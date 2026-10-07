@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {
-		deckStatus,
 		matchReasons,
 		snippetOf,
 		type DeckStatus,
@@ -52,7 +51,7 @@
 						class="card bg-base-100 border-base-200 hover:border-primary flex w-full cursor-pointer flex-row items-center gap-3 border p-3 text-left shadow-sm transition-colors"
 						onclick={() => onSelect(entry.id)}
 					>
-						<span class="h-10 w-1.5 shrink-0 rounded-sm {statusColors[deckStatus(entry)]}"></span>
+						<span class="h-10 w-1.5 shrink-0 rounded-sm {statusColors[entry.status]}"></span>
 						<i class="fa-duotone {entry.kind === 'delegation' ? 'fa-users' : 'fa-user'} text-lg"
 						></i>
 						<span class="flex min-w-0 flex-1 flex-col gap-1">

@@ -852,6 +852,39 @@ column) is not exported.
 While a search is active the table drops its sorting so the best match comes first; clearing the
 search brings `initialSorting` back.
 
+**Client mode vs. server mode.** Without `tableState` the table holds every row and searches
+(Fuse), filters, sorts and pages them in the browser - only right for a few hundred rows (an
+upload, a conference's schools). **Any table over registrations, people or applications runs in
+server mode**, where the backend does the work:
+
+```svelte
+<script lang="ts">
+	const tableState = createTableState(); // $lib/components/tanStackTable/tableState.svelte
+	const page = $derived(await fetchThingsPage(conferenceId, tableState)); // thingsQuery.ts
+</script>
+
+<ManagedTable {columns} rows={page.rows} {tableState} rowCount={page.total} {exportRows} />
+```
+
+`createTableState` owns the URL state (`search` is the typed text once typing paused 250 ms;
+`sorting`, `columnFilters`, `pagination`). The page's `*Query.ts` turns it into rumble arguments
+with the helpers of `tanStackTable/serverQuery.ts`: `pageArgs` (asks for one row more than a page),
+`pageOf` (splits that row off into `hasMore`), `orderFrom` (sorting to `orderBy`, with a tiebreaker),
+`searchWords` / `containing` / `personContains` (every word has to occur somewhere: `ilike` over the
+columns and the related people), `stringFilter` / `booleanFilter` / `enumFilter` / `rangeFilter`
+(the filter drawer's values to `where`). `exportRows` fetches every matching row with
+`fetchEveryRow`. The total comes from the entity's rumble count query (`countQuery({ table })` in
+its handler, e.g. `delegationsCount(where)`, same `where` as the page, wrapped in `asCount`) and goes
+to the table as `rowCount`: it gives the pager its page count and last-page button; without it the
+pager only knows `hasMore`. `*Query.ts` next to the page is the model: `management/delegations/`.
+
+What the backend cannot do, the table does not offer: `orderBy` only reaches a row's own columns
+(not the person's name behind a relation), and computed values (codenames, translated nation names
+
+- search sends `nationCodesMatching(term)` instead - member counts) cannot be sorted or filtered.
+  Such a column sets `enableSorting: false`; an enum filter in server mode gives its `options`
+  (the drawer cannot count values it has not loaded).
+
 ### CollapsibleCard
 
 A card whose header toggles its body, with an optional `badge` snippet at the header's end:
@@ -955,18 +988,27 @@ Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violati
 (Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), one child route per tab, with the
 tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.svelte`.
 
-| File                              | Role                                                                                                                                  |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `board.ts`                        | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `$lib/assignment`), `describeRole` |
-| `GroupCard.svelte`                | A draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign    |
-| `RoleCard.svelte`                 | A drop zone for a nation, non-state actor or custom role: seats taken / total, its groups, free slots, over-capacity in red           |
-| `SplitModal.svelte`               | Splits a delegation by picking a part per member (radio grid, no drag and drop)                                                       |
-| `assignGroup.ts`                  | Plans a role for a group: whole delegations through `assignDelegation`, parts and converted singles through their unit                |
-| `sighting/ApplicationCard.svelte` | One application with its people, texts and wishes; `ReviewControls` rate, flag, disqualify and annotate it                            |
+| File                                      | Role                                                                                                                                                                                                  |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `board.ts`                                | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `$lib/assignment`), `describeRole`                                                                 |
+| `GroupCard.svelte`                        | A draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign                                                                    |
+| `RoleCard.svelte`                         | A drop zone for a nation, non-state actor or custom role: seats taken / total, its groups, free slots, over-capacity in red                                                                           |
+| `SplitModal.svelte`                       | Splits a delegation by picking a part per member (radio grid, no drag and drop)                                                                                                                       |
+| `assignGroup.ts`                          | Plans a role for a group: whole delegations through `assignDelegation`, parts and converted singles through their unit                                                                                |
+| `sighting/ApplicationCard.svelte`         | One application with its people, texts and wishes; `ReviewControls` rate, flag, disqualify and annotate it                                                                                            |
+| `sighting/+page.svelte`, `DeckNav.svelte` | The deck is the backend's (`sightingDeck`: filtered, ordered, a window around the card plus totals and the cards to step to); a card is read on its own, search and school filter ask the backend too |
 
 - Drag and drop uses `@thisux/sveltednd` (`draggable` with `dragData: { id: group.key }`, `droppable`
   containers named `pool`, `role:<key>`); every drop is one draft mutation, and the live queries
   bring the result back - there is no local copy of the draft.
+- **A page that awaits (`$derived(await …)`) must not read route params or URL state inside that
+  derived.** A navigation - the table's or the sighting's own URL writes are one - hands the page
+  fresh `params`, which re-ran the derived from the state a still-pending batch showed: the card
+  stayed on the previous one. Pull the id into its own `$derived`, hold what the query depends on
+  in `$state` and write it to the URL, and create `createTableState` / `queryParameters` before the
+  first `await` (afterwards a server render has no request to read the URL of). Rumble rejects an
+  empty `AND`: use `allOf`. The client cache answers a request with unchanged variables, so a
+  refetch after a save has to change one (see `revision` of `sightingDeck`).
 - Cards keyed by props that come from live data pull their keys into their own `$derived` before
   querying (`ApplicationCard`), or a rebuilt parent list re-runs their queries in a loop.
 - `$lib/components/assignment/AssignmentReleaseToggle.svelte` is the release switch; it saves on

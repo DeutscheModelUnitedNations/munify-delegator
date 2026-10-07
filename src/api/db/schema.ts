@@ -6,6 +6,7 @@ import {
 	jsonb,
 	integer,
 	doublePrecision,
+	date,
 	boolean,
 	index,
 	uniqueIndex,
@@ -618,7 +619,17 @@ export const delegation = snakeCase.table(
 		),
 		// rumble's `search` argument; see `trigramIndex`.
 		trigramIndex('delegation_id_trgm', table.id),
-		trigramIndex('delegation_school_trgm', table.school)
+		trigramIndex('delegation_school_trgm', table.school),
+		// The management tables search these with `ilike '%word%'`, which the same indexes serve.
+		trigramIndex('delegation_entry_code_trgm', table.entryCode),
+		trigramIndex('delegation_motivation_trgm', table.motivation),
+		trigramIndex('delegation_experience_trgm', table.experience),
+		// paging through a conference's delegations, newest first
+		index('delegation_conference_id_created_at_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.createdAt.desc().nullsLast()
+		)
 	]
 );
 
@@ -861,6 +872,15 @@ export const singleParticipant = snakeCase.table(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
+		),
+		trigramIndex('single_participant_id_trgm', table.id),
+		trigramIndex('single_participant_school_trgm', table.school),
+		trigramIndex('single_participant_motivation_trgm', table.motivation),
+		trigramIndex('single_participant_experience_trgm', table.experience),
+		index('single_participant_conference_id_created_at_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.createdAt.desc().nullsLast()
 		)
 	]
 );
@@ -1043,6 +1063,154 @@ export const waitingListEntry = snakeCase.table(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
+		),
+		trigramIndex('waiting_list_entry_school_trgm', table.school),
+		trigramIndex('waiting_list_entry_experience_trgm', table.experience),
+		trigramIndex('waiting_list_entry_motivation_trgm', table.motivation),
+		trigramIndex('waiting_list_entry_requests_trgm', table.requests),
+		index('waiting_list_entry_conference_id_assigned_created_at_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.assigned.asc().nullsLast(),
+			table.createdAt.asc().nullsLast()
 		)
 	]
 );
+
+/**
+ * The statistics dashboard's materialized views, created by hand in the
+ * `statistics_materialized_views` migration (which documents each one) and refreshed by
+ * `src/api/handlers/statistics.ts`. `.existing()` keeps drizzle-kit from managing them; a change
+ * goes into a new custom migration (`drizzle-kit generate --custom`).
+ */
+export const statisticsPeople = snakeCase
+	.materializedView('statistics_people', {
+		conferenceId: text().notNull(),
+		kind: text({
+			enum: ['DELEGATION_MEMBER', 'SINGLE_PARTICIPANT', 'SUPERVISOR', 'TEAM_MEMBER']
+		}).notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		hasNation: boolean().notNull(),
+		hasCommittee: boolean().notNull(),
+		accepted: boolean().notNull(),
+		attends: boolean().notNull(),
+		gender: gender(),
+		foodPreference: foodPreference(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsDelegations = snakeCase
+	.materializedView('statistics_delegations', {
+		conferenceId: text().notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		school: text(),
+		delegations: integer().notNull(),
+		members: integer().notNull()
+	})
+	.existing();
+
+export const statisticsRegistrationDays = snakeCase
+	.materializedView('statistics_registration_days', {
+		conferenceId: text().notNull(),
+		day: date({ mode: 'string' }).notNull(),
+		kind: text({ enum: ['DELEGATION', 'SINGLE_PARTICIPANT', 'SUPERVISOR'] }).notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		registrations: integer().notNull(),
+		members: integer().notNull()
+	})
+	.existing();
+
+export const statisticsRoleApplications = snakeCase
+	.materializedView('statistics_role_applications', {
+		conferenceId: text().notNull(),
+		roleId: text().notNull(),
+		name: text().notNull(),
+		fontAwesomeIcon: text(),
+		total: integer().notNull(),
+		applied: integer().notNull()
+	})
+	.existing();
+
+export const statisticsAges = snakeCase
+	.materializedView('statistics_ages', {
+		conferenceId: text().notNull(),
+		categoryId: text().notNull(),
+		categoryType: text({ enum: ['delegationMember', 'singleParticipant'] }).notNull(),
+		roleName: text(),
+		committeeId: text(),
+		committeeName: text(),
+		committeeAbbreviation: text(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		age: integer(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsAddresses = snakeCase
+	.materializedView('statistics_addresses', {
+		conferenceId: text().notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		country: text(),
+		zipPrefix: text(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsParticipantStatus = snakeCase
+	.materializedView('statistics_participant_status', {
+		conferenceId: text().notNull(),
+		expected: boolean().notNull(),
+		hasStatus: boolean().notNull(),
+		paymentStatus: administrativeStatus(),
+		postalDone: boolean().notNull(),
+		postalProblem: boolean().notNull(),
+		didAttend: boolean().notNull(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsCommitteeFill = snakeCase
+	.materializedView('statistics_committee_fill', {
+		conferenceId: text().notNull(),
+		committeeId: text().notNull(),
+		name: text().notNull(),
+		abbreviation: text().notNull(),
+		totalSeats: integer().notNull(),
+		assignedSeats: integer().notNull()
+	})
+	.existing();
+
+export const statisticsWaitingList = snakeCase
+	.materializedView('statistics_waiting_list', {
+		conferenceId: text().notNull(),
+		hidden: boolean().notNull(),
+		assigned: boolean().notNull(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsPapers = snakeCase
+	.materializedView('statistics_papers', {
+		conferenceId: text().notNull(),
+		type: paperType().notNull(),
+		status: paperStatus().notNull(),
+		hasReview: boolean().notNull(),
+		committeeId: text(),
+		committeeName: text(),
+		committeeAbbreviation: text(),
+		count: integer().notNull()
+	})
+	.existing();
+
+export const statisticsRefreshedAt = snakeCase
+	.materializedView('statistics_refreshed_at', {
+		id: integer().notNull(),
+		refreshedAt: timestamp({ precision: 3, withTimezone: true }).notNull()
+	})
+	.existing();

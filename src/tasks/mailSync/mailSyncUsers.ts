@@ -1,5 +1,10 @@
 import { db } from '$api/db/db';
-import type { UserFilter } from '$api/services/statisticsFilters';
+
+// The `where` slot also accepts drizzle's EmptyFilter symbol; only the object half is useful here.
+type UserFilter = Extract<
+	NonNullable<NonNullable<Parameters<typeof db.query.user.findMany>[0]>['where']>,
+	object
+>;
 
 // Only the fields computeSubscriberState() needs. Loading whole conferences instead would pull
 // their data-URL images and legal documents along, which cost ~5-13 MB per user.

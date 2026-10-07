@@ -3,6 +3,7 @@
 	import { queryParameters } from 'sveltekit-search-params';
 	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import type { TableState } from '$lib/components/tanStackTable/tableState.svelte';
 	import Drawer from '$lib/components/Drawer.svelte';
 
 	/**
@@ -11,6 +12,14 @@
 	interface Props {
 		columns: ManagedColumn<T>[];
 		rows: T[];
+		/** Hands the table's search, sorting and paging to the page, which queries the backend with them */
+		tableState?: TableState;
+		/** With `tableState`: whether the backend has rows after this page */
+		hasMore?: boolean;
+		/** With `tableState`: how many rows match in all */
+		rowCount?: number;
+		/** With `tableState`: all rows matching, for the export */
+		exportRows?: () => Promise<T[]>;
 		/** Extra classes for a column's header and cells, by column id */
 		columnClasses?: Record<string, string>;
 		/** Category of the placeholder drawer shown while the real one loads */
@@ -21,7 +30,18 @@
 		drawer: Snippet<[selectedId: string, close: () => void]>;
 	}
 
-	let { columns, rows, columnClasses, category, pendingHeader, drawer }: Props = $props();
+	let {
+		columns,
+		rows,
+		tableState,
+		hasMore,
+		rowCount,
+		exportRows,
+		columnClasses,
+		category,
+		pendingHeader,
+		drawer
+	}: Props = $props();
 
 	const params = queryParameters({ selected: true });
 
@@ -31,6 +51,10 @@
 <ManagedTable
 	{columns}
 	{rows}
+	{tableState}
+	{hasMore}
+	{rowCount}
+	{exportRows}
 	{columnClasses}
 	queryParamKey="filter"
 	onRowClick={(row) => {

@@ -13,7 +13,7 @@
 
 	const [board, conference] = $derived(
 		await Promise.all([
-			fetchAssignmentRows(conferenceId),
+			fetchAssignmentRows(conferenceId, { draftOnly: true }),
 			client.liveQuery.conference({ __args: { id: conferenceId }, assignmentReleased: true })
 		])
 	);

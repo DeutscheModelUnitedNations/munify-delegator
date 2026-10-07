@@ -18,8 +18,13 @@
 		taken: number;
 		/** Highlights the role while something that fits is being dragged. */
 		highlight?: boolean;
+		/**
+		 * Height of the list while seats are free. Once the role is full the free-seat box is gone and
+		 * the list grows by its height, so the card keeps its size without an empty gap.
+		 */
+		listHeight?: string;
 		onDrop: (state: DragDropState<{ id: string }>) => void;
-		children?: Snippet;
+		children?: Snippet<[listHeight: string]>;
 	}
 
 	let {
@@ -31,18 +36,21 @@
 		seats,
 		taken,
 		highlight = false,
+		listHeight = '20rem',
 		onDrop,
 		children
 	}: Props = $props();
 
 	const free = $derived(seats - taken);
+	// The free-seat box: two lines of padding and border (2.25rem) plus the gap above it.
+	const height = $derived(free > 0 ? listHeight : `calc(${listHeight} + 2.75rem)`);
 </script>
 
 <div
 	role="list"
 	aria-label={title}
 	use:droppable={{ container, callbacks: { onDrop } }}
-	class="flex w-52 flex-col gap-2 rounded-lg border p-2 transition-colors
+	class="flex w-full flex-col gap-2 rounded-lg border p-2 transition-colors
 		{free < 0
 		? 'border-error bg-error/10'
 		: free === 0
@@ -66,7 +74,7 @@
 			<span class="badge badge-xs badge-error">{m.assignmentOverCapacity()}</span>
 		{/if}
 	</div>
-	{@render children?.()}
+	{@render children?.(height)}
 	{#if free > 0}
 		<div
 			class="border-base-content/30 text-base-content/50 rounded-md border-2 border-dashed py-2 text-center text-xs"

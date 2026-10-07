@@ -19,6 +19,7 @@ import {
 	rolesWithSeats,
 	singleDropAction,
 	sizeOptions,
+	wishList,
 	wishRank,
 	wishStatus,
 	type BoardRoles,
@@ -83,12 +84,14 @@ describe('boardState', () => {
 		expect(view.reviewOf({ delegationId: null, singleParticipantId: 's' })).toBeUndefined();
 	});
 
-	it('counts open groups and exactly fitting roles per size', () => {
+	it('counts open groups and roles not yet full per size', () => {
 		// The single participant is no group: only converted ones are.
 		expect(sizeOptions(view)).toEqual([
-			{ size: 2, openGroups: 1, openRoles: 2 },
-			{ size: 3, openGroups: 0, openRoles: 0 }
+			{ size: 2, openGroups: 1, unfilledRoles: 2 },
+			{ size: 3, openGroups: 0, unfilledRoles: 0 }
 		]);
+		const halfFull = boardState(rows({ delegations: [delegation('d', 1, 'DEU')] }), roles);
+		expect(sizeOptions(halfFull).find((option) => option.size === 2)?.unfilledRoles).toBe(2);
 	});
 
 	it('picks the asked size, else the first with open groups', () => {
@@ -248,6 +251,39 @@ describe('describeRole and wishRank', () => {
 		expect(wishRank(wishes, { nationAlpha3Code: 'DEU', nonStateActorId: null })).toBeUndefined();
 		expect(wishRank(wishes, { nationAlpha3Code: null, nonStateActorId: null })).toBeUndefined();
 		expect(wishRank(undefined, { nationAlpha3Code: 'FRA', nonStateActorId: null })).toBeUndefined();
+	});
+
+	describe('wishList', () => {
+		const wishes = [
+			{ rank: 2, nation: { alpha3Code: 'FRA' }, nonStateActor: null },
+			{ rank: 1, nation: null, nonStateActor: { id: 'amn', abbreviation: 'AI' } },
+			{ rank: 3, nation: null, nonStateActor: null }
+		];
+
+		it('lists the wishes by rank while no role is held', () => {
+			expect(wishList(wishes, { nationAlpha3Code: null, nonStateActorId: null }, name)).toEqual([
+				{ key: 'amn', rank: 1, name: 'AI', matches: false },
+				{ key: 'FRA', rank: 2, name: 'name of FRA', matches: false },
+				{ key: '3', rank: 3, name: '', matches: false }
+			]);
+		});
+
+		it('puts the wish matching the role first', () => {
+			const nation = wishList(wishes, { nationAlpha3Code: 'FRA', nonStateActorId: null }, name);
+			expect(nation.map((wish) => [wish.key, wish.matches])).toEqual([
+				['FRA', true],
+				['amn', false],
+				['3', false]
+			]);
+			const nsa = wishList(wishes, { nationAlpha3Code: null, nonStateActorId: 'amn' }, name);
+			expect(nsa.filter((wish) => wish.matches).map((wish) => wish.key)).toEqual(['amn']);
+		});
+
+		it('has nothing to list without wishes', () => {
+			expect(wishList(undefined, { nationAlpha3Code: 'FRA', nonStateActorId: null }, name)).toEqual(
+				[]
+			);
+		});
 	});
 });
 

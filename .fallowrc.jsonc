@@ -11,13 +11,14 @@
 		"ignore": ["src/lib/api/rumbleClient/**", "src/tasks/apis/listmonk/listmonk-paths.d.ts"]
 	},
 	// Runtime roots no SvelteKit convention declares: the background tasks are bundled separately
-	// by scripts/tasksBuild.ts and run as their own process, and the scripts are run by hand
-	// (`bun run …`) or from CI.
-	"entry": ["src/tasks/index.ts", "scripts/**/*.ts"],
+	// by tsdown.tasks.config.ts and run as their own process, and the scripts are run by hand
+	// (`bun run …`) or from CI. The worker threads are started by path (`$api/services/matching`)
+	// and bundled by tsdown.compute.config.ts.
+	"entry": ["src/tasks/index.ts", "src/lib/assignment/*.worker.ts", "scripts/**/*.ts"],
 	// Reached in ways the static graph does not follow: the certificate and the dashboard calendar
 	// through `{#await import('…')}` in a template (Certificate.svelte in the stages, CalendarSection
 	// in sections/DashboardConferenceOverview.svelte), the task shims through the aliases
-	// scripts/tasksBuild.ts maps `$app/environment` and `$env/dynamic/private` to.
+	// tsdown.tasks.config.ts maps `$app/environment` and `$env/dynamic/private` to.
 	"dynamicallyLoaded": [
 		"src/routes/**/stages/Common/Certificate.svelte",
 		"src/lib/components/dashboard/CalendarSection.svelte",

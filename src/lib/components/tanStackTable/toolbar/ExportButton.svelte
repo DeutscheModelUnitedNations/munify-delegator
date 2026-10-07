@@ -5,7 +5,7 @@
 
 	interface Props {
 		/** Called when an export is chosen, so the text is only built then */
-		getExport: () => TableExport;
+		getExport: () => TableExport | Promise<TableExport>;
 		/** Base name of the downloaded file */
 		filename: string;
 	}
@@ -14,13 +14,13 @@
 
 	const stamp = () => new Date().toISOString().slice(0, 10);
 
-	function exportCsv() {
-		const { header, data } = getExport();
+	async function exportCsv() {
+		const { header, data } = await getExport();
 		downloadCSV(header, data, `${filename}-${stamp()}.csv`);
 	}
 
-	function exportJson() {
-		const { header, data } = getExport();
+	async function exportJson() {
+		const { header, data } = await getExport();
 		downloadJSON(
 			data.map((row) => Object.fromEntries(header.map((name, i) => [name, row[i]]))),
 			`${filename}-${stamp()}.json`

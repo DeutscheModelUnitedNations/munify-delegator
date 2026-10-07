@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -80,6 +87,7 @@ const SingleParticipantRef = object({
 	})
 });
 query({ table: 'singleParticipant' });
+countQuery({ table: 'singleParticipant' });
 const pubsub = rumblePubsub({ table: 'singleParticipant' });
 // Assigning someone from the waiting list also settles their entry there.
 const waitingListEntryPubsub = rumblePubsub({ table: 'waitingListEntry' });

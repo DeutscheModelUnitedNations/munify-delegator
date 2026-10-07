@@ -1,4 +1,4 @@
-<script lang="ts" generics="E extends { group?: string }">
+<script lang="ts" generics="E extends { group?: string; col: { id: string } }">
 	import type { Snippet } from 'svelte';
 	import { groupEntries } from '$lib/components/tanStackTable/columnEntries';
 
@@ -29,7 +29,9 @@
 			</h3>
 		{/if}
 		<div class={listClass}>
-			{#each members as entry (entry)}
+			<!-- Keyed by column: the entries are rebuilt whenever the table's state changes, and keying
+			by the entry would replace a filter's input on every keystroke, taking the focus with it -->
+			{#each members as entry (entry.col.id)}
 				{@render item(entry)}
 			{/each}
 		</div>

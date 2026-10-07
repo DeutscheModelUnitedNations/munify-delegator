@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -26,6 +33,7 @@ abilityBuilder.waitingListEntry
 
 const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
+countQuery({ table: 'waitingListEntry' });
 const pubsub = rumblePubsub({ table: 'waitingListEntry' });
 
 schemaBuilder.mutationFields((t) => ({

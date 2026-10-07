@@ -832,7 +832,7 @@ been exercised against a database holding real data.
 
 - [x] `src/tasks/**` reads `$api/db/db`; `tasksDb.ts` is gone. The bundle dropped from carrying
       Prisma's engine to 75 KB, but the shared `$api/**` code pulled SvelteKit's virtual modules
-      into it, so `scripts/tasksBuild.ts` aliases `$app/environment` and `$env/dynamic/private` to
+      into it, so `tsdown.tasks.config.ts` aliases `$app/environment` and `$env/dynamic/private` to
       plain-Node stand-ins under `src/tasks/shims/`. The pre-push hook now runs vitest like CI,
       because bun's own runner cannot resolve those at all.
 - [x] `prisma/seed/dev` became `src/api/db/seedDev.ts` plus the factories under
@@ -876,7 +876,7 @@ Keeping these is the "reasonably" in "as close as reasonably possible":
 - **Sentry/Bugsink + OpenTelemetry.** Delegator-only observability. Rumble bundles
   `@pothos/plugin-tracing` + `@pothos/tracing-opentelemetry`, so the resolver-level tracing
   survives the migration — verify how rumble exposes it before deleting `src/api/resolvers/tracer.ts`.
-- **`src/tasks/**`+`Dockerfile.tasks`+`scripts/tasksBuild.ts`.\*\* Chase has no background tasks.
+- **`src/tasks/**`+`Dockerfile.tasks`+`tsdown.tasks.config.ts`.\*\* Chase has no background tasks.
 - **fallow** (`fallow`, `fallow:audit`, `fallow:health`, the lefthook/CI steps). Delegator-only
   tooling worth keeping.
 - **Docker compose extras** (listmonk, mailpit, bugsink) — real delegator dependencies.

@@ -69,3 +69,38 @@ test('the sighting keeps ratings, exclusions and notes on the server', async ({ 
 	await page.getByRole('textbox', { name: /notiz|note/i }).fill('');
 	await page.getByRole('textbox', { name: /notiz|note/i }).blur();
 });
+
+// The deck, its filters, the slider and the search are the backend's: only a window of the deck
+// and the card on top are ever loaded.
+test('the sighting seeks, filters and searches in the backend', async ({ page }) => {
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/sighting`
+	});
+	const position = page.getByTestId('deck-position');
+	await expect(position).toHaveText(/^1 (von|of) \d+$/);
+	const heading = page.locator('h3').filter({ has: page.locator('i.fa-users, i.fa-user') });
+	const first = await heading.innerText();
+
+	// the slider seeks to a place in the deck
+	await page.getByRole('slider').fill('3');
+	await expect(position).toHaveText(/^3 (von|of) \d+$/);
+	await expect(heading).not.toHaveText(first);
+
+	// a status filter narrows the deck: nothing is flagged in the seed
+	await page.getByLabel(/status/i).selectOption('flagged');
+	await expect(page.getByText(/keine|no applications/i).first()).toBeVisible();
+	await page.getByLabel(/status/i).selectOption('all');
+	await expect(position).toHaveText(/^\d+ (von|of) \d+$/);
+
+	// the codename finds the application, and picking it brings it back to the deck
+	const name = await heading.innerText();
+	await page.getByRole('searchbox').first().fill(name.trim().slice(0, 12));
+	const results = page.getByTestId('search-count');
+	await expect(results).toBeVisible({ timeout: 15_000 });
+	await page.getByRole('searchbox').first().press('Enter');
+	await expect(heading).toHaveText(name);
+
+	expect(errors, 'no uncaught browser errors').toEqual([]);
+});

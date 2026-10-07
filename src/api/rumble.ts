@@ -28,6 +28,7 @@ export const {
 	schemaBuilder,
 	object,
 	query,
+	countQuery,
 	pubsub,
 	createYoga,
 	enum_,

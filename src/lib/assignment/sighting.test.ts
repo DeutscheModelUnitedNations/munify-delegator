@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-	applicationOf,
-	deckPosition,
-	deckStatus,
 	delegationApplication,
-	filterSightings,
 	genderIcon,
 	memberSummary,
-	nextUnreviewedId,
 	reviewArgs,
-	schoolsOf,
 	matchReasons,
 	searchFieldsOf,
 	singleApplication,
 	distinctSupervisors,
+	entryKind,
+	entryStatus,
+	searchHitEntries,
 	type SightingEntry
 } from './sighting';
 
@@ -23,67 +20,8 @@ const entry = (overrides: Partial<SightingEntry>): SightingEntry => ({
 	codename: 'x',
 	school: null,
 	size: 1,
-	review: undefined,
+	status: 'unrated',
 	...overrides
-});
-
-const entries = [
-	entry({ id: 's', codename: 'single', kind: 'single', school: 'B' }),
-	entry({
-		id: 'a',
-		codename: 'alpha',
-		size: 2,
-		school: 'A',
-		review: { evaluation: 3, flagged: true, disqualified: false }
-	}),
-	entry({
-		id: 'b',
-		codename: 'beta',
-		size: 4,
-		school: 'A',
-		review: { flagged: false, disqualified: true, note: 'late' }
-	})
-];
-
-describe('filterSightings', () => {
-	const all = { search: '', status: 'all' as const, school: null };
-
-	it('puts large delegations first and single participants last', () => {
-		expect(filterSightings(entries, all).map((e) => e.id)).toEqual(['b', 'a', 's']);
-	});
-
-	it('filters by status', () => {
-		expect(filterSightings(entries, { ...all, status: 'unrated' }).map((e) => e.id)).toEqual(['s']);
-		expect(filterSightings(entries, { ...all, status: 'flagged' }).map((e) => e.id)).toEqual(['a']);
-		expect(filterSightings(entries, { ...all, status: 'noted' }).map((e) => e.id)).toEqual(['b']);
-	});
-
-	it('needs every search term and the school to match', () => {
-		expect(filterSightings(entries, { ...all, search: 'alp a' }).map((e) => e.id)).toEqual(['a']);
-		expect(filterSightings(entries, { ...all, school: 'B' }).map((e) => e.id)).toEqual(['s']);
-	});
-
-	it('also searches the text of the application and the team note', () => {
-		const withText = [
-			entry({ id: 't', fields: [{ kind: 'memberEmail', value: 'erika@example.org' }] }),
-			entry({ id: 'n', review: { flagged: false, disqualified: false, note: 'Great speaker' } })
-		];
-		expect(filterSightings(withText, { ...all, search: 'ERIKA@example' }).map((e) => e.id)).toEqual(
-			['t']
-		);
-		expect(filterSightings(withText, { ...all, search: 'speaker' }).map((e) => e.id)).toEqual([
-			'n'
-		]);
-	});
-});
-
-describe('schoolsOf', () => {
-	it('counts applications and people per school', () => {
-		expect(schoolsOf(entries)).toEqual([
-			{ school: 'A', applications: 2, people: 6 },
-			{ school: 'B', applications: 1, people: 1 }
-		]);
-	});
 });
 
 describe('application details', () => {
@@ -138,27 +76,6 @@ describe('application details', () => {
 			motivation: 'yes',
 			people: [{ id: 's', isHeadDelegate: false }],
 			wishes: [{ name: 'Press' }]
-		});
-	});
-
-	describe('applicationOf', () => {
-		const applications = {
-			delegations: [
-				{ id: 'd1', school: 'S', members: [], appliedForRoles: [{ rank: 1, nation: null }] }
-			],
-			singleParticipants: [
-				{ id: 's1', user: person('s1'), supervisors: [], appliedForRoles: [{ name: 'Press' }] }
-			]
-		};
-
-		it('finds the application of either kind, or nothing', () => {
-			expect(applicationOf({ kind: 'delegation', id: 'd1' }, applications, String)?.school).toBe(
-				'S'
-			);
-			expect(applicationOf({ kind: 'single', id: 's1' }, applications, String)?.wishes).toEqual([
-				{ name: 'Press' }
-			]);
-			expect(applicationOf({ kind: 'single', id: 'd1' }, applications, String)).toBeUndefined();
 		});
 	});
 
@@ -231,60 +148,74 @@ describe('reviewArgs', () => {
 	});
 });
 
-describe('deck status priorities', () => {
-	it('shows a rating green even when flagged, and an exclusion red over everything', () => {
-		const review = (r: object) => entry({ review: { flagged: false, disqualified: false, ...r } });
-		expect(deckStatus(review({ evaluation: 3, flagged: true }))).toBe('rated');
-		expect(deckStatus(review({ evaluation: 3, disqualified: true }))).toBe('disqualified');
+describe('deck entries from the backend', () => {
+	it('reads the kind and status it sends as strings', () => {
+		expect(entryKind('single')).toBe('single');
+		expect(entryKind('delegation')).toBe('delegation');
+		expect(entryKind('anything')).toBe('delegation');
+		expect(entryStatus('rated')).toBe('rated');
+		expect(entryStatus('flagged')).toBe('flagged');
+		expect(entryStatus('disqualified')).toBe('disqualified');
+		expect(entryStatus('noted')).toBe('unrated');
 	});
 });
 
-describe('the deck', () => {
-	const deck = [
-		entry({ id: 'a', review: { evaluation: 4, flagged: false, disqualified: false } }),
-		entry({ id: 'b' }),
-		entry({ id: 'c', review: { flagged: true, disqualified: false } }),
-		entry({ id: 'd' }),
-		entry({ id: 'e', review: { flagged: true, disqualified: true } })
-	];
+describe('searchHitEntries', () => {
+	const person = {
+		id: 'p',
+		givenName: 'Erika',
+		familyName: 'Muster',
+		conferenceParticipationsCount: 0
+	};
+	const hits = {
+		delegations: [
+			{
+				id: 'd1',
+				school: 'Goethe',
+				members: [{ isHeadDelegate: true, user: person, supervisors: [] }],
+				appliedForRoles: []
+			}
+		],
+		singleParticipants: [
+			{ id: 's1', school: null, user: person, supervisors: [], appliedForRoles: [] }
+		],
+		entries: [
+			{ kind: 'delegation', id: 'd1', school: 'Goethe', size: 1, status: 'rated' },
+			{ kind: 'single', id: 's1', school: null, size: 1, status: 'whatever' },
+			{ kind: 'delegation', id: 'd2', school: null, size: 2, status: 'flagged' }
+		]
+	};
+	const codename = (id: string) => `code ${id}`;
 
-	it('tells how far along an application is, the strictest mark first', () => {
-		expect(deck.map(deckStatus)).toEqual([
-			'rated',
-			'unrated',
-			'flagged',
-			'unrated',
-			'disqualified'
-		]);
+	it('finds nothing before the search has run', () => {
+		expect(searchHitEntries(undefined, 'x', codename)).toEqual([]);
 	});
 
-	it('finds the neighbours of the current card', () => {
-		expect(deckPosition(deck, 'c')).toMatchObject({
-			index: 2,
-			total: 5,
-			previousId: 'b',
-			nextId: 'd',
-			current: { id: 'c' }
+	it('turns the hits into entries carrying what the search looked through', () => {
+		const [delegation, single, unloaded] = searchHitEntries(hits, 'erika', codename);
+		expect(delegation).toMatchObject({
+			kind: 'delegation',
+			id: 'd1',
+			codename: 'code d1',
+			school: 'Goethe',
+			status: 'rated'
 		});
-		expect(deckPosition(deck, 'a').previousId).toBeUndefined();
-		expect(deckPosition(deck, 'e').nextId).toBeUndefined();
+		expect(delegation.fields).toContainEqual({ kind: 'member', value: 'Erika Muster' });
+		expect(single).toMatchObject({ kind: 'single', id: 's1', status: 'unrated' });
+		expect(single.fields).toContainEqual({ kind: 'member', value: 'Erika Muster' });
+		expect(unloaded).toMatchObject({ id: 'd2', status: 'flagged', fields: undefined });
 	});
 
-	it('falls back to the first card for an id outside the deck, and copes with an empty one', () => {
-		expect(deckPosition(deck, 'gone')).toMatchObject({ index: 0, current: { id: 'a' } });
-		expect(deckPosition(deck, undefined).index).toBe(0);
-		expect(deckPosition([], 'a')).toMatchObject({ total: 0, current: undefined });
-	});
-
-	it('jumps to the next unreviewed card, wrapping around', () => {
-		expect(nextUnreviewedId(deck, 'a')).toBe('b');
-		expect(nextUnreviewedId(deck, 'b')).toBe('d');
-		expect(nextUnreviewedId(deck, 'd')).toBe('b');
-		expect(
-			nextUnreviewedId(
-				deck.filter((e) => e.id !== 'b' && e.id !== 'd'),
-				'a'
-			)
-		).toBeUndefined();
+	it('puts the applications whose codename or id was typed first', () => {
+		expect(searchHitEntries(hits, 'CODE  s1', codename).map((entry) => entry.id)).toEqual([
+			's1',
+			'd1',
+			'd2'
+		]);
+		expect(searchHitEntries(hits, 'd2', codename).map((entry) => entry.id)).toEqual([
+			'd2',
+			'd1',
+			's1'
+		]);
 	});
 });

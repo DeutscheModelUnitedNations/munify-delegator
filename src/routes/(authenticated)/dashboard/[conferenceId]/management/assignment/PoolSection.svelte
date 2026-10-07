@@ -11,6 +11,11 @@
 		/** Highlights the pool while something with a role is being dragged. */
 		highlight?: boolean;
 		class?: string;
+		/**
+		 * The children are a virtualized list that scrolls on its own, so the section skips its
+		 * wrapping list and its empty hint is the only thing it adds.
+		 */
+		virtual?: boolean;
 		onDrop: (state: DragDropState<{ id: string }>) => void;
 		children: Snippet;
 	}
@@ -21,6 +26,7 @@
 		hint,
 		highlight = false,
 		class: className = '',
+		virtual = false,
 		onDrop,
 		children
 	}: Props = $props();
@@ -40,11 +46,15 @@
 	{#if hint}
 		<p class="text-base-content/60 text-xs">{hint}</p>
 	{/if}
-	<div role="list" class="flex flex-wrap gap-2">
-		{#if count > 0}
+	{#if count === 0}
+		<p class="text-base-content/60 py-6 text-center text-sm">{m.assignmentPoolEmpty()}</p>
+	{:else if virtual}
+		<div role="list">
 			{@render children()}
-		{:else}
-			<p class="text-base-content/60 py-6 text-center text-sm">{m.assignmentPoolEmpty()}</p>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<div role="list" class="flex flex-wrap gap-2">
+			{@render children()}
+		</div>
+	{/if}
 </section>

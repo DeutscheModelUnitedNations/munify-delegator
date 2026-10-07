@@ -1,7 +1,8 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
+	import { fetchAllDelegations, fetchDelegationsPage } from './delegationsQuery';
 	import { renderComponent } from '$lib/components/tanStackTable';
 	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import { appliedColumn } from '$lib/components/tanStackTable/commonColumns';
@@ -13,31 +14,22 @@
 	import type { PageProps } from './$types';
 	import { assignedRoleName } from './delegationRole';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { fetchAssignmentReviews } from '../assignment/board';
 
 	let { params: routeParams }: PageProps = $props();
 
-	// Only what the table's columns show and search; the drawer fetches the rest of a delegation.
-	const fetchedDelegations = $derived(
-		await client.liveQuery.delegations({
-			__args: { where: { conferenceId: { eq: routeParams.conferenceId } } },
-			id: true,
-			entryCode: true,
-			applied: true,
-			school: true,
-			assignedNation: { alpha2Code: true, alpha3Code: true },
-			assignedNonStateActor: { id: true, name: true, fontAwesomeIcon: true },
-			members: { id: true },
-			appliedForRoles: { id: true }
-		})
-	);
-	const reviews = $derived(await fetchAssignmentReviews(routeParams.conferenceId));
-	const evaluationById = $derived(
-		new Map(reviews.map((review) => [review.delegationId, review.evaluation]))
-	);
+	// Navigations (the table's own URL state is one) hand over fresh params; reading them inside an
+	// awaited derived would refetch from whatever state the batch under way still shows.
+	const conferenceId = $derived(routeParams.conferenceId);
+
+	// Search, filters, order and paging run in the backend; the table only holds this page.
+	const tableState = createTableState();
+	const fetched = $derived(await fetchDelegationsPage(conferenceId, tableState));
 	// The nation's translated name is only known client-side, so it is joined on here.
-	const delegations = $derived(
-		fetchedDelegations.map((d) => ({
+	function toRows(rows: (typeof fetched)['rows'], reviews: (typeof fetched)['reviews']) {
+		const evaluationById = new Map(
+			reviews.map((review) => [review.delegationId, review.evaluation])
+		);
+		return rows.map((d) => ({
 			...d,
 			evaluation: evaluationById.get(d.id) ?? null,
 			assignedNation: d.assignedNation
@@ -46,26 +38,35 @@
 						name: getFullTranslatedCountryNameFromISO3Code(d.assignedNation.alpha3Code)
 					}
 				: undefined
-		}))
-	);
+		}));
+	}
+	const delegations = $derived(toRows(fetched.rows, fetched.reviews));
+
+	async function exportRows() {
+		const all = await fetchAllDelegations(conferenceId, tableState);
+		return toRows(all.rows, all.reviews);
+	}
 
 	const columns: ManagedColumn<(typeof delegations)[number]>[] = [
 		{
 			id: 'codename',
 			header: 'Codename',
-			accessorFn: (row) => codenmz(row.id)
+			accessorFn: (row) => codenmz(row.id),
+			enableSorting: false
 		},
 		{
 			id: 'entryCode',
 			header: 'Entry Code',
 			accessorFn: (row) => row.entryCode,
-			cell: ({ getValue }) => getValue<string>()
+			cell: ({ getValue }) => getValue<string>(),
+			filter: { type: 'text' }
 		},
-		appliedColumn(),
+		{ ...appliedColumn(), filter: { type: 'boolean' } },
 		{
 			id: 'role',
 			header: m.role(),
 			accessorFn: assignedRoleName,
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.assignedNation
 					? renderComponent(AssignmentBadge, {
@@ -83,6 +84,7 @@
 			id: 'evaluation',
 			header: m.assignmentWeightsRating(),
 			accessorFn: (row) => row.evaluation ?? 0,
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.applied
 					? renderComponent(StarRating, { rating: row.original.evaluation ?? 0, size: 'xs' })
@@ -91,17 +93,20 @@
 		{
 			id: 'school',
 			header: m.schoolOrInstitution(),
-			accessorFn: (row) => row.school ?? 'N/A'
+			accessorFn: (row) => row.school ?? 'N/A',
+			filter: { type: 'text' }
 		},
 		{
 			id: 'members',
 			header: m.members(),
-			accessorFn: (row) => row.members.length
+			accessorFn: (row) => row.members.length,
+			enableSorting: false
 		},
 		{
 			id: 'appliedForRoles',
 			header: m.roleApplications(),
-			accessorFn: (row) => row.appliedForRoles.length
+			accessorFn: (row) => row.appliedForRoles.length,
+			enableSorting: false
 		}
 	];
 
@@ -112,14 +117,16 @@
 		members: 'text-center',
 		appliedForRoles: 'text-center'
 	};
-
-	// TODO export data
 </script>
 
 <RegistrationAdminTable
 	{columns}
 	{columnClasses}
 	rows={delegations}
+	{tableState}
+	hasMore={fetched.hasMore}
+	rowCount={fetched.total}
+	{exportRows}
 	category={m.delegation()}
 	pendingHeader={(selectedId) => ({ id: selectedId, title: codenmz(selectedId) })}
 >

@@ -2493,6 +2493,27 @@ export type PaperversionWhereInputArgument = {
   version?: IntWhereInputArgument | null | undefined    
 };
 		
+export type ParticipantFilterInput = {
+  bool?: Boolean | null | undefined,
+  column: String,
+  max?: Float | null | undefined,
+  min?: Float | null | undefined,
+  mode?: String | null | undefined,
+  text?: String | null | undefined,
+  values?: String[] | undefined    
+};
+		
+export type ParticipantSortInput = {
+  column: String,
+  desc: Boolean    
+};
+		
+export type ParticipantsPage = {
+  hasMore: Boolean,
+  total: Int,
+  userIds: ID[]    
+};
+		
 export type Paymenttransaction = {
   amount: Float,
   conference: (p?: {
@@ -2637,6 +2658,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: AssignmentreviewWhereInputArgument | null | undefined
   }) => Assignmentreview[],
+  assignmentReviewsCount: (p?: {
+    where?: AssignmentreviewWhereInputArgument | null | undefined
+  }) => Int,
   assignmentSingleRole: (p: {
     id: ID
   }) => Assignmentsinglerole,
@@ -2767,6 +2791,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferencesupervisorWhereInputArgument | null | undefined
   }) => Conferencesupervisor[],
+  conferenceSupervisorsCount: (p?: {
+    where?: ConferencesupervisorWhereInputArgument | null | undefined
+  }) => Int,
   conferences: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -2804,6 +2831,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
+  delegationsCount: (p?: {
+    where?: DelegationWhereInputArgument | null | undefined
+  }) => Int,
   findGlobalIntroductionPapers: (p: {
     conferenceId: ID
   }) => Paper[],
@@ -2898,6 +2928,14 @@ export type Query = {
     search?: String | null | undefined,
     where?: PaperWhereInputArgument | null | undefined
   }) => Paper[],
+  participantsPage: (p: {
+    conferenceId: ID,
+    filters?: ParticipantFilterInput[] | null | undefined,
+    limit: Int,
+    offset: Int,
+    search?: String | null | undefined,
+    sort?: ParticipantSortInput[] | null | undefined
+  }) => ParticipantsPage,
   paymentTransaction: (p: {
     id: ID
   }) => Paymenttransaction,
@@ -2965,6 +3003,30 @@ export type Query = {
   seatPlanningAssignments: (p: {
     conferenceId: ID
   }) => SeatPlanningAssignments,
+  sightingDeck: (p: {
+    conferenceId: ID,
+    currentId?: ID | null | undefined,
+    index?: Int | null | undefined,
+    revision?: Int | null | undefined,
+    school?: String | null | undefined,
+    size?: Int | null | undefined,
+    status?: String | null | undefined
+  }) => SightingDeck,
+  sightingEntries: (p: {
+    conferenceId: ID,
+    ids: ID[],
+    school?: String | null | undefined,
+    status?: String | null | undefined
+  }) => SightingDeckEntry[],
+  sightingNameMatches: (p: {
+    conferenceId: ID,
+    search: String
+  }) => SightingNameMatch[],
+  sightingSchools: (p: {
+    conferenceId: ID,
+    limit?: Int | null | undefined,
+    search?: String | null | undefined
+  }) => SightingSchool[],
   singleParticipant: (p: {
     id: ID
   }) => Singleparticipant,
@@ -2975,6 +3037,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  singleParticipantsCount: (p?: {
+    where?: SingleparticipantWhereInputArgument | null | undefined
+  }) => Int,
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,
@@ -3025,6 +3090,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Teammember[],
+  teamMembersCount: (p?: {
+    where?: TeammemberWhereInputArgument | null | undefined
+  }) => Int,
   user: (p: {
     id: ID
   }) => User,
@@ -3052,6 +3120,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: WaitinglistentryWhereInputArgument | null | undefined
   }) => Waitinglistentry[],
+  waitingListEntriesCount: (p?: {
+    where?: WaitinglistentryWhereInputArgument | null | undefined
+  }) => Int,
   waitingListEntry: (p: {
     id: ID
   }) => Waitinglistentry    
@@ -3230,6 +3301,45 @@ export type SeatPlanningCommitteeSeat = {
   nationAlpha3Code: String    
 };
 		
+export type SightingDeck = {
+  counts: () => SightingDeckCounts,
+  current: () => SightingDeckEntry | null,
+  entries: () => SightingDeckEntry[],
+  index: Int,
+  next: () => SightingDeckEntry | null,
+  nextUnreviewed: () => SightingDeckEntry | null,
+  overallRated: Int,
+  overallTotal: Int,
+  previous: () => SightingDeckEntry | null,
+  start: Int,
+  total: Int    
+};
+		
+export type SightingDeckCounts = {
+  disqualified: Int,
+  flagged: Int,
+  rated: Int,
+  unrated: Int    
+};
+		
+export type SightingDeckEntry = {
+  id: ID,
+  kind: String,
+  school: String | null,
+  size: Int,
+  status: String    
+};
+		
+export type SightingNameMatch = {
+  id: ID    
+};
+		
+export type SightingSchool = {
+  applications: Int,
+  people: Int,
+  school: String    
+};
+		
 export type Singleparticipant = {
   applied: Boolean,
   appliedForRoles: (p?: {
@@ -3316,6 +3426,7 @@ export type StatisticsResult = {
   nationalityDistribution: () => StatisticsResultNationality[],
   paperStats: () => StatisticsResultPaperStats,
   postalPaymentProgress: () => StatisticsResultPostalPaymentProgress,
+  refreshedAt: DateTime | null,
   registered: () => StatisticsResultRegistered,
   registrationTimeline: () => StatisticsResultRegistrationTimeline[],
   roleBased: () => StatisticsResultRoleBased,
@@ -3328,13 +3439,15 @@ export type StatisticsResult = {
 export type StatisticsResultAddresses = {
   _count: () => StatisticsResultAddressesCount,
   country: String | null,
-  zip: String | null    
+  lat: Float | null,
+  lng: Float | null,
+  zipPrefix: String | null    
 };
 		
 export type StatisticsResultAddressesCount = {
   _all: Int,
   country: Int,
-  zip: Int    
+  zipPrefix: Int    
 };
 		
 export type StatisticsResultAge = {
@@ -3607,6 +3720,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: AssignmentreviewWhereInputArgument | null | undefined
   }) => Assignmentreview[],
+  assignmentReviewsCount: (p?: {
+    where?: AssignmentreviewWhereInputArgument | null | undefined
+  }) => Int,
   assignmentSingleRole: (p: {
     id: ID
   }) => Assignmentsinglerole,
@@ -3730,6 +3846,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: ConferencesupervisorWhereInputArgument | null | undefined
   }) => Conferencesupervisor[],
+  conferenceSupervisorsCount: (p?: {
+    where?: ConferencesupervisorWhereInputArgument | null | undefined
+  }) => Int,
   conferences: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3767,6 +3886,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
+  delegationsCount: (p?: {
+    where?: DelegationWhereInputArgument | null | undefined
+  }) => Int,
   nation: (p: {
     id: ID
   }) => Nation,
@@ -3877,6 +3999,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  singleParticipantsCount: (p?: {
+    where?: SingleparticipantWhereInputArgument | null | undefined
+  }) => Int,
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,
@@ -3927,6 +4052,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Teammember[],
+  teamMembersCount: (p?: {
+    where?: TeammemberWhereInputArgument | null | undefined
+  }) => Int,
   user: (p: {
     id: ID
   }) => User,
@@ -3954,6 +4082,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: WaitinglistentryWhereInputArgument | null | undefined
   }) => Waitinglistentry[],
+  waitingListEntriesCount: (p?: {
+    where?: WaitinglistentryWhereInputArgument | null | undefined
+  }) => Int,
   waitingListEntry: (p: {
     id: ID
   }) => Waitinglistentry    
@@ -4569,7 +4700,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

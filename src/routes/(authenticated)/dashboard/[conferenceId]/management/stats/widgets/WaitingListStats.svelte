@@ -7,7 +7,7 @@
 	let { conferenceId }: { conferenceId: string } = $props();
 
 	const stats = $derived(
-		await client.liveQuery.getConferenceStatistics({
+		await client.query.getConferenceStatistics({
 			__args: { conferenceId, filter: statsQueryFilter() },
 			waitingList: { total: true, visible: true, hidden: true, assigned: true, unassigned: true }
 		})

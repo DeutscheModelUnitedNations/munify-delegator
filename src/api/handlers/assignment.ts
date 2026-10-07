@@ -4,6 +4,7 @@ import {
 	enum_,
 	object,
 	pubsub as rumblePubsub,
+	countQuery,
 	query,
 	schemaBuilder
 } from '$api/rumble';
@@ -14,6 +15,7 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
+import { matchSingles } from '$api/services/matching';
 import { loadExperiencedIds } from '$api/services/assignmentExperience';
 import {
 	applyAssignmentDraft,
@@ -21,7 +23,7 @@ import {
 	draftDelegationTarget,
 	loadAssignmentInput
 } from '$api/services/assignmentDraft';
-import { DEFAULT_WEIGHTS, autoAssign, autoAssignSingles } from '$lib/assignment/autoAssign';
+import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
 import { experienceShare } from '$lib/assignment/experience';
 import { reviewProblem, reviewRow } from '$lib/assignment/review';
 import {
@@ -55,6 +57,7 @@ abilityBuilder.assignmentWeights.allow(['read', 'update', 'delete']).when(assign
 
 const AssignmentReviewRef = object({ table: 'assignmentReview' });
 query({ table: 'assignmentReview' });
+countQuery({ table: 'assignmentReview' });
 object({ table: 'assignmentUnit' });
 query({ table: 'assignmentUnit' });
 object({ table: 'assignmentUnitMember' });
@@ -515,7 +518,7 @@ schemaBuilder.mutationFields((t) => ({
 			);
 			const applicantById = new Map(applicants.map((applicant) => [applicant.id, applicant]));
 
-			const matches = autoAssignSingles({
+			const matches = await matchSingles({
 				weights: weights ?? DEFAULT_WEIGHTS,
 				roles: customRoles.map((role) => ({
 					id: role.id,

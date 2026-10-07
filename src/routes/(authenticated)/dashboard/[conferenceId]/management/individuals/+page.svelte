@@ -1,7 +1,8 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
+	import { fetchAllIndividuals, fetchIndividualsPage } from './individualsQuery';
 	import { renderComponent } from '$lib/components/tanStackTable';
 	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import {
@@ -14,36 +15,39 @@
 	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { fetchAssignmentReviews } from '../assignment/board';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
 
-	const singleParticipants = $derived(
-		await client.liveQuery.singleParticipants({
-			__args: { where: { conferenceId: { eq: routeParams.conferenceId } } },
-			id: true,
-			applied: true,
-			school: true,
-			appliedForRoles: { id: true, fontAwesomeIcon: true, name: true },
-			assignedRole: { id: true, fontAwesomeIcon: true, name: true },
-			motivation: true,
-			experience: true,
-			user: { id: true, familyName: true, givenName: true }
-		})
-	);
-	const reviews = $derived(await fetchAssignmentReviews(routeParams.conferenceId));
-	const evaluationById = $derived(
-		new Map(reviews.map((review) => [review.singleParticipantId, review.evaluation]))
-	);
+	// Navigations (the table's own URL state is one) hand over fresh params; reading them inside an
+	// awaited derived would refetch from whatever state the batch under way still shows.
+	const conferenceId = $derived(routeParams.conferenceId);
+
+	// Search, filters, order and paging run in the backend; the table only holds this page.
+	const tableState = createTableState();
+	const fetched = $derived(await fetchIndividualsPage(conferenceId, tableState));
+
+	function toRows(rows: (typeof fetched)['rows'], reviews: (typeof fetched)['reviews']) {
+		const evaluationById = new Map(
+			reviews.map((review) => [review.singleParticipantId, review.evaluation])
+		);
+		return rows.map((row) => ({ ...row, evaluation: evaluationById.get(row.id) ?? 0 }));
+	}
+	const singleParticipants = $derived(toRows(fetched.rows, fetched.reviews));
+
+	async function exportRows() {
+		const all = await fetchAllIndividuals(conferenceId, tableState);
+		return toRows(all.rows, all.reviews);
+	}
 
 	const columns: ManagedColumn<(typeof singleParticipants)[number]>[] = [
-		nameColumn(),
-		appliedColumn(),
+		{ ...nameColumn(), enableSorting: false },
+		{ ...appliedColumn(), filter: { type: 'boolean' } },
 		{
 			id: 'roleApplications',
 			header: m.roleApplications(),
 			accessorFn: (row) => row.appliedForRoles.map((r) => r.name).join(' '),
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.appliedForRoles.length === 0
 					? 'N/A'
@@ -57,11 +61,12 @@
 		{
 			id: 'evaluation',
 			header: m.assignmentWeightsRating(),
-			accessorFn: (row) => evaluationById.get(row.id) ?? 0,
+			accessorFn: (row) => row.evaluation,
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.applied
 					? renderComponent(StarRating, {
-							rating: evaluationById.get(row.original.id) ?? 0,
+							rating: row.original.evaluation,
 							size: 'xs'
 						})
 					: ''
@@ -70,6 +75,7 @@
 			id: 'role',
 			header: m.role(),
 			accessorFn: (row) => row.assignedRole?.name ?? '',
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.assignedRole
 					? renderComponent(IconCell, {
@@ -81,7 +87,8 @@
 		{
 			id: 'school',
 			header: m.schoolOrInstitution(),
-			accessorFn: (row) => row.school ?? 'N/A'
+			accessorFn: (row) => row.school ?? 'N/A',
+			filter: { type: 'text' }
 		},
 		{
 			id: 'motivation',
@@ -99,14 +106,16 @@
 	];
 
 	const columnClasses = { applied: 'text-center', roleApplications: 'text-center' };
-
-	// TODO export data
 </script>
 
 <RegistrationAdminTable
 	{columns}
 	{columnClasses}
 	rows={singleParticipants}
+	{tableState}
+	hasMore={fetched.hasMore}
+	rowCount={fetched.total}
+	{exportRows}
 	category={m.singleParticipant()}
 >
 	{#snippet drawer(selectedId, close)}

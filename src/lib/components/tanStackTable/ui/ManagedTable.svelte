@@ -1,7 +1,7 @@
 <script lang="ts" generics="TData extends object">
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { queryParameters, ssp } from 'sveltekit-search-params';
+	import { queryParameters } from 'sveltekit-search-params';
 	import { m } from '$lib/paraglide/messages';
 	import {
 		createTable,
@@ -9,7 +9,6 @@
 		rowSearchText,
 		type ColumnFiltersState,
 		type ColumnVisibilityState,
-		type PaginationState,
 		type SortingState,
 		type Table
 	} from '$lib/components/tanStackTable';
@@ -18,11 +17,8 @@
 		defaultColumnVisibility,
 		initialColumnVisibility,
 		managedTableFeatures,
-		filtersParam,
-		sameSorting,
 		shownColumnsParam,
 		shownFromVisibility,
-		sortingParam,
 		visibilityFromShown,
 		soleFilteredRow,
 		tableExport,
@@ -31,6 +27,10 @@
 	} from '$lib/components/tanStackTable/managedTable';
 	import { DataTable } from '$lib/components/tanStackTable/ui';
 	import { filterFnFor } from '$lib/components/tanStackTable/filters';
+	import {
+		createTableState,
+		type TableState
+	} from '$lib/components/tanStackTable/tableState.svelte';
 	import SortableTable from './SortableTable.svelte';
 	import ActiveFilters from './ActiveFilters.svelte';
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
@@ -43,7 +43,10 @@
 	 * The table of the management pages: a sortable, paginated table with a search box kept in the
 	 * URL, an export button and the size / zebra settings. Search is fuzzy (Fuse) and matches across
 	 * the columns named in `searchColumns` (all by default), using what each column's accessor
-	 * returns. Columns that say how they can be
+	 * returns - for tables small enough to hold in the browser. A table of many rows is driven by the
+	 * backend instead: the page makes a `createTableState`, queries with its search, sorting,
+	 * filters and page, and passes it as `tableState` with just the rows of the page. The table then
+	 * searches, sorts, filters and pages nothing itself. Columns that say how they can be
 	 * filtered (`filter`) get a filter drawer, active-filter chips and filters kept in the URL
 	 * (`?filters=`); every column can be hidden from the column drawer, where `defaultVisible` and
 	 * `group` apply and the choice is remembered under `storageKey`.
@@ -72,6 +75,20 @@
 		searchColumns?: readonly string[];
 		/** Group headings in the order the drawers list them in */
 		groupOrder?: string[];
+		/**
+		 * Hands the table's state to the page and puts the table in server mode: `rows` is only the
+		 * current page, already searched, filtered and sorted by the backend.
+		 */
+		tableState?: TableState;
+		/** Server mode: whether the backend has rows after this page (it is asked for one more) */
+		hasMore?: boolean;
+		/** Server mode: how many rows match in all, when the backend counts them */
+		rowCount?: number;
+		/**
+		 * Server mode: every row matching the current search and filters, for the export (the table
+		 * itself only holds one page). The page fetches them from the backend in chunks.
+		 */
+		exportRows?: () => Promise<TData[]>;
 		/** Extra controls in the toolbar row, before the filter and column buttons */
 		toolbar?: Snippet<[Table<ManagedTableFeatures, TData>]>;
 	}
@@ -91,39 +108,33 @@
 		storageKey,
 		groupOrder,
 		searchColumns,
+		tableState,
+		hasMore = false,
+		rowCount,
+		exportRows,
 		toolbar
 	}: Props = $props();
+
+	const serverMode = untrack(() => tableState !== undefined);
+	// svelte-ignore state_referenced_locally
+	const view: TableState =
+		tableState ??
+		createTableState({ searchKey: queryParamKey, pageSize, initialSorting, defaultFilters });
 
 	// Everything a viewer can set is kept in the URL, so a copied link shows the same table. The
 	// URL key of the search is fixed for a table's lifetime; the search params object cannot follow
 	// a change. The state is read off the parameters, with the page's own defaults where a
 	// parameter is missing, and written back when the user changes it.
-	const searchKey = untrack(() => queryParamKey) ?? 'filter';
-	const searchParams = queryParameters(
-		{ [searchKey]: ssp.string() },
-		{ pushHistory: false, showDefaults: false }
-	);
 	const params = queryParameters(
-		{
-			filters: filtersParam,
-			sort: sortingParam,
-			columns: shownColumnsParam,
-			page: ssp.number(),
-			size: ssp.number()
-		},
+		{ columns: shownColumnsParam },
 		{ pushHistory: false, showDefaults: false }
 	);
 
-	const globalFilter = $derived(searchParams[searchKey] ?? '');
-
-	// Searching shows the best match first, so it replaces the sorting until one is chosen again
-	const defaultSorting = $derived(globalFilter.trim() ? [] : initialSorting);
-	const sorting = $derived<SortingState>(params.sort ?? defaultSorting);
-	const pagination = $derived<PaginationState>({
-		pageIndex: Math.max((params.page ?? 1) - 1, 0),
-		pageSize: params.size ?? pageSize
-	});
-	const columnFilters = $derived<ColumnFiltersState>(params.filters ?? defaultFilters ?? []);
+	// Client mode searches as the user types; server mode queries once typing has paused
+	const globalFilter = $derived(view.typedSearch);
+	const sorting = $derived(view.sorting);
+	const pagination = $derived(view.pagination);
+	const columnFilters = $derived(view.columnFilters);
 
 	// What the columns show without a link saying: what this browser remembered, else the defaults.
 	// svelte-ignore state_referenced_locally
@@ -158,11 +169,6 @@
 		params.columns = shown.join() === defaults.join() ? null : shown;
 	}
 
-	function resetFilters() {
-		params.filters = null;
-		params.page = null;
-	}
-
 	const searchedColumns = $derived(
 		searchColumns
 			? columns.filter((column) => {
@@ -172,10 +178,12 @@
 			: columns
 	);
 	const searchRows = $derived(
-		createFuzzySearch(rows, (row, index) => rowSearchText(searchedColumns, row, index))
+		serverMode
+			? undefined
+			: createFuzzySearch(rows, (row, index) => rowSearchText(searchedColumns, row, index))
 	);
 	/** The rows matching the search, best match first; every row without one. */
-	const searchedRows = $derived(searchRows(globalFilter));
+	const searchedRows = $derived(searchRows ? searchRows(globalFilter) : rows);
 
 	const table = createTable({
 		features: managedTableFeatures,
@@ -184,6 +192,15 @@
 		},
 		get columns() {
 			return tableColumns;
+		},
+		manualPagination: serverMode,
+		manualSorting: serverMode,
+		manualFiltering: serverMode,
+		get pageCount() {
+			// the backend only says whether there is another page
+			if (!serverMode) return undefined;
+			if (rowCount !== undefined) return Math.max(Math.ceil(rowCount / pagination.pageSize), 1);
+			return pagination.pageIndex + (hasMore ? 2 : 1);
 		},
 		state: {
 			get sorting() {
@@ -200,38 +217,40 @@
 			}
 		},
 		onSortingChange: (updater) => {
-			const next = typeof updater === 'function' ? updater(sorting) : updater;
-			params.sort = sameSorting(next, defaultSorting) ? null : next;
+			view.setSorting(typeof updater === 'function' ? updater(sorting) : updater);
 		},
 		onPaginationChange: (updater) => {
-			const next = typeof updater === 'function' ? updater(pagination) : updater;
-			params.page = next.pageIndex === 0 ? null : next.pageIndex + 1;
-			params.size = next.pageSize === pageSize ? null : next.pageSize;
+			view.setPagination(typeof updater === 'function' ? updater(pagination) : updater);
 		},
 		onColumnFiltersChange: (updater) => {
-			params.filters = typeof updater === 'function' ? updater(columnFilters) : updater;
-			params.page = null;
+			view.setColumnFilters(typeof updater === 'function' ? updater(columnFilters) : updater);
 		},
 		onColumnVisibilityChange: (updater) => {
 			setColumnVisibility(typeof updater === 'function' ? updater(columnVisibility) : updater);
 		}
 	});
 
-	function setSearch(value: string) {
-		searchParams[searchKey] = value === '' ? null : value;
-		params.sort = null;
-		params.page = null;
-	}
+	const setSearch = (value: string) => view.setSearch(value);
+
+	/** Which rows the table shows: a page's range in server mode, matches of all in client mode */
+	const shownRows = $derived.by(() => {
+		if (!serverMode) return `${table.getFilteredRowModel().rows.length} / ${rows.length}`;
+		const first = pagination.pageIndex * pagination.pageSize;
+		const total = rowCount !== undefined ? ` / ${rowCount}` : hasMore ? '+' : '';
+		return `${first + 1}–${first + rows.length}${total}`;
+	});
 
 	/** What the export contains: the shown columns, for every row the filters let through. */
-	function getExport() {
+	async function getExport() {
 		const shown = new Set(table.getVisibleLeafColumns().map((column) => column.id));
 		return tableExport(
 			columns.filter((column) => {
 				const id = columnIdOf(column);
 				return id === undefined || shown.has(id);
 			}),
-			table.getPrePaginatedRowModel().rows.map((row) => row.original),
+			exportRows
+				? await exportRows()
+				: table.getPrePaginatedRowModel().rows.map((row) => row.original),
 			{ yes: m.yes(), no: m.no() }
 		);
 	}
@@ -243,28 +262,32 @@
 	});
 </script>
 
+{#snippet searchBox()}
+	<label class="no-print input input-bordered flex grow items-center gap-2">
+		<input
+			type="text"
+			class="grow"
+			value={globalFilter}
+			oninput={(e) => setSearch(e.currentTarget.value)}
+			placeholder={m.search()}
+		/>
+		{#if globalFilter}
+			<button
+				class="btn btn-square btn-ghost btn-sm"
+				aria-label="Clear search"
+				onclick={() => setSearch('')}
+			>
+				<i class="fa-duotone fa-times"></i>
+			</button>
+		{:else}
+			<i class="fa-duotone fa-magnifying-glass"></i>
+		{/if}
+	</label>
+{/snippet}
+
 <div class="flex min-w-0 items-center gap-2">
 	{#if enableSearch}
-		<label class="no-print input input-bordered flex grow items-center gap-2">
-			<input
-				type="text"
-				class="grow"
-				value={globalFilter}
-				oninput={(e) => setSearch(e.currentTarget.value)}
-				placeholder={m.search()}
-			/>
-			{#if globalFilter}
-				<button
-					class="btn btn-square btn-ghost btn-sm"
-					aria-label="Clear search"
-					onclick={() => setSearch('')}
-				>
-					<i class="fa-duotone fa-times"></i>
-				</button>
-			{:else}
-				<i class="fa-duotone fa-magnifying-glass"></i>
-			{/if}
-		</label>
+		{@render searchBox()}
 	{:else}
 		<div class="grow"></div>
 	{/if}
@@ -282,9 +305,7 @@
 		<i class="fa-duotone fa-columns"></i>
 		{m.columns()}
 	</button>
-	<span class="text-base-content/60 text-sm whitespace-nowrap">
-		{table.getFilteredRowModel().rows.length} / {rows.length}
-	</span>
+	<span class="text-base-content/60 text-sm whitespace-nowrap">{shownRows}</span>
 	<SettingsButton />
 	<ExportButton filename={title || 'export'} {getExport} />
 </div>
@@ -295,7 +316,7 @@
 		{table}
 		{columns}
 		{groupOrder}
-		onResetFilters={resetFilters}
+		onResetFilters={() => view.resetFilters()}
 	/>
 {/if}
 <ColumnConfigDrawer
@@ -310,5 +331,5 @@
 
 <div class="mt-4 min-w-0">
 	<SortableTable {table} {onRowClick} {isRowSelected} {columnClasses} />
-	<DataTable.Pagination {table} />
+	<DataTable.Pagination {table} {serverMode} {rowCount} />
 </div>

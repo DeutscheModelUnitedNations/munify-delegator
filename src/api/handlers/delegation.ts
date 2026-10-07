@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -104,6 +111,7 @@ const DelegationRef = object({
 	})
 });
 query({ table: 'delegation' });
+countQuery({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });
 // Creating a delegation also seats its head delegate, and deleting one takes its members with it.
 const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });

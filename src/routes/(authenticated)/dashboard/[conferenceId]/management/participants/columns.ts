@@ -21,6 +21,24 @@ import GuardianConsentCell from './GuardianConsentCell.svelte';
 import MonoCell from './MonoCell.svelte';
 import ConferenceBirthdayCell from './ConferenceBirthdayCell.svelte';
 
+const GENDERS = ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT'];
+const FOOD_PREFERENCES = ['OMNIVORE', 'VEGETARIAN', 'VEGAN'];
+const PARTICIPATION_ROLES = [
+	'DELEGATION_MEMBER',
+	'SINGLE_PARTICIPANT',
+	'SUPERVISOR',
+	'TEAM_MEMBER'
+];
+const TEAM_ROLES = [
+	'PROJECT_MANAGEMENT',
+	'PARTICIPANT_CARE',
+	'MEMBER',
+	'REVIEWER',
+	'TEAM_COORDINATOR',
+	'CONTENT_LEAD'
+];
+const ADMINISTRATIVE_STATUSES = ['DONE', 'PENDING', 'PROBLEM'];
+
 function participantColumns(): ManagedColumn<ParticipantRow>[] {
 	return [
 		// --- Personal ---
@@ -105,7 +123,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => (row.original.gender ? translateGender(row.original.gender) : ''),
 			group: m.personalData(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateGender }
+			filter: {
+				type: 'enum',
+				options: [...GENDERS, '—'],
+				label: translateGender
+			}
 		},
 		{
 			accessorKey: 'pronouns',
@@ -121,7 +143,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 				renderComponent(FoodPreferenceCell, { value: row.original.foodPreference }),
 			group: m.personalData(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateFoodPreference }
+			filter: {
+				type: 'enum',
+				options: [...FOOD_PREFERENCES, '—'],
+				label: translateFoodPreference
+			}
 		},
 		{
 			accessorKey: 'city',
@@ -146,7 +172,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => renderComponent(RoleBadge, { role: row.original.role }),
 			group: m.participation(),
 			defaultVisible: true,
-			filter: { type: 'enum', label: translateParticipationRole }
+			filter: {
+				type: 'enum',
+				options: PARTICIPATION_ROLES,
+				label: translateParticipationRole
+			}
 		},
 		{
 			id: 'nation',
@@ -177,7 +207,7 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			header: m.committee(),
 			group: m.participation(),
 			defaultVisible: true,
-			filter: { type: 'enum' }
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'delegationSchool',
@@ -214,7 +244,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => (row.original.teamRole ? translateTeamRole(row.original.teamRole) : ''),
 			group: m.participation(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateTeamRole }
+			filter: {
+				type: 'enum',
+				options: [...TEAM_ROLES, '—'],
+				label: translateTeamRole
+			}
 		},
 		{
 			accessorKey: 'plansOwnAttendance',
@@ -232,7 +266,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.paymentStatus }),
 			group: m.status(),
 			defaultVisible: true,
-			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
+			filter: {
+				type: 'enum',
+				options: ADMINISTRATIVE_STATUSES,
+				label: translateAdministrativeStatus,
+				alwaysAvailable: true
+			}
 		},
 		{
 			accessorKey: 'postalRegistrationStatus',
@@ -241,7 +280,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 				renderComponent(StatusIcon, { status: row.original.postalRegistrationStatus }),
 			group: m.status(),
 			defaultVisible: true,
-			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
+			filter: {
+				type: 'enum',
+				options: ADMINISTRATIVE_STATUSES,
+				label: translateAdministrativeStatus,
+				alwaysAvailable: true
+			}
 		},
 		{
 			accessorKey: 'didAttend',
@@ -257,7 +301,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.termsAndConditions }),
 			group: m.status(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
+			filter: {
+				type: 'enum',
+				options: ADMINISTRATIVE_STATUSES,
+				label: translateAdministrativeStatus,
+				alwaysAvailable: true
+			}
 		},
 		{
 			accessorKey: 'guardianConsent',
@@ -270,7 +319,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 				}),
 			group: m.status(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
+			filter: {
+				type: 'enum',
+				options: ADMINISTRATIVE_STATUSES,
+				label: translateAdministrativeStatus,
+				alwaysAvailable: true
+			}
 		},
 		{
 			accessorKey: 'mediaConsent',
@@ -279,7 +333,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.mediaConsent }),
 			group: m.status(),
 			defaultVisible: false,
-			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
+			filter: {
+				type: 'enum',
+				options: ADMINISTRATIVE_STATUSES,
+				label: translateAdministrativeStatus,
+				alwaysAvailable: true
+			}
 		},
 		{
 			accessorKey: 'documentNumber',

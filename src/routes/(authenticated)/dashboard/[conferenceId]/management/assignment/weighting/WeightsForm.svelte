@@ -63,6 +63,9 @@
 	});
 	const formData = $derived(form.form);
 
+	// Only fills the fields (and taints the form), so the defaults still have to be saved
+	const resetToDefaults = () => form.form.set({ ...DEFAULT_WEIGHTS });
+
 	/** What a few typical applications would cost with the weights as entered. */
 	const examples = $derived(
 		[
@@ -266,5 +269,9 @@
 				</ul>
 			</div>
 		</div>
+		<button type="button" class="btn btn-ghost self-end" onclick={resetToDefaults}>
+			<i class="fa-duotone fa-rotate-left"></i>
+			{m.assignmentWeightsReset()}
+		</button>
 	</aside>
 </div>

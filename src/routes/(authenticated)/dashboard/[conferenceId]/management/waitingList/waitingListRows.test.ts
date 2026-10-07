@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { toWaitingListRow, visibleEntries, type WaitingListSourceEntry } from './waitingListRows';
+import { toWaitingListRow, type WaitingListSourceEntry } from './waitingListRows';
 
 const entry: WaitingListSourceEntry = {
 	id: 'w1',
@@ -34,13 +34,6 @@ const bare: WaitingListSourceEntry = {
 	hidden: true,
 	createdAt: new Date('2026-01-03T00:00:00Z')
 };
-
-describe('visibleEntries', () => {
-	test('drops hidden entries only when filtering', () => {
-		expect(visibleEntries([entry, bare], true)).toEqual([entry]);
-		expect(visibleEntries([entry, bare], false)).toEqual([entry, bare]);
-	});
-});
 
 describe('toWaitingListRow', () => {
 	test('maps every column and computes the age at the conference', () => {

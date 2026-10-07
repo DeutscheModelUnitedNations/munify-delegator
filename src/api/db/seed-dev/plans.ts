@@ -42,7 +42,10 @@ export interface ConferencePlan {
 		surveys: boolean;
 		attendance: boolean;
 		participantStatus: boolean;
-		/** Shape the waiting list to show this status light; absent = no waiting list. */
+		/**
+		 * Shape the waiting list to show this status light, with the persona on it; absent = no
+		 * hand-made list (`crowd.bulk.waitingList` can still fill one).
+		 */
 		waitingList?: 'VACANCIES' | 'LONG_LIST';
 		invitations: boolean;
 		/** An assignment draft in progress: ratings, a split and a few planned roles. */
@@ -58,6 +61,11 @@ export interface ConferencePlan {
 		singles: number;
 		supervisors: number;
 		team: number;
+		/**
+		 * Anonymous load-test volume (`seed-dev/bulk.ts`): applications without a seat, supervisors
+		 * of those applicants, and people on the waiting list.
+		 */
+		bulk?: { delegations: number; singles: number; supervisors: number; waitingList?: number };
 	};
 }
 
@@ -111,7 +119,7 @@ export const conferencePlans: ConferencePlan[] = [
 		days: { startAssignment: 21, startConference: 60, endConference: 63 },
 		assigned: false,
 		with: noExtras,
-		crowd: fullCrowd
+		crowd: { ...fullCrowd, bulk: { delegations: 14000, singles: 2000, supervisors: 3500 } }
 	},
 	{
 		key: 'grace',
@@ -126,7 +134,12 @@ export const conferencePlans: ConferencePlan[] = [
 		days: { startAssignment: -5 / (24 * 60), startConference: 45, endConference: 48 },
 		assigned: false,
 		with: noExtras,
-		crowd: { ...fullCrowd, delegations: 6, singles: 4 }
+		crowd: {
+			...fullCrowd,
+			delegations: 6,
+			singles: 4,
+			bulk: { delegations: 8000, singles: 1000, supervisors: 2000 }
+		}
 	},
 	{
 		key: 'closed',
@@ -140,7 +153,7 @@ export const conferencePlans: ConferencePlan[] = [
 		days: { startAssignment: -3, startConference: 40, endConference: 43 },
 		assigned: false,
 		with: { ...noExtras, assignmentDraft: true },
-		crowd: fullCrowd
+		crowd: { ...fullCrowd, bulk: { delegations: 20000, singles: 3000, supervisors: 5000 } }
 	},
 	{
 		key: 'preparation',
@@ -173,7 +186,7 @@ export const conferencePlans: ConferencePlan[] = [
 			waitingList: 'VACANCIES',
 			invitations: true
 		},
-		crowd: fullCrowd
+		crowd: { ...fullCrowd, bulk: { delegations: 8000, singles: 1000, supervisors: 2000 } }
 	},
 	{
 		key: 'locked',
@@ -201,7 +214,8 @@ export const conferencePlans: ConferencePlan[] = [
 			delegations: 5,
 			singles: 3,
 			supervisors: 2,
-			team: 2
+			team: 2,
+			bulk: { delegations: 4000, singles: 500, supervisors: 1000, waitingList: 3000 }
 		}
 	},
 	{
@@ -229,7 +243,10 @@ export const conferencePlans: ConferencePlan[] = [
 			participantStatus: true,
 			invitations: false
 		},
-		crowd: fullCrowd
+		crowd: {
+			...fullCrowd,
+			bulk: { delegations: 8000, singles: 1000, supervisors: 2000, waitingList: 1500 }
+		}
 	},
 	{
 		key: 'post',
@@ -255,7 +272,10 @@ export const conferencePlans: ConferencePlan[] = [
 			participantStatus: true,
 			invitations: false
 		},
-		crowd: fullCrowd
+		crowd: {
+			...fullCrowd,
+			bulk: { delegations: 6000, singles: 1000, supervisors: 1500, waitingList: 1000 }
+		}
 	},
 	{
 		key: 'second',
@@ -279,7 +299,8 @@ export const conferencePlans: ConferencePlan[] = [
 			delegations: 5,
 			singles: 3,
 			supervisors: 2,
-			team: 2
+			team: 2,
+			bulk: { delegations: 2000, singles: 500, supervisors: 500, waitingList: 2000 }
 		}
 	}
 ];

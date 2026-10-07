@@ -25,9 +25,18 @@
 	interface Props {
 		table: PaginatedTable;
 		pageSizeOptions?: number[];
+		/** Rows come one page at a time from the backend, which only says whether another follows */
+		serverMode?: boolean;
+		/** With `serverMode`: the number of rows in all, where the backend counted them */
+		rowCount?: number;
 	}
 
-	let { table, pageSizeOptions = [10, 20, 50, 100] }: Props = $props();
+	let {
+		table,
+		pageSizeOptions = [10, 20, 50, 100],
+		serverMode = false,
+		rowCount
+	}: Props = $props();
 
 	const pagination = $derived(table.atoms.pagination.get());
 	const pageIndex = $derived(pagination.pageIndex);
@@ -38,8 +47,13 @@
 
 <div class="flex flex-wrap items-center justify-between gap-4 px-2 py-3">
 	<div class="text-base-content/70 text-sm">
-		{totalRows}
-		{m.entries()}
+		{#if serverMode}
+			{rowCount ?? pageSize}
+			{m.entries()}
+		{:else}
+			{totalRows}
+			{m.entries()}
+		{/if}
 	</div>
 
 	<div class="flex items-center gap-4">
@@ -75,7 +89,7 @@
 				<i class="fa-solid fa-angle-left"></i>
 			</button>
 			<button class="join-item btn btn-sm pointer-events-none">
-				{pageIndex + 1} / {pageCount}
+				{#if serverMode && rowCount === undefined}{pageIndex + 1}{:else}{pageIndex + 1} / {pageCount}{/if}
 			</button>
 			<button
 				class="join-item btn btn-sm"
@@ -85,14 +99,16 @@
 			>
 				<i class="fa-solid fa-angle-right"></i>
 			</button>
-			<button
-				class="join-item btn btn-sm"
-				aria-label="Last page"
-				onclick={() => table.lastPage()}
-				disabled={!table.getCanNextPage()}
-			>
-				<i class="fa-solid fa-angles-right"></i>
-			</button>
+			{#if !serverMode || rowCount !== undefined}
+				<button
+					class="join-item btn btn-sm"
+					aria-label="Last page"
+					onclick={() => table.lastPage()}
+					disabled={!table.getCanNextPage()}
+				>
+					<i class="fa-solid fa-angles-right"></i>
+				</button>
+			{/if}
 		</div>
 	</div>
 </div>

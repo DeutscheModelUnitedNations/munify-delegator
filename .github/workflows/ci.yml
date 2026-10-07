@@ -421,7 +421,7 @@ jobs:
               - 'src/api/services/**'
               - 'src/lib/services/formatNames.ts'
               - 'src/api/db/**'
-              - 'scripts/tasksBuild.ts'
+              - 'tsdown.tasks.config.ts'
               - 'Dockerfile.tasks'
               - 'package.json'
               - 'bun.lock'

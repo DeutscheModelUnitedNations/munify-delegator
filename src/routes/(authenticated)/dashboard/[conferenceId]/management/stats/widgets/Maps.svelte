@@ -2,62 +2,40 @@
 	import { Map, TileLayer, Popup, Marker } from 'sveaflet';
 	import { divIcon, point } from 'leaflet';
 	import { MarkerCluster } from 'sveaflet-markercluster';
-	import type { ZipCoordinate } from '../zip-api/+server';
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { statsQueryFilter } from '../stats.svelte';
 
-	type Coordinate = {
-		zip: string;
-		country: string;
-		lat: number;
-		lng: number;
-		cached?: boolean;
-		zipCount: number;
-	};
-
 	let { conferenceId }: { conferenceId: string } = $props();
 
+	// The server groups by three-digit ZIP area and resolves each area's centre.
 	const stats = $derived(
-		await client.liveQuery.getConferenceStatistics({
+		await client.query.getConferenceStatistics({
 			__args: { conferenceId, filter: statsQueryFilter() },
-			addresses: { country: true, zip: true, _count: { zip: true } }
+			addresses: {
+				country: true,
+				zipPrefix: true,
+				lat: true,
+				lng: true,
+				_count: { zipPrefix: true }
+			}
 		})
 	);
-	const addresses = $derived(stats.addresses);
-	let coordinates: Coordinate[] = $state([]);
-
-	// fetch coordinates
-	async function fetchCoordinates() {
-		const base = page.url.pathname.replace(/\/?$/, '/');
-		const endpoint = base + 'zip-api';
-		const res = await fetch(endpoint, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(addresses.filter((a) => a.country === 'DEU'))
-		});
-		const data: ZipCoordinate[] = await res.json();
-		return data
-			.filter((item) => item.lat != null && item.lng != null)
-			.map((item) => {
-				const addr = addresses.find((a) => a.zip === item.zip && a.country === 'DEU');
-				return {
-					...item,
-					lat: Number(item.lat),
-					lng: Number(item.lng),
-					zipCount: addr?._count.zip ?? 0,
-					country: addr?.country ?? 'N/A'
-				};
-			})
-			.filter((item) => item.country != 'N/A');
-	}
-
-	$effect(() => {
-		fetchCoordinates().then((data) => {
-			coordinates = data;
-		});
-	});
+	const areas = $derived(
+		stats.addresses.flatMap((a) =>
+			a.zipPrefix !== null && a.lat !== null && a.lng !== null
+				? [
+						{
+							zipPrefix: a.zipPrefix,
+							country: a.country,
+							lat: a.lat,
+							lng: a.lng,
+							count: a._count.zipPrefix
+						}
+					]
+				: []
+		)
+	);
 </script>
 
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
@@ -105,15 +83,15 @@
 						}
 					}}
 				>
-					{#each coordinates as item (`${item.country}_${item.zip}`)}
-						{@const markerTitle = `${m.zipCode()}: ${item.zip} (${item.zipCount})`}
+					{#each areas as item (`${item.country}_${item.zipPrefix}`)}
+						{@const markerTitle = `${m.zipCode()}: ${item.zipPrefix}xx (${item.count})`}
 						<Marker
 							latLng={[item.lat, item.lng]}
-							options={{ title: markerTitle, data: { count: item.zipCount } }}
+							options={{ title: markerTitle, data: { count: item.count } }}
 						>
 							<Popup>
-								<strong>{m.zipCode()}: {item.zip}</strong><br />
-								{m.participants()}: {item.zipCount}
+								<strong>{m.zipCode()}: {item.zipPrefix}xx</strong><br />
+								{m.participants()}: {item.count}
 							</Popup>
 						</Marker>
 					{/each}

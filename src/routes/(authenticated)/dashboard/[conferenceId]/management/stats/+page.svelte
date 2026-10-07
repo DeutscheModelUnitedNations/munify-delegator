@@ -7,7 +7,6 @@
 	import IndividualRoles from './widgets/IndividualRoles.svelte';
 	import DietMatrix from './widgets/DietMatrix.svelte';
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
-	import Maps from './widgets/Maps.svelte';
 	import RoleStats from './widgets/RoleStats.svelte';
 	import CommitteeFillRates from './widgets/CommitteeFillRates.svelte';
 	import RegistrationTimeline from './widgets/RegistrationTimeline.svelte';
@@ -17,13 +16,15 @@
 	import SupervisorStats from './widgets/SupervisorStats.svelte';
 	import PostalPaymentProgress from './widgets/PostalPaymentProgress.svelte';
 	import PaperStats from './widgets/PaperStats.svelte';
+	import Maps from './widgets/Maps.svelte';
 	import HistoryComparison from './widgets/HistoryComparison.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
 	// Every widget fetches the statistics it renders, with the filter as part of its query, so a
-	// filter change refetches them all; `$effect.pending()` reports that refetch.
+	// filter change refetches them all; `$effect.pending()` reports that refetch. They use `query`,
+	// not `liveQuery`: the statistics come from materialized views, which no mutation publishes to.
 	const isLoading = $derived($effect.pending() > 0);
 </script>
 
@@ -35,7 +36,7 @@
 		</div>
 	{/if}
 
-	<Filter />
+	<Filter conferenceId={params.conferenceId} />
 	<DaysUntil conferenceId={params.conferenceId} />
 
 	<AppliedChartAndStats conferenceId={params.conferenceId} />

@@ -12,7 +12,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
-import { eq } from 'drizzle-orm';
+import { and, count, eq, isNotNull, or } from 'drizzle-orm';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { GraphQLError } from 'graphql';
 import { configPublic } from '$config/public';
@@ -189,26 +189,28 @@ export const UserRef = object({
 		conferenceParticipationsCount: t.field({
 			type: 'Int',
 			resolve: async (user) => {
-				const [memberships, participations] = await Promise.all([
-					db.query.delegationMember.findMany({
-						where: {
-							userId: user.id,
-							delegation: {
-								OR: [
-									{ assignedNationAlpha3Code: { isNotNull: true } },
-									{ assignedNonStateActorId: { isNotNull: true } }
-								]
-							}
-						},
-						columns: { id: true }
-					}),
-					db.query.singleParticipant.findMany({
-						where: { userId: user.id, assignedRoleId: { isNotNull: true } },
-						columns: { id: true }
-					})
+				const { delegation, delegationMember, singleParticipant } = schema;
+				const [[memberships], participations] = await Promise.all([
+					db
+						.select({ value: count() })
+						.from(delegationMember)
+						.innerJoin(delegation, eq(delegation.id, delegationMember.delegationId))
+						.where(
+							and(
+								eq(delegationMember.userId, user.id),
+								or(
+									isNotNull(delegation.assignedNationAlpha3Code),
+									isNotNull(delegation.assignedNonStateActorId)
+								)
+							)
+						),
+					db.$count(
+						singleParticipant,
+						and(eq(singleParticipant.userId, user.id), isNotNull(singleParticipant.assignedRoleId))
+					)
 				]);
 
-				return memberships.length + participations.length;
+				return (memberships?.value ?? 0) + participations;
 			}
 		})
 	})

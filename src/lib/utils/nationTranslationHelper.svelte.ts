@@ -323,3 +323,22 @@ export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {
 	console.warn('Could not translate country code', isoCode);
 	return 'N/A';
 };
+
+/**
+ * The ISO3 codes of the nations whose name (in any language) or code contains `term`. Names are
+ * only translated in the browser, so a backend search for a nation's name sends these codes.
+ */
+export const nationCodesMatching = (term: string): string[] => {
+	const needle = term.trim().toLowerCase();
+	if (!needle) return [];
+	const codes: string[] = [];
+	for (const [code, names] of NationIso3ToLocalNamesMap) {
+		if (
+			code.toLowerCase().includes(needle) ||
+			Object.values(names).some((name) => name.toLowerCase().includes(needle))
+		) {
+			codes.push(code);
+		}
+	}
+	return codes;
+};

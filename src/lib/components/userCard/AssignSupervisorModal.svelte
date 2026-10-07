@@ -4,6 +4,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { allOf, personContains, searchWords } from '$lib/components/tanStackTable/serverQuery';
+
+	const SUPERVISOR_LIMIT = 20;
 
 	interface Props {
 		open: boolean;
@@ -13,24 +16,31 @@
 
 	let { open = $bindable(false), userId, conferenceId }: Props = $props();
 
-	// Every supervisor of the conference to pick from, only fetched while the picker is open.
+	// The picker searches in the backend and shows the first matches, only fetched while it is open.
+	let typed = $state('');
+	let search = $state('');
+	$effect(() => {
+		const next = typed;
+		const timer = setTimeout(() => (search = next), 250);
+		return () => clearTimeout(timer);
+	});
+
 	const supervisors = $derived(
 		open
 			? await client.liveQuery.conferenceSupervisors({
-					__args: { where: { conferenceId: { eq: conferenceId } } },
+					__args: {
+						where: {
+							conferenceId: { eq: conferenceId },
+							...allOf(searchWords(search).map((word) => ({ user: personContains(word) })))
+						},
+						limit: SUPERVISOR_LIMIT,
+						orderBy: { createdAt: 'desc', id: 'asc' }
+					},
 					id: true,
 					connectionCode: true,
 					user: { id: true, givenName: true, familyName: true }
 				})
 			: []
-	);
-
-	const sortedSupervisors = $derived(
-		supervisors.toSorted((a, b) =>
-			`${a.user.familyName}${a.user.givenName}`.localeCompare(
-				`${b.user.familyName}${b.user.givenName}`
-			)
-		)
 	);
 
 	const assignSupervisor = async (connectionCode: string) => {
@@ -45,6 +55,10 @@
 </script>
 
 <Modal bind:open title={m.assignSupervisor()}>
+	<label class="input input-bordered mb-2 flex w-full items-center gap-2">
+		<input type="text" class="grow" bind:value={typed} placeholder={m.search()} />
+		<i class="fa-duotone fa-magnifying-glass"></i>
+	</label>
 	<div class="overflow-x-auto">
 		<table class="table table-sm">
 			<thead>
@@ -54,7 +68,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each sortedSupervisors as supervisor (supervisor.id)}
+				{#each supervisors as supervisor (supervisor.id)}
 					<tr>
 						<td>
 							<button

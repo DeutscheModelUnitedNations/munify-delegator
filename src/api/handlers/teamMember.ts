@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PROJECT_MANAGEMENT_ROLES,
 	isTeamMemberOfConference,
@@ -27,6 +34,7 @@ abilityBuilder.teamMember.allow('delete').when((ctx) => {
 
 object({ table: 'teamMember' });
 query({ table: 'teamMember' });
+countQuery({ table: 'teamMember' });
 const pubsub = rumblePubsub({ table: 'teamMember' });
 
 schemaBuilder.mutationFields((t) => ({

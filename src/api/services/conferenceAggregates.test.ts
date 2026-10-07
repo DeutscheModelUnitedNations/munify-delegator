@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { distinctNationCodes, schoolRows } from './conferenceAggregates';
+import { distinctNationCodes, normalizeSchoolName, schoolRows } from './conferenceAggregates';
 
 describe('schoolRows', () => {
 	test('counts delegations, their members and single participants per school', () => {
@@ -74,5 +74,15 @@ describe('distinctNationCodes', () => {
 
 	test('is empty without committees', () => {
 		expect(distinctNationCodes([])).toEqual([]);
+	});
+});
+
+describe('normalizeSchoolName', () => {
+	test('replaces every comma and period and tidies whitespace', () => {
+		expect(normalizeSchoolName('  Gym., Musterstadt. Nord ')).toBe('Gym Musterstadt Nord');
+	});
+
+	test('is empty for punctuation only', () => {
+		expect(normalizeSchoolName(' ., ')).toBe('');
 	});
 });

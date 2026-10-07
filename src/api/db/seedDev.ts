@@ -14,6 +14,8 @@
 import { faker } from '@faker-js/faker';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { reset } from 'drizzle-seed';
+import { sql } from 'drizzle-orm';
+import { STATISTICS_VIEWS } from './statisticsViews';
 import * as schema from './schema';
 import { unMemberNations } from './seed-data/nations';
 import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user';
@@ -27,6 +29,7 @@ import { addAssignedPersonas, addRegistrationPersonas } from './seed-dev/persona
 import { addReviewerSnippets, addTeam } from './seed-dev/team';
 import { addPapers } from './seed-dev/papers';
 import { addSurveys } from './seed-dev/surveys';
+import { addBulk } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { printOverview } from './seed-dev/overview';
 import { conferencePlans } from './seed-dev/plans';
@@ -89,12 +92,20 @@ for (const plan of conferencePlans) {
 	addPapers(cs);
 	addSurveys(cs);
 	addCalendar(cs);
+	addBulk(cs);
 }
 
 console.info('Resetting database...');
 await reset(db, schema);
-console.info(`Inserting ${batch.user.length} users and ${conferencePlans.length} conferences...`);
+console.info(
+	`Inserting ${batch.user.length} users, ${batch.delegation.length} delegations and ${batch.singleParticipant.length} single participants in ${conferencePlans.length} conferences...`
+);
 await insertBatch(db, batch);
+// The app refreshes them every few minutes; until then the statistics would show the old data.
+console.info('Refreshing the statistics views...');
+for (const view of STATISTICS_VIEWS) {
+	await db.execute(sql.raw(`REFRESH MATERIALIZED VIEW "${view}"`));
+}
 
 printOverview();
 process.exit(0);

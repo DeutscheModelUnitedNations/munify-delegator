@@ -1,6 +1,47 @@
+import { building } from '$app/environment';
+import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
 import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
-import { conferenceStats } from '$api/services/statistics';
+import type { StatsFilterType } from '$api/services/statisticsFilters';
+import {
+	addressesOf,
+	ageStatisticsOf,
+	committeeFillRatesOf,
+	countdownsOf,
+	dietOf,
+	genderOf,
+	nationalityDistributionOf,
+	paperStatsOf,
+	participantStatusOf,
+	registrationStatisticsOf,
+	registrationTimelineOf,
+	roleBasedOf,
+	schoolStatsOf,
+	supervisorStatsOf,
+	waitingListOf
+} from '$api/services/statistics';
+import {
+	refreshStatisticsViews,
+	statisticsRefreshedAt,
+	statisticsRowsOf,
+	type StatisticsRows
+} from '$api/services/statisticsData';
+import { zipCoordinates } from '$api/services/zipCoordinates';
+import { assertFindFirstExists } from '@m1212e/rumble';
+
+// The statistics are aggregations over every registration of a conference, served from
+// materialized views rather than computed per request. They are refreshed on startup and then
+// every few minutes; several app instances share the work through an advisory lock.
+const STATISTICS_REFRESH_INTERVAL_MS = 5 * 60_000;
+
+if (!building) {
+	const refresh = () =>
+		refreshStatisticsViews().catch((err) =>
+			console.error('Failed to refresh statistics materialized views', err)
+		);
+	void refresh();
+	setInterval(refresh, STATISTICS_REFRESH_INTERVAL_MS);
+}
 
 const StatsFilterEnum = schemaBuilder.enumType('StatsFilter', {
 	values: ['ALL', 'APPLIED', 'NOT_APPLIED', 'APPLIED_WITH_ROLE', 'APPLIED_WITHOUT_ROLE'] as const
@@ -333,7 +374,7 @@ const statusType = schemaBuilder.simpleObject('StatisticsResultRegisteredPartici
 const addressesCount = schemaBuilder.simpleObject('StatisticsResultAddressesCount', {
 	fields: (t) => ({
 		country: t.int(),
-		zip: t.int(),
+		zipPrefix: t.int(),
 		_all: t.int()
 	})
 });
@@ -342,49 +383,116 @@ const addressesType = schemaBuilder.simpleObject('StatisticsResultAddresses', {
 	fields: (t) => ({
 		_count: t.field({ type: addressesCount }),
 		country: t.string({ nullable: true }),
-		zip: t.string({ nullable: true })
+		zipPrefix: t.string({
+			nullable: true,
+			description: 'The first three digits of the ZIP code; the view groups by area, not by ZIP.'
+		}),
+		lat: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' }),
+		lng: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' })
 	})
 });
 
-const StatisticsResult = schemaBuilder.simpleObject('StatisticsResult', {
-	fields: (t) => ({
-		countdowns: t.field({ type: countdownsType }),
-		registered: t.field({ type: registeredType }),
-		age: t.field({ type: ageStatsType }),
-		diet: t.field({ type: dietType }),
-		gender: t.field({ type: genderType }),
-		status: t.field({ type: statusType }),
-		addresses: t.field({ type: [addressesType] }),
-		roleBased: t.field({ type: roleBasedStats }),
-		committeeFillRates: t.field({ type: [committeeFillRate] }),
-		registrationTimeline: t.field({ type: [registrationTimelineEntry] }),
-		nationalityDistribution: t.field({ type: [nationalityStats] }),
-		schoolStats: t.field({ type: [schoolStats] }),
-		waitingList: t.field({ type: waitingListStats }),
-		supervisorStats: t.field({ type: supervisorStatsType }),
-		postalPaymentProgress: t.field({ type: postalPaymentProgressType }),
-		paperStats: t.field({ type: paperStatsType })
-	})
-});
-
-/**
- * `conferenceStats` computes every block in one pass, whatever the query selected, and the stats
- * page asks for it once per widget so each one fetches only what it renders. Requests for the same
- * conference and filter that arrive while a computation is running share it, so a page load (or
- * the refetch a published mutation triggers) costs one computation rather than one per widget.
- * Nothing is kept once it settles, so no request is ever answered with an earlier result.
- */
-const statsInFlight = new Map<string, ReturnType<typeof conferenceStats>>();
-
-function sharedConferenceStats(args: Parameters<typeof conferenceStats>[0]) {
-	const key = `${args.conferenceId}:${args.filter}`;
-	const running = statsInFlight.get(key);
-	if (running) return running;
-
-	const computation = conferenceStats(args).finally(() => statsInFlight.delete(key));
-	statsInFlight.set(key, computation);
-	return computation;
+/** What every block of the statistics resolves from: its view rows are loaded on first use. */
+interface StatisticsSource {
+	conference: { startConference: Date; startAssignment: Date };
+	filter: StatsFilterType;
+	rows: StatisticsRows;
 }
+
+/** The two blocks the participant status view feeds. */
+const participantStatusOfSource = async ({ rows }: StatisticsSource) =>
+	participantStatusOf(await rows.participantStatus());
+
+const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsResult').implement({
+	fields: (t) => ({
+		refreshedAt: t.field({
+			type: 'DateTime',
+			nullable: true,
+			description: 'When the figures were last recomputed; they lag the data by up to that long.',
+			resolve: () => statisticsRefreshedAt()
+		}),
+		countdowns: t.field({
+			type: countdownsType,
+			resolve: ({ conference }) => countdownsOf(conference)
+		}),
+		registered: t.field({
+			type: registeredType,
+			resolve: async ({ rows, filter }) =>
+				registrationStatisticsOf(
+					await rows.people(),
+					await rows.delegations(),
+					await rows.roleApplications(),
+					filter
+				)
+		}),
+		age: t.field({
+			type: ageStatsType,
+			resolve: async ({ rows, filter }) => ageStatisticsOf(await rows.ages(), filter)
+		}),
+		diet: t.field({
+			type: dietType,
+			resolve: async ({ rows, filter }) => dietOf(await rows.people(), filter)
+		}),
+		gender: t.field({
+			type: genderType,
+			resolve: async ({ rows, filter }) => genderOf(await rows.people(), filter)
+		}),
+		status: t.field({
+			type: statusType,
+			resolve: async (source) => (await participantStatusOfSource(source)).status
+		}),
+		addresses: t.field({
+			type: [addressesType],
+			resolve: async ({ rows, filter }) => {
+				const [addresses, coordinates] = await Promise.all([rows.addresses(), zipCoordinates()]);
+				return addressesOf(addresses, filter).map((address) => ({
+					...address,
+					...(address.country === 'DEU' && address.zipPrefix !== null
+						? coordinates.get(address.zipPrefix)
+						: undefined)
+				}));
+			}
+		}),
+		roleBased: t.field({
+			type: roleBasedStats,
+			resolve: async ({ rows, filter }) =>
+				roleBasedOf(await rows.people(), await rows.delegations(), filter)
+		}),
+		committeeFillRates: t.field({
+			type: [committeeFillRate],
+			resolve: async ({ rows }) => committeeFillRatesOf(await rows.committeeFill())
+		}),
+		registrationTimeline: t.field({
+			type: [registrationTimelineEntry],
+			resolve: async ({ rows, filter }) =>
+				registrationTimelineOf(await rows.registrationDays(), filter)
+		}),
+		nationalityDistribution: t.field({
+			type: [nationalityStats],
+			resolve: async ({ rows, filter }) => nationalityDistributionOf(await rows.addresses(), filter)
+		}),
+		schoolStats: t.field({
+			type: [schoolStats],
+			resolve: async ({ rows, filter }) => schoolStatsOf(await rows.delegations(), filter)
+		}),
+		waitingList: t.field({
+			type: waitingListStats,
+			resolve: async ({ rows }) => waitingListOf(await rows.waitingList())
+		}),
+		supervisorStats: t.field({
+			type: supervisorStatsType,
+			resolve: async ({ rows }) => supervisorStatsOf(await rows.people())
+		}),
+		postalPaymentProgress: t.field({
+			type: postalPaymentProgressType,
+			resolve: async (source) => (await participantStatusOfSource(source)).postalPaymentProgress
+		}),
+		paperStats: t.field({
+			type: paperStatsType,
+			resolve: async ({ rows }) => paperStatsOf(await rows.papers())
+		})
+	})
+});
 
 schemaBuilder.queryFields((t) => ({
 	getConferenceStatistics: t.field({
@@ -396,15 +504,17 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
-			const stats = await sharedConferenceStats({
-				conferenceId: args.conferenceId,
-				filter: args.filter ?? 'ALL'
-			});
+			const conference = await db.query.conference
+				.findFirst({
+					where: { id: args.conferenceId },
+					columns: { startConference: true, startAssignment: true }
+				})
+				.then(assertFindFirstExists);
 
 			return {
-				...stats,
-				registered: stats.registrationStatistics,
-				age: stats.ageStatistics
+				conference,
+				filter: args.filter ?? 'ALL',
+				rows: statisticsRowsOf(args.conferenceId)
 			};
 		}
 	})

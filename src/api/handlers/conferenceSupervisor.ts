@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
@@ -72,6 +79,7 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 
 const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
+countQuery({ table: 'conferenceSupervisor' });
 const pubsub = rumblePubsub({ table: 'conferenceSupervisor' });
 // The supervision links are join tables, so a change there shows up on the two sides of it.
 const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });

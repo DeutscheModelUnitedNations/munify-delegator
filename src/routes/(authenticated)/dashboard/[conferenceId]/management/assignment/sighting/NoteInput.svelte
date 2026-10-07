@@ -3,6 +3,7 @@
 	import { reviewArgs, type SightingReview } from '$lib/assignment/sighting';
 	import { m } from '$lib/paraglide/messages';
 	import { toastError } from '../toastError';
+	import { reviewSaved } from './reviewVersion.svelte';
 
 	/** The team's note on one application: always an input, saved when it loses focus. */
 	interface Props {
@@ -31,7 +32,9 @@
 				__args: reviewArgs(kind, id, review, { note: note || null }),
 				evaluation: true
 			})
-		).catch(toastError);
+		)
+			.then(reviewSaved)
+			.catch(toastError);
 	}
 </script>
 

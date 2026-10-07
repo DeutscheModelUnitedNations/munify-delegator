@@ -55,13 +55,6 @@
 	const schools = $derived(loadedSchools);
 
 	$effect(() => {
-		if (newSchoolName) {
-			newSchoolName = newSchoolName.replace(',', ' ');
-			newSchoolName = newSchoolName.replace('.', ' ');
-		}
-	});
-
-	$effect(() => {
 		if (selectedSchools.length === 1) {
 			newSchoolName = selectedSchools[0];
 		}

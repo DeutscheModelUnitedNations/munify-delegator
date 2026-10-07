@@ -14,6 +14,8 @@
 		children?: Snippet;
 		/** Classes of the box that holds the body and the footer */
 		bodyClass?: string;
+		/** Extra content on the left of the footer, beside the buttons */
+		footer?: Snippet;
 		/** Extra classes for the modal box, such as a wider max width */
 		boxClass?: string;
 		confirmLabel: string;
@@ -30,6 +32,7 @@
 		title,
 		subtitle,
 		children,
+		footer,
 		bodyClass = 'mt-4 flex flex-col gap-4',
 		boxClass = '',
 		confirmLabel,
@@ -49,7 +52,10 @@
 		{/if}
 		<div class={bodyClass}>
 			{@render children?.()}
-			<div class="modal-action">
+			<div class="modal-action items-center">
+				{#if footer}
+					<div class="mr-auto">{@render footer()}</div>
+				{/if}
 				<button type="button" class="btn" onclick={onClose}>
 					{m.cancel()}
 				</button>

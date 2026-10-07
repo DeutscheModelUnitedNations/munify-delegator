@@ -322,6 +322,31 @@ export function addCrowd(cs: ConferenceSeed) {
 	cs.crowdDelegations = crowdDelegations;
 }
 
+export interface WaitingListEntryPlan {
+	assigned?: boolean;
+	hidden?: boolean;
+	/** When the person signed up; their place on the list follows from it. */
+	createdAt?: Date;
+}
+
+export function addWaitingListEntry(
+	cs: ConferenceSeed,
+	userId: string,
+	plan: WaitingListEntryPlan = {}
+) {
+	cs.batch.waitingListEntry.push({
+		conferenceId: cs.id,
+		userId,
+		school: `Gymnasium ${faker.location.city()}`,
+		experience: faker.lorem.sentence(),
+		motivation: faker.lorem.sentences(2),
+		requests: faker.helpers.maybe(() => 'Gerne zusammen mit meiner Freundin') ?? null,
+		assigned: plan.assigned ?? false,
+		hidden: plan.hidden ?? false,
+		...(plan.createdAt ? { createdAt: plan.createdAt, updatedAt: plan.createdAt } : {})
+	});
+}
+
 /**
  * The waiting list, sized from the seats and participants so the status light shows `target`:
  * a few entries leave vacancies, more than twenty beyond the free seats make the list long.
@@ -335,19 +360,8 @@ export function addWaitingList(cs: ConferenceSeed, personaUserId: DevAccountSub)
 		cs.nonStateActorIds.length;
 	const freeSeats = Math.max(seats - cs.acceptedUsers.length, 0);
 	const entries = target === 'VACANCIES' ? 5 : freeSeats + 25;
-
-	const entry = (userId: string, overrides: { assigned?: boolean; hidden?: boolean } = {}) => {
-		cs.batch.waitingListEntry.push({
-			conferenceId: cs.id,
-			userId,
-			school: `Gymnasium ${faker.location.city()}`,
-			experience: faker.lorem.sentence(),
-			motivation: faker.lorem.sentences(2),
-			requests: faker.helpers.maybe(() => 'Gerne zusammen mit meiner Freundin') ?? null,
-			assigned: overrides.assigned ?? false,
-			hidden: overrides.hidden ?? false
-		});
-	};
+	const entry = (userId: string, overrides: WaitingListEntryPlan = {}) =>
+		addWaitingListEntry(cs, userId, overrides);
 
 	entry(personaUserId);
 	// Two who already got a seat from the list, and two hidden as duplicates or no-shows.

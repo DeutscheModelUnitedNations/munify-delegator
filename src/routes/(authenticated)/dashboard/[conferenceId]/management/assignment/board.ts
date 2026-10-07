@@ -4,11 +4,53 @@ import { client } from '$lib/api/rumbleClient/client';
  * The applications of a conference and the draft on top of them, live, without the reviews: every
  * draft mutation publishes to these tables, a rating or note does not.
  */
-export async function fetchAssignmentRows(conferenceId: string) {
+export async function fetchAssignmentRows(
+	conferenceId: string,
+	/**
+	 * Only the delegations and single participants the draft touches. The draft holds nothing but
+	 * changes, so counting what applying it would change needs no more than those.
+	 */
+	options: { draftOnly?: boolean } = {}
+) {
 	const inConference = { conferenceId: { eq: conferenceId } };
-	const [delegations, singleParticipants, units, draftSingleRoles] = await Promise.all([
+	const [units, draftSingleRoles] = await Promise.all([
+		client.liveQuery.assignmentUnits({
+			__args: { where: inConference },
+			id: true,
+			sourceDelegationId: true,
+			sourceSingleParticipantId: true,
+			nationAlpha3Code: true,
+			nonStateActorId: true,
+			members: { delegationMemberId: true }
+		}),
+		client.liveQuery.assignmentSingleRoles({
+			__args: { where: inConference },
+			singleParticipantId: true,
+			roleId: true
+		})
+	]);
+	const touched = options.draftOnly
+		? {
+				delegations: {
+					id: {
+						in: [...new Set(units.flatMap((unit) => unit.sourceDelegationId ?? []))]
+					}
+				},
+				singleParticipants: {
+					id: {
+						in: [
+							...new Set([
+								...units.flatMap((unit) => unit.sourceSingleParticipantId ?? []),
+								...draftSingleRoles.map((role) => role.singleParticipantId)
+							])
+						]
+					}
+				}
+			}
+		: { delegations: {}, singleParticipants: {} };
+	const [delegations, singleParticipants] = await Promise.all([
 		client.liveQuery.delegations({
-			__args: { where: { ...inConference, applied: { eq: true } } },
+			__args: { where: { ...inConference, applied: { eq: true }, ...touched.delegations } },
 			id: true,
 			school: true,
 			assignedNationAlpha3Code: true,
@@ -25,26 +67,12 @@ export async function fetchAssignmentRows(conferenceId: string) {
 			}
 		}),
 		client.liveQuery.singleParticipants({
-			__args: { where: { ...inConference, applied: { eq: true } } },
+			__args: { where: { ...inConference, applied: { eq: true }, ...touched.singleParticipants } },
 			id: true,
 			school: true,
 			assignedRoleId: true,
 			user: { givenName: true, familyName: true },
 			appliedForRoles: { id: true, name: true }
-		}),
-		client.liveQuery.assignmentUnits({
-			__args: { where: inConference },
-			id: true,
-			sourceDelegationId: true,
-			sourceSingleParticipantId: true,
-			nationAlpha3Code: true,
-			nonStateActorId: true,
-			members: { delegationMemberId: true }
-		}),
-		client.liveQuery.assignmentSingleRoles({
-			__args: { where: inConference },
-			singleParticipantId: true,
-			roleId: true
 		})
 	]);
 	return { delegations, singleParticipants, units, draftSingleRoles };

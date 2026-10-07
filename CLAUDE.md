@@ -123,7 +123,7 @@ bun run add-translation
 ### Building
 
 ```bash
-# Production build
+# Production build (app, then the compute worker threads in build/compute via tsdown, then the tasks)
 bun run build
 
 # Preview production build

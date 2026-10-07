@@ -116,8 +116,14 @@
 	</div>
 {/snippet}
 
-{#snippet enumFilter(col: FilterColumn, label: ((value: string) => string) | undefined)}
-	{@const facetedValues = col.getFacetedUniqueValues()}
+{#snippet enumFilter(
+	col: FilterColumn,
+	label: ((value: string) => string) | undefined,
+	options: readonly string[] | undefined
+)}
+	{@const facetedValues = options
+		? new Map<unknown, number | undefined>(options.map((option) => [option, undefined]))
+		: col.getFacetedUniqueValues()}
 	{@const currentFilter = (col.getFilterValue() as string[] | undefined) ?? []}
 	<div class="flex flex-wrap gap-1.5">
 		{#each [...facetedValues.entries()] as [value, count] (value)}
@@ -131,7 +137,7 @@
 				onclick={() => toggleEnumValue(col.id, filterKey)}
 			>
 				{filterKey === '—' || !label ? filterKey : label(filterKey)}
-				<span class="text-sm opacity-70">{count}</span>
+				{#if count !== undefined}<span class="text-sm opacity-70">{count}</span>{/if}
 			</button>
 		{/each}
 	</div>
@@ -204,7 +210,7 @@
 				{#if filter.type === 'text'}
 					{@render textFilter(col, header)}
 				{:else if filter.type === 'enum'}
-					{@render enumFilter(col, filter.label)}
+					{@render enumFilter(col, filter.label, filter.options)}
 				{:else if filter.type === 'boolean'}
 					{@render booleanFilter(col)}
 				{:else if filter.type === 'range'}

@@ -64,3 +64,11 @@ export function distinctNationCodes(
 	}
 	return alpha3Codes;
 }
+
+/**
+ * Cleans a hand-typed school name: commas and periods become spaces, runs of whitespace
+ * collapse and the ends are trimmed.
+ */
+export function normalizeSchoolName(name: string) {
+	return name.replace(/[,.]/g, ' ').replace(/\s+/g, ' ').trim();
+}

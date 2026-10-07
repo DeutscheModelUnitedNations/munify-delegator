@@ -41,14 +41,6 @@ export interface WaitingListSourceEntry {
 	createdAt: Date | string;
 }
 
-/** The entries the table shows: hidden ones only when asked to. */
-export function visibleEntries<E extends { hidden: boolean }>(
-	entries: readonly E[],
-	filterHidden: boolean
-): readonly E[] {
-	return filterHidden ? entries.filter((e) => !e.hidden) : entries;
-}
-
 function conferenceAge(
 	birthday: Maybe<Date | string>,
 	startConference: Maybe<Date | string>

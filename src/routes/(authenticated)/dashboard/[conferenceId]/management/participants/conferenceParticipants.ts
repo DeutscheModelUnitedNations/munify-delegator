@@ -19,11 +19,13 @@ const participantUser = {
 /**
  * Every registration of a conference, whatever its type, for the participants table.
  *
- * One list query per registration type, holding only what the table's columns show, filter and
- * export. Everything else about a person is fetched by the user card when a row is opened.
+ * One list query per registration type for the people of one page (`userIds`), holding only what
+ * the table's columns show and export. Everything else about a person is fetched by the user card when a row is opened.
  */
-export async function fetchConferenceParticipants(conferenceId: string) {
-	const inConference = { where: { conferenceId: { eq: conferenceId } } };
+export async function fetchConferenceParticipants(conferenceId: string, userIds: string[]) {
+	const inConference = {
+		where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } }
+	};
 
 	const [
 		conference,
@@ -72,20 +74,9 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 		client.liveQuery.teamMembers({ __args: inConference, role: true, user: participantUser }),
 		client.liveQuery.conferenceParticipantStatuses({
 			__args: {
-				where: {
-					conferenceId: { eq: conferenceId },
-					// Only the statuses of people registered here, which are the rows the table joins
-					// them onto. A status can outlive its registration, and the non-nullable `user` of
-					// someone the caller may no longer read would fail the whole query.
-					user: {
-						OR: [
-							{ delegationMemberships: { conferenceId: { eq: conferenceId } } },
-							{ singleParticipant: { conferenceId: { eq: conferenceId } } },
-							{ conferenceSupervisor: { conferenceId: { eq: conferenceId } } },
-							{ teamMember: { conferenceId: { eq: conferenceId } } }
-						]
-					}
-				}
+				// Only the statuses of the people on this page, who are registered here and are the
+				// rows the table joins them onto.
+				where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } }
 			},
 			user: { id: true },
 			paymentStatus: true,

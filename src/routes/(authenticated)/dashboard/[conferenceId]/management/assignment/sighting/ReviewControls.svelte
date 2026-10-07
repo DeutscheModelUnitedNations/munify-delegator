@@ -5,6 +5,7 @@
 	import StarRating from '$lib/components/StarRating.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { toastError } from '../toastError';
+	import { reviewSaved } from './reviewVersion.svelte';
 
 	/** The team's rating, flag and exclusion of one application. */
 	interface Props {
@@ -25,7 +26,9 @@
 				__args: reviewArgs(kind, id, review, change),
 				evaluation: true
 			})
-		).catch(toastError);
+		)
+			.then(reviewSaved)
+			.catch(toastError);
 		saving = false;
 	}
 

@@ -24,7 +24,8 @@ COPY . .
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 # `bun run check` is not repeated here: the CI `typecheck` job runs the same command and is in
 # the docker-build `needs` list, so the image is only built once it has already passed.
-RUN bun run build:app
+# The compute worker threads go into build/ next to the server, so the image needs nothing else.
+RUN bun run build:app && bun run build:compute
 
 USER bun
 ENV NODE_ENV=production

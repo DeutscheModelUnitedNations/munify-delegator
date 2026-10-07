@@ -10,6 +10,8 @@
 	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
+	import { TEAM_ROLES, fetchAllTeamMembers, fetchTeamMembersPage } from './teamMembersQuery';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
@@ -18,27 +20,15 @@
 
 	let { params }: PageProps = $props();
 
-	const teamMembers = $derived(
-		await client.liveQuery.teamMembers({
-			__args: { where: { conferenceId: { eq: params.conferenceId } } },
-			id: true,
-			role: true,
-			user: {
-				id: true,
-				givenName: true,
-				familyName: true,
-				email: true,
-				birthday: true,
-				phone: true,
-				street: true,
-				zip: true,
-				city: true,
-				country: true,
-				gender: true,
-				foodPreference: true
-			}
-		})
-	);
+	// Navigations (the table's own URL state is one) hand over fresh params; reading them inside an
+	// awaited derived would refetch from whatever state the batch under way still shows.
+	const conferenceId = $derived(params.conferenceId);
+
+	// Search, filters, order and paging run in the backend; the table only holds this page.
+	const tableState = createTableState();
+	const fetched = $derived(await fetchTeamMembersPage(conferenceId, tableState));
+	const teamMembers = $derived(fetched.rows);
+	const exportRows = () => fetchAllTeamMembers(conferenceId, tableState);
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
 
 	// Dedicated schema for profile completeness validation
@@ -115,22 +105,26 @@
 		{
 			id: 'family_name',
 			header: m.familyName(),
-			accessorFn: (row) => row.user.familyName
+			accessorFn: (row) => row.user.familyName,
+			enableSorting: false
 		},
 		{
 			id: 'given_name',
 			header: m.givenName(),
-			accessorFn: (row) => row.user.givenName
+			accessorFn: (row) => row.user.givenName,
+			enableSorting: false
 		},
 		{
 			id: 'email',
 			header: m.email(),
-			accessorFn: (row) => row.user.email
+			accessorFn: (row) => row.user.email,
+			enableSorting: false
 		},
 		{
 			id: 'role',
 			header: m.role(),
 			accessorFn: (row) => translateTeamRole(row.role),
+			filter: { type: 'enum', label: translateTeamRole, options: TEAM_ROLES },
 			cell: ({ row }) =>
 				renderComponent(BadgeCell, {
 					label: translateTeamRole(row.original.role),
@@ -141,6 +135,7 @@
 			id: 'profileStatus',
 			header: m.profileStatus(),
 			accessorFn: (row) => (isProfileComplete(row.user) ? m.complete() : m.incomplete()),
+			enableSorting: false,
 			cell: ({ row }) =>
 				isProfileComplete(row.original.user)
 					? renderComponent(BadgeCell, { label: m.complete(), variant: 'badge-success' })
@@ -168,5 +163,12 @@
 </script>
 
 <TeamManagementPage title={m.teamMembers()} conferenceId={params.conferenceId}>
-	<ManagedTable {columns} rows={teamMembers} />
+	<ManagedTable
+		{columns}
+		rows={teamMembers}
+		{tableState}
+		hasMore={fetched.hasMore}
+		rowCount={fetched.total}
+		{exportRows}
+	/>
 </TeamManagementPage>

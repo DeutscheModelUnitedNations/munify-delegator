@@ -21,7 +21,11 @@ import type { InferSelectModel } from 'drizzle-orm';
 import { UserRef } from './user';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
-import { distinctNationCodes, schoolRows } from '$api/services/conferenceAggregates';
+import {
+	distinctNationCodes,
+	normalizeSchoolName,
+	schoolRows
+} from '$api/services/conferenceAggregates';
 import { totalSeats } from '$api/services/seatPlanning';
 import { storedFileUrl } from '$api/services/files';
 
@@ -218,13 +222,8 @@ const ConferenceRef = object({
 
 		waitingListLength: t.field({
 			type: 'Int',
-			resolve: async (conference) =>
-				(
-					await db.query.waitingListEntry.findMany({
-						where: { conferenceId: conference.id },
-						columns: { id: true }
-					})
-				).length
+			resolve: (conference) =>
+				db.$count(schema.waitingListEntry, eq(schema.waitingListEntry.conferenceId, conference.id))
 		}),
 
 		/** The document number to hand to the next participant who needs one. */
@@ -302,11 +301,14 @@ schemaBuilder.mutationFields((t) => ({
 			newSchoolName: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const newSchoolName = normalizeSchoolName(args.newSchoolName);
+			if (!newSchoolName) throw new Error('The new school name must not be empty');
+
 			if (args.schoolsToMerge.length > 0) {
 				await db.transaction(async (tx) => {
 					await tx
 						.update(schema.delegation)
-						.set({ school: args.newSchoolName })
+						.set({ school: newSchoolName })
 						.where(
 							and(
 								(await ctx.abilities.delegation.filter('update')).merge({
@@ -318,7 +320,7 @@ schemaBuilder.mutationFields((t) => ({
 
 					await tx
 						.update(schema.singleParticipant)
-						.set({ school: args.newSchoolName })
+						.set({ school: newSchoolName })
 						.where(
 							and(
 								(await ctx.abilities.singleParticipant.filter('update')).merge({

@@ -56,6 +56,11 @@ export type ColumnFilter = {
 			type: Extract<FilterType, 'enum'>;
 			/** The text of one of the column's values; the value itself where left out */
 			label?: (value: string) => string;
+			/**
+			 * The values to offer. Without it the drawer lists the values of the loaded rows, which
+			 * is all of them only while the table holds every row (not in server mode).
+			 */
+			options?: readonly string[];
 	  }
 );
 

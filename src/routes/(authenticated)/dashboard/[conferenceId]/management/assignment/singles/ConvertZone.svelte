@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { CONVERT_CONTAINER } from '$lib/assignment/board';
-	import codenamize from '$lib/helpers/codenamize';
 	import formatNames from '$lib/helpers/formatNames';
 	import { m } from '$lib/paraglide/messages';
 	import { droppable, type DragDropState } from '@thisux/sveltednd';
@@ -18,7 +17,7 @@
 </script>
 
 <section
-	class="flex min-h-24 flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition-colors
+	class="flex min-h-24 grow flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition-colors
 		{highlight ? 'border-primary bg-primary/10' : 'border-base-300'}"
 	aria-label={m.assignmentConvertToDelegation()}
 	use:droppable={{ container: CONVERT_CONTAINER, callbacks: { onDrop } }}
@@ -31,12 +30,9 @@
 	<ul class="flex flex-col gap-1">
 		{#each converted as { singleParticipantId, single } (singleParticipantId)}
 			<li class="flex items-center justify-between gap-2 text-sm">
-				<span>
-					{codenamize(singleParticipantId)}
-					{#if single}
-						· {formatNames(single.user.givenName, single.user.familyName)}
-					{/if}
-				</span>
+				{#if single}
+					<span>{formatNames(single.user.givenName, single.user.familyName)}</span>
+				{/if}
 				<button class="btn btn-ghost btn-xs" onclick={() => onRevert(singleParticipantId)}>
 					<i class="fa-duotone fa-rotate-left"></i>
 					{m.assignmentRevertConversion()}

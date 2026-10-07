@@ -11,13 +11,15 @@
 		poolGroups,
 		roleContainer,
 		rolesWithSeats,
-		sizeOptions
+		sizeOptions,
+		wishStatus
 	} from '$lib/assignment/board';
 	import type { AssignmentGroup } from '$lib/assignment/state';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
+	import VirtualList from 'svelte-virtual-list';
 	import { queryParameters, ssp } from 'sveltekit-search-params';
 	import { assignGroup } from '../assignGroup';
 	import { fetchAssignmentBoard, fetchAssignmentRoles, type BoardDelegation } from '../board';
@@ -41,7 +43,6 @@
 
 	const params = queryParameters({
 		size: ssp.number(0),
-		seats: ssp.number(0),
 		disqualified: ssp.boolean(false)
 	});
 
@@ -54,8 +55,8 @@
 
 	const options = $derived(sizeOptions(view));
 	const size = $derived(pickSize(options, params.size ?? 0));
-	// 0 follows the group size.
-	const seats = $derived(params.seats || size);
+	// Roles are shown by the same seat count as the group size.
+	const seats = $derived(size);
 	const pool = $derived(poolGroups(view, size, !!params.disqualified));
 	const shownRoles = $derived(
 		rolesWithSeats(view, seats)
@@ -65,6 +66,18 @@
 			}))
 			.sort((a, b) => a.title.localeCompare(b.title))
 	);
+
+	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
+	const isBadFit = (group: AssignmentGroup) => {
+		const wish = wishStatus(
+			delegationById.get(group.delegationId ?? '')?.appliedForRoles,
+			group.target
+		);
+		return !!wish && wish.rank === undefined;
+	};
+	/** The groups of a role, misfits first so they are seen at once. */
+	const sortedGroups = (groups: AssignmentGroup[]) =>
+		groups.toSorted((a, b) => Number(isBadFit(b)) - Number(isBadFit(a)));
 
 	function onDrop(dropState: DragDropState<{ id: string }>) {
 		dragging = undefined;
@@ -113,17 +126,18 @@
 	}
 </script>
 
-{#snippet groupCard(group: AssignmentGroup, container: string)}
+{#snippet groupCard(group: AssignmentGroup, container: string, fluid = false)}
 	<GroupCard
 		{group}
 		delegation={delegationById.get(group.delegationId ?? '')}
 		single={singleById.get(group.singleParticipantId ?? '')}
 		review={view.reviewOf(group)}
 		{container}
+		{fluid}
+		conferenceId={routeParams.conferenceId}
 		onDragChange={(isDragging) => (dragging = isDragging ? group : undefined)}
 		onSplit={() => openSplit(group)}
 		onUndoSplit={() => undoSplit(group)}
-		onUnassign={() => assignGroup(group)}
 	/>
 {/snippet}
 
@@ -142,11 +156,7 @@
 		showDisqualified={!!params.disqualified}
 		{busy}
 		canAutoAssign={pool.length > 0}
-		onSize={(next) => {
-			params.size = next;
-			params.seats = 0;
-		}}
-		onSeats={(next) => (params.seats = next)}
+		onSize={(next) => (params.size = next)}
 		onShowDisqualified={(show) => (params.disqualified = show)}
 		onAutoAssign={autoAssign}
 		onReset={resetSeats}
@@ -159,14 +169,21 @@
 			hint={m.assignmentPoolHint({ size })}
 			highlight={hasRole(dragging)}
 			class="xl:w-96 xl:shrink-0"
+			virtual
 			{onDrop}
 		>
-			{#each pool as group (group.key)}
-				{@render groupCard(group, POOL_CONTAINER)}
-			{/each}
+			<!-- Only the rows in view are in the DOM; the pool can hold hundreds of delegations. -->
+			<VirtualList items={pool} height="max(16rem, calc(100vh - 36rem))" let:item={group}>
+				<div class="pb-2">
+					{@render groupCard(group, POOL_CONTAINER, true)}
+				</div>
+			</VirtualList>
 		</PoolSection>
 
-		<section class="flex grow flex-wrap content-start gap-3" aria-label={m.assignmentRoles()}>
+		<section
+			class="grid grow grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] content-start items-start gap-3"
+			aria-label={m.assignmentRoles()}
+		>
 			{#each shownRoles as role (role.key)}
 				<RoleCard
 					container={roleContainer(role.key)}
@@ -179,8 +196,8 @@
 					highlight={freeSeats(view, role) >= (dragging?.size ?? Infinity)}
 					{onDrop}
 				>
-					{#each role.groups as group (group.key)}
-						{@render groupCard(group, roleContainer(role.key))}
+					{#each sortedGroups(role.groups) as group (group.key)}
+						{@render groupCard(group, roleContainer(role.key), true)}
 					{/each}
 				</RoleCard>
 			{:else}

@@ -17,7 +17,7 @@
 
 	// Today's snapshot: exactly the figures the widgets compare against a past day.
 	const snapshot = $derived(
-		await client.liveQuery.getConferenceStatistics({
+		await client.query.getConferenceStatistics({
 			__args: { conferenceId, filter: statsQueryFilter() },
 			registered: {
 				total: true,

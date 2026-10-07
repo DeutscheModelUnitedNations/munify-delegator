@@ -119,7 +119,7 @@ const applicationKey = (row: {
 }) => row.delegationId ?? row.singleParticipantId ?? '';
 
 /** The review of the application a group or single participant comes from. */
-export function reviewLookup<R extends BoardReviewRow>(reviews: readonly R[]) {
+function reviewLookup<R extends BoardReviewRow>(reviews: readonly R[]) {
 	const byApplication = new Map(reviews.map((review) => [applicationKey(review), review]));
 	return (group: Pick<AssignmentGroup, 'delegationId' | 'singleParticipantId'>) =>
 		byApplication.get(applicationKey(group));
@@ -167,7 +167,7 @@ export const hasRole = (group: AssignmentGroup | undefined) => !!group && !!targ
 const isOpen = (view: BoardState, group: AssignmentGroup) =>
 	!targetKey(group.target) && !view.reviewOf(group)?.disqualified;
 
-/** Every size a group or a role comes in, with how many groups and exactly fitting roles are open. */
+/** Every size a group or a role comes in, with how many groups are open and roles not yet full. */
 export function sizeOptions(view: BoardState) {
 	const sizes = new Set([...view.groups.map((g) => g.size), ...view.seated.map((r) => r.seats)]);
 	return [...sizes]
@@ -175,7 +175,7 @@ export function sizeOptions(view: BoardState) {
 		.map((size) => ({
 			size,
 			openGroups: view.groups.filter((g) => g.size === size && isOpen(view, g)).length,
-			openRoles: view.seated.filter((r) => freeSeats(view, r) === size).length
+			unfilledRoles: view.seated.filter((r) => r.seats === size && freeSeats(view, r) > 0).length
 		}));
 }
 
@@ -315,6 +315,36 @@ export function wishRank(wishes: readonly Wish[] | undefined, target: Target) {
 	const key = targetKey(target);
 	if (!key || !wishes) return undefined;
 	return wishes.find((wish) => targetKey(wishTarget(wish)) === key)?.rank;
+}
+
+interface ListedWish extends Wish {
+	nonStateActor?: Nullable<{ id: string; abbreviation: string }>;
+}
+
+/** Whether a wish is the role a group holds; never, while it holds none. */
+function wishMatches(wish: ListedWish, target: Target) {
+	if (!targetKey(target)) return false;
+	return wish.nation
+		? wish.nation.alpha3Code === target.nationAlpha3Code
+		: wish.nonStateActor?.id === target.nonStateActorId;
+}
+
+/** Every wish of a delegation as a card lists it: the one matching its role first, then by rank. */
+export function wishList(
+	wishes: readonly ListedWish[] | undefined,
+	target: Target,
+	nationName: (code: string) => string
+) {
+	return (wishes ?? [])
+		.map((wish) => ({
+			key: wish.nation?.alpha3Code ?? wish.nonStateActor?.id ?? String(wish.rank),
+			rank: wish.rank,
+			name: wish.nation
+				? nationName(wish.nation.alpha3Code)
+				: (wish.nonStateActor?.abbreviation ?? ''),
+			matches: wishMatches(wish, target)
+		}))
+		.toSorted((a, b) => Number(b.matches) - Number(a.matches) || a.rank - b.rank);
 }
 
 export const CONVERT_CONTAINER = 'convert';

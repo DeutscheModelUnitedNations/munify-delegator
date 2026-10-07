@@ -1,8 +1,8 @@
 import { getLocale } from '$lib/paraglide/runtime';
-import type { conferenceStats } from '$api/services/statistics';
+import type { registrationReport } from '$api/services/statisticsData';
 
-type ConferenceStats = Awaited<ReturnType<typeof conferenceStats>>;
-type RegistrationStatistics = ConferenceStats['registrationStatistics'];
+type RegistrationReport = Awaited<ReturnType<typeof registrationReport>>;
+type RegistrationStatistics = RegistrationReport['registrationStatistics'];
 
 function formatConferenceDate(date: Date) {
 	return date.toLocaleDateString(getLocale(), {
@@ -74,7 +74,7 @@ const countdownLine = (date: Date | null, describe: (date: Date) => string, miss
  */
 export function conferenceStatusBlocks(
 	conference: { title: string; startConference: Date | null; startAssignment: Date | null },
-	countdowns: ConferenceStats['countdowns'],
+	countdowns: RegistrationReport['countdowns'],
 	rs: RegistrationStatistics,
 	hs: RegistrationStatistics | undefined
 ) {

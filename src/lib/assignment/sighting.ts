@@ -1,7 +1,6 @@
 import Fuse from 'fuse.js';
-import { createFuzzySearch } from '$lib/components/tanStackTable/search';
 import { getAgeAtConference } from '$lib/helpers/ageChecker';
-/** Pure decisions behind the sighting: which applications to show, in which order. */
+/** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {
 	evaluation?: number | null;
@@ -17,7 +16,8 @@ export interface SightingEntry {
 	codename: string;
 	school: string | null;
 	size: number;
-	review: SightingReview | undefined;
+	/** How far the sighting has come with it */
+	status: DeckStatus;
 	/** What a search looks through besides the codename, id, school and note, see `searchFieldsOf`. */
 	fields?: SearchField[];
 }
@@ -32,25 +32,6 @@ export const SIGHTING_STATUSES: SightingStatus[] = [
 	'disqualified',
 	'noted'
 ];
-
-/** Largest delegations first, single participants last, otherwise by codename. */
-function sightingOrder(a: SightingEntry, b: SightingEntry) {
-	if (a.kind !== b.kind) return a.kind === 'delegation' ? -1 : 1;
-	if (a.size !== b.size) return b.size - a.size;
-	return a.codename.localeCompare(b.codename);
-}
-
-const STATUS_MATCHERS: Record<SightingStatus, (review: SightingEntry['review']) => boolean> = {
-	all: () => true,
-	unrated: (review) => review?.evaluation == null && !review?.disqualified,
-	rated: (review) => review?.evaluation != null,
-	flagged: (review) => !!review?.flagged,
-	disqualified: (review) => !!review?.disqualified,
-	noted: (review) => !!review?.note
-};
-
-const matchesStatus = (entry: SightingEntry, status: SightingStatus) =>
-	STATUS_MATCHERS[status](entry.review);
 
 export type SearchFieldKind =
 	| 'codename'
@@ -75,20 +56,10 @@ function fieldsOfEntry(entry: SightingEntry): SearchField[] {
 	const own: SearchField[] = [
 		{ kind: 'codename', value: entry.codename },
 		{ kind: 'id', value: entry.id },
-		{ kind: 'school', value: entry.school ?? '' },
-		{ kind: 'note', value: entry.review?.note ?? '' }
+		{ kind: 'school', value: entry.school ?? '' }
 	];
 	return [...own, ...(entry.fields ?? [])].filter((field) => field.value);
 }
-
-const searchTextOf = (entry: SightingEntry) =>
-	fieldsOfEntry(entry)
-		.map((field) => field.value)
-		.join(' ');
-
-/** The fuzzy search over the codename, id, school, texts, people and the team's note of entries. */
-export const searchSightings = (entries: readonly SightingEntry[]) =>
-	createFuzzySearch(entries, searchTextOf);
 
 /** A field a search matched, with the first occurrence marked: `value.slice(start, end)`. */
 export interface MatchReason {
@@ -137,38 +108,6 @@ export function snippetOf(reason: MatchReason, context = 30) {
 		hit: reason.value.slice(reason.start, reason.end),
 		after: reason.value.slice(reason.end, to) + (to < reason.value.length ? '…' : '')
 	};
-}
-
-/**
- * The applications passing the filters. Without a search they come in the order of the deck;
- * with one, the best match first. `searcher` lets a caller keep the search index between calls.
- */
-export function filterSightings(
-	entries: readonly SightingEntry[],
-	filter: { search: string; status: SightingStatus; school: string | null },
-	searcher?: ReturnType<typeof searchSightings>
-) {
-	const searching = filter.search.trim() !== '';
-	const matching = searching ? (searcher ?? searchSightings(entries))(filter.search) : entries;
-	const passing = matching.filter(
-		(entry) =>
-			matchesStatus(entry, filter.status) &&
-			(filter.school === null || (entry.school ?? '') === filter.school)
-	);
-	return searching ? passing : passing.toSorted(sightingOrder);
-}
-
-/** Applications and people per school, by school name; no school sorts as the empty name. */
-export function schoolsOf(entries: readonly SightingEntry[]) {
-	const schools = new Map<string, { school: string; applications: number; people: number }>();
-	for (const entry of entries) {
-		const school = entry.school ?? '';
-		const summary = schools.get(school) ?? { school, applications: 0, people: 0 };
-		summary.applications += 1;
-		summary.people += entry.size;
-		schools.set(school, summary);
-	}
-	return [...schools.values()].sort((a, b) => a.school.localeCompare(b.school));
 }
 
 type Nullable<T> = T | null | undefined;
@@ -339,52 +278,62 @@ export function reviewArgs(
 	};
 }
 
-/** How far along the sighting an application is, for the strip showing the whole deck. */
+/** How far along the sighting an application is, for the strip showing the deck. */
 export type DeckStatus = 'disqualified' | 'flagged' | 'rated' | 'unrated';
 
-export function deckStatus(entry: SightingEntry): DeckStatus {
-	const review = entry.review;
-	if (review?.disqualified) return 'disqualified';
-	if (review?.evaluation != null) return 'rated';
-	return review?.flagged ? 'flagged' : 'unrated';
+/** The kind of an application in the backend's deck, which sends it as a plain string. */
+export const entryKind = (kind: string): SightingEntry['kind'] =>
+	kind === 'single' ? 'single' : 'delegation';
+
+/** The status of an application in the backend's deck, which sends it as a plain string. */
+export const entryStatus = (value: string): DeckStatus =>
+	value === 'rated' || value === 'flagged' || value === 'disqualified' ? value : 'unrated';
+
+interface SearchHits {
+	delegations: readonly (SightedDelegation & { id: string })[];
+	singleParticipants: readonly (SightedSingleParticipant & { id: string })[];
+	entries: readonly {
+		kind: string;
+		id: string;
+		school: string | null;
+		size: number;
+		status: string;
+	}[];
 }
 
 /**
- * Where `currentId` sits in the deck of applications under review. An id that is not in the deck
- * (it was filtered away, or never existed) falls back to the first card.
+ * What a search found, as entries carrying the fields it looked through; somebody typing a
+ * codename wants that application first.
  */
-export function deckPosition(deck: readonly SightingEntry[], currentId: string | null | undefined) {
-	const found = deck.findIndex((entry) => entry.id === currentId);
-	const index = found === -1 ? 0 : found;
-	return {
-		index,
-		total: deck.length,
-		current: deck.at(index),
-		previousId: index > 0 ? deck[index - 1].id : undefined,
-		nextId: deck.at(index + 1)?.id
+export function searchHitEntries(
+	hits: SearchHits | undefined,
+	search: string,
+	codenameOf: (id: string) => string
+): SightingEntry[] {
+	if (!hits) return [];
+	const fields = new Map<string, SearchField[]>([
+		...hits.delegations.map((delegation): [string, SearchField[]] => [
+			delegation.id,
+			searchFieldsOf(delegationApplication(delegation, String))
+		]),
+		...hits.singleParticipants.map((single): [string, SearchField[]] => [
+			single.id,
+			searchFieldsOf(singleApplication(single))
+		])
+	]);
+	const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+	const entries = hits.entries.map((entry) => ({
+		kind: entryKind(entry.kind),
+		id: entry.id,
+		codename: codenameOf(entry.id),
+		school: entry.school,
+		size: entry.size,
+		status: entryStatus(entry.status),
+		fields: fields.get(entry.id)
+	}));
+	const named = (entry: SightingEntry) => {
+		const name = `${entry.codename} ${entry.id}`.toLowerCase();
+		return terms.every((term) => name.includes(term));
 	};
-}
-
-/** The next application after `currentId` that nobody has rated, flagged or excluded yet. */
-export function nextUnreviewedId(deck: readonly SightingEntry[], currentId: string | undefined) {
-	const start = deck.findIndex((entry) => entry.id === currentId) + 1;
-	const ordered = [...deck.slice(start), ...deck.slice(0, start)];
-	return ordered.find((entry) => deckStatus(entry) === 'unrated' && entry.id !== currentId)?.id;
-}
-
-/** The application a deck entry stands for, shaped for the card, out of everything fetched. */
-export function applicationOf(
-	entry: Pick<SightingEntry, 'kind' | 'id'>,
-	applications: {
-		delegations: readonly (SightedDelegation & { id: string })[];
-		singleParticipants: readonly (SightedSingleParticipant & { id: string })[];
-	},
-	nationName: (code: string) => string
-) {
-	if (entry.kind === 'single') {
-		const single = applications.singleParticipants.find((p) => p.id === entry.id);
-		return single && singleApplication(single);
-	}
-	const delegation = applications.delegations.find((d) => d.id === entry.id);
-	return delegation && delegationApplication(delegation, nationName);
+	return [...entries.filter(named), ...entries.filter((entry) => !named(entry))];
 }

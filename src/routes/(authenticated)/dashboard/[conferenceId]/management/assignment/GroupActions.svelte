@@ -5,22 +5,20 @@
 	interface Props {
 		onSplit?: () => void;
 		onUndoSplit?: () => void;
-		onUnassign?: () => void;
 	}
 
-	let { onSplit, onUndoSplit, onUnassign }: Props = $props();
+	let { onSplit, onUndoSplit }: Props = $props();
 
 	const actions = $derived(
 		[
-			{ run: onSplit, label: m.assignmentSplit(), icon: 'split' },
-			{ run: onUndoSplit, label: m.assignmentUndoSplit(), icon: 'object-group' },
-			{ run: onUnassign, label: m.assignmentUnassign(), icon: 'xmark' }
+			{ run: onSplit, label: m.assignmentCardSplit(), icon: 'split' },
+			{ run: onUndoSplit, label: m.assignmentCardUndoSplit(), icon: 'object-group' }
 		].filter((action) => action.run)
 	);
 </script>
 
 {#if actions.length > 0}
-	<div class="flex justify-end gap-1">
+	<div class="flex gap-0.5">
 		{#each actions as action (action.icon)}
 			<button
 				class="btn btn-ghost btn-xs btn-square"

@@ -9,39 +9,26 @@
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 	import type { PageProps } from './$types';
-	import { toWaitingListRow, visibleEntries, type WaitingListRow } from './waitingListRows';
+	import { toWaitingListRow, type WaitingListRow } from './waitingListRows';
+	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
+	import { fetchAllWaitingListEntries, fetchWaitingListPage } from './waitingListQuery';
 
 	let { params }: PageProps = $props();
 
-	/** Only entries still waiting - assigned ones have become real registrations. */
-	const waitingListEntries = $derived(
-		await client.liveQuery.waitingListEntries({
-			__args: {
-				where: { conferenceId: { eq: params.conferenceId }, assigned: { eq: false } }
-			},
-			id: true,
-			user: {
-				id: true,
-				givenName: true,
-				familyName: true,
-				email: true,
-				phone: true,
-				city: true,
-				birthday: true,
-				conferenceParticipationsCount: true
-			},
-			school: true,
-			experience: true,
-			motivation: true,
-			requests: true,
-			hidden: true,
-			createdAt: true
-		})
-	);
+	// Navigations (the table's own URL state is one) hand over fresh params; reading them inside an
+	// awaited derived would refetch from whatever state the batch under way still shows.
+	const conferenceId = $derived(params.conferenceId);
+
+	// Set up before the first await: afterwards a server render has no request to read the URL of.
+	// Search, filters, order and paging run in the backend; the table only holds this page.
+	const tableState = createTableState({
+		pageSize: 20,
+		initialSorting: [{ id: 'createdAt', desc: false }]
+	});
 	// Only the start date, to work out how old each person will be by then.
 	const conference = $derived(
 		await client.liveQuery.conference({
-			__args: { id: params.conferenceId },
+			__args: { id: conferenceId },
 			id: true,
 			startConference: true
 		})
@@ -50,10 +37,24 @@
 	let filterHidden = $state(true);
 
 	const startConference = $derived(conference?.startConference);
-	const visible = $derived(visibleEntries(waitingListEntries, filterHidden));
-	const rows: WaitingListRow[] = $derived(
-		visible.map((entry) => toWaitingListRow(entry, startConference))
+
+	/** Only entries still waiting - assigned ones have become real registrations. */
+	const page = $derived(
+		await fetchWaitingListPage(conferenceId, tableState, filterHidden, startConference)
 	);
+	const rows: WaitingListRow[] = $derived(
+		page.rows.map((entry) => toWaitingListRow(entry, startConference))
+	);
+
+	async function exportRows() {
+		const entries = await fetchAllWaitingListEntries(
+			conferenceId,
+			tableState,
+			filterHidden,
+			startConference
+		);
+		return entries.map((entry) => toWaitingListRow(entry, startConference));
+	}
 
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
@@ -68,7 +69,7 @@
 				renderComponent(WaitingListActions, {
 					entryId: row.original.id,
 					userId: row.original.userId,
-					conferenceId: params.conferenceId,
+					conferenceId: conferenceId,
 					hidden: row.original.hidden
 				}),
 			enableSorting: false
@@ -84,27 +85,27 @@
 			header: m.familyName(),
 			cell: ({ getValue }) => capitalizeFirstLetter(getValue<string>()),
 			filter: { type: 'text' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'given_name',
 			header: m.givenName(),
 			cell: ({ getValue }) => capitalizeFirstLetter(getValue<string>()),
 			filter: { type: 'text' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'email',
 			header: m.email(),
 			filter: { type: 'text' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'phone',
 			header: m.phone(),
 			cell: ({ getValue }) => getValue<string | null>() ?? '—',
 			filter: { type: 'text' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'conferenceAge',
@@ -114,13 +115,12 @@
 				return age !== undefined ? String(age) : '—';
 			},
 			filter: { type: 'range' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'participationCount',
 			header: m.participationCount(),
-			filter: { type: 'range' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'city',
@@ -130,7 +130,7 @@
 				return v ? capitalizeFirstLetter(v) : '—';
 			},
 			filter: { type: 'text' },
-			enableSorting: true
+			enableSorting: false
 		},
 		{
 			accessorKey: 'school',
@@ -175,9 +175,10 @@
 	{rows}
 	onRowClick={(row) => openUserCard(row.userId)}
 	storageKey="waiting-list-columns-{params.conferenceId}"
-	initialSorting={[{ id: 'createdAt', desc: false }]}
-	pageSize={20}
-	searchColumns={['family_name', 'given_name', 'email']}
+	{tableState}
+	hasMore={page.hasMore}
+	rowCount={page.total}
+	{exportRows}
 >
 	{#snippet toolbar()}
 		<label class="no-print flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">

@@ -31,3 +31,19 @@ export function ofAgeAtConference(
 	const ageAtConference = getAgeAtConference(dateOfBirth, startConference);
 	return ageAtConference ? ageAtConference >= 18 : false;
 }
+
+/**
+ * The birthdays of people whose age on `startConference` lies within the range, as bounds for a
+ * date filter: at least `gte` years old means born on or before that many years earlier, at most
+ * `lte` means born after the day `lte + 1` years earlier.
+ */
+export function birthdayBoundsForAge(
+	range: { gte?: number; lte?: number },
+	startConference: Date | string
+): { lte?: Date; gt?: Date } {
+	const start = dayjs(startConference);
+	return {
+		...(range.gte === undefined ? {} : { lte: start.subtract(range.gte, 'year').toDate() }),
+		...(range.lte === undefined ? {} : { gt: start.subtract(range.lte + 1, 'year').toDate() })
+	};
+}

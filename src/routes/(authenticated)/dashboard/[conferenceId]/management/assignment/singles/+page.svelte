@@ -15,6 +15,7 @@
 	import { toastError } from '../toastError';
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
+	import VirtualList from 'svelte-virtual-list';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -54,7 +55,18 @@
 				: []
 		)
 	);
-	const holdersOf = (roleId: string) => view.singles.filter((single) => single.roleId === roleId);
+	/** None of the applicant's wishes is the role they hold, as `SingleCard` flags it. */
+	const isBadFit = (singleParticipantId: string, roleId: string) =>
+		!singleById.get(singleParticipantId)?.appliedForRoles.some((role) => role.id === roleId);
+	/** The holders of a role, those that did not wish for it first so misfits are seen at once. */
+	const holdersOf = (roleId: string) =>
+		view.singles
+			.filter((single) => single.roleId === roleId)
+			.toSorted(
+				(a, b) =>
+					Number(isBadFit(b.singleParticipantId, roleId)) -
+					Number(isBadFit(a.singleParticipantId, roleId))
+			);
 
 	function onDrop(dropState: DragDropState<{ id: string }>) {
 		dragging = false;
@@ -76,7 +88,7 @@
 		).catch(toastError);
 </script>
 
-{#snippet singleCard(single: (typeof view.singles)[number], container: string)}
+{#snippet singleCard(single: (typeof view.singles)[number], container: string, fluid = false)}
 	<SingleCard
 		singleParticipantId={single.singleParticipantId}
 		single={singleById.get(single.singleParticipantId)}
@@ -86,6 +98,7 @@
 		{container}
 		onDragChange={(isDragging) => (dragging = isDragging)}
 		conferenceId={params.conferenceId}
+		{fluid}
 	/>
 {/snippet}
 
@@ -105,15 +118,21 @@
 
 	<div class="flex flex-col gap-4 xl:flex-row">
 		<div class="flex flex-col gap-4 xl:w-96 xl:shrink-0">
-			<PoolSection container={POOL_CONTAINER} count={pool.length} {onDrop}>
-				{#each pool as single (single.singleParticipantId)}
-					{@render singleCard(single, POOL_CONTAINER)}
-				{/each}
+			<PoolSection container={POOL_CONTAINER} count={pool.length} virtual {onDrop}>
+				<!-- Only the rows in view are in the DOM; the pool can hold hundreds of applicants. -->
+				<VirtualList items={pool} height="max(16rem, calc(100vh - 36rem))" let:item={single}>
+					<div class="pb-2">
+						{@render singleCard(single, POOL_CONTAINER, true)}
+					</div>
+				</VirtualList>
 			</PoolSection>
 			<ConvertZone {converted} highlight={dragging} {onDrop} onRevert={revert} />
 		</div>
 
-		<section class="flex grow flex-wrap content-start gap-3" aria-label={m.assignmentRoles()}>
+		<section
+			class="grid grow grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] content-start items-start gap-3"
+			aria-label={m.assignmentRoles()}
+		>
 			{#each roles.customRoles as role (role.id)}
 				{@const holders = holdersOf(role.id)}
 				<RoleCard
@@ -125,9 +144,13 @@
 					highlight={dragging && holders.length < role.seatAmount}
 					{onDrop}
 				>
-					{#each holders as single (single.singleParticipantId)}
-						{@render singleCard(single, roleContainer(role.id))}
-					{/each}
+					{#snippet children(listHeight)}
+						<VirtualList items={holders} height={listHeight} let:item={single}>
+							<div class="pb-2">
+								{@render singleCard(single, roleContainer(role.id), true)}
+							</div>
+						</VirtualList>
+					{/snippet}
 				</RoleCard>
 			{:else}
 				<p class="text-base-content/60 w-full py-12 text-center">{m.assignmentNoCustomRoles()}</p>

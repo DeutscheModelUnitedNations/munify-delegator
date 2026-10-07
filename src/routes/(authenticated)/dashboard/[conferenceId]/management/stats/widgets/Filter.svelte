@@ -1,8 +1,24 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { unifiedFilter, type StatsFilterOption } from '../stats.svelte';
 
+	let { conferenceId }: { conferenceId: string } = $props();
+
 	let { getFilter, setFilter } = unifiedFilter();
+
+	// The figures come from materialized views the server recomputes every few minutes, so they
+	// lag behind the data; say by how much.
+	const stats = $derived(
+		await client.query.getConferenceStatistics({
+			__args: { conferenceId },
+			refreshedAt: true
+		})
+	);
+	const refreshedAt = $derived(
+		stats.refreshedAt?.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' })
+	);
 
 	const filterOptions: { value: StatsFilterOption; label: () => string }[] = [
 		{ value: 'all', label: () => m.statsFilterAll() },
@@ -29,5 +45,8 @@
 				</option>
 			{/each}
 		</select>
+		{#if refreshedAt}
+			<p class="text-xs text-base-content/60">{m.statsRefreshedAt({ time: refreshedAt })}</p>
+		{/if}
 	</div>
 </section>

@@ -2,7 +2,7 @@ import { config } from './config';
 import { db } from '$api/db/db';
 import { IncomingWebhook } from '@slack/webhook';
 import { logTaskEnd, logTaskStart, taskWarning } from './logs';
-import { conferenceStats } from '$api/services/statistics';
+import { refreshStatisticsViews, registrationReport } from '$api/services/statisticsData';
 import fs from 'fs';
 import { registerTask } from './registry';
 import { conferenceStatusBlocks } from './conferenceStatusMessage';
@@ -44,10 +44,11 @@ async function runConferenceStatus(): Promise<void> {
 		where: { state: 'PARTICIPANT_REGISTRATION', startAssignment: { gte: new Date() } }
 	});
 
+	// The app refreshes the statistics views every few minutes, but this process may run without it.
+	if (conferencesWithOpenRegistration.length > 0) await refreshStatisticsViews();
+
 	for (const conference of conferencesWithOpenRegistration) {
-		const { countdowns, registrationStatistics: rs } = await conferenceStats({
-			conferenceId: conference.id
-		});
+		const { countdowns, registrationStatistics: rs } = await registrationReport(conference);
 
 		// import historic stats from file
 		const hs: typeof rs | undefined = readHistoricStats(conference.id);
