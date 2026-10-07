@@ -57,29 +57,18 @@
 			</table>
 		</div>
 	</div>
-	<PlausibilityDetails
-		headline={m.plausibilityTooYoung()}
-		items={plausibility.tooYoungUsers}
-		conferenceId={params.conferenceId}
-	/>
-	<PlausibilityDetails
-		headline={m.plausibilityTooOld()}
-		items={plausibility.tooOldUsers}
-		conferenceId={params.conferenceId}
-	/>
+	<PlausibilityDetails headline={m.plausibilityTooYoung()} items={plausibility.tooYoungUsers} />
+	<PlausibilityDetails headline={m.plausibilityTooOld()} items={plausibility.tooOldUsers} />
 	<PlausibilityDetails
 		headline={m.plausibilityShouldBeSupervisor()}
 		items={plausibility.shouldBeSupervisor}
-		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldNotBeSupervisor()}
 		items={plausibility.shouldNotBeSupervisor}
-		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityIncompleteOrInvalidData()}
 		items={plausibility.dataMissing}
-		conferenceId={params.conferenceId}
 	/>
 </div>

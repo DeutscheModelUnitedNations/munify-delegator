@@ -4,8 +4,10 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
-	import type { TableColumns } from 'svelte-table';
-	import DataTable from '$lib/components/dataTable/DataTable.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import RepresentationBadge from './RepresentationBadge.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -85,38 +87,33 @@
 		});
 
 	// TODO fetch user name from backend
-	const columns: TableColumns<NonNullable<typeof presentUsers>[number]> = [
+	const columns: ManagedColumn<NonNullable<typeof presentUsers>[number]>[] = [
 		{
-			key: 'email',
-			title: m.email(),
-			value: (row) => row.email ?? 'N/A'
+			id: 'email',
+			header: m.email(),
+			accessorFn: (row) => row.email ?? 'N/A'
 		},
 		{
-			key: 'role',
-			title: m.role(),
-			parseHTML: true,
-			value: (row) => row.representation.alpha3Code ?? row.representation.name ?? 'N/A',
-			renderValue: (row) =>
-				row.representation.type === 'DELEGATION'
-					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.representation.alpha2Code}"><span class="fi fi-${row.representation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
-					: row.representation.type === 'NSA' &&
-						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.representation.name}"><span class="fas fa-${row.representation?.faIcon?.replace('fa-', '')}"></span></div>`,
-			sortable: true,
-			class: 'text-center'
+			id: 'role',
+			header: m.role(),
+			accessorFn: (row) => row.representation.alpha3Code ?? row.representation.name ?? 'N/A',
+			cell: ({ row }) =>
+				renderComponent(RepresentationBadge, { representation: row.original.representation })
 		},
 		{
-			key: 'committee',
-			title: m.committee(),
-			value: (row) => committees.find((c) => c.id === row.committeeId)?.name ?? 'N/A'
+			id: 'committee',
+			header: m.committee(),
+			accessorFn: (row) => committees.find((c) => c.id === row.committeeId)?.name ?? 'N/A'
 		},
 		{
-			key: 'attendancePercentage',
-			title: m.attendancePercentage(),
-			value: (row) => row.attendancePercentage,
-			renderValue: (row) => `${Math.floor(row.attendancePercentage)}%`,
-			sortable: true
+			id: 'attendancePercentage',
+			header: m.attendancePercentage(),
+			accessorFn: (row) => row.attendancePercentage,
+			cell: ({ row }) => `${Math.floor(row.original.attendancePercentage)}%`
 		}
 	];
+
+	const columnClasses = { role: 'text-center' };
 
 	async function applyPresent() {
 		loading = true;
@@ -205,12 +202,12 @@
 			<h2 class="mt-4 text-2xl font-bold">
 				{m.present()}: {presentUsers.length}
 			</h2>
-			<DataTable
+			<ManagedTable
 				{columns}
 				rows={presentUsers}
-				enableSearch={true}
-				tableClass="max-h-80"
-				rowSelected={selectUser}
+				{columnClasses}
+				onRowClick={selectUser}
+				queryParamKey="presentFilter"
 			/>
 			<button class="btn btn-primary" onclick={applyPresent}>
 				{#if loading}
@@ -224,12 +221,12 @@
 			<h2 class="mt-2 text-2xl font-bold">
 				{m.absent()}: {absentUsers.length}
 			</h2>
-			<DataTable
+			<ManagedTable
 				{columns}
 				rows={absentUsers}
-				enableSearch={true}
-				tableClass="max-h-80"
-				rowSelected={selectUser}
+				{columnClasses}
+				onRowClick={selectUser}
+				queryParamKey="absentFilter"
 			/>
 			<button class="btn btn-primary" onclick={applyAbsent}>
 				{#if loading}

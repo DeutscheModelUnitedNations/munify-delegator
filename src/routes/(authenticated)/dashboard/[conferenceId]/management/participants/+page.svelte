@@ -1,7 +1,8 @@
 <script lang="ts">
 	import {
 		createTable,
-		columnCanGlobalFilter,
+		createFuzzySearch,
+		rowSearchText,
 		type SortingState,
 		type PaginationState,
 		type ColumnFiltersState,
@@ -41,11 +42,18 @@
 	const columns = createColumnDefs();
 
 	// --- State ---
-	let sorting = $state<SortingState>([{ id: 'family_name', desc: false }]);
+	const defaultSorting: SortingState = [{ id: 'family_name', desc: false }];
+	// Searching shows the best match first, so it replaces the sorting until one is chosen again
+	let sorting = $state<SortingState>(defaultSorting);
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 20 });
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let columnVisibility = $state<ColumnVisibilityState>({});
 	let globalFilter = $state('');
+
+	const searchParticipants = $derived(
+		createFuzzySearch(participants, (row, index) => rowSearchText(columns, row, index))
+	);
+	const searchedParticipants = $derived(searchParticipants(globalFilter));
 
 	let filterDrawerOpen = $state(false);
 	let columnConfigDrawerOpen = $state(false);
@@ -57,6 +65,7 @@
 	$effect(() => {
 		if (params.search) {
 			globalFilter = params.search;
+			sorting = [];
 		}
 	});
 
@@ -100,6 +109,7 @@
 
 	function handleGlobalFilterChange(value: string) {
 		globalFilter = value;
+		sorting = value.trim() ? [] : defaultSorting;
 		params.search = value || null;
 		pagination = { ...pagination, pageIndex: 0 };
 	}
@@ -117,7 +127,7 @@
 	const table = createTable({
 		features: participantTableFeatures,
 		get data() {
-			return participants;
+			return [...searchedParticipants];
 		},
 		columns,
 		state: {
@@ -132,9 +142,6 @@
 			},
 			get columnVisibility() {
 				return columnVisibility;
-			},
-			get globalFilter() {
-				return globalFilter;
 			}
 		},
 		onSortingChange: (updater) => {
@@ -150,16 +157,11 @@
 		onColumnVisibilityChange: (updater) => {
 			const newState = typeof updater === 'function' ? updater(columnVisibility) : updater;
 			handleVisibilityChange(newState);
-		},
-		onGlobalFilterChange: (updater) => {
-			globalFilter = typeof updater === 'function' ? updater(globalFilter) : updater;
-		},
-		globalFilterFn: 'includesString',
-		getColumnCanGlobalFilter: columnCanGlobalFilter
+		}
 	});
 
 	function handleRowClick(row: ParticipantRow) {
-		openUserCard(row.userId, conferenceId);
+		openUserCard(row.userId);
 	}
 
 	function handleExport() {

@@ -170,7 +170,7 @@
 	function selectItem(item: ResultItem) {
 		closeCommandPalette();
 		const target = resultTarget(item, conferenceId);
-		if ('userId' in target) openUserCard(target.userId, conferenceId);
+		if ('userId' in target) openUserCard(target.userId);
 		else goto(target.href);
 	}
 

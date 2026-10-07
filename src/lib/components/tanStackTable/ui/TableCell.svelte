@@ -9,6 +9,6 @@
 	let { children, class: className = '', ...rest }: Props = $props();
 </script>
 
-<td class={className} {...rest}>
+<td class="max-w-[24ch] truncate {className}" {...rest}>
 	{@render children()}
 </td>

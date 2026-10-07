@@ -56,7 +56,7 @@
 	{:else if tab === 'supervisors' && showSupervisors}
 		<SupervisorsTab {userId} {conferenceId} />
 	{:else if tab === 'supervisor' && supervisorId}
-		<SupervisorTab {supervisorId} {conferenceId} />
+		<SupervisorTab {supervisorId} />
 	{:else if tab === 'history'}
 		<HistoryTab {userId} {conferenceId} />
 	{/if}

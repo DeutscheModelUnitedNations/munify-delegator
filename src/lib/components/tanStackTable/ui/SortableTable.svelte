@@ -28,11 +28,21 @@
 	 */
 	interface Props {
 		table: Table<TFeatures, TData>;
-		onRowClick: (row: TData) => void;
+		onRowClick?: (row: TData) => void;
+		/** Highlights the rows it returns true for. */
+		isRowSelected?: (row: TData) => boolean;
+		/** Extra classes for a column's header and cells, by column id. */
+		columnClasses?: Record<string, string>;
 		class?: string;
 	}
 
-	let { table, onRowClick, class: className = 'table-zebra table-sm' }: Props = $props();
+	let {
+		table,
+		onRowClick,
+		isRowSelected,
+		columnClasses = {},
+		class: className = 'table-zebra table-sm'
+	}: Props = $props();
 </script>
 
 {#snippet sortIndicator(sorted: false | 'asc' | 'desc', canSort: boolean)}
@@ -52,7 +62,7 @@
 				{#each headerGroup.headers as header (header.id)}
 					{@const canSort = column_getCanSort(header.column)}
 					{@const sorted = column_getIsSorted(header.column)}
-					<TableHead>
+					<TableHead class={columnClasses[header.column.id]}>
 						{#if !header.isPlaceholder}
 							<button
 								class="flex items-center gap-2"
@@ -70,9 +80,9 @@
 	</TableHeader>
 	<TableBody>
 		{#each table.getRowModel().rows as row (row.id)}
-			<TableRow onclick={() => onRowClick(row.original)}>
+			<TableRow selected={isRowSelected?.(row.original)} onclick={() => onRowClick?.(row.original)}>
 				{#each row_getVisibleCells(row) as cell (cell.id)}
-					<TableCell>
+					<TableCell class={columnClasses[cell.column.id]}>
 						<FlexRender {cell} />
 					</TableCell>
 				{/each}

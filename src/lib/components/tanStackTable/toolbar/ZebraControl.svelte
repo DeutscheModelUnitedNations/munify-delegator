@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getTableSettings } from './dataTableSettings.svelte';
+	import { getTableSettings } from './tableSettings.svelte';
 
 	const { getZebra, setZebra } = getTableSettings();
 </script>

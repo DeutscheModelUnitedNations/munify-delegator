@@ -237,7 +237,7 @@
 							{member.assignedCommittee?.abbreviation ?? 'N/A'}
 						</td>
 						<td>
-							<OpenUserCardButton user={member.user} {conferenceId} />
+							<OpenUserCardButton user={member.user} />
 						</td>
 					</tr>
 				{/each}

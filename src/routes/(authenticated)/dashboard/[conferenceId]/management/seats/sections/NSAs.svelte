@@ -88,7 +88,6 @@
 									given_name={member.user.givenName}
 									family_name={member.user.familyName}
 									userId={member.user.id}
-									{conferenceId}
 								/>
 							{/each}
 							{#if delegation.members.length < nsa.seatAmount}

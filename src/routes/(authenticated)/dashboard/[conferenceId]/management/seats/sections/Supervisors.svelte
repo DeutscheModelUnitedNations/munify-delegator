@@ -64,7 +64,6 @@
 								given_name={supervisor.user.givenName}
 								family_name={supervisor.user.familyName}
 								userId={supervisor.user.id}
-								{conferenceId}
 							/>
 						{/each}
 

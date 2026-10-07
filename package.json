@@ -142,7 +142,6 @@
 		"svelte-inspect-value": "^0.11.3",
 		"svelte-persisted-store": "^0.12.0",
 		"svelte-sonner": "^1.2.1",
-		"svelte-table": "^0.6.5",
 		"svelte-tiptap": "^3.0.2",
 		"sveltekit-breadcrumbs": "^0.0.9",
 		"sveltekit-search-params": "^4.0.0",

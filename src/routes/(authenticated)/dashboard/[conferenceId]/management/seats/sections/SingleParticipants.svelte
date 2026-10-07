@@ -72,7 +72,6 @@
 								given_name={participant.user.givenName}
 								family_name={participant.user.familyName}
 								userId={participant.user.id}
-								{conferenceId}
 							/>
 						{/each}
 						<AddParticipantBtn

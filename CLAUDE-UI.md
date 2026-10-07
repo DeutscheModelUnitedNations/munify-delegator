@@ -16,7 +16,7 @@ This document provides guidance for building consistent user interfaces in MUNif
 Components are located in `src/lib/components/`.
 
 **Naming convention**: directories are `camelCase`, component files are `PascalCase`
-(e.g. `dataTable/DataTable.svelte`). This matches munify-chase.
+(e.g. `tanStackTable/ui/ManagedTable.svelte`). This matches munify-chase.
 
 Key directories:
 
@@ -772,44 +772,49 @@ Shows an open/closed badge with the deadline formatted in the conference timezon
 
 ## Data Display
 
-### DataTable
+### ManagedTable
 
-Searchable, sortable table with optional row expansion:
+The table of the management pages, built on TanStack Table
+(`$lib/components/tanStackTable/ui/ManagedTable.svelte`): sortable, paginated, with a search box
+kept in the URL (`?filter=`), an export button and the size / zebra settings. Columns are
+`ManagedColumn<Row>` definitions; the accessor is what gets sorted and searched (every term must
+occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 
 ```svelte
 <script lang="ts">
-	import DataTable from '$lib/components/dataTable/DataTable.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import BadgeCell from '$lib/components/tanStackTable/cells/BadgeCell.svelte';
 
-	const columns = [
-		{ key: 'name', title: 'Name', value: (row) => row.name, sortable: true },
-		{ key: 'email', title: 'Email', value: (row) => row.email }
+	const columns: ManagedColumn<Row>[] = [
+		{ id: 'name', header: 'Name', accessorFn: (row) => row.name },
+		{
+			id: 'role',
+			header: 'Role',
+			accessorFn: (row) => row.role,
+			cell: ({ row }) => renderComponent(BadgeCell, { label: row.original.role })
+		}
 	];
 </script>
 
-<DataTable
+<ManagedTable
 	{columns}
 	rows={data}
-	enableSearch={true}
-	sortBy="name"
-	rowSelected={(row) => handleRowClick(row)}
+	columnClasses={{ role: 'text-center' }}
+	onRowClick={(row) => handleRowClick(row)}
+	isRowSelected={(row) => row.id === selectedId}
 />
 ```
 
-With expandable rows:
+Cells are Svelte components under `tanStackTable/cells/` (`BadgeCell`, `IconCell`, `IconListCell`,
+`AssignmentBadge`, …), never HTML strings. A cell text longer than 24ch is truncated. The first
+column has to be an accessor column. `tanStackTable/commonColumns.ts` holds the person-table
+columns `nameColumn()`, `appliedColumn()` and `userCardColumn()`; `RegistrationAdminTable` adds the
+row-opens-a-drawer behaviour on top.
 
-```svelte
-<DataTable {columns} rows={data} showExpandIcon={true}>
-	{#snippet expandedRowContent(row)}
-		<div class="p-4">
-			<p>Expanded content for {row.name}</p>
-		</div>
-	{/snippet}
-</DataTable>
-```
-
-Columns every person table repeats live in `dataTable/commonColumns.ts`: `nameColumn()`,
-`appliedColumn()` and `userCardColumn()`. The last renders a button as an HTML string, so the
-table has to sit in `RegistrationAdminTable`, which picks up its clicks.
+Pages with their own filters or column configuration (the participants table, the waiting list)
+use `SortableTable` and `createTable` directly.
 
 ### CollapsibleCard
 

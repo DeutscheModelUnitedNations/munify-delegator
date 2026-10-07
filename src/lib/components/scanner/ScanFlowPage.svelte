@@ -11,7 +11,6 @@
 
 	interface Props {
 		flow: ScannedUserFlow<S>;
-		conferenceId: string;
 		/** Page heading */
 		title: string;
 		/** Explanation under the heading */
@@ -37,7 +36,6 @@
 
 	let {
 		flow,
-		conferenceId,
 		title,
 		description,
 		header,
@@ -111,7 +109,7 @@
 		<button
 			class="btn btn-soft btn-sm"
 			onclick={() => {
-				if (flow.queryUserId) openUserCard(flow.queryUserId, conferenceId);
+				if (flow.queryUserId) openUserCard(flow.queryUserId);
 			}}
 			aria-label={m.details()}
 		>

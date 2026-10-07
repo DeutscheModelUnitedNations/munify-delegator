@@ -292,7 +292,7 @@
 		<div class="truncate text-sm opacity-60">{user.id}</div>
 		<button
 			class="btn btn-soft btn-sm ml-auto"
-			onclick={() => openUserCard(user.id, routeParams.conferenceId)}
+			onclick={() => openUserCard(user.id)}
 			aria-label="Details for {name}"
 		>
 			<i class="fa-duotone fa-id-card"></i>

@@ -91,7 +91,7 @@
 								{/if}
 							</td>
 							<td>
-								<OpenUserCardButton user={sup.user} {conferenceId} />
+								<OpenUserCardButton user={sup.user} />
 							</td>
 						</tr>
 					{/each}

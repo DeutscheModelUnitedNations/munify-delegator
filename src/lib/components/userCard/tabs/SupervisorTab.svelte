@@ -11,10 +11,9 @@
 
 	interface Props {
 		supervisorId: string;
-		conferenceId: string;
 	}
 
-	let { supervisorId, conferenceId }: Props = $props();
+	let { supervisorId }: Props = $props();
 
 	const studentSelection = { id: true, givenName: true, familyName: true } as const;
 
@@ -202,7 +201,7 @@
 				{member.assignedCommittee?.abbreviation ?? ''}
 			</td>
 			<td>
-				<OpenUserCardButton user={member.user} {conferenceId} />
+				<OpenUserCardButton user={member.user} />
 			</td>
 		</tr>
 	{/each}
@@ -232,7 +231,7 @@
 					<td>{participant.school ?? 'N/A'}</td>
 					<td>{participant.assignedRole?.name ?? 'N/A'}</td>
 					<td>
-						<OpenUserCardButton user={participant.user} {conferenceId} />
+						<OpenUserCardButton user={participant.user} />
 					</td>
 				</tr>
 			{/each}

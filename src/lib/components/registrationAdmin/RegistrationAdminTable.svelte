@@ -1,20 +1,18 @@
 <script lang="ts" generics="T extends { id: string }">
 	import type { Snippet } from 'svelte';
-	import type { TableColumns } from 'svelte-table';
 	import { queryParameters } from 'sveltekit-search-params';
-	import DataTable from '$lib/components/dataTable/DataTable.svelte';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	/**
-	 * A management table whose rows open a drawer, kept in the `selected` URL parameter. Buttons
-	 * rendered by `userCardColumn` open the person's user card.
+	 * A management table whose rows open a drawer, kept in the `selected` URL parameter.
 	 */
 	interface Props {
-		conferenceId: string;
-		columns: TableColumns<T>;
+		columns: ManagedColumn<T>[];
 		rows: T[];
-		additionallyIndexedKeys?: string[];
+		/** Extra classes for a column's header and cells, by column id */
+		columnClasses?: Record<string, string>;
 		/** Category of the placeholder drawer shown while the real one loads */
 		category: string;
 		/** Id and title the placeholder drawer can already show */
@@ -23,44 +21,23 @@
 		drawer: Snippet<[selectedId: string, close: () => void]>;
 	}
 
-	let {
-		conferenceId,
-		columns,
-		rows,
-		additionallyIndexedKeys,
-		category,
-		pendingHeader,
-		drawer
-	}: Props = $props();
+	let { columns, rows, columnClasses, category, pendingHeader, drawer }: Props = $props();
 
 	const params = queryParameters({ selected: true });
 
 	const close = () => (params.selected = null);
-
-	function openUserCardFromTable(e: MouseEvent) {
-		const btn = e.target instanceof Element ? e.target.closest('.usercard-btn') : null;
-		if (btn) {
-			e.stopPropagation();
-			const userId = btn.getAttribute('data-userid');
-			if (userId) openUserCard(userId, conferenceId);
-		}
-	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div onclick={openUserCardFromTable}>
-	<DataTable
-		{columns}
-		{rows}
-		enableSearch={true}
-		{additionallyIndexedKeys}
-		queryParamKey="filter"
-		rowSelected={(row) => {
-			params.selected = row.id;
-		}}
-	/>
-</div>
+<ManagedTable
+	{columns}
+	{rows}
+	{columnClasses}
+	queryParamKey="filter"
+	onRowClick={(row) => {
+		params.selected = row.id;
+	}}
+	isRowSelected={(row) => row.id === params.selected}
+/>
 
 {#if params.selected}
 	{@const selectedId = params.selected}

@@ -1,11 +1,11 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
-	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
-	import { appliedColumn } from '$lib/components/dataTable/commonColumns';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import { appliedColumn } from '$lib/components/tanStackTable/commonColumns';
+	import AssignmentBadge from '$lib/components/tanStackTable/cells/AssignmentBadge.svelte';
 	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -42,65 +42,68 @@
 		}))
 	);
 
-	const { getTableSize } = getTableSettings();
-
-	const columns: TableColumns<(typeof delegations)[number]> = [
+	const columns: ManagedColumn<(typeof delegations)[number]>[] = [
 		{
-			key: 'codename',
-			title: 'Codename',
-			value: (row) => codenmz(row.id)
+			id: 'codename',
+			header: 'Codename',
+			accessorFn: (row) => codenmz(row.id)
 		},
 		{
-			key: 'entryCode',
-			title: 'Entry Code',
-			value: (row) => row.entryCode,
-			class: 'font-mono'
+			id: 'entryCode',
+			header: 'Entry Code',
+			accessorFn: (row) => row.entryCode,
+			cell: ({ getValue }) => getValue<string>()
 		},
-		appliedColumn(getTableSize),
+		appliedColumn(),
 		{
-			key: 'role',
-			title: m.role(),
-			parseHTML: true,
-			value: assignedRoleName,
-			renderValue: (row) =>
-				row.assignedNation
-					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNation.name}"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
-					: row.assignedNonStateActor &&
-						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNonStateActor.name}"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
-			sortable: true,
-			class: 'text-center'
-		},
-		{
-			key: 'school',
-			title: m.schoolOrInstitution(),
-			value: (row) => row.school ?? 'N/A',
-			sortable: true,
-			class: 'max-w-[30ch] truncate'
+			id: 'role',
+			header: m.role(),
+			accessorFn: assignedRoleName,
+			cell: ({ row }) =>
+				row.original.assignedNation
+					? renderComponent(AssignmentBadge, {
+							tooltip: row.original.assignedNation.name,
+							flagCode: row.original.assignedNation.alpha2Code
+						})
+					: row.original.assignedNonStateActor
+						? renderComponent(AssignmentBadge, {
+								tooltip: row.original.assignedNonStateActor.name,
+								icon: row.original.assignedNonStateActor.fontAwesomeIcon
+							})
+						: ''
 		},
 		{
-			key: 'members',
-			title: m.members(),
-			value: (row) => row.members.length,
-			sortable: true,
-			class: 'text-center'
+			id: 'school',
+			header: m.schoolOrInstitution(),
+			accessorFn: (row) => row.school ?? 'N/A'
 		},
 		{
-			key: 'appliedForRoles',
-			title: m.roleApplications(),
-			value: (row) => row.appliedForRoles.length,
-			sortable: true,
-			class: 'text-center'
+			id: 'members',
+			header: m.members(),
+			accessorFn: (row) => row.members.length
+		},
+		{
+			id: 'appliedForRoles',
+			header: m.roleApplications(),
+			accessorFn: (row) => row.appliedForRoles.length
 		}
 	];
+
+	const columnClasses = {
+		entryCode: 'font-mono',
+		applied: 'text-center',
+		role: 'text-center',
+		members: 'text-center',
+		appliedForRoles: 'text-center'
+	};
 
 	// TODO export data
 </script>
 
 <RegistrationAdminTable
-	conferenceId={routeParams.conferenceId}
 	{columns}
+	{columnClasses}
 	rows={delegations}
-	additionallyIndexedKeys={['assignedNation.name']}
 	category={m.delegation()}
 	pendingHeader={(selectedId) => ({ id: selectedId, title: codenmz(selectedId) })}
 >

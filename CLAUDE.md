@@ -497,7 +497,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - Form components and `FormFieldset` grouping patterns
 - Modal and Drawer usage
 - Dashboard section layouts
-- DataTable configuration
+- ManagedTable configuration
 - Navigation components (Tabs, NavMenu)
 - Status indicators and badges
 - Color theming and icons
@@ -665,6 +665,7 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 | **sequential-thinking** | `@modelcontextprotocol/server-sequential-thinking` | Complex problem-solving through structured thinking        |
 | **drizzle-github**      | `gitmcp.io/drizzle-team/drizzle-orm`               | Drizzle ORM documentation                                  |
 | **rumble-github**       | `gitmcp.io/m1212e/rumble`                          | rumble source, the API layer this app is built on          |
+| **fallow**              | `fallow-mcp` (local devDependency)                 | Dead code, cycles, duplication and complexity analysis     |
 
 ### Setup Requirements
 

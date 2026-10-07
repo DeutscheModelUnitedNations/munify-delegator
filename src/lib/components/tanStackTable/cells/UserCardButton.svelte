@@ -9,9 +9,12 @@
 </script>
 
 <button
-	class="btn btn-ghost btn-sm btn-square"
-	onclick={() => openUserCard(userId)}
-	aria-label="Details"
+	class="btn btn-ghost btn-xs btn-square print:hidden"
+	aria-label="Open user card"
+	onclick={(e) => {
+		e.stopPropagation();
+		openUserCard(userId);
+	}}
 >
 	<i class="fa-duotone fa-id-card"></i>
 </button>

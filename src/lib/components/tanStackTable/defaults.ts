@@ -42,17 +42,3 @@ export const autoSortFns = {
 	datetime: sortFn_datetime,
 	basic: sortFn_basic
 };
-
-/**
- * v8's default for `getColumnCanGlobalFilter`: only columns whose first row
- * holds a string or a number take part in the global search. v9 has no
- * default and would search every accessor column (booleans, dates, …).
- */
-export function columnCanGlobalFilter<
-	TFeatures extends TableFeatures,
-	TData extends RowData,
-	TValue extends CellData = CellData
->(column: Column<TFeatures, TData, TValue>): boolean {
-	const value = column.table.getCoreRowModel().flatRows[0]?.getValue(column.id);
-	return typeof value === 'string' || typeof value === 'number';
-}

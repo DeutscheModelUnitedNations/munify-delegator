@@ -1,15 +1,16 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
-	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import {
 		appliedColumn,
 		nameColumn,
 		userCardColumn
-	} from '$lib/components/dataTable/commonColumns';
+	} from '$lib/components/tanStackTable/commonColumns';
+	import IconCell from '$lib/components/tanStackTable/cells/IconCell.svelte';
+	import IconListCell from '$lib/components/tanStackTable/cells/IconListCell.svelte';
 	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
 	import type { PageProps } from './$types';
@@ -29,69 +30,63 @@
 			user: { id: true, familyName: true, givenName: true }
 		})
 	);
-	const { getTableSize } = getTableSettings();
-
-	const columns: TableColumns<(typeof singleParticipants)[number]> = [
+	const columns: ManagedColumn<(typeof singleParticipants)[number]>[] = [
 		nameColumn(),
-		appliedColumn(getTableSize),
+		appliedColumn(),
 		{
-			key: 'roleApplications',
-			title: m.roleApplications(),
-			renderValue: (row) => {
-				if (row.appliedForRoles.length === 0) return 'N/A';
-				return `
-				<div class="flex flex gap-2 justify-center items-center">
-				${row.appliedForRoles
-					.map(
-						(r) => `
-						<div class="tooltip" data-tip="${r.name}">
-						<i class="fa-duotone fa-${r.fontAwesomeIcon?.replace('fa-', '')} text-${getTableSize()}"></i>
-						</div>
-				`
-					)
-					.join('')}</div>`;
-			},
-			parseHTML: true,
-			class: 'text-center'
+			id: 'roleApplications',
+			header: m.roleApplications(),
+			accessorFn: (row) => row.appliedForRoles.map((r) => r.name).join(' '),
+			cell: ({ row }) =>
+				row.original.appliedForRoles.length === 0
+					? 'N/A'
+					: renderComponent(IconListCell, {
+							items: row.original.appliedForRoles.map((r) => ({
+								icon: `fa-duotone fa-${r.fontAwesomeIcon?.replace('fa-', '')}`,
+								tooltip: r.name
+							}))
+						})
 		},
 		{
-			key: 'role',
-			title: m.role(),
-			parseHTML: true,
-			renderValue: (row) => `
-						<div class="tooltip" data-tip="${row?.assignedRole?.name}">
-						<i class="fa-duotone fa-${row?.assignedRole?.fontAwesomeIcon?.replace('fa-', '')} text-${getTableSize()}"></i>
-						</div>
-				`
+			id: 'role',
+			header: m.role(),
+			accessorFn: (row) => row.assignedRole?.name ?? '',
+			cell: ({ row }) =>
+				row.original.assignedRole
+					? renderComponent(IconCell, {
+							icon: `fa-duotone fa-${row.original.assignedRole.fontAwesomeIcon?.replace('fa-', '')}`,
+							tooltip: row.original.assignedRole.name
+						})
+					: ''
 		},
 		{
-			key: 'school',
-			title: m.schoolOrInstitution(),
-			value: (row) => row.school ?? 'N/A',
-			sortable: true,
-			class: 'max-w-[30ch] truncate'
+			id: 'school',
+			header: m.schoolOrInstitution(),
+			accessorFn: (row) => row.school ?? 'N/A'
 		},
 		{
-			key: 'motivation',
-			title: m.motivation(),
-			value: (row) => row.motivation ?? 'N/A',
-			class: 'max-w-[20ch] truncate'
+			id: 'motivation',
+			header: m.motivation(),
+			accessorFn: (row) => row.motivation ?? 'N/A',
+			enableSorting: false
 		},
 		{
-			key: 'experience',
-			title: m.experience(),
-			value: (row) => row.experience ?? 'N/A',
-			class: 'max-w-[20ch] truncate'
+			id: 'experience',
+			header: m.experience(),
+			accessorFn: (row) => row.experience ?? 'N/A',
+			enableSorting: false
 		},
 		userCardColumn()
 	];
+
+	const columnClasses = { applied: 'text-center', roleApplications: 'text-center' };
 
 	// TODO export data
 </script>
 
 <RegistrationAdminTable
-	conferenceId={routeParams.conferenceId}
 	{columns}
+	{columnClasses}
 	rows={singleParticipants}
 	category={m.singleParticipant()}
 >

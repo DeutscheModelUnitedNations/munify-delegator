@@ -4,10 +4,9 @@
 	interface Props {
 		headline: string;
 		items: { id: string; givenName: string | null; familyName: string | null }[];
-		conferenceId: string;
 	}
 
-	let { headline, items, conferenceId }: Props = $props();
+	let { headline, items }: Props = $props();
 </script>
 
 {#if items.length > 0}
@@ -22,7 +21,7 @@
 							<td>
 								<button
 									class="btn btn-sm"
-									onclick={() => openUserCard(user.id, conferenceId)}
+									onclick={() => openUserCard(user.id)}
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-id-card"></i>

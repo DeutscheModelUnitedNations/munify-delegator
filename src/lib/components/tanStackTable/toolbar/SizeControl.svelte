@@ -1,22 +1,15 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { getTableSettings } from './dataTableSettings.svelte';
+	import { getTableSettings } from './tableSettings.svelte';
 
 	const { getTableSize, setTableSize } = getTableSettings();
 
+	const sizeSteps = ['xs', 'sm', 'md', 'lg'];
+	const defaultStep = 2;
+
 	const translateTableSize = (size: string) => {
-		switch (size) {
-			case 'xs':
-				return 0;
-			case 'sm':
-				return 1;
-			case 'md':
-				return 2;
-			case 'lg':
-				return 3;
-			default:
-				return 2;
-		}
+		const step = sizeSteps.indexOf(size);
+		return step === -1 ? defaultStep : step;
 	};
 </script>
 

@@ -150,7 +150,7 @@
 						{/if}
 					</td>
 					<td>
-						<UserCardButton userId={member.user.id} {conferenceId} />
+						<UserCardButton userId={member.user.id} />
 					</td>
 				</tr>
 			{/each}
@@ -183,7 +183,7 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<button class="btn" onclick={() => openUserCard(supervisor.user.id, conferenceId)}>
+		<button class="btn" onclick={() => openUserCard(supervisor.user.id)}>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-id-card"></i>
 		</button>

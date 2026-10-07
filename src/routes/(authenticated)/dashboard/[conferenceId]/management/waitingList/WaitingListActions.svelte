@@ -3,8 +3,8 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
 
 	interface Props {
 		entryId: string;
@@ -16,6 +16,7 @@
 	let { entryId, userId, conferenceId, hidden }: Props = $props();
 
 	let isMutating = $state(false);
+	let confirmingDelete = $state(false);
 
 	async function toggleHidden() {
 		if (isMutating) return;
@@ -36,7 +37,6 @@
 
 	async function deleteEntry() {
 		if (isMutating) return;
-		if (!confirm(m.areYouSure())) return;
 		isMutating = true;
 		const promise = Promise.resolve(
 			client.mutate.deleteWaitingListEntry({ __args: { id: entryId } })
@@ -48,21 +48,12 @@
 			// handled by toast
 		} finally {
 			isMutating = false;
+			confirmingDelete = false;
 		}
 	}
 </script>
 
 <div class="flex items-center gap-1">
-	<button
-		class="btn btn-ghost btn-xs"
-		title={m.adminUserCard()}
-		onclick={(e) => {
-			e.stopPropagation();
-			openUserCard(userId, conferenceId);
-		}}
-	>
-		<i class="fa-duotone fa-id-card"></i>
-	</button>
 	<a
 		class="btn btn-primary btn-xs"
 		href={resolve(`/dashboard/${conferenceId}/management/seats?assignUserId=${userId}`)}
@@ -90,9 +81,22 @@
 		title={m.deleteEntry()}
 		onclick={(e) => {
 			e.stopPropagation();
-			deleteEntry();
+			confirmingDelete = true;
 		}}
 	>
 		<i class="fa-duotone fa-trash"></i>
 	</button>
 </div>
+
+{#if confirmingDelete}
+	<!-- The modal sits inside the table row, so keep its clicks from opening the user card. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+	<div onclick={(e) => e.stopPropagation()}>
+		<ConfirmDeleteModal
+			title={m.deleteEntry()}
+			text={m.areYouSure()}
+			onConfirm={deleteEntry}
+			onClose={() => (confirmingDelete = false)}
+		/>
+	</div>
+{/if}

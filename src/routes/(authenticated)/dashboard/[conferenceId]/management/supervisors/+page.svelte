@@ -1,11 +1,11 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
-	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
-	import { nameColumn, userCardColumn } from '$lib/components/dataTable/commonColumns';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import { nameColumn, userCardColumn } from '$lib/components/tanStackTable/commonColumns';
+	import IconCell from '$lib/components/tanStackTable/cells/IconCell.svelte';
 	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import SupervisorDrawer from './SupervisorDrawer.svelte';
 	import type { PageProps } from './$types';
@@ -22,60 +22,48 @@
 			supervisedSingleParticipants: { id: true }
 		})
 	);
-	const { getTableSize } = getTableSettings();
-
-	const columns: TableColumns<(typeof supervisors)[number]> = [
+	const columns: ManagedColumn<(typeof supervisors)[number]>[] = [
 		nameColumn(),
 		{
-			key: 'plansAttendance',
-			title: m.adminPlansAttendance(),
-			value: (row) => (row.plansOwnAttendenceAtConference ? 1 : 0),
-			renderValue: (row) =>
-				row.plansOwnAttendenceAtConference
-					? `<i class="fa-duotone fa-location-check text-${getTableSize()}"></i>`
-					: `<i class="fa-duotone fa-cloud text-${getTableSize()}"></i>`,
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'plansAttendance',
+			header: m.adminPlansAttendance(),
+			accessorFn: (row) => (row.plansOwnAttendenceAtConference ? 1 : 0),
+			cell: ({ row }) =>
+				renderComponent(IconCell, {
+					icon: row.original.plansOwnAttendenceAtConference
+						? 'fa-duotone fa-location-check'
+						: 'fa-duotone fa-cloud'
+				})
 		},
 		{
-			key: 'delegations',
-			title: m.delegationMembers(),
-			value: (row) => row.supervisedDelegationMembers.length,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'delegations',
+			header: m.delegationMembers(),
+			accessorFn: (row) => row.supervisedDelegationMembers.length
 		},
 		{
-			key: 'singleParticipants',
-			title: m.adminSingleParticipants(),
-			value: (row) => row.supervisedSingleParticipants.length,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'singleParticipants',
+			header: m.adminSingleParticipants(),
+			accessorFn: (row) => row.supervisedSingleParticipants.length
 		},
 		{
-			key: 'totalSupervisedParticipants',
-			title: m.participants(),
-			value: (row) =>
-				row.supervisedSingleParticipants.length + row.supervisedDelegationMembers.length,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'totalSupervisedParticipants',
+			header: m.participants(),
+			accessorFn: (row) =>
+				row.supervisedSingleParticipants.length + row.supervisedDelegationMembers.length
 		},
 		userCardColumn()
 	];
 
+	const columnClasses = Object.fromEntries(
+		['plansAttendance', 'delegations', 'singleParticipants', 'totalSupervisedParticipants'].map(
+			(id) => [id, 'text-center']
+		)
+	);
+
 	// TODO export data
 </script>
 
-<RegistrationAdminTable
-	conferenceId={routeParams.conferenceId}
-	{columns}
-	rows={supervisors}
-	category={m.supervisor()}
->
+<RegistrationAdminTable {columns} {columnClasses} rows={supervisors} category={m.supervisor()}>
 	{#snippet drawer(selectedId, close)}
 		<SupervisorDrawer
 			supervisorId={selectedId}

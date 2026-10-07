@@ -39,6 +39,8 @@ export const {
 	defaultLimit: 1000,
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
+	// Adds a trigram `search` argument to the list queries, ranked by `search_distance`.
+	search: { enabled: true },
 	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
 	// registers. Variables stay out of the spans: they regularly carry personal data.
 	otel: {

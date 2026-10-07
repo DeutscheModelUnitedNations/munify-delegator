@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { type TableColumns } from 'svelte-table';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import { toast } from 'svelte-sonner';
-	import DataTable from '$lib/components/dataTable/DataTable.svelte';
-	import CheckboxForTable from './CheckboxForTable.svelte';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
@@ -68,52 +67,46 @@
 		}
 	});
 
-	const columns: TableColumns<SchoolRow> = [
+	const columns: ManagedColumn<SchoolRow>[] = [
 		{
-			key: 'selected',
-			title: '',
-			value: (row) => (selectedSchools.includes(row.school) ? 1 : 0),
-			renderComponent: CheckboxForTable
+			id: 'school',
+			header: m.cleanupNormalizeSchoolsColumnSchool(),
+			accessorFn: (row) => row.school
 		},
 		{
-			key: 'school',
-			title: m.cleanupNormalizeSchoolsColumnSchool(),
-			value: (row) => row.school,
-			sortable: true
+			id: 'delegationCount',
+			header: m.cleanupNormalizeSchoolsColumnDelegations(),
+			accessorFn: (row) => row.delegationCount
 		},
 		{
-			key: 'delegationCount',
-			title: m.cleanupNormalizeSchoolsColumnDelegations(),
-			value: (row) => row.delegationCount,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'delegationMembers',
+			header: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
+			accessorFn: (row) => row.delegationMembers
 		},
 		{
-			key: 'delegationMembers',
-			title: m.cleanupNormalizeSchoolsColumnDelegationMembers(),
-			value: (row) => row.delegationMembers,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'singleParticipants',
+			header: m.singleParticipants(),
+			accessorFn: (row) => row.singleParticipants
 		},
 		{
-			key: 'singleParticipants',
-			title: m.singleParticipants(),
-			value: (row) => row.singleParticipants,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'sumParticipants',
-			title: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
-			value: (row) => row.sumParticipants,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
+			id: 'sumParticipants',
+			header: m.cleanupNormalizeSchoolsColumnTotalParticipants(),
+			accessorFn: (row) => row.sumParticipants
 		}
 	];
+
+	const columnClasses = Object.fromEntries(
+		['delegationCount', 'delegationMembers', 'singleParticipants', 'sumParticipants'].map((id) => [
+			id,
+			'text-center'
+		])
+	);
+
+	function toggleSchool(row: SchoolRow) {
+		selectedSchools = selectedSchools.includes(row.school)
+			? selectedSchools.filter((school) => school !== row.school)
+			: [...selectedSchools, row.school];
+	}
 
 	const handleNormalize = async () => {
 		if (selectedSchools.length < 1) {
@@ -168,13 +161,13 @@
 	</div>
 {:else if schools.length > 0}
 	<div class="mt-4">
-		<DataTable
+		<ManagedTable
 			{columns}
 			rows={schools}
-			selectOnClick
-			rowKey="school"
-			bind:selected={selectedSchools}
-			sortBy="school"
+			{columnClasses}
+			onRowClick={toggleSchool}
+			isRowSelected={(row) => selectedSchools.includes(row.school)}
+			initialSorting={[{ id: 'school', desc: false }]}
 		/>
 
 		<div class="my-4 flex flex-col gap-2">

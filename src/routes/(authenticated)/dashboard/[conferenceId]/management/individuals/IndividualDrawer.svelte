@@ -101,7 +101,7 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<button class="btn" onclick={() => openUserCard(singleParticipant.user.id, conferenceId)}>
+		<button class="btn" onclick={() => openUserCard(singleParticipant.user.id)}>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-id-card"></i>
 		</button>

@@ -1,26 +1,8 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import {
-		createTable,
-		renderComponent,
-		tableFeatures,
-		rowSortingFeature,
-		columnFilteringFeature,
-		globalFilteringFeature,
-		rowPaginationFeature,
-		columnVisibilityFeature,
-		createSortedRowModel,
-		createFilteredRowModel,
-		createPaginatedRowModel,
-		autoFilterFns,
-		autoSortFns,
-		columnCanGlobalFilter,
-		type ColumnDef,
-		type SortingState,
-		type PaginationState
-	} from '$lib/components/tanStackTable';
-	import { DataTable } from '$lib/components/tanStackTable/ui';
-	import SortableTable from '$lib/components/tanStackTable/ui/SortableTable.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -66,9 +48,6 @@
 	);
 
 	let filterHidden = $state(true);
-	let sorting = $state<SortingState>([{ id: 'createdAt', desc: false }]);
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 20 });
-	let globalFilter = $state('');
 
 	const startConference = $derived(conference?.startConference);
 	const visible = $derived(visibleEntries(waitingListEntries, filterHidden));
@@ -76,27 +55,12 @@
 		visible.map((entry) => toWaitingListRow(entry, startConference))
 	);
 
-	const totalCount = $derived(visible.length);
-
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
 		timeStyle: 'short'
 	});
 
-	const features = tableFeatures({
-		rowSortingFeature,
-		columnFilteringFeature,
-		globalFilteringFeature,
-		rowPaginationFeature,
-		columnVisibilityFeature,
-		sortedRowModel: createSortedRowModel(),
-		filteredRowModel: createFilteredRowModel(),
-		paginatedRowModel: createPaginatedRowModel(),
-		filterFns: autoFilterFns,
-		sortFns: autoSortFns
-	});
-
-	const columns: ColumnDef<typeof features, WaitingListRow>[] = [
+	const columns: ManagedColumn<WaitingListRow>[] = [
 		{
 			id: 'actions',
 			header: '',
@@ -195,91 +159,22 @@
 			enableSorting: true
 		}
 	];
-
-	const table = createTable({
-		features,
-		get data() {
-			return rows;
-		},
-		columns,
-		state: {
-			get sorting() {
-				return sorting;
-			},
-			get pagination() {
-				return pagination;
-			},
-			get globalFilter() {
-				return globalFilter;
-			}
-		},
-		onSortingChange: (updater) => {
-			sorting = typeof updater === 'function' ? updater(sorting) : updater;
-		},
-		onPaginationChange: (updater) => {
-			pagination = typeof updater === 'function' ? updater(pagination) : updater;
-		},
-		onGlobalFilterChange: (updater) => {
-			globalFilter = typeof updater === 'function' ? updater(globalFilter) : updater;
-		},
-		globalFilterFn: 'includesString',
-		getColumnCanGlobalFilter: columnCanGlobalFilter
-	});
-
-	function handleRowClick(row: WaitingListRow) {
-		openUserCard(row.userId, params.conferenceId);
-	}
-
-	function handleGlobalFilterChange(value: string) {
-		globalFilter = value;
-		pagination = { ...pagination, pageIndex: 0 };
-	}
 </script>
 
-<div class="flex h-full flex-col">
-	<div class="flex flex-wrap items-center gap-2 px-1 py-2">
-		<label class="input input-sm input-bordered flex items-center gap-2">
-			<i class="fa-duotone fa-magnifying-glass text-base-content/50"></i>
-			<input
-				type="text"
-				placeholder={m.search()}
-				class="grow"
-				value={globalFilter}
-				oninput={(e) => handleGlobalFilterChange(e.currentTarget.value)}
-			/>
-			{#if globalFilter}
-				<button
-					class="btn btn-circle btn-ghost btn-xs"
-					aria-label="Clear search"
-					onclick={() => handleGlobalFilterChange('')}
-				>
-					<i class="fa-duotone fa-xmark"></i>
-				</button>
-			{/if}
-		</label>
-
-		<div class="grow"></div>
-
-		<span class="text-base-content/60 text-sm">
-			{table.getFilteredRowModel().rows.length} / {totalCount}
-		</span>
-
-		<button
-			class="btn btn-ghost btn-sm"
-			onclick={() => {
-				filterHidden = !filterHidden;
-				pagination = { ...pagination, pageIndex: 0 };
-			}}
-		>
-			<i class="fa-duotone fa-eye-slash"></i>
-			{m.filterHiddenEntries()}
-			{#if filterHidden}
-				<span class="badge badge-primary badge-xs"></span>
-			{/if}
-		</button>
-	</div>
-
-	<SortableTable {table} onRowClick={handleRowClick} />
-
-	<DataTable.Pagination {table} />
+<div class="mb-2 flex justify-end">
+	<button class="btn btn-ghost btn-sm" onclick={() => (filterHidden = !filterHidden)}>
+		<i class="fa-duotone fa-eye-slash"></i>
+		{m.filterHiddenEntries()}
+		{#if filterHidden}
+			<span class="badge badge-primary badge-xs"></span>
+		{/if}
+	</button>
 </div>
+
+<ManagedTable
+	{columns}
+	{rows}
+	onRowClick={(row) => openUserCard(row.userId)}
+	initialSorting={[{ id: 'createdAt', desc: false }]}
+	pageSize={20}
+/>

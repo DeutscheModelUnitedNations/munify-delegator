@@ -100,7 +100,7 @@
 			{/if}
 		</td>
 		<td>
-			<UserCardButton userId={member.user.id} {conferenceId} />
+			<UserCardButton userId={member.user.id} />
 		</td>
 	</tr>
 {/snippet}

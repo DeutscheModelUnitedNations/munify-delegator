@@ -1,5 +1,6 @@
 export { renderComponent } from './renderHelpers';
-export { autoFilterFns, autoSortFns, columnCanGlobalFilter } from './defaults';
+export { autoFilterFns, autoSortFns } from './defaults';
+export { createFuzzySearch, rowSearchText } from './search';
 
 // Re-export the official Svelte 5 adapter and the table-core API it builds on
 export {

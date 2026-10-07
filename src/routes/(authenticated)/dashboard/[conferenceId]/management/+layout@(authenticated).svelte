@@ -5,7 +5,6 @@
 	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
-	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { canPlanSeats, isSeatPlanningOnly } from '$lib/helpers/managementAccess';
 	import { managementMembership } from './managementMembership';
@@ -141,6 +140,5 @@
 </div>
 
 {#if !seatPlanningOnly}
-	<UserCardDrawer conferenceId={params.conferenceId} />
 	<CommandPalette conferenceId={params.conferenceId} />
 {/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TableSizeControl from './DataTableSizeControl.svelte';
-	import ZebraControl from './DataTableZebraControl.svelte';
+	import TableSizeControl from './SizeControl.svelte';
+	import ZebraControl from './ZebraControl.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	let confirmDialogOpen = $state(false);

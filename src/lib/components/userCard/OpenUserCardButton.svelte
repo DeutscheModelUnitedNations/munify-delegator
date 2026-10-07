@@ -4,15 +4,14 @@
 
 	interface Props {
 		user: { id: string; givenName?: string | null; familyName?: string | null };
-		conferenceId: string;
 	}
 
-	let { user, conferenceId }: Props = $props();
+	let { user }: Props = $props();
 </script>
 
 <button
 	class="btn btn-ghost btn-xs btn-square"
-	onclick={() => openUserCard(user.id, conferenceId)}
+	onclick={() => openUserCard(user.id)}
 	title={formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 		givenNameFirst: true
 	})}

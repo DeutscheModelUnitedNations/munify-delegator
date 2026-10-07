@@ -7,7 +7,7 @@
 	let { children, params }: LayoutProps = $props();
 </script>
 
-<ConferenceSidebarLayout conferenceId={params.conferenceId}>
+<ConferenceSidebarLayout>
 	{#snippet nav()}
 		<NavMenuButton
 			href={`/dashboard/${params.conferenceId}/team-management/members`}

@@ -8,7 +8,6 @@
 		count: number;
 		limit?: number;
 		participants: { id: string; givenName: string | null; familyName: string | null }[];
-		conferenceId: string;
 		defaultExpanded?: boolean;
 	}
 
@@ -18,7 +17,6 @@
 		count,
 		limit = 0,
 		participants,
-		conferenceId,
 		defaultExpanded = false
 	}: Props = $props();
 </script>
@@ -41,10 +39,7 @@
 			<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4 gap-2 pt-2">
 				{#each participants as user (user.id)}
 					<p>
-						<button
-							class="hover:underline cursor-pointer"
-							onclick={() => openUserCard(user.id, conferenceId)}
-						>
+						<button class="hover:underline cursor-pointer" onclick={() => openUserCard(user.id)}>
 							{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						</button>
 					</p>

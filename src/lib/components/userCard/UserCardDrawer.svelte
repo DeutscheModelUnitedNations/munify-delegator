@@ -1,77 +1,79 @@
 <script lang="ts">
-	import { Drawer } from 'vaul-svelte';
+	import { Dialog } from 'bits-ui';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { m } from '$lib/paraglide/messages';
-	import { getUserCardState, closeUserCard, openUserCard } from './userCardState.svelte';
+	import {
+		createUserCardParams,
+		registerUserCardParams,
+		getUserCardState,
+		closeUserCard
+	} from './userCardState.svelte';
 	import UserCardContent from './UserCardContent.svelte';
-	import { queryParameters } from 'sveltekit-search-params';
 
-	interface Props {
-		conferenceId: string;
-	}
-
-	let { conferenceId }: Props = $props();
-
+	// Mounted once for the whole authenticated area. Whether it is open is read off the URL.
+	registerUserCardParams(createUserCardParams());
 	const cardState = getUserCardState();
-	const params = queryParameters({ userCard: true });
 
-	// Guard to prevent URL→State effect from re-opening during close.
-	// params.userCard is only cleared by the State -> URL effect below (and the URL
-	// itself only changes once goto() resolves), so it still holds the old value
-	// when closeUserCard() synchronously updates state.
-	let closing = $state(false);
-
-	// URL -> State sync: if page loads with ?userCard=xxx, open the drawer
+	// The URL loses the ids the instant the card closes. Keep the last ones rendered so the
+	// drawer keeps its content while the exit transition plays.
+	let shown = $state<{ userId: string; conferenceId: string } | null>(null);
 	$effect(() => {
-		if (params.userCard && !cardState.isOpen && !closing) {
-			openUserCard(params.userCard, conferenceId);
-		}
-	});
-
-	// State -> URL sync
-	$effect(() => {
-		if (cardState.isOpen && cardState.userId) {
-			params.userCard = cardState.userId;
-		} else if (!cardState.isOpen) {
-			params.userCard = null;
-		}
-	});
-
-	// Reset closing guard once the URL param has actually been cleared
-	$effect(() => {
-		if (closing && !params.userCard) {
-			closing = false;
+		if (cardState.userId && cardState.conferenceId) {
+			shown = { userId: cardState.userId, conferenceId: cardState.conferenceId };
 		}
 	});
 
 	const handleOpenChange = (open: boolean) => {
-		if (!open) {
-			closing = true;
-			closeUserCard();
-		}
+		if (!open) closeUserCard();
 	};
 </script>
 
-<Drawer.Root direction="bottom" open={cardState.isOpen} onOpenChange={handleOpenChange}>
-	<Drawer.Portal>
-		<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Drawer.Content
-			class="bg-base-100 fixed inset-x-0 max-w-7xl mx-auto bottom-0 z-50 flex h-[90vh] flex-col rounded-t-2xl shadow-2xl"
-		>
-			<div class="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-base-300"></div>
-			<Drawer.Close
-				class="btn btn-soft btn-sm btn-square absolute top-4 right-4 z-10"
-				aria-label="Close"
-			>
-				<i class="fa-solid fa-xmark"></i>
-			</Drawer.Close>
-			<Drawer.Title class="sr-only">{m.adminUserCard()}</Drawer.Title>
-			{#if cardState.userId && cardState.conferenceId}
-				<UserCardContent
-					userId={cardState.userId}
-					conferenceId={cardState.conferenceId}
-					mode="drawer"
-				/>
-			{/if}
-		</Drawer.Content>
-	</Drawer.Portal>
-</Drawer.Root>
+<!--
+	A bits-ui dialog with Svelte transitions rather than vaul: vaul only animates a close it runs
+	itself (its own close button), so overlay clicks and Escape unmounted the drawer instantly and
+	a controlled open prop gave it no enter animation either. forceMount hands the unmounting to
+	the `{#if}` below, which keeps the node alive until the out transition has finished.
+-->
+<Dialog.Root open={cardState.isOpen} onOpenChange={handleOpenChange}>
+	<Dialog.Portal>
+		<Dialog.Overlay forceMount>
+			{#snippet child({ props, open })}
+				{#if open}
+					<div
+						{...props}
+						class="fixed inset-0 z-40 bg-black/40"
+						transition:fade={{ duration: 200 }}
+					></div>
+				{/if}
+			{/snippet}
+		</Dialog.Overlay>
+		<Dialog.Content forceMount>
+			{#snippet child({ props, open })}
+				{#if open}
+					<div
+						{...props}
+						class="bg-base-100 fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[90vh] max-w-7xl flex-col rounded-t-2xl shadow-2xl outline-none"
+						transition:fly={{ y: '100%', duration: 300, easing: cubicOut }}
+					>
+						<div class="bg-base-300 mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full"></div>
+						<Dialog.Close
+							class="btn btn-soft btn-sm btn-square absolute top-4 right-4 z-10"
+							aria-label="Close"
+						>
+							<i class="fa-solid fa-xmark"></i>
+						</Dialog.Close>
+						<Dialog.Title class="sr-only">{m.adminUserCard()}</Dialog.Title>
+						{#if shown}
+							<UserCardContent
+								userId={shown.userId}
+								conferenceId={shown.conferenceId}
+								mode="drawer"
+							/>
+						{/if}
+					</div>
+				{/if}
+			{/snippet}
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>

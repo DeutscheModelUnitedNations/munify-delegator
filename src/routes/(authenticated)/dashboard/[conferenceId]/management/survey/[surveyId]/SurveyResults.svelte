@@ -145,7 +145,6 @@
 			count={option.countSurveyAnswers}
 			limit={option.upperLimit}
 			{participants}
-			{conferenceId}
 		/>
 	{/each}
 
@@ -153,7 +152,6 @@
 		title={m.notAssignedParticipants()}
 		count={notAnsweredParticipants.length}
 		participants={notAnsweredParticipants}
-		{conferenceId}
 	/>
 </div>
 

@@ -84,7 +84,6 @@
 
 <ScanFlowPage
 	{flow}
-	conferenceId={routeParams.conferenceId}
 	title={m.postalRegistration()}
 	barcodeFormats={['data_matrix']}
 	persistKey="useCameraForPostalRegistration"
