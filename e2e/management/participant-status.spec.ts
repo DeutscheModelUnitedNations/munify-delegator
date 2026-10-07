@@ -12,11 +12,10 @@ test('a team member can mark a participant payment status as done from the parti
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
 	});
 
-	const targetRow = page.locator('tr', { hasText: E2E_MGMT_TARGET_FAMILY_NAME });
-	await expect(targetRow).toBeVisible({ timeout: 15_000 });
-	await targetRow.click();
-
-	await page.getByRole('tab', { name: /status|dtatus/i }).click();
+	// A filter that narrows the table to one row opens that row's user card by itself.
+	const statusTab = page.getByRole('tab', { name: /status/i });
+	await expect(statusTab).toBeVisible({ timeout: 15_000 });
+	await statusTab.click();
 
 	const paymentDoneButton = page.locator('.card:has(.fa-money-bill) button[aria-label="DONE"]');
 	await expect(paymentDoneButton).toBeVisible({ timeout: 15_000 });

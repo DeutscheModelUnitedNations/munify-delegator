@@ -155,13 +155,20 @@ test('participant care cannot open the seat planning', async ({ page }) => {
 	expect(seat.errors?.length).toBeGreaterThan(0);
 });
 
+/** A committee's card on the configuration page, found by the heading that names it. */
+function committeeCard(page: Page, heading: string) {
+	return page
+		.getByRole('heading', { name: heading, exact: true })
+		.locator('xpath=ancestor::section[1]');
+}
+
 test('the project management adds and deletes a committee', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
 		startUrl: `${MANAGEMENT}/configuration?tab=committees`
 	});
 
 	// a committee with an assigned delegate cannot be deleted
-	const gvCard = page.locator('.card', { hasText: 'Generalversammlung (SPGV)' });
+	const gvCard = committeeCard(page, 'Generalversammlung (SPGV)');
 	await expect(gvCard.getByRole('button', { name: /löschen/i })).toBeDisabled({ timeout: 15_000 });
 
 	const abbreviation = `C${Date.now() % 100000}`;
@@ -175,9 +182,9 @@ test('the project management adds and deletes a committee', async ({ page }) => 
 	await modal.getByPlaceholder('Sitze pro Delegation').fill('2');
 	await modal.getByRole('button', { name: /erstellen/i }).click();
 
-	const card = page.locator('.card', { hasText: `E2E Committee (${abbreviation})` });
+	const card = committeeCard(page, `E2E Committee (${abbreviation})`);
 	await expect(card).toBeVisible({ timeout: 15_000 });
-	await expect(card).toContainText('Sitze pro Delegation: 2');
+	await expect(card.getByTitle('Sitze pro Delegation')).toHaveText('2');
 
 	await card.getByRole('button', { name: /löschen/i }).click();
 	await page
