@@ -57,7 +57,7 @@
 		<div class="h-0.5 w-full {stripClass}"></div>
 	{/if}
 	<div
-		class="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:px-8"
+		class="mx-auto flex w-full max-w-[1800px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:px-8"
 	>
 		{#if headerState.openNavCallback !== undefined}
 			<button
