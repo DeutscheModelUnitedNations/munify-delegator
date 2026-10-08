@@ -35,10 +35,7 @@
 </script>
 
 {#if current?.user}
-	<section
-		class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5"
-		aria-label={drawerTitle}
-	>
+	<section class="flex flex-col gap-4 rounded-box bg-base-200/60 p-6" aria-label={drawerTitle}>
 		<header class="flex items-center justify-between gap-2">
 			<h3 class="flex items-center gap-2 text-lg font-bold">
 				<i class="fa-sharp-duotone fa-solid {drawerIcon} text-xl"></i>
@@ -67,7 +64,7 @@
 
 		{@render children(current.user, current.status)}
 
-		<footer class="flex gap-2 border-t border-base-300 pt-4">
+		<footer class="flex gap-2 pt-2">
 			<button class="btn flex-1 btn-primary" onclick={onConfirm} disabled={flow.busy}>
 				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 				{confirmLabel}
@@ -82,9 +79,7 @@
 	</section>
 {:else}
 	<!-- Nothing to show yet: loading, not found, or waiting for the first scan -->
-	<div
-		class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-box border-2 border-dashed border-base-300 p-6 text-center"
-	>
+	<div class="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
 		{#if flow.queryUserId && flow.loading}
 			<span class="loading loading-md loading-spinner"></span>
 			<span class="font-mono text-sm text-base-content/70">{flow.queryUserId}</span>

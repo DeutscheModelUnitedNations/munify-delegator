@@ -34,7 +34,7 @@
 	}
 </script>
 
-<div class="card-body bg-base-100 dark:bg-base-200 rounded-box">
+<div class="flex flex-col gap-4">
 	<p class="opacity-70">{m.announcementSectionDescription()}</p>
 
 	<div class="alert alert-info mb-6">

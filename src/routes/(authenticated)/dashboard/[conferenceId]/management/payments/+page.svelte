@@ -3,12 +3,12 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
-	import TopDrawer from '$lib/components/TopDrawer.svelte';
+	import ScanHistory, { type ScanHistoryEntry } from '$lib/components/scanner/ScanHistory.svelte';
+	import ScanSearchBar from '$lib/components/scanner/ScanSearchBar.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import type { PageProps } from './$types';
@@ -25,10 +25,6 @@
 	});
 
 	let hotkeyDebounce = $state(false);
-
-	// Drawer state
-	let showPaymentDrawer = $state(false);
-	let lastLoadedReference = $state('');
 
 	// Input ref for refocusing
 	let searchInputElem = $state<HTMLInputElement>();
@@ -118,24 +114,37 @@
 		}
 	});
 
-	// Drawer open/close management with stale data prevention
+	/** Whether the transaction searched for has loaded and nothing is pending. */
+	const resultReady = $derived(
+		transactionReadyFor(params.searchValue, paymentTransaction?.id, referenceFetching)
+	);
+
+	// Remember the transactions that were found, the latest first, each once
+	const HISTORY_LENGTH = 5;
+	let history = $state<ScanHistoryEntry[]>([]);
+
+	/** The payers' names, comma separated. */
+	const payerNames = (
+		users: readonly { givenName?: string | null; familyName?: string | null }[]
+	) =>
+		users
+			.map((user) => formatNames(user.givenName ?? undefined, user.familyName ?? undefined))
+			.join(', ');
+
+	const payers = $derived(payerNames(referencedUsers ?? []));
+	const currency = $derived(conference?.currency ?? 'EUR');
+
+	/** What a remembered transaction is called: its payers, else its amount. */
+	const historyName = (amount: number) =>
+		payers || amount.toLocaleString(undefined, { style: 'currency', currency });
+
 	$effect(() => {
-		const searchVal = params.searchValue;
-		if (!searchVal) {
-			showPaymentDrawer = false;
-			lastLoadedReference = '';
-			return;
-		}
-		if (searchVal !== lastLoadedReference) {
-			showPaymentDrawer = false;
-		}
-	});
-	$effect(() => {
-		const searchVal = params.searchValue;
-		if (transactionReadyFor(searchVal, paymentTransaction?.id, referenceFetching)) {
-			lastLoadedReference = searchVal;
-			showPaymentDrawer = true;
-		}
+		const found = paymentTransaction;
+		if (!found || !resultReady) return;
+		const entry = { id: found.id, name: historyName(found.amount) };
+		untrack(() => {
+			history = [entry, ...history.filter((e) => e.id !== entry.id)].slice(0, HISTORY_LENGTH);
+		});
 	});
 
 	// --- Actions ---
@@ -165,7 +174,6 @@
 			recieveDate = new Date().toISOString().split('T')[0];
 			await changeTransactionStatus('DONE');
 			await loadLastConfirmed();
-			showPaymentDrawer = false;
 			params.searchValue = '';
 			setTimeout(() => {
 				searchInputElem?.focus();
@@ -177,7 +185,6 @@
 
 	const resetView = () => {
 		recieveDate = new Date().toISOString().split('T')[0];
-		showPaymentDrawer = false;
 		params.searchValue = '';
 		setTimeout(() => {
 			searchInputElem?.focus();
@@ -231,55 +238,102 @@
 	});
 </script>
 
-<div class="flex w-full flex-col gap-8 md:p-10">
+<div class="flex w-full flex-col gap-6 md:p-10">
 	<div class="flex flex-col gap-2">
+		<h2 class="text-2xl font-bold">{m.payment()}</h2>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-		<p>{@html m.paymentAdminDescription()}</p>
-		<!-- Show last confirmed transaction if available -->
-		{#if lastReceived}
-			<div class="alert alert-success">
-				<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-lg"></i>
-				<div>
-					{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
-				</div>
-			</div>
-		{/if}
-		<FormFieldset title={m.referenceSearch()}>
-			<div class="join w-full">
-				<input
-					type="text"
-					bind:this={searchInputElem}
-					placeholder={m.referenceSearch()}
-					class="input input-lg join-item w-full"
-					bind:value={params.searchValue}
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							searchInputElem?.blur();
-						}
-					}}
-				/>
-				<button
-					class="btn btn-primary btn-lg join-item"
-					aria-label="Search"
-					onclick={() => searchInputElem?.blur()}
-				>
-					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
-				</button>
-			</div>
-		</FormFieldset>
+		<p class="leading-relaxed text-base-content/70">{@html m.paymentAdminDescription()}</p>
 	</div>
 
-	<!-- Loading / error state -->
-	{#if params.searchValue && referenceFetching}
-		<div class="flex items-center justify-center py-4">
-			<span class="loading loading-spinner loading-lg"></span>
-		</div>
-	{:else if params.searchValue && !paymentTransaction && !referenceFetching}
-		<div class="alert alert-warning">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-lg"></i>
-			<div>{m.noPaymentFound()}</div>
+	{#if lastReceived}
+		<div class="alert alert-success">
+			<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-lg"></i>
+			<div>
+				{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
+			</div>
 		</div>
 	{/if}
+
+	<ScanSearchBar
+		bind:value={params.searchValue}
+		bind:inputElem={searchInputElem}
+		busy={referenceFetching}
+		onsubmit={() => searchInputElem?.blur()}
+		placeholder={m.referenceSearch()}
+		aria-label={m.referenceSearch()}
+	/>
+
+	<div class="grid items-start gap-6 lg:grid-cols-2">
+		<ScanHistory
+			entries={history}
+			activeId={params.searchValue}
+			onSelect={(id) => (params.searchValue = id)}
+		/>
+
+		{#if paymentTransaction && resultReady}
+			<section
+				class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5"
+				aria-label={m.payment()}
+			>
+				<header class="flex items-center justify-between gap-2">
+					<h3 class="flex items-center gap-2 text-lg font-bold">
+						<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-xl"></i>
+						{m.payment()}
+					</h3>
+					<button
+						type="button"
+						class="btn btn-square btn-ghost btn-sm"
+						onclick={resetView}
+						aria-label={m.close()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
+					</button>
+				</header>
+
+				{@render transactionDetails(paymentTransaction)}
+
+				<footer class="flex gap-2 border-t border-base-300 pt-4">
+					{#if !paymentTransaction.recievedAt}
+						<button
+							class="btn flex-1 btn-error"
+							onclick={() => changeTransactionStatus('PROBLEM')}
+							disabled={hotkeyDebounce}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+							{m.markAsProblem()}
+						</button>
+						<button
+							class="btn flex-1 btn-primary"
+							onclick={markReceivedAndNext}
+							disabled={hotkeyDebounce}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-check"></i>
+							{m.markAsRecieved()}
+							<Kbd hotkey="alt+a" />
+						</button>
+					{:else}
+						<button class="btn flex-1 btn-error" onclick={resetView}>
+							<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+							{m.close()}
+							<Kbd hotkey="Esc" />
+						</button>
+					{/if}
+				</footer>
+			</section>
+		{:else if params.searchValue}
+			<div
+				class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-box border-2 border-dashed border-base-300 p-6 text-center"
+			>
+				{#if referenceFetching}
+					<span class="loading loading-md loading-spinner"></span>
+					<span class="font-mono text-sm text-base-content/70">{params.searchValue}</span>
+				{:else}
+					<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-3xl text-warning"></i>
+					<p class="text-base-content/80">{m.noPaymentFound()}</p>
+				{/if}
+			</div>
+		{/if}
+	</div>
 </div>
 
 {#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
@@ -344,49 +398,3 @@
 		</div>
 	</div>
 {/snippet}
-
-<!-- Top drawer overlay for payment data -->
-<TopDrawer bind:open={showPaymentDrawer} title={m.payment()} titleIcon="fa-money-bill-transfer">
-	{#snippet headerActions()}
-		<button
-			type="button"
-			class="btn btn-ghost btn-sm btn-square"
-			onclick={() => resetView()}
-			aria-label={m.close()}
-		>
-			<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
-		</button>
-	{/snippet}
-
-	{#if paymentTransaction && paymentTransaction.id === params.searchValue}
-		{@render transactionDetails(paymentTransaction)}
-	{/if}
-
-	{#snippet footer()}
-		{#if paymentTransaction && !paymentTransaction.recievedAt}
-			<button
-				class="btn btn-error flex-1"
-				onclick={() => changeTransactionStatus('PROBLEM')}
-				disabled={hotkeyDebounce}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
-				{m.markAsProblem()}
-			</button>
-			<button
-				class="btn btn-success flex-1"
-				onclick={markReceivedAndNext}
-				disabled={hotkeyDebounce}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-check"></i>
-				{m.markAsRecieved()}
-				<Kbd hotkey="alt+a" />
-			</button>
-		{:else}
-			<button class="btn btn-error flex-1" onclick={resetView}>
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
-				{m.close()}
-				<Kbd hotkey="Esc" />
-			</button>
-		{/if}
-	{/snippet}
-</TopDrawer>

@@ -29,9 +29,9 @@
 </script>
 
 <div
-	class="relative aspect-video max-h-[40vh] min-h-52 w-full overflow-hidden rounded-box border {streaming
-		? 'border-transparent bg-black'
-		: 'bg-base-200 border-base-300 border-dashed'}"
+	class="relative aspect-video max-h-[40vh] min-h-52 w-full overflow-hidden rounded-box {streaming
+		? 'bg-black'
+		: 'bg-base-200'}"
 >
 	<video
 		bind:this={videoElem}

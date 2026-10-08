@@ -4,6 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import ScanSearchBar from './ScanSearchBar.svelte';
 	import ScanSuggestions from './ScanSuggestions.svelte';
 	import ScanViewfinder from './ScanViewfinder.svelte';
 	import {
@@ -268,37 +269,19 @@
 <div class="flex w-full flex-col gap-6">
 	<!-- Search by name, email or id; also where a hand scanner types -->
 	<div class="relative w-full">
-		<form
-			class="join w-full"
-			onsubmit={(e) => {
-				e.preventDefault();
-				submitManual();
-			}}
-		>
-			<label class="input join-item w-full">
-				<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/50"></i>
-				<input
-					type="text"
-					role="combobox"
-					aria-expanded={suggestions.length > 0}
-					aria-controls="scanner-suggestions-{persistKey}"
-					aria-autocomplete="list"
-					bind:this={manualInputElem}
-					bind:value={query}
-					onkeydown={onInputKeydown}
-					placeholder={manualPlaceholder}
-					aria-label={m.userIdInput()}
-					class="grow"
-					autocomplete="off"
-				/>
-				{#if searching}
-					<span class="loading loading-spinner loading-xs"></span>
-				{/if}
-			</label>
-			<button type="submit" class="btn btn-primary join-item" aria-label={m.search()}>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
-			</button>
-		</form>
+		<ScanSearchBar
+			bind:value={query}
+			bind:inputElem={manualInputElem}
+			busy={searching}
+			onsubmit={submitManual}
+			role="combobox"
+			aria-expanded={suggestions.length > 0}
+			aria-controls="scanner-suggestions-{persistKey}"
+			aria-autocomplete="list"
+			onkeydown={onInputKeydown}
+			placeholder={manualPlaceholder}
+			aria-label={m.userIdInput()}
+		/>
 
 		<ScanSuggestions
 			id="scanner-suggestions-{persistKey}"

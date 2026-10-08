@@ -52,7 +52,7 @@
 	</div>
 {:else}
 	<button
-		class="btn btn-soft group h-auto justify-start py-2 text-left {fullWidth ? 'w-full' : ''}"
+		class="btn btn-ghost group h-auto justify-start px-0 py-1 text-left {fullWidth ? 'w-full' : ''}"
 		onclick={startEditing}
 	>
 		{@render children()}

@@ -4,7 +4,6 @@
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import ScanFlowPage from '$lib/components/scanner/ScanFlowPage.svelte';
 	import { ScannedUserFlow } from '$lib/components/scanner/scannedUserFlow.svelte';
 	import EditableIdentityField from './EditableIdentityField.svelte';
@@ -148,14 +147,10 @@
 
 	{#snippet header()}
 		<!-- Session-wide occasion input -->
-		<FormFieldset title={m.occasionForSession()}>
-			<input
-				class="input w-full"
-				type="text"
-				bind:value={occasion.current}
-				placeholder={m.occasion()}
-			/>
-		</FormFieldset>
+		<label class="input w-full">
+			<span class="label">{m.occasionForSession()}</span>
+			<input type="text" bind:value={occasion.current} placeholder={m.occasion()} />
+		</label>
 	{/snippet}
 
 	{#snippet children(userDetails)}
@@ -205,17 +200,16 @@
 		</ParticipantRoleSummary>
 
 		<!-- Access Card ID Section -->
-		<FormFieldset title={m.accessCardId()}>
+		<label class="input input-lg w-full">
+			<span class="label">{m.accessCardId()}</span>
 			<input
-				class="input input-lg w-full"
 				bind:this={accessCardInputElem}
 				bind:value={accessCardInput}
 				type="text"
-				placeholder={m.accessCardId()}
 				onkeydown={(e) => {
 					if (e.key === 'Enter') saveAndNext();
 				}}
 			/>
-		</FormFieldset>
+		</label>
 	{/snippet}
 </ScanFlowPage>
