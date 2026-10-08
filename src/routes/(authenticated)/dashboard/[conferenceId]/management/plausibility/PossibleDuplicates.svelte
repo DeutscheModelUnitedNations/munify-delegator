@@ -51,6 +51,9 @@
 		address: m.duplicateReasonAddress
 	};
 
+	const active = $derived(pairs.filter((pair) => pair.status !== 'DISMISSED'));
+	const dismissed = $derived(pairs.filter((pair) => pair.status === 'DISMISSED'));
+
 	let scanning = $state(false);
 
 	async function scan() {
@@ -75,6 +78,52 @@
 	}
 </script>
 
+{#snippet pairCard(pair: (typeof pairs)[number])}
+	<div class="card bg-base-100 border-base-200 border shadow-sm">
+		<div class="card-body gap-4">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="badge badge-warning">
+					{m.possibleDuplicateMatch({ score: Math.round(pair.score * 100) })}
+				</span>
+				{#each pair.reasons as reason (reason)}
+					<span class="badge badge-ghost">{reasonLabels[reason]?.() ?? reason}</span>
+				{/each}
+				{#if pair.status === 'CONFIRMED'}
+					<span class="badge badge-error">
+						<i class="fa-sharp-duotone fa-solid fa-link"></i>
+						{m.possibleDuplicateConfirmedBadge()}
+					</span>
+				{/if}
+			</div>
+			<div class="flex flex-col gap-4 md:flex-row">
+				<DuplicateAccount id={pair.userId} account={pair.user} attendances={pair.userAttendances} />
+				<DuplicateAccount
+					id={pair.candidateId}
+					account={pair.candidate}
+					attendances={pair.candidateAttendances}
+				/>
+			</div>
+			<div class="card-actions justify-end">
+				{#if pair.status === 'OPEN'}
+					<button class="btn btn-sm" onclick={() => decide(pair.id, 'DISMISSED')}>
+						<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
+						{m.possibleDuplicateDifferentPeople()}
+					</button>
+					<button class="btn btn-sm btn-warning" onclick={() => decide(pair.id, 'CONFIRMED')}>
+						<i class="fa-sharp-duotone fa-solid fa-link"></i>
+						{m.possibleDuplicateSamePerson()}
+					</button>
+				{:else}
+					<button class="btn btn-sm btn-ghost" onclick={() => decide(pair.id, 'OPEN')}>
+						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+						{m.possibleDuplicateReopen()}
+					</button>
+				{/if}
+			</div>
+		</div>
+	</div>
+{/snippet}
+
 <section class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-2xl font-bold">{m.plausibilityPossibleDuplicates()}</h2>
@@ -85,55 +134,22 @@
 	</div>
 	<p class="text-base-content/70 max-w-3xl text-sm">{m.possibleDuplicatesDescription()}</p>
 
-	{#each pairs as pair (pair.id)}
-		<div class="card bg-base-100 border-base-200 border shadow-sm">
-			<div class="card-body gap-4">
-				<div class="flex flex-wrap items-center gap-2">
-					<span class="badge badge-warning">
-						{m.possibleDuplicateMatch({ score: Math.round(pair.score * 100) })}
-					</span>
-					{#each pair.reasons as reason (reason)}
-						<span class="badge badge-ghost">{reasonLabels[reason]?.() ?? reason}</span>
-					{/each}
-					{#if pair.status === 'CONFIRMED'}
-						<span class="badge badge-error">
-							<i class="fa-sharp-duotone fa-solid fa-link"></i>
-							{m.possibleDuplicateConfirmedBadge()}
-						</span>
-					{/if}
-				</div>
-				<div class="flex flex-col gap-4 md:flex-row">
-					<DuplicateAccount
-						id={pair.userId}
-						account={pair.user}
-						attendances={pair.userAttendances}
-					/>
-					<DuplicateAccount
-						id={pair.candidateId}
-						account={pair.candidate}
-						attendances={pair.candidateAttendances}
-					/>
-				</div>
-				<div class="card-actions justify-end">
-					{#if pair.status === 'OPEN'}
-						<button class="btn btn-sm" onclick={() => decide(pair.id, 'DISMISSED')}>
-							<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
-							{m.possibleDuplicateDifferentPeople()}
-						</button>
-						<button class="btn btn-sm btn-warning" onclick={() => decide(pair.id, 'CONFIRMED')}>
-							<i class="fa-sharp-duotone fa-solid fa-link"></i>
-							{m.possibleDuplicateSamePerson()}
-						</button>
-					{:else}
-						<button class="btn btn-sm btn-ghost" onclick={() => decide(pair.id, 'OPEN')}>
-							<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
-							{m.possibleDuplicateReopen()}
-						</button>
-					{/if}
-				</div>
-			</div>
-		</div>
+	{#each active as pair (pair.id)}
+		{@render pairCard(pair)}
 	{:else}
 		<p class="text-base-content/60">{m.possibleDuplicatesNone()}</p>
 	{/each}
+
+	{#if dismissed.length > 0}
+		<details class="collapse-arrow bg-base-200 collapse">
+			<summary class="collapse-title font-semibold">
+				{m.possibleDuplicatesDismissed({ count: dismissed.length })}
+			</summary>
+			<div class="collapse-content flex flex-col gap-4">
+				{#each dismissed as pair (pair.id)}
+					{@render pairCard(pair)}
+				{/each}
+			</div>
+		</details>
+	{/if}
 </section>

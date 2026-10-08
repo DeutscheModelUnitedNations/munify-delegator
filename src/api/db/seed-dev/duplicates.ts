@@ -1,49 +1,72 @@
-import type { Insert } from '../rows';
-import { devAccounts } from '../seed-data/devAccounts';
-import { makeDevAccountUser } from '../seed-data/user';
+import { makeSeedTeamMember } from '../seed-data/teamMember';
 import type { ConferenceSeed } from './context';
-import { addSingle } from './participants';
+import {
+	accountId,
+	duplicateScenarios,
+	scenarioPairs,
+	scenarioUsers,
+	type Participation
+} from './duplicateScenarios';
+import { addDelegation, addSingle, addSupervisor } from './participants';
+import { addWaitingListEntry } from './conference';
+import type { SeedBatch } from './batch';
 
 /**
- * A returning applicant: "Simon Beworben" (`dev-reg-single-applied`, applying now) took part in
- * the conference that is over as "Simón Beworben", with another email, phone number and address -
- * and left a care note there. The participant care persona finds the pair on the plausibility page
- * of a registration conference.
+ * Writes the possible-duplicate scenarios (`duplicateScenarios.ts`) into the seed: the accounts,
+ * who took part where, and the stored pairs. The accounts of the earlier conferences are in
+ * "Seed 8 · Post" (the dev team is on its team, so participant care reads them anyway) and in
+ * "Seed 10 · Other organizers" (it is not, so they are readable only through the pair); the new
+ * ones are in "Seed 2 · Registration open", whose plausibility page lists the pairs.
  */
-const RETURNING = 'dev-reg-single-applied';
-const EARLIER_ACCOUNT_ID = 'seed-earlier-account-simon';
 
-/** The earlier account, as it was entered then. */
-export function earlierAccount(): Insert<'user'> & { id: string } {
-	const account = devAccounts.find((candidate) => candidate.sub === RETURNING);
-	if (!account) throw new Error(`The dev account ${RETURNING} is missing`);
-	const now = makeDevAccountUser(account);
-	return {
-		...now,
-		id: EARLIER_ACCOUNT_ID,
-		email: 'simon.b.2023@example.org',
-		preferredUsername: 'simon-b-2023',
-		givenName: 'Simón',
-		phone: '+4917699887766',
-		street: 'Am Alten Hafen 3',
-		zip: '24103',
-		city: 'Kiel',
-		emergencyContacts: 'Vater: +49 431 556677',
-		globalNotes:
-			'Hat beim Abschlussabend mehrfach Absprachen mit dem Team ignoriert. Vor einer erneuten Zulassung bitte mit der Projektleitung sprechen.'
-	};
+/** The users and the stored pairs. A dev account's user row exists already. */
+export function addDuplicateScenarioAccounts(batch: SeedBatch) {
+	batch.user.push(...scenarioUsers());
+	batch.possibleDuplicate.push(...scenarioPairs());
 }
 
-/** What the matcher finds for the pair; `duplicates.test.ts` holds it to that. */
-export const SEEDED_PAIR = {
-	userId: RETURNING,
-	candidateId: EARLIER_ACCOUNT_ID,
-	score: 0.7,
-	reasons: ['birthday', 'name']
-};
+/** Writes one part an account played, except a delegate's: those are gathered per delegation. */
+function addPart(cs: ConferenceSeed, userId: string, part: Participation) {
+	if (part.as === 'single') {
+		addSingle(cs, { userId, applied: true, roleId: cs.customRoleIds[0] });
+	} else if (part.as === 'supervisor') {
+		addSupervisor(cs, { userId, attends: true });
+	} else if (part.as === 'waitingList') {
+		addWaitingListEntry(cs, userId);
+	}
+}
 
-export function addEarlierAccount(cs: ConferenceSeed) {
-	cs.batch.user.push(earlierAccount());
-	addSingle(cs, { userId: EARLIER_ACCOUNT_ID, applied: true });
-	cs.batch.possibleDuplicate.push({ ...SEEDED_PAIR, status: 'OPEN' });
+/** The parts the scenarios' accounts played in this conference; a no-op in the other ones. */
+export function addDuplicateScenarioParticipants(cs: ConferenceSeed) {
+	for (const scenario of duplicateScenarios) {
+		const delegations = new Map<string, string[]>();
+		for (const account of scenario.accounts) {
+			const userId = accountId(scenario, account);
+			for (const part of account.took.filter((took) => took.at === cs.plan.key)) {
+				if (part.as !== 'delegate') {
+					addPart(cs, userId, part);
+					continue;
+				}
+				const group = part.group ?? account.name;
+				delegations.set(group, [...(delegations.get(group) ?? []), userId]);
+			}
+		}
+		for (const userIds of delegations.values()) {
+			addDelegation(cs, {
+				applied: true,
+				members: userIds.map((userId, index) => ({ userId, head: index === 0 }))
+			});
+		}
+	}
+}
+
+/** The other organizers' conference has a team of its own, and none of the dev personas. */
+export function addElsewhereTeam(cs: ConferenceSeed) {
+	cs.batch.teamMember.push(
+		makeSeedTeamMember({
+			conferenceId: cs.id,
+			userId: cs.world.crowdUser('team'),
+			role: 'PROJECT_MANAGEMENT'
+		})
+	);
 }

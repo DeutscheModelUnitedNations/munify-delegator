@@ -1043,15 +1043,26 @@ export const user = snakeCase.table(
 	},
 	(table) => [
 		uniqueIndex('user_email_key').using('btree', table.email.asc().nullsLast()),
-		// rumble's `search` argument; see `trigramIndex`. These are the columns every reader of a
-		// user may search; the care team's private columns (address, notes) are left out.
+		// rumble's `search` argument; see `trigramIndex`. It tests every column the reader may see
+		// in every row, so a reader who sees the care team's private columns (address, phone,
+		// notes: the care team, system admins) searches those too. One of them without an index
+		// turns the whole OR into a scan of the table (2 s for 490k users).
 		trigramIndex('user_id_trgm', table.id),
 		trigramIndex('user_email_trgm', table.email),
 		trigramIndex('user_given_name_trgm', table.givenName),
 		trigramIndex('user_family_name_trgm', table.familyName),
 		trigramIndex('user_preferred_username_trgm', table.preferredUsername),
 		trigramIndex('user_locale_trgm', table.locale),
-		trigramIndex('user_pronouns_trgm', table.pronouns)
+		trigramIndex('user_pronouns_trgm', table.pronouns),
+		trigramIndex('user_street_trgm', table.street),
+		trigramIndex('user_apartment_trgm', table.apartment),
+		trigramIndex('user_zip_trgm', table.zip),
+		trigramIndex('user_city_trgm', table.city),
+		trigramIndex('user_region_trgm', table.region),
+		trigramIndex('user_country_trgm', table.country),
+		trigramIndex('user_phone_trgm', table.phone),
+		trigramIndex('user_emergency_contacts_trgm', table.emergencyContacts),
+		trigramIndex('user_global_notes_trgm', table.globalNotes)
 	]
 );
 

@@ -103,8 +103,8 @@ const userPubsub = rumblePubsub({ table: 'user' });
 
 schemaBuilder.queryFields((t) => ({
 	/**
-	 * Open and confirmed pairs with an account taking part in the conference, likeliest first.
-	 * Dismissed ones are left out: their other account is no longer readable (see `user.ts`).
+	 * Pairs with an account taking part in the conference, likeliest first - dismissed ones too,
+	 * so a dismissal can be undone (the other account is then readable by name only, see `user.ts`).
 	 */
 	conferencePossibleDuplicates: t.drizzleField({
 		type: [PossibleDuplicateRef],
@@ -116,7 +116,6 @@ schemaBuilder.queryFields((t) => ({
 				query({
 					...(await ctx.abilities.possibleDuplicate.filter('read')).merge({
 						where: {
-							status: { in: ['OPEN', 'CONFIRMED'] },
 							OR: [{ user: participant }, { candidate: participant }]
 						}
 					}).query.many,
@@ -140,7 +139,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	/**
 	 * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`. A
-	 * dismissed pair no longer lets the care team read the other account.
+	 * dismissed pair no longer lets the care team read the other account's notes.
 	 */
 	decidePossibleDuplicate: t.drizzleField({
 		type: PossibleDuplicateRef,

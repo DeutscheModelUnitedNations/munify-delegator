@@ -131,6 +131,7 @@
 
 <ScanFlowPage
 	{flow}
+	conferenceId={routeParams.conferenceId}
 	title={m.accessFlow()}
 	barcodeFormats={['data_matrix', 'code_128']}
 	persistKey="useCameraForAccessFlow"

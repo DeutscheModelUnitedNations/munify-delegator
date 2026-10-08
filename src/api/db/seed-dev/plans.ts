@@ -21,7 +21,8 @@ export type ConferenceKey =
 	| 'locked'
 	| 'active'
 	| 'post'
-	| 'second';
+	| 'second'
+	| 'elsewhere';
 
 export interface ConferencePlan {
 	key: ConferenceKey;
@@ -301,6 +302,32 @@ export const conferencePlans: ConferencePlan[] = [
 			supervisors: 2,
 			team: 2,
 			bulk: { delegations: 2000, singles: 500, supervisors: 500, waitingList: 2000 }
+		}
+	},
+	{
+		key: 'elsewhere',
+		summary:
+			'POST: another organizer’s conference a year ago - no dev team member took part. The earlier accounts of the duplicate scenarios attended it, so participant care reads them only through the pair',
+		conference: {
+			title: 'Seed 10 · Other organizers',
+			longTitle: 'Konferenz anderer Veranstalter',
+			state: 'POST',
+			unlockPayments: true,
+			unlockPostals: true,
+			isOpenPaperSubmission: false
+		},
+		days: { startAssignment: -420, startConference: -380, endConference: -377 },
+		assigned: true,
+		with: noExtras,
+		crowd: {
+			committees: 0,
+			nationsPerCommittee: [0, 0],
+			nonStateActors: 0,
+			customRoles: 0,
+			delegations: 0,
+			singles: 0,
+			supervisors: 0,
+			team: 1
 		}
 	}
 ];

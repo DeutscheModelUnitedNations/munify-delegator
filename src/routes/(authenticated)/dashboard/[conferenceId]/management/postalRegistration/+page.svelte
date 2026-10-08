@@ -84,13 +84,13 @@
 
 <ScanFlowPage
 	{flow}
+	conferenceId={routeParams.conferenceId}
 	title={m.postalRegistration()}
 	barcodeFormats={['data_matrix']}
 	persistKey="useCameraForPostalRegistration"
 	notFoundMessage={m.userNotFoundForPostalRegistration()}
 	drawerTitle={m.postalRegistration()}
 	drawerIcon="fa-envelopes-bulk"
-	drawerMaxWidth="max-w-4xl"
 	confirmLabel={m.confirmAll()}
 	onConfirm={confirmAllStatuses}
 	onClose={() => flow.reset()}
@@ -124,7 +124,7 @@
 		</div>
 
 		<!-- Status widgets grid -->
-		<div class="grid grid-flow-col grid-cols-1 grid-rows-5 gap-4 md:grid-cols-2 md:grid-rows-3">
+		<div class="grid grid-cols-1 gap-4">
 			<ParticipantAssignedDocumentWidget
 				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>

@@ -66,21 +66,27 @@ abilityBuilder.user.allow('update').when((ctx) => {
 abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
 
 // Participant care sees the other account of a possible duplicate of someone they look after:
-// who it is and the care notes on it - the reason the pair is shown - but no contact details.
-// A dismissed pair grants nothing.
-abilityBuilder.user.allow('read').when((ctx) => {
+// who it is and, while the pair stands (open or confirmed), the care notes on it - the reason the
+// pair is shown - but no contact details. A dismissed pair keeps the name only, so the page can
+// still list it and the dismissal can be undone; the notes are withheld again.
+function duplicateOfManaged(ctx: Context, status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[]) {
 	const managed = isManagedUser(ctx);
 	if (!managed) return undefined;
-	const standing = { status: { in: ['OPEN' as const, 'CONFIRMED' as const] } };
+	const standing = { status: { in: status } };
 	return {
-		where: {
-			OR: [
-				{ duplicatesAsUser: { ...standing, candidate: managed } },
-				{ duplicatesAsCandidate: { ...standing, user: managed } }
-			]
-		},
-		columns: { ...IDENTITY, globalNotes: true }
+		OR: [
+			{ duplicatesAsUser: { ...standing, candidate: managed } },
+			{ duplicatesAsCandidate: { ...standing, user: managed } }
+		]
 	};
+}
+abilityBuilder.user.allow('read').when((ctx) => {
+	const filter = duplicateOfManaged(ctx, ['OPEN', 'CONFIRMED']);
+	return filter ? { where: filter, columns: { ...IDENTITY, globalNotes: true } } : undefined;
+});
+abilityBuilder.user.allow('read').when((ctx) => {
+	const filter = duplicateOfManaged(ctx, ['DISMISSED']);
+	return filter ? { where: filter, columns: IDENTITY } : undefined;
 });
 
 /** A delegation membership or single participation the caller supervises. */

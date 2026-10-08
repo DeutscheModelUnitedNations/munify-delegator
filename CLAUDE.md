@@ -445,9 +445,10 @@ bun run preview
 - **Dev accounts and the dev seed belong together.** `src/api/db/seed-data/devAccounts.ts` lists
   every account on the login page; `bun run dev:accounts` writes them into `oidc-mock.yaml`
   (never edit its `users` by hand - `devAccounts.test.ts` fails on drift), and
-  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Nine
+  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Ten
   conferences cover the stages (`seed-dev/plans.ts`: pre, registration open / in its grace period
-  / closed, preparation with everything and with nothing unlocked, active, post). The closed one
+  / closed, preparation with everything and with nothing unlocked, active, post, a second small
+  one, and another organizer's past conference without any dev team member). The closed one
   carries an assignment draft in progress; the locked one has seats handed out but not released,
   so its participants see "assignment in progress". Team personas
   hold one team role everywhere; `[Registration]` personas cover the application steps;
@@ -554,8 +555,20 @@ bun run preview
   turning. A re-scan refreshes scores but never a decision.
 - **Visibility:** the pair is readable by whoever manages one of its accounts; a user read rule
   lets participant care read the _other_ account's identity and care notes (no contact details)
-  while the pair is open or confirmed. `e2e/authorization/possible-duplicates.spec.ts` pins it
-  down. The dev seed's "Simon Beworben" has an earlier account with a note in "Seed 8 · Post".
+  while the pair is open or confirmed; once it is dismissed the name stays (the page lists dismissed pairs, so a dismissal can be undone) and the notes are withheld. `e2e/authorization/possible-duplicates.spec.ts` pins it
+  down.
+- **The dev seed replays the ways a returning person's data can differ**
+  (`seed-dev/duplicateScenarios.ts`, one scenario per case): spelling, umlauts, name order, a
+  dropped second given name, typos, another script, an email variant, a nickname with a reformatted
+  phone, the parents' number, a new family name in the same household, and the limits - what is not
+  found (a new name and address with only the parents' number kept), siblings, a shared birthday,
+  a common name - plus every decision state (open, confirmed, dismissed, and pairs gone stale after
+  a profile correction), an account with three generations, a note-only earlier account (waiting
+  list), and a returning supervisor. The stored pairs are what the matcher finds for the scenario
+  accounts, so `duplicates.test.ts` fails when the matcher and the seed drift apart. The earlier
+  accounts took part in "Seed 8 · Post" or in "Seed 10 · Other organizers", where no dev team
+  member is on the team: there participant care reads them only through the pair. The new ones
+  are in "Seed 2" - sign in as `dev-team-care` and open its plausibility page.
 
 #### 8. Background Tasks
 

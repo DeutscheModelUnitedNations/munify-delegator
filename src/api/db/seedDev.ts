@@ -32,7 +32,11 @@ import { addSurveys } from './seed-dev/surveys';
 import { addBulk } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { printOverview } from './seed-dev/overview';
-import { addEarlierAccount } from './seed-dev/duplicates';
+import {
+	addDuplicateScenarioAccounts,
+	addDuplicateScenarioParticipants,
+	addElsewhereTeam
+} from './seed-dev/duplicates';
 import { conferencePlans } from './seed-dev/plans';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -72,6 +76,7 @@ for (const account of devAccounts) {
 	if (account.profile !== 'none') batch.user.push(makeDevAccountUser(account));
 }
 addReviewerSnippets(batch);
+addDuplicateScenarioAccounts(batch);
 
 const templates = {
 	contract: await pdfTemplate('Teilnahmevertrag'),
@@ -83,6 +88,12 @@ const templates = {
 
 for (const plan of conferencePlans) {
 	const cs = buildConferenceStructure(world, plan, templates);
+	if (plan.key === 'elsewhere') {
+		// Another organizer's conference: nothing of the dev team in it, only the duplicate scenarios.
+		addElsewhereTeam(cs);
+		addDuplicateScenarioParticipants(cs);
+		continue;
+	}
 	addTeam(cs);
 	// Personas before the crowd: their fixed codes and nation are reserved first.
 	if (plan.assigned) addAssignedPersonas(cs);
@@ -94,7 +105,7 @@ for (const plan of conferencePlans) {
 	addSurveys(cs);
 	addCalendar(cs);
 	addBulk(cs);
-	if (plan.key === 'post') addEarlierAccount(cs);
+	addDuplicateScenarioParticipants(cs);
 }
 
 console.info('Resetting database...');

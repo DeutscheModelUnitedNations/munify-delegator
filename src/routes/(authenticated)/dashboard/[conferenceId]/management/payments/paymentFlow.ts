@@ -5,7 +5,7 @@ interface LoadedTransaction {
 	recievedAt?: Date | string | null;
 }
 
-/** Whether the drawer can open: the transaction searched for has loaded and nothing is pending. */
+/** Whether the result can be shown: the transaction searched for has loaded and nothing is pending. */
 export function transactionReadyFor(
 	searchValue: string | null | undefined,
 	transactionId: string | undefined,

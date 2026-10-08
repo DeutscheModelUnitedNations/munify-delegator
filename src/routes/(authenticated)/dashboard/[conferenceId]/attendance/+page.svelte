@@ -375,6 +375,7 @@
 			bind:scannedCode
 			barcodeFormats={['data_matrix', 'code_128']}
 			persistKey="useCameraForAttendanceScanner"
+			{conferenceId}
 			manualPlaceholder={m.enterPostalRegistrationCode()}
 			scanPromptText={m.scanPostalRegistrationCodePrompt()}
 		/>

@@ -1,35 +1,53 @@
 <script lang="ts">
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
-	import { onDestroy, onMount, untrack } from 'svelte';
+	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import ScanSuggestions from './ScanSuggestions.svelte';
+	import ScanViewfinder from './ScanViewfinder.svelte';
+	import {
+		codeToSubmit,
+		looksLikeUserId,
+		navigateSuggestions,
+		type UserSuggestion
+	} from './suggestions';
+	import { searchUsers } from './userSearch';
 
 	interface Props {
 		/** Barcode formats to detect */
 		barcodeFormats?: BarcodeFormat[];
 		/** Key the scanner remembers whether the camera was on under, to turn it back on next time */
 		persistKey: string;
+		/** Conference whose people the search box suggests first */
+		conferenceId: string;
 		/** Placeholder for manual input field */
 		manualPlaceholder?: string;
 		/** Prompt shown while camera is scanning */
 		scanPromptText?: string;
 		/** The scanned/entered code — two-way bindable (nullable for queryParameters compatibility) */
 		scannedCode: string | null;
+		/** Shown beside the camera, e.g. the person the code leads to */
+		result?: Snippet;
+		/** Shown under the camera, e.g. who was scanned before */
+		belowCamera?: Snippet;
 	}
 
 	let {
 		barcodeFormats = ['data_matrix', 'code_128'],
 		persistKey,
+		conferenceId,
 		manualPlaceholder = '',
 		scanPromptText = '',
-		scannedCode = $bindable<string | null>('')
+		scannedCode = $bindable<string | null>(''),
+		result,
+		belowCamera
 	}: Props = $props();
 
 	// Internal state
 	let availableVideoDevices: MediaDeviceInfo[] = $state([]);
 	let selectedVideoDeviceIndex = $state(0);
-	let videoElem: HTMLVideoElement;
+	let videoElem = $state<HTMLVideoElement>();
 	let streaming = $state(false);
 	let starting = $state(false);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
@@ -38,6 +56,11 @@
 		false
 	);
 	let manualInputElem = $state<HTMLInputElement>();
+	let query = $state('');
+	let suggestions = $state<UserSuggestion[]>([]);
+	let highlighted = $state(-1);
+	let searching = $state(false);
+	let searchSequence = 0;
 	/**
 	 * The code scanned last, ignored until it has left the picture: the stream keeps running between
 	 * scans, so the paper still held up after a reset would otherwise be scanned again at once.
@@ -122,14 +145,16 @@
 		cameraWanted.current = false;
 	}
 
-	function readyToDetect() {
-		return streaming && !detecting && videoElem.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+	/** The video element once it shows a picture and no detection is running (only called while streaming). */
+	function videoToDetect() {
+		if (detecting || !videoElem) return undefined;
+		return videoElem.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? videoElem : undefined;
 	}
 
 	/** The code in the picture that is not the one scanned last, if there is one. */
-	async function detectNewCode() {
+	async function detectNewCode(video: HTMLVideoElement) {
 		barcodeDetector ??= new BarcodeDetector({ formats: barcodeFormats });
-		const codes = (await barcodeDetector.detect(videoElem))
+		const codes = (await barcodeDetector.detect(video))
 			.map((barcode) => barcode.rawValue)
 			.filter((code) => !!code);
 		if (!codes.includes(blockedCode ?? '')) blockedCode = null;
@@ -144,10 +169,11 @@
 	}
 
 	async function scanForCode() {
-		if (!readyToDetect()) return;
+		const video = videoToDetect();
+		if (!video) return;
 		detecting = true;
 		try {
-			acceptScanned(await detectNewCode());
+			acceptScanned(await detectNewCode(video));
 		} catch (error) {
 			toast.error(m.barcodeDetectError({ error: String(error) }));
 		} finally {
@@ -155,11 +181,34 @@
 		}
 	}
 
-	function submitManual() {
-		const code = manualInputElem?.value?.trim();
-		if (!code) return;
+	function clearSearch() {
+		query = '';
+		suggestions = [];
+		highlighted = -1;
+		searchSequence += 1;
+		searching = false;
+	}
+
+	function submitCode(code: string) {
 		scannedCode = code;
+		clearSearch();
 		manualInputElem?.blur();
+	}
+
+	function submitManual() {
+		const code = codeToSubmit(query, suggestions, highlighted);
+		if (code) submitCode(code);
+	}
+
+	function onInputKeydown(event: KeyboardEvent) {
+		const move = navigateSuggestions(event.key, highlighted, suggestions.length);
+		if (!move) return;
+		event.preventDefault();
+		highlighted = move.highlighted;
+		if (move.close) {
+			event.stopPropagation();
+			suggestions = [];
+		}
 	}
 
 	// --- Effects ---
@@ -171,8 +220,33 @@
 		return () => clearInterval(intervalId);
 	});
 
+	// Suggest people while typing, once the typing pauses; a scanned id needs no search
+	$effect(() => {
+		const text = query.trim();
+		if (!text || looksLikeUserId(text)) {
+			suggestions = [];
+			highlighted = -1;
+			searching = false;
+			return;
+		}
+		const sequence = ++searchSequence;
+		searching = true;
+		const timeoutId = setTimeout(async () => {
+			try {
+				const found = await searchUsers(conferenceId, text);
+				if (sequence !== searchSequence) return;
+				suggestions = found;
+				highlighted = -1;
+			} catch (error) {
+				console.error('User search failed:', error);
+			} finally {
+				if (sequence === searchSequence) searching = false;
+			}
+		}, 80);
+		return () => clearTimeout(timeoutId);
+	});
+
 	onMount(() => {
-		if (manualInputElem) manualInputElem.value = scannedCode ?? '';
 		if (cameraWanted.current) startVideo();
 	});
 
@@ -183,128 +257,73 @@
 	/** Clears the code and readies the scanner for the next one; the camera keeps running. */
 	export function reset() {
 		scannedCode = null;
+		clearSearch();
 		if (manualInputElem) {
-			manualInputElem.value = '';
 			// A hand scanner types into the field, but on a phone focusing it would pop the keyboard
 			if (!streaming) manualInputElem.focus();
 		}
 	}
 </script>
 
-<div class="flex w-full flex-col gap-3">
-	<!-- Camera viewport -->
-	<div
-		class="relative aspect-[4/3] w-full overflow-hidden rounded-box border sm:aspect-video {streaming
-			? 'border-transparent bg-black'
-			: 'bg-base-200 border-base-300 border-dashed'}"
-	>
-		<video
-			bind:this={videoElem}
-			class="absolute inset-0 h-full w-full object-cover {streaming ? '' : 'invisible'}"
-			autoplay
-			muted
-			playsinline
+<div class="flex w-full flex-col gap-6">
+	<!-- Search by name, email or id; also where a hand scanner types -->
+	<div class="relative w-full">
+		<form
+			class="join w-full"
+			onsubmit={(e) => {
+				e.preventDefault();
+				submitManual();
+			}}
 		>
-			<track kind="captions" src="" srclang="en" label="English" default />
-		</video>
-
-		{#if streaming}
-			<!-- Crosshair: a square to hold the code in, the rest of the picture dimmed -->
-			<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-				<div
-					class="relative aspect-square h-1/2 rounded-2xl sm:h-3/5 shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)]"
-				>
-					<span
-						class="absolute top-0 left-0 size-8 rounded-tl-2xl border-t-4 border-l-4 border-white"
-					></span>
-					<span
-						class="absolute top-0 right-0 size-8 rounded-tr-2xl border-t-4 border-r-4 border-white"
-					></span>
-					<span
-						class="absolute bottom-0 left-0 size-8 rounded-bl-2xl border-b-4 border-l-4 border-white"
-					></span>
-					<span
-						class="absolute right-0 bottom-0 size-8 rounded-br-2xl border-r-4 border-b-4 border-white"
-					></span>
-					<span
-						class="absolute top-1/2 left-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-white/80"
-					></span>
-					<span
-						class="absolute top-1/2 left-1/2 h-6 w-px -translate-x-1/2 -translate-y-1/2 bg-white/80"
-					></span>
-				</div>
-			</div>
-
-			<div class="absolute top-3 right-3 flex gap-2">
-				{#if availableVideoDevices.length > 1}
-					<button
-						class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
-						onclick={switchCamera}
-						aria-label={m.switchCamera()}
-						title={m.switchCamera()}
-					>
-						<i class="fa-sharp-duotone fa-solid fa-camera-rotate"></i>
-					</button>
+			<label class="input join-item w-full">
+				<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/50"></i>
+				<input
+					type="text"
+					role="combobox"
+					aria-expanded={suggestions.length > 0}
+					aria-controls="scanner-suggestions-{persistKey}"
+					aria-autocomplete="list"
+					bind:this={manualInputElem}
+					bind:value={query}
+					onkeydown={onInputKeydown}
+					placeholder={manualPlaceholder}
+					aria-label={m.userIdInput()}
+					class="grow"
+					autocomplete="off"
+				/>
+				{#if searching}
+					<span class="loading loading-spinner loading-xs"></span>
 				{/if}
-				<button
-					class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
-					onclick={turnCameraOff}
-					aria-label={m.stopCamera()}
-					title={m.stopCamera()}
-				>
-					<i class="fa-sharp-duotone fa-solid fa-video-slash"></i>
-				</button>
-			</div>
+			</label>
+			<button type="submit" class="btn btn-primary join-item" aria-label={m.search()}>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+			</button>
+		</form>
 
-			<div
-				class="absolute bottom-4 left-1/2 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 text-sm text-white"
-			>
-				{#if scannedCode}
-					<!-- Scanning pauses while a code is handled, whether it came from the camera or by hand -->
-					<i class="fa-sharp-duotone fa-solid fa-circle-pause"></i>
-					<span class="truncate font-mono">{scannedCode}</span>
-				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-barcode-read fa-beat-fade"></i>
-					<span class="truncate">{scanPromptText}</span>
-				{/if}
-			</div>
-		{:else}
-			<div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
-				<i class="fa-sharp-duotone fa-solid fa-video-slash text-base-content/40 text-4xl"></i>
-				<p class="text-base-content/70 text-sm">{m.cameraOff()}</p>
-				<button class="btn btn-primary" onclick={startVideo} disabled={starting}>
-					{#if starting}
-						<span class="loading loading-spinner loading-sm"></span>
-					{:else}
-						<i class="fa-sharp-duotone fa-solid fa-video"></i>
-					{/if}
-					{m.startCamera()}
-				</button>
-			</div>
-		{/if}
+		<ScanSuggestions
+			id="scanner-suggestions-{persistKey}"
+			{suggestions}
+			bind:highlighted
+			onpick={submitCode}
+		/>
 	</div>
 
-	<!-- Manual entry, also where a hand scanner types -->
-	<form
-		class="join w-full"
-		onsubmit={(e) => {
-			e.preventDefault();
-			submitManual();
-		}}
-	>
-		<label class="input join-item w-full">
-			<i class="fa-sharp-duotone fa-solid fa-keyboard text-base-content/50"></i>
-			<input
-				type="text"
-				bind:this={manualInputElem}
-				placeholder={manualPlaceholder}
-				aria-label={m.userIdInput()}
-				class="grow font-mono"
-				autocomplete="off"
+	<!-- Camera, with what the scan leads to beside it -->
+	<div class="grid items-start gap-6 {result ? 'lg:grid-cols-2' : ''}">
+		<div class="flex flex-col gap-4">
+			<ScanViewfinder
+				bind:videoElem
+				{streaming}
+				{starting}
+				{scannedCode}
+				{scanPromptText}
+				canSwitchCamera={availableVideoDevices.length > 1}
+				onswitch={switchCamera}
+				onstop={turnCameraOff}
+				onstart={startVideo}
 			/>
-		</label>
-		<button type="submit" class="btn btn-primary join-item" aria-label={m.search()}>
-			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
-		</button>
-	</form>
+			{@render belowCamera?.()}
+		</div>
+		{@render result?.()}
+	</div>
 </div>

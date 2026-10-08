@@ -11,7 +11,7 @@ import {
 
 // A possible duplicate lets participant care read an account outside their conferences: its name
 // and its care note, the reason the pair is shown - not its contact details, not for anybody else
-// on the team, and no longer once the pair is dismissed.
+// on the team. Once the pair is dismissed the note is withheld again, the name stays.
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
@@ -69,16 +69,27 @@ test('participant care reads the other account’s name and note, not its contac
 	});
 });
 
-test('dismissing the pair takes the other account away again', async ({ page }) => {
+test('a dismissed pair keeps the name, loses the note, and can be reopened', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/dashboard' });
 
 	await decide(page, 'DISMISSED');
 	try {
-		expect(await earlierAccount(page)).toBeUndefined();
+		expect(await earlierAccount(page)).toMatchObject({ globalNotes: null, phone: null });
+
+		// still listed, so the dismissal can be undone
+		const pairs = await gql(
+			page,
+			`query ($c: ID!) {
+				conferencePossibleDuplicates(conferenceId: $c) { id status candidate { id } user { id familyName } }
+			}`,
+			{ c: E2E_CONFERENCE_ID }
+		);
+		expect(pairs.errors, JSON.stringify(pairs)).toBeUndefined();
+		expect(JSON.stringify(pairs.data)).toContain('DISMISSED');
 	} finally {
 		await decide(page, 'OPEN');
 	}
-	expect(await earlierAccount(page)).toBeDefined();
+	expect(await earlierAccount(page)).toMatchObject({ globalNotes: E2E_DUPLICATE_EARLIER_NOTE });
 });
 
 test('the rest of the team sees neither the pairs nor the other account', async ({ page }) => {

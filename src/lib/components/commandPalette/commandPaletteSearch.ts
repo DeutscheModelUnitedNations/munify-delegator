@@ -29,7 +29,7 @@ const MIN_SEARCH_LENGTH = 2;
 type StringFilter = { ilike: string };
 type PersonColumn = 'givenName' | 'familyName' | 'email';
 
-function containsWord(word: string) {
+export function containsWord(word: string) {
 	const ilike: StringFilter = { ilike: `%${word}%` };
 	const columns: PersonColumn[] = ['givenName', 'familyName', 'email'];
 	return {

@@ -1,4 +1,5 @@
 import { devAccounts } from '../seed-data/devAccounts';
+import { duplicateScenarios } from './duplicateScenarios';
 import { conferencePlans, invitationTokens, joinCodes, seedConferenceId } from './plans';
 
 /** The console guide after seeding: which conference is which, and whom to sign in as. */
@@ -34,10 +35,10 @@ export function printOverview() {
 		line(`  ${state.padEnd(8)} /auth/accept-invitation?token=${token}`);
 	}
 	line();
-	line(
-		'Possible duplicate: "Simon Beworben" (dev-reg-single-applied) had an earlier account with a'
-	);
-	line('  care note in "Seed 8 · Post"; the plausibility page of "Seed 2" shows the pair');
+	line('Possible duplicates (plausibility page of "Seed 2", sign in as dev-team-care)');
+	for (const scenario of duplicateScenarios) {
+		line(`  ${scenario.key.padEnd(24)} ${scenario.summary}`);
+	}
 	line();
 	line('Done!');
 }
