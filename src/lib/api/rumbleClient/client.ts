@@ -1430,7 +1430,7 @@ export type DelegationmemberWhereInputArgument = {
   userId?: IDWhereInputArgument | null | undefined    
 };
 		
-export type EmailAddress = unknown;
+export type EmailAddress = string;
 		
 export type EmailStatusResult = {
   email: String,
@@ -1629,7 +1629,7 @@ export type JWK = {
   y: String | null    
 };
 		
-export type Locale = unknown;
+export type Locale = string;
 		
 export type MediaconsentstatusEnum = "ALLOWED_ALL" | "NOT_ALLOWED" | "NOT_SET" | "PARTIALLY_ALLOWED";
 		
@@ -2578,9 +2578,9 @@ export type PaymenttransactionWhereInputArgument = {
   userId?: IDWhereInputArgument | null | undefined    
 };
 		
-export type PersonName = unknown;
+export type PersonName = string;
 		
-export type PhoneNumber = unknown;
+export type PhoneNumber = string;
 		
 export type Place = {
   address: String | null,
