@@ -13,7 +13,7 @@ import { toastError } from '../toastError';
  */
 const saved = new SvelteMap<string, SightingReview>();
 /** The latest save per application: an answer to an earlier one must not undo a later one. */
-const latest = new Map<string, number>();
+const latest = new SvelteMap<string, number>();
 let saves = 0;
 
 /** What this browser last saved for an application, if anything. */
