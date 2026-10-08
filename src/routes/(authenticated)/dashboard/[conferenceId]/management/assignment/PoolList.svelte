@@ -29,20 +29,29 @@
 	});
 </script>
 
-{#if loading}
-	<div class="flex justify-center py-6" role="status">
-		<span class="loading loading-spinner loading-md text-primary"></span>
-	</div>
-{:else if items.length > 0}
-	<VirtualList {items} height="max(16rem, calc(100vh - 36rem))" bind:end let:item>
-		<div class="pb-2">
-			{@render row(item)}
+<!--
+	As tall as the space it is given on a wide screen (the pool section is one screen high there);
+	stacked above the roles on a narrow one, a fixed share of the screen.
+-->
+<div class="flex h-[60vh] min-h-0 flex-col xl:h-auto xl:flex-1">
+	{#if loading}
+		<div class="flex justify-center py-6" role="status">
+			<span class="loading loading-spinner loading-md text-primary"></span>
 		</div>
-	</VirtualList>
-{/if}
-{#if more}
-	<button class="btn btn-ghost btn-sm mt-2 w-full" onclick={onLoadMore}>
-		<i class="fa-duotone fa-arrow-down"></i>
-		{m.assignmentPoolLoadMore()}
-	</button>
-{/if}
+	{:else if items.length > 0}
+		<div class="min-h-0 flex-1">
+			<VirtualList {items} height="100%" bind:end let:item>
+				<div class="pb-2">
+					{@render row(item)}
+				</div>
+			</VirtualList>
+		</div>
+	{/if}
+	<!-- Only where scrolling cannot ask for more: a pool too short to scroll. -->
+	{#if more && !loading && items.length < SCROLLING_ROWS}
+		<button class="btn btn-ghost btn-sm mt-2 w-full shrink-0" onclick={onLoadMore}>
+			<i class="fa-duotone fa-arrow-down"></i>
+			{m.assignmentPoolLoadMore()}
+		</button>
+	{/if}
+</div>

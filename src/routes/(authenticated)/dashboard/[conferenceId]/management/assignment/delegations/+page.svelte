@@ -11,13 +11,17 @@
 		hasRole,
 		inPageOrder,
 		pickSize,
+		poolCountsBesidesDraft,
 		poolGroups,
 		roleContainer,
 		rolesWithSeats,
 		sizeOptions,
 		wishStatus
 	} from '$lib/assignment/board';
+	import { seatedRoles } from '$lib/assignment/capacity';
 	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
+	import { liveSnapshot } from '$lib/api/liveSnapshot';
+	import { memoizeLast } from '$lib/helpers/memoizeLast';
 	import { targetKey, type AssignmentGroup } from '$lib/assignment/state';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -25,15 +29,13 @@
 	import { toast } from 'svelte-sonner';
 	import { assignGroup } from '../assignGroup';
 	import {
-		draftApplicationIds,
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
 		fetchDelegationPoolPage,
 		fetchDelegationPoolSizes,
-		fetchReviewsOf,
 		fetchSeatedApplications,
-		idsOf,
-		type BoardDelegation
+		type BoardDelegation,
+		seatedSnapshot
 	} from '../board';
 	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
@@ -66,36 +68,54 @@
 		return () => clearTimeout(timer);
 	});
 
-	const [roles, draft] = $derived(
+	// Nothing here depends on the draft through a query: the draft brings the applications it
+	// touches along, so a move arrives as one live update and asks for nothing afterwards.
+	const [roles, draft, seated, poolCounts] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(routeParams.conferenceId),
-			fetchAssignmentDraft(routeParams.conferenceId)
+			fetchAssignmentDraft(routeParams.conferenceId),
+			fetchSeatedApplications(routeParams.conferenceId),
+			fetchDelegationPoolSizes(routeParams.conferenceId, !!params.disqualified)
 		])
 	);
+	// Plain copies of the live results the board works over (see `liveSnapshot`): everything
+	// below reads plain arrays, and `memoizeLast` hands back the last board when they are the same.
+	const roleSnapshot = {
+		committees: liveSnapshot<(typeof roles.committees)[number]>(),
+		nonStateActors: liveSnapshot<(typeof roles.nonStateActors)[number]>()
+	};
+	const plainRoles = $derived({
+		committees: roleSnapshot.committees(roles.committees),
+		nonStateActors: roleSnapshot.nonStateActors(roles.nonStateActors)
+	});
 	// Everything that holds a role or that the draft touches: the roles, their groups and seats.
-	const touched = $derived(draftApplicationIds(draft));
-	const seated = $derived(await fetchSeatedApplications(routeParams.conferenceId, touched));
-	const seatedIds = $derived({
-		delegationIds: idsOf(seated.delegations),
-		singleParticipantIds: idsOf(seated.singleParticipants)
-	});
-	const seatedReviews = $derived(await fetchReviewsOf(routeParams.conferenceId, seatedIds));
+	const plain = seatedSnapshot();
+	const seatedSet = $derived(plain(draft, seated));
+	const units = $derived(seatedSet.units);
+	const draftSingleRoles = $derived(seatedSet.draftSingleRoles);
+	const seatedDelegations = $derived(seatedSet.delegations);
+	const seatedSingles = $derived(seatedSet.singleParticipants);
+	const seatedReviewRows = $derived(seatedSet.reviews);
 	const seatedRows = $derived({
-		delegations: seated.delegations,
-		singleParticipants: seated.singleParticipants,
-		units: draft.units,
-		draftSingleRoles: draft.draftSingleRoles,
-		reviews: seatedReviews
+		delegations: seatedDelegations,
+		singleParticipants: seatedSingles,
+		units,
+		draftSingleRoles,
+		reviews: seatedReviewRows
 	});
+	const seatedBoard = memoizeLast(boardState);
+	const fullBoard = memoizeLast(boardState);
 	// The size tabs and the roles need nothing but the seated applications; the size then decides
 	// which pool the backend is asked for.
-	const seatedView = $derived(boardState(seatedRows, roles));
-	// How many open groups of each size the pool holds, counted by the backend.
+	const seatedRoleList = $derived(seatedRoles(plainRoles.committees, plainRoles.nonStateActors));
+	const seatedView = $derived(seatedBoard(seatedRows, seatedRoleList));
+	// How many open groups of each size the pool holds: the backend's counts, less the delegations
+	// the draft touches, which the seated board counts itself.
 	const poolSizes = $derived(
-		await fetchDelegationPoolSizes(
-			routeParams.conferenceId,
-			!!params.disqualified,
-			touched.delegationIds
+		poolCountsBesidesDraft(
+			poolCounts,
+			units.flatMap((unit) => unit.sourceDelegation ?? []),
+			(id) => !!seatedView.reviewOf({ delegationId: id, singleParticipantId: null })?.disqualified
 		)
 	);
 	const options = $derived(sizeOptions(seatedView, poolSizes));
@@ -132,19 +152,11 @@
 	// The board as far as it is loaded: the seated applications and the pool's pages.
 	const delegations = $derived([
 		...new Map(
-			[...poolPages.flatMap((page) => page.rows), ...seated.delegations].map((d) => [d.id, d])
+			[...poolPages.flatMap((page) => page.rows), ...seatedDelegations].map((d) => [d.id, d])
 		).values()
 	]);
-	const view = $derived(
-		boardState(
-			{
-				...seatedRows,
-				delegations,
-				reviews: [...poolPages.flatMap((page) => page.reviews), ...seatedReviews]
-			},
-			roles
-		)
-	);
+	const reviews = $derived([...poolPages.flatMap((page) => page.reviews), ...seatedReviewRows]);
+	const view = $derived(fullBoard({ ...seatedRows, delegations, reviews }, seatedRoleList));
 	// Pages stay in the order they were loaded, so the list does not reshuffle while it scrolls.
 	const pool = $derived(
 		inPageOrder(
@@ -158,7 +170,7 @@
 		rolesWithSeats(seatedView, seats)
 			.map((role) => ({
 				...role,
-				...describeRole(role.target, roles, getFullTranslatedCountryNameFromISO3Code)
+				...describeRole(role.target, plainRoles, getFullTranslatedCountryNameFromISO3Code)
 			}))
 			.sort((a, b) => a.title.localeCompare(b.title))
 	);
@@ -177,7 +189,7 @@
 	$effect(() => moves.settle());
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
-	const singleById = $derived(new Map(seated.singleParticipants.map((s) => [s.id, s])));
+	const singleById = $derived(new Map(seatedSingles.map((s) => [s.id, s])));
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
 	const isBadFit = (group: AssignmentGroup) => {
@@ -285,7 +297,7 @@
 			count={poolCount}
 			hint={m.assignmentPoolHint({ size })}
 			highlight={hasRole(dragging)}
-			class="xl:w-96 xl:shrink-0"
+			class="xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
 			virtual
 			{onDrop}
 		>

@@ -52,7 +52,8 @@
 	{#if count === 0 && !more}
 		<p class="text-base-content/60 py-6 text-center text-sm">{m.assignmentPoolEmpty()}</p>
 	{:else if virtual}
-		<div role="list">
+		<!-- Fills the rest of the section; the virtual list scrolls inside it. -->
+		<div role="list" class="flex min-h-0 flex-1 flex-col">
 			{@render children()}
 		</div>
 	{:else}

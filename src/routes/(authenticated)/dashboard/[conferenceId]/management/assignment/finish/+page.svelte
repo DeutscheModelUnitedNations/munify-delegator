@@ -2,7 +2,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { planApply, planIsEmpty } from '$lib/assignment/applyPlan';
 	import { boardState, describeRole, mergedRoles } from '$lib/assignment/board';
-	import { seatsByKey } from '$lib/assignment/capacity';
+	import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
 	import { targetKey, type Target } from '$lib/assignment/state';
 	import ActionModal from '$lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
@@ -10,10 +10,10 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { toast } from 'svelte-sonner';
 	import {
-		draftApplicationIds,
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
-		fetchSeatedApplications
+		fetchSeatedApplications,
+		seatedSnapshot
 	} from '../board';
 	import { toastError } from '../toastError';
 	import ApplyProblems from './ApplyProblems.svelte';
@@ -25,19 +25,29 @@
 
 	let { params }: PageProps = $props();
 
-	const [draft, roles, conference] = $derived(
+	const [draft, roles, conference, seated] = $derived(
 		await Promise.all([
 			fetchAssignmentDraft(params.conferenceId),
 			fetchAssignmentRoles(params.conferenceId),
-			client.liveQuery.conference({ __args: { id: params.conferenceId }, assignmentReleased: true })
+			client.liveQuery.conference({
+				__args: { id: params.conferenceId },
+				assignmentReleased: true
+			}),
+			fetchSeatedApplications(params.conferenceId)
 		])
 	);
 	// What applying does depends only on what holds a role or what the draft touches; the
 	// applications without a role that the draft leaves alone are left alone by applying too.
-	const touched = $derived(draftApplicationIds(draft));
-	const seated = $derived(await fetchSeatedApplications(params.conferenceId, touched));
+	const plain = seatedSnapshot();
+	const rows = $derived(plain(draft, seated));
 	// The tab shows no ratings.
-	const view = $derived(boardState({ ...draft, ...seated, reviews: [] }, roles));
+	const view = $derived(
+		boardState(
+			{ ...rows, reviews: [] },
+
+			seatedRoles(roles.committees, roles.nonStateActors)
+		)
+	);
 	const preview = $derived(
 		planApply({
 			...view.live,
@@ -47,14 +57,18 @@
 	);
 	const empty = $derived(planIsEmpty(preview.plan));
 
-	const roleName = (target: Target) =>
+	/** A role as the tables show it, with its flag; undefined for no role. */
+	const describeTarget = (target: Target) =>
 		targetKey(target)
-			? describeRole(target, roles, getFullTranslatedCountryNameFromISO3Code).title
-			: m.assignmentNoRole();
+			? describeRole(target, roles, getFullTranslatedCountryNameFromISO3Code)
+			: undefined;
+	const roleName = (target: Target) => describeTarget(target)?.title ?? m.assignmentNoRole();
 	const customRoleName = (roleId: string | null) =>
 		roles.customRoles.find((role) => role.id === roleId)?.name ?? m.assignmentNoRole();
+	const customRoleIcon = (roleId: string | null) =>
+		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
 
-	const delegationById = $derived(new Map(seated.delegations.map((d) => [d.id, d])));
+	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
 	const pendingGroups = $derived(
 		view.groups
 			.filter((group) => group.pending)
@@ -126,10 +140,21 @@
 					singleRoles={pendingSingles.length}
 				/>
 				{#if pendingGroups.length > 0}
-					<PendingGroupsTable groups={pendingGroups} {merged} {delegationById} {roleName} />
+					<PendingGroupsTable
+						groups={pendingGroups}
+						{merged}
+						{delegationById}
+						{describeTarget}
+						conferenceId={params.conferenceId}
+					/>
 				{/if}
 				{#if pendingSingles.length > 0}
-					<PendingSinglesTable singles={pendingSingles} {customRoleName} />
+					<PendingSinglesTable
+						singles={pendingSingles}
+						{customRoleName}
+						{customRoleIcon}
+						conferenceId={params.conferenceId}
+					/>
 				{/if}
 			{/if}
 		</div>

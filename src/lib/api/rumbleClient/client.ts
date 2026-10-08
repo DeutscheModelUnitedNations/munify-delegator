@@ -3360,6 +3360,10 @@ export type Singleparticipant = {
   assignedRole: () => Customconferencerole | null,
   assignedRoleId: ID | null,
   assignmentDetails: String | null,
+  assignmentReview: (p?: {
+    orderBy?: AssignmentreviewOrderInputArgument | null | undefined,
+    where?: AssignmentreviewWhereInputArgument | null | undefined
+  }) => Assignmentreview | null,
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -3409,6 +3413,7 @@ export type SingleparticipantWhereInputArgument = {
   assignedRole?: CustomconferenceroleWhereInputArgument | null | undefined,
   assignedRoleId?: IDWhereInputArgument | null | undefined,
   assignmentDetails?: StringWhereInputArgument | null | undefined,
+  assignmentReview?: AssignmentreviewWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,

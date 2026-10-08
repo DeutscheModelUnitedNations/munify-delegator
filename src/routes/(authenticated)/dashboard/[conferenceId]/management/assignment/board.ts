@@ -4,6 +4,7 @@ import {
 	type DelegationWhereInputArgument,
 	type SingleparticipantWhereInputArgument
 } from '$lib/api/rumbleClient/client';
+import { liveSnapshot } from '$lib/api/liveSnapshot';
 import type { BoardReviewRow } from '$lib/assignment/board';
 
 /*
@@ -21,6 +22,7 @@ const inConference = (conferenceId: string) => ({ conferenceId: { eq: conference
 /** What the board shows of a delegation. */
 const delegationCard = {
 	id: true,
+	applied: true,
 	school: true,
 	assignedNationAlpha3Code: true,
 	assignedNonStateActorId: true,
@@ -39,6 +41,7 @@ const delegationCard = {
 /** What the board shows of a single participant. */
 const singleCard = {
 	id: true,
+	applied: true,
 	school: true,
 	assignedRoleId: true,
 	user: { givenName: true, familyName: true },
@@ -68,7 +71,16 @@ function fetchReviews(where: AssignmentreviewWhereInputArgument) {
 	return client.liveQuery.assignmentReviews({ __args: { where }, ...reviewFields });
 }
 
-/** The draft of a conference: its units and the custom roles it plans, live. */
+/** A card's fields with the application's review, for rows read along with something else. */
+const delegationCardWithReview = { ...delegationCard, assignmentReview: reviewFields } as const;
+const singleCardWithReview = { ...singleCard, assignmentReview: reviewFields } as const;
+
+/**
+ * The draft of a conference, live: its units and the custom roles it plans, each with the
+ * application it comes from and that application's review. One query, so a move on the board
+ * arrives as one update: nothing has to be asked for afterwards, which would keep the page's
+ * update pending (and a second move in that window left the board half updated).
+ */
 export async function fetchAssignmentDraft(conferenceId: string) {
 	const [units, draftSingleRoles] = await Promise.all([
 		client.liveQuery.assignmentUnits({
@@ -78,31 +90,21 @@ export async function fetchAssignmentDraft(conferenceId: string) {
 			sourceSingleParticipantId: true,
 			nationAlpha3Code: true,
 			nonStateActorId: true,
-			members: { delegationMemberId: true }
+			members: { delegationMemberId: true },
+			sourceDelegation: delegationCardWithReview,
+			sourceSingleParticipant: singleCardWithReview
 		}),
 		client.liveQuery.assignmentSingleRoles({
 			__args: { where: inConference(conferenceId) },
 			singleParticipantId: true,
-			roleId: true
+			roleId: true,
+			singleParticipant: singleCardWithReview
 		})
 	]);
 	return { units, draftSingleRoles };
 }
 
-export type AssignmentDraft = Awaited<ReturnType<typeof fetchAssignmentDraft>>;
-
-const sortedUnique = (ids: Iterable<string>) => [...new Set(ids)].sort();
-
-/** The applications the draft touches, sorted so equal drafts ask the same queries. */
-export function draftApplicationIds(draft: AssignmentDraft) {
-	return {
-		delegationIds: sortedUnique(draft.units.flatMap((unit) => unit.sourceDelegationId ?? [])),
-		singleParticipantIds: sortedUnique([
-			...draft.units.flatMap((unit) => unit.sourceSingleParticipantId ?? []),
-			...draft.draftSingleRoles.map((role) => role.singleParticipantId)
-		])
-	};
-}
+type AssignmentDraft = Awaited<ReturnType<typeof fetchAssignmentDraft>>;
 
 export interface ApplicationIds {
 	delegationIds: readonly string[];
@@ -110,37 +112,106 @@ export interface ApplicationIds {
 }
 
 /**
- * The applied delegations and single participants that hold a role or that the draft touches,
- * live: everything the roles, their seat counts and the plan of applying the draft depend on. The
- * applications without a role that the draft leaves alone change none of that.
+ * The applied delegations and single participants that hold a role, live, with their reviews.
+ * Together with the applications the draft brings along (`seatedFrom`), that is everything the
+ * roles, their seat counts and the plan of applying the draft depend on. It does not depend on
+ * the draft, so a move on the board asks for nothing new.
  */
-export async function fetchSeatedApplications(conferenceId: string, touched: ApplicationIds) {
+export async function fetchSeatedApplications(conferenceId: string) {
 	const applied = { ...inConference(conferenceId), applied: { eq: true } };
 	const [delegations, singleParticipants] = await Promise.all([
-		fetchBoardDelegations({
-			...applied,
-			OR: [
-				{ assignedNationAlpha3Code: { isNotNull: true } },
-				{ assignedNonStateActorId: { isNotNull: true } },
-				{ id: { in: [...touched.delegationIds] } }
-			]
+		client.liveQuery.delegations({
+			__args: {
+				where: {
+					...applied,
+					OR: [
+						{ assignedNationAlpha3Code: { isNotNull: true } },
+						{ assignedNonStateActorId: { isNotNull: true } }
+					]
+				}
+			},
+			...delegationCardWithReview
 		}),
-		fetchBoardSingleParticipants({
-			...applied,
-			OR: [
-				{ assignedRoleId: { isNotNull: true } },
-				{ id: { in: [...touched.singleParticipantIds] } }
-			]
+		client.liveQuery.singleParticipants({
+			__args: { where: { ...applied, assignedRoleId: { isNotNull: true } } },
+			...singleCardWithReview
 		})
 	]);
 	return { delegations, singleParticipants };
 }
 
-/** The ids of the given rows, sorted, to read their reviews by. */
-export const idsOf = (rows: readonly { id: string }[]) => sortedUnique(rows.map((row) => row.id));
+type SeatedApplications = Awaited<ReturnType<typeof fetchSeatedApplications>>;
+
+type WithReview<T> = T & { assignmentReview?: BoardReviewRow | null };
+
+/**
+ * The applications that hold a role or that the draft touches, as plain rows, and their reviews
+ * collected: the seated ones and the ones the draft's units and single roles bring along. Applications
+ * no longer applied are left out; one listed twice counts once.
+ */
+export function seatedFrom(input: {
+	delegations: readonly WithReview<BoardDelegation>[];
+	singleParticipants: readonly WithReview<BoardSingleParticipant>[];
+	units: readonly {
+		sourceDelegation?: WithReview<BoardDelegation> | null;
+		sourceSingleParticipant?: WithReview<BoardSingleParticipant> | null;
+	}[];
+	draftSingleRoles: readonly { singleParticipant?: WithReview<BoardSingleParticipant> | null }[];
+}) {
+	const delegations = new Map<string, BoardDelegation>();
+	const singleParticipants = new Map<string, BoardSingleParticipant>();
+	const reviews: BoardReviewRow[] = [];
+	const add = <T extends { id: string; applied: boolean }>(
+		into: Map<string, T>,
+		row: WithReview<T> | null | undefined
+	) => {
+		if (!row?.applied || into.has(row.id)) return;
+		// Kept with its review attached: the extra field is harmless to everything reading the row.
+		into.set(row.id, row);
+		if (row.assignmentReview) reviews.push(row.assignmentReview);
+	};
+	for (const row of input.delegations) add(delegations, row);
+	for (const unit of input.units) add(delegations, unit.sourceDelegation);
+	for (const row of input.singleParticipants) add(singleParticipants, row);
+	for (const unit of input.units) add(singleParticipants, unit.sourceSingleParticipant);
+	for (const role of input.draftSingleRoles) add(singleParticipants, role.singleParticipant);
+	return {
+		delegations: [...delegations.values()],
+		singleParticipants: [...singleParticipants.values()],
+		reviews
+	};
+}
+
+/**
+ * Plain copies of the draft and the seated applications, joined (`seatedFrom`): what the
+ * assignment tabs work over. Create one per component and call it in a `$derived`; each live
+ * result is read once, and an unchanged one keeps its copy (see `liveSnapshot`).
+ */
+export function seatedSnapshot() {
+	const snapshot = {
+		units: liveSnapshot<AssignmentDraft['units'][number]>(),
+		draftSingleRoles: liveSnapshot<AssignmentDraft['draftSingleRoles'][number]>(),
+		delegations: liveSnapshot<SeatedApplications['delegations'][number]>(),
+		singles: liveSnapshot<SeatedApplications['singleParticipants'][number]>()
+	};
+	return (draft: AssignmentDraft, seated: SeatedApplications) => {
+		const units = snapshot.units(draft.units);
+		const draftSingleRoles = snapshot.draftSingleRoles(draft.draftSingleRoles);
+		return {
+			units,
+			draftSingleRoles,
+			...seatedFrom({
+				delegations: snapshot.delegations(seated.delegations),
+				singleParticipants: snapshot.singles(seated.singleParticipants),
+				units,
+				draftSingleRoles
+			})
+		};
+	};
+}
 
 /** The reviews of the given applications, live. */
-export function fetchReviewsOf(conferenceId: string, ids: ApplicationIds) {
+function fetchReviewsOf(conferenceId: string, ids: ApplicationIds) {
 	return fetchReviews({
 		...inConference(conferenceId),
 		OR: [
@@ -162,32 +233,6 @@ export async function fetchReviewsOfMany(conferenceId: string, ids: ApplicationI
 		pages.push({ delegationIds: [], singleParticipantIds });
 	}
 	return (await Promise.all(pages.map((page) => fetchReviewsOf(conferenceId, page)))).flat();
-}
-
-const pageArgs = (page: number) => ({
-	limit: POOL_PAGE,
-	offset: page * POOL_PAGE,
-	orderBy: { id: 'asc' as const }
-});
-
-/**
- * The reviews of one page of a pool, read once and copied out of the query result like the page
- * itself (see `fetchDelegationPoolPage`).
- */
-async function pageReviews(conferenceId: string, ids: ApplicationIds) {
-	const reviews = await client.query.assignmentReviews({
-		__args: {
-			where: {
-				...inConference(conferenceId),
-				OR: [
-					{ delegationId: { in: [...ids.delegationIds] } },
-					{ singleParticipantId: { in: [...ids.singleParticipantIds] } }
-				]
-			}
-		},
-		...reviewFields
-	});
-	return [...reviews];
 }
 
 /** Which pool of delegations the board shows. */
@@ -266,29 +311,29 @@ async function unratedPoolRows(
 	return [...unrated].map(({ assignmentReview, ...row }) => ({ row, review: assignmentReview }));
 }
 
+type PoolEntry<T> = { row: T; review: BoardReviewRow | null };
+
 /**
- * One page of a pool of delegations, filtered and ordered by the backend: the rated ones best
- * first, then the rest by id, so every delegation on a page is one the board shows. Read once and
- * copied out of the query results, so a page is never asked for or read again. Not live, which
- * the board does not need: whatever the draft or applying changes about these delegations reaches
- * it through `fetchSeatedApplications`, which is.
+ * One page of a pool, ordered by the backend: the rated applications best first (read through
+ * their reviews, the only way to order by the rating), then the rest by id, so every row on a
+ * page is one the board shows. Read once and copied out of the query results, so a page is never
+ * asked for or read again. Not live, which the board does not need: whatever the draft or applying
+ * changes about these applications reaches it through `fetchSeatedApplications`, which is.
  */
-export async function fetchDelegationPoolPage(
-	conferenceId: string,
-	filter: DelegationPoolFilter,
-	page: number
-): Promise<PoolPage<BoardDelegation>> {
+async function ratedFirstPage<T>(
+	page: number,
+	source: {
+		countRated: () => Promise<number>;
+		rated: (offset: number) => Promise<PoolEntry<T>[]>;
+		unrated: (paging: { limit: number; offset: number }) => Promise<PoolEntry<T>[]>;
+	}
+): Promise<PoolPage<T>> {
 	const offset = page * POOL_PAGE;
-	const ratedCount = Number(
-		await client.query.assignmentReviewsCount({
-			__args: { where: ratedPoolWhere(conferenceId, filter) }
-		})
-	);
-	const entries: { row: BoardDelegation; review: BoardReviewRow | null }[] =
-		offset < ratedCount ? await ratedPoolRows(conferenceId, filter, offset) : [];
+	const ratedCount = await source.countRated();
+	const entries = offset < ratedCount ? await source.rated(offset) : [];
 	if (entries.length < POOL_PAGE) {
 		entries.push(
-			...(await unratedPoolRows(conferenceId, filter, {
+			...(await source.unrated({
 				limit: POOL_PAGE - entries.length,
 				offset: Math.max(0, offset - ratedCount)
 			}))
@@ -300,53 +345,105 @@ export async function fetchDelegationPoolPage(
 	};
 }
 
-/**
- * How many delegations the pool holds per group size, counted by the backend, leaving out those
- * the draft touches: they reach the board through `fetchSeatedApplications` and count there. The
- * largest size comes first, then one count per size (an index on the conference and the size
- * serves both), so the size tabs know every size there is without the delegations being read.
- */
-export async function fetchDelegationPoolSizes(
+/** One page of a pool of delegations, best rated first (see `ratedFirstPage`). */
+export function fetchDelegationPoolPage(
 	conferenceId: string,
-	showDisqualified: boolean,
-	touchedDelegationIds: readonly string[]
-) {
-	const where = (size?: number): DelegationWhereInputArgument => ({
-		AND: [
-			delegationPoolWhere(conferenceId, { size, showDisqualified }),
-			{ NOT: { id: { in: [...touchedDelegationIds] } } }
-		]
+	filter: DelegationPoolFilter,
+	page: number
+): Promise<PoolPage<BoardDelegation>> {
+	return ratedFirstPage(page, {
+		countRated: async () =>
+			Number(
+				await client.query.assignmentReviewsCount({
+					__args: { where: ratedPoolWhere(conferenceId, filter) }
+				})
+			),
+		rated: (offset) => ratedPoolRows(conferenceId, filter, offset),
+		unrated: (paging) => unratedPoolRows(conferenceId, filter, paging)
 	});
+}
+
+/**
+ * How many delegations the pool holds per group size, counted by the backend: the largest size
+ * first, then one count per size (an index on the conference and the size serves both), so the
+ * size tabs know every size there is without the delegations being read. It does not depend on
+ * the draft (`poolCountsBesidesDraft` takes the touched delegations out), so a move on the board
+ * asks for nothing new.
+ */
+export async function fetchDelegationPoolSizes(conferenceId: string, showDisqualified: boolean) {
+	const where = (size?: number) => delegationPoolWhere(conferenceId, { size, showDisqualified });
 	const [largest] = await client.query.delegations({
 		__args: { where: where(), orderBy: { memberCount: 'desc' }, limit: 1 },
 		memberCount: true
 	});
 	const sizes = Array.from({ length: largest?.memberCount ?? 0 }, (_, index) => index + 1);
 	const counts = await Promise.all(
-		sizes.map((size) => client.liveQuery.delegationsCount({ __args: { where: where(size) } }))
+		sizes.map((size) => client.query.delegationsCount({ __args: { where: where(size) } }))
 	);
 	return new Map(sizes.map((size, index) => [size, Number(counts[index])]));
 }
 
-/** One page of the applied single participants without a live role; see `fetchDelegationPoolPage`. */
-export async function fetchSinglePoolPage(conferenceId: string, page: number) {
-	const rows = await client.query.singleParticipants({
-		__args: {
-			where: {
-				...inConference(conferenceId),
-				applied: { eq: true },
-				assignedRoleId: { isNull: true }
-			},
-			...pageArgs(page)
+/** The single participants of the pool: applied, without a custom role. */
+const singlePoolWhere = (conferenceId: string): SingleparticipantWhereInputArgument => ({
+	...inConference(conferenceId),
+	applied: { eq: true },
+	assignedRoleId: { isNull: true }
+});
+
+const ratedSinglesWhere = (conferenceId: string): AssignmentreviewWhereInputArgument => ({
+	...inConference(conferenceId),
+	evaluation: { isNotNull: true },
+	singleParticipant: singlePoolWhere(conferenceId)
+});
+
+/** One page of the single participants without a role, best rated first (see `ratedFirstPage`). */
+export function fetchSinglePoolPage(
+	conferenceId: string,
+	page: number
+): Promise<PoolPage<BoardSingleParticipant>> {
+	return ratedFirstPage(page, {
+		countRated: async () =>
+			Number(
+				await client.query.assignmentReviewsCount({
+					__args: { where: ratedSinglesWhere(conferenceId) }
+				})
+			),
+		rated: async (offset) => {
+			const rated = await client.query.assignmentReviews({
+				__args: {
+					where: ratedSinglesWhere(conferenceId),
+					orderBy: { evaluation: 'desc', singleParticipantId: 'asc' },
+					limit: POOL_PAGE,
+					offset
+				},
+				...reviewFields,
+				singleParticipant: singleCard
+			});
+			return [...rated].flatMap(({ singleParticipant, ...review }) =>
+				singleParticipant ? [{ row: singleParticipant, review }] : []
+			);
 		},
-		...singleCard
+		unrated: async (paging) => {
+			const unrated = await client.query.singleParticipants({
+				__args: {
+					where: {
+						AND: [
+							singlePoolWhere(conferenceId),
+							{ NOT: { assignmentReview: { evaluation: { isNotNull: true } } } }
+						]
+					},
+					orderBy: { id: 'asc' },
+					...paging
+				},
+				...singleCard,
+				assignmentReview: reviewFields
+			});
+			return [...unrated].map(({ assignmentReview, ...row }) => ({
+				row,
+				review: assignmentReview
+			}));
+		}
 	});
-	const plain = [...rows];
-	const reviews = await pageReviews(conferenceId, {
-		delegationIds: [],
-		singleParticipantIds: idsOf(plain)
-	});
-	return { rows: plain, reviews };
 }
 
 export type PoolPage<T> = { rows: T[]; reviews: BoardReviewRow[] };

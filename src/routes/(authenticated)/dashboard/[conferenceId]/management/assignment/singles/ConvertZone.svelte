@@ -19,7 +19,7 @@
 </script>
 
 <section
-	class="flex min-h-24 grow flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition-colors
+	class="flex max-h-[40%] min-h-24 shrink-0 flex-col gap-2 overflow-y-auto rounded-lg border-2 border-dashed p-3 transition-colors
 		{highlight ? 'border-primary bg-primary/10' : 'border-base-300'}"
 	aria-label={m.assignmentConvertToDelegation()}
 	use:droppable={{ container: CONVERT_CONTAINER, callbacks: { onDrop } }}

@@ -1,7 +1,6 @@
 // world-countries
 
 import { getLocale, locales } from '$lib/paraglide/runtime';
-import { SvelteMap } from 'svelte/reactivity';
 import allNations from 'world-countries';
 
 const addressNations = [
@@ -282,9 +281,11 @@ function nationCodeToLocalName(code: string, locale = getLocale(), official = fa
 	return translation.common;
 }
 
-// we build an index of nation codes to translation objects
+// we build an index of nation codes to translation objects. A plain Map: it is built once and never
+// changes, so reading it needs no reactivity (a SvelteMap would track every lookup).
 type TranslationObject = { [key in (typeof locales)[number]]: string };
-const NationIso3ToLocalNamesMap = new SvelteMap<string, TranslationObject>();
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- static lookup table, see above
+const NationIso3ToLocalNamesMap = new Map<string, TranslationObject>();
 
 function hasEveryLocale(
 	translations: Partial<TranslationObject>
@@ -318,8 +319,6 @@ export const translatedNationCodeAddressFormOptions = $state(
 export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {
 	const found = NationIso3ToLocalNamesMap.get(isoCode.toUpperCase());
 	if (found) return found[getLocale()];
-	console.log(NationIso3ToLocalNamesMap);
-
 	console.warn('Could not translate country code', isoCode);
 	return 'N/A';
 };

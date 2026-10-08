@@ -1,4 +1,4 @@
-import { seatedRoles } from './capacity';
+import type { SeatedRole } from './capacity';
 import {
 	assignmentGroups,
 	occupancy,
@@ -125,8 +125,12 @@ function reviewLookup<R extends BoardReviewRow>(reviews: readonly R[]) {
 		byApplication.get(applicationKey(group));
 }
 
-/** Everything the board shows, worked out from the live rows and the draft. */
-export function boardState<R extends BoardRows>(rows: R, roles: BoardRoles) {
+/**
+ * Everything the board shows, worked out from the live rows and the draft. `seated` is the roles
+ * with their seats (`seatedRoles`), which change far less often than the rows: work them out once
+ * per change of the roles rather than once per call.
+ */
+export function boardState<R extends BoardRows>(rows: R, seated: readonly SeatedRole[]) {
 	const live = liveState(rows);
 	const { groups, incompleteSplits } = assignmentGroups(
 		live.delegations,
@@ -138,7 +142,7 @@ export function boardState<R extends BoardRows>(rows: R, roles: BoardRoles) {
 		live,
 		groups,
 		incompleteSplits,
-		seated: seatedRoles(roles.committees, roles.nonStateActors),
+		seated,
 		taken: occupancy(groups),
 		singles: singleRoles(live.singleParticipants, live.draftSingleRoles, converted),
 		reviewOf: reviewLookup<R['reviews'][number]>(rows.reviews)
@@ -172,20 +176,50 @@ const isOpen = (view: BoardState, group: AssignmentGroup) =>
  * `poolCounts` adds the open groups the board has not loaded, as the backend counted them per size.
  */
 export function sizeOptions(view: BoardState, poolCounts: ReadonlyMap<number, number> = new Map()) {
-	const sizes = new Set([
-		...view.groups.map((g) => g.size),
-		...view.seated.map((r) => r.seats),
-		...[...poolCounts].flatMap(([size, count]) => (count > 0 ? [size] : []))
-	]);
-	return [...sizes]
-		.sort((a, b) => a - b)
-		.map((size) => ({
-			size,
-			openGroups:
-				view.groups.filter((g) => g.size === size && isOpen(view, g)).length +
-				(poolCounts.get(size) ?? 0),
-			unfilledRoles: view.seated.filter((r) => r.seats === size && freeSeats(view, r) > 0).length
-		}));
+	const options = new Map<number, { size: number; openGroups: number; unfilledRoles: number }>();
+	const option = (size: number) => {
+		let entry = options.get(size);
+		if (!entry) options.set(size, (entry = { size, openGroups: 0, unfilledRoles: 0 }));
+		return entry;
+	};
+	for (const group of view.groups) {
+		const entry = option(group.size);
+		if (isOpen(view, group)) entry.openGroups++;
+	}
+	for (const role of view.seated) {
+		const entry = option(role.seats);
+		if (freeSeats(view, role) > 0) entry.unfilledRoles++;
+	}
+	for (const [size, count] of poolCounts) {
+		if (count > 0) option(size).openGroups += count;
+	}
+	return [...options.values()].sort((a, b) => a.size - b.size);
+}
+
+/**
+ * The backend's per-size count of the pool (applied delegations without a live role), less the
+ * delegations the draft touches: those reach the board as groups of their own and are counted
+ * there (`sizeOptions`), so the counts need not be asked for again on every move.
+ */
+export function poolCountsBesidesDraft(
+	counts: ReadonlyMap<number, number>,
+	touched: readonly {
+		id: string;
+		assignedNationAlpha3Code?: Nullable<string>;
+		assignedNonStateActorId?: Nullable<string>;
+		members: readonly unknown[];
+	}[],
+	disqualified: (delegationId: string) => boolean
+) {
+	const result = new Map(counts);
+	for (const delegation of touched) {
+		if (delegation.assignedNationAlpha3Code || delegation.assignedNonStateActorId) continue;
+		if (disqualified(delegation.id)) continue;
+		const size = delegation.members.length;
+		const count = result.get(size);
+		if (count) result.set(size, count - 1);
+	}
+	return result;
 }
 
 /** The size asked for, else the first with open groups, else the smallest. */

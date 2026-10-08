@@ -502,6 +502,11 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.singleParticipant.id.through(r.customConferenceRoleToSingleParticipant.b),
 			to: r.customConferenceRole.id.through(r.customConferenceRoleToSingleParticipant.a)
 		}),
+		// The team's review of the application, so the board can read it along with the participant.
+		assignmentReview: r.one.assignmentReview({
+			from: r.singleParticipant.id,
+			to: r.assignmentReview.singleParticipantId
+		}),
 		assignedRole: r.one.customConferenceRole({
 			from: r.singleParticipant.assignedRoleId,
 			to: r.customConferenceRole.id

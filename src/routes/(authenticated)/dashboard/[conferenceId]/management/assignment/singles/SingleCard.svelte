@@ -7,6 +7,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
+	import { sightingHref } from '../sightingLink';
 
 	/** A single participant on the board, dragged by their id out of `container`. */
 	interface Props {
@@ -46,12 +47,7 @@
 			}
 		)
 	);
-	const sightingHref = $derived(
-		resolve(
-			`/(authenticated)/dashboard/[conferenceId]/management/assignment/sighting?application=${singleParticipantId}`,
-			{ conferenceId }
-		)
-	);
+	const sightingLink = $derived(sightingHref(conferenceId, singleParticipantId));
 	/** Every wish, the one matching the current assignment first. Wishes of a single are unranked. */
 	const wishes = $derived(
 		(single?.appliedForRoles ?? [])
@@ -119,7 +115,7 @@
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
 		<a
 			class="btn btn-ghost btn-xs btn-square shrink-0"
-			href={sightingHref}
+			href={sightingLink}
 			draggable="false"
 			aria-label={m.assignmentCardSighting()}
 			title={m.assignmentCardSighting()}

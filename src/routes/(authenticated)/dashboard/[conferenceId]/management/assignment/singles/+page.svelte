@@ -7,19 +7,20 @@
 		roleContainer,
 		singleDropAction
 	} from '$lib/assignment/board';
+	import { seatedRoles } from '$lib/assignment/capacity';
+	import { liveSnapshot } from '$lib/api/liveSnapshot';
 	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
+	import { memoizeLast } from '$lib/helpers/memoizeLast';
 	import { m } from '$lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
 	import {
-		draftApplicationIds,
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
-		fetchReviewsOf,
 		fetchSeatedApplications,
 		fetchSinglePoolPage,
-		idsOf,
-		type BoardSingleParticipant
+		type BoardSingleParticipant,
+		seatedSnapshot
 	} from '../board';
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import { PoolPages } from '../poolPages.svelte';
@@ -34,15 +35,31 @@
 
 	let { params }: PageProps = $props();
 
-	const [roles, draft] = $derived(
+	// Nothing here depends on the draft through a query: the draft brings the applications it
+	// touches along, so a move arrives as one live update and asks for nothing afterwards.
+	const [roles, draft, seated] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(params.conferenceId),
-			fetchAssignmentDraft(params.conferenceId)
+			fetchAssignmentDraft(params.conferenceId),
+			fetchSeatedApplications(params.conferenceId)
 		])
 	);
+	// Plain copies of the live results the board works over (see `liveSnapshot`).
+	const roleSnapshot = {
+		committees: liveSnapshot<(typeof roles.committees)[number]>(),
+		nonStateActors: liveSnapshot<(typeof roles.nonStateActors)[number]>()
+	};
+	const seatedRoleList = $derived(
+		seatedRoles(
+			roleSnapshot.committees(roles.committees),
+			roleSnapshot.nonStateActors(roles.nonStateActors)
+		)
+	);
 	// Everyone who holds a role or whom the draft touches: the roles and their holders.
-	const touched = $derived(draftApplicationIds(draft));
-	const seated = $derived(await fetchSeatedApplications(params.conferenceId, touched));
+	const plain = seatedSnapshot();
+	const seatedSet = $derived(plain(draft, seated));
+	const units = $derived(seatedSet.units);
+	const draftSingleRoles = $derived(seatedSet.draftSingleRoles);
 
 	// The single participants without a role, a page at a time as the pool scrolls. Pages are
 	// plain data, read once; what the draft or applying changes about them comes in live through
@@ -57,30 +74,21 @@
 	const poolPages = $derived(poolLoader.pages(params.conferenceId));
 	const poolLoading = $derived(poolLoader.pending(params.conferenceId));
 	const morePages = $derived(PoolPages.more(poolPages.at(-1)));
-	const seatedIds = $derived({
-		delegationIds: [],
-		singleParticipantIds: idsOf(seated.singleParticipants)
-	});
-	const seatedReviews = $derived(await fetchReviewsOf(params.conferenceId, seatedIds));
 
 	const singleParticipants = $derived([
 		...new Map(
-			[...poolPages.flatMap((page) => page.rows), ...seated.singleParticipants].map((s) => [
+			[...poolPages.flatMap((page) => page.rows), ...seatedSet.singleParticipants].map((s) => [
 				s.id,
 				s
 			])
 		).values()
 	]);
+	const reviews = $derived([...poolPages.flatMap((page) => page.reviews), ...seatedSet.reviews]);
+	const board = memoizeLast(boardState);
 	const view = $derived(
-		boardState(
-			{
-				delegations: seated.delegations,
-				singleParticipants,
-				units: draft.units,
-				draftSingleRoles: draft.draftSingleRoles,
-				reviews: [...poolPages.flatMap((page) => page.reviews), ...seatedReviews]
-			},
-			roles
+		board(
+			{ delegations: seatedSet.delegations, singleParticipants, units, draftSingleRoles, reviews },
+			seatedRoleList
 		)
 	);
 
@@ -205,8 +213,17 @@
 		{#if busy}
 			<BusyOverlay size="lg" />
 		{/if}
-		<div class="flex flex-col gap-4 xl:w-96 xl:shrink-0">
-			<PoolSection container={POOL_CONTAINER} count={pool.length} more={morePages} virtual {onDrop}>
+		<div
+			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
+		>
+			<PoolSection
+				container={POOL_CONTAINER}
+				count={pool.length}
+				more={morePages}
+				class="min-h-0 xl:flex-1"
+				virtual
+				{onDrop}
+			>
 				<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
 					{#snippet row(single)}
 						{@render singleCard(single, POOL_CONTAINER, true)}

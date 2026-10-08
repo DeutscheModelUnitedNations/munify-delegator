@@ -13,6 +13,7 @@ import {
 	dropAction,
 	pendingCount,
 	pickSize,
+	poolCountsBesidesDraft,
 	releaseNotice,
 	poolGroups,
 	roleArgs,
@@ -26,6 +27,7 @@ import {
 	type BoardRoles,
 	type BoardRows
 } from './board';
+import { seatedRoles } from './capacity';
 import type { AssignmentGroup } from './state';
 
 const delegation = (id: string, size: number, nation: string | null = null) => ({
@@ -56,6 +58,8 @@ const roles: BoardRoles = {
 	]
 };
 
+const seated = seatedRoles(roles.committees, roles.nonStateActors);
+
 const rows = (overrides: Partial<BoardRows> = {}): BoardRows => ({
 	delegations: [delegation('a', 2), delegation('b', 3, 'FRA'), delegation('c', 2)],
 	singleParticipants: [{ id: 's', assignedRoleId: null }],
@@ -69,7 +73,7 @@ const rows = (overrides: Partial<BoardRows> = {}): BoardRows => ({
 });
 
 describe('boardState', () => {
-	const view = boardState(rows(), roles);
+	const view = boardState(rows(), seated);
 
 	it('seats every nation across its committees and the non-state actors', () => {
 		expect(view.seated.map((role) => [role.key, role.seats])).toEqual([
@@ -91,7 +95,7 @@ describe('boardState', () => {
 			{ size: 2, openGroups: 1, unfilledRoles: 2 },
 			{ size: 3, openGroups: 0, unfilledRoles: 0 }
 		]);
-		const halfFull = boardState(rows({ delegations: [delegation('d', 1, 'DEU')] }), roles);
+		const halfFull = boardState(rows({ delegations: [delegation('d', 1, 'DEU')] }), seated);
 		expect(sizeOptions(halfFull).find((option) => option.size === 2)?.unfilledRoles).toBe(2);
 	});
 
@@ -148,10 +152,39 @@ describe('boardState', () => {
 					}
 				]
 			}),
-			roles
+			seated
 		);
 		expect(converted.singles).toEqual([]);
 		expect(converted.taken.get('nation:DEU')).toBe(1);
+	});
+});
+
+describe('poolCountsBesidesDraft', () => {
+	const counts = new Map([
+		[2, 3],
+		[4, 1]
+	]);
+	const touched = (id: string, size: number, nation: string | null = null) => ({
+		...delegation(id, size, nation),
+		members: Array.from({ length: size }, (_, i) => ({ id: `${id}-${i}` }))
+	});
+
+	it('takes the delegations the draft touches out of the counts of their size', () => {
+		const result = poolCountsBesidesDraft(counts, [touched('a', 2), touched('b', 4)], () => false);
+		expect([...result]).toEqual([
+			[2, 2],
+			[4, 0]
+		]);
+	});
+
+	it('leaves alone those the backend did not count', () => {
+		// a live role, an exclusion while excluded ones are hidden, a size without a count
+		const result = poolCountsBesidesDraft(
+			counts,
+			[touched('held', 2, 'FRA'), touched('out', 2), touched('big', 7)],
+			(id) => id === 'out'
+		);
+		expect([...result]).toEqual([...counts]);
 	});
 });
 
@@ -161,7 +194,7 @@ describe('inPageOrder', () => {
 			delegations: [delegation('p1', 2), delegation('p0', 2), delegation('moved', 2)],
 			reviews: [{ delegationId: 'p1', evaluation: 5, flagged: false, disqualified: false }]
 		}),
-		roles
+		seated
 	);
 
 	it('keeps the groups of earlier pages first, whatever order they come in', () => {
@@ -179,7 +212,7 @@ describe('inPageOrder', () => {
 });
 
 describe('dropAction', () => {
-	const view = boardState(rows(), roles);
+	const view = boardState(rows(), seated);
 
 	it('unassigns a group dropped into the pool', () => {
 		expect(dropAction(view, 'b', roleContainer('nation:FRA'), POOL_CONTAINER)).toMatchObject({
@@ -364,10 +397,10 @@ describe('finish tab', () => {
 	it('names the roles applying would merge', () => {
 		const merging = boardState(
 			rows({ units: [{ id: 'u', sourceDelegationId: 'a', nationAlpha3Code: 'FRA', members: [] }] }),
-			roles
+			seated
 		);
 		expect([...mergedRoles(merging.groups)]).toEqual(['nation:FRA']);
-		expect(mergedRoles(boardState(rows(), roles).groups).size).toBe(0);
+		expect(mergedRoles(boardState(rows(), seated).groups).size).toBe(0);
 	});
 
 	it('reminds to release once applied, until released', () => {

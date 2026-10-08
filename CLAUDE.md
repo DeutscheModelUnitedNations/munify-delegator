@@ -309,6 +309,16 @@ bun run preview
     that; likewise read fields of a fresh result in a second `$derived`, not in the one that awaited
     it. (rumble only announces updates whose data actually changed, which stops the resulting
     loops, but the extra queries are still waste.)
+  - **Every property read of a live result is a subscription.** rumble's result proxy calls Svelte's
+    `createSubscriber` on each read, and each call creates a render effect; a `$derived` that walks
+    a live array row by row creates one per row, and renews them all every time it runs. A page
+    that computes over many live rows reads each result once into a plain copy
+    (`$lib/api/liveSnapshot`, which uses `slice`, a single read) in its own `$derived`, and
+    computes over the copies; `memoizeLast` (`$lib/helpers/memoizeLast`) then skips the work when
+    a derived runs again over the same copies. On the assignment board this took a tab switch
+    from ~45 board computations and a 0.5 s stall to 2 and ~0.1 s. Do not read live results in an
+    `$effect` there instead: during the page's first async work that trips Svelte's "Batch has
+    scheduled effects" invariant.
   - When a component needs several queries, run them with `Promise.all` in one
     `$derived(await …)`. A module that exports a fetch function and its result type is still right
     when several components share a shape (`conferenceParticipants.ts`).
@@ -488,14 +498,18 @@ bun run preview
   and weights stay).
 - **The tabs never read a whole conference, and the backend does the sorting.** A conference can
   hold more applications than a list query returns (1000). `management/assignment/board.ts` reads
-  the draft, then the applications that hold a role or that the draft touches
-  (`fetchSeatedApplications`, bounded by the seats and the draft; enough for the roles, the seat
-  counts and the plan of applying). The delegation pool is asked for exactly as shown: filtered by
+  the draft with the applications it touches (each unit and planned single role brings its source
+  row and review), the applications that hold a role (`fetchSeatedApplications`), and joins them
+  with `seatedFrom`: enough for the roles, the seat counts and the plan of applying. Nothing is
+  asked for by the draft's ids, so a move arrives as one live update; a query keyed by them kept
+  the page's update pending after every move, and a second move in that window left a card
+  stranded in the pool. The delegation pool is asked for exactly as shown: filtered by
   `delegation.memberCount` (kept by a trigger on `delegation_member`), the role and the exclusion,
   rated delegations first by rating (read through `assignmentReviews`), then the rest by id, a page
   at a time (`PoolPages`, loaded imperatively; `PoolList` asks for the next page as it scrolls).
-  The size tabs come from per-size `delegationsCount`s. Pages are copied out of the query results
-  once and never re-read: every row read through a live result subscribes whatever reads it.
+  The size tabs come from per-size `delegationsCount`s that ignore the draft
+  (`poolCountsBesidesDraft` takes the touched delegations out). Pages are copied out of the query
+  results once and never re-read.
 - **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
   holds them as state and mirrors them into the URL with `replaceState` on the next task: a
   navigation or a `page` write landing while the board's async loads are pending trips Svelte's

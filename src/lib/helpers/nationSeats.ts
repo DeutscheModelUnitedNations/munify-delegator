@@ -10,15 +10,15 @@ type SeatedCommittee<N extends { alpha2Code: string }> = {
  * (most recently listed first).
  */
 export function nationSeats<N extends { alpha2Code: string }>(committees: SeatedCommittee<N>[]) {
-	const roles: { nation: N; seats: number; committees: string[] }[] = [];
+	const roles = new Map<string, { nation: N; seats: number; committees: string[] }>();
 	for (const committee of committees) {
 		for (const nation of committee.nations) {
-			const entry = roles.find((role) => role.nation.alpha2Code === nation.alpha2Code);
+			const entry = roles.get(nation.alpha2Code);
 			if (entry) {
 				entry.seats += committee.numOfSeatsPerDelegation;
-				entry.committees = [committee.abbreviation, ...entry.committees];
+				entry.committees.unshift(committee.abbreviation);
 			} else {
-				roles.push({
+				roles.set(nation.alpha2Code, {
 					nation,
 					seats: committee.numOfSeatsPerDelegation,
 					committees: [committee.abbreviation]
@@ -26,5 +26,5 @@ export function nationSeats<N extends { alpha2Code: string }>(committees: Seated
 			}
 		}
 	}
-	return roles;
+	return [...roles.values()];
 }

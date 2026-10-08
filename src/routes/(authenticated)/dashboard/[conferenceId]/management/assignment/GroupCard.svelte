@@ -17,6 +17,7 @@
 	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
 	import GroupBadges from './GroupBadges.svelte';
+	import { sightingHref } from './sightingLink';
 
 	/**
 	 * One group on the board: a delegation, a part of a split one, or a single participant turned
@@ -82,13 +83,8 @@
 	/** Under the names: the school. */
 	const subtitle = $derived(single ? single.school : delegation?.school);
 	const applicationId = $derived(group.singleParticipantId ?? group.delegationId);
-	const sightingHref = $derived(
-		applicationId
-			? resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/assignment/sighting?application=${applicationId}`,
-					{ conferenceId }
-				)
-			: undefined
+	const sightingLink = $derived(
+		applicationId ? sightingHref(conferenceId, applicationId) : undefined
 	);
 	const detailsHref = $derived(
 		group.singleParticipantId
@@ -150,11 +146,11 @@
 		</ul>
 	{/if}
 	<div class="flex items-center gap-0.5">
-		{#if sightingHref}
+		{#if sightingLink}
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
 			<a
 				class="btn btn-ghost btn-xs btn-square"
-				href={sightingHref}
+				href={sightingLink}
 				draggable="false"
 				aria-label={m.assignmentCardSighting()}
 				title={m.assignmentCardSighting()}

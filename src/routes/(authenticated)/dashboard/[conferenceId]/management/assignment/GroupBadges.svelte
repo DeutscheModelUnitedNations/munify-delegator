@@ -12,21 +12,30 @@
 	let { group, review }: Props = $props();
 </script>
 
+<!-- An icon with what it means, shown on hover (and read out by screen readers). -->
+{#snippet marked(tip: string, icon: string, badge: boolean)}
+	<span class="tooltip tooltip-right before:max-w-60 before:whitespace-pre-line" data-tip={tip}>
+		{#if badge}
+			<span class="badge badge-xs badge-info" role="img" aria-label={tip}>
+				<i class="fa-solid {icon}"></i>
+			</span>
+		{:else}
+			<i class="fa-duotone {icon}" role="img" aria-label={tip}></i>
+		{/if}
+	</span>
+{/snippet}
+
 <div class="flex flex-wrap items-center gap-1">
 	{#if group.part}
-		<span class="badge badge-xs badge-info" title={m.assignmentSplitPart()}>
-			<i class="fa-solid fa-split"></i>
-		</span>
+		{@render marked(m.assignmentSplitPart(), 'fa-split', true)}
 	{/if}
 	{#if group.singleParticipantId}
-		<span class="badge badge-xs badge-info" title={m.assignmentConvertedSingle()}>
-			<i class="fa-solid fa-user-plus"></i>
-		</span>
+		{@render marked(m.assignmentConvertedSingle(), 'fa-user-plus', true)}
 	{/if}
 	{#if review?.flagged}
-		<i class="fa-duotone fa-flag text-warning" title={m.assignmentFlag()}></i>
+		{@render marked(m.assignmentFlag(), 'fa-flag text-warning', false)}
 	{/if}
 	{#if review?.note}
-		<i class="fa-duotone fa-note-sticky text-info" title={review.note}></i>
+		{@render marked(review.note, 'fa-note-sticky text-info', false)}
 	{/if}
 </div>
