@@ -3,7 +3,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { pendingCount } from '$lib/assignment/board';
 	import { m } from '$lib/paraglide/messages';
-	import { fetchAssignmentRows } from './board';
+	import { draftApplicationIds, fetchAssignmentDraft, fetchSeatedApplications } from './board';
 
 	interface Props {
 		conferenceId: string;
@@ -11,14 +11,16 @@
 
 	let { conferenceId }: Props = $props();
 
-	const [board, conference] = $derived(
+	const [draft, conference] = $derived(
 		await Promise.all([
-			fetchAssignmentRows(conferenceId, { draftOnly: true }),
+			fetchAssignmentDraft(conferenceId),
 			client.liveQuery.conference({ __args: { id: conferenceId }, assignmentReleased: true })
 		])
 	);
+	const touched = $derived(draftApplicationIds(draft));
+	const seated = $derived(await fetchSeatedApplications(conferenceId, touched));
 
-	const pending = $derived(pendingCount(board));
+	const pending = $derived(pendingCount({ ...draft, ...seated }));
 </script>
 
 <a

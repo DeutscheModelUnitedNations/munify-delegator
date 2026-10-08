@@ -15,7 +15,7 @@
 	import DetailRow from '$lib/components/registrationAdmin/DetailRow.svelte';
 	import { resolve } from '$app/paths';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { fetchAssignmentReviews } from '../assignment/board';
+	import { fetchReviewOf } from '../assignment/board';
 	import UserCardButton from '$lib/components/registrationAdmin/UserCardButton.svelte';
 
 	interface Props {
@@ -58,11 +58,7 @@
 		})
 	);
 
-	const evaluation = $derived(
-		(await fetchAssignmentReviews(conferenceId)).find(
-			(review) => review.delegationId === delegationId
-		)?.evaluation
-	);
+	const evaluation = $derived((await fetchReviewOf(conferenceId, { delegationId }))?.evaluation);
 
 	let members = $derived(
 		delegation.members.toSorted((a, b) => {

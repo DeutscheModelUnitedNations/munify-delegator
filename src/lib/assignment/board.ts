@@ -167,14 +167,23 @@ export const hasRole = (group: AssignmentGroup | undefined) => !!group && !!targ
 const isOpen = (view: BoardState, group: AssignmentGroup) =>
 	!targetKey(group.target) && !view.reviewOf(group)?.disqualified;
 
-/** Every size a group or a role comes in, with how many groups are open and roles not yet full. */
-export function sizeOptions(view: BoardState) {
-	const sizes = new Set([...view.groups.map((g) => g.size), ...view.seated.map((r) => r.seats)]);
+/**
+ * Every size a group or a role comes in, with how many groups are open and roles not yet full.
+ * `poolCounts` adds the open groups the board has not loaded, as the backend counted them per size.
+ */
+export function sizeOptions(view: BoardState, poolCounts: ReadonlyMap<number, number> = new Map()) {
+	const sizes = new Set([
+		...view.groups.map((g) => g.size),
+		...view.seated.map((r) => r.seats),
+		...[...poolCounts].flatMap(([size, count]) => (count > 0 ? [size] : []))
+	]);
 	return [...sizes]
 		.sort((a, b) => a - b)
 		.map((size) => ({
 			size,
-			openGroups: view.groups.filter((g) => g.size === size && isOpen(view, g)).length,
+			openGroups:
+				view.groups.filter((g) => g.size === size && isOpen(view, g)).length +
+				(poolCounts.get(size) ?? 0),
 			unfilledRoles: view.seated.filter((r) => r.seats === size && freeSeats(view, r) > 0).length
 		}));
 }
@@ -186,13 +195,34 @@ export function pickSize(options: readonly { size: number; openGroups: number }[
 	return (open ?? options[0])?.size ?? 0;
 }
 
-/** The groups of one size without a role, best rated first. */
+/**
+ * The groups of one size without a role, in the order they are given: the backend delivers the
+ * pool ordered (best rated first), so nothing is sorted here.
+ */
 export function poolGroups(view: BoardState, size: number, showDisqualified: boolean) {
-	const rating = (group: AssignmentGroup) => view.reviewOf(group)?.evaluation ?? 0;
-	return view.groups
-		.filter((group) => group.size === size && !targetKey(group.target))
-		.filter((group) => showDisqualified || !view.reviewOf(group)?.disqualified)
-		.sort((a, b) => rating(b) - rating(a) || a.key.localeCompare(b.key));
+	return view.groups.filter(
+		(group) =>
+			group.size === size &&
+			!targetKey(group.target) &&
+			(showDisqualified || !view.reviewOf(group)?.disqualified)
+	);
+}
+
+/**
+ * Groups in the order of the pages their applications were loaded from, keeping their order within
+ * a page, so a pool read page by page does not reshuffle as it grows. Groups whose application is on
+ * no page (the draft moved them back from a role) come first.
+ */
+export function inPageOrder(
+	groups: readonly AssignmentGroup[],
+	pages: readonly (readonly { id: string }[])[]
+) {
+	const pageOf = new Map(
+		pages.flatMap((page, index) => page.map((row) => [row.id, index] as const))
+	);
+	const position = (group: AssignmentGroup) =>
+		pageOf.get(group.delegationId ?? group.singleParticipantId ?? '') ?? -1;
+	return groups.toSorted((a, b) => position(a) - position(b));
 }
 
 /** The roles with `seats` seats, with the groups planned onto each. */

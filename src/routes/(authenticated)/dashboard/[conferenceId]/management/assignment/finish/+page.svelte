@@ -9,7 +9,12 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { toast } from 'svelte-sonner';
-	import { fetchAssignmentBoard, fetchAssignmentRoles } from '../board';
+	import {
+		draftApplicationIds,
+		fetchAssignmentDraft,
+		fetchAssignmentRoles,
+		fetchSeatedApplications
+	} from '../board';
 	import { toastError } from '../toastError';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
@@ -20,14 +25,19 @@
 
 	let { params }: PageProps = $props();
 
-	const [board, roles, conference] = $derived(
+	const [draft, roles, conference] = $derived(
 		await Promise.all([
-			fetchAssignmentBoard(params.conferenceId),
+			fetchAssignmentDraft(params.conferenceId),
 			fetchAssignmentRoles(params.conferenceId),
 			client.liveQuery.conference({ __args: { id: params.conferenceId }, assignmentReleased: true })
 		])
 	);
-	const view = $derived(boardState(board, roles));
+	// What applying does depends only on what holds a role or what the draft touches; the
+	// applications without a role that the draft leaves alone are left alone by applying too.
+	const touched = $derived(draftApplicationIds(draft));
+	const seated = $derived(await fetchSeatedApplications(params.conferenceId, touched));
+	// The tab shows no ratings.
+	const view = $derived(boardState({ ...draft, ...seated, reviews: [] }, roles));
 	const preview = $derived(
 		planApply({
 			...view.live,
@@ -44,7 +54,7 @@
 	const customRoleName = (roleId: string | null) =>
 		roles.customRoles.find((role) => role.id === roleId)?.name ?? m.assignmentNoRole();
 
-	const delegationById = $derived(new Map(board.delegations.map((d) => [d.id, d])));
+	const delegationById = $derived(new Map(seated.delegations.map((d) => [d.id, d])));
 	const pendingGroups = $derived(
 		view.groups
 			.filter((group) => group.pending)

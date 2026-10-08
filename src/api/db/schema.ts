@@ -599,9 +599,21 @@ export const delegation = snakeCase.table(
 		assignedNonStateActorId: text().references(() => nonStateActor.id, {
 			onDelete: 'set null',
 			onUpdate: 'cascade'
-		})
+		}),
+		/**
+		 * How many members the delegation has. Kept by a trigger on `delegation_member` (see the
+		 * `delegation_member_count` migration), so the assignment board can ask for the delegations
+		 * of one group size instead of reading them all.
+		 */
+		memberCount: integer().default(0).notNull()
 	},
 	(table) => [
+		// The assignment board's pool: the delegations of one size in a conference.
+		index('delegation_conference_id_member_count_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.memberCount.asc().nullsLast()
+		),
 		uniqueIndex('delegation_conference_id_assigned_nation_alpha3_code_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),

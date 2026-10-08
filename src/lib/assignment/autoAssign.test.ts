@@ -204,7 +204,7 @@ describe('autoAssign', () => {
 		]);
 	});
 
-	it('gives leftover roles to groups without a wish, after the wishes', () => {
+	it('gives leftover roles to groups without a wish, in the same pass, after the wishes are served', () => {
 		const { groups } = assignmentGroups([delegation('a', 2)], [], []);
 		const base = {
 			size: 2,
@@ -332,6 +332,224 @@ describe('autoAssign', () => {
 			const result = run({ ...DEFAULT_WEIGHTS, experienceModifier: -4 }, [role('FRA', 2)]);
 			expect([...result.keys()]).toEqual(['vet']);
 		});
+	});
+});
+
+describe('autoAssign matching quality', () => {
+	type Wishes = Record<string, string[]>;
+	const rankFrom =
+		(wishes: Wishes) => (group: { key: string }, target: { nationAlpha3Code: string | null }) => {
+			const index = wishes[group.key]?.indexOf(target.nationAlpha3Code ?? '') ?? -1;
+			return index < 0 ? undefined : index + 1;
+		};
+	const run = (
+		wishes: Wishes,
+		roleCodes: string[],
+		extra: Partial<Parameters<typeof autoAssign>[0]> = {},
+		size = 4
+	) => {
+		const { groups } = assignmentGroups(
+			Object.keys(wishes).map((key) => delegation(key, size)),
+			[],
+			[]
+		);
+		const result = autoAssign({
+			size,
+			groups,
+			roles: roleCodes.map((code) => role(code, size)),
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: () => undefined,
+			wishRankOf: rankFrom(wishes),
+			...extra
+		});
+		return new Map(result.map(({ group, target }) => [group.key, target.nationAlpha3Code]));
+	};
+
+	// A small seeded generator so the randomised cases are reproducible.
+	const random = (seed: number) => {
+		let state = seed;
+		return () => (state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 2 ** 32;
+	};
+
+	/** The most groups that can sit on a role they wished for (augmenting paths). */
+	function maxWishedMatching(wishes: Wishes, roleCodes: string[]) {
+		const owner = new Map<string, string>();
+		const place = (group: string, seen: Set<string>): boolean => {
+			for (const code of wishes[group].filter((c) => roleCodes.includes(c))) {
+				if (seen.has(code)) continue;
+				seen.add(code);
+				const current = owner.get(code);
+				if (current === undefined || place(current, seen)) {
+					owner.set(code, group);
+					return true;
+				}
+			}
+			return false;
+		};
+		return Object.keys(wishes).filter((group) => place(group, new Set())).length;
+	}
+
+	it('seats the rank-1 wishes of the groups in the pool and fills the leftover role last', () => {
+		// The shape that was reported: six free four-seat roles, groups wishing mostly for roles
+		// that are not among them. Nobody wishes for DEU.
+		const wishes: Wishes = {
+			gnb: ['GNB', 'GTM', 'UGA'],
+			jor: ['JOR', 'GHA', 'ETH'],
+			yem: ['YEM', 'EST', 'ETH'],
+			uga: ['UGA', 'EST', 'GTM', 'JOR', 'ETH'],
+			gtm: ['GTM', 'UGA', 'JOR', 'ETH', 'GNB'],
+			rated: ['ETH', 'GHA', 'GNB', 'GTM'],
+			plain: ['ETH', 'GHA', 'GNB', 'GTM'],
+			lost: ['EST', 'JEM', 'GHA', 'GNB', 'GTM']
+		};
+		const result = run(wishes, ['DEU', 'GTM', 'GNB', 'YEM', 'JOR', 'UGA'], {
+			reviewOf: (group) =>
+				group.key === 'rated' ? { evaluation: 3.5, flagged: false, disqualified: false } : undefined
+		});
+		expect(result.get('gnb')).toBe('GNB');
+		expect(result.get('jor')).toBe('JOR');
+		expect(result.get('yem')).toBe('YEM');
+		expect(result.get('uga')).toBe('UGA');
+		expect(result.get('gtm')).toBe('GTM');
+		// The only role left goes to the best rated of those without any wish left.
+		expect(result.get('rated')).toBe('DEU');
+		expect(result.size).toBe(6);
+	});
+
+	it('never gives a group an unwished role while a free role it wished for stays empty', () => {
+		const wishes: Wishes = {
+			a: ['FRA', 'GBR'],
+			b: ['GBR'],
+			c: ['ESP'],
+			d: ['ESP', 'FRA']
+		};
+		const result = run(wishes, ['FRA', 'GBR', 'ITA']);
+		for (const [group, code] of result) {
+			if (wishes[group].includes(code ?? '')) continue;
+			// An unwished role: so none of the roles still empty may be one this group wished for.
+			const empty = ['FRA', 'GBR', 'ITA'].filter((c) => ![...result.values()].includes(c));
+			expect(empty.filter((c) => wishes[group].includes(c))).toEqual([]);
+		}
+	});
+
+	it('seats a maximum number of groups on their wishes, however the wishes overlap', () => {
+		for (let seed = 1; seed <= 200; seed++) {
+			const next = random(seed);
+			const roleCodes = Array.from({ length: 1 + Math.floor(next() * 6) }, (_, i) => `R${i}`);
+			const wishes: Wishes = {};
+			for (let i = 0; i < 2 + Math.floor(next() * 30); i++) {
+				wishes[`g${i}`] = roleCodes
+					.concat(['X1', 'X2', 'X3'])
+					.filter(() => next() < 0.25)
+					.sort(() => next() - 0.5);
+			}
+			const result = run(wishes, roleCodes, { seed: String(seed) });
+			const wishedSeated = [...result].filter(([group, code]) =>
+				wishes[group].includes(code ?? '')
+			).length;
+			expect(wishedSeated, `seed ${seed}`).toBe(maxWishedMatching(wishes, roleCodes));
+			// Every role is used (there are always at least as many groups as roles here), once.
+			const used = [...result.values()];
+			expect(new Set(used).size, `seed ${seed}`).toBe(used.length);
+			expect(used.length, `seed ${seed}`).toBe(
+				Math.min(roleCodes.length, Object.keys(wishes).length)
+			);
+		}
+	});
+
+	it('picks the cheapest of the maximum matchings', () => {
+		// Both groups can only be seated one way; swapping would cost more or seat fewer.
+		const result = run({ a: ['FRA', 'GBR'], b: ['FRA', 'GBR'], c: ['GBR'] }, ['FRA', 'GBR']);
+		expect(result.get('c')).toBe('GBR');
+		expect(result.get('a') === 'FRA' || result.get('b') === 'FRA').toBe(true);
+		expect(result.size).toBe(2);
+	});
+
+	it('prefers two second wishes over one first and one far-down wish', () => {
+		// a: FRA 1, GBR 2; b: FRA 1, GBR 5. Squared ranks: a=FRA,b=GBR costs 1+25, a=GBR,b=FRA costs 4+1.
+		const result = run({ a: ['FRA', 'GBR'], b: ['FRA', 'X1', 'X2', 'X3', 'GBR'] }, ['FRA', 'GBR']);
+		expect(result.get('b')).toBe('FRA');
+		expect(result.get('a')).toBe('GBR');
+	});
+
+	it('hands the leftover roles to the best rated groups without a seatable wish', () => {
+		const wishes: Wishes = { low: ['X1'], high: ['X1'], mid: ['X1'] };
+		const evaluation = { low: 1, high: 5, mid: 3 } as Record<string, number>;
+		const result = run(wishes, ['FRA', 'GBR'], {
+			reviewOf: (group) => ({
+				evaluation: evaluation[group.key],
+				flagged: false,
+				disqualified: false
+			})
+		});
+		expect([...result.keys()].sort()).toEqual(['high', 'mid']);
+	});
+
+	it('does not seat anyone when no role has exactly the group size free', () => {
+		const { groups } = assignmentGroups([delegation('a', 4), delegation('b', 4, 'FRA')], [], []);
+		const result = autoAssign({
+			size: 4,
+			groups,
+			// FRA has 8 free after b, GBR is bigger than the group, ESP is smaller.
+			roles: [role('FRA', 12), role('GBR', 6), role('ESP', 2)],
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: () => undefined,
+			wishRankOf: () => 1
+		});
+		expect(result).toEqual([]);
+	});
+
+	it('uses a role that is exactly as free as the group is large after others took seats', () => {
+		const { groups } = assignmentGroups([delegation('a', 4), delegation('b', 4, 'FRA')], [], []);
+		const result = autoAssign({
+			size: 4,
+			groups,
+			roles: [role('FRA', 8)],
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: () => undefined,
+			wishRankOf: () => 1
+		});
+		expect(result.map(({ group }) => group.key)).toEqual(['a']);
+	});
+
+	it('only considers groups of the requested size', () => {
+		const { groups } = assignmentGroups([delegation('two', 2), delegation('four', 4)], [], []);
+		const result = autoAssign({
+			size: 4,
+			groups,
+			roles: [role('FRA', 4)],
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: () => undefined,
+			wishRankOf: () => 1
+		});
+		expect(result.map(({ group }) => group.key)).toEqual(['four']);
+	});
+
+	it('handles a pool far larger than the roles, and a pool smaller than the roles', () => {
+		const wishes: Wishes = {};
+		for (let i = 0; i < 133; i++) wishes[`g${i}`] = [`R${i % 9}`, `R${(i + 3) % 9}`];
+		const roleCodes = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'];
+		const many = run(wishes, roleCodes);
+		expect(many.size).toBe(6);
+		expect([...many.values()].sort()).toEqual(roleCodes);
+		for (const [group, code] of many) expect(wishes[group]).toContain(code);
+
+		const few = run({ a: ['R0'], b: ['R1'] }, roleCodes);
+		expect([...few.entries()].sort()).toEqual([
+			['a', 'R0'],
+			['b', 'R1']
+		]);
+	});
+
+	it('is deterministic for a seed and gives every group a chance across seeds', () => {
+		const wishes: Wishes = { a: ['FRA'], b: ['FRA'], c: ['FRA'] };
+		const winners = new Set<string>();
+		for (let i = 0; i < 40; i++) {
+			const first = run(wishes, ['FRA'], { seed: `s${i}` });
+			expect([...first]).toEqual([...run(wishes, ['FRA'], { seed: `s${i}` })]);
+			winners.add([...first.keys()][0]);
+		}
+		expect(winners.size).toBe(3);
 	});
 });
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BusyOverlay from '../BusyOverlay.svelte';
 	import { cardBorder, type BoardReviewRow } from '$lib/assignment/board';
 	import StarRating from '$lib/components/StarRating.svelte';
 	import { resolve } from '$app/paths';
@@ -20,6 +21,8 @@
 		conferenceId: string;
 		/** Fill the width of the container instead of the fixed card width. */
 		fluid?: boolean;
+		/** A change to the card is on its way: it shows a spinner and cannot be dragged. */
+		busy?: boolean;
 	}
 
 	let {
@@ -31,7 +34,8 @@
 		roleId = null,
 		onDragChange,
 		conferenceId,
-		fluid = false
+		fluid = false,
+		busy = false
 	}: Props = $props();
 
 	const detailsHref = $derived(
@@ -66,10 +70,11 @@
 
 <div
 	role="listitem"
-	use:draggable={{ container, dragData: { id: singleParticipantId } }}
+	use:draggable={{ container, dragData: { id: singleParticipantId }, disabled: busy }}
 	ondragstart={() => onDragChange(true)}
 	ondragend={() => onDragChange(false)}
-	class="bg-base-100 flex {fluid
+	aria-busy={busy}
+	class="bg-base-100 relative flex {fluid
 		? 'w-full'
 		: 'w-44'} cursor-grab gap-1 rounded-lg border p-2 text-xs shadow-sm {cardBorder(
 		review,
@@ -133,4 +138,7 @@
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 		</a>
 	</div>
+	{#if busy}
+		<BusyOverlay />
+	{/if}
 </div>

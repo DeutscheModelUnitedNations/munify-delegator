@@ -1,5 +1,6 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	import type { BoardReview } from '../assignment/board';
 	import { m } from '$lib/paraglide/messages';
 	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
 	import { fetchAllDelegations, fetchDelegationsPage } from './delegationsQuery';
@@ -25,7 +26,10 @@
 	const tableState = createTableState();
 	const fetched = $derived(await fetchDelegationsPage(conferenceId, tableState));
 	// The nation's translated name is only known client-side, so it is joined on here.
-	function toRows(rows: (typeof fetched)['rows'], reviews: (typeof fetched)['reviews']) {
+	function toRows(
+		rows: (typeof fetched)['rows'],
+		reviews: readonly Pick<BoardReview, 'delegationId' | 'evaluation'>[]
+	) {
 		const evaluationById = new Map(
 			reviews.map((review) => [review.delegationId, review.evaluation])
 		);

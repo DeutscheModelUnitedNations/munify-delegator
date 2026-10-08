@@ -9,7 +9,7 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { resolve } from '$app/paths';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { fetchAssignmentReviews } from '../assignment/board';
+	import { fetchReviewOf } from '../assignment/board';
 	import ApplicationStatusAlert from '$lib/components/registrationAdmin/ApplicationStatusAlert.svelte';
 	import DetailsTable from '$lib/components/registrationAdmin/DetailsTable.svelte';
 	import DetailRow from '$lib/components/registrationAdmin/DetailRow.svelte';
@@ -45,9 +45,7 @@
 	);
 
 	const evaluation = $derived(
-		(await fetchAssignmentReviews(conferenceId)).find(
-			(review) => review.singleParticipantId === singleParticipantId
-		)?.evaluation
+		(await fetchReviewOf(conferenceId, { singleParticipantId }))?.evaluation
 	);
 
 	const revokeApplication = async () => {
@@ -110,7 +108,7 @@
 		<DetailRow icon="fa-compass">{singleParticipant.experience}</DetailRow>
 		<DetailRow icon="fa-check-to-slot">
 			<div class="flex items-center gap-2">
-				<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
+				<div class="bg-base-300 h-full rounded-md px-3 py-0.5">
 					{singleParticipant.appliedForRoles.length}
 				</div>
 				<div class="flex flex-col">

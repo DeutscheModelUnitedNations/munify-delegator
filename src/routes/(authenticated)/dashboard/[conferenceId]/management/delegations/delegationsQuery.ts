@@ -17,7 +17,7 @@ import {
 	searchWords,
 	stringFilter
 } from '$lib/components/tanStackTable/serverQuery';
-import { fetchAssignmentReviews } from '../assignment/board';
+import { fetchReviewsOfMany } from '../assignment/board';
 import { nationCodesMatching } from '$lib/utils/nationTranslationHelper.svelte';
 
 /** A word anywhere a delegation shows it: school, entry code, role, a member's name. */
@@ -103,9 +103,10 @@ export async function fetchDelegationsPage(conferenceId: string, state: TableSta
 
 /** Every delegation matching the table's search and filters, with its rating, for the export. */
 export async function fetchAllDelegations(conferenceId: string, state: TableState) {
-	const [rows, reviews] = await Promise.all([
-		fetchEveryRow((paging) => listDelegations(conferenceId, state, paging)),
-		fetchAssignmentReviews(conferenceId)
-	]);
+	const rows = await fetchEveryRow((paging) => listDelegations(conferenceId, state, paging));
+	const reviews = await fetchReviewsOfMany(conferenceId, {
+		delegationIds: rows.map((row) => row.id),
+		singleParticipantIds: []
+	});
 	return { rows, reviews };
 }

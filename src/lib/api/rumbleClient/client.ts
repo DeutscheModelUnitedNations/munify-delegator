@@ -1281,6 +1281,10 @@ export type Delegation = {
   assignedNationAlpha3Code: String | null,
   assignedNonStateActor: () => Nonstateactor | null,
   assignedNonStateActorId: ID | null,
+  assignmentReview: (p?: {
+    orderBy?: AssignmentreviewOrderInputArgument | null | undefined,
+    where?: AssignmentreviewWhereInputArgument | null | undefined
+  }) => Assignmentreview | null,
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -1290,6 +1294,7 @@ export type Delegation = {
   entryCode: String,
   experience: String | null,
   id: ID,
+  memberCount: Int,
   members: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1319,6 +1324,7 @@ export type DelegationOrderInputArgument = {
   entryCode?: SortingParameter | null | undefined,
   experience?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
+  memberCount?: SortingParameter | null | undefined,
   motivation?: SortingParameter | null | undefined,
   school?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
@@ -1347,12 +1353,14 @@ export type DelegationWhereInputArgument = {
   assignedNationAlpha3Code?: StringWhereInputArgument | null | undefined,
   assignedNonStateActor?: NonstateactorWhereInputArgument | null | undefined,
   assignedNonStateActorId?: IDWhereInputArgument | null | undefined,
+  assignmentReview?: AssignmentreviewWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   entryCode?: StringWhereInputArgument | null | undefined,
   experience?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
+  memberCount?: IntWhereInputArgument | null | undefined,
   members?: DelegationmemberWhereInputArgument | null | undefined,
   motivation?: StringWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,

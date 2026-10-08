@@ -1,13 +1,20 @@
 <script lang="ts">
+	import BusyOverlay from './BusyOverlay.svelte';
 	import { resolve } from '$app/paths';
-	import { canSplit, cardBorder, wishList, wishStatus } from '$lib/assignment/board';
+	import {
+		canSplit,
+		cardBorder,
+		wishList,
+		wishStatus,
+		type BoardReviewRow
+	} from '$lib/assignment/board';
 	import type { AssignmentGroup } from '$lib/assignment/state';
 	import StarRating from '$lib/components/StarRating.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { draggable } from '@thisux/sveltednd';
-	import type { BoardDelegation, BoardReview, BoardSingleParticipant } from './board';
+	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
 	import GroupBadges from './GroupBadges.svelte';
 
@@ -19,7 +26,7 @@
 		group: AssignmentGroup;
 		delegation: BoardDelegation | undefined;
 		single: BoardSingleParticipant | undefined;
-		review: BoardReview | undefined;
+		review: BoardReviewRow | undefined;
 		container: string;
 		conferenceId: string;
 		onDragChange?: (dragging: boolean) => void;
@@ -27,6 +34,8 @@
 		onUndoSplit?: () => void;
 		/** Fill the width of the container instead of the fixed card width. */
 		fluid?: boolean;
+		/** A change to the card is on its way: it shows a spinner and cannot be dragged. */
+		busy?: boolean;
 	}
 
 	let {
@@ -39,7 +48,8 @@
 		onDragChange,
 		onSplit,
 		onUndoSplit,
-		fluid = false
+		fluid = false,
+		busy = false
 	}: Props = $props();
 
 	/** The people in the group, the head delegate first. */
@@ -97,10 +107,11 @@
 
 <div
 	role="listitem"
-	use:draggable={{ container, dragData: { id: group.key } }}
+	use:draggable={{ container, dragData: { id: group.key }, disabled: busy }}
 	ondragstart={() => onDragChange?.(true)}
 	ondragend={() => onDragChange?.(false)}
-	class="bg-base-100 flex {fluid
+	aria-busy={busy}
+	class="bg-base-100 relative flex {fluid
 		? 'w-full'
 		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-lg border p-2 text-xs shadow-sm {cardBorder(
 		review,
@@ -166,4 +177,7 @@
 			</a>
 		{/if}
 	</div>
+	{#if busy}
+		<BusyOverlay />
+	{/if}
 </div>

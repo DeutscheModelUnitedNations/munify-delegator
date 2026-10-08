@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		POOL_CONTAINER,
@@ -7,6 +9,7 @@
 		dropAction,
 		freeSeats,
 		hasRole,
+		inPageOrder,
 		pickSize,
 		poolGroups,
 		roleContainer,
@@ -14,58 +17,167 @@
 		sizeOptions,
 		wishStatus
 	} from '$lib/assignment/board';
-	import type { AssignmentGroup } from '$lib/assignment/state';
+	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
+	import { targetKey, type AssignmentGroup } from '$lib/assignment/state';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
-	import VirtualList from 'svelte-virtual-list';
-	import { queryParameters, ssp } from 'sveltekit-search-params';
 	import { assignGroup } from '../assignGroup';
-	import { fetchAssignmentBoard, fetchAssignmentRoles, type BoardDelegation } from '../board';
+	import {
+		draftApplicationIds,
+		fetchAssignmentDraft,
+		fetchAssignmentRoles,
+		fetchDelegationPoolPage,
+		fetchDelegationPoolSizes,
+		fetchReviewsOf,
+		fetchSeatedApplications,
+		idsOf,
+		type BoardDelegation
+	} from '../board';
+	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
+	import BusyOverlay from '../BusyOverlay.svelte';
 	import GroupCard from '../GroupCard.svelte';
+	import { PoolPages } from '../poolPages.svelte';
+	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
 	import SplitModal from '../SplitModal.svelte';
-	import { toastError } from '../toastError';
+	import { succeeded, toastError } from '../toastError';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
 
-	const [board, roles] = $derived(
-		await Promise.all([
-			fetchAssignmentBoard(routeParams.conferenceId),
-			fetchAssignmentRoles(routeParams.conferenceId)
-		])
-	);
-	const view = $derived(boardState(board, roles));
-
-	const params = queryParameters({
-		size: ssp.number(0),
-		disqualified: ssp.boolean(false)
+	// The size and the filter are kept here and mirrored into the URL without a navigation. A
+	// navigation (what `sveltekit-search-params` does) lands in a batch of its own while the pool
+	// of the new size is still loading, and Svelte trips its "Batch has scheduled effects"
+	// invariant on the overlap, leaving the board half updated. The URL is written on the next
+	// task for the same reason: `replaceState` writes `page`, which must not happen while Svelte
+	// is still committing the change it follows.
+	const params = $state(boardParams(page.url.searchParams));
+	$effect(() => {
+		const next = { size: params.size, disqualified: params.disqualified };
+		const timer = setTimeout(() => {
+			// The browser's own URL: `page.url` does not follow shallow `replaceState` calls.
+			const url = withBoardParams(new URL(location.href), next);
+			if (url.search !== location.search) replaceState(url, page.state);
+		});
+		return () => clearTimeout(timer);
 	});
 
-	let dragging = $state<AssignmentGroup | undefined>();
-	let splitting = $state<BoardDelegation | undefined>();
-	let busy = $state(false);
-
-	const delegationById = $derived(new Map(board.delegations.map((d) => [d.id, d])));
-	const singleById = $derived(new Map(board.singleParticipants.map((s) => [s.id, s])));
-
-	const options = $derived(sizeOptions(view));
+	const [roles, draft] = $derived(
+		await Promise.all([
+			fetchAssignmentRoles(routeParams.conferenceId),
+			fetchAssignmentDraft(routeParams.conferenceId)
+		])
+	);
+	// Everything that holds a role or that the draft touches: the roles, their groups and seats.
+	const touched = $derived(draftApplicationIds(draft));
+	const seated = $derived(await fetchSeatedApplications(routeParams.conferenceId, touched));
+	const seatedIds = $derived({
+		delegationIds: idsOf(seated.delegations),
+		singleParticipantIds: idsOf(seated.singleParticipants)
+	});
+	const seatedReviews = $derived(await fetchReviewsOf(routeParams.conferenceId, seatedIds));
+	const seatedRows = $derived({
+		delegations: seated.delegations,
+		singleParticipants: seated.singleParticipants,
+		units: draft.units,
+		draftSingleRoles: draft.draftSingleRoles,
+		reviews: seatedReviews
+	});
+	// The size tabs and the roles need nothing but the seated applications; the size then decides
+	// which pool the backend is asked for.
+	const seatedView = $derived(boardState(seatedRows, roles));
+	// How many open groups of each size the pool holds, counted by the backend.
+	const poolSizes = $derived(
+		await fetchDelegationPoolSizes(
+			routeParams.conferenceId,
+			!!params.disqualified,
+			touched.delegationIds
+		)
+	);
+	const options = $derived(sizeOptions(seatedView, poolSizes));
 	const size = $derived(pickSize(options, params.size ?? 0));
 	// Roles are shown by the same seat count as the group size.
 	const seats = $derived(size);
-	const pool = $derived(poolGroups(view, size, !!params.disqualified));
+
+	// The pool: filtered to this size and ordered (best rated first) by the backend, a page at a
+	// time as it scrolls. Pages are plain data, read once; what the draft or applying changes about
+	// their delegations comes in live through `seated`, which is listed last so it wins.
+	const poolFilter = $derived({ size, showDisqualified: !!params.disqualified });
+	const poolKey = $derived(
+		`${routeParams.conferenceId}|${poolFilter.size}|${poolFilter.showDisqualified}`
+	);
+	const poolLoader = new PoolPages<BoardDelegation>();
+	$effect(() => {
+		const { conferenceId } = routeParams;
+		const filter = poolFilter;
+		poolLoader
+			.load(poolKey, (page) => fetchDelegationPoolPage(conferenceId, filter, page))
+			.catch(toastError);
+	});
+	const poolPages = $derived(poolLoader.pages(poolKey));
+	const poolLoading = $derived(poolLoader.pending(poolKey));
+	const morePages = $derived(PoolPages.more(poolPages.at(-1)));
+	const loadMore = () => {
+		const { conferenceId } = routeParams;
+		const filter = poolFilter;
+		poolLoader
+			.loadMore(poolKey, (page) => fetchDelegationPoolPage(conferenceId, filter, page))
+			.catch(toastError);
+	};
+
+	// The board as far as it is loaded: the seated applications and the pool's pages.
+	const delegations = $derived([
+		...new Map(
+			[...poolPages.flatMap((page) => page.rows), ...seated.delegations].map((d) => [d.id, d])
+		).values()
+	]);
+	const view = $derived(
+		boardState(
+			{
+				...seatedRows,
+				delegations,
+				reviews: [...poolPages.flatMap((page) => page.reviews), ...seatedReviews]
+			},
+			roles
+		)
+	);
+	// Pages stay in the order they were loaded, so the list does not reshuffle while it scrolls.
+	const pool = $derived(
+		inPageOrder(
+			poolGroups(view, size, !!params.disqualified),
+			poolPages.map((page) => page.rows)
+		)
+	);
+	/** The backend's count plus the groups the draft put back without a role. */
+	const poolCount = $derived(options.find((option) => option.size === size)?.openGroups ?? 0);
 	const shownRoles = $derived(
-		rolesWithSeats(view, seats)
+		rolesWithSeats(seatedView, seats)
 			.map((role) => ({
 				...role,
 				...describeRole(role.target, roles, getFullTranslatedCountryNameFromISO3Code)
 			}))
 			.sort((a, b) => a.title.localeCompare(b.title))
 	);
+
+	let dragging = $state<AssignmentGroup | undefined>();
+	let splitting = $state<BoardDelegation | undefined>();
+	/** The bulk action under way; it covers the board until it is done. */
+	let running = $state<'autoAssign' | 'reset'>();
+	const busy = $derived(running !== undefined);
+	/** Where the board shows a group now; its key changes when the draft gains or drops its unit. */
+	const placeOf = (key: string) => {
+		const group = view.groups.find((candidate) => candidate.key === key);
+		return group ? (targetKey(group.target) ?? POOL_CONTAINER) : 'gone';
+	};
+	const moves = new PendingMoves(placeOf);
+	$effect(() => moves.settle());
+
+	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
+	const singleById = $derived(new Map(seated.singleParticipants.map((s) => [s.id, s])));
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
 	const isBadFit = (group: AssignmentGroup) => {
@@ -89,24 +201,24 @@
 		);
 		if (!action) return;
 		if (action.type === 'full') toast.error(m.assignmentNotEnoughSeats());
-		else void assignGroup(action.group, action.target);
+		else void moves.track(action.group.key, () => assignGroup(action.group, action.target));
 	}
 
-	async function run(action: () => Promise<unknown>) {
-		busy = true;
+	async function run(kind: 'autoAssign' | 'reset', action: () => Promise<unknown>) {
+		running = kind;
 		await action().catch(toastError);
-		busy = false;
+		running = undefined;
 	}
 
 	const autoAssign = () =>
-		run(async () => {
+		run('autoAssign', async () => {
 			const assigned = await client.mutate.autoAssignDelegations({
 				__args: { conferenceId: routeParams.conferenceId, size }
 			});
 			toast.success(m.assignmentAutoAssigned({ count: assigned }));
 		});
 	const resetSeats = () =>
-		run(() =>
+		run('reset', () =>
 			Promise.resolve(
 				client.mutate.resetAssignmentSize({
 					__args: { conferenceId: routeParams.conferenceId, seats }
@@ -120,8 +232,8 @@
 
 	function undoSplit(group: AssignmentGroup) {
 		const delegationId = group.delegationId ?? '';
-		return run(() =>
-			Promise.resolve(client.mutate.undoDelegationSplit({ __args: { delegationId } }))
+		return moves.track(group.key, () =>
+			succeeded(client.mutate.undoDelegationSplit({ __args: { delegationId } }))
 		);
 	}
 </script>
@@ -134,6 +246,7 @@
 		review={view.reviewOf(group)}
 		{container}
 		{fluid}
+		busy={moves.has(group.key)}
 		conferenceId={routeParams.conferenceId}
 		onDragChange={(isDragging) => (dragging = isDragging ? group : undefined)}
 		onSplit={() => openSplit(group)}
@@ -155,29 +268,32 @@
 		{seats}
 		showDisqualified={!!params.disqualified}
 		{busy}
-		canAutoAssign={pool.length > 0}
+		{running}
+		canAutoAssign={poolCount > 0}
 		onSize={(next) => (params.size = next)}
 		onShowDisqualified={(show) => (params.disqualified = show)}
 		onAutoAssign={autoAssign}
 		onReset={resetSeats}
 	/>
 
-	<div class="flex flex-col gap-4 xl:flex-row">
+	<div class="relative flex flex-col gap-4 xl:flex-row" aria-busy={busy}>
+		{#if busy}
+			<BusyOverlay size="lg" />
+		{/if}
 		<PoolSection
 			container={POOL_CONTAINER}
-			count={pool.length}
+			count={poolCount}
 			hint={m.assignmentPoolHint({ size })}
 			highlight={hasRole(dragging)}
 			class="xl:w-96 xl:shrink-0"
 			virtual
 			{onDrop}
 		>
-			<!-- Only the rows in view are in the DOM; the pool can hold hundreds of delegations. -->
-			<VirtualList items={pool} height="max(16rem, calc(100vh - 36rem))" let:item={group}>
-				<div class="pb-2">
+			<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
+				{#snippet row(group)}
 					{@render groupCard(group, POOL_CONTAINER, true)}
-				</div>
-			</VirtualList>
+				{/snippet}
+			</PoolList>
 		</PoolSection>
 
 		<section

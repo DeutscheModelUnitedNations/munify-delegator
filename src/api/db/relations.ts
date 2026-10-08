@@ -310,6 +310,11 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.delegation.assignedNationAlpha3Code,
 			to: r.nation.alpha3Code
 		}),
+		// The team's review of the application, so lists of delegations can filter by it.
+		assignmentReview: r.one.assignmentReview({
+			from: r.delegation.id,
+			to: r.assignmentReview.delegationId
+		}),
 		assignedNonStateActor: r.one.nonStateActor({
 			from: r.delegation.assignedNonStateActorId,
 			to: r.nonStateActor.id

@@ -251,6 +251,7 @@
 	"assignmentPool": "Ohne Rolle",
 	"assignmentPoolEmpty": "Alle zugeteilt",
 	"assignmentPoolHint": "Gruppen mit {size} Personen ohne Rolle. Ziehe sie auf eine Rolle oder hierher zurück.",
+	"assignmentPoolLoadMore": "Weitere laden",
 	"assignmentPreviousParticipations": "Frühere Konferenzteilnahmen",
 	"assignmentQuickSplitTitle": "In {count} gleich große Teile mit je {size} Mitgliedern aufteilen",
 	"assignmentRateHotkey": "Mit den Tasten 1 bis 5 bewerten, Strg/⌘ + D entfernt die Bewertung",

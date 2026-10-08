@@ -8,6 +8,7 @@ import {
 	cardBorder,
 	describeRole,
 	hasRole,
+	inPageOrder,
 	mergedRoles,
 	dropAction,
 	pendingCount,
@@ -102,9 +103,25 @@ describe('boardState', () => {
 		expect(pickSize([], 0)).toBe(0);
 	});
 
-	it('pools unassigned groups best rated first, disqualified ones only on request', () => {
+	it('adds the open groups the backend counted, and sizes only they come in', () => {
+		const options = sizeOptions(
+			view,
+			new Map([
+				[2, 5],
+				[7, 3],
+				[9, 0]
+			])
+		);
+		expect(options).toEqual([
+			{ size: 2, openGroups: 6, unfilledRoles: 2 },
+			{ size: 3, openGroups: 0, unfilledRoles: 0 },
+			{ size: 7, openGroups: 3, unfilledRoles: 0 }
+		]);
+	});
+
+	it('pools unassigned groups in the order given, disqualified ones only on request', () => {
 		expect(poolGroups(view, 2, false).map((g) => g.key)).toEqual(['a']);
-		expect(poolGroups(view, 2, true).map((g) => g.key)).toEqual(['c', 'a']);
+		expect(poolGroups(view, 2, true).map((g) => g.key)).toEqual(['a', 'c']);
 	});
 
 	it('tells groups with a role from those without', () => {
@@ -135,6 +152,29 @@ describe('boardState', () => {
 		);
 		expect(converted.singles).toEqual([]);
 		expect(converted.taken.get('nation:DEU')).toBe(1);
+	});
+});
+
+describe('inPageOrder', () => {
+	const view = boardState(
+		rows({
+			delegations: [delegation('p1', 2), delegation('p0', 2), delegation('moved', 2)],
+			reviews: [{ delegationId: 'p1', evaluation: 5, flagged: false, disqualified: false }]
+		}),
+		roles
+	);
+
+	it('keeps the groups of earlier pages first, whatever order they come in', () => {
+		const pool = poolGroups(view, 2, false);
+		expect(pool[0].key).toBe('p1');
+		const ordered = inPageOrder(pool, [[{ id: 'p0' }], [{ id: 'p1' }]]);
+		expect(ordered.map((group) => group.key)).toEqual(['moved', 'p0', 'p1']);
+	});
+
+	it('keeps the order within a page', () => {
+		const pool = poolGroups(view, 2, false);
+		const onePage = inPageOrder(pool, [[{ id: 'p0' }, { id: 'p1' }, { id: 'moved' }]]);
+		expect(onePage.map((group) => group.key)).toEqual(pool.map((group) => group.key));
 	});
 });
 

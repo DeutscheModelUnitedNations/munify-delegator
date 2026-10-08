@@ -486,6 +486,20 @@ bun run preview
   through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
   of re-creating them, so supervision links and statuses survive, and clears the draft (ratings
   and weights stay).
+- **The tabs never read a whole conference, and the backend does the sorting.** A conference can
+  hold more applications than a list query returns (1000). `management/assignment/board.ts` reads
+  the draft, then the applications that hold a role or that the draft touches
+  (`fetchSeatedApplications`, bounded by the seats and the draft; enough for the roles, the seat
+  counts and the plan of applying). The delegation pool is asked for exactly as shown: filtered by
+  `delegation.memberCount` (kept by a trigger on `delegation_member`), the role and the exclusion,
+  rated delegations first by rating (read through `assignmentReviews`), then the rest by id, a page
+  at a time (`PoolPages`, loaded imperatively; `PoolList` asks for the next page as it scrolls).
+  The size tabs come from per-size `delegationsCount`s. Pages are copied out of the query results
+  once and never re-read: every row read through a live result subscribes whatever reads it.
+- **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
+  holds them as state and mirrors them into the URL with `replaceState` on the next task: a
+  navigation or a `page` write landing while the board's async loads are pending trips Svelte's
+  "Batch has scheduled effects" invariant (5.57.1).
 - **Release is only visibility.** `conference.assignmentReleased` (`setAssignmentReleased`,
   project management and participant care, switchable both ways) decides whether participants and
   supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,

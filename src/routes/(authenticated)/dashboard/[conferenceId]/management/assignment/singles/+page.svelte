@@ -1,18 +1,32 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
+		CONVERT_CONTAINER,
 		POOL_CONTAINER,
 		boardState,
 		roleContainer,
 		singleDropAction
 	} from '$lib/assignment/board';
+	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
-	import { fetchAssignmentBoard, fetchAssignmentRoles } from '../board';
+	import {
+		draftApplicationIds,
+		fetchAssignmentDraft,
+		fetchAssignmentRoles,
+		fetchReviewsOf,
+		fetchSeatedApplications,
+		fetchSinglePoolPage,
+		idsOf,
+		type BoardSingleParticipant
+	} from '../board';
+	import BusyOverlay from '../BusyOverlay.svelte';
+	import { PoolPages } from '../poolPages.svelte';
+	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
-	import { toastError } from '../toastError';
+	import { succeeded, toastError } from '../toastError';
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
@@ -20,29 +34,91 @@
 
 	let { params }: PageProps = $props();
 
-	const [board, roles] = $derived(
+	const [roles, draft] = $derived(
 		await Promise.all([
-			fetchAssignmentBoard(params.conferenceId),
-			fetchAssignmentRoles(params.conferenceId)
+			fetchAssignmentRoles(params.conferenceId),
+			fetchAssignmentDraft(params.conferenceId)
 		])
 	);
-	const view = $derived(boardState(board, roles));
+	// Everyone who holds a role or whom the draft touches: the roles and their holders.
+	const touched = $derived(draftApplicationIds(draft));
+	const seated = $derived(await fetchSeatedApplications(params.conferenceId, touched));
+
+	// The single participants without a role, a page at a time as the pool scrolls. Pages are
+	// plain data, read once; what the draft or applying changes about them comes in live through
+	// `seated`, which is listed last so it wins.
+	const poolLoader = new PoolPages<BoardSingleParticipant>();
+	$effect(() => {
+		const { conferenceId } = params;
+		poolLoader
+			.load(conferenceId, (page) => fetchSinglePoolPage(conferenceId, page))
+			.catch(toastError);
+	});
+	const poolPages = $derived(poolLoader.pages(params.conferenceId));
+	const poolLoading = $derived(poolLoader.pending(params.conferenceId));
+	const morePages = $derived(PoolPages.more(poolPages.at(-1)));
+	const seatedIds = $derived({
+		delegationIds: [],
+		singleParticipantIds: idsOf(seated.singleParticipants)
+	});
+	const seatedReviews = $derived(await fetchReviewsOf(params.conferenceId, seatedIds));
+
+	const singleParticipants = $derived([
+		...new Map(
+			[...poolPages.flatMap((page) => page.rows), ...seated.singleParticipants].map((s) => [
+				s.id,
+				s
+			])
+		).values()
+	]);
+	const view = $derived(
+		boardState(
+			{
+				delegations: seated.delegations,
+				singleParticipants,
+				units: draft.units,
+				draftSingleRoles: draft.draftSingleRoles,
+				reviews: [...poolPages.flatMap((page) => page.reviews), ...seatedReviews]
+			},
+			roles
+		)
+	);
 
 	let dragging = $state(false);
 	let busy = $state(false);
 
 	async function autoAssign() {
 		busy = true;
-		await Promise.resolve(
+		const mutation = Promise.resolve(
 			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId: params.conferenceId } })
-		)
-			.then((assigned) => toast.success(m.assignmentSinglesAutoAssigned({ count: assigned })))
-			.catch(toastError);
+		);
+		if (await succeeded(mutation)) {
+			toast.success(m.assignmentSinglesAutoAssigned({ count: await mutation }));
+		}
 		busy = false;
 	}
 
-	const singleById = $derived(new Map(board.singleParticipants.map((s) => [s.id, s])));
+	/** Where the board shows a single participant now: a role, the pool or the converted ones. */
+	const placeOf = (singleParticipantId: string) => {
+		const single = view.singles.find((entry) => entry.singleParticipantId === singleParticipantId);
+		if (single) return single.roleId ?? POOL_CONTAINER;
+		const converted = view.groups.some(
+			(group) => group.singleParticipantId === singleParticipantId
+		);
+		return converted ? CONVERT_CONTAINER : 'gone';
+	};
+	const moves = new PendingMoves(placeOf);
+	$effect(() => moves.settle());
+
+	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
 	const pool = $derived(view.singles.filter((single) => !single.roleId));
+
+	const loadMore = () => {
+		const { conferenceId } = params;
+		poolLoader
+			.loadMore(conferenceId, (page) => fetchSinglePoolPage(conferenceId, page))
+			.catch(toastError);
+	};
 	const converted = $derived(
 		view.groups.flatMap((group) =>
 			group.singleParticipantId
@@ -73,19 +149,23 @@
 		const singleParticipantId = dropState.draggedItem.id;
 		const action = singleDropAction(dropState.sourceContainer, dropState.targetContainer);
 		if (!action) return;
-		const mutation =
-			action.type === 'convert'
-				? client.mutate.convertSingleParticipant({ __args: { singleParticipantId } })
-				: client.mutate.assignSingleParticipantRole({
-						__args: { singleParticipantId, roleId: action.roleId }
-					});
-		void Promise.resolve(mutation).catch(toastError);
+		void moves.track(singleParticipantId, () =>
+			succeeded(
+				action.type === 'convert'
+					? client.mutate.convertSingleParticipant({ __args: { singleParticipantId } })
+					: client.mutate.assignSingleParticipantRole({
+							__args: { singleParticipantId, roleId: action.roleId }
+						})
+			)
+		);
 	}
 
 	const revert = (singleParticipantId: string) =>
-		Promise.resolve(
-			client.mutate.revertSingleParticipantConversion({ __args: { singleParticipantId } })
-		).catch(toastError);
+		moves.track(singleParticipantId, () =>
+			succeeded(
+				client.mutate.revertSingleParticipantConversion({ __args: { singleParticipantId } })
+			)
+		);
 </script>
 
 {#snippet singleCard(single: (typeof view.singles)[number], container: string, fluid = false)}
@@ -99,6 +179,7 @@
 		onDragChange={(isDragging) => (dragging = isDragging)}
 		conferenceId={params.conferenceId}
 		{fluid}
+		busy={moves.has(single.singleParticipantId)}
 	/>
 {/snippet}
 
@@ -108,25 +189,37 @@
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
 			class="btn btn-primary btn-sm"
-			disabled={busy || pool.length === 0}
+			disabled={busy || (pool.length === 0 && !morePages)}
 			onclick={autoAssign}
 		>
-			<i class="fa-duotone fa-wand-magic-sparkles"></i>
+			{#if busy}
+				<span class="loading loading-spinner loading-xs"></span>
+			{:else}
+				<i class="fa-duotone fa-wand-magic-sparkles"></i>
+			{/if}
 			{m.assignmentAutoAssignSingles()}
 		</button>
 	</div>
 
-	<div class="flex flex-col gap-4 xl:flex-row">
+	<div class="relative flex flex-col gap-4 xl:flex-row" aria-busy={busy}>
+		{#if busy}
+			<BusyOverlay size="lg" />
+		{/if}
 		<div class="flex flex-col gap-4 xl:w-96 xl:shrink-0">
-			<PoolSection container={POOL_CONTAINER} count={pool.length} virtual {onDrop}>
-				<!-- Only the rows in view are in the DOM; the pool can hold hundreds of applicants. -->
-				<VirtualList items={pool} height="max(16rem, calc(100vh - 36rem))" let:item={single}>
-					<div class="pb-2">
+			<PoolSection container={POOL_CONTAINER} count={pool.length} more={morePages} virtual {onDrop}>
+				<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
+					{#snippet row(single)}
 						{@render singleCard(single, POOL_CONTAINER, true)}
-					</div>
-				</VirtualList>
+					{/snippet}
+				</PoolList>
 			</PoolSection>
-			<ConvertZone {converted} highlight={dragging} {onDrop} onRevert={revert} />
+			<ConvertZone
+				{converted}
+				highlight={dragging}
+				reverting={(singleParticipantId) => moves.has(singleParticipantId)}
+				{onDrop}
+				onRevert={revert}
+			/>
 		</div>
 
 		<section

@@ -8,6 +8,8 @@
 		seats: number;
 		showDisqualified: boolean;
 		busy: boolean;
+		/** The bulk action under way, whose button shows a spinner. */
+		running?: 'autoAssign' | 'reset';
 		canAutoAssign: boolean;
 		onSize: (size: number) => void;
 		onShowDisqualified: (show: boolean) => void;
@@ -21,6 +23,7 @@
 		seats,
 		showDisqualified,
 		busy,
+		running,
 		canAutoAssign,
 		onSize,
 		onShowDisqualified,
@@ -28,6 +31,14 @@
 		onReset
 	}: Props = $props();
 </script>
+
+{#snippet icon(action: 'autoAssign' | 'reset', name: string)}
+	{#if running === action}
+		<span class="loading loading-spinner loading-xs"></span>
+	{:else}
+		<i class="fa-duotone {name}"></i>
+	{/if}
+{/snippet}
 
 {#snippet todoBadge()}
 	<span class="bg-warning size-2.5 rounded-full" aria-hidden="true"></span>
@@ -75,7 +86,7 @@
 		</label>
 		<div class="ml-auto flex flex-wrap items-center gap-2">
 			<button class="btn btn-ghost btn-sm" disabled={busy} onclick={onReset}>
-				<i class="fa-duotone fa-rotate-left"></i>
+				{@render icon('reset', 'fa-rotate-left')}
 				{m.assignmentResetSeats({ count: seats })}
 			</button>
 			<button
@@ -83,7 +94,7 @@
 				disabled={busy || !canAutoAssign}
 				onclick={onAutoAssign}
 			>
-				<i class="fa-duotone fa-wand-magic-sparkles"></i>
+				{@render icon('autoAssign', 'fa-wand-magic-sparkles')}
 				{m.assignmentAutoAssign({ size })}
 			</button>
 		</div>

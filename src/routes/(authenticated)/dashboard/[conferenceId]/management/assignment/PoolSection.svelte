@@ -16,6 +16,8 @@
 		 * wrapping list and its empty hint is the only thing it adds.
 		 */
 		virtual?: boolean;
+		/** Only some pages of the pool are loaded: `count` is what they hold, and more may follow. */
+		more?: boolean;
 		onDrop: (state: DragDropState<{ id: string }>) => void;
 		children: Snippet;
 	}
@@ -27,6 +29,7 @@
 		highlight = false,
 		class: className = '',
 		virtual = false,
+		more = false,
 		onDrop,
 		children
 	}: Props = $props();
@@ -41,12 +44,12 @@
 >
 	<h3 class="font-bold">
 		{m.assignmentPool()}
-		<span class="badge badge-sm">{count}</span>
+		<span class="badge badge-sm">{count}{more ? '+' : ''}</span>
 	</h3>
 	{#if hint}
 		<p class="text-base-content/60 text-xs">{hint}</p>
 	{/if}
-	{#if count === 0}
+	{#if count === 0 && !more}
 		<p class="text-base-content/60 py-6 text-center text-sm">{m.assignmentPoolEmpty()}</p>
 	{:else if virtual}
 		<div role="list">

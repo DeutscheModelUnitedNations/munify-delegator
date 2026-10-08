@@ -251,6 +251,7 @@
 	"assignmentPool": "Without a role",
 	"assignmentPoolEmpty": "All assigned",
 	"assignmentPoolHint": "Groups of {size} without a role. Drag them onto a role, or back here.",
+	"assignmentPoolLoadMore": "Load more",
 	"assignmentPreviousParticipations": "Previous conference participations",
 	"assignmentQuickSplitTitle": "Split into {count} equal parts of {size} members each",
 	"assignmentRateHotkey": "Rate with the keys 1 to 5, Ctrl/⌘ + D clears the rating",

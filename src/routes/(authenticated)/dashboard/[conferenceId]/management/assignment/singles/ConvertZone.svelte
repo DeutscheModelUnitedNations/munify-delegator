@@ -9,11 +9,13 @@
 	interface Props {
 		converted: { singleParticipantId: string; single: BoardSingleParticipant | undefined }[];
 		highlight: boolean;
+		/** Whether the conversion of a participant is being taken back right now. */
+		reverting: (singleParticipantId: string) => boolean;
 		onDrop: (state: DragDropState<{ id: string }>) => void;
 		onRevert: (singleParticipantId: string) => void;
 	}
 
-	let { converted, highlight, onDrop, onRevert }: Props = $props();
+	let { converted, highlight, reverting, onDrop, onRevert }: Props = $props();
 </script>
 
 <section
@@ -33,8 +35,16 @@
 				{#if single}
 					<span>{formatNames(single.user.givenName, single.user.familyName)}</span>
 				{/if}
-				<button class="btn btn-ghost btn-xs" onclick={() => onRevert(singleParticipantId)}>
-					<i class="fa-duotone fa-rotate-left"></i>
+				<button
+					class="btn btn-ghost btn-xs"
+					disabled={reverting(singleParticipantId)}
+					onclick={() => onRevert(singleParticipantId)}
+				>
+					{#if reverting(singleParticipantId)}
+						<span class="loading loading-spinner loading-xs"></span>
+					{:else}
+						<i class="fa-duotone fa-rotate-left"></i>
+					{/if}
 					{m.assignmentRevertConversion()}
 				</button>
 			</li>

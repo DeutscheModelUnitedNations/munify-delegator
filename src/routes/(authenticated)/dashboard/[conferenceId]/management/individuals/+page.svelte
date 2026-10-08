@@ -1,5 +1,6 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	import type { BoardReview } from '../assignment/board';
 	import { m } from '$lib/paraglide/messages';
 	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
 	import { fetchAllIndividuals, fetchIndividualsPage } from './individualsQuery';
@@ -27,7 +28,10 @@
 	const tableState = createTableState();
 	const fetched = $derived(await fetchIndividualsPage(conferenceId, tableState));
 
-	function toRows(rows: (typeof fetched)['rows'], reviews: (typeof fetched)['reviews']) {
+	function toRows(
+		rows: (typeof fetched)['rows'],
+		reviews: readonly Pick<BoardReview, 'singleParticipantId' | 'evaluation'>[]
+	) {
 		const evaluationById = new Map(
 			reviews.map((review) => [review.singleParticipantId, review.evaluation])
 		);

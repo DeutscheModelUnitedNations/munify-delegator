@@ -17,7 +17,7 @@ import {
 	searchWords,
 	stringFilter
 } from '$lib/components/tanStackTable/serverQuery';
-import { fetchAssignmentReviews } from '../assignment/board';
+import { fetchReviewsOfMany } from '../assignment/board';
 
 /** A word anywhere an individual shows it: name, school, texts, the roles applied for or given. */
 function wordMatches(word: string): SingleparticipantWhereInputArgument {
@@ -92,9 +92,10 @@ export async function fetchIndividualsPage(conferenceId: string, state: TableSta
 
 /** Every individual application matching the table's search and filters, with its rating. */
 export async function fetchAllIndividuals(conferenceId: string, state: TableState) {
-	const [rows, reviews] = await Promise.all([
-		fetchEveryRow((paging) => listIndividuals(conferenceId, state, paging)),
-		fetchAssignmentReviews(conferenceId)
-	]);
+	const rows = await fetchEveryRow((paging) => listIndividuals(conferenceId, state, paging));
+	const reviews = await fetchReviewsOfMany(conferenceId, {
+		delegationIds: [],
+		singleParticipantIds: rows.map((row) => row.id)
+	});
 	return { rows, reviews };
 }
