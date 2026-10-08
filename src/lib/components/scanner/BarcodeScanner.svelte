@@ -109,7 +109,8 @@
 	}
 
 	function stopVideo() {
-		if (videoElem?.srcObject instanceof MediaStream) {
+		// `MediaStream` does not exist during SSR, where this runs as the component is torn down.
+		if (videoElem && videoElem.srcObject instanceof MediaStream) {
 			videoElem.srcObject.getTracks().forEach((track) => track.stop());
 			videoElem.srcObject = null;
 		}

@@ -91,7 +91,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await expect(dashboardEntryCode).not.toHaveText(originalEntryCode!, { timeout: 15_000 });
 
 	// --- remove member C ---
-	const memberCRow = headPage.locator('tr', { hasText: 'E2E member-mgmt-c' });
+	const memberCRow = headPage.locator('tr', { hasText: /member-mgmt-c/i });
 	await expect(memberCRow).toBeVisible({ timeout: 15_000 });
 	await memberCRow.locator('button.btn-error').click();
 	await expect(memberCRow).toBeHidden({ timeout: 15_000 });
@@ -105,7 +105,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	expect(memberCData?.delegationMembers).toEqual([]);
 
 	// --- transfer head delegate to member B ---
-	const memberBRow = headPage.locator('tr', { hasText: 'E2E member-mgmt-b' });
+	const memberBRow = headPage.locator('tr', { hasText: /member-mgmt-b/i });
 
 	async function isMemberBHeadDelegate() {
 		const data = await graphql(

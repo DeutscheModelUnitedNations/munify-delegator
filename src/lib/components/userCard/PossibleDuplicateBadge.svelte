@@ -15,7 +15,8 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	const standing = { status: { in: ['OPEN' as const, 'CONFIRMED' as const] } };
+	// Open or confirmed pairs. The GraphQL `where` takes a single enum value per field, not `in`.
+	const standing = { NOT: { status: 'DISMISSED' as const } };
 	const user = $derived(
 		await client.liveQuery.user({
 			__args: { id: userId },
