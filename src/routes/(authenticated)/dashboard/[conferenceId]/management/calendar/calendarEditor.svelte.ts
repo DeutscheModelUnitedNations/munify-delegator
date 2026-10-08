@@ -131,6 +131,7 @@ export function toEditorDay(day: {
 	return {
 		id: day.id,
 		name: day.name,
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a value copy, never mutated
 		date: new Date(day.date),
 		tracks: day.tracks
 			.map((track) => ({ ...track, description: orNull(track.description) }))
@@ -138,7 +139,9 @@ export function toEditorDay(day: {
 		entries: day.entries.map((entry) => ({
 			id: entry.id,
 			name: entry.name,
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a value copy, never mutated
 			startTime: new Date(entry.startTime),
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a value copy, never mutated
 			endTime: new Date(entry.endTime),
 			fontAwesomeIcon: orNull(entry.fontAwesomeIcon),
 			color: entry.color,

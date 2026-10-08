@@ -14,7 +14,8 @@
 
 	let { days, timezone = 'UTC', onEditEntry, onEditPlace }: Props = $props();
 
-	// svelte-ignore state_referenced_locally -- only the day shown first depends on it
+	// Only the day shown first depends on these props, so reading them once is intended
+	// svelte-ignore state_referenced_locally
 	let selectedDayIndex = $state(todayIndex(days, timezone));
 	let filterTrackId = $state<string | null>(null);
 
