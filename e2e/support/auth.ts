@@ -28,12 +28,20 @@ export function makeTestUser(
 	const unique = `e2e-${prefix}-${Date.now()}-${counter++}`;
 	return {
 		email: `${unique}@e2e.test`,
-		given_name: 'E2E',
+		given_name: 'Testperson',
 		family_name: prefix,
 		preferred_username: unique,
 		locale: 'de',
 		...overrides
 	};
+}
+
+/**
+ * The id as a name the `PersonName` scalar accepts, which allows no digits: each digit becomes a
+ * letter, so ids that differ only in a digit (`…-member-1`, `…-member-2`) keep distinct names.
+ */
+function asPersonName(id: string): string {
+	return id.replace(/\d/g, (digit) => String.fromCharCode(65 + Number(digit)));
 }
 
 /**
@@ -46,8 +54,8 @@ export function makeTestUser(
 export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {}): TestUserClaims {
 	return {
 		email: `${id}@e2e.test`,
-		given_name: 'E2E',
-		family_name: id,
+		given_name: 'Testperson',
+		family_name: asPersonName(id),
 		preferred_username: id,
 		locale: 'de',
 		...overrides

@@ -30,13 +30,15 @@
 		onAutoAssign,
 		onReset
 	}: Props = $props();
+
+	const descending = $derived(options.toReversed());
 </script>
 
 {#snippet icon(action: 'autoAssign' | 'reset', name: string)}
 	{#if running === action}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else}
-		<i class="fa-duotone {name}"></i>
+		<i class="fa-sharp-duotone fa-solid {name}"></i>
 	{/if}
 {/snippet}
 
@@ -51,12 +53,12 @@
 				{m.assignmentGroupSize()}
 			</legend>
 			<div role="tablist" class="flex h-9 items-stretch">
-				{#each options as option, i (option.size)}
+				{#each descending as option, i (option.size)}
 					<button
 						role="tab"
 						class="step flex cursor-pointer items-center justify-center gap-1.5 text-sm font-semibold transition-colors
 							{i === 0 ? 'step-first' : 'step-middle -ml-2'}
-							{i === options.length - 1 ? 'step-last' : ''}
+							{i === descending.length - 1 ? 'step-last' : ''}
 							{option.size === size
 							? 'bg-primary text-primary-content'
 							: option.unfilledRoles === 0

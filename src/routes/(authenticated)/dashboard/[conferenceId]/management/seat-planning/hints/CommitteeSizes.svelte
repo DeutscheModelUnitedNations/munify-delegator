@@ -19,14 +19,14 @@
 	<h4 class="text-sm font-semibold">{m.seatPlanningCommitteeSizes()}</h4>
 	{#each rows as row (row.id)}
 		<button
-			class="hover:bg-base-300 flex items-center gap-2 rounded px-1 text-left text-sm"
+			class="hover:bg-base-300 flex items-center gap-2 rounded-field px-1 text-left text-sm"
 			title={row.seatsPerDelegation > 1
 				? `${row.name}: ${m.seatPlanningSeatsTimesDelegation({ nations: row.nations, seats: row.seatsPerDelegation })}`
 				: row.name}
 			onclick={() => onSelectCommittee(row.id)}
 		>
 			<span class="w-16 truncate font-mono">{row.abbreviation}</span>
-			<span class="bg-base-300 h-3 grow overflow-hidden rounded">
+			<span class="bg-base-300 h-3 grow overflow-hidden rounded-field">
 				<span class="bg-primary block h-full" style:width="{(row.seats / maxSeats) * 100}%"></span>
 			</span>
 			<span class="w-8 text-right font-mono">{row.seats}</span>

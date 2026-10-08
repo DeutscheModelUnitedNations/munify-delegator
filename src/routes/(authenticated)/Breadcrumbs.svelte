@@ -273,7 +273,10 @@
 </script>
 
 {#snippet delimiter()}
-	<i class="fa-solid fa-chevron-right text-base-content/30 text-[0.6rem]" aria-hidden="true"></i>
+	<i
+		class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/30 text-[0.6rem]"
+		aria-hidden="true"
+	></i>
 {/snippet}
 
 <!-- ATTENTION: importObject is dir route specific. You cannot move this file without adjusting this
@@ -290,7 +293,7 @@ import path via the parameter! The home link is the wordmark in the header, so t
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
 			<a class="btn btn-ghost btn-sm max-w-48 !no-underline" href={pathSegment.href}>
-				<i class="fa-duotone fa-{breadcrumb.icon}"></i>
+				<i class="fa-sharp-duotone fa-solid fa-{breadcrumb.icon}"></i>
 				<span class="ml-1 truncate">{breadcrumb.translation}</span>
 			</a>
 		{/if}

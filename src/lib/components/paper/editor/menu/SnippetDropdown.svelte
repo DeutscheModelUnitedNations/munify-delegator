@@ -22,9 +22,9 @@
 <li class="md:tooltip" data-tip={m.snippets()}>
 	<div class="dropdown dropdown-end">
 		<button tabindex="0" type="button" class="flex items-center gap-1 cursor-pointer" {disabled}>
-			<i class="fa-duotone fa-bookmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bookmark"></i>
 			<span class="md:hidden">{m.snippets()}</span>
-			<i class="fa-solid fa-chevron-down text-[10px] opacity-60"></i>
+			<i class="fa-sharp-duotone fa-solid fa-chevron-down text-[10px] opacity-60"></i>
 		</button>
 
 		<ul
@@ -41,7 +41,7 @@
 				{#each snippets as snippet (snippet.id)}
 					<li>
 						<button type="button" class="cursor-pointer" onclick={() => handleSelect(snippet)}>
-							<i class="fa-solid fa-bookmark text-primary"></i>
+							<i class="fa-sharp-duotone fa-solid fa-bookmark text-primary"></i>
 							<span class="truncate">{snippet.name}</span>
 						</button>
 					</li>

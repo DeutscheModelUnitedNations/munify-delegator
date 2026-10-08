@@ -68,7 +68,7 @@
 			onblur={saveTitle}
 		/>
 		<div class="mt-1 text-xs opacity-60">
-			<i class="fa-duotone fa-file-pdf"></i>
+			<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
 			{resolution.fileName}
 		</div>
 	</td>

@@ -35,8 +35,8 @@
 
 	const iconClasses = $derived(
 		variant === 'info'
-			? 'bg-info/20 text-info flex h-12 w-12 shrink-0 items-center justify-center rounded-lg p-3'
-			: 'bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-lg p-3'
+			? 'bg-info/20 text-info flex h-12 w-12 shrink-0 items-center justify-center rounded-box p-3'
+			: 'bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-box p-3'
 	);
 </script>
 
@@ -44,7 +44,7 @@
 	<div class="card-body">
 		{#snippet header()}
 			<div class={iconClasses}>
-				<i class="fa-duotone fa-{icon} text-xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-{icon} text-xl"></i>
 			</div>
 			<div class="flex-1">
 				<div class="flex items-center justify-between">
@@ -60,7 +60,7 @@
 						{#if collapsible}
 							<div class="btn btn-ghost btn-sm btn-circle text-base-content/60">
 								<i
-									class="fa-duotone fa-chevron-down transition-transform duration-200 {collapsed
+									class="fa-sharp-duotone fa-solid fa-chevron-down transition-transform duration-200 {collapsed
 										? '-rotate-90'
 										: ''}"
 								></i>

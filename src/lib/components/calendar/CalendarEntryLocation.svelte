@@ -16,14 +16,14 @@
 {#snippet placeNotes(current: CalendarPlace)}
 	{#if current.info}
 		<div class="alert alert-warning text-sm">
-			<i class="fa-solid fa-triangle-exclamation fa-fw"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation fa-fw"></i>
 			<span>{current.info}</span>
 		</div>
 	{/if}
 
 	{#if current.directions}
 		<div class="alert alert-soft text-base-content">
-			<i class="fa-duotone fa-bus fa-fw"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bus fa-fw"></i>
 			<div>
 				<div class="font-semibold">{m.calendarPlaceDirections()}</div>
 				<p class="whitespace-pre-wrap text-sm">
@@ -44,7 +44,7 @@
 					rel="external noopener noreferrer"
 					class="btn btn-outline btn-sm gap-1.5"
 				>
-					<i class="fa-duotone fa-globe"></i>
+					<i class="fa-sharp-duotone fa-solid fa-globe"></i>
 					{m.calendarPlaceWebsite()}
 				</a>
 			{/if}
@@ -55,7 +55,7 @@
 					download="{current.name} - {m.calendarPlaceSitePlan()}.pdf"
 					class="btn btn-outline btn-sm gap-1.5"
 				>
-					<i class="fa-duotone fa-map"></i>
+					<i class="fa-sharp-duotone fa-solid fa-map"></i>
 					{m.calendarPlaceSitePlanDownload()}
 				</a>
 			{/if}
@@ -65,7 +65,7 @@
 
 {#if place || room}
 	<div class="alert alert-soft text-base-content">
-		<i class="fa-duotone fa-location-dot fa-fw"></i>
+		<i class="fa-sharp-duotone fa-solid fa-location-dot fa-fw"></i>
 		<div class="min-w-0 flex-1">
 			<div class="font-semibold">{locationLabel}</div>
 			{#if place?.address}

@@ -36,7 +36,7 @@
 </script>
 
 <section
-	class="bg-base-200 flex min-h-32 flex-col gap-2 rounded-lg p-3 {className} {highlight
+	class="bg-base-200 flex min-h-32 flex-col gap-2 rounded-box p-3 {className} {highlight
 		? 'ring-primary ring-2'
 		: ''}"
 	aria-label={m.assignmentPool()}

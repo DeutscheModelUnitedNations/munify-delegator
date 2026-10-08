@@ -85,7 +85,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-clipboard-check text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-clipboard-check text-base-content/70"></i>
 			{m.statsPostalPaymentProgress()}
 		</h2>
 
@@ -97,7 +97,7 @@
 			<!-- Postal Progress -->
 			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">
-					<i class="fa-duotone fa-envelope mr-1"></i>
+					<i class="fa-sharp-duotone fa-solid fa-envelope mr-1"></i>
 					{m.postalRegistration()}
 				</h3>
 				<GaugeChart
@@ -133,7 +133,7 @@
 			<!-- Payment Progress -->
 			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">
-					<i class="fa-duotone fa-credit-card mr-1"></i>
+					<i class="fa-sharp-duotone fa-solid fa-credit-card mr-1"></i>
 					{m.payment()}
 				</h3>
 				<GaugeChart
@@ -170,7 +170,7 @@
 		<!-- Completion Matrix -->
 		<div class="mt-4">
 			<h3 class="mb-2 text-center text-sm font-medium">
-				<i class="fa-duotone fa-grid-2 mr-1"></i>
+				<i class="fa-sharp-duotone fa-solid fa-grid-2 mr-1"></i>
 				{m.statsCompletionMatrix()}
 			</h3>
 			<BarChart

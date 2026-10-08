@@ -22,7 +22,7 @@
 	href={disabled ? undefined : href}
 >
 	<div class="inline-flex items-center gap-2 {active && 'font-bold'}">
-		<i class="fa-duotone fa-{icon.replace('fa-', '')}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-{icon.replace('fa-', '')}"></i>
 		{title}
 	</div>
 </a>

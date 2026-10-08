@@ -108,7 +108,7 @@
 		</div>
 	{:else if papersByDelegation.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-info-circle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 			<span>{m.supervisorPapersEmpty()}</span>
 		</div>
 	{:else}
@@ -160,7 +160,7 @@
 										</td>
 										<td class="align-middle">
 											<button class="btn btn-ghost btn-xs" aria-label={m.openPaper()}>
-												<i class="fa-solid fa-arrow-right"></i>
+												<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 											</button>
 										</td>
 									</tr>

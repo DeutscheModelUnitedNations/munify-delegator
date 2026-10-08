@@ -36,7 +36,7 @@ const SightingDeckCounts = schemaBuilder.simpleObject('SightingDeckCounts', {
 
 const SightingDeck = schemaBuilder.simpleObject('SightingDeck', {
 	description:
-		'A window of the sighting deck (after its filters) around the card on top, and what the navigation needs: the position, the totals and the cards to step to.',
+		'A window of the sighting deck (after its filters) around the card on top, and what the navigation needs: the position, the totals and where the next unrated card lies past the window.',
 	fields: (t) => ({
 		total: t.int(),
 		counts: t.field({ type: SightingDeckCounts }),
@@ -46,9 +46,12 @@ const SightingDeck = schemaBuilder.simpleObject('SightingDeck', {
 		start: t.int(),
 		entries: t.field({ type: [SightingDeckEntry] }),
 		current: t.field({ type: SightingDeckEntry, nullable: true }),
-		previous: t.field({ type: SightingDeckEntry, nullable: true }),
-		next: t.field({ type: SightingDeckEntry, nullable: true }),
-		nextUnreviewed: t.field({ type: SightingDeckEntry, nullable: true })
+		unreviewedPastWindow: t.field({
+			type: SightingDeckEntry,
+			nullable: true,
+			description:
+				'The first unrated card after the window, or else the first unrated card of the deck.'
+		})
 	})
 });
 

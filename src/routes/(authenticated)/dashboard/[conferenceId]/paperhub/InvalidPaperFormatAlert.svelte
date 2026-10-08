@@ -28,13 +28,13 @@
 
 <div class="alert alert-error flex-col items-start gap-3">
 	<div class="flex items-center gap-3">
-		<i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-2xl"></i>
 		<div>
 			<p class="font-semibold">{m.paperInvalidFormat()}</p>
 			<p class="text-sm opacity-80">{m.paperInvalidFormatDescription()}</p>
 			{#if rawContent}
 				<button class="btn btn-sm btn-outline mt-2" onclick={downloadRawContent}>
-					<i class="fa-solid fa-download"></i>
+					<i class="fa-sharp-duotone fa-solid fa-download"></i>
 					{m.paperInvalidFormatDownload()}
 				</button>
 			{/if}

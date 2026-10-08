@@ -23,7 +23,7 @@
 
 {#if config}
 	<span class="badge badge-soft badge-sm {config.color}">
-		<i class="fa-solid {config.icon} text-xs"></i>
+		<i class="fa-sharp-duotone fa-solid {config.icon} text-xs"></i>
 		{config.label}
 	</span>
 {:else}

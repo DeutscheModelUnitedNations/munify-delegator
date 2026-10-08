@@ -58,7 +58,8 @@ export const BlockquoteWithFind = Blockquote.extend<BlockquoteWithFindOptions>({
 			const findButton = document.createElement('button');
 			findButton.className = 'btn btn-ghost btn-xs btn-square text-primary';
 			findButton.type = 'button';
-			findButton.innerHTML = '<i class="fa-solid fa-magnifying-glass text-xs"></i>';
+			findButton.innerHTML =
+				'<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-xs"></i>';
 
 			// Handle click
 			findButton.addEventListener('click', (e) => {

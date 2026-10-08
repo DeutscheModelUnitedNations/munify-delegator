@@ -36,6 +36,6 @@
 	<p class="mt-10 text-xs">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		{@html supportIdHtml}
-		<span class="bg-base-200 rounded-sm p-1 font-mono">{id}</span>
+		<span class="bg-base-200 rounded-selector p-1 font-mono">{id}</span>
 	</p>
 </section>

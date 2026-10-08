@@ -104,7 +104,7 @@
 				{@render content()}
 				{#if onclick}
 					<button class="btn btn-ghost" type="button" {onclick} aria-label="Copy referral">
-						<i class="fa-duotone fa-clipboard text-xl"></i>
+						<i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
 					</button>
 				{/if}
 			</div>

@@ -11,13 +11,13 @@
 <thead>
 	<tr>
 		<td class="text-left">
-			<i class="fa-duotone {icon}"></i>
+			<i class="fa-sharp-duotone fa-solid {icon}"></i>
 		</td>
 		<td class="text-left">
-			<i class="fa-duotone fa-users"></i>
+			<i class="fa-sharp-duotone fa-solid fa-users"></i>
 		</td>
 		<td>
-			<i class="fa-duotone fa-sigma"></i>
+			<i class="fa-sharp-duotone fa-solid fa-sigma"></i>
 		</td>
 	</tr>
 </thead>

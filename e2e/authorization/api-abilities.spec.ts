@@ -107,7 +107,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 	expectRefused(
 		await gql(
 			page,
-			`mutation ($e: String!) {
+			`mutation ($e: EmailAddress!) {
 				updateUsersNewsletterPreferences(email: $e, wantsToReceiveGeneralInformation: true)
 			}`,
 			{ e: `${E2E_CONNECT_PARTICIPANT_ID}@e2e.test` }
@@ -130,7 +130,7 @@ test('unsubscribing works without a session and does not reveal accounts', async
 	for (const email of [`${E2E_CONNECT_PARTICIPANT_ID}@e2e.test`, 'nobody-at-all@e2e.test']) {
 		const res = await request.post('/api/graphql', {
 			data: {
-				query: `mutation ($e: String!) {
+				query: `mutation ($e: EmailAddress!) {
 					updateUsersNewsletterPreferences(email: $e, wantsToReceiveGeneralInformation: false)
 				}`,
 				variables: { e: email }

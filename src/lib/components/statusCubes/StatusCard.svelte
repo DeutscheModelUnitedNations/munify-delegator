@@ -68,7 +68,7 @@
 <div class="card {bgClass} {isDisabled ? 'cursor-not-allowed opacity-50' : ''}">
 	<div class="card-body">
 		<div class="flex items-center gap-3">
-			<i class="fa-solid fa-{icon.replace('fa-', '')} text-2xl {colorClass}"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{icon.replace('fa-', '')} text-2xl {colorClass}"></i>
 			<h2 class="card-title">{task}</h2>
 		</div>
 		<p class={isDisabled ? 'text-base-content/50' : 'text-base-content/70'}>{description}</p>

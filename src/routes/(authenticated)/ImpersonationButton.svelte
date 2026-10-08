@@ -56,11 +56,11 @@
 	aria-label={m.stopImpersonation()}
 >
 	{#if isStoppingImpersonation}
-		<i class="fa-solid fa-spinner fa-spin text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-xl"></i>
 	{:else if isHovered}
-		<i class="fa-solid fa-xmark text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-xmark text-xl"></i>
 	{:else}
-		<i class="fa-solid fa-user-secret text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-user-secret text-xl"></i>
 	{/if}
 </button>
 

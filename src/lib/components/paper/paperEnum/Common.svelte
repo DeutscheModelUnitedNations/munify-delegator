@@ -16,6 +16,6 @@
 </script>
 
 <span class="badge {color} {sizeClasses[size]} font-medium whitespace-nowrap">
-	<i class="fa-solid fa-{icon.replace('fa-', '')}"></i>
+	<i class="fa-sharp-duotone fa-solid fa-{icon.replace('fa-', '')}"></i>
 	<span>{text}</span>
 </span>

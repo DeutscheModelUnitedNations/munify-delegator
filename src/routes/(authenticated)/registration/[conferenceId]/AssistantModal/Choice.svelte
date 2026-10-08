@@ -40,7 +40,7 @@
 		{#if btn.href}
 			<a class="btn w-full {btn.class ?? ''}" href={btn.href}>
 				{#if btn.icon}
-					<i class={`fa-solid fa-${btn.icon} w-5`}></i>
+					<i class={`fa-sharp-duotone fa-solid fa-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</a>
@@ -56,7 +56,7 @@
 				}}
 			>
 				{#if btn.icon}
-					<i class={`fa-solid fa-${btn.icon} w-5`}></i>
+					<i class={`fa-sharp-duotone fa-solid fa-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</button>

@@ -169,7 +169,7 @@
 									class="tooltip tooltip-left"
 									data-tip={m.seatPlanningOverfilled({ members, seats: nsa.seatAmount })}
 								>
-									<i class="fa-duotone fa-triangle-exclamation text-error"></i>
+									<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error"></i>
 								</span>
 							{/if}
 						</div>
@@ -185,7 +185,7 @@
 								disabled={members !== undefined}
 								onclick={() => (toDelete = nsa)}
 							>
-								<i class="fa-duotone fa-trash"></i>
+								<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 							</button>
 						</span>
 					</td>
@@ -245,7 +245,7 @@
 						disabled={!draftValid}
 						onclick={create}
 					>
-						<i class="fa-solid fa-plus"></i>
+						<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 					</button>
 				</td>
 			</tr>
@@ -260,7 +260,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (toDelete = undefined)}>{m.cancel()}</button>
 		<button class="btn btn-error" onclick={() => toDelete && remove(toDelete.id)}>
-			<i class="fa-solid fa-trash"></i>
+			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 			{m.delete()}
 		</button>
 	{/snippet}

@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { userFormSchema } from '../../../../routes/(authenticated)/my-account/form-schema';
+	import { adminUserFormSchema } from '../../../../routes/(authenticated)/my-account/form-schema';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
@@ -12,7 +12,9 @@
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
-	import { buildUserFormValues } from '$lib/api/userFormValues';
+	import { buildUserFormValues, toUpdateUserArgs } from '$lib/api/userFormValues';
+	import AddressRegionField from '$lib/components/form/AddressRegionField.svelte';
+	import { addressRules } from '$lib/helpers/addressRules';
 	import { toast } from 'svelte-sonner';
 	import GlobalNotes from '../GlobalNotes.svelte';
 	import { untrack } from 'svelte';
@@ -38,6 +40,7 @@
 		apartment: true,
 		zip: true,
 		city: true,
+		region: true,
 		country: true,
 		gender: true,
 		birthday: true,
@@ -49,30 +52,18 @@
 	let editing = $state(false);
 	let globalNotesOpen = $state(false);
 
-	// Admin form schema - omit newsletter preferences (personal user choice)
-	const adminFormSchema = userFormSchema.omit({
-		wantsToReceiveGeneralInformation: true,
-		wantsJoinTeamInformation: true
-	});
-
-	const initialData = defaults(buildUserFormValues(user), zod4Client(adminFormSchema));
+	const initialData = defaults(buildUserFormValues(user), zod4Client(adminUserFormSchema));
 
 	const form = superForm(initialData, {
 		SPA: true,
-		validators: zod4Client(adminFormSchema),
+		validators: zod4Client(adminUserFormSchema),
 		resetForm: false,
 		validationMethod: 'oninput',
 		async onUpdate({ form: updatedForm }) {
 			if (!updatedForm.valid) return;
 
-			const { given_name, family_name, ...formData } = updatedForm.data;
 			const promise = client.mutate.updateUser({
-				__args: {
-					...formData,
-					id: userId,
-					givenName: given_name,
-					familyName: family_name
-				},
+				__args: toUpdateUserArgs(userId, updatedForm.data),
 				id: true
 			});
 
@@ -92,6 +83,8 @@
 	});
 
 	const { form: formData } = form;
+	// which of postal code, city and region the picked country's addresses use
+	const address = $derived(addressRules($formData.country));
 
 	function toggleEdit() {
 		if (editing) {
@@ -141,7 +134,7 @@
 			<div class="flex flex-col gap-6">
 				<FormFieldset title={m.legalName()}>
 					<div class="mb-2 flex items-center gap-2 text-base-content/60">
-						<i class="fa-duotone fa-id-card"></i>
+						<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 					</div>
 					<FormTextInput
 						{form}
@@ -162,7 +155,7 @@
 				<FormFieldset title={m.personalInformation()}>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-duotone fa-birthday-cake"></i>
+							<i class="fa-sharp-duotone fa-solid fa-birthday-cake"></i>
 							<span class="text-sm">{m.birthDate()}</span>
 						</div>
 						<FormDateTimeInput
@@ -175,7 +168,7 @@
 					</div>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-duotone fa-{genderIcon}"></i>
+							<i class="fa-sharp-duotone fa-solid fa-{genderIcon}"></i>
 							<span class="text-sm">{m.gender()}</span>
 						</div>
 						<FormSelect {form} name="gender" options={genderOptions()} disabled={!editing} />
@@ -189,7 +182,7 @@
 					/>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-duotone fa-{foodIcon}"></i>
+							<i class="fa-sharp-duotone fa-solid fa-{foodIcon}"></i>
 							<span class="text-sm">{m.diet()}</span>
 						</div>
 						<FormSelect
@@ -208,7 +201,7 @@
 					<!-- Email (read-only, from OIDC) with action buttons -->
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-duotone fa-envelope"></i>
+							<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
 							<span class="text-sm">{m.email()}</span>
 						</div>
 						<div class="flex items-center gap-1">
@@ -226,7 +219,7 @@
 										aria-label={m.copy()}
 										onclick={() => copyToClipboard(user.email ?? '')}
 									>
-										<i class="fa-duotone fa-copy"></i>
+										<i class="fa-sharp-duotone fa-solid fa-copy"></i>
 									</button>
 								</div>
 								<div class="tooltip" data-tip={m.email()}>
@@ -235,7 +228,7 @@
 										class="btn btn-ghost btn-sm btn-square"
 										aria-label={m.email()}
 									>
-										<i class="fa-duotone fa-paper-plane"></i>
+										<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 									</a>
 								</div>
 							{/if}
@@ -245,7 +238,7 @@
 					<!-- Phone with action buttons -->
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2 text-base-content/60">
-							<i class="fa-duotone fa-phone"></i>
+							<i class="fa-sharp-duotone fa-solid fa-phone"></i>
 							<span class="text-sm">{m.phoneNumber()}</span>
 						</div>
 						<div class="flex items-center gap-1">
@@ -265,7 +258,7 @@
 										aria-label={m.copy()}
 										onclick={() => copyToClipboard(($formData.phone ?? '').toString())}
 									>
-										<i class="fa-duotone fa-copy"></i>
+										<i class="fa-sharp-duotone fa-solid fa-copy"></i>
 									</button>
 								</div>
 								<div class="tooltip" data-tip={m.phoneNumber()}>
@@ -274,7 +267,7 @@
 										class="btn btn-ghost btn-sm btn-square"
 										aria-label={m.phoneNumber()}
 									>
-										<i class="fa-duotone fa-phone-arrow-up-right"></i>
+										<i class="fa-sharp-duotone fa-solid fa-phone-arrow-up-right"></i>
 									</a>
 								</div>
 							{/if}
@@ -282,7 +275,7 @@
 					</div>
 
 					<div class="flex items-center gap-2 text-base-content/60 mt-2">
-						<i class="fa-duotone fa-house"></i>
+						<i class="fa-sharp-duotone fa-solid fa-house"></i>
 						<span class="text-sm">{m.address()}</span>
 					</div>
 					<FormTextInput {form} name="street" placeholder={m.street()} disabled={!editing} />
@@ -292,8 +285,6 @@
 						placeholder={m.streetAddition()}
 						disabled={!editing}
 					/>
-					<FormTextInput {form} name="zip" placeholder={m.zipCode()} disabled={!editing} />
-					<FormTextInput {form} name="city" placeholder={m.city()} disabled={!editing} />
 					<FormSelect
 						{form}
 						name="country"
@@ -301,9 +292,16 @@
 						options={translatedNationCodeAddressFormOptions}
 						disabled={!editing}
 					/>
+					{#if address.zip}
+						<FormTextInput {form} name="zip" placeholder={m.zipCode()} disabled={!editing} />
+					{/if}
+					{#if address.city}
+						<FormTextInput {form} name="city" placeholder={m.city()} disabled={!editing} />
+					{/if}
+					<AddressRegionField {form} name="region" rules={address} disabled={!editing} />
 
 					<div class="flex items-center gap-2 text-base-content/60 mt-2">
-						<i class="fa-duotone fa-light-emergency-on"></i>
+						<i class="fa-sharp-duotone fa-solid fa-light-emergency-on"></i>
 						<span class="text-sm">{m.emergencyContacts()}</span>
 					</div>
 					<FormTextArea
@@ -320,10 +318,10 @@
 	<div class="flex justify-end">
 		<button class="btn btn-sm {editing ? 'btn-ghost' : 'btn-outline'}" onclick={toggleEdit}>
 			{#if editing}
-				<i class="fa-duotone fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 				{m.cancel()}
 			{:else}
-				<i class="fa-duotone fa-pen-to-square"></i>
+				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 				{m.edit()}
 			{/if}
 		</button>
@@ -332,18 +330,18 @@
 	<!-- Global Notes -->
 	<div class="mt-4 flex flex-col gap-2">
 		<h3 class="text-lg font-bold">
-			<i class="fa-duotone fa-note-sticky mr-1"></i>
+			<i class="fa-sharp-duotone fa-solid fa-note-sticky mr-1"></i>
 			{m.globalNotes()}
 		</h3>
 		<p class="text-base-content/60 text-sm">
 			{m.globalNotesDescription()}
 			{m.globalNotesHint()}
 		</p>
-		<div class="bg-base-200 min-h-12 rounded-lg p-3 whitespace-pre-wrap">
+		<div class="bg-base-200 min-h-12 rounded-box p-3 whitespace-pre-wrap">
 			{user.globalNotes ?? '–'}
 		</div>
 		<button class="btn btn-sm btn-outline self-start" onclick={() => (globalNotesOpen = true)}>
-			<i class="fa-duotone fa-pen-to-square"></i>
+			<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 			{m.editGlobalNotes()}
 		</button>
 	</div>

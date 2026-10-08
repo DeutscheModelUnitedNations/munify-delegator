@@ -69,9 +69,9 @@
 
 {#snippet appliedIcon(applied: boolean)}
 	{#if applied}
-		<i class="fa-solid fa-circle-check text-success"></i>
+		<i class="fa-sharp-duotone fa-solid fa-circle-check text-success"></i>
 	{:else}
-		<i class="fa-solid fa-hourglass-half text-error"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hourglass-half text-error"></i>
 	{/if}
 {/snippet}
 
@@ -81,7 +81,7 @@
 		href={resolve(`/dashboard/${conferenceId}/management/${list}?selected=${selectedId}`)}
 		aria-label="Details"
 	>
-		<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+		<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 	</a>
 {/snippet}
 
@@ -141,12 +141,14 @@
 			</tr>
 			{#each members as member (member.id)}
 				<tr class="text-xs">
-					<td class="text-right"><i class="fa-duotone fa-arrow-turn-down-right"></i></td>
+					<td class="text-right"
+						><i class="fa-sharp-duotone fa-solid fa-arrow-turn-down-right"></i></td
+					>
 					<td colspan="3">
 						{member.user.givenName}
 						<span class="uppercase">{member.user.familyName}</span>
 						{#if member.isHeadDelegate}
-							<i class="fa-duotone fa-medal ml-2"></i>
+							<i class="fa-sharp-duotone fa-solid fa-medal ml-2"></i>
 						{/if}
 					</td>
 					<td>
@@ -185,7 +187,7 @@
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<button class="btn" onclick={() => openUserCard(supervisor.user.id)}>
 			{m.adminUserCard()}
-			<i class="fa-duotone fa-id-card"></i>
+			<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 		</button>
 	</div>
 </Drawer>

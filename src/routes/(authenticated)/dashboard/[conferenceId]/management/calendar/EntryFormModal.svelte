@@ -185,7 +185,7 @@
 		<div class="flex items-center gap-2">
 			<input type="text" bind:value={entryIcon} class="input flex-1" placeholder="e.g. gavel" />
 			{#if entryIcon}
-				<i class="fa-duotone fa-{entryIcon} text-base-content/60 text-lg"></i>
+				<i class="fa-sharp-duotone fa-solid fa-{entryIcon} text-base-content/60 text-lg"></i>
 			{/if}
 		</div>
 	</fieldset>

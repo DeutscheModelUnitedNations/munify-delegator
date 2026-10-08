@@ -189,7 +189,7 @@
 <SideDrawer bind:open title={m.filters()} icon="fa-filter">
 	<div class="flex gap-2">
 		<button class="btn btn-ghost btn-sm" onclick={clearAllFilters}>
-			<i class="fa-duotone fa-filter-circle-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-filter-circle-xmark"></i>
 			{m.clearAllFilters()}
 		</button>
 	</div>

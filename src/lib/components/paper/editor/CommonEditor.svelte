@@ -143,7 +143,7 @@
 					onclick={handleQuoteClick}
 					title={m.quoteInReview()}
 				>
-					<i class="fa-solid fa-quote-left"></i>
+					<i class="fa-sharp-duotone fa-solid fa-quote-left"></i>
 					{m.quote()}
 				</button>
 			</BubbleMenu>
@@ -159,19 +159,19 @@
 			class="mt-2 pt-2 border-t border-base-300 text-xs text-base-content/60 flex flex-wrap gap-x-4 gap-y-1"
 		>
 			<span>
-				<i class="fa-solid fa-font"></i>
+				<i class="fa-sharp-duotone fa-solid fa-font"></i>
 				{m.paperStatsWords({ count: stats.words })}
 			</span>
 			<span>
-				<i class="fa-solid fa-text-width"></i>
+				<i class="fa-sharp-duotone fa-solid fa-text-width"></i>
 				{m.paperStatsCharacters({ count: stats.characters })}
 			</span>
 			<span>
-				<i class="fa-solid fa-paragraph"></i>
+				<i class="fa-sharp-duotone fa-solid fa-paragraph"></i>
 				{m.paperStatsParagraphs({ count: stats.paragraphs })}
 			</span>
 			<span>
-				<i class="fa-solid fa-clock"></i>
+				<i class="fa-sharp-duotone fa-solid fa-clock"></i>
 				{m.paperStatsReadingTime({ count: stats.readingTimeMinutes })}
 			</span>
 		</div>

@@ -26,14 +26,14 @@
 	role="list"
 	aria-label={m.assignmentPart({ number: index + 1 })}
 	use:droppable={{ container, callbacks: { onDrop } }}
-	class="flex min-h-32 flex-col gap-2 rounded-lg border p-2 transition-colors {filled
+	class="flex min-h-32 flex-col gap-2 rounded-box border p-2 transition-colors {filled
 		? 'border-primary/50 bg-primary/5'
 		: 'border-base-300 bg-base-200'}"
 >
 	<div class="flex items-center gap-2 text-sm font-bold">
 		<span class="mr-auto">{m.assignmentPart({ number: index + 1 })}</span>
 		<span class="badge badge-sm {filled ? 'badge-primary' : 'badge-ghost'}">
-			<i class="fa-duotone fa-users"></i>
+			<i class="fa-sharp-duotone fa-solid fa-users"></i>
 			{members.length}
 		</span>
 		{#if onRemove}
@@ -43,7 +43,7 @@
 				aria-label={m.assignmentRemovePart()}
 				onclick={onRemove}
 			>
-				<i class="fa-duotone fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 		{/if}
 	</div>
@@ -53,7 +53,7 @@
 			use:draggable={{ container, dragData: { id: member.id } }}
 			ondragstart={() => onDragChange(member.id)}
 			ondragend={() => onDragChange(undefined)}
-			class="bg-base-100 border-base-300 flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2.5 text-base shadow-sm {draggedId ===
+			class="bg-base-100 border-base-300 flex cursor-grab items-center gap-2 rounded-box border px-3 py-2.5 text-base shadow-sm {draggedId ===
 			member.id
 				? 'opacity-50'
 				: ''}"
@@ -62,12 +62,13 @@
 				{formatNames(member.user.givenName ?? undefined, member.user.familyName ?? undefined)}
 			</span>
 			{#if member.isHeadDelegate}
-				<i class="fa-duotone fa-crown text-warning shrink-0" title={m.headDelegate()}></i>
+				<i class="fa-sharp-duotone fa-solid fa-crown text-warning shrink-0" title={m.headDelegate()}
+				></i>
 			{/if}
 		</div>
 	{:else}
 		<div
-			class="border-base-content/30 text-base-content/50 flex grow items-center justify-center rounded-md border-2 border-dashed p-2 text-center text-xs"
+			class="border-base-content/30 text-base-content/50 flex grow items-center justify-center rounded-field border-2 border-dashed p-2 text-center text-xs"
 		>
 			{m.assignmentPartEmpty()}
 		</div>

@@ -39,10 +39,10 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th class="text-center"><i class="fa-duotone fa-hashtag"></i></th>
-			<th class="text-center"><i class="fa-duotone fa-flag"></i></th>
-			<th><i class="fa-duotone fa-text"></i></th>
-			<th class="text-center"><i class="fa-duotone fa-users"></i></th>
+			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-hashtag"></i></th>
+			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-flag"></i></th>
+			<th><i class="fa-sharp-duotone fa-solid fa-text"></i></th>
+			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
 		</tr>
 	</thead>
 	<tbody>

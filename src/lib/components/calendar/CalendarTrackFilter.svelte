@@ -22,7 +22,7 @@
 {/snippet}
 
 <div
-	class="border-base-300 bg-base-200/50 mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2"
+	class="border-base-300 bg-base-200/50 mb-4 flex flex-wrap items-center gap-2 rounded-box border px-3 py-2"
 >
 	<span class="text-sm font-medium">{m.calendarTrack()}:</span>
 	<div class="flex flex-wrap gap-1">

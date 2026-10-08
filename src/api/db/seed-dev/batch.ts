@@ -47,6 +47,7 @@ export interface SeedBatch {
 	assignmentUnitMember: Insert<'assignmentUnitMember'>[];
 	assignmentSingleRole: Insert<'assignmentSingleRole'>[];
 	assignmentWeights: Insert<'assignmentWeights'>[];
+	possibleDuplicate: Insert<'possibleDuplicate'>[];
 }
 
 export function emptyBatch(): SeedBatch {
@@ -89,7 +90,8 @@ export function emptyBatch(): SeedBatch {
 		assignmentUnit: [],
 		assignmentUnitMember: [],
 		assignmentSingleRole: [],
-		assignmentWeights: []
+		assignmentWeights: [],
+		possibleDuplicate: []
 	};
 }
 
@@ -173,5 +175,8 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	);
 	await insertChunked(batch.assignmentWeights, (rows) =>
 		db.insert(s.assignmentWeights).values(rows)
+	);
+	await insertChunked(batch.possibleDuplicate, (rows) =>
+		db.insert(s.possibleDuplicate).values(rows)
 	);
 }

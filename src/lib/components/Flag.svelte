@@ -12,13 +12,13 @@
 	const flagClassNames = () => {
 		switch (size) {
 			case 'xs':
-				return 'w-[2rem] h-[1.5rem] rounded';
+				return 'w-[2rem] h-[1.5rem] rounded-field';
 			case 'sm':
-				return 'w-[4rem] h-[3rem] rounded-lg';
+				return 'w-[4rem] h-[3rem] rounded-box';
 			case 'md':
-				return 'w-[6rem] h-[4.5rem] rounded-lg';
+				return 'w-[6rem] h-[4.5rem] rounded-box';
 			case 'lg':
-				return 'w-[8rem] h-[6rem] rounded-lg';
+				return 'w-[8rem] h-[6rem] rounded-box';
 		}
 	};
 
@@ -47,7 +47,12 @@
 		'bg-base-300'}"
 >
 	{#if nsa}
-		<i class="fa-solid fa-{(icon ?? 'fa-hand-point-up').replace('fa-', '')} {iconClassNames()}"></i>
+		<i
+			class="fa-sharp-duotone fa-solid fa-{(icon ?? 'fa-hand-point-up').replace(
+				'fa-',
+				''
+			)} {iconClassNames()}"
+		></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}

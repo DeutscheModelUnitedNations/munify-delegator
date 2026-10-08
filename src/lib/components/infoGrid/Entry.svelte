@@ -17,14 +17,14 @@
 	{:else if children}
 		{@render children?.()}
 	{:else}
-		<i class="fa-duotone fa-dash"></i>
+		<i class="fa-sharp-duotone fa-solid fa-dash"></i>
 	{/if}
 {/snippet}
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend">
 		{#if fontAwesomeIcon}
-			<i class="fa-duotone fa-{fontAwesomeIcon.replace('fa-', '')}"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{fontAwesomeIcon.replace('fa-', '')}"></i>
 		{/if}
 		{title}
 	</legend>

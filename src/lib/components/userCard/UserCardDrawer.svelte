@@ -31,14 +31,14 @@
 <SlidePanel
 	bind:open={() => cardState.isOpen, handleOpenChange}
 	direction="bottom"
-	class="h-[90vh] max-w-7xl rounded-t-2xl shadow-2xl"
+	class="h-[90vh] max-w-7xl rounded-t-box shadow-2xl"
 >
 	<div class="bg-base-300 mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full"></div>
 	<Dialog.Close
 		class="btn btn-soft btn-sm btn-square absolute top-4 right-4 z-10"
 		aria-label="Close"
 	>
-		<i class="fa-solid fa-xmark"></i>
+		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 	</Dialog.Close>
 	<Dialog.Title class="sr-only">{m.adminUserCard()}</Dialog.Title>
 	{#if shown}

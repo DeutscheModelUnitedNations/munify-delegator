@@ -111,6 +111,11 @@ function implicitManyToMany<TName extends string>(
 }
 
 export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
+export const possibleDuplicateStatus = pgEnum('possible_duplicate_status', [
+	'OPEN',
+	'DISMISSED',
+	'CONFIRMED'
+]);
 export const assignmentMarkEffect = pgEnum('assignment_mark_effect', [
 	'WISHES_AND_SEATING',
 	'SEATING_ONLY'
@@ -1017,12 +1022,16 @@ export const user = snakeCase.table(
 		givenName: text('given_name').notNull(),
 		locale: text().notNull(),
 		preferredUsername: text('preferred_username').notNull(),
-		birthday: timestamp({ precision: 3 }),
+		// a calendar day: the `Date` scalar carries it as YYYY-MM-DD, read as UTC midnight
+		birthday: date({ mode: 'date' }),
 		phone: text(),
 		street: text(),
 		apartment: text(),
 		zip: text(),
 		city: text(),
+		// state, province or prefecture where the country's addresses have one (rumble's AddressInput)
+		region: text(),
+		// ISO 3166-1 alpha-3
 		country: text(),
 		pronouns: text(),
 		foodPreference: foodPreference(),
@@ -1043,6 +1052,31 @@ export const user = snakeCase.table(
 		trigramIndex('user_preferred_username_trgm', table.preferredUsername),
 		trigramIndex('user_locale_trgm', table.locale),
 		trigramIndex('user_pronouns_trgm', table.pronouns)
+	]
+);
+
+/**
+ * Two accounts that may belong to one person (`$api/services/possibleDuplicates.ts` finds them),
+ * so a care note on the old one is not lost to a fresh signup. Stored rather than computed on
+ * read so a dismissal sticks and a re-scan only refreshes the score. `userId` is the smaller of the
+ * two ids, so each pair has one row.
+ */
+export const possibleDuplicate = snakeCase.table(
+	'possible_duplicate',
+	{
+		...defaultIdAndTimestamps,
+		userId: userRef('cascade'),
+		candidateId: userRef('cascade'),
+		score: doublePrecision().notNull(),
+		/** `MatchReason`s: which signals the two accounts share */
+		reasons: text().array().notNull(),
+		status: possibleDuplicateStatus().notNull().default('OPEN'),
+		decidedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+		decidedAt: timestamp({ precision: 3 })
+	},
+	(table) => [
+		uniqueIndex('possible_duplicate_user_id_candidate_id_key').on(table.userId, table.candidateId),
+		index('possible_duplicate_candidate_id_idx').on(table.candidateId)
 	]
 );
 

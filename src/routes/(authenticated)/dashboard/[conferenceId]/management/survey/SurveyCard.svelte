@@ -95,7 +95,7 @@
 		</div>
 		<div class="flex flex-1 flex-col gap-2 overflow-hidden">
 			<!-- Summary stats table -->
-			<div class="bg-base-300 overflow-hidden rounded-t-lg">
+			<div class="bg-base-300 overflow-hidden rounded-t-box">
 				<table class="table table-sm">
 					<tbody>
 						<tr class="border-base-200">
@@ -110,7 +110,7 @@
 				</table>
 			</div>
 			<!-- Per-option stats table -->
-			<div class="bg-base-300 overflow-hidden rounded-b-lg">
+			<div class="bg-base-300 overflow-hidden rounded-b-box">
 				<table class="table table-sm">
 					<tbody>
 						{#each survey.options as option, i (option.id)}
@@ -130,7 +130,7 @@
 	</div>
 {/snippet}
 
-<div class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4">
+<div class="bg-base-200 flex w-full flex-col gap-4 rounded-box p-4">
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{survey.title}</h3>
 		<div class="flex flex-wrap items-center gap-2">
@@ -141,7 +141,7 @@
 			{/if}
 			{#if survey.hidden}
 				<span class="badge badge-neutral w-fit">
-					<i class="fa-duotone fa-box-archive mr-1"></i>
+					<i class="fa-sharp-duotone fa-solid fa-box-archive mr-1"></i>
 					{m.archivedSurvey()}
 				</span>
 			{/if}
@@ -156,7 +156,7 @@
 				{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
 			</button>
 			<button class="btn btn-ghost btn-sm" onclick={() => toggleHidden(survey.id, survey.hidden)}>
-				<i class="fa-duotone fa-box-archive"></i>
+				<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
 				{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 			</button>
 			<a
@@ -194,7 +194,7 @@
 	{#if survey.options.length > 0}
 		{@render optionStats()}
 	{:else}
-		<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
+		<div class="bg-base-300 rounded-field p-4 text-center text-sm opacity-70">
 			{m.noOptionsYet()}
 		</div>
 	{/if}

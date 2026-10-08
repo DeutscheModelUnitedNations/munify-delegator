@@ -19,14 +19,14 @@
 {#if counts.total > 0}
 	<div class="border-t border-base-300 pt-4">
 		<h4 class="text-sm font-semibold mb-2">{m.paperStatusOverview()}</h4>
-		<div class="flex h-12 w-full rounded-lg overflow-hidden">
+		<div class="flex h-12 w-full rounded-box overflow-hidden">
 			{#if counts.submitted > 0}
 				<div
 					class="tooltip tooltip-right tooltip-warning bg-warning flex items-center justify-center gap-2 text-warning-content transition-all"
 					style="width: {(counts.submitted / counts.total) * 100}%"
 					data-tip="{m.paperStatusSubmitted()}: {counts.submitted}"
 				>
-					<i class="fa-solid fa-paper-plane"></i>
+					<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.submitted}</span
 					>
@@ -38,7 +38,7 @@
 					style="width: {(counts.revised / counts.total) * 100}%"
 					data-tip="{m.paperStatusRevised()}: {counts.revised}"
 				>
-					<i class="fa-solid fa-rotate"></i>
+					<i class="fa-sharp-duotone fa-solid fa-rotate"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.revised}</span
 					>
@@ -50,7 +50,7 @@
 					style="width: {(counts.changesRequested / counts.total) * 100}%"
 					data-tip="{m.paperStatusChangesRequested()}: {counts.changesRequested}"
 				>
-					<i class="fa-solid fa-rotate-left"></i>
+					<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.changesRequested}</span
 					>
@@ -62,7 +62,7 @@
 					style="width: {(counts.accepted / counts.total) * 100}%"
 					data-tip="{m.paperStatusAccepted()}: {counts.accepted}"
 				>
-					<i class="fa-solid fa-check"></i>
+					<i class="fa-sharp-duotone fa-solid fa-check"></i>
 					<span class="text-sm font-medium" class:blur-sm={blur} class:select-none={blur}
 						>{counts.accepted}</span
 					>
@@ -72,19 +72,19 @@
 		<!-- Legend -->
 		<div class="flex gap-4 text-sm text-base-content/70 mt-2">
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-warning rounded"></span>
+				<span class="inline-block w-3 h-3 bg-warning rounded-field"></span>
 				{m.paperStatusSubmitted()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-info rounded"></span>
+				<span class="inline-block w-3 h-3 bg-info rounded-field"></span>
 				{m.paperStatusRevised()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-error rounded"></span>
+				<span class="inline-block w-3 h-3 bg-error rounded-field"></span>
 				{m.paperStatusChangesRequested()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-success rounded"></span>
+				<span class="inline-block w-3 h-3 bg-success rounded-field"></span>
 				{m.paperStatusAccepted()}
 			</span>
 		</div>

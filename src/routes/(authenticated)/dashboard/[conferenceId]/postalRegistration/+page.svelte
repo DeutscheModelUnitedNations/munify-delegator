@@ -92,12 +92,12 @@
 				<div class="flex flex-col gap-2 items-start">
 					<div>{m.checkYourAddressAndBirthday()}</div>
 					<div class="grid grid-cols-[auto_1fr] gap-4 items-center bg-base-100 p-4 rounded-box">
-						<i class="fa-duotone fa-user"></i>
+						<i class="fa-sharp-duotone fa-solid fa-user"></i>
 						<div>
 							{userQueryData.givenName}
 							{userQueryData.familyName}
 						</div>
-						<i class="fa-duotone fa-home"></i>
+						<i class="fa-sharp-duotone fa-solid fa-home"></i>
 						<div>
 							{userQueryData.street}
 							{userQueryData.apartment ? `, ${userQueryData.apartment}` : ''}<br />
@@ -105,7 +105,7 @@
 							{userQueryData.city}<br />
 							{userQueryData.country}
 						</div>
-						<i class="fa-duotone fa-cake-candles"></i>
+						<i class="fa-sharp-duotone fa-solid fa-cake-candles"></i>
 						<div>
 							{userQueryData.birthday ? new Date(userQueryData.birthday).toLocaleDateString() : ''}
 						</div>
@@ -139,7 +139,7 @@
 		{@html m.postalRegistrationFAQ1()}
 		<div class="card bg-base-200 shadow-lg">
 			<div class="card-body gap-10 sm:flex-row">
-				<i class="fa-duotone fa-mailbox-flag-up text-5xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-mailbox-flag-up text-5xl"></i>
 				<address class="text-lg sm:text-xl">
 					<strong>{conference.postalName}</strong><br /><span>{conference.postalStreet}</span><br />
 					{#if conference.postalApartment}

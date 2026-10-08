@@ -36,7 +36,8 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 					.replace('%lang%', locale)
 					.replace(
 						'%fontawesome.stylesheet%',
-						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />`
+						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />` +
+							`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
 					);
 			}
 		});

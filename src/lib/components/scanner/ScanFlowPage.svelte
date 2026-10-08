@@ -67,33 +67,34 @@
 	});
 </script>
 
-<div class="flex w-full flex-col gap-8 md:p-10">
+<div class="flex w-full max-w-3xl flex-col gap-6 md:p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{title}</h2>
-		<p>{@render description()}</p>
-
-		{@render header?.()}
-
-		<BarcodeScanner
-			bind:this={flow.scanner}
-			bind:scannedCode={flow.queryUserId}
-			{barcodeFormats}
-			{persistKey}
-			manualPlaceholder={m.enterPostalRegistrationCode()}
-			scanPromptText={m.scanPostalRegistrationCodePrompt()}
-			cameraZIndex="z-30"
-		/>
+		<p class="text-base-content/70 leading-relaxed">{@render description()}</p>
 	</div>
+
+	{@render header?.()}
+
+	<BarcodeScanner
+		bind:this={flow.scanner}
+		bind:scannedCode={flow.queryUserId}
+		{barcodeFormats}
+		{persistKey}
+		manualPlaceholder={m.enterPostalRegistrationCode()}
+		scanPromptText={m.scanPostalRegistrationCodePrompt()}
+	/>
 
 	<!-- Loading / error state -->
 	{#if flow.queryUserId && flow.loading}
-		<div class="flex items-center justify-center py-4">
-			<span class="loading loading-spinner loading-lg"></span>
+		<div class="text-base-content/70 flex items-center gap-3">
+			<span class="loading loading-spinner loading-sm"></span>
+			<span class="font-mono text-sm">{flow.queryUserId}</span>
 		</div>
 	{:else if flow.queryUserId && !flow.data?.user}
-		<div class="alert alert-warning">
-			<i class="fa-duotone fa-triangle-exclamation text-lg"></i>
-			<div>{notFoundMessage}</div>
+		<div role="alert" class="alert alert-warning alert-soft">
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-lg"></i>
+			<span>{notFoundMessage}</span>
+			<button class="btn btn-ghost btn-sm" onclick={onClose}>{m.close()}</button>
 		</div>
 	{/if}
 </div>
@@ -113,7 +114,7 @@
 			}}
 			aria-label={m.details()}
 		>
-			<i class="fa-duotone fa-id-card"></i>
+			<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 		</button>
 		<button
 			type="button"
@@ -121,7 +122,7 @@
 			onclick={() => onClose()}
 			aria-label={m.close()}
 		>
-			<i class="fa-duotone fa-xmark text-lg"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
 		</button>
 	{/snippet}
 
@@ -132,12 +133,12 @@
 
 	{#snippet footer()}
 		<button class="btn btn-primary flex-1" onclick={onConfirm} disabled={flow.busy}>
-			<i class="fa-solid fa-check"></i>
+			<i class="fa-sharp-duotone fa-solid fa-check"></i>
 			{confirmLabel}
 			<Kbd hotkey="alt+a" />
 		</button>
 		<button class="btn btn-error" onclick={onClose}>
-			<i class="fa-solid fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			{m.close()}
 			<Kbd hotkey="Esc" />
 		</button>

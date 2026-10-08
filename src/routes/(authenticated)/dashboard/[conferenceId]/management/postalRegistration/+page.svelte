@@ -112,7 +112,7 @@
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
-			<i class="fa-duotone fa-user text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user text-2xl"></i>
 			<div class="grow">
 				<h3 class="text-xl font-bold">
 					{formatNames(userDetails.givenName ?? undefined, userDetails.familyName ?? undefined)}

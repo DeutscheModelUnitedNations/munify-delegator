@@ -1,26 +1,21 @@
 <script lang="ts">
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
-	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		/** Barcode formats to detect */
 		barcodeFormats?: BarcodeFormat[];
-		/** Key for persisted camera preference store */
+		/** Key the scanner remembers whether the camera was on under, to turn it back on next time */
 		persistKey: string;
 		/** Placeholder for manual input field */
 		manualPlaceholder?: string;
 		/** Prompt shown while camera is scanning */
 		scanPromptText?: string;
-		/** z-index class for camera preview container */
-		cameraZIndex?: string;
 		/** The scanned/entered code — two-way bindable (nullable for queryParameters compatibility) */
 		scannedCode: string | null;
-		/** Optional snippet for extra controls between camera settings and input */
-		extraControls?: Snippet;
 	}
 
 	let {
@@ -28,27 +23,30 @@
 		persistKey,
 		manualPlaceholder = '',
 		scanPromptText = '',
-		cameraZIndex = 'z-30',
-		scannedCode = $bindable<string | null>(''),
-		extraControls
+		scannedCode = $bindable<string | null>('')
 	}: Props = $props();
 
 	// Internal state
 	let availableVideoDevices: MediaDeviceInfo[] = $state([]);
 	let selectedVideoDeviceIndex = $state(0);
 	let videoElem: HTMLVideoElement;
-	let canvasElem: HTMLCanvasElement;
 	let streaming = $state(false);
+	let starting = $state(false);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
-	let useCamera = new PersistedState(
+	let cameraWanted = new PersistedState(
 		untrack(() => persistKey),
 		false
 	);
 	let manualInputElem = $state<HTMLInputElement>();
+	/**
+	 * The code scanned last, ignored until it has left the picture: the stream keeps running between
+	 * scans, so the paper still held up after a reset would otherwise be scanned again at once.
+	 */
+	let blockedCode: string | null = null;
+	let detecting = false;
 
-	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
-		formats: untrack(() => barcodeFormats)
-	});
+	// Created on first use: the polyfill cannot be constructed during SSR
+	let barcodeDetector: BarcodeDetector | undefined;
 
 	// --- Camera / Scanner functions ---
 
@@ -83,23 +81,23 @@
 	}
 
 	async function startVideo() {
-		scannedCode = null;
-		if (!videoElem) {
-			console.error('videoElem is not available.');
-			return;
-		}
+		if (!videoElem || starting) return;
+		starting = true;
 		try {
-			if (streaming) {
-				stopVideo();
-			}
+			stopVideo();
 			const videoConstraints = await selectedCameraConstraints();
 			const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
+			cameraWanted.current = true;
 		} catch (error) {
 			console.error('Error accessing camera:', error);
 			toast.error(cameraErrorMessage(error));
+			// Do not retry on every visit when the camera is denied or missing
+			cameraWanted.current = false;
+		} finally {
+			starting = false;
 		}
 	}
 
@@ -110,180 +108,202 @@
 		}
 	}
 
-	async function stopVideo() {
-		if (videoElem.srcObject) {
-			const stream = videoElem.srcObject as MediaStream;
-			const tracks = stream.getTracks();
-			tracks.forEach((track) => track.stop());
+	function stopVideo() {
+		if (videoElem?.srcObject instanceof MediaStream) {
+			videoElem.srcObject.getTracks().forEach((track) => track.stop());
 			videoElem.srcObject = null;
 		}
 		streaming = false;
 	}
 
-	function scanForCode() {
-		if (streaming) {
-			canvasElem.width = videoElem.videoWidth;
-			canvasElem.height = videoElem.videoHeight;
-			const ctx = canvasElem.getContext('2d');
-			if (ctx) {
-				ctx.drawImage(videoElem, 0, 0, videoElem.videoWidth, videoElem.videoHeight);
-				canvasElem.toBlob(async (blob) => {
-					if (blob) {
-						barcodeDetector
-							.detect(canvasElem)
-							.then((barcodes) => {
-								if (barcodes.length > 0) {
-									const barcode = barcodes[0];
-									const code = barcode.rawValue;
-									if (code) {
-										stopVideo();
-										scannedCode = code;
-									} else {
-										throw new Error('Barcode value is empty');
-									}
-								}
-							})
-							.catch((error) => {
-								toast.error(m.barcodeDetectError({ error: String(error) }));
-							});
-					}
-				}, 'image/jpeg');
-			}
+	function turnCameraOff() {
+		stopVideo();
+		cameraWanted.current = false;
+	}
+
+	function readyToDetect() {
+		return streaming && !detecting && videoElem.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+	}
+
+	/** The code in the picture that is not the one scanned last, if there is one. */
+	async function detectNewCode() {
+		barcodeDetector ??= new BarcodeDetector({ formats: barcodeFormats });
+		const codes = (await barcodeDetector.detect(videoElem))
+			.map((barcode) => barcode.rawValue)
+			.filter((code) => !!code);
+		if (!codes.includes(blockedCode ?? '')) blockedCode = null;
+		return codes.find((code) => code !== blockedCode);
+	}
+
+	function acceptScanned(code: string | undefined) {
+		// The scan may have been answered by hand while the detector was running
+		if (!code || scannedCode) return;
+		scannedCode = code;
+		blockedCode = code;
+	}
+
+	async function scanForCode() {
+		if (!readyToDetect()) return;
+		detecting = true;
+		try {
+			acceptScanned(await detectNewCode());
+		} catch (error) {
+			toast.error(m.barcodeDetectError({ error: String(error) }));
+		} finally {
+			detecting = false;
 		}
+	}
+
+	function submitManual() {
+		const code = manualInputElem?.value?.trim();
+		if (!code) return;
+		scannedCode = code;
+		manualInputElem?.blur();
 	}
 
 	// --- Effects ---
 
-	// Scan interval while streaming and no code detected
+	// Scan while streaming and no code is being handled
 	$effect(() => {
-		let intervalId: ReturnType<typeof setInterval> | undefined;
-		if (streaming && !scannedCode) {
-			intervalId = setInterval(scanForCode, 500);
-		}
-		return () => {
-			if (intervalId) {
-				clearInterval(intervalId);
-			}
-		};
-	});
-
-	// Stop video when camera toggled off
-	$effect(() => {
-		if (!useCamera.current) {
-			if (streaming) {
-				stopVideo();
-			}
-		}
+		if (!streaming || scannedCode) return;
+		const intervalId = setInterval(scanForCode, 300);
+		return () => clearInterval(intervalId);
 	});
 
 	onMount(() => {
-		if (scannedCode && manualInputElem) {
-			manualInputElem.value = scannedCode ?? '';
-		}
+		if (manualInputElem) manualInputElem.value = scannedCode ?? '';
+		if (cameraWanted.current) startVideo();
 	});
 
-	onDestroy(() => {
-		if (streaming) {
-			stopVideo();
-		}
-	});
+	onDestroy(stopVideo);
 
 	// --- Exposed API ---
 
+	/** Clears the code and readies the scanner for the next one; the camera keeps running. */
 	export function reset() {
 		scannedCode = null;
-		if (useCamera.current) {
-			startVideo();
-		} else if (manualInputElem) {
+		if (manualInputElem) {
 			manualInputElem.value = '';
-			manualInputElem.focus();
+			// A hand scanner types into the field, but on a phone focusing it would pop the keyboard
+			if (!streaming) manualInputElem.focus();
 		}
 	}
 </script>
 
-<FormFieldset title={m.cameraSettings()}>
-	<label for="useCamera-{persistKey}" class="mr-2">
-		<input
-			type="checkbox"
-			id="useCamera-{persistKey}"
-			bind:checked={useCamera.current}
-			class="toggle toggle-primary mr-2"
-		/>
-		{m.useCameraForScanning()}</label
+<div class="flex w-full flex-col gap-3">
+	<!-- Camera viewport -->
+	<div
+		class="relative aspect-[4/3] w-full overflow-hidden rounded-box border sm:aspect-video {streaming
+			? 'border-transparent bg-black'
+			: 'bg-base-200 border-base-300 border-dashed'}"
 	>
-	{#if useCamera.current}
-		<button class="btn btn-primary mt-4" disabled={streaming} onclick={startVideo}>
-			<i class="fa-solid fa-video"></i>
-			{m.startCamera()}
-		</button>
-		<button
-			class="btn btn-secondary mt-2"
-			disabled={availableVideoDevices.length <= 1}
-			onclick={switchCamera}
+		<video
+			bind:this={videoElem}
+			class="absolute inset-0 h-full w-full object-cover {streaming ? '' : 'invisible'}"
+			autoplay
+			muted
+			playsinline
 		>
-			<i class="fa-solid fa-camera-rotate"></i>
-			{m.switchCamera()}
-		</button>
-	{/if}
-</FormFieldset>
+			<track kind="captions" src="" srclang="en" label="English" default />
+		</video>
 
-{#if extraControls}
-	{@render extraControls()}
-{/if}
+		{#if streaming}
+			<!-- Crosshair: a square to hold the code in, the rest of the picture dimmed -->
+			<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+				<div
+					class="relative aspect-square h-1/2 rounded-2xl sm:h-3/5 shadow-[0_0_0_100vmax_rgb(0_0_0/0.45)]"
+				>
+					<span
+						class="absolute top-0 left-0 size-8 rounded-tl-2xl border-t-4 border-l-4 border-white"
+					></span>
+					<span
+						class="absolute top-0 right-0 size-8 rounded-tr-2xl border-t-4 border-r-4 border-white"
+					></span>
+					<span
+						class="absolute bottom-0 left-0 size-8 rounded-bl-2xl border-b-4 border-l-4 border-white"
+					></span>
+					<span
+						class="absolute right-0 bottom-0 size-8 rounded-br-2xl border-r-4 border-b-4 border-white"
+					></span>
+					<span
+						class="absolute top-1/2 left-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-white/80"
+					></span>
+					<span
+						class="absolute top-1/2 left-1/2 h-6 w-px -translate-x-1/2 -translate-y-1/2 bg-white/80"
+					></span>
+				</div>
+			</div>
 
-{#if !useCamera.current}
-	<FormFieldset title={m.userIdInput()}>
-		<div class="join">
+			<div class="absolute top-3 right-3 flex gap-2">
+				{#if availableVideoDevices.length > 1}
+					<button
+						class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
+						onclick={switchCamera}
+						aria-label={m.switchCamera()}
+						title={m.switchCamera()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-camera-rotate"></i>
+					</button>
+				{/if}
+				<button
+					class="btn btn-circle btn-sm border-none bg-black/50 text-white hover:bg-black/70"
+					onclick={turnCameraOff}
+					aria-label={m.stopCamera()}
+					title={m.stopCamera()}
+				>
+					<i class="fa-sharp-duotone fa-solid fa-video-slash"></i>
+				</button>
+			</div>
+
+			<div
+				class="absolute bottom-4 left-1/2 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-4 py-1.5 text-sm text-white"
+			>
+				{#if scannedCode}
+					<!-- Scanning pauses while a code is handled, whether it came from the camera or by hand -->
+					<i class="fa-sharp-duotone fa-solid fa-circle-pause"></i>
+					<span class="truncate font-mono">{scannedCode}</span>
+				{:else}
+					<i class="fa-sharp-duotone fa-solid fa-barcode-read fa-beat-fade"></i>
+					<span class="truncate">{scanPromptText}</span>
+				{/if}
+			</div>
+		{:else}
+			<div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
+				<i class="fa-sharp-duotone fa-solid fa-video-slash text-base-content/40 text-4xl"></i>
+				<p class="text-base-content/70 text-sm">{m.cameraOff()}</p>
+				<button class="btn btn-primary" onclick={startVideo} disabled={starting}>
+					{#if starting}
+						<span class="loading loading-spinner loading-sm"></span>
+					{:else}
+						<i class="fa-sharp-duotone fa-solid fa-video"></i>
+					{/if}
+					{m.startCamera()}
+				</button>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Manual entry, also where a hand scanner types -->
+	<form
+		class="join w-full"
+		onsubmit={(e) => {
+			e.preventDefault();
+			submitManual();
+		}}
+	>
+		<label class="input join-item w-full">
+			<i class="fa-sharp-duotone fa-solid fa-keyboard text-base-content/50"></i>
 			<input
 				type="text"
 				bind:this={manualInputElem}
 				placeholder={manualPlaceholder}
-				class="input w-full input-lg join-item"
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						scannedCode = manualInputElem?.value?.trim() || null;
-					}
-				}}
+				aria-label={m.userIdInput()}
+				class="grow font-mono"
+				autocomplete="off"
 			/>
-			<button
-				class="btn btn-primary btn-lg join-item"
-				aria-label={m.search()}
-				onclick={() => {
-					scannedCode = manualInputElem?.value?.trim() || null;
-					manualInputElem?.blur();
-				}}
-			>
-				<i class="fa-solid fa-magnifying-glass"></i>
-			</button>
-		</div>
-	</FormFieldset>
-{/if}
-
-<!-- Camera preview -->
-<div
-	class="media-container {!useCamera.current || scannedCode
-		? 'hidden'
-		: ''} bg-primary relative {cameraZIndex} flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
->
-	<i
-		class="fa-duotone fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
-	></i>
-	<video bind:this={videoElem} autoplay playsinline>
-		<track kind="captions" src="" srclang="en" label="English" default />
-	</video>
-	<canvas bind:this={canvasElem} class="hidden"></canvas>
+		</label>
+		<button type="submit" class="btn btn-primary join-item" aria-label={m.search()}>
+			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
+		</button>
+	</form>
 </div>
-
-{#if useCamera.current}
-	<div class="flex flex-col gap-2">
-		<div
-			class="bg-base-200 border-1 border-base-300 flex h-18 w-full max-w-md items-center gap-6 rounded-box p-6"
-		>
-			<i class="fa-duotone fa-barcode-read {!scannedCode && 'fa-beat-fade'} text-2xl"></i>
-			<div class="truncate font-mono text-sm">
-				{scannedCode || scanPromptText}
-			</div>
-		</div>
-	</div>
-{/if}

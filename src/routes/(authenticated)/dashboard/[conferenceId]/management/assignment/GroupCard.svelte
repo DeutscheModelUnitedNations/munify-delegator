@@ -109,7 +109,7 @@
 	aria-busy={busy}
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
-		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-lg border p-2 text-xs shadow-sm {cardBorder(
+		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-box border p-2 text-xs shadow-sm {cardBorder(
 		review,
 		group.pending
 	)}"
@@ -117,7 +117,7 @@
 >
 	<div class="flex items-baseline gap-1.5">
 		<span class="text-base-content/60 shrink-0" title={m.assignmentGroupSize()}>
-			<i class="fa-duotone fa-users"></i>
+			<i class="fa-sharp-duotone fa-solid fa-users"></i>
 			{group.size}
 		</span>
 		<span class="truncate font-bold">{names}</span>
@@ -134,11 +134,9 @@
 			{#each wishes as item (item.key)}
 				<li class="flex items-center gap-1 {wishTone(item.matches)}" title={item.name}>
 					{#if item.matches}
-						<i class="fa-duotone fa-circle-check shrink-0"></i>
+						<i class="fa-sharp-duotone fa-solid fa-circle-check shrink-0"></i>
 					{:else if unwished}
-						<i
-							class="fa-duotone fa-triangle-exclamation text-warning shrink-0 [--fa-secondary-color:currentColor] [--fa-secondary-opacity:0.6]"
-						></i>
+						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-warning shrink-0"></i>
 					{/if}
 					<span class="truncate">{item.name}</span>
 				</li>
@@ -155,7 +153,7 @@
 				aria-label={m.assignmentCardSighting()}
 				title={m.assignmentCardSighting()}
 			>
-				<i class="fa-duotone fa-arrow-left"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			</a>
 		{/if}
 		<GroupActions {...actions} />
@@ -169,7 +167,7 @@
 				aria-label={m.assignmentCardOpenDetails()}
 				title={m.assignmentCardOpenDetails()}
 			>
-				<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 			</a>
 		{/if}
 	</div>

@@ -160,7 +160,7 @@
 	{:else}
 		<div class="tooltip" data-tip={m.committeeAssignment()}>
 			<div
-				class="border-info flex h-8 w-10 items-center justify-center rounded-md border border-dotted"
+				class="border-info flex h-8 w-10 items-center justify-center rounded-field border border-dotted"
 			>
 				<i class="fas fa-hourglass-half text-info"></i>
 			</div>
@@ -223,7 +223,7 @@
 					</div>
 				</th>
 			{/each}
-			<th class="bg-base-100 z-20!"><i class="fa-duotone fa-sigma"></i></th>
+			<th class="bg-base-100 z-20!"><i class="fa-sharp-duotone fa-solid fa-sigma"></i></th>
 		</tr>
 	</thead>
 	<tbody>

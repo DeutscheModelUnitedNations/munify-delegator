@@ -61,7 +61,7 @@
 				{/if}
 				{#if survey?.hidden}
 					<span class="badge badge-neutral">
-						<i class="fa-duotone fa-box-archive mr-1"></i>
+						<i class="fa-sharp-duotone fa-solid fa-box-archive mr-1"></i>
 						{m.archivedSurvey()}
 					</span>
 				{/if}
@@ -74,7 +74,7 @@
 					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
 				</button>
 				<button class="btn btn-ghost" onclick={toggleHidden}>
-					<i class="fa-duotone fa-box-archive"></i>
+					<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
 					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 				</button>
 			</div>

@@ -115,7 +115,7 @@
 						disabled={empty}
 						onclick={() => (confirmingDiscard = true)}
 					>
-						<i class="fa-duotone fa-trash"></i>
+						<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 						{m.assignmentDiscardDraft()}
 					</button>
 					<button
@@ -123,7 +123,7 @@
 						disabled={empty || preview.errors.length > 0}
 						onclick={() => (confirmingApply = true)}
 					>
-						<i class="fa-duotone fa-check-double"></i>
+						<i class="fa-sharp-duotone fa-solid fa-check-double"></i>
 						{m.assignmentApply()}
 					</button>
 				</div>

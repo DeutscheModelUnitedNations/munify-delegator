@@ -34,7 +34,7 @@
 				? 'alert-info'
 				: 'alert-warning'} alert-vertical sm:alert-horizontal"
 		>
-			<i class="fa-solid fa-person-digging text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-person-digging text-2xl"></i>
 			<div class="flex flex-1 flex-col gap-2 sm:gap-1">
 				<h3 class="font-bold">{m.maintenanceMessage()}</h3>
 				<div class="text-xs">

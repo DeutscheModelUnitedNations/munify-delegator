@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
 import { eq } from 'drizzle-orm';
+import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '$api/db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
@@ -16,6 +17,19 @@ type Claims = {
 	given_name?: string;
 	family_name?: string;
 };
+
+/**
+ * A name claim the way the `PersonName` scalar would store it. A claim it rejects (or none at all)
+ * is kept as it came: the account form then asks for a valid one before anything else.
+ */
+function nameFromClaim(claim: string | undefined): string {
+	if (!claim) return '';
+	try {
+		return normalizePersonName(claim);
+	} catch {
+		return claim.trim();
+	}
+}
 
 /** Answers an email conflict on login with the page explaining it. */
 async function redirectToEmailConflict(
@@ -42,7 +56,8 @@ export async function upsertSelfFromClaims(claims: Claims) {
 	if (!claims.email) {
 		throw new Error('OIDC result is missing required field: email');
 	}
-	const email = claims.email;
+	// lowercased like the `EmailAddress` scalar; a provider sending an invalid address is a bug there
+	const email = normalizeEmailAddress(claims.email);
 	const locale = claims.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE;
 
 	let user;
@@ -52,8 +67,8 @@ export async function upsertSelfFromClaims(claims: Claims) {
 			.values({
 				id: claims.sub,
 				email,
-				familyName: claims.family_name ?? '',
-				givenName: claims.given_name ?? '',
+				familyName: nameFromClaim(claims.family_name),
+				givenName: nameFromClaim(claims.given_name),
 				preferredUsername: claims.preferred_username ?? email,
 				locale
 			})

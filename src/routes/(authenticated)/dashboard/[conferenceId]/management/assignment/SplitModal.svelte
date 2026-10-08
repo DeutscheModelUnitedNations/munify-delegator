@@ -86,7 +86,7 @@
 						title={m.assignmentQuickSplitTitle({ count, size: members.length / count })}
 						onclick={() => splitEvenly(count)}
 					>
-						<i class="fa-solid fa-divide text-xs"></i>{count}
+						<i class="fa-sharp-duotone fa-solid fa-divide text-xs"></i>{count}
 					</button>
 				{/each}
 			</div>
@@ -108,10 +108,10 @@
 		{/each}
 		{#if partCount < members.length}
 			<button
-				class="border-base-content/30 text-base-content/60 hover:border-primary hover:text-primary hover:bg-primary/5 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors"
+				class="border-base-content/30 text-base-content/60 hover:border-primary hover:text-primary hover:bg-primary/5 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-box border-2 border-dashed transition-colors"
 				onclick={() => partCount++}
 			>
-				<i class="fa-duotone fa-plus text-2xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-plus text-2xl"></i>
 				<span class="text-sm font-semibold">{m.assignmentAddPart()}</span>
 			</button>
 		{/if}

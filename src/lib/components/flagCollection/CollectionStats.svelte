@@ -23,7 +23,7 @@
 <div class="stats stats-vertical lg:stats-horizontal shadow bg-base-100 w-full">
 	<div class="stat">
 		<div class="stat-figure text-success">
-			<i class="fa-solid fa-flag text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-flag text-2xl"></i>
 		</div>
 		<div class="stat-title">{m.completedFlags()}</div>
 		<div class="stat-value text-success">{stats.completedFlags}</div>
@@ -32,7 +32,7 @@
 
 	<div class="stat">
 		<div class="stat-figure text-primary">
-			<i class="fa-solid fa-puzzle-piece text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-puzzle-piece text-2xl"></i>
 		</div>
 		<div class="stat-title">{m.foundPiecesLabel()}</div>
 		<div class="stat-value text-primary">{stats.foundPieces}</div>
@@ -41,7 +41,7 @@
 
 	<div class="stat">
 		<div class="stat-figure text-warning">
-			<i class="fa-solid fa-hourglass-half text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-hourglass-half text-2xl"></i>
 		</div>
 		<div class="stat-title">{m.unlockedPiecesLabel()}</div>
 		<div class="stat-value text-warning">{stats.unlockedPieces}</div>

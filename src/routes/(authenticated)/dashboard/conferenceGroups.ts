@@ -58,7 +58,7 @@ const groupIcons: Record<ConferenceGroupKey, string> = {
 
 /** The FontAwesome Duotone icon of a group, wherever conferences are listed. */
 export function conferenceGroupIcon(key: ConferenceGroupKey) {
-	return `fa-duotone ${groupIcons[key]}`;
+	return `fa-sharp-duotone fa-solid ${groupIcons[key]}`;
 }
 
 /** The icon a conference state goes by: the one of the group that state lands in. */

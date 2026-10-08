@@ -35,7 +35,7 @@
 <div class="stats bg-base-200 shadow">
 	<div class="stat">
 		<div class="stat-figure text-primary">
-			<i class="fa-duotone fa-{icon} text-3xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{icon} text-3xl"></i>
 		</div>
 		<div class="stat-title">{title}</div>
 		{#if value}

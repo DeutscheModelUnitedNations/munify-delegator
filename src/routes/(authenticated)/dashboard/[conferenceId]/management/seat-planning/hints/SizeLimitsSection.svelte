@@ -45,7 +45,7 @@
 	<p class="text-base-content/60 text-xs">{m.seatPlanningSizeLimitsHint()}</p>
 	{#if outsideLimits.length > 0}
 		<div class="alert alert-error alert-soft p-2 text-sm">
-			<i class="fa-duotone fa-ruler"></i>
+			<i class="fa-sharp-duotone fa-solid fa-ruler"></i>
 			<div>
 				<p class="font-semibold">{m.seatPlanningOutsideLimits({ count: outsideLimits.length })}</p>
 				<p>{outsideLimits.map((role) => `${roleName(role)} (${role.size})`).join(', ')}</p>

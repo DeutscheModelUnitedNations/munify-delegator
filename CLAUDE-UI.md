@@ -353,17 +353,18 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 
 ### Available Form Components
 
-| Component           | Purpose                         | Key Props                                                                     |
-| ------------------- | ------------------------------- | ----------------------------------------------------------------------------- |
-| `Form`              | Form wrapper with submit button | `form`, `showSubmitButton`, `action`                                          |
-| `FormFieldset`      | Visual grouping with legend     | `title`, `icon` (snippet before the title)                                    |
-| `FormTextInput`     | Text/email/password input       | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder` |
-| `FormTextArea`      | Multi-line text                 | `form`, `name`, `label`                                                       |
-| `FormSelect`        | Dropdown select                 | `form`, `name`, `label`, `options`                                            |
-| `FormCheckbox`      | Checkbox toggle                 | `form`, `name`, `label`                                                       |
-| `FormDateTimeInput` | Date/time picker                | `form`, `name`, `label`                                                       |
-| `FormFile`          | File upload                     | `form`, `name`, `label`                                                       |
-| `FormSubmitButton`  | Submit with loading state       | `form`, `disabled`, `loading`                                                 |
+| Component            | Purpose                         | Key Props                                                                                        |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Form`               | Form wrapper with submit button | `form`, `showSubmitButton`, `action`                                                             |
+| `FormFieldset`       | Visual grouping with legend     | `title`, `icon` (snippet before the title)                                                       |
+| `FormTextInput`      | Text/email/password input       | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder`                    |
+| `FormTextArea`       | Multi-line text                 | `form`, `name`, `label`                                                                          |
+| `FormSelect`         | Dropdown select                 | `form`, `name`, `label`, `options`                                                               |
+| `FormCheckbox`       | Checkbox toggle                 | `form`, `name`, `label`                                                                          |
+| `FormDateTimeInput`  | Date/time picker                | `form`, `name`, `label`                                                                          |
+| `FormFile`           | File upload                     | `form`, `name`, `label`                                                                          |
+| `FormSubmitButton`   | Submit with loading state       | `form`, `disabled`, `loading`                                                                    |
+| `AddressRegionField` | State/province of an address    | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
 
 ### Complete Form Example
 
@@ -1141,21 +1142,21 @@ Use DaisyUI badges for status labels:
 
 ## Icons
 
-Use FontAwesome Duotone icons throughout the application:
+Use FontAwesome Sharp Duotone icons throughout the application:
 
 ```svelte
 <!-- Regular duotone icon -->
-<i class="fa-duotone fa-user"></i>
+<i class="fa-sharp-duotone fa-solid fa-user"></i>
 
 <!-- Solid version for active states -->
 <i class="fas fa-user"></i>
 
 <!-- With size -->
-<i class="fa-duotone fa-user text-2xl"></i>
+<i class="fa-sharp-duotone fa-solid fa-user text-2xl"></i>
 
 <!-- With color -->
-<i class="fa-duotone fa-check text-success"></i>
-<i class="fa-duotone fa-times text-error"></i>
+<i class="fa-sharp-duotone fa-solid fa-check text-success"></i>
+<i class="fa-sharp-duotone fa-solid fa-times text-error"></i>
 ```
 
 ---
@@ -1256,7 +1257,7 @@ For card-based layouts:
 
 ```svelte
 <div class="flex flex-col items-center justify-center py-12 text-center">
-	<i class="fa-duotone fa-inbox text-4xl text-base-content/30 mb-4"></i>
+	<i class="fa-sharp-duotone fa-solid fa-inbox text-4xl text-base-content/30 mb-4"></i>
 	<p class="text-base-content/60">No items found</p>
 </div>
 ```
@@ -1275,7 +1276,7 @@ For card-based layouts:
 
 <!-- Icon button -->
 <button class="btn btn-square btn-ghost btn-sm">
-	<i class="fa-duotone fa-pencil"></i>
+	<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
 </button>
 ```
 

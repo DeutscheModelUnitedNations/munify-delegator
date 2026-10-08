@@ -2,7 +2,7 @@
 	import { getTableSettings } from '../toolbar/tableSettings.svelte';
 
 	interface Props {
-		/** Full FontAwesome class list, e.g. `fa-duotone fa-cloud` */
+		/** Full FontAwesome class list, e.g. `fa-sharp-duotone fa-solid fa-cloud` */
 		icon: string;
 		tooltip?: string;
 	}

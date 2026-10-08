@@ -20,9 +20,9 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th><i class="fa-duotone fa-megaphone"></i></th>
-				<th><i class="fa-duotone fa-info"></i></th>
-				<th class="text-center"><i class="fa-duotone fa-users"></i></th>
+				<th><i class="fa-sharp-duotone fa-solid fa-megaphone"></i></th>
+				<th><i class="fa-sharp-duotone fa-solid fa-info"></i></th>
+				<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
 				{#if actionCell}<th></th>{/if}
 			</tr>
 		</thead>

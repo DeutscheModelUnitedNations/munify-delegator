@@ -99,7 +99,7 @@
 						)}?application={singleParticipantId}"
 						aria-label={m.assignmentTabSighting()}
 					>
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 					</a>
 				</div>
 			</DetailRow>
@@ -108,13 +108,18 @@
 		<DetailRow icon="fa-compass">{singleParticipant.experience}</DetailRow>
 		<DetailRow icon="fa-check-to-slot">
 			<div class="flex items-center gap-2">
-				<div class="bg-base-300 h-full rounded-md px-3 py-0.5">
+				<div class="bg-base-300 h-full rounded-field px-3 py-0.5">
 					{singleParticipant.appliedForRoles.length}
 				</div>
 				<div class="flex flex-col">
 					{#each singleParticipant.appliedForRoles as role (role.id)}
 						<div>
-							<i class="fa-duotone fa-{(role.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
+							<i
+								class="fa-sharp-duotone fa-solid fa-{(role.fontAwesomeIcon ?? '').replace(
+									'fa-',
+									''
+								)}"
+							></i>
 							{role.name}
 						</div>
 					{/each}
@@ -129,7 +134,7 @@
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<button class="btn" onclick={() => openUserCard(singleParticipant.user.id)}>
 			{m.adminUserCard()}
-			<i class="fa-duotone fa-id-card"></i>
+			<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 		</button>
 	</div>
 
@@ -140,7 +145,7 @@
 			onclick={revokeApplication}
 		>
 			{m.revokeApplication()}
-			<i class="fa-solid fa-file-slash"></i>
+			<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
 		</button>
 	</div>
 </Drawer>

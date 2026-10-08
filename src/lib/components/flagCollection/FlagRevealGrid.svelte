@@ -35,7 +35,7 @@
 </script>
 
 <div
-	class="flag-reveal-container relative overflow-hidden rounded-lg shadow-inner {compact
+	class="flag-reveal-container relative overflow-hidden rounded-box shadow-inner {compact
 		? 'aspect-video'
 		: 'flag-aspect'}"
 >
@@ -51,7 +51,7 @@
 					'hsl(220, 70%, 45%)'}, {nsaGradients?.gradient1.to ?? 'hsl(260, 70%, 55%)'})"
 			>
 				<i
-					class="fa-solid fa-{cleanIcon} text-white/30"
+					class="fa-sharp-duotone fa-solid fa-{cleanIcon} text-white/30"
 					class:text-4xl={!compact}
 					class:text-2xl={compact}
 				></i>

@@ -59,7 +59,7 @@ export function createSuggestionRenderer() {
 				}"
 				data-index="${index}"
 			>
-				<i class="fa-solid fa-bookmark text-xs ${index === state.selectedIndex ? '' : 'text-primary'}"></i>
+				<i class="fa-sharp-duotone fa-solid fa-bookmark text-xs ${index === state.selectedIndex ? '' : 'text-primary'}"></i>
 				<span class="truncate">${escapeHtml(item.name)}</span>
 			</button>
 		`

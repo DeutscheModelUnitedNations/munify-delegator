@@ -24,7 +24,7 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row">
 		<a class="btn btn-primary" href={resolve('/')}>
-			<i class="fa-duotone fa-arrow-right"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 			{m.sessionExpiredTryAgain()}
 		</a>
 		<a class="btn btn-ghost" href={resolve('/')}>

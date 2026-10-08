@@ -90,7 +90,7 @@
 	<tr>
 		<td>
 			{#if member.isHeadDelegate}
-				<i class="fa-duotone fa-medal text-lg"></i>
+				<i class="fa-sharp-duotone fa-solid fa-medal text-lg"></i>
 			{/if}
 		</td>
 		<td>
@@ -101,7 +101,7 @@
 			{#if member.assignedCommittee}
 				<span class="text-xs">{member.assignedCommittee.abbreviation}</span>
 			{:else}
-				<i class="fa-duotone fa-dash"></i>
+				<i class="fa-sharp-duotone fa-solid fa-dash"></i>
 			{/if}
 		</td>
 		<td>
@@ -146,7 +146,7 @@
 					onclick={() => changeDelegationSchool(delegationId)}
 					aria-label="Edit School"
 				>
-					<i class="fa-duotone fa-pencil"></i>
+					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
 				</button>
 			</div>
 		</DetailRow>
@@ -164,7 +164,7 @@
 						)}?application={delegationId}"
 						aria-label={m.assignmentTabSighting()}
 					>
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 					</a>
 				</div>
 			</DetailRow>
@@ -172,7 +172,7 @@
 		<DetailRow icon="fa-fire-flame-curved">{delegation.motivation}</DetailRow>
 		<DetailRow icon="fa-compass">{delegation.experience}</DetailRow>
 		<DetailRow icon="fa-flag">
-			<span class="bg-base-300 mr-1 rounded-md px-3 py-0.5"
+			<span class="bg-base-300 mr-1 rounded-field px-3 py-0.5"
 				>{delegation.appliedForRoles.length}</span
 			>
 			{appliedForRoleNames}
@@ -183,7 +183,7 @@
 		<h3 class="text-xl font-bold">{m.delegationMembers()}</h3>
 		{#if members.length === 0}
 			<div class="alert alert-warning">
-				<i class="fa-solid fa-info-circle"></i>
+				<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 				{m.noMembersFound()}
 			</div>
 		{:else}
@@ -220,19 +220,19 @@
 				});
 			}}
 		>
-			<i class="fa-duotone fa-arrow-rotate-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
 		<button
 			class="btn {members.length === 0 && 'disabled'}"
 			onclick={() => (committeeAssignmentModalOpen = true)}
 		>
-			<i class="fa-duotone fa-grid-2"></i>
+			<i class="fa-sharp-duotone fa-solid fa-grid-2"></i>
 			{m.committeeAssignment()}
 		</button>
 		{#if currentUser.myOIDCRoles?.includes('admin')}
 			<button class="btn" onclick={() => (headDelegateModalOpen = true)}>
-				<i class="fa-duotone fa-medal"></i>
+				<i class="fa-sharp-duotone fa-solid fa-medal"></i>
 				{m.headDelegate()}
 			</button>
 		{/if}

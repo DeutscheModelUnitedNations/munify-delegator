@@ -277,10 +277,10 @@
 				aria-label="Clear search"
 				onclick={() => setSearch('')}
 			>
-				<i class="fa-duotone fa-times"></i>
+				<i class="fa-sharp-duotone fa-solid fa-times"></i>
 			</button>
 		{:else}
-			<i class="fa-duotone fa-magnifying-glass"></i>
+			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 		{/if}
 	</label>
 {/snippet}
@@ -294,7 +294,7 @@
 	{@render toolbar?.(table)}
 	{#if hasFilters}
 		<button class="btn btn-ghost btn-sm no-print" onclick={() => (filterDrawerOpen = true)}>
-			<i class="fa-duotone fa-filter"></i>
+			<i class="fa-sharp-duotone fa-solid fa-filter"></i>
 			{m.filters()}
 			{#if columnFilters.length > 0}
 				<span class="badge badge-primary badge-xs">{columnFilters.length}</span>
@@ -302,7 +302,7 @@
 		</button>
 	{/if}
 	<button class="btn btn-ghost btn-sm no-print" onclick={() => (columnDrawerOpen = true)}>
-		<i class="fa-duotone fa-columns"></i>
+		<i class="fa-sharp-duotone fa-solid fa-columns"></i>
 		{m.columns()}
 	</button>
 	<span class="text-base-content/60 text-sm whitespace-nowrap">{shownRows}</span>

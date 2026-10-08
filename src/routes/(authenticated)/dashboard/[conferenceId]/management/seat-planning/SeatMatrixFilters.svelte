@@ -16,7 +16,7 @@
 
 <div class="flex flex-wrap items-center gap-2">
 	<label class="input input-bordered flex grow items-center gap-2">
-		<i class="fa-duotone fa-magnifying-glass"></i>
+		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 		<input
 			type="search"
 			placeholder={m.seatPlanningSearch()}

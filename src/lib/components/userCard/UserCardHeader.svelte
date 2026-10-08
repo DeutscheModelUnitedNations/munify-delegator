@@ -6,6 +6,7 @@
 	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
+	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import Modal from '../Modal.svelte';
@@ -179,10 +180,11 @@
 	<div class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4">
 		<div class="flex flex-wrap items-center gap-4">
 			<h2 class="text-3xl font-bold">{displayName}</h2>
-			<i class="fa-duotone fa-{genderIcon} text-base-content/50"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
 			{#if pronouns}
 				<span class="text-base-content/60 text-sm">({pronouns})</span>
 			{/if}
+			<PossibleDuplicateBadge {userId} {conferenceId} />
 
 			<!-- Action buttons -->
 			<div class="ml-auto flex items-center gap-1">
@@ -193,7 +195,7 @@
 							aria-label={m.generateBadge()}
 							onclick={openBadgeGenerator}
 						>
-							<i class="fa-duotone fa-id-badge"></i>
+							<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
 						</button>
 					</div>
 				{/if}
@@ -214,7 +216,7 @@
 								deleteModalOpen = true;
 							}}
 						>
-							<i class="fa-duotone fa-user-xmark"></i>
+							<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
 						</button>
 					</div>
 				{/if}
@@ -228,7 +230,7 @@
 						class="btn btn-ghost btn-sm btn-square"
 						title={m.userCardOpenFullPage()}
 					>
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
 			</div>
@@ -241,7 +243,7 @@
 		>
 			<span class="group-hover:hidden">{userId}</span>
 			<span class="hidden items-center gap-1 group-hover:flex">
-				<i class="fa-duotone fa-copy"></i>
+				<i class="fa-sharp-duotone fa-solid fa-copy"></i>
 				{m.copyUserId()}
 			</span>
 		</button>
@@ -260,7 +262,7 @@
 <Modal bind:open={deleteModalOpen} title={m.deleteParticipant()}>
 	<div class="flex flex-col gap-4">
 		<div class="alert alert-error">
-			<i class="fa-solid fa-triangle-exclamation text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
 			<span>{m.deleteParticipantWarning()}</span>
 		</div>
 
@@ -275,7 +277,7 @@
 				title={m.copy()}
 			>
 				{confirmDisplayName}
-				<i class="fa-duotone fa-copy text-xs"></i>
+				<i class="fa-sharp-duotone fa-solid fa-copy text-xs"></i>
 			</button>
 		</p>
 
@@ -299,7 +301,7 @@
 			{#if deleteLoading}
 				<span class="loading loading-spinner loading-sm"></span>
 			{/if}
-			<i class="fa-solid fa-trash"></i>
+			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 			{m.deleteParticipantConfirmButton()}
 		</button>
 	{/snippet}

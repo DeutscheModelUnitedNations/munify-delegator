@@ -30,7 +30,7 @@
 					onchange={() => (selected = transition.value)}
 				/>
 				<div class="btn w-full {buttonClass(transition.value)}">
-					<i class="fa-solid {getPaperStatusIcon(transition.value)}"></i>
+					<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(transition.value)}"></i>
 					{transition.label}
 				</div>
 			</label>

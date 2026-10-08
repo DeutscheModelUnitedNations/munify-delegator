@@ -30,9 +30,9 @@
 		aria-label={m.impersonation()}
 	>
 		{#if isLoading}
-			<i class="fa-duotone fa-spinner fa-spin"></i>
+			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>
 		{:else}
-			<i class="fa-duotone fa-user-secret"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user-secret"></i>
 		{/if}
 		{#if !iconOnly}
 			<span class="ml-2">{m.impersonation()}</span>

@@ -22,7 +22,7 @@
 
 {#each sizeWarnings as { size, count, candidates } (size)}
 	<div class="alert alert-warning alert-soft items-start p-3 text-sm">
-		<i class="fa-duotone fa-triangle-exclamation mt-0.5"></i>
+		<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation mt-0.5"></i>
 		<div class="flex flex-col gap-1">
 			<p class="font-semibold">{m.seatPlanningSizeRule({ size, count })}</p>
 			{#if candidates.length > 0}
@@ -35,7 +35,7 @@
 
 {#if singleSeats.length > 0}
 	<div class="alert alert-warning alert-soft items-start p-3 text-sm">
-		<i class="fa-duotone fa-user mt-0.5"></i>
+		<i class="fa-sharp-duotone fa-solid fa-user mt-0.5"></i>
 		<div class="flex flex-col gap-1">
 			<p class="font-semibold">{m.seatPlanningSingleSeat({ count: singleSeats.length })}</p>
 			<p>{m.seatPlanningSingleSeatHint()}</p>

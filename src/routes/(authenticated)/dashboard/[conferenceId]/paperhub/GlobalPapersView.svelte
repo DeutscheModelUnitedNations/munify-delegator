@@ -110,7 +110,7 @@
 		<div class="flex flex-col sm:flex-row gap-3">
 			<!-- Search Input -->
 			<label class="input input-bordered flex items-center gap-2 flex-1">
-				<i class="fa-solid fa-search text-base-content/50"></i>
+				<i class="fa-sharp-duotone fa-solid fa-search text-base-content/50"></i>
 				<input
 					type="text"
 					placeholder={m.searchByDelegation()}

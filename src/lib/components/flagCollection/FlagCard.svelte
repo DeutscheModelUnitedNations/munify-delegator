@@ -54,7 +54,7 @@
 		<ul class="text-xs space-y-1">
 			{#each flag.pieces as piece (piece.id)}
 				<li class="flex items-center gap-2">
-					<i class="fa-solid {pieceIcons[piece.state]}"></i>
+					<i class="fa-sharp-duotone fa-solid {pieceIcons[piece.state]}"></i>
 					<span class="truncate {piece.state === 'LOCKED' ? 'opacity-50' : ''}">
 						{#if piece.committeeAbbreviation}
 							<span class="font-semibold">{piece.committeeAbbreviation}:</span>
@@ -79,7 +79,8 @@
 		<div class="flex items-center justify-between gap-2 mb-2">
 			<span class="font-semibold text-sm truncate flex-1" title={displayName}>{displayName}</span>
 			{#if flag.isComplete}
-				<i class="fa-solid fa-trophy text-warning text-sm animate-trophy-shine"></i>
+				<i class="fa-sharp-duotone fa-solid fa-trophy text-warning text-sm animate-trophy-shine"
+				></i>
 			{/if}
 		</div>
 

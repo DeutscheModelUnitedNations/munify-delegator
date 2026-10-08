@@ -51,8 +51,11 @@
 						class="card bg-base-100 border-base-200 hover:border-primary flex w-full cursor-pointer flex-row items-center gap-3 border p-3 text-left shadow-sm transition-colors"
 						onclick={() => onSelect(entry.id)}
 					>
-						<span class="h-10 w-1.5 shrink-0 rounded-sm {statusColors[entry.status]}"></span>
-						<i class="fa-duotone {entry.kind === 'delegation' ? 'fa-users' : 'fa-user'} text-lg"
+						<span class="h-10 w-1.5 shrink-0 rounded-selector {statusColors[entry.status]}"></span>
+						<i
+							class="fa-sharp-duotone fa-solid {entry.kind === 'delegation'
+								? 'fa-users'
+								: 'fa-user'} text-lg"
 						></i>
 						<span class="flex min-w-0 flex-1 flex-col gap-1">
 							<span class="font-bold">{entry.codename}</span>
@@ -65,7 +68,8 @@
 											{reasonLabels[reason.kind]()}
 										</span>
 										<span class="truncate">
-											{snippet.before}<mark class="bg-warning/40 rounded-sm">{snippet.hit}</mark
+											{snippet.before}<mark class="bg-warning/40 rounded-selector"
+												>{snippet.hit}</mark
 											>{snippet.after}
 										</span>
 									</span>
@@ -83,7 +87,7 @@
 	</div>
 {:else}
 	<div class="text-base-content/60 flex flex-col items-center py-12 text-center">
-		<i class="fa-duotone fa-magnifying-glass mb-4 text-4xl opacity-30"></i>
+		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass mb-4 text-4xl opacity-30"></i>
 		<p>{m.assignmentNoApplications()}</p>
 	</div>
 {/if}

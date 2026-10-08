@@ -32,7 +32,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-filter text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-filter text-base-content/70"></i>
 			{m.statsFilter()}
 		</h2>
 		<select

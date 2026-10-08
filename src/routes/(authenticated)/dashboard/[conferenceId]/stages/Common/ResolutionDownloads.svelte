@@ -43,7 +43,7 @@
 									class="btn btn-outline btn-sm justify-start gap-2"
 									onclick={() => downloadResolution(resolution.id)}
 								>
-									<i class="fa-duotone fa-file-pdf text-primary"></i>
+									<i class="fa-sharp-duotone fa-solid fa-file-pdf text-primary"></i>
 									<span class="truncate">{resolution.title}</span>
 									<i class="fas fa-download ml-auto"></i>
 								</button>

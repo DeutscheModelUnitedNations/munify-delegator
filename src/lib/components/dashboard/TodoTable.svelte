@@ -37,7 +37,8 @@
 						<i class="fas fa-square-check text-primary w-6 text-center text-2xl"></i>
 					{:else if todo.completed === false}
 						{#if todo.arrowDown}
-							<i class="fa-duotone fa-arrow-down point-down w-6 text-center text-2xl"></i>
+							<i class="fa-sharp-duotone fa-solid fa-arrow-down point-down w-6 text-center text-2xl"
+							></i>
 						{:else}
 							<i class="fas fa-square text-error w-6 text-center text-2xl"></i>
 						{/if}

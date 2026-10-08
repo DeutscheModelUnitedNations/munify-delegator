@@ -118,7 +118,7 @@
 
 {#snippet addButton(label: string, onclick: () => void)}
 	<button type="button" class="btn btn-sm self-start" {onclick}>
-		<i class="fa-duotone fa-plus"></i>
+		<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 		{label}
 	</button>
 {/snippet}
@@ -208,7 +208,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt(form.committees, committee.key)}
 								>
-									<i class="fa-duotone fa-trash"></i>
+									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>
 							</div>
 
@@ -225,7 +225,7 @@
 											}}
 										>
 											{nationNames.get(code) ?? code}
-											<i class="fa-solid fa-xmark"></i>
+											<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 										</button>
 									{/each}
 								</div>
@@ -282,7 +282,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt(form.nsa, nsa.key)}
 								>
-									<i class="fa-duotone fa-trash"></i>
+									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>
 							</div>
 							<label class="flex flex-col">
@@ -328,7 +328,7 @@
 									aria-label={m.delete()}
 									onclick={() => removeAt(form.customConferenceRole, role.key)}
 								>
-									<i class="fa-duotone fa-trash"></i>
+									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>
 							</div>
 							<label class="flex flex-col">
@@ -370,11 +370,11 @@
 						disabled={!validation.success}
 						onclick={copyJson}
 					>
-						<i class="fa-duotone fa-copy"></i>
+						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
 						{m.copy()}
 					</button>
 					<button type="button" class="btn" disabled={!validation.success} onclick={downloadJson}>
-						<i class="fa-duotone fa-download"></i>
+						<i class="fa-sharp-duotone fa-solid fa-download"></i>
 						{m.download()}
 					</button>
 					<button type="button" class="btn btn-ghost text-error ml-auto" onclick={resetForm}>
@@ -404,7 +404,7 @@
 					disabled={!importText.trim()}
 					onclick={() => importJson(importText)}
 				>
-					<i class="fa-duotone fa-file-import"></i>
+					<i class="fa-sharp-duotone fa-solid fa-file-import"></i>
 					{m.import()}
 				</button>
 			</FormFieldset>

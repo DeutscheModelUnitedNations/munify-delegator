@@ -47,7 +47,7 @@
 	{#snippet action()}
 		<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 		<button class="btn btn-primary" disabled={!valid} onclick={create}>
-			<i class="fa-solid fa-plus"></i>
+			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 			{m.create()}
 		</button>
 	{/snippet}

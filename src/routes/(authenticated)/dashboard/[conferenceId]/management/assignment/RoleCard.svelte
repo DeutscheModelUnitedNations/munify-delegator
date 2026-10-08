@@ -50,7 +50,7 @@
 	role="list"
 	aria-label={title}
 	use:droppable={{ container, callbacks: { onDrop } }}
-	class="flex w-full flex-col gap-2 rounded-lg border p-2 transition-colors
+	class="flex w-full flex-col gap-2 rounded-box border p-2 transition-colors
 		{free < 0
 		? 'border-error bg-error/10'
 		: free === 0
@@ -77,7 +77,7 @@
 	{@render children?.(height)}
 	{#if free > 0}
 		<div
-			class="border-base-content/30 text-base-content/50 rounded-md border-2 border-dashed py-2 text-center text-xs"
+			class="border-base-content/30 text-base-content/50 rounded-field border-2 border-dashed py-2 text-center text-xs"
 		>
 			{m.assignmentFreeSeats({ count: free })}
 		</div>

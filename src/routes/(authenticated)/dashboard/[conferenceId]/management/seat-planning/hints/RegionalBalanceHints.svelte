@@ -27,17 +27,17 @@
 	<div class="flex items-center justify-between gap-2">
 		<h4 class="text-sm font-semibold">{m.seatPlanningRegionalBalance()}</h4>
 		<button class="btn btn-ghost btn-sm" onclick={() => (baselineModalOpen = true)}>
-			<i class="fa-duotone fa-sliders"></i>
+			<i class="fa-sharp-duotone fa-solid fa-sliders"></i>
 			{m.regionalBaselineButton()}
 		</button>
 	</div>
 	<p class="text-base-content/70 text-xs">{m.regionalBalanceIntro()}</p>
 	<div class="text-base-content/70 flex gap-3 text-xs">
 		<span class="inline-flex items-center gap-1.5">
-			<span class="bg-warning h-2 w-3 rounded-sm"></span>{m.regionalBalanceTooFew()}
+			<span class="bg-warning h-2 w-3 rounded-selector"></span>{m.regionalBalanceTooFew()}
 		</span>
 		<span class="inline-flex items-center gap-1.5">
-			<span class="bg-primary h-2 w-3 rounded-sm"></span>{m.regionalBalanceTooMany()}
+			<span class="bg-primary h-2 w-3 rounded-selector"></span>{m.regionalBalanceTooMany()}
 		</span>
 	</div>
 

@@ -42,7 +42,7 @@
 					onchange={() => (plansOwnAttendenceAtConference = !plansOwnAttendenceAtConference)}
 				/>
 			</label>
-			<i class="fa-duotone fa-arrow-down"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
 			<p class="text-center text-sm italic">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 				{@html plansOwnAttendenceAtConference

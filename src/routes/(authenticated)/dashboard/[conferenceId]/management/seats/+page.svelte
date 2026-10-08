@@ -48,9 +48,9 @@
 		<div class="w-full">
 			<div class="alert alert-warning w-full">
 				{#if assignUserLoading}
-					<i class="fa-solid fa-spinner fa-spin"></i>
+					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>
 				{:else if assignUser}
-					<i class="fa-solid fa-user-plus fa-beat-fade"></i>
+					<i class="fa-sharp-duotone fa-solid fa-user-plus fa-beat-fade"></i>
 					<div>
 						{m.assigningUser()}
 						<span class="font-bold">
@@ -59,7 +59,7 @@
 						({assignUser.id})
 					</div>
 				{:else}
-					<i class="fa-solid fa-user-xmark fa-shake"></i>
+					<i class="fa-sharp-duotone fa-solid fa-user-xmark fa-shake"></i>
 					{m.userNotFound()}
 				{/if}
 			</div>

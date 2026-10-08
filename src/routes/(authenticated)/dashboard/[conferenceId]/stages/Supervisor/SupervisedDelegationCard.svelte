@@ -75,10 +75,16 @@
 	{#snippet detailSpace()}
 		<InfoGrid.Grid>
 			{#if isStateParticipantRegistration}
-				<InfoGrid.Entry title={m.entryCode()} fontAwesomeIcon="fa-duotone fa-barcode">
+				<InfoGrid.Entry
+					title={m.entryCode()}
+					fontAwesomeIcon="fa-sharp-duotone fa-solid fa-barcode"
+				>
 					<span class="font-mono tracking-[0.3rem]">{delegation.entryCode}</span>
 				</InfoGrid.Entry>
-				<RoleApplicationsEntry fontAwesomeIcon="fa-duotone fa-flag" applications={roleApplications}>
+				<RoleApplicationsEntry
+					fontAwesomeIcon="fa-sharp-duotone fa-solid fa-flag"
+					applications={roleApplications}
+				>
 					{#snippet role(roleApplication)}
 						<Flag
 							size="xs"
@@ -89,7 +95,7 @@
 					{/snippet}
 				</RoleApplicationsEntry>
 			{:else}
-				<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-duotone fa-flag">
+				<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-sharp-duotone fa-solid fa-flag">
 					<div class="flex items-center gap-2">
 						<Flag
 							size="xs"
@@ -107,7 +113,7 @@
 			{/if}
 			<InfoGrid.Entry
 				title={m.delegationMembers()}
-				fontAwesomeIcon="fa-duotone fa-users"
+				fontAwesomeIcon="fa-sharp-duotone fa-solid fa-users"
 				content={delegation.members.length}
 			/>
 			{#if isStateParticipantRegistration}
@@ -149,7 +155,7 @@
 						{m.hiddenMember()}
 						{#if member.isHeadDelegate}
 							<div class="tooltip" data-tip={m.headDelegate()}>
-								<i class="fa-duotone fa-medal ml-2"></i>
+								<i class="fa-sharp-duotone fa-solid fa-medal ml-2"></i>
 							</div>
 						{/if}
 					</td>

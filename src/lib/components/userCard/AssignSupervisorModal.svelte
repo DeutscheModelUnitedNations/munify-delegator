@@ -57,7 +57,7 @@
 <Modal bind:open title={m.assignSupervisor()}>
 	<label class="input input-bordered mb-2 flex w-full items-center gap-2">
 		<input type="text" class="grow" bind:value={typed} placeholder={m.search()} />
-		<i class="fa-duotone fa-magnifying-glass"></i>
+		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 	</label>
 	<div class="overflow-x-auto">
 		<table class="table table-sm">
@@ -76,7 +76,7 @@
 								aria-label={m.assignSupervisor()}
 								onclick={() => assignSupervisor(supervisor.connectionCode)}
 							>
-								<i class="fa-duotone fa-plus"></i>
+								<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 							</button>
 						</td>
 						<td>

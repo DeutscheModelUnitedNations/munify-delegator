@@ -10,7 +10,7 @@
 
 {#if hasBirthday}
 	<span class="flex items-center gap-1.5 text-secondary">
-		<i class="fa-solid fa-cake-candles"></i>
+		<i class="fa-sharp-duotone fa-solid fa-cake-candles"></i>
 		<span class="text-xs">{m.yes()}</span>
 	</span>
 {:else}

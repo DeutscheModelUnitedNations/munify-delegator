@@ -105,21 +105,21 @@
 			onclick={() => handleRegenerateAndCopy(invitationId)}
 			title={m.copyLink()}
 		>
-			<i class="fa-duotone fa-copy"></i>
+			<i class="fa-sharp-duotone fa-solid fa-copy"></i>
 		</button>
 		<button
 			class="btn btn-sm btn-ghost"
 			onclick={() => handleResendEmail(invitationId)}
 			title={m.resendInvitation()}
 		>
-			<i class="fa-duotone fa-paper-plane"></i>
+			<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 		</button>
 		<button
 			class="btn btn-sm btn-ghost text-error"
 			onclick={() => handleRevoke(invitationId)}
 			title={m.revokeInvitation()}
 		>
-			<i class="fa-duotone fa-ban"></i>
+			<i class="fa-sharp-duotone fa-solid fa-ban"></i>
 		</button>
 	</div>
 {/snippet}

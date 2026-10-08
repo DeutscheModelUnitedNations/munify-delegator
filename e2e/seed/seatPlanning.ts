@@ -24,7 +24,7 @@ export const E2E_SEAT_PM_ID = 'e2e-seat-pm';
 export const E2E_SEAT_CONTENT_LEAD_ID = 'e2e-seat-content-lead';
 export const E2E_SEAT_PARTICIPANT_CARE_ID = 'e2e-seat-pc';
 export const E2E_SEAT_DELEGATE_ID = 'e2e-seat-delegate';
-export const E2E_SEAT_DELEGATE_FAMILY_NAME = 'E2ESeatDelegate';
+export const E2E_SEAT_DELEGATE_FAMILY_NAME = 'ETwoESeatDelegate';
 
 const NATIONS = { deu: 'de', fra: 'fr', nld: 'nl', ita: 'it' };
 const LOCKED_DELEGATION_ID = 'e2e00000seatdelegation0001';

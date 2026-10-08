@@ -299,13 +299,13 @@
 			}}
 		/>
 		<button class="btn btn-primary mt-2" onclick={startSession} disabled={!occasion.trim()}>
-			<i class="fa-solid fa-play"></i>
+			<i class="fa-sharp-duotone fa-solid fa-play"></i>
 			{m.startSession()}
 		</button>
 	</FormFieldset>
 
 	<div class="alert alert-info">
-		<i class="fa-duotone fa-info-circle text-lg"></i>
+		<i class="fa-sharp-duotone fa-solid fa-info-circle text-lg"></i>
 		<span>{m.noActiveSession()}</span>
 	</div>
 {/snippet}
@@ -336,11 +336,11 @@
 
 		<div class="ml-auto flex gap-2">
 			<button class="btn btn-ghost btn-sm" onclick={downloadBackup}>
-				<i class="fa-duotone fa-download"></i>
+				<i class="fa-sharp-duotone fa-solid fa-download"></i>
 				{m.downloadBackup()}
 			</button>
 			<button class="btn btn-error btn-sm" onclick={endSession}>
-				<i class="fa-solid fa-stop"></i>
+				<i class="fa-sharp-duotone fa-solid fa-stop"></i>
 				{m.endSession()}
 			</button>
 		</div>
@@ -356,7 +356,7 @@
 				aria-label={m.back()}
 				href={resolve(`/dashboard/${conferenceId}`)}
 			>
-				<i class="fa-duotone fa-arrow-left"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			</a>
 			<h2 class="text-2xl font-bold">{m.attendanceScanner()}</h2>
 		</div>
@@ -377,7 +377,6 @@
 			persistKey="useCameraForAttendanceScanner"
 			manualPlaceholder={m.enterPostalRegistrationCode()}
 			scanPromptText={m.scanPostalRegistrationCodePrompt()}
-			cameraZIndex="z-30"
 		/>
 
 		<!-- Queue -->

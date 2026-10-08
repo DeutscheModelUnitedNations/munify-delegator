@@ -73,7 +73,7 @@
 		<div class="card bg-success/10 border border-success/20">
 			<div class="card-body py-4">
 				<div class="flex items-center gap-3">
-					<i class="fa-solid fa-circle-check text-2xl text-success"></i>
+					<i class="fa-sharp-duotone fa-solid fa-circle-check text-2xl text-success"></i>
 					<span class="font-medium text-success">{m.allComplete()}</span>
 				</div>
 			</div>

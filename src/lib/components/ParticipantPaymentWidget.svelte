@@ -63,7 +63,7 @@
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-money-bill-transfer mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer mr-2"></i>
 		{m.paymentReferences()}
 	</h3>
 
@@ -71,16 +71,16 @@
 		<span class="loading loading-spinner loading-sm"></span>
 	{:else if paymentRefs.length === 0}
 		<div class="alert alert-warning">
-			<i class="fa-duotone fa-triangle-exclamation"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 			<span>{m.noPaymentReferences()}</span>
 		</div>
 	{:else}
 		<div class="flex flex-col gap-2">
 			{#each paymentRefs as ref (ref.id)}
-				<div class="bg-base-200 flex items-center justify-between rounded-lg px-4 py-2">
+				<div class="bg-base-200 flex items-center justify-between rounded-box px-4 py-2">
 					<div class="flex items-center gap-3">
 						{#if ref.recievedAt}
-							<i class="fa-duotone fa-circle-check text-success"></i>
+							<i class="fa-sharp-duotone fa-solid fa-circle-check text-success"></i>
 							<span class="font-mono text-sm">{ref.id}</span>
 							<p>
 								{m.commandPalettePaymentReceived({
@@ -94,7 +94,7 @@
 								})}
 							</p>
 						{:else}
-							<i class="fa-duotone fa-circle-xmark text-error"></i>
+							<i class="fa-sharp-duotone fa-solid fa-circle-xmark text-error"></i>
 							<span class="font-mono text-sm">{ref.id}</span>
 							<p>
 								{m.commandPalettePaymentNotReceived({
@@ -114,7 +114,7 @@
 								)}
 							title={m.payment()}
 						>
-							<i class="fa-duotone fa-money-bill-transfer"></i>
+							<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer"></i>
 						</button>
 					</div>
 				</div>

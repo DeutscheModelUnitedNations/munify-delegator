@@ -68,14 +68,14 @@
 
 {#snippet reviewerRow(reviewer: Reviewer, i: number)}
 	<div
-		class="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 {reviewer.isCurrentUser
+		class="flex items-center gap-3 rounded-box px-2 py-2 -mx-2 {reviewer.isCurrentUser
 			? 'bg-primary/10 ring-1 ring-primary/30'
 			: ''}"
 	>
 		<!-- Rank -->
 		<span class="w-8 text-right font-bold text-base-content/50">
 			{#if rankIcons[i]}
-				<i class="fa-solid {rankIcons[i]}"></i>
+				<i class="fa-sharp-duotone fa-solid {rankIcons[i]}"></i>
 			{:else}
 				#{i + 1}
 			{/if}
@@ -90,7 +90,7 @@
 		</span>
 
 		<!-- Bar Chart -->
-		<div class="flex-1 flex h-6 rounded overflow-hidden bg-base-300">
+		<div class="flex-1 flex h-6 rounded-field overflow-hidden bg-base-300">
 			{@render bar(reviewer.firstReviews, 'bg-primary', 'text-primary-content', m.firstReviews())}
 			{@render bar(
 				reviewer.totalReviews - reviewer.firstReviews,
@@ -112,7 +112,7 @@
 	{#snippet badge()}
 		{#if leaderboard?.length}
 			<div class="badge badge-primary badge-lg gap-2">
-				<i class="fa-solid fa-users"></i>
+				<i class="fa-sharp-duotone fa-solid fa-users"></i>
 				{leaderboard.length}
 			</div>
 		{/if}
@@ -128,18 +128,18 @@
 				<!-- Legend -->
 				<div class="flex gap-6 text-sm text-base-content/60 mt-4 pt-4 border-t border-base-300">
 					<span class="flex items-center gap-2">
-						<span class="inline-block w-3 h-3 bg-primary rounded"></span>
+						<span class="inline-block w-3 h-3 bg-primary rounded-field"></span>
 						{m.firstReviews()}
 					</span>
 					<span class="flex items-center gap-2">
-						<span class="inline-block w-3 h-3 bg-accent rounded"></span>
+						<span class="inline-block w-3 h-3 bg-accent rounded-field"></span>
 						{m.additionalReviews()}
 					</span>
 				</div>
 			</div>
 		{:else}
 			<div class="alert alert-info">
-				<i class="fa-solid fa-info-circle"></i>
+				<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 				<span>{m.noReviewsYet()}</span>
 			</div>
 		{/if}

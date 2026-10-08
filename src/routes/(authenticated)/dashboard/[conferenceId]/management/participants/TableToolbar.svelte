@@ -30,6 +30,6 @@
 	title={m.openIssuesDescription()}
 	onclick={toggleIssueFilter}
 >
-	<i class="fa-duotone fa-triangle-exclamation"></i>
+	<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 	{m.openIssues()}
 </button>

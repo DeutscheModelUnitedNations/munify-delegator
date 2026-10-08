@@ -117,21 +117,21 @@
 
 {#snippet appliedIcon(applied: boolean)}
 	{#if applied}
-		<i class="fa-solid fa-circle-check text-success"></i>
+		<i class="fa-sharp-duotone fa-solid fa-circle-check text-success"></i>
 	{:else}
-		<i class="fa-solid fa-hourglass-half text-error"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hourglass-half text-error"></i>
 	{/if}
 {/snippet}
 
 {#snippet attendancePlanBadge()}
 	{#if conferenceSupervisor.plansOwnAttendenceAtConference}
 		<span class="badge badge-sm badge-success">
-			<i class="fa-solid fa-location-check"></i>
+			<i class="fa-sharp-duotone fa-solid fa-location-check"></i>
 			{m.supervisorPlansOwnAttendance()}</span
 		>
 	{:else}
 		<span class="badge badge-sm badge-info">
-			<i class="fa-solid fa-cloud"></i>
+			<i class="fa-sharp-duotone fa-solid fa-cloud"></i>
 			{m.supervisorDoesNotPlanOwnAttendance()}</span
 		>
 	{/if}
@@ -174,7 +174,9 @@
 			</div>
 		</td>
 		<td>
-			<code class="bg-base-300 rounded px-1 text-xs font-mono">{group.delegation.entryCode}</code>
+			<code class="bg-base-300 rounded-field px-1 text-xs font-mono"
+				>{group.delegation.entryCode}</code
+			>
 		</td>
 		<td>
 			<span class="badge badge-sm"
@@ -188,7 +190,7 @@
 	{#each group.members as member (member.id)}
 		<tr class="text-sm">
 			<td class="text-right">
-				<i class="fa-duotone fa-arrow-turn-down-right text-base-content/40"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-turn-down-right text-base-content/40"></i>
 			</td>
 			<td colspan="2">
 				<PersonName
@@ -241,7 +243,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Supervisor Info Card -->
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex flex-col gap-1 text-sm">
 			<div class="flex items-center gap-1">
 				<span class="text-base-content/60">{m.connectionCode()}:</span>
@@ -250,7 +252,7 @@
 					onclick={copyConnectionCode}
 					title={m.copy()}
 				>
-					<code class="bg-base-300 rounded px-1 group-hover:bg-base-content/20"
+					<code class="bg-base-300 rounded-field px-1 group-hover:bg-base-content/20"
 						>{conferenceSupervisor.connectionCode}</code
 					>
 				</button>
@@ -265,7 +267,7 @@
 	<!-- Action Buttons -->
 	<div class="flex flex-wrap items-center gap-4">
 		<button class="btn btn-sm" onclick={rotateCode}>
-			<i class="fa-duotone fa-arrow-rotate-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
 		<label class="flex items-center gap-2 cursor-pointer">
@@ -282,7 +284,7 @@
 	<!-- Students list -->
 	{#if delegationMembers.length === 0 && singleParticipants.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-duotone fa-graduation-cap"></i>
+			<i class="fa-sharp-duotone fa-solid fa-graduation-cap"></i>
 			<span>{m.userCardNoStudents()}</span>
 		</div>
 	{/if}

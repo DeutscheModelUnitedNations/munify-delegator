@@ -39,7 +39,7 @@
 	{/if}
 	{#if member.isHeadDelegate}
 		<span class="badge badge-accent tooltip tooltip-bottom" data-tip={m.headDelegate()}
-			><i class="fa-solid fa-medal"></i></span
+			><i class="fa-sharp-duotone fa-solid fa-medal"></i></span
 		>
 	{/if}
 {/snippet}
@@ -51,13 +51,18 @@
 	{#if participant.assignedRole}
 		<span class="badge badge-soft gap-1">
 			{#if participant.assignedRole.fontAwesomeIcon}
-				<i class="fa-solid fa-{participant.assignedRole.fontAwesomeIcon.replace('fa-', '')}"></i>
+				<i
+					class="fa-sharp-duotone fa-solid fa-{participant.assignedRole.fontAwesomeIcon.replace(
+						'fa-',
+						''
+					)}"
+				></i>
 			{/if}
 			{participant.assignedRole.name}
 		</span>
 	{:else}
 		<span class="badge badge-primary">
-			<i class="fa-solid fa-user mr-1"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user mr-1"></i>
 			{m.singleParticipant()}
 		</span>
 	{/if}
@@ -65,7 +70,7 @@
 
 {#snippet teamMemberSummary(member: TeamMember)}
 	<span class="badge badge-primary">
-		<i class="fa-solid fa-people-group mr-1"></i>
+		<i class="fa-sharp-duotone fa-solid fa-people-group mr-1"></i>
 		{m.teamMember()}
 	</span>
 	{#if member.role}
@@ -86,7 +91,7 @@
 {:else if conferenceSupervisor}
 	<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
 		<span class="badge badge-primary">
-			<i class="fa-solid fa-chalkboard-user mr-1"></i>
+			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user mr-1"></i>
 			{m.supervisor()}
 		</span>
 	</div>

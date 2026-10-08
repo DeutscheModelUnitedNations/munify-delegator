@@ -11,8 +11,8 @@
 
 <div class="text-center">
 	{#if applied}
-		<i class="fa-solid fa-circle-check text-success text-{getTableSize()}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-circle-check text-success text-{getTableSize()}"></i>
 	{:else}
-		<i class="fa-solid fa-hourglass-half text-warning text-{getTableSize()}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hourglass-half text-warning text-{getTableSize()}"></i>
 	{/if}
 </div>

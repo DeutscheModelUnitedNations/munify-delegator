@@ -157,7 +157,12 @@
 							<td>
 								<div class="flex items-center gap-4">
 									{#if role.fontAwesomeIcon}
-										<i class="fa-duotone fa-{role.fontAwesomeIcon.replace('fa-', '')} text-xl"></i>
+										<i
+											class="fa-sharp-duotone fa-solid fa-{role.fontAwesomeIcon.replace(
+												'fa-',
+												''
+											)} text-xl"
+										></i>
 									{/if}
 									{role.name}
 								</div>
@@ -183,7 +188,7 @@
 				class="btn btn-primary btn-wide mt-4"
 				href={resolve(`/registration/${conferenceId}/individual`)}
 			>
-				<i class="fa-solid fa-plus"></i>
+				<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 				{m.addAnotherApplication()}
 			</a>
 		{/if}

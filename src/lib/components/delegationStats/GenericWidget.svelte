@@ -12,7 +12,7 @@
 	{#each content as stat, statIndex (statIndex)}
 		<div class="stat">
 			<div class="stat-figure text-secondary">
-				<i class="fa-duotone text-3xl fa-{stat.icon}"></i>
+				<i class="fa-sharp-duotone fa-solid text-3xl fa-{stat.icon}"></i>
 			</div>
 			<div class="stat-title">{stat.title}</div>
 			<div class="stat-value">

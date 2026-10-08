@@ -33,8 +33,7 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
  */
 function applications(conferenceId: string): SQL {
 	return sql`
-		select d.id, 'delegation'::text as kind, 0 as kind_rank, d.school,
-			coalesce(m.n, 0)::int as size,
+		select d.id, 'delegation'::text as kind, 0 as kind_rank, d.school, d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
 			coalesce(r.disqualified, false) as disqualified, r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
@@ -42,10 +41,6 @@ function applications(conferenceId: string): SQL {
 				when coalesce(r.flagged, false) then 'flagged'
 				else 'unrated' end as status
 		from delegation d
-		left join (
-			select delegation_id, count(*) as n from delegation_member
-			where conference_id = ${conferenceId} group by delegation_id
-		) m on m.delegation_id = d.id
 		left join assignment_review r on r.delegation_id = d.id
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
@@ -91,15 +86,17 @@ export const deckSchema = z.object({
 	start: z.number(),
 	entries: z.array(entrySchema),
 	current: entrySchema.nullable(),
-	previous: entrySchema.nullable(),
-	next: entrySchema.nullable(),
-	nextUnreviewed: entrySchema.nullable()
+	unreviewedPastWindow: entrySchema.nullable()
 });
 
 /**
- * The window of the filtered deck around the card on top, with where that card is, the counts the
- * progress bar sums up, and the cards one step either way and the next one nobody looked at.
- * `index` (a slider seek) wins over `currentId`; a card the filters hide falls back to the first.
+ * The window of the filtered deck around the card on top, with where that card is and the counts
+ * the progress bar sums up. The browser turns the cards within the window by itself, so all it
+ * needs from beyond it is where "next unreviewed" goes once the window has none left
+ * (`unreviewedPastWindow`: the first unrated card after the window, or else the deck's first).
+ *
+ * `index` (a slider seek) wins over `currentId`. A card the filters hide - rated while the deck
+ * shows the unrated ones - leaves the card that took its place on top, not the first one.
  */
 export function deckSql(options: {
 	conferenceId: string;
@@ -114,10 +111,13 @@ export function deckSql(options: {
 		sql.raw(
 			`json_build_object('kind', ${alias}.kind, 'id', ${alias}.id, 'school', ${alias}.school, 'size', ${alias}.size, 'status', ${alias}.status)`
 		);
+	// Only what the deck is sorted and shown by goes through the sort: the reviews' notes would
+	// make every row it moves wider for nothing.
 	return sql`
 		with apps as (select * from (${applications(conferenceId)}) a),
 		deck as (
-			select a.*, row_number() over (order by ${deckOrder}) - 1 as idx
+			select a.id, a.kind, a.kind_rank, a.school, a.size, a.status,
+				row_number() over (order by ${deckOrder}) - 1 as idx
 			from apps a where ${passes(status, school)}
 		),
 		totals as (select count(*)::int as n from deck),
@@ -126,12 +126,21 @@ export function deckSql(options: {
 				case when ${index}::int is not null
 					then least(greatest(${index}::int, 0), greatest((select n from totals) - 1, 0)) end,
 				(select idx from deck where id = ${currentId}::text),
+				(select least(count(*), greatest((select n from totals) - 1, 0)) from deck d
+					where (d.kind_rank, -d.size, d.id) <
+						(select a.kind_rank, -a.size, a.id from apps a where a.id = ${currentId}::text limit 1)),
 				0
 			)::int as i
 		),
 		win as (
 			select greatest(0, least((select i from cur) - ${Math.floor(size / 2)},
 				(select n from totals) - ${size}))::int as s
+		),
+		beyond as (
+			select coalesce(
+				(select min(idx) from deck where status = 'unrated' and idx >= (select s from win) + ${size}),
+				(select min(idx) from deck where status = 'unrated')
+			) as i
 		)
 		select json_build_object(
 			'total', (select n from totals),
@@ -147,13 +156,7 @@ export function deckSql(options: {
 			'entries', coalesce((select json_agg(${entry('d')} order by d.idx) from deck d
 				where d.idx >= (select s from win) and d.idx < (select s from win) + ${size}), '[]'::json),
 			'current', (select ${entry('d')} from deck d where d.idx = (select i from cur)),
-			'previous', (select ${entry('d')} from deck d where d.idx = (select i from cur) - 1),
-			'next', (select ${entry('d')} from deck d where d.idx = (select i from cur) + 1),
-			'nextUnreviewed', coalesce(
-				(select ${entry('d')} from deck d where d.status = 'unrated' and d.idx > (select i from cur)
-					order by d.idx limit 1),
-				(select ${entry('d')} from deck d where d.status = 'unrated' and d.idx <> (select i from cur)
-					order by d.idx limit 1))
+			'unreviewedPastWindow', (select ${entry('d')} from deck d where d.idx = (select i from beyond))
 		) as result`;
 }
 

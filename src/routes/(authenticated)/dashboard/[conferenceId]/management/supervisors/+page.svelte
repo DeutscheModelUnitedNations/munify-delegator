@@ -33,8 +33,8 @@
 			cell: ({ row }) =>
 				renderComponent(IconCell, {
 					icon: row.original.plansOwnAttendenceAtConference
-						? 'fa-duotone fa-location-check'
-						: 'fa-duotone fa-cloud'
+						? 'fa-sharp-duotone fa-solid fa-location-check'
+						: 'fa-sharp-duotone fa-solid fa-cloud'
 				})
 		},
 		{

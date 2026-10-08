@@ -30,7 +30,7 @@
 			conferenceId
 		})}
 	>
-		<i class="fa-duotone fa-pen-ruler"></i>
+		<i class="fa-sharp-duotone fa-solid fa-pen-ruler"></i>
 		{m.assignmentPendingChanges({ count: pending })}
 	</a>
 	<!-- Where the release is switched: the conference's status settings. -->
@@ -41,7 +41,8 @@
 		})}
 		title={m.assignmentOpenReleaseSettings()}
 	>
-		<i class="fa-duotone {conference.assignmentReleased ? 'fa-eye' : 'fa-eye-slash'}"></i>
+		<i class="fa-sharp-duotone fa-solid {conference.assignmentReleased ? 'fa-eye' : 'fa-eye-slash'}"
+		></i>
 		{conference.assignmentReleased ? m.assignmentReleasedBadge() : m.assignmentHiddenBadge()}
 	</a>
 </div>

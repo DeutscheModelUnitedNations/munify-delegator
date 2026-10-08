@@ -30,14 +30,17 @@
 
 <div {id} class="card bg-base-200 border border-base-300">
 	<div
-		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-lg"
-		class:rounded-b-lg={!expanded}
+		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-box"
+		class:rounded-b-box={!expanded}
 		{...toggleButtonProps(() => (expanded = !expanded))}
 	>
 		<div class="flex items-center gap-3">
-			<i class="fa-solid {expanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-base-content/50"
+			<i
+				class="fa-sharp-duotone fa-solid {expanded
+					? 'fa-chevron-down'
+					: 'fa-chevron-right'} text-base-content/50"
 			></i>
-			<i class="fa-solid fa-{icon} text-primary text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{icon} text-primary text-xl"></i>
 			<div>
 				<h3 class="text-lg font-bold">{title}</h3>
 				{#if description}

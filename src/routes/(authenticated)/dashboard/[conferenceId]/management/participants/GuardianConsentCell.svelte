@@ -15,7 +15,7 @@
 
 {#if isOfAge}
 	<span class="flex items-center gap-1.5 text-base-content/40">
-		<i class="fa-solid fa-circle-minus"></i>
+		<i class="fa-sharp-duotone fa-solid fa-circle-minus"></i>
 		<span class="text-xs">{m.notRequired()}</span>
 	</span>
 {:else}

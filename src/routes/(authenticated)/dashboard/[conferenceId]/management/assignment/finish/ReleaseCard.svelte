@@ -39,7 +39,7 @@
 </script>
 
 <section class="alert {notice.tone} alert-soft items-start">
-	<i class="fa-duotone {notice.icon} mt-1 text-xl"></i>
+	<i class="fa-sharp-duotone fa-solid {notice.icon} mt-1 text-xl"></i>
 	<div class="flex flex-col gap-3">
 		<h3 class="font-bold">{notice.title}</h3>
 		<p class="text-sm">{notice.hint}</p>
@@ -50,7 +50,7 @@
 				{ conferenceId }
 			)}
 		>
-			<i class="fa-duotone fa-toggle-on"></i>
+			<i class="fa-sharp-duotone fa-solid fa-toggle-on"></i>
 			{m.assignmentOpenReleaseSettings()}
 		</a>
 	</div>

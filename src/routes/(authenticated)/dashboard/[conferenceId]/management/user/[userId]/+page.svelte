@@ -17,7 +17,7 @@
 			href={resolve(`/dashboard/${params.conferenceId}/management/participants`)}
 			class="btn btn-ghost btn-sm"
 		>
-			<i class="fa-duotone fa-arrow-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			{m.back()}
 		</a>
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>

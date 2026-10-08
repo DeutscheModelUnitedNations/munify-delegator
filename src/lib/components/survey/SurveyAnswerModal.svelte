@@ -86,7 +86,7 @@
 {#snippet optionCard(option: SurveyOption)}
 	{@const capacity = remainingCapacity(option)}
 	<label
-		class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-md p-4 transition-all duration-300"
+		class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-field p-4 transition-all duration-300"
 	>
 		<input
 			type="radio"
@@ -102,8 +102,8 @@
 			{#if option.description}
 				<p class="whitespace-pre-line text-sm">{option.description}</p>
 			{/if}
-			<div class="{capacityClass(capacity)} flex w-auto items-center rounded-md p-2 text-sm">
-				<i class="fa-duotone fa-users mr-2"></i>
+			<div class="{capacityClass(capacity)} flex w-auto items-center rounded-field p-2 text-sm">
+				<i class="fa-sharp-duotone fa-solid fa-users mr-2"></i>
 				{@render seats(option, capacity)}
 			</div>
 		</div>
@@ -118,7 +118,7 @@
 		disabled={!newAnswer || questionLocked || loading}
 	>
 		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}
-		<i class="fa-duotone fa-save"></i>
+		<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		{m.save()}
 	</button>
 {/snippet}
@@ -132,7 +132,7 @@
 
 		{#if questionLocked}
 			<div class="alert alert-warning">
-				<i class="fa-duotone fa-lock"></i>
+				<i class="fa-sharp-duotone fa-solid fa-lock"></i>
 				{m.questionDeadlinePassed()}
 			</div>
 		{/if}

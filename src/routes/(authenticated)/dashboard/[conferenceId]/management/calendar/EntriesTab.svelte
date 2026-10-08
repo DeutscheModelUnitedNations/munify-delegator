@@ -102,11 +102,11 @@
 			<div class="flex items-center gap-1.5">
 				{#if hasOverlap}
 					<div class="tooltip tooltip-right" data-tip={m.calendarEntryOverlap()}>
-						<i class="fa-solid fa-triangle-exclamation text-warning text-xs"></i>
+						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-warning text-xs"></i>
 					</div>
 				{/if}
 				{#if entry.fontAwesomeIcon}
-					<i class="fa-duotone fa-{entry.fontAwesomeIcon}"></i>
+					<i class="fa-sharp-duotone fa-solid fa-{entry.fontAwesomeIcon}"></i>
 				{/if}
 				{entry.name}
 			</div>

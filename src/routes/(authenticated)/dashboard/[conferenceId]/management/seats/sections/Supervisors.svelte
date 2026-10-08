@@ -47,10 +47,10 @@
 	<thead>
 		<tr>
 			<td>
-				<i class="fa-duotone fa-users"></i>
+				<i class="fa-sharp-duotone fa-solid fa-users"></i>
 			</td>
 			<td>
-				<i class="fa-duotone fa-sigma"></i>
+				<i class="fa-sharp-duotone fa-solid fa-sigma"></i>
 			</td>
 		</tr>
 	</thead>

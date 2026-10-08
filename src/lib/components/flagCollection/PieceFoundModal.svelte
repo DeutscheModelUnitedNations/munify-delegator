@@ -56,9 +56,9 @@
 
 		<div class="animate-bounce">
 			{#if isComplete}
-				<i class="fa-solid fa-trophy text-6xl text-warning"></i>
+				<i class="fa-sharp-duotone fa-solid fa-trophy text-6xl text-warning"></i>
 			{:else}
-				<i class="fa-solid fa-puzzle-piece text-6xl text-primary"></i>
+				<i class="fa-sharp-duotone fa-solid fa-puzzle-piece text-6xl text-primary"></i>
 			{/if}
 		</div>
 
@@ -72,7 +72,7 @@
 			{/if}
 		</div>
 
-		<div class="flex items-center gap-3 bg-base-200 p-4 rounded-lg">
+		<div class="flex items-center gap-3 bg-base-200 p-4 rounded-box">
 			{#if flagType === 'NATION' && flagAlpha2Code}
 				<Flag size="sm" alpha2Code={flagAlpha2Code} />
 			{:else}
@@ -94,7 +94,7 @@
 
 		{#if isComplete}
 			<div class="alert alert-success">
-				<i class="fa-solid fa-party-horn"></i>
+				<i class="fa-sharp-duotone fa-solid fa-party-horn"></i>
 				<span>{m.congratulationsFlagComplete()}</span>
 			</div>
 		{/if}
@@ -104,16 +104,16 @@
 		<div class="flex gap-2">
 			{#if onViewCollection}
 				<button class="btn btn-ghost" onclick={handleViewCollection}>
-					<i class="fa-solid fa-puzzle-piece"></i>
+					<i class="fa-sharp-duotone fa-solid fa-puzzle-piece"></i>
 					{m.viewCollection()}
 				</button>
 			{/if}
 			<button class="btn btn-primary" onclick={() => (open = false)}>
 				{#if isComplete}
-					<i class="fa-solid fa-party-horn"></i>
+					<i class="fa-sharp-duotone fa-solid fa-party-horn"></i>
 					{m.celebrate()}
 				{:else}
-					<i class="fa-solid fa-arrow-right"></i>
+					<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 					{m.continueReviewing()}
 				{/if}
 			</button>

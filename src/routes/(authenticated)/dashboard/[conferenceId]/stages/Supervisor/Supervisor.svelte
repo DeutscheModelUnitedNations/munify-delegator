@@ -207,7 +207,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="fa-solid fa-exclamation-triangle text-xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
 				{m.noDelegationsFound()}
 			</div>
 		{/each}
@@ -222,7 +222,7 @@
 			/>
 		{:else}
 			<div class="alert alert-warning">
-				<i class="fa-solid fa-exclamation-triangle text-xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
 				{m.noSingleParticipantsFound()}
 			</div>
 		{/each}
@@ -281,7 +281,7 @@
 {:else}
 	{#if isStateParticipantRegistration}
 		<section class="alert alert-info">
-			<i class="fa-solid fa-circle-info text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
 			{m.registeredAsSupervisor()}
 		</section>
 	{/if}

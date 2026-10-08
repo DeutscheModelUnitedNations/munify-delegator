@@ -48,9 +48,9 @@
 				<tr>
 					<th>{m.members()} <span class="badge badge-xs">{application.people.length}</span></th>
 					<th class="text-right">{m.assignmentAge()}</th>
-					<th class="text-center"><i class="fa-duotone fa-venus-mars"></i></th>
+					<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-venus-mars"></i></th>
 					<th class="text-right" title={m.assignmentPreviousParticipations()}>
-						<i class="fa-duotone fa-rotate-left"></i>
+						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 					</th>
 				</tr>
 			</thead>
@@ -80,7 +80,7 @@
 	<div class="flex flex-col gap-4">
 		<section class="flex flex-col gap-1">
 			<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-				<i class="fa-duotone fa-school"></i>
+				<i class="fa-sharp-duotone fa-solid fa-school"></i>
 				{m.schoolOrInstitution()}
 			</h4>
 			{#if application.school}
@@ -95,7 +95,7 @@
 		{#if supervisors.length > 0}
 			<section class="flex flex-col gap-1">
 				<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-					<i class="fa-duotone fa-chalkboard-user"></i>
+					<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
 					{m.supervisors()}
 				</h4>
 				<ul class="flex flex-col gap-0.5">
@@ -117,7 +117,7 @@
 
 	<section class="flex flex-col gap-2">
 		<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-			<i class="fa-duotone fa-flag"></i>
+			<i class="fa-sharp-duotone fa-solid fa-flag"></i>
 			{m.assignmentWishes()}
 		</h4>
 		{#if application.wishes.length > 0}

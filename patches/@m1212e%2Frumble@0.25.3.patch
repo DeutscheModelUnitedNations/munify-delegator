@@ -86,10 +86,10 @@ index a333275..cca2733 100644
  				varCtx
  			})}
  `;
-diff --git a/out/generate-0QFVc3Sg.mjs b/out/generate-0QFVc3Sg.mjs
-index 2a0402f..2d91301 100644
---- a/out/generate-0QFVc3Sg.mjs
-+++ b/out/generate-0QFVc3Sg.mjs
+diff --git a/out/generate-BAZg-eXa.mjs b/out/generate-BAZg-eXa.mjs
+index 04ce08b..e652fe5 100644
+--- a/out/generate-BAZg-eXa.mjs
++++ b/out/generate-BAZg-eXa.mjs
 @@ -1,5 +1,14 @@
  import { GraphQLEnumType, GraphQLInputObjectType, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType } from "graphql";
 -import { access, mkdir, rm, writeFile } from "node:fs/promises";
@@ -106,7 +106,7 @@ index 2a0402f..2d91301 100644
  import { join } from "node:path";
  import { getIntrospectedSchema, minifyIntrospectionQuery } from "@urql/introspection";
  import { uneval } from "devalue";
-@@ -216,7 +225,7 @@ export type ${key} = ${rep};
+@@ -220,7 +229,7 @@ export type ${key} = ${rep};
  	});
  	imports.push(...c.imports);
  	code += c.code;
@@ -115,11 +115,11 @@ index 2a0402f..2d91301 100644
  import type { IntrospectionQuery } from "graphql";
  export const schema = ${uneval(minifyIntrospectionQuery(getIntrospectedSchema(schema), {
  		includeEnums: true,
-diff --git a/out/generate-CM3XjmlO.cjs b/out/generate-CM3XjmlO.cjs
-index e0340a3..063b17b 100644
---- a/out/generate-CM3XjmlO.cjs
-+++ b/out/generate-CM3XjmlO.cjs
-@@ -180,6 +180,16 @@ function makeStringLiteralUnionFromEnum(enumType) {
+diff --git a/out/generate-Ci6AXNnn.cjs b/out/generate-Ci6AXNnn.cjs
+index fc647d4..f2c2846 100644
+--- a/out/generate-Ci6AXNnn.cjs
++++ b/out/generate-Ci6AXNnn.cjs
+@@ -184,6 +184,16 @@ function makeStringLiteralUnionFromEnum(enumType) {
  }
  //#endregion
  //#region lib/client/generate/generate.ts
@@ -136,7 +136,7 @@ index e0340a3..063b17b 100644
  async function generateFromSchema({ outputPath, schema, rumbleImportPath = "@m1212e/rumble/client", apiUrl, useExternalUrqlClient = false, removeExisting = true, forceReactivity, autoIncludeIdField }) {
  	if (removeExisting) try {
  		await (0, node_fs_promises.access)(outputPath);
-@@ -216,7 +226,7 @@ export type ${key} = ${rep};
+@@ -220,7 +230,7 @@ export type ${key} = ${rep};
  	});
  	imports.push(...c.imports);
  	code += c.code;
@@ -146,7 +146,7 @@ index e0340a3..063b17b 100644
  export const schema = ${(0, devalue.uneval)((0, _urql_introspection.minifyIntrospectionQuery)((0, _urql_introspection.getIntrospectedSchema)(schema), {
  		includeEnums: true,
 diff --git a/out/index.cjs b/out/index.cjs
-index c168449..8cdc38b 100644
+index 3ecba95..9a54a06 100644
 --- a/out/index.cjs
 +++ b/out/index.cjs
 @@ -440,7 +440,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {
@@ -171,7 +171,7 @@ index c168449..8cdc38b 100644
  					}
  					const subscribe = (subscriptions, _element) => {
 diff --git a/out/index.mjs b/out/index.mjs
-index 25d5a6f..0a9bc90 100644
+index ad78846..9635fe0 100644
 --- a/out/index.mjs
 +++ b/out/index.mjs
 @@ -410,7 +410,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {

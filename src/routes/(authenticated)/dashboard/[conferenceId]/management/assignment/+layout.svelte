@@ -9,6 +9,11 @@
 
 	let { children, params }: LayoutProps = $props();
 
+	// Every navigation hands the layout a fresh `params`, a card turn in the sighting (which only
+	// changes the query) included. Read through it, `DraftStatus` asked for the whole draft and
+	// every seated application again each time; a string that has not changed stops that here.
+	const conferenceId = $derived(params.conferenceId);
+
 	// The route id is fixed per page, unlike `page.params`, so reading it here is safe.
 	const tab = $derived(page.route.id?.split('/').pop());
 
@@ -27,7 +32,7 @@
 			title,
 			icon,
 			href: resolve(`/(authenticated)/dashboard/[conferenceId]/management/assignment/${id}`, {
-				conferenceId: params.conferenceId
+				conferenceId
 			})
 		}))
 	);
@@ -39,7 +44,7 @@
 			<h2 class="text-2xl font-bold">{m.adminAssignment()}</h2>
 			<p class="text-base-content/70 max-w-3xl text-sm">{m.assignmentIntro()}</p>
 		</div>
-		<DraftStatus conferenceId={params.conferenceId} />
+		<DraftStatus {conferenceId} />
 	</div>
 
 	<Tabs>

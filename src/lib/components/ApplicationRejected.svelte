@@ -17,7 +17,7 @@
 
 	{#if conferenceIdForWaitingListLink}
 		<div class="alert alert-info">
-			<i class="fa-solid user-clock text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid user-clock text-2xl"></i>
 			<div class="flex flex-col gap-2">
 				<h2 class="text-2xl font-bold">{m.joinWaitingList()}</h2>
 				<p>{m.joinWaitingListText()}</p>

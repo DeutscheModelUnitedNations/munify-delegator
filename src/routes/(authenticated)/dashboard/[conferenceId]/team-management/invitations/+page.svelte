@@ -32,7 +32,7 @@
 		<PendingInvitationsTable invitations={pendingInvitations} />
 	{:else}
 		<div class="text-center text-base-content/70 py-8">
-			<i class="fa-duotone fa-envelope-open text-4xl mb-4"></i>
+			<i class="fa-sharp-duotone fa-solid fa-envelope-open text-4xl mb-4"></i>
 			<p>{m.noResults()}</p>
 		</div>
 	{/if}

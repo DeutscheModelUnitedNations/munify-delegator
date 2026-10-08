@@ -238,7 +238,7 @@
 		<!-- Show last confirmed transaction if available -->
 		{#if lastReceived}
 			<div class="alert alert-success">
-				<i class="fa-solid fa-money-bill-transfer text-lg"></i>
+				<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-lg"></i>
 				<div>
 					{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
 				</div>
@@ -263,7 +263,7 @@
 					aria-label="Search"
 					onclick={() => searchInputElem?.blur()}
 				>
-					<i class="fa-solid fa-magnifying-glass"></i>
+					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 				</button>
 			</div>
 		</FormFieldset>
@@ -276,7 +276,7 @@
 		</div>
 	{:else if params.searchValue && !paymentTransaction && !referenceFetching}
 		<div class="alert alert-warning">
-			<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-lg"></i>
 			<div>{m.noPaymentFound()}</div>
 		</div>
 	{/if}
@@ -284,8 +284,8 @@
 
 {#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
 	{@const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
-	<div class="bg-base-200 flex w-full items-center gap-4 rounded-md px-4 py-2">
-		<i class="fa-duotone {paymentStatusIcon(user.id, received)} text-2xl"></i>
+	<div class="bg-base-200 flex w-full items-center gap-4 rounded-field px-4 py-2">
+		<i class="fa-sharp-duotone fa-solid {paymentStatusIcon(user.id, received)} text-2xl"></i>
 		<div class="text-lg font-bold">
 			{name}
 		</div>
@@ -295,7 +295,7 @@
 			onclick={() => openUserCard(user.id)}
 			aria-label="Details for {name}"
 		>
-			<i class="fa-duotone fa-id-card"></i>
+			<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 		</button>
 	</div>
 {/snippet}
@@ -319,13 +319,13 @@
 	<!-- Received status alert -->
 	{#if transaction.recievedAt}
 		<div class="alert alert-success mb-4">
-			<i class="fa-duotone fa-check text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-check text-2xl"></i>
 			{m.paymentRecieved({ date: formatLongDate(transaction.recievedAt) })}
 		</div>
 	{/if}
 
 	<!-- Amount display -->
-	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-md p-3">
+	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-field p-3">
 		<div class="font-mono text-3xl font-bold">
 			{transaction.amount.toLocaleString(undefined, {
 				style: 'currency',
@@ -354,7 +354,7 @@
 			onclick={() => resetView()}
 			aria-label={m.close()}
 		>
-			<i class="fa-duotone fa-xmark text-lg"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
 		</button>
 	{/snippet}
 
@@ -369,7 +369,7 @@
 				onclick={() => changeTransactionStatus('PROBLEM')}
 				disabled={hotkeyDebounce}
 			>
-				<i class="fa-solid fa-triangle-exclamation"></i>
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 				{m.markAsProblem()}
 			</button>
 			<button
@@ -377,13 +377,13 @@
 				onclick={markReceivedAndNext}
 				disabled={hotkeyDebounce}
 			>
-				<i class="fa-solid fa-check"></i>
+				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 				{m.markAsRecieved()}
 				<Kbd hotkey="alt+a" />
 			</button>
 		{:else}
 			<button class="btn btn-error flex-1" onclick={resetView}>
-				<i class="fa-solid fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 				{m.close()}
 				<Kbd hotkey="Esc" />
 			</button>

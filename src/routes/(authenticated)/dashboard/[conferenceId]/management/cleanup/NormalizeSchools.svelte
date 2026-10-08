@@ -207,7 +207,7 @@
 	</div>
 {:else}
 	<div class="alert alert-info mt-4">
-		<i class="fa-duotone fa-info-circle"></i>
+		<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 		<span>{m.cleanupNormalizeSchoolsNoSchools()}</span>
 	</div>
 {/if}

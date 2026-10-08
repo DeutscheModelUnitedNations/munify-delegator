@@ -17,23 +17,23 @@
 	<thead>
 		<tr>
 			<th>
-				<i class="fa-duotone fa-text"></i>
+				<i class="fa-sharp-duotone fa-solid fa-text"></i>
 			</th>
 			<th>
-				<i class="fa-duotone fa-podium"></i>
+				<i class="fa-sharp-duotone fa-solid fa-podium"></i>
 			</th>
 			<th class="text-center">
 				<div class="tooltip" data-tip={m.nations()}>
-					<i class="fa-duotone fa-flag"></i>
+					<i class="fa-sharp-duotone fa-solid fa-flag"></i>
 				</div>
 			</th>
 			<th class="text-center">
 				<div class="tooltip" data-tip={m.membersPerDelegation()}>
-					<i class="fa-duotone fa-users"></i>
+					<i class="fa-sharp-duotone fa-solid fa-users"></i>
 				</div>
 			</th>
 			<th class="text-left">
-				<i class="fa-duotone fa-list-ol"></i>
+				<i class="fa-sharp-duotone fa-solid fa-list-ol"></i>
 			</th>
 		</tr>
 	</thead>

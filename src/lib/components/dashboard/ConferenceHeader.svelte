@@ -84,7 +84,7 @@
 					<img
 						src={logoUrl}
 						alt={title}
-						class="h-20 w-20 rounded-lg object-contain md:h-24 md:w-24"
+						class="h-20 w-20 rounded-box object-contain md:h-24 md:w-24"
 					/>
 				</div>
 			{:else if emblemUrl}
@@ -92,14 +92,14 @@
 					<img
 						src={emblemUrl}
 						alt={title}
-						class="h-20 w-20 rounded-lg object-contain md:h-24 md:w-24"
+						class="h-20 w-20 rounded-box object-contain md:h-24 md:w-24"
 					/>
 				</div>
 			{:else}
 				<div
-					class="bg-primary/10 text-primary flex h-20 w-20 shrink-0 items-center justify-center rounded-lg md:h-24 md:w-24"
+					class="bg-primary/10 text-primary flex h-20 w-20 shrink-0 items-center justify-center rounded-box md:h-24 md:w-24"
 				>
-					<i class="fa-duotone fa-landmark-flag text-4xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-landmark-flag text-4xl"></i>
 				</div>
 			{/if}
 
@@ -115,7 +115,7 @@
 
 				{#if startDate && endDate}
 					<div class="text-base-content/60 flex items-center gap-2 text-sm">
-						<i class="fa-duotone fa-calendar-days"></i>
+						<i class="fa-sharp-duotone fa-solid fa-calendar-days"></i>
 						<span>{formatDateRange(startDate, endDate)}</span>
 					</div>
 				{/if}

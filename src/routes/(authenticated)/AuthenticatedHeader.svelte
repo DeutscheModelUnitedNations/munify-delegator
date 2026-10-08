@@ -68,7 +68,7 @@
 					headerState.openNavCallback = undefined;
 				}}
 			>
-				<i class="fa-duotone fa-bars text-xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-bars text-xl"></i>
 			</button>
 		{/if}
 
@@ -97,7 +97,7 @@
 					class="btn btn-ghost btn-sm text-base-content/60 hidden gap-2 sm:flex"
 					onclick={openCommandPalette}
 				>
-					<i class="fa-duotone fa-magnifying-glass"></i>
+					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 					<span class="text-sm">{m.search()}</span>
 					<Kbd hotkey="mod+k" size="xs" />
 				</button>

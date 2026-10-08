@@ -24,7 +24,7 @@
 		<NoConferenceIndicator />
 		{#if currentUser.isAdmin}
 			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/seed')}>
-				<i class="fa-duotone fa-seedling"></i>
+				<i class="fa-sharp-duotone fa-solid fa-seedling"></i>
 				{m.seedConference()}
 			</a>
 		{/if}
@@ -41,7 +41,7 @@
 					</div>
 					{#if currentUser.isAdmin}
 						<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('/dashboard/seed')}>
-							<i class="fa-solid fa-plus text-2xl"></i>
+							<i class="fa-sharp-duotone fa-solid fa-plus text-2xl"></i>
 							{m.seedConference()}
 						</a>
 					{/if}

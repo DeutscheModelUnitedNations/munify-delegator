@@ -1,18 +1,15 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { reviewArgs, type SightingReview } from '$lib/assignment/sighting';
+	import type { SightingReview } from '$lib/assignment/sighting';
 	import { m } from '$lib/paraglide/messages';
-	import { toastError } from '../toastError';
-	import { reviewSaved } from './reviewVersion.svelte';
 
 	/** The team's note on one application: always an input, saved when it loses focus. */
 	interface Props {
-		kind: 'delegation' | 'single';
-		id: string;
 		review: SightingReview | undefined;
+		/** Changes the review; shown at once, saved behind the scenes */
+		onReview: (change: Partial<SightingReview>) => void;
 	}
 
-	let { kind, id, review }: Props = $props();
+	let { review, onReview }: Props = $props();
 
 	const saved = $derived(review?.note ?? '');
 	let draft = $state('');
@@ -23,24 +20,17 @@
 		if (!focused) draft = saved;
 	});
 
-	async function save() {
+	function save() {
 		focused = false;
 		const note = draft.trim();
 		if (note === saved) return;
-		await Promise.resolve(
-			client.mutate.setAssignmentReview({
-				__args: reviewArgs(kind, id, review, { note: note || null }),
-				evaluation: true
-			})
-		)
-			.then(reviewSaved)
-			.catch(toastError);
+		onReview({ note: note || null });
 	}
 </script>
 
 <label class="flex flex-col gap-1">
 	<span class="flex items-center gap-2 text-sm font-semibold">
-		<i class="fa-duotone fa-note-sticky text-lg"></i>
+		<i class="fa-sharp-duotone fa-solid fa-note-sticky text-lg"></i>
 		{m.assignmentNote()}
 	</span>
 	<textarea

@@ -107,7 +107,7 @@
 
 {#snippet statusBadge(status: PaperstatusEnum)}
 	<div class="badge {getStatusBadgeClass(status)} badge-sm gap-1">
-		<i class="fa-solid {getPaperStatusIcon(status)} text-xs"></i>
+		<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(status)} text-xs"></i>
 		{translatePaperStatus(status)}
 	</div>
 {/snippet}
@@ -117,7 +117,7 @@
 	<!-- Version submission event -->
 	<div class="flex flex-wrap justify-between items-center gap-2">
 		<div class="flex items-center gap-2">
-			<i class="fa-solid fa-file-arrow-up text-secondary"></i>
+			<i class="fa-sharp-duotone fa-solid fa-file-arrow-up text-secondary"></i>
 			<span class="font-semibold">
 				{m.versionSubmitted({ version: version.version.toString() })}
 			</span>
@@ -140,7 +140,7 @@
 					onclick={() => handleCompareClick(version)}
 					title={m.compareVersion()}
 				>
-					<i class="fa-solid fa-code-compare"></i>
+					<i class="fa-sharp-duotone fa-solid fa-code-compare"></i>
 				</button>
 			{/if}
 		</div>
@@ -150,7 +150,7 @@
 {#snippet reviewEvent(review: Review)}
 	<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
 		<div class="flex items-center gap-2">
-			<i class="fa-solid fa-user-pen text-base-content/50"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user-pen text-base-content/50"></i>
 			<span class="font-semibold">
 				{review.reviewer.givenName}
 				{review.reviewer.familyName}
@@ -159,7 +159,7 @@
 		{#if review.statusBefore && review.statusAfter}
 			<div class="flex items-center gap-1">
 				{@render statusBadge(review.statusBefore)}
-				<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right text-xs text-base-content/50"></i>
 				{@render statusBadge(review.statusAfter)}
 			</div>
 		{/if}
@@ -182,7 +182,9 @@
 			})}
 		</div>
 		<div class="timeline-middle">
-			<i class="fa-solid fa-circle-chevron-right text-primary text-lg w-5 text-center"></i>
+			<i
+				class="fa-sharp-duotone fa-solid fa-circle-chevron-right text-primary text-lg w-5 text-center"
+			></i>
 		</div>
 		<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
 			{#if event.type === 'version'}
@@ -212,10 +214,10 @@
 <!-- Version comparison selection indicator -->
 {#if comparisonState.isSelecting}
 	<div class="alert alert-info fixed bottom-4 right-4 z-50 w-auto max-w-sm shadow-lg">
-		<i class="fa-solid fa-code-compare"></i>
+		<i class="fa-sharp-duotone fa-solid fa-code-compare"></i>
 		<span>{m.selectSecondVersionToCompare()}</span>
 		<button class="btn btn-sm btn-ghost" onclick={cancelComparison} aria-label={m.cancel()}>
-			<i class="fa-solid fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		</button>
 	</div>
 {/if}

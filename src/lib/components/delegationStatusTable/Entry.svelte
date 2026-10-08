@@ -94,7 +94,11 @@
 			disabled={loading}
 			aria-label="Download Postal Registration PDF"
 		>
-			<i class={loading ? 'fa-solid fa-spinner fa-spin' : 'fa-duotone fa-download'}></i>
+			<i
+				class={loading
+					? 'fa-sharp-duotone fa-solid fa-spinner fa-spin'
+					: 'fa-sharp-duotone fa-solid fa-download'}
+			></i>
 		</button>
 	</div>
 {/snippet}
@@ -104,12 +108,12 @@
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
 			<div class="tooltip" data-tip={m.headDelegate()}>
-				<i class="fa-duotone fa-medal ml-2"></i>
+				<i class="fa-sharp-duotone fa-solid fa-medal ml-2"></i>
 			</div>
 		{/if}
 	</td>
 	<td>
-		{@render valueOrDash(pronouns, 'fa-duotone')}
+		{@render valueOrDash(pronouns, 'fa-sharp-duotone fa-solid')}
 	</td>
 
 	{#if committee != undefined}
@@ -121,7 +125,7 @@
 	{#if email}
 		<td>
 			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label="E-Mail">
-				<i class="fa-duotone fa-envelope"></i>
+				<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
 			</a>
 		</td>
 	{/if}

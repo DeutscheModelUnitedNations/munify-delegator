@@ -99,7 +99,7 @@
 		<div class="collapse-content">
 			<div class="grid grid-cols-3 md:grid-cols-6 gap-2 pt-2">
 				{#each committeeAverages as committee (committee.committeeId)}
-					<div class="text-center p-2 bg-base-200 rounded">
+					<div class="text-center p-2 bg-base-200 rounded-field">
 						<div class="text-xs text-base-content/70">{committee.abbreviation}</div>
 						<div class="font-bold">{committee.average.toFixed(1)}</div>
 						<div class="text-xs text-base-content/50">n={committee.count}</div>
@@ -114,7 +114,7 @@
 	<div class="card-body p-4">
 		<div class="flex items-center justify-between">
 			<h2 class="card-title text-base font-semibold">
-				<i class="fa-duotone fa-cake-candles text-base-content/70"></i>
+				<i class="fa-sharp-duotone fa-solid fa-cake-candles text-base-content/70"></i>
 				{m.statsAgeDistribution()}
 			</h2>
 			{#if averageAge !== null}
@@ -127,7 +127,7 @@
 
 		{#if missingBirthdays > 0}
 			<div class="alert alert-warning py-2 text-sm">
-				<i class="fa-duotone fa-triangle-exclamation"></i>
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 				<span>{m.statsMissingBirthdays({ count: missingBirthdays })}</span>
 			</div>
 		{/if}

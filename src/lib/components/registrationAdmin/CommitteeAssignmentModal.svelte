@@ -101,9 +101,9 @@
 		onclick={() => assign(member.id, committeeId)}
 	>
 		{#if loading}
-			<i class="fa-duotone fa-spin fa-spinner"></i>
+			<i class="fa-sharp-duotone fa-solid fa-spin fa-spinner"></i>
 		{:else}
-			<i class="fa-duotone {active ? 'fa-check' : 'fa-plus'}"></i>
+			<i class="fa-sharp-duotone fa-solid {active ? 'fa-check' : 'fa-plus'}"></i>
 		{/if}
 	</button>
 {/snippet}

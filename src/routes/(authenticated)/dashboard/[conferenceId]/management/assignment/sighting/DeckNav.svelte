@@ -3,31 +3,33 @@
 	import type { DeckStatus } from '$lib/assignment/sighting';
 	import codenamize from '$lib/helpers/codenamize';
 	import { m } from '$lib/paraglide/messages';
-	import type { LoadedSightingDeck } from './applications';
+	import type { DeckPosition, DeckWindowData } from '$lib/assignment/deckWindow';
 
 	/**
 	 * Moves through the applications under review one at a time: back and forth, to the next one
 	 * nobody has looked at yet, or to any of them: through the strip of those around the current
 	 * one, or the slider over the whole deck. A bar sums up how far the deck has come. The deck is
-	 * the backend's answer: the window around the current card, the totals and the cards to step to.
+	 * the backend's window around the current card, which the page turns through by itself.
 	 */
 	interface Props {
-		deck: LoadedSightingDeck;
+		deck: DeckWindowData;
+		/** Where the card on top lies, and the cards to step to from there */
+		position: DeckPosition;
 		onSelect: (id: string) => void;
 		/** The slider was moved to this place in the deck */
 		onSeek: (index: number) => void;
 	}
 
-	let { deck, onSelect, onSeek }: Props = $props();
+	let { deck, position, onSelect, onSeek }: Props = $props();
 
-	const previousId = $derived(deck.previous?.id);
-	const nextId = $derived(deck.next?.id);
-	const unreviewedId = $derived(deck.nextUnreviewed?.id);
+	const previousId = $derived(position.previous?.id);
+	const nextId = $derived(position.next?.id);
+	const unreviewedId = $derived(position.nextUnreviewed?.id);
 	const after = $derived(deck.total - deck.start - deck.entries.length);
 
 	/** Where the slider is while it is dragged; the card only follows once it is let go. */
 	let dragging = $state<number | undefined>();
-	const sliderValue = $derived(dragging ?? deck.index + 1);
+	const sliderValue = $derived(dragging ?? position.index + 1);
 
 	const segmentColors: Record<DeckStatus, string> = {
 		rated: 'bg-success',
@@ -90,10 +92,10 @@
 			{#each deck.entries as entry, offset (entry.id)}
 				{@const status = statusOf(entry.status)}
 				{@const codename = codenamize(entry.id)}
-				{@const current = deck.start + offset === deck.index}
+				{@const current = deck.start + offset === position.index}
 				<li class="w-5 min-w-1 shrink">
 					<button
-						class="block h-3 w-full cursor-pointer rounded-sm transition-all {segmentColors[
+						class="block h-3 w-full cursor-pointer rounded-selector transition-all {segmentColors[
 							status
 						]} {current
 							? 'ring-primary ring-offset-base-100 h-4 ring-2 ring-offset-1'
@@ -117,16 +119,16 @@
 			disabled={!previousId}
 			onclick={() => previousId && onSelect(previousId)}
 		>
-			<i class="fa-duotone fa-arrow-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			{m.assignmentDeckPrevious()}
 			<kbd class="kbd kbd-xs hidden sm:inline-block">←</kbd>
 		</button>
 		<span class="px-2 text-sm font-medium tabular-nums" data-testid="deck-position">
-			{m.assignmentDeckPosition({ current: deck.index + 1, total: deck.total })}
+			{m.assignmentDeckPosition({ current: position.index + 1, total: deck.total })}
 		</span>
 		<button class="btn btn-sm" disabled={!nextId} onclick={() => nextId && onSelect(nextId)}>
 			{m.assignmentDeckNext()}
-			<i class="fa-duotone fa-arrow-right"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 			<kbd class="kbd kbd-xs hidden sm:inline-block">→</kbd>
 		</button>
 		<button
@@ -134,7 +136,7 @@
 			disabled={!unreviewedId}
 			onclick={() => unreviewedId && onSelect(unreviewedId)}
 		>
-			<i class="fa-duotone fa-forward-step"></i>
+			<i class="fa-sharp-duotone fa-solid fa-forward-step"></i>
 			{m.assignmentDeckNextUnreviewed()}
 			<kbd class="kbd kbd-xs hidden sm:inline-block">{NEXT_UNREVIEWED_KEY.toUpperCase()}</kbd>
 		</button>

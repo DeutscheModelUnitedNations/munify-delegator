@@ -111,9 +111,9 @@
 		<div class="flex flex-wrap gap-3 -mt-4 ml-6">
 			{#each pinnedSelections as pinned (pinned.title)}
 				<div
-					class="bg-primary/10 border-primary/30 flex items-center gap-3 rounded-lg border px-5 py-3.5 shadow-sm"
+					class="bg-primary/10 border-primary/30 flex items-center gap-3 rounded-box border px-5 py-3.5 shadow-sm"
 				>
-					<i class="fa-duotone fa-square-poll-horizontal text-primary text-lg"></i>
+					<i class="fa-sharp-duotone fa-solid fa-square-poll-horizontal text-primary text-lg"></i>
 					<div class="flex flex-col">
 						<span class="text-base-content/60 text-xs">{pinned.title}</span>
 						<span class="text-primary font-semibold">{pinned.selection}</span>

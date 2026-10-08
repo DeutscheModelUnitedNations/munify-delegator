@@ -34,16 +34,16 @@
 
 <div
 	class={isCommittee
-		? 'border border-base-300 rounded-lg bg-base-100'
-		: 'border border-base-200 rounded-md mb-2 last:mb-0'}
+		? 'border border-base-300 rounded-box bg-base-100'
+		: 'border border-base-200 rounded-field mb-2 last:mb-0'}
 	class:bg-base-50={striped}
 >
 	<div
 		class="cursor-pointer transition-colors {hoverClass} {isCommittee
-			? 'p-4 rounded-t-lg'
-			: 'p-3 rounded-t-md'}"
-		class:rounded-b-lg={isCommittee && !expanded}
-		class:rounded-b-md={!isCommittee && !expanded}
+			? 'p-4 rounded-t-box'
+			: 'p-3 rounded-t-field'}"
+		class:rounded-b-box={isCommittee && !expanded}
+		class:rounded-b-field={!isCommittee && !expanded}
 		onclick={onToggle}
 		role="button"
 		tabindex="0"
@@ -52,7 +52,9 @@
 		<div class="flex items-center justify-between">
 			<div class="flex items-center {isCommittee ? 'gap-3' : 'gap-2'}">
 				<i
-					class="fa-solid {expanded ? 'fa-chevron-down' : 'fa-chevron-right'} {isCommittee
+					class="fa-sharp-duotone fa-solid {expanded
+						? 'fa-chevron-down'
+						: 'fa-chevron-right'} {isCommittee
 						? 'text-base-content/50'
 						: 'text-base-content/40 text-sm'}"
 				></i>

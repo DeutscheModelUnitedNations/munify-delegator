@@ -50,7 +50,7 @@
 	<!-- Only where scrolling cannot ask for more: a pool too short to scroll. -->
 	{#if more && !loading && items.length < SCROLLING_ROWS}
 		<button class="btn btn-ghost btn-sm mt-2 w-full shrink-0" onclick={onLoadMore}>
-			<i class="fa-duotone fa-arrow-down"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
 			{m.assignmentPoolLoadMore()}
 		</button>
 	{/if}

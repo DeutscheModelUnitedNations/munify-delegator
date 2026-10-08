@@ -35,7 +35,7 @@
 
 {#if errors.length > 0}
 	<div class="alert alert-error alert-soft">
-		<i class="fa-duotone fa-circle-xmark text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-circle-xmark text-xl"></i>
 		<div class="flex flex-col gap-1">
 			<h3 class="font-bold">{m.assignmentBlockingProblems()}</h3>
 			<ul class="list-inside list-disc text-sm">
@@ -48,7 +48,7 @@
 {/if}
 {#if warnings.length > 0}
 	<div class="alert alert-warning alert-soft">
-		<i class="fa-duotone fa-triangle-exclamation text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
 		<ul class="list-inside list-disc text-sm">
 			{#each warnings as warning, index (index)}
 				<li>

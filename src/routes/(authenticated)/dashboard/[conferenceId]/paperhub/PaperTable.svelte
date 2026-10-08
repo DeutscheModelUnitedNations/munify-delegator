@@ -115,10 +115,10 @@
 			{#if 'text' in label}
 				{label.text}
 			{:else}
-				<i class="fa-solid {label.icon}"></i>
+				<i class="fa-sharp-duotone fa-solid {label.icon}"></i>
 			{/if}
 			{#if sortable}
-				<i class="fa-solid {getSortIcon(key)} text-xs opacity-50"></i>
+				<i class="fa-sharp-duotone fa-solid {getSortIcon(key)} text-xs opacity-50"></i>
 			{/if}
 		</div>
 	</th>
@@ -177,7 +177,9 @@
 					<td>
 						<div class="tooltip" data-tip={translatePaperType(paper.type)}>
 							<i
-								class="fa-solid {getPaperTypeIcon(paper.type)} {getTypeColor(paper.type)} text-base"
+								class="fa-sharp-duotone fa-solid {getPaperTypeIcon(paper.type)} {getTypeColor(
+									paper.type
+								)} text-base"
 							></i>
 						</div>
 					</td>
@@ -185,9 +187,9 @@
 						<td>
 							<div class="tooltip" data-tip={translatePaperStatus(paper.status)}>
 								<i
-									class="fa-solid {getPaperStatusIcon(paper.status)} {getStatusColor(
+									class="fa-sharp-duotone fa-solid {getPaperStatusIcon(
 										paper.status
-									)} text-base"
+									)} {getStatusColor(paper.status)} text-base"
 								></i>
 							</div>
 						</td>

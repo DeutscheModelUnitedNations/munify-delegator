@@ -53,7 +53,11 @@
 				>
 					{#snippet role(roleApplication)}
 						<div class="badge">
-							<i class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace('fa-', '')} mr-2"
+							<i
+								class="fa-sharp-duotone fa-solid fa-{roleApplication.fontAwesomeIcon?.replace(
+									'fa-',
+									''
+								)} mr-2"
 							></i>
 							{roleApplication.name}
 						</div>
@@ -62,7 +66,7 @@
 			{:else}
 				<InfoGrid.Entry title={m.role()} fontAwesomeIcon="masks-theater">
 					<i
-						class="fa-duotone fa-{singleParticipant.assignedRole.fontAwesomeIcon?.replace(
+						class="fa-sharp-duotone fa-solid fa-{singleParticipant.assignedRole.fontAwesomeIcon?.replace(
 							'fa-',
 							''
 						)}"

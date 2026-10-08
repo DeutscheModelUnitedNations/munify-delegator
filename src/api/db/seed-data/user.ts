@@ -31,29 +31,34 @@ export function makeSeedUser(
 		.toLowerCase()
 		.replace('@', `.${++emailCounter}@`);
 	const complete = !options.incomplete;
+	const country = faker.helpers.weightedArrayElement([
+		{ weight: 8, value: 'DEU' },
+		{ weight: 1, value: 'AUT' },
+		{ weight: 1, value: 'CHE' }
+	]);
 	return {
 		id: faker.database.mongodbObjectId(),
 		apartment: faker.helpers.maybe(() => faker.location.buildingNumber()) ?? null,
 		street: complete ? faker.location.street() : null,
-		zip: complete ? faker.string.numeric({ length: 5, allowLeadingZeros: false }) : null,
+		// Austrian and Swiss postal codes have four digits, German ones five
+		zip: complete
+			? faker.string.numeric({ length: country === 'DEU' ? 5 : 4, allowLeadingZeros: false })
+			: null,
 		birthday: faker.date.birthdate({
 			mode: 'age',
 			min: options.minAge ?? 14,
 			max: options.maxAge ?? 50
 		}),
 		city: complete ? faker.location.city() : null,
-		country: faker.helpers.weightedArrayElement([
-			{ weight: 8, value: 'DEU' },
-			{ weight: 1, value: 'AUT' },
-			{ weight: 1, value: 'CHE' }
-		]),
+		country,
 		email,
 		familyName,
 		foodPreference: faker.helpers.arrayElement(FOOD_PREFERENCES),
 		gender: faker.helpers.arrayElement(GENDERS),
 		givenName,
 		locale: faker.helpers.arrayElement(['de', 'en']),
-		phone: complete ? mobileNumber() : null,
+		// stored the way the PhoneNumber scalar stores it
+		phone: complete ? mobileNumber().replaceAll(' ', '') : null,
 		preferredUsername: faker.internet.username({ firstName: givenName, lastName: familyName }),
 		pronouns: faker.helpers.maybe(() =>
 			faker.helpers.arrayElement(['er/ihm', 'sie/ihr', 'they/them'])
@@ -64,6 +69,16 @@ export function makeSeedUser(
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()
 	};
+}
+
+/**
+ * Seven digits of their own for each dev account, so the accounts do not share phone numbers -
+ * which the duplicate check would rightly take for one person.
+ */
+function accountDigits(sub: string, salt: number) {
+	let hash = salt;
+	for (const char of sub) hash = (hash * 31 + char.charCodeAt(0)) % 10_000_000;
+	return String(hash).padStart(7, '0');
 }
 
 /**
@@ -84,7 +99,7 @@ export function makeDevAccountUser(account: DevAccount): Insert<'user'> & { id: 
 		preferredUsername: account.sub,
 		locale: 'de',
 		birthday: complete ? birthday : null,
-		phone: complete ? '+49 151 23456789' : null,
+		phone: complete ? `+49151${accountDigits(account.sub, 1)}` : null,
 		street: complete ? 'Platz der Vereinten Nationen 1' : null,
 		apartment: null,
 		zip: complete ? '53113' : null,
@@ -93,7 +108,9 @@ export function makeDevAccountUser(account: DevAccount): Insert<'user'> & { id: 
 		gender: complete ? 'NO_STATEMENT' : null,
 		foodPreference: complete ? 'VEGETARIAN' : null,
 		pronouns: null,
-		emergencyContacts: complete ? 'Erika Mustermann (Mutter): +49 151 98765432' : null,
+		emergencyContacts: complete
+			? `Erika Mustermann (Mutter): +49 160 ${accountDigits(account.sub, 2)}`
+			: null,
 		wantsToReceiveGeneralInformation: false,
 		wantsJoinTeamInformation: false
 	};

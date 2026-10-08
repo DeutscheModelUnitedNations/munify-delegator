@@ -24,7 +24,7 @@
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-id-card mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-id-card mr-2"></i>
 		{m.accessCardId()}
 	</h3>
 	<div class="join">
@@ -38,7 +38,7 @@
 			}}
 		/>
 		<button class="btn btn-square join-item" onclick={save} aria-label="Save">
-			<i class="fa-solid fa-save"></i>
+			<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		</button>
 	</div>
 </div>

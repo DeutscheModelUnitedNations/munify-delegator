@@ -23,7 +23,7 @@
 			onclick={() => onSelectGroup(group)}
 		>
 			<span class="flex items-center gap-2">
-				<i class="fa-duotone fa-filter text-base-content/60 text-xs"></i>
+				<i class="fa-sharp-duotone fa-solid fa-filter text-base-content/60 text-xs"></i>
 				{translateRegionalGroup(group)}
 			</span>
 			<span class="badge badge-sm {unseated > 0 ? 'badge-neutral' : 'badge-ghost'}">

@@ -32,6 +32,7 @@ import { addSurveys } from './seed-dev/surveys';
 import { addBulk } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { printOverview } from './seed-dev/overview';
+import { addEarlierAccount } from './seed-dev/duplicates';
 import { conferencePlans } from './seed-dev/plans';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
@@ -93,6 +94,7 @@ for (const plan of conferencePlans) {
 	addSurveys(cs);
 	addCalendar(cs);
 	addBulk(cs);
+	if (plan.key === 'post') addEarlierAccount(cs);
 }
 
 console.info('Resetting database...');

@@ -40,14 +40,14 @@
 			}}
 		/>
 		<button class="btn btn-square btn-lg join-item" onclick={save} aria-label={m.save()}>
-			<i class="fa-solid fa-save"></i>
+			<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		</button>
 		<button
 			class="btn btn-square btn-lg btn-error join-item"
 			onclick={() => (editing = false)}
 			aria-label={m.cancel()}
 		>
-			<i class="fa-solid fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		</button>
 	</div>
 {:else}
@@ -57,7 +57,7 @@
 	>
 		{@render children()}
 		<i
-			class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
+			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
 		></i>
 	</button>
 {/if}

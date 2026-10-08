@@ -3,22 +3,32 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
+	import PossibleDuplicates from './PossibleDuplicates.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
+	const conferenceId = $derived(params.conferenceId);
 
 	const userSummary = { id: true, givenName: true, familyName: true } as const;
 
-	const plausibility = $derived(
-		await client.liveQuery.conferencePlausibility({
-			__args: { conferenceId: params.conferenceId },
-			dataMissing: userSummary,
-			shouldBeSupervisor: userSummary,
-			shouldNotBeSupervisor: userSummary,
-			tooOldUsers: userSummary,
-			tooYoungUsers: userSummary
-		})
+	const [plausibility, duplicates] = $derived(
+		await Promise.all([
+			client.liveQuery.conferencePlausibility({
+				__args: { conferenceId },
+				dataMissing: userSummary,
+				shouldBeSupervisor: userSummary,
+				shouldNotBeSupervisor: userSummary,
+				tooOldUsers: userSummary,
+				tooYoungUsers: userSummary
+			}),
+			client.liveQuery.conferencePossibleDuplicates({
+				__args: { conferenceId },
+				id: true,
+				status: true
+			})
+		])
 	);
+	const openDuplicates = $derived(duplicates.filter((pair) => pair.status === 'OPEN'));
 </script>
 
 <div class="flex flex-col gap-8 p-10">
@@ -53,6 +63,10 @@
 						headline={m.plausibilityIncompleteOrInvalidData()}
 						items={plausibility.dataMissing}
 					/>
+					<PlausibilityOverviewItem
+						headline={m.plausibilityPossibleDuplicates()}
+						items={openDuplicates}
+					/>
 				</tbody>
 			</table>
 		</div>
@@ -71,4 +85,5 @@
 		headline={m.plausibilityIncompleteOrInvalidData()}
 		items={plausibility.dataMissing}
 	/>
+	<PossibleDuplicates {conferenceId} />
 </div>

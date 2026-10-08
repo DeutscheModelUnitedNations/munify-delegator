@@ -25,7 +25,7 @@
 				role="img"
 				aria-label={`${label} – ${m.seatPlanningLockedBy({ members: lockedBy.join(', ') })}`}
 			>
-				<i class="fa-solid fa-lock"></i>
+				<i class="fa-sharp-duotone fa-solid fa-lock"></i>
 			</span>
 		</span>
 	{:else}
@@ -36,7 +36,7 @@
 			onclick={() => planner.setSeat(committee.id, nation.alpha3Code, !hasSeat)}
 		>
 			{#if hasSeat}
-				<i class="fa-solid fa-check"></i>
+				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 			{/if}
 		</button>
 	{/if}

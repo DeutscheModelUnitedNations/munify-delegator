@@ -24,6 +24,6 @@
 {/if}
 {#if members !== undefined && members > size}
 	<span class="tooltip tooltip-left" data-tip={m.seatPlanningOverfilled({ members, seats: size })}>
-		<i class="fa-duotone fa-triangle-exclamation text-error"></i>
+		<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error"></i>
 	</span>
 {/if}

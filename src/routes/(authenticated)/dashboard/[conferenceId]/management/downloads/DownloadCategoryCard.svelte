@@ -15,7 +15,7 @@
 	<div class="card-body">
 		<div class="flex items-start gap-4 mb-4">
 			<div
-				class="bg-primary/10 text-primary rounded-lg p-3 shrink-0 w-12 h-12 flex justify-center items-center"
+				class="bg-primary/10 text-primary rounded-box p-3 shrink-0 w-12 h-12 flex justify-center items-center"
 			>
 				<i class="{icon} text-xl"></i>
 			</div>

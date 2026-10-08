@@ -31,7 +31,7 @@
 <div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
 	<!-- Loading overlay -->
 	{#if isLoading}
-		<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-lg">
+		<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-box">
 			<span class="loading loading-spinner loading-lg text-primary"></span>
 		</div>
 	{/if}

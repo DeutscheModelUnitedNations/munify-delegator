@@ -30,7 +30,7 @@
 	);
 </script>
 
-<section class="border-primary/40 overflow-hidden rounded-lg border">
+<section class="border-primary/40 overflow-hidden rounded-box border">
 	<header
 		class="bg-primary/15 border-primary/40 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b px-4 py-1"
 	>
@@ -43,20 +43,20 @@
 				class="text-base-content/70 flex items-center gap-1 text-sm"
 				title={m.committeeNationCount({ count: committee.nations.length })}
 			>
-				<i class="fa-duotone fa-flag"></i>
+				<i class="fa-sharp-duotone fa-solid fa-flag"></i>
 				{committee.nations.length}
 			</span>
 			<span
 				class="text-base-content/70 flex items-center gap-1 text-sm"
 				title={m.seatsPerDelegation()}
 			>
-				<i class="fa-duotone fa-chair"></i>
+				<i class="fa-sharp-duotone fa-solid fa-chair"></i>
 				{committee.numOfSeatsPerDelegation}
 			</span>
 		</div>
 		<div class="flex gap-1">
 			<button class="btn btn-ghost btn-xs" onclick={onEdit}>
-				<i class="fa-duotone fa-pen-to-square"></i>
+				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 				{m.edit()}
 			</button>
 			{#if canConfigure}
@@ -65,7 +65,7 @@
 					data-tip={deletable ? undefined : m.committeeDeleteDisabled()}
 				>
 					<button class="btn btn-ghost btn-xs text-error" disabled={!deletable} onclick={onDelete}>
-						<i class="fa-duotone fa-trash"></i>
+						<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 						{m.delete()}
 					</button>
 				</span>
@@ -74,7 +74,7 @@
 	</header>
 	{#if committee.resolutionHeadline}
 		<p class="text-base-content/70 px-4 pt-0.5 text-sm">
-			<i class="fa-duotone fa-file-signature mr-1"></i>
+			<i class="fa-sharp-duotone fa-solid fa-file-signature mr-1"></i>
 			{m.resolutionHeadline()}: {committee.resolutionHeadline}
 		</p>
 	{/if}
@@ -93,7 +93,7 @@
 		class="btn btn-ghost btn-xs text-base-content/70 mx-3 my-1 w-[calc(100%-1.5rem)]"
 		onclick={onAddAgendaItem}
 	>
-		<i class="fa-duotone fa-plus"></i>
+		<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 		{m.createNewAgendaItem()}
 	</button>
 </section>

@@ -237,7 +237,7 @@
 		</div>
 		{#if !status}
 			<div class="alert alert-info">
-				<i class="fa-solid fa-circle-info"></i>
+				<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
 				<span>{m.noParticipantStatusYet()}</span>
 			</div>
 		{/if}
@@ -267,12 +267,12 @@
 		<h3 class="text-lg font-bold">{m.adminActions()}</h3>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-sm" onclick={downloadPostalDocs}>
-				<i class="fa-duotone fa-file-pdf"></i>
+				<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
 				{m.postalRegistration()}
 			</button>
 
 			<button class="btn btn-sm" onclick={downloadCertificate}>
-				<i class="fa-duotone fa-certificate"></i>
+				<i class="fa-sharp-duotone fa-solid fa-certificate"></i>
 				{m.certificate()}
 			</button>
 		</div>

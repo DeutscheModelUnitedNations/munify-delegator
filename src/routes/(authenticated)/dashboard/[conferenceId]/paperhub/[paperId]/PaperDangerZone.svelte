@@ -40,14 +40,15 @@
 		class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
 		onclick={() => (showDangerZone = !showDangerZone)}
 	>
-		<i class="fa-solid {showDangerZone ? 'fa-chevron-down' : 'fa-chevron-right'}"></i>
+		<i class="fa-sharp-duotone fa-solid {showDangerZone ? 'fa-chevron-down' : 'fa-chevron-right'}"
+		></i>
 		{m.dangerZone()}
 	</button>
 
 	{#if showDangerZone}
 		<div class="mt-2 border border-error/30 rounded-box p-4 bg-error/5">
 			<div class="flex items-center gap-2 text-error mb-3">
-				<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-lg"></i>
 				<h3 class="font-bold">{m.paperDeleteTitle()}</h3>
 			</div>
 
@@ -59,7 +60,7 @@
 				<label class="label" for="delete-confirmation">
 					<span class="label-text text-sm">{m.paperDeleteConfirmation()}</span>
 				</label>
-				<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded">
+				<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded-field">
 					{confirmationText}
 				</div>
 				<input
@@ -76,7 +77,7 @@
 				disabled={deleteConfirmationText !== confirmationText}
 				onclick={handleDeletePaper}
 			>
-				<i class="fa-solid fa-trash"></i>
+				<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 				{m.paperDeleteButton()}
 			</button>
 		</div>

@@ -29,7 +29,7 @@
 {/snippet}
 
 {#await import('sveaflet') then { Map, TileLayer, Marker, Popup }}
-	<div class="h-[250px] overflow-hidden rounded-lg" data-vaul-no-drag>
+	<div class="h-[250px] overflow-hidden rounded-box" data-vaul-no-drag>
 		<Map
 			options={{
 				center: [lat, lng],
@@ -54,5 +54,5 @@
 <div class="flex flex-wrap gap-2">
 	{@render mapLink(appleMapsUrl, 'fa-brands fa-apple', 'Maps')}
 	{@render mapLink(googleMapsUrl, 'fa-brands fa-google', 'Maps')}
-	{@render mapLink(osmUrl, 'fa-duotone fa-map', 'OpenStreetMap')}
+	{@render mapLink(osmUrl, 'fa-sharp-duotone fa-solid fa-map', 'OpenStreetMap')}
 </div>

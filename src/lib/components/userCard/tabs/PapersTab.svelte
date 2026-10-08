@@ -46,13 +46,13 @@
 
 {#if papers.length === 0}
 	<div class="alert alert-info">
-		<i class="fa-duotone fa-file-lines"></i>
+		<i class="fa-sharp-duotone fa-solid fa-file-lines"></i>
 		<span>{m.userCardNoPapers()}</span>
 	</div>
 {:else}
 	<div class="flex flex-col gap-3">
 		{#each papers as paper (paper.id)}
-			<div class="bg-base-200 rounded-lg p-4">
+			<div class="bg-base-200 rounded-box p-4">
 				<div class="flex items-start justify-between gap-2">
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2">
@@ -77,25 +77,25 @@
 						class="btn btn-ghost btn-xs btn-square"
 						title={m.goToPaperHub()}
 					>
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 					</a>
 				</div>
 
 				<div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-base-content/60">
 					{#if paper.firstSubmittedAt}
 						<span class="flex items-center gap-1">
-							<i class="fa-duotone fa-paper-plane"></i>
+							<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 							{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
 						</span>
 					{/if}
 					<span class="flex items-center gap-1">
-						<i class="fa-duotone fa-layer-group"></i>
+						<i class="fa-sharp-duotone fa-solid fa-layer-group"></i>
 						{paper.versions.length}
 						{m.userCardPaperVersions()}
 					</span>
 					{#if totalReviews(paper) > 0}
 						<span class="flex items-center gap-1">
-							<i class="fa-duotone fa-comments"></i>
+							<i class="fa-sharp-duotone fa-solid fa-comments"></i>
 							{totalReviews(paper)}
 							{m.userCardPaperReviews()}
 						</span>

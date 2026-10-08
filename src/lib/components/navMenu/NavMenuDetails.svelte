@@ -12,7 +12,7 @@
 
 <li>
 	<span class="menu-title flex items-center gap-2 pt-3">
-		<i class="fa-duotone {icon} w-5 text-center"></i>
+		<i class="fa-sharp-duotone fa-solid {icon} w-5 text-center"></i>
 		{title}
 	</span>
 	<ul>

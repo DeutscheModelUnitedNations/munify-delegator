@@ -49,7 +49,7 @@
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-hashtag mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hashtag mr-2"></i>
 		{m.documentNumber()}
 	</h3>
 	{#if editing}
@@ -66,7 +66,7 @@
 				}}
 				aria-label="Exit Editing"
 			>
-				<i class="fa-solid fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 
 			<button
@@ -80,7 +80,7 @@
 				}}
 				aria-label="Save"
 			>
-				<i class="fa-solid fa-save"></i>
+				<i class="fa-sharp-duotone fa-solid fa-save"></i>
 			</button>
 			<button
 				class="btn join-item tooltip {disabledShortcut ? 'btn-square' : ''}"
@@ -90,7 +90,7 @@
 				}}
 				aria-label="SaveNext"
 			>
-				<i class="fa-solid fa-arrow-right-to-line"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right-to-line"></i>
 				{#if !disabledShortcut}
 					<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
 				{/if}
@@ -102,7 +102,7 @@
 				# {assignedDocumentNumber}
 			</div>
 			<button class="btn btn-square" onclick={() => (editing = true)} aria-label="Edit">
-				<i class="fa-solid fa-pen-to-square"></i>
+				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 			</button>
 		</div>
 	{/if}

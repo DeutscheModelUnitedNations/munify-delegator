@@ -1,6 +1,6 @@
 {
 	"FA Icon Duotone": {
-		"body": "<i class=\"fa-duotone fa-$1\"></i>",
+		"body": "<i class=\"fa-sharp-duotone fa-solid fa-$1\"></i>",
 		"description": "Font Awesome Icon Regular",
 		"prefix": "<ir"
 	},

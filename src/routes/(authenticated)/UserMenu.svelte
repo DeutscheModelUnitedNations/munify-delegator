@@ -51,23 +51,29 @@
 				</span>
 			</div>
 			<i
-				class="fa-solid fa-chevron-right text-base-content/40 group-hover:text-primary text-xs transition-all group-hover:translate-x-0.5"
+				class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/40 group-hover:text-primary text-xs transition-all group-hover:translate-x-0.5"
 				aria-hidden="true"
 			></i>
 		</a>
 		<div class="divider my-0"></div>
 		<ul class="menu w-full p-2">
+			<li>
+				<a href={resolve('/dashboard')}>
+					<i class="fa-sharp-duotone fa-solid fa-gauge w-4"></i>
+					{m.dashboard()}
+				</a>
+			</li>
 			{#if configPublic.PUBLIC_FEEDBACK_URL}
 				<li>
 					<a href={configPublic.PUBLIC_FEEDBACK_URL} target="_blank" rel="external">
-						<i class="fa-duotone fa-comment w-4"></i>
+						<i class="fa-sharp-duotone fa-solid fa-comment w-4"></i>
 						{m.feedback()}
 					</a>
 				</li>
 			{/if}
 			<li>
 				<a class={logoutUrl ? '' : 'disabled'} href={logoutUrl} rel="external">
-					<i class="fa-duotone fa-sign-out w-4"></i>
+					<i class="fa-sharp-duotone fa-solid fa-sign-out w-4"></i>
 					{m.logout()}
 				</a>
 			</li>

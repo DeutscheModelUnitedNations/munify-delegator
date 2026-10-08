@@ -19,7 +19,7 @@
 
 	{#if supervisors.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-user-slash"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user-slash"></i>
 			{m.noSupervisors()}
 		</div>
 	{:else}
@@ -36,9 +36,9 @@
 					<tr>
 						<td>
 							{#if supervisor.plansOwnAttendenceAtConference}
-								<i class="fa-duotone fa-location-check text-lg"></i>
+								<i class="fa-sharp-duotone fa-solid fa-location-check text-lg"></i>
 							{:else}
-								<i class="fa-duotone fa-cloud text-lg"></i>
+								<i class="fa-sharp-duotone fa-solid fa-cloud text-lg"></i>
 							{/if}
 						</td>
 						<td>
@@ -56,7 +56,7 @@
 								)}
 								aria-label="Details"
 							>
-								<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+								<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 							</a>
 						</td>
 					</tr>

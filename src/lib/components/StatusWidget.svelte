@@ -48,7 +48,7 @@
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-{faIcon.replace('fa-', '')} mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-{faIcon.replace('fa-', '')} mr-2"></i>
 		{title}
 	</h3>
 	<div class="join w-full">

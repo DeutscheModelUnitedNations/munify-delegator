@@ -65,7 +65,7 @@
 <div class="card bg-base-100 border-base-200 border shadow-xl">
 	<div class="card-body">
 		<h2 class="card-title justify-center">
-			<i class="fa-duotone fa-shield-halved text-primary"></i>
+			<i class="fa-sharp-duotone fa-solid fa-shield-halved text-primary"></i>
 			{m.loginInformation()}
 		</h2>
 		<div class="divide-base-200 divide-y">
@@ -103,7 +103,9 @@
 					editLabel={row.editLabel}
 				>
 					{#if row.isSet}
-						<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
+						<div class="text-success text-sm">
+							<i class="fa-sharp-duotone fa-solid fa-check"></i>
+						</div>
 					{/if}
 				</AccountRow>
 			{/each}

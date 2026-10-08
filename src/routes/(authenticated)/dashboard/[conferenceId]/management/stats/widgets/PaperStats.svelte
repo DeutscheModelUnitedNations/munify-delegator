@@ -69,7 +69,7 @@
 	<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
 		<div class="card-body p-4">
 			<h2 class="card-title text-base font-semibold">
-				<i class="fa-duotone fa-file-lines text-base-content/70"></i>
+				<i class="fa-sharp-duotone fa-solid fa-file-lines text-base-content/70"></i>
 				{m.statsPaperOverview()}
 			</h2>
 
@@ -126,19 +126,19 @@
 						<!-- Legend -->
 						<div class="flex flex-wrap gap-3 text-xs text-base-content/70 mt-2">
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-warning rounded"></span>
+								<span class="inline-block w-3 h-3 bg-warning rounded-field"></span>
 								{m.paperStatusSubmitted()} ({paperStats.byStatus.submitted})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-error rounded"></span>
+								<span class="inline-block w-3 h-3 bg-error rounded-field"></span>
 								{m.paperStatusChangesRequested()} ({paperStats.byStatus.changesRequested})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-success rounded"></span>
+								<span class="inline-block w-3 h-3 bg-success rounded-field"></span>
 								{m.paperStatusAccepted()} ({paperStats.byStatus.accepted})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-base-300 rounded"></span>
+								<span class="inline-block w-3 h-3 bg-base-300 rounded-field"></span>
 								{m.paperStatusDraft()} ({paperStats.byStatus.draft})
 							</span>
 						</div>
@@ -157,7 +157,7 @@
 					<div class="collapse-content">
 						<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 							{#each paperStats.byCommittee.toSorted((a, b) => b.count - a.count) as committee (committee.committeeId)}
-								<div class="flex items-center gap-2 p-2 bg-base-200 rounded">
+								<div class="flex items-center gap-2 p-2 bg-base-200 rounded-field">
 									<span class="badge badge-primary badge-sm">{committee.abbreviation}</span>
 									<span class="text-sm font-semibold">{committee.count}</span>
 								</div>

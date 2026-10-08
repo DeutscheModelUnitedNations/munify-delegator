@@ -76,7 +76,7 @@
 			<!-- wait until the full code has been entered -->
 		{:else if previewLoading}
 			<div class="mt-10 ml-10">
-				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 			</div>
 		{:else if preview}
 			<div class="alert alert-info mt-4">

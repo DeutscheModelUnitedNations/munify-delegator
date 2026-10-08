@@ -220,7 +220,7 @@
 				<!-- Focus Mode Toggle -->
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
-						<i class="fa-solid fa-bullseye text-primary text-xl"></i>
+						<i class="fa-sharp-duotone fa-solid fa-bullseye text-primary text-xl"></i>
 						<div>
 							<h3 class="font-semibold">{m.focusModeLabel()}</h3>
 							<p class="text-sm text-base-content/60">{m.focusModeDescription()}</p>
@@ -239,7 +239,7 @@
 		<div class="card bg-base-200 border border-base-300 p-4">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
-					<i class="fa-solid fa-bookmark text-primary text-xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-bookmark text-primary text-xl"></i>
 					<div>
 						<h3 class="font-semibold">{m.reviewerSnippets()}</h3>
 						<p class="text-sm text-base-content/60">{m.reviewerSnippetsShortDescription()}</p>
@@ -249,7 +249,7 @@
 					href={resolve(`/dashboard/${conferenceId}/paperhub/snippets`)}
 					class="btn btn-ghost btn-sm"
 				>
-					<i class="fa-solid fa-gear"></i>
+					<i class="fa-sharp-duotone fa-solid fa-gear"></i>
 					{m.manageSnippets()}
 				</a>
 			</div>
@@ -271,7 +271,7 @@
 								data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
 							>
 								<div class="badge badge-warning gap-1">
-									<i class="fa-solid fa-hand"></i>
+									<i class="fa-sharp-duotone fa-solid fa-hand"></i>
 									{helpNeededCount}
 								</div>
 							</div>

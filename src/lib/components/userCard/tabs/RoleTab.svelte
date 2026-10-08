@@ -55,7 +55,7 @@
 </script>
 
 {#snippet assignmentCard(participant: SingleParticipant)}
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">
 			{#if participant.assignedRole}
 				<Flag nsa icon={participant.assignedRole.fontAwesomeIcon ?? 'fa-hand-point-up'} size="xs" />
@@ -115,7 +115,7 @@
 					class="btn btn-error btn-sm {!singleParticipant.applied && 'btn-disabled'}"
 					onclick={() => revokeApplication(singleParticipant.id)}
 				>
-					<i class="fa-solid fa-file-slash"></i>
+					<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
 					{m.revokeApplication()}
 				</button>
 			</div>
@@ -123,7 +123,7 @@
 
 		{@render application(singleParticipant)}
 	{:else if teamMember}
-		<div class="bg-base-200 rounded-lg p-4">
+		<div class="bg-base-200 rounded-box p-4">
 			<div class="flex items-center gap-2">
 				<h3 class="font-bold">{m.teamMember()}</h3>
 			</div>

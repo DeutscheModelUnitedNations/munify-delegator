@@ -44,7 +44,7 @@
 
 {#snippet optionRow(option: Option)}
 	<label
-		class="hover:bg-base-200 w-full cursor-pointer flex-row items-center gap-2 rounded-lg p-2 text-sm transition-all duration-300"
+		class="hover:bg-base-200 w-full cursor-pointer flex-row items-center gap-2 rounded-box p-2 text-sm transition-all duration-300"
 	>
 		<input
 			type="radio"
@@ -68,7 +68,7 @@
 
 <div class="card flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="w-full flex-1 font-bold">
-		<i class="fa-duotone fa-poll mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-poll mr-2"></i>
 		{survey.title}
 	</h3>
 	{#if optionsOpen}
@@ -85,11 +85,11 @@
 	<div class="flex w-full gap-2">
 		{#if !optionsOpen}
 			<button class="btn btn-sm" onclick={() => (optionsOpen = true)}>
-				<i class="fa-duotone fa-pencil"></i>{m.edit()}
+				<i class="fa-sharp-duotone fa-solid fa-pencil"></i>{m.edit()}
 			</button>
 		{:else}
 			<button class="btn btn-success btn-sm" onclick={() => (optionsOpen = false)}>
-				<i class="fa-duotone fa-check"></i>{m.done()}
+				<i class="fa-sharp-duotone fa-solid fa-check"></i>{m.done()}
 			</button>
 		{/if}
 		<a
@@ -100,7 +100,7 @@
 			})}
 			aria-label="Edit Survey"
 		>
-			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 		</a>
 	</div>
 </div>

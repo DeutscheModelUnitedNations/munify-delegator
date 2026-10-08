@@ -57,7 +57,7 @@
 					class="btn btn-soft btn-sm gap-1.5"
 					onclick={() => closeAnd(() => onEditEntry(current.id))}
 				>
-					<i class="fa-duotone fa-pen-to-square"></i>
+					<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 					{m.calendarEditEntry()}
 				</button>
 			{/if}
@@ -67,7 +67,7 @@
 					class="btn btn-soft btn-sm gap-1.5"
 					onclick={() => closeAnd(() => onEditPlace(placeId))}
 				>
-					<i class="fa-duotone fa-location-pen"></i>
+					<i class="fa-sharp-duotone fa-solid fa-location-pen"></i>
 					{m.calendarEditPlace()}
 				</button>
 			{/if}
@@ -80,7 +80,7 @@
 		bind:open
 		{direction}
 		class={direction === 'bottom'
-			? 'max-h-[85vh] overflow-hidden rounded-t-2xl'
+			? 'max-h-[85vh] overflow-hidden rounded-t-box'
 			: 'sm:max-w-md md:max-w-lg'}
 	>
 		{#if entry}

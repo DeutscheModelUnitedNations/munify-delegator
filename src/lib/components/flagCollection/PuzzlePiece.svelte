@@ -53,18 +53,22 @@
 
 <div
 	class="h-full w-full flex items-center justify-center transition-all duration-500 {bgClass} {overlayClass}"
-	class:rounded-sm={!overlay}
+	class:rounded-selector={!overlay}
 	class:aspect-square={!overlay}
 	class:hover:scale-105={!compact && !overlay}
 	title={tooltipText}
 >
 	{#if state === 'LOCKED'}
-		<i class="fa-solid fa-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{:else if state === 'UNLOCKED'}
-		<i class="fa-solid fa-puzzle-piece {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i
+			class="fa-sharp-duotone fa-solid fa-puzzle-piece {iconClass} {compact
+				? 'text-xs'
+				: 'text-sm'}"
+		></i>
 	{:else if !overlay}
 		<!-- Only show check icon in non-overlay mode (old tile view) -->
-		<i class="fa-solid fa-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{/if}
 </div>
 

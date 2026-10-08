@@ -13,7 +13,7 @@
 
 <section class="flex flex-col gap-1">
 	<h4 class="text-base-content/70 flex items-center gap-2 text-sm font-semibold">
-		<i class="fa-duotone fa-{icon}"></i>
+		<i class="fa-sharp-duotone fa-solid fa-{icon}"></i>
 		{label}
 		{#if text}
 			<span class="text-base-content/50 text-xs font-normal">

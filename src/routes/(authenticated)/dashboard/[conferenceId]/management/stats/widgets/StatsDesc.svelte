@@ -43,7 +43,7 @@
 		<span>–</span>
 	{:else}
 		<span class={getFontClass()}>
-			<i class="fa-solid {getFontAwesomeIcon()}"></i>
+			<i class="fa-sharp-duotone fa-solid {getFontAwesomeIcon()}"></i>
 			{historicValue}
 			{#if currentValue > historicValue}
 				(+ {currentValue - historicValue})

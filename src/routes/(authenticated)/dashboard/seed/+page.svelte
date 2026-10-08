@@ -56,7 +56,7 @@
 
 <div class="flex w-full flex-col items-center gap-4 p-10">
 	<a href={resolve('/(authenticated)/dashboard/conference-request')} class="btn btn-ghost self-end">
-		<i class="fa-duotone fa-file-pen"></i>
+		<i class="fa-sharp-duotone fa-solid fa-file-pen"></i>
 		{m.conferenceRequest()}
 	</a>
 	<input

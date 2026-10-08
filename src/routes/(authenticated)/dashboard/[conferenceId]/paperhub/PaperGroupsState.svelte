@@ -17,7 +17,7 @@
 <LoadState {loading} {error}>
 	{#if empty}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-info-circle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 			<span>{m.noPapersSubmittedYet()}</span>
 		</div>
 	{:else}

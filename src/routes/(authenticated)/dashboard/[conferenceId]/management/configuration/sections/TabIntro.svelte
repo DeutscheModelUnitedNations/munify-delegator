@@ -6,6 +6,6 @@
 </script>
 
 <p class="text-base-content/70 flex min-w-0 flex-1 items-center gap-2 text-sm">
-	<i class="fa-duotone fa-circle-info text-primary"></i>
+	<i class="fa-sharp-duotone fa-solid fa-circle-info text-primary"></i>
 	<span>{@render children()}</span>
 </p>

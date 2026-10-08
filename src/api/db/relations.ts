@@ -581,6 +581,25 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	possibleDuplicate: {
+		user: r.one.user({
+			from: r.possibleDuplicate.userId,
+			to: r.user.id,
+			optional: false,
+			alias: 'possibleDuplicateUser'
+		}),
+		candidate: r.one.user({
+			from: r.possibleDuplicate.candidateId,
+			to: r.user.id,
+			optional: false,
+			alias: 'possibleDuplicateCandidate'
+		}),
+		decidedBy: r.one.user({
+			from: r.possibleDuplicate.decidedById,
+			to: r.user.id,
+			alias: 'possibleDuplicateDecidedBy'
+		})
+	},
 	teamMemberInvitation: {
 		acceptedBy: r.one.user({
 			from: r.teamMemberInvitation.acceptedById,
@@ -598,6 +617,22 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	user: {
+		/** pairs where this account is the smaller id; see `possibleDuplicate` */
+		duplicatesAsUser: r.many.possibleDuplicate({
+			from: r.user.id,
+			to: r.possibleDuplicate.userId,
+			alias: 'possibleDuplicateUser'
+		}),
+		duplicatesAsCandidate: r.many.possibleDuplicate({
+			from: r.user.id,
+			to: r.possibleDuplicate.candidateId,
+			alias: 'possibleDuplicateCandidate'
+		}),
+		duplicateDecisions: r.many.possibleDuplicate({
+			from: r.user.id,
+			to: r.possibleDuplicate.decidedById,
+			alias: 'possibleDuplicateDecidedBy'
+		}),
 		conferenceParticipantStatus: r.many.conferenceParticipantStatus({
 			from: r.user.id,
 			to: r.conferenceParticipantStatus.userId

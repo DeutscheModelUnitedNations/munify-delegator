@@ -28,7 +28,7 @@
 >
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-list-check text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-list-check text-base-content/70"></i>
 			{m.statsWaitingList()}
 		</h2>
 
@@ -56,11 +56,11 @@
 
 			<div class="mt-2 text-xs text-base-content/70 flex gap-4">
 				<span>
-					<i class="fa-duotone fa-eye mr-1"></i>
+					<i class="fa-sharp-duotone fa-solid fa-eye mr-1"></i>
 					{m.statsWaitingListVisible()}: {stats.waitingList.visible}
 				</span>
 				<span>
-					<i class="fa-duotone fa-eye-slash mr-1"></i>
+					<i class="fa-sharp-duotone fa-solid fa-eye-slash mr-1"></i>
 					{m.statsWaitingListHidden()}: {stats.waitingList.hidden}
 				</span>
 			</div>

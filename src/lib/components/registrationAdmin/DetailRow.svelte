@@ -12,7 +12,7 @@
 </script>
 
 <tr>
-	<td class="text-center"><i class="fa-duotone {icon} text-lg"></i></td>
+	<td class="text-center"><i class="fa-sharp-duotone fa-solid {icon} text-lg"></i></td>
 	<td class={className}>
 		{@render children()}
 	</td>

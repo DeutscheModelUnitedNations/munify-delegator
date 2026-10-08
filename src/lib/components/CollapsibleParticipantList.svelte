@@ -21,7 +21,7 @@
 	}: Props = $props();
 </script>
 
-<div class="collapse collapse-arrow bg-base-200 rounded-lg">
+<div class="collapse collapse-arrow bg-base-200 rounded-box">
 	<input type="checkbox" checked={defaultExpanded} />
 	<div class="collapse-title">
 		<div class="flex items-center gap-2">

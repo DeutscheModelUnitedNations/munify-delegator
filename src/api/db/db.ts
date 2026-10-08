@@ -9,7 +9,16 @@ const conf = {
 	jit: true
 } as const;
 
-export const db = building ? drizzle.mock(conf) : drizzle(configPrivate.DATABASE_URL, conf);
+// Postgres' own JIT is off for the app's connections. rumble's ability filters and per-row column
+// masks make statements that postgres costs far above `jit_above_cost`, so it compiled each one to
+// machine code before running it: a delegation's card took 6.7 s, of which 6.3 s was compiling and
+// 0.4 s running. None of these statements runs long enough to win that back.
+export const db = building
+	? drizzle.mock(conf)
+	: drizzle({
+			connection: { connectionString: configPrivate.DATABASE_URL, options: '-c jit=off' },
+			...conf
+		});
 
 export const schema = schemaInternal;
 

@@ -16,7 +16,7 @@
 
 <div class="grid grid-cols-[auto_1fr] gap-2">
 	{#each items as { fontAwesomeIcon, text, link, trustedHtml }, i (i)}
-		<i class={`fa-duotone fa-${fontAwesomeIcon.replace('fa-', '')}`}></i>
+		<i class={`fa-sharp-duotone fa-solid fa-${fontAwesomeIcon.replace('fa-', '')}`}></i>
 		{#if link}
 			<a href={link} class="hover:underline" target="_blank" rel="external">{text}</a>
 		{:else if trustedHtml}

@@ -96,7 +96,7 @@
 	</div>
 
 	{#if surveys.length === 0}
-		<div class="bg-base-200 flex flex-col items-center justify-center rounded-lg p-12">
+		<div class="bg-base-200 flex flex-col items-center justify-center rounded-box p-12">
 			<i class="fas fa-chart-pie text-5xl opacity-50"></i>
 			<p class="mt-4 text-lg opacity-70">{m.noSurveysYet()}</p>
 			<button class="btn btn-primary mt-4" onclick={() => (showCreateModal = true)}>
@@ -118,7 +118,7 @@
 			<div class="collapse collapse-arrow bg-base-200">
 				<input type="checkbox" bind:checked={hiddenSurveysExpanded} />
 				<div class="collapse-title font-medium">
-					<i class="fa-duotone fa-box-archive mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-box-archive mr-2"></i>
 					{m.archivedSurveys()} ({hiddenSurveys.length})
 				</div>
 				<div class="collapse-content flex flex-col gap-4">

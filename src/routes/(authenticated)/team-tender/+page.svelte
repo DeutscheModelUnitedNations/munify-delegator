@@ -42,12 +42,12 @@
 >
 	<div class="card bg-base-100 max-w-lg">
 		<div class="card-body items-center">
-			<i class="fa-duotone fa-bullhorn text-primary mb-4 text-5xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bullhorn text-primary mb-4 text-5xl"></i>
 			<h1 class="text-3xl font-bold">{m.teamTenderTitle()}</h1>
 
 			{#if signedUp}
 				<div class="alert alert-success mt-6">
-					<i class="fa-solid fa-circle-check text-xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-circle-check text-xl"></i>
 					<div>
 						<h3 class="font-bold">{m.teamTenderAlreadySignedUp()}</h3>
 						<p class="text-sm">{m.teamTenderAlreadySignedUpDescription()}</p>
@@ -63,7 +63,7 @@
 			{:else}
 				<p class="mt-4 max-w-md text-base">{m.teamTenderDescription()}</p>
 				<button class="btn btn-primary mt-6" disabled={loading} onclick={() => toggleSignUp(true)}>
-					<i class="fa-solid fa-paper-plane"></i>
+					<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 					{m.teamTenderSignUp()}
 				</button>
 			{/if}

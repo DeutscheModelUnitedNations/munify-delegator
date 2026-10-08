@@ -108,7 +108,7 @@
 <div class="flex w-full flex-col gap-4">
 	<div class="flex items-center gap-4">
 		<a class="btn btn-square" aria-label="Back" href={resolve(`/dashboard/${params.conferenceId}`)}>
-			<i class="fa-duotone fa-arrow-left text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left text-xl"></i>
 		</a>
 		<h1 class="text-2xl font-bold">{m.committeeAssignment()}</h1>
 	</div>

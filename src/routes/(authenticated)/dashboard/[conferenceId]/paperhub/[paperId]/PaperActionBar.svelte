@@ -38,7 +38,7 @@
 						onclick={() => onSave(false)}
 						disabled={!unsavedChanges}
 					>
-						<i class="fa-solid fa-save"></i>
+						<i class="fa-sharp-duotone fa-solid fa-save"></i>
 						{m.paperSaveDraft()}
 					</button>
 				{/if}
@@ -47,7 +47,7 @@
 					onclick={() => onSave(true)}
 					disabled={!unsavedChanges && !isDraft}
 				>
-					<i class="fa-solid fa-paper-plane"></i>
+					<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 					{isDraft ? m.paperSubmit() : m.paperResubmit()}
 				</button>
 			{/if}
@@ -60,7 +60,8 @@
 					class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
 					onclick={() => (reviewerEditMode = !reviewerEditMode)}
 				>
-					<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
+					<i class="fa-sharp-duotone fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"
+					></i>
 					{reviewerEditMode ? m.viewer() : m.edit()}
 				</button>
 			</div>

@@ -11,7 +11,7 @@
 	onclick={() => (confirmDialogOpen = true)}
 	aria-label="Settings"
 >
-	<i class="fa-duotone fa-gears text-xl"></i>
+	<i class="fa-sharp-duotone fa-solid fa-gears text-xl"></i>
 </button>
 
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
@@ -27,7 +27,7 @@
 				onclick={() => (confirmDialogOpen = false)}
 				aria-label="Close"
 			>
-				<i class="fa-duotone fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 		</div>
 	</div>

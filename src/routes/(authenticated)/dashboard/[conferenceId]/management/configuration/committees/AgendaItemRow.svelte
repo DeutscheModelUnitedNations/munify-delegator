@@ -26,19 +26,19 @@
 			: ''}"
 		title={item.papers.length === 1 ? m.paper() : m.papers()}
 	>
-		<i class="fa-duotone fa-file-lines"></i>
+		<i class="fa-sharp-duotone fa-solid fa-file-lines"></i>
 		{item.papers.length}
 	</span>
 	<div class="flex gap-1">
 		<button class="btn btn-ghost btn-xs btn-square" aria-label={m.edit()} onclick={() => onEdit()}>
-			<i class="fa-duotone fa-pen-to-square"></i>
+			<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 		</button>
 		<button
 			class="btn btn-ghost btn-xs btn-square text-error"
 			aria-label={m.delete()}
 			onclick={() => onDelete()}
 		>
-			<i class="fa-duotone fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		</button>
 	</div>
 </li>

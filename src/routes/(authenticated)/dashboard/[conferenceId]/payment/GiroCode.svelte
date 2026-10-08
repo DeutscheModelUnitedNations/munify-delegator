@@ -27,14 +27,14 @@
 	<h1 class="text-2xl font-bold">{m.giroCode()}</h1>
 	<p>{m.giroCodeDescription()}</p>
 	<div
-		class="flex aspect-square w-full items-center justify-center rounded-lg bg-white p-10 sm:max-w-sm"
+		class="flex aspect-square w-full items-center justify-center rounded-box bg-white p-10 sm:max-w-sm"
 	>
 		{#if qrCode && qrCode !== ''}
 			<img src={qrCode} alt="QR Code" class="w-full" />
 		{:else if qrCode === ''}
-			<i class="fa-duotone fa-bug text-3xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bug text-3xl"></i>
 		{:else}
-			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 		{/if}
 	</div>
 </div>

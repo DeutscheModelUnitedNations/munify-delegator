@@ -56,7 +56,7 @@
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
 			onclick={() => (addCommitteeModalOpen = true)}
 		>
-			<i class="fa-solid fa-plus"></i>
+			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 			{m.addCommittee()}
 		</button>
 	{/if}

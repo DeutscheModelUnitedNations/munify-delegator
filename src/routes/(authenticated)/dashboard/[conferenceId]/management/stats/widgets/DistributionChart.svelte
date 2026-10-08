@@ -36,7 +36,7 @@
 >
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-users text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-users text-base-content/70"></i>
 			{m.statsParticipantDistribution()}
 		</h2>
 

@@ -155,13 +155,13 @@
 <!-- A nation's seats in a committee; non-state actors have none -->
 {#snippet committeeCell(role: RoleApplication, committee: Committee)}
 	{#if role.nonStateActor}
-		<td class="text-center"><i class="fa-duotone fa-minus"></i></td>
+		<td class="text-center"><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
 	{:else}
 		<td class="text-center">
 			{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
 				<div class="tooltip" data-tip={committee.abbreviation}>
 					{#each Array.from({ length: committee.numOfSeatsPerDelegation }, (_, seat) => seat) as seat (seat)}
-						<i class="fa-duotone fa-check"></i>
+						<i class="fa-sharp-duotone fa-solid fa-check"></i>
 					{/each}
 				</div>
 			{/if}
@@ -175,13 +175,13 @@
 			{@render roleName(role)}
 		</td>
 		{#if role.nonStateActor}
-			<td><i class="fa-duotone fa-minus"></i></td>
+			<td><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
 		{:else}
 			<td
 				class="tooltip"
 				data-tip={role.nation ? getNationRegionalGroup(role.nation.alpha3Code) : undefined}
 			>
-				<i class="fa-duotone fa-earth"></i>
+				<i class="fa-sharp-duotone fa-solid fa-earth"></i>
 			</td>
 		{/if}
 		{#each conference.committees as committee (committee.id)}
@@ -333,7 +333,7 @@
 				onclick={() => {
 					onClose();
 				}}
-				aria-label="Close"><i class="fa-solid fa-xmark"></i></button
+				aria-label="Close"><i class="fa-sharp-duotone fa-solid fa-xmark"></i></button
 			>
 		</div>
 	</div>

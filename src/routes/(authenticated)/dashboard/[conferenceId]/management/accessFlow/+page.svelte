@@ -191,7 +191,7 @@
 						: ''}
 					onSave={(value) => saveIdentityField('birthday', value)}
 				>
-					<i class="fa-duotone fa-cake-candles text-xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-cake-candles text-xl"></i>
 					<span class="text-xl">
 						{userDetails.birthday
 							? new Date(userDetails.birthday).toLocaleDateString('de', {

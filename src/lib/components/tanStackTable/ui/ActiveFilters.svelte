@@ -32,14 +32,14 @@
 				onclick={() => table.getColumn(filter.id)?.setFilterValue(undefined)}
 			>
 				{headerOf(filter.id)}
-				<i class="fa-duotone fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 		{/each}
 		<button
 			class="btn btn-ghost btn-sm rounded-full text-sm font-normal"
 			onclick={() => table.resetColumnFilters()}
 		>
-			<i class="fa-duotone fa-filter-circle-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-filter-circle-xmark"></i>
 			{m.clearAllFilters()}
 		</button>
 	</div>

@@ -19,12 +19,14 @@
 
 <div
 	class="{colorConfig.bg} border-b {colorConfig.border} px-5 {direction === 'bottom'
-		? 'rounded-t-2xl py-4'
+		? 'rounded-t-box py-4'
 		: 'py-4'}"
 >
 	<div class="flex items-start gap-3">
 		{#if entry.fontAwesomeIcon}
-			<i class="fa-solid fa-{entry.fontAwesomeIcon} {colorConfig.text} mt-0.5 text-xl"></i>
+			<i
+				class="fa-sharp-duotone fa-solid fa-{entry.fontAwesomeIcon} {colorConfig.text} mt-0.5 text-xl"
+			></i>
 		{/if}
 		<div class="min-w-0 flex-1">
 			<Dialog.Title class="text-lg font-bold leading-tight">
@@ -42,7 +44,7 @@
 			onclick={onClose}
 			aria-label="Close"
 		>
-			<i class="fa-solid fa-xmark text-lg"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
 		</button>
 	</div>
 </div>

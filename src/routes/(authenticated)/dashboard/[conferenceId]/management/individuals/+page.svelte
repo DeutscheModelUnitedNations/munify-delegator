@@ -57,7 +57,7 @@
 					? 'N/A'
 					: renderComponent(IconListCell, {
 							items: row.original.appliedForRoles.map((r) => ({
-								icon: `fa-duotone fa-${r.fontAwesomeIcon?.replace('fa-', '')}`,
+								icon: `fa-sharp-duotone fa-solid fa-${r.fontAwesomeIcon?.replace('fa-', '')}`,
 								tooltip: r.name
 							}))
 						})
@@ -83,7 +83,7 @@
 			cell: ({ row }) =>
 				row.original.assignedRole
 					? renderComponent(IconCell, {
-							icon: `fa-duotone fa-${row.original.assignedRole.fontAwesomeIcon?.replace('fa-', '')}`,
+							icon: `fa-sharp-duotone fa-solid fa-${row.original.assignedRole.fontAwesomeIcon?.replace('fa-', '')}`,
 							tooltip: row.original.assignedRole.name
 						})
 					: ''

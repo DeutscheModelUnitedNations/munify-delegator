@@ -12,13 +12,15 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
-import { and, count, eq, isNotNull, or } from 'drizzle-orm';
+import { and, count, eq, isNotNull, or, sql } from 'drizzle-orm';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { GraphQLError } from 'graphql';
 import { configPublic } from '$config/public';
 import { isUniqueViolationOn } from '$api/services/emailConflict';
 import { reportEmailConflict } from '$api/services/reportEmailConflict';
 import type { Context } from '$api/context';
+import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
+import { scanUserForDuplicatesInBackground } from '$api/services/possibleDuplicates';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
@@ -62,6 +64,24 @@ abilityBuilder.user.allow('update').when((ctx) => {
 // Project management and participant care see everybody they look after - the participants,
 // waiting-list entrants and team of the conferences they manage - in full.
 abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
+
+// Participant care sees the other account of a possible duplicate of someone they look after:
+// who it is and the care notes on it - the reason the pair is shown - but no contact details.
+// A dismissed pair grants nothing.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const managed = isManagedUser(ctx);
+	if (!managed) return undefined;
+	const standing = { status: { in: ['OPEN' as const, 'CONFIRMED' as const] } };
+	return {
+		where: {
+			OR: [
+				{ duplicatesAsUser: { ...standing, candidate: managed } },
+				{ duplicatesAsCandidate: { ...standing, user: managed } }
+			]
+		},
+		columns: { ...IDENTITY, globalNotes: true }
+	};
+});
 
 /** A delegation membership or single participation the caller supervises. */
 function supervisedByCaller(ctx: Context) {
@@ -307,20 +327,21 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.mutationFields((t) => ({
-	/** The my-account form. Validated with the same zod schema the form itself uses. */
+	/**
+	 * The my-account form and the user card's. rumble's scalars normalize what they can (names,
+	 * the phone number as E.164, the address against the country's postal metadata); the same zod
+	 * schema the form uses then judges the rest.
+	 */
 	updateUser: t.drizzleField({
 		type: UserRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			givenName: t.arg.string({ required: true }),
-			familyName: t.arg.string({ required: true }),
-			birthday: t.arg({ type: 'DateTime', required: true }),
-			phone: t.arg.string({ required: true }),
-			street: t.arg.string({ required: true }),
+			givenName: t.arg({ type: 'PersonName', required: true }),
+			familyName: t.arg({ type: 'PersonName', required: true }),
+			birthday: t.arg({ type: 'Date', required: true }),
+			phone: t.arg({ type: 'PhoneNumber', required: true }),
+			address: t.arg({ type: 'AddressInput', required: true }),
 			apartment: t.arg.string(),
-			zip: t.arg.string({ required: true }),
-			city: t.arg.string({ required: true }),
-			country: t.arg.string({ required: true }),
 			gender: t.arg({ type: genderEnum, required: true }),
 			pronouns: t.arg.string(),
 			foodPreference: t.arg({ type: foodPreferenceEnum, required: true }),
@@ -329,16 +350,24 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const country = alpha2ToAlpha3(args.address.countryCode);
+			if (!country) throw new GraphQLError(`Unknown country ${args.address.countryCode}`);
+			const address = {
+				street: args.address.streetAddress,
+				zip: args.address.postalCode ?? null,
+				city: args.address.locality ?? null,
+				region: args.address.region ?? null,
+				country
+			};
+			const phone = args.phone.number;
+
 			userFormSchema.parse({
 				given_name: args.givenName,
 				family_name: args.familyName,
 				birthday: args.birthday,
-				phone: args.phone,
-				street: args.street,
+				phone,
+				...address,
 				apartment: args.apartment,
-				zip: args.zip,
-				city: args.city,
-				country: args.country,
 				gender: args.gender,
 				pronouns: args.pronouns,
 				foodPreference: args.foodPreference,
@@ -353,14 +382,11 @@ schemaBuilder.mutationFields((t) => ({
 					givenName: args.givenName,
 					familyName: args.familyName,
 					birthday: args.birthday,
-					phone: args.phone,
-					street: args.street,
-					apartment: args.apartment ?? undefined,
-					zip: args.zip,
-					city: args.city,
-					country: args.country,
+					phone,
+					...address,
+					apartment: args.apartment ?? null,
 					gender: args.gender,
-					pronouns: args.pronouns ?? undefined,
+					pronouns: args.pronouns ?? null,
 					foodPreference: args.foodPreference,
 					emergencyContacts: args.emergencyContacts,
 					wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
@@ -371,6 +397,8 @@ schemaBuilder.mutationFields((t) => ({
 				);
 
 			pubsub.updated(args.id);
+			// a completed or changed profile may now look like an account from before
+			scanUserForDuplicatesInBackground(args.id);
 
 			return db.query.user
 				.findFirst(
@@ -391,13 +419,13 @@ schemaBuilder.mutationFields((t) => ({
 	updateUsersNewsletterPreferences: t.field({
 		type: 'Boolean',
 		args: {
-			email: t.arg.string({ required: true }),
+			email: t.arg({ type: 'EmailAddress', required: true }),
 			wantsToReceiveGeneralInformation: t.arg.boolean(),
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
 			const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
-			if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email.toLowerCase()) {
+			if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email) {
 				throw new GraphQLError('Only the account itself may subscribe to the newsletter');
 			}
 
@@ -407,7 +435,8 @@ schemaBuilder.mutationFields((t) => ({
 					wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
 					wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 				})
-				.where(eq(schema.user.email, args.email))
+				// the scalar lowercases; addresses stored before it did may still carry capitals
+				.where(sql`lower(${schema.user.email}) = ${args.email}`)
 				.returning({ id: schema.user.id });
 
 			for (const { id } of updated) pubsub.updated(id);
@@ -448,9 +477,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: UserRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			givenName: t.arg.string(),
-			familyName: t.arg.string(),
-			birthday: t.arg({ type: 'DateTime' })
+			givenName: t.arg({ type: 'PersonName' }),
+			familyName: t.arg({ type: 'PersonName' }),
+			birthday: t.arg({ type: 'Date' })
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertManagesUser(ctx, args.id);
@@ -465,6 +494,7 @@ schemaBuilder.mutationFields((t) => ({
 				.where(eq(schema.user.id, args.id));
 
 			pubsub.updated(args.id);
+			scanUserForDuplicatesInBackground(args.id);
 
 			return db.query.user
 				.findFirst(

@@ -197,7 +197,7 @@
 		{#if survey.options.length > 0}
 			<div class="mt-4 flex flex-col gap-3">
 				{#each survey.options as option (option.id)}
-					<div class="bg-base-200 rounded-lg p-4">
+					<div class="bg-base-200 rounded-box p-4">
 						{#if editingOption === option.id}
 							{@render optionEditor()}
 						{:else}
@@ -207,7 +207,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="bg-base-200 mt-4 rounded-lg p-8 text-center text-sm opacity-50">
+			<div class="bg-base-200 mt-4 rounded-box p-8 text-center text-sm opacity-50">
 				{m.noOptionsYet()}
 			</div>
 		{/if}

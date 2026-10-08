@@ -31,13 +31,13 @@
 </script>
 
 <div class="alert alert-soft text-base-content">
-	<i class="fa-duotone fa-clock fa-fw"></i>
+	<i class="fa-sharp-duotone fa-solid fa-clock fa-fw"></i>
 	<div>
 		<div class="font-semibold">{timeLabel}</div>
 		<div class="text-xs">{dayLabel}</div>
 		{#if track}
 			<div class="mt-1 text-xs">
-				<i class="fa-solid fa-layer-group mr-1"></i>
+				<i class="fa-sharp-duotone fa-solid fa-layer-group mr-1"></i>
 				{track.name}
 				{#if track.description}
 					&middot; {track.description}

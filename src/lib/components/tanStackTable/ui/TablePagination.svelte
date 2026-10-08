@@ -78,7 +78,7 @@
 				onclick={() => table.firstPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
-				<i class="fa-solid fa-angles-left"></i>
+				<i class="fa-sharp-duotone fa-solid fa-angles-left"></i>
 			</button>
 			<button
 				class="join-item btn btn-sm"
@@ -86,7 +86,7 @@
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
-				<i class="fa-solid fa-angle-left"></i>
+				<i class="fa-sharp-duotone fa-solid fa-angle-left"></i>
 			</button>
 			<button class="join-item btn btn-sm pointer-events-none">
 				{#if serverMode && rowCount === undefined}{pageIndex + 1}{:else}{pageIndex + 1} / {pageCount}{/if}
@@ -97,7 +97,7 @@
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
-				<i class="fa-solid fa-angle-right"></i>
+				<i class="fa-sharp-duotone fa-solid fa-angle-right"></i>
 			</button>
 			{#if !serverMode || rowCount !== undefined}
 				<button
@@ -106,7 +106,7 @@
 					onclick={() => table.lastPage()}
 					disabled={!table.getCanNextPage()}
 				>
-					<i class="fa-solid fa-angles-right"></i>
+					<i class="fa-sharp-duotone fa-solid fa-angles-right"></i>
 				</button>
 			{/if}
 		</div>

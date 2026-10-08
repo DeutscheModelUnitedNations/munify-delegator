@@ -93,7 +93,7 @@
 	description={m.thanksForParticipatingDescription()}
 >
 	<div class="flex flex-col items-center justify-center py-4">
-		<i class="fa-duotone fa-hands-clapping text-6xl text-primary mb-4"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hands-clapping text-6xl text-primary mb-4"></i>
 		<p class="text-center text-base-content/70">{m.conferenceCompleteMessage()}</p>
 	</div>
 </DashboardSection>

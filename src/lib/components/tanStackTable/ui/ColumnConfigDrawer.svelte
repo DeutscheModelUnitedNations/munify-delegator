@@ -56,11 +56,11 @@
 <SideDrawer bind:open title={m.columnConfiguration()} icon="fa-columns">
 	<div class="flex gap-2">
 		<button class="btn btn-ghost btn-sm" onclick={showAll}>
-			<i class="fa-duotone fa-eye"></i>
+			<i class="fa-sharp-duotone fa-solid fa-eye"></i>
 			{m.showAll()}
 		</button>
 		<button class="btn btn-ghost btn-sm" onclick={resetToDefaults}>
-			<i class="fa-duotone fa-arrow-rotate-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.resetToDefaults()}
 		</button>
 	</div>

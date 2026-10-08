@@ -16,5 +16,5 @@
 		openUserCard(userId);
 	}}
 >
-	<i class="fa-duotone fa-id-card"></i>
+	<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 </button>

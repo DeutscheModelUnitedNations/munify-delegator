@@ -26,7 +26,7 @@
 				title={action.label}
 				onclick={action.run}
 			>
-				<i class="fa-duotone fa-{action.icon}"></i>
+				<i class="fa-sharp-duotone fa-solid fa-{action.icon}"></i>
 			</button>
 		{/each}
 	</div>

@@ -185,12 +185,12 @@
 	{#if reviewed}
 		<!-- Options after review has been saved -->
 		<div class="alert alert-success">
-			<i class="fa-solid fa-check-circle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-check-circle"></i>
 			<span>{m.reviewAddedSuccessfully()}</span>
 		</div>
 		{#if nextPaperId && agendaItemId}
 			<button class="btn btn-outline" onclick={jumpToNextPaper}>
-				<i class="fa-solid fa-angles-right"></i>
+				<i class="fa-sharp-duotone fa-solid fa-angles-right"></i>
 				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
 			</button>
 		{:else if agendaItemId}
@@ -204,7 +204,7 @@
 
 	{#if availableTransitions.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-info-circle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 			<span>{m.noStatusTransitionsAvailable()}</span>
 		</div>
 	{:else}
@@ -227,7 +227,7 @@
 			{#if isSubmitting}
 				<span class="loading loading-spinner loading-sm"></span>
 			{:else}
-				<i class="fa-solid fa-paper-plane"></i>
+				<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 			{/if}
 			{m.submitReview()}
 		</button>
@@ -238,7 +238,7 @@
 <Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>
 	<div class="flex flex-col gap-4">
 		<div class="alert alert-warning">
-			<i class="fa-solid fa-exclamation-triangle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle"></i>
 			<span>{m.reviewSubmissionWarning()}</span>
 		</div>
 		<p class="text-sm text-base-content/70">
@@ -252,7 +252,7 @@
 				{m.cancel()}
 			</button>
 			<button class="btn btn-primary" onclick={handleSubmitReview}>
-				<i class="fa-solid fa-paper-plane"></i>
+				<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 				{m.submitReview()}
 			</button>
 		</div>

@@ -21,6 +21,6 @@
 			{/each}
 		</div>
 	{:else}
-		<i class="fa-duotone fa-dash"></i>
+		<i class="fa-sharp-duotone fa-solid fa-dash"></i>
 	{/if}
 </InfoGrid.Entry>

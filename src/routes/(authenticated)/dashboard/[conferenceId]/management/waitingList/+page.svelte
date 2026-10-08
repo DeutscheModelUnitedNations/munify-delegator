@@ -182,7 +182,7 @@
 >
 	{#snippet toolbar()}
 		<label class="no-print flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
-			<i class="fa-duotone fa-eye-slash"></i>
+			<i class="fa-sharp-duotone fa-solid fa-eye-slash"></i>
 			{m.filterHiddenEntries()}
 			<input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={filterHidden} />
 		</label>

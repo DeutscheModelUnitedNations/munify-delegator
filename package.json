@@ -25,7 +25,7 @@
 		"@inlang/cli": "^3.3.8",
 		"@inlang/paraglide-js": "^2.25.4",
 		"@lingual/i18n-check": "^0.9.5",
-		"@m1212e/rumble": "^0.25.1",
+		"@m1212e/rumble": "^0.25.3",
 		"@magidoc/plugin-svelte-marked": "^7.0.0",
 		"@opentelemetry/api": "^1.9.1",
 		"@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
@@ -85,6 +85,7 @@
 		"@typescript/native": "npm:typescript@^7.0.2",
 		"@urql/exchange-graphcache": "^9.0.2",
 		"@vitest/coverage-v8": "^5.0.3",
+		"any-ascii": "^0.3.3",
 		"barcode-detector": "^3.2.2",
 		"bits-ui": "^2.19.5",
 		"codenamize-ts": "1.0.2",
@@ -118,6 +119,7 @@
 		"jsdom": "^30.1.2",
 		"leaflet": "^1.9.4",
 		"lefthook": "^2.1.16",
+		"lib-address": "^0.7.0",
 		"libphonenumber-js": "^1.13.14",
 		"mermaid": "^12.1.0",
 		"munkres-algorithm": "^1.0.2",
@@ -226,7 +228,7 @@
 	"version": "0.0.1",
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
-		"@m1212e/rumble@0.25.1": "patches/@m1212e%2Frumble@0.25.1.patch",
+		"@m1212e/rumble@0.25.3": "patches/@m1212e%2Frumble@0.25.3.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch"
 	}
 }

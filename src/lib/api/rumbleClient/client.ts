@@ -1824,6 +1824,10 @@ export type Mutation = {
     requests?: String | null | undefined,
     school: String
   }) => Waitinglistentry,
+  decidePossibleDuplicate: (p: {
+    id: ID,
+    status: PossibleduplicatestatusEnum
+  }) => Possibleduplicate,
   deleteAgendaItem: (p: {
     id: ID
   }) => Boolean,
@@ -1913,6 +1917,9 @@ export type Mutation = {
   rotateSupervisorConnectionCode: (p: {
     id: ID
   }) => Conferencesupervisor,
+  scanPossibleDuplicates: (p: {
+    conferenceId: ID
+  }) => Int,
   seedNewConference: (p: {
     data: JSON
   }) => Conference,
@@ -2163,35 +2170,32 @@ export type Mutation = {
     title?: String | null | undefined
   }) => Surveyquestion,
   updateUser: (p: {
+    address: AddressInput,
     apartment?: String | null | undefined,
-    birthday: DateTime,
-    city: String,
-    country: String,
+    birthday: Date,
     emergencyContacts: String,
-    familyName: String,
+    familyName: PersonName,
     foodPreference: FoodpreferenceEnum,
     gender: GenderEnum,
-    givenName: String,
+    givenName: PersonName,
     id: ID,
-    phone: String,
+    phone: PhoneNumber,
     pronouns?: String | null | undefined,
-    street: String,
     wantsJoinTeamInformation?: Boolean | null | undefined,
-    wantsToReceiveGeneralInformation?: Boolean | null | undefined,
-    zip: String
+    wantsToReceiveGeneralInformation?: Boolean | null | undefined
   }) => User,
   updateUsersGlobalNotes: (p: {
     globalNotes: String,
     id: ID
   }) => User,
   updateUsersIdentityInfo: (p: {
-    birthday?: DateTime | null | undefined,
-    familyName?: String | null | undefined,
-    givenName?: String | null | undefined,
+    birthday?: Date | null | undefined,
+    familyName?: PersonName | null | undefined,
+    givenName?: PersonName | null | undefined,
     id: ID
   }) => User,
   updateUsersNewsletterPreferences: (p: {
-    email: String,
+    email: EmailAddress,
     wantsJoinTeamInformation?: Boolean | null | undefined,
     wantsToReceiveGeneralInformation?: Boolean | null | undefined
   }) => Boolean,
@@ -2650,6 +2654,75 @@ export type PlausibilityResult = {
   tooYoungUsers: () => User[]    
 };
 		
+export type PossibleDuplicateAttendance = {
+  conferenceId: ID,
+  role: String,
+  startConference: DateTime,
+  title: String    
+};
+		
+export type Possibleduplicate = {
+  candidate: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User,
+  candidateAttendances: () => PossibleDuplicateAttendance[],
+  candidateId: ID,
+  createdAt: DateTime,
+  decidedAt: DateTime | null,
+  decidedBy: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  decidedById: ID | null,
+  id: ID,
+  reasons: String[],
+  score: Float,
+  search_distance: Float | null,
+  status: PossibleduplicatestatusEnum,
+  updatedAt: DateTime,
+  user: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User,
+  userAttendances: () => PossibleDuplicateAttendance[],
+  userId: ID    
+};
+		
+export type PossibleduplicateOrderInputArgument = {
+  candidateId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  decidedAt?: SortingParameter | null | undefined,
+  decidedById?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  reasons?: SortingParameter | null | undefined,
+  score?: SortingParameter | null | undefined,
+  status?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  userId?: SortingParameter | null | undefined    
+};
+		
+export type PossibleduplicateWhereInputArgument = {
+  AND?: PossibleduplicateWhereInputArgument[] | undefined,
+  NOT?: PossibleduplicateWhereInputArgument | null | undefined,
+  OR?: PossibleduplicateWhereInputArgument[] | undefined,
+  candidate?: UserWhereInputArgument | null | undefined,
+  candidateId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  decidedAt?: DateTimeWhereInputArgument | null | undefined,
+  decidedBy?: UserWhereInputArgument | null | undefined,
+  decidedById?: IDWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  reasons?: StringArrayWhereInputArgument | null | undefined,
+  score?: FloatWhereInputArgument | null | undefined,
+  status?: PossibleduplicatestatusEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  user?: UserWhereInputArgument | null | undefined,
+  userId?: IDWhereInputArgument | null | undefined    
+};
+		
+export type PossibleduplicatestatusEnum = "CONFIRMED" | "DISMISSED" | "OPEN";
+		
 export type PreviewConferenceSupervisor = {
   family_name: String | null,
   given_name: String | null    
@@ -2789,6 +2862,9 @@ export type Query = {
   conferencePlausibility: (p: {
     conferenceId: ID
   }) => PlausibilityResult,
+  conferencePossibleDuplicates: (p: {
+    conferenceId: ID
+  }) => Possibleduplicate[],
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -2964,6 +3040,16 @@ export type Query = {
     search?: String | null | undefined,
     where?: PlaceWhereInputArgument | null | undefined
   }) => Place[],
+  possibleDuplicate: (p: {
+    id: ID
+  }) => Possibleduplicate,
+  possibleDuplicates: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PossibleduplicateOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PossibleduplicateWhereInputArgument | null | undefined
+  }) => Possibleduplicate[],
   previewConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String
@@ -3314,13 +3400,11 @@ export type SightingDeck = {
   current: () => SightingDeckEntry | null,
   entries: () => SightingDeckEntry[],
   index: Int,
-  next: () => SightingDeckEntry | null,
-  nextUnreviewed: () => SightingDeckEntry | null,
   overallRated: Int,
   overallTotal: Int,
-  previous: () => SightingDeckEntry | null,
   start: Int,
-  total: Int    
+  total: Int,
+  unreviewedPastWindow: () => SightingDeckEntry | null    
 };
 		
 export type SightingDeckCounts = {
@@ -3699,6 +3783,21 @@ export type StatsFilter = "ALL" | "APPLIED" | "APPLIED_WITHOUT_ROLE" | "APPLIED_
 		
 export type String = string;
 		
+export type StringArrayWhereInputArgument = {
+  AND?: StringArrayWhereInputArgument[] | undefined,
+  NOT?: StringArrayWhereInputArgument | null | undefined,
+  OR?: StringArrayWhereInputArgument[] | undefined,
+  arrayContained?: String[] | undefined,
+  arrayContains?: String[] | undefined,
+  arrayOverlaps?: String[] | undefined,
+  eq?: String[] | undefined,
+  in?: String[] | undefined,
+  isNotNull?: Boolean | null | undefined,
+  isNull?: Boolean | null | undefined,
+  ne?: String[] | undefined,
+  notIn?: String[] | undefined    
+};
+		
 export type StringWhereInputArgument = {
   AND?: StringWhereInputArgument[] | undefined,
   NOT?: StringWhereInputArgument | null | undefined,
@@ -3972,6 +4071,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: PlaceWhereInputArgument | null | undefined
   }) => Place[],
+  possibleDuplicate: (p: {
+    id: ID
+  }) => Possibleduplicate,
+  possibleDuplicates: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PossibleduplicateOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PossibleduplicateWhereInputArgument | null | undefined
+  }) => Possibleduplicate[],
   resolution: (p: {
     id: ID
   }) => Resolution,
@@ -4393,7 +4502,7 @@ export type UpsertSelfResult = {
 		
 export type User = {
   apartment: String | null,
-  birthday: DateTime | null,
+  birthday: Date | null,
   city: String | null,
   conferenceParticipantStatus: (p?: {
     limit?: Int | null | undefined,
@@ -4419,6 +4528,27 @@ export type User = {
     search?: String | null | undefined,
     where?: DelegationmemberWhereInputArgument | null | undefined
   }) => Delegationmember[],
+  duplicateDecisions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PossibleduplicateOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PossibleduplicateWhereInputArgument | null | undefined
+  }) => Possibleduplicate[],
+  duplicatesAsCandidate: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PossibleduplicateOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PossibleduplicateWhereInputArgument | null | undefined
+  }) => Possibleduplicate[],
+  duplicatesAsUser: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PossibleduplicateOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PossibleduplicateWhereInputArgument | null | undefined
+  }) => Possibleduplicate[],
   email: String,
   emergencyContacts: String | null,
   familyName: String,
@@ -4480,6 +4610,7 @@ export type User = {
     search?: String | null | undefined,
     where?: AttendanceentryWhereInputArgument | null | undefined
   }) => Attendanceentry[],
+  region: String | null,
   reviewerSnippets: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -4541,6 +4672,7 @@ export type UserOrderInputArgument = {
   phone?: SortingParameter | null | undefined,
   preferredUsername?: SortingParameter | null | undefined,
   pronouns?: SortingParameter | null | undefined,
+  region?: SortingParameter | null | undefined,
   street?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   wantsJoinTeamInformation?: SortingParameter | null | undefined,
@@ -4560,13 +4692,16 @@ export type UserWhereInputArgument = {
   NOT?: UserWhereInputArgument | null | undefined,
   OR?: UserWhereInputArgument[] | undefined,
   apartment?: StringWhereInputArgument | null | undefined,
-  birthday?: DateTimeWhereInputArgument | null | undefined,
+  birthday?: DateWhereInputArgument | null | undefined,
   city?: StringWhereInputArgument | null | undefined,
   conferenceParticipantStatus?: ConferenceparticipantstatusWhereInputArgument | null | undefined,
   conferenceSupervisor?: ConferencesupervisorWhereInputArgument | null | undefined,
   country?: StringWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   delegationMemberships?: DelegationmemberWhereInputArgument | null | undefined,
+  duplicateDecisions?: PossibleduplicateWhereInputArgument | null | undefined,
+  duplicatesAsCandidate?: PossibleduplicateWhereInputArgument | null | undefined,
+  duplicatesAsUser?: PossibleduplicateWhereInputArgument | null | undefined,
   email?: StringWhereInputArgument | null | undefined,
   emergencyContacts?: StringWhereInputArgument | null | undefined,
   familyName?: StringWhereInputArgument | null | undefined,
@@ -4586,6 +4721,7 @@ export type UserWhereInputArgument = {
   preferredUsername?: StringWhereInputArgument | null | undefined,
   pronouns?: StringWhereInputArgument | null | undefined,
   recordedAttendanceEntries?: AttendanceentryWhereInputArgument | null | undefined,
+  region?: StringWhereInputArgument | null | undefined,
   reviewerSnippets?: ReviewersnippetWhereInputArgument | null | undefined,
   singleParticipant?: SingleparticipantWhereInputArgument | null | undefined,
   street?: StringWhereInputArgument | null | undefined,
@@ -4713,7 +4849,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

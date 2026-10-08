@@ -40,6 +40,6 @@
 			onCycle();
 		}}
 	>
-		<i class="fa-solid {current.icon} text-base"></i>
+		<i class="fa-sharp-duotone fa-solid {current.icon} text-base"></i>
 	</button>
 </div>

@@ -142,7 +142,7 @@
 {#snippet actionButtons()}
 	<div class="flex gap-2">
 		<button class="btn btn-sm" onclick={() => rotateDelegationEntryCode(delegationId)}>
-			<i class="fa-duotone fa-arrow-rotate-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
 		{#if delegation.assignedNation}
@@ -150,12 +150,12 @@
 				class="btn btn-sm {members.length === 0 && 'btn-disabled'}"
 				onclick={() => (committeeAssignmentModalOpen = true)}
 			>
-				<i class="fa-duotone fa-grid-2"></i>
+				<i class="fa-sharp-duotone fa-solid fa-grid-2"></i>
 				{m.committeeAssignment()}
 			</button>
 		{/if}
 		<button class="btn btn-sm" onclick={() => (headDelegateModalOpen = true)}>
-			<i class="fa-duotone fa-medal"></i>
+			<i class="fa-sharp-duotone fa-solid fa-medal"></i>
 			{m.headDelegate()}
 		</button>
 		{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
@@ -163,7 +163,7 @@
 				class="btn btn-error btn-sm {!delegation.applied && 'btn-disabled'}"
 				onclick={() => revokeDelegationApplication(delegationId)}
 			>
-				<i class="fa-solid fa-file-slash"></i>
+				<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
 				{m.revokeApplication()}
 			</button>
 		{/if}
@@ -172,7 +172,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Assignment Card -->
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">
 			{@render assignment()}
 		</div>
@@ -186,7 +186,7 @@
 					onclick={() => changeDelegationSchool(delegationId)}
 					aria-label="Edit School"
 				>
-					<i class="fa-duotone fa-pencil"></i>
+					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
 				</button>
 			</div>
 			<div class="flex items-center gap-1">
@@ -196,7 +196,7 @@
 					onclick={copyEntryCode}
 					title={m.copy()}
 				>
-					<code class="bg-base-300 rounded px-1 group-hover:bg-base-content/20">
+					<code class="bg-base-300 rounded-field px-1 group-hover:bg-base-content/20">
 						{delegation.entryCode}
 					</code>
 				</button>

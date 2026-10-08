@@ -82,7 +82,7 @@
 		<div class="flex gap-2">
 			<button class="btn" onclick={handleCancel}>{m.cancel()}</button>
 			<button class="btn btn-primary" onclick={handleConfirm}>
-				<i class="fa-solid fa-check"></i>
+				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 				{m.insertSnippet()}
 			</button>
 		</div>

@@ -73,7 +73,7 @@
 						class:tab-active={currentView === tab.view}
 						onclick={() => (params.view = tab.view)}
 					>
-						<i class="fa-solid {tab.icon} mr-1"></i>
+						<i class="fa-sharp-duotone fa-solid {tab.icon} mr-1"></i>
 						{tab.label()}
 					</button>
 				{/each}

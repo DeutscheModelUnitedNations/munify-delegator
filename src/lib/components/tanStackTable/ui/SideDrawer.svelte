@@ -21,11 +21,11 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between px-5 pt-4 pb-3">
 		<Dialog.Title class="flex items-center gap-2 text-lg font-bold">
-			<i class="fa-duotone {icon} text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid {icon} text-xl"></i>
 			{title}
 		</Dialog.Title>
 		<Dialog.Close class="btn btn-ghost btn-sm btn-circle">
-			<i class="fa-duotone fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		</Dialog.Close>
 	</div>
 

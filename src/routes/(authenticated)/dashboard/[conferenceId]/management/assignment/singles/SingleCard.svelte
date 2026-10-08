@@ -72,7 +72,7 @@
 	aria-busy={busy}
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
-		: 'w-44'} cursor-grab gap-1 rounded-lg border p-2 text-xs shadow-sm {cardBorder(
+		: 'w-44'} cursor-grab gap-1 rounded-box border p-2 text-xs shadow-sm {cardBorder(
 		review,
 		pending
 	)}"
@@ -89,9 +89,7 @@
 		<div class="flex items-center gap-1">
 			<StarRating rating={review?.evaluation ?? 0} size="xs" />
 			{#if review?.flagged}
-				<i
-					class="fa-duotone fa-flag text-warning [--fa-secondary-color:currentColor] [--fa-secondary-opacity:0.6]"
-				></i>
+				<i class="fa-sharp-duotone fa-solid fa-flag text-warning"></i>
 			{/if}
 		</div>
 		{#if wishes.length > 0}
@@ -99,10 +97,9 @@
 				{#each wishes as wish, index (wish.id)}
 					<li class="flex items-center gap-1 {wishTone[index]}" title={wish.name}>
 						{#if wish.matches}
-							<i class="fa-duotone fa-circle-check shrink-0"></i>
+							<i class="fa-sharp-duotone fa-solid fa-circle-check shrink-0"></i>
 						{:else if unwished}
-							<i
-								class="fa-duotone fa-triangle-exclamation text-warning shrink-0 [--fa-secondary-color:currentColor] [--fa-secondary-opacity:0.6]"
+							<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-warning shrink-0"
 							></i>
 						{/if}
 						<span class="truncate">{wish.name}</span>
@@ -120,7 +117,7 @@
 			aria-label={m.assignmentCardSighting()}
 			title={m.assignmentCardSighting()}
 		>
-			<i class="fa-duotone fa-arrow-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 		</a>
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
 		<a
@@ -131,7 +128,7 @@
 			aria-label={m.assignmentCardOpenDetails()}
 			title={m.assignmentCardOpenDetails()}
 		>
-			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 		</a>
 	</div>
 	{#if busy}

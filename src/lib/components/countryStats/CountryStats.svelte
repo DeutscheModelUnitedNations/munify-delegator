@@ -81,7 +81,7 @@
 	<div class="stats col-span-1 shadow md:col-span-2 xl:col-span-3">
 		<div class="stat bg-base-200">
 			<div class="stat-figure text-primary">
-				<i class="fa-duotone fa-flag text-3xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-flag text-3xl"></i>
 			</div>
 			<div class="stat-title">Offizieller Landesname</div>
 			<div class="stat-value">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>

@@ -16,7 +16,7 @@
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<i
-				class="fa-duotone text-4xl"
+				class="fa-sharp-duotone fa-solid text-4xl"
 				class:fa-circle-check={allAccepted}
 				class:text-success={allAccepted}
 				class:fa-users={!allAccepted}

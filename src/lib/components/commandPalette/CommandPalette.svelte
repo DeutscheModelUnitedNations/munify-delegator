@@ -258,7 +258,7 @@
 		>
 			<!-- Search input -->
 			<div class="border-base-300 flex items-center gap-3 border-b px-4 py-3">
-				<i class="fa-duotone fa-magnifying-glass text-base-content/40"></i>
+				<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-base-content/40"></i>
 				<input
 					bind:this={inputEl}
 					bind:value={searchInput}

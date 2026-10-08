@@ -104,7 +104,7 @@
 
 				{#snippet failed()}
 					<div class="alert alert-error">
-						<i class="fa-duotone fa-triangle-exclamation"></i>
+						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 						<span>{m.httpGenericError()}</span>
 					</div>
 				{/snippet}

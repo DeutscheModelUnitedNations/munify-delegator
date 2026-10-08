@@ -51,7 +51,7 @@
 	{/each}
 </select>
 <label class="input w-auto max-w-xs">
-	<i class="fa-duotone fa-school opacity-60"></i>
+	<i class="fa-sharp-duotone fa-solid fa-school opacity-60"></i>
 	<input
 		type="search"
 		list={listId}
@@ -76,7 +76,7 @@
 			onSchool(null);
 		}}
 	>
-		<i class="fa-duotone fa-xmark"></i>
+		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		{school || m.assignmentNoSchool()}
 	</button>
 {/if}

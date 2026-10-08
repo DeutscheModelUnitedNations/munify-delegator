@@ -64,7 +64,7 @@
 <div class="flex w-full flex-col gap-4 py-4">
 	{#if conference.state !== 'PRE'}
 		<div role="alert" class="alert alert-warning">
-			<i class="fa-duotone fa-triangle-exclamation text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
 			<div>
 				<h3 class="font-bold">{m.seatPlanningLiveWarningTitle()}</h3>
 				<p class="text-sm">{m.seatPlanningLiveWarning()}</p>
@@ -100,7 +100,7 @@
 				/>
 			{:else if committees.length === 0}
 				<div class="alert alert-info">
-					<i class="fa-duotone fa-circle-info"></i>
+					<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
 					{m.seatPlanningNoCommittees()}
 				</div>
 			{:else}

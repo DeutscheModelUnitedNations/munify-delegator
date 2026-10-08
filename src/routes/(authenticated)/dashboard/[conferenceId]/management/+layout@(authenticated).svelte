@@ -11,7 +11,10 @@
 
 	let { children, params }: LayoutProps = $props();
 
-	const membership = $derived(await managementMembership(params.conferenceId));
+	// Every navigation hands the layout a fresh `params`, one that only changes the query included;
+	// a string that has not changed keeps the membership from being asked for again each time.
+	const conferenceId = $derived(params.conferenceId);
+	const membership = $derived(await managementMembership(conferenceId));
 	const seatPlanningOnly = $derived(isSeatPlanningOnly(membership));
 </script>
 
@@ -21,93 +24,93 @@
 			{#if seatPlanningOnly}
 				<!-- content leads have no other entry, so no workflow group around it -->
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/management/seat-planning"
+					href="/dashboard/{conferenceId}/management/seat-planning"
 					icon="fa-table-cells"
 					title={m.seatPlanning()}
 				/>
 			{:else}
 				<NavMenuButton
-					href={`/dashboard/${params.conferenceId}/management/stats`}
+					href={`/dashboard/${conferenceId}/management/stats`}
 					icon="fa-chart-pie"
 					title={m.adminStats()}
 				/>
 				<NavMenuButton
-					href={`/dashboard/${params.conferenceId}/management/configuration`}
+					href={`/dashboard/${conferenceId}/management/configuration`}
 					icon="fa-gears"
 					title={m.settings()}
 				/>
 				<NavMenuButton
-					href={`/dashboard/${params.conferenceId}/management/seats`}
+					href={`/dashboard/${conferenceId}/management/seats`}
 					icon="fa-chair-office"
 					title={m.seats()}
 				/>
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/management/participants"
+					href="/dashboard/{conferenceId}/management/participants"
 					icon="fa-users"
 					title={m.adminUsers()}
 				/>
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/management/delegations"
+					href="/dashboard/{conferenceId}/management/delegations"
 					icon="fa-users-viewfinder"
 					title={m.adminDelegations()}
 				/>
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/management/individuals"
+					href="/dashboard/{conferenceId}/management/individuals"
 					icon="fa-user"
 					title={m.adminSingleParticipants()}
 				/>
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/management/supervisors"
+					href="/dashboard/{conferenceId}/management/supervisors"
 					icon="fa-chalkboard-user"
 					title={m.adminSupervisors()}
 				/>
 				<NavMenuButton
-					href={`/dashboard/${params.conferenceId}/management/waitingList`}
+					href={`/dashboard/${conferenceId}/management/waitingList`}
 					icon="fa-user-clock"
 					title={m.waitingList()}
 				/>
 				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin">
 					{#if canPlanSeats(membership)}
 						<NavMenuButton
-							href="/dashboard/{params.conferenceId}/management/seat-planning"
+							href="/dashboard/{conferenceId}/management/seat-planning"
 							icon="fa-table-cells"
 							title={m.seatPlanning()}
 						/>
 					{/if}
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/assignment"
+						href="/dashboard/{conferenceId}/management/assignment"
 						icon="fa-shuffle"
 						title={m.adminAssignment()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/postalRegistration"
+						href="/dashboard/{conferenceId}/management/postalRegistration"
 						icon="fa-envelope"
 						title={m.postalRegistration()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/payments"
+						href="/dashboard/{conferenceId}/management/payments"
 						icon="fa-money-bill-transfer"
 						title={m.payment()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/accessFlow"
+						href="/dashboard/{conferenceId}/management/accessFlow"
 						icon="fa-id-card-clip"
 						title={m.accessFlow()}
 					/>
 				</NavMenuDetails>
 				<NavMenuDetails title={m.navInfo()} icon="fa-comments">
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/announcement"
+						href="/dashboard/{conferenceId}/management/announcement"
 						icon="fa-bullhorn"
 						title={m.announcementSectionTitle()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/calendar"
+						href="/dashboard/{conferenceId}/management/calendar"
 						icon="fa-calendar-days"
 						title={m.calendar()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/survey"
+						href="/dashboard/{conferenceId}/management/survey"
 						icon="fa-chart-pie"
 						title={m.survey()}
 					/>
@@ -115,33 +118,33 @@
 
 				<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox">
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/plausibility"
+						href="/dashboard/{conferenceId}/management/plausibility"
 						icon="fa-shield-check"
 						title={m.adminPlausibility()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/cleanup"
+						href="/dashboard/{conferenceId}/management/cleanup"
 						icon="fa-broom"
 						title={m.cleanup()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/helper"
+						href="/dashboard/{conferenceId}/management/helper"
 						icon="fa-gear-code"
 						title={m.helper()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/import"
+						href="/dashboard/{conferenceId}/management/import"
 						icon="fa-file-import"
 						title={m.import()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{params.conferenceId}/management/downloads"
+						href="/dashboard/{conferenceId}/management/downloads"
 						icon="fa-download"
 						title={m.downloads()}
 					/>
 				</NavMenuDetails>
 				<NavMenuButton
-					href="/dashboard/{params.conferenceId}/team-management"
+					href="/dashboard/{conferenceId}/team-management"
 					icon="fa-user-group"
 					title={m.teamManagement()}
 				/>
@@ -155,5 +158,5 @@
 </div>
 
 {#if !seatPlanningOnly}
-	<CommandPalette conferenceId={params.conferenceId} />
+	<CommandPalette {conferenceId} />
 {/if}

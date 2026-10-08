@@ -22,22 +22,22 @@
 </script>
 
 <div
-	class="flex items-center gap-3 rounded-lg px-3 py-2 font-mono text-sm transition-all
+	class="flex items-center gap-3 rounded-box px-3 py-2 font-mono text-sm transition-all
 		{rowClass[entry.status]}"
 >
 	<!-- Status icon -->
 	{#if entry.status === 'success'}
-		<i class="fa-duotone fa-check"></i>
+		<i class="fa-sharp-duotone fa-solid fa-check"></i>
 	{:else if entry.status === 'processing'}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else if entry.status === 'pending'}
-		<i class="fa-duotone fa-clock"></i>
+		<i class="fa-sharp-duotone fa-solid fa-clock"></i>
 	{:else if isNetworkError}
-		<i class="fa-duotone fa-arrow-rotate-right"></i>
+		<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-right"></i>
 	{:else if isDuplicate}
-		<i class="fa-duotone fa-clone"></i>
+		<i class="fa-sharp-duotone fa-solid fa-clone"></i>
 	{:else}
-		<i class="fa-duotone fa-xmark"></i>
+		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 	{/if}
 
 	<!-- User ID -->
@@ -58,7 +58,7 @@
 	<!-- Dismiss button for non-network errors -->
 	{#if entry.status === 'error' && !isNetworkError}
 		<button class="btn btn-ghost btn-xs btn-square" onclick={onDismiss} aria-label={m.dismiss()}>
-			<i class="fa-duotone fa-xmark"></i>
+			<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 		</button>
 	{/if}
 </div>

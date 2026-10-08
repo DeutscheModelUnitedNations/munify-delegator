@@ -32,11 +32,11 @@
 
 			<div class="join join-vertical w-full">
 				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => onSave(false)}>
-					<i class="fa-solid fa-pencil mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-pencil mr-2"></i>
 					{m.paperSaveDraft()}
 				</button>
 				<button class="btn btn-primary btn-lg join-item" onclick={() => onSave(true)}>
-					<i class="fa-solid fa-paper-plane mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-paper-plane mr-2"></i>
 					{m.paperSubmit()}
 				</button>
 			</div>

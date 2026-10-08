@@ -35,7 +35,7 @@
 			</div>
 			{#if status}
 				<div class="badge {getStatusBadgeClass(status)} badge-lg gap-2">
-					<i class="fa-solid {getPaperStatusIcon(status)}"></i>
+					<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(status)}"></i>
 					{translatePaperStatus(status)}
 				</div>
 			{/if}
@@ -48,7 +48,7 @@
 		<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
 			<div class="flex items-center gap-3 text-sm text-base-content/70 flex-wrap">
 				<span class="flex items-center gap-1">
-					<i class="fa-solid {getPaperTypeIcon(paper.type)}"></i>
+					<i class="fa-sharp-duotone fa-solid {getPaperTypeIcon(paper.type)}"></i>
 					{translatePaperType(paper.type)}
 				</span>
 				{#if versionNumber !== undefined}
@@ -61,7 +61,7 @@
 					<span class="text-base-content/30">•</span>
 					<div class="tooltip" data-tip={m.createdAt()}>
 						<span class="flex items-center gap-1">
-							<i class="fa-solid fa-plus text-xs"></i>
+							<i class="fa-sharp-duotone fa-solid fa-plus text-xs"></i>
 							{createdAt.toLocaleDateString()}
 						</span>
 					</div>
@@ -70,7 +70,7 @@
 					<span class="text-base-content/30">•</span>
 					<div class="tooltip" data-tip={m.submittedAt()}>
 						<span class="flex items-center gap-1">
-							<i class="fa-solid fa-paper-plane text-xs"></i>
+							<i class="fa-sharp-duotone fa-solid fa-paper-plane text-xs"></i>
 							{paper.firstSubmittedAt.toLocaleDateString()}
 						</span>
 					</div>

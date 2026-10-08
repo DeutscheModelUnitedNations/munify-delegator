@@ -69,7 +69,7 @@
 		<div class="text-base-content/60 text-sm">
 			{conference?.title ?? ''}
 		</div>
-		<div class="bg-base-200 rounded-lg px-3 py-1 font-mono text-lg tabular-nums">
+		<div class="bg-base-200 rounded-box px-3 py-1 font-mono text-lg tabular-nums">
 			{formatTime(currentTime)}
 		</div>
 	</div>
@@ -79,7 +79,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center gap-4 sm:gap-6">
 			<!-- Flag - Most Prominent -->
 			<div class="flex flex-col items-center gap-2">
-				<div class="flag-glow rounded-xl">
+				<div class="flag-glow rounded-box">
 					{#if participantInfo.alpha2Code}
 						<Flag size="lg" alpha2Code={participantInfo.alpha2Code} />
 					{:else if participantInfo.isNSA}
@@ -114,7 +114,7 @@
 		<!-- Error state for unassigned/no participant -->
 		<div class="flex flex-1 flex-col items-center justify-center gap-6">
 			<div class="text-error text-6xl">
-				<i class="fa-solid fa-circle-exclamation"></i>
+				<i class="fa-sharp-duotone fa-solid fa-circle-exclamation"></i>
 			</div>
 			<h1 class="text-center text-2xl font-bold">
 				{m.registrationModeNotRegistered()}
@@ -128,7 +128,7 @@
 	<!-- Back Button -->
 	<div class="mt-auto w-full pt-4">
 		<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
-			<i class="fa-solid fa-arrow-left"></i>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			{m.backToDashboard()}
 		</a>
 	</div>

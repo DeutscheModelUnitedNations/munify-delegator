@@ -15,7 +15,9 @@
 	import FormSection from '$lib/components/form/FormSection.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { buildUserFormValues } from '$lib/api/userFormValues';
+	import { buildUserFormValues, toUpdateUserArgs } from '$lib/api/userFormValues';
+	import AddressRegionField from '$lib/components/form/AddressRegionField.svelte';
+	import { addressRules } from '$lib/helpers/addressRules';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -44,6 +46,7 @@
 		apartment: true,
 		zip: true,
 		city: true,
+		region: true,
 		country: true,
 		gender: true,
 		pronouns: true,
@@ -72,9 +75,8 @@
 			},
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
-				const { given_name, family_name, ...values } = validated.data;
 				const promise = client.mutate.updateUser({
-					__args: { ...values, id: user.sub, givenName: given_name, familyName: family_name },
+					__args: toUpdateUserArgs(user.sub, validated.data),
 					id: true
 				});
 				toast.promise(promise, genericPromiseToastMessages);
@@ -87,6 +89,10 @@
 	);
 
 	//TODO pronoun prefill
+
+	const { form: formData } = form;
+	// which of postal code, city and region the picked country's addresses use
+	const address = $derived(addressRules($formData.country));
 
 	// Show toast for successful account center updates
 	$effect(() => {
@@ -135,7 +141,7 @@
 		>
 			<div class="card-body bg-base-100 rounded-box">
 				<h2 class="card-title mb-4 justify-center">
-					<i class="fa-duotone fa-user-pen text-primary"></i>
+					<i class="fa-sharp-duotone fa-solid fa-user-pen text-primary"></i>
 					{m.personalData()}
 				</h2>
 				<Form {form}>
@@ -182,10 +188,6 @@
 								placeholder={m.streetAddition()}
 							/>
 						</div>
-						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-							<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
-							<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
-						</div>
 						<FormSelect
 							{form}
 							name="country"
@@ -193,6 +195,15 @@
 							placeholder={m.pleaseSelectCountry()}
 							options={translatedNationCodeAddressFormOptions}
 						/>
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
+							{#if address.zip}
+								<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
+							{/if}
+							{#if address.city}
+								<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
+							{/if}
+						</div>
+						<AddressRegionField {form} name="region" rules={address} />
 					</FormSection>
 					<FormSection title={m.aboutYou()} icon="user">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">

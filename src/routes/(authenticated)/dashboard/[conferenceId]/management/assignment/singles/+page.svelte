@@ -193,7 +193,7 @@
 
 <div class="flex flex-col gap-4">
 	<div class="alert alert-info alert-soft">
-		<i class="fa-duotone fa-user-tie text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-user-tie text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
 			class="btn btn-primary btn-sm"
@@ -203,7 +203,7 @@
 			{#if busy}
 				<span class="loading loading-spinner loading-xs"></span>
 			{:else}
-				<i class="fa-duotone fa-wand-magic-sparkles"></i>
+				<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
 			{/if}
 			{m.assignmentAutoAssignSingles()}
 		</button>

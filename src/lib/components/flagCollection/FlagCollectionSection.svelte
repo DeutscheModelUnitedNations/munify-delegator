@@ -129,7 +129,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-info-circle"></i>
+			<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 			<span>{m.noFlagsInFilter()}</span>
 		</div>
 	{/if}
@@ -146,7 +146,7 @@
 	{#snippet badge()}
 		{#if flagCollection?.stats}
 			<div class="badge badge-primary badge-lg gap-2">
-				<i class="fa-solid fa-trophy"></i>
+				<i class="fa-sharp-duotone fa-solid fa-trophy"></i>
 				{flagCollection.stats.completedFlags}/{flagCollection.stats.totalFlags}
 			</div>
 		{/if}
@@ -157,7 +157,7 @@
 			{@render collection(flagCollection)}
 		{:else}
 			<div class="alert alert-info">
-				<i class="fa-solid fa-info-circle"></i>
+				<i class="fa-sharp-duotone fa-solid fa-info-circle"></i>
 				<span>{m.noFlagsYet()}</span>
 			</div>
 		{/if}

@@ -27,6 +27,16 @@ const schema = z.object({
 			.default('https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/all.min.css?v=825d23a4')
 	),
 
+	// Stylesheet with the Sharp Duotone font, which `all.min.css` does not bundle. Without it
+	// `fa-sharp-duotone` draws both duotone layers as the same plain glyph, i.e. every icon twice.
+	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z
+			.string()
+			.url()
+			.default('https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/sharp-duotone-solid.min.css')
+	),
+
 	// --- TEMPORARY: Migration notice (remove after migration period) ---
 	PUBLIC_OIDC_MIGRATION_NOTICE: z.preprocess(
 		(v) => (v === '' ? undefined : v),

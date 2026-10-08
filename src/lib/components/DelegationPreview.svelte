@@ -64,7 +64,7 @@
 		in:fly={{ x: 50, duration: 300, delay: 300 }}
 		out:fly={{ x: 50, duration: 300 }}
 	>
-		<div class="bg-base-100 dark:bg-base-200 rounded-lg p-4 shadow-lg dark:stroke-slate-300">
+		<div class="bg-base-100 dark:bg-base-200 rounded-box p-4 shadow-lg dark:stroke-slate-300">
 			<div class="overflow-x-auto">
 				<table class="table">
 					<tbody>

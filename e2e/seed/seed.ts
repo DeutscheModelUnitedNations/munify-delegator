@@ -88,8 +88,15 @@ export const E2E_SURVEY_OPTION_B_TITLE = 'Seeded Option B';
 // Management: admin views/updates a pre-registered participant's status.
 export const E2E_MGMT_ADMIN_ID = 'e2e-mgmt-admin';
 export const E2E_MGMT_TARGET_USER_ID = 'e2e-mgmt-target';
-export const E2E_MGMT_TARGET_FAMILY_NAME = 'E2EMgmtTarget';
+export const E2E_MGMT_TARGET_FAMILY_NAME = 'ETwoEMgmtTarget';
 export const E2E_MGMT_TARGET_SINGLE_PARTICIPANT_ID = 'e2e00000singlepart00000001';
+
+// Possible duplicates: an earlier account, in none of the e2e conferences, with a care note, paired
+// with the management target. Participant care may read its name and note, not its phone.
+export const E2E_DUPLICATE_EARLIER_USER_ID = 'e2e-duplicate-earlier';
+export const E2E_DUPLICATE_EARLIER_NOTE = 'Earlier account: talk to project management first.';
+export const E2E_DUPLICATE_EARLIER_PHONE = '+4917611122233';
+export const E2E_POSSIBLE_DUPLICATE_ID = 'e2e00000possibleduplicate1';
 
 // Payments: a participant generates a reference, an admin marks it received.
 export const E2E_PAYMENT_ADMIN_ID = 'e2e-payment-admin';
@@ -244,6 +251,8 @@ export default async function seed() {
 			// schema validates, and `emergencyContacts` isn't set at all. Without this override every
 			// fixedTestUser login here would redirect to /my-account instead of the intended page.
 			country: 'DEU',
+			// German postal codes have five digits; the seed user may have been made for elsewhere
+			zip: '24103',
 			phone: '+4917612345678',
 			emergencyContacts: 'Emergency contact: +49 176 12345678',
 			...overrides
@@ -298,6 +307,28 @@ export default async function seed() {
 		.insert(schema.singleParticipant)
 		.values(mgmtTargetParticipant)
 		.onConflictDoUpdate({ target: schema.singleParticipant.id, set: mgmtTargetParticipant });
+
+	// --- possible duplicate fixture: reset to OPEN on every run, since the spec decides it ---
+	await upsertActorUser(E2E_DUPLICATE_EARLIER_USER_ID);
+	await db
+		.update(schema.user)
+		.set({ globalNotes: E2E_DUPLICATE_EARLIER_NOTE, phone: E2E_DUPLICATE_EARLIER_PHONE })
+		.where(eq(schema.user.id, E2E_DUPLICATE_EARLIER_USER_ID));
+	const possibleDuplicate = {
+		id: E2E_POSSIBLE_DUPLICATE_ID,
+		// the smaller id first, as the scan stores pairs
+		userId: E2E_DUPLICATE_EARLIER_USER_ID,
+		candidateId: E2E_MGMT_TARGET_USER_ID,
+		score: 0.7,
+		reasons: ['birthday', 'name'],
+		status: 'OPEN' as const,
+		decidedById: null,
+		decidedAt: null
+	};
+	await db
+		.insert(schema.possibleDuplicate)
+		.values(possibleDuplicate)
+		.onConflictDoUpdate({ target: schema.possibleDuplicate.id, set: possibleDuplicate });
 
 	// --- connect-supervisor fixture: a supervisor with a fixed code, and a single participant
 	// who isn't connected to them yet, ready to type the code in ---

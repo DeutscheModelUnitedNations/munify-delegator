@@ -24,7 +24,7 @@
 									onclick={() => openUserCard(user.id)}
 									aria-label="Details"
 								>
-									<i class="fa-duotone fa-id-card"></i>
+									<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 								</button>
 							</td>
 						</tr>

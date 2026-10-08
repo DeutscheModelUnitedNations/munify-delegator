@@ -53,14 +53,14 @@
 <div class="flex flex-col gap-4">
 	<div class="flex items-center justify-between">
 		<button class="btn btn-sm" onclick={() => (assignSupervisorModalOpen = true)}>
-			<i class="fa-duotone fa-chalkboard-user"></i>
+			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
 			{m.assignSupervisor()}
 		</button>
 	</div>
 
 	{#if supervisors.length === 0}
 		<div class="alert alert-info">
-			<i class="fa-duotone fa-chalkboard-user"></i>
+			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
 			<span>{m.userCardNoSupervisors()}</span>
 		</div>
 	{:else}
@@ -81,7 +81,7 @@
 								<PersonName givenName={sup.user.givenName} familyName={sup.user.familyName} />
 							</td>
 							<td>
-								<code class="bg-base-300 rounded px-1 text-xs">{sup.connectionCode}</code>
+								<code class="bg-base-300 rounded-field px-1 text-xs">{sup.connectionCode}</code>
 							</td>
 							<td class="text-center">
 								{#if sup.plansOwnAttendenceAtConference}

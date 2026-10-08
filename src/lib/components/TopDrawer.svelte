@@ -35,13 +35,13 @@
 	bind:open
 	direction="top"
 	keepFocus
-	class="max-h-[85vh] {maxWidth} overflow-hidden rounded-b-2xl"
+	class="max-h-[85vh] {maxWidth} overflow-hidden rounded-b-box"
 >
 	<!-- Header -->
 	<div class="flex items-center justify-between px-5 pt-4 pb-3">
 		<Dialog.Title class="flex items-center gap-2 text-lg font-bold">
 			{#if titleIcon}
-				<i class="fa-duotone {titleIcon} text-xl"></i>
+				<i class="fa-sharp-duotone fa-solid {titleIcon} text-xl"></i>
 			{/if}
 			{title}
 		</Dialog.Title>

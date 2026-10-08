@@ -90,7 +90,7 @@
 	{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
 		<div class="tooltip" data-tip={committee.abbreviation}>
 			{#each { length: committee.numOfSeatsPerDelegation }}
-				<i class="fa-duotone fa-check"></i>
+				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 			{/each}
 		</div>
 	{:else}
@@ -131,7 +131,7 @@
 							</div>
 						</td>
 						<td class="tooltip" data-tip={getNationRegionalGroup(nation.alpha3Code)}>
-							<i class="fa-duotone fa-earth"></i>
+							<i class="fa-sharp-duotone fa-solid fa-earth"></i>
 						</td>
 						{#each committees as committee, committeeIndex (committeeIndex)}
 							<td class="text-center">{@render committeeSeats(committee, nation)}</td>

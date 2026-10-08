@@ -14,7 +14,7 @@
 </script>
 
 <div
-	class="bg-base-100/60 absolute inset-0 z-10 grid rounded-lg {size === 'lg'
+	class="bg-base-100/60 absolute inset-0 z-10 grid rounded-box {size === 'lg'
 		? 'items-start justify-items-center pt-24'
 		: 'place-items-center'}"
 	role="status"

@@ -31,7 +31,7 @@
 	let questionLocked = $derived(new Date(question.deadline) < new Date());
 </script>
 
-<div class="bg-base-200 flex flex-col gap-3 rounded-lg p-4">
+<div class="bg-base-200 flex flex-col gap-3 rounded-box p-4">
 	<DeadlineDisplay deadline={question.deadline} {conferenceTimezone} />
 	<h3 class="text-lg font-bold">{question.title}</h3>
 	{#if question.description}
@@ -39,23 +39,23 @@
 	{/if}
 
 	<div
-		class="bg-base-100 grid grid-cols-[auto_1fr] items-center gap-2 rounded-md p-3 shadow-sm {!answer &&
+		class="bg-base-100 grid grid-cols-[auto_1fr] items-center gap-2 rounded-field p-3 shadow-sm {!answer &&
 		!questionLocked
 			? 'border-warning border'
 			: ''}"
 	>
 		{#if answer}
-			<i class="fa-solid fa-check-circle text-success"></i>
+			<i class="fa-sharp-duotone fa-solid fa-check-circle text-success"></i>
 			<span class="font-semibold">{answer.option.title}</span>
 		{:else}
-			<i class="fa-solid fa-circle-exclamation text-warning"></i>
+			<i class="fa-sharp-duotone fa-solid fa-circle-exclamation text-warning"></i>
 			<span class="text-warning">{m.noAnswerYet()}</span>
 		{/if}
 	</div>
 
 	{#if !questionLocked}
 		<button class="btn btn-primary btn-sm w-fit" onclick={() => (modalOpen = true)}>
-			<i class="fa-solid fa-pen"></i>
+			<i class="fa-sharp-duotone fa-solid fa-pen"></i>
 			{answer ? m.changeAnswer() : m.takeSurvey()}
 		</button>
 	{/if}

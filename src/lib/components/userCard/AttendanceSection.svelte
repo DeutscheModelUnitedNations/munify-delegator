@@ -63,7 +63,7 @@
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-clipboard-list mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-clipboard-list mr-2"></i>
 		{m.attendanceLog()}
 	</h3>
 
@@ -83,7 +83,7 @@
 			disabled={!occasion.trim()}
 			aria-label={m.recordEntry()}
 		>
-			<i class="fa-solid fa-plus"></i>
+			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 			{m.recordEntry()}
 		</button>
 	</div>
@@ -125,7 +125,7 @@
 									onclick={() => deleteEntry(entry.id)}
 									aria-label={m.deleteAttendanceEntry()}
 								>
-									<i class="fa-duotone fa-trash text-error"></i>
+									<i class="fa-sharp-duotone fa-solid fa-trash text-error"></i>
 								</button>
 							</td>
 						</tr>

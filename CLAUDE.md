@@ -344,7 +344,10 @@ bun run preview
   `page`, `params` is `{}`, and that result is the one that sticks. The page renders as if the
   conference did not exist. The prop is handed to the component rather than written in a batch,
   so it does not have this problem. Name it `routeParams` where the page already has a `params`
-  (a `sveltekit-search-params` object).
+  (a `sveltekit-search-params` object). Read it through a primitive `$derived`
+  (`const conferenceId = $derived(params.conferenceId)`) before an awaited derived uses it, in
+  layouts too: every navigation, a query-only one included, hands over a fresh `params` object,
+  and an awaited derived reading `params.x` directly asks for everything again each time.
 
 - **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
@@ -393,6 +396,15 @@ bun run preview
 - **Uploads** go through `fileProxy` and are converted in the component with
   `$lib/helpers/fileToDataURL`; the columns store data URLs, and an untouched field must yield
   `undefined` so the stored value survives.
+- **Personal data goes in through rumble's scalars**: `PersonName`, `EmailAddress`,
+  `PhoneNumber` (stored as E.164), `Date` for a calendar day and `AddressInput` for an address
+  (validated against libaddressinput's metadata, alpha-2 country codes; the user table keeps
+  alpha-3, `$lib/helpers/countryCodes` converts). Values that arrive some other way, such as
+  OIDC claims in `upsertSelf.ts`, go through rumble's exported `normalizePersonName` /
+  `normalizeEmailAddress` / `parsePhoneNumber`. The account forms check the same rules first:
+  `isPersonName`, and `addressRules`/`addressIssues` for which of postal code, city and region
+  (`AddressRegionField`) a country uses. A `Date` value is UTC midnight on the wire; a date picker
+  yields local midnight, so convert with `$lib/helpers/calendarDay` (`toUpdateUserArgs` does).
 - **Regeneration** happens on dev server start, so a handler change is only visible to the
   frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
 - **SSR** goes through `src/api/graphql.remote.ts`, which executes the schema in-process.
@@ -527,7 +539,25 @@ bun run preview
   that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
   checks the known paths.
 
-#### 7. Background Tasks
+#### 7. Possible duplicate accounts
+
+- **Why:** someone with a care note (`user.globalNotes`) who signs up again with a new account
+  would shed it. The plausibility page lists accounts that may belong to the same person as an
+  account from before, for participant care to decide (`OPEN` / `CONFIRMED` / `DISMISSED`).
+- **Matching** is pure, in `$api/services/duplicateMatching.ts`: names are transliterated to Latin
+  letters (`any-ascii`, any script) and compared per part with Jaro-Winkler; birthday, email local
+  part, phone, emergency numbers and address add weights, none of them enough alone. Only accounts
+  sharing a blocking key are compared. `possibleDuplicates.ts` loads the accounts and stores the
+  pairs: the pool is everyone who attended a conference that is over or has a care note; a
+  conference scan (button on the page) and every profile change (`updateUser`,
+  `updateUsersIdentityInfo`) compare against it, a chunk at a time so the event loop keeps
+  turning. A re-scan refreshes scores but never a decision.
+- **Visibility:** the pair is readable by whoever manages one of its accounts; a user read rule
+  lets participant care read the _other_ account's identity and care notes (no contact details)
+  while the pair is open or confirmed. `e2e/authorization/possible-duplicates.spec.ts` pins it
+  down. The dev seed's "Simon Beworben" has an earlier account with a note in "Seed 8 · Post".
+
+#### 8. Background Tasks
 
 - **node-schedule** for cron jobs
 - Tasks registered in `src/tasks/index.ts`
@@ -568,7 +598,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
 - **Modals**: Use `Modal` component with `action` snippet for footer buttons
 - **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
-- **Icons**: Use FontAwesome Duotone (`fa-duotone fa-icon-name`)
+- **Icons**: Use FontAwesome Sharp Duotone (`fa-sharp-duotone fa-solid fa-icon-name`), never with custom `--fa-*` colors
 - **URL State**: Use `sveltekit-search-params` for URL-persisted state (v4: `queryParameters()` returns a
   reactive object - read and assign `params.x`, no `$` store syntax)
 
@@ -653,6 +683,15 @@ Required variables (see `.env.example`):
 The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 
 ## Performance Notes
+
+- **Postgres JIT is off** for the app's connections (`-c jit=off` in `src/api/db/db.ts`). rumble's
+  ability and mask SQL is costed far above `jit_above_cost`, and compiling it took seconds per
+  statement (a delegation card: 6.3 s of 6.7 s).
+- **The sighting turns cards in the browser.** `sighting/deckWindow.svelte.ts` holds a window of
+  the backend's deck and moves through it without asking; the backend is asked in the background
+  (near the window's edge, after a review) and waited for only on a jump outside it. The next cards
+  and their reviews are read ahead one at a time (`prefetchCards`), and reviews show optimistically
+  (`savedReviews.svelte.ts`).
 
 - Svelte 5 runes mode enabled - use `$state`, `$derived`, `$effect` instead of legacy stores
 - `compilerOptions.experimental.async` is on, so components may `await` at the top level of

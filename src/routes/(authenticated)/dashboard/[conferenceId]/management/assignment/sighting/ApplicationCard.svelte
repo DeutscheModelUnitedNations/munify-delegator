@@ -22,9 +22,12 @@
 		application: ReturnType<typeof delegationApplication>;
 		startConference: Date | string;
 		review: SightingReview | undefined;
+		/** Changes the review; shown at once */
+		onReview: (change: Partial<SightingReview>) => void;
 	}
 
-	let { conferenceId, kind, id, codename, application, startConference, review }: Props = $props();
+	let { conferenceId, kind, id, codename, application, startConference, review, onReview }: Props =
+		$props();
 
 	const detailsHref = $derived(
 		kind === 'delegation'
@@ -54,7 +57,7 @@
 		<div class="flex flex-wrap items-start justify-between gap-4">
 			<div class="flex flex-col">
 				<h3 class="flex items-center gap-2 text-xl font-bold">
-					<i class="fa-duotone {kind === 'delegation' ? 'fa-users' : 'fa-user'}"></i>
+					<i class="fa-sharp-duotone fa-solid {kind === 'delegation' ? 'fa-users' : 'fa-user'}"></i>
 					{#if person}
 						<button
 							type="button"
@@ -65,16 +68,16 @@
 						</button>
 						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
 							<span title={m.assignmentAge()}>{age ?? '?'}</span>
-							<i class="fa-solid fa-{genderIcon(person.gender)}"></i>
+							<i class="fa-sharp-duotone fa-solid fa-{genderIcon(person.gender)}"></i>
 							{#if person.conferenceParticipationsCount > 0}
 								<span class="text-warning" title={m.assignmentPreviousParticipations()}>
-									<i class="fa-solid fa-rotate-left"></i>
+									<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 									{person.conferenceParticipationsCount}
 								</span>
 							{/if}
 							{#if person.globalNotes?.trim()}
 								<i
-									class="fa-solid fa-triangle-exclamation text-error text-lg"
+									class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error text-lg"
 									title={person.globalNotes.trim()}
 									aria-label={m.globalNotes()}
 								></i>
@@ -87,7 +90,7 @@
 				<span class="text-base-content/50 font-mono text-xs">{id}</span>
 			</div>
 			<div class="flex items-center gap-2">
-				<ReviewControls {kind} {id} {review} />
+				<ReviewControls {review} {onReview} />
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
 				<a
 					class="btn btn-square btn-ghost"
@@ -96,13 +99,13 @@
 					aria-label={m.assignmentOpenDetails()}
 					title={m.assignmentOpenDetails()}
 				>
-					<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 				</a>
 			</div>
 		</div>
 
 		<ApplicationDetails {conferenceId} {application} {startConference} {kind} />
 
-		<NoteInput {kind} {id} {review} />
+		<NoteInput {review} {onReview} />
 	</div>
 </div>

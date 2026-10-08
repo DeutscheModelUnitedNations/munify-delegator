@@ -41,10 +41,10 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-12">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-map-location-dot text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-map-location-dot text-base-content/70"></i>
 			{m.statsGeographicDistribution()}
 		</h2>
-		<div class="w-full h-[400px] rounded-lg overflow-hidden">
+		<div class="w-full h-[400px] rounded-box overflow-hidden">
 			<Map options={{ center: [51.948, 10.2651], zoom: 6 }}>
 				<TileLayer
 					url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}

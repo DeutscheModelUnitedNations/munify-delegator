@@ -12,7 +12,7 @@
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
 	<div class="card-body p-4">
 		<h2 class="card-title text-base font-semibold">
-			<i class="fa-duotone fa-table text-base-content/70"></i>
+			<i class="fa-sharp-duotone fa-solid fa-table text-base-content/70"></i>
 			{title}
 		</h2>
 		<div class="overflow-x-auto">
@@ -33,7 +33,7 @@
 								{#if typeof yLabels[i] === 'string'}
 									{yLabels[i]}
 								{:else}
-									<i class="fa-duotone {yLabels[i].icon} mr-1"></i>
+									<i class="fa-sharp-duotone fa-solid {yLabels[i].icon} mr-1"></i>
 									{yLabels[i].label}
 								{/if}
 							</th>

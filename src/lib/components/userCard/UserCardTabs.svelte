@@ -87,7 +87,7 @@
 				class="tab whitespace-nowrap gap-1.5 {activeTab === tab.id ? 'tab-active' : ''}"
 				onclick={() => onTabChange(tab.id)}
 			>
-				<i class="fa-duotone {tab.icon} text-xs"></i>
+				<i class="fa-sharp-duotone fa-solid {tab.icon} text-xs"></i>
 				<span class="hidden sm:inline">{tab.label}</span>
 			</button>
 		{/each}

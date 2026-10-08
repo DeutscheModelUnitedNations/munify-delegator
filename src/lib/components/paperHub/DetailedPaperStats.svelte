@@ -231,7 +231,7 @@
 
 <div class="card bg-base-200 border border-base-300 p-4">
 	<div class="flex items-center gap-3 mb-4">
-		<i class="fa-duotone fa-chart-pie text-primary text-xl"></i>
+		<i class="fa-sharp-duotone fa-solid fa-chart-pie text-primary text-xl"></i>
 		<h3 class="font-semibold">{m.statsDetailedPaperStatistics()}</h3>
 	</div>
 
@@ -239,7 +239,7 @@
 	<div class="stats stats-vertical sm:stats-horizontal shadow w-full mb-4">
 		<div class="stat">
 			<div class="stat-figure text-primary">
-				<i class="fa-duotone fa-file-lines text-2xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-file-lines text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPaperTotal()}</div>
 			<div class="stat-value text-primary">{detailedStats.total}</div>
@@ -247,7 +247,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-info">
-				<i class="fa-duotone fa-comments text-2xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-comments text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPapersWithReviews()}</div>
 			<div class="stat-value text-info">{detailedStats.withReviews}</div>
@@ -255,7 +255,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-warning">
-				<i class="fa-duotone fa-comment-slash text-2xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-comment-slash text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsPapersWithoutReviews()}</div>
 			<div class="stat-value text-warning">{detailedStats.withoutReviews}</div>
@@ -263,7 +263,7 @@
 
 		<div class="stat">
 			<div class="stat-figure text-success">
-				<i class="fa-duotone fa-check-circle text-2xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-check-circle text-2xl"></i>
 			</div>
 			<div class="stat-title">{m.statsAcceptedPapers()}</div>
 			<div class="stat-value text-success">{detailedStats.accepted}</div>
@@ -273,7 +273,7 @@
 	<!-- Progress Gauges Row -->
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 		<!-- Review Progress Gauge -->
-		<div class="bg-base-100 rounded-lg p-4 border border-base-300">
+		<div class="bg-base-100 rounded-box p-4 border border-base-300">
 			<h4 class="text-sm font-medium text-center mb-2">{m.statsReviewProgress()}</h4>
 			<GaugeChart
 				value={detailedStats.reviewProgress}
@@ -286,7 +286,7 @@
 		</div>
 
 		<!-- Acceptance Rate Gauge -->
-		<div class="bg-base-100 rounded-lg p-4 border border-base-300">
+		<div class="bg-base-100 rounded-box p-4 border border-base-300">
 			<h4 class="text-sm font-medium text-center mb-2">{m.statsAcceptanceRate()}</h4>
 			<GaugeChart
 				value={detailedStats.acceptanceRate}
@@ -302,7 +302,7 @@
 	<!-- Paper Statistics Charts (moved from top section) -->
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 		<!-- Papers by Type -->
-		<div class="bg-base-100 rounded-lg p-3 border border-base-300">
+		<div class="bg-base-100 rounded-box p-3 border border-base-300">
 			<h5 class="text-xs font-medium text-base-content/70 mb-2">{m.statsPapersByType()}</h5>
 			<BarChart
 				labels={papersByTypeData.labels}
@@ -312,7 +312,7 @@
 			/>
 		</div>
 		<!-- Status by Type (Stacked) -->
-		<div class="bg-base-100 rounded-lg p-3 border border-base-300">
+		<div class="bg-base-100 rounded-box p-3 border border-base-300">
 			<h5 class="text-xs font-medium text-base-content/70 mb-2">{m.statsPapersByStatus()}</h5>
 			<MultiSeriesBarChart
 				labels={statusByTypeData.labels}
@@ -327,48 +327,48 @@
 
 	<!-- Committee Breakdown (grouped stacked horizontal bar chart) -->
 	{#if hasCommitteesToShow}
-		<div class="bg-base-100 rounded-lg p-3 border border-base-300">
+		<div class="bg-base-100 rounded-box p-3 border border-base-300">
 			<h5 class="text-xs font-medium text-base-content/70 mb-2">
-				<i class="fa-duotone fa-sitemap mr-2"></i>
+				<i class="fa-sharp-duotone fa-solid fa-sitemap mr-2"></i>
 				{m.statsPapersByCommittee()}
 			</h5>
 			<!-- Legend explanation -->
 			<div class="flex flex-wrap gap-3 text-xs text-base-content/70 mb-3">
 				<span class="flex items-center gap-1">
 					<span
-						class="inline-block w-3 h-3 rounded"
+						class="inline-block w-3 h-3 rounded-field"
 						style="background-color: {PAPER_STATUS_COLORS.SUBMITTED}"
 					></span>
 					{m.paperStatusSubmitted()}
 				</span>
 				<span class="flex items-center gap-1">
 					<span
-						class="inline-block w-3 h-3 rounded"
+						class="inline-block w-3 h-3 rounded-field"
 						style="background-color: {PAPER_STATUS_COLORS.REVISED}"
 					></span>
 					{m.paperStatusRevised()}
 				</span>
 				<span class="flex items-center gap-1">
 					<span
-						class="inline-block w-3 h-3 rounded"
+						class="inline-block w-3 h-3 rounded-field"
 						style="background-color: {PAPER_STATUS_COLORS.CHANGES_REQUESTED}"
 					></span>
 					{m.paperStatusChangesRequested()}
 				</span>
 				<span class="flex items-center gap-1">
 					<span
-						class="inline-block w-3 h-3 rounded"
+						class="inline-block w-3 h-3 rounded-field"
 						style="background-color: {PAPER_STATUS_COLORS.ACCEPTED}"
 					></span>
 					{m.paperStatusAccepted()}
 				</span>
 				<span class="text-base-content/50">|</span>
 				<span class="flex items-center gap-1">
-					<span class="inline-block w-3 h-3 rounded bg-base-content"></span>
+					<span class="inline-block w-3 h-3 rounded-field bg-base-content"></span>
 					{m.paperTypePositionPaper()}
 				</span>
 				<span class="flex items-center gap-1">
-					<span class="inline-block w-3 h-3 rounded bg-base-content/70"></span>
+					<span class="inline-block w-3 h-3 rounded-field bg-base-content/70"></span>
 					{m.paperTypeWorkingPaper()}
 				</span>
 			</div>

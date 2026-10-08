@@ -269,7 +269,7 @@
 <div class="flex flex-col gap-4">
 	{#if view.incompleteSplits.length > 0}
 		<div class="alert alert-warning alert-soft">
-			<i class="fa-duotone fa-triangle-exclamation text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
 			{m.assignmentIncompleteSplitsHint({ count: view.incompleteSplits.length })}
 		</div>
 	{/if}

@@ -28,7 +28,7 @@
 		<div
 			class="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full"
 		>
-			<i class="fa-duotone fa-{icon}"></i>
+			<i class="fa-sharp-duotone fa-solid fa-{icon}"></i>
 		</div>
 		<div class="flex flex-col gap-1">
 			<div class="flex items-center gap-1">
