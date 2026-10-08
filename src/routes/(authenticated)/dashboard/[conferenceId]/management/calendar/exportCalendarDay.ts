@@ -18,7 +18,7 @@ export async function exportCalendarDay(dayId: string) {
 			fontAwesomeIcon: true,
 			color: true,
 			room: true,
-			calendarTrackId: true,
+			tracks: { id: true },
 			place: {
 				id: true,
 				name: true,

@@ -66,12 +66,7 @@ export function makeSeedCalendarEntry(
 		Insert<'calendarEntry'>,
 		'calendarDayId' | 'name' | 'startTime' | 'endTime' | 'color'
 	> &
-		Partial<
-			Pick<
-				Insert<'calendarEntry'>,
-				'calendarTrackId' | 'description' | 'fontAwesomeIcon' | 'placeId' | 'room'
-			>
-		>
+		Partial<Pick<Insert<'calendarEntry'>, 'description' | 'fontAwesomeIcon' | 'placeId' | 'room'>>
 ): Insert<'calendarEntry'> & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
@@ -84,7 +79,6 @@ export function makeSeedCalendarEntry(
 		room: options.room ?? null,
 		placeId: options.placeId ?? null,
 		calendarDayId: options.calendarDayId,
-		calendarTrackId: options.calendarTrackId ?? null,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()
 	};

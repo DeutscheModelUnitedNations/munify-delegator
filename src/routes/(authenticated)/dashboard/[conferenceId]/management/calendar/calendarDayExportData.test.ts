@@ -17,7 +17,7 @@ describe('toCalendarDayExport', () => {
 				fontAwesomeIcon: 'flag',
 				color: 'SESSION',
 				room: 'Aula',
-				calendarTrackId: 't2',
+				tracks: [{ id: 't1' }, { id: 't2' }],
 				place: {
 					name: 'Town hall',
 					address: 'Main street 1',
@@ -33,7 +33,7 @@ describe('toCalendarDayExport', () => {
 				startTime: new Date('2026-03-12T12:05:00Z'),
 				endTime: new Date('2026-03-12T13:00:00Z'),
 				color: 'SOCIAL',
-				calendarTrackId: 'missing',
+				tracks: [{ id: 'missing' }],
 				place: { name: 'Canteen', address: null }
 			},
 			{
@@ -44,7 +44,7 @@ describe('toCalendarDayExport', () => {
 				fontAwesomeIcon: null,
 				color: 'LOGISTICS',
 				room: null,
-				calendarTrackId: null,
+				tracks: [],
 				place: null
 			}
 		]
@@ -69,7 +69,7 @@ describe('toCalendarDayExport', () => {
 			fontAwesomeIcon: 'flag',
 			color: 'SESSION',
 			room: 'Aula',
-			trackName: 'Side',
+			trackNames: ['Main', 'Side'],
 			place: {
 				name: 'Town hall',
 				address: 'Main street 1',
@@ -88,7 +88,7 @@ describe('toCalendarDayExport', () => {
 			description: null,
 			fontAwesomeIcon: null,
 			room: null,
-			trackName: null,
+			trackNames: [],
 			startTime: '12:05',
 			place: {
 				name: 'Canteen',
@@ -100,8 +100,16 @@ describe('toCalendarDayExport', () => {
 				websiteUrl: null
 			}
 		});
-		expect(pause.trackName).toBeNull();
+		expect(pause.trackNames).toEqual([]);
 		expect(pause.place).toBeNull();
+	});
+
+	test('files from before tracks could be spanned still import', () => {
+		const old = { version: 1, tracks: [], entries: [] };
+		const entry = { ...toCalendarDayExport(day).entries[2], trackName: 'Side' };
+		const { trackNames: _, ...legacy } = entry;
+		const parsed = calendarDayExportSchema.parse({ ...old, entries: [legacy] });
+		expect(parsed.entries[0].trackNames).toEqual(['Side']);
 	});
 
 	test('produces a file the import schema accepts', () => {

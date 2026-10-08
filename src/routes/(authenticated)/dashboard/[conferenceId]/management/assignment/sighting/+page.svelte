@@ -110,6 +110,10 @@
 		searchTerm ? await searchApplications(conferenceId, searchTerm, { status, school }) : undefined
 	);
 	const searchShown = $derived(searchHitEntries(hits, searchTerm, codenamize));
+	// Typing has not paused yet, or the backend has not answered
+	const searchBusy = $derived(
+		searching && ((params.search ?? '').trim() !== searchTerm || $effect.pending() > 0)
+	);
 
 	// The card on top: the one asked for, or the one taking its place once it is filtered away.
 	const current = $derived(position.current);
@@ -212,6 +216,9 @@
 					if (e.key === 'Enter' && searching && searchShown[0]) pick(searchShown[0].id);
 				}}
 			/>
+			{#if searchBusy}
+				<span class="loading loading-xs loading-spinner" aria-label={m.search()}></span>
+			{/if}
 		</label>
 		<FilterSelects
 			{status}

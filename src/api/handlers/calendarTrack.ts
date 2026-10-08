@@ -7,6 +7,7 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 
 // Ported from abilities/entities/calendarTrack.ts
@@ -21,6 +22,7 @@ abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
 const CalendarTrackRef = object({ table: 'calendarTrack' });
 query({ table: 'calendarTrack' });
 const pubsub = rumblePubsub({ table: 'calendarTrack' });
+const entryPubsub = rumblePubsub({ table: 'calendarEntry' });
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarTrack: t.drizzleField({
@@ -97,18 +99,34 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.calendarTrack)
-				.where(
-					(await ctx.abilities.calendarTrack.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
-				.returning({ id: schema.calendarTrack.id });
+			const deleteFilter = (await ctx.abilities.calendarTrack.filter('delete')).merge({
+				where: { id: args.id }
+			}).sql.where;
+
+			// Entries that run on this track alone would be left without one, so they go with it
+			const linked = await db.query.calendarEntry.findMany({
+				where: { tracks: { id: args.id } },
+				columns: { id: true },
+				with: { tracks: { columns: { id: true } } }
+			});
+			const orphanIds = linked.filter((entry) => entry.tracks.length === 1).map((e) => e.id);
+
+			const deleted = await db.transaction(async (tx) => {
+				const rows = await tx
+					.delete(schema.calendarTrack)
+					.where(deleteFilter)
+					.returning({ id: schema.calendarTrack.id });
+				if (rows.length > 0 && orphanIds.length > 0) {
+					await tx.delete(schema.calendarEntry).where(inArray(schema.calendarEntry.id, orphanIds));
+				}
+				return rows;
+			});
 
 			if (deleted.length === 0) {
 				throw new GraphQLError('Calendar track not found, or not yours to delete');
 			}
 			pubsub.removed();
+			if (orphanIds.length > 0) entryPubsub.removed();
 
 			return true;
 		}

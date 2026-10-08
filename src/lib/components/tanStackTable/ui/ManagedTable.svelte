@@ -230,6 +230,11 @@
 		}
 	});
 
+	// Server mode: typing has not paused yet, or the backend has not answered
+	const searchBusy = $derived(
+		serverMode &&
+			(globalFilter.trim() !== view.search || (view.search !== '' && $effect.pending() > 0))
+	);
 	const setSearch = (value: string) => view.setSearch(value);
 
 	/** Which rows the table shows: a page's range in server mode, matches of all in client mode */
@@ -271,7 +276,9 @@
 			oninput={(e) => setSearch(e.currentTarget.value)}
 			placeholder={m.search()}
 		/>
-		{#if globalFilter}
+		{#if searchBusy}
+			<span class="loading loading-xs loading-spinner" aria-label={m.search()}></span>
+		{:else if globalFilter}
 			<button
 				class="btn btn-square btn-ghost btn-sm"
 				aria-label="Clear search"

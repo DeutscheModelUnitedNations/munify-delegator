@@ -6,6 +6,7 @@ import {
 } from 'libphonenumber-js';
 import type { CountryCode } from 'libphonenumber-js';
 import { alpha3ToAlpha2 } from '$lib/helpers/countryCodes';
+import { DUPLICATE_THRESHOLD } from '$lib/helpers/plausibilityRules';
 
 /**
  * Finds accounts that may belong to the same person: someone who got a care note and came back
@@ -40,9 +41,6 @@ export type DuplicatePair = {
 	score: number;
 	reasons: MatchReason[];
 };
-
-/** A pair at or above this score is worth a look. */
-export const DUPLICATE_THRESHOLD = 0.6;
 
 /**
  * What each signal adds. None reaches the threshold alone: a shared phone number may be a
@@ -210,31 +208,36 @@ function sharesEmergencyPhone(a: MatchKeys, b: MatchKeys): boolean {
 	return false;
 }
 
+/** The reasons the cheap keys of two accounts give, each with its weight. */
+function keyReasons(a: MatchKeys, b: MatchKeys): [MatchReason, number][] {
+	const sameAddress =
+		a.zip &&
+		a.zip === b.zip &&
+		a.street &&
+		b.street &&
+		jaroWinkler(a.street, b.street) >= STREET_SIMILAR;
+	const candidates: [MatchReason, unknown][] = [
+		['birthday', a.birthday && a.birthday === b.birthday],
+		['email', a.emailLocal && a.emailLocal === b.emailLocal],
+		['phone', a.phone && a.phone === b.phone],
+		['emergencyContact', sharesEmergencyPhone(a, b)],
+		['address', sameAddress]
+	];
+	return candidates.flatMap(([reason, hit]) => (hit ? [[reason, WEIGHTS[reason]]] : []));
+}
+
 /** How alike two accounts are, and why; `undefined` below `DUPLICATE_THRESHOLD`. */
 export function compareKeys(
 	a: MatchKeys,
 	b: MatchKeys
 ): Omit<DuplicatePair, 'userId' | 'candidateId'> | undefined {
-	const reasons: MatchReason[] = [];
-	let score = 0;
+	const found = keyReasons(a, b);
+	const reasons: MatchReason[] = found.map(([reason]) => reason);
+	let score = found.reduce((sum, [, weight]) => sum + weight, 0);
 	const add = (reason: MatchReason, weight: number) => {
 		reasons.push(reason);
 		score += weight;
 	};
-
-	if (a.birthday && a.birthday === b.birthday) add('birthday', WEIGHTS.birthday);
-	if (a.emailLocal && a.emailLocal === b.emailLocal) add('email', WEIGHTS.email);
-	if (a.phone && a.phone === b.phone) add('phone', WEIGHTS.phone);
-	if (sharesEmergencyPhone(a, b)) add('emergencyContact', WEIGHTS.emergencyContact);
-	if (
-		a.zip &&
-		a.zip === b.zip &&
-		a.street &&
-		b.street &&
-		jaroWinkler(a.street, b.street) >= STREET_SIMILAR
-	) {
-		add('address', WEIGHTS.address);
-	}
 
 	// the names last, and only where they can still make the difference: most accounts a scan
 	// compares share nothing but a birthday with strangers

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatClockMinutes } from '$lib/helpers/formatClock';
 	import type { CalendarEntry as Entry, CalendarTrack as Track } from './calendarTypes';
 	import OptionalTooltip from '$lib/components/OptionalTooltip.svelte';
 	import CalendarEntryCard from './CalendarEntryCard.svelte';
@@ -44,9 +45,7 @@
 	);
 
 	let visibleEntries = $derived(
-		filterTrackId
-			? entries.filter((e) => e.calendarTrackId === filterTrackId || !e.calendarTrackId)
-			: entries
+		filterTrackId ? entries.filter((e) => e.tracks.some((t) => t.id === filterTrackId)) : entries
 	);
 
 	let timeRange = $derived(hourRange(entries));
@@ -71,12 +70,12 @@
 	let columnCount = $derived(Math.max(visibleTracks.length, 1));
 
 	function getColumnForEntry(entry: Entry): { start: number; span: number } {
-		if (!entry.calendarTrackId) {
-			return { start: 1, span: columnCount };
-		}
-		const idx = visibleTracks.findIndex((t) => t.id === entry.calendarTrackId);
-		if (idx === -1) return { start: 1, span: columnCount };
-		return { start: idx + 1, span: 1 };
+		const indexes = entry.tracks
+			.map((track) => visibleTracks.findIndex((t) => t.id === track.id))
+			.filter((index) => index !== -1);
+		if (indexes.length === 0) return { start: 1, span: columnCount };
+		const first = Math.min(...indexes);
+		return { start: first + 1, span: Math.max(...indexes) - first + 1 };
 	}
 
 	function isCompact(entry: Entry): boolean {
@@ -122,7 +121,7 @@
 					class="text-base-content/40 absolute right-2 text-xs leading-none"
 					style="top: {(hour - timeRange.startHour) * hourHeight}px; transform: translateY(-50%);"
 				>
-					{hour.toString().padStart(2, '0')}:00
+					{formatClockMinutes(hour * 60)}
 				</div>
 			{/each}
 		</div>

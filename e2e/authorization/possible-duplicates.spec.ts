@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
-	E2E_CONFERENCE_ID,
 	E2E_DUPLICATE_EARLIER_NOTE,
 	E2E_DUPLICATE_EARLIER_USER_ID,
 	E2E_MGMT_ADMIN_ID,
+	E2E_MGMT_TARGET_USER_ID,
 	E2E_POSSIBLE_DUPLICATE_ID,
 	E2E_TEAM_COORDINATOR_ID
 } from '../seed/seed';
@@ -53,10 +53,7 @@ test('participant care reads the other account’s name and note, not its contac
 
 	const pairs = await gql(
 		page,
-		`query ($c: ID!) {
-			conferencePossibleDuplicates(conferenceId: $c) { id user { id globalNotes } candidate { id } }
-		}`,
-		{ c: E2E_CONFERENCE_ID }
+		`query { possibleDuplicates { id user { id globalNotes } candidate { id } } }`
 	);
 	expect(pairs.errors, JSON.stringify(pairs)).toBeUndefined();
 	expect(JSON.stringify(pairs.data)).toContain(E2E_DUPLICATE_EARLIER_NOTE);
@@ -79,10 +76,7 @@ test('a dismissed pair keeps the name, loses the note, and can be reopened', asy
 		// still listed, so the dismissal can be undone
 		const pairs = await gql(
 			page,
-			`query ($c: ID!) {
-				conferencePossibleDuplicates(conferenceId: $c) { id status candidate { id } user { id familyName } }
-			}`,
-			{ c: E2E_CONFERENCE_ID }
+			`query { possibleDuplicates { id status candidate { id } user { id familyName } } }`
 		);
 		expect(pairs.errors, JSON.stringify(pairs)).toBeUndefined();
 		expect(JSON.stringify(pairs.data)).toContain('DISMISSED');
@@ -92,15 +86,38 @@ test('a dismissed pair keeps the name, loses the note, and can be reopened', asy
 	expect(await earlierAccount(page)).toMatchObject({ globalNotes: E2E_DUPLICATE_EARLIER_NOTE });
 });
 
+test('a confirmed pair carries the old account’s note over to the new one', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/dashboard' });
+
+	const linkedNotes = async () => {
+		const result = await gql(
+			page,
+			`query {
+				users(where: { id: { eq: "${E2E_MGMT_TARGET_USER_ID}" } }) {
+					duplicatesAsCandidate(where: { status: CONFIRMED }) { user { globalNotes } }
+				}
+			}`
+		);
+		expect(result.errors, JSON.stringify(result)).toBeUndefined();
+		return JSON.stringify(result.data);
+	};
+
+	// an open pair is a suspicion, not yet a fact: nothing is carried over
+	expect(await linkedNotes()).not.toContain(E2E_DUPLICATE_EARLIER_NOTE);
+	await decide(page, 'CONFIRMED');
+	try {
+		expect(await linkedNotes()).toContain(E2E_DUPLICATE_EARLIER_NOTE);
+	} finally {
+		await decide(page, 'OPEN');
+	}
+	expect(await linkedNotes()).not.toContain(E2E_DUPLICATE_EARLIER_NOTE);
+});
+
 test('the rest of the team sees neither the pairs nor the other account', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), { startUrl: '/dashboard' });
 
-	const pairs = await gql(
-		page,
-		`query ($c: ID!) { conferencePossibleDuplicates(conferenceId: $c) { id } }`,
-		{ c: E2E_CONFERENCE_ID }
-	);
-	expect(pairs.errors?.[0]?.message, JSON.stringify(pairs)).toMatch(/requires one of/);
+	const pairs = await gql(page, `query { possibleDuplicates { id } }`);
+	expect(pairs.data?.possibleDuplicates, JSON.stringify(pairs)).toEqual([]);
 	expect(await earlierAccount(page)).toBeUndefined();
 
 	const decision = await gql(

@@ -4,14 +4,6 @@ export function toTimeString(d: Date): string {
 	return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
 
-/** A day's date with an `HH:mm` time set on it, in UTC. */
-export function combineDateTime(dayDate: Date, timeStr: string): Date {
-	const d = new Date(dayDate);
-	const [h, min] = timeStr.split(':').map(Number);
-	d.setUTCHours(h, min, 0, 0);
-	return d;
-}
-
 /** The same wall-clock time as `time`, on the date of `dayDate`. */
 export function moveToDay(time: Date | string, dayDate: Date | string): Date {
 	const source = new Date(time);

@@ -59,6 +59,8 @@ export function addCalendar(cs: ConferenceSeed) {
 		return time;
 	}
 
+	const trackLinks: Insert<'calendarEntryToCalendarTrack'>[] = [];
+
 	/** The same session in all three tracks, one room each. */
 	function parallelSessions(
 		dayIndex: number,
@@ -66,21 +68,37 @@ export function addCalendar(cs: ConferenceSeed) {
 		from: [number, number],
 		to: [number, number]
 	) {
-		return tracksPerDay[dayIndex].map((track, trackIndex) =>
-			makeSeedCalendarEntry({
+		return tracksPerDay[dayIndex].map((track, trackIndex) => {
+			const entry = makeSeedCalendarEntry({
 				calendarDayId: days[dayIndex].id,
-				calendarTrackId: track.id,
 				name,
 				startTime: at(dayDates[dayIndex], from[0], from[1]),
 				endTime: at(dayDates[dayIndex], to[0], to[1]),
 				color: 'SESSION',
 				fontAwesomeIcon: 'gavel',
 				room: `Raum ${201 + trackIndex}`
-			})
-		);
+			});
+			trackLinks.push({ a: entry.id, b: track.id });
+			return entry;
+		});
 	}
 
-	const entries: Insert<'calendarEntry'>[] = [
+	// Runs on the first two of the day's three tracks
+	const workshop = makeSeedCalendarEntry({
+		calendarDayId: days[1].id,
+		name: 'Workshop: Diplomatische Verhandlungen',
+		startTime: at(dayDates[1], 12, 0),
+		endTime: at(dayDates[1], 13, 30),
+		color: 'WORKSHOP',
+		fontAwesomeIcon: 'chalkboard-user',
+		room: 'Saal A'
+	});
+	trackLinks.push(
+		{ a: workshop.id, b: tracksPerDay[1][0].id },
+		{ a: workshop.id, b: tracksPerDay[1][1].id }
+	);
+
+	const entries: (Insert<'calendarEntry'> & { id: string })[] = [
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Eröffnungsfeier',
@@ -126,15 +144,7 @@ export function addCalendar(cs: ConferenceSeed) {
 			color: 'BREAK',
 			fontAwesomeIcon: 'utensils'
 		}),
-		makeSeedCalendarEntry({
-			calendarDayId: days[1].id,
-			name: 'Workshop: Diplomatische Verhandlungen',
-			startTime: at(dayDates[1], 12, 0),
-			endTime: at(dayDates[1], 13, 30),
-			color: 'WORKSHOP',
-			fontAwesomeIcon: 'chalkboard-user',
-			room: 'Saal A'
-		}),
+		workshop,
 		...parallelSessions(1, 'Sitzung IV', [13, 30], [15, 30]),
 		makeSeedCalendarEntry({
 			calendarDayId: days[1].id,
@@ -165,5 +175,12 @@ export function addCalendar(cs: ConferenceSeed) {
 			room: 'Plenarsaal'
 		})
 	];
+	// Entries without a track of their own run on every track of their day
+	const linked = new Set(trackLinks.map((link) => link.a));
+	for (const entry of [...entries].filter((e) => !linked.has(e.id))) {
+		const day = days.findIndex((d) => d.id === entry.calendarDayId);
+		trackLinks.push(...tracksPerDay[day].map((track) => ({ a: entry.id, b: track.id })));
+	}
 	cs.batch.calendarEntry.push(...entries);
+	cs.batch.calendarEntryToCalendarTrack.push(...trackLinks);
 }

@@ -452,11 +452,6 @@ export type Calendarentry = {
     where?: CalendardayWhereInputArgument | null | undefined
   }) => Calendarday,
   calendarDayId: ID,
-  calendarTrack: (p?: {
-    orderBy?: CalendartrackOrderInputArgument | null | undefined,
-    where?: CalendartrackWhereInputArgument | null | undefined
-  }) => Calendartrack | null,
-  calendarTrackId: ID | null,
   color: CalendarentrycolorEnum,
   createdAt: DateTime,
   description: String | null,
@@ -472,12 +467,18 @@ export type Calendarentry = {
   room: String | null,
   search_distance: Float | null,
   startTime: DateTime,
+  tracks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CalendartrackOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CalendartrackWhereInputArgument | null | undefined
+  }) => Calendartrack[],
   updatedAt: DateTime    
 };
 		
 export type CalendarentryOrderInputArgument = {
   calendarDayId?: SortingParameter | null | undefined,
-  calendarTrackId?: SortingParameter | null | undefined,
   color?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
@@ -497,8 +498,6 @@ export type CalendarentryWhereInputArgument = {
   OR?: CalendarentryWhereInputArgument[] | undefined,
   calendarDay?: CalendardayWhereInputArgument | null | undefined,
   calendarDayId?: IDWhereInputArgument | null | undefined,
-  calendarTrack?: CalendartrackWhereInputArgument | null | undefined,
-  calendarTrackId?: IDWhereInputArgument | null | undefined,
   color?: CalendarentrycolorEnum | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,
@@ -510,6 +509,7 @@ export type CalendarentryWhereInputArgument = {
   placeId?: IDWhereInputArgument | null | undefined,
   room?: StringWhereInputArgument | null | undefined,
   startTime?: DateTimeWhereInputArgument | null | undefined,
+  tracks?: CalendartrackWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
@@ -1700,7 +1700,7 @@ export type Mutation = {
   }) => Calendarday,
   createCalendarEntry: (p: {
     calendarDayId: ID,
-    calendarTrackId?: ID | null | undefined,
+    calendarTrackIds?: ID[] | null | undefined,
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
     endTime: DateTime,
@@ -1995,7 +1995,7 @@ export type Mutation = {
   }) => Calendarday,
   updateCalendarEntry: (p: {
     calendarDayId?: ID | null | undefined,
-    calendarTrackId?: ID | null | undefined,
+    calendarTrackIds?: ID[] | null | undefined,
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
     endTime?: DateTime | null | undefined,
@@ -2862,9 +2862,6 @@ export type Query = {
   conferencePlausibility: (p: {
     conferenceId: ID
   }) => PlausibilityResult,
-  conferencePossibleDuplicates: (p: {
-    conferenceId: ID
-  }) => Possibleduplicate[],
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,

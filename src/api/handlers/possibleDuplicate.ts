@@ -11,7 +11,6 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isManagedUser,
-	participatesIn,
 	systemAdmin,
 	userId
 } from '$api/services/authHelper';
@@ -100,31 +99,6 @@ const PossibleDuplicateRef = object({
 query({ table: 'possibleDuplicate' });
 const pubsub = rumblePubsub({ table: 'possibleDuplicate' });
 const userPubsub = rumblePubsub({ table: 'user' });
-
-schemaBuilder.queryFields((t) => ({
-	/**
-	 * Pairs with an account taking part in the conference, likeliest first - dismissed ones too,
-	 * so a dismissal can be undone (the other account is then readable by name only, see `user.ts`).
-	 */
-	conferencePossibleDuplicates: t.drizzleField({
-		type: [PossibleDuplicateRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			const participant = participatesIn({ id: args.conferenceId });
-			return db.query.possibleDuplicate.findMany(
-				query({
-					...(await ctx.abilities.possibleDuplicate.filter('read')).merge({
-						where: {
-							OR: [{ user: participant }, { candidate: participant }]
-						}
-					}).query.many,
-					orderBy: { score: 'desc' }
-				})
-			);
-		}
-	})
-}));
 
 schemaBuilder.mutationFields((t) => ({
 	/** Looks for duplicates of everyone taking part in the conference; answers the pairs found. */

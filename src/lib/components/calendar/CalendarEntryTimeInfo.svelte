@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatClock } from '$lib/helpers/formatClock';
 	import type { CalendarEntry, CalendarTrack } from './calendarTypes';
 
 	interface Props {
@@ -10,8 +11,7 @@
 
 	let { entry, track = null, dayName, dayDate = null }: Props = $props();
 
-	const formatTime = (date: Date) =>
-		new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+	const formatTime = (date: Date) => formatClock(date);
 
 	let timeLabel = $derived(`${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}`);
 

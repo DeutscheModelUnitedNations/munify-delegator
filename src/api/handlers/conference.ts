@@ -19,6 +19,12 @@ import { and, eq, inArray, max } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 import type { InferSelectModel } from 'drizzle-orm';
 import { UserRef } from './user';
+import {
+	PARTICIPANT_MAX_AGE,
+	PARTICIPANT_MIN_AGE,
+	SUPERVISOR_MIN_AGE,
+	yearsAgo
+} from '$lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
 import {
@@ -631,11 +637,6 @@ function toFormShape(user: PlausibilityUser) {
 	return { ...rest, given_name: givenName, family_name: familyName };
 }
 
-/** January 1st of the year the given age is reached, used as the age cut-off. */
-function yearsAgo(years: number) {
-	return new Date(new Date().getFullYear() - years, 0, 1);
-}
-
 schemaBuilder.queryFields((t) => ({
 	/**
 	 * Flags participants whose age does not fit the role they registered for, plus those whose
@@ -660,25 +661,25 @@ schemaBuilder.queryFields((t) => ({
 				await Promise.all([
 					db.query.user.findMany(
 						readableUsers.merge({
-							where: { ...participating, birthday: { gt: yearsAgo(13) } }
+							where: { ...participating, birthday: { gt: yearsAgo(PARTICIPANT_MIN_AGE) } }
 						}).query.many
 					),
 					db.query.user.findMany(
 						readableUsers.merge({
 							where: {
 								...participating,
-								birthday: { lt: yearsAgo(21), gt: yearsAgo(26) }
+								birthday: { lt: yearsAgo(SUPERVISOR_MIN_AGE), gt: yearsAgo(PARTICIPANT_MAX_AGE) }
 							}
 						}).query.many
 					),
 					db.query.user.findMany(
 						readableUsers.merge({
-							where: { ...participating, birthday: { lt: yearsAgo(26) } }
+							where: { ...participating, birthday: { lt: yearsAgo(PARTICIPANT_MAX_AGE) } }
 						}).query.many
 					),
 					db.query.user.findMany(
 						readableUsers.merge({
-							where: { ...supervising, birthday: { gt: yearsAgo(21) } }
+							where: { ...supervising, birthday: { gt: yearsAgo(SUPERVISOR_MIN_AGE) } }
 						}).query.many
 					),
 					db.query.user.findMany(

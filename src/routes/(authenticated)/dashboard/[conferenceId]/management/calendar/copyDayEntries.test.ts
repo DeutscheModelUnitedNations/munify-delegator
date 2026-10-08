@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { copiedEntryArgs, matchingTargetTrackId } from './copyDayEntries';
+import { copiedEntryArgs, matchingTargetTrackIds, retargetTrackRange } from './copyDayEntries';
 
 const sourceTracks = [
 	{ id: 's1', name: 'Main' },
@@ -7,16 +7,15 @@ const sourceTracks = [
 ];
 const targetTracks = [{ id: 't1', name: 'Main' }];
 
-describe('matchingTargetTrackId', () => {
-	test('finds the target track with the same name', () => {
-		expect(matchingTargetTrackId('s1', sourceTracks, targetTracks)).toBe('t1');
+describe('matchingTargetTrackIds', () => {
+	test('finds the target tracks with the same names', () => {
+		expect(matchingTargetTrackIds(['s1'], sourceTracks, targetTracks)).toEqual(['t1']);
 	});
 
-	test('is null without a track, an unknown track or no namesake on the target day', () => {
-		expect(matchingTargetTrackId(null, sourceTracks, targetTracks)).toBeNull();
-		expect(matchingTargetTrackId(undefined, sourceTracks, targetTracks)).toBeNull();
-		expect(matchingTargetTrackId('gone', sourceTracks, targetTracks)).toBeNull();
-		expect(matchingTargetTrackId('s2', sourceTracks, targetTracks)).toBeNull();
+	test('leaves out unknown tracks and those without a namesake on the target day', () => {
+		expect(matchingTargetTrackIds([], sourceTracks, targetTracks)).toEqual([]);
+		expect(matchingTargetTrackIds(['gone'], sourceTracks, targetTracks)).toEqual([]);
+		expect(matchingTargetTrackIds(['s2', 's1'], sourceTracks, targetTracks)).toEqual(['t1']);
 	});
 });
 
@@ -36,14 +35,14 @@ describe('copiedEntryArgs', () => {
 					color: 'SESSION',
 					placeId: 'p1',
 					room: 'Aula',
-					calendarTrackId: 's1'
+					tracks: [{ id: 's1' }]
 				},
 				targetDay,
 				tracks
 			)
 		).toEqual({
 			calendarDayId: 'day2',
-			calendarTrackId: 't1',
+			calendarTrackIds: ['t1'],
 			name: 'Opening',
 			description: 'Welcome',
 			startTime: new Date('2026-03-14T09:00:00Z'),
@@ -62,17 +61,55 @@ describe('copiedEntryArgs', () => {
 					name: 'Break',
 					startTime: '2026-03-12T15:00:00Z',
 					endTime: '2026-03-12T15:15:00Z',
-					color: 'BREAK'
+					color: 'BREAK',
+					tracks: []
 				},
 				targetDay,
 				tracks
 			)
 		).toMatchObject({
-			calendarTrackId: null,
+			calendarTrackIds: [],
 			description: null,
 			fontAwesomeIcon: null,
 			placeId: null,
 			room: null
+		});
+	});
+});
+
+describe('retargetTrackRange', () => {
+	const source = [
+		{ id: 's1', name: 'Plenary' },
+		{ id: 's2', name: 'Workshop' }
+	];
+	const target = [
+		{ id: 't0', name: 'Other' },
+		{ id: 't2', name: 'Workshop' },
+		{ id: 't1', name: 'Plenary' }
+	];
+
+	test('maps both ends to the tracks of the same name', () => {
+		expect(retargetTrackRange({ from: 's1', to: 's2' }, source, target)).toEqual({
+			from: 't1',
+			to: 't2'
+		});
+	});
+
+	test('a single track keeps both ends together', () => {
+		expect(retargetTrackRange({ from: 's1', to: null }, source, target)).toEqual({
+			from: 't1',
+			to: 't1'
+		});
+	});
+
+	test('falls back to the first track of the target day', () => {
+		expect(retargetTrackRange({ from: 'x', to: null }, source, target)).toEqual({
+			from: 't0',
+			to: 't0'
+		});
+		expect(retargetTrackRange({ from: null, to: null }, source, [])).toEqual({
+			from: null,
+			to: null
 		});
 	});
 });

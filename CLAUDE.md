@@ -557,6 +557,11 @@ bun run preview
   lets participant care read the _other_ account's identity and care notes (no contact details)
   while the pair is open or confirmed; once it is dismissed the name stays (the page lists dismissed pairs, so a dismissal can be undone) and the notes are withheld. `e2e/authorization/possible-duplicates.spec.ts` pins it
   down.
+- **Confirmed means the notes follow the person.** The user card shows the care notes of accounts
+  confirmed to be the same person (`LinkedAccountNotes`), and the sighting's red warning counts them
+  with the person's own (`careNotesOf` in `$lib/helpers/linkedNotes`; select
+  `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
+  nothing over.
 - **The dev seed replays the ways a returning person's data can differ**
   (`seed-dev/duplicateScenarios.ts`, one scenario per case): spelling, umlauts, name order, a
   dropped second given name, typos, another script, an email variant, a nickname with a reformatted

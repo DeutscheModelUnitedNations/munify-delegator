@@ -253,18 +253,31 @@ schemaBuilder.mutationFields((t) => ({
 				const placeIdByName = await importPlaces(tx, args.conferenceId, importData.entries);
 
 				for (const entry of importData.entries) {
-					await tx.insert(schema.calendarEntry).values({
-						calendarDayId: day.id,
-						name: entry.name,
-						description: entry.description,
-						startTime: timeOnDay(args.date, entry.startTime),
-						endTime: timeOnDay(args.date, entry.endTime),
-						fontAwesomeIcon: entry.fontAwesomeIcon,
-						color: entry.color,
-						room: entry.room,
-						calendarTrackId: entry.trackName ? (trackIdByName.get(entry.trackName) ?? null) : null,
-						placeId: entry.place ? (placeIdByName.get(entry.place.name) ?? null) : null
-					});
+					const created = await tx
+						.insert(schema.calendarEntry)
+						.values({
+							calendarDayId: day.id,
+							name: entry.name,
+							description: entry.description,
+							startTime: timeOnDay(args.date, entry.startTime),
+							endTime: timeOnDay(args.date, entry.endTime),
+							fontAwesomeIcon: entry.fontAwesomeIcon,
+							color: entry.color,
+							room: entry.room,
+							placeId: entry.place ? (placeIdByName.get(entry.place.name) ?? null) : null
+						})
+						.returning()
+						.then(assertFirstEntryExists);
+					// Files from before an entry named its tracks leave them out for "all tracks"
+					const trackIds =
+						entry.trackNames.length === 0
+							? [...trackIdByName.values()]
+							: entry.trackNames.flatMap((name) => trackIdByName.get(name) ?? []);
+					if (trackIds.length > 0) {
+						await tx
+							.insert(schema.calendarEntryToCalendarTrack)
+							.values(trackIds.map((trackId) => ({ a: created.id, b: trackId })));
+					}
 				}
 
 				return day;

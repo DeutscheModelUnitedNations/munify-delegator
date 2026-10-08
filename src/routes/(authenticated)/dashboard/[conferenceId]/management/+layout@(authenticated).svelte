@@ -8,6 +8,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { canPlanSeats, isSeatPlanningOnly } from '$lib/helpers/managementAccess';
 	import { managementMembership } from './managementMembership';
+	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 
 	let { children, params }: LayoutProps = $props();
 
@@ -117,11 +118,17 @@
 				</NavMenuDetails>
 
 				<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox">
-					<NavMenuButton
-						href="/dashboard/{conferenceId}/management/plausibility"
-						icon="fa-shield-check"
-						title={m.adminPlausibility()}
-					/>
+					<!-- the count is fetched on its own, so the menu does not wait for it -->
+					<svelte:boundary>
+						<PlausibilityNavButton {conferenceId} />
+						{#snippet pending()}
+							<NavMenuButton
+								href="/dashboard/{conferenceId}/management/plausibility"
+								icon="fa-shield-check"
+								title={m.adminPlausibility()}
+							/>
+						{/snippet}
+					</svelte:boundary>
 					<NavMenuButton
 						href="/dashboard/{conferenceId}/management/cleanup"
 						icon="fa-broom"

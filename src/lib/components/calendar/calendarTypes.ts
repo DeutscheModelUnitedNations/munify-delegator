@@ -29,7 +29,8 @@ export interface CalendarEntry {
 	color: CalendarentrycolorEnum;
 	place?: CalendarPlace | null;
 	room?: string | null;
-	calendarTrackId?: string | null;
+	/** The tracks the entry runs on; none means all of them */
+	tracks: { id: string }[];
 }
 
 export interface CalendarDay {

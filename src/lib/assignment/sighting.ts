@@ -1,5 +1,6 @@
 import Fuse from 'fuse.js';
 import { getAgeAtConference } from '$lib/helpers/ageChecker';
+import type { WithLinkedAccounts } from '$lib/helpers/linkedNotes';
 /** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {
@@ -112,7 +113,7 @@ export function snippetOf(reason: MatchReason, context = 30) {
 
 type Nullable<T> = T | null | undefined;
 
-interface Person {
+interface Person extends WithLinkedAccounts {
 	id: string;
 	givenName: string;
 	familyName: string;
@@ -120,7 +121,6 @@ interface Person {
 	birthday?: Nullable<Date | string>;
 	gender?: Nullable<string>;
 	conferenceParticipationsCount: number;
-	globalNotes?: Nullable<string>;
 }
 
 interface Supervisor {

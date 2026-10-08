@@ -54,7 +54,6 @@ describe('makeSeedCalendarEntry', () => {
 		expect(
 			makeSeedCalendarEntry({
 				...required,
-				calendarTrackId: 'track',
 				description: 'Feierlich',
 				fontAwesomeIcon: 'flag',
 				placeId: 'place',
@@ -62,7 +61,6 @@ describe('makeSeedCalendarEntry', () => {
 			})
 		).toMatchObject({
 			...required,
-			calendarTrackId: 'track',
 			description: 'Feierlich',
 			fontAwesomeIcon: 'flag',
 			placeId: 'place',
@@ -72,7 +70,6 @@ describe('makeSeedCalendarEntry', () => {
 
 	test('leaves the details it is not given empty', () => {
 		expect(makeSeedCalendarEntry(required)).toMatchObject({
-			calendarTrackId: null,
 			description: null,
 			fontAwesomeIcon: null,
 			placeId: null,

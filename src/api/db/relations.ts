@@ -126,9 +126,9 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.calendarDay.id,
 			optional: false
 		}),
-		calendarTrack: r.one.calendarTrack({
-			from: r.calendarEntry.calendarTrackId,
-			to: r.calendarTrack.id
+		tracks: r.many.calendarTrack({
+			from: r.calendarEntry.id.through(r.calendarEntryToCalendarTrack.a),
+			to: r.calendarTrack.id.through(r.calendarEntryToCalendarTrack.b)
 		}),
 		place: r.one.place({
 			from: r.calendarEntry.placeId,
@@ -142,8 +142,8 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		}),
 		entries: r.many.calendarEntry({
-			from: r.calendarTrack.id,
-			to: r.calendarEntry.calendarTrackId
+			from: r.calendarTrack.id.through(r.calendarEntryToCalendarTrack.b),
+			to: r.calendarEntry.id.through(r.calendarEntryToCalendarTrack.a)
 		})
 	},
 	committee: {

@@ -43,7 +43,7 @@
 					websiteUrl: true
 				},
 				room: true,
-				calendarTrackId: true
+				tracks: { id: true }
 			}
 		});
 	}

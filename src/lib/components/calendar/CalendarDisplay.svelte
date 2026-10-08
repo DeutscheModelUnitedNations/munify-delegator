@@ -3,6 +3,7 @@
 	import CalendarTrackFilter from './CalendarTrackFilter.svelte';
 	import CalendarDayView from './CalendarDayView.svelte';
 	import CalendarEntryDrawer from './CalendarEntryDrawer.svelte';
+	import { entryTrackSummary, todayIndex } from './calendarDisplay';
 
 	interface Props {
 		days: Day[];
@@ -13,31 +14,8 @@
 
 	let { days, timezone = 'UTC', onEditEntry, onEditPlace }: Props = $props();
 
-	function getTodayIndex() {
-		const now = new Date();
-		const fmt = new Intl.DateTimeFormat('en-US', {
-			timeZone: timezone,
-			year: 'numeric',
-			month: 'numeric',
-			day: 'numeric'
-		});
-		const parts = fmt.formatToParts(now);
-		const todayYear = Number(parts.find((p) => p.type === 'year')?.value);
-		const todayMonth = Number(parts.find((p) => p.type === 'month')?.value) - 1;
-		const todayDay = Number(parts.find((p) => p.type === 'day')?.value);
-
-		const idx = days.findIndex((d) => {
-			const dd = new Date(d.date);
-			return (
-				dd.getUTCFullYear() === todayYear &&
-				dd.getUTCMonth() === todayMonth &&
-				dd.getUTCDate() === todayDay
-			);
-		});
-		return idx >= 0 ? idx : 0;
-	}
-
-	let selectedDayIndex = $state(getTodayIndex());
+	// svelte-ignore state_referenced_locally -- only the day shown first depends on it
+	let selectedDayIndex = $state(todayIndex(days, timezone));
 	let filterTrackId = $state<string | null>(null);
 
 	let selectedDay = $derived(days[selectedDayIndex]);
@@ -48,11 +26,7 @@
 	let selectedEntry = $state<Entry | null>(null);
 	let selectedDayForDrawer = $state<Day | null>(null);
 
-	let selectedTrack = $derived(
-		selectedEntry?.calendarTrackId && selectedDayForDrawer
-			? (selectedDayForDrawer.tracks.find((t) => t.id === selectedEntry?.calendarTrackId) ?? null)
-			: null
-	);
+	let selectedTrack = $derived(entryTrackSummary(selectedDayForDrawer, selectedEntry));
 
 	function handleEntryClick(entry: Entry, day: Day) {
 		selectedEntry = entry;

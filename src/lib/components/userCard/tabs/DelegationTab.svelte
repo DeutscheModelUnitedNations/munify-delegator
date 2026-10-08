@@ -15,6 +15,7 @@
 	import HeadDelegateModal from '$lib/components/registrationAdmin/HeadDelegateModal.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
+	import codenmz from '$lib/helpers/codenamize';
 
 	interface Props {
 		delegationId: string;
@@ -171,6 +172,8 @@
 {/snippet}
 
 <div class="flex flex-col gap-6">
+	<h2 class="text-2xl font-bold">{codenmz(delegationId)}</h2>
+
 	<!-- Assignment Card -->
 	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">

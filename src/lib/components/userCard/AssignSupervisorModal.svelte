@@ -43,6 +43,9 @@
 			: []
 	);
 
+	// Typing has not paused yet, or the backend has not answered
+	const searchBusy = $derived(open && (typed !== search || $effect.pending() > 0));
+
 	const assignSupervisor = async (connectionCode: string) => {
 		const promise = client.mutate.connectToConferenceSupervisor({
 			__args: { conferenceId, userId, connectionCode },
@@ -57,7 +60,11 @@
 <Modal bind:open title={m.assignSupervisor()}>
 	<label class="input input-bordered mb-2 flex w-full items-center gap-2">
 		<input type="text" class="grow" bind:value={typed} placeholder={m.search()} />
-		<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
+		{#if searchBusy}
+			<span class="loading loading-xs loading-spinner" aria-label={m.search()}></span>
+		{:else}
+			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
+		{/if}
 	</label>
 	<div class="overflow-x-auto">
 		<table class="table table-sm">

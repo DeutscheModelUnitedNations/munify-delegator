@@ -1,4 +1,5 @@
 import { client } from '$lib/api/rumbleClient/client';
+import { confirmedLinkedAccounts } from '$lib/helpers/linkedNotes';
 import type { DeckWindowData, WindowEntry } from '$lib/assignment/deckWindow';
 import { containing, personContains } from '$lib/components/tanStackTable/serverQuery';
 
@@ -10,7 +11,9 @@ const person = {
 	birthday: true,
 	gender: true,
 	conferenceParticipationsCount: true,
-	globalNotes: true
+	globalNotes: true,
+	// the notes on accounts confirmed to be the same person count as the person's own
+	...confirmedLinkedAccounts
 } as const;
 
 const supervisors = {

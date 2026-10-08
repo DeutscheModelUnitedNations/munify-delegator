@@ -411,12 +411,15 @@ export const calendarEntry = snakeCase.table('calendar_entry', {
 	calendarDayId: text()
 		.notNull()
 		.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	calendarTrackId: text().references(() => calendarTrack.id, {
-		onDelete: 'set null',
-		onUpdate: 'cascade'
-	}),
 	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' })
 });
+
+/** The tracks an entry runs on. Every entry runs on at least one track. */
+export const calendarEntryToCalendarTrack = implicitManyToMany(
+	'calendar_entry_to_calendar_track',
+	() => calendarEntry.id,
+	() => calendarTrack.id
+);
 
 export const calendarTrack = snakeCase.table(
 	'calendar_track',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatClock } from '$lib/helpers/formatClock';
 	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import { getColorConfig } from './calendarColors';
 
@@ -28,9 +29,7 @@
 
 	let colorConfig = $derived(getColorConfig(color));
 
-	let timeLabel = $derived(
-		`${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} – ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
-	);
+	let timeLabel = $derived(`${formatClock(startTime)} – ${formatClock(endTime)}`);
 
 	let locationLabel = $derived([place?.name, room].filter(Boolean).join(' · '));
 </script>

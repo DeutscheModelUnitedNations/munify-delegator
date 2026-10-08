@@ -278,6 +278,55 @@ Slide-out drawer showing full entry details including place information, map, an
 
 ---
 
+## Calendar Editor (management/calendar)
+
+`management/calendar/` is three tabs: **Calendar** (the editor), **Days & tracks** and **Places**.
+
+### CalendarEditor
+
+`CalendarEditor.svelte` draws every day side by side, one column per track, on one time axis. It
+is the only place entries are moved: there is no separate list, move or sort-order form.
+
+| Gesture                          | Result                                                                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Drag a card                      | Moves it in 15-minute steps; sideways picks the track, onto another day column moves the day                                |
+| Drag a card's top or bottom edge | Resizes it (at least 15 minutes)                                                                                            |
+| Drag a card's left or right edge | Stretches it over more tracks of its day (at least one)                                                                     |
+| Click or drag on empty space     | Opens the entry form for a new entry (an hour from the click, or the dragged range; dragging sideways picks several tracks) |
+| Click a card / Enter             | Opens the entry form; Duplicate and Delete are in its footer                                                                |
+| Arrows on a focused card         | Up/down move it 15 minutes, left/right one track; with Shift they move the end or the right edge; Delete asks to delete     |
+| Escape while dragging            | Cancels                                                                                                                     |
+
+An entry runs on a **run of consecutive tracks** (`calendarEntry.tracks`, the join table
+`calendarEntryToCalendarTrack`; the API takes `calendarTrackIds`). Every entry
+names at least one track; there is no "no track means all tracks" rule, so a track added later
+does not pick up existing entries, and deleting a track deletes the entries that ran on it alone. A
+moved entry keeps its width and is squeezed in where the target day has fewer tracks; the "Track …
+to …" selects in the entry form set the first and last track.
+
+### Structure
+
+| File                                                                                            | Role                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `calendarGrid.ts`                                                                               | Pure geometry and drag maths: snapping, `dragSpan`, `createSpan`, the column grid, drop target, overlaps, lanes, `keyAction`                                                                           |
+| `calendarEditor.svelte.ts` (`CalendarEditor`)                                                   | State: the drag in progress, optimistic saves in a `SvelteMap` overlaid on the live data (like the seat planner), undo toast, rollback with the server's message                                       |
+| `CalendarEditor.svelte`                                                                         | Pointer handling (one `pointerdown` on the grid, the pointer stays captured so a card can change column mid-drag) and layout                                                                           |
+| `EditorEntryCard.svelte`                                                                        | One card and its resize edges                                                                                                                                                                          |
+| `EntryFormModal.svelte`                                                                         | Details of an entry: day, track, times and duration chips, colour, icon presets, place, room                                                                                                           |
+| `DaysTracksTab.svelte`, `TrackMatrix.svelte`, `DayFormModal.svelte`, `TrackRowFormModal.svelte` | Matrix: days as columns, track names as rows, a checkbox per cell creates or removes that day's track; select all, deselect all, plus button (adds a track to every day), drag a row's grip to reorder |
+
+### Rules
+
+- **Day order comes from the date.** The day form has no sort order; `dayFields` / `daySortOrder`
+  place the day among the others (days are unique by sort order, so a taken place goes last).
+  Tracks are ordered with the arrows (`trackOrderChanges` renumbers them).
+- **Times are wall-clock minutes stored as UTC.** The editor works in minutes of the day and writes
+  them back with `dateAtMinutes`; a drag ends at 23:45 at the latest.
+- **The hour range follows the saved entries, not the drag**, so the grid does not shift under the
+  pointer. It has an hour of room around the entries; "Whole day" shows 00:00 to 24:00.
+- **Unit tests run Svelte's server build**, where a `$derived` is computed once; read derived state
+  after the last change in a test, and leave the live overlay to `e2e/calendar/`.
+
 ## Kbd Component
 
 `src/lib/components/Kbd.svelte`
@@ -1059,6 +1108,8 @@ Sidebar navigation:
 ```
 
 `NavMenuDetails` is a labelled group whose entries are indented below it; it does not collapse.
+
+`NavMenuButton` takes `attention` (and `attentionLabel`, the text for screen readers and the tooltip): a small red dot that pings at the end of the entry, for something that wants a look. The management menu's plausibility entry uses it while detected duplicate pairs wait for a decision (`PlausibilityNavButton`, fetched on its own so the menu does not wait for the count).
 
 ### ConferenceSidebarLayout
 

@@ -3,7 +3,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import DuplicateAccount from './DuplicateAccount.svelte';
+	import DuplicateComparison from './DuplicateComparison.svelte';
+	import { duplicatesOfConference } from './possibleDuplicatesWhere';
 
 	interface Props {
 		conferenceId: string;
@@ -17,7 +18,12 @@
 		birthday: true,
 		email: true,
 		createdAt: true,
-		globalNotes: true
+		globalNotes: true,
+		phone: true,
+		emergencyContacts: true,
+		street: true,
+		zip: true,
+		city: true
 	} as const;
 	const attendance = {
 		conferenceId: true,
@@ -27,8 +33,8 @@
 	} as const;
 
 	const pairs = $derived(
-		await client.liveQuery.conferencePossibleDuplicates({
-			__args: { conferenceId },
+		await client.liveQuery.possibleDuplicates({
+			__args: { where: duplicatesOfConference(conferenceId), orderBy: { score: 'desc' } },
 			id: true,
 			score: true,
 			reasons: true,
@@ -41,15 +47,6 @@
 			candidateAttendances: attendance
 		})
 	);
-
-	const reasonLabels: Record<string, () => string> = {
-		birthday: m.duplicateReasonBirthday,
-		name: m.duplicateReasonName,
-		email: m.duplicateReasonEmail,
-		phone: m.duplicateReasonPhone,
-		emergencyContact: m.duplicateReasonEmergencyContact,
-		address: m.duplicateReasonAddress
-	};
 
 	const active = $derived(pairs.filter((pair) => pair.status !== 'DISMISSED'));
 	const dismissed = $derived(pairs.filter((pair) => pair.status === 'DISMISSED'));
@@ -79,42 +76,57 @@
 </script>
 
 {#snippet pairCard(pair: (typeof pairs)[number])}
-	<div class="card bg-base-100 border-base-200 border shadow-sm">
-		<div class="card-body gap-4">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="badge badge-warning">
-					{m.possibleDuplicateMatch({ score: Math.round(pair.score * 100) })}
-				</span>
-				{#each pair.reasons as reason (reason)}
-					<span class="badge badge-ghost">{reasonLabels[reason]?.() ?? reason}</span>
-				{/each}
-				{#if pair.status === 'CONFIRMED'}
-					<span class="badge badge-error">
-						<i class="fa-sharp-duotone fa-solid fa-link"></i>
-						{m.possibleDuplicateConfirmedBadge()}
-					</span>
-				{/if}
-			</div>
-			<div class="flex flex-col gap-4 md:flex-row">
-				<DuplicateAccount id={pair.userId} account={pair.user} attendances={pair.userAttendances} />
-				<DuplicateAccount
-					id={pair.candidateId}
-					account={pair.candidate}
-					attendances={pair.candidateAttendances}
-				/>
-			</div>
+	{@const percent = Math.round(pair.score * 100)}
+	<div id="pair-{pair.id}" class="card bg-base-200 scroll-mt-6 shadow-sm">
+		<div class="card-body gap-2 p-3">
+			<DuplicateComparison
+				reasons={pair.reasons}
+				left={{ id: pair.userId, account: pair.user, attendances: pair.userAttendances }}
+				right={{
+					id: pair.candidateId,
+					account: pair.candidate,
+					attendances: pair.candidateAttendances
+				}}
+			>
+				{#snippet corner()}
+					<div class="flex flex-col items-center gap-1">
+						<div
+							class="radial-progress text-warning text-xs font-bold"
+							style="--value:{percent}; --size:3rem; --thickness:4px;"
+							role="progressbar"
+							aria-valuenow={percent}
+							aria-valuemin="0"
+							aria-valuemax="100"
+							title={m.possibleDuplicateMatch({ score: percent })}
+						>
+							<span class="text-base-content">{percent}%</span>
+						</div>
+						<!-- Always there, hidden unless confirmed, so the corner keeps its height -->
+						<i
+							class="fa-sharp-duotone fa-solid fa-link text-error {pair.status === 'CONFIRMED'
+								? ''
+								: 'invisible'}"
+							title={pair.status === 'CONFIRMED' ? m.possibleDuplicateConfirmedBadge() : undefined}
+							aria-label={pair.status === 'CONFIRMED'
+								? m.possibleDuplicateConfirmedBadge()
+								: undefined}
+							aria-hidden={pair.status === 'CONFIRMED' ? undefined : true}
+						></i>
+					</div>
+				{/snippet}
+			</DuplicateComparison>
 			<div class="card-actions justify-end">
 				{#if pair.status === 'OPEN'}
-					<button class="btn btn-sm" onclick={() => decide(pair.id, 'DISMISSED')}>
+					<button class="btn btn-xs" onclick={() => decide(pair.id, 'DISMISSED')}>
 						<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
 						{m.possibleDuplicateDifferentPeople()}
 					</button>
-					<button class="btn btn-sm btn-warning" onclick={() => decide(pair.id, 'CONFIRMED')}>
+					<button class="btn btn-xs btn-warning" onclick={() => decide(pair.id, 'CONFIRMED')}>
 						<i class="fa-sharp-duotone fa-solid fa-link"></i>
 						{m.possibleDuplicateSamePerson()}
 					</button>
 				{:else}
-					<button class="btn btn-sm btn-ghost" onclick={() => decide(pair.id, 'OPEN')}>
+					<button class="btn btn-xs btn-ghost" onclick={() => decide(pair.id, 'OPEN')}>
 						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 						{m.possibleDuplicateReopen()}
 					</button>
@@ -134,18 +146,22 @@
 	</div>
 	<p class="text-base-content/70 max-w-3xl text-sm">{m.possibleDuplicatesDescription()}</p>
 
-	{#each active as pair (pair.id)}
-		{@render pairCard(pair)}
+	{#if active.length > 0}
+		<div class="grid gap-4 lg:grid-cols-2">
+			{#each active as pair (pair.id)}
+				{@render pairCard(pair)}
+			{/each}
+		</div>
 	{:else}
 		<p class="text-base-content/60">{m.possibleDuplicatesNone()}</p>
-	{/each}
+	{/if}
 
 	{#if dismissed.length > 0}
-		<details class="collapse-arrow bg-base-200 collapse">
+		<details class="collapse-arrow border-base-300 collapse border">
 			<summary class="collapse-title font-semibold">
 				{m.possibleDuplicatesDismissed({ count: dismissed.length })}
 			</summary>
-			<div class="collapse-content flex flex-col gap-4">
+			<div class="collapse-content grid gap-4 lg:grid-cols-2">
 				{#each dismissed as pair (pair.id)}
 					{@render pairCard(pair)}
 				{/each}

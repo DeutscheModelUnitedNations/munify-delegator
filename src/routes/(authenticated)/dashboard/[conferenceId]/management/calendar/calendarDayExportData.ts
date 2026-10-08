@@ -32,7 +32,7 @@ interface SourceEntry {
 	fontAwesomeIcon?: Maybe<string>;
 	color: ExportEntry['color'];
 	room?: Maybe<string>;
-	calendarTrackId?: Maybe<string>;
+	tracks: readonly { id: string }[];
 	place?: Maybe<SourcePlace>;
 }
 
@@ -54,9 +54,10 @@ function exportPlace(place: SourcePlace): ExportPlace {
 	};
 }
 
-function trackNameOf(entry: SourceEntry, tracks: readonly SourceTrack[]): string | null {
-	if (!entry.calendarTrackId) return null;
-	return tracks.find((t) => t.id === entry.calendarTrackId)?.name ?? null;
+function trackNamesOf(entry: SourceEntry, tracks: readonly SourceTrack[]): string[] {
+	return entry.tracks.flatMap(
+		(entryTrack) => tracks.find((t) => t.id === entryTrack.id)?.name ?? []
+	);
 }
 
 function exportEntry(entry: SourceEntry, tracks: readonly SourceTrack[]): ExportEntry {
@@ -68,14 +69,14 @@ function exportEntry(entry: SourceEntry, tracks: readonly SourceTrack[]): Export
 		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
 		color: entry.color,
 		room: entry.room ?? null,
-		trackName: trackNameOf(entry, tracks),
+		trackNames: trackNamesOf(entry, tracks),
 		place: entry.place ? exportPlace(entry.place) : null
 	};
 }
 
 /**
- * A day's tracks and entries as an import file: ids are dropped, an entry names its track instead
- * of referencing it, and times become `HH:mm` so the file can be imported into any other day.
+ * A day's tracks and entries as an import file: ids are dropped, an entry names its tracks instead
+ * of referencing them, and times become `HH:mm` so the file can be imported into any other day.
  */
 export function toCalendarDayExport(day: CalendarDayExportSource): CalendarDayExportData {
 	return {

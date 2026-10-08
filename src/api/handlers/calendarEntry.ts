@@ -14,6 +14,7 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 import { nullToUndefined } from '$api/services/args';
 
@@ -39,19 +40,23 @@ const calendarEntryColorEnum = enum_({ tsName: 'calendarEntryColor' });
  */
 async function assertReferences(
 	conferenceId: string,
-	refs: { calendarDayId: string; calendarTrackId?: string | null; placeId?: string | null }
+	refs: { calendarDayId: string; calendarTrackIds?: readonly string[]; placeId?: string | null }
 ) {
-	const [day, track, place] = await Promise.all([
+	const trackIds = [...new Set(refs.calendarTrackIds ?? [])];
+	if (refs.calendarTrackIds && trackIds.length === 0) {
+		throw new GraphQLError('An entry has to run on at least one track');
+	}
+	const [day, tracks, place] = await Promise.all([
 		db.query.calendarDay.findFirst({
 			where: { id: refs.calendarDayId, conferenceId },
 			columns: { id: true }
 		}),
-		refs.calendarTrackId
-			? db.query.calendarTrack.findFirst({
-					where: { id: refs.calendarTrackId, calendarDayId: refs.calendarDayId },
+		trackIds.length > 0
+			? db.query.calendarTrack.findMany({
+					where: { id: { in: trackIds }, calendarDayId: refs.calendarDayId },
 					columns: { id: true }
 				})
-			: true,
+			: [],
 		refs.placeId
 			? db.query.place.findFirst({
 					where: { id: refs.placeId, conferenceId },
@@ -59,9 +64,24 @@ async function assertReferences(
 				})
 			: true
 	]);
-	if (!day || !track || !place) {
+	if (!day || tracks.length !== trackIds.length || !place) {
 		throw new GraphQLError('Day, track and place must all belong to the same conference');
 	}
+}
+
+/** Makes `trackIds` the tracks of an entry. */
+async function setTracks(entryId: string, trackIds: readonly string[]) {
+	const ids = [...new Set(trackIds)];
+	await db.transaction(async (tx) => {
+		await tx
+			.delete(schema.calendarEntryToCalendarTrack)
+			.where(eq(schema.calendarEntryToCalendarTrack.a, entryId));
+		if (ids.length > 0) {
+			await tx
+				.insert(schema.calendarEntryToCalendarTrack)
+				.values(ids.map((trackId) => ({ a: entryId, b: trackId })));
+		}
+	});
 }
 
 schemaBuilder.mutationFields((t) => ({
@@ -76,12 +96,16 @@ schemaBuilder.mutationFields((t) => ({
 			fontAwesomeIcon: t.arg.string(),
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
-			calendarTrackId: t.arg.id(),
+			calendarTrackIds: t.arg.idList(),
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
-			await assertReferences(day.conferenceId, args);
+			await assertReferences(day.conferenceId, {
+				calendarDayId: args.calendarDayId,
+				calendarTrackIds: args.calendarTrackIds ?? [],
+				placeId: args.placeId
+			});
 
 			const created = await db
 				.insert(schema.calendarEntry)
@@ -94,11 +118,11 @@ schemaBuilder.mutationFields((t) => ({
 					fontAwesomeIcon: nullToUndefined(args.fontAwesomeIcon),
 					color: nullToUndefined(args.color),
 					room: nullToUndefined(args.room),
-					calendarTrackId: nullToUndefined(args.calendarTrackId),
 					placeId: nullToUndefined(args.placeId)
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+			if (args.calendarTrackIds?.length) await setTracks(created.id, args.calendarTrackIds);
 
 			pubsub.created();
 
@@ -125,7 +149,7 @@ schemaBuilder.mutationFields((t) => ({
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
 			calendarDayId: t.arg.id(),
-			calendarTrackId: t.arg.id(),
+			calendarTrackIds: t.arg.idList(),
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
@@ -133,16 +157,18 @@ schemaBuilder.mutationFields((t) => ({
 				.findFirst({
 					...(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } })
 						.query.single,
-					columns: { calendarDayId: true, calendarTrackId: true },
-					with: { calendarDay: { columns: { conferenceId: true } } }
+					columns: { calendarDayId: true },
+					with: {
+						calendarDay: { columns: { conferenceId: true } },
+						tracks: { columns: { id: true } }
+					}
 				})
 				.then(assertFindFirstExists);
 			const calendarDayId = args.calendarDayId ?? entry.calendarDayId;
 			await assertReferences(entry.calendarDay.conferenceId, {
 				calendarDayId,
-				// Moving to another day takes the track along only if it is that day's too.
-				calendarTrackId:
-					args.calendarTrackId === undefined ? entry.calendarTrackId : args.calendarTrackId,
+				// Moving to another day takes the tracks along only if they are that day's too.
+				calendarTrackIds: args.calendarTrackIds ?? entry.tracks.map((track) => track.id),
 				placeId: args.placeId
 			});
 
@@ -159,13 +185,14 @@ schemaBuilder.mutationFields((t) => ({
 					description: args.description,
 					fontAwesomeIcon: args.fontAwesomeIcon,
 					room: args.room,
-					calendarTrackId: args.calendarTrackId,
 					placeId: args.placeId
 				})
 				.where(
 					(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } }).sql
 						.where
 				);
+
+			if (args.calendarTrackIds) await setTracks(args.id, args.calendarTrackIds);
 
 			pubsub.updated(args.id);
 

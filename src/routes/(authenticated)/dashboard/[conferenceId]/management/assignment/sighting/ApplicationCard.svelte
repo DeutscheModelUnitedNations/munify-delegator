@@ -8,6 +8,7 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { getAgeAtConference } from '$lib/helpers/ageChecker';
 	import formatNames from '$lib/helpers/formatNames';
+	import { careNotesOf } from '$lib/helpers/linkedNotes';
 	import { m } from '$lib/paraglide/messages';
 	import ApplicationDetails from './ApplicationDetails.svelte';
 	import NoteInput from './NoteInput.svelte';
@@ -75,10 +76,10 @@
 									{person.conferenceParticipationsCount}
 								</span>
 							{/if}
-							{#if person.globalNotes?.trim()}
+							{#if careNotesOf(person)}
 								<i
 									class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-error text-lg"
-									title={person.globalNotes.trim()}
+									title={careNotesOf(person)}
 									aria-label={m.globalNotes()}
 								></i>
 							{/if}

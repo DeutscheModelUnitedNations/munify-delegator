@@ -42,6 +42,7 @@ export interface SeedBatch {
 	calendarDay: Insert<'calendarDay'>[];
 	calendarTrack: Insert<'calendarTrack'>[];
 	calendarEntry: Insert<'calendarEntry'>[];
+	calendarEntryToCalendarTrack: Insert<'calendarEntryToCalendarTrack'>[];
 	assignmentReview: Insert<'assignmentReview'>[];
 	assignmentUnit: Insert<'assignmentUnit'>[];
 	assignmentUnitMember: Insert<'assignmentUnitMember'>[];
@@ -86,6 +87,7 @@ export function emptyBatch(): SeedBatch {
 		calendarDay: [],
 		calendarTrack: [],
 		calendarEntry: [],
+		calendarEntryToCalendarTrack: [],
 		assignmentReview: [],
 		assignmentUnit: [],
 		assignmentUnitMember: [],
@@ -165,6 +167,9 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.calendarDay, (rows) => db.insert(s.calendarDay).values(rows));
 	await insertChunked(batch.calendarTrack, (rows) => db.insert(s.calendarTrack).values(rows));
 	await insertChunked(batch.calendarEntry, (rows) => db.insert(s.calendarEntry).values(rows));
+	await insertChunked(batch.calendarEntryToCalendarTrack, (rows) =>
+		db.insert(s.calendarEntryToCalendarTrack).values(rows)
+	);
 	await insertChunked(batch.assignmentReview, (rows) => db.insert(s.assignmentReview).values(rows));
 	await insertChunked(batch.assignmentUnit, (rows) => db.insert(s.assignmentUnit).values(rows));
 	await insertChunked(batch.assignmentUnitMember, (rows) =>

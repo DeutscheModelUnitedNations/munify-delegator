@@ -3,6 +3,7 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { getAgeAtConference } from '$lib/helpers/ageChecker';
 	import formatNames from '$lib/helpers/formatNames';
+	import { careNotesOf } from '$lib/helpers/linkedNotes';
 	import { m } from '$lib/paraglide/messages';
 
 	/**
@@ -17,7 +18,7 @@
 
 	let { person, startConference }: Props = $props();
 
-	const note = $derived(person.globalNotes?.trim());
+	const note = $derived(careNotesOf(person));
 
 	const age = $derived(
 		person.birthday ? getAgeAtConference(person.birthday, startConference) : undefined

@@ -57,7 +57,7 @@
 						color: true,
 						placeId: true,
 						room: true,
-						calendarTrackId: true
+						tracks: { id: true }
 					}
 				}),
 				client.query.calendarTracks({
@@ -67,12 +67,11 @@
 				})
 			]);
 			const tracks = { source: source.tracks, target: targetTracks };
-			const mutations = source.entries.map((entry) =>
-				client.mutate.createCalendarEntry({
-					__args: copiedEntryArgs(entry, targetDay, tracks),
-					id: true
-				})
-			);
+			// An entry none of whose tracks the target day has would run nowhere, so it stays behind
+			const mutations = source.entries
+				.map((entry) => copiedEntryArgs(entry, targetDay, tracks))
+				.filter((args) => args.calendarTrackIds.length > 0)
+				.map((args) => client.mutate.createCalendarEntry({ __args: args, id: true }));
 			const results = await Promise.allSettled(mutations);
 			const failures = results.filter((r) => r.status === 'rejected');
 			if (failures.length > 0) {

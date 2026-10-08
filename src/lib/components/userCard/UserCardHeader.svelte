@@ -7,12 +7,14 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
 	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
+	import LinkedAccountNotes from './LinkedAccountNotes.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import Modal from '../Modal.svelte';
 	import { configPublic } from '$config/public';
 	import { closeUserCard } from './userCardState.svelte';
 	import type { UserCardRoles } from './userCardRoles';
+	import { badgeSessionBody, requestBadgeSession, seatBadgeValues } from './badgeSession';
 
 	interface Props extends UserCardRoles {
 		userId: string;
@@ -78,35 +80,6 @@
 
 	// --- Badge generation ---
 	const openBadgeGenerator = async () => {
-		const body: {
-			name?: string;
-			countryName?: string;
-			countryAlpha2Code?: string;
-			committee?: string;
-			pronouns?: string;
-			id?: string;
-			mediaConsentStatus?: string;
-		} = {};
-		if (givenName && familyName) {
-			body.name = `${givenName} ${familyName}`;
-		}
-		if (delegationMember?.delegation.assignedNation?.alpha3Code) {
-			body.countryName = getFullTranslatedCountryNameFromISO3Code(
-				delegationMember.delegation.assignedNation.alpha3Code
-			);
-		}
-		if (delegationMember?.delegation.assignedNation?.alpha2Code) {
-			body.countryAlpha2Code = delegationMember.delegation.assignedNation.alpha2Code;
-		}
-		if (delegationMember?.assignedCommittee?.abbreviation) {
-			body.committee = delegationMember.assignedCommittee.abbreviation;
-		}
-		if (pronouns) {
-			body.pronouns = pronouns;
-		}
-		if (userId) {
-			body.id = userId;
-		}
 		try {
 			// Only the badge needs it, so it is read when a badge is asked for.
 			const [status] = await client.query.conferenceParticipantStatuses({
@@ -114,34 +87,18 @@
 				id: true,
 				mediaConsentStatus: true
 			});
-			if (status?.mediaConsentStatus) {
-				body.mediaConsentStatus = status.mediaConsentStatus;
-			}
-			const res = await fetch(`${configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
+			const body = badgeSessionBody({
+				givenName,
+				familyName,
+				...seatBadgeValues(delegationMember, getFullTranslatedCountryNameFromISO3Code),
+				pronouns,
+				id: userId,
+				mediaConsentStatus: status?.mediaConsentStatus
 			});
-			if (!res.ok) {
-				const errorText = await res.text();
-				console.error(`Badge generator API error (${res.status}): ${errorText}`);
-				toast.error(m.genericToastError());
-				return;
-			}
-			const data: unknown = await res.json();
-			if (
-				typeof data !== 'object' ||
-				data === null ||
-				!('url' in data) ||
-				typeof (data as { url: unknown }).url !== 'string' ||
-				(data as { url: string }).url.trim() === ''
-			) {
-				console.error('Badge generator returned invalid response:', data);
-				toast.error(m.genericToastError());
-				return;
-			}
-			const { url } = data as { url: string };
-			window.open(url.replace('http://', 'https://'), '_blank');
+			window.open(
+				await requestBadgeSession(configPublic.PUBLIC_BADGE_GENERATOR_URL, body),
+				'_blank'
+			);
 		} catch (e) {
 			console.error('Failed to open badge generator', e);
 			toast.error(m.genericToastError());
@@ -255,6 +212,8 @@
 			{conferenceSupervisor}
 			{teamMember}
 		/>
+
+		<LinkedAccountNotes {userId} />
 	</div>
 </div>
 
