@@ -12,6 +12,7 @@ test('an admin can build a calendar day with a place and an entry, and drag it a
 	const dayName = `E2E Day ${Date.now()}`;
 	const placeName = `E2E Place ${Date.now()}`;
 	const entryName = `E2E Entry ${Date.now()}`;
+	const trackName = `E2E Track ${Date.now()}`;
 
 	// --- Days & tracks tab: create a day ---
 	await page.getByRole('tab', { name: 'Tage & Tracks', exact: true }).click();
@@ -24,6 +25,16 @@ test('an admin can build a calendar day with a place and an entry, and drag it a
 	await expect(dayModal).toBeHidden({ timeout: 15_000 });
 	await expect(page.getByText(dayName)).toBeVisible({ timeout: 15_000 });
 
+	// An entry runs on at least one track, and a new day has none: add one (it goes on every day)
+	await page.getByRole('button', { name: 'Track hinzufügen' }).first().click();
+	const trackModal = page.locator('.modal.modal-open');
+	await trackModal.locator('input[type="text"]').first().fill(trackName);
+	await trackModal.getByRole('button', { name: 'Erstellen' }).click();
+	await expect(trackModal).toBeHidden({ timeout: 15_000 });
+	await expect(page.getByRole('checkbox', { name: `${trackName} · ${dayName}` })).toBeChecked({
+		timeout: 15_000
+	});
+
 	// --- Places tab: create a place ---
 	await page.getByRole('tab', { name: 'Orte', exact: true }).click();
 	await page.getByRole('button', { name: 'Ort hinzufügen' }).first().click();
@@ -34,9 +45,14 @@ test('an admin can build a calendar day with a place and an entry, and drag it a
 	await expect(placeModal).toBeHidden({ timeout: 15_000 });
 	await expect(page.getByText(placeName)).toBeVisible({ timeout: 15_000 });
 
-	// --- Calendar tab: create an entry on the day just created ---
+	// --- Calendar tab: a click on an empty slot of the new day opens a new entry ---
 	await page.getByRole('tab', { name: 'Kalender', exact: true }).click();
-	await page.getByRole('button', { name: 'Eintrag hinzufügen' }).first().click();
+	const dayHeader = page.locator('span.font-bold', { hasText: dayName });
+	await dayHeader.scrollIntoViewIfNeeded();
+	const headerBox = await dayHeader.boundingBox();
+	const gridBox = await page.locator('.cursor-cell').boundingBox();
+	if (!headerBox || !gridBox) throw new Error('calendar grid has no box');
+	await page.mouse.click(headerBox.x + headerBox.width / 2, gridBox.y + 10);
 
 	const entryModal = page.locator('.modal.modal-open');
 	await entryModal.locator('input[type="text"]').first().fill(entryName);

@@ -51,7 +51,7 @@ test('an admin can create a survey question and add an option to it', async ({ p
 
 	// The detail page opens on the results tab; option management lives under settings.
 	await page
-		.getByRole('button', { name: /einstellungen|settings/i })
+		.getByRole('tab', { name: /einstellungen|settings/i })
 		.first()
 		.click();
 	await page
