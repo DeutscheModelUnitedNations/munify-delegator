@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
 	singleParticipants: vi.fn(),
 	committees: vi.fn(),
 	committeeAgendaItems: vi.fn(),
-	paymentTransactions: vi.fn()
+	paymentTransactions: vi.fn(),
+	conferenceParticipantStatuses: vi.fn()
 }));
 
 vi.mock('$lib/api/rumbleClient/client', () => ({ client: { query: mocks } }));
@@ -58,33 +59,35 @@ describe('searchConference', () => {
 	});
 
 	describe('people', () => {
-		test('only the first word is searched, the others narrow by name and email', async () => {
-			await searchConference(conferenceId, '  anna   schmidt ');
+		test('every word is searched on its own and a person has to match all of them', async () => {
+			const person = (id: string) => ({ id, givenName: id, familyName: id, email: id, ...noRoles });
+			// Members: "anna" finds a and b, "schmidt" (or a misspelling of it) finds b and c
+			mocks.users.mockImplementation(async ({ __args }) => {
+				if ('NOT' in __args.where) return [];
+				return __args.search === 'anna' ? [person('a'), person('b')] : [person('b'), person('c')];
+			});
 
-			const [members, foreign] = [argsOf(mocks.users, 0), argsOf(mocks.users, 1)];
-			expect(members.search).toBe('anna');
-			expect(foreign.search).toBe('anna');
+			const { users } = await searchConference(conferenceId, '  anna   schmidt ');
 
-			const narrowing = {
-				OR: [
-					{ givenName: { ilike: '%schmidt%' } },
-					{ familyName: { ilike: '%schmidt%' } },
-					{ email: { ilike: '%schmidt%' } }
-				]
-			};
-			expect(members.where.AND[1]).toEqual(narrowing);
-			expect(foreign.where.AND[1]).toEqual(narrowing);
+			expect(mocks.users.mock.calls.map(([call]) => call.__args.search).sort()).toEqual([
+				'anna',
+				'anna',
+				'schmidt',
+				'schmidt'
+			]);
+			expect(users.map((user) => user.id)).toEqual(['b']);
 		});
 
-		test('a single word adds no narrowing', async () => {
+		test('a single word is one query per group', async () => {
 			await searchConference(conferenceId, 'anna');
-			expect(argsOf(mocks.users, 0).where.AND).toHaveLength(1);
+			expect(mocks.users).toHaveBeenCalledTimes(2);
+			expect(argsOf(mocks.users, 0).limit).toBe(10);
 		});
 
 		test('members are anyone with a part in the conference, waiting list included', async () => {
 			await searchConference(conferenceId, 'anna');
 
-			const { OR } = argsOf(mocks.users, 0).where.AND[0];
+			const { OR } = argsOf(mocks.users, 0).where;
 			expect(OR).toEqual([
 				{ delegationMemberships: inConference },
 				{ singleParticipant: inConference },
@@ -97,8 +100,29 @@ describe('searchConference', () => {
 		test('foreign users are the ones without any part', async () => {
 			await searchConference(conferenceId, 'anna');
 
-			const participates = argsOf(mocks.users, 0).where.AND[0];
-			expect(argsOf(mocks.users, 1).where.AND[0]).toEqual({ NOT: participates });
+			const participates = argsOf(mocks.users, 0).where;
+			expect(argsOf(mocks.users, 1).where).toEqual({ NOT: participates });
+		});
+
+		test('the owner of an access card is found by the card id, once', async () => {
+			const owner = {
+				id: 'u1',
+				givenName: 'A',
+				familyName: 'B',
+				email: 'a@b.c',
+				...noRoles,
+				singleParticipant: [{}]
+			};
+			mocks.conferenceParticipantStatuses.mockResolvedValue([{ user: owner }]);
+			mocks.users.mockResolvedValueOnce([owner]);
+
+			const { users } = await searchConference(conferenceId, 'CARD-0007');
+
+			expect(argsOf(mocks.conferenceParticipantStatuses).where).toEqual({
+				...inConference,
+				accessCardId: { ilike: '%CARD-0007%' }
+			});
+			expect(users.map((user) => [user.id, user.participationType])).toEqual([['u1', 'single']]);
 		});
 
 		test('each result is typed by its role', async () => {

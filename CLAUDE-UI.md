@@ -587,7 +587,7 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ## TopDrawer Component
 
-Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `SlidePanel`. It closes on overlay click, Escape and the close button, and animates out the same way for each. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
+Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `SlidePanel`. It closes on overlay click, Escape and the close button, and animates out the same way for each. Used in management tool pages (postalRegistration, payments) for showing scanned/searched item details.
 
 ### Props
 

@@ -3,7 +3,10 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
-	import { openCommandPalette } from '$lib/components/commandPalette/commandPaletteState.svelte';
+	import {
+		openCommandPalette,
+		isCommandPaletteAvailable
+	} from '$lib/components/commandPalette/commandPaletteState.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { headerState } from '$lib/state/authenticatedHeaderStatus.svelte';
 	import { page } from '$app/stores';
@@ -40,6 +43,23 @@
 		}
 	});
 
+	let titleScroller = $state<HTMLDivElement>();
+
+	// On mobile the title and breadcrumbs share one row that scrolls horizontally; keep the end
+	// (the current page) in view initially and whenever the crumbs change (navigation, lazily
+	// loaded titles).
+	$effect(() => {
+		const scroller = titleScroller;
+		if (!scroller) return;
+		const scrollToEnd = () => {
+			scroller.scrollLeft = scroller.scrollWidth;
+		};
+		scrollToEnd();
+		const observer = new MutationObserver(scrollToEnd);
+		observer.observe(scroller, { childList: true, subtree: true, characterData: true });
+		return () => observer.disconnect();
+	});
+
 	let headerHeight = $state(0);
 
 	// The side navigation sticks below the header, so it needs to know how tall the header is
@@ -57,11 +77,11 @@
 		<div class="h-0.5 w-full {stripClass}"></div>
 	{/if}
 	<div
-		class="mx-auto flex w-full max-w-[1800px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:px-8"
+		class="mx-auto flex w-full max-w-[1800px] items-center gap-x-4 px-4 py-2 md:flex-wrap md:gap-y-1 md:px-8"
 	>
 		{#if headerState.openNavCallback !== undefined}
 			<button
-				class="sm:hidden"
+				class="shrink-0 sm:hidden"
 				aria-label="Toggle navigation menu"
 				onclick={() => {
 					headerState.openNavCallback?.();
@@ -72,19 +92,23 @@
 			</button>
 		{/if}
 
-		<a class="text-lg leading-none" href={resolve('/dashboard')}>
-			<span class="font-light">MUNify</span> <span class="font-bold">DELEGATOR</span>
-		</a>
-
-		<!-- daisyUI's .breadcrumbs scrolls horizontally, which clips the conference switcher's dropdown; let it overflow and wrap instead, and drop its own separators since the breadcrumbs draw chevrons -->
+		<!-- On mobile the title and the breadcrumbs form one row that scrolls horizontally (the conference switcher's dropdown is portaled, so scrolling does not clip it). From md up the title stays put and the breadcrumbs overflow and wrap instead. Drop daisyUI's own separators since the breadcrumbs draw chevrons -->
 		<div
-			class="order-last w-full min-w-0 md:order-none md:w-auto md:flex-1 [&_.breadcrumbs]:overflow-visible [&_.breadcrumbs>ul]:flex-wrap [&_.breadcrumbs_li]:before:hidden [&_.breadcrumbs_li]:after:hidden"
+			bind:this={titleScroller}
+			class="flex min-w-0 flex-1 items-center gap-x-4 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden"
 		>
-			<Breadcrumbs />
-		</div>
-		<div class="flex-1 md:hidden"></div>
+			<a class="shrink-0 text-lg leading-none whitespace-nowrap" href={resolve('/dashboard')}>
+				<span class="font-light">MUNify</span> <span class="font-bold">DELEGATOR</span>
+			</a>
 
-		<div class="flex items-center gap-2">
+			<div
+				class="min-w-0 md:flex-1 [&_.breadcrumbs]:overflow-visible md:[&_.breadcrumbs>ul]:flex-wrap [&_.breadcrumbs>ul]:flex-nowrap [&_.breadcrumbs_li]:shrink-0 [&_.breadcrumbs_li]:before:hidden [&_.breadcrumbs_li]:after:hidden"
+			>
+				<Breadcrumbs />
+			</div>
+		</div>
+
+		<div class="flex shrink-0 items-center gap-2">
 			{#if isImpersonating}
 				<ImpersonationButton
 					impersonatedEmail={impersonationStatus?.impersonatedUser?.email}
@@ -92,7 +116,14 @@
 				/>
 			{/if}
 
-			{#if $page.url.pathname.includes('/management/')}
+			{#if isCommandPaletteAvailable()}
+				<button
+					class="btn btn-ghost btn-circle btn-sm sm:hidden"
+					aria-label={m.search()}
+					onclick={openCommandPalette}
+				>
+					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
+				</button>
 				<button
 					class="btn btn-ghost btn-sm text-base-content/60 hidden gap-2 sm:flex"
 					onclick={openCommandPalette}

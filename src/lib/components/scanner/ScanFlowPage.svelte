@@ -4,6 +4,7 @@
 	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
 	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
+	import ScanPageHeader from '$lib/components/scanner/ScanPageHeader.svelte';
 	import ScanResultPanel from '$lib/components/scanner/ScanResultPanel.svelte';
 	import ScanHistory, { type ScanHistoryEntry } from '$lib/components/scanner/ScanHistory.svelte';
 	import type { ScannedUserData, ScannedUserFlow } from './scannedUserFlow.svelte';
@@ -82,11 +83,8 @@
 	});
 </script>
 
-<div class="flex w-full flex-col gap-6 md:p-10">
-	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{title}</h2>
-		<p class="leading-relaxed text-base-content/70">{@render description()}</p>
-	</div>
+<div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
+	<ScanPageHeader {title} {description} />
 
 	{@render header?.()}
 

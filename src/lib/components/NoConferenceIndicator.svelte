@@ -9,7 +9,6 @@
 	<h1 class="text-center text-3xl">{m.noConferenceHeading()}</h1>
 	<p>{m.noConferenceText()}</p>
 	<div class="flex flex-col gap-4 md:flex-row-reverse">
-		<a class="btn btn-primary" href={resolve('/registration')}>{m.signupNow()}</a>
 		<a class="btn" href={resolve('/')}>{m.backToHome()}</a>
 	</div>
 </main>

@@ -2,14 +2,14 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import AnnouncementContent from '$lib/components/dashboard/AnnouncementContent.svelte';
 	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
 	interface Props {
 		conferenceId: string;
-		userId: string;
+		/** Left out for a visitor who is not signed in */
+		userId?: string;
 		/** Team members see the calendar regardless and never the participant announcement. */
 		isTeamMember: boolean;
 		/** Surveys are only for people who hold a role at the conference. */
@@ -47,22 +47,20 @@
 	logoUrl={conference.logoUrl}
 />
 {#if conference.info && !isTeamMember}
-	<DashboardSection
-		icon="bullhorn"
+	<AnnouncementContent
+		info={conference.info}
 		title={m.announcementSectionTitle()}
 		description={m.announcementSectionDescription()}
-		variant="info"
-	>
-		<AnnouncementContent info={conference.info} showExpanded={conference.showInfoExpanded} />
-	</DashboardSection>
+		showExpanded={conference.showInfoExpanded}
+	/>
 {/if}
-{#if conference.showCalendar || isTeamMember}
+{#if userId && (conference.showCalendar || isTeamMember)}
 	{#await import('$lib/components/dashboard/CalendarSection.svelte') then { default: CalendarSection }}
 		<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
 	{:catch error}
 		<ChunkLoadError {error} />
 	{/await}
 {/if}
-{#if hasAssignedRole && (conference.state === 'PREPARATION' || conference.state === 'ACTIVE')}
+{#if userId && hasAssignedRole && (conference.state === 'PREPARATION' || conference.state === 'ACTIVE')}
 	<SurveySection {conferenceId} {userId} conferenceTimezone={conference.timezone} />
 {/if}

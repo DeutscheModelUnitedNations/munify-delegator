@@ -96,6 +96,16 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			keywords: ['zuweisung', 'assignment', 'zuteilen', 'verteilen', 'assign']
 		},
 		{
+			id: 'checkIn',
+			title: () => m.onSiteCheckIn(),
+			icon: 'fa-id-badge',
+			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/checkIn', {
+				conferenceId
+			}),
+			category: 'workflows',
+			keywords: ['anmeldung', 'check-in', 'namensschild', 'nametag', 'einlass', 'tische']
+		},
+		{
 			id: 'postalRegistration',
 			title: () => m.postalRegistration(),
 			icon: 'fa-envelope',
@@ -116,14 +126,27 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			keywords: ['zahlung', 'payment', 'geld', 'money', 'überweisung', 'transfer', 'bezahlung']
 		},
 		{
-			id: 'accessFlow',
-			title: () => m.accessFlow(),
-			icon: 'fa-id-card-clip',
-			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/accessFlow', {
+			id: 'attendance',
+			title: () => m.attendanceScanner(),
+			icon: 'fa-barcode-read',
+			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/attendance', {
 				conferenceId
 			}),
 			category: 'workflows',
-			keywords: ['zugang', 'access', 'einlass', 'check-in', 'registrierung', 'badge']
+			keywords: [
+				'anwesenheit',
+				'attendance',
+				'scanner',
+				'scan',
+				'badge',
+				'barcode',
+				'zugang',
+				'access',
+				'einlass',
+				'check-in',
+				'zugangskontrolle',
+				'ausweis'
+			]
 		},
 		{
 			id: 'announcement',

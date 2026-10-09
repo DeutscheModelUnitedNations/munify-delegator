@@ -9,7 +9,7 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	page
 }) => {
 	const supervisor = makeTestUser('supervisor');
-	await loginAs(page, supervisor, { startUrl: '/registration' });
+	await loginAs(page, supervisor, { startUrl: '/login?next=/dashboard' });
 	await openFirstConferenceForRegistration(page);
 
 	await page.locator('a[href$="/supervisor"]').click();

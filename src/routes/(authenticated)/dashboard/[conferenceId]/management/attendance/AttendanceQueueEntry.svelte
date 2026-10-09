@@ -6,9 +6,11 @@
 	interface Props {
 		entry: QueueEntry;
 		onDismiss: () => void;
+		/** Brings the scanned person up again */
+		onSelect: () => void;
 	}
 
-	let { entry, onDismiss }: Props = $props();
+	let { entry, onDismiss, onSelect }: Props = $props();
 
 	const rowClass = {
 		success: 'bg-success/10 text-success opacity-60',
@@ -40,8 +42,21 @@
 		<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 	{/if}
 
-	<!-- User ID -->
-	<span class="flex-1 truncate text-base-content">{entry.userId}</span>
+	<!-- Who was scanned -->
+	<button
+		type="button"
+		class="flex-1 cursor-pointer truncate text-left text-base-content hover:underline"
+		onclick={onSelect}
+	>
+		{entry.label ?? entry.userId}
+	</button>
+
+	{#if entry.checkPassed === false}
+		<span class="badge badge-soft badge-warning badge-sm gap-1" title={m.scanCheckFailedLogged()}>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			{m.scanIssuesFound()}
+		</span>
+	{/if}
 
 	<!-- Timestamp -->
 	<span class="text-base-content/50 text-xs">

@@ -18,7 +18,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	headPage.on('dialog', (dialog) => dialog.accept());
 
 	const headDelegate = makeTestUser('member-mgmt-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();

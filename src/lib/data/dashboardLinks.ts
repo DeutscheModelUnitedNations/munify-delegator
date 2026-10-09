@@ -161,13 +161,14 @@ const dashboardLinks: DashboardLink[] = [
 		icon: 'person-seat',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
-		getHref: (ctx) => resolve('/seats/[conferenceId]', { conferenceId: ctx.conferenceId }),
-		external: true,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/seats', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) =>
-			ctx.conferenceState === 'PREPARATION' ||
-			ctx.conferenceState === 'ACTIVE' ||
-			ctx.conferenceState === 'POST',
+		// The seats are known - and of interest to everyone deciding where to apply - from the
+		// moment registration opens
+		isVisible: (ctx) => !!ctx.conferenceState && ctx.conferenceState !== 'PRE',
 		isDisabled: () => false
 	}
 ];

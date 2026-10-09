@@ -61,7 +61,7 @@
 	};
 </script>
 
-<div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
+<div class="card flex flex-col gap-2 p-4">
 	<h3 class="font-bold">
 		<i class="fa-sharp-duotone fa-solid fa-clipboard-list mr-2"></i>
 		{m.attendanceLog()}

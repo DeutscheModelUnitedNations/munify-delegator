@@ -17,7 +17,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 	headPage.on('dialog', (dialog) => dialog.accept());
 
 	const headDelegate = makeTestUser('payment-deleg-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();

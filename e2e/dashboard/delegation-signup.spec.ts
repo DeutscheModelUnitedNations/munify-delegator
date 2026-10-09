@@ -19,7 +19,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 	headPage.on('dialog', (dialog) => dialog.accept());
 
 	const headDelegate = makeTestUser('signup-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();

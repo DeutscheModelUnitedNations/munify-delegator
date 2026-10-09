@@ -10,13 +10,13 @@ export async function openFirstConferenceForRegistration(
 	page: Page,
 	conferenceId: string = E2E_CONFERENCE_ID
 ): Promise<string> {
-	await page.goto('/registration');
+	await page.goto('/dashboard');
 
 	// Target the conference explicitly rather than taking `.first()`. The seed defines more than
 	// one conference, the registration list has no guaranteed order, and picking whichever card
 	// happened to render first made every caller intermittently register for the wrong
 	// conference - which then failed much later, in an unrelated assertion.
-	const registerButton = page.locator(`main a.btn-primary[href*="${conferenceId}"]`).first();
+	const registerButton = page.locator(`main a[href*="${conferenceId}"]`).first();
 	await expect(
 		registerButton,
 		`expected conference ${conferenceId} to be open for registration - is the e2e seed loaded?`

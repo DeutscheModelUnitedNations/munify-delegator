@@ -16,6 +16,12 @@ export const canPlanSeats = (membership: string | undefined) =>
 	membership === 'PROJECT_MANAGEMENT' ||
 	membership === 'CONTENT_LEAD';
 
+/** Storing an access card on a person's status, which the scanner's badge option does */
+export const canWriteAccessCards = (membership: string | undefined) =>
+	membership === 'SYSTEM_ADMIN' ||
+	membership === 'PROJECT_MANAGEMENT' ||
+	membership === 'PARTICIPANT_CARE';
+
 /** Creating and deleting committees and changing their seats per delegation */
 export const canConfigureCommittees = (membership: string | undefined) =>
 	membership === 'SYSTEM_ADMIN' || membership === 'PROJECT_MANAGEMENT';

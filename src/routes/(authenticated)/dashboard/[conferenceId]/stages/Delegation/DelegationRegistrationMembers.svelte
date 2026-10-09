@@ -48,6 +48,8 @@
 		`${page.url.origin}/registration/${conferenceId}/join-delegation?code=${delegation.entryCode}`
 	);
 
+	let supervisorLink = $derived(`${page.url.origin}/registration/${conferenceId}/supervisor`);
+
 	const makeHeadDelegate = async (userId: string) => {
 		if (!confirm(m.makeHeadDelegateConfirmation())) return;
 		const promise = client.mutate.updateDelegation({
@@ -123,6 +125,7 @@
 				<EntryCode
 					entryCode={delegation.entryCode}
 					{referralLink}
+					{supervisorLink}
 					userHasRotationPermission={userIsHeadDelegate}
 					rotationFn={rotateEntryCode}
 				/>

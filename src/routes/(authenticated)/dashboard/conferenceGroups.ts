@@ -66,3 +66,16 @@ export function conferenceStateIcon(state: ConferencestateEnum) {
 	const group = groupOrder.find((entry) => entry.state === state);
 	return group ? conferenceGroupIcon(group.key) : conferenceGroupIcon('upcoming');
 }
+
+const stateLabels: Record<ConferencestateEnum, () => string> = {
+	ACTIVE: m.conferenceStateActive,
+	PARTICIPANT_REGISTRATION: m.conferenceStateRegistration,
+	PREPARATION: m.conferenceStatePreparation,
+	PRE: m.conferenceStatePre,
+	POST: m.conferenceStatePost
+};
+
+/** The short name of a conference state, for badges. */
+export function conferenceStateLabel(state: ConferencestateEnum) {
+	return stateLabels[state]();
+}

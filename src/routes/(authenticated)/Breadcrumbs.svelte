@@ -111,6 +111,10 @@
 			translation: m.payment(),
 			icon: 'hand-holding-circle-dollar'
 		},
+		checkIn: {
+			translation: m.onSiteCheckIn(),
+			icon: 'id-badge'
+		},
 		postalRegistration: {
 			translation: m.postalRegistration(),
 			icon: 'envelopes-bulk'
@@ -230,10 +234,6 @@
 		'registration-mode': {
 			icon: 'id-card',
 			translation: m.registrationMode()
-		},
-		accessFlow: {
-			icon: 'id-card-clip',
-			translation: m.accessFlow()
 		},
 		announcement: {
 			icon: 'bullhorn',

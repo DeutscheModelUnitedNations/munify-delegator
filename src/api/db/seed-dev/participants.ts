@@ -166,16 +166,17 @@ export type StatusPlan = Partial<
 		| 'didAttend'
 		| 'accessCardId'
 	>
-> & { withDocumentNumber?: boolean };
+> & { withDocumentNumber?: boolean; withAccessCard?: boolean };
 
 export function addStatus(cs: ConferenceSeed, userId: string, plan: StatusPlan) {
-	const { withDocumentNumber, ...status } = plan;
+	const { withDocumentNumber, withAccessCard, ...status } = plan;
 	const statusId = faker.database.mongodbObjectId();
 	cs.batch.conferenceParticipantStatus.push({
 		id: statusId,
 		conferenceId: cs.id,
 		userId,
 		assignedDocumentNumber: withDocumentNumber ? ++cs.documentNumber : null,
+		accessCardId: withAccessCard ? `CARD-${++cs.accessCardNumber}` : null,
 		...status
 	});
 	return statusId;

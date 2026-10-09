@@ -58,7 +58,7 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 		getTitle: () => m.attendanceScanner(),
 		getDescription: () => m.attendanceScannerDescription(),
 		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/attendance', {
+			resolve('/(authenticated)/dashboard/[conferenceId]/management/attendance', {
 				conferenceId: ctx.conferenceId
 			}),
 		external: false,
@@ -122,8 +122,10 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'person-seat',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
-		getHref: (ctx) => resolve('/seats/[conferenceId]', { conferenceId: ctx.conferenceId }),
-		external: true,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/seats', {
+				conferenceId: ctx.conferenceId
+			}),
 		isVisible: () => true
 	},
 	{

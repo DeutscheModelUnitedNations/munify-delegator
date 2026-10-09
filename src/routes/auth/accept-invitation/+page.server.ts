@@ -4,6 +4,7 @@ import { claimPendingInvitation } from '$api/services/upsertSelf';
 import type { PageServerLoad } from './$types';
 import { assertInvitationUsable } from './invitationValidity';
 import { error, redirect } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 
 /**
  * Turns an emailed invitation link into a conference membership.
@@ -36,7 +37,7 @@ export const load: PageServerLoad = async (event) => {
 		sameSite: 'lax',
 		path: '/',
 		maxAge: 60 * 60, // 1 hour - should be enough for auth flow
-		secure: true,
+		secure: !dev,
 		httpOnly: true
 	});
 

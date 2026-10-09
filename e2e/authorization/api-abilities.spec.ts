@@ -35,7 +35,7 @@ function expectRefused(result: GraphQLResult, reason: RegExp) {
 }
 
 test('a participant cannot write on somebody else’s behalf', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-writer'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-writer'), { startUrl: '/login?next=/dashboard' });
 
 	// A status row for another user - the create path used to have no check at all.
 	expectRefused(
@@ -117,7 +117,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 });
 
 test('a participant reads nothing of conferences they are not part of', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-reader'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-reader'), { startUrl: '/login?next=/dashboard' });
 
 	const result = await gql(
 		page,
@@ -145,9 +145,9 @@ test('co-delegates see each other’s names, not each other’s contact details'
 }) => {
 	const head = await (await browser.newContext()).newPage();
 	const member = await (await browser.newContext()).newPage();
-	await loginAs(head, makeTestUser('authz-head'), { startUrl: '/dashboard' });
+	await loginAs(head, makeTestUser('authz-head'), { startUrl: '/login?next=/dashboard' });
 	const memberClaims = makeTestUser('authz-member');
-	await loginAs(member, memberClaims, { startUrl: '/dashboard' });
+	await loginAs(member, memberClaims, { startUrl: '/login?next=/dashboard' });
 
 	const created = await gql(
 		head,
@@ -194,7 +194,9 @@ test('co-delegates see each other’s names, not each other’s contact details'
 });
 
 test('a team coordinator cannot hand out project management', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), {
+		startUrl: '/login?next=/dashboard'
+	});
 
 	const invited = await gql(
 		page,
@@ -234,13 +236,13 @@ test('payment details and documents are for people with a part in the conference
 
 	// A member of its team reads them.
 	const page = await (await browser.newContext()).newPage();
-	await loginAs(page, fixedTestUser(E2E_PAYMENT_ADMIN_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_PAYMENT_ADMIN_ID), { startUrl: '/login?next=/dashboard' });
 	const member = await read(page.request.post.bind(page.request));
 	expect(member.iban).toBeTruthy();
 });
 
 test('a reviewer reads delegations without their join codes', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID), { startUrl: '/login?next=/dashboard' });
 
 	// The delegation itself is readable...
 	const delegation = await gql(page, `query ($id: ID!) { delegation(id: $id) { id school } }`, {
@@ -265,7 +267,7 @@ test('project management uploads resolutions, everybody with a part in it downlo
 }) => {
 	const as = async (claims: Parameters<typeof loginAs>[1]) => {
 		const page = await (await browser.newContext()).newPage();
-		await loginAs(page, claims, { startUrl: '/dashboard' });
+		await loginAs(page, claims, { startUrl: '/login?next=/dashboard' });
 		return page;
 	};
 	const create = `mutation ($c: ID!, $n: String!, $content: String!) {

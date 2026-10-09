@@ -36,6 +36,11 @@
 					icon="fa-user-group"
 					title={m.teamManagement()}
 				/>
+				<NavMenuButton
+					href="/dashboard/{conferenceId}/management/attendance"
+					icon="fa-barcode-read"
+					title={m.attendanceScanner()}
+				/>
 			{:else}
 				<NavMenuButton
 					href={`/dashboard/${conferenceId}/management/stats`}
@@ -81,6 +86,11 @@
 						title={m.adminAssignment()}
 					/>
 					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/checkIn"
+						icon="fa-id-badge"
+						title={m.onSiteCheckIn()}
+					/>
+					<NavMenuButton
 						href="/dashboard/{conferenceId}/management/postalRegistration"
 						icon="fa-envelope"
 						title={m.postalRegistration()}
@@ -91,9 +101,9 @@
 						title={m.payment()}
 					/>
 					<NavMenuButton
-						href="/dashboard/{conferenceId}/management/accessFlow"
-						icon="fa-id-card-clip"
-						title={m.accessFlow()}
+						href="/dashboard/{conferenceId}/management/attendance"
+						icon="fa-barcode-read"
+						title={m.attendanceScanner()}
 					/>
 				</NavMenuDetails>
 				<NavMenuDetails title={m.navInfo()} icon="fa-comments">
@@ -157,6 +167,6 @@
 	</div>
 </div>
 
-{#if !seatPlanningOnly}
+{#if membership && !seatPlanningOnly}
 	<CommandPalette {conferenceId} />
 {/if}

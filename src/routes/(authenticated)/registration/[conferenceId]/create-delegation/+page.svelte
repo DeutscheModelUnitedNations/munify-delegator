@@ -68,7 +68,7 @@
 				<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}
 					>{m.next()}</button
 				>
-				<a class="btn btn-warning" href={resolve(`/registration/${conferenceId}`)}>{m.back()}</a>
+				<a class="btn btn-warning" href={resolve(`/dashboard/${conferenceId}`)}>{m.back()}</a>
 			{:else}
 				<Form {form}>
 					<p>

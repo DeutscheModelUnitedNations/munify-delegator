@@ -34,6 +34,10 @@
 	const showStatus = $derived(
 		hasConferenceAccess({ delegationMember, singleParticipant, conferenceSupervisor, teamMember })
 	);
+	// Opened from a search or a link for somebody who has no part in this conference at all
+	const inConference = $derived(
+		!!delegationMember || !!singleParticipant || !!conferenceSupervisor || !!teamMember
+	);
 	const showRole = $derived(!!singleParticipant || !!teamMember);
 	const showSupervisors = $derived(!!delegationMember || !!singleParticipant);
 	const delegationId = $derived(delegationMember?.delegation.id);
@@ -75,7 +79,15 @@
 		{conferenceSupervisor}
 		{teamMember}
 		{mode}
+		{showStatus}
 	/>
+
+	{#if !inConference}
+		<div class="alert alert-warning mx-5 md:mx-10 lg:mx-16" role="status">
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			<span>{m.notInConference()}</span>
+		</div>
+	{/if}
 
 	<UserCardTabs
 		{activeTab}

@@ -6,6 +6,10 @@ export interface QueueEntry {
 	errorKind?: 'network' | 'user_not_found' | 'duplicate' | 'unknown';
 	errorMessage?: string;
 	retryCount: number;
+	/** The result of the check at the time of the scan; `null` when the scan was not checked. */
+	checkPassed: boolean | null;
+	/** Who was scanned, once it is known, for the log. */
+	label?: string;
 }
 
 /** Whether a failed sync is worth retrying: the request never reached the server. */

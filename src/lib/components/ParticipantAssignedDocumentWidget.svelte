@@ -47,15 +47,15 @@
 	});
 </script>
 
-<div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
+<div class="card flex min-w-0 flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
 		<i class="fa-sharp-duotone fa-solid fa-hashtag mr-2"></i>
 		{m.documentNumber()}
 	</h3>
 	{#if editing}
-		<div class="join">
+		<div class="join min-w-0">
 			<input
-				class="input join-item w-full"
+				class="input join-item w-full min-w-0 flex-1"
 				bind:value={assignedDocumentNumberLocal}
 				type="number"
 			/>

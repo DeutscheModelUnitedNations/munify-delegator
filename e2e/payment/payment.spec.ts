@@ -9,7 +9,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 	const participantPage = await participantContext.newPage();
 
 	const participant = makeTestUser('payment-participant');
-	await loginAs(participantPage, participant, { startUrl: '/dashboard' });
+	await loginAs(participantPage, participant, { startUrl: '/login?next=/dashboard' });
 
 	// Only somebody taking part in the conference can be paid for, so the participant registers
 	// first - the API refuses a payment reference for anybody else.

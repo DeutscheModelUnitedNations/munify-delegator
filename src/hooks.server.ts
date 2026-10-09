@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '$lib/sentryDataCollection';
-import { redirect, type Handle } from '@sveltejs/kit';
+import { isRedirect, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import {
 	AUTHENTICATED_ROUTES,
 	OIDC,
+	isPublicRoute,
 	accessTokenCookieName,
 	refreshTokenCookieName
 } from '$api/services/OIDC';
@@ -55,6 +56,7 @@ const migrationNoticeHandle: Handle = ({ event, resolve }) => {
 	if (
 		configPublic.PUBLIC_OIDC_MIGRATION_NOTICE &&
 		AUTHENTICATED_ROUTES.some((route) => event.url.pathname.startsWith(route)) &&
+		!isPublicRoute(event.url.pathname) &&
 		!event.cookies.get(accessTokenCookieName) &&
 		!event.cookies.get(refreshTokenCookieName) &&
 		event.cookies.get(MIGRATION_NOTICE_COOKIE) !== MIGRATION_NOTICE_VERSION
@@ -67,12 +69,31 @@ const migrationNoticeHandle: Handle = ({ event, resolve }) => {
 };
 // --- END TEMPORARY ---
 
+/**
+ * The OIDC handle, except that a public page (see `isPublicRoute`) is served without a session
+ * instead of redirecting to the provider. A visitor who is signed in still gets their session on
+ * `event.locals.oidc`.
+ */
+const oidcHandle: Handle = async (input) => {
+	if (!isPublicRoute(input.event.url.pathname)) {
+		return OIDC.handle(input);
+	}
+	try {
+		return await OIDC.handle(input);
+	} catch (error) {
+		if (isRedirect(error)) {
+			return input.resolve(input.event);
+		}
+		throw error;
+	}
+};
+
 export const handleError = Sentry.handleErrorWithSentry();
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
 	migrationNoticeHandle,
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
 	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.
-	OIDC.handle,
+	oidcHandle,
 	paraglideHandle
 );

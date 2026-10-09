@@ -1,5 +1,5 @@
 import { client } from './rumbleClient/client';
-import { getCurrentUser } from '$lib/state/currentUser.svelte';
+import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
 
 /**
  * Who the caller is in one conference: which role they hold, and just enough about it to decide
@@ -120,6 +120,7 @@ export async function fetchMyParticipation(conferenceId: string) {
 	// only fail.
 	if (!conferenceId) return undefined;
 
-	const user = await getCurrentUser();
+	const user = await getOptionalCurrentUser();
+	if (!user) return undefined;
 	return fetchMyConferenceParticipation({ userId: user.sub, conferenceId });
 }

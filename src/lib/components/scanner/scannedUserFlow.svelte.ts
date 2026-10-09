@@ -32,7 +32,7 @@ interface Resettable {
 }
 
 /**
- * The state behind a "scan a participant, check them off in a drawer" page (access flow, postal
+ * The state behind a "scan a participant, check them off in a drawer" page (postal
  * registration): the scanned id in the URL, the person loaded for it, the drawer that shows them
  * only once their data has arrived, and a guard against running the confirm action twice.
  *

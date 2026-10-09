@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	canConfigureCommittees,
+	canWriteAccessCards,
 	canPlanSeats,
 	isSeatPlanningOnly,
 	managementRedirect
@@ -66,5 +67,13 @@ describe('role checks', () => {
 		expect(canConfigureCommittees('PROJECT_MANAGEMENT')).toBe(true);
 		expect(canConfigureCommittees('CONTENT_LEAD')).toBe(false);
 		expect(canConfigureCommittees('PARTICIPANT_CARE')).toBe(false);
+	});
+
+	test('only admins, project management and participant care store access cards', () => {
+		expect(canWriteAccessCards('SYSTEM_ADMIN')).toBe(true);
+		expect(canWriteAccessCards('PROJECT_MANAGEMENT')).toBe(true);
+		expect(canWriteAccessCards('PARTICIPANT_CARE')).toBe(true);
+		expect(canWriteAccessCards('CONTENT_LEAD')).toBe(false);
+		expect(canWriteAccessCards(undefined)).toBe(false);
 	});
 });

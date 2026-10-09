@@ -1,28 +1,39 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import AccentStripe from '$lib/components/AccentStripe.svelte';
+	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
+	import SignInHint from '$lib/components/dashboard/SignInHint.svelte';
+	import ConferenceSelectorHeader from '$lib/components/dashboard/ConferenceSelectorHeader.svelte';
+	import MyConferencesSection from '$lib/components/dashboard/MyConferencesSection.svelte';
+	import ConferenceStateGroup from './ConferenceStateGroup.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
-	import { fetchSelectableConferences } from './conferenceSelector';
-	import {
-		conferenceGroupIcon,
-		conferenceGroupLabel,
-		groupConferencesByState
-	} from './conferenceGroups';
+	import { fetchMyConferenceIds, fetchSelectableConferences } from './conferenceSelector';
+	import { groupConferencesByState } from './conferenceGroups';
 
 	// Only what decides the grouping; each card fetches what it shows.
 	const conferences = $derived(await fetchSelectableConferences());
-	const currentUser = await getCurrentUser();
+	const currentUser = await getOptionalCurrentUser();
 
-	const groups = $derived(groupConferencesByState(conferences));
+	// A visitor who is not signed in has no part in any conference yet
+	const myConferenceIds = $derived(
+		currentUser ? await fetchMyConferenceIds(currentUser.sub) : new Set<string>()
+	);
+
+	// "Your conferences" first: one list, ordered by conference state. Past conferences always go
+	// to the regular groups below, even the ones the user took part in.
+	const isMine = (conference: (typeof conferences)[number]) =>
+		myConferenceIds.has(conference.id) && conference.state !== 'POST';
+	const mine = $derived(
+		groupConferencesByState(conferences.filter(isMine)).flatMap((group) => group.conferences)
+	);
+	const others = $derived(groupConferencesByState(conferences.filter((c) => !isMine(c))));
 </script>
 
 {#if conferences.length === 0}
 	<div class="flex w-full flex-col items-center gap-4">
 		<NoConferenceIndicator />
-		{#if currentUser.isAdmin}
+		{#if currentUser?.isAdmin}
 			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/seed')}>
 				<i class="fa-sharp-duotone fa-solid fa-seedling"></i>
 				{m.seedConference()}
@@ -32,44 +43,24 @@
 {:else}
 	<div class="flex w-full flex-col items-center pb-16">
 		<div class="flex w-full max-w-none flex-col gap-12">
-			<header class="flex flex-col gap-4 pt-6">
-				<AccentStripe />
-				<div class="flex items-start justify-between gap-4">
-					<div class="flex flex-col gap-4">
-						<h1 class="text-4xl font-bold tracking-tight">{m.conferences()}</h1>
-						<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
-					</div>
-					{#if currentUser.isAdmin}
-						<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('/dashboard/seed')}>
-							<i class="fa-sharp-duotone fa-solid fa-plus text-2xl"></i>
-							{m.seedConference()}
-						</a>
-					{/if}
-				</div>
-			</header>
+			<ConferenceSelectorHeader isAdmin={currentUser?.isAdmin ?? false} />
 
-			{#each groups as group (group.key)}
-				{@const past = group.key === 'past'}
-				<section class="flex flex-col gap-5">
-					<div class="flex items-center gap-3">
-						<h2
-							class="text-sm font-semibold tracking-widest uppercase {past
-								? 'text-base-content/50'
-								: 'text-base-content/80'}"
-						>
-							<i class="{conferenceGroupIcon(group.key)} mr-1.5"></i>
-							{conferenceGroupLabel(group.key)}
-						</h2>
-						<span class="badge badge-ghost badge-sm">{group.conferences.length}</span>
-						<div class="bg-base-300 h-px flex-1"></div>
-					</div>
-					<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-						{#each group.conferences as conference (conference.id)}
-							<ConferenceSelectorCard conferenceId={conference.id} muted={past} />
-						{/each}
-					</div>
-				</section>
-			{/each}
+			{#if !currentUser}
+				<SignInHint title={m.yourConferences()} text={m.signInToSeeYourConferences()} />
+			{:else if mine.length > 0}
+				<MyConferencesSection conferenceIds={mine.map((conference) => conference.id)} />
+			{/if}
+
+			{#if others.length > 0}
+				<div class="flex flex-col gap-8">
+					{#each others as group (group.key)}
+						<ConferenceStateGroup
+							groupKey={group.key}
+							conferenceIds={group.conferences.map((conference) => conference.id)}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

@@ -21,6 +21,7 @@
 		"@eslint/js": "^10.0.1",
 		"@faker-js/faker": "^10.6.0",
 		"@floating-ui/dom": "^1.8.0",
+		"@fontsource/outfit": "5.3.0",
 		"@graphql-yoga/plugin-graphql-sse": "^3.24.1",
 		"@inlang/cli": "^3.3.8",
 		"@inlang/paraglide-js": "^2.25.4",
@@ -205,7 +206,7 @@
 		"db:nuke": "docker compose -f ./dev.docker-compose.yml down -v && docker compose -f ./dev.docker-compose.yml up -d --wait && bun run db:migrate",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
-		"dev:server": "svelte-kit sync && vite",
+		"dev:server": "svelte-kit sync && vite --host",
 		"fallow": "bun scripts/mergeCoverage.ts && fallow --coverage coverage/coverage-final.json",
 		"fallow:audit": "bun scripts/mergeCoverage.ts && fallow audit --coverage coverage/coverage-final.json",
 		"fallow:health": "bun scripts/mergeCoverage.ts && fallow health --score --coverage coverage/coverage-final.json",
@@ -229,6 +230,7 @@
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
 		"@m1212e/rumble@0.25.3": "patches/@m1212e%2Frumble@0.25.3.patch",
-		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch"
+		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
+		"@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch"
 	}
 }

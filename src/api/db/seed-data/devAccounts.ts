@@ -48,45 +48,6 @@ export const devAccounts = [
 		profile: 'complete',
 		age: 34
 	},
-	{
-		sub: 'dev-service-user',
-		label: '[Global] Service user',
-		description: 'OIDC role service_user: may create committee agenda items, nothing else',
-		givenName: 'Sergio',
-		familyName: 'Service',
-		roles: ['service_user'],
-		profile: 'complete',
-		age: 40
-	},
-	{
-		sub: 'dev-participant',
-		label: '[Global] Fresh participant',
-		description: 'Complete profile, no participation anywhere - register, join with a code',
-		givenName: 'Paul',
-		familyName: 'Participant',
-		roles: [],
-		profile: 'complete',
-		age: 17
-	},
-	{
-		sub: 'dev-new-user',
-		label: '[Global] First login',
-		description: 'No user row yet: the first login creates it and asks for the profile',
-		givenName: 'Nora',
-		familyName: 'Neu',
-		roles: [],
-		profile: 'none'
-	},
-	{
-		sub: 'dev-incomplete-profile',
-		label: '[Global] Incomplete profile',
-		description: 'Row without birthday, phone or address: every login redirects to /my-account',
-		givenName: 'Ines',
-		familyName: 'Incomplete',
-		roles: [],
-		profile: 'incomplete'
-	},
-
 	// --- Team: one role each, in every seeded conference ---------------------------------------
 	{
 		sub: 'dev-team-pm',
@@ -156,6 +117,36 @@ export const devAccounts = [
 		familyName: 'Invited',
 		roles: [],
 		profile: 'none'
+	},
+
+	// --- Accounts without a part yet --------------------------------------------------------
+	{
+		sub: 'dev-participant',
+		label: '[Global] Fresh participant',
+		description: 'Complete profile, no participation anywhere - register, join with a code',
+		givenName: 'Paul',
+		familyName: 'Participant',
+		roles: [],
+		profile: 'complete',
+		age: 17
+	},
+	{
+		sub: 'dev-new-user',
+		label: '[Global] First login',
+		description: 'No user row yet: the first login creates it and asks for the profile',
+		givenName: 'Nora',
+		familyName: 'Neu',
+		roles: [],
+		profile: 'none'
+	},
+	{
+		sub: 'dev-incomplete-profile',
+		label: '[Global] Incomplete profile',
+		description: 'Row without birthday, phone or address: every login redirects to /my-account',
+		givenName: 'Ines',
+		familyName: 'Incomplete',
+		roles: [],
+		profile: 'incomplete'
 	},
 
 	// --- Registration: the application stages, in the "Registration open" conference -----------
@@ -350,6 +341,30 @@ export const devAccounts = [
 		roles: [],
 		profile: 'complete',
 		age: 17
+	},
+
+	// --- Mixed: several parts across the stages, for the conference selector -------------------
+	{
+		sub: 'dev-mixed-team',
+		label: '[Mixed] Team and participant',
+		description:
+			'Team member (MEMBER) of the registration, closed and active conferences, a single participant with a role in the preparation and past ones',
+		givenName: 'Tamara',
+		familyName: 'Doppelrolle',
+		roles: [],
+		profile: 'complete',
+		age: 22
+	},
+	{
+		sub: 'dev-mixed-supervisor',
+		label: '[Mixed] Supervisor and applicant',
+		description:
+			'Single applicant in the registration conference, supervisor of the German delegation in the preparation, active and past ones',
+		givenName: 'Silke',
+		familyName: 'Mehrfach',
+		roles: [],
+		profile: 'complete',
+		age: 41
 	}
 ] as const satisfies readonly DevAccount[];
 

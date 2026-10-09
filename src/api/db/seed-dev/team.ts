@@ -20,12 +20,22 @@ const TEAM_PERSONAS: [DevAccountSub, Insert<'teamMember'>['role']][] = [
 	['dev-team-member', 'MEMBER']
 ];
 
+/** Conferences where a mixed account sits on the team instead of taking part. */
+const MIXED_TEAM_CONFERENCES: ConferenceSeed['plan']['key'][] = [
+	'registration',
+	'closed',
+	'active'
+];
+
 /** As `invitationToken.ts` stores it: only the SHA-256 of the token the link carries. */
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 export function addTeam(cs: ConferenceSeed) {
 	for (const [userId, role] of TEAM_PERSONAS) {
 		cs.batch.teamMember.push({ conferenceId: cs.id, userId, role });
+	}
+	if (MIXED_TEAM_CONFERENCES.includes(cs.plan.key)) {
+		cs.batch.teamMember.push({ conferenceId: cs.id, userId: 'dev-mixed-team', role: 'MEMBER' });
 	}
 	for (let index = 0; index < cs.plan.crowd.team; index++) {
 		cs.batch.teamMember.push(

@@ -19,22 +19,36 @@ import {
  * the caller may read, ranked best match first. One query per table, run in parallel.
  *
  * rumble compares the term with each column on its own, so "anna schmidt" matches neither the
- * given name nor the family name. Only the first word goes to `search`; the others narrow the
- * result with `ilike` on the name and email columns, so every word still has to match somewhere.
+ * given name nor the family name. People are therefore searched one word at a time and only those
+ * every word found are kept, which leaves each word as tolerant of typos as the trigram match.
  */
 
 const RESULT_LIMIT = 10;
 const MIN_SEARCH_LENGTH = 2;
 
-type StringFilter = { ilike: string };
-type PersonColumn = 'givenName' | 'familyName' | 'email';
+/** Candidates asked for per word, so the people every word found can still be told apart. */
+const WORD_CANDIDATES = 50;
 
-export function containsWord(word: string) {
-	const ilike: StringFilter = { ilike: `%${word}%` };
-	const columns: PersonColumn[] = ['givenName', 'familyName', 'email'];
-	return {
-		OR: columns.map((column) => ({ [column]: ilike }) as Record<PersonColumn, StringFilter>)
-	};
+/**
+ * The rows `find` returns for every word of the term, best match for the first word first.
+ * A single word is one query; with several, a row has to turn up for each of them.
+ */
+export async function searchEveryWord<T extends { id: string }>(
+	words: string[],
+	find: (word: string, limit: number) => Promise<T[]>,
+	resultLimit = RESULT_LIMIT
+): Promise<T[]> {
+	const [first, ...rest] = words;
+	if (!first) return [];
+	if (rest.length === 0) return find(first, resultLimit);
+
+	const [firstMatches, ...otherMatches] = await Promise.all(
+		words.map((word) => find(word, WORD_CANDIDATES))
+	);
+	const otherIds = otherMatches.map((matches) => new Set(matches.map((row) => row.id)));
+	return firstMatches
+		.filter((row) => otherIds.every((ids) => ids.has(row.id)))
+		.slice(0, resultLimit);
 }
 
 /** Membership in the conference through any of the four possible roles. */
@@ -167,12 +181,24 @@ interface SearchResults {
 	transactions: SearchTransaction[];
 }
 
+/** The parts a person may hold in one conference, which decide whether they take part in it. */
+export function participation(conferenceId: string) {
+	const inConference = { conferenceId: { eq: conferenceId } };
+	return {
+		delegationMemberships: { __args: { where: inConference }, id: true },
+		singleParticipant: { __args: { where: inConference }, id: true },
+		conferenceSupervisor: { __args: { where: inConference }, id: true },
+		teamMember: { __args: { where: inConference }, id: true },
+		waitingListEntry: { __args: { where: inConference }, id: true }
+	} as const;
+}
+
 export async function searchConference(
 	conferenceId: string,
 	searchTerm: string
 ): Promise<SearchResults> {
-	const [search, ...otherWords] = searchTerm.trim().split(/\s+/);
-	if (!search || searchTerm.trim().length < MIN_SEARCH_LENGTH) {
+	const words = searchTerm.trim().split(/\s+/);
+	if (!words[0] || searchTerm.trim().length < MIN_SEARCH_LENGTH) {
 		return {
 			users: [],
 			delegations: [],
@@ -182,66 +208,75 @@ export async function searchConference(
 			transactions: []
 		};
 	}
-	const narrowing = otherWords.map(containsWord);
 	const inConference = { conferenceId: { eq: conferenceId } };
 
-	const [users, foreignUsers, delegations, transactions, seats, committees] = await Promise.all([
-		client.query.users({
-			__args: {
-				search,
-				where: { AND: [participatesIn(conferenceId), ...narrowing] },
-				limit: RESULT_LIMIT
-			},
-			id: true,
-			givenName: true,
-			familyName: true,
-			email: true,
-			delegationMemberships: { __args: { where: inConference }, id: true },
-			singleParticipant: { __args: { where: inConference }, id: true },
-			conferenceSupervisor: { __args: { where: inConference }, id: true },
-			teamMember: { __args: { where: inConference }, id: true },
-			waitingListEntry: { __args: { where: inConference }, id: true }
-		}),
-		client.query.users({
-			__args: {
-				search,
-				where: { AND: [{ NOT: participatesIn(conferenceId) }, ...narrowing] },
-				limit: RESULT_LIMIT
-			},
-			id: true,
-			givenName: true,
-			familyName: true,
-			email: true
-		}),
-		// `entryCode` is the delegation's join secret, masked for team members who do not hand it
-		// out, and a masked column fails the whole query: it is neither selected nor searched.
-		client.query.delegations({
-			__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
-			id: true,
-			school: true,
-			members: { isHeadDelegate: true, user: { id: true } }
-		}),
-		client.query.paymentTransactions({
-			__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
-			id: true,
-			amount: true,
-			recievedAt: true,
-			conference: { currency: true }
-		}),
-		searchSeats(conferenceId, searchTerm.trim()),
-		searchCommittees(conferenceId, searchTerm.trim())
-	]);
+	const [users, cardHolders, foreignUsers, delegations, transactions, seats, committees] =
+		await Promise.all([
+			searchEveryWord(words, (search, limit) =>
+				client.query.users({
+					__args: { search, where: participatesIn(conferenceId), limit },
+					id: true,
+					givenName: true,
+					familyName: true,
+					email: true,
+					...participation(conferenceId)
+				})
+			),
+			// The access card of the external ID card, so scanning or typing it finds its owner. Only
+			// rows the caller may read come back.
+			client.query.conferenceParticipantStatuses({
+				__args: {
+					where: { ...inConference, accessCardId: { ilike: `%${searchTerm.trim()}%` } },
+					limit: RESULT_LIMIT
+				},
+				user: {
+					id: true,
+					givenName: true,
+					familyName: true,
+					email: true,
+					...participation(conferenceId)
+				}
+			}),
+			searchEveryWord(words, (search, limit) =>
+				client.query.users({
+					__args: { search, where: { NOT: participatesIn(conferenceId) }, limit },
+					id: true,
+					givenName: true,
+					familyName: true,
+					email: true
+				})
+			),
+			// `entryCode` is the delegation's join secret, masked for team members who do not hand it
+			// out, and a masked column fails the whole query: it is neither selected nor searched.
+			client.query.delegations({
+				__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
+				id: true,
+				school: true,
+				members: { isHeadDelegate: true, user: { id: true } }
+			}),
+			client.query.paymentTransactions({
+				__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
+				id: true,
+				amount: true,
+				recievedAt: true,
+				conference: { currency: true }
+			}),
+			searchSeats(conferenceId, searchTerm.trim()),
+			searchCommittees(conferenceId, searchTerm.trim())
+		]);
 
 	return {
 		seats,
 		committees,
-		users: users.map((user) => ({
-			id: user.id,
-			email: user.email,
-			givenName: user.givenName,
-			familyName: user.familyName,
-			participationType: userParticipationType(user)
-		})),
+		users: [...cardHolders.map((status) => status.user), ...users]
+			.filter((user, index, all) => all.findIndex((other) => other.id === user.id) === index)
+			.map((user) => ({
+				id: user.id,
+				email: user.email,
+				givenName: user.givenName,
+				familyName: user.familyName,
+				participationType: userParticipationType(user)
+			})),
 		foreignUsers: foreignUsers.map((user) => ({
 			id: user.id,
 			email: user.email,

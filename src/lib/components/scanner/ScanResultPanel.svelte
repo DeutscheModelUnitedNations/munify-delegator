@@ -35,13 +35,12 @@
 </script>
 
 {#if current?.user}
-	<section class="flex flex-col gap-4 rounded-box bg-base-200/60 p-6" aria-label={drawerTitle}>
-		<header class="flex items-center justify-between gap-2">
-			<h3 class="flex items-center gap-2 text-lg font-bold">
-				<i class="fa-sharp-duotone fa-solid {drawerIcon} text-xl"></i>
-				{drawerTitle}
-			</h3>
-			<div class="flex gap-2">
+	<section
+		class="flow-root min-w-0 rounded-box bg-base-200/60 p-2 md:p-6 [&>:not(header)]:mb-2 md:[&>:not(header)]:mb-4"
+		aria-label={drawerTitle}
+	>
+		<header class="float-right mb-2 ml-3 flex gap-2">
+			<div class="contents">
 				<button
 					class="btn btn-soft btn-sm"
 					onclick={() => {
@@ -64,7 +63,7 @@
 
 		{@render children(current.user, current.status)}
 
-		<footer class="flex gap-2 pt-2">
+		<footer class="mb-0! flex flex-wrap gap-2 pt-2">
 			<button class="btn flex-1 btn-primary" onclick={onConfirm} disabled={flow.busy}>
 				<i class="fa-sharp-duotone fa-solid fa-check"></i>
 				{confirmLabel}

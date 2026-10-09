@@ -21,14 +21,15 @@
 {#snippet delegationMemberSummary(member: DelegationMember)}
 	{@const delegation = member.delegation}
 	{#if delegation.assignedNation || delegation.assignedNonStateActor}
-		<div class="tooltip tooltip-bottom" data-tip={assignmentName(delegation)}>
+		<span class="bg-base-100 rounded-box flex items-center gap-2 py-1 pr-3 pl-1 font-semibold">
 			<Flag
-				size="sm"
+				size="xs"
 				alpha2Code={delegation.assignedNation?.alpha2Code}
 				nsa={!!delegation.assignedNonStateActor}
 				icon={delegation.assignedNonStateActor?.fontAwesomeIcon}
 			/>
-		</div>
+			{assignmentName(delegation)}
+		</span>
 	{:else}
 		<span class="badge badge-error badge-soft">{m.noAssignment()}</span>
 	{/if}
@@ -38,9 +39,10 @@
 		</span>
 	{/if}
 	{#if member.isHeadDelegate}
-		<span class="badge badge-accent tooltip tooltip-bottom" data-tip={m.headDelegate()}
-			><i class="fa-sharp-duotone fa-solid fa-medal"></i></span
-		>
+		<span class="badge badge-accent gap-1">
+			<i class="fa-sharp-duotone fa-solid fa-medal"></i>
+			{m.headDelegate()}
+		</span>
 	{/if}
 {/snippet}
 
@@ -81,22 +83,22 @@
 {/snippet}
 
 {#if delegationMember}
-	<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+	<div class="flex flex-wrap items-center gap-2 text-sm">
 		{@render delegationMemberSummary(delegationMember)}
 	</div>
 {:else if singleParticipant}
-	<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+	<div class="flex flex-wrap items-center gap-2 text-sm">
 		{@render singleParticipantSummary(singleParticipant)}
 	</div>
 {:else if conferenceSupervisor}
-	<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+	<div class="flex flex-wrap items-center gap-2 text-sm">
 		<span class="badge badge-primary">
 			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user mr-1"></i>
 			{m.supervisor()}
 		</span>
 	</div>
 {:else if teamMember}
-	<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+	<div class="flex flex-wrap items-center gap-2 text-sm">
 		{@render teamMemberSummary(teamMember)}
 	</div>
 {/if}

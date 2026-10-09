@@ -9,6 +9,12 @@ import type { LayoutLoad } from './$types';
  * application depends on the stage, and supervisors never send one.
  */
 export const load: LayoutLoad = async (event) => {
+	// A supervisor's link has to work for someone who cannot read the conference yet (it only
+	// shows to people who have a part in it once registration is over); the mutation checks the rest.
+	if (event.url.pathname.endsWith('/supervisor')) {
+		return;
+	}
+
 	const conference = await client.query.conference({
 		__args: { id: event.params.conferenceId },
 		state: true,
@@ -16,18 +22,14 @@ export const load: LayoutLoad = async (event) => {
 	});
 
 	if (!conference) {
-		redirect(307, '/registration');
-	}
-
-	if (event.url.pathname.endsWith('/supervisor') && conference.state !== 'POST') {
-		return;
+		redirect(307, `/dashboard/${event.params.conferenceId}`);
 	}
 
 	switch (getRegistrationStatus(conference.state, new Date(conference.startAssignment))) {
 		case 'CLOSED':
 		case 'NOT_YET_OPEN':
 		case 'UNKNOWN':
-			redirect(307, '/registration');
+			redirect(307, `/dashboard/${event.params.conferenceId}`);
 			break;
 		case 'WAITING_LIST':
 			if (!event.url.pathname.endsWith('waiting-list')) {

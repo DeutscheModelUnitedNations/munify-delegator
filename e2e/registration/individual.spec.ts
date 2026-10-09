@@ -4,7 +4,7 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 
 test('a new user can register as an individual participant', async ({ page }) => {
 	const user = makeTestUser('individual');
-	await loginAs(page, user, { startUrl: '/registration' });
+	await loginAs(page, user, { startUrl: '/login?next=/dashboard' });
 
 	await openFirstConferenceForRegistration(page);
 

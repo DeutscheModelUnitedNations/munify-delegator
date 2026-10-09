@@ -95,7 +95,7 @@ export async function loginAs(
 	claims: TestUserClaims,
 	opts: { startUrl?: string } = {}
 ): Promise<void> {
-	const startUrl = opts.startUrl ?? '/dashboard';
+	const startUrl = opts.startUrl ?? '/login?next=/dashboard';
 	await page.goto(startUrl);
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });

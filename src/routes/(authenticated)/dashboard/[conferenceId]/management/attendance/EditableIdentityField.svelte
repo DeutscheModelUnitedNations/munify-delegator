@@ -7,12 +7,21 @@
 		initialValue: string;
 		type?: 'text' | 'date';
 		fullWidth?: boolean;
+		/** Shows the value without the means to change it. */
+		readonly?: boolean;
 		onSave: (value: string) => Promise<void>;
 		/** The value as shown while not editing. */
 		children: Snippet;
 	}
 
-	let { initialValue, type = 'text', fullWidth = false, onSave, children }: Props = $props();
+	let {
+		initialValue,
+		type = 'text',
+		fullWidth = false,
+		readonly = false,
+		onSave,
+		children
+	}: Props = $props();
 
 	let editing = $state(false);
 	let value = $state('');
@@ -28,7 +37,9 @@
 	}
 </script>
 
-{#if editing}
+{#if readonly}
+	<div class="py-1 text-left {fullWidth ? 'w-full' : ''}">{@render children()}</div>
+{:else if editing}
 	<div class="join {fullWidth ? 'w-full' : ''}">
 		<input
 			class="input join-item input-lg {fullWidth ? 'w-full' : ''}"
@@ -57,7 +68,7 @@
 	>
 		{@render children()}
 		<i
-			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
+			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 text-sm opacity-50 transition-opacity group-hover:opacity-100"
 		></i>
 	</button>
 {/if}

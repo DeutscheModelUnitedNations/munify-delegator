@@ -38,6 +38,15 @@ export function addRegistrationPersonas(cs: ConferenceSeed) {
 		});
 	}
 
+	if (cs.plan.key === 'registration') {
+		addSingle(cs, {
+			id: 'single-mixed',
+			userId: 'dev-mixed-supervisor',
+			applied: true,
+			preferences: cs.customRoleIds.slice(2, 4)
+		});
+	}
+
 	if (cs.plan.key === 'registration' || cs.plan.key === 'closed') {
 		const ready =
 			cs.plan.key === 'registration'
@@ -143,9 +152,9 @@ const conferenceStatuses: Statuses = {
 		mediaConsentStatus: 'NOT_ALLOWED',
 		withDocumentNumber: false
 	}),
-	'dev-nsa-delegate': doneAndPresent(),
-	'dev-single': doneAndPresent(),
-	'dev-supervisor': doneAndPresent()
+	'dev-nsa-delegate': doneAndPresent({ accessCardId: 'CARD-0003' }),
+	'dev-single': doneAndPresent({ accessCardId: 'CARD-0004' }),
+	'dev-supervisor': doneAndPresent({ accessCardId: 'CARD-0005' })
 };
 
 /** Whose status rows the tables above may describe, in a typed order to walk them in. */
@@ -204,6 +213,17 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		preferences: cs.customRoleIds.slice(0, 2)
 	});
 
+	// A team member elsewhere, a participant with a role here.
+	if (['preparation', 'post'].includes(cs.plan.key)) {
+		addSingle(cs, {
+			id: 'single-mixed',
+			userId: 'dev-mixed-team',
+			applied: true,
+			roleId: cs.customRoleIds[3],
+			preferences: cs.customRoleIds.slice(3, 5)
+		});
+	}
+
 	const rejected = addDelegation(cs, {
 		id: 'delegation-rejected',
 		applied: true,
@@ -224,6 +244,14 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		attends: true,
 		memberIds: [...german.memberIds.values(), ...rejected.memberIds.values()]
 	});
+	if (['preparation', 'active', 'post'].includes(cs.plan.key)) {
+		addSupervisor(cs, {
+			id: 'supervisor-mixed',
+			userId: 'dev-mixed-supervisor',
+			attends: true,
+			memberIds: [...german.memberIds.values()]
+		});
+	}
 	addSupervisor(cs, {
 		id: 'supervisor-absent',
 		userId: 'dev-supervisor-absent',

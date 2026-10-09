@@ -12,7 +12,7 @@ const m_noAccess = /hier hast du keinen zugriff|you don't have access to this pa
 const MANAGEMENT_ROUTES = ['', '/participants', '/configuration', '/payments', '/stats'];
 
 test('a plain participant is refused every management route for a conference', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/login?next=/dashboard' });
 
 	for (const suffix of MANAGEMENT_ROUTES) {
 		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
@@ -31,7 +31,7 @@ test('a plain participant is refused every management route for a conference', a
 });
 
 test('a plain participant cannot read other participants through the API', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-api-outsider'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-api-outsider'), { startUrl: '/login?next=/dashboard' });
 
 	// The participants table is the management view this user was just refused; the resolver
 	// behind it must refuse too, otherwise the route guard is the only thing protecting the data.

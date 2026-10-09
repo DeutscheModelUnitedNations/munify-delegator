@@ -14,4 +14,4 @@
 	const formatted = $derived(formatHotkey(hotkey, isMac));
 </script>
 
-<span class="kbd kbd-{size}">{formatted}</span>
+<span class="kbd kbd-{size} hidden md:inline-flex">{formatted}</span>

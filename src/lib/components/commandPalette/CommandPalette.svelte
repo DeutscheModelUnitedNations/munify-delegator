@@ -6,7 +6,8 @@
 	import {
 		getCommandPaletteState,
 		closeCommandPalette,
-		toggleCommandPalette
+		toggleCommandPalette,
+		registerCommandPalette
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
@@ -30,6 +31,8 @@
 	let { conferenceId }: Props = $props();
 
 	const paletteState = getCommandPaletteState();
+
+	$effect(registerCommandPalette);
 
 	let searchInput = $state('');
 	let activeIndex = $state(0);

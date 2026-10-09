@@ -31,6 +31,7 @@ import { distinctNationCodes, normalizeSchoolName } from '$api/services/conferen
 import { loadSchoolRows, refreshSchoolSuggestions } from '$api/services/schoolSuggestions';
 import { totalSeats } from '$api/services/seatPlanning';
 import { storedFileUrl } from '$api/services/files';
+import { MAX_NAMETAG_BINS } from '$api/services/nametagBins';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -63,11 +64,13 @@ const MEMBERS_ONLY = {
 /** The team's internal tools. */
 const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
 
-// Everyone can see which conferences exist and their details - short of the members-only and
-// team-only columns.
-abilityBuilder.conference
-	.allow('read')
-	.when(() => ({ columns: { ...MEMBERS_ONLY, ...TEAM_ONLY } }));
+// Everyone can see the conferences that are open for registration (or, from the assignment on,
+// for the waiting list) and their details - short of the members-only and team-only columns. Any
+// other conference is only visible to the people who have a part in it (the rules below).
+abilityBuilder.conference.allow('read').when(() => ({
+	where: { state: { in: ['PARTICIPANT_REGISTRATION', 'PREPARATION'] } },
+	columns: { ...MEMBERS_ONLY, ...TEAM_ONLY }
+}));
 abilityBuilder.conference.allow('read').when(systemAdmin);
 
 // Participants and supervisors also read the members-only columns.
@@ -350,6 +353,7 @@ schemaBuilder.mutationFields((t) => ({
 			isOpenPaperSubmission: t.arg.boolean(),
 			showCalendar: t.arg.boolean(),
 			timezone: t.arg.string(),
+			nametagBinCount: t.arg.int(),
 			state: t.arg({ type: conferenceStateEnum }),
 			startAssignment: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),
@@ -382,6 +386,13 @@ schemaBuilder.mutationFields((t) => ({
 			certificateContent: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			if (
+				args.nametagBinCount != null &&
+				!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
+			) {
+				throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+			}
+
 			// An omitted upload leaves the stored value untouched; only a supplied file replaces it.
 			await db
 				.update(schema.conference)
@@ -402,6 +413,7 @@ schemaBuilder.mutationFields((t) => ({
 					isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
 					showCalendar: nullToUndefined(args.showCalendar),
 					timezone: nullToUndefined(args.timezone),
+					nametagBinCount: nullToUndefined(args.nametagBinCount),
 					state: nullToUndefined(args.state),
 					startAssignment: nullToUndefined(args.startAssignment),
 					startConference: nullToUndefined(args.startConference),

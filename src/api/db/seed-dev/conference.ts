@@ -206,6 +206,7 @@ function crowdStatus(cs: ConferenceSeed): StatusPlan {
 			{ weight: running ? 1 : 3, value: 'PENDING' as const },
 			{ weight: 1, value: 'PROBLEM' as const }
 		]);
+	const didAttend = cs.plan.with.attendance ? faker.datatype.boolean(0.9) : false;
 	return {
 		paymentStatus: pick(),
 		termsAndConditions: pick(),
@@ -217,7 +218,9 @@ function crowdStatus(cs: ConferenceSeed): StatusPlan {
 			'PARTIALLY_ALLOWED',
 			'NOT_ALLOWED'
 		] as const),
-		didAttend: cs.plan.with.attendance ? faker.datatype.boolean(0.9) : false,
+		didAttend,
+		// Whoever showed up got a card at the door
+		withAccessCard: didAttend,
 		withDocumentNumber: running || faker.datatype.boolean(0.5)
 	};
 }

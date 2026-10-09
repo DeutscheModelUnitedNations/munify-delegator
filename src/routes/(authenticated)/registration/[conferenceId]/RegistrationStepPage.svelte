@@ -29,9 +29,7 @@
 
 				{@render children()}
 
-				<a class="btn btn-warning mt-16" href={resolve(`/registration/${conferenceId}`)}
-					>{m.back()}</a
-				>
+				<a class="btn btn-warning mt-16" href={resolve(`/dashboard/${conferenceId}`)}>{m.back()}</a>
 			</div>
 		</div>
 	</main>

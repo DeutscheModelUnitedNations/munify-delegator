@@ -124,7 +124,7 @@
 		</div>
 
 		<!-- Status widgets grid -->
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-1 gap-2 md:gap-4">
 			<ParticipantAssignedDocumentWidget
 				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>

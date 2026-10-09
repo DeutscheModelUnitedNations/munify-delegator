@@ -83,7 +83,7 @@ Rules worth keeping when adding fixtures:
 
 ## Deliberately not covered
 
-- **Attendance scanner** (`dashboard/[id]/attendance`) - a camera QR scanner. Covering it
+- **Attendance scanner** (`dashboard/[id]/management/attendance`) - a camera QR scanner. Covering it
   honestly needs a simulated video device; a fake that bypasses the scanner would assert nothing.
 
 ## Quarantined

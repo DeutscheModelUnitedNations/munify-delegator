@@ -6,8 +6,33 @@ import { upsertSelfFromClaims } from './upsertSelf';
 
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
-/** Everything behind the `(authenticated)` route group. */
-export const AUTHENTICATED_ROUTES = ['/dashboard', '/registration', '/my-account', '/team-tender'];
+/**
+ * Everything behind the `(authenticated)` route group, except the conference selector at
+ * `/dashboard` itself: the library matches by prefix, so the trailing slash leaves it public.
+ * `/login` exists to start the sign-in from there and send the visitor back.
+ */
+export const AUTHENTICATED_ROUTES = [
+	'/dashboard/',
+	'/registration',
+	'/my-account',
+	'/team-tender',
+	'/login'
+];
+
+/** Pages under `/dashboard/` that need a login although they look like a conference id. */
+const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
+
+/**
+ * A conference's own dashboard page and its seat overview are public: they show what is public
+ * about the conference to visitors who are not signed in (and what they would have to do to take
+ * part). Everything below it - and the pages that merely sit next to the conference ids - needs a
+ * session. The library only matches routes
+ * by prefix, so the hooks use this to let the visitor through where the library would redirect.
+ */
+export function isPublicRoute(pathname: string): boolean {
+	const match = /^\/dashboard\/([^/]+)(?:\/seats)?\/?$/.exec(pathname);
+	return !!match && !LOGIN_ONLY_DASHBOARD_PAGES.includes(match[1]);
+}
 
 /**
  * The library's default cookie prefix. We do not pass `cookiePrefix`, so this is what it uses;

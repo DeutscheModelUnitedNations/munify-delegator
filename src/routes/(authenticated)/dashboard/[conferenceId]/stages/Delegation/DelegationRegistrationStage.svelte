@@ -185,8 +185,8 @@
 					{m.setDelegationPreferences()}</button
 				>
 			{:else}
-				<a class="btn btn-primary mt-4" href={resolve(`/seats/${conferenceId}`)} target="_blank">
-					<i class="fas fa-arrow-up-right-from-square"></i>
+				<a class="btn btn-primary mt-4" href={resolve(`/dashboard/${conferenceId}/seats`)}>
+					<i class="fas fa-arrow-right"></i>
 					{m.conferenceSeats()}
 				</a>
 			{/if}

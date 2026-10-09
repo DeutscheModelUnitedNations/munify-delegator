@@ -44,6 +44,8 @@ export interface ConferenceSeed {
 	crowdDelegations: { headId: string; userIds: string[]; memberIds: string[] }[];
 	/** Last document number handed out. */
 	documentNumber: number;
+	/** Last access card number handed out to the crowd; the personas hold the low ones. */
+	accessCardNumber: number;
 	/** A deterministic id for a persona's row in this conference. */
 	rowId(suffix: string): string;
 	/** Draws from `make` until the value is new for this conference (entry codes, references). */
@@ -71,6 +73,7 @@ export function createConferenceSeed(
 		nationDelegations: [],
 		crowdDelegations: [],
 		documentNumber: 0,
+		accessCardNumber: 100,
 		rowId: (suffix) => `${conference.id}-${suffix}`,
 		uniqueCode(make) {
 			for (let attempt = 0; attempt < 1000; attempt++) {

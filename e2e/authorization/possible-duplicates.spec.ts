@@ -49,7 +49,7 @@ async function decide(page: Page, status: 'OPEN' | 'DISMISSED' | 'CONFIRMED') {
 test('participant care reads the other account’s name and note, not its contact details', async ({
 	page
 }) => {
-	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/login?next=/dashboard' });
 
 	const pairs = await gql(
 		page,
@@ -67,7 +67,7 @@ test('participant care reads the other account’s name and note, not its contac
 });
 
 test('a dismissed pair keeps the name, loses the note, and can be reopened', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/login?next=/dashboard' });
 
 	await decide(page, 'DISMISSED');
 	try {
@@ -87,7 +87,7 @@ test('a dismissed pair keeps the name, loses the note, and can be reopened', asy
 });
 
 test('a confirmed pair carries the old account’s note over to the new one', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), { startUrl: '/login?next=/dashboard' });
 
 	const linkedNotes = async () => {
 		const result = await gql(
@@ -114,7 +114,9 @@ test('a confirmed pair carries the old account’s note over to the new one', as
 });
 
 test('the rest of the team sees neither the pairs nor the other account', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), { startUrl: '/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), {
+		startUrl: '/login?next=/dashboard'
+	});
 
 	const pairs = await gql(page, `query { possibleDuplicates { id } }`);
 	expect(pairs.data?.possibleDuplicates, JSON.stringify(pairs)).toEqual([]);

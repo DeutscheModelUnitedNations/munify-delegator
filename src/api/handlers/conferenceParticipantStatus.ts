@@ -202,6 +202,20 @@ schemaBuilder.mutationFields((t) => ({
 				where: args.id ? { id: args.id } : { conferenceId: args.conferenceId, userId: targetUserId }
 			});
 
+			if (values.accessCardId) {
+				const holder = await db.query.conferenceParticipantStatus.findFirst({
+					where: {
+						conferenceId: args.conferenceId,
+						accessCardId: values.accessCardId,
+						...(existing ? { id: { ne: existing.id } } : {})
+					},
+					columns: { id: true }
+				});
+				if (holder) {
+					throw new GraphQLError('This access card belongs to somebody else already');
+				}
+			}
+
 			const statusId = existing
 				? await updateStatus(
 						(await ctx.abilities.conferenceParticipantStatus.filter('update')).merge({

@@ -311,6 +311,7 @@ export type AssignmentweightsWhereInputArgument = {
 };
 		
 export type Attendanceentry = {
+  checkPassed: Boolean | null,
   conferenceParticipantStatus: (p?: {
     orderBy?: ConferenceparticipantstatusOrderInputArgument | null | undefined,
     where?: ConferenceparticipantstatusWhereInputArgument | null | undefined
@@ -325,16 +326,23 @@ export type Attendanceentry = {
   }) => User,
   recordedById: ID,
   search_distance: Float | null,
+  session: (p?: {
+    orderBy?: AttendancesessionOrderInputArgument | null | undefined,
+    where?: AttendancesessionWhereInputArgument | null | undefined
+  }) => Attendancesession | null,
+  sessionId: ID | null,
   timestamp: DateTime,
   updatedAt: DateTime    
 };
 		
 export type AttendanceentryOrderInputArgument = {
+  checkPassed?: SortingParameter | null | undefined,
   conferenceParticipantStatusId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   occasion?: SortingParameter | null | undefined,
   recordedById?: SortingParameter | null | undefined,
+  sessionId?: SortingParameter | null | undefined,
   timestamp?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
@@ -343,6 +351,7 @@ export type AttendanceentryWhereInputArgument = {
   AND?: AttendanceentryWhereInputArgument[] | undefined,
   NOT?: AttendanceentryWhereInputArgument | null | undefined,
   OR?: AttendanceentryWhereInputArgument[] | undefined,
+  checkPassed?: BooleanWhereInputArgument | null | undefined,
   conferenceParticipantStatus?: ConferenceparticipantstatusWhereInputArgument | null | undefined,
   conferenceParticipantStatusId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
@@ -350,9 +359,71 @@ export type AttendanceentryWhereInputArgument = {
   occasion?: StringWhereInputArgument | null | undefined,
   recordedBy?: UserWhereInputArgument | null | undefined,
   recordedById?: IDWhereInputArgument | null | undefined,
+  session?: AttendancesessionWhereInputArgument | null | undefined,
+  sessionId?: IDWhereInputArgument | null | undefined,
   timestamp?: DateTimeWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
+		
+export type Attendancesession = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  createdBy: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User,
+  createdById: ID,
+  endedAt: DateTime | null,
+  entries: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AttendanceentryOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: AttendanceentryWhereInputArgument | null | undefined
+  }) => Attendanceentry[],
+  id: ID,
+  mode: AttendancesessionmodeEnum,
+  occasion: String,
+  search_distance: Float | null,
+  startedAt: DateTime,
+  updatedAt: DateTime    
+};
+		
+export type AttendancesessionOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  createdById?: SortingParameter | null | undefined,
+  endedAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  mode?: SortingParameter | null | undefined,
+  occasion?: SortingParameter | null | undefined,
+  startedAt?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type AttendancesessionWhereInputArgument = {
+  AND?: AttendancesessionWhereInputArgument[] | undefined,
+  NOT?: AttendancesessionWhereInputArgument | null | undefined,
+  OR?: AttendancesessionWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  createdBy?: UserWhereInputArgument | null | undefined,
+  createdById?: IDWhereInputArgument | null | undefined,
+  endedAt?: DateTimeWhereInputArgument | null | undefined,
+  entries?: AttendanceentryWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  mode?: AttendancesessionmodeEnum | null | undefined,
+  occasion?: StringWhereInputArgument | null | undefined,
+  startedAt?: DateTimeWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type AttendancesessionmodeEnum = "BADGE" | "CHECK" | "RECORD";
 		
 export type BigInt = unknown;
 		
@@ -797,6 +868,7 @@ export type Conference = {
   mediaConsentContent: String | null,
   mediaConsentContentSet: Boolean,
   mediaConsentContentUrl: String | null,
+  nametagBinCount: Int,
   nextDocumentNumber: Int,
   nonStateActors: (p?: {
     limit?: Int | null | undefined,
@@ -917,6 +989,7 @@ export type ConferenceOrderInputArgument = {
   logoDataURL?: SortingParameter | null | undefined,
   longTitle?: SortingParameter | null | undefined,
   mediaConsentContent?: SortingParameter | null | undefined,
+  nametagBinCount?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
   postalCity?: SortingParameter | null | undefined,
   postalCountry?: SortingParameter | null | undefined,
@@ -985,6 +1058,7 @@ export type ConferenceWhereInputArgument = {
   logoDataURL?: StringWhereInputArgument | null | undefined,
   longTitle?: StringWhereInputArgument | null | undefined,
   mediaConsentContent?: StringWhereInputArgument | null | undefined,
+  nametagBinCount?: IntWhereInputArgument | null | undefined,
   nonStateActors?: NonstateactorWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
   paymentTransactions?: PaymenttransactionWhereInputArgument | null | undefined,
@@ -1691,8 +1765,11 @@ export type Mutation = {
     userId: ID
   }) => Singleparticipant,
   createAttendanceEntry: (p: {
+    accessCardId?: String | null | undefined,
+    checkPassed?: Boolean | null | undefined,
     conferenceId: ID,
     occasion: String,
+    sessionId?: ID | null | undefined,
     userId: ID
   }) => Attendanceentry,
   createCalendarDay: (p: {
@@ -1894,6 +1971,9 @@ export type Mutation = {
   dismissSchoolSuggestion: (p: {
     id: ID
   }) => Boolean,
+  endAttendanceSession: (p: {
+    id: ID
+  }) => Boolean,
   importCalendarDay: (p: {
     conferenceId: ID,
     date: DateTime,
@@ -1968,6 +2048,12 @@ export type Mutation = {
     delegationId: ID,
     parts: AssignmentSplitPartInput[]
   }) => Boolean,
+  startAttendanceSession: (p: {
+    conferenceId: ID,
+    id: ID,
+    mode: AttendancesessionmodeEnum,
+    occasion: String
+  }) => Attendancesession,
   startImpersonation: (p: {
     scope?: String | null | undefined,
     targetUserId: ID
@@ -2050,6 +2136,7 @@ export type Mutation = {
     logoDataURL?: String | null | undefined,
     longTitle?: String | null | undefined,
     mediaConsentContent?: String | null | undefined,
+    nametagBinCount?: Int | null | undefined,
     postalApartment?: String | null | undefined,
     postalCity?: String | null | undefined,
     postalCountry?: String | null | undefined,
@@ -2223,6 +2310,25 @@ export type MyReviewStats = {
   totalReviews: Int    
 };
 		
+export type NametagBin = {
+  fromLetter: String | null,
+  index: Int,
+  letters: String[],
+  nationParticipants: Int,
+  otherParticipants: Int,
+  participants: Int,
+  toLetter: String | null    
+};
+		
+export type NametagBinGroup = {
+  fontAwesomeIcon: String | null,
+  nationAlpha2Code: String | null,
+  nationAlpha3Code: String | null,
+  participants: Int,
+  roleName: String | null,
+  sortName: String    
+};
+		
 export type Nation = {
   alpha2Code: String,
   alpha3Code: String,
@@ -2345,6 +2451,13 @@ export type OfflineUserRefresh = {
 export type OfflineUserSsoIdentity = {
   identityId: String,
   issuer: String    
+};
+		
+export type OwnNametagTable = {
+  fromLetter: String | null,
+  index: Int,
+  others: Boolean,
+  toLetter: String | null    
 };
 		
 export type Paper = {
@@ -2798,6 +2911,16 @@ export type Query = {
   attendanceEntry: (p: {
     id: ID
   }) => Attendanceentry,
+  attendanceSession: (p: {
+    id: ID
+  }) => Attendancesession,
+  attendanceSessions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AttendancesessionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: AttendancesessionWhereInputArgument | null | undefined
+  }) => Attendancesession[],
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -2964,6 +3087,17 @@ export type Query = {
     conferenceId: ID
   }) => MyReviewStats | null,
   myReviewerSnippets: () => Reviewersnippet[],
+  nametagBinGroups: (p: {
+    binCount: Int,
+    conferenceId: ID,
+    index: Int,
+    locale: String
+  }) => NametagBinGroup[],
+  nametagBins: (p: {
+    binCount?: Int | null | undefined,
+    conferenceId: ID,
+    locale: String
+  }) => NametagBin[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -2985,6 +3119,10 @@ export type Query = {
     where?: NonstateactorWhereInputArgument | null | undefined
   }) => Nonstateactor[],
   offlineUserRefresh: () => OfflineUserRefresh,
+  ownNametagTable: (p: {
+    conferenceId: ID,
+    locale: String
+  }) => OwnNametagTable | null,
   paper: (p: {
     id: ID
   }) => Paper,
@@ -3097,6 +3235,10 @@ export type Query = {
     search?: String | null | undefined,
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
+  scanLookup: (p: {
+    code: String,
+    conferenceId: ID
+  }) => ScanLookupResult,
   schoolSuggestion: (p: {
     id: ID
   }) => Schoolsuggestion,
@@ -3389,6 +3531,30 @@ export type RoleapplicationWhereInputArgument = {
   nonStateActorId?: IDWhereInputArgument | null | undefined,
   rank?: IntWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type ScanLookupResult = {
+  accessCardId: String | null,
+  birthday: String | null,
+  committeeAbbreviation: String | null,
+  didAttend: Boolean,
+  familyName: String | null,
+  found: Boolean,
+  givenName: String | null,
+  guardianConsent: AdministrativestatusEnum,
+  inConference: Boolean,
+  isHeadDelegate: Boolean,
+  isSupervisor: Boolean,
+  isTeamMember: Boolean,
+  isWaitingList: Boolean,
+  nationAlpha2Code: String | null,
+  nationAlpha3Code: String | null,
+  nonStateActorIcon: String | null,
+  nonStateActorName: String | null,
+  paymentStatus: AdministrativestatusEnum,
+  singleRoleName: String | null,
+  termsAndConditions: AdministrativestatusEnum,
+  userId: String | null    
 };
 		
 export type Schoolsuggestion = {
@@ -3981,6 +4147,16 @@ export type Subscription = {
   attendanceEntry: (p: {
     id: ID
   }) => Attendanceentry,
+  attendanceSession: (p: {
+    id: ID
+  }) => Attendancesession,
+  attendanceSessions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AttendancesessionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: AttendancesessionWhereInputArgument | null | undefined
+  }) => Attendancesession[],
   calendarDay: (p: {
     id: ID
   }) => Calendarday,
@@ -4955,7 +5131,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

@@ -31,50 +31,6 @@ users:
       preferred_username: 'dev-admin'
       locale: 'de'
       roles: ['admin']
-  - sub: 'dev-service-user'
-    label: '[Global] Service user'
-    description: 'OIDC role service_user: may create committee agenda items, nothing else'
-    claims:
-      email: 'service-user@delegator.local'
-      email_verified: true
-      given_name: 'Sergio'
-      family_name: 'Service'
-      preferred_username: 'dev-service-user'
-      locale: 'de'
-      roles: ['service_user']
-  - sub: 'dev-participant'
-    label: '[Global] Fresh participant'
-    description: 'Complete profile, no participation anywhere - register, join with a code'
-    claims:
-      email: 'participant@delegator.local'
-      email_verified: true
-      given_name: 'Paul'
-      family_name: 'Participant'
-      preferred_username: 'dev-participant'
-      locale: 'de'
-      roles: []
-  - sub: 'dev-new-user'
-    label: '[Global] First login'
-    description: 'No user row yet: the first login creates it and asks for the profile'
-    claims:
-      email: 'new-user@delegator.local'
-      email_verified: true
-      given_name: 'Nora'
-      family_name: 'Neu'
-      preferred_username: 'dev-new-user'
-      locale: 'de'
-      roles: []
-  - sub: 'dev-incomplete-profile'
-    label: '[Global] Incomplete profile'
-    description: 'Row without birthday, phone or address: every login redirects to /my-account'
-    claims:
-      email: 'incomplete-profile@delegator.local'
-      email_verified: true
-      given_name: 'Ines'
-      family_name: 'Incomplete'
-      preferred_username: 'dev-incomplete-profile'
-      locale: 'de'
-      roles: []
 
   # Team
   - sub: 'dev-team-pm'
@@ -152,6 +108,41 @@ users:
       given_name: 'Ivo'
       family_name: 'Invited'
       preferred_username: 'dev-team-invitee'
+      locale: 'de'
+      roles: []
+
+  # Global
+  - sub: 'dev-participant'
+    label: '[Global] Fresh participant'
+    description: 'Complete profile, no participation anywhere - register, join with a code'
+    claims:
+      email: 'participant@delegator.local'
+      email_verified: true
+      given_name: 'Paul'
+      family_name: 'Participant'
+      preferred_username: 'dev-participant'
+      locale: 'de'
+      roles: []
+  - sub: 'dev-new-user'
+    label: '[Global] First login'
+    description: 'No user row yet: the first login creates it and asks for the profile'
+    claims:
+      email: 'new-user@delegator.local'
+      email_verified: true
+      given_name: 'Nora'
+      family_name: 'Neu'
+      preferred_username: 'dev-new-user'
+      locale: 'de'
+      roles: []
+  - sub: 'dev-incomplete-profile'
+    label: '[Global] Incomplete profile'
+    description: 'Row without birthday, phone or address: every login redirects to /my-account'
+    claims:
+      email: 'incomplete-profile@delegator.local'
+      email_verified: true
+      given_name: 'Ines'
+      family_name: 'Incomplete'
+      preferred_username: 'dev-incomplete-profile'
       locale: 'de'
       roles: []
 
@@ -365,5 +356,29 @@ users:
       given_name: 'Willi'
       family_name: 'Warteliste'
       preferred_username: 'dev-waitlist'
+      locale: 'de'
+      roles: []
+
+  # Mixed
+  - sub: 'dev-mixed-team'
+    label: '[Mixed] Team and participant'
+    description: 'Team member (MEMBER) of the registration, closed and active conferences, a single participant with a role in the preparation and past ones'
+    claims:
+      email: 'mixed-team@delegator.local'
+      email_verified: true
+      given_name: 'Tamara'
+      family_name: 'Doppelrolle'
+      preferred_username: 'dev-mixed-team'
+      locale: 'de'
+      roles: []
+  - sub: 'dev-mixed-supervisor'
+    label: '[Mixed] Supervisor and applicant'
+    description: 'Single applicant in the registration conference, supervisor of the German delegation in the preparation, active and past ones'
+    claims:
+      email: 'mixed-supervisor@delegator.local'
+      email_verified: true
+      given_name: 'Silke'
+      family_name: 'Mehrfach'
+      preferred_username: 'dev-mixed-supervisor'
       locale: 'de'
       roles: []

@@ -30,3 +30,15 @@ export async function managementMembership(
 
 	return teamMembers.map((member) => member.role).find((role) => MANAGEMENT_ROLES.includes(role));
 }
+
+/** Whether the caller holds any team role in the conference, whatever it is. */
+export async function isTeamMemberOf(conferenceId: string): Promise<boolean> {
+	const user = await fetchCurrentUser();
+	if (user.isAdmin) return true;
+
+	const teamMembers = await client.query.teamMembers({
+		__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+		role: true
+	});
+	return teamMembers.length > 0;
+}

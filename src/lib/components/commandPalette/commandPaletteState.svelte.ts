@@ -1,4 +1,17 @@
 let isOpen = $state(false);
+let mounted = $state(false);
+
+/** Called by the palette while it is mounted, so the header only offers a search that exists. */
+export function registerCommandPalette() {
+	mounted = true;
+	return () => {
+		mounted = false;
+	};
+}
+
+export function isCommandPaletteAvailable() {
+	return mounted;
+}
 
 export function openCommandPalette() {
 	isOpen = true;

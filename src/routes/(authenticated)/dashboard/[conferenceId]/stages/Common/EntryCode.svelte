@@ -7,11 +7,14 @@
 	interface Props {
 		entryCode: string;
 		referralLink: string;
+		/** Takes a supervisor straight to registering as one, whatever state the conference is in. */
+		supervisorLink?: string;
 		userHasRotationPermission: boolean;
 		rotationFn?: () => void;
 	}
 
-	let { entryCode, referralLink, userHasRotationPermission, rotationFn }: Props = $props();
+	let { entryCode, referralLink, supervisorLink, userHasRotationPermission, rotationFn }: Props =
+		$props();
 
 	let qrModalOpen = $state(false);
 </script>
@@ -38,6 +41,17 @@
 		aria-label="Copy referral link"
 		><i class="fa-sharp-duotone fa-solid fa-link text-xl"></i>
 	</button>
+	{#if supervisorLink}
+		<button
+			class="btn btn-square btn-ghost"
+			onclick={() => {
+				navigator.clipboard.writeText(supervisorLink);
+				toast.success(m.linkCopied());
+			}}
+			aria-label="Copy supervisor link"
+			><i class="fa-sharp-duotone fa-solid fa-chalkboard-user text-xl"></i>
+		</button>
+	{/if}
 	<button
 		class="btn btn-square btn-ghost"
 		onclick={() => (qrModalOpen = true)}

@@ -29,7 +29,7 @@
 </script>
 
 <div
-	class="relative aspect-video max-h-[40vh] min-h-52 w-full overflow-hidden rounded-box {streaming
+	class="relative h-32 w-full md:aspect-video md:h-auto md:max-h-[40vh] md:min-h-52 overflow-hidden rounded-box {streaming
 		? 'bg-black'
 		: 'bg-base-200'}"
 >
@@ -101,8 +101,12 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center">
-			<i class="fa-sharp-duotone fa-solid fa-video-slash text-base-content/40 text-4xl"></i>
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center md:gap-4 md:p-4"
+		>
+			<i
+				class="fa-sharp-duotone fa-solid fa-video-slash hidden text-base-content/40 md:block md:text-4xl"
+			></i>
 			<p class="text-base-content/70 text-sm">{m.cameraOff()}</p>
 			<button class="btn btn-primary" onclick={onstart} disabled={starting}>
 				{#if starting}

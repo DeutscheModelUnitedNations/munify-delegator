@@ -41,9 +41,11 @@ export const {
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
 	// Adds a trigram `search` argument to the list queries, ranked by `search_distance`. A row
-	// matches when any one column is this similar to the term; pg_trgm's default of 0.3 misses
-	// a prefix of a longer word ("ann" against "Annabelle" scores 0.27), 0.2 finds it.
-	search: { enabled: true, threshold: 0.2 },
+	// matches when any one column is this similar to the term. 0.2 finds a prefix of a longer word
+	// ("ann" against "Annabelle" scores 0.27) but lets a short term pull in ~300k candidate rows
+	// on 490k users, each rechecked against the heap (3.8 s); pg_trgm's default of 0.3 takes the
+	// same search to ~1.1 s and misses such short prefixes.
+	search: { enabled: true, threshold: 0.3 },
 	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
 	// registers. Variables stay out of the spans: they regularly carry personal data.
 	otel: {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
@@ -10,6 +10,10 @@
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import ParticipantStages from './stages/Common/ParticipantStages.svelte';
+	import SignInHint from '$lib/components/dashboard/SignInHint.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
+	import RegistrationLanding from '../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
 
@@ -17,7 +21,7 @@
 
 	// Only who the caller is here; every section below fetches what it shows itself.
 	const [currentUser, participation] = $derived(
-		await Promise.all([getCurrentUser(), fetchMyParticipation(params.conferenceId)])
+		await Promise.all([getOptionalCurrentUser(), fetchMyParticipation(params.conferenceId)])
 	);
 	const isOfAgeAtConference = $derived(
 		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
@@ -43,92 +47,102 @@
 </script>
 
 <div class="flex w-full flex-col items-center">
-	<div class="flex w-full flex-col gap-10">
-		{#if conference}
-			<DashboardConferenceOverview
-				{conferenceId}
-				userId={currentUser.sub}
-				isTeamMember={!!teamMember}
-				{hasAssignedRole}
-			/>
-		{/if}
-		{#if !conference}
-			<NoConferenceIndicator />
-		{:else if singleParticipant && singleParticipantId}
-			{#key singleParticipantId}
-				<ParticipantStages
+	{#if !currentUser}
+		<!-- A visitor who is not signed in sees the conference and what taking part would take -->
+		<div class="flex w-full flex-col gap-10">
+			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false} />
+			<PublicQuickLinks {conferenceId} />
+			<SignInHint title={m.signInHintTitle()} text={m.signInToSeeYourParticipation()} />
+		</div>
+	{:else}
+		<div class="flex w-full flex-col gap-10">
+			{#if conference}
+				<DashboardConferenceOverview
 					{conferenceId}
-					conferenceState={conference.state}
 					userId={currentUser.sub}
-					assignmentReleased={conference.assignmentReleased}
-					accepted={!!singleParticipant.assignedRole}
-					{status}
-					ofAge={isOfAgeAtConference}
-					certificateRole={{ customConferenceRole: singleParticipant.assignedRole }}
-				>
-					{#snippet registration()}
-						<SingleParticipantRegistrationStage {conferenceId} {singleParticipantId} />
-					{/snippet}
-					{#snippet preparation()}
-						<SingleParticipantPreparationStage
-							{conferenceId}
-							{singleParticipant}
-							user={currentUser}
-							{status}
-							ofAgeAtConference={isOfAgeAtConference}
-						/>
-					{/snippet}
-				</ParticipantStages>
-			{/key}
-		{:else if delegationMember && delegationMemberId}
-			{#key delegationMemberId}
-				<ParticipantStages
-					{conferenceId}
-					conferenceState={conference.state}
-					userId={currentUser.sub}
-					assignmentReleased={conference.assignmentReleased}
-					accepted={delegationAccepted}
-					{status}
-					ofAge={isOfAgeAtConference}
-					certificateRole={{
-						country: delegationMember.delegation.assignedNation,
-						nonStateActor: delegationMember.delegation.assignedNonStateActor,
-						assignedCommittee: delegationMember.assignedCommittee
-					}}
-				>
-					{#snippet registration()}
-						<DelegationRegistrationStage {conferenceId} {delegationMemberId} />
-					{/snippet}
-					{#snippet preparation()}
-						<DelegationPreparationStage
-							{conferenceId}
-							{delegationMember}
-							user={currentUser}
-							{status}
-							ofAgeAtConference={isOfAgeAtConference}
-						/>
-					{/snippet}
-				</ParticipantStages>
-			{/key}
-		{:else if supervisorId}
-			{#key supervisorId}
-				<Supervisor
-					{conferenceId}
-					conferenceState={conference.state}
-					assignmentReleased={conference.assignmentReleased}
-					{supervisorId}
-					user={currentUser}
-					{status}
-					ofAge={isOfAgeAtConference}
+					isTeamMember={!!teamMember}
+					{hasAssignedRole}
 				/>
-			{/key}
-		{:else if teamMember}
-			<TeamMemberDashboard {conferenceId} role={teamMember.role} isAdmin={currentUser.isAdmin} />
-		{:else if currentUser.isAdmin}
-			<!-- A system admin needs no part in the conference to manage it -->
-			<TeamMemberDashboard {conferenceId} isAdmin />
-		{:else}
-			<NoConferenceIndicator />
-		{/if}
-	</div>
+			{/if}
+			{#if !conference}
+				<NoConferenceIndicator />
+			{:else if singleParticipant && singleParticipantId}
+				{#key singleParticipantId}
+					<ParticipantStages
+						{conferenceId}
+						conferenceState={conference.state}
+						userId={currentUser.sub}
+						assignmentReleased={conference.assignmentReleased}
+						accepted={!!singleParticipant.assignedRole}
+						{status}
+						ofAge={isOfAgeAtConference}
+						certificateRole={{ customConferenceRole: singleParticipant.assignedRole }}
+					>
+						{#snippet registration()}
+							<SingleParticipantRegistrationStage {conferenceId} {singleParticipantId} />
+						{/snippet}
+						{#snippet preparation()}
+							<SingleParticipantPreparationStage
+								{conferenceId}
+								{singleParticipant}
+								user={currentUser}
+								{status}
+								ofAgeAtConference={isOfAgeAtConference}
+							/>
+						{/snippet}
+					</ParticipantStages>
+				{/key}
+			{:else if delegationMember && delegationMemberId}
+				{#key delegationMemberId}
+					<ParticipantStages
+						{conferenceId}
+						conferenceState={conference.state}
+						userId={currentUser.sub}
+						assignmentReleased={conference.assignmentReleased}
+						accepted={delegationAccepted}
+						{status}
+						ofAge={isOfAgeAtConference}
+						certificateRole={{
+							country: delegationMember.delegation.assignedNation,
+							nonStateActor: delegationMember.delegation.assignedNonStateActor,
+							assignedCommittee: delegationMember.assignedCommittee
+						}}
+					>
+						{#snippet registration()}
+							<DelegationRegistrationStage {conferenceId} {delegationMemberId} />
+						{/snippet}
+						{#snippet preparation()}
+							<DelegationPreparationStage
+								{conferenceId}
+								{delegationMember}
+								user={currentUser}
+								{status}
+								ofAgeAtConference={isOfAgeAtConference}
+							/>
+						{/snippet}
+					</ParticipantStages>
+				{/key}
+			{:else if supervisorId}
+				{#key supervisorId}
+					<Supervisor
+						{conferenceId}
+						conferenceState={conference.state}
+						assignmentReleased={conference.assignmentReleased}
+						{supervisorId}
+						user={currentUser}
+						{status}
+						ofAge={isOfAgeAtConference}
+					/>
+				{/key}
+			{:else if teamMember}
+				<TeamMemberDashboard {conferenceId} role={teamMember.role} isAdmin={currentUser.isAdmin} />
+			{:else if currentUser.isAdmin}
+				<!-- A system admin needs no part in the conference to manage it -->
+				<TeamMemberDashboard {conferenceId} isAdmin />
+			{:else}
+				<!-- No part in this conference yet: the only thing to do is to apply -->
+				<RegistrationLanding {conferenceId} />
+			{/if}
+		</div>
+	{/if}
 </div>

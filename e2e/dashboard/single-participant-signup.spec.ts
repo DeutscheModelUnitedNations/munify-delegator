@@ -11,7 +11,7 @@ test('a single participant can manage role applications and complete their signu
 	page.on('dialog', (dialog) => dialog.accept());
 
 	const participant = makeTestUser('single-signup');
-	await loginAs(page, participant, { startUrl: '/registration' });
+	await loginAs(page, participant, { startUrl: '/login?next=/dashboard' });
 	const conferenceId = await openFirstConferenceForRegistration(page);
 
 	await page.locator('a[href$="/individual"]').click();

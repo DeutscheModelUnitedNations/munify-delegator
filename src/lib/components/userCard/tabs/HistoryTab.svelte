@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -116,7 +117,18 @@
 			<!-- Content -->
 			<div class="flex min-w-0 flex-1 flex-col gap-1">
 				<div class="flex items-center justify-between gap-2">
-					<span class="font-bold">{entry.conferenceTitle}</span>
+					<!-- The same person's card in that conference, where their role there is shown -->
+					<a
+						class="link link-hover font-bold"
+						href={resolve('/(authenticated)/dashboard/[conferenceId]/management/user/[userId]', {
+							conferenceId: entry.conferenceId,
+							userId
+						})}
+						title={m.openUserCardInConference({ conference: entry.conferenceTitle })}
+					>
+						{entry.conferenceTitle}
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square text-xs"></i>
+					</a>
 					<div class="flex shrink-0 items-center gap-1">
 						<span class="text-base-content/50 text-xs">
 							{formatDateRange(entry.startDate, entry.endDate)}

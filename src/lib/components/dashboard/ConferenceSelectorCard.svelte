@@ -6,7 +6,11 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
+	import {
+		conferenceStateIcon,
+		conferenceStateLabel
+	} from '../../../routes/(authenticated)/dashboard/conferenceGroups';
 	import { participationOf, roleText } from './myConferenceCardParticipation';
 
 	interface Props {
@@ -17,7 +21,7 @@
 
 	let { conferenceId, muted = false }: Props = $props();
 
-	const currentUser = await getCurrentUser();
+	const currentUser = await getOptionalCurrentUser();
 
 	const [conference, myParticipation] = $derived(
 		await Promise.all([
@@ -49,17 +53,13 @@
 	// Someone without a part in a conference can only do one thing there: apply, while that is possible.
 	const canApply = $derived(
 		!takesPart &&
-			!currentUser.isAdmin &&
+			!currentUser?.isAdmin &&
 			['OPEN', 'WAITING_LIST'].includes(
 				getRegistrationStatus(conference.state, new Date(conference.startAssignment))
 			)
 	);
 
-	const href = $derived(
-		canApply
-			? resolve('/(authenticated)/registration/[conferenceId]', { conferenceId })
-			: resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId })
-	);
+	const href = $derived(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
@@ -87,14 +87,20 @@
 		/>
 	</figure>
 	<div class="card-body justify-between p-5">
-		{#if takesPart}
-			<div class="badge badge-neutral badge-sm self-start gap-1.5 font-medium">
-				<i class="fa-sharp-duotone fa-solid fa-id-badge text-xs"></i>
-				{roleLabel}
+		<div class="flex items-start justify-between gap-2">
+			{#if takesPart}
+				<div class="badge badge-neutral badge-sm gap-1.5 font-medium">
+					<i class="fa-sharp-duotone fa-solid fa-id-badge text-xs"></i>
+					{roleLabel}
+				</div>
+			{:else}
+				<div></div>
+			{/if}
+			<div class="badge badge-primary badge-sm shrink-0 gap-1.5 font-medium">
+				<i class="{conferenceStateIcon(conference.state)} text-xs"></i>
+				{conferenceStateLabel(conference.state)}
 			</div>
-		{:else}
-			<div></div>
-		{/if}
+		</div>
 
 		<div class="flex flex-col gap-2">
 			<div>

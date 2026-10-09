@@ -26,12 +26,14 @@
 				<li>
 					<button
 						type="button"
-						class="flex items-center gap-3 {entry.id === activeId ? 'bg-primary/20' : ''}"
+						class="flex min-w-0 items-center gap-3 {entry.id === activeId ? 'bg-primary/20' : ''}"
 						onclick={() => onSelect(entry.id)}
 					>
 						<i class="fa-sharp-duotone fa-solid fa-clock-rotate-left text-base-content/50"></i>
-						<span class="truncate font-medium">{entry.name}</span>
-						<span class="ml-auto truncate font-mono text-xs text-base-content/50">{entry.id}</span>
+						<span class="min-w-0 truncate font-medium">{entry.name}</span>
+						<span class="ml-auto min-w-0 shrink-[2] truncate font-mono text-xs text-base-content/50"
+							>{entry.id}</span
+						>
 					</button>
 				</li>
 			{/each}

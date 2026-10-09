@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
-	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
+	import { onDestroy, onMount, tick, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -32,6 +32,11 @@
 		result?: Snippet;
 		/** Shown under the camera, e.g. who was scanned before */
 		belowCamera?: Snippet;
+		/**
+		 * Hides the search box and the camera, which keep running, while the result needs the
+		 * person's attention. The search box gets the focus back when they return.
+		 */
+		collapsed?: boolean;
 	}
 
 	let {
@@ -42,12 +47,13 @@
 		scanPromptText = '',
 		scannedCode = $bindable<string | null>(''),
 		result,
-		belowCamera
+		belowCamera,
+		collapsed = false
 	}: Props = $props();
 
 	// Internal state
 	let availableVideoDevices: MediaDeviceInfo[] = $state([]);
-	let selectedVideoDeviceIndex = $state(0);
+	let facingMode = $state<'environment' | 'user'>('environment');
 	let videoElem = $state<HTMLVideoElement>();
 	let streaming = $state(false);
 	let starting = $state(false);
@@ -93,15 +99,29 @@
 		return m.cameraFailed();
 	}
 
-	/** Constraints that pick the selected camera, falling back to the first one available. */
-	async function selectedCameraConstraints(): Promise<MediaTrackConstraints> {
+	/** Reads the cameras present. Browsers only list them (with ids) once camera access was granted. */
+	async function refreshVideoDevices() {
 		const devices = await navigator.mediaDevices.enumerateDevices();
 		availableVideoDevices = devices.filter((device) => device.kind === 'videoinput');
-		if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
-			selectedVideoDeviceIndex = 0;
+	}
+
+	/** Starts the stream in the video element, unless the browser offers no camera here. */
+	async function openCamera(video: HTMLVideoElement) {
+		// Browsers only expose `mediaDevices` on secure contexts (HTTPS or localhost)
+		if (!navigator.mediaDevices) {
+			toast.error(m.cameraInsecureContext());
+			cameraWanted.current = false;
+			return;
 		}
-		if (availableVideoDevices.length === 0) return {};
-		return { deviceId: { ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId } };
+		// `ideal` falls back to whatever camera exists, e.g. a laptop's single webcam
+		const stream = await navigator.mediaDevices.getUserMedia({
+			video: { facingMode: { ideal: facingMode } }
+		});
+		video.srcObject = stream;
+		await video.play();
+		streaming = true;
+		cameraWanted.current = true;
+		await refreshVideoDevices();
 	}
 
 	async function startVideo() {
@@ -109,12 +129,7 @@
 		starting = true;
 		try {
 			stopVideo();
-			const videoConstraints = await selectedCameraConstraints();
-			const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
-			videoElem.srcObject = stream;
-			await videoElem.play();
-			streaming = true;
-			cameraWanted.current = true;
+			await openCamera(videoElem);
 		} catch (error) {
 			console.error('Error accessing camera:', error);
 			toast.error(cameraErrorMessage(error));
@@ -125,11 +140,10 @@
 		}
 	}
 
+	/** Flips between the outward facing and the selfie camera. */
 	function switchCamera() {
-		if (availableVideoDevices.length > 1) {
-			selectedVideoDeviceIndex = (selectedVideoDeviceIndex + 1) % availableVideoDevices.length;
-			startVideo();
-		}
+		facingMode = facingMode === 'environment' ? 'user' : 'environment';
+		startVideo();
 	}
 
 	function stopVideo() {
@@ -251,6 +265,16 @@
 		if (cameraWanted.current) startVideo();
 	});
 
+	// A hand scanner types into the search box, so it has to hold the focus again once it is shown
+	let wasCollapsed = false;
+	$effect(() => {
+		const hidden = collapsed;
+		if (wasCollapsed && !hidden) {
+			void tick().then(() => manualInputElem?.focus());
+		}
+		wasCollapsed = hidden;
+	});
+
 	onDestroy(stopVideo);
 
 	// --- Exposed API ---
@@ -266,9 +290,9 @@
 	}
 </script>
 
-<div class="flex w-full flex-col gap-6">
+<div class="flex w-full min-w-0 flex-col gap-4 md:gap-6">
 	<!-- Search by name, email or id; also where a hand scanner types -->
-	<div class="relative w-full">
+	<div class="relative w-full" class:hidden={collapsed}>
 		<ScanSearchBar
 			bind:value={query}
 			bind:inputElem={manualInputElem}
@@ -291,9 +315,13 @@
 		/>
 	</div>
 
-	<!-- Camera, with what the scan leads to beside it -->
-	<div class="grid items-start gap-6 {result ? 'lg:grid-cols-2' : ''}">
-		<div class="flex flex-col gap-4">
+	<!-- Camera, with what the scan leads to beside it; on a phone the result comes before the history -->
+	<div
+		class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 md:gap-6 {result && !collapsed
+			? 'lg:grid-cols-2'
+			: ''}"
+	>
+		<div class="min-w-0 lg:col-start-1" class:hidden={collapsed}>
 			<ScanViewfinder
 				bind:videoElem
 				{streaming}
@@ -305,8 +333,16 @@
 				onstop={turnCameraOff}
 				onstart={startVideo}
 			/>
-			{@render belowCamera?.()}
 		</div>
-		{@render result?.()}
+		{#if belowCamera}
+			<div class="order-last min-w-0 lg:order-none lg:col-start-1" class:hidden={collapsed}>
+				{@render belowCamera()}
+			</div>
+		{/if}
+		{#if result}
+			<div class="min-w-0 {collapsed ? '' : 'lg:col-start-2 lg:row-span-2 lg:row-start-1'}">
+				{@render result()}
+			</div>
+		{/if}
 	</div>
 </div>

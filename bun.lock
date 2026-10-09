@@ -26,6 +26,7 @@
         "@eslint/js": "^10.0.1",
         "@faker-js/faker": "^10.6.0",
         "@floating-ui/dom": "^1.8.0",
+        "@fontsource/outfit": "5.3.0",
         "@graphql-yoga/plugin-graphql-sse": "^3.24.1",
         "@inlang/cli": "^3.3.8",
         "@inlang/paraglide-js": "^2.25.4",
@@ -171,6 +172,7 @@
   "patchedDependencies": {
     "sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
     "@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
+    "@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch",
     "@m1212e/rumble@0.25.3": "patches/@m1212e%2Frumble@0.25.3.patch",
   },
   "overrides": {

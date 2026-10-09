@@ -1,0 +1,36 @@
+diff --git a/dist/OIDC.js b/dist/OIDC.js
+index b07984419d33bf44a7da582abad369593631bd84..1ce098c4a9c1be512772c420df4c85314225e964 100644
+--- a/dist/OIDC.js
++++ b/dist/OIDC.js
+@@ -220,7 +220,9 @@ export async function makeOIDC({ development = false, oidcAuthority, oidcClientI
+             httpOnly: true,
+             sameSite: 'lax',
+             // sameSite: 'strict',
+-            secure: true,
++            // Browsers drop Secure cookies on plain http://<lan-ip> (only localhost is exempt), which
++            // broke signing in from a phone against the dev server
++            secure: !development,
+             maxAge: tokens.expires_in ? tokens.expires_in : undefined
+         };
+         req.cookies.set(accessTokenCookieName, tokens.access_token, cookieOptions);
+@@ -315,14 +317,18 @@ export async function makeOIDC({ development = false, oidcAuthority, oidcClientI
+                 sameSite: 'lax',
+                 maxAge: 60 * 5,
+                 path: '/',
+-                secure: true,
++                // Browsers drop Secure cookies on plain http://<lan-ip> (only localhost is exempt), which
++            // broke signing in from a phone against the dev server
++            secure: !development,
+                 httpOnly: true
+             });
+             event.cookies.set(oidcStateCookieName, state, {
+                 sameSite: 'lax',
+                 maxAge: 60 * 5,
+                 path: '/',
+-                secure: true,
++                // Browsers drop Secure cookies on plain http://<lan-ip> (only localhost is exempt), which
++            // broke signing in from a phone against the dev server
++            secure: !development,
+                 httpOnly: true
+             });
+             redirect(302, redirect_uri.toString());

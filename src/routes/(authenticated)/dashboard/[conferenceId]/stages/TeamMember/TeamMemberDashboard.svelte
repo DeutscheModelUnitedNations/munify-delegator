@@ -1,7 +1,6 @@
 <script lang="ts">
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
-	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCards from '$lib/components/dashboard/DashboardLinkCards.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
@@ -46,15 +45,5 @@
 	title={m.teamMemberDashboard()}
 	description={role ? `${conference.title} · ${translateTeamRole(role)}` : conference.title}
 >
-	<DashboardLinksGrid>
-		{#each visibleLinks as link (link.id)}
-			<DashboardLinkCard
-				href={link.getHref(linkContext)}
-				icon={link.icon}
-				title={link.getTitle()}
-				description={link.getDescription()}
-				external={link.external}
-			/>
-		{/each}
-	</DashboardLinksGrid>
+	<DashboardLinkCards links={visibleLinks} context={linkContext} />
 </DashboardSection>

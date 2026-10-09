@@ -103,6 +103,26 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.attendanceEntry.recordedById,
 			to: r.user.id,
 			optional: false
+		}),
+		session: r.one.attendanceSession({
+			from: r.attendanceEntry.sessionId,
+			to: r.attendanceSession.id
+		})
+	},
+	attendanceSession: {
+		conference: r.one.conference({
+			from: r.attendanceSession.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		createdBy: r.one.user({
+			from: r.attendanceSession.createdById,
+			to: r.user.id,
+			optional: false
+		}),
+		entries: r.many.attendanceEntry({
+			from: r.attendanceSession.id,
+			to: r.attendanceEntry.sessionId
 		})
 	},
 	calendarDay: {

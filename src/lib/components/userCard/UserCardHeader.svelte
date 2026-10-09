@@ -5,6 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
 	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
 	import LinkedAccountNotes from './LinkedAccountNotes.svelte';
@@ -24,6 +25,8 @@
 		pronouns?: string | null;
 		gender?: string | null;
 		mode: 'drawer' | 'page';
+		/** Whether the person has a place in the conference, which the status strip needs */
+		showStatus: boolean;
 	}
 
 	let {
@@ -34,6 +37,7 @@
 		pronouns,
 		gender,
 		mode,
+		showStatus,
 		delegationMember,
 		singleParticipant,
 		conferenceSupervisor,
@@ -68,6 +72,14 @@
 				return 'genderless';
 		}
 	});
+
+	const initials = $derived(
+		[givenName, familyName]
+			.map((name) => name?.trim().at(0))
+			.filter(Boolean)
+			.join('')
+			.toUpperCase()
+	);
 
 	const isParticipant = $derived(
 		!!delegationMember || !!singleParticipant || !!conferenceSupervisor
@@ -134,17 +146,42 @@
 </script>
 
 <div class="flex items-center gap-3 px-5 pt-3 pb-2 md:px-10 lg:px-16">
-	<div class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4">
-		<div class="flex flex-wrap items-center gap-4">
-			<h2 class="text-3xl font-bold">{displayName}</h2>
-			<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
-			{#if pronouns}
-				<span class="text-base-content/60 text-sm">({pronouns})</span>
-			{/if}
-			<PossibleDuplicateBadge {userId} {conferenceId} />
+	<div
+		class="border-base-300 from-primary/10 to-base-200 rounded-box flex flex-1 flex-col gap-3 border bg-linear-to-br p-4"
+	>
+		<div class="flex items-start gap-4">
+			<!-- Initials, so a card is recognisable at a glance -->
+			<div class="avatar avatar-placeholder hidden sm:flex">
+				<div class="bg-primary/20 text-primary w-14 rounded-full text-xl font-bold">
+					<span>{initials}</span>
+				</div>
+			</div>
+
+			<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+				<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+					<h2 class="text-3xl font-bold">{displayName}</h2>
+					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
+					{#if pronouns}
+						<span class="text-base-content/60 text-sm">({pronouns})</span>
+					{/if}
+					<PossibleDuplicateBadge {userId} {conferenceId} />
+				</div>
+
+				<button
+					class="group text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
+					onclick={copyUserId}
+					title={m.copy()}
+				>
+					<span class="group-hover:hidden">{userId}</span>
+					<span class="hidden items-center gap-1 group-hover:flex">
+						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+						{m.copyUserId()}
+					</span>
+				</button>
+			</div>
 
 			<!-- Action buttons -->
-			<div class="ml-auto flex items-center gap-1">
+			<div class="flex items-center gap-1">
 				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
 					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
 						<button
@@ -193,18 +230,6 @@
 			</div>
 		</div>
 
-		<button
-			class="group text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
-			onclick={copyUserId}
-			title={m.copy()}
-		>
-			<span class="group-hover:hidden">{userId}</span>
-			<span class="hidden items-center gap-1 group-hover:flex">
-				<i class="fa-sharp-duotone fa-solid fa-copy"></i>
-				{m.copyUserId()}
-			</span>
-		</button>
-
 		<!-- Role summary -->
 		<UserCardRoleSummary
 			{delegationMember}
@@ -212,6 +237,10 @@
 			{conferenceSupervisor}
 			{teamMember}
 		/>
+
+		{#if showStatus}
+			<UserCardStatusStrip {userId} {conferenceId} />
+		{/if}
 
 		<LinkedAccountNotes {userId} />
 	</div>

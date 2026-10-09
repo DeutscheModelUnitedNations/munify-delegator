@@ -125,6 +125,15 @@ export const assignmentExperienceEffect = pgEnum('assignment_experience_effect',
 	'SEATING_ONLY'
 ]);
 export const administrativeStatus = pgEnum('administrative_status', ['DONE', 'PROBLEM', 'PENDING']);
+/**
+ * What a scan does in an attendance session: CHECK shows the person and their open points first,
+ * RECORD only logs, BADGE checks and also stores an access card number before the next scan.
+ */
+export const attendanceSessionMode = pgEnum('attendance_session_mode', [
+	'CHECK',
+	'RECORD',
+	'BADGE'
+]);
 export const teamRole = pgEnum('team_role', [
 	'PROJECT_MANAGEMENT',
 	'PARTICIPANT_CARE',
@@ -369,6 +378,22 @@ export const assignmentWeights = snakeCase.table(
 	]
 );
 
+/**
+ * One run of the scanner: an occasion, started by a team member and ended by them. Its id is
+ * made by the client, so starting it can wait in the offline queue and be repeated safely.
+ */
+export const attendanceSession = snakeCase.table('attendance_session', {
+	...defaultIdAndTimestamps,
+	conferenceId: conferenceRef('cascade'),
+	occasion: text().notNull(),
+	startedAt: timestamp({ precision: 3 })
+		.default(sql`CURRENT_TIMESTAMP`)
+		.notNull(),
+	endedAt: timestamp({ precision: 3 }),
+	createdById: userRef('restrict'),
+	mode: attendanceSessionMode().default('RECORD').notNull()
+});
+
 export const attendanceEntry = snakeCase.table('attendance_entry', {
 	...defaultIdAndTimestamps,
 	timestamp: timestamp({ precision: 3 })
@@ -378,7 +403,17 @@ export const attendanceEntry = snakeCase.table('attendance_entry', {
 	conferenceParticipantStatusId: text()
 		.notNull()
 		.references(() => conferenceParticipantStatus.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	recordedById: userRef('restrict')
+	recordedById: userRef('restrict'),
+	/** The scanner session the scan belongs to; empty for entries from before sessions existed. */
+	sessionId: text().references(() => attendanceSession.id, {
+		onDelete: 'set null',
+		onUpdate: 'cascade'
+	}),
+	/**
+	 * Whether the participant had no open issue when scanned in check mode, as it was at that
+	 * moment. Empty when nothing was checked (record mode, older entries).
+	 */
+	checkPassed: boolean()
 });
 
 export const calendarDay = snakeCase.table(
@@ -556,7 +591,9 @@ export const conference = snakeCase.table('conference', {
 	timezone: text().default('Europe/Berlin').notNull(),
 	/** Whether participants see the roles they were assigned. The team always does. */
 	assignmentReleased: boolean().default(false).notNull(),
-	assignmentReleasedAt: timestamp({ precision: 3 })
+	assignmentReleasedAt: timestamp({ precision: 3 }),
+	/** Into how many bins (by the first letter of the nation) the nametag handout is split. */
+	nametagBinCount: integer().default(3).notNull()
 });
 
 export const conferenceParticipantStatus = snakeCase.table(
@@ -583,6 +620,12 @@ export const conferenceParticipantStatus = snakeCase.table(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.assignedDocumentNumber.asc().nullsLast()
+		),
+		// One card per person: Postgres lets any number of rows without a card share the NULL.
+		uniqueIndex('conference_participant_status_conference_id_access_card_id_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.accessCardId.asc().nullsLast()
 		),
 		uniqueIndex('conference_participant_status_user_id_conference_id_key').using(
 			'btree',

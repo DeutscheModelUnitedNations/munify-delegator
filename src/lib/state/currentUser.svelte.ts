@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { fetchCurrentUser, type CurrentUser } from '$lib/api/currentUser';
+import { fetchCurrentUser, fetchOptionalCurrentUser, type CurrentUser } from '$lib/api/currentUser';
 
 /**
  * The signed-in person, fetched once per browser session.
@@ -13,12 +13,25 @@ import { fetchCurrentUser, type CurrentUser } from '$lib/api/currentUser';
  */
 let cached: CurrentUser | undefined;
 
+function remember(user: CurrentUser | null) {
+	if (browser && user) cached = user;
+}
+
 /** Awaited at the top of any component that needs to know who is signed in. */
 export async function getCurrentUser(): Promise<CurrentUser> {
-	if (browser && cached) return cached;
+	if (cached) return cached;
 
 	const user = await fetchCurrentUser();
-	if (browser) cached = user;
+	remember(user);
+	return user;
+}
+
+/** The signed-in person, or null for a visitor. Only a signed-in person is cached. */
+export async function getOptionalCurrentUser(): Promise<CurrentUser | null> {
+	if (cached) return cached;
+
+	const user = await fetchOptionalCurrentUser();
+	remember(user);
 	return user;
 }
 
