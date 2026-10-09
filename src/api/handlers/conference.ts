@@ -27,11 +27,8 @@ import {
 } from '$lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
-import {
-	distinctNationCodes,
-	normalizeSchoolName,
-	schoolRows
-} from '$api/services/conferenceAggregates';
+import { distinctNationCodes, normalizeSchoolName } from '$api/services/conferenceAggregates';
+import { loadSchoolRows, refreshSchoolSuggestions } from '$api/services/schoolSuggestions';
 import { totalSeats } from '$api/services/seatPlanning';
 import { storedFileUrl } from '$api/services/files';
 
@@ -251,35 +248,7 @@ const ConferenceRef = object({
 		 */
 		schools: t.field({
 			type: [ConferenceSchools],
-			resolve: async (conference, _args, ctx) => {
-				const [delegations, participants] = await Promise.all([
-					db.query.delegation.findMany(
-						(await ctx.abilities.delegation.filter('read')).merge({
-							where: {
-								conferenceId: conference.id,
-								applied: true,
-								school: { isNotNull: true }
-							}
-						}).query.many
-					),
-					db.query.singleParticipant.findMany(
-						(await ctx.abilities.singleParticipant.filter('read')).merge({
-							where: {
-								conferenceId: conference.id,
-								applied: true,
-								school: { isNotNull: true }
-							}
-						}).query.many
-					)
-				]);
-
-				const memberCounts = await db.query.delegationMember.findMany({
-					where: { delegation: { conferenceId: conference.id, applied: true } },
-					columns: { delegationId: true }
-				});
-
-				return schoolRows(delegations, memberCounts, participants);
-			}
+			resolve: async (conference, _args, ctx) => loadSchoolRows(conference.id, ctx)
 		})
 	})
 });
@@ -292,6 +261,8 @@ const customConferenceRolePubsub = rumblePubsub({ table: 'customConferenceRole' 
 const nonStateActorPubsub = rumblePubsub({ table: 'nonStateActor' });
 const delegationPubsub = rumblePubsub({ table: 'delegation' });
 const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
+const schoolSuggestionPubsub = rumblePubsub({ table: 'schoolSuggestion' });
+const schoolSuggestionVariantPubsub = rumblePubsub({ table: 'schoolSuggestionVariant' });
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -338,8 +309,12 @@ schemaBuilder.mutationFields((t) => ({
 				});
 			}
 
+			await refreshSchoolSuggestions(args.conferenceId, ctx);
+
 			delegationPubsub.updated();
 			singleParticipantPubsub.updated();
+			schoolSuggestionPubsub.updated();
+			schoolSuggestionVariantPubsub.updated();
 
 			return db.query.conference
 				.findFirst(

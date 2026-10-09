@@ -98,19 +98,18 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
 		case 'foreignUser':
 			return { userId: item.data.id };
 		case 'delegation':
-			// A delegation opens its head delegate's card, or the delegation list filtered to it
+			// A delegation opens its head delegate's card, or the participant list without one
 			if (item.data.headDelegateUserId) return { userId: item.data.headDelegateUserId };
 			return {
-				href: resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/delegations?filter=${encodeURIComponent(item.data.school ?? item.data.id)}`,
-					{ conferenceId }
-				)
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/participants', {
+					conferenceId
+				})
 			};
 		case 'seat':
-			// A seat opens its holder's card, or the delegation list when nobody holds it yet
+			// A seat opens its holder's card, or the participant list when nobody holds it yet
 			if (item.data.holderUserId) return { userId: item.data.holderUserId };
 			return {
-				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/delegations', {
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/participants', {
 					conferenceId
 				})
 			};

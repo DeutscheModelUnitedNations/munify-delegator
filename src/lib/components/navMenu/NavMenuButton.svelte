@@ -8,6 +8,8 @@
 		href: ResolvedPathname;
 		icon: string;
 		active?: boolean;
+		/** Stay active on the pages below `href` too, e.g. a detail page of this list. */
+		includeSubpages?: boolean;
 		/**
 		 * Something here wants a look: a small red dot that pings sits at the end of the entry.
 		 * `attentionLabel` says what, for those who cannot see the dot.
@@ -16,16 +18,22 @@
 		attentionLabel?: string;
 	}
 
-	let { title, href, icon, active, attention = false, attentionLabel }: Props = $props();
-	let showAsActive = $derived.by(() => {
-		if (active !== undefined) {
-			return active;
-		} else if (browser) {
-			return $page.url.pathname.endsWith(href);
-		} else {
-			return false;
-		}
-	});
+	let {
+		title,
+		href,
+		icon,
+		active,
+		includeSubpages = false,
+		attention = false,
+		attentionLabel
+	}: Props = $props();
+	function isActivePath(pathname: string, target: string, withSubpages: boolean) {
+		return pathname.endsWith(target) || (withSubpages && pathname.includes(`${target}/`));
+	}
+
+	let showAsActive = $derived(
+		active ?? (browser && isActivePath($page.url.pathname, href, includeSubpages))
+	);
 </script>
 
 <li class="w-full" {title}>

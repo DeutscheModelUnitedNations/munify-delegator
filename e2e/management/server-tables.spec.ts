@@ -5,9 +5,6 @@ import { E2E_ASSIGNMENT_ADMIN_ID, E2E_CONFERENCE_ID } from '../seed/seed';
 // The registration tables hand search, sorting, filters and paging to the backend. Each one has
 // to load, find a row by a word in it, find nothing for nonsense, sort and page without errors.
 const TABLES = [
-	{ route: 'management/delegations', search: 'filter' },
-	{ route: 'management/individuals', search: 'filter' },
-	{ route: 'management/supervisors', search: 'filter' },
 	{ route: 'management/participants', search: 'search' },
 	{ route: 'management/waitingList', search: 'filter' },
 	{ route: 'team-management/members', search: 'filter' }

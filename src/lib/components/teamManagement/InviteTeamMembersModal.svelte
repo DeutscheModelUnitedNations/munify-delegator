@@ -3,7 +3,6 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { configPublic } from '$config/public';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 
@@ -134,6 +133,26 @@
 		}
 	}
 
+	function invitationMessage(created: { addedDirectly: boolean }[]) {
+		const directlyAdded = created.filter((c) => c.addedDirectly).length;
+		return [
+			directlyAdded > 0 ? m.usersAddedDirectly({ count: directlyAdded }) : '',
+			created.length > directlyAdded
+				? m.invitationsSentCount({ count: created.length - directlyAdded })
+				: ''
+		]
+			.filter(Boolean)
+			.join(' ');
+	}
+
+	function announceInvitations(
+		created: { addedDirectly: boolean }[],
+		errors: { email: string; error: string }[]
+	) {
+		if (created.length > 0) toast.success(invitationMessage(created));
+		for (const err of errors) toast.error(`${err.email}: ${err.error}`);
+	}
+
 	async function handleSendInvitations() {
 		const selectedEmails = emailStatuses.filter((e) => e.selected && isInvitable(e));
 
@@ -153,27 +172,7 @@
 				errors: { email: true, error: true }
 			});
 
-			if (created.length > 0) {
-				const directlyAdded = created.filter((c) => c.addedDirectly).length;
-				const invitationsSent = created.filter((c) => !c.addedDirectly).length;
-
-				let message = '';
-				if (directlyAdded > 0) {
-					message += m.usersAddedDirectly({ count: directlyAdded });
-				}
-				if (invitationsSent > 0) {
-					if (message) message += ' ';
-					message += m.invitationsSentCount({ count: invitationsSent });
-				}
-				toast.success(message);
-			}
-
-			if (errors.length > 0) {
-				errors.forEach((err) => {
-					toast.error(`${err.email}: ${err.error}`);
-				});
-			}
-
+			announceInvitations(created, errors);
 			handleClose();
 		} catch (error) {
 			toast.error(m.httpGenericError());
@@ -190,19 +189,16 @@
 		emailStatuses = [];
 	}
 
+	const statusBadges: Record<EmailStatusValue, { class: string; text: () => string }> = {
+		exists: { class: 'badge-success', text: () => m.accountExists() },
+		new_user: { class: 'badge-info', text: () => m.newUser() },
+		pending_invitation: { class: 'badge-warning', text: () => m.pendingInvitation() },
+		already_member: { class: 'badge-ghost', text: () => m.alreadyMember() }
+	};
+
 	function getStatusBadge(status: EmailStatus['status']): { class: string; text: string } {
-		switch (status) {
-			case 'exists':
-				return { class: 'badge-success', text: m.accountExists() };
-			case 'new_user':
-				return { class: 'badge-info', text: m.newUser() };
-			case 'pending_invitation':
-				return { class: 'badge-warning', text: m.pendingInvitation() };
-			case 'already_member':
-				return { class: 'badge-ghost', text: m.alreadyMember() };
-			default:
-				return { class: 'badge-ghost', text: status };
-		}
+		const badge = statusBadges[status];
+		return { class: badge.class, text: badge.text() };
 	}
 </script>
 
@@ -252,13 +248,14 @@
 
 {#snippet enterStep()}
 	<div class="flex flex-col gap-4">
-		<FormFieldset title={m.emailAddresses()}>
+		<label class="flex flex-col gap-2">
+			<span class="font-semibold">{m.emailAddresses()}</span>
 			<textarea
 				class="textarea textarea-bordered w-full h-32"
 				bind:value={emailInput}
 				placeholder={m.enterEmailsPlaceholder()}></textarea>
-			<p class="text-sm text-base-content/70">{m.separateEmailsHint()}</p>
-		</FormFieldset>
+			<span class="text-sm text-base-content/70">{m.separateEmailsHint()}</span>
+		</label>
 
 		<div class="modal-action">
 			<button class="btn" onclick={handleClose}>{m.cancel()}</button>

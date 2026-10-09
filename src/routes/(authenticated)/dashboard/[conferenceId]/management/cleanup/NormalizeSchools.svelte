@@ -6,6 +6,7 @@
 	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
+	import SchoolSuggestions from './SchoolSuggestions.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 
 	interface Props {
@@ -32,14 +33,14 @@
 
 	type SchoolRow = Awaited<ReturnType<typeof fetchSchools>>['schools'][number];
 
-	let schoolsLoading = $state(false);
+	let schoolsLoading = $state(true);
 	let normalizing = $state(false);
 	let loadedSchools = $state<SchoolRow[]>([]);
 
 	async function loadSchools() {
-		schoolsLoading = true;
 		try {
-			loadedSchools = (await fetchSchools()).schools;
+			const conference = await fetchSchools();
+			loadedSchools = conference.schools;
 		} finally {
 			schoolsLoading = false;
 		}
@@ -101,13 +102,13 @@
 			: [...selectedSchools, row.school];
 	}
 
-	const handleNormalize = async () => {
-		if (selectedSchools.length < 1) {
+	async function mergeSchools(schoolsToMerge: string[], newName: string) {
+		if (schoolsToMerge.length < 1) {
 			toast.error(m.cleanupNormalizeSchoolsSelectAtLeastOne());
 			return;
 		}
 
-		if (!newSchoolName.trim()) {
+		if (!newName.trim()) {
 			toast.error(m.cleanupNormalizeSchoolsEnterNewName());
 			return;
 		}
@@ -117,15 +118,15 @@
 			await client.mutate.normalizeSchoolsInConference({
 				__args: {
 					conferenceId,
-					schoolsToMerge: [...selectedSchools],
-					newSchoolName: newSchoolName.trim()
+					schoolsToMerge: [...schoolsToMerge],
+					newSchoolName: newName.trim()
 				},
 				id: true,
 				schools: schoolSelection
 			});
 
-			toast.success(m.cleanupNormalizeSchoolsSuccess({ count: selectedSchools.length }));
-			selectedSchools = [];
+			toast.success(m.cleanupNormalizeSchoolsSuccess({ count: schoolsToMerge.length }));
+			selectedSchools = selectedSchools.filter((school) => !schoolsToMerge.includes(school));
 			newSchoolName = '';
 			await loadSchools();
 		} catch (error) {
@@ -134,7 +135,14 @@
 		} finally {
 			normalizing = false;
 		}
-	};
+	}
+
+	const handleNormalize = () => mergeSchools(selectedSchools, newSchoolName);
+
+	function selectSuggestion(names: string[]) {
+		selectedSchools = names;
+		newSchoolName = names[0];
+	}
 
 	onMount(() => {
 		hotkeys('shift+enter', (event) => {
@@ -154,6 +162,67 @@
 	</div>
 {:else if schools.length > 0}
 	<div class="mt-4">
+		<SchoolSuggestions
+			{conferenceId}
+			merging={normalizing}
+			onMerge={mergeSchools}
+			onSelect={selectSuggestion}
+		/>
+
+		<div class="mb-4 flex flex-col gap-3">
+			{#if selectedSchools.length > 0}
+				<div class="flex flex-wrap items-center gap-2">
+					{#each selectedSchools as school (school)}
+						<button
+							type="button"
+							class="badge badge-primary badge-soft gap-1"
+							onclick={() => (selectedSchools = selectedSchools.filter((s) => s !== school))}
+						>
+							{school}
+							<i class="fa-sharp-duotone fa-solid fa-xmark text-xs"></i>
+						</button>
+					{/each}
+					<button
+						type="button"
+						class="btn btn-ghost btn-xs ml-auto"
+						onclick={() => (selectedSchools = [])}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-trash-xmark"></i>
+						{m.cleanupNormalizeSchoolsClearSelected({ count: selectedSchools.length })}
+					</button>
+				</div>
+			{/if}
+
+			<div class="flex flex-col gap-2 sm:flex-row">
+				<input
+					id="newSchoolName"
+					type="text"
+					bind:value={newSchoolName}
+					placeholder={m.cleanupNormalizeSchoolsNewNamePlaceholder()}
+					aria-label={m.cleanupNormalizeSchoolsNewName()}
+					class="input input-bordered w-full flex-1"
+				/>
+				<button
+					type="button"
+					onclick={handleNormalize}
+					class="btn btn-primary"
+					disabled={normalizing || selectedSchools.length < 1 || !newSchoolName.trim()}
+				>
+					{#if normalizing}
+						<span class="loading loading-spinner"></span>
+					{:else}
+						<i class="fa-sharp-duotone fa-solid fa-code-merge"></i>
+					{/if}
+					{#if selectedSchools.length === 1}
+						{m.cleanupNormalizeSchoolsRenameOne()}
+					{:else}
+						{m.cleanupNormalizeSchoolsNormalizeMany()}
+					{/if}
+					<Kbd hotkey="shift+enter" />
+				</button>
+			</div>
+		</div>
+
 		<ManagedTable
 			{columns}
 			rows={schools}
@@ -162,48 +231,6 @@
 			isRowSelected={(row) => selectedSchools.includes(row.school)}
 			initialSorting={[{ id: 'school', desc: false }]}
 		/>
-
-		<div class="my-4 flex flex-col gap-2">
-			<button class="btn btn-outline" onclick={() => (selectedSchools = [])}>
-				{m.cleanupNormalizeSchoolsClearSelected({ count: selectedSchools.length })}
-			</button>
-			<div class="flex flex-wrap gap-1">
-				{#each selectedSchools as school (school)}
-					<span class="badge">{school}</span>
-				{/each}
-			</div>
-		</div>
-
-		<div class="mt-6 flex items-end gap-4">
-			<div class="form-control flex-1">
-				<label class="label" for="newSchoolName">
-					<span class="label-text">{m.cleanupNormalizeSchoolsNewName()}</span>
-				</label>
-				<input
-					id="newSchoolName"
-					type="text"
-					bind:value={newSchoolName}
-					placeholder={m.cleanupNormalizeSchoolsNewNamePlaceholder()}
-					class="input input-bordered w-full"
-				/>
-			</div>
-			<button
-				type="button"
-				onclick={handleNormalize}
-				class="btn btn-primary"
-				disabled={normalizing || selectedSchools.length < 1 || !newSchoolName.trim()}
-			>
-				{#if normalizing}
-					<span class="loading loading-spinner"></span>
-				{/if}
-				{#if selectedSchools.length === 1}
-					{m.cleanupNormalizeSchoolsRenameOne()}
-				{:else}
-					{m.cleanupNormalizeSchoolsNormalizeMany()}
-				{/if}
-				<Kbd hotkey="shift+enter" />
-			</button>
-		</div>
 	</div>
 {:else}
 	<div class="alert alert-info mt-4">

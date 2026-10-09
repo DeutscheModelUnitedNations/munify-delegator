@@ -22,9 +22,9 @@
 	};
 </script>
 
-<div class="collapse collapse-arrow bg-base-100 border border-base-200 shadow-sm">
+<div class="collapse collapse-arrow bg-base-100 border-base-200 border shadow-sm">
 	<input type="checkbox" />
-	<div class="collapse-title p-6">
+	<div class="collapse-title px-6 py-5">
 		<div class="flex items-center gap-3">
 			<div
 				class="bg-base-300/50 text-base-content/70 rounded-box p-3 w-12 h-12 flex justify-center items-center"
@@ -33,7 +33,7 @@
 			</div>
 			<div>
 				<span class="font-medium">{m.csvExportSettings()}</span>
-				<span class="text-sm text-base-content/60 ml-2">
+				<span class="badge badge-soft badge-primary badge-sm ml-3 font-mono">
 					{getDelimiterLabel(currentSettings.delimiter)}, {getEncodingLabel(
 						currentSettings.encoding
 					)}

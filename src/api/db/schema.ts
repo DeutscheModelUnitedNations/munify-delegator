@@ -441,6 +441,50 @@ export const calendarTrack = snakeCase.table(
 	]
 );
 
+/**
+ * A group of school names that most likely name the same school, found by the analysis the
+ * cleanup page runs. `key` is the group's sorted names as JSON, so a rerun finds the row again and
+ * keeps the team's decision; a group that gains or loses a spelling is a new row.
+ */
+export const schoolSuggestion = snakeCase.table(
+	'school_suggestion',
+	{
+		...defaultIdAndTimestamps,
+		key: text().notNull(),
+		similarity: doublePrecision().notNull(),
+		/** The team decided these are different schools. */
+		dismissed: boolean().default(false).notNull(),
+		conferenceId: conferenceRef('cascade')
+	},
+	(table) => [
+		uniqueIndex('school_suggestion_conference_id_key_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.key.asc().nullsLast()
+		)
+	]
+);
+
+/** One spelling of a suggestion, with how many participants wrote it. */
+export const schoolSuggestionVariant = snakeCase.table(
+	'school_suggestion_variant',
+	{
+		...defaultIdAndTimestamps,
+		school: text().notNull(),
+		sumParticipants: integer().notNull(),
+		suggestionId: text()
+			.notNull()
+			.references(() => schoolSuggestion.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+	},
+	(table) => [
+		uniqueIndex('school_suggestion_variant_suggestion_id_school_key').using(
+			'btree',
+			table.suggestionId.asc().nullsLast(),
+			table.school.asc().nullsLast()
+		)
+	]
+);
+
 export const committee = snakeCase.table('committee', {
 	...defaultIdAndTimestamps,
 	name: text().notNull(),

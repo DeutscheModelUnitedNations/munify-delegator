@@ -4,6 +4,7 @@
 	import { locales } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import ConferenceSwitcher from './ConferenceSwitcher.svelte';
+	import SurveyCrumbTitle from './SurveyCrumbTitle.svelte';
 	import type { LayoutProps } from './$types';
 
 	type Parameters = keyof LayoutProps['params'];
@@ -294,7 +295,17 @@ import path via the parameter! The home link is the wordmark in the header, so t
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
 			<a class="btn btn-ghost btn-sm max-w-48 !no-underline" href={pathSegment.href}>
 				<i class="fa-sharp-duotone fa-solid fa-{breadcrumb.icon}"></i>
-				<span class="ml-1 truncate">{breadcrumb.translation}</span>
+				<span class="ml-1 truncate">
+					{#if pathSegment.key === 'surveyId' && pathSegment.isParameter}
+						<svelte:boundary>
+							<SurveyCrumbTitle surveyId={pathSegment.value} />
+							{#snippet pending()}{breadcrumb.translation}{/snippet}
+							{#snippet failed()}{breadcrumb.translation}{/snippet}
+						</svelte:boundary>
+					{:else}
+						{breadcrumb.translation}
+					{/if}
+				</span>
 			</a>
 		{/if}
 	{/snippet}

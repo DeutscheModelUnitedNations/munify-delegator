@@ -2,7 +2,6 @@
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import { cardBorder, type BoardReviewRow } from '$lib/assignment/board';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { resolve } from '$app/paths';
 	import formatNames from '$lib/helpers/formatNames';
 	import { m } from '$lib/paraglide/messages';
 	import { draggable } from '@thisux/sveltednd';
@@ -39,14 +38,6 @@
 		busy = false
 	}: Props = $props();
 
-	const detailsHref = $derived(
-		resolve(
-			`/(authenticated)/dashboard/[conferenceId]/management/individuals?selected=${singleParticipantId}`,
-			{
-				conferenceId
-			}
-		)
-	);
 	const sightingLink = $derived(sightingHref(conferenceId, singleParticipantId));
 	/** Every wish, the one matching the current assignment first. Wishes of a single are unranked. */
 	const wishes = $derived(
@@ -118,17 +109,6 @@
 			title={m.assignmentCardSighting()}
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
-		</a>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
-		<a
-			class="btn btn-ghost btn-xs btn-square shrink-0"
-			href={detailsHref}
-			target="_blank"
-			draggable="false"
-			aria-label={m.assignmentCardOpenDetails()}
-			title={m.assignmentCardOpenDetails()}
-		>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 		</a>
 	</div>
 	{#if busy}

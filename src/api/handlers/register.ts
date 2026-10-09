@@ -27,6 +27,7 @@ import './reviewerSnippet';
 import './roleApplication';
 import './statistics';
 import './participantsPage';
+import './schoolSuggestion';
 import './seatPlanning';
 import './sightingDeck';
 import './singleParticipant';

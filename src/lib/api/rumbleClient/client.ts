@@ -1634,6 +1634,9 @@ export type Locale = string;
 export type MediaconsentstatusEnum = "ALLOWED_ALL" | "NOT_ALLOWED" | "NOT_SET" | "PARTIALLY_ALLOWED";
 		
 export type Mutation = {
+  analyzeSchoolSuggestions: (p: {
+    conferenceId: ID
+  }) => Boolean,
   applyAssignment: (p: {
     conferenceId: ID
   }) => Boolean,
@@ -1887,6 +1890,9 @@ export type Mutation = {
   }) => Boolean,
   discardAssignmentDraft: (p: {
     conferenceId: ID
+  }) => Boolean,
+  dismissSchoolSuggestion: (p: {
+    id: ID
   }) => Boolean,
   importCalendarDay: (p: {
     conferenceId: ID,
@@ -3091,6 +3097,16 @@ export type Query = {
     search?: String | null | undefined,
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
+  schoolSuggestion: (p: {
+    id: ID
+  }) => Schoolsuggestion,
+  schoolSuggestions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SchoolsuggestionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SchoolsuggestionWhereInputArgument | null | undefined
+  }) => Schoolsuggestion[],
   seatPlanningAssignments: (p: {
     conferenceId: ID
   }) => SeatPlanningAssignments,
@@ -3372,6 +3388,89 @@ export type RoleapplicationWhereInputArgument = {
   nonStateActor?: NonstateactorWhereInputArgument | null | undefined,
   nonStateActorId?: IDWhereInputArgument | null | undefined,
   rank?: IntWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type Schoolsuggestion = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  dismissed: Boolean,
+  id: ID,
+  key: String,
+  search_distance: Float | null,
+  similarity: Float,
+  updatedAt: DateTime,
+  variants: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SchoolsuggestionvariantOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SchoolsuggestionvariantWhereInputArgument | null | undefined
+  }) => Schoolsuggestionvariant[]    
+};
+		
+export type SchoolsuggestionOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  dismissed?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  key?: SortingParameter | null | undefined,
+  similarity?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type SchoolsuggestionWhereInputArgument = {
+  AND?: SchoolsuggestionWhereInputArgument[] | undefined,
+  NOT?: SchoolsuggestionWhereInputArgument | null | undefined,
+  OR?: SchoolsuggestionWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  dismissed?: BooleanWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  key?: StringWhereInputArgument | null | undefined,
+  similarity?: FloatWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  variants?: SchoolsuggestionvariantWhereInputArgument | null | undefined    
+};
+		
+export type Schoolsuggestionvariant = {
+  createdAt: DateTime,
+  id: ID,
+  school: String,
+  search_distance: Float | null,
+  suggestion: (p?: {
+    orderBy?: SchoolsuggestionOrderInputArgument | null | undefined,
+    where?: SchoolsuggestionWhereInputArgument | null | undefined
+  }) => Schoolsuggestion,
+  suggestionId: ID,
+  sumParticipants: Int,
+  updatedAt: DateTime    
+};
+		
+export type SchoolsuggestionvariantOrderInputArgument = {
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  school?: SortingParameter | null | undefined,
+  suggestionId?: SortingParameter | null | undefined,
+  sumParticipants?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type SchoolsuggestionvariantWhereInputArgument = {
+  AND?: SchoolsuggestionvariantWhereInputArgument[] | undefined,
+  NOT?: SchoolsuggestionvariantWhereInputArgument | null | undefined,
+  OR?: SchoolsuggestionvariantWhereInputArgument[] | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  school?: StringWhereInputArgument | null | undefined,
+  suggestion?: SchoolsuggestionWhereInputArgument | null | undefined,
+  suggestionId?: IDWhereInputArgument | null | undefined,
+  sumParticipants?: IntWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
@@ -4108,6 +4207,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
+  schoolSuggestion: (p: {
+    id: ID
+  }) => Schoolsuggestion,
+  schoolSuggestions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SchoolsuggestionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SchoolsuggestionWhereInputArgument | null | undefined
+  }) => Schoolsuggestion[],
   singleParticipant: (p: {
     id: ID
   }) => Singleparticipant,
@@ -4846,7 +4955,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

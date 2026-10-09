@@ -83,126 +83,122 @@
 </script>
 
 {#snippet optionStats()}
-	<div class="flex items-start gap-4">
-		<div class="w-28 shrink-0">
+	<div class="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+		<div class="w-32 shrink-0">
 			<PieChart
 				data={chartData}
 				donut={true}
 				showLegend={false}
 				showLabels={false}
-				height="112px"
+				height="128px"
 			/>
 		</div>
-		<div class="flex flex-1 flex-col gap-2 overflow-hidden">
-			<!-- Summary stats table -->
-			<div class="bg-base-300 overflow-hidden rounded-t-box">
-				<table class="table table-sm">
-					<tbody>
-						<tr class="border-base-200">
-							<td class="font-medium">{m.deadline()}</td>
-							<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
-						</tr>
-						<tr class="border-base-200 border-b-0">
-							<td class="font-medium">{m.totalAnswers()}</td>
-							<td class="text-right font-medium">{totalAnswers}</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-			<!-- Per-option stats table -->
-			<div class="bg-base-300 overflow-hidden rounded-b-box">
-				<table class="table table-sm">
-					<tbody>
-						{#each survey.options as option, i (option.id)}
-							<tr class="border-base-200" class:border-b-0={i === survey.options.length - 1}>
-								<td class="text-base-content/60 truncate text-xs">{option.title}</td>
-								<td class="text-base-content/60 text-right text-xs">
-									{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
-											class="text-base-content/40">/{option.upperLimit}</span
-										>{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+		<div class="flex w-full flex-1 flex-col gap-4">
+			<dl class="grid grid-cols-2 gap-3">
+				<div class="rounded-field bg-base-100/60 px-3 py-2">
+					<dt class="flex items-center gap-1.5 text-xs text-base-content/60">
+						<i class="fa-sharp-duotone fa-solid fa-clock"></i>
+						{m.deadline()}
+					</dt>
+					<dd class="font-semibold">{formatDeadline(survey.deadline)}</dd>
+				</div>
+				<div class="rounded-field bg-base-100/60 px-3 py-2">
+					<dt class="flex items-center gap-1.5 text-xs text-base-content/60">
+						<i class="fa-sharp-duotone fa-solid fa-comments"></i>
+						{m.totalAnswers()}
+					</dt>
+					<dd class="text-lg leading-tight font-bold">{totalAnswers}</dd>
+				</div>
+			</dl>
+			<ul class="flex flex-col gap-2.5">
+				{#each survey.options as option (option.id)}
+					<li class="flex flex-col gap-1">
+						<div class="flex items-baseline justify-between gap-2 text-sm">
+							<span class="truncate">{option.title}</span>
+							<span class="shrink-0 font-semibold tabular-nums">
+								{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
+										class="font-normal text-base-content/40">/{option.upperLimit}</span
+									>{/if}
+							</span>
+						</div>
+						<progress
+							class="progress h-1.5 w-full progress-primary"
+							value={option.countSurveyAnswers}
+							max={option.upperLimit > 0 ? option.upperLimit : Math.max(totalAnswers, 1)}
+						></progress>
+					</li>
+				{/each}
+			</ul>
 		</div>
 	</div>
 {/snippet}
 
-<div class="bg-base-200 flex w-full flex-col gap-4 rounded-box p-4">
-	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-bold">{survey.title}</h3>
-		<div class="flex flex-wrap items-center gap-2">
-			{#if survey.draft}
-				<span class="badge badge-warning w-fit">{m.surveyIsDraft()}</span>
-			{:else}
-				<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
-			{/if}
-			{#if survey.hidden}
-				<span class="badge badge-neutral w-fit">
-					<i class="fa-sharp-duotone fa-solid fa-box-archive mr-1"></i>
-					{m.archivedSurvey()}
-				</span>
-			{/if}
+<article class="flex w-full flex-col gap-5 rounded-box border border-base-300 bg-base-200/50 p-5">
+	<header class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+		<div class="flex min-w-0 flex-col gap-2">
+			<div class="flex flex-wrap items-center gap-2">
+				<h3 class="text-xl font-bold">{survey.title}</h3>
+				{#if survey.hidden}
+					<span class="badge badge-soft">
+						<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
+						{m.archivedSurvey()}
+					</span>
+				{/if}
+			</div>
+			<p class="text-sm whitespace-pre-line text-base-content/70">{survey.description}</p>
 		</div>
-		<p class="whitespace-pre-line text-sm opacity-70">{survey.description}</p>
-		<div class="flex flex-wrap gap-2">
-			<button
-				class="btn btn-sm {survey.draft ? 'btn-success' : 'btn-warning'}"
-				onclick={() => toggleDraft(survey.id, survey.draft)}
-			>
-				<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-				{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+		<div class="flex flex-none flex-wrap gap-2">
+			<button class="btn btn-ghost btn-sm" onclick={() => toggleDraft(survey.id, survey.draft)}>
+				<i
+					class="fa-sharp-duotone fa-solid {survey.draft
+						? 'fa-eye-slash text-warning'
+						: 'fa-eye text-success'}"
+				></i>
+				{survey.draft ? m.surveyIsDraft() : m.surveyIsLive()}
 			</button>
 			<button class="btn btn-ghost btn-sm" onclick={() => toggleHidden(survey.id, survey.hidden)}>
 				<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
 				{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 			</button>
-			<a
-				href={resolve(`/dashboard/${conferenceId}/management/survey/${survey.id}`)}
-				class="btn btn-sm"
-			>
-				<i class="fas fa-edit"></i>
-				{m.edit()}
-			</a>
 			<button
-				class="btn btn-error btn-sm"
+				class="btn btn-ghost btn-sm text-error"
 				onclick={() => onDelete({ id: survey.id, title: survey.title })}
 			>
-				<i class="fas fa-trash"></i>
+				<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 				{m.delete()}
 			</button>
 		</div>
-
-		<!-- Toggle switches -->
-		<div class="mt-2 flex flex-col gap-2">
-			<label class="flex cursor-pointer items-center gap-2">
-				<input
-					type="checkbox"
-					class="toggle toggle-success toggle-sm"
-					checked={survey.showSelectionOnDashboard}
-					onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
-				/>
-				<span class="text-sm">{m.showSelectionOnDashboard()}</span>
-				<span class="text-base-content/50 text-xs">({m.showSelectionOnDashboardDescription()})</span
-				>
-			</label>
-		</div>
-	</div>
+	</header>
 
 	{#if survey.options.length > 0}
 		{@render optionStats()}
 	{:else}
-		<div class="bg-base-300 rounded-field p-4 text-center text-sm opacity-70">
+		<div
+			class="rounded-field border-2 border-dashed border-base-300 p-4 text-center text-sm text-base-content/70"
+		>
 			{m.noOptionsYet()}
 		</div>
 	{/if}
 
-	<a
-		class="btn btn-primary"
-		href={resolve(`/dashboard/${conferenceId}/management/survey/${survey.id}`)}
+	<footer
+		class="flex flex-col gap-3 border-t border-base-300 pt-4 sm:flex-row sm:items-center sm:justify-between"
 	>
-		{m.details()}
-	</a>
-</div>
+		<label class="flex cursor-pointer flex-wrap items-center gap-2">
+			<input
+				type="checkbox"
+				class="toggle toggle-sm toggle-success"
+				checked={survey.showSelectionOnDashboard}
+				onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
+			/>
+			<span class="text-sm">{m.showSelectionOnDashboard()}</span>
+			<span class="text-xs text-base-content/50">({m.showSelectionOnDashboardDescription()})</span>
+		</label>
+		<a
+			class="btn btn-sm btn-primary"
+			href={resolve(`/dashboard/${conferenceId}/management/survey/${survey.id}`)}
+		>
+			{m.details()}
+			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+		</a>
+	</footer>
+</article>

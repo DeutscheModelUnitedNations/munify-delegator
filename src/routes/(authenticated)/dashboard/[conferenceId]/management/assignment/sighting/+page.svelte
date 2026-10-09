@@ -255,7 +255,6 @@
 				in:fly={{ x: direction * 80, duration: prefersReducedMotion.current ? 0 : 160 }}
 			>
 				<ApplicationCard
-					{conferenceId}
 					kind={currentKind}
 					id={current.id}
 					codename={codenamize(current.id)}

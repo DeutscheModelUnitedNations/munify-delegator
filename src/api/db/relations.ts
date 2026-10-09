@@ -581,6 +581,24 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	schoolSuggestion: {
+		conference: r.one.conference({
+			from: r.schoolSuggestion.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		variants: r.many.schoolSuggestionVariant({
+			from: r.schoolSuggestion.id,
+			to: r.schoolSuggestionVariant.suggestionId
+		})
+	},
+	schoolSuggestionVariant: {
+		suggestion: r.one.schoolSuggestion({
+			from: r.schoolSuggestionVariant.suggestionId,
+			to: r.schoolSuggestion.id,
+			optional: false
+		})
+	},
 	possibleDuplicate: {
 		user: r.one.user({
 			from: r.possibleDuplicate.userId,

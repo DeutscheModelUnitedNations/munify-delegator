@@ -3,7 +3,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import DownloadButton from '../../downloads/DownloadButton.svelte';
 	import {
 		buildUserRoleMap,
 		buildUserRow,
@@ -29,11 +28,12 @@
 			__args: { id: surveyId },
 			id: true,
 			title: true,
-			options: { id: true, title: true }
+			options: { id: true, title: true, countSurveyAnswers: true }
 		})
 	);
 	const surveyTitle = $derived(survey.title);
 	const options = $derived(survey.options);
+	const totalAnswers = $derived(options.reduce((sum, o) => sum + o.countSurveyAnswers, 0));
 
 	type SurveyOption = (typeof options)[number];
 
@@ -192,20 +192,67 @@
 	};
 </script>
 
-<DownloadButton
-	onclick={downloadAllResults}
-	title={m.exportAllResults()}
-	loading={loadingStates['all'] ?? false}
-/>
-<DownloadButton
-	onclick={downloadNotAnswered}
-	title={m.exportNotAnswered()}
-	loading={loadingStates['not-answered'] ?? false}
-/>
-{#each options as option (option.id)}
-	<DownloadButton
-		onclick={() => downloadByOption(option)}
-		title={m.exportByOption({ option: option.title })}
-		loading={loadingStates[`option-${option.id}`] ?? false}
-	/>
-{/each}
+{#snippet exportTile(
+	title: string,
+	key: string,
+	icon: string,
+	onclick: () => void,
+	count?: number,
+	accent = false
+)}
+	<button
+		class="group relative flex cursor-pointer items-center gap-3 rounded-box border p-3 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md disabled:cursor-progress disabled:opacity-60 {accent
+			? 'border-primary/40 bg-primary/10'
+			: 'border-base-300 bg-base-100/60'}"
+		disabled={loadingStates[key] ?? false}
+		{onclick}
+	>
+		<span
+			class="flex size-11 flex-none items-center justify-center rounded-field text-xl {accent
+				? 'bg-primary text-primary-content'
+				: 'bg-base-300 text-base-content/80 group-hover:bg-primary/20 group-hover:text-primary'}"
+		>
+			{#if loadingStates[key]}
+				<span class="loading loading-md loading-spinner"></span>
+			{:else}
+				<i class="fa-sharp-duotone fa-solid {icon}"></i>
+			{/if}
+		</span>
+		<span class="flex min-w-0 flex-1 flex-col">
+			<span class="truncate font-semibold">{title}</span>
+			<span class="flex items-center gap-2 text-xs text-base-content/50">
+				<span class="font-mono">CSV</span>
+				{#if count !== undefined}
+					<span class="flex items-center gap-1">
+						<i class="fa-sharp-duotone fa-solid fa-user"></i>
+						{count}
+					</span>
+				{/if}
+			</span>
+		</span>
+		<i
+			class="fa-sharp-duotone fa-solid fa-download text-sm text-base-content/30 transition group-hover:text-primary"
+		></i>
+	</button>
+{/snippet}
+
+<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+	{@render exportTile(
+		m.exportAllResults(),
+		'all',
+		'fa-table-list',
+		downloadAllResults,
+		totalAnswers,
+		true
+	)}
+	{@render exportTile(m.exportNotAnswered(), 'not-answered', 'fa-user-clock', downloadNotAnswered)}
+	{#each options as option (option.id)}
+		{@render exportTile(
+			option.title,
+			`option-${option.id}`,
+			'fa-list-check',
+			() => downloadByOption(option),
+			option.countSurveyAnswers
+		)}
+	{/each}
+</div>

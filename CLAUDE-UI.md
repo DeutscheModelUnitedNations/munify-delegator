@@ -926,7 +926,7 @@ columns and the related people), `stringFilter` / `booleanFilter` / `enumFilter`
 `fetchEveryRow`. The total comes from the entity's rumble count query (`countQuery({ table })` in
 its handler, e.g. `delegationsCount(where)`, same `where` as the page, wrapped in `asCount`) and goes
 to the table as `rowCount`: it gives the pager its page count and last-page button; without it the
-pager only knows `hasMore`. `*Query.ts` next to the page is the model: `management/delegations/`.
+pager only knows `hasMore`. `*Query.ts` next to the page is the model: `management/participants/`.
 
 What the backend cannot do, the table does not offer: `orderBy` only reaches a row's own columns
 (not the person's name behind a relation), and computed values (codenames, translated nation names
@@ -1084,7 +1084,7 @@ shares.
 - A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
 
 The dashboard has no sidebar. Only the management and team-management areas add one, through
-`SideNavigationDrawer` (directly, or via `ConferenceSidebarLayout`): a menu that is always fully shown on
+`SideNavigationDrawer` (directly, or via `ManagementShell`): a menu that is always fully shown on
 desktop (a drawer behind the top bar's burger on mobile) for the many pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
 
 ### NavMenu
@@ -1111,10 +1111,13 @@ Sidebar navigation:
 
 `NavMenuButton` takes `attention` (and `attentionLabel`, the text for screen readers and the tooltip): a small red dot that pings at the end of the entry, for something that wants a look. The management menu's plausibility entry uses it while detected duplicate pairs wait for a decision (`PlausibilityNavButton`, fetched on its own so the menu does not wait for the count).
 
-### ConferenceSidebarLayout
+`NavMenuButton` also takes `includeSubpages`, which keeps the entry active on the pages below its `href`. Use it for a list whose detail pages are not in the menu (the survey list and `survey/[surveyId]`), so the menu still shows where you are; such a detail page also carries a back link to its list.
 
-The layout of a conference area with its own side navigation (team management): pass the menu's entries as the `nav` snippet; it also mounts the user card drawer
-those pages open.
+### ManagementShell
+
+The management side navigation around a page (`management/ManagementShell.svelte`). The management
+layout and team management (which has its own route and guard, and uses tabs for its sections) both
+render inside it, so the menu stays the same; it also mounts the user card drawer those pages open.
 
 ### Tabs
 

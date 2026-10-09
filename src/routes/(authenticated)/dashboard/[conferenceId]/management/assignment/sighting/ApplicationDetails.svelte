@@ -4,7 +4,6 @@
 		memberSummary,
 		type delegationApplication
 	} from '$lib/assignment/sighting';
-	import { resolve } from '$app/paths';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { m } from '$lib/paraglide/messages';
@@ -12,33 +11,18 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import PersonLine from './PersonLine.svelte';
 
-	/** Who applied in a first row (members, school and supervisors linking to their management pages, wishes), what they wrote below. */
+	/** Who applied in a first row (members, school, supervisors, wishes), what they wrote below. */
 	interface Props {
-		conferenceId: string;
 		application: ReturnType<typeof delegationApplication>;
 		startConference: Date | string;
 		kind: 'delegation' | 'single';
 	}
 
-	let { conferenceId, application, startConference, kind }: Props = $props();
+	let { application, startConference, kind }: Props = $props();
 
 	const supervisors = $derived(distinctSupervisors(application.supervisors, formatNames));
 
 	const summary = $derived(memberSummary(application.people, startConference));
-
-	const managementPage = (page: 'supervisors' | 'delegations') =>
-		page === 'supervisors'
-			? resolve('/(authenticated)/dashboard/[conferenceId]/management/supervisors', {
-					conferenceId
-				})
-			: resolve('/(authenticated)/dashboard/[conferenceId]/management/delegations', {
-					conferenceId
-				});
-
-	/** The delegations table, searched for the school. */
-	const schoolHref = $derived(
-		`${managementPage('delegations')}?${new URLSearchParams({ filter: application.school ?? '' })}`
-	);
 </script>
 
 <div class="grid gap-x-8 gap-y-6 {kind === 'delegation' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}">
@@ -84,9 +68,7 @@
 				{m.schoolOrInstitution()}
 			</h4>
 			{#if application.school}
-				<a class="link link-hover cursor-pointer font-medium" href={schoolHref}>
-					{application.school}
-				</a>
+				<span class="font-medium">{application.school}</span>
 			{:else}
 				<p class="text-base-content/60">{m.assignmentNoSchool()}</p>
 			{/if}

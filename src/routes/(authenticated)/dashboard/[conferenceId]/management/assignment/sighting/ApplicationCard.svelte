@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import {
 		genderIcon,
 		type delegationApplication,
@@ -16,7 +15,6 @@
 
 	/** One application in the sighting: who applied, with what, and the team's rating of it. */
 	interface Props {
-		conferenceId: string;
 		kind: 'delegation' | 'single';
 		id: string;
 		codename: string;
@@ -27,18 +25,8 @@
 		onReview: (change: Partial<SightingReview>) => void;
 	}
 
-	let { conferenceId, kind, id, codename, application, startConference, review, onReview }: Props =
-		$props();
+	let { kind, id, codename, application, startConference, review, onReview }: Props = $props();
 
-	const detailsHref = $derived(
-		kind === 'delegation'
-			? resolve(`/(authenticated)/dashboard/[conferenceId]/management/delegations?selected=${id}`, {
-					conferenceId
-				})
-			: resolve(`/(authenticated)/dashboard/[conferenceId]/management/individuals?selected=${id}`, {
-					conferenceId
-				})
-	);
 	/** A single participant is one person: their name and facts head the card instead of a table. */
 	const person = $derived(kind === 'single' ? application.people[0] : undefined);
 	const age = $derived(
@@ -92,20 +80,10 @@
 			</div>
 			<div class="flex items-center gap-2">
 				<ReviewControls {review} {onReview} />
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
-				<a
-					class="btn btn-square btn-ghost"
-					href={detailsHref}
-					target="_blank"
-					aria-label={m.assignmentOpenDetails()}
-					title={m.assignmentOpenDetails()}
-				>
-					<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
-				</a>
 			</div>
 		</div>
 
-		<ApplicationDetails {conferenceId} {application} {startConference} {kind} />
+		<ApplicationDetails {application} {startConference} {kind} />
 
 		<NoteInput {review} {onReview} />
 	</div>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import BusyOverlay from './BusyOverlay.svelte';
-	import { resolve } from '$app/paths';
 	import {
 		canSplit,
 		cardBorder,
@@ -86,19 +85,6 @@
 	const sightingLink = $derived(
 		applicationId ? sightingHref(conferenceId, applicationId) : undefined
 	);
-	const detailsHref = $derived(
-		group.singleParticipantId
-			? resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/individuals?selected=${group.singleParticipantId}`,
-					{ conferenceId }
-				)
-			: group.delegationId
-				? resolve(
-						`/(authenticated)/dashboard/[conferenceId]/management/delegations?selected=${group.delegationId}`,
-						{ conferenceId }
-					)
-				: undefined
-	);
 </script>
 
 <div
@@ -157,19 +143,6 @@
 			</a>
 		{/if}
 		<GroupActions {...actions} />
-		{#if detailsHref}
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
-			<a
-				class="btn btn-ghost btn-xs btn-square ml-auto"
-				href={detailsHref}
-				target="_blank"
-				draggable="false"
-				aria-label={m.assignmentCardOpenDetails()}
-				title={m.assignmentCardOpenDetails()}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
-			</a>
-		{/if}
 	</div>
 	{#if busy}
 		<BusyOverlay />

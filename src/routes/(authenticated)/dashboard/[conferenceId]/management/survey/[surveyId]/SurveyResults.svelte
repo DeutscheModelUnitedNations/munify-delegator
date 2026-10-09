@@ -5,7 +5,6 @@
 	import GaugeChart from '$lib/components/charts/echarts/GaugeChart.svelte';
 	import LineChart from '$lib/components/charts/echarts/LineChart.svelte';
 	import CollapsibleParticipantList from '$lib/components/CollapsibleParticipantList.svelte';
-	import DownloadCategoryCard from '../../downloads/DownloadCategoryCard.svelte';
 	import SurveyExportButtons from './SurveyExportButtons.svelte';
 	import { fetchSurveyResults } from './surveyAnswers';
 	import { compareByDisplayName } from './surveyExport';
@@ -156,10 +155,17 @@
 </div>
 
 <!-- Export Section -->
-<DownloadCategoryCard
-	title={m.surveyExports()}
-	description={m.surveyExportsDescription()}
-	icon="fas fa-file-export"
->
-	<SurveyExportButtons {surveyId} {conferenceId} />
-</DownloadCategoryCard>
+<section class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5">
+	<header class="flex items-center gap-3">
+		<div class="flex size-10 flex-none items-center justify-center rounded-field bg-primary/15">
+			<i class="fa-sharp-duotone fa-solid fa-file-export text-xl text-primary"></i>
+		</div>
+		<div>
+			<h3 class="text-lg font-bold">{m.surveyExports()}</h3>
+			<p class="text-sm text-base-content/60">{m.surveyExportsDescription()}</p>
+		</div>
+	</header>
+	<div class="border-t border-base-300 pt-4">
+		<SurveyExportButtons {surveyId} {conferenceId} />
+	</div>
+</section>

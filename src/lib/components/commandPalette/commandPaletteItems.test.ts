@@ -74,11 +74,11 @@ describe('flattenResults', () => {
 });
 
 describe('resultTarget', () => {
-	test('a seat opens its holder, or the delegation list when nobody holds it', () => {
+	test('a seat opens its holder, or the participant list when nobody holds it', () => {
 		expect(resultTarget({ type: 'seat', data: seat }, conferenceId)).toEqual({ userId: 'u9' });
 		expect(
 			resultTarget({ type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId)
-		).toHaveProperty('href', expect.stringContaining('/conf-1/management/delegations'));
+		).toHaveProperty('href', expect.stringContaining('/conf-1/management/participants'));
 	});
 	test('a committee opens the committees tab', () => {
 		expect(resultTarget({ type: 'committee', data: committee }, conferenceId)).toHaveProperty(
@@ -92,7 +92,7 @@ describe('resultTarget', () => {
 			userId: 'f1'
 		});
 	});
-	test('a delegation opens its head delegate, or the filtered list', () => {
+	test('a delegation opens its head delegate, or the participant list', () => {
 		expect(resultTarget({ type: 'delegation', data: delegation }, conferenceId)).toEqual({
 			userId: 'u9'
 		});
@@ -102,7 +102,7 @@ describe('resultTarget', () => {
 		);
 		expect(target).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/management/delegations?filter=Gym')
+			expect.stringContaining('/conf-1/management/participants')
 		);
 	});
 	test('pages, configuration and transactions navigate', () => {

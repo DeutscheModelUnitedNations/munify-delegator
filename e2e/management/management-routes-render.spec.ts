@@ -15,9 +15,6 @@ const DEV_SERVER_NOISE =
 const ROUTES = [
 	'',
 	'/participants',
-	'/delegations',
-	'/individuals',
-	'/supervisors',
 	'/waitingList',
 	'/payments',
 	'/stats',

@@ -76,36 +76,6 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			keywords: ['teilnehmende', 'participants', 'nutzer', 'users', 'personen']
 		},
 		{
-			id: 'delegations',
-			title: () => m.adminDelegations(),
-			icon: 'fa-users-viewfinder',
-			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/delegations', {
-				conferenceId
-			}),
-			category: 'tables',
-			keywords: ['delegationen', 'delegations', 'schulen', 'schools', 'gruppen', 'groups']
-		},
-		{
-			id: 'individuals',
-			title: () => m.adminSingleParticipants(),
-			icon: 'fa-user',
-			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/individuals', {
-				conferenceId
-			}),
-			category: 'tables',
-			keywords: ['einzelteilnehmende', 'individual', 'einzelpersonen', 'single', 'rollen', 'roles']
-		},
-		{
-			id: 'supervisors',
-			title: () => m.adminSupervisors(),
-			icon: 'fa-chalkboard-user',
-			href: resolve('/(authenticated)/dashboard/[conferenceId]/management/supervisors', {
-				conferenceId
-			}),
-			category: 'tables',
-			keywords: ['betreuer', 'supervisors', 'betreuende', 'aufsicht']
-		},
-		{
 			id: 'waitingList',
 			title: () => m.waitingList(),
 			icon: 'fa-user-clock',
