@@ -1,0 +1,521 @@
+import { building } from '$app/environment';
+import { db } from '$api/db/db';
+import { schemaBuilder } from '$api/rumble';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
+import type { StatsFilterType } from '$api/services/statisticsFilters';
+import {
+	addressesOf,
+	ageStatisticsOf,
+	committeeFillRatesOf,
+	countdownsOf,
+	dietOf,
+	genderOf,
+	nationalityDistributionOf,
+	paperStatsOf,
+	participantStatusOf,
+	registrationStatisticsOf,
+	registrationTimelineOf,
+	roleBasedOf,
+	schoolStatsOf,
+	supervisorStatsOf,
+	waitingListOf
+} from '$api/services/statistics';
+import {
+	refreshStatisticsViews,
+	statisticsRefreshedAt,
+	statisticsRowsOf,
+	type StatisticsRows
+} from '$api/services/statisticsData';
+import { zipCoordinates } from '$api/services/zipCoordinates';
+import { assertFindFirstExists } from '@m1212e/rumble';
+
+// The statistics are aggregations over every registration of a conference, served from
+// materialized views rather than computed per request. They are refreshed on startup and then
+// every few minutes; several app instances share the work through an advisory lock.
+const STATISTICS_REFRESH_INTERVAL_MS = 5 * 60_000;
+
+if (!building) {
+	const refresh = () =>
+		refreshStatisticsViews().catch((err) =>
+			console.error('Failed to refresh statistics materialized views', err)
+		);
+	void refresh();
+	setInterval(refresh, STATISTICS_REFRESH_INTERVAL_MS);
+}
+
+const StatsFilterEnum = schemaBuilder.enumType('StatsFilter', {
+	values: ['ALL', 'APPLIED', 'NOT_APPLIED', 'APPLIED_WITH_ROLE', 'APPLIED_WITHOUT_ROLE'] as const
+});
+
+const dietVariations = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredParticipantDietVariations',
+	{
+		fields: (t) => ({
+			omnivore: t.int(),
+			vegetarian: t.int(),
+			vegan: t.int()
+		})
+	}
+);
+
+const genderVariations = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredParticipantGenderVariations',
+	{
+		fields: (t) => ({
+			male: t.int(),
+			female: t.int(),
+			diverse: t.int(),
+			noStatement: t.int()
+		})
+	}
+);
+
+const roleBasedStats = schemaBuilder.simpleObject('StatisticsResultRoleBased', {
+	fields: (t) => ({
+		delegationMembersWithRole: t.int(),
+		delegationMembersWithoutRole: t.int(),
+		delegationMembersWithCommittee: t.int(),
+		delegationMembersWithoutCommittee: t.int(),
+		singleParticipantsWithRole: t.int(),
+		singleParticipantsWithoutRole: t.int(),
+		delegationsWithAssignment: t.int(),
+		delegationsWithoutAssignment: t.int()
+	})
+});
+
+const committeeFillRate = schemaBuilder.simpleObject('StatisticsResultCommitteeFillRate', {
+	fields: (t) => ({
+		committeeId: t.id(),
+		name: t.string(),
+		abbreviation: t.string(),
+		totalSeats: t.int(),
+		assignedSeats: t.int(),
+		fillPercentage: t.int()
+	})
+});
+
+const registrationTimelineEntry = schemaBuilder.simpleObject(
+	'StatisticsResultRegistrationTimeline',
+	{
+		fields: (t) => ({
+			date: t.string(),
+			cumulativeDelegations: t.int(),
+			cumulativeDelegationMembers: t.int(),
+			cumulativeSingleParticipants: t.int(),
+			cumulativeSupervisors: t.int()
+		})
+	}
+);
+
+const nationalityStats = schemaBuilder.simpleObject('StatisticsResultNationality', {
+	fields: (t) => ({
+		country: t.string(),
+		countryCode: t.string(),
+		count: t.int()
+	})
+});
+
+const schoolStats = schemaBuilder.simpleObject('StatisticsResultSchool', {
+	fields: (t) => ({
+		school: t.string(),
+		delegationCount: t.int(),
+		memberCount: t.int()
+	})
+});
+
+const waitingListStats = schemaBuilder.simpleObject('StatisticsResultWaitingList', {
+	fields: (t) => ({
+		total: t.int(),
+		visible: t.int(),
+		hidden: t.int(),
+		assigned: t.int(),
+		unassigned: t.int()
+	})
+});
+
+const supervisorStatsType = schemaBuilder.simpleObject('StatisticsResultSupervisorStats', {
+	fields: (t) => ({
+		total: t.int(),
+		accepted: t.int(),
+		rejected: t.int(),
+		plansAttendance: t.int(),
+		doesNotPlanAttendance: t.int(),
+		acceptedAndPresent: t.int(),
+		acceptedAndNotPresent: t.int(),
+		rejectedAndPresent: t.int(),
+		rejectedAndNotPresent: t.int()
+	})
+});
+
+const postalPaymentProgressType = schemaBuilder.simpleObject(
+	'StatisticsResultPostalPaymentProgress',
+	{
+		fields: (t) => ({
+			maxParticipants: t.int(),
+			postalDone: t.int(),
+			postalPending: t.int(),
+			postalProblem: t.int(),
+			postalPercentage: t.int(),
+			paymentDone: t.int(),
+			paymentPending: t.int(),
+			paymentProblem: t.int(),
+			paymentPercentage: t.int(),
+			bothComplete: t.int(),
+			postalOnlyComplete: t.int(),
+			paymentOnlyComplete: t.int(),
+			neitherComplete: t.int()
+		})
+	}
+);
+
+const papersByTypeStats = schemaBuilder.simpleObject('StatisticsResultPapersByType', {
+	fields: (t) => ({
+		positionPaper: t.int(),
+		workingPaper: t.int(),
+		introductionPaper: t.int()
+	})
+});
+
+const papersByStatusStats = schemaBuilder.simpleObject('StatisticsResultPapersByStatus', {
+	fields: (t) => ({
+		draft: t.int(),
+		submitted: t.int(),
+		changesRequested: t.int(),
+		accepted: t.int()
+	})
+});
+
+const papersByCommitteeStats = schemaBuilder.simpleObject('StatisticsResultPapersByCommittee', {
+	fields: (t) => ({
+		committeeId: t.string(),
+		name: t.string(),
+		abbreviation: t.string(),
+		count: t.int()
+	})
+});
+
+const paperStatsType = schemaBuilder.simpleObject('StatisticsResultPaperStats', {
+	fields: (t) => ({
+		total: t.int(),
+		byType: t.field({ type: papersByTypeStats }),
+		byStatus: t.field({ type: papersByStatusStats }),
+		withReviews: t.int(),
+		withoutReviews: t.int(),
+		byCommittee: t.field({ type: [papersByCommitteeStats] })
+	})
+});
+
+const ageCategoryBreakdown = schemaBuilder.simpleObject('StatisticsResultAgeCategoryBreakdown', {
+	fields: (t) => ({
+		categoryId: t.string(),
+		count: t.int()
+	})
+});
+
+const ageDistributionEntry = schemaBuilder.simpleObject('StatisticsResultAgeDistributionEntry', {
+	fields: (t) => ({
+		age: t.int(),
+		count: t.int(),
+		byCategory: t.field({ type: [ageCategoryBreakdown] })
+	})
+});
+
+/** Which kind of registration an age category groups. */
+const AgeCategoryType = schemaBuilder.enumType('StatisticsResultAgeCategoryType', {
+	values: ['delegationMember', 'singleParticipant'] as const
+});
+
+const ageCategoryStats = schemaBuilder.simpleObject('StatisticsResultAgeCategoryStats', {
+	fields: (t) => ({
+		categoryId: t.string(),
+		categoryName: t.string(),
+		categoryType: t.field({ type: AgeCategoryType }),
+		count: t.int(),
+		average: t.float({ nullable: true })
+	})
+});
+
+const ageCommitteeStats = schemaBuilder.simpleObject('StatisticsResultAgeCommitteeStats', {
+	fields: (t) => ({
+		committeeId: t.string(),
+		committeeName: t.string(),
+		abbreviation: t.string(),
+		count: t.int(),
+		average: t.float({ nullable: true })
+	})
+});
+
+const ageOverall = schemaBuilder.simpleObject('StatisticsResultAgeOverall', {
+	fields: (t) => ({
+		average: t.float({ nullable: true }),
+		total: t.int(),
+		missingBirthdays: t.int()
+	})
+});
+
+const ageStatsType = schemaBuilder.simpleObject('StatisticsResultAge', {
+	fields: (t) => ({
+		overall: t.field({ type: ageOverall }),
+		distribution: t.field({ type: [ageDistributionEntry] }),
+		byCategory: t.field({ type: [ageCategoryStats] }),
+		byCommittee: t.field({ type: [ageCommitteeStats] })
+	})
+});
+
+const countdownsType = schemaBuilder.simpleObject('StatisticsResultCountdowns', {
+	fields: (t) => ({
+		daysUntilConference: t.int(),
+		daysUntilEndRegistration: t.int()
+	})
+});
+
+const registeredDelegations = schemaBuilder.simpleObject('StatisticsResultRegisteredDelegations', {
+	fields: (t) => ({
+		total: t.int(),
+		notApplied: t.int(),
+		applied: t.int()
+	})
+});
+
+const registeredDelegationMembers = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredDelegationMembers',
+	{
+		fields: (t) => ({
+			total: t.int(),
+			notApplied: t.int(),
+			applied: t.int()
+		})
+	}
+);
+
+const registeredSingleParticipantsByRole = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredSingleParticipantsByRole',
+	{
+		fields: (t) => ({
+			role: t.string(),
+			fontAwesomeIcon: t.string({ nullable: true }),
+			total: t.int(),
+			notApplied: t.int(),
+			applied: t.int()
+		})
+	}
+);
+
+const registeredSingleParticipants = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredSingleParticipants',
+	{
+		fields: (t) => ({
+			total: t.int(),
+			notApplied: t.int(),
+			applied: t.int(),
+			byRole: t.field({ type: [registeredSingleParticipantsByRole] })
+		})
+	}
+);
+
+const registeredType = schemaBuilder.simpleObject('StatisticsResultRegistered', {
+	fields: (t) => ({
+		total: t.int(),
+		notApplied: t.int(),
+		applied: t.int(),
+		delegations: t.field({ type: registeredDelegations }),
+		delegationMembers: t.field({ type: registeredDelegationMembers }),
+		singleParticipants: t.field({ type: registeredSingleParticipants }),
+		supervisors: t.int()
+	})
+});
+
+const dietType = schemaBuilder.simpleObject('StatisticsResultRegisteredParticipantDiet', {
+	fields: (t) => ({
+		singleParticipants: t.field({ type: dietVariations }),
+		delegationMembers: t.field({ type: dietVariations }),
+		supervisors: t.field({ type: dietVariations }),
+		teamMembers: t.field({ type: dietVariations })
+	})
+});
+
+const genderType = schemaBuilder.simpleObject('StatisticsResultRegisteredParticipantGender', {
+	fields: (t) => ({
+		singleParticipants: t.field({ type: genderVariations }),
+		delegationMembers: t.field({ type: genderVariations }),
+		supervisors: t.field({ type: genderVariations }),
+		teamMembers: t.field({ type: genderVariations })
+	})
+});
+
+const postalRegistrationStatus = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredParticipantStatusPostalRegistration',
+	{
+		fields: (t) => ({
+			done: t.int(),
+			problem: t.int()
+		})
+	}
+);
+
+const paymentRegistrationStatus = schemaBuilder.simpleObject(
+	'StatisticsResultRegisteredParticipantStatusPayment',
+	{
+		fields: (t) => ({
+			done: t.int(),
+			problem: t.int()
+		})
+	}
+);
+
+const statusType = schemaBuilder.simpleObject('StatisticsResultRegisteredParticipantStatus', {
+	fields: (t) => ({
+		postalStatus: t.field({ type: postalRegistrationStatus }),
+		paymentStatus: t.field({ type: paymentRegistrationStatus }),
+		didAttend: t.int()
+	})
+});
+
+const addressesCount = schemaBuilder.simpleObject('StatisticsResultAddressesCount', {
+	fields: (t) => ({
+		country: t.int(),
+		zipPrefix: t.int(),
+		_all: t.int()
+	})
+});
+
+const addressesType = schemaBuilder.simpleObject('StatisticsResultAddresses', {
+	fields: (t) => ({
+		_count: t.field({ type: addressesCount }),
+		country: t.string({ nullable: true }),
+		zipPrefix: t.string({
+			nullable: true,
+			description: 'The first three digits of the ZIP code; the view groups by area, not by ZIP.'
+		}),
+		lat: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' }),
+		lng: t.float({ nullable: true, description: 'Centre of the area; German ZIPs only.' })
+	})
+});
+
+/** What every block of the statistics resolves from: its view rows are loaded on first use. */
+interface StatisticsSource {
+	conference: { startConference: Date; startAssignment: Date };
+	filter: StatsFilterType;
+	rows: StatisticsRows;
+}
+
+/** The two blocks the participant status view feeds. */
+const participantStatusOfSource = async ({ rows }: StatisticsSource) =>
+	participantStatusOf(await rows.participantStatus());
+
+const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsResult').implement({
+	fields: (t) => ({
+		refreshedAt: t.field({
+			type: 'DateTime',
+			nullable: true,
+			description: 'When the figures were last recomputed; they lag the data by up to that long.',
+			resolve: () => statisticsRefreshedAt()
+		}),
+		countdowns: t.field({
+			type: countdownsType,
+			resolve: ({ conference }) => countdownsOf(conference)
+		}),
+		registered: t.field({
+			type: registeredType,
+			resolve: async ({ rows, filter }) =>
+				registrationStatisticsOf(
+					await rows.people(),
+					await rows.delegations(),
+					await rows.roleApplications(),
+					filter
+				)
+		}),
+		age: t.field({
+			type: ageStatsType,
+			resolve: async ({ rows, filter }) => ageStatisticsOf(await rows.ages(), filter)
+		}),
+		diet: t.field({
+			type: dietType,
+			resolve: async ({ rows, filter }) => dietOf(await rows.people(), filter)
+		}),
+		gender: t.field({
+			type: genderType,
+			resolve: async ({ rows, filter }) => genderOf(await rows.people(), filter)
+		}),
+		status: t.field({
+			type: statusType,
+			resolve: async (source) => (await participantStatusOfSource(source)).status
+		}),
+		addresses: t.field({
+			type: [addressesType],
+			resolve: async ({ rows, filter }) => {
+				const [addresses, coordinates] = await Promise.all([rows.addresses(), zipCoordinates()]);
+				return addressesOf(addresses, filter).map((address) => ({
+					...address,
+					...(address.country === 'DEU' && address.zipPrefix !== null
+						? coordinates.get(address.zipPrefix)
+						: undefined)
+				}));
+			}
+		}),
+		roleBased: t.field({
+			type: roleBasedStats,
+			resolve: async ({ rows, filter }) =>
+				roleBasedOf(await rows.people(), await rows.delegations(), filter)
+		}),
+		committeeFillRates: t.field({
+			type: [committeeFillRate],
+			resolve: async ({ rows }) => committeeFillRatesOf(await rows.committeeFill())
+		}),
+		registrationTimeline: t.field({
+			type: [registrationTimelineEntry],
+			resolve: async ({ rows, filter }) =>
+				registrationTimelineOf(await rows.registrationDays(), filter)
+		}),
+		nationalityDistribution: t.field({
+			type: [nationalityStats],
+			resolve: async ({ rows, filter }) => nationalityDistributionOf(await rows.addresses(), filter)
+		}),
+		schoolStats: t.field({
+			type: [schoolStats],
+			resolve: async ({ rows, filter }) => schoolStatsOf(await rows.delegations(), filter)
+		}),
+		waitingList: t.field({
+			type: waitingListStats,
+			resolve: async ({ rows }) => waitingListOf(await rows.waitingList())
+		}),
+		supervisorStats: t.field({
+			type: supervisorStatsType,
+			resolve: async ({ rows }) => supervisorStatsOf(await rows.people())
+		}),
+		postalPaymentProgress: t.field({
+			type: postalPaymentProgressType,
+			resolve: async (source) => (await participantStatusOfSource(source)).postalPaymentProgress
+		}),
+		paperStats: t.field({
+			type: paperStatsType,
+			resolve: async ({ rows }) => paperStatsOf(await rows.papers())
+		})
+	})
+});
+
+schemaBuilder.queryFields((t) => ({
+	getConferenceStatistics: t.field({
+		type: StatisticsResult,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			filter: t.arg({ type: StatsFilterEnum, defaultValue: 'ALL' })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+
+			const conference = await db.query.conference
+				.findFirst({
+					where: { id: args.conferenceId },
+					columns: { startConference: true, startAssignment: true }
+				})
+				.then(assertFindFirstExists);
+
+			return {
+				conference,
+				filter: args.filter ?? 'ALL',
+				rows: statisticsRowsOf(args.conferenceId)
+			};
+		}
+	})
+}));

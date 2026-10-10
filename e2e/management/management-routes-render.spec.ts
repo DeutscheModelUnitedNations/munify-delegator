@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { test, expect } from '../support/test';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
 // Breadth over depth: most management routes had no coverage at all, and the cheapest regression
@@ -15,9 +15,6 @@ const DEV_SERVER_NOISE =
 const ROUTES = [
 	'',
 	'/participants',
-	'/delegations',
-	'/individuals',
-	'/supervisors',
 	'/waitingList',
 	'/payments',
 	'/stats',
@@ -25,12 +22,18 @@ const ROUTES = [
 	'/plausibility',
 	'/downloads',
 	'/announcement',
-	'/accessFlow',
 	'/postalRegistration',
+	'/checkIn',
 	'/survey',
 	'/configuration',
 	'/configuration/committees',
-	'/seat-planning'
+	'/seat-planning',
+	'/assignment/introduction',
+	'/assignment/sighting',
+	'/assignment/weighting',
+	'/assignment/singles',
+	'/assignment/delegations',
+	'/assignment/finish'
 ];
 
 test('every management route renders for an authorised admin', async ({ page }) => {
@@ -40,17 +43,17 @@ test('every management route renders for an authorised admin', async ({ page }) 
 	page.on('pageerror', (e) => pageErrors.push(e.message));
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID, { roles: ['admin'] }), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management`
 	});
 
 	const failures: string[] = [];
 
 	for (const suffix of ROUTES) {
-		const path = `/management/${E2E_CONFERENCE_ID}${suffix}`;
+		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
 		pageErrors.length = 0;
 
 		const res = await page.goto(path);
-		await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+		await waitForHydration(page);
 
 		if ((res?.status() ?? 500) >= 400) {
 			failures.push(`${path}: HTTP ${res?.status()}`);

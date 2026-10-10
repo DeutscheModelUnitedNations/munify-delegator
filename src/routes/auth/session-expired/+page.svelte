@@ -1,6 +1,7 @@
 <script lang="ts">
 	import questionSvg from '$assets/undraw/question.svg';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 </script>
 
 <main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-8 p-4 py-12">
@@ -22,11 +23,11 @@
 	</div>
 
 	<div class="flex flex-col gap-3 sm:flex-row">
-		<a class="btn btn-primary" href="/">
-			<i class="fa-duotone fa-arrow-right"></i>
+		<a class="btn btn-primary" href={resolve('/')}>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 			{m.sessionExpiredTryAgain()}
 		</a>
-		<a class="btn btn-ghost" href="/">
+		<a class="btn btn-ghost" href={resolve('/')}>
 			{m.backToHome()}
 		</a>
 	</div>

@@ -1,12 +1,20 @@
 <script lang="ts">
-	import { Html, Head, Body, Container, Section, Text, Link, Hr } from 'better-svelte-email';
+	import {
+		Html,
+		Head,
+		Body,
+		Container,
+		Section,
+		Text,
+		Link
+	} from '@better-svelte-email/components';
 
 	interface Props {
 		recipientName: string;
 		paperTitle: string;
 		paperType: string;
 		reviewerName: string;
-		reviewerEmail: string;
+		reviewerEmail?: string;
 		newStatus: string;
 		conferenceTitle: string;
 		paperUrl: string;
@@ -48,8 +56,8 @@
 					<strong>"{paperTitle}"</strong>
 					für die Konferenz
 					<strong>{conferenceTitle}</strong>
-					hat neues Feedback von {reviewerName}
-					(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>) erhalten.
+					hat neues Feedback von {reviewerName}{#if reviewerEmail}
+						(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>){/if} erhalten.
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">

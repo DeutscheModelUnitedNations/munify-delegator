@@ -24,7 +24,7 @@ export function isManagedListName(name: string) {
 	return MANAGED_LIST_PATTERN.test(name);
 }
 
-export function shortenId(id: string) {
+function shortenId(id: string) {
 	return id.slice(0, 6);
 }
 

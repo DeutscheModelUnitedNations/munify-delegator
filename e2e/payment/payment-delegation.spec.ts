@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -8,12 +8,16 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can generate a delegation payment reference covering all members', async ({
 	browser
 }) => {
+	// Two separate sign-ups, each through the full login and profile flow, plus the flow itself
+	// run within a few seconds of the default 30s.
+	test.setTimeout(90_000);
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
 	headPage.on('dialog', (dialog) => dialog.accept());
 
 	const headDelegate = makeTestUser('payment-deleg-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();
@@ -50,10 +54,10 @@ test('a head delegate can generate a delegation payment reference covering all m
 
 	const feeRes = await headPage.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueConference(where: { id: "${conferenceId}" }) { feeAmount } }`
+			query: `query { conference(id: "${conferenceId}") { feeAmount } }`
 		}
 	});
-	const feeAmount = (await feeRes.json())?.data?.findUniqueConference?.feeAmount as number;
+	const feeAmount = (await feeRes.json())?.data?.conference?.feeAmount as number;
 	expect(feeAmount).toBeGreaterThan(0);
 
 	await headPage.goto(`/dashboard/${conferenceId}/payment/delegation`);

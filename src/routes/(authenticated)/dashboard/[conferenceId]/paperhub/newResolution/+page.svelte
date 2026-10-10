@@ -1,28 +1,28 @@
 <script lang="ts">
-	import PaperEditor from '$lib/components/Paper/Editor';
+	import PaperEditor from '$lib/components/paper/editor';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchNewResolutionContext } from './newResolutionContext';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$houdini';
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { cache, graphql } from '$houdini';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
-	import { resolutionStore } from '$lib/components/Paper/Editor/editorStore';
-	import { goto, invalidateAll } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { resolutionStore } from '$lib/components/paper/editor/editorStore';
+	import { untrack } from 'svelte';
 	import {
-		type ResolutionHeaderData,
 		type Resolution,
 		isClauseEmpty,
 		createEmptyResolution
-	} from '$lib/components/Paper/Editor/Resolution';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import { browser } from '$app/environment';
-	import { persisted } from 'svelte-persisted-store';
+	} from '$lib/components/paper/editor/resolution';
 	import { get } from 'svelte/store';
+	import { DraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
+	import DraftRecoveryModal from '$lib/components/paper/draft/DraftRecoveryModal.svelte';
+	import { createPaper } from '../paperSaving';
+	import { paperEntityName, resolutionHeader } from '../paperDisplay';
+	import NewPaperForm from '../NewPaperForm.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// Types for draft persistence
 	interface ResolutionDraft {
@@ -30,14 +30,6 @@
 		content: Resolution;
 		savedAt: number;
 	}
-
-	const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-	// State for recovery modal
-	let showRecoveryModal = $state(false);
-	let savedDraft: ResolutionDraft | null = $state(null);
-	// Key to force editor remount when restoring draft
-	let editorKey = $state(0);
 
 	// Helper to check if resolution has any meaningful content
 	function isResolutionEmpty(resolution: Resolution): boolean {
@@ -54,176 +46,39 @@
 		return preambleEmpty && operativeEmpty;
 	}
 
-	// Helper to format relative time
-	function formatRelativeTime(timestamp: number | undefined): string {
-		if (!timestamp) return '';
-		const seconds = Math.floor((Date.now() - timestamp) / 1000);
-		if (seconds < 60) return m.timeAgoSeconds({ count: seconds });
-		const minutes = Math.floor(seconds / 60);
-		if (minutes < 60) return m.timeAgoMinutes({ count: minutes });
-		const hours = Math.floor(minutes / 60);
-		if (hours < 24) return m.timeAgoHours({ count: hours });
-		const days = Math.floor(hours / 24);
-		return m.timeAgoDays({ count: days });
-	}
+	const currentUser = await getCurrentUser();
 
-	let { data }: { data: PageData } = $props();
+	// The draft, the form and the delegation it names are seeded once; re-reading them while
+	// someone is writing would discard their work.
+	const conferenceId = untrack(() => params.conferenceId);
 
-	// Create persisted store for this conference's resolution draft (only on browser)
-	const draftStore = browser
-		? persisted<ResolutionDraft | null>(`resolutionDraft_${data.conferenceId}`, null)
-		: null;
+	const resetResolution = () => resolutionStore.replaceResolution(createEmptyResolution(''));
 
-	// Check for existing draft SYNCHRONOUSLY before render
-	// This must happen BEFORE child components (like ResolutionEditor) mount
-	if (browser && draftStore) {
-		const storedDraft = get(draftStore);
-		if (storedDraft) {
-			// Check if draft is expired (older than 7 days)
-			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
-				draftStore.set(null);
-				resolutionStore.replaceResolution(createEmptyResolution(''));
-			} else {
-				// Valid draft found - set state for modal
-				savedDraft = storedDraft;
-				showRecoveryModal = true;
-			}
-		} else {
-			// No draft - clear store before editor mounts
-			resolutionStore.replaceResolution(createEmptyResolution(''));
-		}
-	} else {
-		// SSR or no draftStore - clear store
-		resolutionStore.replaceResolution(createEmptyResolution(''));
-	}
-
-	// Recovery functions
-	function restoreDraft() {
-		if (savedDraft) {
-			// Set form data
-			if (savedDraft.agendaItemId) {
-				$formData.agendaItemId = savedDraft.agendaItemId;
-			}
-			// Set content to the resolution store
-			resolutionStore.replaceResolution(savedDraft.content);
-			// Increment key to force editor remount with new content
-			editorKey++;
-		}
-		showRecoveryModal = false;
-	}
-
-	function startFresh() {
-		if (draftStore) {
-			draftStore.set(null);
-		}
-		resolutionStore.replaceResolution(createEmptyResolution(''));
-		// Increment key to force editor remount with cleared content
-		editorKey++;
-		showRecoveryModal = false;
-	}
-
-	// Auto-save: poll the resolution store snapshot on an interval and persist
-	// a JSON copy to localStorage when it changes.
-	let saveInterval: ReturnType<typeof setInterval>;
-	let lastSavedContent: string | null = null;
-
-	// Function to save current content to localStorage
-	function saveCurrentDraft() {
-		if (!browser || !draftStore || showRecoveryModal) return;
-
-		// Read form data for current agenda item
-		const currentFormData = get(form.form);
-
-		// Read the current snapshot from the resolution store
-		const rawContent = resolutionStore.snapshot;
-
+	const draft = new DraftAutosave<ResolutionDraft, Resolution>(`resolutionDraft_${conferenceId}`, {
 		// Skip saving if resolution has no meaningful content
-		if (isResolutionEmpty(rawContent)) {
-			return;
-		}
-
-		// Stringify to create a plain JSON snapshot
-		let contentString: string;
-		try {
-			contentString = JSON.stringify(rawContent);
-		} catch (e) {
-			return;
-		}
-
-		// Skip if content hasn't changed
-		if (contentString === lastSavedContent) {
-			return;
-		}
-		lastSavedContent = contentString;
-
-		draftStore.set({
-			agendaItemId: currentFormData.agendaItemId,
-			content: JSON.parse(contentString),
-			savedAt: Date.now()
-		});
-	}
-
-	// Set up auto-save interval when component mounts
-	onMount(() => {
-		if (!browser || !draftStore) return;
-
-		// Poll every second for changes
-		saveInterval = setInterval(() => {
-			if (!showRecoveryModal) {
-				saveCurrentDraft();
+		readContent: () =>
+			isResolutionEmpty(resolutionStore.snapshot) ? undefined : resolutionStore.snapshot,
+		toDraft: (content, savedAt) => ({
+			agendaItemId: get(form.form).agendaItemId,
+			content,
+			savedAt
+		}),
+		applyDraft: (saved) => {
+			if (saved.agendaItemId) {
+				$formData.agendaItemId = saved.agendaItemId;
 			}
-		}, 1000);
-
-		return () => {
-			if (saveInterval) clearInterval(saveInterval);
-		};
+			resolutionStore.replaceResolution(saved.content);
+		},
+		resetEditor: resetResolution
 	});
 
-	// Safety net: save on page unload
-	$effect(() => {
-		if (!browser || !draftStore) return;
+	const context = await fetchNewResolutionContext(conferenceId, currentUser.sub);
+	const delegationMember = $derived(context.delegationMember);
+	let delegation = $derived(delegationMember.delegation);
+	let committee = $derived(delegationMember.assignedCommittee);
+	let conference = $derived(context.conference);
 
-		const handleBeforeUnload = () => {
-			saveCurrentDraft();
-		};
-
-		window.addEventListener('beforeunload', handleBeforeUnload);
-		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-	});
-
-	let delegationMember = $derived(
-		data.getResolutionDelegationMemberQuery?.data.findUniqueDelegationMember
-	);
-	let delegation = $derived(delegationMember?.delegation);
-	let committee = $derived(delegationMember?.assignedCommittee);
-	let conference = $derived(data.conferenceQueryData?.findUniqueConference);
-
-	const createPaperMutation = graphql(`
-		mutation CreateResolutionPaperMutation(
-			$conferenceId: String!
-			$userId: String!
-			$delegationId: String!
-			$content: Json!
-			$agendaItemId: String
-			$status: PaperStatus
-		) {
-			createOnePaper(
-				data: {
-					conferenceId: $conferenceId
-					authorId: $userId
-					delegationId: $delegationId
-					type: WORKING_PAPER
-					content: $content
-					status: $status
-					agendaItemId: $agendaItemId
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	let form = superForm(data.form, {
+	let form = superForm(context.form, {
 		onSubmit: (input) => {
 			// We don't want to send a POST request to the server, instead we are handling the GraphQL mutation locally
 			input.cancel();
@@ -241,33 +96,16 @@
 	});
 
 	// Resolution header data for working papers
-	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
-		const nationName = delegation?.assignedNation
-			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-			: undefined;
-		const nsaName = delegation?.assignedNonStateActor?.name;
+	let resolutionHeaderData = $derived(
+		resolutionHeader(conference, {
+			committee,
+			topic: committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)?.title,
+			authoringDelegation: paperEntityName(delegation),
+			documentNumber: 'WP/DRAFT'
+		})
+	);
 
-		// Get the selected agenda item title
-		const selectedAgendaItem = $formData.agendaItemId
-			? committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)
-			: undefined;
-
-		return {
-			conferenceName: conference?.title ?? 'Model UN',
-			conferenceTitle: conference?.longTitle ?? conference?.title ?? 'Model United Nations',
-			committeeAbbreviation: committee?.abbreviation,
-			committeeFullName: committee?.name,
-			committeeResolutionHeadline: committee?.resolutionHeadline ?? undefined,
-			documentNumber: `WP/DRAFT`,
-			topic: selectedAgendaItem?.title,
-			authoringDelegation: nationName ?? nsaName,
-			conferenceEmblem: conference?.emblemDataURL ?? undefined
-		};
-	});
-
-	const saveFile = async (options: { submit?: boolean } = {}) => {
-		const { submit = false } = options;
-
+	const saveFile = async (submit: boolean) => {
 		if (!$formData.agendaItemId) {
 			toast.error(m.paperAgendaItemRequired());
 			return;
@@ -282,80 +120,44 @@
 			return;
 		}
 
-		const promise = createPaperMutation.mutate({
-			conferenceId: data.conferenceId,
-			userId: data.user.sub,
-			delegationId: delegation?.id,
-			content,
-			agendaItemId: $formData.agendaItemId,
-			status: submit ? 'SUBMITTED' : 'DRAFT'
-		});
-		toast.promise(promise, {
-			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
-			success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
-			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
-		});
-
-		const response = await promise;
-
-		cache.markStale();
-		await invalidateAll();
-
-		if (response?.data?.createOnePaper?.id) {
-			// Clear store so next paper creation starts fresh
-			resolutionStore.replaceResolution(createEmptyResolution(''));
-			// Clear localStorage draft on successful submission
-			if (draftStore) {
-				draftStore.set(null);
+		await createPaper(
+			{
+				conferenceId: params.conferenceId,
+				authorId: currentUser.sub,
+				delegationId: delegation.id,
+				type: 'WORKING_PAPER',
+				content,
+				agendaItemId: $formData.agendaItemId
+			},
+			submit,
+			() => {
+				// Clear store so next paper creation starts fresh
+				resetResolution();
+				// Clear localStorage draft on successful submission
+				draft.clear();
 			}
-			goto(`/dashboard/${data.conferenceId}/paperhub`);
-		}
+		);
 	};
 </script>
 
-<!-- Draft Recovery Modal -->
-<Modal bind:open={showRecoveryModal} title={m.paperDraftRecoveryTitle()}>
-	<p class="mb-2">{m.paperDraftRecoveryMessage()}</p>
-	<p class="text-sm text-base-content/70">
-		{m.paperDraftSavedAgo({ time: formatRelativeTime(savedDraft?.savedAt) })}
-	</p>
-	{#snippet action()}
-		<button class="btn" onclick={startFresh}>{m.paperStartFresh()}</button>
-		<button class="btn btn-primary" onclick={restoreDraft}>{m.paperRestoreDraft()}</button>
+<DraftRecoveryModal {draft} />
+
+<NewPaperForm title={m.paperTypeWorkingPaper()} {form} onSave={saveFile}>
+	{#snippet details()}
+		<FormTextInput {form} name="delegation" disabled label={m.delegation()} />
+
+		{#if $formData.committee}
+			<FormTextInput {form} name="committee" disabled label={m.committee()} />
+		{/if}
+		<FormSelect name="agendaItemId" label={m.paperAgendaItem()} {form} options={agendaItems} />
 	{/snippet}
-</Modal>
-
-<div class="flex flex-col gap-2 w-full">
-	<h2 class="text-2xl font-bold">{m.paperTypeWorkingPaper()}</h2>
-
-	<Form {form} class="w-full flex flex-col xl:flex-row-reverse gap-4" showSubmitButton={false}>
-		<div class="flex flex-col gap-4 xl:w-1/3">
-			<FormFieldset title={m.paperDetails()}>
-				<FormTextInput {form} name="delegation" disabled label={m.delegation()} />
-
-				{#if $formData.committee}
-					<FormTextInput {form} name="committee" disabled label={m.committee()} />
-				{/if}
-				<FormSelect name="agendaItemId" label={m.paperAgendaItem()} {form} options={agendaItems} />
-			</FormFieldset>
-
-			<div class="join join-vertical w-full">
-				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => saveFile()}>
-					<i class="fa-solid fa-pencil mr-2"></i>
-					{m.paperSaveDraft()}
-				</button>
-				<button class="btn btn-primary btn-lg join-item" onclick={() => saveFile({ submit: true })}>
-					<i class="fa-solid fa-paper-plane mr-2"></i>
-					{m.paperSubmit()}
-				</button>
-			</div>
-		</div>
-		{#key editorKey}
+	{#snippet editor()}
+		{#key draft.editorKey}
 			<PaperEditor.Resolution.ResolutionEditor
 				committeeName={committee?.name ?? 'Committee'}
 				editable
 				headerData={resolutionHeaderData}
 			/>
 		{/key}
-	</Form>
-</div>
+	{/snippet}
+</NewPaperForm>

@@ -1,16 +1,22 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { resolve } from '$app/paths';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
-	import formatNames from '$lib/services/formatNames';
+	import { fetchCommitteeAssignment } from './committeeAssignment';
+	import formatNames from '$lib/helpers/formatNames';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
-	let assignmentData = $derived(data.DelegationAssignmentDataQuery);
-	let members = $derived($assignmentData.data?.findUniqueDelegationMember?.delegation.members);
-	let delegation = $derived($assignmentData.data?.findUniqueDelegationMember?.delegation);
+	let { params }: PageProps = $props();
+
+	const currentUser = $derived(await getCurrentUser());
+
+	const assignment = $derived(await fetchCommitteeAssignment(params.conferenceId, currentUser.sub));
+	const delegationMember = $derived(assignment.delegationMember);
+	let members = $derived(delegationMember?.delegation.members);
+	let delegation = $derived(delegationMember?.delegation);
 	let committees = $derived(
-		$assignmentData.data?.findManyCommittees.filter((c) =>
+		assignment.committees.filter((c) =>
 			c.nations.some((n) => n.alpha3Code === delegation?.assignedNation?.alpha3Code)
 		)
 	);
@@ -35,23 +41,22 @@
 		}
 	});
 
-	const assignCommitteeMutation = graphql(`
-		mutation assignCommitteesToDelegationMembers(
-			$data: [updateManyDelegationMemberInputTypeArrayValue!]!
-		) {
-			assignCommitteesToDelegationMembers(assignments: $data) {
-				id
-				assignedCommittee {
-					id
-				}
-			}
-		}
-	`);
+	type MemberWithCommittee = (typeof membersWithCommittees)[number];
+	type Committee = (typeof committees)[number];
+
+	const unassignedMembers = $derived(membersWithCommittees.filter((x) => !x.alreadyAssigned));
+
+	/** Whether every seat of `committee` is taken, so it cannot be picked for another member. */
+	const isCommitteeFull = (committee: Committee, memberId: string | undefined) =>
+		membersWithCommittees.some(
+			(x) =>
+				x.delegationMemberId !== memberId &&
+				committee.numOfSeatsPerDelegation <=
+					membersWithCommittees.filter((y) => y.committeeId === committee.id).length
+		);
 
 	const sendCommitteeAssignment = async () => {
 		// Only validate unassigned members - already assigned ones are locked
-		const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned);
-
 		if (unassignedMembers.some((x) => !x.committeeId)) {
 			alert(m.pleaseAssignAllMembers());
 			return;
@@ -63,24 +68,47 @@
 		}
 
 		// Only send unassigned members to the mutation
-		const req = await assignCommitteeMutation.mutate({
-			data: unassignedMembers.map((x) => ({
-				delegationMemberId: x.delegationMemberId,
-				committeeId: x.committeeId as string
-			}))
+		const assigned = await client.mutate.assignCommitteesToDelegationMembers({
+			__args: {
+				conferenceId: params.conferenceId ?? '',
+				assignments: unassignedMembers.map((member) => ({
+					delegationMemberId: member.delegationMemberId,
+					committeeId: member.committeeId ?? ''
+				}))
+			},
+			id: true,
+			assignedCommittee: { id: true }
 		});
-		if (!req.data?.assignCommitteesToDelegationMembers) {
+		if (assigned.length === 0) {
 			alert(m.failedToAssignCommittees());
 			throw new Error('Failed to assign committees');
 		}
-		invalidateAll();
 	};
 </script>
 
+{#snippet committeeCell(memberWithCommittee: MemberWithCommittee, memberId: string | undefined)}
+	{#if memberWithCommittee.alreadyAssigned}
+		{@const assignedCommittee = committees?.find((c) => c.id === memberWithCommittee.committeeId)}
+		<div class="flex items-center gap-2">
+			<span class="badge badge-success">{assignedCommittee?.abbreviation}</span>
+			<span class="text-xs text-gray-500">({m.alreadyAssigned()})</span>
+		</div>
+	{:else}
+		<select class="select" bind:value={memberWithCommittee.committeeId}>
+			<option value="" selected>{m.pleaseSelect()}</option>
+			{#each committees ?? [] as committee (committee.id)}
+				<option value={committee.id} disabled={isCommitteeFull(committee, memberId)}>
+					{committee.abbreviation}
+				</option>
+			{/each}
+		</select>
+	{/if}
+{/snippet}
+
 <div class="flex w-full flex-col gap-4">
 	<div class="flex items-center gap-4">
-		<a class="btn btn-square" aria-label="Back" href=".">
-			<i class="fa-duotone fa-arrow-left text-xl"></i>
+		<a class="btn btn-square" aria-label="Back" href={resolve(`/dashboard/${params.conferenceId}`)}>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-left text-xl"></i>
 		</a>
 		<h1 class="text-2xl font-bold">{m.committeeAssignment()}</h1>
 	</div>
@@ -97,7 +125,7 @@
 	<section class="flex flex-col gap-4">
 		<h3 class="font-bold">{m.theFollowingCommitteesAreAssignable()}:</h3>
 		<div class="flex flex-col gap-1">
-			{#each committees ?? [] as committee}
+			{#each committees ?? [] as committee (committee.id)}
 				<div class="badge badge-primary badge-lg">
 					<span class="font-bold">{committee.abbreviation}</span
 					>&emsp;{committee.name}&emsp;({committee.numOfSeatsPerDelegation}
@@ -114,45 +142,18 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each membersWithCommittees ?? [] as memberWithCommittee}
+				{#each membersWithCommittees ?? [] as memberWithCommittee (memberWithCommittee.delegationMemberId)}
 					{@const member = members?.find((me) => me.id === memberWithCommittee.delegationMemberId)}
 					<tr>
-						<td>{formatNames(member?.user.given_name, member?.user.family_name)}</td>
+						<td>{formatNames(member?.user.givenName, member?.user.familyName)}</td>
 						<td>
-							{#if memberWithCommittee.alreadyAssigned}
-								{@const assignedCommittee = committees?.find(
-									(c) => c.id === memberWithCommittee.committeeId
-								)}
-								<div class="flex items-center gap-2">
-									<span class="badge badge-success">{assignedCommittee?.abbreviation}</span>
-									<span class="text-xs text-gray-500">({m.alreadyAssigned()})</span>
-								</div>
-							{:else}
-								<select class="select" bind:value={memberWithCommittee.committeeId}>
-									<option value="" selected>{m.pleaseSelect()}</option>
-									{#each committees ?? [] as committee}
-										<option
-											value={committee.id}
-											disabled={membersWithCommittees.some(
-												(x) =>
-													x.delegationMemberId !== member?.id &&
-													committee.numOfSeatsPerDelegation <=
-														membersWithCommittees.filter((y) => y.committeeId === committee.id)
-															.length
-											)}
-										>
-											{committee.abbreviation}
-										</option>
-									{/each}
-								</select>
-							{/if}
+							{@render committeeCell(memberWithCommittee, member?.id)}
 						</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
-		{#if $assignmentData.data?.findUniqueDelegationMember?.isHeadDelegate}
-			{@const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned)}
+		{#if delegationMember?.isHeadDelegate}
 			{#if unassignedMembers.length > 0}
 				<button
 					class="btn btn-primary"

@@ -35,7 +35,11 @@
  * const y: any = {}; y.self = y;
  * deepEquals(x, y); // true
  */
-export default function deepEquals(a: any, b: any, seen = new WeakMap<object, object>()) {
+export default function deepEquals(
+	a: unknown,
+	b: unknown,
+	seen = new WeakMap<object, object>()
+): boolean {
 	if (Object.is(a, b)) return true; // handles -0/+0 and NaN
 
 	// If types differ, or one is null and the other not, bail out
@@ -44,51 +48,38 @@ export default function deepEquals(a: any, b: any, seen = new WeakMap<object, ob
 	}
 
 	// Cycle detection
-	const mapped = seen.get(a as object);
+	const mapped = seen.get(a);
 	if (mapped && mapped === b) return true;
-	seen.set(a as object, b as object);
+	seen.set(a, b);
 
 	// Handle Array vs non-Array
 	const aIsArray = Array.isArray(a);
 	const bIsArray = Array.isArray(b);
 	if (aIsArray !== bIsArray) return false;
 
-	if (aIsArray && bIsArray) {
-		// For arrays, keep semantics: positions matter; undefined entries are compared normally
-		if (a.length !== b.length) return false;
-		for (let i = 0; i < a.length; i++) {
-			if (!deepEquals(a[i], b[i], seen)) return false;
-		}
-		return true;
-	}
+	if (Array.isArray(a) && Array.isArray(b)) return arraysEqual(a, b, seen);
+	return objectsEqual(a, b, seen);
+}
 
-	// Compare plain objects, but ignore keys whose value is undefined on either side
+/** Positions matter; undefined entries are compared normally. */
+function arraysEqual(a: unknown[], b: unknown[], seen: WeakMap<object, object>) {
+	if (a.length !== b.length) return false;
+	return a.every((entry, i) => deepEquals(entry, b[i], seen));
+}
 
-	// Build key sets excluding keys with undefined values
-	const keysA = Object.keys(a).filter((k) => a[k] !== undefined);
-	const keysB = Object.keys(b).filter((k) => b[k] !== undefined);
+/** Compares plain objects, but ignores keys whose value is undefined on either side. */
+function objectsEqual(a: object, b: object, seen: WeakMap<object, object>) {
+	const definedEntries = (value: object) =>
+		new Map(Object.entries(value).filter(([, entry]) => entry !== undefined));
+	const entriesA = definedEntries(a);
+	const entriesB = definedEntries(b);
 
-	// Quick check: same number of meaningful keys
-	if (keysA.length !== keysB.length) return false;
+	// Same number of meaningful keys, so a key set contained in b's is the same key set
+	if (entriesA.size !== entriesB.size) return false;
 
-	// Ensure same key set (ignoring undefined-valued keys)
-	for (const k of keysA) {
-		if (!Object.prototype.hasOwnProperty.call(b, k) || b[k] === undefined) {
-			// If b doesn't have k, but a[k] is defined (we filtered undefined), then not equal
-			return false;
-		}
-	}
-
-	// Deep compare values for the filtered keys
-	for (const k of keysA) {
-		if (!deepEquals(a[k], b[k], seen)) return false;
-	}
-
-	// Also ensure b doesn't have extra defined keys not in a
-	for (const k of keysB) {
-		if (!Object.prototype.hasOwnProperty.call(a, k) || a[k] === undefined) {
-			return false;
-		}
+	for (const [k, value] of entriesA) {
+		if (!entriesB.has(k)) return false;
+		if (!deepEquals(value, entriesB.get(k), seen)) return false;
 	}
 
 	return true;

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
 import { E2E_CONFERENCE_ID } from '../seed/seed';
 
@@ -9,22 +9,13 @@ const m_noAccess = /hier hast du keinen zugriff|you don't have access to this pa
 // the inverse - that a plain participant is refused - which is what actually guards the
 // management area. Without them a broken ability rule looks exactly like a passing suite.
 
-const MANAGEMENT_ROUTES = [
-	'',
-	'/participants',
-	'/delegations',
-	'/configuration',
-	'/payments',
-	'/stats',
-	'/supervisors',
-	'/individuals'
-];
+const MANAGEMENT_ROUTES = ['', '/participants', '/configuration', '/payments', '/stats'];
 
 test('a plain participant is refused every management route for a conference', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/login?next=/dashboard' });
 
 	for (const suffix of MANAGEMENT_ROUTES) {
-		const path = `/management/${E2E_CONFERENCE_ID}${suffix}`;
+		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
 		const res = await page.goto(path);
 
 		// Routes that render server-side fail the layout guard with a 403 status. Routes that opt
@@ -40,18 +31,18 @@ test('a plain participant is refused every management route for a conference', a
 });
 
 test('a plain participant cannot read other participants through the API', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-api-outsider'), { startUrl: '/dashboard' });
+	await loginAs(page, makeTestUser('authz-api-outsider'), { startUrl: '/login?next=/dashboard' });
 
 	// The participants table is the management view this user was just refused; the resolver
 	// behind it must refuse too, otherwise the route guard is the only thing protecting the data.
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyConferenceParticipantStatuss(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" } }) { id } }`
+			query: `query { conferenceParticipantStatuses(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" } }) { id } }`
 		}
 	});
 	const json = await res.json();
 
-	const rows = json?.data?.findManyConferenceParticipantStatuss;
+	const rows = json?.data?.conferenceParticipantStatuses;
 	// Either the resolver errors, or it scopes the result to nothing this user may see.
 	expect(json.errors !== undefined || (Array.isArray(rows) && rows.length === 0)).toBe(true);
 });

@@ -29,7 +29,7 @@
 	$effect(() => {
 		for (const s of status) {
 			if (s.hotkey) {
-				hotkeys(s.hotkey ?? '', (event, handler) => {
+				hotkeys(s.hotkey ?? '', (event) => {
 					event.preventDefault();
 					btnClick(s.value);
 				});
@@ -46,13 +46,13 @@
 	});
 </script>
 
-<div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
+<div class="card flex flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-{faIcon.replace('fa-', '')} mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-{faIcon.replace('fa-', '')} mr-2"></i>
 		{title}
 	</h3>
 	<div class="join w-full">
-		{#each status as { value, faIcon, color, hotkey }}
+		{#each status as { value, faIcon, color, hotkey } (value)}
 			<button
 				class="btn {activeStatus === value && `${color}`} join-item flex-1"
 				aria-label={`${value}`}

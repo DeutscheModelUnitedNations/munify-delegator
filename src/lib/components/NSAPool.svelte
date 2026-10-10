@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { Row } from '$api/db/rows';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 
-	type NonStateActorPool = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConference']
-	>['nonStateActors'];
+	type NonStateActorPool = Pick<
+		Row<'nonStateActor'>,
+		'id' | 'name' | 'description' | 'seatAmount' | 'fontAwesomeIcon'
+	>[];
 
 	interface Props {
 		nonStateActorPool: NonStateActorPool;
@@ -19,14 +20,14 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th><i class="fa-duotone fa-megaphone"></i></th>
-				<th><i class="fa-duotone fa-info"></i></th>
-				<th class="text-center"><i class="fa-duotone fa-users"></i></th>
+				<th><i class="fa-sharp-duotone fa-solid fa-megaphone"></i></th>
+				<th><i class="fa-sharp-duotone fa-solid fa-info"></i></th>
+				<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
 				{#if actionCell}<th></th>{/if}
 			</tr>
 		</thead>
 		<tbody>
-			{#each nonStateActorPool.sort((a, b) => a.name.localeCompare(b.name)) as nsa}
+			{#each nonStateActorPool.sort((a, b) => a.name.localeCompare(b.name)) as nsa (nsa.id)}
 				<tr>
 					<td class="align-top md:align-middle">
 						<div class="flex items-center gap-4">

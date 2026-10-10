@@ -144,7 +144,7 @@ export async function executeActions(
  * Blocklisted subscribers are kept on purpose. They record that an address bounced or asked not
  * to be mailed at all; deleted, the next sync would create them afresh and mail them again.
  */
-export const GARBAGE_QUERY =
+const GARBAGE_QUERY =
 	"subscribers.status != 'blocklisted' AND NOT EXISTS " +
 	'(SELECT 1 FROM subscriber_lists sl WHERE sl.subscriber_id = subscribers.id)';
 

@@ -1,28 +1,31 @@
 <script lang="ts">
-	import dmunLogo from '$assets/logo/dmun_logo.png';
+	import dmunLogo from '$assets/logo/dmun-lang.svg';
+	import dmunLogoDark from '$assets/logo/dmun-lang-darkmode.svg';
 	import { configPublic } from '$config/public';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 </script>
 
 <div class="w-full p-4 print:hidden">
 	<footer
-		class="footer footer-center footer-horizontal bg-base-200 text-base-content mt-3 flex-col rounded-xl p-10"
+		class="footer footer-center footer-horizontal bg-base-100 text-base-content rounded-box mt-3 flex flex-col p-10"
 	>
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
-			<a class="link-hover link" href="/">{m.home()}</a>
-			<a class="link-hover link" href="/registration">{m.registration()}</a>
-			<a class="link-hover link" href="/dashboard">{m.dashboard()}</a>
-			<a class="link-hover link" href="/my-account">{m.myAccount()}</a>
-			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
-				>{@html m.imprintAndPrivacy()}</a
-			>
+			<a class="link-hover link" href={resolve('/')}>{m.home()}</a>
+			<a class="link-hover link" href="https://dmun.de/legal" target="_blank">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
+				{@html m.imprintAndPrivacy()}
+			</a>
 		</nav>
 		<LanguageSwitcher />
 		<nav>
 			<div class="grid grid-flow-col gap-4" id="socials">
 				<a href="https://www.instagram.com/dmun_ev/" aria-label="Instagram">
 					<i class="fa-brands fa-instagram text-3xl"></i>
+				</a>
+				<a href="https://www.youtube.com/user/DeutscheMUNeV" aria-label="YouTube">
+					<i class="fa-brands fa-youtube text-3xl"></i>
 				</a>
 				<a href="https://github.com/deutschemodelunitednations" aria-label="GitHub">
 					<i class="fa-brands fa-github text-3xl"></i>
@@ -32,7 +35,16 @@
 		<aside>
 			<p>{m.aServiceBy()}</p>
 			<a href="https://dmun.de" target="_blank" class="transition-all duration-300 hover:scale-105">
-				<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:hue-rotate-180 dark:invert" />
+				<img
+					src={dmunLogo}
+					alt="DMUN – Deutsche Model United Nations e.V."
+					class="w-60 dark:hidden"
+				/>
+				<img
+					src={dmunLogoDark}
+					alt="DMUN – Deutsche Model United Nations e.V."
+					class="hidden w-60 dark:block"
+				/>
 			</a>
 			<p>
 				Copyright © {new Date().getFullYear() !== 2024 ? '2024-' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}

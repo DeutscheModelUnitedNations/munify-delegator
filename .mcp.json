@@ -8,6 +8,14 @@
 			"args": ["-y", "mcp-remote", "https://gitmcp.io/saadeghi/daisyui"],
 			"command": "bunx"
 		},
+		"drizzle-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/drizzle-team/drizzle-orm"],
+			"command": "bunx"
+		},
+		"fallow": {
+			"args": ["fallow-mcp"],
+			"command": "bunx"
+		},
 		"github": {
 			"args": ["-y", "@anthropic-ai/github-mcp-server"],
 			"command": "bunx",
@@ -15,20 +23,12 @@
 				"GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
 			}
 		},
-		"houdini-github": {
-			"args": ["-y", "mcp-remote", "https://gitmcp.io/HoudiniGraphql/houdini"],
-			"command": "bunx"
-		},
 		"memory": {
 			"args": ["-y", "@modelcontextprotocol/server-memory"],
 			"command": "bunx"
 		},
-		"pothos-github": {
-			"args": ["-y", "mcp-remote", "https://gitmcp.io/hayes/pothos"],
-			"command": "bunx"
-		},
-		"prisma": {
-			"args": ["-y", "prisma", "mcp"],
+		"rumble-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/m1212e/rumble"],
 			"command": "bunx"
 		},
 		"sequential-thinking": {

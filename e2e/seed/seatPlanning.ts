@@ -6,12 +6,14 @@
  * Netherlands. The Netherlands' delegation has a member assigned to GV, which locks that seat, and
  * one NSA has a delegation assigned, which blocks deleting it.
  */
-import { ConferenceState, type PrismaClient } from '@prisma/client';
-import { makeSeedConference } from '../../prisma/seed/dev/conference';
-import { makeSeedDelegation } from '../../prisma/seed/dev/delegation';
-import { makeSeedDelegationMember } from '../../prisma/seed/dev/delegationMember';
-import { makeSeedTeamMember } from '../../prisma/seed/dev/teamMember';
-import { makeSeedUser } from '../../prisma/seed/dev/user';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { and, eq, ne, notInArray } from 'drizzle-orm';
+import * as schema from '../../src/api/db/schema';
+import { makeSeedConference } from '../../src/api/db/seed-data/conference';
+import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
+import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
+import { makeSeedUser } from '../../src/api/db/seed-data/user';
+import { upsertTeamMember } from './teamMember';
 
 export const E2E_SEAT_CONFERENCE_ID = 'e2e00000conference0000003';
 export const E2E_SEAT_GV_ID = 'e2e00000seatcommittee00001';
@@ -22,39 +24,44 @@ export const E2E_SEAT_PM_ID = 'e2e-seat-pm';
 export const E2E_SEAT_CONTENT_LEAD_ID = 'e2e-seat-content-lead';
 export const E2E_SEAT_PARTICIPANT_CARE_ID = 'e2e-seat-pc';
 export const E2E_SEAT_DELEGATE_ID = 'e2e-seat-delegate';
-export const E2E_SEAT_DELEGATE_FAMILY_NAME = 'E2ESeatDelegate';
+export const E2E_SEAT_DELEGATE_FAMILY_NAME = 'ETwoESeatDelegate';
 
 const NATIONS = { deu: 'de', fra: 'fr', nld: 'nl', ita: 'it' };
 const LOCKED_DELEGATION_ID = 'e2e00000seatdelegation0001';
 const NSA_DELEGATION_ID = 'e2e00000seatdelegation0002';
 
-export async function seedSeatPlanning(db: PrismaClient) {
+export async function seedSeatPlanning(db: NodePgDatabase) {
 	const conference = {
-		...makeSeedConference({ state: ConferenceState.PRE }),
+		...makeSeedConference({ state: 'PRE' }),
 		id: E2E_SEAT_CONFERENCE_ID,
 		title: 'E2E Seat Planning Conference'
 	};
-	await db.conference.upsert({
-		where: { id: conference.id },
-		update: conference,
-		create: conference
-	});
+	await db
+		.insert(schema.conference)
+		.values(conference)
+		.onConflictDoUpdate({ target: schema.conference.id, set: conference });
 
 	for (const [alpha3Code, alpha2Code] of Object.entries(NATIONS)) {
-		await db.nation.upsert({
-			where: { alpha3Code },
-			update: {},
-			create: { alpha3Code, alpha2Code }
-		});
+		await db.insert(schema.nation).values({ alpha3Code, alpha2Code }).onConflictDoNothing();
 	}
 
 	// committees and NSAs a previous run created
-	await db.committee.deleteMany({
-		where: { conferenceId: conference.id, id: { notIn: [E2E_SEAT_GV_ID, E2E_SEAT_SR_ID] } }
-	});
-	await db.nonStateActor.deleteMany({
-		where: { conferenceId: conference.id, id: { not: E2E_SEAT_ASSIGNED_NSA_ID } }
-	});
+	await db
+		.delete(schema.committee)
+		.where(
+			and(
+				eq(schema.committee.conferenceId, conference.id),
+				notInArray(schema.committee.id, [E2E_SEAT_GV_ID, E2E_SEAT_SR_ID])
+			)
+		);
+	await db
+		.delete(schema.nonStateActor)
+		.where(
+			and(
+				eq(schema.nonStateActor.conferenceId, conference.id),
+				ne(schema.nonStateActor.id, E2E_SEAT_ASSIGNED_NSA_ID)
+			)
+		);
 
 	const committees = [
 		{
@@ -66,7 +73,8 @@ export async function seedSeatPlanning(db: PrismaClient) {
 		{ id: E2E_SEAT_SR_ID, name: 'Sicherheitsrat', abbreviation: 'SPSR', nations: ['nld'] }
 	];
 	for (const [index, { id, name, abbreviation, nations }] of committees.entries()) {
-		const data = {
+		const committee = {
+			id,
 			conferenceId: conference.id,
 			name,
 			abbreviation,
@@ -74,17 +82,21 @@ export async function seedSeatPlanning(db: PrismaClient) {
 			regionalBaseline: 'UN_MEMBERS' as const,
 			regionalBaselineTargets: [],
 			// fixed order of the matrix columns
-			createdAt: new Date(2026, 0, 1 + index),
-			nations: { set: nations.map((alpha3Code) => ({ alpha3Code })) }
+			createdAt: new Date(2026, 0, 1 + index)
 		};
-		await db.committee.upsert({
-			where: { id },
-			update: data,
-			create: { ...data, id, nations: { connect: data.nations.set } }
-		});
+		await db
+			.insert(schema.committee)
+			.values(committee)
+			.onConflictDoUpdate({ target: schema.committee.id, set: committee });
+
+		await db.delete(schema.committeeToNation).where(eq(schema.committeeToNation.a, id));
+		await db
+			.insert(schema.committeeToNation)
+			.values(nations.map((alpha3Code) => ({ a: id, b: alpha3Code })));
 	}
 
 	const nsa = {
+		id: E2E_SEAT_ASSIGNED_NSA_ID,
 		conferenceId: conference.id,
 		name: E2E_SEAT_ASSIGNED_NSA_NAME,
 		abbreviation: 'E2EN',
@@ -92,24 +104,36 @@ export async function seedSeatPlanning(db: PrismaClient) {
 		fontAwesomeIcon: 'fa-dove',
 		seatAmount: 2
 	};
-	await db.nonStateActor.upsert({
-		where: { id: E2E_SEAT_ASSIGNED_NSA_ID },
-		update: nsa,
-		create: { ...nsa, id: E2E_SEAT_ASSIGNED_NSA_ID }
-	});
+	await db
+		.insert(schema.nonStateActor)
+		.values(nsa)
+		.onConflictDoUpdate({ target: schema.nonStateActor.id, set: nsa });
 
-	for (const id of [E2E_SEAT_PM_ID, E2E_SEAT_CONTENT_LEAD_ID, E2E_SEAT_PARTICIPANT_CARE_ID]) {
-		const user = { ...makeSeedUser(), id, email: `${id}@e2e.test` };
-		await db.user.upsert({ where: { id }, update: user, create: user });
+	const users = [
+		...[E2E_SEAT_PM_ID, E2E_SEAT_CONTENT_LEAD_ID, E2E_SEAT_PARTICIPANT_CARE_ID].map((id) => ({
+			...makeSeedUser(),
+			id,
+			email: `${id}@e2e.test`,
+			// the my-account form schema has to be satisfied, or every login lands on /my-account
+			// (see upsertActorUser in seed.ts)
+			country: 'DEU',
+			phone: '+4917612345678',
+			emergencyContacts: 'Emergency contact: +49 176 12345678'
+		})),
+		{
+			...makeSeedUser(),
+			id: E2E_SEAT_DELEGATE_ID,
+			email: `${E2E_SEAT_DELEGATE_ID}@e2e.test`,
+			givenName: 'Seat',
+			familyName: E2E_SEAT_DELEGATE_FAMILY_NAME
+		}
+	];
+	for (const user of users) {
+		await db
+			.insert(schema.user)
+			.values(user)
+			.onConflictDoUpdate({ target: schema.user.id, set: user });
 	}
-	const delegate = {
-		...makeSeedUser(),
-		id: E2E_SEAT_DELEGATE_ID,
-		email: `${E2E_SEAT_DELEGATE_ID}@e2e.test`,
-		given_name: 'Seat',
-		family_name: E2E_SEAT_DELEGATE_FAMILY_NAME
-	};
-	await db.user.upsert({ where: { id: delegate.id }, update: delegate, create: delegate });
 
 	const teamMembers = [
 		[E2E_SEAT_PM_ID, 'PROJECT_MANAGEMENT'],
@@ -117,15 +141,7 @@ export async function seedSeatPlanning(db: PrismaClient) {
 		[E2E_SEAT_PARTICIPANT_CARE_ID, 'PARTICIPANT_CARE']
 	] as const;
 	for (const [userId, role] of teamMembers) {
-		const teamMember = {
-			...makeSeedTeamMember({ conferenceId: conference.id, userId, role }),
-			id: `e2e-team-${userId}`
-		};
-		await db.teamMember.upsert({
-			where: { id: teamMember.id },
-			update: teamMember,
-			create: teamMember
-		});
+		await upsertTeamMember(db, conference.id, userId, role);
 	}
 
 	const lockedDelegation = {
@@ -133,35 +149,30 @@ export async function seedSeatPlanning(db: PrismaClient) {
 		id: LOCKED_DELEGATION_ID,
 		assignedNationAlpha3Code: 'nld'
 	};
-	await db.delegation.upsert({
-		where: { id: lockedDelegation.id },
-		update: lockedDelegation,
-		create: lockedDelegation
-	});
-	const lockedMember = {
-		...makeSeedDelegationMember({
-			conferenceId: conference.id,
-			delegationId: lockedDelegation.id,
-			userId: delegate.id,
-			isHeadDelegate: true
-		}),
-		id: 'e2e00000seatdelegationmember1',
-		assignedCommitteeId: E2E_SEAT_GV_ID
-	};
-	await db.delegationMember.upsert({
-		where: { id: lockedMember.id },
-		update: lockedMember,
-		create: lockedMember
-	});
-
 	const nsaDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
 		id: NSA_DELEGATION_ID,
 		assignedNonStateActorId: E2E_SEAT_ASSIGNED_NSA_ID
 	};
-	await db.delegation.upsert({
-		where: { id: nsaDelegation.id },
-		update: nsaDelegation,
-		create: nsaDelegation
-	});
+	for (const delegation of [lockedDelegation, nsaDelegation]) {
+		await db
+			.insert(schema.delegation)
+			.values(delegation)
+			.onConflictDoUpdate({ target: schema.delegation.id, set: delegation });
+	}
+
+	const lockedMember = {
+		...makeSeedDelegationMember({
+			conferenceId: conference.id,
+			delegationId: lockedDelegation.id,
+			userId: E2E_SEAT_DELEGATE_ID,
+			isHeadDelegate: true,
+			assignedCommitteeId: E2E_SEAT_GV_ID
+		}),
+		id: 'e2e00000seatdelegationmember1'
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(lockedMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: lockedMember });
 }

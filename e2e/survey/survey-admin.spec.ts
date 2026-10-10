@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
@@ -13,7 +14,7 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	const optionTitle = 'E2E Option A';
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/survey`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/survey`
 	});
 	await waitForHydration(page);
 
@@ -38,10 +39,10 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	// with no stable hook, and repeated runs leave several surveys on this page.
 	const created = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManySurveyQuestions(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, title: { equals: "${surveyTitle}" } }) { id } }`
+			query: `query { surveyQuestions(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, title: { eq: "${surveyTitle}" } }) { id } }`
 		}
 	});
-	const surveyId = (await created.json())?.data?.findManySurveyQuestions?.[0]?.id;
+	const surveyId = (await created.json())?.data?.surveyQuestions?.[0]?.id;
 	expect(surveyId, 'survey question was not persisted').toBeTruthy();
 
 	await page.locator(`a[href$="/survey/${surveyId}"]`).first().click();
@@ -50,7 +51,7 @@ test('an admin can create a survey question and add an option to it', async ({ p
 
 	// The detail page opens on the results tab; option management lives under settings.
 	await page
-		.getByRole('button', { name: /einstellungen|settings/i })
+		.getByRole('tab', { name: /einstellungen|settings/i })
 		.first()
 		.click();
 	await page
@@ -70,10 +71,10 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	// Confirm it actually persisted rather than only rendering optimistically.
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManySurveyQuestions(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, title: { equals: "${surveyTitle}" } }) { title options { title upperLimit } } }`
+			query: `query { surveyQuestions(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, title: { eq: "${surveyTitle}" } }) { title options { title upperLimit } } }`
 		}
 	});
-	const question = (await res.json())?.data?.findManySurveyQuestions?.[0];
+	const question = (await res.json())?.data?.surveyQuestions?.[0];
 	expect(question?.title).toBe(surveyTitle);
 	expect(question?.options).toEqual([{ title: optionTitle, upperLimit: 5 }]);
 });
@@ -85,19 +86,17 @@ async function gql(page: Page, query: string) {
 	return body.data;
 }
 
-// System admins (OIDC role `admin`) can open every conference under /management without being on
-// its team. The survey create resolvers used to hand-check TeamMember rows and rejected them with
-// "Access denied - requires team member status", so creating a survey silently did nothing.
+// System admins (OIDC role `admin`) can open every conference's management without being on its
+// team, so creating a survey must not hinge on a TeamMember row.
 test('a system admin without a team role can manage surveys and options', async ({ page }) => {
 	const surveyTitle = `E2E Sysadmin Survey ${Date.now()}`;
 
 	// A fresh user: guaranteed to have no TeamMember row on the e2e conference.
 	await loginAs(page, makeTestUser('survey-sysadmin', { roles: ['admin'] }), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/survey`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/survey`
 	});
 	await waitForHydration(page);
 
-	// --- create through the UI: this is the path that used to fail ---
 	await page
 		.getByRole('button', { name: /umfrage erstellen|create survey/i })
 		.first()
@@ -114,40 +113,36 @@ test('a system admin without a team role can manage surveys and options', async 
 
 	const found = await gql(
 		page,
-		`query { findManySurveyQuestions(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, title: { equals: "${surveyTitle}" } }) { id draft } }`
+		`query { surveyQuestions(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, title: { eq: "${surveyTitle}" } }) { id draft } }`
 	);
-	const surveyId: string = found.findManySurveyQuestions?.[0]?.id;
+	const surveyId: string = found.surveyQuestions?.[0]?.id;
 	expect(surveyId, 'survey question was not persisted').toBeTruthy();
-	expect(found.findManySurveyQuestions[0].draft).toBe(true);
+	expect(found.surveyQuestions[0].draft).toBe(true);
 
-	// --- edit + publish the survey ---
 	const updated = await gql(
 		page,
-		`mutation { updateOneSurveyQuestion(where: { id: "${surveyId}" }, data: { description: { set: "Edited" }, draft: { set: false } }) { description draft } }`
+		`mutation { updateSurveyQuestion(id: "${surveyId}", description: "Edited", draft: false) { description draft } }`
 	);
-	expect(updated.updateOneSurveyQuestion).toEqual({ description: 'Edited', draft: false });
+	expect(updated.updateSurveyQuestion).toEqual({ description: 'Edited', draft: false });
 
-	// --- create, edit and delete an option ---
 	const option = await gql(
 		page,
-		`mutation { createOneSurveyOption(data: { questionId: "${surveyId}", title: "Option A", description: "A", upperLimit: 5 }) { id } }`
+		`mutation { createSurveyOption(questionId: "${surveyId}", title: "Option A", description: "A", upperLimit: 5) { id } }`
 	);
-	const optionId: string = option.createOneSurveyOption?.id;
+	const optionId: string = option.createSurveyOption?.id;
 	expect(optionId, 'survey option was not created').toBeTruthy();
 
 	const updatedOption = await gql(
 		page,
-		`mutation { updateOneSurveyOption(where: { id: "${optionId}" }, data: { title: { set: "Option B" } }) { title } }`
+		`mutation { updateSurveyOption(id: "${optionId}", title: "Option B") { title } }`
 	);
-	expect(updatedOption.updateOneSurveyOption).toEqual({ title: 'Option B' });
+	expect(updatedOption.updateSurveyOption).toEqual({ title: 'Option B' });
 
-	await gql(page, `mutation { deleteOneSurveyOption(where: { id: "${optionId}" }) { id } }`);
-
-	// --- delete the survey ---
-	await gql(page, `mutation { deleteOneSurveyQuestion(where: { id: "${surveyId}" }) { id } }`);
+	await gql(page, `mutation { deleteSurveyOption(id: "${optionId}") }`);
+	await gql(page, `mutation { deleteSurveyQuestion(id: "${surveyId}") }`);
 	const after = await gql(
 		page,
-		`query { findManySurveyQuestions(where: { id: { equals: "${surveyId}" } }) { id } }`
+		`query { surveyQuestions(where: { id: { eq: "${surveyId}" } }) { id } }`
 	);
-	expect(after.findManySurveyQuestions).toEqual([]);
+	expect(after.surveyQuestions).toEqual([]);
 });

@@ -15,7 +15,7 @@ const PER_PAGE = 40;
 export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscriber> | undefined> {
 	const subscriberMap = new Map<string, ListmonkSubscriber>();
 	let currentPage = 1;
-	let totalEntries = 0;
+	let totalEntries: number;
 
 	do {
 		const res = await listmonkClient.GET('/subscribers', {

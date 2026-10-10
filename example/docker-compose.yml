@@ -15,7 +15,6 @@ services:
 
   delegator:
     image: deutschemodelunitednations/delegator:latest
-    command: ['sh', '-c', 'ls -l && npx prisma migrate deploy && node ./index.js']
     depends_on:
       - postgres
     ports:

@@ -31,7 +31,7 @@
 			onclick={() => copyToClipboard(value)}
 			aria-label="Copy to clipboard"
 		>
-			<i class="fa-duotone fa-copy text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-copy text-xl"></i>
 		</button>
 	</div>
 </div>

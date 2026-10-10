@@ -23,9 +23,9 @@
 </script>
 
 <div class="card bg-base-200 grid w-full grid-cols-[auto_1fr] items-center gap-4 p-4">
-	<i class="fa-duotone fa-arrow-down-short-wide self-center text-xl"></i>
+	<i class="fa-sharp-duotone fa-solid fa-arrow-down-short-wide self-center text-xl"></i>
 	<div class="flex flex-wrap gap-2">
-		{#each sortingOptions as option}
+		{#each sortingOptions as option (option.key)}
 			<button
 				class="badge {option.key === activeSorting ? 'badge-primary' : ''}"
 				onclick={() => (activeSorting = option.key)}
@@ -36,9 +36,9 @@
 		{/each}
 	</div>
 
-	<i class="fa-duotone fa-filter self-center text-xl"></i>
+	<i class="fa-sharp-duotone fa-solid fa-filter self-center text-xl"></i>
 	<div class="flex w-full flex-wrap gap-2">
-		{#each filterOptions as option}
+		{#each filterOptions as option, optionIndex (optionIndex)}
 			<button
 				class="badge {activeFilter.includes(option.key) ? 'badge-primary' : ''}"
 				onclick={() =>

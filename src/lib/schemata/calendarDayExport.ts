@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CalendarEntryColor } from '$houdini';
+import { allColors } from '$lib/components/calendar/calendarColors';
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -13,17 +13,25 @@ const placeSchema = z.object({
 	websiteUrl: z.string().nullable()
 });
 
-const entrySchema = z.object({
-	name: z.string().min(1),
-	description: z.string().nullable(),
-	startTime: z.string().regex(timeRegex),
-	endTime: z.string().regex(timeRegex),
-	fontAwesomeIcon: z.string().nullable(),
-	color: z.nativeEnum(CalendarEntryColor),
-	room: z.string().nullable(),
-	trackName: z.string().nullable(),
-	place: placeSchema.nullable()
-});
+const entrySchema = z
+	.object({
+		name: z.string().min(1),
+		description: z.string().nullable(),
+		startTime: z.string().regex(timeRegex),
+		endTime: z.string().regex(timeRegex),
+		fontAwesomeIcon: z.string().nullable(),
+		color: z.enum(allColors),
+		room: z.string().nullable(),
+		// Files from before an entry could span tracks name one `trackName`
+		trackName: z.string().nullable().optional(),
+		/** The tracks the entry runs on; older files leave them out for all of them */
+		trackNames: z.array(z.string()).optional(),
+		place: placeSchema.nullable()
+	})
+	.transform(({ trackName, trackNames, ...entry }) => ({
+		...entry,
+		trackNames: trackNames ?? (trackName ? [trackName] : [])
+	}));
 
 const trackSchema = z.object({
 	name: z.string().min(1),
@@ -37,4 +45,4 @@ export const calendarDayExportSchema = z.object({
 	entries: z.array(entrySchema)
 });
 
-export type CalendarDayExportData = z.infer<typeof calendarDayExportSchema>;
+export type CalendarDayExportData = z.output<typeof calendarDayExportSchema>;

@@ -12,7 +12,7 @@
 	<div class="flex w-full max-w-[700px] flex-col items-center gap-8">
 		<!-- Branding -->
 		<div class="text-center">
-			<i class="fa-duotone fa-id-card-clip text-base-content mb-2 text-4xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-id-card-clip text-base-content mb-2 text-4xl"></i>
 			<h2 class="text-base-content text-xl font-thin">MUNify</h2>
 			<h1 class="text-base-content text-2xl font-bold tracking-widest uppercase">Delegator</h1>
 		</div>
@@ -22,7 +22,7 @@
 
 		<!-- Warning header -->
 		<div class="alert alert-warning w-full">
-			<i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-2xl"></i>
 			<div>
 				<h2 class="text-xl font-bold">{m.migrationNoticeTitle()}</h2>
 				<p>{m.migrationNoticeSubtitle()}</p>
@@ -33,15 +33,16 @@
 		<div class="flex w-full flex-col gap-4">
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-duotone fa-circle-info text-info mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-circle-info text-info mr-2"></i>
 					{m.migrationNoticeFaqIdentityProviderTitle()}
 				</h3>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				<p class="text-base-content">{@html m.migrationNoticeFaqIdentityProviderBody()}</p>
 			</div>
 
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-duotone fa-key text-success mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-key text-success mr-2"></i>
 					{m.migrationNoticeFaqEmailPasswordTitle()}
 				</h3>
 				<p class="text-base-content">{m.migrationNoticeFaqEmailPasswordBody()}</p>
@@ -49,7 +50,7 @@
 
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-duotone fa-user-plus text-primary mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-user-plus text-primary mr-2"></i>
 					{m.migrationNoticeFaqNewUserTitle()}
 				</h3>
 				<p class="text-base-content">{m.migrationNoticeFaqNewUserBody()}</p>
@@ -57,7 +58,7 @@
 
 			<div class="bg-warning rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-solid fa-exclamation-triangle fa-beat-fade mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle fa-beat-fade mr-2"></i>
 					{m.migrationNoticeFaqSocialTitle()}
 				</h3>
 				<p class="text-base-content">
@@ -71,7 +72,7 @@
 
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-duotone fa-fingerprint text-warning mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-fingerprint text-warning mr-2"></i>
 					{m.migrationNoticeFaqMfaTitle()}
 				</h3>
 				<p class="text-base-content">{m.migrationNoticeFaqMfaBody()}</p>
@@ -79,10 +80,11 @@
 
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
-					<i class="fa-duotone fa-life-ring text-error mr-2"></i>
+					<i class="fa-sharp-duotone fa-solid fa-life-ring text-error mr-2"></i>
 					{m.migrationNoticeFaqHelpTitle()}
 				</h3>
 				<p class="text-base-content">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/, interpolating the deployment's configured support address -->
 					{@html m.migrationNoticeFaqHelpBody({ email: configPublic.PUBLIC_SUPPORT_EMAIL })}
 				</p>
 			</div>
@@ -96,7 +98,7 @@
 				<span class="label-text">{m.migrationNoticeDontShowAgain()}</span>
 			</label>
 			<button type="submit" class="btn btn-primary btn-block">
-				<i class="fa-duotone fa-arrow-right"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
 				{m.migrationNoticeContinue()}
 			</button>
 		</form>

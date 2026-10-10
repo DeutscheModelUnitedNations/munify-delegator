@@ -1,3 +1,3 @@
-import { yogaInstance } from '$api/resolvers/api';
+import { yoga } from '$api/yoga';
 
-export { yogaInstance as GET, yogaInstance as POST };
+export { yoga as GET, yoga as POST, yoga as OPTIONS };

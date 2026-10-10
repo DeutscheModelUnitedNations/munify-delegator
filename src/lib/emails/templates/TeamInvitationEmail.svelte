@@ -1,5 +1,14 @@
 <script lang="ts">
-	import { Html, Head, Body, Container, Section, Text, Link, Hr } from 'better-svelte-email';
+	import {
+		Html,
+		Head,
+		Body,
+		Container,
+		Section,
+		Text,
+		Link,
+		Hr
+	} from '@better-svelte-email/components';
 
 	interface Props {
 		recipientEmail: string;

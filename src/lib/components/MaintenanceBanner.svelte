@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { configPublic } from '$config/public';
 	import { m } from '$lib/paraglide/messages';
+	import { maintenanceStatus } from './maintenanceWindow';
 
 	const { PUBLIC_MAINTENANCE_WINDOW_START, PUBLIC_MAINTENANCE_WINDOW_END } = configPublic;
 
@@ -19,16 +20,9 @@
 		const interval = setInterval(() => {
 			now = new Date();
 		}, 60000); // Update every minute
-		if (start && end && end > now) {
-			visible = true;
-			if (start > now) {
-				isUpcoming = true;
-			} else {
-				isUpcoming = false;
-			}
-		} else {
-			visible = false;
-		}
+		const status = maintenanceStatus(start, end, now);
+		visible = status !== 'none';
+		isUpcoming = status === 'upcoming';
 		return () => clearInterval(interval);
 	});
 </script>
@@ -40,7 +34,7 @@
 				? 'alert-info'
 				: 'alert-warning'} alert-vertical sm:alert-horizontal"
 		>
-			<i class="fa-solid fa-person-digging text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-person-digging text-2xl"></i>
 			<div class="flex flex-1 flex-col gap-2 sm:gap-1">
 				<h3 class="font-bold">{m.maintenanceMessage()}</h3>
 				<div class="text-xs">

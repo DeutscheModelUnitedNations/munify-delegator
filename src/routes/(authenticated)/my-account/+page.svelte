@@ -1,32 +1,98 @@
 <script lang="ts">
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { superForm } from 'sveltekit-superforms';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
-	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
-	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
-	import type { PageData } from './$houdini';
-	import FakeUser from './FakeUser.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
+	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
+	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
+	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import { dev } from '$app/environment';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { buildUserFormValues, toUpdateUserArgs } from '$lib/api/userFormValues';
+	import AddressRegionField from '$lib/components/form/AddressRegionField.svelte';
+	import { addressRules } from '$lib/helpers/addressRules';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
-	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
-		resetForm: false,
-		validationMethod: 'oninput',
-		validators: zod4Client(userFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		}
+	const user = await getCurrentUser();
+
+	/**
+	 * Where to continue once the profile is complete. Set by the login callback when it sends
+	 * someone here to fill in missing details; only same-origin paths are honoured.
+	 */
+	const redirectUrl = $derived.by(() => {
+		const target = page.url.searchParams.get('redirect');
+		if (!target) return undefined;
+		return new URL(target, page.url.origin).host === page.url.host ? target : undefined;
 	});
 
+	// Seeded once: this is the form's initial value, and re-reading the row while someone edits it
+	// would throw their changes away.
+	const stored = await client.query.user({
+		__args: { id: user.sub },
+		givenName: true,
+		familyName: true,
+		birthday: true,
+		phone: true,
+		street: true,
+		apartment: true,
+		zip: true,
+		city: true,
+		region: true,
+		country: true,
+		gender: true,
+		pronouns: true,
+		foodPreference: true,
+		emergencyContacts: true,
+		wantsToReceiveGeneralInformation: true,
+		wantsJoinTeamInformation: true
+	});
+
+	const form = superForm(
+		defaults(
+			{
+				...buildUserFormValues(stored),
+				wantsToReceiveGeneralInformation: stored?.wantsToReceiveGeneralInformation ?? false,
+				wantsJoinTeamInformation: stored?.wantsJoinTeamInformation ?? false
+			},
+			zod4Client(userFormSchema)
+		),
+		{
+			SPA: true,
+			resetForm: false,
+			validationMethod: 'oninput',
+			validators: zod4Client(userFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const promise = client.mutate.updateUser({
+					__args: toUpdateUserArgs(user.sub, validated.data),
+					id: true
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
+				const target = redirectUrl;
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- runtime same-origin path from ?redirect=, checked in redirectUrl; resolve() only takes typed routes
+				if (target) await goto(target);
+			}
+		}
+	);
+
 	//TODO pronoun prefill
+
+	const { form: formData } = form;
+	// which of postal code, city and region the picked country's addresses use
+	const address = $derived(addressRules($formData.country));
 
 	// Show toast for successful account center updates
 	$effect(() => {
@@ -38,31 +104,23 @@
 			mfa: () => m.accountUpdateSuccessMfa(),
 			'backup-codes': () => m.accountUpdateSuccessBackupCodes()
 		};
-		if (data.accountUpdateSuccess && successMap[data.accountUpdateSuccess]) {
-			toast.success(successMap[data.accountUpdateSuccess]());
+		const success = page.url.searchParams.get('show_success');
+		if (success && successMap[success]) {
+			toast.success(successMap[success]());
 		}
 	});
-
-	function accountUrl(path: string) {
-		return `${data.accountCenterUrl}/${path}?redirect=${encodeURIComponent(data.accountRedirectUrl)}`;
-	}
-
-	const mfaFactors = $derived(data.user.mfaVerificationFactors ?? []);
-	const hasPasskey = $derived(mfaFactors.includes('WebAuthn'));
-	const hasTotp = $derived(mfaFactors.includes('Totp'));
-	const hasBackupCodes = $derived(mfaFactors.includes('BackupCode'));
 </script>
 
-{#if data.redirectUrl}
+{#if redirectUrl}
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
-	<section class="max-ch-md z-20 mt-10 text-center">
+	<section class="max-ch-md z-20 mt-6 text-center">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
 		<!-- If this is set we are likely to call this via the registration flow
 		 and we want to show a hint -->
-		{#if data.redirectUrl}
+		{#if redirectUrl}
 			<div class="alert alert-warning mt-10">
 				<i class="fas fa-exclamation-triangle text-3xl"></i>
 				<div>
@@ -74,51 +132,43 @@
 			</div>
 		{/if}
 	</section>
-	<div class="mt-10 grid w-full max-w-4xl grid-cols-1 items-start gap-10 lg:grid-cols-2">
+	<div
+		class="mt-10 grid w-full max-w-6xl grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
+	>
 		<div
-			class="card bg-base-100 border-base-200 z-20 border shadow-xl {data.redirectUrl &&
+			class="card bg-base-100 border-base-200 z-20 border shadow-xl {redirectUrl &&
 				'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 rounded-box">
-				{#if dev}
-					<FakeUser {form} />
-				{/if}
-				<div class="card-title block text-center">{m.personalData()}</div>
+				<h2 class="card-title mb-4 justify-center">
+					<i class="fa-sharp-duotone fa-solid fa-user-pen text-primary"></i>
+					{m.personalData()}
+				</h2>
 				<Form {form}>
-					<FormFieldset title={m.legalName()}>
-						<div class="alert alert-info mb-4">
-							<i class="fa-duotone fa-info-circle shrink-0"></i>
-							<span class="flex-1 min-w-0">{m.legalNameDisclaimer()}</span>
+					<FormSection title={m.contactInformation()} icon="address-book">
+						<p class="text-base-content/60 text-xs">
+							<span class="font-semibold">{m.legalName()}:</span>
+							{m.legalNameDisclaimer()}
+						</p>
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+							<FormTextInput
+								{form}
+								name="given_name"
+								label={m.firstName()}
+								placeholder={m.firstName()}
+							/>
+							<FormTextInput
+								{form}
+								name="family_name"
+								label={m.lastName()}
+								placeholder={m.lastName()}
+							/>
 						</div>
-						<FormTextInput
-							{form}
-							name="given_name"
-							label={m.firstName()}
-							placeholder={m.firstName()}
-						/>
-						<FormTextInput
-							{form}
-							name="family_name"
-							label={m.lastName()}
-							placeholder={m.lastName()}
-						/>
-					</FormFieldset>
-					<FormFieldset title={m.contactInformation()}>
 						<FormTextInput
 							{form}
 							name="phone"
 							label={m.phoneNumber()}
 							placeholder="+49 123456789"
-						/>
-						<FormTextInput {form} name="street" label={m.address()} placeholder={m.street()} />
-						<FormTextInput {form} name="apartment" placeholder={m.streetAddition()} />
-						<FormTextInput {form} name="zip" placeholder={m.zipCode()} />
-						<FormTextInput {form} name="city" placeholder={m.city()} />
-						<FormSelect
-							{form}
-							name="country"
-							placeholder={m.pleaseSelectCountry()}
-							options={translatedNationCodeAddressFormOptions}
 						/>
 						<FormTextArea
 							{form}
@@ -127,44 +177,73 @@
 							description={m.emergencyContactDescription()}
 							placeholder={m.emergencyContactsPlaceholder()}
 						/>
-					</FormFieldset>
-					<FormFieldset title={m.personalInformation()}>
-						<FormDateTimeInput
-							{form}
-							name="birthday"
-							label={m.birthDate()}
-							defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
-							enableFutureDates={false}
-						/>
+					</FormSection>
+					<FormSection title={m.address()} icon="house">
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
+							<FormTextInput {form} name="street" label={m.street()} placeholder={m.street()} />
+							<FormTextInput
+								{form}
+								name="apartment"
+								label={m.streetAddition()}
+								placeholder={m.streetAddition()}
+							/>
+						</div>
 						<FormSelect
 							{form}
-							name="gender"
-							label={m.gender()}
-							options={[
-								{ value: 'MALE', label: m.male() },
-								{ value: 'FEMALE', label: m.female() },
-								{ value: 'DIVERSE', label: m.diverse() },
-								{ value: 'NO_STATEMENT', label: m.noStatement() }
-							]}
+							name="country"
+							label={m.country()}
+							placeholder={m.pleaseSelectCountry()}
+							options={translatedNationCodeAddressFormOptions}
 						/>
-						<FormTextInput
-							{form}
-							name="pronouns"
-							placeholder={m.pronounsExample()}
-							label={m.pronouns()}
-						/>
-						<FormSelect
-							{form}
-							name="foodPreference"
-							label={m.diet()}
-							options={[
-								{ value: 'VEGAN', label: m.vegan() },
-								{ value: 'VEGETARIAN', label: m.vegetarian() },
-								{ value: 'OMNIVORE', label: m.omnivore() }
-							]}
-						/>
-					</FormFieldset>
-					<FormFieldset title={m.newsletters()}>
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
+							{#if address.zip}
+								<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
+							{/if}
+							{#if address.city}
+								<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
+							{/if}
+						</div>
+						<AddressRegionField {form} name="region" rules={address} />
+					</FormSection>
+					<FormSection title={m.aboutYou()} icon="user">
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+							<FormDateTimeInput
+								{form}
+								name="birthday"
+								label={m.birthDate()}
+								defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
+								enableFutureDates={false}
+							/>
+							<FormSelect
+								{form}
+								name="gender"
+								label={m.gender()}
+								options={[
+									{ value: 'MALE', label: m.male() },
+									{ value: 'FEMALE', label: m.female() },
+									{ value: 'DIVERSE', label: m.diverse() },
+									{ value: 'NO_STATEMENT', label: m.noStatement() }
+								]}
+							/>
+							<FormTextInput
+								{form}
+								name="pronouns"
+								placeholder={m.pronounsExample()}
+								label={m.pronouns()}
+							/>
+							<FormSelect
+								{form}
+								name="foodPreference"
+								label={m.diet()}
+								options={[
+									{ value: 'VEGAN', label: m.vegan() },
+									{ value: 'VEGETARIAN', label: m.vegetarian() },
+									{ value: 'OMNIVORE', label: m.omnivore() }
+								]}
+							/>
+						</div>
+					</FormSection>
+					<FormSection title={m.newsletters()} icon="envelope-open-text">
 						<FormCheckbox
 							{form}
 							name="wantsToReceiveGeneralInformation"
@@ -175,140 +254,13 @@
 							name="wantsJoinTeamInformation"
 							label={m.receiveJoinTeamInformation()}
 						/>
-					</FormFieldset>
+					</FormSection>
 				</Form>
 			</div>
 		</div>
 
-		<div class="card bg-base-100 border-base-200 border shadow-xl">
-			<div class="card-body">
-				<div class="card-title block text-center">{m.loginInformation()}</div>
-				<div class="divide-base-200 divide-y">
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-user text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.loginName()}</div>
-							<div class="truncate">{data.user.preferred_username ?? '–'}</div>
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl('username')}
-							aria-label="Change username"
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-envelope text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.email()}</div>
-							<div class="truncate">{data.user.email}</div>
-						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('email')} aria-label="Change email">
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-key text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.password()}</div>
-							{#if data.user.hasPassword}
-								<div>•••••</div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl('password')}
-							aria-label="Change password"
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-fingerprint text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.passkeys()}</div>
-							{#if hasPasskey}
-								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl(hasPasskey ? 'passkey/manage' : 'passkey/add')}
-							aria-label={hasPasskey ? 'Manage passkeys' : 'Add passkey'}
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-shield-keyhole text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.authenticatorApp()}</div>
-							{#if hasTotp}
-								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl(hasTotp ? 'authenticator-app/replace' : 'authenticator-app')}
-							aria-label={hasTotp ? 'Replace authenticator app' : 'Set up authenticator app'}
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					{#if hasPasskey || hasTotp}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-file-shield text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.backupCodes()}</div>
-								{#if hasBackupCodes}
-									<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-								{/if}
-							</div>
-							<a
-								class="btn btn-ghost btn-sm"
-								href={accountUrl(hasBackupCodes ? 'backup-codes/manage' : 'backup-codes/generate')}
-								aria-label={hasBackupCodes ? 'Manage backup codes' : 'Generate backup codes'}
-							>
-								<i class="fa-duotone fa-pen-to-square"></i>
-							</a>
-						</div>
-					{/if}
-					{#if data.user.ssoIdentities?.length || data.user.socialIdentities?.length}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-link text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.ssoIdentities()}</div>
-								<div class="flex flex-wrap gap-1 mt-1">
-									{#each data.user.socialIdentities ?? [] as provider}
-										<span class="badge badge-sm capitalize">{provider}</span>
-									{/each}
-									{#each data.user.ssoIdentities ?? [] as sso}
-										<span class="badge badge-sm">{sso.issuer}</span>
-									{/each}
-								</div>
-							</div>
-						</div>
-					{/if}
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-binary text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.userId()}</div>
-							<div class="truncate font-mono text-sm">{data.user.sub}</div>
-						</div>
-					</div>
-					{#if data.user.myOIDCRoles.length}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-user-lock text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.rights()}</div>
-								<div>{data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</div>
-							</div>
-						</div>
-					{/if}
-				</div>
-				<p class="mt-4 text-center text-sm">{@html m.deleteAccountGPDR()}</p>
-			</div>
+		<div class="lg:sticky lg:top-6">
+			<LoginInformationCard {user} />
 		</div>
 	</div>
 </div>

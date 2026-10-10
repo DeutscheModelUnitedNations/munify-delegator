@@ -1,19 +1,18 @@
 <script lang="ts">
-	import type { AdministrativeStatus } from '@prisma/client';
-	import hotkeys from 'hotkeys-js';
+	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import StatusWidget from './StatusWidget.svelte';
 
 	interface Props {
 		title: string;
 		faIcon: string;
-		status: AdministrativeStatus;
-		changeStatus: (status: AdministrativeStatus) => Promise<void>;
+		status: AdministrativestatusEnum;
+		changeStatus: (status: AdministrativestatusEnum) => Promise<void>;
 		doneHotkey?: string;
 	}
 
 	let { title, faIcon, status, changeStatus, doneHotkey }: Props = $props();
 
-	const btnClick = async (status: AdministrativeStatus) => {
+	const btnClick = async (status: AdministrativestatusEnum) => {
 		await changeStatus(status);
 	};
 </script>

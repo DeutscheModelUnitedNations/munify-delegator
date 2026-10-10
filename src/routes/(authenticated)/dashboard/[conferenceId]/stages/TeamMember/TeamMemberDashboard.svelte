@@ -1,42 +1,40 @@
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardLinkCards from '$lib/components/dashboard/DashboardLinkCards.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
-	import type { TeamRole } from '@prisma/client';
-	import {
-		getTeamLinksForRole,
-		type TeamDashboardLinkContext
-	} from '$lib/config/teamDashboardLinks';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
+	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
+	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/data/teamDashboardLinks';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { configPublic } from '$config/public';
 
 	interface Props {
 		conferenceId: string;
-		conferenceTitle: string;
-		role: TeamRole;
-		linkToTeamWiki?: string | null;
-		linkToServicesPage?: string | null;
-		linkToPreparationGuide?: string | null;
-		docsUrl?: string | null;
+		/** Absent for a system admin who is not part of the team. */
+		role?: TeamroleEnum;
+		isAdmin?: boolean;
 	}
 
-	let {
-		conferenceId,
-		conferenceTitle,
-		role,
-		linkToTeamWiki,
-		linkToServicesPage,
-		linkToPreparationGuide,
-		docsUrl
-	}: Props = $props();
+	let { conferenceId, role, isAdmin = false }: Props = $props();
+
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: conferenceId },
+			title: true,
+			linkToTeamWiki: true,
+			linkToServicesPage: true,
+			linkToPreparationGuide: true
+		})
+	);
 
 	let linkContext = $derived<TeamDashboardLinkContext>({
 		conferenceId,
 		role,
-		linkToTeamWiki,
-		linkToServicesPage,
-		linkToPreparationGuide,
-		docsUrl
+		isAdmin,
+		linkToTeamWiki: conference.linkToTeamWiki,
+		linkToServicesPage: conference.linkToServicesPage,
+		linkToPreparationGuide: conference.linkToPreparationGuide,
+		docsUrl: configPublic.PUBLIC_DOCS_URL
 	});
 
 	let visibleLinks = $derived(getTeamLinksForRole(linkContext));
@@ -45,17 +43,7 @@
 <DashboardSection
 	icon="users-gear"
 	title={m.teamMemberDashboard()}
-	description={`${conferenceTitle} · ${translateTeamRole(role)}`}
+	description={role ? `${conference.title} · ${translateTeamRole(role)}` : conference.title}
 >
-	<DashboardLinksGrid>
-		{#each visibleLinks as link (link.id)}
-			<DashboardLinkCard
-				href={link.getHref(linkContext)}
-				icon={link.icon}
-				title={link.getTitle()}
-				description={link.getDescription()}
-				external={link.external}
-			/>
-		{/each}
-	</DashboardLinksGrid>
+	<DashboardLinkCards links={visibleLinks} context={linkContext} />
 </DashboardSection>

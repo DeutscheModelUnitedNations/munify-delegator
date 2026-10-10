@@ -1,46 +1,53 @@
 <script lang="ts">
 	import Steps from '$lib/components/Steps.svelte';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
-	import Form from '$lib/components/Form/Form.svelte';
-	import { superForm } from 'sveltekit-superforms';
+	import Form from '$lib/components/form/Form.svelte';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import type { Snippet } from 'svelte';
 	import { qr } from '@svelte-put/qr/svg';
+	import { client } from '$lib/api/rumbleClient/client';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
-		resetForm: false,
-		validationMethod: 'oninput',
-		validators: zod4Client(applicationFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		onResult({ result }) {
-			switch (result.type) {
-				case 'success':
-					entryCode = result.data?.delegation?.entryCode;
-					step++;
-					break;
+	let { params }: PageProps = $props();
 
-				case 'error':
-					toast.error(result.error.message);
-					break;
-				default:
-					throw new Error('Unknown result type');
+	const conferenceId = $derived(params.conferenceId);
+
+	let step = $state(0);
+	let entryCode = $state<string>();
+
+	const form = superForm(
+		defaults({ school: '', motivation: '', experience: '' }, zod4Client(applicationFormSchema)),
+		{
+			SPA: true,
+			resetForm: false,
+			validationMethod: 'oninput',
+			validators: zod4Client(applicationFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const delegation = await client.mutate.createDelegation({
+					__args: { ...validated.data, conferenceId },
+					id: true,
+					entryCode: true
+				});
+				entryCode = delegation.entryCode;
+				step++;
 			}
 		}
-	});
-	let step = $state(0);
+	);
 
-	let entryCode = $derived<string | undefined>(undefined);
 	let referralLink = $derived(
-		`${data.origin}/registration/${data.conferenceId}/join-delegation?code=${entryCode}`
+		`${page.url.origin}/registration/${conferenceId}/join-delegation?code=${entryCode}`
 	);
 </script>
 
@@ -56,11 +63,12 @@
 		<div class="flex w-full max-w-lg flex-col gap-6 text-center">
 			<h1 class="text-3xl tracking-wider uppercase">{m.createDelegation()}</h1>
 			{#if step === 0}
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				{@html m.createDelegationProcessExplaination()}
 				<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}
 					>{m.next()}</button
 				>
-				<a class="btn btn-warning" href=".">{m.back()}</a>
+				<a class="btn btn-warning" href={resolve(`/dashboard/${conferenceId}`)}>{m.back()}</a>
 			{:else}
 				<Form {form}>
 					<p>
@@ -96,7 +104,7 @@
 				{@render content()}
 				{#if onclick}
 					<button class="btn btn-ghost" type="button" {onclick} aria-label="Copy referral">
-						<i class="fa-duotone fa-clipboard text-xl"></i>
+						<i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
 					</button>
 				{/if}
 			</div>
@@ -139,10 +147,15 @@
 				</p>
 			{/snippet}
 			{@render CopyCard(ReferralCode, () => {
-				navigator.clipboard.writeText(entryCode as string);
+				if (!entryCode) return;
+				navigator.clipboard.writeText(entryCode);
 				toast.success(m.codeCopied());
 			})}
-			<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
+			<a
+				class="btn btn-primary btn-lg mt-10 w-full"
+				href={resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId })}
+				>{m.toDashboard()}</a
+			>
 		</div>
 	{/if}
 </div>

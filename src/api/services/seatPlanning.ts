@@ -1,23 +1,23 @@
-import type { Prisma, RegionalBaseline } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
-import formatNames from '$lib/services/formatNames';
-import { isValidManualTargets } from '$lib/services/seatPlanning/baselines';
-import { regionalGroups } from '$lib/services/seatPlanning/unMembers';
+import formatNames from '$lib/helpers/formatNames';
+import type { Insert } from '$api/db/rows';
+import type { regionalBaseline } from '$api/db/schema';
+import { isValidManualTargets } from '$lib/helpers/seatPlanning/baselines';
+import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
  * unit tested; the resolvers feed them with what they queried.
  */
 
+type RegionalBaseline = (typeof regionalBaseline.enumValues)[number];
+
 /**
  * Delegation members that block removing `nationAlpha3Code` from `committeeId`: members of the
  * delegation holding that nation who are assigned to exactly that committee.
  */
-export function seatRemovalBlockersWhere(
-	committeeId: string,
-	nationAlpha3Code: string
-): Prisma.DelegationMemberWhereInput {
+export function seatRemovalBlockersWhere(committeeId: string, nationAlpha3Code: string) {
 	return {
 		assignedCommitteeId: committeeId,
 		delegation: { assignedNationAlpha3Code: nationAlpha3Code }
@@ -84,7 +84,7 @@ interface DelegationWithMembers {
 	assignedNationAlpha3Code: string | null;
 	members: {
 		assignedCommitteeId: string | null;
-		user: { given_name: string; family_name: string };
+		user: { givenName: string; familyName: string };
 	}[];
 }
 
@@ -100,7 +100,7 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 		for (const { assignedCommitteeId, user } of members) {
 			if (!assignedCommitteeId) continue;
 			const names = namesByCommittee.get(assignedCommitteeId) ?? [];
-			names.push(formatNames(user.given_name, user.family_name));
+			names.push(formatNames(user.givenName, user.familyName));
 			namesByCommittee.set(assignedCommitteeId, names);
 		}
 
@@ -121,12 +121,12 @@ interface NonStateActorUpdateInput {
 }
 
 /**
- * Maps the optional GraphQL update arguments of a non state actor to Prisma update data: omitted
- * fields stay untouched, an empty icon clears the icon and the seat amount has to be positive.
+ * Maps the optional GraphQL update arguments of a non state actor to update data: omitted fields
+ * stay untouched, an empty icon clears the icon and the seat amount has to be positive.
  */
 export function nonStateActorUpdateData(
 	data: NonStateActorUpdateInput
-): Prisma.NonStateActorUpdateInput {
+): Partial<Insert<'nonStateActor'>> {
 	assertSeatsPerDelegationAllowed(data.seatAmount, []);
 
 	return {
@@ -145,8 +145,11 @@ interface CommitteeUpdateInput {
 	numOfSeatsPerDelegation?: number | null;
 }
 
-/** Maps the optional GraphQL update arguments of a committee to Prisma update data */
-export function committeeUpdateData(data: CommitteeUpdateInput): Prisma.CommitteeUpdateInput {
+/**
+ * Maps the optional GraphQL update arguments of a committee to update data. The headline is passed
+ * through as is, so sending null clears it rather than leaving it untouched.
+ */
+export function committeeUpdateData(data: CommitteeUpdateInput): Partial<Insert<'committee'>> {
 	return {
 		name: data.name ?? undefined,
 		abbreviation: data.abbreviation ?? undefined,

@@ -1,0 +1,192 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
+	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
+	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import { canPlanSeats, managementNav } from '$lib/helpers/managementAccess';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
+	import { fetchMyPaperHubRoles } from '../paperhub/myPaperHubRoles';
+	import { canOpenPaperHub, paperHubAccess } from '../paperhub/paperHubViews';
+	import { managementMembership, myTeamRoles } from './managementMembership';
+	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
+
+	/**
+	 * The management side navigation around a page. Shared by the management pages and team
+	 * management, which sits in the menu but lives under its own route and guard.
+	 */
+	let { children, conferenceId }: { children: Snippet; conferenceId: string } = $props();
+	const membership = $derived(await managementMembership(conferenceId));
+	const teamRoles = $derived(await myTeamRoles(conferenceId));
+	// A snapshot of booleans: the menu does not need to follow a role change live
+	const canSeePaperHub = $derived(
+		await Promise.all([
+			fetchMyParticipation(conferenceId),
+			fetchMyPaperHubRoles(conferenceId)
+		]).then(([participation, roles]) => canOpenPaperHub(paperHubAccess(participation, roles)))
+	);
+	const nav = $derived(managementNav(membership, teamRoles, canSeePaperHub));
+</script>
+
+<div class="flex min-w-0 grow basis-0 overflow-x-clip">
+	<SideNavigationDrawer>
+		<NavMenu>
+			{#if nav.management}
+				<NavMenuButton
+					href={`/dashboard/${conferenceId}/management/stats`}
+					icon="fa-chart-pie"
+					title={m.adminStats()}
+				/>
+				<NavMenuButton
+					href={`/dashboard/${conferenceId}/management/configuration`}
+					icon="fa-gears"
+					title={m.settings()}
+				/>
+				<NavMenuButton
+					href={`/dashboard/${conferenceId}/management/seats`}
+					icon="fa-chair-office"
+					title={m.seats()}
+				/>
+				<NavMenuButton
+					href="/dashboard/{conferenceId}/management/participants"
+					icon="fa-users"
+					title={m.adminUsers()}
+				/>
+				<NavMenuButton
+					href={`/dashboard/${conferenceId}/management/waitingList`}
+					icon="fa-user-clock"
+					title={m.waitingList()}
+				/>
+			{/if}
+			{#if nav.teamManagement}
+				<NavMenuButton
+					href="/dashboard/{conferenceId}/team-management"
+					includeSubpages
+					icon="fa-user-group"
+					title={m.teamManagement()}
+				/>
+			{/if}
+			{#if nav.paperHub}
+				<NavMenuButton
+					href="/dashboard/{conferenceId}/paperhub"
+					includeSubpages
+					icon="fa-files"
+					title={m.paperHub()}
+				/>
+			{/if}
+			{#if nav.management}
+				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin">
+					{#if canPlanSeats(membership)}
+						<NavMenuButton
+							href="/dashboard/{conferenceId}/management/seat-planning"
+							icon="fa-table-cells"
+							title={m.seatPlanning()}
+						/>
+					{/if}
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/assignment"
+						icon="fa-shuffle"
+						title={m.adminAssignment()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/checkIn"
+						icon="fa-id-badge"
+						title={m.onSiteCheckIn()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/postalRegistration"
+						icon="fa-envelope"
+						title={m.postalRegistration()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/payments"
+						icon="fa-money-bill-transfer"
+						title={m.payment()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/attendance"
+						icon="fa-barcode-read"
+						title={m.attendanceScanner()}
+					/>
+				</NavMenuDetails>
+				<NavMenuDetails title={m.navInfo()} icon="fa-comments">
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/announcement"
+						icon="fa-bullhorn"
+						title={m.announcementSectionTitle()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/calendar"
+						icon="fa-calendar-days"
+						title={m.calendar()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/survey"
+						includeSubpages
+						icon="fa-chart-pie"
+						title={m.survey()}
+					/>
+				</NavMenuDetails>
+
+				<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox">
+					<!-- the count is fetched on its own, so the menu does not wait for it -->
+					<svelte:boundary>
+						<PlausibilityNavButton {conferenceId} />
+						{#snippet pending()}
+							<NavMenuButton
+								href="/dashboard/{conferenceId}/management/plausibility"
+								icon="fa-shield-check"
+								title={m.adminPlausibility()}
+							/>
+						{/snippet}
+					</svelte:boundary>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/cleanup"
+						icon="fa-broom"
+						title={m.cleanup()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/helper"
+						icon="fa-gear-code"
+						title={m.helper()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/import"
+						icon="fa-file-import"
+						title={m.import()}
+					/>
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/downloads"
+						icon="fa-download"
+						title={m.downloads()}
+					/>
+				</NavMenuDetails>
+			{:else}
+				{#if nav.seatPlanning}
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/seat-planning"
+						icon="fa-table-cells"
+						title={m.seatPlanning()}
+					/>
+				{/if}
+				{#if nav.scanner}
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/attendance"
+						icon="fa-barcode-read"
+						title={m.attendanceScanner()}
+					/>
+				{/if}
+			{/if}
+		</NavMenu>
+	</SideNavigationDrawer>
+
+	<div class="flex h-full min-w-0 grow flex-col px-3">
+		{@render children()}
+	</div>
+</div>
+
+{#if nav.management}
+	<CommandPalette {conferenceId} />
+{/if}

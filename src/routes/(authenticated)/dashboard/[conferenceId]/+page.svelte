@@ -1,212 +1,148 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import ConferenceHeader from '$lib/components/Dashboard/ConferenceHeader.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import AnnouncementContent from '$lib/components/Dashboard/AnnouncementContent.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
-	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
 	import SingleParticipantPreparationStage from './stages/SingleParticipant/SingleParticipantPreparationStage.svelte';
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
-	import { configPublic } from '$config/public';
-	import SurveySection from '$lib/components/Dashboard/SurveySection.svelte';
-	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
+	import Supervisor from './stages/Supervisor/Supervisor.svelte';
+	import ParticipantStages from './stages/Common/ParticipantStages.svelte';
+	import SignInHint from '$lib/components/dashboard/SignInHint.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
+	import RegistrationLanding from '../../registration/[conferenceId]/RegistrationLanding.svelte';
+	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
+	import type { PageProps } from './$types';
 
-	// the app needs some proper loading states!
-	//TODO https://houdinigraphql.com/guides/loading-states
+	let { params }: PageProps = $props();
 
-	let { data }: { data: PageData } = $props();
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let conference = $derived(conferenceQueryData?.findUniqueConference);
-	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
-	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
-	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
-	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
-	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
+	// Only who the caller is here; every section below fetches what it shows itself.
+	const [currentUser, participation] = $derived(
+		await Promise.all([getOptionalCurrentUser(), fetchMyParticipation(params.conferenceId)])
+	);
+	const isOfAgeAtConference = $derived(
+		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
+	);
+	let conference = $derived(participation?.conference);
+	let delegationMember = $derived(participation?.delegationMember);
+	let singleParticipant = $derived(participation?.singleParticipant);
+	let supervisor = $derived(participation?.supervisor);
+	let teamMember = $derived(participation?.teamMember);
+	let status = $derived(participation?.participantStatus ?? null);
+	// Ids as primitives: a section keyed by one only fetches again when it changes, not on every live
+	// update of the participation it was read from.
+	const conferenceId = $derived(params.conferenceId);
+	const singleParticipantId = $derived(singleParticipant?.id);
+	const delegationMemberId = $derived(delegationMember?.id);
+	const supervisorId = $derived(supervisor?.id);
+
+	const delegationAccepted = $derived(
+		!!delegationMember?.delegation.assignedNation ||
+			!!delegationMember?.delegation.assignedNonStateActor
+	);
+	const hasAssignedRole = $derived(!!singleParticipant?.assignedRole || delegationAccepted);
 </script>
 
 <div class="flex w-full flex-col items-center">
-	<div class="flex w-full flex-col gap-10">
-		{#if conference}
-			<ConferenceHeader
-				title={conference.title}
-				longTitle={conference.longTitle}
-				state={conference.state}
-				startDate={conference.startConference}
-				endDate={conference.endConference}
-				emblemDataURL={conference.emblemDataURL}
-				logoDataURL={conference.logoDataURL}
-			/>
-			{#if conference.info && !teamMember}
-				<DashboardSection
-					icon="bullhorn"
-					title={m.announcementSectionTitle()}
-					description={m.announcementSectionDescription()}
-					variant="info"
-				>
-					<AnnouncementContent info={conference.info} showExpanded={conference.showInfoExpanded} />
-				</DashboardSection>
-			{/if}
-			{#if conference.showCalendar || teamMember}
-				{#await import('$lib/components/Dashboard/CalendarSection.svelte') then { default: CalendarSection }}
-					<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
-				{:catch error}
-					<ChunkLoadError {error} />
-				{/await}
-			{/if}
-		{/if}
-		{#if (singleParticipant?.assignedRole || delegationMember?.delegation?.assignedNation || delegationMember?.delegation?.assignedNonStateActor) && (conference?.state === 'PREPARATION' || conference?.state === 'ACTIVE')}
-			<SurveySection
-				conferenceId={conference!.id}
-				userId={data.user.sub}
-				conferenceTimezone={conference!.timezone}
-			/>
-		{/if}
-		<!-- TODO add "new" badge if content of this changes -->
-		{#if singleParticipant?.id}
-			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<SingleParticipantRegistrationStage
-					{singleParticipant}
-					{conference}
-					applicationForm={data.applicationForm}
+	{#if !currentUser}
+		<!-- A visitor who is not signed in sees the conference and what taking part would take -->
+		<div class="flex w-full flex-col gap-10">
+			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false} />
+			<PublicQuickLinks {conferenceId} />
+			<SignInHint title={m.signInHintTitle()} text={m.signInToSeeYourParticipation()} />
+		</div>
+	{:else}
+		<div class="flex w-full flex-col gap-10">
+			{#if conference}
+				<DashboardConferenceOverview
+					{conferenceId}
+					userId={currentUser.sub}
+					isTeamMember={!!teamMember}
+					{hasAssignedRole}
 				/>
-			{:else if singleParticipant?.assignedRole}
-				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
-					<ConferenceStatusWidget
-						conferenceId={conference!.id}
-						userId={data.user.sub}
-						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
-						unlockPayment={conference?.unlockPayments}
-						unlockPostals={conference?.unlockPostals}
-					/>
-					<SingleParticipantPreparationStage
-						{conference}
-						{singleParticipant}
-						user={data.user}
-						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
-					/>
-				{:else if conference!.state === 'POST'}
-					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
-						<Certificate
-							conferenceId={conference!.id}
-							userId={data.user.sub}
-							didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus
-								?.didAttend}
-							customConferenceRole={singleParticipant.assignedRole}
-						/>
-					{:catch error}
-						<ChunkLoadError {error} />
-					{/await}
-				{/if}
-			{:else}
-				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
-		{:else if delegationMember?.id}
-			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<DelegationRegistrationStage
-					{delegationMember}
-					{conference}
-					applicationForm={data.applicationForm}
-				/>
-			{:else if !!delegationMember?.delegation?.assignedNation || !!delegationMember?.delegation?.assignedNonStateActor}
-				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
-					<ConferenceStatusWidget
-						conferenceId={conference!.id}
-						userId={data.user.sub}
-						ofAgeAtConference={data.ofAgeAtConference}
+			{#if !conference}
+				<NoConferenceIndicator />
+			{:else if singleParticipant && singleParticipantId}
+				{#key singleParticipantId}
+					<ParticipantStages
+						{conferenceId}
+						conferenceState={conference.state}
+						userId={currentUser.sub}
+						assignmentReleased={conference.assignmentReleased}
+						accepted={!!singleParticipant.assignedRole}
 						{status}
-						unlockPayment={conference?.unlockPayments}
-						unlockPostals={conference?.unlockPostals}
-					/>
-					<DelegationPreparationStage
-						{delegationMember}
-						{conference}
-						user={data.user}
+						ofAge={isOfAgeAtConference}
+						certificateRole={{ customConferenceRole: singleParticipant.assignedRole }}
+					>
+						{#snippet registration()}
+							<SingleParticipantRegistrationStage {conferenceId} {singleParticipantId} />
+						{/snippet}
+						{#snippet preparation()}
+							<SingleParticipantPreparationStage
+								{conferenceId}
+								{singleParticipant}
+								user={currentUser}
+								{status}
+								ofAgeAtConference={isOfAgeAtConference}
+							/>
+						{/snippet}
+					</ParticipantStages>
+				{/key}
+			{:else if delegationMember && delegationMemberId}
+				{#key delegationMemberId}
+					<ParticipantStages
+						{conferenceId}
+						conferenceState={conference.state}
+						userId={currentUser.sub}
+						assignmentReleased={conference.assignmentReleased}
+						accepted={delegationAccepted}
 						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
+						ofAge={isOfAgeAtConference}
+						certificateRole={{
+							country: delegationMember.delegation.assignedNation,
+							nonStateActor: delegationMember.delegation.assignedNonStateActor,
+							assignedCommittee: delegationMember.assignedCommittee
+						}}
+					>
+						{#snippet registration()}
+							<DelegationRegistrationStage {conferenceId} {delegationMemberId} />
+						{/snippet}
+						{#snippet preparation()}
+							<DelegationPreparationStage
+								{conferenceId}
+								{delegationMember}
+								user={currentUser}
+								{status}
+								ofAgeAtConference={isOfAgeAtConference}
+							/>
+						{/snippet}
+					</ParticipantStages>
+				{/key}
+			{:else if supervisorId}
+				{#key supervisorId}
+					<Supervisor
+						{conferenceId}
+						conferenceState={conference.state}
+						assignmentReleased={conference.assignmentReleased}
+						{supervisorId}
+						user={currentUser}
+						{status}
+						ofAge={isOfAgeAtConference}
 					/>
-				{:else if conference!.state === 'POST'}
-					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
-						<Certificate
-							conferenceId={conference!.id}
-							userId={data.user.sub}
-							didAttend={!!status?.didAttend}
-							country={delegationMember.delegation.assignedNation}
-							nonStateActor={delegationMember.delegation.assignedNonStateActor}
-							assignedCommittee={delegationMember.assignedCommittee}
-						/>
-					{:catch error}
-						<ChunkLoadError {error} />
-					{/await}
-				{/if}
+				{/key}
+			{:else if teamMember}
+				<TeamMemberDashboard {conferenceId} role={teamMember.role} isAdmin={currentUser.isAdmin} />
+			{:else if currentUser.isAdmin}
+				<!-- A system admin needs no part in the conference to manage it -->
+				<TeamMemberDashboard {conferenceId} isAdmin />
 			{:else}
-				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
+				<!-- No part in this conference yet: the only thing to do is to apply -->
+				<RegistrationLanding {conferenceId} />
 			{/if}
-		{:else if supervisor}
-			{@const atLeastOneAccepted =
-				conference!.state !== 'PARTICIPANT_REGISTRATION' &&
-				(supervisor.supervisedDelegationMembers
-					.flatMap((x) => x.delegation)
-					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
-					supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole).length > 0)}
-			{#if atLeastOneAccepted || conference!.state === 'PARTICIPANT_REGISTRATION'}
-				{#if conference!.state === 'POST'}
-					{@const acceptedDelegations = supervisor.supervisedDelegationMembers
-						.map((x) => x.delegation)
-						.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor)}
-					{@const acceptedSingleParticipants = supervisor.supervisedSingleParticipants.filter(
-						(x) => !!x.assignedRole
-					)}
-					{@const totalStudents =
-						supervisor.supervisedDelegationMembers.length +
-						supervisor.supervisedSingleParticipants.length}
-					{@const acceptedStudents = acceptedDelegations.length + acceptedSingleParticipants.length}
-					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
-						<Certificate
-							conferenceId={conference!.id}
-							userId={data.user.sub}
-							didAttend={!!status?.didAttend}
-							isSupervisor={true}
-							totalStudentsCount={totalStudents}
-							acceptedStudentsCount={acceptedStudents}
-						/>
-					{:catch error}
-						<ChunkLoadError {error} />
-					{/await}
-				{:else}
-					{#await import('./stages/Supervisor/Supervisor.svelte') then { default: Supervisor }}
-						<Supervisor
-							user={data.user}
-							{conference}
-							{supervisor}
-							{status}
-							ofAge={data.ofAgeAtConference}
-						/>
-					{:catch error}
-						<ChunkLoadError {error} />
-					{/await}
-				{/if}
-			{:else}
-				<ApplicationRejected />
-			{/if}
-		{:else if teamMember}
-			<TeamMemberDashboard
-				conferenceId={conference!.id}
-				conferenceTitle={conference!.title}
-				role={teamMember.role}
-				linkToTeamWiki={conference?.linkToTeamWiki}
-				linkToServicesPage={conference?.linkToServicesPage}
-				linkToPreparationGuide={conference?.linkToPreparationGuide}
-				docsUrl={configPublic.PUBLIC_DOCS_URL}
-			/>
-		{:else}
-			<NoConferenceIndicator />
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>

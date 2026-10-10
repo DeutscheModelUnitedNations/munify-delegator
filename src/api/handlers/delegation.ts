@@ -1,0 +1,378 @@
+import { db, schema } from '$api/db/db';
+import {
+	abilityBuilder,
+	object,
+	pubsub as rumblePubsub,
+	countQuery,
+	query,
+	schemaBuilder
+} from '$api/rumble';
+import {
+	PARTICIPANT_CARE_ROLES,
+	isTeamMemberOfConference,
+	systemAdmin,
+	userId,
+	where
+} from '$api/services/authHelper';
+import { fetchUserParticipations } from '$api/services/participation';
+import { assertApplicationReady } from '$api/services/applicationReadiness';
+import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
+import formatNames from '$lib/helpers/formatNames';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import { m } from '$lib/paraglide/messages';
+import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { GraphQLError } from 'graphql';
+import { eq } from 'drizzle-orm';
+import type { Context } from '$api/context';
+import {
+	DELEGATION_ASSIGNMENT,
+	maskedUntilRelease,
+	onceReleased
+} from '$api/services/assignmentVisibility';
+import { NationRef } from './nation';
+import { NonStateActorRef } from './nonStateActor';
+
+// Ported from abilities/entities/delegation.ts
+abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
+
+/** The delegation the caller is a member of. */
+function ownDelegation(ctx: Context) {
+	const id = userId(ctx);
+	return id ? { members: { user: { id } } } : undefined;
+}
+
+/** The delegations the caller supervises. */
+function supervisedDelegation(ctx: Context) {
+	const id = userId(ctx);
+	return id ? { members: { supervisors: { user: { id } } } } : undefined;
+}
+
+// Delegates see their own delegation, and supervisors the ones they supervise - the assigned
+// nation or non-state actor only once the team has released the assignment.
+abilityBuilder.delegation
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(ownDelegation(ctx), DELEGATION_ASSIGNMENT));
+abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(ownDelegation(ctx)));
+abilityBuilder.delegation
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(supervisedDelegation(ctx), DELEGATION_ASSIGNMENT));
+abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
+
+// The head delegate may change the delegation until it has applied.
+abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
+	const id = userId(ctx);
+	return id
+		? { where: { applied: false, members: { user: { id }, isHeadDelegate: true } } }
+		: undefined;
+});
+
+// Project management and participant care manage their conference's delegations.
+abilityBuilder.delegation
+	.allow(['read', 'update'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+
+// Any team member of the conference may see them - without the join code, which the members,
+// their supervisors and participant care hand out.
+abilityBuilder.delegation.allow('read').when((ctx) => {
+	const team = isTeamMemberOfConference(ctx);
+	return team ? { where: team, columns: { entryCode: false } } : undefined;
+});
+
+const DelegationRef = object({
+	table: 'delegation',
+	adjust: (t) => ({
+		// Resolved through the foreign keys, which the read rules mask until the assignment is
+		// released - a plain relation would be read through the nation's own (public) rules.
+		assignedNation: t.field({
+			type: NationRef,
+			nullable: true,
+			resolve: async (delegation, _args, ctx) =>
+				delegation.assignedNationAlpha3Code
+					? db.query.nation.findFirst(
+							(await ctx.abilities.nation.filter('read')).merge({
+								where: { alpha3Code: delegation.assignedNationAlpha3Code }
+							}).query.single
+						)
+					: null
+		}),
+		assignedNonStateActor: t.field({
+			type: NonStateActorRef,
+			nullable: true,
+			resolve: async (delegation, _args, ctx) =>
+				delegation.assignedNonStateActorId
+					? db.query.nonStateActor.findFirst(
+							(await ctx.abilities.nonStateActor.filter('read')).merge({
+								where: { id: delegation.assignedNonStateActorId }
+							}).query.single
+						)
+					: null
+		})
+	})
+});
+query({ table: 'delegation' });
+countQuery({ table: 'delegation' });
+const pubsub = rumblePubsub({ table: 'delegation' });
+// Creating a delegation also seats its head delegate, and deleting one takes its members with it.
+const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
+
+/** Hands the head delegate role from the current holder to another member of the delegation. */
+async function transferHeadDelegate(
+	members: { id: string; userId: string; isHeadDelegate: boolean }[],
+	newHeadDelegateUserId: string
+) {
+	const current = members.find((member) => member.isHeadDelegate);
+	if (!current) {
+		throw new GraphQLError('No head delegate member found');
+	}
+	const next = members.find((member) => member.userId === newHeadDelegateUserId);
+	if (!next) {
+		throw new GraphQLError('No new head delegate member found');
+	}
+
+	// Order is safe here only because the caller checks `updatable` once, up front, and
+	// these writes go by raw id rather than re-deriving an ability filter per statement.
+	// The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
+	// ability on every statement inside the transaction, so demoting the acting head
+	// delegate first revoked their own permission before the promotion ran. Don't
+	// reintroduce a per-statement ability re-check here without also promoting first.
+	await db.transaction(async (tx) => {
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate: false })
+			.where(eq(schema.delegationMember.id, current.id));
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate: true })
+			.where(eq(schema.delegationMember.id, next.id));
+	});
+}
+
+schemaBuilder.mutationFields((t) => ({
+	createDelegation: t.drizzleField({
+		type: DelegationRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			school: t.arg.string(),
+			motivation: t.arg.string(),
+			experience: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const id = userId(ctx);
+			if (!id) {
+				throw new GraphQLError('Must be logged in');
+			}
+
+			applicationFormSchema.parse({
+				school: args.school,
+				motivation: args.motivation,
+				experience: args.experience
+			});
+
+			// Refuses if the user already takes part in this conference in any role.
+			await fetchUserParticipations({
+				conferenceId: args.conferenceId,
+				userId: id,
+				throwIfAnyIsFound: true
+			});
+
+			const created = await db.transaction(async (tx) => {
+				const delegation = await tx
+					.insert(schema.delegation)
+					.values({
+						conferenceId: args.conferenceId,
+						school: args.school ?? undefined,
+						motivation: args.motivation ?? undefined,
+						experience: args.experience ?? undefined,
+						entryCode: makeEntryCode()
+					})
+					.returning()
+					.then(assertFirstEntryExists);
+
+				// The creator becomes the head delegate.
+				await tx.insert(schema.delegationMember).values({
+					conferenceId: delegation.conferenceId,
+					delegationId: delegation.id,
+					userId: id,
+					isHeadDelegate: true
+				});
+
+				return delegation;
+			});
+
+			pubsub.created();
+			delegationMemberPubsub.created();
+
+			return db.query.delegation
+				.findFirst(
+					query(
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	updateDelegation: t.drizzleField({
+		type: DelegationRef,
+		args: {
+			id: t.arg.id({ required: true }),
+			applied: t.arg.boolean(),
+			resetEntryCode: t.arg.boolean(),
+			newHeadDelegateUserId: t.arg.id(),
+			school: t.arg.string(),
+			experience: t.arg.string(),
+			motivation: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const updatable = (await ctx.abilities.delegation.filter('update')).merge({
+				where: { id: args.id }
+			});
+
+			const delegation = await db.query.delegation
+				.findFirst({
+					...updatable.query.single,
+					with: { members: true, conference: true, appliedForRoles: true }
+				})
+				.then(assertFindFirstExists);
+
+			if (args.applied !== undefined && args.applied !== null) {
+				// Drop applications the delegation has outgrown before judging whether it may apply.
+				await tidyRoleApplications(delegation.id);
+
+				if (args.applied) {
+					if (delegation.members.length < 2) {
+						throw new GraphQLError(m.notEnoughMembers());
+					}
+					assertApplicationReady(delegation, args, 3);
+				}
+
+				await db
+					.update(schema.delegation)
+					.set({ applied: args.applied })
+					.where(updatable.sql.where);
+			}
+
+			if (args.school || args.experience || args.motivation) {
+				await db
+					.update(schema.delegation)
+					.set({
+						school: args.school,
+						experience: args.experience,
+						motivation: args.motivation
+					})
+					.where(updatable.sql.where);
+			}
+
+			if (args.resetEntryCode) {
+				await db
+					.update(schema.delegation)
+					.set({ entryCode: makeEntryCode() })
+					.where(updatable.sql.where);
+			}
+
+			if (args.newHeadDelegateUserId) {
+				await transferHeadDelegate(delegation.members, args.newHeadDelegateUserId);
+			}
+
+			pubsub.updated(args.id);
+			// A new head delegate flips the flag on two members.
+			if (args.newHeadDelegateUserId) {
+				delegationMemberPubsub.updated();
+			}
+
+			return db.query.delegation
+				.findFirst(
+					query(
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	deleteDelegation: t.field({
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const deleted = await db
+				.delete(schema.delegation)
+				.where(
+					(await ctx.abilities.delegation.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
+				)
+				.returning({ id: schema.delegation.id });
+			if (deleted.length === 0) {
+				throw new GraphQLError('Delegation not found, or not yours to delete');
+			}
+			pubsub.removed();
+			delegationMemberPubsub.removed();
+
+			return true;
+		}
+	})
+}));
+
+const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
+	fields: (t) => ({
+		id: t.string(),
+		conferenceId: t.string(),
+		entryCode: t.string(),
+		motivation: t.string({ nullable: true }),
+		school: t.string({ nullable: true }),
+		experience: t.string({ nullable: true }),
+		memberCount: t.int(),
+		headDelegateFullName: t.string(),
+		applied: t.boolean(),
+		conferenceTitle: t.string()
+	})
+});
+
+schemaBuilder.queryFields((t) => ({
+	/**
+	 * What somebody sees after entering a delegation's join code, before committing to join.
+	 *
+	 * Deliberately not ability-filtered: the caller is by definition not a member yet. Knowing the
+	 * entry code is the authorisation, which is why it only needs a logged-in user.
+	 */
+	previewDelegation: t.field({
+		type: DelegationPreview,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			entryCode: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			ctx.mustBeLoggedIn();
+
+			const delegation = await db.query.delegation
+				.findFirst({
+					where: { conferenceId: args.conferenceId, entryCode: args.entryCode },
+					with: {
+						conference: { columns: { title: true } },
+						members: { with: { user: { columns: { givenName: true, familyName: true } } } }
+					}
+				})
+				.then(assertFindFirstExists);
+
+			const headDelegate = delegation.members.find((member) => member.isHeadDelegate);
+
+			return {
+				id: delegation.id,
+				conferenceId: delegation.conferenceId,
+				entryCode: delegation.entryCode,
+				motivation: delegation.motivation,
+				school: delegation.school,
+				experience: delegation.experience,
+				memberCount: delegation.members.length,
+				headDelegateFullName: formatNames(
+					headDelegate?.user?.givenName,
+					headDelegate?.user?.familyName
+				),
+				applied: delegation.applied,
+				conferenceTitle: delegation.conference?.title ?? ''
+			};
+		}
+	})
+}));

@@ -1,13 +1,20 @@
-import { db } from '$db/db';
-import {
-	hashToken,
-	isTokenExpired,
-	pendingInvitationCookieName
-} from '$api/services/invitationToken';
-import { startSignin, codeVerifierCookieName, oidcStateCookieName } from '$api/services/OIDC';
+import { db } from '$api/db/db';
+import { hashToken, pendingInvitationCookieName } from '$api/services/invitationToken';
+import { claimPendingInvitation } from '$api/services/upsertSelf';
 import type { PageServerLoad } from './$types';
+import { assertInvitationUsable } from './invitationValidity';
 import { error, redirect } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 
+/**
+ * Turns an emailed invitation link into a conference membership.
+ *
+ * This has to be a server load: it reads a secret out of the query string, checks it against the
+ * database and hands the browser a cookie, none of which a component can do. The login itself is
+ * left to the OIDC handle — redirecting to the (protected) conference dashboard is what starts it,
+ * and `userLoggedInSuccessfully` redeems the cookie once the person is back. Someone who is
+ * already signed in never passes through that callback, so they are redeemed here instead.
+ */
 export const load: PageServerLoad = async (event) => {
 	const token = event.url.searchParams.get('token');
 
@@ -19,53 +26,25 @@ export const load: PageServerLoad = async (event) => {
 	const hashedToken = hashToken(token);
 
 	// Find the invitation
-	const invitation = await db.teamMemberInvitation.findUnique({
-		where: { token: hashedToken },
-		include: { conference: true }
+	const invitation = await db.query.teamMemberInvitation.findFirst({
+		where: { token: hashedToken }
 	});
 
-	if (!invitation) {
-		error(404, 'Invitation not found or invalid');
-	}
-
-	if (invitation.revokedAt) {
-		error(410, 'This invitation has been revoked');
-	}
-
-	if (invitation.usedAt) {
-		error(410, 'This invitation has already been used');
-	}
-
-	if (isTokenExpired(invitation.expiresAt)) {
-		error(410, 'This invitation has expired');
-	}
+	assertInvitationUsable(invitation);
 
 	// Store the plaintext token in httpOnly cookie for processing after login
 	event.cookies.set(pendingInvitationCookieName, token, {
 		sameSite: 'lax',
 		path: '/',
 		maxAge: 60 * 60, // 1 hour - should be enough for auth flow
-		secure: true,
+		secure: !dev,
 		httpOnly: true
 	});
 
-	// Start OIDC login flow with the conference dashboard as target URL
-	const targetUrl = new URL(`/dashboard/${invitation.conferenceId}`, event.url.origin);
-	const { encrypted_verifier, redirect_uri, encrypted_state } = await startSignin(targetUrl);
+	const alreadySignedIn = event.locals.oidc?.user;
+	if (alreadySignedIn) {
+		await claimPendingInvitation(alreadySignedIn.sub);
+	}
 
-	event.cookies.set(codeVerifierCookieName, encrypted_verifier, {
-		sameSite: 'lax',
-		path: '/',
-		secure: true,
-		httpOnly: true
-	});
-
-	event.cookies.set(oidcStateCookieName, encrypted_state, {
-		sameSite: 'lax',
-		path: '/',
-		secure: true,
-		httpOnly: true
-	});
-
-	redirect(302, redirect_uri.toString());
+	redirect(302, `/dashboard/${invitation.conferenceId}`);
 };

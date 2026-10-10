@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
@@ -23,9 +23,9 @@
 				: 'badge-warning'} badge-lg absolute top-0 right-4 z-10 -translate-y-1/2"
 		>
 			{#if applied}
-				<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
+				<i class="fa-sharp-duotone fa-solid fa-circle-check mr-2"></i> {m.applied()}
 			{:else}
-				<i class="fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
+				<i class="fa-sharp-duotone fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
 			{/if}
 		</div>
 	{/if}

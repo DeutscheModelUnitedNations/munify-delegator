@@ -1,11 +1,12 @@
 import type {
+	ConferenceListType,
 	MailSyncUser,
 	ListAssignmentRule,
 	SubscriberAttribs,
 	ComputedSubscriberState
 } from './types';
 import { createGlobalListName, createConferenceListName } from './listNames';
-import formatNames from '$lib/services/formatNames';
+import formatNames from '$lib/helpers/formatNames';
 
 // Rule: Global newsletter subscription
 
@@ -35,6 +36,38 @@ const globalTeamTendersRule: ListAssignmentRule = {
 
 // Rule: Delegation member list assignments
 
+type DelegationMembership = MailSyncUser['delegationMemberships'][number];
+
+/**
+ * The lists one delegation membership puts a user on. Until the team releases the assignment,
+ * nobody is on a list that tells them what they got - or that they got nothing.
+ */
+function delegationMemberListTypes(dm: DelegationMembership): ConferenceListType[] {
+	const { delegation } = dm;
+	const released = delegation.conference.assignmentReleased;
+	const hasRole = Boolean(
+		delegation.assignedNationAlpha3Code || delegation.assignedNonStateActorId
+	);
+	const types: ConferenceListType[] = [];
+
+	if (!released) {
+		types.push(delegation.applied ? 'REGISTRATION_COMPLETED' : 'REGISTRATION_NOT_COMPLETED');
+		return types;
+	}
+
+	if (delegation.assignedNationAlpha3Code) types.push('DELEGATION_MEMBERS_NATIONS');
+	else if (delegation.assignedNonStateActorId) types.push('DELEGATION_MEMBERS_NSA');
+
+	if (dm.isHeadDelegate && hasRole) types.push('HEAD_DELEGATES');
+
+	if (!delegation.applied) types.push('REGISTRATION_NOT_COMPLETED');
+	else {
+		types.push('REGISTRATION_COMPLETED');
+		if (!hasRole) types.push('REJECTED_PARTICIPANTS');
+	}
+	return types;
+}
+
 const delegationMemberRule: ListAssignmentRule = {
 	description:
 		'Assigns delegation members to NATIONS, NSA, HEAD_DELEGATES, REGISTRATION_*, REJECTED lists',
@@ -47,47 +80,18 @@ const delegationMemberRule: ListAssignmentRule = {
 
 			conferenceAttribs.push({
 				id: dm.conferenceId,
-				role: dm.delegation.assignedNationAlpha3Code
-					? 'DELEGATE_NATION'
-					: dm.delegation.assignedNonStateActorId
-						? 'DELEGATE_NSA'
-						: undefined,
+				role: !conference.assignmentReleased
+					? undefined
+					: dm.delegation.assignedNationAlpha3Code
+						? 'DELEGATE_NATION'
+						: dm.delegation.assignedNonStateActorId
+							? 'DELEGATE_NSA'
+							: undefined,
 				title: conference.title
 			});
 
-			if (dm.delegation.assignedNationAlpha3Code) {
-				listNames.push(
-					createConferenceListName(conference.title, dm.conferenceId, 'DELEGATION_MEMBERS_NATIONS')
-				);
-			} else if (dm.delegation.assignedNonStateActorId) {
-				listNames.push(
-					createConferenceListName(conference.title, dm.conferenceId, 'DELEGATION_MEMBERS_NSA')
-				);
-			}
-
-			if (
-				dm.isHeadDelegate &&
-				(dm.delegation.assignedNationAlpha3Code || dm.delegation.assignedNonStateActorId)
-			) {
-				listNames.push(
-					createConferenceListName(conference.title, dm.conferenceId, 'HEAD_DELEGATES')
-				);
-			}
-
-			if (dm.delegation.applied) {
-				listNames.push(
-					createConferenceListName(conference.title, dm.conferenceId, 'REGISTRATION_COMPLETED')
-				);
-
-				if (!dm.delegation.assignedNationAlpha3Code && !dm.delegation.assignedNonStateActorId) {
-					listNames.push(
-						createConferenceListName(conference.title, dm.conferenceId, 'REJECTED_PARTICIPANTS')
-					);
-				}
-			} else {
-				listNames.push(
-					createConferenceListName(conference.title, dm.conferenceId, 'REGISTRATION_NOT_COMPLETED')
-				);
+			for (const type of delegationMemberListTypes(dm)) {
+				listNames.push(createConferenceListName(conference.title, dm.conferenceId, type));
 			}
 		}
 
@@ -115,13 +119,14 @@ const singleParticipantRule: ListAssignmentRule = {
 					createConferenceListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_COMPLETED')
 				);
 
-				if (sp.assignedRoleId) {
+				// Nobody hears whether they got a role before the team releases it.
+				if (sp.conference.assignmentReleased) {
 					listNames.push(
-						createConferenceListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS')
-					);
-				} else {
-					listNames.push(
-						createConferenceListName(sp.conference.title, sp.conferenceId, 'REJECTED_PARTICIPANTS')
+						createConferenceListName(
+							sp.conference.title,
+							sp.conferenceId,
+							sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
+						)
 					);
 				}
 			} else {
@@ -141,6 +146,36 @@ const singleParticipantRule: ListAssignmentRule = {
 
 // Rule: Supervisor list assignments
 
+type Supervision = MailSyncUser['conferenceSupervisor'][number];
+
+/**
+ * The lists one supervision puts a user on. During registration that depends on whether their
+ * participants have applied yet; afterwards, on whether any of them got a role.
+ */
+function supervisorListTypes(supervisor: Supervision): ConferenceListType[] {
+	const delegations = supervisor.supervisedDelegationMembers.map((d) => d.delegation);
+	const singles = supervisor.supervisedSingleParticipants;
+
+	if (
+		supervisor.conference.state !== 'PARTICIPANT_REGISTRATION' &&
+		supervisor.conference.assignmentReleased
+	) {
+		const anyWithRole =
+			delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId) ||
+			singles.some((d) => d.assignedRoleId);
+		return anyWithRole ? ['SUPERVISORS'] : [];
+	}
+
+	const types: ConferenceListType[] = [];
+	if (delegations.some((d) => d.applied) || singles.some((d) => d.applied)) {
+		types.push('SUPERVISORS');
+	}
+	if (delegations.some((d) => !d.applied) || singles.some((d) => !d.applied)) {
+		types.push('SUPERVISORS_REGISTRATION_NOT_COMPLETED');
+	}
+	return types;
+}
+
 const supervisorRule: ListAssignmentRule = {
 	description: 'Assigns supervisors to SUPERVISORS and SUPERVISORS_REGISTRATION_NOT_COMPLETED',
 	evaluate(user) {
@@ -154,46 +189,10 @@ const supervisorRule: ListAssignmentRule = {
 				title: supervisor.conference.title
 			});
 
-			if (supervisor.conference.state === 'PARTICIPANT_REGISTRATION') {
-				if (
-					supervisor.supervisedDelegationMembers.map((d) => d.delegation).some((d) => d.applied) ||
-					supervisor.supervisedSingleParticipants.some((d) => d.applied)
-				) {
-					listNames.push(
-						createConferenceListName(
-							supervisor.conference.title,
-							supervisor.conferenceId,
-							'SUPERVISORS'
-						)
-					);
-				}
-				if (
-					supervisor.supervisedDelegationMembers.map((d) => d.delegation).some((d) => !d.applied) ||
-					supervisor.supervisedSingleParticipants.some((d) => !d.applied)
-				) {
-					listNames.push(
-						createConferenceListName(
-							supervisor.conference.title,
-							supervisor.conferenceId,
-							'SUPERVISORS_REGISTRATION_NOT_COMPLETED'
-						)
-					);
-				}
-			} else {
-				if (
-					supervisor.supervisedDelegationMembers
-						.map((d) => d.delegation)
-						.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId) ||
-					supervisor.supervisedSingleParticipants.some((d) => d.assignedRoleId)
-				) {
-					listNames.push(
-						createConferenceListName(
-							supervisor.conference.title,
-							supervisor.conferenceId,
-							'SUPERVISORS'
-						)
-					);
-				}
+			for (const type of supervisorListTypes(supervisor)) {
+				listNames.push(
+					createConferenceListName(supervisor.conference.title, supervisor.conferenceId, type)
+				);
 			}
 		}
 
@@ -266,7 +265,9 @@ export function computeSubscriberState(user: MailSyncUser): ComputedSubscriberSt
 
 	return {
 		email: user.email.trim(),
-		formattedName: formatNames(user.given_name, user.family_name, { familyNameUppercase: false }),
+		formattedName: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
+			familyNameUppercase: false
+		}),
 		listNames: [...new Set(allListNames)],
 		attribs: {
 			userId: user.id,

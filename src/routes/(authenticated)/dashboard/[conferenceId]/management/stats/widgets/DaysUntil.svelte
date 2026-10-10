@@ -1,0 +1,42 @@
+<script lang="ts">
+	import { m } from '$lib/paraglide/messages';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
+
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.query.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			countdowns: { daysUntilConference: true, daysUntilEndRegistration: true }
+		})
+	);
+</script>
+
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
+	<div class="card-body p-4">
+		<div class="stats w-full">
+			<div class="stat py-2 px-3">
+				<div class="stat-figure">
+					<i class="fa-sharp-duotone fa-solid fa-hourglass-clock text-2xl text-base-content/70"></i>
+				</div>
+				<div class="stat-title text-xs">{m.daysUntilConference()}</div>
+				<div class="stat-value text-xl">{stats.countdowns.daysUntilConference ?? '-'}</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
+	<div class="card-body p-4">
+		<div class="stats w-full">
+			<div class="stat py-2 px-3">
+				<div class="stat-figure">
+					<i class="fa-sharp-duotone fa-solid fa-check-to-slot text-2xl text-base-content/70"></i>
+				</div>
+				<div class="stat-title text-xs">{m.daysUntilEndRegistration()}</div>
+				<div class="stat-value text-xl">{stats.countdowns.daysUntilEndRegistration ?? '-'}</div>
+			</div>
+		</div>
+	</div>
+</section>

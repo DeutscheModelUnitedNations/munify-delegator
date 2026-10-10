@@ -1,0 +1,167 @@
+import { db, schema } from '$api/db/db';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
+import {
+	PAPER_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
+	assertTeamRole,
+	isTeamMemberOfConference,
+	systemAdmin
+} from '$api/services/authHelper';
+import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { GraphQLError } from 'graphql';
+import { eq } from 'drizzle-orm';
+
+// Ported from abilities/entities/committeeAgendaItem.ts
+abilityBuilder.committeeAgendaItem.allow('read');
+abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when(systemAdmin);
+
+// Scoped through the committee, since an agenda item has no direct conference relation.
+abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when((ctx) => {
+	const committee = isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT']);
+	return committee ? { where: { committee } } : undefined;
+});
+
+export const CommitteeAgendaItemRef = object({ table: 'committeeAgendaItem' });
+query({ table: 'committeeAgendaItem' });
+const pubsub = rumblePubsub({ table: 'committeeAgendaItem' });
+
+const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
+
+schemaBuilder.mutationFields((t) => ({
+	createAgendaItem: t.drizzleField({
+		type: CommitteeAgendaItemRef,
+		args: {
+			committeeId: t.arg.id({ required: true }),
+			title: t.arg.string({ required: true }),
+			teaserText: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			// The chase integration creates agenda items with the `service_user` OIDC role; the
+			// conference's project management may add them by hand.
+			const committee = await db.query.committee
+				.findFirst({ where: { id: args.committeeId }, columns: { conferenceId: true } })
+				.then(assertFindFirstExists);
+			if (!ctx.hasRole('service_user')) {
+				await assertTeamRole(ctx, committee.conferenceId, PROJECT_MANAGEMENT_ROLES);
+			}
+
+			const created = await db
+				.insert(schema.committeeAgendaItem)
+				.values({
+					committeeId: args.committeeId,
+					title: args.title,
+					teaserText: args.teaserText ?? undefined
+				})
+				.returning()
+				.then(assertFirstEntryExists);
+
+			pubsub.created();
+
+			return db.query.committeeAgendaItem
+				.findFirst(
+					query(
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	updateAgendaItem: t.drizzleField({
+		type: CommitteeAgendaItemRef,
+		args: {
+			id: t.arg.id({ required: true }),
+			title: t.arg.string(),
+			teaserText: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			await db
+				.update(schema.committeeAgendaItem)
+				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
+				.where(
+					(await ctx.abilities.committeeAgendaItem.filter('update')).merge({
+						where: { id: args.id }
+					}).sql.where
+				);
+
+			pubsub.updated(args.id);
+
+			return db.query.committeeAgendaItem
+				.findFirst(
+					query(
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	deleteAgendaItem: t.field({
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const deleted = await db
+				.delete(schema.committeeAgendaItem)
+				.where(
+					(await ctx.abilities.committeeAgendaItem.filter('delete')).merge({
+						where: { id: args.id }
+					}).sql.where
+				)
+				.returning({ id: schema.committeeAgendaItem.id });
+			if (deleted.length === 0) {
+				throw new GraphQLError('Agenda item not found, or not yours to delete');
+			}
+			pubsub.removed();
+
+			return true;
+		}
+	}),
+
+	setAgendaItemReviewHelpStatus: t.drizzleField({
+		type: CommitteeAgendaItemRef,
+		args: {
+			agendaItemId: t.arg.id({ required: true }),
+			status: t.arg({ type: reviewHelpStatusEnum, required: true })
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const agendaItem = await db.query.committeeAgendaItem
+				.findFirst({
+					where: { id: args.agendaItemId },
+					with: { committee: { columns: { conferenceId: true } } }
+				})
+				.then(assertFindFirstExists);
+
+			// Reviewers get this on top of the update ability, which they do not otherwise hold for
+			// agenda items - hence a role check rather than an ability filter.
+			await assertTeamRole(ctx, agendaItem.committee.conferenceId, PAPER_ROLES);
+
+			await db
+				.update(schema.committeeAgendaItem)
+				.set({ reviewHelpStatus: args.status })
+				.where(eq(schema.committeeAgendaItem.id, args.agendaItemId));
+
+			pubsub.updated(args.agendaItemId);
+
+			return db.query.committeeAgendaItem
+				.findFirst(
+					query(
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.agendaItemId }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	})
+}));

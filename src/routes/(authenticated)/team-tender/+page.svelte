@@ -1,32 +1,28 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
-	import { invalidateAll } from '$app/navigation';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
 
-	let { data }: PageProps = $props();
+	// The signed-in person does not change while the page is open.
+	const currentUser = await getCurrentUser();
 
-	let signedUp = $state(data.wantsJoinTeamInformation);
+	const dbUser = await client.query.user({
+		__args: { id: currentUser.sub },
+		wantsJoinTeamInformation: true
+	});
+
+	let signedUp = $state(dbUser?.wantsJoinTeamInformation ?? false);
 	let loading = $state(false);
-
-	const updatePreferenceMutation = graphql(`
-		mutation UpdateTeamTenderPreference($email: String!, $wantsJoinTeamInformation: Boolean!) {
-			updateOneUsersNewsletterPreferences(
-				email: $email
-				wantsJoinTeamInformation: $wantsJoinTeamInformation
-			) {
-				id
-			}
-		}
-	`);
 
 	const toggleSignUp = async (value: boolean) => {
 		loading = true;
-		const promise = updatePreferenceMutation.mutate({
-			email: data.user.email,
-			wantsJoinTeamInformation: value
-		});
+		const promise = Promise.resolve(
+			client.mutate.updateUsersNewsletterPreferences({
+				__args: { email: currentUser.email, wantsJoinTeamInformation: value }
+			})
+		);
 		toast.promise(promise, {
 			success: value ? m.teamTenderSignUpSuccess() : m.teamTenderUnsubscribeSuccess(),
 			error: m.teamTenderError(),
@@ -34,8 +30,6 @@
 		});
 		try {
 			await promise;
-			cache.markStale();
-			await invalidateAll();
 			signedUp = value;
 		} finally {
 			loading = false;
@@ -48,12 +42,12 @@
 >
 	<div class="card bg-base-100 max-w-lg">
 		<div class="card-body items-center">
-			<i class="fa-duotone fa-bullhorn text-primary mb-4 text-5xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bullhorn text-primary mb-4 text-5xl"></i>
 			<h1 class="text-3xl font-bold">{m.teamTenderTitle()}</h1>
 
 			{#if signedUp}
 				<div class="alert alert-success mt-6">
-					<i class="fa-solid fa-circle-check text-xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-circle-check text-xl"></i>
 					<div>
 						<h3 class="font-bold">{m.teamTenderAlreadySignedUp()}</h3>
 						<p class="text-sm">{m.teamTenderAlreadySignedUpDescription()}</p>
@@ -69,13 +63,13 @@
 			{:else}
 				<p class="mt-4 max-w-md text-base">{m.teamTenderDescription()}</p>
 				<button class="btn btn-primary mt-6" disabled={loading} onclick={() => toggleSignUp(true)}>
-					<i class="fa-solid fa-paper-plane"></i>
+					<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 					{m.teamTenderSignUp()}
 				</button>
 			{/if}
 
 			<div class="divider"></div>
-			<a class="link link-hover text-sm" href="/my-account">
+			<a class="link link-hover text-sm" href={resolve('/my-account')}>
 				{m.teamTenderManagePreferences()}
 			</a>
 		</div>

@@ -1,49 +1,7 @@
-import { graphql } from '$houdini';
-import type { ConferenceOpenForRegistrationQueryVariables } from './$houdini';
+import { redirect } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query ConferenceOpenForRegistrationQuery($userId: String!, $currentDate: DateTime!) {
-		findManyConferences(
-			orderBy: [{ startConference: asc }]
-			where: { startConference: { gt: $currentDate } }
-		) {
-			id
-			location
-			longTitle
-			startAssignment
-			startConference
-			state
-			title
-			website
-			endConference
-			imageDataURL
-			language
-			totalSeats
-			totalParticipants
-			waitingListLength
-		}
-		findManyDelegationMembers(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-		findManySingleParticipants(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-		findManyConferenceSupervisors(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-	}
-`);
-
-export const _ConferenceOpenForRegistrationQueryVariables: ConferenceOpenForRegistrationQueryVariables =
-	async (event) => {
-		return {
-			userId: (await event.parent()).user.sub,
-			currentDate: new Date()
-		};
-	};
+/** The conference selector is the dashboard; what a conference offers is decided there. */
+export const load: PageLoad = () => {
+	redirect(307, '/dashboard');
+};

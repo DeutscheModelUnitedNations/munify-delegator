@@ -1,10 +1,15 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { escapeHtml } from '$lib/helpers/escapeHtml';
 	import { blur } from 'svelte/transition';
+	import { verifyCertificate } from './verifyCertificate';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
-	let { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate } = data;
+	let { params }: PageProps = $props();
+
+	const { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate } = $derived(
+		await verifyCertificate(params.jwt)
+	);
 </script>
 
 <div class="bg-base-200 flex h-screen w-full flex-col items-center justify-center p-6">
@@ -16,9 +21,10 @@
 			{#if fullName}
 				<h2 class="card-title">{m.certificateIsValid()}</h2>
 				<p class="text-lg">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/; the interpolated values are escaped -->
 					{@html m.certificateIsValidFor({
-						fullName,
-						conferenceTitle: conferenceTitle ?? m.unknownConferenceTitle(),
+						fullName: escapeHtml(fullName),
+						conferenceTitle: escapeHtml(conferenceTitle ?? m.unknownConferenceTitle()),
 						conferenceStartDate: conferenceStartDate
 							? conferenceStartDate.toLocaleDateString()
 							: m.unknownDate(),

@@ -1,71 +1,63 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import { resolve } from '$app/paths';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { queryParam } from 'sveltekit-search-params';
-	import type { PageData } from './$types';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { queryParameters } from 'sveltekit-search-params';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { goto, invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
+	import { goto } from '$app/navigation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { entryCodeLength } from '$api/services/entryCodeGenerator';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params: routeParams }: PageProps = $props();
 
-	let code = queryParam('code');
+	const params = queryParameters({ code: true });
 
-	let conferenceId = $derived(data.conferenceQueryData?.findUniqueConference?.id);
+	let conferenceId = $derived(routeParams.conferenceId);
 
-	// codes are uppercase only; normalize what users type or paste (incl. via link)
-	let normalizedCode = $derived(($code ?? '').trim().toUpperCase());
+	// Codes are uppercase only; normalize what people type or paste (a link included).
+	let normalizedCode = $derived((params.code ?? '').trim().toUpperCase());
 	let codeComplete = $derived(normalizedCode.length === entryCodeLength);
 
-	const previewSupervisorQuery = graphql(`
-		query previewSupervisor($conferenceId: ID!, $connectionCode: String!) {
-			previewConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
-				family_name
-				given_name
-			}
-		}
-	`);
+	function fetchPreview(connectionCode: string) {
+		return client.query.previewConferenceSupervisor({
+			__args: { conferenceId, connectionCode },
+			family_name: true,
+			given_name: true
+		});
+	}
 
-	const connectSupervisorMutation = graphql(`
-		mutation connectSupervisor($conferenceId: ID!, $connectionCode: String!) {
-			connectToConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
-				id
-			}
-		}
-	`);
+	let preview = $state<Awaited<ReturnType<typeof fetchPreview>>>();
+	let previewLoading = $state(false);
 
 	const connect = async () => {
-		if (
-			!conferenceId ||
-			!codeComplete ||
-			!$previewSupervisorQuery.data?.previewConferenceSupervisor
-		)
-			return;
+		if (!conferenceId || !codeComplete || !preview) return;
 
-		const promise = connectSupervisorMutation.mutate({
-			conferenceId,
-			connectionCode: normalizedCode
+		const promise = client.mutate.connectToConferenceSupervisor({
+			__args: { conferenceId, connectionCode: normalizedCode },
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 
-		const res = await promise;
-
-		if (res?.errors) {
-			console.error(res.errors);
-			return;
-		}
-
-		cache.markStale();
-		await invalidateAll();
-		goto(`/dashboard/${conferenceId}`);
+		goto(resolve(`/dashboard/${conferenceId}`));
 	};
+
 	$effect(() => {
 		if (!conferenceId || !codeComplete) return;
-		previewSupervisorQuery.fetch({
-			variables: { conferenceId, connectionCode: normalizedCode }
-		});
+		previewLoading = true;
+		preview = undefined;
+		void fetchPreview(normalizedCode)
+			.then((result) => {
+				preview = result;
+			})
+			.catch(() => {
+				preview = undefined;
+			})
+			.finally(() => {
+				previewLoading = false;
+			});
 	});
 </script>
 
@@ -77,21 +69,21 @@
 		<input
 			type="text"
 			class="input w-full max-w-lg font-mono tracking-[0.6rem] uppercase"
-			bind:value={$code}
+			bind:value={params.code}
 		/>
 
 		{#if !codeComplete}
 			<!-- wait until the full code has been entered -->
-		{:else if $previewSupervisorQuery.fetching}
+		{:else if previewLoading}
 			<div class="mt-10 ml-10">
-				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+				<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
+		{:else if preview}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">
-						{$previewSupervisorQuery.data.previewConferenceSupervisor.given_name}
-						{$previewSupervisorQuery.data.previewConferenceSupervisor.family_name}
+						{preview.given_name}
+						{preview.family_name}
 					</h3>
 					<p class="mt-4 text-sm">{m.connectSupervisorWarning()}</p>
 					<button class="btn btn-primary mt-4" onclick={connect}>{m.connectSupervisorBtn()}</button>

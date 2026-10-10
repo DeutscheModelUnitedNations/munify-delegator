@@ -1,91 +1,44 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
-	import {
-		validateResolution,
-		createEmptyResolution,
-		type ResolutionHeaderData
-	} from '$lib/components/Paper/Editor/Resolution';
-	import PaperEditor from '$lib/components/Paper/Editor';
-	import { editorContentStore, resolutionStore } from '$lib/components/Paper/Editor/editorStore';
-	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
-	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
-	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyPaperHubRoles } from '../myPaperHubRoles';
+	import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
+	import { compareEditorContentHash } from '$lib/components/paper/editor/contentHash';
 	import { m } from '$lib/paraglide/messages';
-	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
-	import type { PaperStatus$options } from '$houdini';
-	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
-	import type {
-		ComparisonState,
-		VersionForComparison,
-		DiffStats
-	} from '$lib/components/Paper/Editor/DiffViewer';
-	import { SvelteMap } from 'svelte/reactivity';
-	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import { goto, invalidateAll } from '$app/navigation';
-	import { page } from '$app/stores';
-	import PaperReviewSection from './PaperReviewSection.svelte';
 	import {
-		downloadResolutionPdf,
-		downloadResolutionTypst,
-		downloadPaperPdf,
-		downloadPaperTypst
-	} from '$lib/services/resolutionExport';
-	import type { PaperTypstMeta } from '$lib/services/paperTypst';
+		buildResolutionHeaderData,
+		currentEditorContent,
+		paperEntityName,
+		paperTitle
+	} from '../paperDisplay';
+	import PaperHeaderCard from '../PaperHeaderCard.svelte';
+	import PaperContent from '../PaperContent.svelte';
+	import { LoadedPaper } from '../loadedPaper.svelte';
+	import { paperSaveToastMessages } from '../paperSaving';
+	import PaperActionBar from './PaperActionBar.svelte';
+	import { fetchPaperDetail, type PaperDetail } from './paperDetail';
+	import PaperExportButtons from './PaperExportButtons.svelte';
+	import PaperReviewSection from './PaperReviewSection.svelte';
+	import PaperHistory from './PaperHistory.svelte';
+	import PaperDangerZone from './PaperDangerZone.svelte';
+	import type { PageProps } from './$types';
 
-	const updatePaperMutation = graphql(`
-		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
-			updateOnePaper(where: { paperId: $paperId }, data: { content: $content, status: $status }) {
-				id
-			}
-		}
-	`);
+	let { params }: PageProps = $props();
 
-	const deletePaperMutation = graphql(`
-		mutation DeletePaperMutation($paperId: String!) {
-			deleteOnePaper(where: { id: $paperId }) {
-				id
-			}
-		}
-	`);
-
-	let { data }: { data: PageData } = $props();
-
-	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
-	let paperData = $derived($paperQuery?.data?.findUniquePaper);
-
-	// Query for user's reviewer snippets
-	const mySnippetsStore = graphql(`
-		query MyReviewerSnippetsForPaperQuery {
-			myReviewerSnippets {
-				id
-				name
-				content
-			}
-		}
-	`);
-
-	// Fetch snippets on mount
-	$effect(() => {
-		mySnippetsStore.fetch();
-	});
-
-	// Get snippets for reviewers
-	let snippets = $derived(
-		($mySnippetsStore?.data?.myReviewerSnippets ?? []).map((s) => ({
-			id: s.id,
-			name: s.name,
-			content: s.content as any
-		}))
+	const [currentUser, paperData, myRoles] = $derived(
+		await Promise.all([
+			getCurrentUser(),
+			fetchPaperDetail(params.paperId),
+			fetchMyPaperHubRoles(params.conferenceId)
+		])
 	);
 
 	// View mode detection
-	let isAuthor = $derived(paperData?.author.id === data.user.sub);
-	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
+	let isAuthor = $derived(paperData?.author.id === currentUser.sub);
+	let isReviewer = $derived(myRoles.isReviewer);
 	let isSupervisor = $derived(
-		!!data.supervisedDelegationIds?.includes(paperData?.delegation.id ?? '')
+		myRoles.supervisedDelegationIds.includes(paperData?.delegation.id ?? '')
 	);
 	let baseViewMode = $derived<'author' | 'reviewer' | 'supervisor'>(
 		isAuthor ? 'author' : isReviewer ? 'reviewer' : isSupervisor ? 'supervisor' : 'author'
@@ -95,264 +48,48 @@
 	let reviewerEditMode = $state(false);
 	let editorEditable = $derived(baseViewMode === 'author' || reviewerEditMode);
 
-	let initialized = $state(false);
-	let currentPaperId = $state<string | null>(null);
-	let resolutionValidationError = $state<string | null>(null);
-	let invalidRawContent = $state<unknown>(null);
+	const loaded = new LoadedPaper();
 
-	// Watch route param directly - this is guaranteed to change on navigation
-	// The Houdini store chain may not trigger reactivity correctly in Svelte 5
+	// Only the latest version is fetched, ordered newest first.
+	let latestVersion = $derived(paperData?.versions.at(0));
+	let versionNumber = $derived(latestVersion?.version ?? 0);
+
+	// Watch the route param directly - it is guaranteed to change on navigation, while the loaded
+	// paper arrives a tick later.
 	$effect(() => {
-		const routePaperId = $page.params.paperId;
-		if (routePaperId && routePaperId !== currentPaperId) {
+		const routePaperId = params.paperId;
+		if (routePaperId && routePaperId !== loaded.paperId) {
 			// Route changed - reset initialized to show loading state
 			// and wait for paperData to arrive
-			initialized = false;
+			loaded.initialized = false;
 		}
 	});
 
 	// Initialize stores when paper data arrives
 	$effect(() => {
-		const routePaperId = $page.params.paperId;
-		if (paperData && paperData.id === routePaperId && routePaperId !== currentPaperId) {
-			// Reset validation error and raw content
-			resolutionValidationError = null;
-			invalidRawContent = null;
-
-			if (!paperData.versions || paperData.versions.length === 0) {
-				// Reset both stores, set appropriate one based on paper type
-				if (paperData.type === 'WORKING_PAPER') {
-					resolutionStore.replaceResolution(
-						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
-					);
-				} else {
-					$editorContentStore = '';
-				}
-				currentPaperId = paperData.id;
-				initialized = true;
-				return;
-			}
-			const latestVer = paperData.versions.reduce((acc, version) =>
-				version.version > acc.version ? version : acc
-			);
-			// Set the correct store based on paper type
-			if (paperData.type === 'WORKING_PAPER') {
-				// Validate working paper content before setting
-				const validationResult = validateResolution(latestVer.content);
-				if (validationResult.valid) {
-					resolutionStore.replaceResolution(validationResult.data);
-				} else {
-					resolutionValidationError = validationResult.error;
-					invalidRawContent = latestVer.content;
-					resolutionStore.replaceResolution(
-						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
-					);
-				}
-			} else {
-				$editorContentStore = latestVer.content;
-			}
-			currentPaperId = paperData.id;
-			initialized = true;
+		const routePaperId = params.paperId;
+		if (paperData && paperData.id === routePaperId) {
+			loaded.loadIfNew(paperData, latestVersion?.content);
 		}
 	});
 
-	let title = $derived(
-		paperData?.agendaItem?.title
-			? `${paperData.agendaItem.committee.abbreviation}: ${paperData.agendaItem.title}`
-			: paperData?.type
-				? `${translatePaperType(paperData.type)}`
-				: ''
+	let resolutionHeaderData = $derived(
+		paperData ? buildResolutionHeaderData(paperData, paperData.conference) : undefined
 	);
-	let nation = $derived(paperData?.delegation?.assignedNation);
-	let nsa = $derived(paperData?.delegation?.assignedNonStateActor);
-	let versionNumber = $derived.by(() => {
-		const versions = paperData?.versions;
-		if (!versions || versions.length === 0) return 0;
-		return versions.reduce((acc, version) => (version.version > acc.version ? version : acc))
-			.version;
-	});
-	let latestVersion = $derived(
-		paperData?.versions?.find((version) => version.version === versionNumber)
-	);
-	let existingReviews = $derived(
-		paperData?.versions?.flatMap((version) => version.reviews ?? []) ?? []
-	);
-
-	// Resolution header data for working papers
-	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
-		if (paperData?.type !== 'WORKING_PAPER') return undefined;
-
-		const nationName = nation
-			? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
-			: undefined;
-		const nsaName = nsa?.name;
-		const year = new Date().getFullYear();
-
-		return {
-			conferenceName: paperData.conference?.title ?? 'Model UN',
-			conferenceTitle:
-				paperData.conference?.longTitle ?? paperData.conference?.title ?? 'Model United Nations',
-			committeeAbbreviation: paperData.agendaItem?.committee?.abbreviation,
-			committeeFullName: paperData.agendaItem?.committee?.name,
-			committeeResolutionHeadline: paperData.agendaItem?.committee?.resolutionHeadline ?? undefined,
-			documentNumber: `WP/${year}/${paperData.id.slice(-6)}`,
-			topic: paperData.agendaItem?.title,
-			authoringDelegation: nationName ?? nsaName,
-			conferenceEmblem: paperData.conference?.emblemDataURL ?? undefined
-		};
-	});
-
-	// Content used for Typst/PDF export: the live editor state (so unsaved
-	// edits are included), falling back to the latest saved version when the
-	// editor has no content yet.
-	let exportContent = $derived(
-		(paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore) ||
-			latestVersion?.content
-	);
-
-	// Position/introduction papers: text-only Typst document metadata.
-	let paperTypstMeta = $derived.by((): PaperTypstMeta | undefined => {
-		if (!paperData || paperData.type === 'WORKING_PAPER') return undefined;
-		const conferenceName = paperData.conference?.title ?? 'Model UN';
-		const committeeName = paperData.agendaItem?.committee?.name;
-		const committeeAbbr = paperData.agendaItem?.committee?.abbreviation;
-		return {
-			conferenceName,
-			paperType: translatePaperType(paperData.type),
-			entityName: nation
-				? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
-				: (nsa?.name ?? undefined),
-			committeeLine: committeeName
-				? `${committeeName}${committeeAbbr ? ` (${committeeAbbr})` : ''}`
-				: undefined,
-			committeeLabel: m.committee(),
-			topic: paperData.agendaItem?.title ?? undefined,
-			topicLabel: m.resolutionTopic().replace(':', ''),
-			disclaimer: m.paperPrintDisclaimer({ conferenceName })
-		};
-	});
-
-	// Filename base: the resolution document number for working papers,
-	// otherwise a type/year/id stub. `safeBaseName` sanitises it.
-	let exportDocNumber = $derived(
-		paperData?.type === 'WORKING_PAPER'
-			? resolutionHeaderData?.documentNumber
-			: paperData
-				? `${paperData.type}/${new Date().getFullYear()}/${paperData.id.slice(-6)}`
-				: undefined
-	);
-
-	let isExportingPdf = $state(false);
-
-	function exportTypst() {
-		if (!exportContent || !paperData) return;
-		if (paperData.type === 'WORKING_PAPER') {
-			downloadResolutionTypst(
-				exportContent,
-				resolutionHeaderData ?? {},
-				resolutionHeaderData?.documentNumber
-			);
-		} else if (paperTypstMeta) {
-			downloadPaperTypst(exportContent, paperTypstMeta, exportDocNumber);
-		}
-	}
-
-	async function exportPdf() {
-		if (!exportContent || !paperData || isExportingPdf) return;
-		isExportingPdf = true;
-		try {
-			const pending =
-				paperData.type === 'WORKING_PAPER'
-					? downloadResolutionPdf(
-							exportContent,
-							resolutionHeaderData ?? {},
-							resolutionHeaderData?.documentNumber
-						)
-					: paperTypstMeta
-						? downloadPaperPdf(exportContent, paperTypstMeta, exportDocNumber)
-						: Promise.resolve();
-			await toast.promise(pending, {
-				loading: m.paperExportPdfLoading(),
-				success: m.paperExportPdfSuccess(),
-				error: m.paperExportPdfError()
-			});
-		} finally {
-			isExportingPdf = false;
-		}
-	}
-
-	let unsavedChanges = $state(false);
-
-	// Version comparison state
-	let comparisonState = $state<ComparisonState>({
-		baseVersion: null,
-		compareVersion: null,
-		isSelecting: false
-	});
-	let showCompareModal = $state(false);
-
-	// Compute diff stats for each version compared to its previous version
-	let versionStats = $derived.by(() => {
-		if (!paperData?.versions || paperData.versions.length < 2)
-			return new SvelteMap<string, DiffStats>();
-
-		const sortedVersions = [...paperData.versions].sort((a, b) => a.version - b.version);
-		const statsMap = new SvelteMap<string, DiffStats>();
-
-		for (let i = 1; i < sortedVersions.length; i++) {
-			const prevVersion = sortedVersions[i - 1];
-			const currVersion = sortedVersions[i];
-			const stats = computeDiffStats(prevVersion.content, currVersion.content);
-			statsMap.set(currVersion.id, stats);
-		}
-
-		return statsMap;
-	});
-
-	const handleCompareClick = (version: VersionForComparison) => {
-		if (!comparisonState.isSelecting) {
-			// First selection - set as base
-			comparisonState = {
-				baseVersion: version,
-				compareVersion: null,
-				isSelecting: true
-			};
-		} else {
-			// Prevent selecting the same version twice
-			if (comparisonState.baseVersion?.id === version.id) {
-				return;
-			}
-			// Second selection - set as compare and open modal
-			comparisonState = {
-				...comparisonState,
-				compareVersion: version,
-				isSelecting: false
-			};
-			showCompareModal = true;
-		}
-	};
-
-	const cancelComparison = () => {
-		comparisonState = {
-			baseVersion: null,
-			compareVersion: null,
-			isSelecting: false
-		};
-	};
 
 	// Get the current content from the correct store based on paper type
 	let currentContent = $derived(
 		paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore
 	);
 
+	let hasCurrentContent = $derived(currentContent !== undefined && currentContent !== null);
+	let latestContentHash = $derived(latestVersion?.contentHash);
+
+	let unsavedChanges = $state(false);
+
 	$effect(() => {
-		if (
-			paperData &&
-			currentContent !== undefined &&
-			currentContent !== null &&
-			!resolutionValidationError
-		) {
-			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
+		if (paperData && hasCurrentContent && !loaded.validationError) {
+			compareEditorContentHash(JSON.stringify(currentContent), latestContentHash).then(
 				(areEqual) => {
 					unsavedChanges = !areEqual;
 				}
@@ -360,32 +97,22 @@
 		}
 	});
 
-	const saveFile = async (options: { submit?: boolean } = {}) => {
+	const saveFile = async (submit: boolean) => {
 		if (!paperData) return;
-
-		const { submit = false } = options;
 
 		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
 		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
 
-		// Use the correct store based on paper type
-		const content =
-			paperData.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore;
-
-		const promise = updatePaperMutation.mutate({
-			paperId: paperData.id,
-			content,
-			status: newStatus
+		const promise = client.mutate.updatePaper({
+			__args: {
+				paperId: paperData.id,
+				content: currentEditorContent(paperData.type),
+				status: newStatus
+			},
+			id: true
 		});
-		toast.promise(promise, {
-			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
-			success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
-			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
-		});
+		toast.promise(promise, paperSaveToastMessages(submit));
 		await promise;
-
-		cache.markStale();
-		await invalidateAll();
 	};
 
 	// Quote selection state for reviewers
@@ -402,422 +129,93 @@
 	// Paper editor container reference for cite navigation
 	let paperEditorContainer = $state<HTMLElement | null>(null);
 
-	// Danger Zone state
-	let showDangerZone = $state(false);
-	let deleteConfirmationText = $state('');
-	let entityName = $derived(
-		nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : (nsa?.name ?? '')
+	let deleteConfirmationExpected = $derived(
+		paperData ? `${paperTitle(paperData)} - ${paperEntityName(paperData.delegation) ?? ''}` : ''
 	);
-	let deleteConfirmationExpected = $derived(`${title} - ${entityName}`);
-
-	const handleDeletePaper = async () => {
-		if (!paperData) return;
-
-		if (deleteConfirmationText !== deleteConfirmationExpected) {
-			toast.error(m.paperDeleteConfirmationMismatch());
-			return;
-		}
-
-		const promise = deletePaperMutation.mutate({
-			paperId: paperData.id
-		});
-		toast.promise(promise, {
-			loading: m.paperDeleting(),
-			success: m.paperDeletedSuccessfully(),
-			error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
-		});
-		await promise;
-
-		// Navigate back to paperhub
-		const conferenceId = $page.params.conferenceId;
-		goto(`/dashboard/${conferenceId}/paperhub`);
-	};
-
-	const downloadRawContent = () => {
-		if (!invalidRawContent || !paperData) return;
-
-		const jsonString = JSON.stringify(invalidRawContent, null, 2);
-		const blob = new Blob([jsonString], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `paper-${paperData.id}-raw-data.json`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-	};
 </script>
 
-<div class="flex flex-col gap-4 w-full">
-	{#if paperData}
-		<!-- Paper Header Card -->
-		<div class="card bg-base-200 border border-base-300">
-			<div class="card-body p-4">
-				<!-- Top Row: Country/NSA + Status -->
-				<div class="flex items-center justify-between gap-4 flex-wrap">
-					<div class="flex items-center gap-3">
-						<Flag size="md" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
-						<span class="text-lg font-semibold">
-							{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa?.name}
-						</span>
-					</div>
-					<div class="badge {getStatusBadgeClass(paperData.status)} badge-lg gap-2">
-						<i class="fa-solid {getPaperStatusIcon(paperData.status)}"></i>
-						{translatePaperStatus(paperData.status)}
-					</div>
-				</div>
+{#snippet paperHeader(paper: PaperDetail)}
+	<PaperHeaderCard {paper} status={paper.status} {versionNumber} createdAt={paper.createdAt}>
+		{#snippet actions()}
+			<PaperExportButtons {paper} {resolutionHeaderData} />
+		{/snippet}
+	</PaperHeaderCard>
 
-				<!-- Title -->
-				<h1 class="text-2xl font-bold mt-2">{title}</h1>
-
-				<!-- Metadata Row -->
-				<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
-					<div class="flex items-center gap-3 text-sm text-base-content/70 flex-wrap">
-						<span class="flex items-center gap-1">
-							<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
-							{translatePaperType(paperData.type)}
-						</span>
-						<span class="text-base-content/30">•</span>
-						<div class="tooltip" data-tip={m.version()}>
-							<span class="font-mono">v{versionNumber}</span>
-						</div>
-						<span class="text-base-content/30">•</span>
-						<div class="tooltip" data-tip={m.createdAt()}>
-							<span class="flex items-center gap-1">
-								<i class="fa-solid fa-plus text-xs"></i>
-								{paperData.createdAt?.toLocaleDateString()}
-							</span>
-						</div>
-						{#if paperData.firstSubmittedAt}
-							<span class="text-base-content/30">•</span>
-							<div class="tooltip" data-tip={m.submittedAt()}>
-								<span class="flex items-center gap-1">
-									<i class="fa-solid fa-paper-plane text-xs"></i>
-									{paperData.firstSubmittedAt?.toLocaleDateString()}
-								</span>
-							</div>
-						{/if}
-					</div>
-					<div class="flex items-center gap-2">
-						<button
-							class="btn btn-sm btn-primary"
-							disabled={!exportContent || isExportingPdf}
-							onclick={exportPdf}
-						>
-							{#if isExportingPdf}
-								<span class="loading loading-spinner loading-xs"></span>
-							{:else}
-								<i class="fa-solid fa-file-pdf"></i>
-							{/if}
-							{m.paperExportPdf()}
-						</button>
-						<button class="btn btn-sm btn-ghost" disabled={!exportContent} onclick={exportTypst}>
-							<i class="fa-duotone fa-file-code"></i>
-							{m.paperExportTypst()}
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
+	{#if baseViewMode === 'supervisor'}
 		<!-- Supervisor Read-Only Banner -->
-		{#if baseViewMode === 'supervisor'}
-			<div class="alert alert-info">
-				<i class="fa-solid fa-chalkboard-user"></i>
-				<span>{m.readOnlyViewSupervisor()}</span>
-			</div>
-		{/if}
-
-		<!-- Action Bar (hidden for supervisors) -->
-		{#if baseViewMode !== 'supervisor'}
-			<div class="card bg-base-100 border border-base-300">
-				<div class="card-body p-3 flex-row items-center justify-between flex-wrap gap-2">
-					<!-- Author/Edit Actions (Left) -->
-					<div class="flex gap-2">
-						{#if baseViewMode === 'author' || reviewerEditMode}
-							{#if paperData.status === 'DRAFT'}
-								<button
-									class="btn btn-warning btn-sm"
-									onclick={() => saveFile()}
-									disabled={!unsavedChanges}
-								>
-									<i class="fa-solid fa-save"></i>
-									{m.paperSaveDraft()}
-								</button>
-							{/if}
-							<button
-								class="btn btn-primary btn-sm"
-								onclick={() => saveFile({ submit: true })}
-								disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
-							>
-								<i class="fa-solid fa-paper-plane"></i>
-								{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
-							</button>
-						{/if}
-					</div>
-
-					<!-- Reviewer Toggle (Right) -->
-					{#if isReviewer && baseViewMode === 'reviewer'}
-						<div class="flex gap-2">
-							<button
-								class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
-								onclick={() => (reviewerEditMode = !reviewerEditMode)}
-							>
-								<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
-								{reviewerEditMode ? m.viewer() : m.edit()}
-							</button>
-						</div>
-					{/if}
-				</div>
-			</div>
-		{/if}
-	{:else}
-		<div>
-			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+		<div class="alert alert-info">
+			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
+			<span>{m.readOnlyViewSupervisor()}</span>
 		</div>
+	{:else}
+		<!-- Action Bar (hidden for supervisors) -->
+		<PaperActionBar
+			status={paper.status}
+			viewMode={baseViewMode}
+			{isReviewer}
+			bind:reviewerEditMode
+			{unsavedChanges}
+			onSave={saveFile}
+		/>
 	{/if}
-	{#if initialized}
-		<div class="w-full flex flex-col gap-4">
-			<!-- Paper Editor - key forces re-creation when paper or editable changes -->
-			<div bind:this={paperEditorContainer}>
-				{#key `${paperData.id}-${editorEditable}`}
-					{#if paperData.type === 'WORKING_PAPER' && resolutionValidationError}
-						<!-- Invalid format error for working papers -->
-						<div class="alert alert-error flex-col items-start gap-3">
-							<div class="flex items-center gap-3">
-								<i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-								<div>
-									<p class="font-semibold">{m.paperInvalidFormat()}</p>
-									<p class="text-sm opacity-80">{m.paperInvalidFormatDescription()}</p>
-									{#if invalidRawContent}
-										<button class="btn btn-sm btn-outline mt-2" onclick={downloadRawContent}>
-											<i class="fa-solid fa-download"></i>
-											{m.paperInvalidFormatDownload()}
-										</button>
-									{/if}
-								</div>
-							</div>
-						</div>
-					{:else if paperData.type === 'WORKING_PAPER'}
-						<PaperEditor.Resolution.ResolutionEditor
-							committeeName={paperData.agendaItem?.committee?.name ?? 'Committee'}
-							editable={editorEditable}
-							headerData={resolutionHeaderData}
-						/>
-					{:else}
-						<PaperEditor.PaperFormat
-							editable={editorEditable}
-							onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
-						/>
-					{/if}
-				{/key}
-			</div>
+{/snippet}
 
-			<!-- Review section for reviewers -->
-			{#if baseViewMode === 'reviewer'}
+{#snippet paperBody(paper: PaperDetail)}
+	<div class="w-full flex flex-col gap-4">
+		<!-- Paper Editor - key forces re-creation when paper or editable changes -->
+		<div bind:this={paperEditorContainer}>
+			{#key `${paper.id}-${editorEditable}`}
+				<PaperContent
+					{paper}
+					{loaded}
+					editable={editorEditable}
+					headerData={resolutionHeaderData}
+					onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+				/>
+			{/key}
+		</div>
+
+		{#if baseViewMode === 'reviewer'}
+			<!-- Review form, followed by the history -->
+			{#key paper.id}
 				<PaperReviewSection
-					paperId={paperData.id}
-					currentStatus={paperData.status}
-					{existingReviews}
-					versions={paperData.versions}
+					paperId={paper.id}
+					conferenceId={params.conferenceId}
+					currentStatus={paper.status}
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
 					paperContainer={paperEditorContainer}
-					agendaItemId={paperData.agendaItem?.id}
-					{snippets}
+					agendaItemId={paper.agendaItem?.id}
 				/>
-			{/if}
-
+			{/key}
+		{:else}
 			<!-- History for authors and supervisors (versions + reviews) -->
-			{#if (baseViewMode === 'author' || baseViewMode === 'supervisor') && (paperData.versions.length > 0 || existingReviews.length > 0)}
-				{@const authorTimelineEvents = [
-					...paperData.versions.map((v) => ({
-						type: 'version' as const,
-						date: new Date(v.createdAt),
-						version: v
-					})),
-					...existingReviews.map((r) => ({
-						type: 'review' as const,
-						date: new Date(r.createdAt),
-						review: r
-					}))
-				].sort((a, b) => b.date.getTime() - a.date.getTime())}
+			<PaperHistory paperId={paper.id} paperContainer={paperEditorContainer} />
+		{/if}
+	</div>
+{/snippet}
 
-				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
-					<legend class="fieldset-legend">{m.history()}</legend>
-					<ul class="timeline timeline-vertical timeline-compact py-2">
-						{#each authorTimelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}
-							<li>
-								{#if index > 0}
-									<hr class="bg-base-300" />
-								{/if}
-								<div
-									class="timeline-start text-xs text-base-content/60 text-right pr-4 whitespace-nowrap"
-								>
-									{event.date.toLocaleDateString()} · {event.date.toLocaleTimeString([], {
-										hour: '2-digit',
-										minute: '2-digit'
-									})}
-								</div>
-								<div class="timeline-middle">
-									<i class="fa-solid fa-circle-chevron-right text-primary text-lg"></i>
-								</div>
-								<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
-									{#if event.type === 'version'}
-										{@const stats = versionStats.get(event.version.id)}
-										<!-- Version submission event -->
-										<div class="flex flex-wrap justify-between items-center gap-2">
-											<div class="flex items-center gap-2">
-												<i class="fa-solid fa-file-arrow-up text-secondary"></i>
-												<span class="font-semibold">
-													{m.versionSubmitted({ version: event.version.version.toString() })}
-												</span>
-												{#if stats}
-													<span class="text-xs font-mono">
-														<span class="text-success">+{stats.added}</span>
-														<span class="text-error">-{stats.removed}</span>
-													</span>
-												{/if}
-											</div>
-											<div class="flex items-center gap-2">
-												{#if event.version.status}
-													<div
-														class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1"
-													>
-														<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"
-														></i>
-														{translatePaperStatus(event.version.status)}
-													</div>
-												{/if}
-												{#if paperData.versions.length > 1}
-													<button
-														class="btn btn-xs btn-ghost {comparisonState.baseVersion?.id ===
-														event.version.id
-															? 'btn-active'
-															: ''}"
-														onclick={() => handleCompareClick(event.version)}
-														title={m.compareVersion()}
-													>
-														<i class="fa-solid fa-code-compare"></i>
-													</button>
-												{/if}
-											</div>
-										</div>
-									{:else}
-										<!-- Review event -->
-										<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
-											<div class="flex items-center gap-2">
-												<i class="fa-solid fa-user-pen text-base-content/50"></i>
-												<span class="font-semibold">
-													{event.review.reviewer.given_name}
-													{event.review.reviewer.family_name}
-												</span>
-											</div>
-											{#if event.review.statusBefore && event.review.statusAfter}
-												<div class="flex items-center gap-1">
-													<div
-														class="badge {getStatusBadgeClass(
-															event.review.statusBefore
-														)} badge-sm gap-1"
-													>
-														<i
-															class="fa-solid {getPaperStatusIcon(
-																event.review.statusBefore
-															)} text-xs"
-														></i>
-														{translatePaperStatus(event.review.statusBefore)}
-													</div>
-													<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
-													<div
-														class="badge {getStatusBadgeClass(
-															event.review.statusAfter
-														)} badge-sm gap-1"
-													>
-														<i
-															class="fa-solid {getPaperStatusIcon(
-																event.review.statusAfter
-															)} text-xs"
-														></i>
-														{translatePaperStatus(event.review.statusAfter)}
-													</div>
-												</div>
-											{/if}
-										</div>
-										<fieldset
-											class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
-										>
-											<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
-											<PaperEditor.ReadOnlyContent
-												content={event.review.comments}
-												paperContainer={paperEditorContainer}
-											/>
-										</fieldset>
-									{/if}
-								</div>
-								{#if index < authorTimelineEvents.length - 1}
-									<hr class="bg-base-300" />
-								{/if}
-							</li>
-						{/each}
-					</ul>
-				</fieldset>
-			{/if}
+<div class="flex flex-col gap-4 w-full">
+	{#if paperData}
+		{@render paperHeader(paperData)}
+	{:else}
+		<div>
+			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 		</div>
+	{/if}
+	{#if loaded.initialized && paperData}
+		{@render paperBody(paperData)}
 	{:else}
 		<div class="mt-6 w-full h-12 skeleton"></div>
 	{/if}
 
-	<!-- Hidden Danger Zone (team members only) -->
-	{#if paperData && isReviewer}
-		<div class="mt-8">
-			<button
-				class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
-				onclick={() => (showDangerZone = !showDangerZone)}
-			>
-				<i class="fa-solid {showDangerZone ? 'fa-chevron-down' : 'fa-chevron-right'}"></i>
-				{m.dangerZone()}
-			</button>
-
-			{#if showDangerZone}
-				<div class="mt-2 border border-error/30 rounded-box p-4 bg-error/5">
-					<div class="flex items-center gap-2 text-error mb-3">
-						<i class="fa-solid fa-triangle-exclamation text-lg"></i>
-						<h3 class="font-bold">{m.paperDeleteTitle()}</h3>
-					</div>
-
-					<p class="text-sm text-base-content/70 mb-4">
-						{m.paperDeleteWarning()}
-					</p>
-
-					<div class="form-control mb-4">
-						<label class="label" for="delete-confirmation">
-							<span class="label-text text-sm">{m.paperDeleteConfirmation()}</span>
-						</label>
-						<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded">
-							{deleteConfirmationExpected}
-						</div>
-						<input
-							id="delete-confirmation"
-							type="text"
-							class="input input-bordered input-error w-full"
-							placeholder={deleteConfirmationExpected}
-							bind:value={deleteConfirmationText}
-						/>
-					</div>
-
-					<button
-						class="btn btn-error"
-						disabled={deleteConfirmationText !== deleteConfirmationExpected}
-						onclick={handleDeletePaper}
-					>
-						<i class="fa-solid fa-trash"></i>
-						{m.paperDeleteButton()}
-					</button>
-				</div>
-			{/if}
-		</div>
+	<!-- Hidden Danger Zone: project management, or the author while it is still a draft -->
+	{#if paperData && (myRoles.mayDeleteAnyPaper || (isAuthor && paperData.status === 'DRAFT'))}
+		<PaperDangerZone
+			paperId={paperData.id}
+			conferenceId={params.conferenceId}
+			confirmationText={deleteConfirmationExpected}
+		/>
 	{/if}
 </div>
 
@@ -827,27 +225,7 @@
 			class="bg-warning p-4 rounded-box shadow-lg tooltip tooltip-left tooltip-warning"
 			data-tip={m.paperNotSavedAlert()}
 		>
-			<i class="fa-solid fa-exclamation-triangle fa-beat-fade text-4xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle fa-beat-fade text-4xl"></i>
 		</div>
 	</div>
-{/if}
-
-<!-- Version comparison selection indicator -->
-{#if comparisonState.isSelecting}
-	<div class="alert alert-info fixed bottom-4 right-4 z-50 w-auto max-w-sm shadow-lg">
-		<i class="fa-solid fa-code-compare"></i>
-		<span>{m.selectSecondVersionToCompare()}</span>
-		<button class="btn btn-sm btn-ghost" onclick={cancelComparison}>
-			<i class="fa-solid fa-xmark"></i>
-		</button>
-	</div>
-{/if}
-
-<!-- Version Compare Modal -->
-{#if comparisonState.baseVersion && comparisonState.compareVersion}
-	<VersionCompareModal
-		bind:open={showCompareModal}
-		baseVersion={comparisonState.baseVersion}
-		compareVersion={comparisonState.compareVersion}
-	/>
 {/if}
