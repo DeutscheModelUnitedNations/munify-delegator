@@ -74,3 +74,7 @@ export function showPaperHubViewToggle(access: PaperHubAccess): boolean {
 		(access.isTeamMember && access.isParticipant) || access.isSupervisor || access.isPaperAuthor
 	);
 }
+
+/** Whether the paper hub has any view for the caller: reviewers, participants and supervisors. */
+export const canOpenPaperHub = (access: PaperHubAccess): boolean =>
+	access.isTeamMember || access.isParticipant;

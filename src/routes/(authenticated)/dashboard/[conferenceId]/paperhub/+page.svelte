@@ -59,11 +59,8 @@
 	let isNSA = $derived(!!participation?.delegationMember?.delegation?.assignedNonStateActor);
 </script>
 
-<div class="flex flex-col gap-6 w-full">
+<div class="flex flex-col gap-4 w-full p-6">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.paperHub()}</h2>
-		<p>{m.paperHubDescription()}</p>
-
 		{#if showViewToggle}
 			<div role="tablist" class="tabs tabs-border mt-2">
 				{#each viewTabs.filter((tab) => tab.available) as tab (tab.view)}

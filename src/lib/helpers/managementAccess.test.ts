@@ -4,6 +4,7 @@ import {
 	canWriteAccessCards,
 	canPlanSeats,
 	isSeatPlanningOnly,
+	managementNav,
 	managementRedirect
 } from './managementAccess';
 
@@ -75,5 +76,56 @@ describe('role checks', () => {
 		expect(canWriteAccessCards('PARTICIPANT_CARE')).toBe(true);
 		expect(canWriteAccessCards('CONTENT_LEAD')).toBe(false);
 		expect(canWriteAccessCards(undefined)).toBe(false);
+	});
+});
+
+describe('managementNav', () => {
+	test('a participant only gets the paper hub', () => {
+		expect(managementNav(undefined, [], true)).toEqual({
+			management: false,
+			seatPlanning: false,
+			teamManagement: false,
+			scanner: false,
+			paperHub: true
+		});
+	});
+
+	test('a reviewer gets the scanner and the paper hub, but no management', () => {
+		const nav = managementNav(undefined, ['REVIEWER'], true);
+		expect(nav).toMatchObject({ management: false, scanner: true, paperHub: true });
+	});
+
+	test('a team coordinator manages the team and nothing else', () => {
+		expect(managementNav(undefined, ['TEAM_COORDINATOR'], false)).toMatchObject({
+			management: false,
+			teamManagement: true,
+			scanner: true,
+			paperHub: false
+		});
+	});
+
+	test('a content lead gets the seat planning on its own', () => {
+		expect(managementNav('CONTENT_LEAD', ['CONTENT_LEAD'], false)).toMatchObject({
+			management: false,
+			seatPlanning: true,
+			teamManagement: false
+		});
+	});
+
+	test('participant care has management but not the team pages', () => {
+		expect(managementNav('PARTICIPANT_CARE', ['PARTICIPANT_CARE'], true)).toMatchObject({
+			management: true,
+			teamManagement: false,
+			paperHub: true
+		});
+	});
+
+	test('system admins see everything', () => {
+		expect(managementNav('SYSTEM_ADMIN', [], false)).toMatchObject({
+			management: true,
+			teamManagement: true,
+			scanner: true,
+			paperHub: true
+		});
 	});
 });

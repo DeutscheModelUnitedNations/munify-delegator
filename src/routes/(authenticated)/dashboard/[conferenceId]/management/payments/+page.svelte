@@ -240,7 +240,6 @@
 
 <div class="flex w-full flex-col gap-6 md:p-10">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.payment()}</h2>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p class="leading-relaxed text-base-content/70">{@html m.paymentAdminDescription()}</p>
 	</div>

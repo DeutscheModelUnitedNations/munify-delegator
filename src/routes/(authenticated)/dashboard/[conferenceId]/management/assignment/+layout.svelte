@@ -41,7 +41,6 @@
 <div class="flex w-full flex-col gap-4 py-4">
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-2xl font-bold">{m.adminAssignment()}</h2>
 			<p class="text-base-content/70 max-w-3xl text-sm">{m.assignmentIntro()}</p>
 		</div>
 		<DraftStatus {conferenceId} />

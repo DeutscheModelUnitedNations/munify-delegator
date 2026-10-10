@@ -103,6 +103,7 @@
 {/snippet}
 
 <CollapsibleCard
+	collapsible={false}
 	icon="ranking-star"
 	title={m.reviewerLeaderboard()}
 	description={m.reviewerLeaderboardDescription()}

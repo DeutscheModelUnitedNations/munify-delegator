@@ -18,6 +18,7 @@
 	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
 	import { PaperSortState, paperHasReviews, sortPapers } from './paperSorting';
 	import { ExpandedPaperGroup, PaperGroupsSnapshot } from './paperGroups.svelte';
+	import { page } from '$app/state';
 
 	interface Props {
 		conferenceId: string;
@@ -96,6 +97,17 @@
 		});
 		helpStatusOverrides.set(updated.id, updated.reviewHelpStatus);
 	};
+
+	// The section shown below the overview cards. The flag collection is linked as #flag-collection.
+	const sectionTabs = [
+		{ id: 'papers', icon: 'fa-file-lines', label: () => m.papers() },
+		{ id: 'flags', icon: 'fa-puzzle-piece', label: () => m.flagCollection() },
+		{ id: 'leaderboard', icon: 'fa-ranking-star', label: () => m.reviewerLeaderboard() },
+		{ id: 'statistics', icon: 'fa-chart-column', label: () => m.statsDetailedPaperStatistics() }
+	] as const;
+	type Section = (typeof sectionTabs)[number]['id'];
+
+	let section = $state<Section>(page.url.hash === '#flag-collection' ? 'flags' : 'papers');
 
 	// Store expanded state in URL params using sveltekit-search-params
 	const openGroup = new ExpandedPaperGroup();
@@ -214,6 +226,7 @@
 
 <div class="flex flex-col gap-3 w-full">
 	<!-- Focus Mode Toggle and Status Overview -->
+	<!-- fallow-ignore-next-line complexity -->
 	{#if !papersLoading && groupedPapers?.length}
 		<div class="card bg-base-200 border border-base-300 p-4">
 			<div class="flex flex-col gap-4">
@@ -256,84 +269,93 @@
 		</div>
 	{/if}
 
-	<PaperGroupsState loading={papersLoading} error={snapshot.error} empty={!groupedPapers?.length}>
-		{#each groupedPapers ?? [] as committeeGroup (committeeGroup.committee.id)}
-			{@const committeePapers = committeeGroup.agendaItems.flatMap((ai) => ai.papers)}
-			{@const helpNeededCount = committeeGroup.agendaItems.filter(
-				(ai) => helpStatusOf(ai.agendaItem) === 'HELP_NEEDED'
-			).length}
-			<CommitteePaperGroup committee={committeeGroup.committee} {openGroup}>
-				{#snippet aside()}
-					<div class="flex items-center gap-2">
-						{#if helpNeededCount > 0}
-							<div
-								class="tooltip tooltip-warning tooltip-left"
-								data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
-							>
-								<div class="badge badge-warning gap-1">
-									<i class="fa-sharp-duotone fa-solid fa-hand"></i>
-									{helpNeededCount}
-								</div>
-							</div>
-						{/if}
-						{@render statusSummary(committeePapers, 'sm')}
-					</div>
-				{/snippet}
-
-				<!-- Agenda Items (expanded) -->
-				<div class="p-4 pt-2">
-					{#each committeeGroup.agendaItems as agendaItemGroup, index (agendaItemGroup.agendaItem.id)}
-						{@const agendaItem = agendaItemGroup.agendaItem}
-						{@const helpStatus = helpStatusOf(agendaItem)}
-						<AgendaItemPaperGroup {agendaItem} {index} {openGroup}>
-							{#snippet leading()}
-								<!-- Review Help Status Toggle -->
-								<ReviewHelpStatusToggle
-									status={helpStatus}
-									onCycle={() => cycleReviewHelpStatus(agendaItem.id, helpStatus)}
-								/>
-							{/snippet}
-							{#snippet aside()}
-								<div class="flex items-center gap-2">
-									{@render statusSummary(agendaItemGroup.papers, 'xs')}
-								</div>
-							{/snippet}
-
-							{@render papersTable(agendaItem.id, agendaItemGroup.papers)}
-						</AgendaItemPaperGroup>
-					{/each}
-				</div>
-			</CommitteePaperGroup>
+	<div role="tablist" class="tabs tabs-border">
+		{#each sectionTabs as tab (tab.id)}
+			<button
+				role="tab"
+				class="tab"
+				class:tab-active={section === tab.id}
+				onclick={() => (section = tab.id)}
+			>
+				<i class="fa-sharp-duotone fa-solid {tab.icon} mr-1"></i>
+				{tab.label()}
+			</button>
 		{/each}
+	</div>
 
-		<!-- Introduction Papers Section (NSA papers without agenda items) -->
-		{#if introductionPapers.length > 0}
-			<CommitteePaperGroup {openGroup}>
-				{#snippet aside()}
-					<div class="flex items-center gap-2">
-						{@render statusSummary(introductionPapers, 'sm')}
+	{#if section === 'papers'}
+		<PaperGroupsState loading={papersLoading} error={snapshot.error} empty={!groupedPapers?.length}>
+			{#each groupedPapers ?? [] as committeeGroup (committeeGroup.committee.id)}
+				{@const committeePapers = committeeGroup.agendaItems.flatMap((ai) => ai.papers)}
+				{@const helpNeededCount = committeeGroup.agendaItems.filter(
+					(ai) => helpStatusOf(ai.agendaItem) === 'HELP_NEEDED'
+				).length}
+				<CommitteePaperGroup committee={committeeGroup.committee} {openGroup}>
+					{#snippet aside()}
+						<div class="flex items-center gap-2">
+							{#if helpNeededCount > 0}
+								<div
+									class="tooltip tooltip-warning tooltip-left"
+									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
+								>
+									<div class="badge badge-warning gap-1">
+										<i class="fa-sharp-duotone fa-solid fa-hand"></i>
+										{helpNeededCount}
+									</div>
+								</div>
+							{/if}
+							{@render statusSummary(committeePapers, 'sm')}
+						</div>
+					{/snippet}
+
+					<!-- Agenda Items (expanded) -->
+					<div class="p-4 pt-2">
+						{#each committeeGroup.agendaItems as agendaItemGroup, index (agendaItemGroup.agendaItem.id)}
+							{@const agendaItem = agendaItemGroup.agendaItem}
+							{@const helpStatus = helpStatusOf(agendaItem)}
+							<AgendaItemPaperGroup {agendaItem} {index} {openGroup}>
+								{#snippet leading()}
+									<!-- Review Help Status Toggle -->
+									<ReviewHelpStatusToggle
+										status={helpStatus}
+										onCycle={() => cycleReviewHelpStatus(agendaItem.id, helpStatus)}
+									/>
+								{/snippet}
+								{#snippet aside()}
+									<div class="flex items-center gap-2">
+										{@render statusSummary(agendaItemGroup.papers, 'xs')}
+									</div>
+								{/snippet}
+
+								{@render papersTable(agendaItem.id, agendaItemGroup.papers)}
+							</AgendaItemPaperGroup>
+						{/each}
 					</div>
-				{/snippet}
+				</CommitteePaperGroup>
+			{/each}
 
-				{@render papersTable('introduction', introductionPapers)}
-			</CommitteePaperGroup>
-		{/if}
-	</PaperGroupsState>
+			<!-- Introduction Papers Section (NSA papers without agenda items) -->
+			{#if introductionPapers.length > 0}
+				<CommitteePaperGroup {openGroup}>
+					{#snippet aside()}
+						<div class="flex items-center gap-2">
+							{@render statusSummary(introductionPapers, 'sm')}
+						</div>
+					{/snippet}
 
-	<!-- Flag Collection Gamification Section -->
-	<div class="mt-6">
+					{@render papersTable('introduction', introductionPapers)}
+				</CommitteePaperGroup>
+			{/if}
+		</PaperGroupsState>
+	{/if}
+
+	{#if section === 'flags'}
 		<FlagCollectionSection {conferenceId} />
-	</div>
-
-	<!-- Reviewer Leaderboard -->
-	<div class="mt-3">
+	{:else if section === 'leaderboard'}
 		<ReviewerLeaderboard {conferenceId} />
-	</div>
-
-	<!-- Detailed Paper Statistics Section -->
-	{#if !papersLoading && allPapers.length > 0}
-		<div class="mt-6">
+	{:else if section === 'statistics'}
+		<PaperGroupsState loading={papersLoading} error={snapshot.error} empty={!allPapers.length}>
 			<DetailedPaperStats {allPapers} {committeesWithPapers} />
-		</div>
+		</PaperGroupsState>
 	{/if}
 </div>

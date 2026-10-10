@@ -162,7 +162,7 @@
 	];
 </script>
 
-<TeamManagementPage title={m.teamMembers()} conferenceId={params.conferenceId}>
+<TeamManagementPage>
 	<ManagedTable
 		{columns}
 		rows={teamMembers}

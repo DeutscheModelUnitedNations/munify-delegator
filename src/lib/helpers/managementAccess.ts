@@ -26,6 +26,42 @@ export const canWriteAccessCards = (membership: string | undefined) =>
 export const canConfigureCommittees = (membership: string | undefined) =>
 	membership === 'SYSTEM_ADMIN' || membership === 'PROJECT_MANAGEMENT';
 
+/** The team pages: project management and team coordinators, whatever else they hold */
+const canManageTeam = (membership: string | undefined, teamRoles: readonly string[]) =>
+	membership === 'SYSTEM_ADMIN' ||
+	teamRoles.some((role) => role === 'PROJECT_MANAGEMENT' || role === 'TEAM_COORDINATOR');
+
+/** What the management side navigation offers one person; every entry is a plain yes or no. */
+export interface ManagementNav {
+	/** The full management area (stats, settings, participants, workflows, maintenance) */
+	management: boolean;
+	/** The seat planning on its own, which content leads reach without the rest */
+	seatPlanning: boolean;
+	teamManagement: boolean;
+	/** The attendance scanner, open to the whole team */
+	scanner: boolean;
+	paperHub: boolean;
+}
+
+/**
+ * Which entries the navigation shows. `canSeePaperHub` is whether the paper hub has a view for
+ * this person (reviewers, participants and supervisors); system admins always get it.
+ */
+export function managementNav(
+	membership: string | undefined,
+	teamRoles: readonly string[],
+	canSeePaperHub: boolean
+): ManagementNav {
+	const management = !!membership && !isSeatPlanningOnly(membership);
+	return {
+		management,
+		seatPlanning: canPlanSeats(membership) && !management,
+		teamManagement: canManageTeam(membership, teamRoles),
+		scanner: membership !== undefined || teamRoles.length > 0,
+		paperHub: membership === 'SYSTEM_ADMIN' || canSeePaperHub
+	};
+}
+
 /**
  * Where to send a user who opened `pathname` inside the management area of a conference, or
  * `undefined` if they may stay.

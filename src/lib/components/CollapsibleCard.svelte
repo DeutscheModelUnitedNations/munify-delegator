@@ -8,6 +8,8 @@
 		title: string;
 		description?: string;
 		expanded?: boolean;
+		/** Without it the body is always shown and the header is a plain heading, e.g. inside a tab. */
+		collapsible?: boolean;
 		id?: string;
 		/** Classes of the body that holds the content while expanded. */
 		contentClass?: string;
@@ -21,25 +23,32 @@
 		title,
 		description,
 		expanded = $bindable(false),
+		collapsible = true,
 		id,
 		contentClass = 'p-4',
 		badge,
 		children
 	}: Props = $props();
+
+	const shown = $derived(expanded || !collapsible);
 </script>
 
 <div {id} class="card bg-base-200 border border-base-300">
 	<div
-		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-box"
-		class:rounded-b-box={!expanded}
-		{...toggleButtonProps(() => (expanded = !expanded))}
+		class="p-4 flex items-center justify-between rounded-t-box {collapsible
+			? 'cursor-pointer hover:bg-base-300/30 transition-colors'
+			: ''}"
+		class:rounded-b-box={!shown}
+		{...collapsible ? toggleButtonProps(() => (expanded = !expanded)) : {}}
 	>
 		<div class="flex items-center gap-3">
-			<i
-				class="fa-sharp-duotone fa-solid {expanded
-					? 'fa-chevron-down'
-					: 'fa-chevron-right'} text-base-content/50"
-			></i>
+			{#if collapsible}
+				<i
+					class="fa-sharp-duotone fa-solid {expanded
+						? 'fa-chevron-down'
+						: 'fa-chevron-right'} text-base-content/50"
+				></i>
+			{/if}
 			<i class="fa-sharp-duotone fa-solid fa-{icon} text-primary text-xl"></i>
 			<div>
 				<h3 class="text-lg font-bold">{title}</h3>
@@ -51,7 +60,7 @@
 		{@render badge?.()}
 	</div>
 
-	{#if expanded}
+	{#if shown}
 		<div class={contentClass}>
 			{@render children()}
 		</div>

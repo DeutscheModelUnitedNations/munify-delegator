@@ -921,7 +921,7 @@
 
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
 	{#snippet description()}{m.attendanceScannerDescription()}{/snippet}
-	<ScanPageHeader title={m.attendanceScanner()} {description} />
+	<ScanPageHeader {description} />
 
 	<!-- Session Setup / Active Session -->
 	{#if !sessionActive}

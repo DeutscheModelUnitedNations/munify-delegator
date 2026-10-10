@@ -27,7 +27,7 @@
 	);
 </script>
 
-<TeamManagementPage title={m.pendingInvitations()} conferenceId={params.conferenceId}>
+<TeamManagementPage>
 	{#if pendingInvitations.length > 0}
 		<PendingInvitationsTable invitations={pendingInvitations} />
 	{:else}

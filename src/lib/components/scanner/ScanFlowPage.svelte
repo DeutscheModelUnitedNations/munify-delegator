@@ -12,9 +12,7 @@
 	interface Props {
 		flow: ScannedUserFlow<S>;
 		conferenceId: string;
-		/** Page heading */
-		title: string;
-		/** Explanation under the heading */
+		/** Explanation at the top of the page */
 		description: Snippet;
 		/** Controls between the description and the scanner */
 		header?: Snippet;
@@ -37,7 +35,6 @@
 	let {
 		flow,
 		conferenceId,
-		title,
 		description,
 		header,
 		barcodeFormats,
@@ -84,7 +81,7 @@
 </script>
 
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
-	<ScanPageHeader {title} {description} />
+	<ScanPageHeader {description} />
 
 	{@render header?.()}
 

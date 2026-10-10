@@ -6,8 +6,11 @@
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { canPlanSeats, isSeatPlanningOnly } from '$lib/helpers/managementAccess';
-	import { managementMembership } from './managementMembership';
+	import { canPlanSeats, managementNav } from '$lib/helpers/managementAccess';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
+	import { fetchMyPaperHubRoles } from '../paperhub/myPaperHubRoles';
+	import { canOpenPaperHub, paperHubAccess } from '../paperhub/paperHubViews';
+	import { managementMembership, myTeamRoles } from './managementMembership';
 	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 
 	/**
@@ -16,32 +19,21 @@
 	 */
 	let { children, conferenceId }: { children: Snippet; conferenceId: string } = $props();
 	const membership = $derived(await managementMembership(conferenceId));
-	const seatPlanningOnly = $derived(isSeatPlanningOnly(membership));
+	const teamRoles = $derived(await myTeamRoles(conferenceId));
+	// A snapshot of booleans: the menu does not need to follow a role change live
+	const canSeePaperHub = $derived(
+		await Promise.all([
+			fetchMyParticipation(conferenceId),
+			fetchMyPaperHubRoles(conferenceId)
+		]).then(([participation, roles]) => canOpenPaperHub(paperHubAccess(participation, roles)))
+	);
+	const nav = $derived(managementNav(membership, teamRoles, canSeePaperHub));
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-x-clip">
 	<SideNavigationDrawer>
 		<NavMenu>
-			{#if seatPlanningOnly}
-				<!-- content leads have no other entry, so no workflow group around it -->
-				<NavMenuButton
-					href="/dashboard/{conferenceId}/management/seat-planning"
-					icon="fa-table-cells"
-					title={m.seatPlanning()}
-				/>
-			{:else if !membership}
-				<!-- team coordinators have no management role, only their team -->
-				<NavMenuButton
-					href="/dashboard/{conferenceId}/team-management"
-					icon="fa-user-group"
-					title={m.teamManagement()}
-				/>
-				<NavMenuButton
-					href="/dashboard/{conferenceId}/management/attendance"
-					icon="fa-barcode-read"
-					title={m.attendanceScanner()}
-				/>
-			{:else}
+			{#if nav.management}
 				<NavMenuButton
 					href={`/dashboard/${conferenceId}/management/stats`}
 					icon="fa-chart-pie"
@@ -67,11 +59,24 @@
 					icon="fa-user-clock"
 					title={m.waitingList()}
 				/>
+			{/if}
+			{#if nav.teamManagement}
 				<NavMenuButton
 					href="/dashboard/{conferenceId}/team-management"
+					includeSubpages
 					icon="fa-user-group"
 					title={m.teamManagement()}
 				/>
+			{/if}
+			{#if nav.paperHub}
+				<NavMenuButton
+					href="/dashboard/{conferenceId}/paperhub"
+					includeSubpages
+					icon="fa-files"
+					title={m.paperHub()}
+				/>
+			{/if}
+			{#if nav.management}
 				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin">
 					{#if canPlanSeats(membership)}
 						<NavMenuButton
@@ -158,6 +163,21 @@
 						title={m.downloads()}
 					/>
 				</NavMenuDetails>
+			{:else}
+				{#if nav.seatPlanning}
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/seat-planning"
+						icon="fa-table-cells"
+						title={m.seatPlanning()}
+					/>
+				{/if}
+				{#if nav.scanner}
+					<NavMenuButton
+						href="/dashboard/{conferenceId}/management/attendance"
+						icon="fa-barcode-read"
+						title={m.attendanceScanner()}
+					/>
+				{/if}
 			{/if}
 		</NavMenu>
 	</SideNavigationDrawer>
@@ -167,6 +187,6 @@
 	</div>
 </div>
 
-{#if membership && !seatPlanningOnly}
+{#if nav.management}
 	<CommandPalette {conferenceId} />
 {/if}

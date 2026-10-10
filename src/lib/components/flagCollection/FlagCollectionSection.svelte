@@ -136,6 +136,7 @@
 {/snippet}
 
 <CollapsibleCard
+	collapsible={false}
 	id="flag-collection"
 	icon="puzzle-piece"
 	title={m.flagCollection()}
