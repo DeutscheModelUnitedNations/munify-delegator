@@ -1,5 +1,13 @@
 import { rgb, type PDFDocument, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
-import { createNametagPdf, MUTED, NEUTRAL, PRIMARY, type NametagFonts } from './nametagPdf';
+import {
+	createNametagPdf,
+	MUTED,
+	NEUTRAL,
+	PRIMARY,
+	roundedRectPath,
+	WHITE,
+	type NametagFonts
+} from './nametagPdf';
 
 export interface NametagSheetEntry {
 	label: string;
@@ -35,24 +43,6 @@ const PAGE_HEIGHT = 595.28;
 const MARGIN = 44;
 const HEADER_HEIGHT = 56;
 const FOOTER_HEIGHT = 34;
-
-const WHITE = rgb(1, 1, 1);
-
-/** A rectangle with rounded corners, which pdf-lib can only draw as a path. */
-function roundedRectPath(width: number, height: number, radius: number) {
-	return [
-		`M ${radius} 0`,
-		`L ${width - radius} 0`,
-		`Q ${width} 0 ${width} ${radius}`,
-		`L ${width} ${height - radius}`,
-		`Q ${width} ${height} ${width - radius} ${height}`,
-		`L ${radius} ${height}`,
-		`Q 0 ${height} 0 ${height - radius}`,
-		`L 0 ${radius}`,
-		`Q 0 0 ${radius} 0`,
-		'Z'
-	].join(' ');
-}
 
 function isKnown(known: Set<number>, char: string): boolean {
 	return known.has(char.codePointAt(0) ?? -1);

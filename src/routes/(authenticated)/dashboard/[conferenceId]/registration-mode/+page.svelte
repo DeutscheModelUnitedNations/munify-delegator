@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
-	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
+	import IdentityCode from '$lib/components/IdentityCode.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
@@ -100,9 +100,9 @@
 				{fullName}
 			</h1>
 
-			<!-- DataMatrix Barcode - Smaller -->
-			<div class="mt-2 w-full max-w-[10rem]">
-				<DataMatrixDisplay data={userId} />
+			<!-- Signed identity code, renewed while the page is open -->
+			<div class="mt-2 w-full max-w-[16rem]">
+				<IdentityCode conferenceId={params.conferenceId} />
 			</div>
 
 			<!-- User ID -->

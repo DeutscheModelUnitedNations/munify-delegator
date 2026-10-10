@@ -23,6 +23,12 @@
 	import CommandPaletteItem from './CommandPaletteItem.svelte';
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
+	import QuickScan from '$lib/components/scanner/QuickScan.svelte';
+	import { acceptScannedCode } from '$lib/api/identityCodeCheck';
+	import { readAimIdentifier } from '$lib/components/scanner/aimIdentifier';
+	import { resolveScannedCode } from '$lib/components/scanner/userSearch';
+	import { looksLikeUserId } from '$lib/components/scanner/suggestions';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		conferenceId: string;
@@ -38,6 +44,7 @@
 	let activeIndex = $state(0);
 	let searchLoading = $state(false);
 	let inputEl = $state<HTMLInputElement | null>(null);
+	let scanning = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Page search (client-side with Fuse.js)
@@ -143,6 +150,7 @@
 		} else {
 			untrack(() => {
 				searchInput = '';
+				scanning = false;
 				userResults = [];
 				transactionResults = [];
 				seatResults = [];
@@ -154,6 +162,24 @@
 			});
 		}
 	});
+
+	/** A scanned code opens the person it stands for, checked the way the scanner page checks it. */
+	async function handleScan(scan: { rawValue: string; format: string }) {
+		scanning = false;
+		const read = readAimIdentifier(scan.rawValue.trim());
+		const result = await acceptScannedCode(read.code, read.format ?? scan.format);
+		if (!result.accepted) {
+			toast.error(result.message);
+			return;
+		}
+		const userId = await resolveScannedCode(conferenceId, result.code);
+		if (!looksLikeUserId(userId)) {
+			toast.error(m.notFound());
+			return;
+		}
+		closeCommandPalette();
+		openUserCard(userId);
+	}
 
 	function selectItem(item: ResultItem) {
 		closeCommandPalette();
@@ -242,6 +268,7 @@
 	});
 </script>
 
+<!-- fallow-ignore-next-line complexity -->
 <svelte:document onkeydowncapture={handleGlobalKeydown} />
 
 {#if paletteState.isOpen}
@@ -270,8 +297,22 @@
 					class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
 					placeholder={m.commandPalettePlaceholder()}
 				/>
+				<button
+					class="btn btn-ghost btn-xs btn-square {scanning ? 'btn-active' : ''}"
+					onclick={() => (scanning = !scanning)}
+					aria-label={m.quickScan()}
+					title={m.quickScan()}
+				>
+					<i class="fa-sharp-duotone fa-solid fa-camera"></i>
+				</button>
 				<Kbd hotkey="Esc" size="xs" />
 			</div>
+
+			{#if scanning}
+				<div class="border-base-300 border-b p-2">
+					<QuickScan onscan={handleScan} onclose={() => (scanning = false)} />
+				</div>
+			{/if}
 
 			<!-- Results -->
 			<div class="max-h-80 overflow-y-auto p-1" role="listbox">

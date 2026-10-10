@@ -2,6 +2,7 @@
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
 	import { onDestroy, onMount, tick, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { readAimIdentifier } from './aimIdentifier';
 	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import ScanSearchBar from './ScanSearchBar.svelte';
@@ -28,6 +29,8 @@
 		scanPromptText?: string;
 		/** The scanned/entered code — two-way bindable (nullable for queryParameters compatibility) */
 		scannedCode: string | null;
+		/** The barcode format the camera read the code in; `null` for a typed or picked code. */
+		scannedFormat?: string | null;
 		/** Shown beside the camera, e.g. the person the code leads to */
 		result?: Snippet;
 		/** Shown under the camera, e.g. who was scanned before */
@@ -46,6 +49,7 @@
 		manualPlaceholder = '',
 		scanPromptText = '',
 		scannedCode = $bindable<string | null>(''),
+		scannedFormat = $bindable<string | null>(null),
 		result,
 		belowCamera,
 		collapsed = false
@@ -169,18 +173,17 @@
 	/** The code in the picture that is not the one scanned last, if there is one. */
 	async function detectNewCode(video: HTMLVideoElement) {
 		barcodeDetector ??= new BarcodeDetector({ formats: barcodeFormats });
-		const codes = (await barcodeDetector.detect(video))
-			.map((barcode) => barcode.rawValue)
-			.filter((code) => !!code);
-		if (!codes.includes(blockedCode ?? '')) blockedCode = null;
-		return codes.find((code) => code !== blockedCode);
+		const codes = (await barcodeDetector.detect(video)).filter((barcode) => !!barcode.rawValue);
+		if (!codes.some((barcode) => barcode.rawValue === blockedCode)) blockedCode = null;
+		return codes.find((barcode) => barcode.rawValue !== blockedCode);
 	}
 
-	function acceptScanned(code: string | undefined) {
+	function acceptScanned(barcode: { rawValue: string; format: string } | undefined) {
 		// The scan may have been answered by hand while the detector was running
-		if (!code || scannedCode) return;
-		scannedCode = code;
-		blockedCode = code;
+		if (!barcode || scannedCode) return;
+		scannedCode = barcode.rawValue;
+		scannedFormat = barcode.format;
+		blockedCode = barcode.rawValue;
 	}
 
 	async function scanForCode() {
@@ -204,14 +207,20 @@
 		searching = false;
 	}
 
-	function submitCode(code: string) {
-		scannedCode = code;
+	function submitCode(text: string) {
+		// a keyboard scanner may put the kind of code it read in front of what it types
+		const read = readAimIdentifier(text);
+		scannedCode = read.code;
+		scannedFormat = read.format;
 		clearSearch();
 		manualInputElem?.blur();
 	}
 
 	function submitManual() {
-		const code = codeToSubmit(query, suggestions, highlighted);
+		const typed = query.trim();
+		const code = readAimIdentifier(typed).format
+			? typed
+			: codeToSubmit(query, suggestions, highlighted);
 		if (code) submitCode(code);
 	}
 
@@ -238,7 +247,7 @@
 	// Suggest people while typing, once the typing pauses; a scanned id needs no search
 	$effect(() => {
 		const text = query.trim();
-		if (!text || looksLikeUserId(text)) {
+		if (!text || looksLikeUserId(text) || readAimIdentifier(text).format) {
 			suggestions = [];
 			highlighted = -1;
 			searching = false;

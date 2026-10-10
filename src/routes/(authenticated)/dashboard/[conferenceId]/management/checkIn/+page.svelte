@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import BinRow from './BinRow.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import { buildNametagQrPdf } from '$lib/api/nametagQrPdf';
 	import { buildNametagSheetsPdf, downloadPdf } from '$lib/api/nametagSheetsPdf';
 	import { binTone, buildSheets, loadSheetAssets } from './nametagSheets';
@@ -85,6 +86,7 @@
 	}
 
 	let downloadingQr = $state(false);
+	let previewOpen = $state(false);
 
 	/** The sheet for the entrance: a QR code to the page that tells everyone where to go. */
 	async function downloadQr() {
@@ -138,6 +140,10 @@
 					{m.nametagQrDownload()}
 					{#if downloadingQr}<span class="loading loading-spinner loading-xs"></span>{/if}
 				</button>
+				<button class="btn btn-sm" onclick={() => (previewOpen = true)}>
+					<i class="fa-sharp-duotone fa-solid fa-eye"></i>
+					{m.nametagQrPreviewButton()}
+				</button>
 				<button class="btn btn-sm" onclick={downloadSheets} disabled={downloading}>
 					<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
 					{m.nametagSheetsDownload()}
@@ -163,3 +169,12 @@
 		</div>
 	</div>
 </div>
+
+<Modal bind:open={previewOpen} title={m.nametagQrPreview()}>
+	<!-- the page the QR code leads to, as it looks on a phone -->
+	<iframe
+		title={m.nametagQrPreview()}
+		src="/dashboard/{conferenceId}/checkIn"
+		class="border-base-300 mx-auto block h-[70vh] w-full max-w-sm rounded-box border"
+	></iframe>
+</Modal>

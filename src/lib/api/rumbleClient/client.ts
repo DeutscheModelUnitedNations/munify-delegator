@@ -1609,6 +1609,14 @@ export type IDWhereInputArgument = {
   notLike?: String | null | undefined    
 };
 		
+export type IdentityCode = {
+  code: String    
+};
+		
+export type IdentityCodePublicKey = {
+  publicKey: String    
+};
+		
 export type ImpersonationStatus = {
   impersonatedUser: () => ImpersonationUser | null,
   isImpersonating: Boolean,
@@ -1981,6 +1989,7 @@ export type Mutation = {
     name: String,
     sortOrder: Int
   }) => Calendarday,
+  issueIdentityCode: () => IdentityCode,
   normalizeSchoolsInConference: (p: {
     conferenceId: ID,
     newSchoolName: String,
@@ -3080,6 +3089,7 @@ export type Query = {
     conferenceId: ID,
     filter?: StatsFilter | null | undefined
   }) => StatisticsResult,
+  identityCodePublicKey: () => IdentityCodePublicKey,
   impersonationStatus: () => ImpersonationStatus,
   logoutUrl: String,
   myOIDCRoles: OIDCRolesEnum[],

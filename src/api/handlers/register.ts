@@ -29,6 +29,7 @@ import './statistics';
 import './participantsPage';
 import './schoolSuggestion';
 import './scanLookup';
+import './identityCode';
 import './seatPlanning';
 import './nametagBins';
 import './sightingDeck';

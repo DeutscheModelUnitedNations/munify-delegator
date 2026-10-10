@@ -33,6 +33,7 @@
 		type ServerMode
 	} from './attendanceSession';
 	import ScanPageHeader from '$lib/components/scanner/ScanPageHeader.svelte';
+	import { acceptScannedCode, warmUpIdentityKey } from '$lib/api/identityCodeCheck';
 	import { loadScannedPerson, type FoundPerson } from './scanLoad';
 	import { managementMembership } from '../managementMembership';
 	import type { PageProps } from './$types';
@@ -110,6 +111,7 @@
 	// --- Scanner ---
 
 	let scannedCode = $state<string | null>('');
+	let scannedFormat = $state<string | null>(null);
 	let scannerRef = $state<BarcodeScanner>();
 	/** The code being worked on; the scanner takes no other until it is released. */
 	let heldCode: string | null = null;
@@ -276,7 +278,7 @@
 			if (intake.action === 'hold') scannedCode = intake.held;
 			if (intake.action === 'take') {
 				heldCode = code;
-				void handleScan(intake.trimmed);
+				void handleScan(intake.trimmed, scannedFormat);
 			}
 		});
 	});
@@ -292,8 +294,22 @@
 		}
 	}
 
+	/** The code to work with, or `null` when it is refused, which is reported. */
+	async function acceptedCode(code: string, format: string | null) {
+		const result = await acceptScannedCode(code, format);
+		if (result.accepted) return result.code;
+		toast.error(result.message);
+		return null;
+	}
+
 	/** What a scan does: log it at once (record), or show the person first (check). */
-	async function handleScan(code: string) {
+	// fallow-ignore-next-line complexity
+	async function handleScan(scanned: string, format: string | null) {
+		const code = await acceptedCode(scanned, format);
+		if (code === null) {
+			release();
+			return;
+		}
 		if (!checking) {
 			// Offline-safe: the code is only resolved if that can be had
 			enqueue(await resolveScannedCode(conferenceId, code), null);
@@ -683,6 +699,7 @@
 	// --- Hotkeys ---
 
 	onMount(() => {
+		warmUpIdentityKey();
 		hotkeys('esc', () => closeResult());
 		hotkeys('alt+a', () => {
 			void confirmResult();
@@ -916,7 +933,8 @@
 		<BarcodeScanner
 			bind:this={scannerRef}
 			bind:scannedCode
-			barcodeFormats={['data_matrix', 'code_128']}
+			bind:scannedFormat
+			barcodeFormats={['qr_code', 'data_matrix', 'code_128']}
 			persistKey="useCameraForAttendanceScanner"
 			{conferenceId}
 			manualPlaceholder={m.enterPostalRegistrationCode()}

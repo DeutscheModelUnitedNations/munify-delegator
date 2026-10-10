@@ -36,7 +36,7 @@ export function binTone(index: number) {
 		: { bar: 'bg-secondary', badge: 'badge-secondary' };
 }
 
-/** The conference's name and logo and the fonts every sheet is set in. */
+/** The conference's name, logo and emblem and the fonts every sheet is set in. */
 export async function loadSheetAssets(conferenceId: string) {
 	const [conference, regular, bold] = await Promise.all([
 		client.query.conference({
@@ -52,6 +52,7 @@ export async function loadSheetAssets(conferenceId: string) {
 	return {
 		conferenceTitle: conference.title,
 		logo: logoSource ? await urlToPng(logoSource) : null,
+		emblem: conference.emblemUrl ? await urlToPng(conference.emblemUrl) : null,
 		fonts: { regular, bold }
 	};
 }

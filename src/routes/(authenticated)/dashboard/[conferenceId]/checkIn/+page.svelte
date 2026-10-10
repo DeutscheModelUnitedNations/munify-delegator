@@ -2,7 +2,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
+	import IdentityCode from '$lib/components/IdentityCode.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { scanIssues, type ScanIssue } from '../management/attendance/scanCheck';
 	import type { PageProps } from './$types';
@@ -90,8 +90,8 @@
 		<!-- the code the team scans to see who this is, which participant care needs most -->
 		<div class="mt-4 flex w-full flex-col items-center gap-2">
 			<p class="text-lg font-bold">{currentUser.given_name} {currentUser.family_name}</p>
-			<div class="w-full max-w-[10rem]">
-				<DataMatrixDisplay data={currentUser.sub} />
+			<div class="w-full max-w-[16rem]">
+				<IdentityCode {conferenceId} />
 			</div>
 			<p class="text-base-content/40 font-mono text-xs">{currentUser.sub}</p>
 		</div>
