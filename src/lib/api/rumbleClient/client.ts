@@ -3090,13 +3090,11 @@ export type Query = {
   nametagBinGroups: (p: {
     binCount: Int,
     conferenceId: ID,
-    index: Int,
-    locale: String
+    index: Int
   }) => NametagBinGroup[],
   nametagBins: (p: {
     binCount?: Int | null | undefined,
-    conferenceId: ID,
-    locale: String
+    conferenceId: ID
   }) => NametagBin[],
   nation: (p: {
     id: ID
@@ -3120,8 +3118,7 @@ export type Query = {
   }) => Nonstateactor[],
   offlineUserRefresh: () => OfflineUserRefresh,
   ownNametagTable: (p: {
-    conferenceId: ID,
-    locale: String
+    conferenceId: ID
   }) => OwnNametagTable | null,
   paper: (p: {
     id: ID

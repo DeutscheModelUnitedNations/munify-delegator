@@ -6,23 +6,24 @@ const counts = (entries: Record<string, number>) =>
 
 describe('nationInitial', () => {
 	test("files a nation by its name in the reader's language", () => {
-		expect(nationInitial('DEU', 'en')).toBe('G');
-		expect(nationInitial('DEU', 'de')).toBe('D');
-		expect(nationInitial('deu', 'en')).toBe('G');
+		expect(nationInitial('DEU', 'eng')).toBe('G');
+		expect(nationInitial('DEU', 'deu')).toBe('D');
+		expect(nationInitial('deu', 'eng')).toBe('G');
 	});
 
 	test('drops diacritics, so Ägypten is an A', () => {
-		expect(nationInitial('EGY', 'de')).toBe('A');
-		expect(nationInitial('EGY', 'en')).toBe('E');
-		expect(nationInitial('ALA', 'en')).toBe('A');
+		expect(nationInitial('EGY', 'deu')).toBe('A');
+		expect(nationInitial('EGY', 'eng')).toBe('E');
+		expect(nationInitial('ALA', 'eng')).toBe('A');
 	});
 
-	test('any other language reads the English names', () => {
-		expect(nationInitial('DEU', 'fr')).toBe('G');
+	test('any language the nation list translates into works, others read English', () => {
+		expect(nationInitial('DEU', 'fra')).toBe('A');
+		expect(nationInitial('DEU', 'xyz')).toBe('G');
 	});
 
 	test('falls back to the code for an unknown nation', () => {
-		expect(nationInitial('QQQ', 'en')).toBe('Q');
+		expect(nationInitial('QQQ', 'eng')).toBe('Q');
 	});
 });
 

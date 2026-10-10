@@ -10,7 +10,6 @@
 	import { toast } from 'svelte-sonner';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -18,8 +17,6 @@
 
 	let { params: routeParams }: PageProps = $props();
 	const conferenceId = $derived(routeParams.conferenceId);
-	// the nations are filed by their names in the language the page is shown in
-	const locale = getLocale();
 
 	const schema = z.object({ nametagBinCount: z.number().int().min(1).max(20) });
 
@@ -60,7 +57,7 @@
 
 	const bins = $derived(
 		await client.liveQuery.nametagBins({
-			__args: { conferenceId, binCount: previewCount, locale },
+			__args: { conferenceId, binCount: previewCount },
 			index: true,
 			fromLetter: true,
 			toLetter: true,
@@ -77,7 +74,7 @@
 		try {
 			const [assets, sheets] = await Promise.all([
 				loadSheetAssets(conferenceId),
-				buildSheets(conferenceId, previewCount, locale, bins)
+				buildSheets(conferenceId, previewCount, bins)
 			]);
 			downloadPdf(await buildNametagSheetsPdf({ sheets, ...assets }), 'nametag-tables.pdf');
 		} catch (error) {

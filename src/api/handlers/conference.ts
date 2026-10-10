@@ -32,6 +32,7 @@ import { loadSchoolRows, refreshSchoolSuggestions } from '$api/services/schoolSu
 import { totalSeats } from '$api/services/seatPlanning';
 import { storedFileUrl } from '$api/services/files';
 import { MAX_NAMETAG_BINS } from '$api/services/nametagBins';
+import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -391,6 +392,10 @@ schemaBuilder.mutationFields((t) => ({
 				!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
 			) {
 				throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+			}
+
+			if (args.language != null && !isConferenceLanguage(args.language)) {
+				throw new GraphQLError('The conference language is not one of the supported languages');
 			}
 
 			// An omitted upload leaves the stored value untouched; only a supplied file replaces it.

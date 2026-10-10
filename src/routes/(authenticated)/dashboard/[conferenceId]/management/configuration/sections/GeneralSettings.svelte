@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '$lib/helpers/conferenceLanguage';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import dayjs from 'dayjs';
 	import FormSection from '$lib/components/form/FormSection.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import FormImage from '$lib/components/form/FormImage.svelte';
 	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
@@ -19,6 +22,11 @@
 	}
 
 	let { form, storedImages }: Props = $props();
+
+	const languageOptions = CONFERENCE_LANGUAGES.map((language) => ({
+		value: language,
+		label: conferenceLanguageName(language, getLocale())
+	})).sort((a, b) => a.label.localeCompare(b.label, getLocale()));
 	let formData = $derived(form.form);
 
 	const technicalRegistrationDeadline = $derived(
@@ -48,7 +56,13 @@
 			placeholder="New York, USA"
 			label={m.conferenceLocation()}
 		/>
-		<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
+		<FormSelect
+			{form}
+			name="language"
+			label={m.conferenceLanguage()}
+			description={m.conferenceLanguageHint()}
+			options={languageOptions}
+		/>
 	</div>
 	<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
 </FormSection>

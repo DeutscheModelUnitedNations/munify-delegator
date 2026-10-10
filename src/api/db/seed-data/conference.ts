@@ -61,7 +61,7 @@ export function makeSeedConference(
 		title: faker.company.name(),
 		longTitle: `${faker.company.name()} Konferenz`,
 		location: faker.location.city(),
-		language: faker.location.language().name,
+		language: 'deu',
 		website: faker.internet.url(),
 		info: faker.company.catchPhrase(),
 		state,

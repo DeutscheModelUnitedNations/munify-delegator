@@ -7,6 +7,7 @@
 	conference changes.
 -->
 <script lang="ts">
+	import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 	import { m } from '$lib/paraglide/messages';
 	import { untrack } from 'svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
@@ -96,7 +97,7 @@
 		title: storedConference.title,
 		longTitle: storedConference.longTitle ?? undefined,
 		location: storedConference.location ?? undefined,
-		language: storedConference.language ?? undefined,
+		language: normalizeConferenceLanguage(storedConference.language),
 		website: storedConference.website ?? undefined,
 		startAssignment: storedConference.startAssignment,
 		registrationDeadlineGracePeriodMinutes: storedConference.registrationDeadlineGracePeriodMinutes,

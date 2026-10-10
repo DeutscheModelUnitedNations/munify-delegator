@@ -74,7 +74,7 @@ export function buildConferenceStructure(
 		}),
 		id: seedConferenceId(plan.key),
 		location: 'Hannover',
-		language: 'Deutsch',
+		language: 'deu',
 		website: 'https://example.org',
 		currency: 'EUR',
 		feeAmount: 85,

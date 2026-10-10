@@ -662,6 +662,7 @@
 	"conferenceInfo": "Conference Information",
 	"conferenceInfoDescription": "Lies dir die aktuellen Konferenzinformationen aufmerksam durch und schaue immer mal wieder nach, ob es Neuigkeiten gibt.",
 	"conferenceLanguage": "Conference Language",
+	"conferenceLanguageHint": "The language the nations are filed and printed in on the nametag tables. Everyone is sent to the same table, whatever language their own interface uses.",
 	"conferenceLocation": "Location",
 	"conferenceLogo": "Conference Logo",
 	"conferenceLogoHint": "Image file for the logo displayed in the dashboard header. If not set, the emblem will be used as fallback.",

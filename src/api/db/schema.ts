@@ -551,6 +551,11 @@ export const conference = snakeCase.table('conference', {
 	title: text().notNull(),
 	longTitle: text(),
 	location: text(),
+	/**
+	 * The conference's language, one of `CONFERENCE_LANGUAGES`: its nations are filed and printed in
+	 * it on the nametag tables, so everyone is sent to the same table whatever language their own
+	 * interface uses. Anything else (older free-text values) reads as German.
+	 */
 	language: text(),
 	website: text(),
 	endConference: timestamp({ precision: 3 }).notNull(),

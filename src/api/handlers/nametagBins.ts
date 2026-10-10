@@ -5,6 +5,7 @@ import {
 	loadNametagBins,
 	loadOwnNametagTable
 } from '$api/services/nametagBins';
+import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 import { db } from '$api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -53,21 +54,22 @@ schemaBuilder.queryFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			/** Preview a count before it is saved; defaults to the conference's setting. */
-			binCount: t.arg.int(),
-			/** The language the signs are read in: nations are filed by their name in it. */
-			locale: t.arg.string({ required: true })
+			binCount: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const conference = await db.query.conference
-				.findFirst({ where: { id: args.conferenceId }, columns: { nametagBinCount: true } })
+				.findFirst({
+					where: { id: args.conferenceId },
+					columns: { nametagBinCount: true, language: true }
+				})
 				.then(assertFindFirstExists);
 
 			const bins = await loadNametagBins(
 				args.conferenceId,
 				args.binCount ?? conference.nametagBinCount,
-				args.locale
+				normalizeConferenceLanguage(conference.language)
 			);
 			return bins.map((bin, index) => ({
 				index,
@@ -85,37 +87,43 @@ schemaBuilder.queryFields((t) => ({
 		type: OwnNametagTable,
 		nullable: true,
 		args: {
-			conferenceId: t.arg.id({ required: true }),
-			locale: t.arg.string({ required: true })
+			conferenceId: t.arg.id({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
 			const user = ctx.mustBeLoggedIn();
 			const conference = await db.query.conference.findFirst({
 				where: { id: args.conferenceId },
-				columns: { nametagBinCount: true, assignmentReleased: true }
+				columns: { nametagBinCount: true, assignmentReleased: true, language: true }
 			});
 			if (!conference?.assignmentReleased) return null;
 			return loadOwnNametagTable(
 				args.conferenceId,
 				conference.nametagBinCount,
 				user.sub,
-				args.locale
+				normalizeConferenceLanguage(conference.language)
 			);
 		}
 	}),
 
-	/** The nations, non-state actors and roles sent to one bin, read when the team opens it. */
+	/** The nations (named in the conference's language), non-state actors and roles sent to one bin, read when the team opens it. */
 	nametagBinGroups: t.field({
 		type: [NametagBinGroup],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			binCount: t.arg.int({ required: true }),
-			index: t.arg.int({ required: true }),
-			locale: t.arg.string({ required: true })
+			index: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			return loadNametagBinGroups(args.conferenceId, args.binCount, args.index, args.locale);
+			const conference = await db.query.conference
+				.findFirst({ where: { id: args.conferenceId }, columns: { language: true } })
+				.then(assertFindFirstExists);
+			return loadNametagBinGroups(
+				args.conferenceId,
+				args.binCount,
+				args.index,
+				normalizeConferenceLanguage(conference.language)
+			);
 		}
 	})
 }));

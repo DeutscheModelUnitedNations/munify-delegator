@@ -1,3 +1,4 @@
+import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 import valiator from 'validator';
 import IBAN from 'iban';
 import { z } from 'zod';
@@ -25,12 +26,7 @@ export const conferenceSettingsFormSchema = z.object({
 			message: m.atLeastXChars({ amount: 3 })
 		})
 		.optional(),
-	language: z
-		.string()
-		.min(2, {
-			message: m.atLeastXChars({ amount: 2 })
-		})
-		.optional(),
+	language: z.string().refine(isConferenceLanguage),
 	website: z
 		.string()
 		.refine((s) => valiator.isURL(s, { protocols: ['http', 'https'] }), {

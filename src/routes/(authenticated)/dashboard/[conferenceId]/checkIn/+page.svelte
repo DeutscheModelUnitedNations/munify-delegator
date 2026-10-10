@@ -4,20 +4,18 @@
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
 	import { scanIssues, type ScanIssue } from '../management/attendance/scanCheck';
 	import type { PageProps } from './$types';
 
 	// Reached by the QR code at the entrance, so it is not linked from anywhere else
 	let { params: routeParams }: PageProps = $props();
 	const conferenceId = $derived(routeParams.conferenceId);
-	const locale = getLocale();
 
 	const currentUser = $derived(await getCurrentUser());
 	const participation = $derived(await fetchMyParticipation(conferenceId));
 	const table = $derived(
 		await client.liveQuery.ownNametagTable({
-			__args: { conferenceId, locale },
+			__args: { conferenceId },
 			index: true,
 			fromLetter: true,
 			toLetter: true,

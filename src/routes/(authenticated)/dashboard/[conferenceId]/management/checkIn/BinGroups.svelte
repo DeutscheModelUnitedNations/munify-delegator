@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
 	let { conferenceId, binCount, index }: { conferenceId: string; binCount: number; index: number } =
 		$props();
@@ -11,7 +9,7 @@
 	// Only rendered once the row is opened
 	const groups = $derived(
 		await client.query.nametagBinGroups({
-			__args: { conferenceId, binCount, index, locale: getLocale() },
+			__args: { conferenceId, binCount, index },
 			nationAlpha3Code: true,
 			roleName: true,
 			sortName: true,
@@ -24,9 +22,8 @@
 	const rows = $derived(
 		groups
 			.map((group) => ({
-				label: group.nationAlpha3Code
-					? getFullTranslatedCountryNameFromISO3Code(group.nationAlpha3Code)
-					: (group.roleName ?? ''),
+				// a nation is named in the conference's language, the one it is filed by
+				label: group.nationAlpha3Code ? group.sortName : (group.roleName ?? ''),
 				alpha2Code: group.nationAlpha2Code,
 				icon: group.fontAwesomeIcon,
 				participants: group.participants,

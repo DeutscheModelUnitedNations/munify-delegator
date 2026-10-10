@@ -37,28 +37,24 @@ interface Cost {
 	squares: number;
 }
 
-/** The languages a nation's name is known in; anything else falls back to English. */
-const GERMAN = 'de';
-
 /**
- * The name a nation is filed under: in the language of the person looking at the signs, since that
- * is the name they will search for. It is what the letters and the sort order of a sign follow.
+ * The name a nation is filed under: in the conference's language, so everyone is sent to the same
+ * table whatever their own interface language is. It is what the letters and the sort order of a
+ * sign follow. A language without translations reads the English names.
  */
-function nationName(alpha3Code: string, locale: string): string {
+function nationName(alpha3Code: string, language: string): string {
 	const nation = allNations.find((candidate) => candidate.cca3 === alpha3Code.toUpperCase());
 	if (!nation) return alpha3Code;
-	return locale === GERMAN
-		? (nation.translations.deu?.common ?? nation.name.common)
-		: nation.name.common;
+	return nation.translations[language]?.common ?? nation.name.common;
 }
 
 /**
- * The first letter A-Z of the nation's name in `locale`, so Germany is a D for a German reader and
- * a G for an English one. Diacritics are dropped (Ägypten → A). Codes the nation list does not know
- * fall back to their own first letter.
+ * The first letter A-Z of the nation's name in `language`, so Germany is a D in German and a G in
+ * English. Diacritics are dropped (Ägypten → A). Codes the nation list does not know fall back to
+ * their own first letter.
  */
-export function nationInitial(alpha3Code: string, locale: string): string {
-	const letter = nationName(alpha3Code, locale)
+export function nationInitial(alpha3Code: string, language: string): string {
+	const letter = nationName(alpha3Code, language)
 		.normalize('NFD')
 		.replace(/[^A-Za-z]/g, '')
 		.charAt(0)
@@ -214,7 +210,7 @@ async function seatedSupervisorUserIds(conferenceId: string): Promise<string[]> 
 }
 
 /** The bins of a conference's seated participants. Everyone who holds a seat gets a nametag. */
-export async function loadNametagBins(conferenceId: string, binCount: number, locale: string) {
+export async function loadNametagBins(conferenceId: string, binCount: number, language: string) {
 	const [nationDelegations, nonStateActorDelegations, pressAndIndividuals, supervisors] =
 		await Promise.all([
 			db.query.delegation.findMany({
@@ -239,7 +235,7 @@ export async function loadNametagBins(conferenceId: string, binCount: number, lo
 		delegation.assignedNationAlpha3Code
 			? [
 					{
-						letter: nationInitial(delegation.assignedNationAlpha3Code, locale),
+						letter: nationInitial(delegation.assignedNationAlpha3Code, language),
 						count: delegation.memberCount
 					}
 				]
@@ -270,7 +266,7 @@ export interface NametagBinGroup {
 async function nationGroups(
 	conferenceId: string,
 	letters: string[],
-	locale: string
+	language: string
 ): Promise<NametagBinGroup[]> {
 	const delegations = await db.query.delegation.findMany({
 		where: { conferenceId, assignedNationAlpha3Code: { isNotNull: true } },
@@ -278,12 +274,12 @@ async function nationGroups(
 	});
 	return delegations.flatMap((delegation) => {
 		const code = delegation.assignedNationAlpha3Code;
-		if (!code || !letters.includes(nationInitial(code, locale))) return [];
+		if (!code || !letters.includes(nationInitial(code, language))) return [];
 		return [
 			{
 				nationAlpha3Code: code,
 				roleName: null,
-				sortName: nationName(code, locale),
+				sortName: nationName(code, language),
 				nationAlpha2Code:
 					allNations.find((nation) => nation.cca3 === code.toUpperCase())?.cca2.toLowerCase() ??
 					null,
@@ -309,7 +305,7 @@ function roleGroup(name: string, icon: string | null, participants: number): Nam
 function singleRoleGroups(
 	singles: { assignedRole: { name: string; fontAwesomeIcon: string | null } | null }[],
 	supervisors: number,
-	locale: string
+	language: string
 ) {
 	const perRole = new Map<string, { icon: string | null; participants: number }>();
 	for (const single of singles) {
@@ -322,13 +318,13 @@ function singleRoleGroups(
 		perRole.set(name, entry);
 	}
 	if (supervisors > 0) {
-		const name = locale === GERMAN ? 'Betreuende' : 'Supervisors';
+		const name = language === 'deu' ? 'Betreuende' : 'Supervisors';
 		perRole.set(name, { icon: 'chalkboard-user', participants: supervisors });
 	}
 	return [...perRole].map(([name, { icon, participants }]) => roleGroup(name, icon, participants));
 }
 
-async function otherGroups(conferenceId: string, locale: string): Promise<NametagBinGroup[]> {
+async function otherGroups(conferenceId: string, language: string): Promise<NametagBinGroup[]> {
 	const [nonStateActors, singles, supervisors] = await Promise.all([
 		db.query.delegation.findMany({
 			where: { conferenceId, assignedNonStateActorId: { isNotNull: true } },
@@ -351,7 +347,7 @@ async function otherGroups(conferenceId: string, locale: string): Promise<Nameta
 		)
 	);
 
-	groups.push(...singleRoleGroups(singles, supervisors, locale));
+	groups.push(...singleRoleGroups(singles, supervisors, language));
 	return groups;
 }
 
@@ -360,14 +356,14 @@ export async function loadNametagBinGroups(
 	conferenceId: string,
 	binCount: number,
 	index: number,
-	locale: string
+	language: string
 ): Promise<NametagBinGroup[]> {
-	const bin = (await loadNametagBins(conferenceId, binCount, locale))[index];
+	const bin = (await loadNametagBins(conferenceId, binCount, language))[index];
 	if (!bin) return [];
 
 	const nations =
-		bin.letters.length > 0 ? await nationGroups(conferenceId, bin.letters, locale) : [];
-	const others = bin.otherParticipants > 0 ? await otherGroups(conferenceId, locale) : [];
+		bin.letters.length > 0 ? await nationGroups(conferenceId, bin.letters, language) : [];
+	const others = bin.otherParticipants > 0 ? await otherGroups(conferenceId, language) : [];
 	return [...nations, ...others];
 }
 
@@ -388,7 +384,7 @@ export async function loadOwnNametagTable(
 	conferenceId: string,
 	binCount: number,
 	userId: string,
-	locale: string
+	language: string
 ): Promise<OwnNametagTable | null> {
 	const [member, single, supervisor] = await Promise.all([
 		db.query.delegationMember.findFirst({
@@ -413,8 +409,8 @@ export async function loadOwnNametagTable(
 		!!single?.assignedRoleId;
 	if (!seated) return null;
 
-	const bins = await loadNametagBins(conferenceId, binCount, locale);
-	const initial = nation ? nationInitial(nation, locale) : null;
+	const bins = await loadNametagBins(conferenceId, binCount, language);
+	const initial = nation ? nationInitial(nation, language) : null;
 	const index = bins.findIndex((bin) =>
 		initial ? bin.letters.includes(initial) : bin.otherParticipants > 0
 	);

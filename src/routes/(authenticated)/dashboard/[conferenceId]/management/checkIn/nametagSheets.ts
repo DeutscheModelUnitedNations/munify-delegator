@@ -2,7 +2,6 @@ import { client } from '$lib/api/rumbleClient/client';
 import { flagPng, iconPng, urlToPng } from '$lib/api/nametagSheetImages';
 import type { NametagSheet, NametagSheetEntry } from '$lib/api/nametagSheetsPdf';
 import { m } from '$lib/paraglide/messages';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import outfitRegularUrl from '@fontsource/outfit/files/outfit-latin-400-normal.woff?url';
 import outfitBoldUrl from '@fontsource/outfit/files/outfit-latin-700-normal.woff?url';
 
@@ -78,13 +77,13 @@ function imageCache() {
 
 type Images = ReturnType<typeof imageCache>;
 
-// by the English name the letters are cut by, so a sign reads in the order of its range
+// by the name the letters are cut by, so a sign reads in the order of its range
 const bySortName = (a: SortedEntry, b: SortedEntry) => a.sortName.localeCompare(b.sortName);
 
 async function nationEntry(group: Group, images: Images): Promise<SortedEntry | null> {
 	if (!group.nationAlpha3Code) return null;
 	return {
-		label: getFullTranslatedCountryNameFromISO3Code(group.nationAlpha3Code),
+		label: group.sortName,
 		sortName: group.sortName,
 		image: group.nationAlpha2Code ? await images.flagOf(group.nationAlpha2Code) : null
 	};
@@ -123,17 +122,12 @@ function sheetOf(bin: Bin, nations: NametagSheetEntry[], others: NametagSheetEnt
 }
 
 /** One sign per table that holds anybody. */
-export async function buildSheets(
-	conferenceId: string,
-	binCount: number,
-	locale: string,
-	bins: Bin[]
-) {
+export async function buildSheets(conferenceId: string, binCount: number, bins: Bin[]) {
 	const images = imageCache();
 	const sheets: NametagSheet[] = [];
 	for (const bin of bins.filter((bin) => bin.participants > 0)) {
 		const groups = await client.query.nametagBinGroups({
-			__args: { conferenceId, binCount, index: bin.index, locale },
+			__args: { conferenceId, binCount, index: bin.index },
 			nationAlpha3Code: true,
 			nationAlpha2Code: true,
 			roleName: true,
