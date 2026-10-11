@@ -542,6 +542,8 @@
 	"checkInGuideOthersHint": "This table serves press, individual roles and non-state actors.",
 	"checkInGuideTable": "Please go to table",
 	"checkInGuideTitle": "Check-in",
+	"checkInGuideUsed": "Already checked in",
+	"checkInGuideUsedAt": "Scanned at {time}",
 	"checkYourAddressAndBirthday": "Please check your address and date of birth before you continue.",
 	"chooseOrDropImage": "Choose an image or drop it here",
 	"chunkLoadErrorDetails": "Error details",

@@ -542,6 +542,8 @@
 	"checkInGuideOthersHint": "Dieser Tisch ist für Presse, Einzelrollen und Nichtstaatliche Akteure.",
 	"checkInGuideTable": "Bitte gehe zu Tisch",
 	"checkInGuideTitle": "Anmeldung vor Ort",
+	"checkInGuideUsed": "Bereits eingecheckt",
+	"checkInGuideUsedAt": "Gescannt um {time} Uhr",
 	"checkYourAddressAndBirthday": "Bitte überprüfe deine Adresse und dein Geburtsdatum noch einmal.",
 	"chooseOrDropImage": "Bild auswählen oder hierher ziehen",
 	"chunkLoadErrorDetails": "Fehlerdetails",

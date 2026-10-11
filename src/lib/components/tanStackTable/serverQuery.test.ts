@@ -5,16 +5,8 @@ import {
 	fetchEveryRow,
 	orderFrom,
 	rangeFilter,
-	searchWords,
 	stringFilter
 } from './serverQuery';
-
-describe('searchWords', () => {
-	test('splits on whitespace and caps the count', () => {
-		expect(searchWords('  anna   schmidt ')).toEqual(['anna', 'schmidt']);
-		expect(searchWords('a b c d e f g', 3)).toEqual(['a', 'b', 'c']);
-	});
-});
 
 describe('orderFrom', () => {
 	type Order = { school?: 'asc' | 'desc'; id?: 'asc' | 'desc' };

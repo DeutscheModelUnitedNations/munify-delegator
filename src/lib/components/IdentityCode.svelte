@@ -6,9 +6,11 @@
 	interface Props {
 		/** Whose conference's emblem sits in the middle of the code. */
 		conferenceId: string;
+		/** No glow around the code, for a ticket that has been used. */
+		calm?: boolean;
 	}
 
-	let { conferenceId }: Props = $props();
+	let { conferenceId, calm = false }: Props = $props();
 
 	// The code is signed and only counts for a few minutes, so it is renewed while the page is open
 	// and again when the page comes back to the front.
@@ -45,8 +47,8 @@
 	});
 </script>
 
-<div class="animate-registration-pulse rounded-box p-1">
-	<div class="animate-registration-border rounded-box p-1">
+<div class="{calm ? '' : 'animate-registration-pulse'} rounded-box p-1">
+	<div class="{calm ? 'bg-base-300' : 'animate-registration-border'} rounded-box p-1">
 		<!-- always dark on white, whatever the theme: a scanner needs the contrast -->
 		<div class="flex aspect-square w-full items-center justify-center rounded-field bg-white p-2">
 			{#if code}
@@ -54,7 +56,8 @@
 					use:qr={{
 						data: code,
 						shape: 'circle',
-						errorCorrectionLevel: 'H',
+						// a logo needs the highest correction; without one a lower level keeps the code coarser
+						errorCorrectionLevel: conference.emblemUrl ? 'H' : 'M',
 						moduleFill: '#01548F',
 						anchorOuterFill: '#1B1837',
 						anchorInnerFill: '#01548F',

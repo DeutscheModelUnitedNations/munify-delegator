@@ -2,16 +2,11 @@ import type { SortingState } from '@tanstack/svelte-table';
 import type { TableState } from './tableState.svelte';
 import type { TextFilterValue } from './filters';
 
-/** Escapes the characters `like` gives a meaning to, so a search word is matched literally. */
-const escapeLike = (word: string) => word.replace(/[\\%_]/g, '\\$&');
+/** Escapes the characters `like` gives a meaning to, so a search text is matched literally. */
+const escapeLike = (text: string) => text.replace(/[\\%_]/g, '\\$&');
 
-/** The words of a search, at most `max` of them; each is meant to be contained somewhere. */
-export function searchWords(search: string, max = 5): string[] {
-	return search.split(/\s+/).filter(Boolean).slice(0, max);
-}
-
-/** `%word%` for an `ilike` filter. */
-export const containing = (word: string) => ({ ilike: `%${escapeLike(word)}%` });
+/** `%text%` for an `ilike` filter. */
+export const containing = (text: string) => ({ ilike: `%${escapeLike(text)}%` });
 
 /**
  * The arguments that make a list query return one page: one row more than the table shows, which
@@ -48,12 +43,6 @@ export function orderFrom<Order extends object>(
 	return Object.assign({}, ...chosen, fallback);
 }
 
-/** A word somewhere in a person's name or email, as a filter on the user table. */
-export function personContains(word: string) {
-	const like = containing(word);
-	return { OR: [{ givenName: like }, { familyName: like }, { email: like }] };
-}
-
 function isTextFilter(value: unknown): value is TextFilterValue {
 	return (
 		typeof value === 'object' &&
@@ -65,37 +54,33 @@ function isTextFilter(value: unknown): value is TextFilterValue {
 	);
 }
 
+type StringFilter = {
+	ilike?: string;
+	notIlike?: string;
+	eq?: string;
+	ne?: string;
+	isNull?: boolean;
+	isNotNull?: boolean;
+};
+
+/** How each text filter mode of the drawer maps to a rumble string filter; `contains` is the fallback. */
+const stringFilterModes: Record<string, (value: string, like: string) => StringFilter> = {
+	equals: (value) => ({ eq: value }),
+	equalsNot: (value) => ({ ne: value }),
+	startsWith: (_, like) => ({ ilike: `${like}%` }),
+	startsWithNot: (_, like) => ({ notIlike: `${like}%` }),
+	containsNot: (_, like) => ({ notIlike: `%${like}%` })
+};
+
 /** A string column's text filter from the filter drawer, as a rumble string filter. */
-export function stringFilter(filter: unknown):
-	| {
-			ilike?: string;
-			notIlike?: string;
-			eq?: string;
-			ne?: string;
-			isNull?: boolean;
-			isNotNull?: boolean;
-	  }
-	| undefined {
+export function stringFilter(filter: unknown): StringFilter | undefined {
 	if (!isTextFilter(filter)) return undefined;
 	const { mode, value } = filter;
 	if (mode === 'isEmpty') return { isNull: true };
 	if (mode === 'isNotEmpty') return { isNotNull: true };
 	if (!value) return undefined;
 	const like = escapeLike(value);
-	switch (mode) {
-		case 'equals':
-			return { eq: value };
-		case 'equalsNot':
-			return { ne: value };
-		case 'startsWith':
-			return { ilike: `${like}%` };
-		case 'startsWithNot':
-			return { notIlike: `${like}%` };
-		case 'containsNot':
-			return { notIlike: `%${like}%` };
-		default:
-			return { ilike: `%${like}%` };
-	}
+	return (stringFilterModes[mode] ?? ((_, l) => ({ ilike: `%${l}%` })))(value, like);
 }
 
 /** A boolean column's filter (`true`, `false`; anything else is no filter). */
@@ -144,7 +129,7 @@ export const asCount = (count: unknown): number => Number(count);
 
 /**
  * `{ AND: conditions }`, or nothing for an empty list: rumble rejects an empty `AND`, and a search
- * with no words or a table without filters has no conditions.
+ * with nothing to match or a table without filters has no conditions.
  */
 export const allOf = <T>(conditions: T[]): { AND?: T[] } =>
 	conditions.length > 0 ? { AND: conditions } : {};

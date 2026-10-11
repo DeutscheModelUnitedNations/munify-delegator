@@ -59,26 +59,16 @@ describe('searchConference', () => {
 	});
 
 	describe('people', () => {
-		test('every word is searched on its own and a person has to match all of them', async () => {
-			const person = (id: string) => ({ id, givenName: id, familyName: id, email: id, ...noRoles });
-			// Members: "anna" finds a and b, "schmidt" (or a misspelling of it) finds b and c
-			mocks.users.mockImplementation(async ({ __args }) => {
-				if ('NOT' in __args.where) return [];
-				return __args.search === 'anna' ? [person('a'), person('b')] : [person('b'), person('c')];
-			});
+		test('the term is passed to the search as typed, not split into words', async () => {
+			await searchConference(conferenceId, '  anna   schmidt ');
 
-			const { users } = await searchConference(conferenceId, '  anna   schmidt ');
-
-			expect(mocks.users.mock.calls.map(([call]) => call.__args.search).sort()).toEqual([
-				'anna',
-				'anna',
-				'schmidt',
-				'schmidt'
+			expect(mocks.users.mock.calls.map(([call]) => call.__args.search)).toEqual([
+				'anna   schmidt',
+				'anna   schmidt'
 			]);
-			expect(users.map((user) => user.id)).toEqual(['b']);
 		});
 
-		test('a single word is one query per group', async () => {
+		test('there is one query per group', async () => {
 			await searchConference(conferenceId, 'anna');
 			expect(mocks.users).toHaveBeenCalledTimes(2);
 			expect(argsOf(mocks.users, 0).limit).toBe(10);

@@ -181,16 +181,13 @@ function condition(filter: ParticipantFilter): SQL | undefined {
 	return conditionOf(filter, column.expr);
 }
 
-/** Each of the first five words of the search has to appear in the name or the email. */
+/** The search as typed has to appear in the name (given name first) or the email. */
 function searchConditions(search: string | null | undefined) {
-	return (search ?? '')
-		.split(/\s+/)
-		.filter(Boolean)
-		.slice(0, 5)
-		.map(
-			(word) =>
-				sql`(u.given_name ilike ${like(word)} or u.family_name ilike ${like(word)} or u.email ilike ${like(word)})`
-		);
+	const term = (search ?? '').trim();
+	if (!term) return [];
+	return [
+		sql`((u.given_name || ' ' || u.family_name) ilike ${like(term)} or u.email ilike ${like(term)})`
+	];
 }
 
 /** The order asked for; columns that do not exist are left out. */

@@ -1,7 +1,8 @@
 import { client } from '$lib/api/rumbleClient/client';
 import { confirmedLinkedAccounts } from '$lib/helpers/linkedNotes';
 import type { DeckWindowData, WindowEntry } from '$lib/assignment/deckWindow';
-import { containing, personContains } from '$lib/components/tanStackTable/serverQuery';
+import { containing } from '$lib/components/tanStackTable/serverQuery';
+import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
 
 const person = {
 	id: true,
@@ -58,7 +59,6 @@ const DECK_WINDOW = 60;
 /** The most hits a search asks for per kind of application. */
 const SEARCH_LIMIT = 20;
 /** Words past this are ignored: every one of them has to match somewhere, which gets slower. */
-const SEARCH_WORDS = 5;
 
 export interface DeckFilter {
 	status: string;
@@ -232,35 +232,25 @@ async function warmNext() {
 }
 
 /**
- * The applications whose school, texts, members or supervisors contain every word of `search`,
- * or whose codename or id does, with what the card shows so the page can say what matched, and
- * where they stand in the sighting. Every filter of the sighting applies to them too.
+ * The applications whose school, texts, members or supervisors contain `search`, or whose
+ * codename or id does, with what the card shows so the page can say what matched, and where they
+ * stand in the sighting. Every filter of the sighting applies to them too.
  */
 export async function searchApplications(conferenceId: string, search: string, filter: DeckFilter) {
-	const words = search.split(/\s+/).filter(Boolean).slice(0, SEARCH_WORDS);
-	if (words.length === 0) return { delegations: [], singleParticipants: [], entries: [] };
+	const term = search.trim();
+	if (!term) return { delegations: [], singleParticipants: [], entries: [] };
+	const userIds = (await matchingUserIds(term)) ?? [];
 	const inConference = { conferenceId: { eq: conferenceId }, applied: { eq: true } };
-	const texts = (like: { ilike: string }) => [
-		{ school: like },
-		{ motivation: like },
-		{ experience: like }
-	];
+	const like = containing(term);
+	const texts = [{ school: like }, { motivation: like }, { experience: like }];
+	const people = { userId: { in: userIds } };
 
 	const [delegations, singleParticipants, nameMatches] = await Promise.all([
 		client.query.delegations({
 			__args: {
 				where: {
 					...inConference,
-					AND: words.map((word) => {
-						const like = containing(word);
-						return {
-							OR: [
-								...texts(like),
-								{ members: { user: personContains(word) } },
-								{ members: { supervisors: { user: personContains(word) } } }
-							]
-						};
-					})
+					OR: [...texts, { members: people }, { members: { supervisors: people } }]
 				},
 				limit: SEARCH_LIMIT
 			},
@@ -270,22 +260,13 @@ export async function searchApplications(conferenceId: string, search: string, f
 			__args: {
 				where: {
 					...inConference,
-					AND: words.map((word) => {
-						const like = containing(word);
-						return {
-							OR: [
-								...texts(like),
-								{ user: personContains(word) },
-								{ supervisors: { user: personContains(word) } }
-							]
-						};
-					})
+					OR: [...texts, people, { supervisors: people }]
 				},
 				limit: SEARCH_LIMIT
 			},
 			...singleCard
 		}),
-		client.query.sightingNameMatches({ __args: { conferenceId, search }, id: true })
+		client.query.sightingNameMatches({ __args: { conferenceId, search: term }, id: true })
 	]);
 	const ids = [
 		...new Set([

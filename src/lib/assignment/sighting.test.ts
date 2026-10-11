@@ -105,8 +105,10 @@ describe('application details', () => {
 			})
 		);
 		const found = entry({ id: 'f', fields });
-		expect(matchReasons(found, 'burning max@x').map((r) => [r.kind, r.start, r.end])).toEqual([
-			['motivation', 7, 14],
+		expect(matchReasons(found, 'burning').map((r) => [r.kind, r.start, r.end])).toEqual([
+			['motivation', 7, 14]
+		]);
+		expect(matchReasons(found, 'max@x').map((r) => [r.kind, r.start, r.end])).toEqual([
 			['supervisorEmail', 0, 5]
 		]);
 		expect(matchReasons(found, 'muster').map((r) => r.kind)).toEqual(['supervisor']);
@@ -207,7 +209,7 @@ describe('searchHitEntries', () => {
 	});
 
 	it('puts the applications whose codename or id was typed first', () => {
-		expect(searchHitEntries(hits, 'CODE  s1', codename).map((entry) => entry.id)).toEqual([
+		expect(searchHitEntries(hits, ' S1 ', codename).map((entry) => entry.id)).toEqual([
 			's1',
 			'd1',
 			'd2'

@@ -51,8 +51,6 @@ export interface SearchField {
 	value: string;
 }
 
-const searchTerms = (search: string) => search.split(/\s+/).filter(Boolean);
-
 function fieldsOfEntry(entry: SightingEntry): SearchField[] {
 	const own: SearchField[] = [
 		{ kind: 'codename', value: entry.codename },
@@ -82,7 +80,7 @@ function matchedRange(fuse: Fuse<SearchField>, term: string) {
 	return { field: hit.item, start, end: end + 1 };
 }
 
-/** Why an entry matches: the field that fits each search term best, once per field. */
+/** Why an entry matches: the field that fits the search best. */
 export function matchReasons(entry: SightingEntry, search: string): MatchReason[] {
 	const fuse = new Fuse(fieldsOfEntry(entry), {
 		keys: ['value'],
@@ -90,14 +88,8 @@ export function matchReasons(entry: SightingEntry, search: string): MatchReason[
 		ignoreLocation: true,
 		includeMatches: true
 	});
-	const reasons = new Map<SearchField, MatchReason>();
-	for (const term of searchTerms(search)) {
-		const found = matchedRange(fuse, term);
-		if (found && !reasons.has(found.field)) {
-			reasons.set(found.field, { ...found.field, start: found.start, end: found.end });
-		}
-	}
-	return [...reasons.values()];
+	const found = matchedRange(fuse, search.trim());
+	return found ? [{ ...found.field, start: found.start, end: found.end }] : [];
 }
 
 /** The match with some words around it, cut off with an ellipsis where the value goes on. */
@@ -321,7 +313,7 @@ export function searchHitEntries(
 			searchFieldsOf(singleApplication(single))
 		])
 	]);
-	const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+	const term = search.trim().toLowerCase();
 	const entries = hits.entries.map((entry) => ({
 		kind: entryKind(entry.kind),
 		id: entry.id,
@@ -333,7 +325,7 @@ export function searchHitEntries(
 	}));
 	const named = (entry: SightingEntry) => {
 		const name = `${entry.codename} ${entry.id}`.toLowerCase();
-		return terms.every((term) => name.includes(term));
+		return name.includes(term);
 	};
 	return [...entries.filter(named), ...entries.filter((entry) => !named(entry))];
 }

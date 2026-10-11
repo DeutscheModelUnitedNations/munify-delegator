@@ -17,39 +17,10 @@ import {
 /**
  * The organizers' search box, on rumble's `search` argument: trigram similarity over the columns
  * the caller may read, ranked best match first. One query per table, run in parallel.
- *
- * rumble compares the term with each column on its own, so "anna schmidt" matches neither the
- * given name nor the family name. People are therefore searched one word at a time and only those
- * every word found are kept, which leaves each word as tolerant of typos as the trigram match.
  */
 
 const RESULT_LIMIT = 10;
 const MIN_SEARCH_LENGTH = 2;
-
-/** Candidates asked for per word, so the people every word found can still be told apart. */
-const WORD_CANDIDATES = 50;
-
-/**
- * The rows `find` returns for every word of the term, best match for the first word first.
- * A single word is one query; with several, a row has to turn up for each of them.
- */
-export async function searchEveryWord<T extends { id: string }>(
-	words: string[],
-	find: (word: string, limit: number) => Promise<T[]>,
-	resultLimit = RESULT_LIMIT
-): Promise<T[]> {
-	const [first, ...rest] = words;
-	if (!first) return [];
-	if (rest.length === 0) return find(first, resultLimit);
-
-	const [firstMatches, ...otherMatches] = await Promise.all(
-		words.map((word) => find(word, WORD_CANDIDATES))
-	);
-	const otherIds = otherMatches.map((matches) => new Set(matches.map((row) => row.id)));
-	return firstMatches
-		.filter((row) => otherIds.every((ids) => ids.has(row.id)))
-		.slice(0, resultLimit);
-}
 
 /** Membership in the conference through any of the four possible roles. */
 function participatesIn(conferenceId: string) {
@@ -197,8 +168,7 @@ export async function searchConference(
 	conferenceId: string,
 	searchTerm: string
 ): Promise<SearchResults> {
-	const words = searchTerm.trim().split(/\s+/);
-	if (!words[0] || searchTerm.trim().length < MIN_SEARCH_LENGTH) {
+	if (searchTerm.trim().length < MIN_SEARCH_LENGTH) {
 		return {
 			users: [],
 			delegations: [],
@@ -212,16 +182,18 @@ export async function searchConference(
 
 	const [users, cardHolders, foreignUsers, delegations, transactions, seats, committees] =
 		await Promise.all([
-			searchEveryWord(words, (search, limit) =>
-				client.query.users({
-					__args: { search, where: participatesIn(conferenceId), limit },
-					id: true,
-					givenName: true,
-					familyName: true,
-					email: true,
-					...participation(conferenceId)
-				})
-			),
+			client.query.users({
+				__args: {
+					search: searchTerm.trim(),
+					where: participatesIn(conferenceId),
+					limit: RESULT_LIMIT
+				},
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				...participation(conferenceId)
+			}),
 			// The access card of the external ID card, so scanning or typing it finds its owner. Only
 			// rows the caller may read come back.
 			client.query.conferenceParticipantStatuses({
@@ -237,15 +209,17 @@ export async function searchConference(
 					...participation(conferenceId)
 				}
 			}),
-			searchEveryWord(words, (search, limit) =>
-				client.query.users({
-					__args: { search, where: { NOT: participatesIn(conferenceId) }, limit },
-					id: true,
-					givenName: true,
-					familyName: true,
-					email: true
-				})
-			),
+			client.query.users({
+				__args: {
+					search: searchTerm.trim(),
+					where: { NOT: participatesIn(conferenceId) },
+					limit: RESULT_LIMIT
+				},
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true
+			}),
 			// `entryCode` is the delegation's join secret, masked for team members who do not hand it
 			// out, and a masked column fails the whole query: it is neither selected nor searched.
 			client.query.delegations({

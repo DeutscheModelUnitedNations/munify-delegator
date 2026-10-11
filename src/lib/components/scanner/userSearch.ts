@@ -1,8 +1,5 @@
 import { client } from '$lib/api/rumbleClient/client';
-import {
-	participation,
-	searchEveryWord
-} from '$lib/components/commandPalette/commandPaletteSearch';
+import { participation } from '$lib/components/commandPalette/commandPaletteSearch';
 import { looksLikeUserId, takesPart, type UserSuggestion } from './suggestions';
 
 const SUGGESTION_LIMIT = 5;
@@ -35,37 +32,32 @@ async function searchCardHolders(conferenceId: string, term: string): Promise<Us
 }
 
 /**
- * People matching a name or an email: rumble's trigram `search` for each word, keeping the people
- * every word found, see `searchEveryWord`. Only people with a part in the conference are searched,
- * so a name shared with someone elsewhere never shows.
+ * People matching a name or an email, on rumble's trigram `search` with the term as typed. Only
+ * people with a part in the conference are searched, so a name shared with someone elsewhere
+ * never shows.
  */
-async function searchNames(conferenceId: string, words: string[]): Promise<UserSuggestion[]> {
+async function searchNames(conferenceId: string, term: string): Promise<UserSuggestion[]> {
 	const inConference = { conferenceId: { eq: conferenceId } };
-	const users = await searchEveryWord(
-		words,
-		(search, limit) =>
-			client.query.users({
-				__args: {
-					search,
-					where: {
-						OR: [
-							{ delegationMemberships: inConference },
-							{ singleParticipant: inConference },
-							{ conferenceSupervisor: inConference },
-							{ teamMember: inConference },
-							{ waitingListEntry: inConference }
-						]
-					},
-					limit
-				},
-				id: true,
-				givenName: true,
-				familyName: true,
-				email: true,
-				...participation(conferenceId)
-			}),
-		SUGGESTION_LIMIT
-	);
+	const users = await client.query.users({
+		__args: {
+			search: term,
+			where: {
+				OR: [
+					{ delegationMemberships: inConference },
+					{ singleParticipant: inConference },
+					{ conferenceSupervisor: inConference },
+					{ teamMember: inConference },
+					{ waitingListEntry: inConference }
+				]
+			},
+			limit: SUGGESTION_LIMIT
+		},
+		id: true,
+		givenName: true,
+		familyName: true,
+		email: true,
+		...participation(conferenceId)
+	});
 
 	return users.map((user) => ({
 		id: user.id,
@@ -80,12 +72,11 @@ async function searchNames(conferenceId: string, words: string[]): Promise<UserS
  * matching by name or email, those with a part in the conference before the rest.
  */
 export async function searchUsers(conferenceId: string, term: string): Promise<UserSuggestion[]> {
-	const words = term.trim().split(/\s+/);
-	if (!words[0] || term.trim().length < MIN_SEARCH_LENGTH) return [];
+	if (term.trim().length < MIN_SEARCH_LENGTH) return [];
 
 	const [cardHolders, byName] = await Promise.all([
 		searchCardHolders(conferenceId, term.trim()),
-		searchNames(conferenceId, words)
+		searchNames(conferenceId, term.trim())
 	]);
 	const named = byName
 		.filter((user) => !cardHolders.some((holder) => holder.id === user.id))

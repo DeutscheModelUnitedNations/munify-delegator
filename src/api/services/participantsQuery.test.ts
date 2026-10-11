@@ -167,11 +167,10 @@ describe('participant filters', () => {
 });
 
 describe('participants page', () => {
-	test('search words match name or email, five at most', () => {
-		const { sql, params } = page({ search: ' a  b c d e f ' });
-		expect(sql).toContain('(u.given_name ilike $');
-		expect(params.filter((p) => typeof p === 'string' && p.startsWith('%'))).toHaveLength(15);
-		expect(params).not.toContain('%f%');
+	test('the search as typed matches the full name or the email', () => {
+		const { sql, params } = page({ search: ' a  b ' });
+		expect(sql).toContain("(u.given_name || ' ' || u.family_name) ilike $");
+		expect(params).toContain('%a  b%');
 	});
 
 	test('orders as asked, then by name and id, skipping unknown columns', () => {

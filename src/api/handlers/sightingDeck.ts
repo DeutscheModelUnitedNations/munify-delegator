@@ -132,7 +132,7 @@ schemaBuilder.queryFields((t) => ({
 	}),
 
 	/**
-	 * The applications whose codename or id contains every word of the search. Codenames are
+	 * The applications whose codename or id contains the search. Codenames are
 	 * worked out from the id and stored nowhere, so they are matched here, not in SQL.
 	 */
 	sightingNameMatches: t.field({
@@ -143,13 +143,13 @@ schemaBuilder.queryFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			const terms = args.search.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 5);
-			if (terms.length === 0) return [];
+			const term = args.search.trim().toLowerCase();
+			if (!term) return [];
 			const result = await db.execute<{ id: string }>(applicationIdsSql(args.conferenceId));
 			const matches: { id: string }[] = [];
 			for (const { id } of result.rows) {
 				const name = `${codenmz(id)} ${id}`.toLowerCase();
-				if (terms.every((term) => name.includes(term))) matches.push({ id });
+				if (name.includes(term)) matches.push({ id });
 				if (matches.length >= MAX_NAME_MATCHES) break;
 			}
 			return matches;

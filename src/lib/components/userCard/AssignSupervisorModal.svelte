@@ -4,7 +4,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { allOf, personContains, searchWords } from '$lib/components/tanStackTable/serverQuery';
+	import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
 
 	const SUPERVISOR_LIMIT = 20;
 
@@ -25,13 +25,15 @@
 		return () => clearTimeout(timer);
 	});
 
+	const userIds = $derived(open ? await matchingUserIds(search) : undefined);
+
 	const supervisors = $derived(
 		open
 			? await client.liveQuery.conferenceSupervisors({
 					__args: {
 						where: {
 							conferenceId: { eq: conferenceId },
-							...allOf(searchWords(search).map((word) => ({ user: personContains(word) })))
+							...(userIds ? { userId: { in: userIds } } : {})
 						},
 						limit: SUPERVISOR_LIMIT,
 						orderBy: { createdAt: 'desc', id: 'asc' }

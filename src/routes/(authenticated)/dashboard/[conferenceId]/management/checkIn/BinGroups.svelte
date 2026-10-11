@@ -8,7 +8,7 @@
 
 	// Only rendered once the row is opened
 	const groups = $derived(
-		await client.query.nametagBinGroups({
+		await client.liveQuery.nametagBinGroups({
 			__args: { conferenceId, binCount, index },
 			nationAlpha3Code: true,
 			roleName: true,

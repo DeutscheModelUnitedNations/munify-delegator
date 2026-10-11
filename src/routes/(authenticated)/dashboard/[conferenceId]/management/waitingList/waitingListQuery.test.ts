@@ -11,13 +11,14 @@ interface Options {
 	search?: string;
 	hideHidden?: boolean;
 	start?: Date | null;
+	userIds?: string[];
 }
 
 function where(
 	columnFilters: ColumnFiltersState,
-	{ search = '', hideHidden = false, start = new Date(2026, 5, 1) }: Options = {}
+	{ search = '', hideHidden = false, start = new Date(2026, 5, 1), userIds }: Options = {}
 ) {
-	return waitingListWhere('c1', { columnFilters, search }, hideHidden, start);
+	return waitingListWhere('c1', { columnFilters, search }, hideHidden, start, userIds);
 }
 
 describe('waitingListWhere', () => {
@@ -56,9 +57,10 @@ describe('waitingListWhere', () => {
 		expect(where([age]).AND).toEqual([{ user: { birthday: { lte: new Date(2010, 5, 1) } } }]);
 	});
 
-	test('every search word has to match somewhere', () => {
-		const and = where([], { search: 'anna gym' }).AND ?? [];
-		expect(and).toHaveLength(2);
-		expect(and[1].OR).toContainEqual({ school: { ilike: '%gym%' } });
+	test('the search text as typed has to match the person or a text of the entry', () => {
+		const and = where([], { search: 'anna gym', userIds: ['u1'] }).AND ?? [];
+		expect(and).toHaveLength(1);
+		expect(and[0].OR).toContainEqual({ userId: { in: ['u1'] } });
+		expect(and[0].OR).toContainEqual({ school: { ilike: '%anna gym%' } });
 	});
 });

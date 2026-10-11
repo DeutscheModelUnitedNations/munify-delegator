@@ -13,11 +13,10 @@ import {
 	orderFrom,
 	pageArgs,
 	pageOf,
-	personContains,
 	rangeFilter,
-	searchWords,
 	stringFilter
 } from '$lib/components/tanStackTable/serverQuery';
+import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
 import { birthdayBoundsForAge } from '$lib/helpers/ageChecker';
 
 /** The names of the columns the user can filter by text, and where their value lives. */
@@ -56,7 +55,8 @@ export function waitingListWhere(
 	conferenceId: string,
 	state: Pick<TableState, 'columnFilters' | 'search'>,
 	hideHidden: boolean,
-	startConference: Date | string | null | undefined
+	startConference: Date | string | null | undefined,
+	userIds: string[] | undefined
 ): WaitinglistentryWhereInputArgument {
 	const filters = new Map(state.columnFilters.map((filter) => [filter.id, filter.value]));
 	const school = stringFilter(filters.get('school'));
@@ -68,17 +68,17 @@ export function waitingListWhere(
 		...allOf([
 			...userTextWhere(filters),
 			...birthdayWhere(filters.get('conferenceAge'), startConference),
-			...searchWords(state.search).map(wordMatches)
+			...(state.search.trim() ? [searchMatches(state.search.trim(), userIds ?? [])] : [])
 		])
 	};
 }
 
-/** A word anywhere an entry shows it: the person's name or email, the school, the texts. */
-function wordMatches(word: string): WaitinglistentryWhereInputArgument {
-	const like = containing(word);
+/** The text anywhere an entry shows it: the person (found by `userIds`), the school, the texts. */
+function searchMatches(text: string, userIds: string[]): WaitinglistentryWhereInputArgument {
+	const like = containing(text);
 	return {
 		OR: [
-			{ user: personContains(word) },
+			{ userId: { in: userIds } },
 			{ school: like },
 			{ motivation: like },
 			{ experience: like },
@@ -92,11 +92,12 @@ function listEntries(
 	state: TableState,
 	hideHidden: boolean,
 	startConference: Date | string | null | undefined,
+	userIds: string[] | undefined,
 	paging: { limit: number; offset: number }
 ) {
 	return client.liveQuery.waitingListEntries({
 		__args: {
-			where: waitingListWhere(conferenceId, state, hideHidden, startConference),
+			where: waitingListWhere(conferenceId, state, hideHidden, startConference, userIds),
 			orderBy: orderFrom<WaitinglistentryOrderInputArgument>(
 				state.sorting,
 				{
@@ -135,23 +136,27 @@ export async function fetchWaitingListPage(
 	hideHidden: boolean,
 	startConference: Date | string | null | undefined
 ) {
+	const userIds = await matchingUserIds(state.search);
 	const [entries, total] = await Promise.all([
-		listEntries(conferenceId, state, hideHidden, startConference, pageArgs(state)),
+		listEntries(conferenceId, state, hideHidden, startConference, userIds, pageArgs(state)),
 		client.liveQuery.waitingListEntriesCount({
-			__args: { where: waitingListWhere(conferenceId, state, hideHidden, startConference) }
+			__args: {
+				where: waitingListWhere(conferenceId, state, hideHidden, startConference, userIds)
+			}
 		})
 	]);
 	return { ...pageOf(entries, state), total: asCount(total) };
 }
 
 /** Every entry matching the table's search and filters, for the export. */
-export function fetchAllWaitingListEntries(
+export async function fetchAllWaitingListEntries(
 	conferenceId: string,
 	state: TableState,
 	hideHidden: boolean,
 	startConference: Date | string | null | undefined
 ) {
+	const userIds = await matchingUserIds(state.search);
 	return fetchEveryRow((paging) =>
-		listEntries(conferenceId, state, hideHidden, startConference, paging)
+		listEntries(conferenceId, state, hideHidden, startConference, userIds, paging)
 	);
 }
