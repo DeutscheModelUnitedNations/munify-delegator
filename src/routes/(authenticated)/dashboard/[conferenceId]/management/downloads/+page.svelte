@@ -8,6 +8,7 @@
 	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
+	import RegistrationModeQr from './RegistrationModeQr.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -40,6 +41,14 @@
 		icon="fas fa-user-check"
 	>
 		<ParticipantStatusExport conferenceId={params.conferenceId} />
+	</DownloadCategoryCard>
+
+	<DownloadCategoryCard
+		title={m.registrationModeQrTitle()}
+		description={m.registrationModeQrDescription()}
+		icon="fas fa-qrcode"
+	>
+		<RegistrationModeQr conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard

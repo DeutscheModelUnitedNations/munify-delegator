@@ -64,10 +64,16 @@
 </svelte:head>
 
 <div class="bg-base-100 flex min-h-screen w-full flex-col items-center p-4 sm:p-6">
-	<!-- Header: Conference + Timestamp -->
+	<!-- Header: Back button + Conference + Timestamp -->
 	<div class="flex w-full items-start justify-between">
-		<div class="text-base-content/60 text-sm">
-			{conference?.title ?? ''}
+		<div class="flex flex-col items-start gap-1">
+			<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
+				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+				{m.backToDashboard()}
+			</a>
+			<div class="text-base-content/60 px-3 text-sm">
+				{conference?.title ?? ''}
+			</div>
 		</div>
 		<div class="bg-base-200 rounded-box px-3 py-1 font-mono text-lg tabular-nums">
 			{formatTime(currentTime)}
@@ -76,7 +82,7 @@
 
 	{#if isValidParticipant}
 		<!-- Main content area -->
-		<div class="flex flex-1 flex-col items-center justify-center gap-4 sm:gap-6">
+		<div class="flex flex-1 flex-col items-center justify-start gap-4 pt-6 sm:gap-6 sm:pt-8">
 			<!-- Flag - Most Prominent -->
 			<div class="flex flex-col items-center gap-2">
 				<div class="flag-glow rounded-box">
@@ -124,14 +130,6 @@
 			</p>
 		</div>
 	{/if}
-
-	<!-- Back Button -->
-	<div class="mt-auto w-full pt-4">
-		<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
-			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
-			{m.backToDashboard()}
-		</a>
-	</div>
 </div>
 
 <style>
