@@ -1,15 +1,10 @@
+import { wallClockNow } from './calendarNow';
 import type { CalendarDay, CalendarEntry } from './calendarTypes';
 
 /** The calendar date `now` falls on in `timezone`, as UTC-midnight milliseconds. */
 function calendarDayIn(timezone: string, now: Date) {
-	const parts = new Intl.DateTimeFormat('en-US', {
-		timeZone: timezone,
-		year: 'numeric',
-		month: 'numeric',
-		day: 'numeric'
-	}).formatToParts(now);
-	const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-	return Date.UTC(part('year'), part('month') - 1, part('day'));
+	const DAY = 24 * 60 * 60 * 1000;
+	return Math.floor(wallClockNow(timezone, now) / DAY) * DAY;
 }
 
 /** The index of today's day in `days` (judged in `timezone`), or 0 when none is today. */

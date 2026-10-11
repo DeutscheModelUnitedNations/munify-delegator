@@ -41,7 +41,7 @@
 </script>
 
 <section class="{cardClasses} {class_}">
-	<div class="card-body">
+	<div class="card-body max-sm:p-4">
 		{#snippet header()}
 			<div class={iconClasses}>
 				<i class="fa-sharp-duotone fa-solid fa-{icon} text-xl"></i>
@@ -91,7 +91,7 @@
 				{@render header()}
 			</div>
 		{:else}
-			<div class="flex items-start gap-4" class:mb-4={!collapsed}>
+			<div class="flex items-start gap-3 sm:gap-4" class:mb-4={!collapsed}>
 				{@render header()}
 			</div>
 		{/if}

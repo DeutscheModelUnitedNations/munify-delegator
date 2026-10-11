@@ -262,7 +262,7 @@ test('a reviewer reads delegations without their join codes', async ({ page }) =
 	);
 });
 
-test('project management uploads resolutions, everybody with a part in it downloads them', async ({
+test('the team uploads resolutions, everybody with a part in it downloads them', async ({
 	browser
 }) => {
 	const as = async (claims: Parameters<typeof loginAs>[1]) => {
@@ -276,12 +276,11 @@ test('project management uploads resolutions, everybody with a part in it downlo
 	const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4 e2e').toString('base64')}`;
 	const list = `query ($c: ID!) { resolutions(where: { conferenceId: { eq: $c } }) { id } }`;
 
-	// Participant care runs the conference with project management, but the resolutions are not
-	// theirs to publish.
-	const care = await as(fixedTestUser(E2E_PAYMENT_ADMIN_ID));
+	// Participants cannot publish resolutions, though they download them.
+	const participant = await as(fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
 	expectRefused(
-		await gql(care, create, { c: E2E_CONFERENCE_ID, n: 'care.pdf', content: pdf }),
-		/requires one of: PROJECT_MANAGEMENT/
+		await gql(participant, create, { c: E2E_CONFERENCE_ID, n: 'delegate.pdf', content: pdf }),
+		/requires one of: PROJECT_MANAGEMENT, PARTICIPANT_CARE, CONTENT_LEAD/
 	);
 
 	const management = await as(fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));

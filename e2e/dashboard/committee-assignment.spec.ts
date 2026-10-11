@@ -11,7 +11,7 @@ import {
 // admin in the loop for this specific action.
 test('a head delegate can assign a delegation member to a committee', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/committeeAssignment`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/committee-assignment`
 	});
 
 	const committeeSelect = page.locator('select.select');

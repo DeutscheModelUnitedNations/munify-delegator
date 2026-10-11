@@ -1,7 +1,8 @@
+import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 import { client } from '$lib/api/rumbleClient/client';
+import { PAPER_ROLES } from '$lib/helpers/teamRoles';
 import { getCurrentUser } from '$lib/state/currentUser.svelte';
-
-const REVIEW_ROLES = ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] as const;
+import { canOpenPaperHub, paperHubAccess } from './paperHubViews';
 
 /**
  * The paper hub looks different for reviewers and for supervisors, so it asks for both.
@@ -17,7 +18,7 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 			__args: {
 				// `role` is a plain enum in the API's filter, not a where-input, and a sibling of
 				// `OR` does not constrain its branches - so each alternative repeats the scope.
-				where: { OR: REVIEW_ROLES.map((role) => ({ role, ...forUser })) }
+				where: { OR: PAPER_ROLES.map((role) => ({ role, ...forUser })) }
 			},
 			role: true
 		}),
@@ -48,4 +49,13 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 			];
 		}
 	};
+}
+
+/** Whether the paper hub belongs in the caller's navigation: a snapshot, not a live value. */
+export async function fetchCanOpenPaperHub(conferenceId: string) {
+	const [participation, roles] = await Promise.all([
+		fetchMyParticipation(conferenceId),
+		fetchMyPaperHubRoles(conferenceId)
+	]);
+	return canOpenPaperHub(paperHubAccess(participation, roles));
 }

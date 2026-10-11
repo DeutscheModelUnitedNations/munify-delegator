@@ -164,10 +164,9 @@
 			</div>
 		{/if}
 	</div>
-	<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2">
-		<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
+	<div class="rounded-field bg-base-100 border border-base-300 p-2">
 		<PaperEditor.ReadOnlyContent content={review.comments} {paperContainer} />
-	</fieldset>
+	</div>
 {/snippet}
 
 {#snippet timelineItem(event: TimelineEvent, index: number)}
@@ -186,7 +185,7 @@
 				class="fa-sharp-duotone fa-solid fa-circle-chevron-right text-primary text-lg w-5 text-center"
 			></i>
 		</div>
-		<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
+		<div class="timeline-end w-full pb-4">
 			{#if event.type === 'version'}
 				{@render versionEvent(event.version)}
 			{:else}
@@ -201,14 +200,14 @@
 {/snippet}
 
 {#if timelineEvents.length > 0}
-	<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
-		<legend class="fieldset-legend">{m.history()}</legend>
+	<div class="card bg-base-200 p-4 flex flex-col gap-2">
+		<h2 class="text-lg font-bold">{m.history()}</h2>
 		<ul class="timeline timeline-vertical timeline-compact py-2">
 			{#each timelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}
 				{@render timelineItem(event, index)}
 			{/each}
 		</ul>
-	</fieldset>
+	</div>
 {/if}
 
 <!-- Version comparison selection indicator -->

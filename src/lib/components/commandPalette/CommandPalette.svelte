@@ -10,6 +10,7 @@
 		registerCommandPalette
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import type { TeamAccess } from '$lib/helpers/teamAccess';
 	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
 	import {
 		describeItem,
@@ -40,9 +41,11 @@
 
 	interface Props {
 		conferenceId: string;
+		/** What the caller may open; the page entries are filtered by it */
+		access: TeamAccess;
 	}
 
-	let { conferenceId }: Props = $props();
+	let { conferenceId, access }: Props = $props();
 
 	const paletteState = getCommandPaletteState();
 
@@ -56,7 +59,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Page search (client-side with Fuse.js)
-	const pages = $derived(getAllPages(conferenceId));
+	const pages = $derived(getAllPages(conferenceId, access));
 	const fuse = $derived(
 		new Fuse(pages, {
 			keys: [

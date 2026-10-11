@@ -7,7 +7,9 @@ export function printOverview() {
 	const line = (text = '') => console.info(text);
 
 	line();
-	line('Conferences (dashboard: /dashboard/<id>, management: /dashboard/<id>/management)');
+	line(
+		'Conferences (dashboard: /dashboard/<id>, team pages: /dashboard/<id>/team/stats and so on)'
+	);
 	for (const plan of conferencePlans) {
 		line(`  ${plan.conference.title.padEnd(36)} ${seedConferenceId(plan.key)}`);
 		line(`  ${''.padEnd(36)} ${plan.summary}`);

@@ -33,7 +33,7 @@
 {#if hasDuplicate}
 	<a
 		class="badge badge-warning gap-1"
-		href={resolve('/(authenticated)/dashboard/[conferenceId]/management/plausibility', {
+		href={resolve('/(authenticated)/dashboard/[conferenceId]/team/plausibility', {
 			conferenceId
 		})}
 	>

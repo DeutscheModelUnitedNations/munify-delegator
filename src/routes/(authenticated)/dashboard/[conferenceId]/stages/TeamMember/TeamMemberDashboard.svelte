@@ -1,49 +1,52 @@
+<!--
+	@component
+	What the dashboard offers a team member: one entry into the team area (whose side navigation,
+	read from the route registry, lists its pages) and the links the conference and the app give the
+	team, as plain cards with no box or heading around them. Cards carry live details of their own,
+	such as what is on right now. No team page is linked directly from here.
+-->
 <script lang="ts">
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import DashboardLinkCards from '$lib/components/dashboard/DashboardLinkCards.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
-	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/data/teamDashboardLinks';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { fetchTeamAccess } from '$lib/api/teamAccess';
 	import { configPublic } from '$config/public';
+	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
+	import {
+		getPaperHubLink,
+		getTeamEntryLink,
+		getTeamResourceLinks,
+		type TeamDashboardLinkContext
+	} from '$lib/data/teamDashboardLinks';
 
-	interface Props {
-		conferenceId: string;
-		/** Absent for a system admin who is not part of the team. */
-		role?: TeamroleEnum;
-		isAdmin?: boolean;
-	}
-
-	let { conferenceId, role, isAdmin = false }: Props = $props();
+	let { conferenceId }: { conferenceId: string } = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			title: true,
 			linkToTeamWiki: true,
 			linkToServicesPage: true,
 			linkToPreparationGuide: true
 		})
 	);
+	const access = $derived(await fetchTeamAccess(conferenceId));
 
-	let linkContext = $derived<TeamDashboardLinkContext>({
+	// A snapshot of a boolean, decided the same way as the team navigation's paper hub entry
+	const canSeePaperHub = $derived(await fetchCanOpenPaperHub(conferenceId));
+
+	const context = $derived<TeamDashboardLinkContext>({
 		conferenceId,
-		role,
-		isAdmin,
 		linkToTeamWiki: conference.linkToTeamWiki,
 		linkToServicesPage: conference.linkToServicesPage,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		docsUrl: configPublic.PUBLIC_DOCS_URL
 	});
-
-	let visibleLinks = $derived(getTeamLinksForRole(linkContext));
+	const links = $derived(
+		[
+			getTeamEntryLink(access),
+			...getTeamResourceLinks(context),
+			getPaperHubLink(canSeePaperHub)
+		].filter((link) => link !== undefined)
+	);
 </script>
 
-<DashboardSection
-	icon="users-gear"
-	title={m.teamMemberDashboard()}
-	description={role ? `${conference.title} · ${translateTeamRole(role)}` : conference.title}
->
-	<DashboardLinkCards links={visibleLinks} context={linkContext} />
-</DashboardSection>
+<DashboardLinkCards {links} {context} {conferenceId} />

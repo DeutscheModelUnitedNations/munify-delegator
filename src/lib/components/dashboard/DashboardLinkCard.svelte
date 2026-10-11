@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { DashboardHref } from '$lib/data/dashboardLinks';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		href: DashboardHref;
@@ -11,6 +12,8 @@
 		badge?: string | number;
 		badgeType?: 'info' | 'warning' | 'success' | 'error';
 		important?: boolean;
+		/** Live details shown under the description, such as what is on right now */
+		info?: Snippet;
 	}
 
 	let {
@@ -22,7 +25,8 @@
 		disabled = false,
 		badge,
 		badgeType = 'info',
-		important = false
+		important = false,
+		info
 	}: Props = $props();
 
 	// Split once so each branch below gets a plainly typed value.
@@ -94,5 +98,6 @@
 			{/if}
 		</div>
 		<p class="text-base-content/70">{description}</p>
+		{@render info?.()}
 	</div>
 {/snippet}

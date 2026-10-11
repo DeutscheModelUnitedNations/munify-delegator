@@ -180,7 +180,7 @@
 <DraftRecoveryModal {draft} />
 
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
-	<h3 class="text-lg font-bold">{m.addReview()}</h3>
+	<h2 class="text-lg font-bold">{m.addReview()}</h2>
 
 	{#if reviewed}
 		<!-- Options after review has been saved -->

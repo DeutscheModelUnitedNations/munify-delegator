@@ -3166,6 +3166,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: PaperWhereInputArgument | null | undefined
   }) => Paper[],
+  papersCount: (p?: {
+    where?: PaperWhereInputArgument | null | undefined
+  }) => Int,
   participantsPage: (p: {
     conferenceId: ID,
     filters?: ParticipantFilterInput[] | null | undefined,
@@ -4383,6 +4386,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: PaperWhereInputArgument | null | undefined
   }) => Paper[],
+  papersCount: (p?: {
+    where?: PaperWhereInputArgument | null | undefined
+  }) => Int,
   paymentTransaction: (p: {
     id: ID
   }) => Paymenttransaction,
@@ -5201,7 +5207,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

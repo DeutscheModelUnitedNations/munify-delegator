@@ -67,3 +67,13 @@ export const test = base.extend<object, { browserCoverage: libCoverage.CoverageM
 		if (recording) await addPageCoverage(page, browserCoverage);
 	}
 });
+
+/**
+ * Confirms every in-app confirm/prompt dialog (`DialogHost`) the page opens, the way
+ * `page.on('dialog', d => d.accept())` did for the browser's native ones.
+ */
+export async function acceptDialogs(page: Page) {
+	await page.addLocatorHandler(page.getByRole('alertdialog'), async (dialog) => {
+		await dialog.locator('button[type="submit"]').click();
+	});
+}

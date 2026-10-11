@@ -134,8 +134,27 @@
 	);
 </script>
 
+{#snippet actionBar()}
+	{#if baseViewMode !== 'supervisor'}
+		<PaperActionBar
+			status={paperData?.status ?? 'DRAFT'}
+			viewMode={baseViewMode}
+			{isReviewer}
+			bind:reviewerEditMode
+			{unsavedChanges}
+			onSave={saveFile}
+		/>
+	{/if}
+{/snippet}
+
 {#snippet paperHeader(paper: PaperDetail)}
-	<PaperHeaderCard {paper} status={paper.status} {versionNumber} createdAt={paper.createdAt}>
+	<PaperHeaderCard
+		{paper}
+		status={paper.status}
+		{versionNumber}
+		createdAt={paper.createdAt}
+		footer={baseViewMode === 'supervisor' ? undefined : actionBar}
+	>
 		{#snippet actions()}
 			<PaperExportButtons {paper} {resolutionHeaderData} />
 		{/snippet}
@@ -147,16 +166,6 @@
 			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
 			<span>{m.readOnlyViewSupervisor()}</span>
 		</div>
-	{:else}
-		<!-- Action Bar (hidden for supervisors) -->
-		<PaperActionBar
-			status={paper.status}
-			viewMode={baseViewMode}
-			{isReviewer}
-			bind:reviewerEditMode
-			{unsavedChanges}
-			onSave={saveFile}
-		/>
 	{/if}
 {/snippet}
 

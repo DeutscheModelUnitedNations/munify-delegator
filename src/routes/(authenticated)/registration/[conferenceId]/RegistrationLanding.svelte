@@ -169,45 +169,45 @@
 				<h2 class="mb-2 text-2xl font-bold">{m.howDoIApply()}</h2>
 				<p class="mb-4">{m.thisDiagramShowHowToApply()}</p>
 				<div
-					class="card mx-auto flex w-full max-w-[1000px] items-center justify-center bg-[#f6f7fb] p-4 shadow-lg"
+					class="card mx-auto flex w-full max-w-[1000px] items-center justify-center bg-base-200 p-4 shadow-lg"
 				>
 					<MermaidWrapper
 						diagram={`\
 						%%{
 							init: {
 								'themeVariables': {
-									'edgeLabelBackground':'#f6f7fb'
+									'edgeLabelBackground':'#F0EFF5','lineColor':'#1B1837'
 								}
 							}
 						}%%
 					flowchart TD
-						A(${m.whichRoleDoIWantToTakeInTheConference()}):::question
+						A[${m.whichRoleDoIWantToTakeInTheConference()}]:::question
 						
-						A --> Delegate(fa:fa-flag\n${m.delegateOfACountry()}):::role
-						A --> NSA(fa:fa-megaphone\n${m.nonStateActorDiagram()}):::role
-						NSA --> B(${m.doIhavePeopleToApplyWith()}):::question
+						A --> Delegate[fa:fa-flag\n${m.delegateOfACountry()}]:::role
+						A --> NSA[fa:fa-megaphone\n${m.nonStateActorDiagram()}]:::role
+						NSA --> B[${m.doIhavePeopleToApplyWith()}]:::question
 						Delegate --> B
 
-						B -->|${m.yes()}| C(${m.didSomeoneOfTheseAlreadyCreateADelegation()}):::question
+						B -->|${m.yes()}| C[${m.didSomeoneOfTheseAlreadyCreateADelegation()}]:::question
 						B --->|${m.no()}| Individual{fa:fa-envelope\n${m.individualApplicationDiagram()}}:::outcome
 
 						C --> |${m.no()}| E{fa:fa-plus\n${m.createDelegationDiagram()}}:::outcome
 						C --> |${m.yes()}| D{fa:fa-right-to-bracket\n${m.joinDelegationDiagram()}}:::outcome
 
-						A --> Journalist(fa:fa-newspaper\n${m.journalist()}):::role ----> Individual
-						A --> Special(fa:fa-gavel\n${m.specialRole()}):::role ----> Individual
+						A --> Journalist[fa:fa-newspaper\n${m.journalist()}]:::role ----> Individual
+						A --> Special[fa:fa-gavel\n${m.specialRole()}]:::role ----> Individual
 
-						A --> Supervisor(fa:fa-chalkboard-user\n${m.supervisor()}):::role
-						Supervisor --> F(${m.didMyStudentsAlreadyCreateADelegation()}):::question
-						F -.-> |${m.no()}| Wait(fa:fa-hourglass-clock\n${m.waitForSignupOfMyStudents()}):::wait
+						A --> Supervisor[fa:fa-chalkboard-user\n${m.supervisor()}]:::role
+						Supervisor --> F[${m.didMyStudentsAlreadyCreateADelegation()}]:::question
+						F -.-> |${m.no()}| Wait[fa:fa-hourglass-clock\n${m.waitForSignupOfMyStudents()}]:::wait
 						F ---> |${m.yes()}| G{fa:fa-right-to-bracket\n${m.signupAsSupervisor()}}:::outcome
 						
-						classDef question fill:#3d7dd2,stroke-width:3px,stroke:#3d7dd2,color:white,font-family:Outfit;
-						classDef role fill:#f9f9f9,stroke:#333,stroke-width:1px,font-family:Outfit;
-						classDef outcome fill:#cfc,stroke-width:3px,font-family:Outfit;
-						classDef wait fill:#fbb,stroke:#000,stroke-width:1px,font-family:Outfit;
+						classDef question fill:#01548F,stroke-width:1px,stroke:#01548F,color:#FFFFFF,font-family:Outfit;
+						classDef role fill:#FFFFFF,stroke:#1B1837,stroke-width:1px,color:#1B1837,font-family:Outfit;
+						classDef outcome fill:#b5e4c1,stroke:#1B1837,stroke-width:2px,color:#0e2614,font-family:Outfit;
+						classDef wait fill:#fdd2d9,stroke:#F51D42,stroke-width:1px,color:#1B1837,font-family:Outfit;
 
-						linkStyle default stroke-width:3px;
+						linkStyle default stroke-width:2px;
 
 						click E "/registration/${conferenceId}/create-delegation"
 						click D "/registration/${conferenceId}/join-delegation"

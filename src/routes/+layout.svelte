@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DialogHost from '$lib/components/DialogHost.svelte';
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
@@ -43,6 +44,7 @@
 </svelte:head>
 
 <Toaster richColors position="top-center" />
+<DialogHost />
 <CookieBanner />
 <MaintenanceBanner />
 <div class="flex min-h-screen">

@@ -34,7 +34,7 @@
 	<div class="flex w-full flex-col items-center gap-4">
 		<NoConferenceIndicator />
 		{#if currentUser?.isAdmin}
-			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/seed')}>
+			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/create')}>
 				<i class="fa-sharp-duotone fa-solid fa-seedling"></i>
 				{m.seedConference()}
 			</a>

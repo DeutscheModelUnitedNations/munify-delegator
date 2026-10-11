@@ -1,4 +1,4 @@
-import { test, expect } from '../support/test';
+import { test, expect, acceptDialogs } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -8,7 +8,7 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a single participant can manage role applications and complete their signup', async ({
 	page
 }) => {
-	page.on('dialog', (dialog) => dialog.accept());
+	await acceptDialogs(page);
 
 	const participant = makeTestUser('single-signup');
 	await loginAs(page, participant, { startUrl: '/login?next=/dashboard' });

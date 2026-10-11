@@ -31,6 +31,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * | CONTENT_LEAD                | the seat planning: which nations sit in which committee, the         |
  * |                             | non-state actors and the committees' regional baselines              |
  * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
+ * | any role but MEMBER         | the same: reading, reviewing and editing the conference's papers     |
  * | any team role               | reading registrations, recording attendance, teammates' phone numbers |
  * | participants                | their registration, delegation, survey answers, and the submitted    |
  * |                             | papers of their own delegation (an author deletes a draft of theirs) |
@@ -45,34 +46,21 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * rumble has no global wildcard.
  */
 
-export const PARTICIPANT_CARE_ROLES = [
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
-
-/** Roles that may see and review the conference's papers. */
-export const PAPER_ROLES = [
-	'REVIEWER',
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
-
-/** Roles that manage the conference's team. */
-export const TEAM_ADMIN_ROLES = [
-	'PROJECT_MANAGEMENT',
-	'TEAM_COORDINATOR'
-] as const satisfies readonly TeamRole[];
-
-/** Roles that plan the seats: committee seats per nation, non-state actors, regional baselines. */
-export const SEAT_PLANNING_ROLES = [
-	'PROJECT_MANAGEMENT',
-	'CONTENT_LEAD'
-] as const satisfies readonly TeamRole[];
-
-/** Only the conference's leadership. */
-export const PROJECT_MANAGEMENT_ROLES = [
-	'PROJECT_MANAGEMENT'
-] as const satisfies readonly TeamRole[];
+// The role lists live in `$lib/helpers/teamRoles`, where the pages' own checks share them.
+export {
+	CONFERENCE_CONTENT_ROLES,
+	PAPER_ROLES,
+	PARTICIPANT_CARE_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
+	SEAT_PLANNING_ROLES,
+	TEAM_ADMIN_ROLES
+} from '$lib/helpers/teamRoles';
+import {
+	PARTICIPANT_CARE_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
+	SEAT_PLANNING_ROLES,
+	TEAM_ADMIN_ROLES
+} from '$lib/helpers/teamRoles';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {

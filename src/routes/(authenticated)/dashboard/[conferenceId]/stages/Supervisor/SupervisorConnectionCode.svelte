@@ -22,7 +22,7 @@
 	);
 
 	const connectionLink = $derived(
-		`${page.url.origin}/dashboard/${conferenceId}/connectSupervisor?code=${supervisor.connectionCode}`
+		`${page.url.origin}/dashboard/${conferenceId}/connect-supervisor?code=${supervisor.connectionCode}`
 	);
 
 	const rotate = async () => {

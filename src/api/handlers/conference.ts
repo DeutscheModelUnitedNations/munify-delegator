@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
+	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	assertTeamRole,
@@ -259,6 +260,23 @@ const ConferenceRef = object({
 
 query({ table: 'conference' });
 const pubsub = rumblePubsub({ table: 'conference' });
+
+/** The settings with a closed set of values; an omitted or cleared one is left to the column. */
+function assertValidConferenceSettings(args: {
+	nametagBinCount?: number | null;
+	language?: string | null;
+}) {
+	if (
+		args.nametagBinCount != null &&
+		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
+	) {
+		throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+	}
+
+	if (args.language != null && !isConferenceLanguage(args.language)) {
+		throw new GraphQLError('The conference language is not one of the supported languages');
+	}
+}
 // Seeding a conference fills it, and normalizing schools rewrites registrations inside it.
 const committeePubsub = rumblePubsub({ table: 'committee' });
 const customConferenceRolePubsub = rumblePubsub({ table: 'customConferenceRole' });
@@ -267,6 +285,33 @@ const delegationPubsub = rumblePubsub({ table: 'delegation' });
 const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 const schoolSuggestionPubsub = rumblePubsub({ table: 'schoolSuggestion' });
 const schoolSuggestionVariantPubsub = rumblePubsub({ table: 'schoolSuggestionVariant' });
+
+/**
+ * The arguments of `updateConference` that participant care and the content lead may send: links,
+ * postal address, templates, the conference status and the feature switches.
+ */
+const CONFERENCE_CONTENT_ARGS: readonly string[] = [
+	'id',
+	'linkToPreparationGuide',
+	'linkToTeamWiki',
+	'linkToServicesPage',
+	'postalName',
+	'postalStreet',
+	'postalApartment',
+	'postalZip',
+	'postalCity',
+	'postalCountry',
+	'contractContent',
+	'guardianConsentContent',
+	'mediaConsentContent',
+	'termsAndConditionsContent',
+	'certificateContent',
+	'state',
+	'unlockPayments',
+	'unlockPostals',
+	'isOpenPaperSubmission',
+	'showCalendar'
+];
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -387,19 +432,33 @@ schemaBuilder.mutationFields((t) => ({
 			certificateContent: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			if (
-				args.nametagBinCount != null &&
-				!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
-			) {
-				throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+			// Project management edits everything; participant care and the content lead may only
+			// touch the links, the postal address, the templates, the status and the features. The update ability is project management's, so the link-only path
+			// checks the role itself and refuses any other argument rather than ignoring it.
+			const updateFilter = (await ctx.abilities.conference.filter('update')).merge({
+				where: { id: args.id }
+			});
+			const mayEditAll = !!(await db.query.conference.findFirst({
+				where: updateFilter.query.single.where,
+				columns: { id: true }
+			}));
+			const linksOnly = !mayEditAll;
+			if (linksOnly) {
+				await assertTeamRole(ctx, args.id, CONFERENCE_CONTENT_ROLES);
+				const forbidden = Object.entries(args).filter(
+					([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
+				);
+				if (forbidden.length > 0) {
+					throw new GraphQLError(
+						`Access denied - only project management may change: ${forbidden.map(([key]) => key).join(', ')}`
+					);
+				}
 			}
 
-			if (args.language != null && !isConferenceLanguage(args.language)) {
-				throw new GraphQLError('The conference language is not one of the supported languages');
-			}
+			assertValidConferenceSettings(args);
 
 			// An omitted upload leaves the stored value untouched; only a supplied file replaces it.
-			await db
+			const updated = await db
 				.update(schema.conference)
 				// An omitted argument arrives as `undefined` and leaves the column alone; an
 				// explicit `null` clears it. Only the non-nullable columns coerce null away.
@@ -449,10 +508,13 @@ schemaBuilder.mutationFields((t) => ({
 					termsAndConditionsContent: args.termsAndConditionsContent,
 					certificateContent: args.certificateContent
 				})
-				.where(
-					(await ctx.abilities.conference.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(linksOnly ? eq(schema.conference.id, args.id) : updateFilter.sql.where)
+				.returning({ id: schema.conference.id });
+
+			// The update ability filters the rows, so a caller who may not edit matches none.
+			if (updated.length === 0) {
+				throw new GraphQLError('Access denied - requires project management');
+			}
 
 			pubsub.updated(args.id);
 

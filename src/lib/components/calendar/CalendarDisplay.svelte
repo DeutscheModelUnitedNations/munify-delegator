@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { CalendarDay as Day, CalendarEntry as Entry } from './calendarTypes';
 	import CalendarTrackFilter from './CalendarTrackFilter.svelte';
 	import CalendarDayView from './CalendarDayView.svelte';
@@ -7,12 +8,14 @@
 
 	interface Props {
 		days: Day[];
+		/** Shown at the start of the row the day and track selection is in */
+		heading?: Snippet;
 		timezone?: string;
 		onEditEntry?: (entryId: string) => void;
 		onEditPlace?: (placeId: string) => void;
 	}
 
-	let { days, timezone = 'UTC', onEditEntry, onEditPlace }: Props = $props();
+	let { days, timezone = 'UTC', heading, onEditEntry, onEditPlace }: Props = $props();
 
 	// Only the day shown first depends on these props, so reading them once is intended
 	// svelte-ignore state_referenced_locally
@@ -43,7 +46,7 @@
 </script>
 
 {#snippet dayTabs()}
-	<div role="tablist" class="tabs tabs-border mb-4">
+	<div role="tablist" class="tabs tabs-border">
 		{#each days as day, i (day.id)}
 			<button
 				role="tab"
@@ -57,16 +60,24 @@
 {/snippet}
 
 {#if days.length > 0}
-	<!-- Small screens: tabs + single day -->
+	<!-- A heading, when given, and the selection (the days, then the tracks) share one row, wrapping
+	onto further rows when there is no room. All days show at once on a very large screen, where
+	there is nothing to select. -->
+	<div class="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+		{@render heading?.()}
+		<div class="3xl:hidden flex flex-wrap items-center gap-x-6 gap-y-2">
+			{#if days.length > 1}
+				{@render dayTabs()}
+			{/if}
+
+			{#if selectedDayTracks.length > 1}
+				<CalendarTrackFilter tracks={selectedDayTracks} bind:filterTrackId />
+			{/if}
+		</div>
+	</div>
+
+	<!-- Small screens: single day -->
 	<div class="3xl:hidden">
-		{#if days.length > 1}
-			{@render dayTabs()}
-		{/if}
-
-		{#if selectedDayTracks.length > 1}
-			<CalendarTrackFilter tracks={selectedDayTracks} bind:filterTrackId />
-		{/if}
-
 		{#if selectedDay}
 			<CalendarDayView
 				dayName={selectedDay.name}

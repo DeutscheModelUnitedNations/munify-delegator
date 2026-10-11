@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
 import {
 	abilityBuilder,
+	countQuery,
 	enum_,
 	object,
 	pubsub as rumblePubsub,
@@ -133,6 +134,7 @@ async function assertMayAuthor(
 	}
 }
 query({ table: 'paper' });
+countQuery({ table: 'paper' }); // generates `papersCount(where)`, which the team dashboard's card shows
 const pubsub = rumblePubsub({ table: 'paper' });
 // Every content change is a new version row rather than an edit in place.
 const paperVersionPubsub = rumblePubsub({ table: 'paperVersion' });

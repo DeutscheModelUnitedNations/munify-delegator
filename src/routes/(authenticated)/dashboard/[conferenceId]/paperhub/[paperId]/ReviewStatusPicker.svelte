@@ -12,13 +12,13 @@
 	let { transitions, selected = $bindable() }: Props = $props();
 
 	function buttonClass(value: PaperstatusEnum) {
-		if (selected !== value) return 'btn-ghost';
+		if (selected !== value) return 'btn-outline';
 		return value === 'CHANGES_REQUESTED' ? 'btn-warning' : 'btn-success';
 	}
 </script>
 
-<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
-	<legend class="fieldset-legend">{m.newStatus()}</legend>
+<div class="flex flex-col gap-2">
+	<span class="text-sm font-semibold">{m.newStatus()}</span>
 	<div class="flex w-full gap-2">
 		{#each transitions as transition (transition.value)}
 			<label class="flex-1 cursor-pointer">
@@ -36,4 +36,4 @@
 			</label>
 		{/each}
 	</div>
-</fieldset>
+</div>

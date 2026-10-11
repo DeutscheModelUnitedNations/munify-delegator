@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { client } from '$lib/api/rumbleClient/client';
@@ -49,7 +50,7 @@
 	};
 
 	const deleteEntry = async (id: string) => {
-		if (!confirm(m.deleteAttendanceEntryConfirm())) return;
+		if (!(await confirmDialog({ text: m.deleteAttendanceEntryConfirm(), danger: true }))) return;
 
 		const promise = Promise.resolve(client.mutate.deleteAttendanceEntry({ __args: { id } }));
 		toast.promise(promise, {

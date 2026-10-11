@@ -2,8 +2,8 @@ import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
-// Team management (invitations + the TeamMemberInvitation resolver) had no coverage. It is also
-// permission-sensitive: the layout only admits system admins, PROJECT_MANAGEMENT and
+// Team members (invitations + the TeamMemberInvitation resolver) had no coverage. It is also
+// permission-sensitive: the route registry only admits system admins, PROJECT_MANAGEMENT and
 // TEAM_COORDINATOR, so this doubles as a check that a PROJECT_MANAGEMENT member is admitted.
 
 test('a project manager can invite a team member by email', async ({ page }) => {
@@ -12,7 +12,7 @@ test('a project manager can invite a team member by email', async ({ page }) => 
 	const invitee = `e2e-invitee-${Date.now()}@e2e.test`;
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team-management/invitations`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/invitations`
 	});
 	await waitForHydration(page);
 

@@ -9,7 +9,7 @@ import {
 } from '$api/rumble';
 import {
 	PAPER_ROLES,
-	PROJECT_MANAGEMENT_ROLES,
+	SEAT_PLANNING_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin
@@ -24,7 +24,7 @@ abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when(systemAdmin)
 
 // Scoped through the committee, since an agenda item has no direct conference relation.
 abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when((ctx) => {
-	const committee = isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT']);
+	const committee = isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES);
 	return committee ? { where: { committee } } : undefined;
 });
 
@@ -49,7 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 				.findFirst({ where: { id: args.committeeId }, columns: { conferenceId: true } })
 				.then(assertFindFirstExists);
 			if (!ctx.hasRole('service_user')) {
-				await assertTeamRole(ctx, committee.conferenceId, PROJECT_MANAGEMENT_ROLES);
+				await assertTeamRole(ctx, committee.conferenceId, SEAT_PLANNING_ROLES);
 			}
 
 			const created = await db
@@ -84,14 +84,18 @@ schemaBuilder.mutationFields((t) => ({
 			teaserText: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await db
+			const updated = await db
 				.update(schema.committeeAgendaItem)
 				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
 				.where(
 					(await ctx.abilities.committeeAgendaItem.filter('update')).merge({
 						where: { id: args.id }
 					}).sql.where
-				);
+				)
+				.returning({ id: schema.committeeAgendaItem.id });
+			if (updated.length === 0) {
+				throw new GraphQLError('Agenda item not found, or not yours to update');
+			}
 
 			pubsub.updated(args.id);
 

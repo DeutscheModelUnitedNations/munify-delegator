@@ -101,7 +101,7 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
 			// A delegation opens its head delegate's card, or the participant list without one
 			if (item.data.headDelegateUserId) return { userId: item.data.headDelegateUserId };
 			return {
-				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/participants', {
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/participants', {
 					conferenceId
 				})
 			};
@@ -109,28 +109,28 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
 			// A seat opens its holder's card, or the participant list when nobody holds it yet
 			if (item.data.holderUserId) return { userId: item.data.holderUserId };
 			return {
-				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/participants', {
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/team/participants', {
 					conferenceId
 				})
 			};
 		case 'committee':
 			return {
 				href: resolve(
-					'/(authenticated)/dashboard/[conferenceId]/management/configuration?tab=committees',
+					'/(authenticated)/dashboard/[conferenceId]/team/configuration?tab=committees',
 					{ conferenceId }
 				)
 			};
 		case 'config':
 			return {
 				href: resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/configuration?tab=${item.data.tab}`,
+					`/(authenticated)/dashboard/[conferenceId]/team/configuration?tab=${item.data.tab}`,
 					{ conferenceId }
 				)
 			};
 		case 'transaction':
 			return {
 				href: resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/payments?searchValue=${item.data.id}`,
+					`/(authenticated)/dashboard/[conferenceId]/team/payments?searchValue=${item.data.id}`,
 					{ conferenceId }
 				)
 			};

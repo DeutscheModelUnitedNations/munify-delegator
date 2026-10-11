@@ -54,7 +54,8 @@
 {:else if !assignmentReleased}
 	<AssignmentPending />
 {:else if !accepted}
-	<ApplicationRejected conferenceIdForWaitingListLink={conferenceId} />
+	<!-- A place can only still be handed out while the conference is running. -->
+	<ApplicationRejected conferenceIdForWaitingListLink={isPreparing ? conferenceId : undefined} />
 {:else if isPreparing}
 	<ConferenceStatusWidget {conferenceId} {status} ofAgeAtConference={ofAge} />
 	{@render preparation()}

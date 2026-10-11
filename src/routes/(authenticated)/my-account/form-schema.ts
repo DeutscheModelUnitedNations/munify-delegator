@@ -59,7 +59,7 @@ const userFormFields = z.object({
 	foodPreference: z.union([z.literal('OMNIVORE'), z.literal('VEGETARIAN'), z.literal('VEGAN')]),
 	emergencyContacts: z
 		.string()
-		.min(5)
+		.min(5, { message: m.atLeastXChars({ amount: 5 }) })
 		.transform((s) => {
 			const phoneNumbers = findPhoneNumbersInText(s);
 			let res: string = '';

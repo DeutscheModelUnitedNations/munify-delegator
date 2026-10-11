@@ -27,8 +27,8 @@
 	const isDraft = $derived(status === 'DRAFT');
 </script>
 
-<div class="card bg-base-100 border border-base-300">
-	<div class="card-body p-3 flex-row items-center justify-between flex-wrap gap-2">
+<div class="flex items-center justify-between flex-wrap gap-2">
+	<div class="contents">
 		<!-- Author/Edit Actions (Left) -->
 		<div class="flex gap-2">
 			{#if viewMode === 'author' || reviewerEditMode}

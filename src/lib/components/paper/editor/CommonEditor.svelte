@@ -89,7 +89,7 @@
 			content: storedContent($editorContentStore) ?? baseContent ?? undefined,
 			editorProps: {
 				attributes: {
-					class: `${additionalClasses} focus:outline-none px-2 pb-2`
+					class: `${additionalClasses} focus:outline-none p-3 ${editable ? 'min-h-48' : ''}`
 				}
 			},
 			onUpdate: ({ editor: e }) => {
@@ -120,15 +120,22 @@
 	});
 </script>
 
-<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[300px]">
-	<legend class="fieldset-legend">{editable ? m.editor() : m.viewer()}</legend>
-
+<div class="flex w-full flex-col gap-2">
 	{#if editor && $editor}
 		{#if editable}
 			{@render fixedMenu?.($editor)}
 		{/if}
 
-		<EditorContent editor={$editor} />
+		<div
+			class={[
+				'rounded-field bg-base-100 border',
+				editable
+					? 'border-base-content/30 cursor-text focus-within:border-primary focus-within:ring-primary/40 focus-within:ring-2'
+					: 'border-base-300'
+			]}
+		>
+			<EditorContent editor={$editor} />
+		</div>
 
 		{#if editable}
 			<BubbleMenu editor={$editor}>
@@ -155,9 +162,7 @@
 	{/if}
 
 	{#if showStats}
-		<div
-			class="mt-2 pt-2 border-t border-base-300 text-xs text-base-content/60 flex flex-wrap gap-x-4 gap-y-1"
-		>
+		<div class="px-1 text-xs text-base-content/60 flex flex-wrap gap-x-4 gap-y-1">
 			<span>
 				<i class="fa-sharp-duotone fa-solid fa-font"></i>
 				{m.paperStatsWords({ count: stats.words })}
@@ -176,4 +181,4 @@
 			</span>
 		</div>
 	{/if}
-</fieldset>
+</div>

@@ -106,7 +106,7 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		: undefined;
 });
 
-// Team coordinators see their team in full but for the care notes: the team-management page lists
+// Team coordinators see their team in full but for the care notes: the team members page lists
 // everybody's address, gender and food preference for planning.
 abilityBuilder.user.allow('read').when((ctx) => {
 	const conference = isTeamMemberOf(ctx, ['TEAM_COORDINATOR']);

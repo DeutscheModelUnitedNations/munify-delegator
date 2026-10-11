@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -41,7 +42,7 @@
 	const conferenceState = $derived(role.conference.state);
 
 	const revokeApplication = async (id: string) => {
-		if (!confirm(m.confirmRevokeApplication())) return;
+		if (!(await confirmDialog({ text: m.confirmRevokeApplication(), danger: true }))) return;
 		const promise = client.mutate.updateSingleParticipant({
 			__args: { id, applied: false },
 			id: true,

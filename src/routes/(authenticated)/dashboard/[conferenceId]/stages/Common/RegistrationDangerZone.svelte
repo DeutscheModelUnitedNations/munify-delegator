@@ -21,19 +21,19 @@
 </script>
 
 <section>
-	<h2 class="mb-4 text-2xl font-bold">{m.dangerZone()}</h2>
+	<h2 class="mb-3 text-lg font-semibold">{m.dangerZone()}</h2>
 	{#if applied}
 		<div class="alert alert-info">
 			<i class="fas fa-exclamation-triangle text-3xl"></i>
 			<p>{appliedText}</p>
 		</div>
 	{:else}
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-wrap gap-2">
 			{@render children()}
 		</div>
 	{/if}
 
-	<p class="mt-10 text-xs">
+	<p class="text-base-content/60 mt-4 text-xs">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		{@html supportIdHtml}
 		<span class="bg-base-200 rounded-selector p-1 font-mono">{id}</span>

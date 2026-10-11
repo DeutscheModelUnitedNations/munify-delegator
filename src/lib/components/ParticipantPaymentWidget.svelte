@@ -108,7 +108,7 @@
 							onclick={() =>
 								goto(
 									resolve(
-										`/(authenticated)/dashboard/[conferenceId]/management/payments?searchValue=${ref.id}`,
+										`/(authenticated)/dashboard/[conferenceId]/team/payments?searchValue=${ref.id}`,
 										{ conferenceId }
 									)
 								)}

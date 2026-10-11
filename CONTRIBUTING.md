@@ -62,4 +62,4 @@ bun run db:seed:dev
 
 #### Importing a conference
 
-New conferences are created by uploading a JSON file at `/dashboard/seed` (system admins only). The file is validated against the schema served at `/schemata/seed`; [src/api/db/seed-data/conferenceImport.example.json](src/api/db/seed-data/conferenceImport.example.json) is a minimal example. The `nations` of a committee are optional, so a conference can be imported before the seats are distributed (see the Security Council in the example). The seats are then filled in the seat planning tool at `/dashboard/<conferenceId>/management/seat-planning`.
+New conferences are created by uploading a JSON file at `/dashboard/create` (system admins only). The file is validated against the schema served at `/schemata/seed`; [src/api/db/seed-data/conferenceImport.example.json](src/api/db/seed-data/conferenceImport.example.json) is a minimal example. The `nations` of a committee are optional, so a conference can be imported before the seats are distributed (see the Security Council in the example). The seats are then filled in the seat planning tool at `/dashboard/<conferenceId>/team/seat-planning`.

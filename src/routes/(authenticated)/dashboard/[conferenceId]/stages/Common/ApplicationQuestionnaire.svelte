@@ -7,7 +7,6 @@
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import Form from '$lib/components/form/Form.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { makeApplicationForm, type ApplicationAnswers } from '../../applicationForm';
@@ -47,7 +46,7 @@
 </script>
 
 <Form {form} {showSubmitButton}>
-	<FormFieldset title={m.questionnaire()}>
+	<div class="flex flex-col gap-2">
 		<FormTextInput
 			name="school"
 			label={m.whichSchoolDoesYourDelegationComeFrom()}
@@ -70,5 +69,5 @@
 			placeholder={m.answerHere()}
 			{disabled}
 		/>
-	</FormFieldset>
+	</div>
 </Form>

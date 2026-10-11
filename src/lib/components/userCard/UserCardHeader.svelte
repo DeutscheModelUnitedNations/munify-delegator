@@ -54,7 +54,7 @@
 	let confirmDisplayName = $derived(formatNames(givenName ?? undefined, familyName ?? undefined));
 
 	let fullPageUrl = $derived(
-		resolve('/(authenticated)/dashboard/[conferenceId]/management/user/[userId]', {
+		resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
 			conferenceId,
 			userId
 		})

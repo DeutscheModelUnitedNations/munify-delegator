@@ -15,7 +15,7 @@ async function graphql(page: Page, query: string) {
 test('a live list shows rows created and deleted elsewhere', async ({ page }) => {
 	test.setTimeout(90_000);
 	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
-		startUrl: `/dashboard/${E2E_SEAT_CONFERENCE_ID}/management/configuration?tab=committees`
+		startUrl: `/dashboard/${E2E_SEAT_CONFERENCE_ID}/team/configuration?tab=committees`
 	});
 	await page.getByRole('heading', { name: /Generalversammlung/ }).waitFor({ timeout: 15_000 });
 

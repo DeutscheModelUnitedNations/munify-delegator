@@ -17,9 +17,11 @@
 		createdAt?: Date;
 		/** Buttons on the right of the metadata row. */
 		actions?: Snippet;
+		/** A row below the metadata, separated by a divider. */
+		footer?: Snippet;
 	}
 
-	let { paper, status, versionNumber, createdAt, actions }: Props = $props();
+	let { paper, status, versionNumber, createdAt, actions, footer }: Props = $props();
 
 	let nation = $derived(paper.delegation.assignedNation);
 	let nsa = $derived(paper.delegation.assignedNonStateActor);
@@ -82,5 +84,10 @@
 				</div>
 			{/if}
 		</div>
+		{#if footer}
+			<div class="border-t border-base-300 mt-2 pt-3">
+				{@render footer()}
+			</div>
+		{/if}
 	</div>
 </div>

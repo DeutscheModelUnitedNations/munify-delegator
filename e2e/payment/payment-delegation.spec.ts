@@ -1,4 +1,4 @@
-import { test, expect } from '../support/test';
+import { test, expect, acceptDialogs } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -14,7 +14,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
-	headPage.on('dialog', (dialog) => dialog.accept());
+	await acceptDialogs(headPage);
 
 	const headDelegate = makeTestUser('payment-deleg-head');
 	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });

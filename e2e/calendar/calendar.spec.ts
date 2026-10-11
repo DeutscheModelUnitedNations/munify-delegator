@@ -6,7 +6,7 @@ test('an admin can build a calendar day with a place and an entry, and drag it a
 	page
 }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/calendar`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/calendar`
 	});
 
 	const dayName = `E2E Day ${Date.now()}`;

@@ -2,9 +2,9 @@ import * as z from 'zod';
 import type { ConferenceSeedingSchema } from './seedSchema';
 
 /**
- * Helpers behind the conference request form (`/management/conference-request`).
+ * Helpers behind the conference request form (`/team/conference-request`).
  * The form never talks to the API: it only produces a JSON document that matches
- * `ConferenceSeedingSchema` so an admin can import it on `/management/seed`.
+ * `ConferenceSeedingSchema` so an admin can import it on `/dashboard/create`.
  */
 
 const SEED_SCHEMA_URL = 'https://delegator.munify.cloud/schemata/seed';
@@ -175,7 +175,7 @@ const isoOffset = (value: string): string | undefined => {
 	return /([+-]\d{2}:\d{2})$/.exec(value)?.[1];
 };
 
-/** Builds the JSON document an admin imports on `/management/seed` */
+/** Builds the JSON document an admin imports on `/dashboard/create` */
 export const toSeedJson = (state: RequestFormState): SeedJson => ({
 	$schema: SEED_SCHEMA_URL,
 	conference: {

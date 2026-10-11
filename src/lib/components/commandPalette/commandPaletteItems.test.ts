@@ -32,7 +32,7 @@ const page: PageEntry = {
 	id: 'stats',
 	title: () => 'Stats',
 	icon: 'fa-chart-pie',
-	href: resolve('/(authenticated)/dashboard/[conferenceId]/management/stats', { conferenceId }),
+	href: resolve('/(authenticated)/dashboard/[conferenceId]/team/stats', { conferenceId }),
 	category: 'management',
 	keywords: []
 };
@@ -78,12 +78,12 @@ describe('resultTarget', () => {
 		expect(resultTarget({ type: 'seat', data: seat }, conferenceId)).toEqual({ userId: 'u9' });
 		expect(
 			resultTarget({ type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId)
-		).toHaveProperty('href', expect.stringContaining('/conf-1/management/participants'));
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
 	});
 	test('a committee opens the committees tab', () => {
 		expect(resultTarget({ type: 'committee', data: committee }, conferenceId)).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/management/configuration?tab=committees')
+			expect.stringContaining('/conf-1/team/configuration?tab=committees')
 		);
 	});
 	test('users open their card', () => {
@@ -100,20 +100,17 @@ describe('resultTarget', () => {
 			{ type: 'delegation', data: { ...delegation, headDelegateUserId: null } },
 			conferenceId
 		);
-		expect(target).toHaveProperty(
-			'href',
-			expect.stringContaining('/conf-1/management/participants')
-		);
+		expect(target).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
 	});
 	test('pages, configuration and transactions navigate', () => {
 		expect(resultTarget({ type: 'page', data: page }, conferenceId)).toEqual({ href: page.href });
 		expect(resultTarget({ type: 'config', data: config }, conferenceId)).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/management/configuration?tab=general')
+			expect.stringContaining('/conf-1/team/configuration?tab=general')
 		);
 		expect(resultTarget({ type: 'transaction', data: transaction }, conferenceId)).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/management/payments?searchValue=t1')
+			expect.stringContaining('/conf-1/team/payments?searchValue=t1')
 		);
 	});
 });

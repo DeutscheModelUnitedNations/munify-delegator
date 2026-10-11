@@ -34,18 +34,18 @@
 }
 
 #mermaid .outcome > * {
-	stroke: #000 !important;
+	stroke: var(--color-neutral) !important;
 	transition: all 0.3s;
 }
 
 #mermaid .outcome:hover > * {
-	stroke: #3d7dd2 !important;
+	stroke: var(--color-primary) !important;
 	transition: all 0.3s;
 }
 
 #mermaid g.edgelabel {
 	padding: 3px !important;
-	color: blue;
+	color: var(--color-primary);
 }
 
 .print-only {

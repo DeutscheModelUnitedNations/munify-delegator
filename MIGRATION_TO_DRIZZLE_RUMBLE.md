@@ -841,7 +841,7 @@ been exercised against a database holding real data.
       `reset.ts` is chase's. `src/lib/seeding/` stayed where it was: it is the in-app seeding
       schema, not a script.
 - [x] `prisma/` is gone. Dropped with it, on the user's call: the real-conference import scripts
-      (superseded by the `seedNewConference` mutation and `/management/seed`) and the two one-off
+      (superseded by the `seedNewConference` mutation and `/dashboard/create`) and the two one-off
       Logto scripts.
 - [x] `$db` is gone, and so are its last four importers.
 

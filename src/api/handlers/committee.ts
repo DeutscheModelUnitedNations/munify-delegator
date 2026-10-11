@@ -37,8 +37,12 @@ abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 // Project management sets up its committees. Which nations sit in them is the seat planning's
 // call, which the content lead shares (`setCommitteeNationSeat`, `setCommitteeRegionalBaseline`).
 abilityBuilder.committee
-	.allow(['update', 'delete'])
+	.allow('delete')
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+// The content lead shapes the committees' content: names, headline and seats.
+abilityBuilder.committee
+	.allow('update')
+	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 
 export const CommitteeRef = object({
 	table: 'committee',

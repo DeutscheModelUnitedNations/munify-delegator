@@ -1,7 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
-	PROJECT_MANAGEMENT_ROLES,
+	CONFERENCE_CONTENT_ROLES,
 	assertTeamRole,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
@@ -20,10 +20,10 @@ abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
 abilityBuilder.resolution.allow('read').when((ctx) => where(isParticipantOfConference(ctx)));
 abilityBuilder.resolution.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
 
-// Project management uploads and curates them.
+// Project management, participant care and the content lead upload and curate them.
 abilityBuilder.resolution
 	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+	.when((ctx) => where(isTeamMemberOfConference(ctx, CONFERENCE_CONTENT_ROLES)));
 
 const ResolutionRef = object({
 	table: 'resolution',
@@ -67,7 +67,7 @@ schemaBuilder.mutationFields((t) => ({
 			content: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PROJECT_MANAGEMENT_ROLES);
+			await assertTeamRole(ctx, args.conferenceId, CONFERENCE_CONTENT_ROLES);
 			await assertCommitteeInConference(args.committeeId, args.conferenceId);
 
 			// The management page checks the same, but the mutation can be called directly.

@@ -38,11 +38,13 @@
 </script>
 
 {#snippet PaperTypeBlock(paperType: PapertypeEnum, description: string, href: ResolvedPathname)}
-	<div class="card w-full bg-base-300 shadow-md flex flex-col items-center p-4 gap-4">
+	<div
+		class="card w-full bg-base-100 border border-base-content/10 rounded-box flex flex-col items-start p-5 gap-3 transition-colors hover:border-primary/40"
+	>
 		<PaperEnum.Type type={paperType} size="md" />
-		<p class="text-sm text-center">{description}</p>
-		<a class="btn btn-primary border-b border-base-300" {href}>
-			<i class="fas fa-plus mr-2"></i>
+		<p class="text-sm text-base-content/70 leading-relaxed grow">{description}</p>
+		<a class="btn btn-primary btn-sm mt-1" {href}>
+			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 			{m.paperCreateNew()}
 		</a>
 	</div>
@@ -105,7 +107,7 @@
 <div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
 	<h3 class="text-xl">{m.submitAPaper()}</h3>
 
-	<div class="flex flex-col md:flex-row justify-center md:justify-start gap-4 mt-4">
+	<div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-4 mt-4">
 		{#if isNSA}
 			{@render PaperTypeBlock(
 				'INTRODUCTION_PAPER',

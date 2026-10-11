@@ -6,7 +6,7 @@ import { E2E_ASSIGNMENT_ADMIN_ID, E2E_CONFERENCE_ID } from '../seed/seed';
 // with the buttons, the arrow keys or the strip of the whole deck, rating as they go.
 test('the sighting turns through the applications one card at a time', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/sighting`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting`
 	});
 
 	const position = page.getByTestId('deck-position');
@@ -45,7 +45,7 @@ test('the sighting turns through the applications one card at a time', async ({ 
 // reload and colour the card in the strip of the deck.
 test('the sighting keeps ratings, exclusions and notes on the server', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/sighting?application=`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=`
 	});
 	const strip = page.getByRole('list', { name: /überblick|glance/i }).getByRole('button');
 	await expect(strip.first()).toHaveClass(/bg-base-300/);
@@ -76,7 +76,7 @@ test('the sighting seeks, filters and searches in the backend', async ({ page })
 	const errors: string[] = [];
 	page.on('pageerror', (error) => errors.push(error.message));
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/sighting`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting`
 	});
 	const position = page.getByTestId('deck-position');
 	await expect(position).toHaveText(/^1 (von|of) \d+$/);

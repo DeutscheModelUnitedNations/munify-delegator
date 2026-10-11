@@ -4,13 +4,12 @@
 	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
 	import AnnouncementContent from '$lib/components/dashboard/AnnouncementContent.svelte';
 	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
-	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
 	interface Props {
 		conferenceId: string;
 		/** Left out for a visitor who is not signed in */
 		userId?: string;
-		/** Team members see the calendar regardless and never the participant announcement. */
+		/** Team members never see the participant announcement. */
 		isTeamMember: boolean;
 		/** Surveys are only for people who hold a role at the conference. */
 		hasAssignedRole: boolean;
@@ -31,7 +30,6 @@
 			logoUrl: true,
 			info: true,
 			showInfoExpanded: true,
-			showCalendar: true,
 			timezone: true
 		})
 	);
@@ -53,13 +51,6 @@
 		description={m.announcementSectionDescription()}
 		showExpanded={conference.showInfoExpanded}
 	/>
-{/if}
-{#if userId && (conference.showCalendar || isTeamMember)}
-	{#await import('$lib/components/dashboard/CalendarSection.svelte') then { default: CalendarSection }}
-		<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
-	{:catch error}
-		<ChunkLoadError {error} />
-	{/await}
 {/if}
 {#if userId && hasAssignedRole && (conference.state === 'PREPARATION' || conference.state === 'ACTIVE')}
 	<SurveySection {conferenceId} {userId} conferenceTimezone={conference.timezone} />

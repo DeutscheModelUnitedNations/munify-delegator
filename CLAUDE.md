@@ -136,9 +136,14 @@ bun run preview
 
 - **`src/routes/`** - SvelteKit routes (filesystem-based routing)
   - `(authenticated)/` - Protected routes requiring authentication
-    - `dashboard/` - Conference dashboards
-    - `management/` - Admin interfaces for conference/delegation management (the assignment
-      lives in `management/assignment/`)
+    - `dashboard/[conferenceId]/` - A conference's dashboard and everything around it
+      - `team/` - **Every team-facing page** (settings, tables, assignment, workflows, team members,
+        scanner, maintenance), behind one guard and one navigation. There is no page at `team/` itself: the dashboard's team
+        entry (`stages/TeamMember/TeamMemberDashboard.svelte`) is one card that opens the first page
+        the caller may open, next to the conference's resource links.
+        The assignment lives in `team/assignment/`. See "Team area" below.
+      - `paperhub/` - Stays outside `team/`: participants and supervisors use it too
+    - `dashboard/create/` - Creating a conference from a seeding JSON (system admins)
     - `registration/` - User registration flows
   - `api/graphql/` - GraphQL API endpoint
   - `auth/` - OIDC authentication callbacks
@@ -468,9 +473,20 @@ bun run preview
   - Actions: `read`, `update`, `delete` (declared in `src/api/rumble.ts`); impersonation, when it
     is redesigned, brings its own
   - Each entity's abilities live at the top of its handler
-- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. `CONTENT_LEAD` only
-  reaches the seat planning: `SEAT_PLANNING_ROLES` on the API, and in the UI the management guard
-  (`$lib/helpers/managementAccess.ts`) keeps a content lead on that one page.
+- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
+  in `$lib/helpers/teamRoles.ts`, shared by the API (`authHelper.ts` re-exports them) and the UI.
+  `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
+  postal address, templates, status, resolutions) next to the scanner and the settings.
+
+- **Team area.** Everything a conference's team works in is under `dashboard/[conferenceId]/team/`,
+  behind **one guard** (`team/+layout.ts`) and **one registry** (`$lib/data/teamRoutes.ts`): each
+  entry holds the path, title, icon, section, command palette keywords and the roles that may open
+  it. The side navigation (`team/TeamShell.svelte`), the dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`: one card that opens the first page the caller may open, plus the conference's resource links), the command palette and the guard are all
+  generated from it, so they cannot disagree. What a caller may open comes from `TeamAccess`
+  (`$lib/helpers/teamAccess.ts`: every role they hold, plus the admin flag; fetch it with
+  `fetchTeamAccess`). The page-level predicates (`canEditConference`, `canEditCommittees`, …) take
+  that and mirror the API's abilities. There are no redirect stubs: a path that is not a page is a
+  404, a page the caller may not open a 403. Folder names are kebab-case.
 
 #### 4. Internationalization
 
@@ -505,12 +521,12 @@ bun run preview
   `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
   dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
   (only roles with _exactly_ as many free seats as the group has members). The board in
-  `management/assignment/` and `applyAssignment` (`src/api/services/assignmentDraft.ts`) both go
+  `team/assignment/` and `applyAssignment` (`src/api/services/assignmentDraft.ts`) both go
   through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
   of re-creating them, so supervision links and statuses survive, and clears the draft (ratings
   and weights stay).
 - **The tabs never read a whole conference, and the backend does the sorting.** A conference can
-  hold more applications than a list query returns (1000). `management/assignment/board.ts` reads
+  hold more applications than a list query returns (1000). `team/assignment/board.ts` reads
   the draft with the applications it touches (each unit and planned single role brings its source
   row and review), the applications that hold a role (`fetchSeatedApplications`), and joins them
   with `seatedFrom`: enough for the roles, the seat counts and the plan of applying. Nothing is

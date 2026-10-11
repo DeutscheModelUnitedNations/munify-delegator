@@ -57,7 +57,7 @@
 
 	<a
 		class="btn btn-primary mt-4 self-start"
-		href={resolve(`/dashboard/${conferenceId}/connectSupervisor`)}
+		href={resolve(`/dashboard/${conferenceId}/connect-supervisor`)}
 	>
 		<i class="fas fa-plus mr-2"></i>
 		{m.connectSupervisor()}

@@ -14,7 +14,7 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	const optionTitle = 'E2E Option A';
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/survey`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/survey`
 	});
 	await waitForHydration(page);
 
@@ -93,7 +93,7 @@ test('a system admin without a team role can manage surveys and options', async 
 
 	// A fresh user: guaranteed to have no TeamMember row on the e2e conference.
 	await loginAs(page, makeTestUser('survey-sysadmin', { roles: ['admin'] }), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/survey`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/survey`
 	});
 	await waitForHydration(page);
 

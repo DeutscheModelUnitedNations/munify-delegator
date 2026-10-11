@@ -1,13 +1,13 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
-	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
+	import codenmz from '$lib/helpers/codenamize';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
 	import CompleteSignupCard from '../Common/CompleteSignupCard.svelte';
@@ -94,29 +94,12 @@
 		}
 	]);
 
-	const stats = $derived([
-		{
-			icon: 'users',
-			title: m.members(),
-			value: delegationMember.delegation?.members?.length,
-			desc: m.inTheDelegation()
-		},
-		{
-			icon: 'list-check',
-			title: m.tasks(),
-			value: todos
-				? `${Math.floor((todos.filter((x) => x.completed).length / todos.length) * 100)} %`
-				: undefined,
-			desc: m.doneToRegister()
-		}
-	]);
-
 	const leaveDelegation = async () => {
 		if (!delegationMember.delegation) {
 			console.error('Error: Delegation Data not found');
 			return;
 		}
-		if (!confirm(m.leaveDelegationConfirmation())) return;
+		if (!(await confirmDialog({ text: m.leaveDelegationConfirmation(), danger: true }))) return;
 		const promise = Promise.resolve(
 			client.mutate.deleteDelegationMember({ __args: { id: delegationMember.id } })
 		);
@@ -130,7 +113,7 @@
 			console.error('Error: Delegation Data not found');
 			return;
 		}
-		if (!confirm(m.deleteDelegationConfirmation())) return;
+		if (!(await confirmDialog({ text: m.deleteDelegationConfirmation(), danger: true }))) return;
 		const promise = Promise.resolve(
 			client.mutate.deleteDelegation({ __args: { id: delegationId } })
 		);
@@ -147,7 +130,7 @@
 			console.error('Error: Delegation Data not found');
 			return;
 		}
-		if (!confirm(m.completeSignupConfirmation())) return;
+		if (!(await confirmDialog({ text: m.completeSignupConfirmation() }))) return;
 		const promise = client.mutate.updateDelegation({
 			__args: { id: delegationId, applied: true },
 			id: true
@@ -158,23 +141,22 @@
 </script>
 
 {#snippet preferences()}
-	<DashboardContentCard
+	<DashboardSection
+		icon="flag"
 		title={m.delegationPreferences()}
 		description={userIsHeadDelegate
 			? m.delegationPreferencesDescriptionHeadDelegate()
 			: m.delegationPreferencesDescriptionMember()}
-		class="flex-1"
 	>
 		{#if delegationMember.delegation.appliedForRoles.length === 0}
-			<div class="alert alert-warning">
-				<i class="fas fa-exclamation-triangle text-3xl"></i>
+			<div class="alert alert-warning alert-soft text-sm">
+				<i class="fas fa-exclamation-triangle"></i>
 				{m.noRoleApplications()}
 			</div>
 		{:else}
 			<RoleApplicationTable {delegationId} {conferenceId} />
 		{/if}
 		{#if !applied}
-			<div class="flex-1"></div>
 			{#if userIsHeadDelegate}
 				<button
 					class="btn btn-primary mt-4"
@@ -191,72 +173,80 @@
 				</a>
 			{/if}
 		{/if}
-	</DashboardContentCard>
+	</DashboardSection>
 {/snippet}
 
-<RegistrationStatusAlert {applied} pendingText={m.completeSignupWarningText()} />
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
-	<GenericWidget content={stats} />
-	<DelegationNameDisplay {delegationId} />
-</section>
+<div class="flex flex-col gap-6">
+	<RegistrationStatusAlert {applied} pendingText={m.completeSignupWarningText()} />
 
-<DelegationRegistrationMembers
-	{conferenceId}
-	{delegationId}
-	delegationMemberId={delegationMember.id}
-	{userIsHeadDelegate}
-/>
-
-<section>
-	<h2 class="mb-2 text-2xl font-bold">{m.application()}</h2>
-	<div class="mb-4 flex flex-col items-start justify-start gap-4 md:flex-row">
-		<DashboardContentCard
-			title={m.informationAndMotivation()}
-			description={userIsHeadDelegate
-				? m.informationAndMotivationDescriptionHeadDelegate()
-				: m.informationAndMotivationDescriptionMember()}
-			class="flex-1"
-		>
-			<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
-			registration, so a different one gets a fresh form. -->
-			<ApplicationQuestionnaire
-				initial={delegationMember.delegation}
-				save={saveApplication}
-				disabled={applied || !userIsHeadDelegate}
-				showSubmitButton={!applied && userIsHeadDelegate}
-				motivationLabel={m.whyDoYouWantToJoinTheConference()}
-				experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
-			/>
-		</DashboardContentCard>
-		{@render preferences()}
+	<div class="bg-base-100 border-base-200 rounded-box border px-4 py-3 sm:px-6 sm:py-4 shadow-sm">
+		<p class="text-base-content/60 text-sm">
+			{m.delegationName()} · {m.delegationNameExplaination()}
+		</p>
+		<p class="text-xl font-semibold">{codenmz(delegationId)}</p>
 	</div>
-	{#if !applied}
-		<CompleteSignupCard
-			description={userIsHeadDelegate
-				? m.completeSignupDescriptionHeadDelegate()
-				: m.completeSignupDescription()}
-			{todos}
-			forbidden={!userIsHeadDelegate}
-			onComplete={completeRegistration}
-		/>
-	{/if}
-</section>
-<RegistrationDangerZone
-	{applied}
-	appliedText={m.noDangerZoneOptions()}
-	supportIdHtml={m.delegationIdForSupport()}
-	id={delegationId}
->
-	{#if delegationMember.delegation.members.length > 1}
-		<button class="btn btn-error" onclick={leaveDelegation}>{m.leaveDelegation()}</button>
-	{/if}
-	{#if userIsHeadDelegate}
-		<button class="btn btn-error join-item" onclick={deleteDelegation}
-			>{m.deleteDelegation()}</button
-		>
-	{/if}
-</RegistrationDangerZone>
+
+	<div class="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+		<div class="flex flex-col gap-6">
+			<DelegationRegistrationMembers
+				{conferenceId}
+				{delegationId}
+				delegationMemberId={delegationMember.id}
+				{userIsHeadDelegate}
+			/>
+			<DashboardSection
+				icon="file-lines"
+				title={m.informationAndMotivation()}
+				description={userIsHeadDelegate
+					? m.informationAndMotivationDescriptionHeadDelegate()
+					: m.informationAndMotivationDescriptionMember()}
+			>
+				<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
+				registration, so a different one gets a fresh form. -->
+				<ApplicationQuestionnaire
+					initial={delegationMember.delegation}
+					save={saveApplication}
+					disabled={applied || !userIsHeadDelegate}
+					showSubmitButton={!applied && userIsHeadDelegate}
+					motivationLabel={m.whyDoYouWantToJoinTheConference()}
+					experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
+				/>
+			</DashboardSection>
+		</div>
+
+		<div class="flex flex-col gap-6">
+			{@render preferences()}
+			{#if !applied}
+				<CompleteSignupCard
+					description={userIsHeadDelegate
+						? m.completeSignupDescriptionHeadDelegate()
+						: m.completeSignupDescription()}
+					{todos}
+					forbidden={!userIsHeadDelegate}
+					onComplete={completeRegistration}
+				/>
+			{/if}
+		</div>
+	</div>
+
+	<RegistrationDangerZone
+		{applied}
+		appliedText={m.noDangerZoneOptions()}
+		supportIdHtml={m.delegationIdForSupport()}
+		id={delegationId}
+	>
+		{#if delegationMember.delegation.members.length > 1}
+			<button class="btn btn-outline btn-error" onclick={leaveDelegation}
+				>{m.leaveDelegation()}</button
+			>
+		{/if}
+		{#if userIsHeadDelegate}
+			<button class="btn btn-outline btn-error" onclick={deleteDelegation}>
+				{m.deleteDelegation()}
+			</button>
+		{/if}
+	</RegistrationDangerZone>
+</div>
 
 {#if delegationPreferencesModalOpen}
 	<SelectDelegationPreferencesModal

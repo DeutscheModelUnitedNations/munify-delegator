@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
 
 	/**
@@ -17,9 +17,18 @@
 	}
 
 	let { description, todos, forbidden = false, onComplete }: Props = $props();
+
+	const doneCount = $derived(todos.filter((x) => x.completed).length);
 </script>
 
-<DashboardContentCard title={m.completeSignup()} {description}>
+<DashboardSection icon="list-check" title={m.completeSignup()} {description}>
+	<div class="mb-2 flex flex-col gap-1">
+		<p class="text-sm font-medium">
+			{m.registrationTasksDone({ done: doneCount, total: todos.length })}
+		</p>
+		<progress class="progress progress-primary w-full" value={doneCount} max={todos.length}
+		></progress>
+	</div>
 	<TodoTable {todos} />
 	<button
 		class="btn btn-success mt-4"
@@ -28,4 +37,4 @@
 	>
 		{m.completeSignupButton()}
 	</button>
-</DashboardContentCard>
+</DashboardSection>

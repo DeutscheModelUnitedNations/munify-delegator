@@ -83,12 +83,12 @@ Rules worth keeping when adding fixtures:
 
 ## Deliberately not covered
 
-- **Attendance scanner** (`dashboard/[id]/management/attendance`) - a camera QR scanner. Covering it
+- **Attendance scanner** (`dashboard/[id]/team/attendance`) - a camera QR scanner. Covering it
   honestly needs a simulated video device; a fake that bypasses the scanner would assert nothing.
 
 ## Quarantined
 
-`management/conference-configuration.spec.ts` is `test.fixme`. Saving conference settings never
+`team/conference-configuration.spec.ts` is `test.fixme`. Saving conference settings never
 reaches the server: a probe as the first statement of the `updateSettings` action never fires,
 and the POST is answered with a 302 from `(authenticated)/+layout.server.ts` (its
 `offlineUserRefresh` returns no user, so it redirects to sign-in and discards the submission). A

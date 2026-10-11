@@ -20,7 +20,7 @@ test('a participant can connect themselves to a supervisor via connection code',
 	page
 }) => {
 	await loginAs(page, fixedTestUser(E2E_CONNECT_PARTICIPANT_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/connectSupervisor?code=${E2E_SUPERVISOR_CONNECTION_CODE}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/connect-supervisor?code=${E2E_SUPERVISOR_CONNECTION_CODE}`
 	});
 
 	const connectButton = page.getByRole('button', { name: 'Verbinden' });

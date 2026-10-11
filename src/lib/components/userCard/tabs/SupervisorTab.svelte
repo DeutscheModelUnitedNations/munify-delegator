@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import PersonName from '../PersonName.svelte';
@@ -96,7 +97,7 @@
 	};
 
 	const rotateCode = async () => {
-		if (!confirm(m.confirmRotateCode())) return;
+		if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
 		const promise = client.mutate.rotateSupervisorConnectionCode({
 			__args: { id: conferenceSupervisor.id },
 			id: true,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -25,7 +26,7 @@
 	let { invitations }: Props = $props();
 
 	async function handleRevoke(invitationId: string) {
-		if (!confirm(m.confirmRevokeInvitation())) return;
+		if (!(await confirmDialog({ text: m.confirmRevokeInvitation(), danger: true }))) return;
 
 		await runInvitationAction(
 			() =>

@@ -1,6 +1,8 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
+import type { Component } from 'svelte';
 import { m } from '$lib/paraglide/messages';
+import CalendarLinkInfo from '$lib/components/dashboard/CalendarLinkInfo.svelte';
 import generatePaperInboxLinkWithParams from '$lib/helpers/paperInboxLink';
 
 export type UserType = 'delegation' | 'singleParticipant' | 'supervisor';
@@ -18,6 +20,7 @@ export interface DashboardLinkContext {
 	hasConferenceInfo?: boolean;
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
+	showCalendar?: boolean;
 	linkToPaperInbox?: string | null;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
@@ -36,6 +39,8 @@ export interface DashboardLink {
 	getDescription: () => string;
 	getHref: (ctx: DashboardLinkContext) => DashboardHref;
 	external?: boolean;
+	/** Live details shown on the card, given the conference they are for */
+	info?: Component<{ conferenceId: string }>;
 	showFor: UserType[];
 	isVisible: (ctx: DashboardLinkContext) => boolean;
 	isDisabled: (ctx: DashboardLinkContext) => boolean;
@@ -52,7 +57,7 @@ const dashboardLinks: DashboardLink[] = [
 		getTitle: () => m.committeeAssignment(),
 		getDescription: () => m.committeeAssignmentLinkDescription(),
 		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/committeeAssignment', {
+			resolve('/(authenticated)/dashboard/[conferenceId]/committee-assignment', {
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation'],
@@ -94,7 +99,7 @@ const dashboardLinks: DashboardLink[] = [
 		getTitle: () => m.postalRegistration(),
 		getDescription: () => m.postalRegistrationLinkDescription(),
 		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/postalRegistration', {
+			resolve('/(authenticated)/dashboard/[conferenceId]/postal-registration', {
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
@@ -169,6 +174,21 @@ const dashboardLinks: DashboardLink[] = [
 		// The seats are known - and of interest to everyone deciding where to apply - from the
 		// moment registration opens
 		isVisible: (ctx) => !!ctx.conferenceState && ctx.conferenceState !== 'PRE',
+		isDisabled: () => false
+	},
+	{
+		id: 'calendar',
+		icon: 'calendar-days',
+		getTitle: () => m.calendarSectionTitle(),
+		getDescription: () => m.calendarSectionDescription(),
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/calendar', {
+				conferenceId: ctx.conferenceId
+			}),
+		info: CalendarLinkInfo,
+		showFor: ['delegation', 'singleParticipant', 'supervisor'],
+		// Shown once the team has switched the schedule on
+		isVisible: (ctx) => !!ctx.showCalendar,
 		isDisabled: () => false
 	}
 ];

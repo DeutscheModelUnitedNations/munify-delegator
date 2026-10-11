@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { LayoutProps } from './$types';
-	import ManagementShell from '../management/ManagementShell.svelte';
+	import TeamShell from '../team/TeamShell.svelte';
 
 	let { children, params }: LayoutProps = $props();
 
@@ -8,6 +8,6 @@
 	const conferenceId = $derived(params.conferenceId);
 </script>
 
-<ManagementShell {conferenceId}>
+<TeamShell {conferenceId}>
 	{@render children()}
-</ManagementShell>
+</TeamShell>

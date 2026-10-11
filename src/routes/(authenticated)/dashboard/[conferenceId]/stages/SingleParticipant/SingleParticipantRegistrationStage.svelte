@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
@@ -49,7 +50,7 @@
 			console.error('Error: singleParticipant not found');
 			return;
 		}
-		if (!confirm(m.completeSignupConfirmation())) return;
+		if (!(await confirmDialog({ text: m.completeSignupConfirmation() }))) return;
 		const promise = client.mutate.updateSingleParticipant({
 			__args: { id: singleParticipant.id, applied: true },
 			id: true,
@@ -64,7 +65,8 @@
 			console.error('Error: singleParticipant not found');
 			return;
 		}
-		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
+		if (!(await confirmDialog({ text: m.deleteAllApplicationsConfirmation(), danger: true })))
+			return;
 
 		const promise = Promise.resolve(
 			client.mutate.deleteSingleParticipant({ __args: { id: singleParticipant.id } })
@@ -79,7 +81,7 @@
 			console.error('Error: singleParticipant not found');
 			return;
 		}
-		if (!confirm(m.deleteApplicationConfirmation())) return;
+		if (!(await confirmDialog({ text: m.deleteApplicationConfirmation(), danger: true }))) return;
 		const promise = client.mutate.updateSingleParticipant({
 			__args: { id: singleParticipant.id, unApplyForRolesIdList: [id] },
 			id: true,
@@ -229,5 +231,7 @@
 	supportIdHtml={m.singleParticipantsIdForSupport()}
 	id={singleParticipant.id}
 >
-	<button class="btn btn-error" onclick={deleteAllApplications}>{m.deleteAllApplications()}</button>
+	<button class="btn btn-outline btn-error" onclick={deleteAllApplications}
+		>{m.deleteAllApplications()}</button
+	>
 </RegistrationDangerZone>

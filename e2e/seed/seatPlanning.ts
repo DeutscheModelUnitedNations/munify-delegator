@@ -1,5 +1,5 @@
 /**
- * Fixtures for the seat planning specs (e2e/management/seat-planning.spec.ts).
+ * Fixtures for the seat planning specs (e2e/team/seat-planning.spec.ts).
  *
  * A separate conference, because the specs add and remove seats, committees and non-state actors.
  * Every run resets it to the state below: GV holds Germany, France and the Netherlands, SR only the

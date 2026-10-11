@@ -120,7 +120,7 @@
 					<!-- The same person's card in that conference, where their role there is shown -->
 					<a
 						class="link link-hover font-bold"
-						href={resolve('/(authenticated)/dashboard/[conferenceId]/management/user/[userId]', {
+						href={resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
 							conferenceId: entry.conferenceId,
 							userId
 						})}

@@ -1,13 +1,15 @@
+import type { Component } from 'svelte';
 import { resolve } from '$app/paths';
+import CalendarLinkInfo from '$lib/components/dashboard/CalendarLinkInfo.svelte';
+import PaperHubLinkInfo from '$lib/components/dashboard/PaperHubLinkInfo.svelte';
+import TeamEntryInfo from '$lib/components/dashboard/TeamEntryInfo.svelte';
 import { m } from '$lib/paraglide/messages';
-import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
 import type { DashboardHref } from './dashboardLinks';
+import { publicCalendarPath, publicSeatsPath, teamRoutesFor } from './teamRoutes';
+import type { TeamAccess } from '$lib/helpers/teamAccess';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
-	/** Absent for a system admin who is not part of the conference's team. */
-	role?: TeamroleEnum;
-	isAdmin?: boolean;
 	linkToTeamWiki?: string | null;
 	linkToServicesPage?: string | null;
 	linkToPreparationGuide?: string | null;
@@ -21,131 +23,100 @@ export interface TeamDashboardLink {
 	getDescription: () => string;
 	getHref: (ctx: TeamDashboardLinkContext) => DashboardHref;
 	external?: boolean;
-	isVisible: (ctx: TeamDashboardLinkContext) => boolean;
-	allowedRoles?: TeamroleEnum[];
+	/** Live details shown on the card, given the conference they are for */
+	info?: Component<{ conferenceId: string }>;
 }
 
-const teamDashboardLinks: TeamDashboardLink[] = [
-	{
-		id: 'administration',
-		icon: 'bars-progress',
-		getTitle: () => m.administration(),
+/**
+ * The one way into the team area from the dashboard. The team area has no landing page of its
+ * own: this opens the first page of it the caller may open (the registry's order), and the side
+ * navigation there lists the rest. `undefined` when the caller may open none.
+ */
+export function getTeamEntryLink(
+	access: TeamAccess & { canSeePaperHub?: boolean }
+): TeamDashboardLink | undefined {
+	const first = teamRoutesFor(access).find((route) => route.path.startsWith('team/'));
+	if (!first) return undefined;
+	return {
+		id: 'team',
+		icon: 'users-gear',
+		info: TeamEntryInfo,
+		getTitle: () => m.team(),
 		getDescription: () => m.manageConference(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/management', {
-				conferenceId: ctx.conferenceId
-			}),
-		external: false,
-		isVisible: () => true,
-		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
-	},
-	{
-		id: 'seatPlanning',
-		icon: 'table-cells',
-		getTitle: () => m.seatPlanning(),
-		getDescription: () => m.seatPlanningDescription(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/management/seat-planning', {
-				conferenceId: ctx.conferenceId
-			}),
-		external: false,
-		isVisible: () => true,
-		allowedRoles: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD']
-	},
-	{
-		id: 'attendanceScanner',
-		icon: 'barcode-read',
-		getTitle: () => m.attendanceScanner(),
-		getDescription: () => m.attendanceScannerDescription(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/management/attendance', {
-				conferenceId: ctx.conferenceId
-			}),
-		external: false,
-		isVisible: () => true
-	},
-	{
-		id: 'teamCoordination',
-		icon: 'user-group',
-		getTitle: () => m.teamCoordination(),
-		getDescription: () => m.teamCoordinationDescription(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/team-management', {
-				conferenceId: ctx.conferenceId
-			}),
-		external: false,
-		isVisible: () => true,
-		allowedRoles: ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR']
-	},
-	{
+		getHref: (ctx) => resolve(`/dashboard/${ctx.conferenceId}/${first.path}`)
+	};
+}
+
+/**
+ * The paper hub, next to the team's card because the registry lists it with the team's pages. It
+ * stays at its own path, as participants and supervisors use it too, so this is offered only to
+ * whoever may open it (`canSeePaperHub`, as the team navigation decides it).
+ */
+export function getPaperHubLink(canSeePaperHub: boolean): TeamDashboardLink | undefined {
+	if (!canSeePaperHub) return undefined;
+	return {
 		id: 'paperHub',
 		icon: 'files',
+		info: PaperHubLinkInfo,
 		getTitle: () => m.paperHub(),
 		getDescription: () => m.reviewPapers(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub', {
-				conferenceId: ctx.conferenceId
-			}),
-		external: false,
-		isVisible: () => true,
-		allowedRoles: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE']
-	},
-	{
-		id: 'teamWiki',
-		icon: 'book-open',
-		getTitle: () => m.teamWiki(),
-		getDescription: () => m.teamWikiDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.linkToTeamWiki ?? '' }),
-		external: true,
-		isVisible: (ctx) => !!ctx.linkToTeamWiki
-	},
-	{
-		id: 'servicesPage',
-		icon: 'toolbox',
-		getTitle: () => m.servicesPage(),
-		getDescription: () => m.servicesPageDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.linkToServicesPage ?? '' }),
-		external: true,
-		isVisible: (ctx) => !!ctx.linkToServicesPage
-	},
-	{
-		id: 'preparation',
-		icon: 'book-bookmark',
-		getTitle: () => m.preparation(),
-		getDescription: () => m.teamPreparationDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.linkToPreparationGuide ?? '' }),
-		external: true,
-		isVisible: (ctx) => !!ctx.linkToPreparationGuide
-	},
-	{
-		id: 'seats',
-		icon: 'person-seat',
-		getTitle: () => m.conferenceSeats(),
-		getDescription: () => m.seatsLinkDescription(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/seats', {
-				conferenceId: ctx.conferenceId
-			}),
-		isVisible: () => true
-	},
-	{
-		id: 'appDocs',
-		icon: 'circle-question',
-		getTitle: () => m.appDocs(),
-		getDescription: () => m.appDocsDescription(),
-		getHref: (ctx) => ({ externalUrl: ctx.docsUrl ?? '' }),
-		external: true,
-		isVisible: (ctx) => !!ctx.docsUrl
-	}
-];
+		getHref: (ctx) => resolve(`/dashboard/${ctx.conferenceId}/paperhub`)
+	};
+}
 
-export function getTeamLinksForRole(ctx: TeamDashboardLinkContext): TeamDashboardLink[] {
-	return teamDashboardLinks.filter((link) => {
-		if (!link.isVisible(ctx)) return false;
-		if (link.allowedRoles && !ctx.isAdmin) {
-			const { role } = ctx;
-			if (!role || !link.allowedRoles.includes(role)) return false;
+/**
+ * What the conference's own settings and the app point the team to: the wiki, the services page,
+ * the preparation guide, the public seats and the docs. Each shows only when it is set.
+ */
+export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboardLink[] {
+	return [
+		externalLink(ctx.linkToTeamWiki, {
+			id: 'teamWiki',
+			icon: 'book-open',
+			getTitle: () => m.teamWiki(),
+			getDescription: () => m.teamWikiDescription()
+		}),
+		externalLink(ctx.linkToServicesPage, {
+			id: 'servicesPage',
+			icon: 'toolbox',
+			getTitle: () => m.servicesPage(),
+			getDescription: () => m.servicesPageDescription()
+		}),
+		externalLink(ctx.linkToPreparationGuide, {
+			id: 'preparation',
+			icon: 'book-bookmark',
+			getTitle: () => m.preparation(),
+			getDescription: () => m.teamPreparationDescription()
+		}),
+		{
+			id: 'seats',
+			icon: 'person-seat',
+			getTitle: () => m.conferenceSeats(),
+			getDescription: () => m.seatsLinkDescription(),
+			getHref: (linkCtx) => resolve(`/dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
+		},
+		externalLink(ctx.docsUrl, {
+			id: 'appDocs',
+			icon: 'circle-question',
+			getTitle: () => m.appDocs(),
+			getDescription: () => m.appDocsDescription()
+		}),
+		{
+			id: 'calendar',
+			info: CalendarLinkInfo,
+			icon: 'calendar-days',
+			getTitle: () => m.calendarSectionTitle(),
+			getDescription: () => m.calendarSectionDescription(),
+			getHref: (linkCtx) => resolve(`/dashboard/${linkCtx.conferenceId}/${publicCalendarPath}`)
 		}
-		return true;
-	});
+	].filter((link) => link !== undefined);
+}
+
+/** A link out of the app, which exists only while its url is set. */
+function externalLink(
+	url: string | null | undefined,
+	link: Pick<TeamDashboardLink, 'id' | 'icon' | 'getTitle' | 'getDescription'>
+): TeamDashboardLink | undefined {
+	if (!url) return undefined;
+	return { ...link, getHref: () => ({ externalUrl: url }), external: true };
 }

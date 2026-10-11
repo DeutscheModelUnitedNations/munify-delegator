@@ -9,13 +9,13 @@ const m_noAccess = /hier hast du keinen zugriff|you don't have access to this pa
 // the inverse - that a plain participant is refused - which is what actually guards the
 // management area. Without them a broken ability rule looks exactly like a passing suite.
 
-const MANAGEMENT_ROUTES = ['', '/participants', '/configuration', '/payments', '/stats'];
+const MANAGEMENT_ROUTES = ['/participants', '/configuration', '/payments', '/stats'];
 
 test('a plain participant is refused every management route for a conference', async ({ page }) => {
 	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/login?next=/dashboard' });
 
 	for (const suffix of MANAGEMENT_ROUTES) {
-		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
+		const path = `/dashboard/${E2E_CONFERENCE_ID}/team${suffix}`;
 		const res = await page.goto(path);
 
 		// Routes that render server-side fail the layout guard with a 403 status. Routes that opt

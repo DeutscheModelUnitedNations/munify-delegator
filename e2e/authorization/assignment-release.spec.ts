@@ -54,7 +54,7 @@ test('a participant sees their role only while the assignment is released', asyn
 		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
 	});
 	await loginAs(admin, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}/management/assignment/finish`
+		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}/team/assignment/finish`
 	});
 
 	try {
@@ -178,7 +178,7 @@ test('a participant cannot find their unreleased role by filtering or sorting', 
 
 test('the team can still filter by assignment', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}/management`
+		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
 	});
 	const { byColumn, byRelation } = probes(
 		E2E_UNRELEASED_NATION_ALPHA3,

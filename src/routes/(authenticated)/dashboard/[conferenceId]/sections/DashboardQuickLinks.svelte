@@ -33,6 +33,7 @@
 			info: true,
 			linkToPreparationGuide: true,
 			isOpenPaperSubmission: true,
+			showCalendar: true,
 			linkToPaperInbox: true
 		})
 	);
@@ -46,6 +47,7 @@
 		hasConferenceInfo: !!conference.info,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
+		showCalendar: conference.showCalendar,
 		linkToPaperInbox: conference.linkToPaperInbox,
 		paymentStatus: status?.paymentStatus,
 		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
@@ -70,7 +72,12 @@
 				badge={badge?.value}
 				badgeType={badge?.type}
 				important={link.isImportant?.(linkContext) ?? false}
-			/>
+			>
+				{#snippet info()}
+					{@const Info = link.info}
+					{#if Info}<Info {conferenceId} />{/if}
+				{/snippet}
+			</DashboardLinkCard>
 		{/each}
 	</DashboardLinksGrid>
 </DashboardSection>

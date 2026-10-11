@@ -38,6 +38,6 @@
 
 {#if visibleLinks.length > 0}
 	<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
-		<DashboardLinkCards links={visibleLinks} context={linkContext} />
+		<DashboardLinkCards links={visibleLinks} context={linkContext} {conferenceId} />
 	</DashboardSection>
 {/if}

@@ -135,10 +135,10 @@
 					/>
 				{/key}
 			{:else if teamMember}
-				<TeamMemberDashboard {conferenceId} role={teamMember.role} isAdmin={currentUser.isAdmin} />
+				<TeamMemberDashboard {conferenceId} />
 			{:else if currentUser.isAdmin}
 				<!-- A system admin needs no part in the conference to manage it -->
-				<TeamMemberDashboard {conferenceId} isAdmin />
+				<TeamMemberDashboard {conferenceId} />
 			{:else}
 				<!-- No part in this conference yet: the only thing to do is to apply -->
 				<RegistrationLanding {conferenceId} />

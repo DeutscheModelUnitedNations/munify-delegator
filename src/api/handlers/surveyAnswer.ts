@@ -37,6 +37,7 @@ abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
 const SurveyAnswerRef = object({ table: 'surveyAnswer' });
 query({ table: 'surveyAnswer' });
 const pubsub = rumblePubsub({ table: 'surveyAnswer' });
+const optionPubsub = rumblePubsub({ table: 'surveyOption' });
 
 /** Organizers may overfill an option and answer past the deadline; participants may not. */
 function assertOptionOpen(option: {
@@ -164,8 +165,11 @@ schemaBuilder.mutationFields((t) => ({
 							.returning({ id: schema.surveyAnswer.id })
 					)[0].id;
 
-			// An upsert, so one notification on whichever row ended up holding the answer.
-			pubsub.updated(answerId);
+			// A new row has to reach list queries (`created`), which an update of its id does not.
+			if (existing) pubsub.updated(answerId);
+			else pubsub.created();
+			// The options show how many answers they hold.
+			optionPubsub.updated();
 
 			return db.query.surveyAnswer
 				.findFirst(

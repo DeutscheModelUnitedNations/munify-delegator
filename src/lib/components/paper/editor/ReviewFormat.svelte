@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { promptDialog } from '$lib/state/dialogs.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { createEditor, Editor, EditorContent } from 'svelte-tiptap';
@@ -105,9 +106,9 @@
 		onQuoteInserted();
 	});
 
-	const setLink = () => {
+	const setLink = async () => {
 		const previousUrl = $editor?.getAttributes('link').href;
-		const url = window.prompt(m.enterUrl(), previousUrl);
+		const url = await promptDialog({ text: m.enterUrl(), initialValue: previousUrl ?? '' });
 
 		if (url === null) return; // cancelled
 		if (url === '') {
@@ -182,12 +183,7 @@
 	});
 </script>
 
-<fieldset
-	class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[200px]"
-	bind:this={editorElement}
->
-	<legend class="fieldset-legend">{m.editor()}</legend>
-
+<div class="flex w-full flex-col" bind:this={editorElement}>
 	{#if $editor}
 		<Menu.Wrapper>
 			<Menu.Button onClick={() => $editor.commands.undo()} label={m.undo()} icon="fa-rotate-left" />
@@ -232,14 +228,18 @@
 	{/if}
 
 	{#if $editor}
-		<EditorContent editor={$editor} />
+		<div
+			class="rounded-field bg-base-100 border border-base-content/30 cursor-text min-h-48 focus-within:border-primary focus-within:ring-primary/40 focus-within:ring-2"
+		>
+			<EditorContent editor={$editor} />
+		</div>
 		{#if snippets.length > 0}
 			<p class="text-xs text-base-content/50 mt-2 px-1">
 				{m.typeSlashForSnippets()}
 			</p>
 		{/if}
 	{/if}
-</fieldset>
+</div>
 
 <!-- Placeholder prompt modal -->
 <PlaceholderPromptModal

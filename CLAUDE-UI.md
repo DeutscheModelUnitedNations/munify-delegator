@@ -278,9 +278,9 @@ Slide-out drawer showing full entry details including place information, map, an
 
 ---
 
-## Calendar Editor (management/calendar)
+## Calendar Editor (team/calendar)
 
-`management/calendar/` is three tabs: **Calendar** (the editor), **Days & tracks** and **Places**.
+`team/calendar/` is three tabs: **Calendar** (the editor), **Days & tracks** and **Places**.
 
 ### CalendarEditor
 
@@ -721,6 +721,16 @@ Main section wrapper with icon, title, and description:
 - `collapsed`: Bindable boolean to track/control collapsed state externally
 - `headerAction`: Optional snippet for header actions
 
+### DashboardLinkCard
+
+A link card of the dashboard (`$lib/components/dashboard/DashboardLinkCard.svelte`). Beside the
+title and description it takes an `info` snippet for live details the card carries itself: the
+schedule's card shows a small timeline of what is on now and the next two things on the signed-in person's track (`CalendarLinkInfo`), the team's
+card the caller's roles (`TeamEntryInfo`). A link definition (`dashboardLinks.ts`,
+`teamDashboardLinks.ts`) sets `info` to such a component, which gets the `conferenceId` and fetches
+its own data; `DashboardLinkCards` and the quick links pass it on. Team members' cards sit on the
+page without a section box around them.
+
 ### DashboardContentCard
 
 Simple card container for content:
@@ -776,7 +786,7 @@ Survey components handle displaying and answering surveys on the participant das
 
 ### SurveySection
 
-Self-fetching dashboard component (like `CalendarSection`) that queries surveys and renders them. Renders nothing if no surveys exist.
+Self-fetching dashboard component that queries surveys and renders them. Renders nothing if no surveys exist.
 
 **File:** `src/lib/components/dashboard/SurveySection.svelte`
 
@@ -926,7 +936,7 @@ columns and the related people), `stringFilter` / `booleanFilter` / `enumFilter`
 `fetchEveryRow`. The total comes from the entity's rumble count query (`countQuery({ table })` in
 its handler, e.g. `delegationsCount(where)`, same `where` as the page, wrapped in `asCount`) and goes
 to the table as `rowCount`: it gives the pager its page count and last-page button; without it the
-pager only knows `hasMore`. `*Query.ts` next to the page is the model: `management/participants/`.
+pager only knows `hasMore`. `*Query.ts` next to the page is the model: `team/participants/`.
 
 What the backend cannot do, the table does not offer: `orderBy` only reaches a row's own columns
 (not the person's name behind a relation), and computed values (codenames, translated nation names
@@ -993,7 +1003,7 @@ Key-value pair display:
 
 ## Seat Planning (Matrix + Hints Sidebar)
 
-The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/management/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
+The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/team/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
 
 ### Structure
 
@@ -1034,7 +1044,7 @@ Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violati
 
 ## Assignment Board
 
-`src/routes/(authenticated)/dashboard/[conferenceId]/management/assignment/` is a tabbed area
+`src/routes/(authenticated)/dashboard/[conferenceId]/team/assignment/` is a tabbed area
 (Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), one child route per tab, with the
 tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.svelte`.
 
@@ -1083,8 +1093,8 @@ shares.
   holds no navigation.
 - A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
 
-The dashboard has no sidebar. Only the management and team-management areas add one, through
-`SideNavigationDrawer` (directly, or via `ManagementShell`): a menu that is always fully shown on
+The dashboard has no sidebar. Only the team area (and the paper hub, which shares its menu) adds one, through
+`SideNavigationDrawer` (directly, or via `TeamShell`): a menu that is always fully shown on
 desktop (a drawer behind the top bar's burger on mobile) for the many pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
 
 ### NavMenu
@@ -1113,11 +1123,30 @@ Sidebar navigation:
 
 `NavMenuButton` also takes `includeSubpages`, which keeps the entry active on the pages below its `href`. Use it for a list whose detail pages are not in the menu (the survey list and `survey/[surveyId]`), so the menu still shows where you are; such a detail page also carries a back link to its list.
 
-### ManagementShell
+### Breadcrumbs
 
-The management side navigation around a page (`management/ManagementShell.svelte`). The management
-layout and team management (which has its own route and guard, and uses tabs for its sections) both
-render inside it, so the menu stays the same; it also mounts the user card drawer those pages open.
+The header's breadcrumbs (`(authenticated)/Breadcrumbs.svelte`) are built by sveltekit-breadcrumbs
+from the `+page.svelte` files' paths. Three rules keep every page covered, all checked by
+`(authenticated)/breadcrumbs.test.ts`:
+
+- Every folder name of a page needs an entry in `(authenticated)/breadcrumbs.ts` (a `[param]` folder
+  by its name; `conferenceId` is drawn as the conference switcher instead).
+- No page may sit in a route group (`(name)/`): the library cannot see through one, and the page
+  would have no crumbs. Share a layout through a component instead (`team/TeamManagementPage.svelte`).
+- A static folder beats a `[param]` sibling (`dashboard/create` vs `dashboard/[conferenceId]`);
+  `staticFirst` orders the pages that way, because the library takes the first one that fits.
+
+A crumb for a folder with no page of its own (`team`) is shown as plain text, not a link.
+
+### TeamShell
+
+The team side navigation around a page (`team/TeamShell.svelte`). The team layout and the paper hub
+both render inside it, so the menu stays the same. The menu is not written out: it is
+`$lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page is in
+the menu exactly when the route guard lets them in. The dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`, which links no team page directly), the
+command palette's page entries and the guard in `team/+layout.ts` read the same registry. A new team
+page is one entry there; its `roles` say who may open it. Members and invitations share a tab layout
+in the `team/(members)` route group.
 
 ### Tabs
 

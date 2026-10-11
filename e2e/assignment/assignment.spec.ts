@@ -24,7 +24,7 @@ async function gql(page: Page, query: string, variables: Record<string, unknown>
 }
 
 async function applyFromFinishTab(page: Page) {
-	await page.goto(`/dashboard/${E2E_CONFERENCE_ID}/management/assignment/finish`);
+	await page.goto(`/dashboard/${E2E_CONFERENCE_ID}/team/assignment/finish`);
 	await waitForHydration(page);
 	const apply = page.getByRole('button', { name: /zuteilung übernehmen|apply assignment/i });
 	await expect(apply.first()).toBeEnabled({ timeout: 15_000 });
@@ -38,7 +38,7 @@ async function applyFromFinishTab(page: Page) {
 
 test('an admin plans a nation for a delegation and applies it', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/sighting`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting`
 	});
 
 	const planned = await gql(
@@ -77,7 +77,7 @@ test('an admin plans a nation for a delegation and applies it', async ({ page })
 
 test('an admin splits a delegation into two single-member delegations', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment/delegations`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/delegations`
 	});
 
 	const memberIds = await gql(page, `query ($d: ID!) { delegation(id: $d) { members { id } } }`, {

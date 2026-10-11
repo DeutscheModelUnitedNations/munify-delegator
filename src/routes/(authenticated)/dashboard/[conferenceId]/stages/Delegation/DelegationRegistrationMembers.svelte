@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
@@ -7,7 +8,7 @@
 	import formatNames from '$lib/helpers/formatNames';
 	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import EntryCode from '../Common/EntryCode.svelte';
@@ -51,7 +52,7 @@
 	let supervisorLink = $derived(`${page.url.origin}/registration/${conferenceId}/supervisor`);
 
 	const makeHeadDelegate = async (userId: string) => {
-		if (!confirm(m.makeHeadDelegateConfirmation())) return;
+		if (!(await confirmDialog({ text: m.makeHeadDelegateConfirmation() }))) return;
 		const promise = client.mutate.updateDelegation({
 			__args: { id: delegationId, newHeadDelegateUserId: userId },
 			id: true,
@@ -62,7 +63,7 @@
 	};
 
 	const removeMember = async (memberId: string) => {
-		if (!confirm(m.removeMemberConfirmation())) return;
+		if (!(await confirmDialog({ text: m.removeMemberConfirmation(), danger: true }))) return;
 		const promise = Promise.resolve(
 			client.mutate.deleteDelegationMember({ __args: { id: memberId } })
 		);
@@ -81,58 +82,58 @@
 	};
 </script>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
-	{#if delegation.members.length > 0}
-		<DelegationStatusTableWrapper title={m.activeMembers()}>
-			{#each delegation.members as member (member.id)}
-				<DelegationStatusTableEntry
-					name={formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined
-					)}
-					pronouns={member.user.pronouns ?? ''}
-					headDelegate={member.isHeadDelegate}
-				>
-					{#if canManageMembers}
-						<div class="tooltip tooltip-left" data-tip={m.makeHeadDelegate()}>
-							<SquareButtonWithLoadingState
-								cssClass="btn-warning"
-								icon="medal"
-								duotone={false}
-								disabled={member.isHeadDelegate}
-								onClick={async () => makeHeadDelegate(member.user.id)}
-							/>
-						</div>
-						<div class="tooltip tooltip-left" data-tip={m.removeMember()}>
-							<SquareButtonWithLoadingState
-								cssClass="btn-error"
-								icon="trash"
-								duotone={false}
-								disabled={member.isHeadDelegate}
-								onClick={async () => removeMember(member.id)}
-							/>
-						</div>
-					{/if}
-				</DelegationStatusTableEntry>
-			{/each}
-		</DelegationStatusTableWrapper>
-		{#if !delegation.applied}
-			<DashboardContentCard
-				title={m.inviteMorePeople()}
-				description={m.inviteMorePeopleDescription()}
-			>
-				<EntryCode
-					entryCode={delegation.entryCode}
-					{referralLink}
-					{supervisorLink}
-					userHasRotationPermission={userIsHeadDelegate}
-					rotationFn={rotateEntryCode}
-				/>
-			</DashboardContentCard>
+<div class="flex flex-col gap-6">
+	<DashboardSection icon="users" title={m.delegationMembers()}>
+		{#if delegation.members.length > 0}
+			<DelegationStatusTableWrapper>
+				{#each delegation.members as member (member.id)}
+					<DelegationStatusTableEntry
+						name={formatNames(
+							member.user.givenName ?? undefined,
+							member.user.familyName ?? undefined
+						)}
+						pronouns={member.user.pronouns ?? ''}
+						headDelegate={member.isHeadDelegate}
+					>
+						{#if canManageMembers}
+							<div class="tooltip tooltip-left" data-tip={m.makeHeadDelegate()}>
+								<SquareButtonWithLoadingState
+									cssClass="btn-warning"
+									icon="medal"
+									duotone={false}
+									disabled={member.isHeadDelegate}
+									onClick={async () => makeHeadDelegate(member.user.id)}
+								/>
+							</div>
+							<div class="tooltip tooltip-left" data-tip={m.removeMember()}>
+								<SquareButtonWithLoadingState
+									cssClass="btn-error"
+									icon="trash"
+									duotone={false}
+									disabled={member.isHeadDelegate}
+									onClick={async () => removeMember(member.id)}
+								/>
+							</div>
+						{/if}
+					</DelegationStatusTableEntry>
+				{/each}
+			</DelegationStatusTableWrapper>
+			{#if !delegation.applied}
+				<div class="border-base-200 mt-4 border-t pt-4">
+					<p class="font-medium">{m.inviteMorePeople()}</p>
+					<p class="text-base-content/60 text-sm">{m.inviteMorePeopleDescription()}</p>
+					<EntryCode
+						entryCode={delegation.entryCode}
+						{referralLink}
+						{supervisorLink}
+						userHasRotationPermission={userIsHeadDelegate}
+						rotationFn={rotateEntryCode}
+					/>
+				</div>
+			{/if}
+		{:else}
+			<div class="skeleton h-40 w-full"></div>
 		{/if}
-		<SupervisorTable {delegationMemberId} {conferenceId} />
-	{:else}
-		<div class="skeleton h-60 w-full"></div>
-	{/if}
-</section>
+	</DashboardSection>
+	<SupervisorTable {delegationMemberId} {conferenceId} />
+</div>

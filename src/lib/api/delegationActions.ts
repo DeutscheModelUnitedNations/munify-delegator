@@ -1,3 +1,4 @@
+import { confirmDialog, promptDialog } from '$lib/state/dialogs.svelte';
 import { client } from '$lib/api/rumbleClient/client';
 import { m } from '$lib/paraglide/messages';
 import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -5,7 +6,7 @@ import { toast } from 'svelte-sonner';
 
 /** Withdraws a delegation's application after the user confirms it. */
 export async function revokeDelegationApplication(delegationId: string) {
-	if (!confirm(m.confirmRevokeApplication())) return;
+	if (!(await confirmDialog({ text: m.confirmRevokeApplication(), danger: true }))) return;
 	const promise = client.mutate.updateDelegation({
 		__args: { id: delegationId, applied: false },
 		id: true,
@@ -17,7 +18,7 @@ export async function revokeDelegationApplication(delegationId: string) {
 
 /** Asks for a new school name and saves it on the delegation; cancelling the prompt does nothing. */
 export async function changeDelegationSchool(delegationId: string) {
-	const newSchool = prompt(m.enterNewSchoolName());
+	const newSchool = await promptDialog({ text: m.enterNewSchoolName() });
 	if (!newSchool) return;
 	try {
 		const promise = client.mutate.updateDelegation({
@@ -34,7 +35,7 @@ export async function changeDelegationSchool(delegationId: string) {
 
 /** Issues the delegation a new entry code after the user confirms it. */
 export async function rotateDelegationEntryCode(delegationId: string) {
-	if (!confirm(m.confirmRotateCode())) return;
+	if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
 	const promise = client.mutate.updateDelegation({
 		__args: { id: delegationId, resetEntryCode: true },
 		id: true,
