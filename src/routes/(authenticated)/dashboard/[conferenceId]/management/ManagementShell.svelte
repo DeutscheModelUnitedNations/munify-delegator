@@ -5,6 +5,7 @@
 	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
+	import SearchHistoryWatcher from '$lib/components/commandPalette/SearchHistoryWatcher.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { canPlanSeats, managementNav } from '$lib/helpers/managementAccess';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
@@ -189,4 +190,5 @@
 
 {#if nav.management}
 	<CommandPalette {conferenceId} />
+	<SearchHistoryWatcher {conferenceId} />
 {/if}

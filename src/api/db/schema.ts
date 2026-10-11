@@ -927,6 +927,27 @@ export const reviewerSnippet = snakeCase.table(
 	]
 );
 
+/**
+ * The results a team member picked in the global search (or scanned), on any of their devices.
+ * The newest few are offered again when the search opens empty, and a fresh one is offered to the
+ * person's other devices for a moment. `originId` names the browser tab that made it, so that tab
+ * does not offer it to itself. What was typed is not kept.
+ */
+export const searchHistory = snakeCase.table(
+	'search_history',
+	{
+		...defaultIdAndTimestamps,
+		userId: userRef('cascade'),
+		conferenceId: conferenceRef('cascade'),
+		originId: text().notNull(),
+		/** The id of the result that was picked: a person, a delegation, a seat, anything. */
+		resultId: text().notNull(),
+		/** How the result was named when it was picked, as the list shows it. */
+		label: text().notNull()
+	},
+	(table) => [index('search_history_user_id_idx').using('btree', table.userId.asc().nullsLast())]
+);
+
 export const roleApplication = snakeCase.table(
 	'role_application',
 	{

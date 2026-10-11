@@ -1771,6 +1771,8 @@
 	"searchByDelegation": "Nach Delegationsname suchen...",
 	"searchByEmail": "Suche per E-Mail",
 	"searchForUser": "UserID oder E-Mail",
+	"searchHandoffAvailable": "Suche von anderem Gerät",
+	"searchHistory": "Zuletzt gesucht",
 	"seat": "Platz",
 	"seatAmount": "Anzahl der Sitze",
 	"seatPlanning": "Sitzplanung",

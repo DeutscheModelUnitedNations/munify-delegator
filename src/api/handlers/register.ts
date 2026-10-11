@@ -24,6 +24,7 @@ import './place';
 import './possibleDuplicate';
 import './resolution';
 import './reviewerSnippet';
+import './searchHistory';
 import './roleApplication';
 import './statistics';
 import './participantsPage';

@@ -29,6 +29,14 @@
 	import { resolveScannedCode } from '$lib/components/scanner/userSearch';
 	import { looksLikeUserId } from '$lib/components/scanner/suggestions';
 	import { toast } from 'svelte-sonner';
+	import {
+		consumeHandoff,
+		getAvailableHandoff,
+		getSearchHistory,
+		recordScan,
+		recordSearch,
+		type SearchHistoryEntry
+	} from './searchHistory.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -177,15 +185,41 @@
 			toast.error(m.notFound());
 			return;
 		}
+		void recordScan(conferenceId, userId);
 		closeCommandPalette();
 		openUserCard(userId);
 	}
 
+	const handoff = $derived(getAvailableHandoff());
+
+	/** Pastes a past result's id into the search, which then finds it again. */
+	function runEntry(entry: SearchHistoryEntry) {
+		searchInput = entry.resultId;
+		triggerServerSearch(entry.resultId);
+		inputEl?.focus();
+	}
+
+	/** The hint chip: runs the search another device just made. */
+	function takeOverHandoff() {
+		const entry = handoff;
+		if (!entry) return;
+		// Taking it over hides the row, which clears `handoff`: read it before that happens.
+		consumeHandoff(entry.id);
+		runEntry(entry);
+	}
+
+	/** Shown while the search is empty. */
+	const history = $derived(
+		searchInput.trim() ? [] : getSearchHistory().filter((entry) => entry.id !== handoff?.id)
+	);
+
 	function selectItem(item: ResultItem) {
+		void recordSearch(conferenceId, item.data.id, describeItem(item).primary);
 		closeCommandPalette();
 		const target = resultTarget(item, conferenceId);
-		if ('userId' in target) openUserCard(target.userId);
-		else goto(target.href);
+		if ('userId' in target) {
+			openUserCard(target.userId);
+		} else goto(target.href);
 	}
 
 	function selectActive() {
@@ -319,6 +353,30 @@
 				{#if userResults.length === 0 && searchLoading && searchTerm.length >= 2}
 					<CommandPaletteResultGroup title={m.commandPaletteUsers()} icon="fa-users" loading={true}>
 						<div class="px-3 py-2 text-sm text-base-content/40"></div>
+					</CommandPaletteResultGroup>
+				{/if}
+
+				{#if handoff}
+					<CommandPaletteItem
+						icon="fa-mobile-screen"
+						primary={handoff.label}
+						secondary={m.searchHandoffAvailable()}
+						active={false}
+						highlight
+						onclick={takeOverHandoff}
+					/>
+				{/if}
+
+				{#if history.length > 0}
+					<CommandPaletteResultGroup title={m.searchHistory()} icon="fa-clock-rotate-left">
+						{#each history as entry (entry.id)}
+							<CommandPaletteItem
+								icon="fa-clock-rotate-left"
+								primary={entry.label}
+								active={false}
+								onclick={() => runEntry(entry)}
+							/>
+						{/each}
 					</CommandPaletteResultGroup>
 				{/if}
 
