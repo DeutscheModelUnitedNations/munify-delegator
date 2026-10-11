@@ -8,8 +8,6 @@
 		level: 'committee' | 'agendaItem';
 		/** Background tint on hover, e.g. `hover:bg-primary/5`. */
 		hoverClass?: string;
-		/** Alternating background for nested groups. */
-		striped?: boolean;
 		/** Left side of the header, after the chevron. */
 		header: Snippet;
 		/** Right side of the header: counts, badges. */
@@ -23,46 +21,33 @@
 		onToggle,
 		level,
 		hoverClass = level === 'committee' ? 'hover:bg-primary/5' : 'hover:bg-secondary/5',
-		striped = false,
 		header,
 		aside,
 		children
 	}: Props = $props();
 
-	let isCommittee = $derived(level === 'committee');
+	const isCommittee = $derived(level === 'committee');
 </script>
 
-<div
-	class={isCommittee
-		? 'border border-base-300 rounded-box bg-base-100'
-		: 'border border-base-200 rounded-field mb-2 last:mb-0'}
-	class:bg-base-50={striped}
->
-	<div
-		class="cursor-pointer transition-colors {hoverClass} {isCommittee
-			? 'p-4 rounded-t-box'
-			: 'p-3 rounded-t-field'}"
-		class:rounded-b-box={isCommittee && !expanded}
-		class:rounded-b-field={!isCommittee && !expanded}
+<div class={isCommittee ? 'rounded-box bg-base-200' : 'border-t border-base-300'}>
+	<button
+		type="button"
+		class="flex w-full items-center justify-between gap-3 text-left transition-colors {hoverClass} {isCommittee
+			? 'p-4 rounded-box'
+			: 'px-4 py-3'}"
+		aria-expanded={expanded}
 		onclick={onToggle}
-		role="button"
-		tabindex="0"
-		onkeypress={(e) => e.key === 'Enter' && onToggle()}
 	>
-		<div class="flex items-center justify-between">
-			<div class="flex items-center {isCommittee ? 'gap-3' : 'gap-2'}">
-				<i
-					class="fa-sharp-duotone fa-solid {expanded
-						? 'fa-chevron-down'
-						: 'fa-chevron-right'} {isCommittee
-						? 'text-base-content/50'
-						: 'text-base-content/40 text-sm'}"
-				></i>
-				{@render header()}
-			</div>
-			{@render aside?.()}
-		</div>
-	</div>
+		<span class="flex min-w-0 items-center {isCommittee ? 'gap-3' : 'gap-2'}">
+			<i
+				class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/50 text-sm transition-transform {expanded
+					? 'rotate-90'
+					: ''}"
+			></i>
+			{@render header()}
+		</span>
+		{@render aside?.()}
+	</button>
 
 	{#if expanded}
 		{@render children()}

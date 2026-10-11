@@ -20,9 +20,9 @@
 </script>
 
 {#if myStats}
-	<div class="border-t border-base-300 pt-4">
-		<h4 class="text-sm font-semibold mb-2">{m.yourReviewStats()}</h4>
-		<div class="flex items-center gap-6">
+	<div>
+		<h4 class="text-sm font-semibold mb-1">{m.yourReviewStats()}</h4>
+		<div class="flex flex-wrap items-center gap-x-6 gap-y-1">
 			<span class="flex items-center gap-2">
 				<i class="fa-sharp-duotone fa-solid fa-star text-primary"></i>
 				<span class="text-sm">{m.firstReviews()}:</span>

@@ -213,7 +213,7 @@
 {/snippet}
 
 {#snippet papersTable(groupId: string, papers: Paper[])}
-	<div class="px-4 pb-3 border-t border-base-200">
+	<div class="px-2 pb-2">
 		<PaperTable
 			papers={getSortedPapers(groupId, papers)}
 			sortable={true}
@@ -225,47 +225,38 @@
 {/snippet}
 
 <div class="flex flex-col gap-3 w-full">
-	<!-- Focus Mode Toggle and Status Overview -->
+	<!-- Status overview, with the focus mode and snippets as controls in its header -->
 	<!-- fallow-ignore-next-line complexity -->
 	{#if !papersLoading && groupedPapers?.length}
-		<div class="card bg-base-200 border border-base-300 p-4">
-			<div class="flex flex-col gap-4">
-				<!-- Focus Mode Toggle -->
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-3">
-						<i class="fa-sharp-duotone fa-solid fa-bullseye text-primary text-xl"></i>
-						<div>
-							<h3 class="font-semibold">{m.focusModeLabel()}</h3>
-							<p class="text-sm text-base-content/60">{m.focusModeDescription()}</p>
-						</div>
+		<div class="card bg-base-200 p-4 flex flex-col gap-4">
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<h2 class="font-semibold">{m.paperStatusOverview()}</h2>
+				<div class="flex flex-wrap items-center gap-2">
+					<div class="tooltip tooltip-left" data-tip={m.focusModeDescription()}>
+						<label class="flex cursor-pointer items-center gap-2 text-sm">
+							<i class="fa-sharp-duotone fa-solid fa-bullseye text-primary"></i>
+							{m.focusModeLabel()}
+							<input
+								type="checkbox"
+								class="toggle toggle-primary toggle-sm"
+								bind:checked={focusMode.current}
+							/>
+						</label>
 					</div>
-					<input type="checkbox" class="toggle toggle-primary" bind:checked={focusMode.current} />
+					<a
+						href={resolve(`/dashboard/${conferenceId}/paperhub/snippets`)}
+						class="btn btn-ghost btn-sm"
+						title={m.reviewerSnippetsShortDescription()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-bookmark"></i>
+						{m.manageSnippets()}
+					</a>
 				</div>
-
-				<PaperStatusDistribution counts={overallStatusCounts} blur={focusMode.current} />
-
-				<MyReviewStats {conferenceId} />
 			</div>
-		</div>
 
-		<!-- Snippets Section -->
-		<div class="card bg-base-200 border border-base-300 p-4">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-bookmark text-primary text-xl"></i>
-					<div>
-						<h3 class="font-semibold">{m.reviewerSnippets()}</h3>
-						<p class="text-sm text-base-content/60">{m.reviewerSnippetsShortDescription()}</p>
-					</div>
-				</div>
-				<a
-					href={resolve(`/dashboard/${conferenceId}/paperhub/snippets`)}
-					class="btn btn-ghost btn-sm"
-				>
-					<i class="fa-sharp-duotone fa-solid fa-gear"></i>
-					{m.manageSnippets()}
-				</a>
-			</div>
+			<PaperStatusDistribution counts={overallStatusCounts} blur={focusMode.current} />
+
+			<MyReviewStats {conferenceId} />
 		</div>
 	{/if}
 
@@ -298,7 +289,7 @@
 									class="tooltip tooltip-warning tooltip-left"
 									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
 								>
-									<div class="badge badge-warning gap-1">
+									<div class="flex items-center gap-1 text-sm font-semibold text-warning">
 										<i class="fa-sharp-duotone fa-solid fa-hand"></i>
 										{helpNeededCount}
 									</div>
@@ -309,11 +300,11 @@
 					{/snippet}
 
 					<!-- Agenda Items (expanded) -->
-					<div class="p-4 pt-2">
-						{#each committeeGroup.agendaItems as agendaItemGroup, index (agendaItemGroup.agendaItem.id)}
+					<div>
+						{#each committeeGroup.agendaItems as agendaItemGroup (agendaItemGroup.agendaItem.id)}
 							{@const agendaItem = agendaItemGroup.agendaItem}
 							{@const helpStatus = helpStatusOf(agendaItem)}
-							<AgendaItemPaperGroup {agendaItem} {index} {openGroup}>
+							<AgendaItemPaperGroup {agendaItem} {openGroup}>
 								{#snippet leading()}
 									<!-- Review Help Status Toggle -->
 									<ReviewHelpStatusToggle

@@ -141,24 +141,19 @@
 {/snippet}
 
 <div class="overflow-x-auto">
-	<table class="table table-xs">
+	<table class="table table-sm">
 		<thead>
-			<tr class="text-xs">
+			<tr class="text-xs text-base-content/60">
 				{@render sortableHeader('country', { text: m.country() })}
-				{@render sortableHeader('type', { icon: 'fa-file', title: m.paperType() })}
+				{@render sortableHeader('type', { text: m.paperType() })}
 				{#if showStatus}
-					{@render sortableHeader('status', { icon: 'fa-circle-info', title: m.status() })}
+					{@render sortableHeader('status', { text: m.status() })}
 				{/if}
-				{@render sortableHeader('firstSubmittedAt', {
-					icon: 'fa-paper-plane',
-					title: m.submittedAt()
-				})}
+				{@render sortableHeader('firstSubmittedAt', { text: m.submittedAt() })}
 				{#if showUpdatedAt}
-					{@render sortableHeader('updatedAt', {
-						icon: 'fa-clock-rotate-left',
-						title: m.paperUpdatedAt()
-					})}
+					{@render sortableHeader('updatedAt', { text: m.paperUpdatedAt() })}
 				{/if}
+				<th></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -175,23 +170,23 @@
 						{@render delegationCell(paper.delegation)}
 					</td>
 					<td>
-						<div class="tooltip" data-tip={translatePaperType(paper.type)}>
+						<span class="flex items-center gap-2 whitespace-nowrap">
 							<i
 								class="fa-sharp-duotone fa-solid {getPaperTypeIcon(paper.type)} {getTypeColor(
 									paper.type
-								)} text-base"
+								)}"
 							></i>
-						</div>
+							{translatePaperType(paper.type)}
+						</span>
 					</td>
 					{#if showStatus}
 						<td>
-							<div class="tooltip" data-tip={translatePaperStatus(paper.status)}>
-								<i
-									class="fa-sharp-duotone fa-solid {getPaperStatusIcon(
-										paper.status
-									)} {getStatusColor(paper.status)} text-base"
-								></i>
-							</div>
+							<span
+								class="flex items-center gap-2 whitespace-nowrap {getStatusColor(paper.status)}"
+							>
+								<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(paper.status)}"></i>
+								{translatePaperStatus(paper.status)}
+							</span>
 						</td>
 					{/if}
 					<td class="text-xs text-base-content/70">
@@ -202,6 +197,9 @@
 							{formatDate(paper.updatedAt)}
 						</td>
 					{/if}
+					<td class="text-right text-base-content/40">
+						<i class="fa-sharp-duotone fa-solid fa-chevron-right text-xs"></i>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
