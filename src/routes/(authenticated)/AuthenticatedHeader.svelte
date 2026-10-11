@@ -124,33 +124,13 @@
 					onclick={openCommandPalette}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
-					{#if getAvailableHandoff()}
-						<span
-							class="absolute top-0.5 right-0.5 flex size-2.5"
-							title={m.searchHandoffAvailable()}
-						>
-							<span
-								class="bg-warning absolute inline-flex size-full animate-ping rounded-full opacity-75"
-							></span>
-							<span class="bg-warning relative inline-flex size-2.5 rounded-full"></span>
-						</span>
-					{/if}
+					{@render handoffBadge()}
 				</button>
 				<button
 					class="btn btn-ghost btn-sm text-base-content/60 relative hidden gap-2 sm:flex"
 					onclick={openCommandPalette}
 				>
-					{#if getAvailableHandoff()}
-						<span
-							class="absolute top-0.5 right-0.5 flex size-2.5"
-							title={m.searchHandoffAvailable()}
-						>
-							<span
-								class="bg-warning absolute inline-flex size-full animate-ping rounded-full opacity-75"
-							></span>
-							<span class="bg-warning relative inline-flex size-2.5 rounded-full"></span>
-						</span>
-					{/if}
+					{@render handoffBadge()}
 					<i class="fa-sharp-duotone fa-solid fa-magnifying-glass"></i>
 					<span class="text-sm">{m.search()}</span>
 					<Kbd hotkey="mod+k" size="xs" />
@@ -161,3 +141,13 @@
 		</div>
 	</div>
 </header>
+
+{#snippet handoffBadge()}
+	{#if getAvailableHandoff()}
+		<span class="absolute top-0.5 right-0.5 flex size-2.5" title={m.searchHandoffAvailable()}>
+			<span class="bg-warning absolute inline-flex size-full animate-ping rounded-full opacity-75"
+			></span>
+			<span class="bg-warning relative inline-flex size-2.5 rounded-full"></span>
+		</span>
+	{/if}
+{/snippet}
