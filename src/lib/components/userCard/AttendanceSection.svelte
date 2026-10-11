@@ -26,28 +26,10 @@
 			},
 			id: true,
 			timestamp: true,
-			occasion: true,
+			session: { occasion: true },
 			recordedBy: { id: true, givenName: true, familyName: true }
 		})
 	);
-
-	let occasion = $state('');
-
-	const createEntry = async () => {
-		if (!occasion.trim()) return;
-
-		const promise = client.mutate.createAttendanceEntry({
-			__args: { userId, conferenceId, occasion: occasion.trim() },
-			id: true
-		});
-		toast.promise(promise, {
-			loading: m.genericToastLoading(),
-			success: m.genericToastSuccess(),
-			error: m.genericToastError()
-		});
-		await promise;
-		occasion = '';
-	};
 
 	const deleteEntry = async (id: string) => {
 		if (!(await confirmDialog({ text: m.deleteAttendanceEntryConfirm(), danger: true }))) return;
@@ -68,27 +50,6 @@
 		{m.attendanceLog()}
 	</h3>
 
-	<div class="join">
-		<input
-			class="input join-item w-full"
-			bind:value={occasion}
-			type="text"
-			placeholder={m.occasion()}
-			onkeydown={(e) => {
-				if (e.key === 'Enter') createEntry();
-			}}
-		/>
-		<button
-			class="btn join-item"
-			onclick={createEntry}
-			disabled={!occasion.trim()}
-			aria-label={m.recordEntry()}
-		>
-			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
-			{m.recordEntry()}
-		</button>
-	</div>
-
 	{#if entries.length === 0}
 		<p class="text-base-content/50 text-sm">{m.noAttendanceEntries()}</p>
 	{:else}
@@ -105,7 +66,7 @@
 					{#each entries as entry (entry.id)}
 						<tr>
 							<td>
-								<div>{entry.occasion}</div>
+								<div>{entry.session.occasion}</div>
 								<div class="text-base-content/50 text-xs">
 									{formatNames(
 										entry.recordedBy.givenName ?? undefined,

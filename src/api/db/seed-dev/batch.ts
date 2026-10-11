@@ -1,6 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../schema';
-import type { Insert } from '../rows';
 
 /**
  * Every row the dev seed writes, collected in memory first and inserted in one go, in foreign
@@ -8,47 +7,48 @@ import type { Insert } from '../rows';
  * another one creates later, without the code having to care which table is written first.
  */
 export interface SeedBatch {
-	nation: Insert<'nation'>[];
-	user: Insert<'user'>[];
-	reviewerSnippet: Insert<'reviewerSnippet'>[];
-	conference: Insert<'conference'>[];
-	committee: Insert<'committee'>[];
-	committeeToNation: Insert<'committeeToNation'>[];
-	committeeAgendaItem: Insert<'committeeAgendaItem'>[];
-	nonStateActor: Insert<'nonStateActor'>[];
-	customConferenceRole: Insert<'customConferenceRole'>[];
-	delegation: Insert<'delegation'>[];
-	delegationMember: Insert<'delegationMember'>[];
-	roleApplication: Insert<'roleApplication'>[];
-	singleParticipant: Insert<'singleParticipant'>[];
-	customConferenceRoleToSingleParticipant: Insert<'customConferenceRoleToSingleParticipant'>[];
-	conferenceSupervisor: Insert<'conferenceSupervisor'>[];
-	conferenceSupervisorToDelegationMember: Insert<'conferenceSupervisorToDelegationMember'>[];
-	conferenceSupervisorToSingleParticipant: Insert<'conferenceSupervisorToSingleParticipant'>[];
-	teamMember: Insert<'teamMember'>[];
-	teamMemberInvitation: Insert<'teamMemberInvitation'>[];
-	waitingListEntry: Insert<'waitingListEntry'>[];
-	conferenceParticipantStatus: Insert<'conferenceParticipantStatus'>[];
-	attendanceEntry: Insert<'attendanceEntry'>[];
-	paymentTransaction: Insert<'paymentTransaction'>[];
-	userReferenceInPaymentTransaction: Insert<'userReferenceInPaymentTransaction'>[];
-	paper: Insert<'paper'>[];
-	paperVersion: Insert<'paperVersion'>[];
-	paperReview: Insert<'paperReview'>[];
-	surveyQuestion: Insert<'surveyQuestion'>[];
-	surveyOption: Insert<'surveyOption'>[];
-	surveyAnswer: Insert<'surveyAnswer'>[];
-	place: Insert<'place'>[];
-	calendarDay: Insert<'calendarDay'>[];
-	calendarTrack: Insert<'calendarTrack'>[];
-	calendarEntry: Insert<'calendarEntry'>[];
-	calendarEntryToCalendarTrack: Insert<'calendarEntryToCalendarTrack'>[];
-	assignmentReview: Insert<'assignmentReview'>[];
-	assignmentUnit: Insert<'assignmentUnit'>[];
-	assignmentUnitMember: Insert<'assignmentUnitMember'>[];
-	assignmentSingleRole: Insert<'assignmentSingleRole'>[];
-	assignmentWeights: Insert<'assignmentWeights'>[];
-	possibleDuplicate: Insert<'possibleDuplicate'>[];
+	nation: (typeof schema.nation.$inferInsert)[];
+	user: (typeof schema.user.$inferInsert)[];
+	reviewerSnippet: (typeof schema.reviewerSnippet.$inferInsert)[];
+	conference: (typeof schema.conference.$inferInsert)[];
+	committee: (typeof schema.committee.$inferInsert)[];
+	committeeToNation: (typeof schema.committeeToNation.$inferInsert)[];
+	committeeAgendaItem: (typeof schema.committeeAgendaItem.$inferInsert)[];
+	nonStateActor: (typeof schema.nonStateActor.$inferInsert)[];
+	customConferenceRole: (typeof schema.customConferenceRole.$inferInsert)[];
+	delegation: (typeof schema.delegation.$inferInsert)[];
+	delegationMember: (typeof schema.delegationMember.$inferInsert)[];
+	roleApplication: (typeof schema.roleApplication.$inferInsert)[];
+	singleParticipant: (typeof schema.singleParticipant.$inferInsert)[];
+	customConferenceRoleToSingleParticipant: (typeof schema.customConferenceRoleToSingleParticipant.$inferInsert)[];
+	conferenceSupervisor: (typeof schema.conferenceSupervisor.$inferInsert)[];
+	conferenceSupervisorToDelegationMember: (typeof schema.conferenceSupervisorToDelegationMember.$inferInsert)[];
+	conferenceSupervisorToSingleParticipant: (typeof schema.conferenceSupervisorToSingleParticipant.$inferInsert)[];
+	teamMember: (typeof schema.teamMember.$inferInsert)[];
+	teamMemberInvitation: (typeof schema.teamMemberInvitation.$inferInsert)[];
+	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
+	conferenceParticipantStatus: (typeof schema.conferenceParticipantStatus.$inferInsert)[];
+	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
+	attendanceEntry: (typeof schema.attendanceEntry.$inferInsert)[];
+	paymentTransaction: (typeof schema.paymentTransaction.$inferInsert)[];
+	userReferenceInPaymentTransaction: (typeof schema.userReferenceInPaymentTransaction.$inferInsert)[];
+	paper: (typeof schema.paper.$inferInsert)[];
+	paperVersion: (typeof schema.paperVersion.$inferInsert)[];
+	paperReview: (typeof schema.paperReview.$inferInsert)[];
+	surveyQuestion: (typeof schema.surveyQuestion.$inferInsert)[];
+	surveyOption: (typeof schema.surveyOption.$inferInsert)[];
+	surveyAnswer: (typeof schema.surveyAnswer.$inferInsert)[];
+	place: (typeof schema.place.$inferInsert)[];
+	calendarDay: (typeof schema.calendarDay.$inferInsert)[];
+	calendarTrack: (typeof schema.calendarTrack.$inferInsert)[];
+	calendarEntry: (typeof schema.calendarEntry.$inferInsert)[];
+	calendarEntryToCalendarTrack: (typeof schema.calendarEntryToCalendarTrack.$inferInsert)[];
+	assignmentReview: (typeof schema.assignmentReview.$inferInsert)[];
+	assignmentUnit: (typeof schema.assignmentUnit.$inferInsert)[];
+	assignmentUnitMember: (typeof schema.assignmentUnitMember.$inferInsert)[];
+	assignmentSingleRole: (typeof schema.assignmentSingleRole.$inferInsert)[];
+	assignmentWeights: (typeof schema.assignmentWeights.$inferInsert)[];
+	possibleDuplicate: (typeof schema.possibleDuplicate.$inferInsert)[];
 }
 
 export function emptyBatch(): SeedBatch {
@@ -74,6 +74,7 @@ export function emptyBatch(): SeedBatch {
 		teamMemberInvitation: [],
 		waitingListEntry: [],
 		conferenceParticipantStatus: [],
+		attendanceSession: [],
 		attendanceEntry: [],
 		paymentTransaction: [],
 		userReferenceInPaymentTransaction: [],
@@ -149,6 +150,9 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.waitingListEntry, (rows) => db.insert(s.waitingListEntry).values(rows));
 	await insertChunked(batch.conferenceParticipantStatus, (rows) =>
 		db.insert(s.conferenceParticipantStatus).values(rows)
+	);
+	await insertChunked(batch.attendanceSession, (rows) =>
+		db.insert(s.attendanceSession).values(rows)
 	);
 	await insertChunked(batch.attendanceEntry, (rows) => db.insert(s.attendanceEntry).values(rows));
 	await insertChunked(batch.paymentTransaction, (rows) =>

@@ -2,10 +2,10 @@ import {
 	findDuplicates,
 	type MatchProfile,
 	type MatchReason
-} from '../../services/duplicateMatching';
+} from '../../handlers/possibleDuplicate/duplicateMatching';
 import { devAccounts, type DevAccountSub } from '../seed-data/devAccounts';
 import { makeDevAccountUser } from '../seed-data/user';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 import type { ConferenceKey } from './plans';
 
 /**
@@ -588,7 +588,7 @@ export function profileOf(id: string, { person: p }: Account): MatchProfile {
 }
 
 /** The user rows the scenarios need; a dev account's exists already. */
-export function scenarioUsers(): (Insert<'user'> & { id: string })[] {
+export function scenarioUsers(): (typeof schema.user.$inferInsert & { id: string })[] {
 	return duplicateScenarios.flatMap((scenario) =>
 		scenario.accounts
 			.filter((account) => !account.devAccount)
@@ -623,7 +623,7 @@ export function scenarioUsers(): (Insert<'user'> & { id: string })[] {
  * The pairs to store: what the matcher finds among the scenario accounts, with the decisions the
  * scenarios declare - plus the stale ones, which it does not find.
  */
-export function scenarioPairs(): Insert<'possibleDuplicate'>[] {
+export function scenarioPairs(): (typeof schema.possibleDuplicate.$inferInsert)[] {
 	const profiles = duplicateScenarios.flatMap((scenario) =>
 		scenario.accounts.map((account) => profileOf(accountId(scenario, account), account))
 	);

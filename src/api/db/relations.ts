@@ -106,7 +106,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		session: r.one.attendanceSession({
 			from: r.attendanceEntry.sessionId,
-			to: r.attendanceSession.id
+			to: r.attendanceSession.id,
+			optional: false
 		})
 	},
 	attendanceSession: {

@@ -1,5 +1,5 @@
 import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
-import type { Row } from '$api/db/rows';
+import type * as schema from '$api/db/schema';
 
 /**
  * Determines a simplified administrative status based on various consent statuses
@@ -13,7 +13,7 @@ import type { Row } from '$api/db/rows';
 export default function getSimplifiedPostalStatus(
 	participantStatus:
 		| (Pick<
-				Row<'conferenceParticipantStatus'>,
+				typeof schema.conferenceParticipantStatus.$inferSelect,
 				'termsAndConditions' | 'guardianConsent' | 'mediaConsent'
 		  > & {
 				[key: string]: unknown;

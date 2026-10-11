@@ -8,7 +8,7 @@ import {
 	isPublicRoute,
 	accessTokenCookieName,
 	refreshTokenCookieName
-} from '$api/services/OIDC';
+} from '$api/services/auth/OIDC';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { building } from '$app/environment';
 import { configPrivate } from '$config/private';

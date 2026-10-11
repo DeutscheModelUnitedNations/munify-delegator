@@ -1,9 +1,12 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 export function makeSeedCalendarDay(
-	options: Pick<Insert<'calendarDay'>, 'conferenceId' | 'date' | 'name' | 'sortOrder'>
-): Insert<'calendarDay'> & { id: string } {
+	options: Pick<
+		typeof schema.calendarDay.$inferInsert,
+		'conferenceId' | 'date' | 'name' | 'sortOrder'
+	>
+): typeof schema.calendarDay.$inferInsert & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		date: options.date,
@@ -16,9 +19,9 @@ export function makeSeedCalendarDay(
 }
 
 export function makeSeedCalendarTrack(
-	options: Pick<Insert<'calendarTrack'>, 'calendarDayId' | 'name' | 'sortOrder'> &
-		Partial<Pick<Insert<'calendarTrack'>, 'description'>>
-): Insert<'calendarTrack'> & { id: string } {
+	options: Pick<typeof schema.calendarTrack.$inferInsert, 'calendarDayId' | 'name' | 'sortOrder'> &
+		Partial<Pick<typeof schema.calendarTrack.$inferInsert, 'description'>>
+): typeof schema.calendarTrack.$inferInsert & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,
@@ -31,10 +34,10 @@ export function makeSeedCalendarTrack(
 }
 
 export function makeSeedPlace(
-	options: Pick<Insert<'place'>, 'conferenceId' | 'name'> &
+	options: Pick<typeof schema.place.$inferInsert, 'conferenceId' | 'name'> &
 		Partial<
 			Pick<
-				Insert<'place'>,
+				typeof schema.place.$inferInsert,
 				| 'address'
 				| 'latitude'
 				| 'longitude'
@@ -44,7 +47,7 @@ export function makeSeedPlace(
 				| 'sitePlanDataURL'
 			>
 		>
-): Insert<'place'> & { id: string } {
+): typeof schema.place.$inferInsert & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,
@@ -63,11 +66,16 @@ export function makeSeedPlace(
 
 export function makeSeedCalendarEntry(
 	options: Pick<
-		Insert<'calendarEntry'>,
+		typeof schema.calendarEntry.$inferInsert,
 		'calendarDayId' | 'name' | 'startTime' | 'endTime' | 'color'
 	> &
-		Partial<Pick<Insert<'calendarEntry'>, 'description' | 'fontAwesomeIcon' | 'placeId' | 'room'>>
-): Insert<'calendarEntry'> & { id: string } {
+		Partial<
+			Pick<
+				typeof schema.calendarEntry.$inferInsert,
+				'description' | 'fontAwesomeIcon' | 'placeId' | 'room'
+			>
+		>
+): typeof schema.calendarEntry.$inferInsert & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,

@@ -6,8 +6,8 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { storedFileUrl } from '$api/services/files';
+} from '$api/services/auth/authHelper';
+import { storedFileUrl } from '$api/services/files/files';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 

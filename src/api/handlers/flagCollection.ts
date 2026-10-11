@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { assertPaperReviewer } from './paper';
+import { assertPaperReviewer } from './paper/paper';
 
 /**
  * Gamified view of a conference's paper progress: every nation and non-state actor is a "flag"

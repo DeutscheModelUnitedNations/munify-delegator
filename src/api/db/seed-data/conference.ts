@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 const CONFERENCE_STATES = [
 	'PRE',
@@ -46,9 +46,12 @@ const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates
 
 export function makeSeedConference(
 	options?: Partial<
-		Pick<Insert<'conference'>, 'state' | 'startAssignment' | 'startConference' | 'endConference'>
+		Pick<
+			typeof schema.conference.$inferInsert,
+			'state' | 'startAssignment' | 'startConference' | 'endConference'
+		>
 	>
-): Insert<'conference'> {
+): typeof schema.conference.$inferInsert {
 	const state = options?.state ?? faker.helpers.arrayElement(CONFERENCE_STATES);
 	const dates = DATES_BY_STATE[state];
 	// Generated in this order, and only where not given, so a seeded faker stays reproducible.

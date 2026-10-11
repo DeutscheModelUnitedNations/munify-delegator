@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { Row } from '$api/db/rows';
+	import type * as schema from '$api/db/schema';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 
 	type NonStateActorPool = Pick<
-		Row<'nonStateActor'>,
+		typeof schema.nonStateActor.$inferSelect,
 		'id' | 'name' | 'description' | 'seatAmount' | 'fontAwesomeIcon'
 	>[];
 

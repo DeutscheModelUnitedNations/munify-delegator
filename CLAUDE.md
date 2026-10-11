@@ -150,7 +150,7 @@ bun run preview
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
 
 - **`src/api/`** - Backend GraphQL API layer
-  - `handlers/` - One module per domain entity, each holding that entity's abilities, object
+  - `handlers/` - One module per domain entity (a directory when the entity has its own helpers: `paper/paper.ts` beside `paper/paperSubmission.ts`), each holding that entity's abilities, object
     reference, queries and mutations. `register.ts` imports them all and is the single place a
     new handler has to be listed.
   - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
@@ -160,7 +160,7 @@ bun run preview
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
-  - `services/` - Backend business logic services
+  - `services/` - Backend business logic, one subdirectory per feature; `services/README.md` indexes them
 
 - **`src/lib/`** - Shared frontend code
   - `api/client.ts` - The urql client and its exchanges
@@ -215,7 +215,7 @@ bun run preview
   ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
   ```
 
-  `services/authHelper.ts` is the one place authorization is built from; its header holds the
+  `services/auth/authHelper.ts` is the one place authorization is built from; its header holds the
   role matrix (who may do what). Rules of thumb, all of them enforced by `e2e/authorization/`:
 
   - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
@@ -422,7 +422,7 @@ bun run preview
   (`logoUrl`, `contractContentUrl`, `sitePlanUrl`, `contentUrl` on a resolution, …) and gets
   `/files/<kind>/<id>/<field>?v=<updatedAt>`, which `src/routes/files/` serves as real bytes with an
   ETag. The route reads through GraphQL with the request's own context, so column masks decide who
-  gets a template. A new stored file goes in `FILE_SOURCES` in `$api/services/files.ts` plus a URL
+  gets a template. A new stored file goes in `FILE_SOURCES` in `$api/services/files/files.ts` plus a URL
   field on its object. The one reader left on the data URL is the paper/resolution header's
   emblem, which the resolution editor and `/api/pdf` still take as a data URL.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
@@ -437,7 +437,7 @@ bun run preview
 #### 3. Authentication & Authorization
 
 - **OIDC flow** via [`@m1212e/sveltekit-oidc`](https://github.com/m1212e/sveltekit-oidc), the same
-  library chase uses. `src/api/services/OIDC.ts` builds the instance; its `handle` hook (wired up in
+  library chase uses. `src/api/services/auth/OIDC.ts` builds the instance; its `handle` hook (wired up in
   `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
   `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
   session on `event.locals.oidc`. There is no auth code in route loads.
@@ -461,7 +461,7 @@ bun run preview
   preparation, active and post, so one login tours the stages. The seed prints the conference ids,
   join codes and invitation links at the end. A new state the UI branches on gets a persona or a
   conference flag here, so it stays reachable with one click.
-- **Login-time user upsert** lives in `src/api/services/upsertSelf.ts`, passed to the library as
+- **Login-time user upsert** lives in `src/api/services/auth/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.
 - **Impersonation is stalled** for this migration: the old implementation swapped session cookies
@@ -501,7 +501,8 @@ bun run preview
 - **Drizzle ORM** with PostgreSQL, using the relational API (`db.query.x.findMany({ where, with })`)
   and `defineRelations` in `src/api/db/relations.ts`. Columns are camelCase in TypeScript and
   snake_case in the database; `snakeCase.table` does the mapping.
-- Row and insert shapes come from `$api/db/rows` (`Row<'conference'>`, `Insert<'conference'>`)
+- Row and insert shapes come from Drizzle itself (`typeof schema.conference.$inferSelect`,
+  `typeof schema.conference.$inferInsert`, with `import type * as schema from '$api/db/schema'`)
   rather than from a generated client
 - Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
@@ -521,7 +522,7 @@ bun run preview
   `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
   dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
   (only roles with _exactly_ as many free seats as the group has members). The board in
-  `team/assignment/` and `applyAssignment` (`src/api/services/assignmentDraft.ts`) both go
+  `team/assignment/` and `applyAssignment` (`src/api/handlers/assignment/assignmentDraft.ts`) both go
   through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
   of re-creating them, so supervision links and statuses survive, and clears the draft (ratings
   and weights stay).
@@ -547,7 +548,7 @@ bun run preview
   project management and participant care, switchable both ways) decides whether participants and
   supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,
   `assignedNonStateActorId`, `assignedCommitteeId`, `assignedRoleId` and `assignmentDetails`
-  (`src/api/services/assignmentVisibility.ts`, two rules per participant-side ability:
+  (`src/api/services/assignment/assignmentVisibility.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). A masked foreign key is not enough on its own, so
   `assignedNation`, `assignedNonStateActor`, `assignedCommittee` and `assignedRole` resolve
   through the key, and the relations pointing back (`nation.assignedDelegations`,
@@ -561,7 +562,7 @@ bun run preview
 - **Why:** someone with a care note (`user.globalNotes`) who signs up again with a new account
   would shed it. The plausibility page lists accounts that may belong to the same person as an
   account from before, for participant care to decide (`OPEN` / `CONFIRMED` / `DISMISSED`).
-- **Matching** is pure, in `$api/services/duplicateMatching.ts`: names are transliterated to Latin
+- **Matching** is pure, in `$api/handlers/possibleDuplicate/duplicateMatching.ts`: names are transliterated to Latin
   letters (`any-ascii`, any script) and compared per part with Jaro-Winkler; birthday, email local
   part, phone, emergency numbers and address add weights, none of them enough alone. Only accounts
   sharing a blocking key are compared. `possibleDuplicates.ts` loads the accounts and stores the

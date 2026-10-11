@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 import type { ConferenceSeed } from './context';
 
 /**
@@ -157,7 +157,7 @@ export function addSupervisor(cs: ConferenceSeed, plan: SupervisorPlan) {
 
 export type StatusPlan = Partial<
 	Pick<
-		Insert<'conferenceParticipantStatus'>,
+		typeof schema.conferenceParticipantStatus.$inferInsert,
 		| 'paymentStatus'
 		| 'termsAndConditions'
 		| 'guardianConsent'
@@ -228,9 +228,25 @@ export function addAttendance(
 		const timestamp = new Date(cs.startConference);
 		timestamp.setDate(timestamp.getDate() + day);
 		timestamp.setHours(8, faker.number.int({ min: 0, max: 59 }), 0, 0);
+		// One session per occasion, shared by everybody who attended it
+		const sessionId = `${cs.id}-attendance-${occasion}`;
+		if (!cs.batch.attendanceSession.some((session) => session.id === sessionId)) {
+			const startedAt = new Date(timestamp);
+			startedAt.setHours(8, 0, 0, 0);
+			const endedAt = new Date(startedAt);
+			endedAt.setHours(18, 0, 0, 0);
+			cs.batch.attendanceSession.push({
+				id: sessionId,
+				conferenceId: cs.id,
+				occasion,
+				startedAt,
+				endedAt,
+				createdById: recordedById
+			});
+		}
 		cs.batch.attendanceEntry.push({
 			conferenceParticipantStatusId: statusId,
-			occasion,
+			sessionId,
 			timestamp,
 			recordedById
 		});

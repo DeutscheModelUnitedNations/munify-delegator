@@ -7,12 +7,12 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { count, eq } from 'drizzle-orm';
 import { countGiven, nullToUndefined } from '$api/services/args';
-import { normalizeRoleApplicationRanks } from '$api/services/normalizeRoleApplicationRanks';
+import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
 
 // Ported from abilities/entities/roleApplication.ts
 abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);

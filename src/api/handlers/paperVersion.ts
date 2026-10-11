@@ -1,6 +1,6 @@
 import { abilityBuilder, object, query } from '$api/rumble';
 import { hashEditorContent } from '$lib/components/paper/editor/contentHash';
-import { PAPER_ROLES, isInOwnDelegation, systemAdmin, userId } from '$api/services/authHelper';
+import { PAPER_ROLES, isInOwnDelegation, systemAdmin, userId } from '$api/services/auth/authHelper';
 
 // Ported from abilities/entities/paper/paperVersion.ts
 abilityBuilder.paperVersion.allow(['read', 'update', 'delete']).when(systemAdmin);

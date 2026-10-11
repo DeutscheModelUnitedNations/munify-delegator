@@ -146,10 +146,10 @@ bun run machine-translate
 #### Authentication & Authorization
 
 - **OIDC Integration**: `@m1212e/sveltekit-oidc` (recommended provider: Logto, but any OIDC provider
-  works). `src/api/services/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
+  works). `src/api/services/auth/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
   which guards the authenticated routes, serves both callback routes without `+page` files and puts
   the session on `event.locals.oidc`. The login-time user upsert is
-  `src/api/services/upsertSelf.ts`
+  `src/api/services/auth/upsertSelf.ts`
 - **Impersonation**: stalled during the migration — the library owns the session cookies the old
   implementation swapped. `$lib/data/impersonation` gates the UI
 - **Context Building**: `src/api/context.ts` constructs request context from `event.locals.oidc`

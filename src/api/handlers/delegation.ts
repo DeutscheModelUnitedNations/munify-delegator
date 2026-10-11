@@ -13,11 +13,11 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import { fetchUserParticipations } from '$api/services/participation';
-import { assertApplicationReady } from '$api/services/applicationReadiness';
-import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
-import { makeEntryCode } from '$api/services/entryCodeGenerator';
+} from '$api/services/auth/authHelper';
+import { fetchUserParticipations } from '$api/services/registration/participation';
+import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
+import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
+import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import formatNames from '$lib/helpers/formatNames';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
@@ -29,9 +29,7 @@ import {
 	DELEGATION_ASSIGNMENT,
 	maskedUntilRelease,
 	onceReleased
-} from '$api/services/assignmentVisibility';
-import { NationRef } from './nation';
-import { NonStateActorRef } from './nonStateActor';
+} from '$api/services/assignment/assignmentVisibility';
 
 // Ported from abilities/entities/delegation.ts
 abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -79,37 +77,7 @@ abilityBuilder.delegation.allow('read').when((ctx) => {
 	return team ? { where: team, columns: { entryCode: false } } : undefined;
 });
 
-const DelegationRef = object({
-	table: 'delegation',
-	adjust: (t) => ({
-		// Resolved through the foreign keys, which the read rules mask until the assignment is
-		// released - a plain relation would be read through the nation's own (public) rules.
-		assignedNation: t.field({
-			type: NationRef,
-			nullable: true,
-			resolve: async (delegation, _args, ctx) =>
-				delegation.assignedNationAlpha3Code
-					? db.query.nation.findFirst(
-							(await ctx.abilities.nation.filter('read')).merge({
-								where: { alpha3Code: delegation.assignedNationAlpha3Code }
-							}).query.single
-						)
-					: null
-		}),
-		assignedNonStateActor: t.field({
-			type: NonStateActorRef,
-			nullable: true,
-			resolve: async (delegation, _args, ctx) =>
-				delegation.assignedNonStateActorId
-					? db.query.nonStateActor.findFirst(
-							(await ctx.abilities.nonStateActor.filter('read')).merge({
-								where: { id: delegation.assignedNonStateActorId }
-							}).query.single
-						)
-					: null
-		})
-	})
-});
+const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
 countQuery({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });

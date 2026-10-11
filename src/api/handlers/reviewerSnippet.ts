@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { systemAdmin, userId } from '$api/services/authHelper';
+import { systemAdmin, userId } from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 

@@ -9,12 +9,12 @@ import {
 	isTeamMemberOf,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { NationRef } from './nation';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 import { m } from '$lib/paraglide/messages';
-import { isSystemAdmin } from '$api/services/authHelper';
+import { isSystemAdmin } from '$api/services/auth/authHelper';
 import { enum_ } from '$api/rumble';
 import { and, eq, inArray, max } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
@@ -28,11 +28,17 @@ import {
 } from '$lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
-import { distinctNationCodes, normalizeSchoolName } from '$api/services/conferenceAggregates';
-import { loadSchoolRows, refreshSchoolSuggestions } from '$api/services/schoolSuggestions';
-import { totalSeats } from '$api/services/seatPlanning';
-import { storedFileUrl } from '$api/services/files';
-import { MAX_NAMETAG_BINS } from '$api/services/nametagBins';
+import {
+	distinctNationCodes,
+	normalizeSchoolName
+} from '$api/handlers/schoolSuggestion/conferenceAggregates';
+import {
+	loadSchoolRows,
+	refreshSchoolSuggestions
+} from '$api/handlers/schoolSuggestion/schoolSuggestions';
+import { totalSeats } from '$api/services/assignment/seatPlanning';
+import { storedFileUrl } from '$api/services/files/files';
+import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {

@@ -5,7 +5,7 @@ import {
 	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';

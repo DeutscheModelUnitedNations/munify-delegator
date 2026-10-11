@@ -4,7 +4,7 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
 	userId
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 
 /**
  * Who a payment covers. Written only by `createPaymentTransaction`, never edited on its own, so

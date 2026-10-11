@@ -1,7 +1,7 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { SEAT_PLANNING_ROLES, assertTeamRole } from '$api/services/authHelper';
-import { lockedCommitteeSeats } from '$api/services/seatPlanning';
+import { SEAT_PLANNING_ROLES, assertTeamRole } from '$api/services/auth/authHelper';
+import { lockedCommitteeSeats } from '$api/services/assignment/seatPlanning';
 
 const SeatPlanningCommitteeSeat = schemaBuilder.simpleObject('SeatPlanningCommitteeSeat', {
 	fields: (t) => ({

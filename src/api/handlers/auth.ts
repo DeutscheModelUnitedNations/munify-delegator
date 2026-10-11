@@ -1,5 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import { OIDC, oidcRoles } from '$api/services/OIDC';
+import { OIDC, oidcRoles } from '$api/services/auth/OIDC';
 
 const OIDCRolesEnum = schemaBuilder.enumType('OIDCRolesEnum', { values: oidcRoles });
 

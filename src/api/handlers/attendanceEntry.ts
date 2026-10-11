@@ -14,7 +14,7 @@ import {
 	participatesIn,
 	systemAdmin,
 	userId
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
@@ -93,21 +93,18 @@ async function assertSessionOfConference(sessionId: string, conferenceId: string
 	}
 }
 
-/** Who records the scan; refuses an anonymous caller, an empty occasion and a foreign session. */
+/** Who records the scan; refuses an anonymous caller and a foreign session. */
 async function assertMayCreateEntry(
 	ctx: Context,
-	args: { userId: string; conferenceId: string; occasion: string; sessionId?: string | null }
+	args: { userId: string; conferenceId: string; sessionId: string }
 ) {
 	const callerId = userId(ctx);
 	if (!callerId) {
 		throw new GraphQLError('Must be logged in');
 	}
-	if (!args.occasion.trim()) {
-		throw new GraphQLError('Occasion must not be empty.');
-	}
 
 	await assertMayRecordAttendance(ctx, args.conferenceId, args.userId);
-	if (args.sessionId) await assertSessionOfConference(args.sessionId, args.conferenceId);
+	await assertSessionOfConference(args.sessionId, args.conferenceId);
 	return callerId;
 }
 
@@ -134,8 +131,7 @@ async function ensureParticipantStatus(userId: string, conferenceId: string) {
  * The entry that already logged the person in the session. Several devices may work in one
  * session, so the session itself says who was scanned.
  */
-async function scanInSession(sessionId: string | null | undefined, statusId: string) {
-	if (!sessionId) return undefined;
+async function scanInSession(sessionId: string, statusId: string) {
 	return db.query.attendanceEntry.findFirst({
 		where: { sessionId, conferenceParticipantStatusId: statusId },
 		columns: { id: true }
@@ -148,17 +144,15 @@ async function scanInSession(sessionId: string | null | undefined, statusId: str
  * a session cards are written through the status update, for participant care only.
  */
 async function storeSessionCard(
-	sessionId: string | null | undefined,
+	sessionId: string,
 	conferenceId: string,
 	statusId: string,
 	accessCardId: string
 ) {
-	const session = sessionId
-		? await db.query.attendanceSession.findFirst({
-				where: { id: sessionId, conferenceId },
-				columns: { mode: true }
-			})
-		: undefined;
+	const session = await db.query.attendanceSession.findFirst({
+		where: { id: sessionId, conferenceId },
+		columns: { mode: true }
+	});
 	if (session?.mode !== 'BADGE') {
 		throw new GraphQLError('This session does not hand out access cards');
 	}
@@ -250,8 +244,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			userId: t.arg.id({ required: true }),
 			conferenceId: t.arg.id({ required: true }),
-			occasion: t.arg.string({ required: true }),
-			sessionId: t.arg.id(),
+			sessionId: t.arg.id({ required: true }),
 			checkPassed: t.arg.boolean(),
 			/** The card to store for the person; only a session that hands out cards takes one. */
 			accessCardId: t.arg.string()
@@ -286,9 +279,8 @@ schemaBuilder.mutationFields((t) => ({
 				.insert(schema.attendanceEntry)
 				.values({
 					conferenceParticipantStatusId: status.id,
-					occasion: args.occasion,
 					recordedById: callerId,
-					sessionId: args.sessionId ?? undefined,
+					sessionId: args.sessionId,
 					checkPassed: args.checkPassed ?? undefined
 				})
 				.returning()
@@ -297,7 +289,7 @@ schemaBuilder.mutationFields((t) => ({
 			pubsub.created();
 			conferenceParticipantStatusPubsub.updated();
 			// The session's entry count changed, which its readers show
-			if (args.sessionId) sessionPubsub.updated(args.sessionId);
+			sessionPubsub.updated(args.sessionId);
 
 			return readEntry(created.id);
 		}

@@ -13,7 +13,7 @@ import {
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';

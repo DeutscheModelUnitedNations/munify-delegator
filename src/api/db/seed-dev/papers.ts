@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Row } from '../rows';
+import type * as schema from '../schema';
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import {
 	invalidResolutionDocument,
@@ -10,8 +10,8 @@ import {
 import { PERSONA_NATION } from './conference';
 import type { ConferenceSeed } from './context';
 
-type PaperStatus = Row<'paper'>['status'];
-type PaperType = Row<'paper'>['type'];
+type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
+type PaperType = (typeof schema.paper.$inferSelect)['type'];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -14,18 +14,20 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
-import { assertTeamRole } from '$api/services/authHelper';
-import { assertApplicationReady } from '$api/services/applicationReadiness';
+} from '$api/services/auth/authHelper';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/registration/participation';
+import { assertTeamRole } from '$api/services/auth/authHelper';
+import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { nullToUndefined } from '$api/services/args';
 import {
 	SINGLE_PARTICIPANT_ASSIGNMENT,
 	maskedUntilRelease,
 	onceReleased
-} from '$api/services/assignmentVisibility';
+} from '$api/services/assignment/assignmentVisibility';
 import type { Context } from '$api/context';
-import { CustomConferenceRoleRef } from './customConferenceRole';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -67,25 +69,7 @@ abilityBuilder.singleParticipant
 	.allow('read')
 	.when((ctx) => onceReleased(supervisedParticipant(ctx)));
 
-const SingleParticipantRef = object({
-	table: 'singleParticipant',
-	adjust: (t) => ({
-		// Resolved through the foreign key, which the read rules mask until the assignment is
-		// released - a plain relation would be read through the role's own (public) rules.
-		assignedRole: t.field({
-			type: CustomConferenceRoleRef,
-			nullable: true,
-			resolve: async (participant, _args, ctx) =>
-				participant.assignedRoleId
-					? db.query.customConferenceRole.findFirst(
-							(await ctx.abilities.customConferenceRole.filter('read')).merge({
-								where: { id: participant.assignedRoleId }
-							}).query.single
-						)
-					: null
-		})
-	})
-});
+const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
 countQuery({ table: 'singleParticipant' });
 const pubsub = rumblePubsub({ table: 'singleParticipant' });

@@ -15,7 +15,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import type { Context } from '$api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';

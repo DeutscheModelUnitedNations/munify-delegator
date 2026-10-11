@@ -186,7 +186,7 @@
 	/** Tells the server about the session, once; starting is safe to repeat. */
 	async function ensureSessionStarted() {
 		const session = sessionStore.current;
-		if (!session || session.started) return;
+		if (!session || session.started) return session;
 		await client.mutate.startAttendanceSession({
 			__args: {
 				id: session.id,
@@ -198,6 +198,7 @@
 		});
 		session.started = true;
 		sessionStore.current = session;
+		return session;
 	}
 
 	/** The people looked up in the info mode, newest last; in memory only. */
@@ -477,15 +478,15 @@
 
 	/** The card and the scan are stored together, so a rejected card logs nothing. */
 	async function saveBadge(current: ShownPerson, accessCardId: string) {
-		await ensureSessionStarted();
+		const session = await ensureSessionStarted();
+		if (!session) throw new Error('No session is running');
 		const timestamp = new Date().toISOString();
 		const passed = current.issues.length === 0;
 		await client.mutate.createAttendanceEntry({
 			__args: {
 				userId: current.person.user.id,
 				conferenceId,
-				occasion: occasion.trim(),
-				sessionId: sessionStore.current?.id,
+				sessionId: session.id,
 				checkPassed: passed,
 				accessCardId
 			},
@@ -564,13 +565,13 @@
 		if (hasScanOf(sessionStore.current?.entries, entry.userId, true)) {
 			throw new Error(ALREADY_SCANNED);
 		}
-		await ensureSessionStarted();
+		const session = await ensureSessionStarted();
+		if (!session) throw new Error('No session is running');
 		await client.mutate.createAttendanceEntry({
 			__args: {
 				userId: entry.userId,
 				conferenceId,
-				occasion: occasion.trim(),
-				sessionId: sessionStore.current?.id,
+				sessionId: session.id,
 				checkPassed: entry.checkPassed
 			},
 			id: true

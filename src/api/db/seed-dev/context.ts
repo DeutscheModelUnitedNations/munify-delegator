@@ -1,4 +1,4 @@
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 import type { SeedBatch } from './batch';
 import type { ConferencePlan } from './plans';
 
@@ -25,7 +25,7 @@ export interface SeedWorld {
 export interface ConferenceSeed {
 	plan: ConferencePlan;
 	id: string;
-	conference: Insert<'conference'>;
+	conference: typeof schema.conference.$inferInsert;
 	startConference: Date;
 	batch: SeedBatch;
 	world: SeedWorld;
@@ -55,7 +55,7 @@ export interface ConferenceSeed {
 export function createConferenceSeed(
 	world: SeedWorld,
 	plan: ConferencePlan,
-	conference: Insert<'conference'> & { id: string },
+	conference: typeof schema.conference.$inferInsert & { id: string },
 	startConference: Date
 ): ConferenceSeed {
 	const usedCodes = new Set<string>();

@@ -6,19 +6,18 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { errorCause, isUniqueViolationOn } from '$api/services/emailConflict';
-import { normalizeRoleApplicationRanks } from '$api/services/normalizeRoleApplicationRanks';
+} from '$api/services/auth/authHelper';
+import { errorCause, isUniqueViolationOn } from '$api/services/auth/emailConflict';
+import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
 import {
 	assertNonStateActorDeletable,
 	assertSeatsPerDelegationAllowed,
 	nonStateActorUpdateData
-} from '$api/services/seatPlanning';
-import { tidyRoleApplicationsForRoles } from '$api/services/tidyRoleApplications';
+} from '$api/services/assignment/seatPlanning';
+import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { visibleAssignedDelegations } from '$api/services/assignmentVisibility';
 import { GraphQLError } from 'graphql';
 
 abilityBuilder.nonStateActor.allow('read');
@@ -30,12 +29,7 @@ abilityBuilder.nonStateActor
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 
-export const NonStateActorRef = object({
-	table: 'nonStateActor',
-	adjust: (t) => ({
-		assignedDelegations: t.relation('assignedDelegations', { query: visibleAssignedDelegations })
-	})
-});
+export const NonStateActorRef = object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
 const pubsub = rumblePubsub({ table: 'nonStateActor' });
 const roleApplicationPubsub = rumblePubsub({ table: 'roleApplication' });

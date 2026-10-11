@@ -9,18 +9,18 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
 import { and, count, eq, isNotNull, or, sql } from 'drizzle-orm';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { GraphQLError } from 'graphql';
 import { configPublic } from '$config/public';
-import { isUniqueViolationOn } from '$api/services/emailConflict';
-import { reportEmailConflict } from '$api/services/reportEmailConflict';
+import { isUniqueViolationOn } from '$api/services/auth/emailConflict';
+import { reportEmailConflict } from '$api/services/auth/reportEmailConflict';
 import type { Context } from '$api/context';
 import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
-import { scanUserForDuplicatesInBackground } from '$api/services/possibleDuplicates';
+import { scanUserForDuplicatesInBackground } from '$api/handlers/possibleDuplicate/possibleDuplicates';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble

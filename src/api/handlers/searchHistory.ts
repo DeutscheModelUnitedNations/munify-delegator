@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { assertTeamRole, systemAdmin, userId, where } from '$api/services/authHelper';
+import { assertTeamRole, systemAdmin, userId, where } from '$api/services/auth/authHelper';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 

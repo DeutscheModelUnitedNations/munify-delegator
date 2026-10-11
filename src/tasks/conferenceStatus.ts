@@ -2,7 +2,10 @@ import { config } from './config';
 import { db } from '$api/db/db';
 import { IncomingWebhook } from '@slack/webhook';
 import { logTaskEnd, logTaskStart, taskWarning } from './logs';
-import { refreshStatisticsViews, registrationReport } from '$api/services/statisticsData';
+import {
+	refreshStatisticsViews,
+	registrationReport
+} from '$api/handlers/statistics/statisticsData';
 import fs from 'fs';
 import { registerTask } from './registry';
 import { conferenceStatusBlocks } from './conferenceStatusMessage';

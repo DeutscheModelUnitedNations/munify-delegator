@@ -14,21 +14,20 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import {
 	assertCommitteeDeletable,
 	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
 	committeeUpdateData,
 	seatRemovalBlockersWhere
-} from '$api/services/seatPlanning';
-import { tidyRoleApplicationsForRoles } from '$api/services/tidyRoleApplications';
+} from '$api/services/assignment/seatPlanning';
+import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
 import formatNames from '$lib/helpers/formatNames';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
-import { assignmentVisible } from '$api/services/assignmentVisibility';
 
 // Ported from abilities/entities/committee.ts
 abilityBuilder.committee.allow('read');
@@ -44,19 +43,7 @@ abilityBuilder.committee
 	.allow('update')
 	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 
-export const CommitteeRef = object({
-	table: 'committee',
-	adjust: (t) => ({
-		// Who sits in a committee is part of the assignment, which participants only see once it
-		// is released.
-		delegationMembers: t.relation('delegationMembers', {
-			query: async (_args, ctx) =>
-				(await ctx.abilities.delegationMember.filter('read')).merge({
-					where: assignmentVisible(ctx)
-				}).query.many
-		})
-	})
-});
+export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });
 const pubsub = rumblePubsub({ table: 'committee' });
 const agendaItemPubsub = rumblePubsub({ table: 'committeeAgendaItem' });

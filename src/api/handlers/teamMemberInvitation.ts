@@ -17,12 +17,12 @@ import {
 	systemAdmin,
 	userId,
 	type TeamRole
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import {
 	getInvitationExpiryDate,
 	hashToken,
 	makeInvitationToken
-} from '$api/services/invitationToken';
+} from '$api/services/auth/invitationToken';
 import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail

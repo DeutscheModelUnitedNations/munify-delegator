@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { enum_, schemaBuilder } from '$api/rumble';
-import { assertTeamRole } from '$api/services/authHelper';
+import { assertTeamRole } from '$api/services/auth/authHelper';
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 

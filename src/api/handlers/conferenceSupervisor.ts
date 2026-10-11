@@ -15,9 +15,12 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
-import { makeEntryCode } from '$api/services/entryCodeGenerator';
+} from '$api/services/auth/authHelper';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/registration/participation';
+import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';

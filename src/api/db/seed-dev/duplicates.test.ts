@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { isValidPhoneNumber } from 'libphonenumber-js';
-import { findDuplicates } from '../../services/duplicateMatching';
+import { findDuplicates } from '../../handlers/possibleDuplicate/duplicateMatching';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import {
 	accountId,

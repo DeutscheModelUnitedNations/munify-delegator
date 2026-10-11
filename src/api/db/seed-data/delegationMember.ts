@@ -1,10 +1,15 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 export function makeSeedDelegationMember(
-	options: Pick<Insert<'delegationMember'>, 'conferenceId' | 'delegationId' | 'userId'> &
-		Partial<Pick<Insert<'delegationMember'>, 'assignedCommitteeId' | 'isHeadDelegate'>>
-): Insert<'delegationMember'> {
+	options: Pick<
+		typeof schema.delegationMember.$inferInsert,
+		'conferenceId' | 'delegationId' | 'userId'
+	> &
+		Partial<
+			Pick<typeof schema.delegationMember.$inferInsert, 'assignedCommitteeId' | 'isHeadDelegate'>
+		>
+): typeof schema.delegationMember.$inferInsert {
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),

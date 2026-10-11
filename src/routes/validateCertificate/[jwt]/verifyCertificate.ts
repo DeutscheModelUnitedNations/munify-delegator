@@ -1,7 +1,7 @@
 import { importJWK, jwtVerify } from 'jose';
 import { client } from '$lib/api/rumbleClient/client';
 import { certificateAlg, certificateRequiredClaims } from '$api/handlers/certificateConfig';
-import type { CertificateJWTPayload } from '$api/handlers/certificate';
+import type { CertificateJWTPayload } from '$api/handlers/certificate/certificate';
 
 /**
  * Checks a participation certificate against the public key the API publishes.

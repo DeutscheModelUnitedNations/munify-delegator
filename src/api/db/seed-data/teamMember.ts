@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 const TEAM_ROLES = [
 	'PROJECT_MANAGEMENT',
@@ -11,9 +11,9 @@ const TEAM_ROLES = [
 ] as const;
 
 export function makeSeedTeamMember(
-	options: Pick<Insert<'teamMember'>, 'conferenceId' | 'userId'> &
-		Partial<Pick<Insert<'teamMember'>, 'role'>>
-): Insert<'teamMember'> {
+	options: Pick<typeof schema.teamMember.$inferInsert, 'conferenceId' | 'userId'> &
+		Partial<Pick<typeof schema.teamMember.$inferInsert, 'role'>>
+): typeof schema.teamMember.$inferInsert {
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),

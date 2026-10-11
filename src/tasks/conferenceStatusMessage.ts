@@ -1,5 +1,5 @@
 import { getLocale } from '$lib/paraglide/runtime';
-import type { registrationReport } from '$api/services/statisticsData';
+import type { registrationReport } from '$api/handlers/statistics/statisticsData';
 
 type RegistrationReport = Awaited<ReturnType<typeof registrationReport>>;
 type RegistrationStatistics = RegistrationReport['registrationStatistics'];

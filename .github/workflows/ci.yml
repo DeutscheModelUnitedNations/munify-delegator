@@ -64,7 +64,7 @@ jobs:
       OIDC_ROLE_CLAIM: roles
       SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
       CERTIFICATE_SECRET: e2e-ci-certificate-secret
-      # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
+      # Must be `development`: src/api/services/auth/OIDC.ts only passes `allowInsecureRequests` to
       # oauth4webapi under that value, and the mock OIDC provider (oidc-mock) is plain HTTP. Any
       # other value fails discovery with "only requests to HTTPS are allowed" and every login
       # times out.

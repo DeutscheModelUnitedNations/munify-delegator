@@ -7,7 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { entryCodeLength } from '$api/services/entryCodeGenerator';
+	import { entryCodeLength } from '$api/services/registration/entryCodeGenerator';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();

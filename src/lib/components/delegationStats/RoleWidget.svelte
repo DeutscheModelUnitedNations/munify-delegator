@@ -3,13 +3,20 @@
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { Row } from '$api/db/rows';
+	import type * as schema from '$api/db/schema';
 
 	interface Props {
-		country?: Pick<Row<'nation'>, 'alpha2Code' | 'alpha3Code'> | null;
-		committees?: Pick<Row<'committee'>, 'name' | 'numOfSeatsPerDelegation'>[] | null;
-		nonStateActor?: Pick<Row<'nonStateActor'>, 'name' | 'fontAwesomeIcon' | 'seatAmount'> | null;
-		customConferenceRole?: Pick<Row<'customConferenceRole'>, 'name' | 'fontAwesomeIcon'> | null;
+		country?: Pick<typeof schema.nation.$inferSelect, 'alpha2Code' | 'alpha3Code'> | null;
+		committees?:
+			Pick<typeof schema.committee.$inferSelect, 'name' | 'numOfSeatsPerDelegation'>[] | null;
+		nonStateActor?: Pick<
+			typeof schema.nonStateActor.$inferSelect,
+			'name' | 'fontAwesomeIcon' | 'seatAmount'
+		> | null;
+		customConferenceRole?: Pick<
+			typeof schema.customConferenceRole.$inferSelect,
+			'name' | 'fontAwesomeIcon'
+		> | null;
 	}
 
 	let { country, nonStateActor, committees, customConferenceRole }: Props = $props();

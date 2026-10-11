@@ -1,9 +1,9 @@
-import type { Row } from '$api/db/rows';
+import type * as schema from '$api/db/schema';
 
 export default function getNumOfSeatsPerNation(
-	nation: Pick<Row<'nation'>, 'alpha3Code'>,
-	committees: (Pick<Row<'committee'>, 'numOfSeatsPerDelegation'> & {
-		nations: Pick<Row<'nation'>, 'alpha3Code'>[];
+	nation: Pick<typeof schema.nation.$inferSelect, 'alpha3Code'>,
+	committees: (Pick<typeof schema.committee.$inferSelect, 'numOfSeatsPerDelegation'> & {
+		nations: Pick<typeof schema.nation.$inferSelect, 'alpha3Code'>[];
 	})[]
 ) {
 	let numOfSeats = 0;

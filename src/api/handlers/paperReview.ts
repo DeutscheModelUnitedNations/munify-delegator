@@ -7,7 +7,7 @@ import {
 	query,
 	schemaBuilder
 } from '$api/rumble';
-import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '$api/services/auth/authHelper';
 import type { Context } from '$api/context';
 import { sendNewReviewNotification } from '$api/services/email';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';

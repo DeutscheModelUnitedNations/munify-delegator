@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 import { devEmail, type DevAccount } from './devAccounts';
 
 const FOOD_PREFERENCES = ['OMNIVORE', 'VEGETARIAN', 'VEGAN'] as const;
@@ -23,7 +23,7 @@ let emailCounter = 0;
  */
 export function makeSeedUser(
 	options: { minAge?: number; maxAge?: number; incomplete?: boolean } = {}
-): Insert<'user'> & { id: string } {
+): typeof schema.user.$inferInsert & { id: string } {
 	const givenName = faker.person.firstName();
 	const familyName = faker.person.lastName();
 	const email = faker.internet
@@ -87,7 +87,9 @@ function accountDigits(sub: string, salt: number) {
  * account at its stated age a month after its last birthday, so a 16-year-old is still 16 at
  * every seeded conference.
  */
-export function makeDevAccountUser(account: DevAccount): Insert<'user'> & { id: string } {
+export function makeDevAccountUser(
+	account: DevAccount
+): typeof schema.user.$inferInsert & { id: string } {
 	const birthday = new Date(Date.now() - (account.age ?? 19) * YEAR_MS - 30 * 24 * 60 * 60 * 1000);
 	birthday.setUTCHours(0, 0, 0, 0);
 	const complete = account.profile === 'complete';

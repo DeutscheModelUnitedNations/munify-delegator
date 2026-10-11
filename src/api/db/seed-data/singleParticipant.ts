@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 export function makeSeedSingleParticipant(
-	options: Pick<Insert<'singleParticipant'>, 'conferenceId' | 'userId'> &
-		Partial<Pick<Insert<'singleParticipant'>, 'applied' | 'assignedRoleId'>>
-): Insert<'singleParticipant'> {
+	options: Pick<typeof schema.singleParticipant.$inferInsert, 'conferenceId' | 'userId'> &
+		Partial<Pick<typeof schema.singleParticipant.$inferInsert, 'applied' | 'assignedRoleId'>>
+): typeof schema.singleParticipant.$inferInsert {
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),

@@ -12,7 +12,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { GraphQLError } from 'graphql';
 
 abilityBuilder.teamMember.allow(['read', 'delete']).when(systemAdmin);

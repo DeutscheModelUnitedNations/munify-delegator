@@ -1,4 +1,4 @@
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 /**
  * The conferences the dev seed creates. Each one pins down one stage of a conference's life, and
@@ -28,8 +28,8 @@ export interface ConferencePlan {
 	key: ConferenceKey;
 	/** Short summary for the console overview. */
 	summary: string;
-	conference: Pick<Insert<'conference'>, 'title' | 'longTitle' | 'state'> &
-		Partial<Insert<'conference'>>;
+	conference: Pick<typeof schema.conference.$inferInsert, 'title' | 'longTitle' | 'state'> &
+		Partial<typeof schema.conference.$inferInsert>;
 	/** Days from now; negative is in the past. */
 	days: { startAssignment: number; startConference: number; endConference: number };
 	/** Whether seats are handed out: delegations hold nations, singles hold roles. */

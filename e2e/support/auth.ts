@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 /**
  * Claims the oidc-mock login page (oidc-mock.yaml, served by `vite dev`) signs into the tokens,
- * normalized by src/api/services/OIDC.ts into an OIDCUser.
+ * normalized by src/api/services/auth/OIDC.ts into an OIDCUser.
  */
 export interface TestUserClaims {
 	email: string;

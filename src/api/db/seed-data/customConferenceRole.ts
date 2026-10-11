@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 export function makeSeedCustomConferenceRole(
-	options: Pick<Insert<'customConferenceRole'>, 'conferenceId'>
-): Insert<'customConferenceRole'> {
+	options: Pick<typeof schema.customConferenceRole.$inferInsert, 'conferenceId'>
+): typeof schema.customConferenceRole.$inferInsert {
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),

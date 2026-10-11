@@ -1,4 +1,4 @@
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 import {
 	makeSeedCalendarDay,
 	makeSeedCalendarEntry,
@@ -87,7 +87,7 @@ export function addCalendar(cs: ConferenceSeed) {
 		return new Date(date.getTime() + (hours * 60 + minutes + shift) * MINUTE_MS);
 	}
 
-	const trackLinks: Insert<'calendarEntryToCalendarTrack'>[] = [];
+	const trackLinks: (typeof schema.calendarEntryToCalendarTrack.$inferInsert)[] = [];
 
 	/** The same session in all three tracks, one room each. */
 	function parallelSessions(
@@ -126,7 +126,7 @@ export function addCalendar(cs: ConferenceSeed) {
 		{ a: workshop.id, b: tracksPerDay[1][1].id }
 	);
 
-	const entries: (Insert<'calendarEntry'> & { id: string })[] = [
+	const entries: (typeof schema.calendarEntry.$inferInsert & { id: string })[] = [
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Eröffnungsfeier',

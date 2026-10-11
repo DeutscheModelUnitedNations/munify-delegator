@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Row } from '$api/db/rows';
+	import type * as schema from '$api/db/schema';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import type { Snippet } from 'svelte';
@@ -9,10 +9,13 @@
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import { m } from '$lib/paraglide/messages';
 
-	type Nation = Pick<Row<'nation'>, 'alpha2Code' | 'alpha3Code'>;
+	type Nation = Pick<typeof schema.nation.$inferSelect, 'alpha2Code' | 'alpha3Code'>;
 	type NationPool = Nation[];
-	type Committee = Pick<Row<'committee'>, 'abbreviation' | 'name' | 'numOfSeatsPerDelegation'> & {
-		nations: Pick<Row<'nation'>, 'alpha3Code'>[];
+	type Committee = Pick<
+		typeof schema.committee.$inferSelect,
+		'abbreviation' | 'name' | 'numOfSeatsPerDelegation'
+	> & {
+		nations: Pick<typeof schema.nation.$inferSelect, 'alpha3Code'>[];
 	};
 
 	interface Props {

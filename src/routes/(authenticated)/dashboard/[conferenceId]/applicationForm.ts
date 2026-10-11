@@ -1,7 +1,7 @@
 import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
-import type { Row } from '$api/db/rows';
+import type * as schema from '$api/db/schema';
 import type { z } from 'zod';
 
 /** The answers the questionnaire submits. */
@@ -15,7 +15,7 @@ export type ApplicationAnswers = z.infer<typeof applicationFormSchema>;
  * SPA mode, so there is no action to validate against on the server.
  */
 export function makeApplicationForm(
-	application: Pick<Row<'delegation'>, 'school' | 'experience' | 'motivation'>
+	application: Pick<typeof schema.delegation.$inferSelect, 'school' | 'experience' | 'motivation'>
 ) {
 	return defaults(
 		{

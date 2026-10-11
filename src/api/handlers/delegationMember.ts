@@ -7,19 +7,21 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
-import { makeEntryCode } from '$api/services/entryCodeGenerator';
+} from '$api/services/auth/authHelper';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/registration/participation';
+import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assignedRoleConditions, countGiven, nullToUndefined } from '$api/services/args';
-import { assertTeamRole } from '$api/services/authHelper';
-import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
+import { assertTeamRole } from '$api/services/auth/authHelper';
+import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
 import {
 	DELEGATION_MEMBER_ASSIGNMENT,
 	maskedUntilRelease,
 	onceReleased
-} from '$api/services/assignmentVisibility';
+} from '$api/services/assignment/assignmentVisibility';
 import type { Context } from '$api/context';
-import { CommitteeRef } from './committee';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -81,25 +83,7 @@ abilityBuilder.delegationMember.allow('update').when((ctx) => {
 		: undefined;
 });
 
-const DelegationMemberRef = object({
-	table: 'delegationMember',
-	adjust: (t) => ({
-		// Resolved through the foreign key, which the read rules mask until the assignment is
-		// released - a plain relation would be read through the committee's own (public) rules.
-		assignedCommittee: t.field({
-			type: CommitteeRef,
-			nullable: true,
-			resolve: async (member, _args, ctx) =>
-				member.assignedCommitteeId
-					? db.query.committee.findFirst(
-							(await ctx.abilities.committee.filter('read')).merge({
-								where: { id: member.assignedCommitteeId }
-							}).query.single
-						)
-					: null
-		})
-	})
-});
+const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
 const pubsub = rumblePubsub({ table: 'delegationMember' });
 // This handler also writes these, and a subscriber watching them has to hear about it.

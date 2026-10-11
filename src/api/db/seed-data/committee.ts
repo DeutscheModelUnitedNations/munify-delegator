@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from '../rows';
+import type * as schema from '../schema';
 
 export function makeSeedCommittee(
-	options: Pick<Insert<'committee'>, 'conferenceId'>
-): Insert<'committee'> {
+	options: Pick<typeof schema.committee.$inferInsert, 'conferenceId'>
+): typeof schema.committee.$inferInsert {
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),

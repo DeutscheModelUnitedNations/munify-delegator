@@ -1,7 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
 import { configPrivate } from '$config/private';
-import { oidcRoles } from './services/OIDC';
+import { oidcRoles } from './services/auth/OIDC';
 
 /**
  * Reads the roles claim, whose shape depends on the provider: Logto sends an array of names or

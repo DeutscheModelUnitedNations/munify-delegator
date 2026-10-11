@@ -1,5 +1,4 @@
 import { db, schema } from '$api/db/db';
-import type { Insert } from '$api/db/rows';
 import {
 	abilityBuilder,
 	enum_,
@@ -17,7 +16,7 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { type SQL, eq, max } from 'drizzle-orm';
@@ -107,7 +106,7 @@ async function documentNumberOf(args: {
 	return (highest?.value ?? 0) + 1;
 }
 
-type StatusValues = Partial<Insert<'conferenceParticipantStatus'>>;
+type StatusValues = Partial<typeof schema.conferenceParticipantStatus.$inferInsert>;
 
 /** Updates the status row the caller's `update` ability narrowed down to. */
 async function updateStatus(updatable: SQL | undefined, values: StatusValues) {

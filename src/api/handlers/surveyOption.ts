@@ -6,7 +6,7 @@ import {
 	assertTeamRoleForSurveyQuestion,
 	isParticipantOfConference,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '$api/services/auth/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 

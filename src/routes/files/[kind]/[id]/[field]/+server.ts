@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { error } from '@sveltejs/kit';
-import { FAILURE_STATUS, fileHeaders, findFileSource } from '$api/services/files';
-import { readStoredFile } from '$api/services/fileReader';
+import { FAILURE_STATUS, fileHeaders, findFileSource } from '$api/services/files/files';
+import { readStoredFile } from '$api/services/files/fileReader';
 import type { RequestHandler } from './$types';
 
 /**
  * Serves a stored file as real bytes, so the browser can cache it and `<img src>` / `<a href>`
- * work without the file travelling through GraphQL. See `$api/services/files` for what is served
+ * work without the file travelling through GraphQL. See `$api/services/files/files` for what is served
  * and how the caller's rights are applied.
  */
 export const GET: RequestHandler = async (event) => {

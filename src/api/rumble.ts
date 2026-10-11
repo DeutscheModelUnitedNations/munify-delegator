@@ -1,5 +1,4 @@
 import { rumble } from '@m1212e/rumble';
-import ValidationPlugin from '@pothos/plugin-validation';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 import { trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';
@@ -40,14 +39,7 @@ export const {
 	defaultLimit: 1000,
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
-	// Adds a trigram `search` argument to the list queries, ranked by `search_distance`. A row
-	// matches when any one column is this similar to the term. 0.2 finds a prefix of a longer word
-	// ("ann" against "Annabelle" scores 0.27) but lets a short term pull in ~300k candidate rows
-	// on 490k users, each rechecked against the heap (3.8 s); pg_trgm's default of 0.3 takes the
-	// same search to ~1.1 s and misses such short prefixes.
 	search: { enabled: true, threshold: 0.3 },
-	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
-	// registers. Variables stay out of the spans: they regularly carry personal data.
 	otel: {
 		enabled: !!configPrivate.OTEL_ENDPOINT_URL,
 		tracer: trace.getTracer(configPrivate.OTEL_SERVICE_NAME, configPrivate.OTEL_SERVICE_VERSION),
@@ -56,7 +48,7 @@ export const {
 	pothosConfig: {
 		// SimpleObjects backs the ad-hoc result types a few mutations return (invitation batches,
 		// review results). Rumble does not load it by default.
-		plugins: [ValidationPlugin, SimpleObjectsPlugin]
+		plugins: [SimpleObjectsPlugin]
 	}
 });
 
