@@ -107,7 +107,7 @@
 			</h1>
 
 			<!-- Signed identity code, renewed while the page is open -->
-			<div class="mt-2 w-full max-w-[16rem]">
+			<div class="mt-2 w-full max-w-64">
 				<IdentityCode conferenceId={params.conferenceId} />
 			</div>
 
