@@ -131,8 +131,8 @@ test('only the assignment team may release, and nobody else reads the draft', as
 
 // Masking hides the values, but a filter on a masked column - or on a relation leading to it - is
 // applied in SQL first: if a probe for the true role found rows while a probe for a wrong role did
-// not, the participant would learn their role without ever reading it. The guard in
-// `$api/services/assignment/assignmentFilterGuard` refuses such filters for everyone off the teams.
+// not, the participant would learn their role without ever reading it. Rumble therefore applies the
+// column masks to filter arguments too: a filter only matches rows exposing the column.
 const conference = `conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" }`;
 const me = `userId: { eq: "${E2E_UNRELEASED_PARTICIPANT_USER_ID}" }`;
 

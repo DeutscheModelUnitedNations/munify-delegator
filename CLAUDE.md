@@ -549,10 +549,12 @@ bun run preview
   supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,
   `assignedNonStateActorId`, `assignedCommitteeId`, `assignedRoleId` and `assignmentDetails`
   (`src/api/services/assignment/assignmentVisibility.ts`, two rules per participant-side ability:
-  `maskedUntilRelease` and `onceReleased`). A masked foreign key is not enough on its own, so
-  `assignedNation`, `assignedNonStateActor`, `assignedCommittee` and `assignedRole` resolve
-  through the key, and the relations pointing back (`nation.assignedDelegations`,
-  `committee.delegationMembers`, …) are filtered with `assignmentVisible`. The dashboard shows
+  `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
+  follows the masks. A relation backed by a masked key (`assignedNation`, `assignedCommittee`, …)
+  resolves to nothing, the relations pointing back (`nation.assignedDelegations`,
+  `committee.delegationMembers`, …) list only rows exposing their key, and `where` / `orderBy`
+  arguments only match rows exposing the column they name - so a participant cannot find a role
+  by filtering or sorting either. Do not hand-write any of this in a handler. The dashboard shows
   `AssignmentPending` instead of a rejection, and the mail sync keeps role lists back. Anything new
   that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
   checks the known paths.
@@ -838,19 +840,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 - **Emails** import from `@better-svelte-email/components` and `@better-svelte-email/server`, not
   the `better-svelte-email` umbrella, whose root re-exports a preview module with raw `.svelte`
   files that Node cannot load during SSR.
-- **rumble is patched** (`patches/`), each fix meant to go upstream:
-  - live queries announce updates on the next task (urql emits synchronously, often inside a
-    `$derived`, where an immediate update throws `state_unsafe_mutation`);
-  - `autoIncludeIdField` applies to nested selections too, and only to types that have the field;
-  - relation nullability unwraps drizzle's `RelationsBuilderColumn` before reading `notNull`;
-  - the per-row column masks test each row with a correlated
-    `exists (... where pk = row.pk and rule)` instead of `pk in (select pk ... where rule)`, which
-    made postgres evaluate every rule against the whole table once per flag and nesting site (a
-    supervisor's group payment query: 9.5 s → 11 ms, same rows);
-  - the client generator does not rewrite unchanged files (a rewrite makes Vite reload every open
-    page, mid-test in e2e).
-
-  Since 0.24.1 rumble itself drops live-query updates whose data did not change.
+- **rumble is no longer patched** (since 0.26.0): the live-query timing, nested `autoIncludeIdField`,
+  relation nullability, correlated column-mask flags and the generator's write-if-changed all
+  landed upstream, together with the mask-aware filter arguments described under "Release is only
+  visibility". Rumble itself drops live-query updates whose data did not change.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
