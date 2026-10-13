@@ -5,5 +5,5 @@ import { systemAdmin } from '$api/services/auth/authHelper';
 abilityBuilder.customConferenceRole.allow('read');
 abilityBuilder.customConferenceRole.allow(['update', 'delete']).when(systemAdmin);
 
-export const CustomConferenceRoleRef = object({ table: 'customConferenceRole' });
+object({ table: 'customConferenceRole' });
 query({ table: 'customConferenceRole' });

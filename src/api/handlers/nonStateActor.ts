@@ -29,7 +29,7 @@ abilityBuilder.nonStateActor
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 
-export const NonStateActorRef = object({ table: 'nonStateActor' });
+const NonStateActorRef = object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
 const pubsub = rumblePubsub({ table: 'nonStateActor' });
 const roleApplicationPubsub = rumblePubsub({ table: 'roleApplication' });
