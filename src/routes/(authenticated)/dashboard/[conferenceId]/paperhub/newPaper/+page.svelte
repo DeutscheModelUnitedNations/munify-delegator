@@ -11,7 +11,7 @@
 	import { editorContentStore } from '$lib/components/paper/editor/editorStore';
 	import { untrack } from 'svelte';
 	import { get } from 'svelte/store';
-	import { DraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
+	import { createDraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
 	import DraftRecoveryModal from '$lib/components/paper/draft/DraftRecoveryModal.svelte';
 	import { createPaper } from '../paperSaving';
 	import NewPaperForm from '../NewPaperForm.svelte';
@@ -39,7 +39,7 @@
 	// someone is writing would discard their work.
 	const conferenceId = untrack(() => params.conferenceId);
 
-	const draft = new DraftAutosave<PaperDraft, unknown>(`paperDraft_${conferenceId}`, {
+	const draft = createDraftAutosave<PaperDraft, unknown>(`paperDraft_${conferenceId}`, {
 		readContent: () => get(editorContentStore),
 		toDraft: (content, savedAt) => {
 			const currentFormData = get(form.form);

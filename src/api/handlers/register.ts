@@ -35,6 +35,7 @@ import './seatPlanning/seatPlanning';
 import './nametagBins/nametagBins';
 import './sightingDeck/sightingDeck';
 import './singleParticipant/singleParticipant';
+import './storedFile/storedFile';
 import './surveyAnswer/surveyAnswer';
 import './surveyOption/surveyOption';
 import './surveyQuestion/surveyQuestion';

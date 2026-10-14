@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import fetchWBStat from '$lib/helpers/fetchWBStat';
 	import { onMount } from 'svelte';
 
@@ -21,7 +22,7 @@
 				if (!data) {
 					value = '–';
 				} else {
-					const formattedValue = formatter ? formatter(data) : data.toLocaleString();
+					const formattedValue = formatter ? formatter(data) : data.toLocaleString(getLocale());
 					value = formattedValue;
 				}
 			})

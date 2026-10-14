@@ -9,6 +9,8 @@
 		Link,
 		Hr
 	} from '@better-svelte-email/components';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		recipientName: string;
@@ -29,9 +31,9 @@
 	}: Props = $props();
 </script>
 
-<Html lang="de">
+<Html lang={getLocale()}>
 	<Head>
-		<title>Willkommen im Organisationsteam</title>
+		<title>{m.emailTeamWelcomeTitle()}</title>
 	</Head>
 	<Body
 		style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
@@ -41,21 +43,19 @@
 		>
 			<Section>
 				<Text style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;">
-					Willkommen im Organisationsteam
+					{m.emailTeamWelcomeTitle()}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					Hallo {recipientName},
+					{m.emailGreeting({ name: recipientName })}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{inviterName} hat dich zum Team der Konferenz
-					<strong>{conferenceTitle}</strong>
-					hinzugefügt. Du hast die Rolle <strong>{roleName}</strong> erhalten.
+					{m.emailTeamWelcomeBody({ inviterName, conferenceTitle, roleName })}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					Du kannst jetzt auf das Konferenz-Dashboard zugreifen.
+					{m.emailTeamWelcomeInstruction()}
 				</Text>
 
 				<Section style="text-align: center; margin: 32px 0;">
@@ -63,14 +63,14 @@
 						href={dashboardUrl}
 						style="background-color: #3d7dd2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
 					>
-						Zum Dashboard
+						{m.emailTeamWelcomeButton()}
 					</Link>
 				</Section>
 
 				<Hr style="border-color: #e5e7eb; margin: 24px 0;" />
 
 				<Text style="font-size: 12px; color: #9ca3af; line-height: 1.6;">
-					Diese E-Mail wurde an {recipientEmail} gesendet.
+					{m.emailSentTo({ email: recipientEmail })}
 				</Text>
 			</Section>
 		</Container>

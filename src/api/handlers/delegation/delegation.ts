@@ -16,9 +16,10 @@ import {
 	updateDelegationDetails
 } from './delegationService';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import type { Context } from '$api/context';
 import { delegationMemberPubsub, delegationPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/delegation.ts
 abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -81,7 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = userId(ctx);
 			if (!id) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const createdId = await createDelegationWithHead(id, args);
@@ -143,7 +144,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.delegation.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Delegation not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			delegationPubsub.removed();
 			delegationMemberPubsub.removed();

@@ -27,7 +27,6 @@ import {
 } from '$lib/assignment/state';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import {
 	assignmentReviewPubsub,
 	assignmentSingleRolePubsub,
@@ -39,6 +38,8 @@ import {
 	delegationPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /*
  * The assignment draft is the team's working copy: project management and participant care plan
@@ -138,8 +139,8 @@ async function assignableSingleParticipant(ctx: Parameters<typeof assertTeamRole
 }
 
 const REVIEW_PROBLEMS = {
-	application: 'Name either a delegation or a single participant',
-	evaluation: 'A rating lies between 0.5 and 5'
+	application: () => m.assignmentReviewNameOneApplication(),
+	evaluation: () => m.assignmentReviewRatingRange()
 };
 
 /** The unique column a review of each kind of application is upserted on. */
@@ -191,7 +192,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const problem = reviewProblem(args);
-			if (problem) throw new GraphQLError(REVIEW_PROBLEMS[problem]);
+			if (problem) throw apiError('INVALID_INPUT', REVIEW_PROBLEMS[problem]());
 			const { application, keys, values } = reviewRow(args);
 			const conferenceId = await applicationConference(ctx, application);
 
@@ -306,12 +307,12 @@ schemaBuilder.mutationFields((t) => ({
 			const parts = args.parts.map((part) => part.memberIds).filter((ids) => ids.length > 0);
 			const memberIds = new Set(delegation.members.map((member) => member.id));
 			const named = parts.flat();
-			if (parts.length < 2) throw new GraphQLError('A split needs at least two parts');
+			if (parts.length < 2) throw apiError('INVALID_INPUT', m.assignmentSplitNeedsTwoParts());
 			if (named.length !== memberIds.size || new Set(named).size !== named.length) {
-				throw new GraphQLError('Every member has to be in exactly one part');
+				throw apiError('INVALID_INPUT', m.assignmentSplitEveryMemberOnce());
 			}
 			if (named.some((id) => !memberIds.has(id))) {
-				throw new GraphQLError('Only the delegation’s own members can be split off');
+				throw apiError('INVALID_INPUT', m.assignmentSplitOnlyOwnMembers());
 			}
 
 			await db.transaction(async (tx) => {

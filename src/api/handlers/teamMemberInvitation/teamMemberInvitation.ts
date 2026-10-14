@@ -8,7 +8,6 @@ import {
 	systemAdmin,
 	userId
 } from '$api/services/authHelper';
-import { GraphQLError } from 'graphql';
 import type { Context } from '$api/context';
 import {
 	checkInvitationEmails,
@@ -17,6 +16,8 @@ import {
 	revokeInvitation
 } from './teamMemberInvitationService';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -116,7 +117,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 			await assertMayManageInvitations(ctx, args.conferenceId);
 
@@ -151,7 +152,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const result = await regenerateInvitation(ctx, callerId, args.invitationId, args.sendEmail);

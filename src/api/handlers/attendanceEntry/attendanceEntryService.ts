@@ -2,8 +2,9 @@ import { db, schema } from '$api/db/db';
 import { assertTeamRole, participatesIn, userId } from '$api/services/authHelper';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import type { Context } from '$api/context';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /**
  * Any team member of the conference may record attendance, not just management - the scanner is
@@ -19,12 +20,9 @@ async function assertMayRecordAttendance(ctx: Context, conferenceId: string, sub
 		columns: { id: true }
 	});
 	if (!subject) {
-		throw new GraphQLError('This user does not take part in the conference');
+		throw apiError('INVALID_INPUT', m.userNotInConference());
 	}
 }
-
-/** What createAttendanceEntry answers a second scan of one person in one session with. */
-export const ALREADY_SCANNED_MESSAGE = 'Already scanned in this session';
 
 /** The session, once it is known to belong to the conference the scan is recorded for. */
 export async function assertSessionOfConference(sessionId: string, conferenceId: string) {
@@ -33,7 +31,7 @@ export async function assertSessionOfConference(sessionId: string, conferenceId:
 		columns: { id: true }
 	});
 	if (!session) {
-		throw new GraphQLError('This session does not belong to the conference');
+		throw apiError('INVALID_INPUT', m.sessionNotInConference());
 	}
 }
 
@@ -44,7 +42,7 @@ export async function assertMayCreateEntry(
 ) {
 	const callerId = userId(ctx);
 	if (!callerId) {
-		throw new GraphQLError('Must be logged in');
+		throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 	}
 
 	await assertMayRecordAttendance(ctx, args.conferenceId, args.userId);
@@ -98,14 +96,14 @@ export async function storeSessionCard(
 		columns: { mode: true }
 	});
 	if (session?.mode !== 'BADGE') {
-		throw new GraphQLError('This session does not hand out access cards');
+		throw apiError('INVALID_INPUT', m.sessionNoAccessCards());
 	}
 	const holder = await db.query.conferenceParticipantStatus.findFirst({
 		where: { conferenceId, accessCardId, id: { ne: statusId } },
 		columns: { id: true }
 	});
 	if (holder) {
-		throw new GraphQLError('This access card belongs to somebody else already');
+		throw apiError('CONFLICT', m.accessCardTaken());
 	}
 	await db
 		.update(schema.conferenceParticipantStatus)

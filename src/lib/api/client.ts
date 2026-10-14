@@ -13,9 +13,12 @@ import { filter, fromPromise, merge, mergeMap, pipe } from 'wonka';
 import { browser } from '$app/environment';
 import { graphqlOperation } from '$api/graphql.remote';
 import { schema } from './rumbleClient/schema';
+import { getLocale } from '$lib/paraglide/runtime';
 import { GRAPHQL_STREAM_ENDPOINT } from './streamEndpoint';
+import { LOCALE_HEADER } from './localeHeader';
 import { graphcacheKeys } from './cacheKeys';
 import { liveQueryUpdates } from './cacheUpdates';
+import { loginRedirectExchange } from './loginRedirect';
 
 /** `AnyVariables` includes `void` for operations that take none; the remote call wants a record. */
 function toVariables(variables: AnyVariables): Record<string, unknown> | undefined {
@@ -79,7 +82,11 @@ const ssrExchange: Exchange = ({ forward }) => {
  * and closes it once the last one ends.
  */
 const sseClient = browser
-	? createSSEClient({ url: GRAPHQL_STREAM_ENDPOINT, singleConnection: true })
+	? createSSEClient({
+			url: GRAPHQL_STREAM_ENDPOINT,
+			singleConnection: true,
+			headers: () => ({ [LOCALE_HEADER]: getLocale() })
+		})
 	: undefined;
 
 const sseSubscriptionExchange = subscriptionExchange({
@@ -111,14 +118,18 @@ export const urqlClient = new Client({
 	// nested fields as functions, and this is what turns a response into plain data.
 	exchanges: [
 		nativeDateExchange,
+		loginRedirectExchange,
 		cacheExchange({ schema, keys: graphcacheKeys(schema), updates: liveQueryUpdates(schema) }),
 		ssrExchange,
 		sseSubscriptionExchange,
 		fetchExchange
 	],
-	fetchOptions: {
-		credentials: 'include'
-	},
+	// The API builds messages (errors, mails) in the locale of whoever asked; the path of
+	// `/api/graphql` does not say which that is, so the request does.
+	fetchOptions: () => ({
+		credentials: 'include',
+		headers: { [LOCALE_HEADER]: getLocale() }
+	}),
 	// In the browser: cached data renders immediately while the network answer refreshes it. The
 	// default, `cache-first`, would hand back a stale entity forever once it had been read once.
 	//

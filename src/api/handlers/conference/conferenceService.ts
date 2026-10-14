@@ -10,7 +10,6 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 import { m } from '$lib/paraglide/messages';
 import { and, eq, inArray } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
 	PARTICIPANT_MAX_AGE,
@@ -25,6 +24,9 @@ import { refreshSchoolSuggestions } from '$api/handlers/schoolSuggestion/schoolS
 import { totalSeats } from '$api/services/seatPlanning';
 import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
+import { claimUploadedFile } from '$api/services/files/uploads';
+import type { FileField } from '$api/services/files/files';
+import { apiError } from '$api/services/apiError';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
@@ -79,11 +81,11 @@ function assertValidConferenceSettings(args: {
 		args.nametagBinCount != null &&
 		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
 	) {
-		throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+		throw apiError('INVALID_INPUT', m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }));
 	}
 
 	if (args.language != null && !isConferenceLanguage(args.language)) {
-		throw new GraphQLError('The conference language is not one of the supported languages');
+		throw apiError('INVALID_INPUT', m.conferenceLanguageUnsupported());
 	}
 }
 
@@ -102,11 +104,11 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'postalZip',
 	'postalCity',
 	'postalCountry',
-	'contractContent',
-	'guardianConsentContent',
-	'mediaConsentContent',
-	'termsAndConditionsContent',
-	'certificateContent',
+	'contractFileId',
+	'guardianConsentFileId',
+	'mediaConsentFileId',
+	'termsAndConditionsFileId',
+	'certificateFileId',
 	'state',
 	'unlockPayments',
 	'unlockPostals',
@@ -179,15 +181,31 @@ export async function updateConference(ctx: ApiContext, args: ConferenceUpdateAr
 			([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
 		);
 		if (forbidden.length > 0) {
-			throw new GraphQLError(
-				`Access denied - only project management may change: ${forbidden.map(([key]) => key).join(', ')}`
+			throw apiError(
+				'FORBIDDEN',
+				m.conferenceChangeProjectManagementOnly({
+					fields: forbidden.map(([key]) => key).join(', ')
+				})
 			);
 		}
 	}
 
 	assertValidConferenceSettings(args);
 
-	// An omitted upload leaves the stored value untouched; only a supplied file replaces it.
+	// An omitted file leaves the stored one untouched; only a supplied file replaces it.
+	const file = <F extends FileField<'conference'>>(field: F, fileId: string | null | undefined) =>
+		claimUploadedFile(ctx, fileId, { kind: 'conference', field, conferenceId: args.id });
+	const files = {
+		imageFileId: await file('image', args.imageFileId),
+		emblemFileId: await file('emblem', args.emblemFileId),
+		logoFileId: await file('logo', args.logoFileId),
+		contractFileId: await file('contract', args.contractFileId),
+		guardianConsentFileId: await file('guardianConsent', args.guardianConsentFileId),
+		mediaConsentFileId: await file('mediaConsent', args.mediaConsentFileId),
+		termsAndConditionsFileId: await file('termsAndConditions', args.termsAndConditionsFileId),
+		certificateFileId: await file('certificate', args.certificateFileId)
+	};
+
 	const updated = await db
 		.update(schema.conference)
 		// An omitted argument arrives as `undefined` and leaves the column alone; an
@@ -229,21 +247,14 @@ export async function updateConference(ctx: ApiContext, args: ConferenceUpdateAr
 			postalZip: args.postalZip,
 			postalCity: args.postalCity,
 			postalCountry: args.postalCountry,
-			imageDataURL: args.imageDataURL,
-			emblemDataURL: args.emblemDataURL,
-			logoDataURL: args.logoDataURL,
-			contractContent: args.contractContent,
-			guardianConsentContent: args.guardianConsentContent,
-			mediaConsentContent: args.mediaConsentContent,
-			termsAndConditionsContent: args.termsAndConditionsContent,
-			certificateContent: args.certificateContent
+			...files
 		})
 		.where(linksOnly ? eq(schema.conference.id, args.id) : updateFilter.sql.where)
 		.returning({ id: schema.conference.id });
 
 	// The update ability filters the rows, so a caller who may not edit matches none.
 	if (updated.length === 0) {
-		throw new GraphQLError('Access denied - requires project management');
+		throw apiError('FORBIDDEN', m.accessDeniedProjectManagement());
 	}
 }
 
@@ -253,10 +264,10 @@ export async function updateConference(ctx: ApiContext, args: ConferenceUpdateAr
  */
 export async function seedConference(ctx: ApiContext, input: unknown) {
 	if (!isSystemAdmin(ctx)) {
-		throw new GraphQLError(m.unauthorized({ error: 'User is not admin' }));
+		throw apiError('FORBIDDEN', m.unauthorized({ error: 'User is not admin' }));
 	}
 	if (!input) {
-		throw new GraphQLError(m.plausibilityIncompleteOrInvalidData());
+		throw apiError('INVALID_INPUT', m.plausibilityIncompleteOrInvalidData());
 	}
 
 	const data = ConferenceSeedingSchema.parse(input);
@@ -275,8 +286,9 @@ export async function seedConference(ctx: ApiContext, input: unknown) {
 			.map((nation) => `${committee.abbreviation}: ${nation}`)
 	);
 	if (unknownNations.length > 0) {
-		throw new GraphQLError(
-			`Unknown nations in the seeding data (only UN member states can be assigned to a committee): ${unknownNations.join(', ')}`
+		throw apiError(
+			'INVALID_INPUT',
+			m.conferenceSeedingUnknownNations({ nations: unknownNations.join(', ') })
 		);
 	}
 

@@ -2,8 +2,9 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
 import { systemAdmin, userId } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { reviewerSnippetPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/reviewerSnippet.ts: users manage only their own snippets.
 abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -33,14 +34,14 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = userId(ctx);
 			if (!id) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const existing = await db.query.reviewerSnippet.findFirst({
 				where: { userId: id, name: args.name }
 			});
 			if (existing) {
-				throw new GraphQLError('A snippet with this name already exists');
+				throw apiError('CONFLICT', m.snippetNameTaken());
 			}
 
 			const created = await db
@@ -81,7 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 				.returning({ id: schema.reviewerSnippet.id });
 
 			if (updated.length === 0) {
-				throw new GraphQLError('Snippet not found or access denied');
+				throw apiError('NOT_FOUND', m.snippetNotFound());
 			}
 
 			reviewerSnippetPubsub.updated(args.id);
@@ -109,7 +110,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.reviewerSnippet.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Snippet not found or access denied');
+				throw apiError('NOT_FOUND', m.snippetNotFound());
 			}
 			reviewerSnippetPubsub.removed();
 

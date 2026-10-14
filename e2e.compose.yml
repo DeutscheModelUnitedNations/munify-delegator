@@ -1,6 +1,6 @@
 # Port-remapped overlay so the e2e stack can run alongside other local projects
-# that already hold 5432. Postgres is the only service the suite needs: the OIDC provider
-# (oidc-mock) runs inside the Vite dev server.
+# that already hold 5432 or 9100. Postgres and the S3 bucket are the services the suite needs:
+# the OIDC provider (oidc-mock) runs inside the Vite dev server.
 services:
   postgres:
     container_name: postgres-e2e-delegator
@@ -9,5 +9,16 @@ services:
     volumes: !override
       - delegator-e2e:/var/lib/postgresql/data
 
+  s3:
+    container_name: s3-e2e-delegator
+    ports: !override
+      - 19100:9000
+    volumes: !override
+      - s3-e2e:/data
+
+  s3-init:
+    container_name: s3-init-e2e-delegator
+
 volumes:
   delegator-e2e:
+  s3-e2e:

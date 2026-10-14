@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import type { ResolvedPathname } from '$app/types';
@@ -66,7 +67,7 @@
 
 	const formatDate = (date: Date | null) => {
 		if (!date) return '-';
-		return new Date(date).toLocaleDateString();
+		return new Date(date).toLocaleDateString(getLocale());
 	};
 
 	const getSortIcon = (key: PaperSortKey) => {

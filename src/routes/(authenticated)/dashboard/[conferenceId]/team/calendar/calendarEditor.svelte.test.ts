@@ -14,7 +14,7 @@ vi.mock('svelte-sonner', () => ({
 	}
 }));
 
-const { CalendarEditor } = await import('./calendarEditor.svelte');
+const { createCalendarEditor } = await import('./calendarEditor.svelte');
 
 const at = (day: string, time: string) => new Date(`${day}T${time}:00Z`);
 
@@ -52,7 +52,7 @@ function days(entryTrackIds: string[] = ['a'], start = '09:00', end = '10:00'): 
 }
 
 let source = $state<EditorDay[]>(days());
-const setup = () => new CalendarEditor(() => source);
+const setup = () => createCalendarEditor(() => source);
 
 beforeEach(() => {
 	updateCalendarEntry.mockReset().mockResolvedValue({ id: 'e1' });

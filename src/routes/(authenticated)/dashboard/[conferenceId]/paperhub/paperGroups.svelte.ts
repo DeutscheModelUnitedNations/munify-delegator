@@ -1,58 +1,84 @@
 import { queryParameters } from 'sveltekit-search-params';
 
-/**
- * The papers of a paper hub view, grouped by committee and agenda item, plus the introduction
- * papers that have no agenda item. Loaded once per conference rather than live: a conference's
- * papers are a large tree, and the views only need a snapshot. Must be created during component
- * initialisation; `load` is re-run whenever what it reads (the conference id) changes.
- */
-export class PaperGroupsSnapshot<Grouped, Introduction> {
-	grouped = $state<Grouped>();
-	introduction = $state<Introduction>();
-	loading = $state(false);
-	error = $state<string>();
-
-	constructor(load: () => Promise<[Grouped, Introduction]>) {
-		$effect(() => {
-			this.loading = true;
-			this.error = undefined;
-			void load()
-				.then(([grouped, introduction]) => {
-					this.grouped = grouped;
-					this.introduction = introduction;
-				})
-				.catch((error: unknown) => {
-					this.error = error instanceof Error ? error.message : String(error);
-				})
-				.finally(() => {
-					this.loading = false;
-				});
-		});
-	}
+export interface PaperGroupsSnapshot<Grouped, Introduction> {
+	readonly grouped: Grouped | undefined;
+	readonly introduction: Introduction | undefined;
+	readonly loading: boolean;
+	readonly error: string | undefined;
 }
 
 /**
+ * The papers of a paper hub view, grouped by committee and agenda item, plus the introduction
+ * papers that have no agenda item. Loaded once per conference rather than live: a conference's
+ * papers are a large tree, and the views only need a snapshot. Must be called during component
+ * initialisation; `load` is re-run whenever what it reads (the conference id) changes.
+ */
+export function createPaperGroupsSnapshot<Grouped, Introduction>(
+	load: () => Promise<[Grouped, Introduction]>
+): PaperGroupsSnapshot<Grouped, Introduction> {
+	let grouped = $state<Grouped>();
+	let introduction = $state<Introduction>();
+	let loading = $state(false);
+	let error = $state<string>();
+
+	$effect(() => {
+		loading = true;
+		error = undefined;
+		void load()
+			.then(([loadedGrouped, loadedIntroduction]) => {
+				grouped = loadedGrouped;
+				introduction = loadedIntroduction;
+			})
+			.catch((e: unknown) => {
+				error = e instanceof Error ? e.message : String(e);
+			})
+			.finally(() => {
+				loading = false;
+			});
+	});
+
+	return {
+		get grouped() {
+			return grouped;
+		},
+		get introduction() {
+			return introduction;
+		},
+		get loading() {
+			return loading;
+		},
+		get error() {
+			return error;
+		}
+	};
+}
+
+export type ExpandedPaperGroup = ReturnType<typeof createExpandedPaperGroup>;
+
+/**
  * Which committee, and which of its agenda items, is expanded, kept in the URL so a reload or a
- * shared link opens the same group. At most one of each is open at a time. Must be created during
+ * shared link opens the same group. At most one of each is open at a time. Must be called during
  * component initialisation.
  */
-export class ExpandedPaperGroup {
-	#params = queryParameters({ committee: true, topic: true });
+export function createExpandedPaperGroup() {
+	const params = queryParameters({ committee: true, topic: true });
 
-	get committee() {
-		return this.#params.committee;
-	}
+	return {
+		get committee() {
+			return params.committee;
+		},
 
-	get topic() {
-		return this.#params.topic;
-	}
+		get topic() {
+			return params.topic;
+		},
 
-	toggleCommittee(committeeId: string) {
-		this.#params.committee = this.#params.committee === committeeId ? null : committeeId;
-		this.#params.topic = null;
-	}
+		toggleCommittee(committeeId: string) {
+			params.committee = params.committee === committeeId ? null : committeeId;
+			params.topic = null;
+		},
 
-	toggleAgendaItem(agendaItemId: string) {
-		this.#params.topic = this.#params.topic === agendaItemId ? null : agendaItemId;
-	}
+		toggleAgendaItem(agendaItemId: string) {
+			params.topic = params.topic === agendaItemId ? null : agendaItemId;
+		}
+	};
 }

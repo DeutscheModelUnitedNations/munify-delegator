@@ -9,7 +9,7 @@
 <button
 	class="btn btn-square btn-ghost"
 	onclick={() => (confirmDialogOpen = true)}
-	aria-label="Settings"
+	aria-label={m.settings()}
 >
 	<i class="fa-sharp-duotone fa-solid fa-gears text-xl"></i>
 </button>
@@ -25,7 +25,7 @@
 			<button
 				class="btn btn-square btn-ghost"
 				onclick={() => (confirmDialogOpen = false)}
-				aria-label="Close"
+				aria-label={m.close()}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>

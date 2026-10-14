@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
@@ -75,14 +76,14 @@
 								{/if}
 							</td>
 							<td class="align-middle whitespace-nowrap text-base-content/60">
-								{new Date(paper.createdAt).toLocaleDateString()}
+								{new Date(paper.createdAt).toLocaleDateString(getLocale())}
 							</td>
 							<td class="align-middle whitespace-nowrap text-base-content/60">
-								{new Date(paper.updatedAt).toLocaleDateString()}
+								{new Date(paper.updatedAt).toLocaleDateString(getLocale())}
 							</td>
 							<td class="align-middle whitespace-nowrap">
 								{#if paper.firstSubmittedAt}
-									{new Date(paper.firstSubmittedAt).toLocaleDateString()}
+									{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
 								{:else}
 									<span class="text-base-content/40">{m.notYetSubmitted()}</span>
 								{/if}

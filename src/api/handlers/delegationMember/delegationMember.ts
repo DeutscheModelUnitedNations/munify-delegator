@@ -24,13 +24,14 @@ import {
 	removeDelegationMember
 } from './delegationMemberService';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import {
 	delegationMemberPubsub,
 	delegationPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/delegationMember.ts
 abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -101,7 +102,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = userId(ctx);
 			if (!id) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const createdId = await joinDelegationByEntryCode(id, args.conferenceId, args.entryCode);
@@ -163,9 +164,7 @@ schemaBuilder.mutationFields((t) => ({
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			if (countGiven(args.assignedNationAlpha3Code, args.assignedNonStateActorId) === 0) {
-				throw new GraphQLError(
-					'Either assignedNationAlpha3Code or assignedNonStateActorId must be provided'
-				);
+				throw apiError('INVALID_INPUT', m.delegationMemberNeedsRole());
 			}
 			await assertOfferedIn(args.conferenceId, args);
 

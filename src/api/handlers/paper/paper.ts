@@ -25,8 +25,9 @@ import {
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { paperPubsub, paperVersionPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 const paperTeam = (id: string) => ({
 	teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } }
@@ -148,7 +149,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.paper.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Paper not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			paperPubsub.removed();
 
@@ -189,7 +190,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const supervised = await db.query.delegationMember.findMany({

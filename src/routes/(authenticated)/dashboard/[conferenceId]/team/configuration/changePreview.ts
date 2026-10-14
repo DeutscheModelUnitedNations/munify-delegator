@@ -214,9 +214,9 @@ function formatFileSize(bytes: number): string {
 export function formatValue(value: unknown): string {
 	if (isEmpty(value)) return m.configChangeValueNotSet();
 	if (typeof value === 'boolean') return value ? m.on() : m.off();
-	if (value instanceof Date) return value.toLocaleString();
+	if (value instanceof Date) return value.toLocaleString(getLocale());
 	if (value instanceof File) return `${value.name} (${formatFileSize(value.size)})`;
-	if (typeof value === 'number') return value.toLocaleString();
+	if (typeof value === 'number') return value.toLocaleString(getLocale());
 	if (typeof value === 'string') return value;
 	return JSON.stringify(value) ?? '';
 }

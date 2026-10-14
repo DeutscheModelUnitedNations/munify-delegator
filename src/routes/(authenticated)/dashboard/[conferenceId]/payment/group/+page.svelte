@@ -7,7 +7,7 @@
 	import ParticipantSelectionCard from '../ParticipantSelectionCard.svelte';
 	import SelectableParticipantsFieldset from '../SelectableParticipantsFieldset.svelte';
 	import SelectableParticipant from '../SelectableParticipant.svelte';
-	import { PaymentParticipantSelection } from '../participantSelection.svelte';
+	import { createPaymentParticipantSelection } from '../participantSelection.svelte';
 	import Selection from '$lib/components/selection';
 	import { sortByNames } from '$lib/helpers/formatNames';
 	import { findOtherSupervisors } from './otherSupervisors';
@@ -70,7 +70,7 @@
 
 	let otherSupervisors = $derived(findOtherSupervisors(supervisorData, allOtherSupervisors));
 
-	const selection = new PaymentParticipantSelection(
+	const selection = createPaymentParticipantSelection(
 		() => [
 			...(delegationMembers ?? []).map((member) => member.user),
 			...(singleParticipants ?? []).map((participant) => participant.user),

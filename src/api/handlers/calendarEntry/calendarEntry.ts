@@ -7,10 +7,11 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { nullToUndefined } from '$api/services/args';
 import { assertReferences, setTracks } from './calendarEntryService';
 import { calendarEntryPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/calendarEntry.ts
 abilityBuilder.calendarEntry.allow('read');
@@ -162,7 +163,7 @@ schemaBuilder.mutationFields((t) => ({
 				.returning({ id: schema.calendarEntry.id });
 
 			if (deleted.length === 0) {
-				throw new GraphQLError('Calendar entry not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			calendarEntryPubsub.removed();
 

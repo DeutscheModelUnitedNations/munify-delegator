@@ -3,6 +3,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/api/rumbleClient/client';
 import { paperEntityName } from '../paperDisplay';
+import { conferenceHeaderInfo } from '../conferenceHeaderInfo';
 import { newResolutionSchema } from './form-schema';
 
 /**
@@ -37,7 +38,7 @@ export async function fetchNewResolutionContext(conferenceId: string, userId: st
 			id: true,
 			title: true,
 			longTitle: true,
-			emblemDataURL: true
+			emblemUrl: true
 		})
 	]);
 
@@ -54,5 +55,9 @@ export async function fetchNewResolutionContext(conferenceId: string, userId: st
 		zod4(newResolutionSchema)
 	);
 
-	return { form, delegationMember, conference };
+	return {
+		form,
+		delegationMember,
+		conference: await conferenceHeaderInfo(conference)
+	};
 }

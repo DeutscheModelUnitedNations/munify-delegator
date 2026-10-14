@@ -1,4 +1,4 @@
-import { PersistedState } from '$lib/state/persistedState.svelte';
+import { createPersistedState } from '$lib/state/persistedState.svelte';
 import type { StatsFilter as GraphQLStatsFilter } from '$lib/api/rumbleClient/client';
 import {
 	filteredStatValue,
@@ -43,7 +43,7 @@ export type { StatsFilterOption };
 const DEFAULT_FILTER: StatsFilterOption = 'all';
 
 // Persisted on the client; the server and a first visit start at the default
-const statsFilter = new PersistedState<StatsFilterOption>('statsFilter', DEFAULT_FILTER);
+const statsFilter = createPersistedState<StatsFilterOption>('statsFilter', DEFAULT_FILTER);
 
 export function unifiedFilter() {
 	const setFilter = (newFilter: StatsFilterOption) => {

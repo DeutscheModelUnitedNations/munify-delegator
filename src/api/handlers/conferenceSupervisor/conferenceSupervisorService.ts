@@ -5,7 +5,8 @@ import {
 } from '$api/services/registration/participation';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
 const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
@@ -17,9 +18,7 @@ export async function registerSupervisor(args: {
 	plansOwnAttendenceAtConference?: boolean | null;
 }) {
 	if (await isUserAlreadyRegistered({ userId: args.subjectId, conferenceId: args.conferenceId })) {
-		throw new GraphQLError(
-			"User is already assigned a different role in the conference. Can't assign supervisor."
-		);
+		throw apiError('CONFLICT', m.supervisorUserHasOtherRole());
 	}
 
 	const created = await db
@@ -54,14 +53,10 @@ export async function connectParticipantToSupervisor(
 	const participation = await fetchUserParticipations({ conferenceId, userId: subjectId });
 
 	if (participation.foundSupervisor || participation.foundTeamMember) {
-		throw new GraphQLError(
-			'You are already a supervisor or team member of this conference and cannot connect to a supervisor.'
-		);
+		throw apiError('CONFLICT', m.supervisorAlreadySupervisorOrTeam());
 	}
 	if (!participation.foundDelegationMember && !participation.foundSingleParticipant) {
-		throw new GraphQLError(
-			'You are not a participant of this conference and cannot connect to a supervisor inside it.'
-		);
+		throw apiError('FORBIDDEN', m.supervisorNotParticipant());
 	}
 
 	// Both supervision links are many-to-many join tables.
@@ -102,7 +97,7 @@ export async function previewSupervisorByCode(
 		!participation.foundTeamMember &&
 		!participation.foundSupervisor
 	) {
-		throw new GraphQLError('You are not registered for this conference.');
+		throw apiError('FORBIDDEN', m.notRegisteredForConference());
 	}
 
 	const supervisor = await db.query.conferenceSupervisor

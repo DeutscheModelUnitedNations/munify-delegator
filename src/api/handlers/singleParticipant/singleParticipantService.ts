@@ -9,8 +9,8 @@ import { nullToUndefined } from '$api/services/args';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { and, eq, inArray } from 'drizzle-orm';
+import { apiError } from '$api/services/apiError';
 
 /** Refuses role ids that are not custom roles of the given conference. */
 async function assertRolesOf(conferenceId: string, roleIds: readonly string[]) {
@@ -21,7 +21,7 @@ async function assertRolesOf(conferenceId: string, roleIds: readonly string[]) {
 		columns: { id: true }
 	});
 	if (roles.length !== unique.length) {
-		throw new GraphQLError('Not every given role belongs to this conference');
+		throw apiError('INVALID_INPUT', m.rolesNotInConference());
 	}
 }
 
@@ -35,12 +35,13 @@ async function ownRegistrationToEdit(conferenceId: string, userId: string, roleI
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
 		await fetchUserParticipations({ conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
-		throw new GraphQLError(
+		throw apiError(
+			'CONFLICT',
 			m.youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference()
 		);
 	}
 	if (foundSingleParticipant?.applied) {
-		throw new GraphQLError(m.youAreAlreadySingleParticipant());
+		throw apiError('CONFLICT', m.youAreAlreadySingleParticipant());
 	}
 	await assertRolesOf(conferenceId, [roleId]);
 	return foundSingleParticipant;
@@ -186,9 +187,7 @@ export async function createAssignedSingleParticipant(args: {
 }) {
 	await assertRolesOf(args.conferenceId, [args.roleId]);
 	if (await isUserAlreadyRegistered({ userId: args.userId, conferenceId: args.conferenceId })) {
-		throw new GraphQLError(
-			"User is already assigned a different role in the conference. Can't assign SingleParticipant."
-		);
+		throw apiError('CONFLICT', m.singleParticipantUserHasOtherRole());
 	}
 
 	const created = await db.transaction(async (tx) => {

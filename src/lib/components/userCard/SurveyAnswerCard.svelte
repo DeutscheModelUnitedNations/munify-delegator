@@ -98,7 +98,7 @@
 				conferenceId,
 				surveyId: survey.id
 			})}
-			aria-label="Edit Survey"
+			aria-label={m.a11yEditSurvey()}
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
 		</a>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { formatClock } from '$lib/helpers/formatClock';
 	import type { CalendarEntry, CalendarTrack } from './calendarTypes';
 
@@ -17,7 +18,7 @@
 
 	let formattedDate = $derived(
 		dayDate
-			? new Date(dayDate).toLocaleDateString(undefined, {
+			? new Date(dayDate).toLocaleDateString(getLocale(), {
 					weekday: 'long',
 					day: '2-digit',
 					month: '2-digit',

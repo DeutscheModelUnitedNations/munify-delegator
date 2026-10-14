@@ -45,74 +45,80 @@ const seatKey = (committeeId: string, nationAlpha3Code: string) =>
  * Seat matrix state shared by the matrix, the NSA list and the hints sidebar. Clicks are applied
  * optimistically and rolled back if the server refuses them.
  */
-export class SeatPlanner {
+export function createSeatPlanner(source: () => SeatPlannerSource) {
 	/** optimistic seat states until the server confirmed them */
-	#pending = new SvelteMap<string, PendingSeat>();
+	const pending = new SvelteMap<string, PendingSeat>();
 	/** latest request per seat; plain bookkeeping that nothing renders */
-	#requests: Record<string, number | undefined> = {};
+	const requests: Record<string, number | undefined> = {};
+
 	/** nations per committee, including the optimistic changes */
-	#seats: Map<string, Set<string>>;
-	#locks: Record<string, string[] | undefined>;
-	#abbreviations: Record<string, string | undefined>;
-	#memberCounts: { nations: Map<string, number>; nonStateActors: Map<string, number> };
+	const seats: Map<string, Set<string>> = $derived(
+		seatsWithPending(source().committees, [...pending.values()])
+	);
 
-	committees: BaselineCommittee[];
-	seatCounts: Map<string, number>;
-	roles: Role[];
+	const committees: BaselineCommittee[] = $derived(
+		source().committees.map((committee) => ({
+			id: committee.id,
+			numOfSeatsPerDelegation: committee.numOfSeatsPerDelegation,
+			regionalBaseline: committee.regionalBaseline,
+			regionalBaselineTargets: committee.regionalBaselineTargets,
+			nations: [...(seats.get(committee.id) ?? [])]
+		}))
+	);
+	const seatCounts: Map<string, number> = $derived(nationSeatCounts(committees));
+	const roles: Role[] = $derived(rolesOf(seatCounts, source().nonStateActors));
 
-	constructor(source: () => SeatPlannerSource) {
-		this.#seats = $derived(seatsWithPending(source().committees, [...this.#pending.values()]));
+	const abbreviations: Record<string, string | undefined> = $derived(
+		Object.fromEntries(source().committees.map((c) => [c.id, c.abbreviation]))
+	);
 
-		this.committees = $derived(
-			source().committees.map((committee) => ({
-				id: committee.id,
-				numOfSeatsPerDelegation: committee.numOfSeatsPerDelegation,
-				regionalBaseline: committee.regionalBaseline,
-				regionalBaselineTargets: committee.regionalBaselineTargets,
-				nations: [...(this.#seats.get(committee.id) ?? [])]
-			}))
-		);
-		this.seatCounts = $derived(nationSeatCounts(this.committees));
-		this.roles = $derived(rolesOf(this.seatCounts, source().nonStateActors));
+	const locks: Record<string, string[] | undefined> = $derived(
+		Object.fromEntries(
+			source().assignments.committeeSeats.map((seat) => [
+				seatKey(seat.committeeId, seat.nationAlpha3Code),
+				seat.memberNames
+			])
+		)
+	);
 
-		this.#abbreviations = $derived(
-			Object.fromEntries(source().committees.map((c) => [c.id, c.abbreviation]))
-		);
+	const memberCounts: { nations: Map<string, number>; nonStateActors: Map<string, number> } =
+		$derived(assignedMemberCounts(source().assignments.roles));
 
-		this.#locks = $derived(
-			Object.fromEntries(
-				source().assignments.committeeSeats.map((seat) => [
-					seatKey(seat.committeeId, seat.nationAlpha3Code),
-					seat.memberNames
-				])
-			)
-		);
-
-		this.#memberCounts = $derived(assignedMemberCounts(source().assignments.roles));
+	/** shows the clicked state until the server answered; returns the id of this request */
+	function begin(key: string, committeeId: string, nationAlpha3Code: string, enabled: boolean) {
+		const request = (requests[key] ?? 0) + 1;
+		requests[key] = request;
+		pending.set(key, { committeeId, nationAlpha3Code, enabled });
+		return request;
 	}
 
-	hasSeat(committeeId: string, nationAlpha3Code: string) {
-		return !!this.#seats.get(committeeId)?.has(nationAlpha3Code);
+	/** a quicker second click on the same cell keeps its optimistic state until it is answered */
+	function end(key: string, request: number) {
+		if (requests[key] === request) pending.delete(key);
 	}
 
-	/** names of the delegates that make removing this seat impossible */
-	lockedBy(committeeId: string, nationAlpha3Code: string) {
-		return this.#locks[seatKey(committeeId, nationAlpha3Code)];
+	function offerUndo(committeeId: string, nationAlpha3Code: string, enabled: boolean) {
+		const values = {
+			nation: getFullTranslatedCountryNameFromISO3Code(nationAlpha3Code),
+			committee: abbreviations[committeeId] ?? ''
+		};
+		const message = enabled ? m.seatPlanningSeatAdded(values) : m.seatPlanningSeatRemoved(values);
+		toast.success(message, {
+			action: {
+				label: m.undo(),
+				onClick: () => setSeat(committeeId, nationAlpha3Code, !enabled, false)
+			}
+		});
 	}
 
-	/** members of the delegation assigned to the nation, if any */
-	nationMemberCount(nationAlpha3Code: string) {
-		return this.#memberCounts.nations.get(nationAlpha3Code);
-	}
-
-	/** members of the delegation assigned to the NSA, if any */
-	nonStateActorMemberCount(nonStateActorId: string) {
-		return this.#memberCounts.nonStateActors.get(nonStateActorId);
-	}
-
-	async setSeat(committeeId: string, nationAlpha3Code: string, enabled: boolean, undoable = true) {
+	async function setSeat(
+		committeeId: string,
+		nationAlpha3Code: string,
+		enabled: boolean,
+		undoable = true
+	) {
 		const key = seatKey(committeeId, nationAlpha3Code);
-		const request = this.#begin(key, committeeId, nationAlpha3Code, enabled);
+		const request = begin(key, committeeId, nationAlpha3Code, enabled);
 		try {
 			await client.mutate.setCommitteeNationSeat({
 				__args: { committeeId, nationAlpha3Code, enabled },
@@ -122,36 +128,44 @@ export class SeatPlanner {
 			toast.error(error instanceof Error ? error.message : m.genericToastError());
 			return;
 		} finally {
-			this.#end(key, request);
+			end(key, request);
 		}
 
-		if (undoable) this.#offerUndo(committeeId, nationAlpha3Code, enabled);
+		if (undoable) offerUndo(committeeId, nationAlpha3Code, enabled);
 	}
 
-	/** shows the clicked state until the server answered; returns the id of this request */
-	#begin(key: string, committeeId: string, nationAlpha3Code: string, enabled: boolean) {
-		const request = (this.#requests[key] ?? 0) + 1;
-		this.#requests[key] = request;
-		this.#pending.set(key, { committeeId, nationAlpha3Code, enabled });
-		return request;
-	}
+	return {
+		get committees() {
+			return committees;
+		},
+		get seatCounts() {
+			return seatCounts;
+		},
+		get roles() {
+			return roles;
+		},
 
-	/** a quicker second click on the same cell keeps its optimistic state until it is answered */
-	#end(key: string, request: number) {
-		if (this.#requests[key] === request) this.#pending.delete(key);
-	}
+		hasSeat(committeeId: string, nationAlpha3Code: string) {
+			return !!seats.get(committeeId)?.has(nationAlpha3Code);
+		},
 
-	#offerUndo(committeeId: string, nationAlpha3Code: string, enabled: boolean) {
-		const values = {
-			nation: getFullTranslatedCountryNameFromISO3Code(nationAlpha3Code),
-			committee: this.#abbreviations[committeeId] ?? ''
-		};
-		const message = enabled ? m.seatPlanningSeatAdded(values) : m.seatPlanningSeatRemoved(values);
-		toast.success(message, {
-			action: {
-				label: m.undo(),
-				onClick: () => this.setSeat(committeeId, nationAlpha3Code, !enabled, false)
-			}
-		});
-	}
+		/** names of the delegates that make removing this seat impossible */
+		lockedBy(committeeId: string, nationAlpha3Code: string) {
+			return locks[seatKey(committeeId, nationAlpha3Code)];
+		},
+
+		/** members of the delegation assigned to the nation, if any */
+		nationMemberCount(nationAlpha3Code: string) {
+			return memberCounts.nations.get(nationAlpha3Code);
+		},
+
+		/** members of the delegation assigned to the NSA, if any */
+		nonStateActorMemberCount(nonStateActorId: string) {
+			return memberCounts.nonStateActors.get(nonStateActorId);
+		},
+
+		setSeat
+	};
 }
+
+export type SeatPlanner = ReturnType<typeof createSeatPlanner>;

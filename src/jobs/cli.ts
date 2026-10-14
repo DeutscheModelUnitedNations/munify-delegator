@@ -1,5 +1,6 @@
 import { defineCommand, runMain } from 'citty';
 import { DEFAULT_RETENTION_DAYS } from './retention';
+import { DEFAULT_GRACE_HOURS } from './fileReferences';
 
 /**
  * One-shot background jobs, run by an external scheduler (a cron job, a Dokploy schedule) as
@@ -37,6 +38,34 @@ const invitationCleanup = defineCommand({
 	}
 });
 
+const fileCleanup = defineCommand({
+	meta: {
+		description: 'Delete uploaded files nothing uses any more, and objects without a file'
+	},
+	args: {
+		'grace-hours': {
+			type: 'string',
+			description: 'Hours an unused upload is kept, so a form being saved can still claim it',
+			default: String(DEFAULT_GRACE_HOURS)
+		},
+		'dry-run': {
+			type: 'boolean',
+			description: 'Only count what would be deleted',
+			default: false
+		}
+	},
+	async run({ args }) {
+		const graceHours = Number(args['grace-hours']);
+		if (!Number.isFinite(graceHours) || graceHours < 1) {
+			throw new Error(`--grace-hours must be at least 1, got "${args['grace-hours']}"`);
+		}
+		const { runFileCleanup } = await import('./fileCleanup');
+		console.info('Starting file-cleanup job');
+		await runFileCleanup({ graceHours, dryRun: args['dry-run'] });
+		process.exit(0);
+	}
+});
+
 const refreshStatistics = defineCommand({
 	meta: { description: 'Refresh the statistics materialized views' },
 	async run() {
@@ -63,6 +92,7 @@ const main = defineCommand({
 		description: 'MUNify DELEGATOR background job runner'
 	},
 	subCommands: {
+		'file-cleanup': fileCleanup,
 		'invitation-cleanup': invitationCleanup,
 		'mail-sync': mailSync,
 		'refresh-statistics': refreshStatistics

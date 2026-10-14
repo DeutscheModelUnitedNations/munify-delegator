@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import formatNames, { formatInitials } from '$lib/helpers/formatNames';
 import type { ParticipantData, RecipientData } from '$lib/utils/pdfGenerator';
 
@@ -54,7 +55,7 @@ export function postalParticipant(user: {
 			id: user.id,
 			name: formatPostalParticipantName(user.givenName, user.familyName),
 			address: `${street} ${user.apartment ? user.apartment : ''}, ${zip} ${city}, ${country}`,
-			birthday: birthday.toLocaleDateString()
+			birthday: birthday.toLocaleDateString(getLocale())
 		},
 		fileName: `${formatInitials(user.givenName ?? undefined, user.familyName ?? undefined)}_postal_registration.pdf`
 	};

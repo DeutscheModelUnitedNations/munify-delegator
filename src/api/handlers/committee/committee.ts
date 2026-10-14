@@ -20,13 +20,13 @@ import formatNames from '$lib/helpers/formatNames';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import {
 	committeeAgendaItemPubsub,
 	committeePubsub,
 	resolutionPubsub,
 	roleApplicationPubsub
 } from '$api/pubsub';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/committee.ts
 abilityBuilder.committee.allow('read');
@@ -160,7 +160,7 @@ schemaBuilder.mutationFields((t) => ({
 					}
 				});
 				if (!existing) {
-					throw new GraphQLError('Committee not found, or not yours to delete');
+					throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 				}
 				const papers = await tx.query.paper.findMany({
 					where: { agendaItem: { committeeId: existing.id } },
@@ -210,7 +210,7 @@ schemaBuilder.mutationFields((t) => ({
 				where: { alpha3Code: args.nationAlpha3Code.toLowerCase() },
 				columns: { alpha3Code: true }
 			});
-			if (!nation) throw new GraphQLError('Nation not found');
+			if (!nation) throw apiError('NOT_FOUND', m.nationNotFound());
 
 			if (args.enabled) {
 				await db
@@ -226,7 +226,8 @@ schemaBuilder.mutationFields((t) => ({
 					});
 
 					if (blockers.length > 0) {
-						throw new GraphQLError(
+						throw apiError(
+							'CONFLICT',
 							m.seatRemovalBlocked({
 								members: blockers
 									.map(({ user }) => formatNames(user.givenName, user.familyName))

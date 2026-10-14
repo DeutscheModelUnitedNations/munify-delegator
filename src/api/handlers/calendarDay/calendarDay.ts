@@ -9,13 +9,14 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { createImportedDay, parseImportData } from './calendarDayService';
-import { GraphQLError } from 'graphql';
 import {
 	calendarDayPubsub,
 	calendarEntryPubsub,
 	calendarTrackPubsub,
 	placePubsub
 } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/calendarDay.ts
 abilityBuilder.calendarDay.allow('read');
@@ -110,7 +111,7 @@ schemaBuilder.mutationFields((t) => ({
 				.returning({ id: schema.calendarDay.id });
 
 			if (deleted.length === 0) {
-				throw new GraphQLError('Calendar day not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			calendarDayPubsub.removed();
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { escapeHtml } from '$lib/helpers/escapeHtml';
 	import { blur } from 'svelte/transition';
@@ -26,10 +27,10 @@
 						fullName: escapeHtml(fullName),
 						conferenceTitle: escapeHtml(conferenceTitle ?? m.unknownConferenceTitle()),
 						conferenceStartDate: conferenceStartDate
-							? conferenceStartDate.toLocaleDateString()
+							? conferenceStartDate.toLocaleDateString(getLocale())
 							: m.unknownDate(),
 						conferenceEndDate: conferenceEndDate
-							? conferenceEndDate.toLocaleDateString()
+							? conferenceEndDate.toLocaleDateString(getLocale())
 							: m.unknownDate()
 					})}
 				</p>

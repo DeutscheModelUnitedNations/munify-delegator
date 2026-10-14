@@ -1,3 +1,5 @@
+import { CombinedError } from '@urql/core';
+import { GraphQLError } from 'graphql';
 import { describe, expect, test } from 'vitest';
 import { isNetworkError, retryDelay } from './attendanceQueue';
 
@@ -6,9 +8,19 @@ describe('isNetworkError', () => {
 		expect(isNetworkError(new TypeError('Failed to fetch'))).toBe(true);
 	});
 
-	test('recognizes fetch and network failures by their message', () => {
-		expect(isNetworkError(new Error('could not fetch'))).toBe(true);
-		expect(isNetworkError(new Error('network down'))).toBe(true);
+	test('recognizes a failed request wrapped by urql, but not a server answer', () => {
+		expect(
+			isNetworkError(new CombinedError({ networkError: new TypeError('Failed to fetch') }))
+		).toBe(true);
+		expect(
+			isNetworkError(
+				new CombinedError({ graphQLErrors: [new GraphQLError('network fetch failed')] })
+			)
+		).toBe(false);
+	});
+
+	test('does not read the message', () => {
+		expect(isNetworkError(new Error('could not fetch'))).toBe(false);
 	});
 
 	test('treats an aborted request as a network error', () => {

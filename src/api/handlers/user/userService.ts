@@ -8,8 +8,9 @@ import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { and, count, eq, isNotNull, or, sql } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { apiError } from '$api/services/apiError';
+import { m } from '$lib/paraglide/messages';
 
 /** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
 export async function assertManagesUser(ctx: Context, id: string) {
@@ -19,7 +20,7 @@ export async function assertManagesUser(ctx: Context, id: string) {
 		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
 		: undefined;
 	if (!found) {
-		throw new GraphQLError('User not found, or not one you look after');
+		throw apiError('NOT_FOUND', m.userNotFoundOrNotSupervised());
 	}
 }
 
@@ -75,7 +76,7 @@ export async function removeParticipation(ctx: ApiContext, userId: string, confe
 		});
 
 		if (!participant) {
-			throw new GraphQLError('User not found');
+			throw apiError('NOT_FOUND', m.userNotFound());
 		}
 
 		// Each delete carries its own ability filter, merged with the conference/user scope, so
@@ -137,7 +138,8 @@ export type ProfileUpdate = {
  */
 export async function updateProfile(ctx: ApiContext, args: ProfileUpdate) {
 	const country = alpha2ToAlpha3(args.address.countryCode);
-	if (!country) throw new GraphQLError(`Unknown country ${args.address.countryCode}`);
+	if (!country)
+		throw apiError('INVALID_INPUT', m.userUnknownCountry({ country: args.address.countryCode }));
 	const address = {
 		street: args.address.streetAddress,
 		zip: args.address.postalCode ?? null,
@@ -195,7 +197,7 @@ export async function updateNewsletterPreferences(
 ) {
 	const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
 	if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email) {
-		throw new GraphQLError('Only the account itself may subscribe to the newsletter');
+		throw apiError('FORBIDDEN', m.userNewsletterOnlyOwn());
 	}
 
 	const updated = await db
@@ -231,21 +233,18 @@ async function throwEmailConflict(
 ): Promise<never> {
 	const conflict = await reportEmailConflict(userSubject, email, error, maskEmail);
 
-	throw new GraphQLError('Email address is already in use by another account', {
-		extensions: {
-			code: 'EMAIL_CONFLICT',
-			isNewUser: conflict.isNewUser,
-			maskedConflictingEmail: conflict.maskedConflictingEmail,
-			maskedExistingEmail: conflict.maskedExistingEmail,
-			refId: conflict.refId
-		}
+	throw apiError('EMAIL_CONFLICT', m.userEmailInUse(), {
+		isNewUser: conflict.isNewUser,
+		maskedConflictingEmail: conflict.maskedConflictingEmail,
+		maskedExistingEmail: conflict.maskedExistingEmail,
+		refId: conflict.refId
 	});
 }
 
 /** The claims the caller's own row is written from; an account without an email cannot have one. */
 function selfClaims(caller: ReturnType<Context['mustBeLoggedIn']>) {
 	if (!caller.email) {
-		throw new GraphQLError('OIDC result is missing required field: email');
+		throw apiError('INVALID_INPUT', m.userEmailMissingFromProvider());
 	}
 	return { email: caller.email, locale: caller.locale ?? PUBLIC_DEFAULT_LOCALE };
 }
@@ -295,9 +294,7 @@ async function assertMayPreviewUsers(ctx: Context) {
 		where: { userId: caller.sub, role: { in: [...PARTICIPANT_CARE_ROLES] } }
 	});
 	if (!privileged) {
-		throw new GraphQLError(
-			'You are not allowed to preview users. You need to be a team member with the role PARTICIPANT_CARE or PROJECT_MANAGEMENT or an admin.'
-		);
+		throw apiError('FORBIDDEN', m.userPreviewForbidden());
 	}
 }
 

@@ -6,7 +6,7 @@
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import ParticipantSelectionCard from '../ParticipantSelectionCard.svelte';
 	import SelectableParticipantsFieldset from '../SelectableParticipantsFieldset.svelte';
-	import { PaymentParticipantSelection } from '../participantSelection.svelte';
+	import { createPaymentParticipantSelection } from '../participantSelection.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -34,7 +34,7 @@
 	);
 	let delegationMembers = $derived(myMemberships.at(0)?.delegation.members);
 
-	const selection = new PaymentParticipantSelection(
+	const selection = createPaymentParticipantSelection(
 		() => delegationMembers?.map((member) => member.user),
 		() => !!delegationMembers
 	);

@@ -23,7 +23,7 @@
 		prefetchCards,
 		searchApplications
 	} from './applications';
-	import { SightingDeckWindow } from './deckWindow.svelte';
+	import { createSightingDeckWindow } from './deckWindow.svelte';
 	import { saveReview, savedReview } from './savedReviews.svelte';
 	import ApplicationCard from './ApplicationCard.svelte';
 	import FilterSelects from './FilterSelects.svelte';
@@ -92,7 +92,7 @@
 			fetchStartConference(conferenceId)
 		])
 	);
-	const sighting = $derived(new SightingDeckWindow(loaded));
+	const sighting = $derived(createSightingDeckWindow(loaded));
 	const deck = $derived(sighting.deck);
 	const position = $derived(sighting.position);
 

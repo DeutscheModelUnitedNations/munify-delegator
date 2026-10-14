@@ -4,35 +4,42 @@ import { parseSizeLimits, type SizeLimits } from '$lib/helpers/seatPlanning/hint
  * Min/max delegation size of the seat planning. Only a planning aid, so it lives in the browser
  * (per conference) instead of the database.
  */
-export class SizeLimitsStore implements SizeLimits {
-	min = $state<number | null>(null);
-	max = $state<number | null>(null);
-	#key: string;
+export function createSizeLimitsStore(conferenceId: string) {
+	const key = `seatPlanningSizeLimits:${conferenceId}`;
+	let min = $state<number | null>(null);
+	let max = $state<number | null>(null);
 
-	constructor(conferenceId: string) {
-		this.#key = `seatPlanningSizeLimits:${conferenceId}`;
+	function apply(limits: SizeLimits) {
+		min = limits.min;
+		max = limits.max;
 	}
 
-	/** call on mount, the server has no access to the browser storage */
-	load() {
-		try {
-			this.#apply(parseSizeLimits(JSON.parse(localStorage.getItem(this.#key) ?? 'null')));
-		} catch {
-			// unavailable or corrupt storage: start without limits
+	return {
+		get min() {
+			return min;
+		},
+		get max() {
+			return max;
+		},
+
+		/** call on mount, the server has no access to the browser storage */
+		load() {
+			try {
+				apply(parseSizeLimits(JSON.parse(localStorage.getItem(key) ?? 'null')));
+			} catch {
+				// unavailable or corrupt storage: start without limits
+			}
+		},
+
+		set(limits: SizeLimits) {
+			apply(parseSizeLimits(limits));
+			try {
+				localStorage.setItem(key, JSON.stringify({ min, max }));
+			} catch {
+				// the limits still apply for this visit
+			}
 		}
-	}
-
-	set(limits: SizeLimits) {
-		this.#apply(parseSizeLimits(limits));
-		try {
-			localStorage.setItem(this.#key, JSON.stringify({ min: this.min, max: this.max }));
-		} catch {
-			// the limits still apply for this visit
-		}
-	}
-
-	#apply({ min, max }: SizeLimits) {
-		this.min = min;
-		this.max = max;
-	}
+	};
 }
+
+export type SizeLimitsStore = ReturnType<typeof createSizeLimitsStore>;

@@ -1,5 +1,6 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
 	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
@@ -199,7 +200,7 @@
 					<th class="min-w-44 align-bottom font-normal">
 						<div class="font-bold">{day.name}</div>
 						<div class="text-base-content/60 text-xs">
-							{new Date(day.date).toLocaleDateString(undefined, {
+							{new Date(day.date).toLocaleDateString(getLocale(), {
 								weekday: 'short',
 								day: '2-digit',
 								month: '2-digit',

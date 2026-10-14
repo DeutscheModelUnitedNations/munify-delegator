@@ -5,7 +5,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import PaperMatrix from './PaperMatrix.svelte';
 	import PaperGroupsState from './PaperGroupsState.svelte';
-	import { PaperGroupsSnapshot } from './paperGroups.svelte';
+	import { createPaperGroupsSnapshot } from './paperGroups.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
@@ -52,7 +52,7 @@
 
 	type Paper = Awaited<ReturnType<typeof fetchIntroductionPapers>>[number];
 
-	const snapshot = new PaperGroupsSnapshot(() =>
+	const snapshot = createPaperGroupsSnapshot(() =>
 		Promise.all([fetchGrouped(), fetchIntroductionPapers()])
 	);
 

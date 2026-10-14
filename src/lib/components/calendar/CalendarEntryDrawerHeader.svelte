@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import type { DrawerDirection } from '$lib/components/SlidePanel.svelte';
 	import { getColorConfig } from './calendarColors';
@@ -42,7 +43,7 @@
 			type="button"
 			class="btn btn-ghost btn-sm btn-square"
 			onclick={onClose}
-			aria-label="Close"
+			aria-label={m.close()}
 		>
 			<i class="fa-sharp-duotone fa-solid fa-xmark text-lg"></i>
 		</button>

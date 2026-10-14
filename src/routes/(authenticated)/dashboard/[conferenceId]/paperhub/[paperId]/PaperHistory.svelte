@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client, type PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import PaperEditor from '$lib/components/paper/editor';
@@ -175,7 +176,7 @@
 			<hr class="bg-base-300" />
 		{/if}
 		<div class="timeline-start text-xs text-base-content/60 text-right pr-4 whitespace-nowrap">
-			{event.date.toLocaleDateString()} · {event.date.toLocaleTimeString([], {
+			{event.date.toLocaleDateString(getLocale())} · {event.date.toLocaleTimeString(getLocale(), {
 				hour: '2-digit',
 				minute: '2-digit'
 			})}

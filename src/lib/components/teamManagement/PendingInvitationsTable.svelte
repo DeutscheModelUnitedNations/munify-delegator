@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
@@ -78,7 +79,7 @@
 	}
 
 	function formatDate(date: Date | string): string {
-		return new Date(date).toLocaleDateString(undefined, {
+		return new Date(date).toLocaleDateString(getLocale(), {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric'

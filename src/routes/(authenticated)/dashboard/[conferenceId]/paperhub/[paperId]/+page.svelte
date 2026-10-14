@@ -14,7 +14,8 @@
 	} from '../paperDisplay';
 	import PaperHeaderCard from '../PaperHeaderCard.svelte';
 	import PaperContent from '../PaperContent.svelte';
-	import { LoadedPaper } from '../loadedPaper.svelte';
+	import { createLoadedPaper } from '../loadedPaper.svelte';
+	import { conferenceHeaderInfo } from '../conferenceHeaderInfo';
 	import { paperSaveToastMessages } from '../paperSaving';
 	import PaperActionBar from './PaperActionBar.svelte';
 	import { fetchPaperDetail, type PaperDetail } from './paperDetail';
@@ -48,7 +49,7 @@
 	let reviewerEditMode = $state(false);
 	let editorEditable = $derived(baseViewMode === 'author' || reviewerEditMode);
 
-	const loaded = new LoadedPaper();
+	const loaded = createLoadedPaper();
 
 	// Only the latest version is fetched, ordered newest first.
 	let latestVersion = $derived(paperData?.versions.at(0));
@@ -73,8 +74,10 @@
 		}
 	});
 
+	const conferenceInfo = $derived(await conferenceHeaderInfo(paperData?.conference));
+
 	let resolutionHeaderData = $derived(
-		paperData ? buildResolutionHeaderData(paperData, paperData.conference) : undefined
+		paperData ? buildResolutionHeaderData(paperData, conferenceInfo) : undefined
 	);
 
 	// Get the current content from the correct store based on paper type

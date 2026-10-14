@@ -22,6 +22,8 @@ import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user'
 import { devAccounts } from './seed-data/devAccounts';
 import { pdfTemplate } from './seed-data/content';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
+import { replaceSeedObjects } from './seed-dev/files';
+import { createStorage, storageConfigFromProcessEnv } from '../services/files/storageClient';
 import type { CrowdKind, SeedWorld } from './seed-dev/context';
 import { addCrowd, addWaitingList, buildConferenceStructure } from './seed-dev/conference';
 import { addAssignmentDraft } from './seed-dev/assignmentDraft';
@@ -44,6 +46,8 @@ import { conferencePlans } from './seed-dev/plans';
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is not set');
 const db = drizzle(databaseUrl);
+// The uploaded files go to the bucket, which is emptied along with the database.
+const storage = createStorage(storageConfigFromProcessEnv());
 
 // A fixed faker seed keeps the generated data identical between runs (dates aside, which are
 // relative to now so every stage stays where it belongs).
@@ -114,6 +118,8 @@ console.info(
 	`Inserting ${batch.user.length} users, ${batch.delegation.length} delegations and ${batch.singleParticipant.length} single participants in ${conferencePlans.length} conferences...`
 );
 await insertBatch(db, batch);
+console.info(`Replacing the bucket's objects with ${batch.storedObject.length} uploaded files...`);
+await replaceSeedObjects(storage, batch);
 // The app refreshes them every few minutes; until then the statistics would show the old data.
 console.info('Refreshing the statistics views...');
 for (const view of STATISTICS_VIEWS) {

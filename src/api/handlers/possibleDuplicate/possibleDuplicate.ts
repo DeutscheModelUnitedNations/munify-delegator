@@ -9,8 +9,9 @@ import {
 } from '$api/services/authHelper';
 import { scanConferenceForDuplicates } from './possibleDuplicates';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { possibleDuplicatePubsub, userPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
 // *other* account, and how much of it, is a rule on the user table (`user.ts`).
@@ -132,7 +133,7 @@ schemaBuilder.mutationFields((t) => ({
 					candidateId: schema.possibleDuplicate.candidateId
 				});
 			const [pair] = updated;
-			if (!pair) throw new GraphQLError('Possible duplicate not found or access denied');
+			if (!pair) throw apiError('NOT_FOUND', m.possibleDuplicateNotFound());
 
 			possibleDuplicatePubsub.updated(args.id);
 			// what of each account the care team may read follows the decision

@@ -1,7 +1,8 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { GraphQLError } from 'graphql';
 import { OIDC_ROLE_CLAIM } from '$app/env/private';
 import { oidcRoles } from './services/OIDC';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /**
  * Reads the roles claim, whose shape depends on the provider: Logto sends an array of names or
@@ -62,7 +63,7 @@ export function context(req: RequestEvent) {
 		event: req,
 		mustBeLoggedIn: () => {
 			if (!user) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 			return user;
 		},

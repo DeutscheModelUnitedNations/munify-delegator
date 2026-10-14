@@ -4,8 +4,9 @@ import type { Context } from '$api/context';
 import { PARTICIPANT_CARE_ROLES, assertTeamRole, participatesIn } from '$api/services/authHelper';
 import { nullToUndefined } from '$api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { type SQL, eq, max } from 'drizzle-orm';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
 async function targetUserIdOf(args: { userId?: string | null; userEmail?: string | null }) {
@@ -41,7 +42,7 @@ async function updateStatus(updatable: SQL | undefined, values: StatusValues) {
 		.where(updatable)
 		.returning({ id: schema.conferenceParticipantStatus.id });
 	if (!updated) {
-		throw new GraphQLError('Participant status not found, or not yours to update');
+		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
 	}
 	return updated.id;
 }
@@ -57,7 +58,7 @@ async function createStatus(
 	userId: string | undefined
 ) {
 	if (!userId) {
-		throw new GraphQLError('A userId or userEmail is required to create a status');
+		throw apiError('INVALID_INPUT', m.participantStatusNeedsUser());
 	}
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
 	const member = await db.query.user.findFirst({
@@ -68,7 +69,7 @@ async function createStatus(
 		columns: { id: true }
 	});
 	if (!member) {
-		throw new GraphQLError('This user does not take part in the conference');
+		throw apiError('INVALID_INPUT', m.userNotInConference());
 	}
 	const created = await db
 		.insert(schema.conferenceParticipantStatus)
@@ -100,9 +101,7 @@ export type StatusUpdateArgs = {
  */
 export async function upsertParticipantStatus(ctx: ApiContext, args: StatusUpdateArgs) {
 	if (!args.id && !args.userId && !args.userEmail) {
-		throw new GraphQLError(
-			'You must provide either an id, a userId and conferenceId or a userEmail and conferenceId'
-		);
+		throw apiError('INVALID_INPUT', m.participantStatusNeedsLookup());
 	}
 
 	const targetUserId = await targetUserIdOf(args);
@@ -133,7 +132,7 @@ export async function upsertParticipantStatus(ctx: ApiContext, args: StatusUpdat
 			columns: { id: true }
 		});
 		if (holder) {
-			throw new GraphQLError('This access card belongs to somebody else already');
+			throw apiError('CONFLICT', m.accessCardTaken());
 		}
 	}
 

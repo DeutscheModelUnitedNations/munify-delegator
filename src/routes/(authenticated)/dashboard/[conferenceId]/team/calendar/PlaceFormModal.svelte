@@ -2,6 +2,7 @@
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '$lib/components/ActionModal.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { uploadFile } from '$lib/api/uploadFile';
 	import { m } from '$lib/paraglide/messages';
 	import { decodePlusCodeFull, recoverPlusCode } from './plusCode';
 	import { untrack } from 'svelte';
@@ -42,11 +43,18 @@
 	let placeDirections = $state(place?.directions ?? '');
 	let placeInfo = $state(place?.info ?? '');
 	let placeWebsiteUrl = $state(place?.websiteUrl ?? '');
-	// The stored plan is served from a URL; only a plan picked in this modal is held as a data
-	// URL, to be uploaded. Leaving it untouched sends nothing, which keeps the stored one.
+	// The stored plan is served from a URL; a plan picked in this modal is uploaded on save and
+	// shown from memory until then. Leaving it untouched sends nothing, which keeps the stored one.
 	const storedSitePlanUrl = place?.sitePlanUrl ?? null;
-	let uploadedSitePlan = $state<string | null>(null);
-	const sitePlanHref = $derived(uploadedSitePlan ?? storedSitePlanUrl);
+	let uploadedSitePlan = $state<File | null>(null);
+	let uploadedSitePlanUrl = $state<string | null>(null);
+	const sitePlanHref = $derived(uploadedSitePlanUrl ?? storedSitePlanUrl);
+	$effect(() => {
+		const url = uploadedSitePlanUrl;
+		return () => {
+			if (url) URL.revokeObjectURL(url);
+		};
+	});
 	let placePlusCode = $state('');
 	let plusCodeError = $state('');
 	let plusCodeLoading = $state(false);
@@ -127,34 +135,33 @@
 		if (!(event.target instanceof HTMLInputElement)) return;
 		const file = event.target.files?.[0];
 		if (!file) return;
-		if (file.size > 10 * 1024 * 1024) {
-			toast.error('File too large (max 10MB)');
+		if (file.size > 10_000_000) {
+			toast.error(m.fileTooLarge({ max: '10 MB' }));
 			event.target.value = '';
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				uploadedSitePlan = reader.result;
-			}
-		};
-		reader.readAsDataURL(file);
+		uploadedSitePlan = file;
+		uploadedSitePlanUrl = URL.createObjectURL(file);
 	}
 
 	async function savePlace() {
 		if (!placeName) return;
 		isLoading = true;
-		const fields = {
-			name: placeName,
-			address: placeAddress || null,
-			latitude: placeLatitude ? parseFloat(placeLatitude) : null,
-			longitude: placeLongitude ? parseFloat(placeLongitude) : null,
-			directions: placeDirections || null,
-			info: placeInfo || null,
-			websiteUrl: placeWebsiteUrl || null,
-			sitePlanDataURL: uploadedSitePlan ?? undefined
-		};
 		try {
+			const fields = {
+				name: placeName,
+				address: placeAddress || null,
+				latitude: placeLatitude ? parseFloat(placeLatitude) : null,
+				longitude: placeLongitude ? parseFloat(placeLongitude) : null,
+				directions: placeDirections || null,
+				info: placeInfo || null,
+				websiteUrl: placeWebsiteUrl || null,
+				sitePlanFileId: await uploadFile(uploadedSitePlan, {
+					kind: 'place',
+					field: 'sitePlan',
+					conferenceId
+				})
+			};
 			if (editedPlaceId) {
 				await client.mutate.updatePlace({ __args: { id: editedPlaceId, ...fields }, id: true });
 			} else {
@@ -163,6 +170,7 @@
 			onClose();
 		} catch (error) {
 			console.error(editedPlaceId ? 'Failed to update place:' : 'Failed to create place:', error);
+			toast.error(error instanceof Error ? error.message : String(error));
 		} finally {
 			isLoading = false;
 		}
@@ -193,7 +201,7 @@
 				type="text"
 				bind:value={placePlusCode}
 				class="input flex-1"
-				placeholder="e.g. 84W3+7X Kiel"
+				placeholder={m.placePlusCodePlaceholder()}
 			/>
 			<button
 				type="button"

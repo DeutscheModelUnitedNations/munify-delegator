@@ -1,45 +1,56 @@
 import { emailService } from './emailService';
 import { renderEmail, TeamInvitationEmail, TeamWelcomeEmail } from '$lib/emails';
+import type { TeamRole } from '$api/services/authHelper';
+import { translateTeamRole } from '$lib/utils/enumTranslations';
+import { m } from '$lib/paraglide/messages';
+import type { Locale } from '$lib/paraglide/runtime';
+import { runWithLocale } from '../requestLocale';
 import type { SendEmailResult } from './types';
 
 export interface SendTeamInvitationEmailParams {
 	recipientEmail: string;
 	conferenceTitle: string;
-	roleName: string;
-	inviterName: string;
+	role: TeamRole;
+	/** Absent when the inviter's account is gone. */
+	inviterName?: string;
 	inviteUrl: string;
 	expiresAt: Date;
+	/** The language of the mail. */
+	locale: Locale;
 }
 
 /**
  * Send an invitation email to a new user to join the team
  */
-export async function sendTeamInvitationEmail(
+export function sendTeamInvitationEmail(
 	params: SendTeamInvitationEmailParams
 ): Promise<SendEmailResult> {
-	const { recipientEmail, conferenceTitle, roleName, inviterName, inviteUrl, expiresAt } = params;
+	const { recipientEmail, conferenceTitle, role, inviterName, inviteUrl, expiresAt, locale } =
+		params;
 
-	const formattedExpiresAt = new Intl.DateTimeFormat('de-DE', {
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric',
-		timeZone: 'Europe/Berlin'
-	}).format(expiresAt);
+	return runWithLocale(locale, async () => {
+		const formattedExpiresAt = new Intl.DateTimeFormat(locale, {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			timeZone: 'Europe/Berlin'
+		}).format(expiresAt);
 
-	const { html, text } = await renderEmail(TeamInvitationEmail, {
-		recipientEmail,
-		conferenceTitle,
-		roleName,
-		inviterName,
-		inviteUrl,
-		expiresAt: formattedExpiresAt
-	});
+		const { html, text } = await renderEmail(TeamInvitationEmail, {
+			recipientEmail,
+			conferenceTitle,
+			roleName: translateTeamRole(role),
+			inviterName: inviterName ?? m.emailTeamInvitationUnknownInviter(),
+			inviteUrl,
+			expiresAt: formattedExpiresAt
+		});
 
-	return emailService.sendEmail({
-		to: recipientEmail,
-		subject: `Einladung ins Organisationsteam: ${conferenceTitle}`,
-		html,
-		text
+		return emailService.sendEmail({
+			to: recipientEmail,
+			subject: m.emailTeamInvitationSubject({ conferenceTitle }),
+			html,
+			text
+		});
 	});
 }
 
@@ -47,28 +58,34 @@ export interface SendTeamWelcomeEmailParams {
 	recipientName: string;
 	recipientEmail: string;
 	conferenceTitle: string;
-	roleName: string;
-	inviterName: string;
+	role: TeamRole;
+	/** Absent when the inviter's account is gone. */
+	inviterName?: string;
 	dashboardUrl: string;
+	/** The language of the mail: the one the recipient uses. */
+	locale: Locale;
 }
 
 /**
  * Send a welcome email to an existing user who was added to the team
  */
-export async function sendTeamWelcomeEmail(
-	params: SendTeamWelcomeEmailParams
-): Promise<SendEmailResult> {
-	const { recipientEmail, ...templateProps } = params;
+export function sendTeamWelcomeEmail(params: SendTeamWelcomeEmailParams): Promise<SendEmailResult> {
+	const { recipientEmail, locale, ...templateProps } = params;
 
-	const { html, text } = await renderEmail(TeamWelcomeEmail, {
-		recipientEmail,
-		...templateProps
-	});
+	return runWithLocale(locale, async () => {
+		const { role, inviterName, ...rest } = templateProps;
+		const { html, text } = await renderEmail(TeamWelcomeEmail, {
+			recipientEmail,
+			...rest,
+			roleName: translateTeamRole(role),
+			inviterName: inviterName ?? m.emailTeamInvitationUnknownInviter()
+		});
 
-	return emailService.sendEmail({
-		to: recipientEmail,
-		subject: `Willkommen im Organisationsteam: ${params.conferenceTitle}`,
-		html,
-		text
+		return emailService.sendEmail({
+			to: recipientEmail,
+			subject: m.emailTeamWelcomeSubject({ conferenceTitle: params.conferenceTitle }),
+			html,
+			text
+		});
 	});
 }

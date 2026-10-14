@@ -31,7 +31,7 @@ bun install
 bun run dev
 
 # Separate commands
-bun run dev:docker    # Start Docker containers (PostgreSQL, etc.)
+bun run dev:docker    # Start Docker containers (PostgreSQL, the RustFS S3 bucket, etc.)
 bun run dev:server    # Start Vite dev server only
 
 # Install git hooks (lefthook)
@@ -53,7 +53,7 @@ bun run db:push
 # Drop every table and enum (WARNING: deletes all data)
 bun run db:reset
 
-# Wipe and refill the dev database: every conference stage, persona accounts, crowd
+# Wipe and refill the dev database and the bucket: every conference stage, persona accounts, crowd
 bun run db:seed:dev
 
 # Rewrite oidc-mock.yaml's users from src/api/db/seed-data/devAccounts.ts
@@ -191,6 +191,7 @@ bun run preview
   - `refresh-statistics.ts` - Recomputes the statistics materialized views (every few minutes)
   - `mailSync/` + `apis/listmonk/` - Mail list synchronisation with Listmonk (`mail-sync`)
   - `invitationCleanup.ts` - Deletes team member invitations long after they expired
+  - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -411,9 +412,9 @@ bun run preview
   component is generic over `N extends FormPath<A> & keyof A`, so a misspelled field name is a
   compile error; for a typed `bind:` (a boolean or a `Date`) reach for `formFieldProxy`, which is
   what keeps those bindings type-safe without a cast.
-- **Uploads** go through `fileProxy` and are converted in the component with
-  `$lib/helpers/fileToDataURL`; the columns store data URLs, and an untouched field must yield
-  `undefined` so the stored value survives.
+- **Uploads** go through `fileProxy`, then `uploadFile` (`$lib/api/uploadFile`), which puts the file
+  straight into the S3 bucket and returns its id for the mutation (`logoFileId`, …). An untouched
+  field must yield `undefined` so the stored file survives; `null` removes it. See "Files" below.
 - **Personal data goes in through rumble's scalars**: `PersonName`, `EmailAddress`,
   `PhoneNumber` (stored as E.164), `Date` for a calendar day and `AddressInput` for an address
   (validated against libaddressinput's metadata, alpha-2 country codes; the user table keeps
@@ -430,14 +431,32 @@ bun run preview
   server-side fetching works without the app being able to fetch its own relative URL. It has to
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
   stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
-- **Stored files are read through URLs, never selected as data.** Images and PDF templates still
-  go in as data URLs (writes are unchanged), but every reader selects the matching `*Url` field
-  (`logoUrl`, `contractContentUrl`, `sitePlanUrl`, `contentUrl` on a resolution, …) and gets
-  `/files/<kind>/<id>/<field>?v=<updatedAt>`, which `src/routes/files/` serves as real bytes with an
-  ETag. The route reads through GraphQL with the request's own context, so column masks decide who
-  gets a template. A new stored file goes in `FILE_SOURCES` in `$api/services/files/files.ts` plus a URL
-  field on its object. The one reader left on the data URL is the paper/resolution header's
-  emblem, which the resolution editor and `/api/pdf` still take as a data URL.
+- **Files live in an S3 bucket** (any S3-compatible service, through
+  [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
+  `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
+  `stored_file` (`conference.logoFileId`, `place.sitePlanFileId`, `resolution.fileId`, …), which
+  knows the object's key, type, size and name. `FILE_SOURCES` in `$api/services/files/files.ts`
+  lists every file: its column, who may upload it, the allowed types and the size limit.
+  - **Upload:** `requestFileUpload` checks the caller's team role, type and size, records the file
+    and returns a presigned PUT URL with type and length signed in; the browser PUTs the bytes
+    there; the mutation saving the row takes the id and `claimUploadedFile` checks that the
+    caller uploaded it, for that field of that conference, and that it arrived in full.
+  - **Download:** readers select the `*Url` field (`logoUrl`, `contractContentUrl`, `sitePlanUrl`,
+    `contentUrl`, …), which is a presigned GET URL of the bucket (`fileUrl` in
+    `$api/services/files/storage.ts`). There is no app route in between: the file id column's mask
+    is the access check, since a masked id reads as null and yields no URL
+    (`e2e/authorization/api-abilities.spec.ts` pins it for a template). The key follows from the
+    row (`objectKey(conferenceId, purpose, fileId)`), so no lookup is needed. A URL is reused for
+    six hours and valid for twelve, so browsers cache the (immutable) object and live queries do
+    not see a new URL on every refetch. Browsers talk to the bucket directly: it needs CORS (GET
+    and PUT from the app's origin), and an image drawn onto a canvas is loaded with
+    `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
+    (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
+  - **Cleanup:** replaced and never-claimed files are not deleted by the mutations; the
+    `file-cleanup` job removes every `stored_file` nothing points at (found through the foreign
+    keys, which `restrict`) and objects without a row.
+  - A new file is a `fileRef()` column, an entry in `FILE_SOURCES`, a `*Url` field on the object,
+    a `claimUploadedFile` call in the mutations that set it, and a target in `uploadFile`.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
   mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
   with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot
@@ -507,6 +526,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
+- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`$lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -618,6 +638,8 @@ bun run preview
   - `mail-sync` - every 15 minutes; needs `LISTMONK_API_URL`, `LISTMONK_API_USER`,
     `LISTMONK_API_KEY`
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
+  - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
+    `--dry-run`; needs the `S3_*` variables
 
 ### Path Aliases (svelte.config.js)
 
@@ -633,6 +655,7 @@ $assets → src/assets
 - **Rich Text Editor**: TipTap for committee agenda items
 - **Maps**: Leaflet via `sveaflet` for delegation locations
 - **External APIs**: Listmonk email service integration in `src/jobs/apis/`
+- **File storage**: an S3 bucket through `s3mini` (`$api/services/files/storageClient.ts`)
 
 ### UI Component Patterns
 
@@ -694,6 +717,8 @@ Required variables (see `.env.example`):
 - `OIDC_SCOPES` - OAuth scopes (must include `openid`)
 - `OIDC_ROLE_CLAIM` - JWT claim for roles
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
+- `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
+  it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
 
 ## Common Workflows
@@ -799,6 +824,13 @@ If `any` or casting is truly unavoidable, you MUST:
 2. Keep the scope as narrow as possible
 3. Consider opening an issue to fix it properly later
 
+## Functions Only
+
+This codebase has no classes, except error classes. State and behavior live in functions: a
+`createX(...)` factory returning an object of methods and getters, with private state in the
+closure (`$state` works inside a factory in a `.svelte.ts` file). Export the type as
+`ReturnType<typeof createX>` and share behavior by composition, not inheritance.
+
 ## MCP Servers
 
 This project uses Model Context Protocol (MCP) servers to enhance AI-assisted development. Configuration is in `.mcp.json`.
@@ -860,6 +892,12 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   relation nullability, correlated column-mask flags and the generator's write-if-changed all
   landed upstream, together with the mask-aware filter arguments described under "Release is only
   visibility". Rumble itself drops live-query updates whose data did not change.
+
+- **s3mini is patched** (`patches/s3mini@1.0.2.patch`): it built the canonical query string with
+  `encodeURIComponent`, which leaves `*'()!` unescaped where SigV4 escapes them, so any signed
+  query value holding one failed with `SignatureDoesNotMatch` - among them the
+  `filename*=UTF-8''…` download names. The patch uses s3mini's own RFC 3986 `uriEscape` there.
+  Drop it once upstream fixes `_buildCanonicalQueryString`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

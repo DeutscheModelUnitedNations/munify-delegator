@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import { m } from '$lib/paraglide/messages';
@@ -183,7 +184,7 @@ export function describeTransaction(transaction: SearchTransaction) {
 	return m.commandPalettePaymentReceived({
 		amount,
 		currency,
-		date: new Date(transaction.recievedAt).toLocaleDateString(undefined, {
+		date: new Date(transaction.recievedAt).toLocaleDateString(getLocale(), {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric'

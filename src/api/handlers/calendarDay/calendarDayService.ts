@@ -4,7 +4,8 @@ import {
 	type CalendarDayExportData,
 	calendarDayExportSchema
 } from '$lib/schemata/calendarDayExport';
-import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /** The import document arrives either as a JSON string or already parsed. */
 export function parseImportData(importData: unknown) {
@@ -13,13 +14,13 @@ export function parseImportData(importData: unknown) {
 		try {
 			raw = JSON.parse(importData);
 		} catch {
-			throw new GraphQLError('Invalid import data: malformed JSON');
+			throw apiError('INVALID_INPUT', m.calendarImportMalformed());
 		}
 	}
 
 	const parsed = calendarDayExportSchema.safeParse(raw);
 	if (!parsed.success) {
-		throw new GraphQLError(`Invalid import data: ${parsed.error.message}`);
+		throw apiError('INVALID_INPUT', m.calendarImportInvalid({ details: parsed.error.message }));
 	}
 	return parsed.data;
 }

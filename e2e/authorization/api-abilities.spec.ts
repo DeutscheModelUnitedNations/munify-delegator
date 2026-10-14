@@ -25,7 +25,10 @@ import {
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
 async function gql(page: Page, query: string, variables: Record<string, unknown> = {}) {
-	const res = await page.request.post('/api/graphql', { data: { query, variables } });
+	const res = await page.request.post('/api/graphql', {
+		headers: { 'x-locale': 'en' },
+		data: { query, variables }
+	});
 	return (await res.json()) as GraphQLResult;
 }
 
@@ -46,7 +49,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 			}`,
 			{ c: E2E_CONFERENCE_ID, u: E2E_CONNECT_PARTICIPANT_ID }
 		),
-		/requires one of|not yours to update/
+		/requires one of|you may not change it/
 	);
 
 	// A survey answer for another participant.
@@ -270,44 +273,83 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 		await loginAs(page, claims, { startUrl: '/login?next=/dashboard' });
 		return page;
 	};
-	const create = `mutation ($c: ID!, $n: String!, $content: String!) {
-		createResolution(conferenceId: $c, fileName: $n, content: $content) { id title }
+	const requestUpload = `mutation ($c: ID!, $n: String!, $t: String!, $s: Int!) {
+		requestFileUpload(conferenceId: $c, kind: "resolution", field: "content", fileName: $n, mimeType: $t, size: $s) { fileId uploadUrl }
 	}`;
-	const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4 e2e').toString('base64')}`;
+	const create = `mutation ($c: ID!, $n: String!, $f: ID!) {
+		createResolution(conferenceId: $c, fileName: $n, fileId: $f) { id title contentUrl }
+	}`;
+	const pdf = Buffer.from('%PDF-1.4 e2e');
+	const pdfUpload = (n: string) => ({
+		c: E2E_CONFERENCE_ID,
+		n,
+		t: 'application/pdf',
+		s: pdf.length
+	});
 	const list = `query ($c: ID!) { resolutions(where: { conferenceId: { eq: $c } }) { id } }`;
 
 	// Participants cannot publish resolutions, though they download them.
 	const participant = await as(fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
 	expectRefused(
-		await gql(participant, create, { c: E2E_CONFERENCE_ID, n: 'delegate.pdf', content: pdf }),
-		/requires one of: PROJECT_MANAGEMENT, PARTICIPANT_CARE, CONTENT_LEAD/
+		await gql(participant, requestUpload, pdfUpload('delegate.pdf')),
+		/requires one of: Project Management, Participant Care, Content Lead/
 	);
 
 	const management = await as(fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
 	expectRefused(
-		await gql(management, create, {
-			c: E2E_CONFERENCE_ID,
-			n: 'page.html',
-			content: 'data:text/html;base64,PGgxPg=='
-		}),
-		/Only PDF files/
+		await gql(management, requestUpload, { ...pdfUpload('page.html'), t: 'text/html' }),
+		/file type cannot be uploaded/
 	);
+	const fileName = `E2E Resolution ${Date.now()}.pdf`;
+	const upload = (await gql(management, requestUpload, pdfUpload(fileName))).data
+		?.requestFileUpload as { fileId: string; uploadUrl: string };
+
+	// Claiming the file before it arrived in the bucket is refused.
+	expectRefused(
+		await gql(management, create, { c: E2E_CONFERENCE_ID, n: fileName, f: upload.fileId }),
+		/not been uploaded completely/
+	);
+	// The URL is signed for the announced type and size, so nothing else goes up through it.
+	const tampered = await management.request.put(upload.uploadUrl, {
+		headers: { 'content-type': 'application/pdf' },
+		data: Buffer.concat([pdf, Buffer.from(' and more')])
+	});
+	expect(tampered.ok()).toBe(false);
+	const uploaded = await management.request.put(upload.uploadUrl, {
+		headers: { 'content-type': 'application/pdf' },
+		data: pdf
+	});
+	expect(uploaded.ok(), await uploaded.text()).toBe(true);
+
 	const created = await gql(management, create, {
 		c: E2E_CONFERENCE_ID,
-		n: `E2E Resolution ${Date.now()}.pdf`,
-		content: pdf
+		n: fileName,
+		f: upload.fileId
 	});
-	const resolution = created.data?.createResolution as { id: string; title: string };
+	const resolution = created.data?.createResolution as {
+		id: string;
+		title: string;
+		contentUrl: string;
+	};
 	expect(resolution?.title, JSON.stringify(created)).toMatch(/^E2E Resolution/);
 
-	// A delegate of the conference downloads it.
+	// A delegate of the conference downloads it straight from the bucket.
 	const delegate = await as(fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
-	const download = await gql(delegate, `query ($id: ID!) { resolution(id: $id) { content } }`, {
-		id: resolution.id
-	});
-	expect(download.data?.resolution, JSON.stringify(download)).toEqual({ content: pdf });
+	const delegateView = await gql(
+		delegate,
+		`query ($id: ID!) { resolution(id: $id) { contentUrl } }`,
+		{
+			id: resolution.id
+		}
+	);
+	const contentUrl = (delegateView.data?.resolution as { contentUrl: string } | undefined)
+		?.contentUrl;
+	expect(contentUrl, JSON.stringify(delegateView)).toMatch(/^https?:\/\/.*X-Amz-Signature=/);
+	const download = await delegate.request.get(contentUrl ?? '');
+	expect(download.headers()['content-type']).toBe('application/pdf');
+	expect(Buffer.from(await download.body())).toEqual(pdf);
 
-	// Somebody without a part in the conference sees none of them.
+	// Somebody without a part in the conference sees none of them, so gets no URL either.
 	const outsider = await as(makeTestUser('authz-resolutions'));
 	const outsiderList = await gql(outsider, list, { c: E2E_CONFERENCE_ID });
 	expect(outsiderList.data?.resolutions, JSON.stringify(outsiderList)).toEqual([]);
@@ -319,4 +361,52 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 			})
 		).data?.deleteResolution
 	).toBe(true);
+});
+
+test('a members-only template hands its URL to members only', async ({ browser }) => {
+	const as = async (claims: Parameters<typeof loginAs>[1]) => {
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, claims, { startUrl: '/login?next=/dashboard' });
+		return page;
+	};
+	const pdf = Buffer.from('%PDF-1.4 contract');
+	const contractUrl = `query ($id: ID!) { conference(id: $id) { contractContentUrl } }`;
+	const setContract = `mutation ($id: ID!, $f: ID) { updateConference(id: $id, contractFileId: $f) { id } }`;
+
+	const management = await as(fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
+	const upload = (
+		await gql(
+			management,
+			`mutation ($c: ID!, $s: Int!) {
+				requestFileUpload(conferenceId: $c, kind: "conference", field: "contract", fileName: "contract.pdf", mimeType: "application/pdf", size: $s) { fileId uploadUrl }
+			}`,
+			{ c: E2E_CONFERENCE_ID, s: pdf.length }
+		)
+	).data?.requestFileUpload as { fileId: string; uploadUrl: string };
+	const put = await management.request.put(upload.uploadUrl, {
+		headers: { 'content-type': 'application/pdf' },
+		data: pdf
+	});
+	expect(put.ok(), await put.text()).toBe(true);
+	const saved = await gql(management, setContract, { id: E2E_CONFERENCE_ID, f: upload.fileId });
+	expect(saved.errors, JSON.stringify(saved)).toBeUndefined();
+
+	try {
+		// A delegate of the conference gets the template.
+		const delegate = await as(fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
+		const forDelegate = await gql(delegate, contractUrl, { id: E2E_CONFERENCE_ID });
+		const url = (forDelegate.data?.conference as { contractContentUrl: string | null } | undefined)
+			?.contractContentUrl;
+		expect(url, JSON.stringify(forDelegate)).toBeTruthy();
+		expect(Buffer.from(await (await delegate.request.get(url ?? '')).body())).toEqual(pdf);
+
+		// Anybody else sees the open conference, but the masked file yields no URL.
+		const outsider = await as(makeTestUser('authz-templates'));
+		const forOutsider = await gql(outsider, contractUrl, { id: E2E_CONFERENCE_ID });
+		expect(forOutsider.data?.conference, JSON.stringify(forOutsider)).toEqual({
+			contractContentUrl: null
+		});
+	} finally {
+		await gql(management, setContract, { id: E2E_CONFERENCE_ID, f: null });
+	}
 });

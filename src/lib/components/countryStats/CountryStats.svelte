@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import numeral from 'numeral';
 	import SingleStatFromWb from './SingleStatFromWB.svelte';
@@ -83,7 +84,7 @@
 			<div class="stat-figure text-primary">
 				<i class="fa-sharp-duotone fa-solid fa-flag text-3xl"></i>
 			</div>
-			<div class="stat-title">Offizieller Landesname</div>
+			<div class="stat-title">{m.countryOfficialName()}</div>
 			<div class="stat-value">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>
 		</div>
 	</div>

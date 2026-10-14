@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { formatClockMinutes } from '$lib/helpers/formatClock';
 	import { toast } from 'svelte-sonner';
 	import { client } from '$lib/api/rumbleClient/client';
 	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import {
-		CalendarEditor,
+		createCalendarEditor,
 		toEditorDay,
 		type EditorDay,
 		type PointerPosition
@@ -59,7 +60,7 @@
 	// the live results would subscribe to each one separately.
 	const editorDays = $derived<EditorDay[]>(days.map(toEditorDay));
 
-	const editor = new CalendarEditor(() => editorDays);
+	const editor = createCalendarEditor(() => editorDays);
 
 	// Saved moves drop out of the overlay once the live data shows them
 	$effect(() => editor.settle());
@@ -211,7 +212,7 @@
 		}
 	}
 
-	const dateFormat = new Intl.DateTimeFormat(undefined, {
+	const dateFormat = new Intl.DateTimeFormat(getLocale(), {
 		weekday: 'short',
 		day: '2-digit',
 		month: '2-digit',

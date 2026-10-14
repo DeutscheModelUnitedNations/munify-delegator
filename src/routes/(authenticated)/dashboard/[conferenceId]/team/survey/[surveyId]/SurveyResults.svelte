@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
 	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
@@ -42,7 +43,7 @@
 		// Get all unique dates and sort them
 		const dateSet = new SvelteSet<string>();
 		for (const answer of survey.surveyAnswers) {
-			const date = new Date(answer.createdAt).toLocaleDateString();
+			const date = new Date(answer.createdAt).toLocaleDateString(getLocale());
 			dateSet.add(date);
 		}
 		const sortedDates = [...dateSet].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
@@ -52,7 +53,9 @@
 			let cumulative = 0;
 			const data = sortedDates.map((date) => {
 				const answersOnDate = survey.surveyAnswers.filter(
-					(a) => a.option.id === option.id && new Date(a.createdAt).toLocaleDateString() === date
+					(a) =>
+						a.option.id === option.id &&
+						new Date(a.createdAt).toLocaleDateString(getLocale()) === date
 				).length;
 				cumulative += answersOnDate;
 				return cumulative;

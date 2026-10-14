@@ -281,7 +281,7 @@
 		{:else if globalFilter}
 			<button
 				class="btn btn-square btn-ghost btn-sm"
-				aria-label="Clear search"
+				aria-label={m.a11yClearSearch()}
 				onclick={() => setSearch('')}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-times"></i>

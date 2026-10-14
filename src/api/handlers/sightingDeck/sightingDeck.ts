@@ -11,8 +11,8 @@ import {
 	schoolsSql
 } from './sightingDeckQuery';
 import codenmz from '$lib/helpers/codenamize';
-import { GraphQLError } from 'graphql';
 import { z } from 'zod';
+import { apiError } from '$api/services/apiError';
 
 const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 	description: 'One application under review: what the deck orders, filters and colours it by.',
@@ -73,7 +73,7 @@ const MAX_NAME_MATCHES = 50;
 
 function statusOf(value: string | null | undefined) {
 	const status = value ?? 'all';
-	if (!isSightingStatusFilter(status)) throw new GraphQLError(`Unknown status ${status}`);
+	if (!isSightingStatusFilter(status)) throw apiError('INVALID_INPUT', `Unknown status ${status}`);
 	return status;
 }
 

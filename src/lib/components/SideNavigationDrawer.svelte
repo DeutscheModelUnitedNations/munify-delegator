@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { afterNavigate } from '$app/navigation';
 	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
 	import type { Snippet } from 'svelte';
@@ -30,7 +31,7 @@
 <!-- Both stay mounted on mobile so they can transition; `invisible` takes the closed drawer out of
 the tab order and the accessibility tree once the slide has finished. -->
 <button
-	aria-label="Close navigation drawer"
+	aria-label={m.a11yCloseNavigation()}
 	aria-hidden="true"
 	tabindex="-1"
 	class="fixed top-0 left-0 z-40 h-full w-full bg-black transition-opacity duration-200 sm:hidden {mobileOpen

@@ -19,8 +19,9 @@ import {
 	updateSingleParticipantApplication
 } from './singleParticipantService';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { singleParticipantPubsub, waitingListEntryPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/singleParticipant.ts
 abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -77,7 +78,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = userId(ctx);
 			if (!id) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			const rowId = await registerSingleParticipant(id, args);
@@ -134,7 +135,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.singleParticipant.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Single participant not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			singleParticipantPubsub.removed();
 

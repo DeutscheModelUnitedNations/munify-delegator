@@ -60,8 +60,8 @@ export interface ApplyInput {
 /** Someone arriving in a delegation: a moved member or a converted single participant. */
 type Arrival = { memberId: string; wasHead: boolean } | { singleParticipantId: string };
 
-class PlanBuilder {
-	plan: ApplyPlan = {
+function createPlanBuilder(delegations: ReadonlyMap<string, LiveDelegation>) {
+	const plan: ApplyPlan = {
 		newDelegations: [],
 		clearTargets: [],
 		setTargets: [],
@@ -72,51 +72,55 @@ class PlanBuilder {
 		singleRoles: []
 	};
 
-	constructor(private readonly delegations: ReadonlyMap<string, LiveDelegation>) {}
+	return {
+		plan,
 
-	create(group: AssignmentGroup): DelegationRef {
-		const copyFrom = group.delegationId
-			? { delegationId: group.delegationId }
-			: { singleParticipantId: group.singleParticipantId ?? '' };
-		this.plan.newDelegations.push({ copyFrom });
-		return { created: this.plan.newDelegations.length - 1 };
-	}
+		create(group: AssignmentGroup): DelegationRef {
+			const copyFrom = group.delegationId
+				? { delegationId: group.delegationId }
+				: { singleParticipantId: group.singleParticipantId ?? '' };
+			plan.newDelegations.push({ copyFrom });
+			return { created: plan.newDelegations.length - 1 };
+		},
 
-	/** Moves people into a delegation, making one of them head delegate if it has none. */
-	arrive(to: DelegationRef, arrivals: Arrival[], hasHead: boolean) {
-		const headIndex = hasHead
-			? -1
-			: Math.max(
-					0,
-					arrivals.findIndex((arrival) => 'wasHead' in arrival && arrival.wasHead)
-				);
-		arrivals.forEach((arrival, index) => {
-			const isHeadDelegate = index === headIndex;
-			if ('memberId' in arrival) {
-				this.plan.moveMembers.push({ memberId: arrival.memberId, to, isHeadDelegate });
-			} else {
-				this.plan.convertSingles.push({
-					singleParticipantId: arrival.singleParticipantId,
-					to,
-					isHeadDelegate
-				});
-			}
-		});
-	}
+		/** Moves people into a delegation, making one of them head delegate if it has none. */
+		arrive(to: DelegationRef, arrivals: Arrival[], hasHead: boolean) {
+			const headIndex = hasHead
+				? -1
+				: Math.max(
+						0,
+						arrivals.findIndex((arrival) => 'wasHead' in arrival && arrival.wasHead)
+					);
+			arrivals.forEach((arrival, index) => {
+				const isHeadDelegate = index === headIndex;
+				if ('memberId' in arrival) {
+					plan.moveMembers.push({ memberId: arrival.memberId, to, isHeadDelegate });
+				} else {
+					plan.convertSingles.push({
+						singleParticipantId: arrival.singleParticipantId,
+						to,
+						isHeadDelegate
+					});
+				}
+			});
+		},
 
-	arrivalsOf(group: AssignmentGroup): Arrival[] {
-		if (group.singleParticipantId) return [{ singleParticipantId: group.singleParticipantId }];
-		const members = this.delegations.get(group.delegationId ?? '')?.members ?? [];
-		return group.memberIds.map((memberId) => ({
-			memberId,
-			wasHead: members.some((member) => member.id === memberId && member.isHeadDelegate)
-		}));
-	}
+		arrivalsOf(group: AssignmentGroup): Arrival[] {
+			if (group.singleParticipantId) return [{ singleParticipantId: group.singleParticipantId }];
+			const members = delegations.get(group.delegationId ?? '')?.members ?? [];
+			return group.memberIds.map((memberId) => ({
+				memberId,
+				wasHead: members.some((member) => member.id === memberId && member.isHeadDelegate)
+			}));
+		},
 
-	resetCommitteesOf(group: AssignmentGroup, target: Target) {
-		if (!sameTarget(group.liveTarget, target)) this.plan.resetCommittees.push(...group.memberIds);
-	}
+		resetCommitteesOf(group: AssignmentGroup, target: Target) {
+			if (!sameTarget(group.liveTarget, target)) plan.resetCommittees.push(...group.memberIds);
+		}
+	};
 }
+
+type PlanBuilder = ReturnType<typeof createPlanBuilder>;
 
 /** Carrier first: the delegation already holding the role, then the largest whole one. */
 function carrierOrder(a: AssignmentGroup, b: AssignmentGroup) {
@@ -232,7 +236,7 @@ export function planApply(input: ApplyInput) {
 		...split
 	}));
 	const warnings: ApplyWarning[] = [];
-	const builder = new PlanBuilder(new Map(input.delegations.map((d) => [d.id, d])));
+	const builder = createPlanBuilder(new Map(input.delegations.map((d) => [d.id, d])));
 
 	const byRole = Map.groupBy(groups, (group) => targetKey(group.target) ?? '');
 	for (const [key, roleGroups] of byRole) {

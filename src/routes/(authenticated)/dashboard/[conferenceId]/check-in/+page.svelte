@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
@@ -117,7 +118,7 @@
 			<span class="text-xs font-normal opacity-80">
 				{#if scannedAt}
 					{m.checkInGuideUsedAt({
-						time: scannedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+						time: scannedAt.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' })
 					})}
 				{/if}
 			</span>

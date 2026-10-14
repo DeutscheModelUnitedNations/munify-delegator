@@ -9,41 +9,38 @@ import { browser } from '$app/environment';
  * missing, blocked or holds something unparseable, so the page has to work without it. Changes made
  * in another tab are not picked up.
  */
-export class PersistedState<T> {
-	readonly #key: string;
-	// Raw, not a deep proxy: values are replaced wholesale and have to serialise as plain JSON
-	#value: T;
-
-	constructor(key: string, initial: T) {
-		this.#key = key;
-		this.#value = $state.raw(this.#read(initial));
-	}
-
-	get current(): T {
-		return this.#value;
-	}
-
-	set current(value: T) {
-		this.#value = value;
-		this.#write(value);
-	}
-
-	#read(fallback: T): T {
+export function createPersistedState<T>(key: string, initial: T) {
+	function read(fallback: T): T {
 		if (!browser) return fallback;
 		try {
-			const stored = localStorage.getItem(this.#key);
+			const stored = localStorage.getItem(key);
 			return stored === null ? fallback : JSON.parse(stored);
 		} catch {
 			return fallback;
 		}
 	}
 
-	#write(value: T) {
+	function write(value: T) {
 		if (!browser) return;
 		try {
-			localStorage.setItem(this.#key, JSON.stringify(value));
+			localStorage.setItem(key, JSON.stringify(value));
 		} catch {
 			// Storage full or blocked: the value just stays in memory
 		}
 	}
+
+	// Raw, not a deep proxy: values are replaced wholesale and have to serialise as plain JSON
+	let value = $state.raw<T>(read(initial));
+
+	return {
+		get current(): T {
+			return value;
+		},
+		set current(next: T) {
+			value = next;
+			write(next);
+		}
+	};
 }
+
+type PersistedState<T> = ReturnType<typeof createPersistedState<T>>;

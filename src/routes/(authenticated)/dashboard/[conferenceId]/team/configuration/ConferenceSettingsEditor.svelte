@@ -17,7 +17,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import Form from '$lib/components/form/Form.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { fileToDataURL } from '$lib/helpers/fileToDataURL';
+	import { uploadFile, type ConferenceFileField } from '$lib/api/uploadFile';
 	import { canEditConference, canEditConferenceContent } from '$lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '$lib/api/teamAccess';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -151,8 +151,10 @@
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
 
-			// The form carries uploads as `File` while the columns store data URLs, so the conversion
-			// happens here; a field left untouched yields `undefined` and keeps what is stored.
+			// The form carries uploads as `File`; each picked one goes to the storage first and the
+			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored.
+			const upload = (field: ConferenceFileField, file: File | undefined) =>
+				uploadFile(file, { kind: 'conference', field, conferenceId });
 			const {
 				image,
 				emblem,
@@ -187,11 +189,11 @@
 					__args: {
 						...content,
 						id: conferenceId,
-						contractContent: await fileToDataURL(contractBasePDF),
-						guardianConsentContent: await fileToDataURL(guardianConsentBasePDF),
-						mediaConsentContent: await fileToDataURL(mediaConsentBasePDF),
-						termsAndConditionsContent: await fileToDataURL(termsAndConditionsBasePDF),
-						certificateContent: await fileToDataURL(certificateBasePDF)
+						contractFileId: await upload('contract', contractBasePDF),
+						guardianConsentFileId: await upload('guardianConsent', guardianConsentBasePDF),
+						mediaConsentFileId: await upload('mediaConsent', mediaConsentBasePDF),
+						termsAndConditionsFileId: await upload('termsAndConditions', termsAndConditionsBasePDF),
+						certificateFileId: await upload('certificate', certificateBasePDF)
 					},
 					id: true,
 					certificateContentSet: true,
@@ -211,14 +213,14 @@
 				__args: {
 					...settings,
 					id: conferenceId,
-					imageDataURL: await fileToDataURL(image),
-					emblemDataURL: await fileToDataURL(emblem),
-					logoDataURL: await fileToDataURL(logo),
-					contractContent: await fileToDataURL(contractBasePDF),
-					guardianConsentContent: await fileToDataURL(guardianConsentBasePDF),
-					mediaConsentContent: await fileToDataURL(mediaConsentBasePDF),
-					termsAndConditionsContent: await fileToDataURL(termsAndConditionsBasePDF),
-					certificateContent: await fileToDataURL(certificateBasePDF)
+					imageFileId: await upload('image', image),
+					emblemFileId: await upload('emblem', emblem),
+					logoFileId: await upload('logo', logo),
+					contractFileId: await upload('contract', contractBasePDF),
+					guardianConsentFileId: await upload('guardianConsent', guardianConsentBasePDF),
+					mediaConsentFileId: await upload('mediaConsent', mediaConsentBasePDF),
+					termsAndConditionsFileId: await upload('termsAndConditions', termsAndConditionsBasePDF),
+					certificateFileId: await upload('certificate', certificateBasePDF)
 				},
 				id: true,
 				imageUrl: true,

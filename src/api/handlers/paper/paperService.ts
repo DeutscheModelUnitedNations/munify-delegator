@@ -7,7 +7,7 @@ import codenmz from '$lib/helpers/codenamize';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { type InferSelectModel, eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
+import { apiError } from '$api/services/apiError';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -44,7 +44,7 @@ const AUTHOR_STATUSES: readonly PaperStatus[] = ['DRAFT', 'SUBMITTED', 'REVISED'
  */
 function assertSavableStatus(requested: PaperStatus | null | undefined, current?: PaperStatus) {
 	if (!requested || requested === current || AUTHOR_STATUSES.includes(requested)) return;
-	throw new GraphQLError('A paper can only be accepted or sent back through a review');
+	throw apiError('CONFLICT', m.paperStatusOnlyThroughReview());
 }
 
 /**
@@ -64,14 +64,14 @@ async function assertMayAuthor(
 ) {
 	const caller = ctx.mustBeLoggedIn().sub;
 	if (args.authorId !== caller) {
-		throw new GraphQLError('Papers can only be written in your own name');
+		throw apiError('FORBIDDEN', m.paperOnlyOwnName());
 	}
 	const membership = await db.query.delegationMember.findFirst({
 		where: { userId: caller, delegationId: args.delegationId, conferenceId: args.conferenceId },
 		columns: { id: true }
 	});
 	if (!membership) {
-		throw new GraphQLError('You can only write papers for your own delegation');
+		throw apiError('FORBIDDEN', m.paperOnlyOwnDelegation());
 	}
 	if (args.agendaItemId) {
 		await db.query.committeeAgendaItem
@@ -100,7 +100,7 @@ export async function createPaper(
 	assertSavableStatus(args.status);
 	// REVISED answers a review, and a new paper has had none.
 	if (args.status === 'REVISED') {
-		throw new GraphQLError('A new paper is either a draft or a submission');
+		throw apiError('INVALID_INPUT', m.paperNewDraftOrSubmission());
 	}
 
 	return db.transaction(async (tx) => {
@@ -109,7 +109,7 @@ export async function createPaper(
 			.then(assertFindFirstExists);
 
 		if (!conference.isOpenPaperSubmission) {
-			throw new GraphQLError(m.paperSubmissionClosed());
+			throw apiError('CONFLICT', m.paperSubmissionClosed());
 		}
 
 		const paper = await tx
@@ -145,7 +145,7 @@ export async function updatePaper(
 	args: { paperId: string; content?: PaperContent; status?: PaperStatus | null }
 ) {
 	if (!userId(ctx)) {
-		throw new GraphQLError('Must be logged in');
+		throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 	}
 
 	await db.transaction(async (tx) => {
@@ -158,7 +158,7 @@ export async function updatePaper(
 			.then(assertFindFirstExists);
 
 		if (!paper.conference?.isOpenPaperSubmission) {
-			throw new GraphQLError(m.paperSubmissionClosed());
+			throw apiError('CONFLICT', m.paperSubmissionClosed());
 		}
 		assertSavableStatus(args.status, paper.status);
 
@@ -190,7 +190,7 @@ export async function assertConferenceParticipant(ctx: Context, conferenceId: st
 	const { foundDelegationMember, foundSingleParticipant, foundSupervisor } =
 		await fetchUserParticipations({ conferenceId, userId: caller });
 	if (![foundDelegationMember, foundSingleParticipant, foundSupervisor].some(Boolean)) {
-		throw new GraphQLError('Access denied - requires conference participant status');
+		throw apiError('FORBIDDEN', m.accessDeniedParticipant());
 	}
 }
 
@@ -345,7 +345,7 @@ export async function findNextPaperToReview(ctx: Context, agendaItemId: string) 
 	});
 
 	if (papers.length === 0) {
-		throw new GraphQLError('No papers found for the specified agenda item.');
+		throw apiError('NOT_FOUND', m.paperNoneForAgendaItem());
 	}
 
 	return papers.find((paper) => paper.status === 'SUBMITTED') ?? papers[0];

@@ -74,7 +74,7 @@
 		<div class="join">
 			<button
 				class="join-item btn btn-sm"
-				aria-label="First page"
+				aria-label={m.a11yFirstPage()}
 				onclick={() => table.firstPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
@@ -82,7 +82,7 @@
 			</button>
 			<button
 				class="join-item btn btn-sm"
-				aria-label="Previous page"
+				aria-label={m.a11yPreviousPage()}
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
@@ -93,7 +93,7 @@
 			</button>
 			<button
 				class="join-item btn btn-sm"
-				aria-label="Next page"
+				aria-label={m.a11yNextPage()}
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
@@ -102,7 +102,7 @@
 			{#if !serverMode || rowCount !== undefined}
 				<button
 					class="join-item btn btn-sm"
-					aria-label="Last page"
+					aria-label={m.a11yLastPage()}
 					onclick={() => table.lastPage()}
 					disabled={!table.getCanNextPage()}
 				>

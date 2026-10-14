@@ -8,8 +8,9 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { surveyOptionPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/surveyOption.ts
 abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -129,7 +130,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.surveyOption.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Survey option not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			surveyOptionPubsub.removed();
 

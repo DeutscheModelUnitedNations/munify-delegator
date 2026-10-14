@@ -1,3 +1,4 @@
+import { hasErrorCode } from '$lib/api/errorCodes';
 import { isNetworkError, type QueueEntry } from './attendanceQueue';
 import type { ScanIssue } from './scanCheck';
 import type { FoundPerson } from './scanLoad';
@@ -38,12 +39,9 @@ export function scanErrorText(err: unknown, offlineText: string, fallback: strin
 	return err instanceof Error ? err.message : fallback;
 }
 
-/** What the server answers a second scan of one person in one session with. */
-export const ALREADY_SCANNED = 'Already scanned in this session';
-
 /** Whether the server refused a scan because another device logged the person in this session. */
 export function isAlreadyScanned(err: unknown) {
-	return err instanceof Error && err.message.includes(ALREADY_SCANNED);
+	return hasErrorCode(err, 'ALREADY_SCANNED');
 }
 
 /** Whether any entry of the session is still waiting to be sent. */

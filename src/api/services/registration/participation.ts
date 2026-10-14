@@ -1,7 +1,7 @@
 import { db } from '$api/db/db';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
-import { GraphQLError } from 'graphql';
+import { apiError } from '$api/services/apiError';
 
 /**
  * Drizzle port of `fetchUserParticipations.ts`.
@@ -34,16 +34,16 @@ export async function fetchUserParticipations({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new GraphQLError(m.youAreAlreadySupervisor({}, { locale: getLocale() }));
+			throw apiError('CONFLICT', m.youAreAlreadySupervisor({}, { locale: getLocale() }));
 		}
 		if (foundSingleParticipant) {
-			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
+			throw apiError('CONFLICT', m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
 		}
 		if (foundDelegationMember) {
-			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
+			throw apiError('CONFLICT', m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
 		}
 		if (foundTeamMember) {
-			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
+			throw apiError('CONFLICT', m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
 		}
 	}
 

@@ -10,7 +10,7 @@ import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
 import { sameTarget, type Target } from '$lib/assignment/state';
 import { m } from '$lib/paraglide/messages';
 import { and, eq, inArray } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
+import { apiError } from '$api/services/apiError';
 
 type Reader = Transaction | typeof db;
 
@@ -54,7 +54,7 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
 				columns: { id: true, seatAmount: true }
 			})
 		]);
-	if (!conference) throw new GraphQLError('Conference not found');
+	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
 
 	const seated = seatedRoles(conference.committees, conference.nonStateActors);
 	return {
@@ -89,7 +89,7 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
 /** Refuses a nation or non-state actor the conference does not offer. */
 export async function assertTargetOf(tx: Reader, conferenceId: string, target: Target) {
 	if (target.nationAlpha3Code && target.nonStateActorId) {
-		throw new GraphQLError('A delegation holds either a nation or a non-state actor, not both');
+		throw apiError('INVALID_INPUT', m.assignmentDelegationNationOrNsa());
 	}
 	if (target.nationAlpha3Code) {
 		const offered = await tx.query.nation.findFirst({
@@ -97,7 +97,10 @@ export async function assertTargetOf(tx: Reader, conferenceId: string, target: T
 			columns: { alpha3Code: true }
 		});
 		if (!offered)
-			throw new GraphQLError(`Nation ${target.nationAlpha3Code} is not of this conference`);
+			throw apiError(
+				'INVALID_INPUT',
+				m.assignmentNationNotInConference({ nation: target.nationAlpha3Code })
+			);
 	}
 	if (target.nonStateActorId) {
 		const offered = await tx.query.nonStateActor.findFirst({
@@ -105,7 +108,10 @@ export async function assertTargetOf(tx: Reader, conferenceId: string, target: T
 			columns: { id: true }
 		});
 		if (!offered) {
-			throw new GraphQLError(`Non-state actor ${target.nonStateActorId} is not of this conference`);
+			throw apiError(
+				'INVALID_INPUT',
+				m.assignmentNsaNotInConference({ nonStateActor: target.nonStateActorId })
+			);
 		}
 	}
 }
@@ -124,7 +130,7 @@ export async function draftDelegationTarget(
 		with: { members: { columns: { id: true }, limit: 1 } }
 	});
 	if (units.some((unit) => unit.members.length > 0)) {
-		throw new GraphQLError('This delegation is split; assign its parts instead');
+		throw apiError('CONFLICT', m.assignmentDelegationIsSplit());
 	}
 	if (sameTarget(target, delegation.liveTarget)) {
 		await tx
@@ -278,7 +284,7 @@ export async function applyAssignmentDraft(conferenceId: string) {
 	return db.transaction(async (tx) => {
 		const { input } = await loadAssignmentInput(tx, conferenceId);
 		const { plan, errors } = planApply(input);
-		if (errors.length > 0) throw new GraphQLError(describeApplyErrors(errors));
+		if (errors.length > 0) throw apiError('CONFLICT', describeApplyErrors(errors));
 
 		const idOf = await createDelegations(tx, conferenceId, plan);
 		await setTargets(tx, plan, idOf);

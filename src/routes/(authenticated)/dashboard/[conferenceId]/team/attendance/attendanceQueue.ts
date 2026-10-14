@@ -1,3 +1,5 @@
+import { CombinedError } from '@urql/core';
+
 export interface QueueEntry {
 	localId: string;
 	userId: string;
@@ -14,13 +16,9 @@ export interface QueueEntry {
 
 /** Whether a failed sync is worth retrying: the request never reached the server. */
 export function isNetworkError(err: unknown) {
-	return (
-		err instanceof TypeError ||
-		(err instanceof Error &&
-			(err.message.includes('fetch') ||
-				err.message.includes('network') ||
-				err.name === 'AbortError'))
-	);
+	// urql wraps a failed fetch; the answer of a server that was reached has no `networkError`.
+	if (err instanceof CombinedError) return err.networkError !== undefined;
+	return err instanceof TypeError || (err instanceof Error && err.name === 'AbortError');
 }
 
 /** Exponential backoff for the n-th retry of a scan, capped at 30 seconds. */

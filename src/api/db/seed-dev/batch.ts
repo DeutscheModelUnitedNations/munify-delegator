@@ -10,6 +10,9 @@ export interface SeedBatch {
 	nation: (typeof schema.nation.$inferInsert)[];
 	user: (typeof schema.user.$inferInsert)[];
 	reviewerSnippet: (typeof schema.reviewerSnippet.$inferInsert)[];
+	storedFile: (typeof schema.storedFile.$inferInsert)[];
+	/** Not a table: the bucket objects of `storedFile`, written by `replaceSeedObjects`. */
+	storedObject: { key: string; bytes: Uint8Array; mimeType: string }[];
 	conference: (typeof schema.conference.$inferInsert)[];
 	committee: (typeof schema.committee.$inferInsert)[];
 	committeeToNation: (typeof schema.committeeToNation.$inferInsert)[];
@@ -56,6 +59,8 @@ export function emptyBatch(): SeedBatch {
 		nation: [],
 		user: [],
 		reviewerSnippet: [],
+		storedFile: [],
+		storedObject: [],
 		conference: [],
 		committee: [],
 		committeeToNation: [],
@@ -113,6 +118,7 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.nation, (rows) => db.insert(s.nation).values(rows));
 	await insertChunked(batch.user, (rows) => db.insert(s.user).values(rows));
 	await insertChunked(batch.reviewerSnippet, (rows) => db.insert(s.reviewerSnippet).values(rows));
+	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
 	await insertChunked(batch.conference, (rows) => db.insert(s.conference).values(rows));
 	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));
 	await insertChunked(batch.committeeToNation, (rows) =>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { translateRegionalGroup } from '$lib/utils/enumTranslations';
 	import type { GroupDeviation } from '$lib/helpers/seatPlanning/baselines';
 
@@ -17,7 +18,7 @@
 		const sign = deviation > 0.05 ? '+' : deviation < -0.05 ? '−' : '±';
 		return (
 			sign +
-			Math.abs(deviation).toLocaleString(undefined, {
+			Math.abs(deviation).toLocaleString(getLocale(), {
 				maximumFractionDigits: 1,
 				minimumFractionDigits: 1
 			})
@@ -35,7 +36,7 @@
 	{#each groups as { group, actual, target, deviation } (group)}
 		<span
 			class="truncate"
-			title="{translateRegionalGroup(group)}: {actual} / {target.toLocaleString(undefined, {
+			title="{translateRegionalGroup(group)}: {actual} / {target.toLocaleString(getLocale(), {
 				maximumFractionDigits: 1
 			})}">{translateRegionalGroup(group, true)}</span
 		>

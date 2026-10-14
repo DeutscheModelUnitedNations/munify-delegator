@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 
@@ -16,7 +17,7 @@
 
 	const formatDate = (date: Date | null | undefined) => {
 		if (!date) return '';
-		return new Date(date).toLocaleDateString(undefined, {
+		return new Date(date).toLocaleDateString(getLocale(), {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric'
@@ -30,7 +31,7 @@
 
 		// Same month and year
 		if (startD.getMonth() === endD.getMonth() && startD.getFullYear() === endD.getFullYear()) {
-			return `${startD.getDate()}. – ${endD.toLocaleDateString(undefined, {
+			return `${startD.getDate()}. – ${endD.toLocaleDateString(getLocale(), {
 				day: 'numeric',
 				month: 'long',
 				year: 'numeric'

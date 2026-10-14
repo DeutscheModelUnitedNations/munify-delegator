@@ -15,7 +15,7 @@
 	<h2 class="text-lg">
 		{m.createdOn({
 			date: new Date().toLocaleDateString(getLocale()),
-			time: new Date().toLocaleTimeString()
+			time: new Date().toLocaleTimeString(getLocale())
 		})}
 	</h2>
 	<h3 class="text-xs">{m.exportFrom({ appName: 'MUNify Delegator' })}</h3>

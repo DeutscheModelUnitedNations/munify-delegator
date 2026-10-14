@@ -64,7 +64,7 @@
 				onclick={() => {
 					editing = false;
 				}}
-				aria-label="Exit Editing"
+				aria-label={m.a11yExitEditing()}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
@@ -78,7 +78,7 @@
 					}
 					onSaveFn(assignedDocumentNumberLocal);
 				}}
-				aria-label="Save"
+				aria-label={m.save()}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-save"></i>
 			</button>
@@ -88,7 +88,7 @@
 				onclick={() => {
 					onSaveFn();
 				}}
-				aria-label="SaveNext"
+				aria-label={m.a11ySaveAndNext()}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-arrow-right-to-line"></i>
 				{#if !disabledShortcut}
@@ -101,7 +101,7 @@
 			<div class="badge badge-xl badge-primary font-mono font-bold">
 				# {assignedDocumentNumber}
 			</div>
-			<button class="btn btn-square" onclick={() => (editing = true)} aria-label="Edit">
+			<button class="btn btn-square" onclick={() => (editing = true)} aria-label={m.edit()}>
 				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 			</button>
 		</div>

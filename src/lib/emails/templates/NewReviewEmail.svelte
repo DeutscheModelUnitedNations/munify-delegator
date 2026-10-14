@@ -8,6 +8,8 @@
 		Text,
 		Link
 	} from '@better-svelte-email/components';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		recipientName: string;
@@ -30,11 +32,13 @@
 		conferenceTitle,
 		paperUrl
 	}: Props = $props();
+
+	const reviewer = $derived(reviewerEmail ? `${reviewerName} (${reviewerEmail})` : reviewerName);
 </script>
 
-<Html lang="de">
+<Html lang={getLocale()}>
 	<Head>
-		<title>Neues Feedback zu deinem Papier</title>
+		<title>{m.emailNewReviewTitle()}</title>
 	</Head>
 	<Body
 		style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
@@ -44,24 +48,19 @@
 		>
 			<Section>
 				<Text style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;">
-					Neues Review erhalten
+					{m.emailNewReviewHeading()}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					Hallo {recipientName},
+					{m.emailGreeting({ name: recipientName })}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					dein {paperType}
-					<strong>"{paperTitle}"</strong>
-					für die Konferenz
-					<strong>{conferenceTitle}</strong>
-					hat neues Feedback von {reviewerName}{#if reviewerEmail}
-						(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>){/if} erhalten.
+					{m.emailNewReviewBody({ paperType, paperTitle, conferenceTitle, reviewer })}
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					Neuer Status: <strong>{newStatus}</strong>
+					{m.emailNewReviewNewStatus()} <strong>{newStatus}</strong>
 				</Text>
 
 				<Section style="text-align: center; margin: 32px 0;">
@@ -69,7 +68,7 @@
 						href={paperUrl}
 						style="background-color: #3d7dd2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
 					>
-						Review ansehen
+						{m.emailNewReviewButton()}
 					</Link>
 				</Section>
 			</Section>

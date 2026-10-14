@@ -103,7 +103,7 @@
 			<div class="card bg-base-200 border-base-300 flex w-full flex-row items-center border p-2">
 				{@render content()}
 				{#if onclick}
-					<button class="btn btn-ghost" type="button" {onclick} aria-label="Copy referral">
+					<button class="btn btn-ghost" type="button" {onclick} aria-label={m.a11yCopyEntryCode()}>
 						<i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
 					</button>
 				{/if}

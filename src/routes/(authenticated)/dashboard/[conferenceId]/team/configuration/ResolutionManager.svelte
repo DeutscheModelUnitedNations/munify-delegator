@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { fileToDataURL } from '$lib/helpers/fileToDataURL';
+	import { uploadFile } from '$lib/api/uploadFile';
 	import { findResolutionUploadProblem, uploadEach } from '$lib/helpers/resolutionUpload';
 	import { resolutionUploadProblemMessages } from '$lib/helpers/resolutionUploadMessages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -53,17 +53,19 @@
 
 	async function uploadFiles(files: File[]) {
 		uploading = true;
-		const failed = await uploadEach(files, async (file) =>
-			client.mutate.createResolution({
+		const failed = await uploadEach(files, async (file) => {
+			const fileId = await uploadFile(file, { kind: 'resolution', field: 'content', conferenceId });
+			if (!fileId) throw new Error(m.fileUploadEmpty());
+			return client.mutate.createResolution({
 				__args: {
 					conferenceId,
 					committeeId: uploadCommitteeId || undefined,
 					fileName: file.name,
-					content: (await fileToDataURL(file)) ?? ''
+					fileId
 				},
 				id: true
-			})
-		);
+			});
+		});
 		uploading = false;
 		reportUpload(failed, files.length);
 	}

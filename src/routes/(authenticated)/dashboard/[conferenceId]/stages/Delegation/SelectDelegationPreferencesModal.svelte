@@ -333,7 +333,7 @@
 				onclick={() => {
 					onClose();
 				}}
-				aria-label="Close"><i class="fa-sharp-duotone fa-solid fa-xmark"></i></button
+				aria-label={m.close()}><i class="fa-sharp-duotone fa-solid fa-xmark"></i></button
 			>
 		</div>
 	</div>

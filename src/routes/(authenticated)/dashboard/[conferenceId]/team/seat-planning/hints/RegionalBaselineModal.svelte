@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -141,7 +142,7 @@
 									value: (
 										(baselineTemplates.UN_MEMBERS[index] / 193) *
 										current.seats
-									).toLocaleString(undefined, { maximumFractionDigits: 1 })
+									).toLocaleString(getLocale(), { maximumFractionDigits: 1 })
 								})}
 							</span>
 						</label>

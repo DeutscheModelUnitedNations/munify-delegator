@@ -9,11 +9,12 @@ import {
 	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { count, eq } from 'drizzle-orm';
 import { countGiven, nullToUndefined } from '$api/services/args';
 import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
 import { roleApplicationPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/roleApplication.ts
 abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -60,10 +61,10 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const targets = countGiven(args.nationId, args.nonStateActorId);
 			if (targets === 0) {
-				throw new GraphQLError('Either nationId or nonStateActorId must be provided');
+				throw apiError('INVALID_INPUT', m.roleApplicationNeedsTarget());
 			}
 			if (targets > 1) {
-				throw new GraphQLError('Only one of nationId or nonStateActorId can be provided');
+				throw apiError('INVALID_INPUT', m.roleApplicationOneTarget());
 			}
 
 			// The caller must be allowed to update the delegation the application belongs to.
@@ -90,7 +91,7 @@ schemaBuilder.mutationFields((t) => ({
 						columns: { id: true }
 					});
 			if (!onOffer) {
-				throw new GraphQLError('This role is not on offer in the conference');
+				throw apiError('INVALID_INPUT', m.roleNotOnOffer());
 			}
 
 			const created = await db.transaction(async (tx) => {
@@ -142,7 +143,7 @@ schemaBuilder.mutationFields((t) => ({
 					delegationId: schema.roleApplication.delegationId
 				});
 			if (deleted.length === 0) {
-				throw new GraphQLError('Role application not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			await normalizeRoleApplicationRanks(deleted[0].delegationId);
 			roleApplicationPubsub.removed();

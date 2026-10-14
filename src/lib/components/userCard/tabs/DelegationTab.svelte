@@ -187,7 +187,7 @@
 				<button
 					class="btn btn-ghost btn-xs btn-square ml-1"
 					onclick={() => changeDelegationSchool(delegationId)}
-					aria-label="Edit School"
+					aria-label={m.a11yEditSchool()}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
 				</button>

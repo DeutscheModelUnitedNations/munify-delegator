@@ -1,5 +1,6 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '$lib/components/ActionModal.svelte';
 	import { client, type CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
@@ -285,7 +286,7 @@
 			>
 				{#each days as option (option.id)}
 					<option value={option.id}>
-						{option.name} – {new Date(option.date).toLocaleDateString(undefined, {
+						{option.name} – {new Date(option.date).toLocaleDateString(getLocale(), {
 							timeZone: 'UTC'
 						})}
 					</option>

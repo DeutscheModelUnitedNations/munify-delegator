@@ -1,5 +1,4 @@
 import {
-	findResolutionFileProblem,
 	findResolutionUploadProblem,
 	isPdfFile,
 	MAX_RESOLUTION_FILE_SIZE,
@@ -55,27 +54,6 @@ describe('findResolutionUploadProblem', () => {
 	test('lets a batch of full-size files through, since each goes up on its own', () => {
 		const files = Array.from({ length: 7 }, (_, i) => pdf(`${i}.pdf`, MAX_RESOLUTION_FILE_SIZE));
 		expect(findResolutionUploadProblem(files)).toBeUndefined();
-	});
-});
-
-describe('findResolutionFileProblem', () => {
-	const dataURL = (bytes: number) =>
-		`data:application/pdf;base64,${Buffer.alloc(bytes).toString('base64')}`;
-
-	test('accepts a PDF data URL up to the limit', () => {
-		expect(findResolutionFileProblem('a.pdf', dataURL(1_000))).toBeUndefined();
-		expect(findResolutionFileProblem('a.pdf', dataURL(MAX_RESOLUTION_FILE_SIZE))).toBeUndefined();
-	});
-
-	test('rejects one over the limit', () => {
-		expect(findResolutionFileProblem('a.pdf', dataURL(MAX_RESOLUTION_FILE_SIZE + 1))).toBe(
-			'fileTooLarge'
-		);
-	});
-
-	test('rejects another media type or file name', () => {
-		expect(findResolutionFileProblem('a.pdf', 'data:text/html;base64,AAAA')).toBe('notPdf');
-		expect(findResolutionFileProblem('a.html', dataURL(10))).toBe('notPdf');
 	});
 });
 

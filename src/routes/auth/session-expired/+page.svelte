@@ -5,7 +5,7 @@
 </script>
 
 <main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-8 p-4 py-12">
-	<img src={questionSvg} alt="Session Expired" class="w-1/3 max-w-[180px]" />
+	<img src={questionSvg} alt={m.sessionExpiredTitle()} class="w-1/3 max-w-[180px]" />
 
 	<h1 class="text-center text-3xl font-bold">{m.sessionExpiredTitle()}</h1>
 

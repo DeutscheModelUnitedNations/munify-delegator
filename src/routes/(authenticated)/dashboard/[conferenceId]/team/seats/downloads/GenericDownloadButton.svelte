@@ -18,7 +18,7 @@
 </script>
 
 <div class="tooltip tooltip-right" data-tip={m.downloadParticipantData({ group: tip })}>
-	<button class="btn btn-sm" aria-label="Download data" onclick={downloadCommitteeData}>
+	<button class="btn btn-sm" aria-label={m.a11yDownloadData()} onclick={downloadCommitteeData}>
 		<i class="fa-sharp-duotone fa-solid {loading ? 'fa-spinner fa-spin' : 'fa-download'}"></i>
 	</button>
 </div>

@@ -3,7 +3,7 @@
 	import { onDestroy, onMount, tick, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { readAimIdentifier } from './aimIdentifier';
-	import { PersistedState } from '$lib/state/persistedState.svelte';
+	import { createPersistedState } from '$lib/state/persistedState.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import ScanSearchBar from './ScanSearchBar.svelte';
 	import ScanSuggestions from './ScanSuggestions.svelte';
@@ -62,7 +62,7 @@
 	let streaming = $state(false);
 	let starting = $state(false);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
-	let cameraWanted = new PersistedState(
+	let cameraWanted = createPersistedState(
 		untrack(() => persistKey),
 		false
 	);

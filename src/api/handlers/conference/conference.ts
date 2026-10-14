@@ -14,7 +14,7 @@ import { eq, max } from 'drizzle-orm';
 import { UserRef } from '$api/handlers/user/user';
 import { distinctNationCodes } from '$api/handlers/schoolSuggestion/conferenceAggregates';
 import { loadSchoolRows } from '$api/handlers/schoolSuggestion/schoolSuggestions';
-import { storedFileUrl } from '$api/services/files/files';
+import { fileUrl } from '$api/services/files/storage';
 import {
 	countOfferedSeats,
 	countSeatedParticipants,
@@ -57,11 +57,11 @@ const MEMBERS_ONLY = {
 	postalZip: false,
 	postalCity: false,
 	postalCountry: false,
-	contractContent: false,
-	guardianConsentContent: false,
-	mediaConsentContent: false,
-	termsAndConditionsContent: false,
-	certificateContent: false
+	contractFileId: false,
+	guardianConsentFileId: false,
+	mediaConsentFileId: false,
+	termsAndConditionsFileId: false,
+	certificateFileId: false
 };
 /** The team's internal tools. */
 const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
@@ -92,90 +92,80 @@ abilityBuilder.conference
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
-		// The four document templates and the certificate template are long HTML blobs. The
-		// configuration UI only needs to know whether each one has been filled in, so these
-		// flags let it avoid transferring the content itself.
+		// Whether each document template has been uploaded, for the configuration UI.
 		contractContentSet: t.field({
 			type: 'Boolean',
-			resolve: (conference) => !!conference.contractContent
+			resolve: (conference) => !!conference.contractFileId
 		}),
 		guardianConsentContentSet: t.field({
 			type: 'Boolean',
-			resolve: (conference) => !!conference.guardianConsentContent
+			resolve: (conference) => !!conference.guardianConsentFileId
 		}),
 		mediaConsentContentSet: t.field({
 			type: 'Boolean',
-			resolve: (conference) => !!conference.mediaConsentContent
+			resolve: (conference) => !!conference.mediaConsentFileId
 		}),
 		termsAndConditionsContentSet: t.field({
 			type: 'Boolean',
-			resolve: (conference) => !!conference.termsAndConditionsContent
+			resolve: (conference) => !!conference.termsAndConditionsFileId
 		}),
 		certificateContentSet: t.field({
 			type: 'Boolean',
-			resolve: (conference) => !!conference.certificateContent
+			resolve: (conference) => !!conference.certificateFileId
 		}),
 
-		// The uploaded images and templates are megabytes of base64. These URLs serve them as real
-		// files, which the browser caches; they are null when nothing is stored (or the reader may
-		// not see it). The files themselves are not meant to be selected any more.
+		// The uploaded images and templates, straight from the bucket; null when nothing is stored
+		// (or the reader may not see it, since a masked file id reads as null).
 		imageUrl: t.field({
 			type: 'String',
 			nullable: true,
-			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'image', conference.imageDataURL)
+			resolve: (conference) => fileUrl('conference', 'image', conference.id, conference.imageFileId)
 		}),
 		emblemUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'emblem', conference.emblemDataURL)
+				fileUrl('conference', 'emblem', conference.id, conference.emblemFileId)
 		}),
 		logoUrl: t.field({
 			type: 'String',
 			nullable: true,
-			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'logo', conference.logoDataURL)
+			resolve: (conference) => fileUrl('conference', 'logo', conference.id, conference.logoFileId)
 		}),
 		contractContentUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'contract', conference.contractContent)
+				fileUrl('conference', 'contract', conference.id, conference.contractFileId)
 		}),
 		guardianConsentContentUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl(
-					'conference',
-					conference,
-					'guardianConsent',
-					conference.guardianConsentContent
-				)
+				fileUrl('conference', 'guardianConsent', conference.id, conference.guardianConsentFileId)
 		}),
 		mediaConsentContentUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'mediaConsent', conference.mediaConsentContent)
+				fileUrl('conference', 'mediaConsent', conference.id, conference.mediaConsentFileId)
 		}),
 		termsAndConditionsContentUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl(
+				fileUrl(
 					'conference',
-					conference,
 					'termsAndConditions',
-					conference.termsAndConditionsContent
+					conference.id,
+					conference.termsAndConditionsFileId
 				)
 		}),
 		certificateContentUrl: t.field({
 			type: 'String',
 			nullable: true,
 			resolve: (conference) =>
-				storedFileUrl('conference', conference, 'certificate', conference.certificateContent)
+				fileUrl('conference', 'certificate', conference.id, conference.certificateFileId)
 		}),
 
 		/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
@@ -300,17 +290,15 @@ schemaBuilder.mutationFields((t) => ({
 			postalZip: t.arg.string(),
 			postalCity: t.arg.string(),
 			postalCountry: t.arg.string(),
-			// Uploads arrive as data URLs rather than multipart files. Rumble's builder has a fixed
-			// scalar map with no `File`, and these columns store data URLs regardless, so the
-			// encoding moves to the client and the multipart path disappears.
-			imageDataURL: t.arg.string(),
-			emblemDataURL: t.arg.string(),
-			logoDataURL: t.arg.string(),
-			contractContent: t.arg.string(),
-			guardianConsentContent: t.arg.string(),
-			mediaConsentContent: t.arg.string(),
-			termsAndConditionsContent: t.arg.string(),
-			certificateContent: t.arg.string()
+			// Files uploaded through `requestFileUpload` for this conference; null removes one.
+			imageFileId: t.arg.id(),
+			emblemFileId: t.arg.id(),
+			logoFileId: t.arg.id(),
+			contractFileId: t.arg.id(),
+			guardianConsentFileId: t.arg.id(),
+			mediaConsentFileId: t.arg.id(),
+			termsAndConditionsFileId: t.arg.id(),
+			certificateFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await updateConference(ctx, args);

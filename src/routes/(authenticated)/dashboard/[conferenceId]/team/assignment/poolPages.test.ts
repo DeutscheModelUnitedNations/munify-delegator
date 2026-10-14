@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { POOL_PAGE, type PoolPage } from './board';
-import { PoolPages } from './poolPages.svelte';
+import { createPoolPages, poolHasMore } from './poolPages.svelte';
 
 vi.mock('$lib/api/rumbleClient/client', () => ({ client: {} }));
 
@@ -18,7 +18,7 @@ const deferred = () => {
 describe('PoolPages', () => {
 	it('loads the first page of a key once, then appends the following ones', async () => {
 		const fetchPage = vi.fn(async (index: number) => page(2, index * 2));
-		const pages = new PoolPages<Row>();
+		const pages = createPoolPages<Row>();
 		expect(pages.pending('c')).toBe(true);
 		await pages.load('c', fetchPage);
 		await pages.load('c', fetchPage);
@@ -30,7 +30,7 @@ describe('PoolPages', () => {
 	});
 
 	it('loads one page at a time', async () => {
-		const pages = new PoolPages<Row>();
+		const pages = createPoolPages<Row>();
 		await pages.load('c', async () => page(1));
 		const next = deferred();
 		const fetchPage = vi.fn(() => next.promise);
@@ -43,7 +43,7 @@ describe('PoolPages', () => {
 	});
 
 	it('starts over for another key, and the latest key wins', async () => {
-		const pages = new PoolPages<Row>();
+		const pages = createPoolPages<Row>();
 		const slow = deferred();
 		const first = pages.load('a', () => slow.promise);
 		await pages.load('b', async () => page(1, 10));
@@ -54,14 +54,14 @@ describe('PoolPages', () => {
 	});
 
 	it('only loads more for the key that is shown', async () => {
-		const pages = new PoolPages<Row>();
+		const pages = createPoolPages<Row>();
 		const fetchPage = vi.fn(async () => page(1));
 		await pages.loadMore('c', fetchPage);
 		expect(fetchPage).not.toHaveBeenCalled();
 	});
 
 	it('frees itself after a failed page', async () => {
-		const pages = new PoolPages<Row>();
+		const pages = createPoolPages<Row>();
 		await expect(pages.load('c', () => Promise.reject(new Error('offline')))).rejects.toThrow(
 			'offline'
 		);
@@ -70,8 +70,8 @@ describe('PoolPages', () => {
 	});
 
 	it('has more only after a full page', () => {
-		expect(PoolPages.more(page(POOL_PAGE))).toBe(true);
-		expect(PoolPages.more(page(POOL_PAGE - 1))).toBe(false);
-		expect(PoolPages.more(undefined)).toBe(false);
+		expect(poolHasMore(page(POOL_PAGE))).toBe(true);
+		expect(poolHasMore(page(POOL_PAGE - 1))).toBe(false);
+		expect(poolHasMore(undefined)).toBe(false);
 	});
 });

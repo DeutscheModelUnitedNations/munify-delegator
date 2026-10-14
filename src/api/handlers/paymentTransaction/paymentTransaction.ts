@@ -10,13 +10,14 @@ import {
 	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
 import {
 	conferenceParticipantStatusPubsub,
 	paymentTransactionPubsub,
 	userReferenceInPaymentTransactionPubsub
 } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/paymentTransaction.ts
 abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -72,7 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 			// make one on anybody's behalf.
 			if (!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))) {
 				if (args.userId !== caller) {
-					throw new GraphQLError('Payment references can only be made in your own name');
+					throw apiError('FORBIDDEN', m.paymentOnlyOwnName());
 				}
 				const visible = await db.query.user.findMany({
 					...(await ctx.abilities.user.filter('read')).merge({
@@ -81,9 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 					columns: { id: true }
 				});
 				if (visible.length !== new Set(args.paymentFor).size) {
-					throw new GraphQLError(
-						'You can only pay for yourself, your delegation and the participants you supervise'
-					);
+					throw apiError('FORBIDDEN', m.paymentOnlyForOwn());
 				}
 			}
 			await assertParticipantsOf(args.conferenceId, args.paymentFor);
@@ -92,7 +91,7 @@ schemaBuilder.mutationFields((t) => ({
 			// rather than reaching for a non-null assertion there.
 			const feeAmount = conference.feeAmount;
 			if (!feeAmount) {
-				throw new GraphQLError('Conference fee not set');
+				throw apiError('INVALID_INPUT', m.paymentFeeNotSet());
 			}
 
 			// The id is caller-generated rather than a nanoid, so retry until it is free.
@@ -101,7 +100,7 @@ schemaBuilder.mutationFields((t) => ({
 				const clash = await db.query.paymentTransaction.findFirst({ where: { id } });
 				if (!clash) break;
 				if (attempt === 9_999) {
-					throw new GraphQLError('Failed to generate unique id');
+					throw apiError('INVALID_INPUT', m.paymentIdGenerationFailed());
 				}
 				id = generateSEPASafeId();
 			}

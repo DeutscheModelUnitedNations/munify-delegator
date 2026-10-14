@@ -92,7 +92,7 @@
 			class="btn btn-ghost btn-sm mr-1"
 			onclick={() => download(run)}
 			disabled={loading}
-			aria-label="Download Postal Registration PDF"
+			aria-label={m.a11yDownloadPostalPdf()}
 		>
 			<i
 				class={loading
@@ -124,7 +124,7 @@
 
 	{#if email}
 		<td>
-			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label="E-Mail">
+			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label={m.email()}>
 				<i class="fa-sharp-duotone fa-solid fa-envelope"></i>
 			</a>
 		</td>

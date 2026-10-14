@@ -1,5 +1,6 @@
 import { db } from '$api/db/db';
-import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /**
  * The delegation members and single participants of a conference whose person was accepted to an
@@ -11,7 +12,7 @@ export async function loadExperiencedIds(conferenceId: string) {
 		where: { id: conferenceId },
 		columns: { startConference: true }
 	});
-	if (!conference) throw new GraphQLError('Conference not found');
+	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
 	const earlier = { id: { ne: conferenceId }, endConference: { lt: conference.startConference } };
 
 	const [members, singles, seatedMembers, seatedSingles] = await Promise.all([

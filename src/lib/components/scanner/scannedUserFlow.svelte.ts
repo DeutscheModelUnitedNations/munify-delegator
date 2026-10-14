@@ -31,127 +31,164 @@ interface Resettable {
 	reset(): void;
 }
 
+export type ScannedUserFlow<S> = ReturnType<typeof createScannedUserFlow<S>>;
+
 /**
  * The state behind a "scan a participant, check them off in a drawer" page (postal
  * registration): the scanned id in the URL, the person loaded for it, the drawer that shows them
  * only once their data has arrived, and a guard against running the confirm action twice.
  *
- * Construct it during component initialisation: it reads the URL through `queryParameters` and
+ * Call it during component initialisation: it reads the URL through `queryParameters` and
  * registers effects.
+ *
+ * @param fetchStatus loads the fields of the person's status row this flow works on
  */
-export class ScannedUserFlow<S> {
-	#params = queryParameters({ queryUserId: true });
-	#fetchStatus: (userId: string) => Promise<S | null>;
-	#lastLoadedUserId = $state('');
+export function createScannedUserFlow<S>(fetchStatus: (userId: string) => Promise<S | null>) {
+	const params = queryParameters({ queryUserId: true });
+	let lastLoadedUserId = $state('');
 
-	data = $state<ScannedUserData<S>>();
-	loading = $state(false);
-	drawerOpen = $state(false);
+	let data = $state<ScannedUserData<S>>();
+	let loading = $state(false);
+	let drawerOpen = $state(false);
 	/** Set while the confirm action runs, so a held hotkey cannot fire it twice. */
-	busy = $state(false);
-	scanner = $state<Resettable>();
+	let busy = $state(false);
+	let scanner = $state<Resettable>();
 
-	/** @param fetchStatus loads the fields of the person's status row this flow works on */
-	constructor(fetchStatus: (userId: string) => Promise<S | null>) {
-		this.#fetchStatus = fetchStatus;
-
-		// Fetch the person whenever a new code is scanned
-		$effect(() => {
-			const queryId = this.queryUserId;
-			if (queryId) void this.load(queryId);
-		});
-
-		// Close the drawer while nothing, or someone not yet loaded, is scanned
-		$effect(() => {
-			const queryId = this.queryUserId;
-			if (!queryId) {
-				this.drawerOpen = false;
-				this.#lastLoadedUserId = '';
-				return;
-			}
-			if (queryId !== this.#lastLoadedUserId) {
-				this.drawerOpen = false;
-			}
-		});
-
-		// Open it once the scanned person's data is there
-		$effect(() => {
-			const loadedId = this.#loadedUserId;
-			if (!loadedId) return;
-			this.#lastLoadedUserId = loadedId;
-			this.drawerOpen = true;
-		});
-	}
-
-	get queryUserId(): string | null {
-		return this.#params.queryUserId;
-	}
-
-	set queryUserId(value: string | null) {
-		this.#params.queryUserId = value;
+	function getQueryUserId(): string | null {
+		return params.queryUserId;
 	}
 
 	/** The loaded data, but only while it belongs to the person currently scanned. */
-	get current(): ScannedUserData<S> | undefined {
-		const queryId = this.queryUserId;
-		if (!queryId || this.data?.user?.id !== queryId) return undefined;
-		return this.data;
+	function getCurrent(): ScannedUserData<S> | undefined {
+		const queryId = getQueryUserId();
+		if (!queryId || data?.user?.id !== queryId) return undefined;
+		return data;
 	}
 
 	/** The id of the scanned person once their data has finished loading. */
-	get #loadedUserId(): string | undefined {
-		const id = this.current?.user?.id;
-		return this.loading ? undefined : id;
+	function getLoadedUserId(): string | undefined {
+		const id = getCurrent()?.user?.id;
+		return loading ? undefined : id;
 	}
 
-	/** Whether the confirm action may run: someone scanned and loaded, and no action running. */
-	get canConfirm(): boolean {
-		return !!this.queryUserId && !!this.data?.user && !this.busy;
-	}
-
-	async load(userId: string) {
-		this.loading = true;
+	async function load(userId: string) {
+		loading = true;
 		try {
-			const [user, status] = await Promise.all([
-				fetchScannedUser(userId),
-				this.#fetchStatus(userId)
-			]);
-			this.data = { user, status };
+			const [user, status] = await Promise.all([fetchScannedUser(userId), fetchStatus(userId)]);
+			data = { user, status };
 		} finally {
-			this.loading = false;
+			loading = false;
 		}
 	}
 
-	/**
-	 * Saves a status change through `write` and reloads the person, so the drawer shows what was
-	 * stored. Without a person there is nothing to change.
-	 */
-	async changeStatus(userId: string | undefined, write: (userId: string) => Promise<unknown>) {
-		if (!userId) {
-			toast.error(m.userNotFound());
+	// Fetch the person whenever a new code is scanned
+	$effect(() => {
+		const queryId = getQueryUserId();
+		if (queryId) void load(queryId);
+	});
+
+	// Close the drawer while nothing, or someone not yet loaded, is scanned
+	$effect(() => {
+		const queryId = getQueryUserId();
+		if (!queryId) {
+			drawerOpen = false;
+			lastLoadedUserId = '';
 			return;
 		}
-		const promise = write(userId);
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		await this.load(userId);
-	}
-
-	/** Runs `action` unless another one is still running. */
-	async runExclusive(action: () => Promise<void>) {
-		if (this.busy) return;
-		this.busy = true;
-		try {
-			await action();
-		} finally {
-			this.busy = false;
+		if (queryId !== lastLoadedUserId) {
+			drawerOpen = false;
 		}
-	}
+	});
 
-	/** Closes the drawer and readies the scanner for the next person. */
-	reset() {
-		this.drawerOpen = false;
-		this.queryUserId = '';
-		this.scanner?.reset();
-	}
+	// Open it once the scanned person's data is there
+	$effect(() => {
+		const loadedId = getLoadedUserId();
+		if (!loadedId) return;
+		lastLoadedUserId = loadedId;
+		drawerOpen = true;
+	});
+
+	return {
+		get data() {
+			return data;
+		},
+		set data(value: ScannedUserData<S> | undefined) {
+			data = value;
+		},
+		get loading() {
+			return loading;
+		},
+		set loading(value: boolean) {
+			loading = value;
+		},
+		get drawerOpen() {
+			return drawerOpen;
+		},
+		set drawerOpen(value: boolean) {
+			drawerOpen = value;
+		},
+		get busy() {
+			return busy;
+		},
+		set busy(value: boolean) {
+			busy = value;
+		},
+		get scanner() {
+			return scanner;
+		},
+		set scanner(value: Resettable | undefined) {
+			scanner = value;
+		},
+
+		get queryUserId(): string | null {
+			return getQueryUserId();
+		},
+		set queryUserId(value: string | null) {
+			params.queryUserId = value;
+		},
+
+		get current() {
+			return getCurrent();
+		},
+
+		/** Whether the confirm action may run: someone scanned and loaded, and no action running. */
+		get canConfirm(): boolean {
+			return !!getQueryUserId() && !!data?.user && !busy;
+		},
+
+		load,
+
+		/**
+		 * Saves a status change through `write` and reloads the person, so the drawer shows what was
+		 * stored. Without a person there is nothing to change.
+		 */
+		async changeStatus(userId: string | undefined, write: (userId: string) => Promise<unknown>) {
+			if (!userId) {
+				toast.error(m.userNotFound());
+				return;
+			}
+			const promise = write(userId);
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
+			await load(userId);
+		},
+
+		/** Runs `action` unless another one is still running. */
+		async runExclusive(action: () => Promise<void>) {
+			if (busy) return;
+			busy = true;
+			try {
+				await action();
+			} finally {
+				busy = false;
+			}
+		},
+
+		/** Closes the drawer and readies the scanner for the next person. */
+		reset() {
+			drawerOpen = false;
+			params.queryUserId = '';
+			scanner?.reset();
+		}
+	};
 }

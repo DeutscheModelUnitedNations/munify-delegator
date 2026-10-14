@@ -9,9 +9,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import {
-	ALREADY_SCANNED_MESSAGE,
 	assertMayCreateEntry,
 	assertSessionOfConference,
 	ensureParticipantStatus,
@@ -23,6 +21,8 @@ import {
 	attendanceSessionPubsub,
 	conferenceParticipantStatusPubsub
 } from '$api/pubsub';
+import { apiError } from '$api/services/apiError';
+import { m } from '$lib/paraglide/messages';
 
 // Ported from abilities/entities/attendanceEntry.ts
 abilityBuilder.attendanceEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -71,10 +71,10 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 			if (!args.occasion.trim()) {
-				throw new GraphQLError('Occasion must not be empty.');
+				throw apiError('INVALID_INPUT', m.attendanceOccasionEmpty());
 			}
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
@@ -113,7 +113,7 @@ schemaBuilder.mutationFields((t) => ({
 				columns: { conferenceId: true }
 			});
 			if (!session) {
-				throw new GraphQLError('Session not found');
+				throw apiError('NOT_FOUND', m.sessionNotFound());
 			}
 			await assertTeamRole(ctx, session.conferenceId, PARTICIPANT_CARE_ROLES);
 
@@ -162,7 +162,7 @@ schemaBuilder.mutationFields((t) => ({
 			// A repeated scan that brought a card has done its work by storing it
 			const scanned = await scanInSession(args.sessionId, status.id);
 			if (scanned && accessCardId) return readEntry(scanned.id);
-			if (scanned) throw new GraphQLError(ALREADY_SCANNED_MESSAGE);
+			if (scanned) throw apiError('ALREADY_SCANNED', m.alreadyScannedInSession());
 
 			const created = await db
 				.insert(schema.attendanceEntry)
@@ -196,7 +196,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.attendanceEntry.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Attendance entry not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			attendanceEntryPubsub.removed();
 

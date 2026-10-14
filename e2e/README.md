@@ -6,9 +6,10 @@ Playwright specs driving the real app against a real database and the local OIDC
 
 ## Running
 
-The suite needs Postgres; the dev server Playwright launches brings the OIDC provider along. The
-default ports (5432 / 5173, and 8090 for the provider's back channel) are often taken by other
-projects, so they are overridable:
+The suite needs Postgres and the S3 bucket (RustFS, created by the `s3-init` service); the dev
+server Playwright launches brings the OIDC provider along. The default ports (5432 / 9100 / 5173,
+and 8090 for the provider's back channel) are often taken by other projects, so they are
+overridable:
 
 ```bash
 # Default stack
@@ -19,9 +20,10 @@ bun run test:e2e
 ```bash
 # Alongside another project that already holds 5432 / 5173
 # Own project name (-p): without it compose replaces the dev Postgres container
-docker compose -p delegator-e2e -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres
+docker compose -p delegator-e2e -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres s3 s3-init
 
 export DATABASE_URL="postgres://postgres:postgres@localhost:15432/postgres"
+export S3_ENDPOINT="http://localhost:19100/delegator"
 export E2E_PORT=5174
 
 bun run db:migrate   # first time only

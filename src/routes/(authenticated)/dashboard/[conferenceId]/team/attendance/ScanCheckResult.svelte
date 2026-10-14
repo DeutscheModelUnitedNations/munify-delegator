@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -118,7 +119,7 @@
 				<i class="fa-sharp-duotone fa-solid fa-cake-candles text-xl"></i>
 				<span class="text-xl">
 					{person.user.birthday
-						? new Date(person.user.birthday).toLocaleDateString('de', { dateStyle: 'long' })
+						? new Date(person.user.birthday).toLocaleDateString(getLocale(), { dateStyle: 'long' })
 						: '—'}
 				</span>
 			</EditableIdentityField>

@@ -15,7 +15,10 @@ import {
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
 async function gql(page: Page, query: string, variables: Record<string, unknown> = {}) {
-	const res = await page.request.post('/api/graphql', { data: { query, variables } });
+	const res = await page.request.post('/api/graphql', {
+		headers: { 'x-locale': 'en' },
+		data: { query, variables }
+	});
 	return (await res.json()) as GraphQLResult;
 }
 

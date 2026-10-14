@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
+import { apiError } from '$api/services/apiError';
 
 type Kind = 'text' | 'enum' | 'bool' | 'number';
 
@@ -176,7 +176,7 @@ const conditionByKind: Record<Kind, ConditionOf> = {
 /** The condition one filter means, or `undefined` when it filters nothing. */
 function condition(filter: ParticipantFilter): SQL | undefined {
 	const column = Object.hasOwn(columns, filter.column) ? columns[filter.column] : undefined;
-	if (!column) throw new GraphQLError(`Unknown participant column: ${filter.column}`);
+	if (!column) throw apiError('INVALID_INPUT', `Unknown participant column: ${filter.column}`);
 	const conditionOf = filter.column === 'nation' ? nationCondition : conditionByKind[column.kind];
 	return conditionOf(filter, column.expr);
 }

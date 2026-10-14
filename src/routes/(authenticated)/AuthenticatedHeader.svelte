@@ -83,7 +83,7 @@
 		{#if headerState.openNavCallback !== undefined}
 			<button
 				class="shrink-0 sm:hidden"
-				aria-label="Toggle navigation menu"
+				aria-label={m.a11yToggleNavigation()}
 				onclick={() => {
 					headerState.openNavCallback?.();
 					headerState.openNavCallback = undefined;

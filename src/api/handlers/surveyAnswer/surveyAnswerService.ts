@@ -8,8 +8,8 @@ import {
 import type { Context } from '$api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /** Organizers may overfill an option and answer past the deadline; participants may not. */
 function assertOptionOpen(option: {
@@ -18,10 +18,10 @@ function assertOptionOpen(option: {
 	question: { deadline: Date };
 }) {
 	if (option.upperLimit && option.surveyAnswers.length >= option.upperLimit) {
-		throw new GraphQLError(m.optionUpperLimitReached(option.upperLimit));
+		throw apiError('CONFLICT', m.optionUpperLimitReached(option.upperLimit));
 	}
 	if (option.question.deadline < new Date()) {
-		throw new GraphQLError(m.questionDeadlinePassed());
+		throw apiError('CONFLICT', m.questionDeadlinePassed());
 	}
 }
 
@@ -44,7 +44,7 @@ async function answeringFor(
 		return subject;
 	}
 	if (subject !== caller) {
-		throw new GraphQLError('You may only answer surveys for yourself');
+		throw apiError('FORBIDDEN', m.surveyAnswerOnlyOwn());
 	}
 	await assertParticipantsOf(conferenceId, [subject]);
 	assertOptionOpen(option);
@@ -61,7 +61,7 @@ async function answerSubject(
 	args: { id?: string | null; questionId?: string | null; userId?: string | null }
 ) {
 	if (args.questionId && args.questionId !== option.questionId) {
-		throw new GraphQLError('The option does not belong to this question');
+		throw apiError('INVALID_INPUT', m.surveyAnswerOptionOtherQuestion());
 	}
 	const addressed = args.id
 		? await db.query.surveyAnswer.findFirst({
@@ -82,7 +82,7 @@ export async function saveSurveyAnswer(
 	args: { id?: string | null; questionId?: string | null; userId?: string | null; optionId: string }
 ) {
 	if (!args.id && (!args.questionId || !args.userId)) {
-		throw new GraphQLError('You must provide either an id or a userId and questionId');
+		throw apiError('INVALID_INPUT', m.surveyAnswerNeedsLookup());
 	}
 
 	const option = await db.query.surveyOption

@@ -55,18 +55,20 @@ export const paperHasReviews = (paper: { versions: { reviews: { id: string }[] }
  * The sort column of each paper table, keyed by the group (agenda item) it belongs to. Clicking a
  * column sorts ascending, clicking it again flips the direction.
  */
-export class PaperSortState {
-	#configs = new SvelteMap<string, SortConfig>();
+export function createPaperSortState() {
+	const configs = new SvelteMap<string, SortConfig>();
 
-	get(groupId: string) {
-		return this.#configs.get(groupId) ?? null;
-	}
+	return {
+		get(groupId: string) {
+			return configs.get(groupId) ?? null;
+		},
 
-	toggle(groupId: string, key: PaperSortKey) {
-		const current = this.#configs.get(groupId);
-		this.#configs.set(groupId, {
-			key,
-			direction: current?.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-		});
-	}
+		toggle(groupId: string, key: PaperSortKey) {
+			const current = configs.get(groupId);
+			configs.set(groupId, {
+				key,
+				direction: current?.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+			});
+		}
+	};
 }

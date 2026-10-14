@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import type { ResolvedPathname } from '$app/types';
 	import { getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import { translatePaperType } from '$lib/utils/enumTranslations';
@@ -21,7 +22,9 @@
 	const tip = (paper: Props['papers'][number]) =>
 		[
 			translatePaperType(paper.type),
-			paper.firstSubmittedAt ? new Date(paper.firstSubmittedAt).toLocaleDateString() : null
+			paper.firstSubmittedAt
+				? new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())
+				: null
 		]
 			.filter(Boolean)
 			.join(' · ');

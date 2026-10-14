@@ -8,7 +8,7 @@ vi.mock('./applications', () => ({
 const toastError = vi.fn();
 vi.mock('../toastError', () => ({ toastError: (error: unknown) => toastError(error) }));
 
-const { SightingDeckWindow } = await import('./deckWindow.svelte');
+const { createSightingDeckWindow } = await import('./deckWindow.svelte');
 
 const entry = (id: string): WindowEntry => ({
 	kind: 'delegation',
@@ -36,7 +36,7 @@ function window(start: number, length: number, total: number, current: string): 
 
 const filter = { status: 'all', school: null };
 const deckWindow = (deck: DeckWindowData) =>
-	new SightingDeckWindow({ conferenceId: 'conf', filter, deck });
+	createSightingDeckWindow({ conferenceId: 'conf', filter, deck });
 
 /** A request the test answers when it chooses to. */
 function pending() {

@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import type { ParticipantData, RecipientData } from '$lib/utils/pdfGenerator';
 import formatNames from '$lib/helpers/formatNames';
 import type { ConferenceSettings } from '../form-schema';
@@ -30,7 +31,7 @@ export function testPrintParticipant(): ParticipantData {
 			givenNameUppercase: true
 		}),
 		address: '405 E 45th St, New York, NY 10017, USA',
-		birthday: new Date('1949-04-30').toLocaleDateString()
+		birthday: new Date('1949-04-30').toLocaleDateString(getLocale())
 	};
 }
 

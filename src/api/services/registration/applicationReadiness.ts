@@ -1,8 +1,8 @@
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
-import { GraphQLError } from 'graphql';
 import dayjs from 'dayjs';
 import type * as schema from '$api/db/schema';
+import { apiError } from '$api/services/apiError';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {
@@ -33,7 +33,7 @@ export function assertApplicationReady(
 	minRoleApplications: number
 ) {
 	if (applicant.appliedForRoles.length < minRoleApplications) {
-		throw new GraphQLError(m.notEnoughtRoleApplications());
+		throw apiError('CONFLICT', m.notEnoughtRoleApplications());
 	}
 	if (
 		!applicant.school ||
@@ -45,13 +45,13 @@ export function assertApplicationReady(
 			experience: edits.experience ?? applicant.experience
 		}).success
 	) {
-		throw new GraphQLError(m.missingInformation());
+		throw apiError('CONFLICT', m.missingInformation());
 	}
 	// `conference` is a required FK, but the relational type is nullable, so this is narrowed
 	// rather than asserted.
 	const conference = applicant.conference;
 	if (conference && conference.state !== 'PARTICIPANT_REGISTRATION') {
-		throw new GraphQLError(m.applicationTimeframeClosed());
+		throw apiError('CONFLICT', m.applicationTimeframeClosed());
 	}
 	if (
 		conference &&
@@ -59,6 +59,6 @@ export function assertApplicationReady(
 			.add(conference.registrationDeadlineGracePeriodMinutes, 'minute')
 			.isBefore(dayjs())
 	) {
-		throw new GraphQLError(m.applicationTimeframeClosed());
+		throw apiError('CONFLICT', m.applicationTimeframeClosed());
 	}
 }

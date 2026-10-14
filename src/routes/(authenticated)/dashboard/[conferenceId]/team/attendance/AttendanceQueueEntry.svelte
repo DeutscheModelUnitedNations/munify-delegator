@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import type { QueueEntry } from './attendanceQueue';
 
@@ -60,7 +61,7 @@
 
 	<!-- Timestamp -->
 	<span class="text-base-content/50 text-xs">
-		{new Date(entry.timestamp).toLocaleTimeString()}
+		{new Date(entry.timestamp).toLocaleTimeString(getLocale())}
 	</span>
 
 	<!-- Error info / retry count -->

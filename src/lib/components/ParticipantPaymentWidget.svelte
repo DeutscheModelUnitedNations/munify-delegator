@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { goto } from '$app/navigation';
@@ -86,7 +87,7 @@
 								{m.commandPalettePaymentReceived({
 									amount: ref.amount,
 									currency: ref.currency,
-									date: new Date(ref.recievedAt).toLocaleDateString(undefined, {
+									date: new Date(ref.recievedAt).toLocaleDateString(getLocale(), {
 										year: 'numeric',
 										month: 'long',
 										day: 'numeric'

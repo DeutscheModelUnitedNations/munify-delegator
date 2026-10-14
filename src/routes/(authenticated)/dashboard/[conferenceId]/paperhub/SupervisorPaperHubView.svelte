@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
@@ -64,7 +65,7 @@
 
 	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return '-';
-		return new Date(date).toLocaleDateString();
+		return new Date(date).toLocaleDateString(getLocale());
 	};
 </script>
 

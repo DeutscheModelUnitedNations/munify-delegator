@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { renderComponent } from '$lib/components/tanStackTable';
 	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
@@ -56,7 +57,7 @@
 		return entries.map((entry) => toWaitingListRow(entry, startConference));
 	}
 
-	const dateFormatter = new Intl.DateTimeFormat(undefined, {
+	const dateFormatter = new Intl.DateTimeFormat(getLocale(), {
 		dateStyle: 'medium',
 		timeStyle: 'short'
 	});

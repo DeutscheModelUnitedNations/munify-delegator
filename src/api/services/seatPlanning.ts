@@ -1,9 +1,9 @@
-import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/helpers/formatNames';
 import type * as schema from '$api/db/schema';
 import { isValidManualTargets } from '$lib/helpers/seatPlanning/baselines';
 import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
+import { apiError } from '$api/services/apiError';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
@@ -71,11 +71,11 @@ export function assertSeatsPerDelegationAllowed(
 	// not part of the update
 	if (numOfSeatsPerDelegation == null) return;
 	if (numOfSeatsPerDelegation < 1) {
-		throw new GraphQLError(m.seatsPerDelegationAtLeastOne());
+		throw apiError('INVALID_INPUT', m.seatsPerDelegationAtLeastOne());
 	}
 	const min = minSeatsPerDelegation(assignedMembers);
 	if (numOfSeatsPerDelegation < min) {
-		throw new GraphQLError(m.seatsPerDelegationBelowAssigned({ min }));
+		throw apiError('CONFLICT', m.seatsPerDelegationBelowAssigned({ min }));
 	}
 }
 
@@ -165,26 +165,26 @@ export function committeeUpdateData(
  */
 export function assertCommitteeDeletable(assignedMembers: number, papers: number) {
 	if (assignedMembers > 0) {
-		throw new GraphQLError(m.committeeDeleteBlocked({ count: assignedMembers }));
+		throw apiError('CONFLICT', m.committeeDeleteBlocked({ count: assignedMembers }));
 	}
 	if (papers > 0) {
-		throw new GraphQLError(m.committeeDeleteBlockedByPapers({ count: papers }));
+		throw apiError('CONFLICT', m.committeeDeleteBlockedByPapers({ count: papers }));
 	}
 }
 
 /** A non-state actor cannot be deleted while a delegation is assigned to it */
 export function assertNonStateActorDeletable(assignedDelegations: number) {
 	if (assignedDelegations > 0) {
-		throw new GraphQLError(m.nonStateActorDeleteBlocked());
+		throw apiError('CONFLICT', m.nonStateActorDeleteBlocked());
 	}
 }
 
 /** Manual baselines need usable targets; templates ignore them (they are kept for later) */
 export function assertRegionalBaselineTargets(baseline: RegionalBaseline, targets: number[]) {
 	if (baseline === 'MANUAL' && !isValidManualTargets(targets)) {
-		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
+		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
 	}
 	if (targets.length > 0 && targets.length !== regionalGroups.length) {
-		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
+		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
 	}
 }

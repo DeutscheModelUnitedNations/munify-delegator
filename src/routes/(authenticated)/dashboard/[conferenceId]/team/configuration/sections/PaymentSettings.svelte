@@ -21,7 +21,7 @@
 		placeholder="Max Mustermann"
 		label={m.accountHolder()}
 	/>
-	<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
+	<FormTextInput {form} name="bankName" placeholder={m.bankName()} label={m.bankName()} />
 	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
 		<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
 		<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />

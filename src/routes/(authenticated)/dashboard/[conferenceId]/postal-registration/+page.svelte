@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
@@ -67,7 +68,7 @@
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		{@html m.postalRegistrationInstructions({
 			conferenceStart: conference.startConference
-				? new Date(conference.startConference).toLocaleDateString()
+				? new Date(conference.startConference).toLocaleDateString(getLocale())
 				: 'Date unknown'
 		})}
 
@@ -107,7 +108,9 @@
 						</div>
 						<i class="fa-sharp-duotone fa-solid fa-cake-candles"></i>
 						<div>
-							{userQueryData.birthday ? new Date(userQueryData.birthday).toLocaleDateString() : ''}
+							{userQueryData.birthday
+								? new Date(userQueryData.birthday).toLocaleDateString(getLocale())
+								: ''}
 						</div>
 					</div>
 					<a class="btn no-underline" href={resolve('/my-account')}>

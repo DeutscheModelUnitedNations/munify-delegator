@@ -5,7 +5,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
  *
  * Position and introduction papers, review comments and reviewer snippets are TipTap documents;
  * working papers are the resolution editor's own shape. The conference's contract, consent,
- * terms and certificate templates are PDF data URLs that pdf-lib loads and draws on.
+ * terms and certificate templates are PDFs that pdf-lib loads and draws on.
  */
 
 type TipTapNode = {
@@ -131,11 +131,11 @@ export function snippetDocument(body: string) {
 }
 
 /**
- * A one-page A4 PDF as a data URL, standing in for an uploaded template. The postal registration
+ * A one-page A4 PDF, standing in for an uploaded template. The postal registration
  * and the certificate draw the participant's details onto its first page, so one page with a
  * visible title is all a template needs to be usable.
  */
-export async function pdfTemplate(title: string): Promise<string> {
+export async function pdfTemplate(title: string): Promise<Uint8Array> {
 	const pdf = await PDFDocument.create();
 	pdf.setTitle(title);
 	const page = pdf.addPage([595.28, 841.89]);
@@ -148,5 +148,5 @@ export async function pdfTemplate(title: string): Promise<string> {
 		font,
 		color: rgb(0.5, 0.5, 0.5)
 	});
-	return `data:application/pdf;base64,${await pdf.saveAsBase64()}`;
+	return pdf.save();
 }

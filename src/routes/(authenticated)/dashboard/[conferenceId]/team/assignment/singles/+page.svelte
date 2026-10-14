@@ -9,7 +9,7 @@
 	} from '$lib/assignment/board';
 	import { seatedRoles } from '$lib/assignment/capacity';
 	import { liveSnapshot } from '$lib/api/liveSnapshot';
-	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
+	import { createPendingMoves } from '$lib/assignment/pendingMoves.svelte';
 	import { memoizeLast } from '$lib/helpers/memoizeLast';
 	import { m } from '$lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
@@ -23,7 +23,7 @@
 		seatedSnapshot
 	} from '../board';
 	import BusyOverlay from '../BusyOverlay.svelte';
-	import { PoolPages } from '../poolPages.svelte';
+	import { createPoolPages, poolHasMore } from '../poolPages.svelte';
 	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
@@ -64,7 +64,7 @@
 	// The single participants without a role, a page at a time as the pool scrolls. Pages are
 	// plain data, read once; what the draft or applying changes about them comes in live through
 	// `seated`, which is listed last so it wins.
-	const poolLoader = new PoolPages<BoardSingleParticipant>();
+	const poolLoader = createPoolPages<BoardSingleParticipant>();
 	$effect(() => {
 		const { conferenceId } = params;
 		poolLoader
@@ -73,7 +73,7 @@
 	});
 	const poolPages = $derived(poolLoader.pages(params.conferenceId));
 	const poolLoading = $derived(poolLoader.pending(params.conferenceId));
-	const morePages = $derived(PoolPages.more(poolPages.at(-1)));
+	const morePages = $derived(poolHasMore(poolPages.at(-1)));
 
 	const singleParticipants = $derived([
 		...new Map(
@@ -115,7 +115,7 @@
 		);
 		return converted ? CONVERT_CONTAINER : 'gone';
 	};
-	const moves = new PendingMoves(placeOf);
+	const moves = createPendingMoves(placeOf);
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));

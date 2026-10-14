@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	interface Props {
@@ -10,7 +11,7 @@
 
 <button
 	class="btn btn-ghost btn-xs btn-square print:hidden"
-	aria-label="Open user card"
+	aria-label={m.a11yOpenUserCard()}
 	onclick={(e) => {
 		e.stopPropagation();
 		openUserCard(userId);

@@ -1,4 +1,5 @@
 <script lang="ts" generics="V extends string | null">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 
 	/** Picks the day something is moved or copied to. */
@@ -14,7 +15,9 @@
 	<legend class="fieldset-legend">{m.calendarTargetDay()}</legend>
 	<select class="select w-full" bind:value>
 		{#each days as day (day.id)}
-			<option value={day.id}>{day.name} – {new Date(day.date).toLocaleDateString()}</option>
+			<option value={day.id}
+				>{day.name} – {new Date(day.date).toLocaleDateString(getLocale())}</option
+			>
 		{/each}
 	</select>
 </fieldset>

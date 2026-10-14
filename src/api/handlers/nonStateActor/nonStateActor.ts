@@ -18,8 +18,8 @@ import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRol
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import { nonStateActorPubsub, roleApplicationPubsub } from '$api/pubsub';
+import { apiError } from '$api/services/apiError';
 
 abilityBuilder.nonStateActor.allow('read');
 abilityBuilder.nonStateActor.allow(['update', 'delete']).when(systemAdmin);
@@ -39,7 +39,7 @@ async function withUniqueNameCheck<T>(operation: Promise<T>) {
 		return await operation;
 	} catch (error) {
 		if (isUniqueViolationOn(errorCause(error), 'non_state_actor_conference_id')) {
-			throw new GraphQLError(m.nonStateActorNotUnique());
+			throw apiError('CONFLICT', m.nonStateActorNotUnique());
 		}
 		throw error;
 	}
@@ -151,7 +151,7 @@ schemaBuilder.mutationFields((t) => ({
 					with: { assignedDelegations: { columns: { id: true } } }
 				});
 				if (!existing) {
-					throw new GraphQLError('Non-state actor not found, or not yours to delete');
+					throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 				}
 
 				assertNonStateActorDeletable(existing.assignedDelegations.length);

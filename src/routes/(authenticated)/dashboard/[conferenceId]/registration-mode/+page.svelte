@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
@@ -51,7 +52,7 @@
 	);
 
 	function formatTime(date: Date): string {
-		return date.toLocaleTimeString([], {
+		return date.toLocaleTimeString(getLocale(), {
 			hour: '2-digit',
 			minute: '2-digit',
 			second: '2-digit'

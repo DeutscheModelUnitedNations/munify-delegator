@@ -1,7 +1,7 @@
 import { inArray, sql } from 'drizzle-orm';
 import { db, schema } from '$api/db/db';
 import { participatesIn } from '../../services/authHelper';
-import { DuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
+import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
 import { possibleDuplicatePubsub } from '$api/pubsub';
 
 /*
@@ -133,7 +133,7 @@ async function scan(scannedWhere: UserFilter) {
 		db.query.user.findMany({ columns: PROFILE_COLUMNS, where: scannedWhere }),
 		loadPool()
 	]);
-	const index = new DuplicateIndex();
+	const index = createDuplicateIndex();
 	await inChunks<MatchProfile>(pool, (chunk) => index.add(chunk));
 	await inChunks<MatchProfile>(scanned, (chunk) => index.match(chunk));
 	return store(

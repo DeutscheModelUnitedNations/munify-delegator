@@ -1,40 +1,25 @@
-import { describe, expect, test } from 'vitest';
-import {
-	decodeDataURL,
-	fileFromRow,
-	fileHeaders,
-	fileQuery,
-	findFileSource,
-	isValidFileId,
-	storedFileUrl
-} from './files';
-
-describe('decodeDataURL', () => {
-	test('decodes base64 payloads to bytes and keeps the mime type', () => {
-		const decoded = decodeDataURL('data:application/pdf;base64,JVBERg==');
-		expect(decoded?.mimeType).toBe('application/pdf');
-		expect(Array.from(decoded?.bytes ?? [])).toEqual([0x25, 0x50, 0x44, 0x46]);
-	});
-
-	test('decodes url-encoded payloads', () => {
-		const decoded = decodeDataURL('data:image/svg+xml,%3Csvg%2F%3E');
-		expect(decoded?.mimeType).toBe('image/svg+xml');
-		expect(new TextDecoder().decode(decoded?.bytes)).toBe('<svg/>');
-	});
-
-	test('rejects anything that is not a data URL', () => {
-		expect(decodeDataURL('https://example.com/a.png')).toBeUndefined();
-	});
-});
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { findFileSource, formatMegabytes } from './files';
+import { contentDisposition, createStorage, filePurpose, objectKey } from './storageClient';
 
 describe('findFileSource', () => {
-	test('maps a route to its column and caching', () => {
-		expect(findFileSource('conference', 'logo')).toEqual({
+	test('maps a route to its column, purpose, limits and caching', () => {
+		expect(findFileSource('conference', 'logo')).toMatchObject({
 			kind: 'conference',
-			column: 'logoDataURL',
-			cacheable: true
+			field: 'logo',
+			purpose: 'conference/logo',
+			column: 'logoFileId',
+			roles: ['PROJECT_MANAGEMENT']
 		});
-		expect(findFileSource('conference', 'certificate')?.cacheable).toBe(false);
+		expect(findFileSource('conference', 'certificate')).toMatchObject({
+			mimeTypes: ['application/pdf']
+		});
+		expect(findFileSource('resolution', 'content')?.column).toBe('fileId');
+	});
+
+	test('lets the content roles upload templates, but only project management the pictures', () => {
+		expect(findFileSource('conference', 'contract')?.roles).toContain('CONTENT_LEAD');
+		expect(findFileSource('conference', 'emblem')?.roles).not.toContain('CONTENT_LEAD');
 	});
 
 	test('does not serve anything that is not listed', () => {
@@ -45,65 +30,61 @@ describe('findFileSource', () => {
 	});
 });
 
-describe('storedFileUrl', () => {
-	const row = { id: 'abc', updatedAt: new Date(1000) };
+describe('formatMegabytes', () => {
+	test('rounds to a tenth', () => {
+		expect(formatMegabytes(10_000_000)).toBe('10 MB');
+		expect(formatMegabytes(1_250_000)).toBe('1.3 MB');
+	});
+});
 
-	test('is versioned by the row update time', () => {
-		expect(storedFileUrl('place', row, 'sitePlan', 'data:image/png;base64,')).toBe(
-			'/files/place/abc/sitePlan?v=1000'
+describe('objectKey', () => {
+	test('groups objects by conference and purpose', () => {
+		expect(objectKey('c1', filePurpose('conference', 'logo'), 'f1')).toBe(
+			'conferences/c1/conference/logo/f1'
+		);
+	});
+});
+
+describe('contentDisposition', () => {
+	test('keeps a plain name', () => {
+		expect(contentDisposition('Resolution 1.pdf')).toBe(
+			`inline; filename="Resolution 1.pdf"; filename*=UTF-8''Resolution%201.pdf`
 		);
 	});
 
-	test('is null when nothing is stored', () => {
-		expect(storedFileUrl('place', row, 'sitePlan', null)).toBeNull();
-	});
-});
-
-describe('isValidFileId', () => {
-	test('accepts ids and rejects anything else', () => {
-		expect(isValidFileId('seed-conference_1')).toBe(true);
-		expect(isValidFileId('a"}) { x')).toBe(false);
-		expect(isValidFileId('')).toBe(false);
-	});
-});
-
-describe('fileFromRow', () => {
-	test('finds the stored file and the file name', () => {
-		const file = fileFromRow(
-			{ content: 'data:application/pdf;base64,JVBERg==', fileName: 'a.pdf' },
-			'content'
+	test('names the file in full as UTF-8, with an ASCII fallback', () => {
+		expect(contentDisposition("Rés (1)'s *final*!.pdf")).toBe(
+			`inline; filename="Res _1__s _final__.pdf"; filename*=UTF-8''R%C3%A9s%20%281%29%27s%20%2Afinal%2A%21.pdf`
 		);
-		expect(file).toMatchObject({ status: 'found', mimeType: 'application/pdf', fileName: 'a.pdf' });
-	});
-
-	test('reports a row without the file as missing', () => {
-		expect(fileFromRow(null, 'content')).toEqual({ status: 'missing' });
-		expect(fileFromRow({ content: null }, 'content')).toEqual({ status: 'missing' });
-		expect(fileFromRow({ content: 'not a data url' }, 'content')).toEqual({ status: 'missing' });
 	});
 });
 
-describe('fileHeaders', () => {
-	test('lets public images be cached for good', () => {
-		const headers = fileHeaders({ mimeType: 'image/png' }, true, '"x"');
-		expect(headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
-		expect(headers.get('content-disposition')).toBeNull();
+describe('presignDownload', () => {
+	const storage = createStorage({
+		endpoint: 'http://s3.test/bucket',
+		accessKeyId: 'key',
+		secretAccessKey: 'secret',
+		region: 'us-east-1'
 	});
 
-	test('keeps private files per user and names downloads', () => {
-		const headers = fileHeaders(
-			{ mimeType: 'application/pdf', fileName: 'Rés 1.pdf' },
-			false,
-			'"x"'
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	test('hands out the same URL for hours, so browsers can cache the file', async () => {
+		vi.useFakeTimers({ now: new Date('2026-10-14T10:00:00Z') });
+		const first = await storage.presignDownload('conferences/c1/conference/logo/f1');
+		vi.setSystemTime(new Date('2026-10-14T15:00:00Z'));
+		expect(await storage.presignDownload('conferences/c1/conference/logo/f1')).toBe(first);
+
+		vi.setSystemTime(new Date('2026-10-14T16:00:01Z'));
+		expect(await storage.presignDownload('conferences/c1/conference/logo/f1')).not.toBe(first);
+	});
+
+	test('names the file when asked', async () => {
+		const url = new URL(await storage.presignDownload('k', 'Résolution 1.pdf'));
+		expect(url.searchParams.get('response-content-disposition')).toBe(
+			contentDisposition('Résolution 1.pdf')
 		);
-		expect(headers.get('cache-control')).toBe('private, no-cache');
-		expect(headers.get('content-disposition')).toBe("inline; filename*=UTF-8''R%C3%A9s%201.pdf");
-	});
-});
-
-describe('fileQuery', () => {
-	test('selects the file, and a resolution also its name', () => {
-		expect(fileQuery('conference', 'logoDataURL')).toContain('conference(id: $id) { logoDataURL }');
-		expect(fileQuery('resolution', 'content')).toContain('{ content fileName }');
 	});
 });

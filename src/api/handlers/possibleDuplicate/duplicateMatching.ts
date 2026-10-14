@@ -271,54 +271,58 @@ function blockingKeys(keys: MatchKeys): string[] {
  * can hand the event loop back in between: a scan of a conference with tens of thousands of
  * accounts takes seconds.
  */
-export class DuplicateIndex {
-	private readonly buckets = new Map<string, MatchKeys[]>();
-	private readonly pairs = new Map<string, DuplicatePair>();
+export function createDuplicateIndex() {
+	const buckets = new Map<string, MatchKeys[]>();
+	const pairs = new Map<string, DuplicatePair>();
 
-	add(pool: MatchProfile[]) {
-		for (const keys of pool.map(matchKeys)) {
-			for (const key of blockingKeys(keys)) {
-				const bucket = this.buckets.get(key);
-				if (bucket) bucket.push(keys);
-				else this.buckets.set(key, [keys]);
-			}
-		}
-	}
-
-	/**
-	 * Compares scanned accounts with the pool added so far. The pool may include them; an account
-	 * is never paired with itself, and a pair found from both sides counts once.
-	 */
-	match(scanned: MatchProfile[]) {
-		for (const keys of scanned.map(matchKeys)) {
-			const compared = new Set<string>([keys.id]);
-			for (const key of blockingKeys(keys)) {
-				for (const other of this.buckets.get(key) ?? []) {
-					if (compared.has(other.id)) continue;
-					compared.add(other.id);
-					this.compare(keys, other);
-				}
-			}
-		}
-	}
-
-	private compare(keys: MatchKeys, other: MatchKeys) {
+	function compare(keys: MatchKeys, other: MatchKeys) {
 		const [userId, candidateId] = keys.id < other.id ? [keys.id, other.id] : [other.id, keys.id];
 		const pairKey = `${userId}|${candidateId}`;
-		if (this.pairs.has(pairKey)) return;
+		if (pairs.has(pairKey)) return;
 		const match = compareKeys(keys, other);
-		if (match) this.pairs.set(pairKey, { userId, candidateId, ...match });
+		if (match) pairs.set(pairKey, { userId, candidateId, ...match });
 	}
 
-	/** Every pair of a scanned account and a pool account that looks like one person. */
-	found(): DuplicatePair[] {
-		return [...this.pairs.values()];
-	}
+	return {
+		add(pool: MatchProfile[]) {
+			for (const keys of pool.map(matchKeys)) {
+				for (const key of blockingKeys(keys)) {
+					const bucket = buckets.get(key);
+					if (bucket) bucket.push(keys);
+					else buckets.set(key, [keys]);
+				}
+			}
+		},
+
+		/**
+		 * Compares scanned accounts with the pool added so far. The pool may include them; an account
+		 * is never paired with itself, and a pair found from both sides counts once.
+		 */
+		match(scanned: MatchProfile[]) {
+			for (const keys of scanned.map(matchKeys)) {
+				const compared = new Set<string>([keys.id]);
+				for (const key of blockingKeys(keys)) {
+					for (const other of buckets.get(key) ?? []) {
+						if (compared.has(other.id)) continue;
+						compared.add(other.id);
+						compare(keys, other);
+					}
+				}
+			}
+		},
+
+		/** Every pair of a scanned account and a pool account that looks like one person. */
+		found(): DuplicatePair[] {
+			return [...pairs.values()];
+		}
+	};
 }
 
-/** `DuplicateIndex` in one go, for inputs small enough not to need breaks. */
+type DuplicateIndex = ReturnType<typeof createDuplicateIndex>;
+
+/** `createDuplicateIndex` in one go, for inputs small enough not to need breaks. */
 export function findDuplicates(scanned: MatchProfile[], pool: MatchProfile[]): DuplicatePair[] {
-	const index = new DuplicateIndex();
+	const index = createDuplicateIndex();
 	index.add(pool);
 	index.match(scanned);
 	return index.found();

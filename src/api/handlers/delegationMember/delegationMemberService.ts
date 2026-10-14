@@ -9,8 +9,8 @@ import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplica
 import type { ApiContext } from '$api/rumble';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { and, eq, inArray } from 'drizzle-orm';
+import { apiError } from '$api/services/apiError';
 
 /** Joining a delegation by entry code. Returns the id of the new member. */
 export async function joinDelegationByEntryCode(
@@ -23,7 +23,7 @@ export async function joinDelegationByEntryCode(
 		.then(assertFindFirstExists);
 
 	if (delegation.applied) {
-		throw new GraphQLError(m.delegationHasAlreadyApplied());
+		throw apiError('CONFLICT', m.delegationHasAlreadyApplied());
 	}
 
 	await fetchUserParticipations({
@@ -70,7 +70,7 @@ export async function removeDelegationMember(ctx: ApiContext, id: string) {
 			});
 
 		if (!deleted) {
-			throw new GraphQLError('Delegation member not found, or not yours to delete');
+			throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 		}
 
 		if (deleted.isHeadDelegate) {
@@ -133,7 +133,7 @@ export async function assertOfferedIn(
 			: true
 	]);
 	if (!nation || !nsa || !committee) {
-		throw new GraphQLError('This role is not on offer in the conference');
+		throw apiError('INVALID_INPUT', m.roleNotOnOffer());
 	}
 }
 
@@ -170,9 +170,7 @@ async function clearParticipation(tx: Transaction, conferenceId: string, userId:
 		)
 		.returning({ id: schema.singleParticipant.id });
 	if (removedSingle.length === 0) {
-		throw new GraphQLError(
-			'User is already part of the conference and records could not be deleted'
-		);
+		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
 	}
 }
 
@@ -367,7 +365,7 @@ async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
 		);
 		for (const [committeeId, members] of taken) {
 			if (members.length > (seats.get(committeeId) ?? 0)) {
-				throw new GraphQLError('A committee has more members of this delegation than it seats');
+				throw apiError('CONFLICT', m.committeeSeatsExceeded());
 			}
 		}
 	}
@@ -401,12 +399,12 @@ export async function assignCommittees(
 				.then(assertFindFirstExists);
 
 			if (committee.conferenceId !== member.conferenceId) {
-				throw new GraphQLError(m.committeeDoesNotBelongToConferenceError());
+				throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 			}
 
 			const nationCode = member.delegation?.assignedNationAlpha3Code ?? '';
 			if (!committee.nations.some((nation) => nation.alpha3Code === nationCode)) {
-				throw new GraphQLError(m.committeeDoesNotBelongToConferenceError());
+				throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 			}
 
 			await tx

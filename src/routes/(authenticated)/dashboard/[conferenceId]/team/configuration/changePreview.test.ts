@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { collectConfigChanges, formatValue, groupConfigChanges } from './changePreview';
+import { getLocale } from '$lib/paraglide/runtime';
 
 type ConferenceState = 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
 
@@ -196,8 +197,8 @@ describe('formatValue', () => {
 
 	test('formats dates, numbers and strings', () => {
 		const date = new Date('2026-03-12T09:00:00Z');
-		expect(formatValue(date)).toBe(date.toLocaleString());
-		expect(formatValue(1234.5)).toBe((1234.5).toLocaleString());
+		expect(formatValue(date)).toBe(date.toLocaleString(getLocale()));
+		expect(formatValue(1234.5)).toBe((1234.5).toLocaleString(getLocale()));
 		expect(formatValue('Kiel')).toBe('Kiel');
 	});
 

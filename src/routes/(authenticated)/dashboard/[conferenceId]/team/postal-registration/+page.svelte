@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
 	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
@@ -11,7 +12,7 @@
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 	import ScanFlowPage from '$lib/components/scanner/ScanFlowPage.svelte';
 	import {
-		ScannedUserFlow,
+		createScannedUserFlow,
 		type StatusChange
 	} from '$lib/components/scanner/scannedUserFlow.svelte';
 	import type { PageProps } from './$types';
@@ -42,7 +43,7 @@
 	} as const;
 
 	/** The postal paperwork we are here to tick off. */
-	const flow = new ScannedUserFlow(async (userId) => {
+	const flow = createScannedUserFlow(async (userId) => {
 		const statuses = await client.query.conferenceParticipantStatuses({
 			__args: {
 				where: { conferenceId: { eq: routeParams.conferenceId }, userId: { eq: userId } }
@@ -117,7 +118,7 @@
 					{formatNames(userDetails.givenName ?? undefined, userDetails.familyName ?? undefined)}
 				</h3>
 				<p class="text-sm opacity-60">
-					{userDetails.birthday ? userDetails.birthday.toLocaleDateString() : ''}
+					{userDetails.birthday ? userDetails.birthday.toLocaleDateString(getLocale()) : ''}
 				</p>
 			</div>
 		</div>

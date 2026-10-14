@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /**
  * An entry's day, track and place are ids from the client, so each has to belong where the entry
@@ -13,7 +14,7 @@ export async function assertReferences(
 ) {
 	const trackIds = [...new Set(refs.calendarTrackIds ?? [])];
 	if (refs.calendarTrackIds && trackIds.length === 0) {
-		throw new GraphQLError('An entry has to run on at least one track');
+		throw apiError('INVALID_INPUT', m.calendarEntryNeedsTrack());
 	}
 	const [day, tracks, place] = await Promise.all([
 		db.query.calendarDay.findFirst({
@@ -34,7 +35,7 @@ export async function assertReferences(
 			: true
 	]);
 	if (!day || tracks.length !== trackIds.length || !place) {
-		throw new GraphQLError('Day, track and place must all belong to the same conference');
+		throw apiError('INVALID_INPUT', m.calendarEntryOtherConference());
 	}
 }
 

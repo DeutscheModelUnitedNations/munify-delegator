@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import {
 	autoFilterFns,
 	autoSortFns,
@@ -100,7 +101,7 @@ export interface TableExport {
 	data: string[][];
 }
 
-const exportDateFormat = new Intl.DateTimeFormat(undefined, {
+const exportDateFormat = new Intl.DateTimeFormat(getLocale(), {
 	dateStyle: 'medium',
 	timeStyle: 'short'
 });

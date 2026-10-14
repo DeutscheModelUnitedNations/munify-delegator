@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		todos: (
 			| {
@@ -54,13 +55,13 @@
 							target="_blank"
 							rel="external"
 							class="btn btn-circle btn-sm"
-							aria-label="Help-Link"
+							aria-label={m.a11yHelpLink()}
 						>
 							<i class="fad fa-question"></i>
 						</a>
 					{:else if todo.help}
 						<div class="tooltip tooltip-left" data-tip={todo.help}>
-							<button class="btn btn-circle btn-sm cursor-help" aria-label="Help">
+							<button class="btn btn-circle btn-sm cursor-help" aria-label={m.a11yHelp()}>
 								<i class="fad fa-question"></i>
 							</button>
 						</div>

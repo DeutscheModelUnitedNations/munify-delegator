@@ -44,7 +44,7 @@ export function makeSeedPlace(
 				| 'directions'
 				| 'info'
 				| 'websiteUrl'
-				| 'sitePlanDataURL'
+				| 'sitePlanFileId'
 			>
 		>
 ): typeof schema.place.$inferInsert & { id: string } {
@@ -57,7 +57,7 @@ export function makeSeedPlace(
 		directions: options.directions ?? null,
 		info: options.info ?? null,
 		websiteUrl: options.websiteUrl ?? null,
-		sitePlanDataURL: options.sitePlanDataURL ?? null,
+		sitePlanFileId: options.sitePlanFileId ?? null,
 		conferenceId: options.conferenceId,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()

@@ -12,6 +12,7 @@ import {
 	type ResultItem
 } from './commandPaletteItems';
 import type { ConfigEntry, PageEntry } from './pageRegistry';
+import { getLocale } from '$lib/paraglide/runtime';
 
 const conferenceId = 'conf-1';
 const user = {
@@ -153,7 +154,7 @@ describe('describeTransaction', () => {
 			m.commandPalettePaymentReceived({
 				amount: 10,
 				currency: 'EUR',
-				date: new Date(recievedAt).toLocaleDateString(undefined, {
+				date: new Date(recievedAt).toLocaleDateString(getLocale(), {
 					year: 'numeric',
 					month: 'long',
 					day: 'numeric'

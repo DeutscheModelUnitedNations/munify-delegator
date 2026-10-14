@@ -1,3 +1,4 @@
+import { m } from '$lib/paraglide/messages';
 import { db, schema } from '$api/db/db';
 import { eq } from 'drizzle-orm';
 import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
@@ -11,7 +12,6 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
-import { GraphQLError } from 'graphql';
 import type { Context } from '$api/context';
 import { scanUserForDuplicatesInBackground } from '$api/handlers/possibleDuplicate/possibleDuplicates';
 import {
@@ -30,6 +30,7 @@ import {
 	singleParticipantPubsub,
 	userPubsub
 } from '$api/pubsub';
+import { apiError } from '$api/services/apiError';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
@@ -373,8 +374,7 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-const IMPERSONATION_STALLED =
-	'Impersonation is temporarily unavailable while the login flow is being migrated.';
+const impersonationStalled = () => m.impersonationUnavailable();
 
 schemaBuilder.mutationFields((t) => ({
 	/*
@@ -396,14 +396,14 @@ schemaBuilder.mutationFields((t) => ({
 			scope: t.arg.string()
 		},
 		resolve: () => {
-			throw new GraphQLError(IMPERSONATION_STALLED);
+			throw apiError('FORBIDDEN', impersonationStalled());
 		}
 	}),
 
 	stopImpersonation: t.field({
 		type: 'Boolean',
 		resolve: () => {
-			throw new GraphQLError(IMPERSONATION_STALLED);
+			throw apiError('FORBIDDEN', impersonationStalled());
 		}
 	})
 }));

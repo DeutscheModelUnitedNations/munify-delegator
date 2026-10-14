@@ -9,10 +9,11 @@ import {
 	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { nullToUndefined } from '$api/services/args';
 import { waitingListEntryPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/waitingListEntry.ts
 abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -42,7 +43,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = userId(ctx);
 			if (!id) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
 			// Same zod schema the registration form uses, so the length limits stay in one place.
@@ -57,7 +58,7 @@ schemaBuilder.mutationFields((t) => ({
 				where: { conferenceId: args.conferenceId, userId: id }
 			});
 			if (existing) {
-				throw new GraphQLError('You are already on the waiting list for this conference');
+				throw apiError('CONFLICT', m.waitingListAlreadyOn());
 			}
 
 			const created = await db
@@ -139,7 +140,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.waitingListEntry.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Waiting list entry not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			waitingListEntryPubsub.removed();
 

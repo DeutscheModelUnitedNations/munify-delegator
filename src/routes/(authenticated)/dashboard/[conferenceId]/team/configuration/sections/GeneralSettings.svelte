@@ -103,7 +103,9 @@
 				label={m.registrationDeadlineGracePeriod()}
 			/>
 			<p class="text-base-content/60 mt-1 text-xs">
-				{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString()}
+				{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString(
+					getLocale()
+				)}
 			</p>
 		</div>
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />

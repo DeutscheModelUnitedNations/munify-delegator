@@ -14,10 +14,10 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { FlagCollectionSection } from '$lib/components/flagCollection';
 	import ReviewerLeaderboard from '$lib/components/paperHub/ReviewerLeaderboard.svelte';
-	import { PersistedState } from '$lib/state/persistedState.svelte';
+	import { createPersistedState } from '$lib/state/persistedState.svelte';
 	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
-	import { PaperSortState, paperHasReviews, sortPapers } from './paperSorting';
-	import { ExpandedPaperGroup, PaperGroupsSnapshot } from './paperGroups.svelte';
+	import { createPaperSortState, paperHasReviews, sortPapers } from './paperSorting';
+	import { createExpandedPaperGroup, createPaperGroupsSnapshot } from './paperGroups.svelte';
 	import { page } from '$app/state';
 
 	interface Props {
@@ -27,7 +27,7 @@
 	let { conferenceId }: Props = $props();
 
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
-	const focusMode = new PersistedState('paperHubFocusMode', false);
+	const focusMode = createPersistedState('paperHubFocusMode', false);
 
 	const paperSelection = {
 		id: true,
@@ -64,7 +64,7 @@
 
 	type Paper = Awaited<ReturnType<typeof fetchIntroductionPapers>>[number];
 
-	const snapshot = new PaperGroupsSnapshot(() =>
+	const snapshot = createPaperGroupsSnapshot(() =>
 		Promise.all([fetchGroupedPapers(), fetchIntroductionPapers()])
 	);
 	let groupedPapers = $derived(snapshot.grouped);
@@ -110,7 +110,7 @@
 	let section = $state<Section>(page.url.hash === '#flag-collection' ? 'flags' : 'papers');
 
 	// Store expanded state in URL params using sveltekit-search-params
-	const openGroup = new ExpandedPaperGroup();
+	const openGroup = createExpandedPaperGroup();
 
 	// Status counting helper
 	const countByStatus = (papers: { status: PaperstatusEnum }[]) => ({
@@ -160,7 +160,7 @@
 	});
 
 	// Sorting state per agenda item
-	const sortState = new PaperSortState();
+	const sortState = createPaperSortState();
 
 	const timeOf = (date: Date | null) => (date ? new Date(date).getTime() : 0);
 

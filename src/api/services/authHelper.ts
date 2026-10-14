@@ -1,6 +1,5 @@
 import { db } from '$api/db/db';
 import type { Context } from '$api/context';
-import { GraphQLError } from 'graphql';
 import type { teamRole } from '$api/db/schema';
 
 /** The TeamRole enum values, taken from the schema so role lists stay type-checked. */
@@ -61,6 +60,9 @@ import {
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
 } from '$lib/helpers/teamRoles';
+import { m } from '$lib/paraglide/messages';
+import { translateTeamRole } from '$lib/utils/enumTranslations';
+import { apiError } from '$api/services/apiError';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {
@@ -200,10 +202,11 @@ export async function assertTeamRole(
 ) {
 	ctx.mustBeLoggedIn();
 	if (!(await hasTeamRole(ctx, conferenceId, roles))) {
-		throw new GraphQLError(
+		throw apiError(
+			'FORBIDDEN',
 			roles
-				? `Access denied - requires one of: ${roles.join(', ')}`
-				: 'Access denied - requires team member status'
+				? m.accessDeniedTeamRoles({ roles: roles.map(translateTeamRole).join(', ') })
+				: m.accessDeniedTeamMember()
 		);
 	}
 }
@@ -232,7 +235,7 @@ export async function assertTeamRoleForCalendarDay(
 		columns: { conferenceId: true }
 	});
 	if (!day) {
-		throw new GraphQLError('Calendar day not found');
+		throw apiError('NOT_FOUND', m.calendarDayNotFound());
 	}
 	await assertTeamRole(ctx, day.conferenceId, roles);
 	return day;
@@ -249,7 +252,7 @@ export async function assertTeamRoleForSurveyQuestion(
 		columns: { conferenceId: true }
 	});
 	if (!question) {
-		throw new GraphQLError('Survey question not found');
+		throw apiError('NOT_FOUND', m.surveyQuestionNotFound());
 	}
 	await assertTeamRole(ctx, question.conferenceId, roles);
 }
@@ -266,7 +269,7 @@ export async function assertParticipantsOf(conferenceId: string, userIds: readon
 		columns: { id: true }
 	});
 	if (found.length !== unique.length) {
-		throw new GraphQLError('Not every given user takes part in this conference');
+		throw apiError('INVALID_INPUT', m.usersNotInConference());
 	}
 }
 

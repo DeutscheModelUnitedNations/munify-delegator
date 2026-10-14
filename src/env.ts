@@ -83,6 +83,16 @@ export const variables = defineEnvVars({
 	SMTP_FROM_ADDRESS: { schema: z.string().email().default('noreply@munify.cloud') },
 	SMTP_FROM_NAME: { schema: z.string().default('MUNify Delegator') },
 
+	// Object storage (any S3-compatible service) for every uploaded file. The endpoint names the
+	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted
+	// (`https://delegator.s3.example.org`). Browsers upload to and download from presigned URLs,
+	// so they must reach `S3_PUBLIC_ENDPOINT` (by default the same) and the bucket must allow CORS.
+	S3_ENDPOINT: { schema: requiredAtRuntime(z.string().url(), 'http://localhost/bucket') },
+	S3_PUBLIC_ENDPOINT: { schema: unlessEmpty(z.string().url().optional()) },
+	S3_ACCESS_KEY_ID: { schema: requiredAtRuntime(z.string(), '') },
+	S3_SECRET_ACCESS_KEY: { schema: requiredAtRuntime(z.string(), '') },
+	S3_REGION: { schema: z.string().default('us-east-1') },
+
 	// Distributed pubsub for GraphQL subscriptions. Without it rumble falls back to an in-memory
 	// event target, which is fine for a single process but drops events between instances.
 	REDIS_URL: { schema: z.string().optional() },

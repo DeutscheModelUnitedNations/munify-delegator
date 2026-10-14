@@ -5,21 +5,41 @@ import { loadPaperIntoEditor, type PaperIdentity } from './paperDisplay';
  * when it first arrives, and shows the editor only after that (`initialized`); reloading on every
  * live update would overwrite what the author is typing.
  */
-export class LoadedPaper {
-	initialized = $state(false);
-	paperId = $state<string | null>(null);
-	/** Why a working paper's content could not be read as a resolution, if it could not. */
-	validationError = $state<string | null>(null);
-	/** That unreadable content, offered as a download. */
-	invalidRawContent = $state<unknown>(null);
+export function createLoadedPaper() {
+	let initialized = $state(false);
+	let paperId = $state<string | null>(null);
+	let validationError = $state<string | null>(null);
+	let invalidRawContent = $state<unknown>(null);
 
-	/** Loads `paper` into the editor unless it is already the one loaded. */
-	loadIfNew(paper: PaperIdentity, latestContent: unknown) {
-		if (paper.id === this.paperId) return;
-		const result = loadPaperIntoEditor(paper, latestContent);
-		this.validationError = result.validationError;
-		this.invalidRawContent = result.invalidRawContent;
-		this.paperId = paper.id;
-		this.initialized = true;
-	}
+	return {
+		get initialized() {
+			return initialized;
+		},
+		set initialized(value: boolean) {
+			initialized = value;
+		},
+		get paperId() {
+			return paperId;
+		},
+		/** Why a working paper's content could not be read as a resolution, if it could not. */
+		get validationError() {
+			return validationError;
+		},
+		/** That unreadable content, offered as a download. */
+		get invalidRawContent() {
+			return invalidRawContent;
+		},
+
+		/** Loads `paper` into the editor unless it is already the one loaded. */
+		loadIfNew(paper: PaperIdentity, latestContent: unknown) {
+			if (paper.id === paperId) return;
+			const result = loadPaperIntoEditor(paper, latestContent);
+			validationError = result.validationError;
+			invalidRawContent = result.invalidRawContent;
+			paperId = paper.id;
+			initialized = true;
+		}
+	};
 }
+
+export type LoadedPaper = ReturnType<typeof createLoadedPaper>;

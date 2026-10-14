@@ -27,7 +27,7 @@
 	<div class="flex items-center gap-2">
 		<a
 			class="btn btn-square btn-ghost"
-			aria-label="back"
+			aria-label={m.back()}
 			href={resolve(`/dashboard/${params.conferenceId}`)}
 		>
 			<i class="fas fa-arrow-left"></i>

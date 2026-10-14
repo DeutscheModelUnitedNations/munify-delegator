@@ -12,7 +12,7 @@ describe('makeSeedPlace', () => {
 			directions: 'Haupteingang',
 			info: 'Ausweis mitbringen',
 			websiteUrl: 'https://landtag.example',
-			sitePlanDataURL: 'data:image/png;base64,'
+			sitePlanFileId: 'file-1'
 		});
 		expect(place).toMatchObject({
 			conferenceId: 'c1',
@@ -23,7 +23,7 @@ describe('makeSeedPlace', () => {
 			directions: 'Haupteingang',
 			info: 'Ausweis mitbringen',
 			websiteUrl: 'https://landtag.example',
-			sitePlanDataURL: 'data:image/png;base64,'
+			sitePlanFileId: 'file-1'
 		});
 		expect(place.id).toEqual(expect.any(String));
 	});
@@ -36,7 +36,7 @@ describe('makeSeedPlace', () => {
 			directions: null,
 			info: null,
 			websiteUrl: null,
-			sitePlanDataURL: null
+			sitePlanFileId: null
 		});
 	});
 });

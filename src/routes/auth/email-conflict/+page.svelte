@@ -47,7 +47,7 @@
 </script>
 
 <main class="mx-auto flex max-w-[700px] flex-col items-center justify-center gap-8 p-4 py-12">
-	<img src={accessDenied} alt="Email Conflict" class="w-1/3 max-w-[200px]" />
+	<img src={accessDenied} alt={m.emailConflictTitle()} class="w-1/3 max-w-[200px]" />
 
 	<h1 class="text-center text-3xl font-bold">{m.emailConflictTitle()}</h1>
 

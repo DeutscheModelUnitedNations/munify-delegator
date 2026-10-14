@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
@@ -119,7 +120,7 @@
 				]
 					.filter(Boolean)
 					.join(', '),
-				birthday: user.birthday.toLocaleDateString()
+				birthday: user.birthday.toLocaleDateString(getLocale())
 			};
 
 			await downloadPostalRegistrationDocuments({

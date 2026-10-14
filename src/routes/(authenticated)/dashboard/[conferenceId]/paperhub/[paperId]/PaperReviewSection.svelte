@@ -11,7 +11,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { getEmptyTipTapDocument } from '$lib/components/paper/editor/contentValidation';
 	import { untrack } from 'svelte';
-	import { DraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
+	import { createDraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
 	import DraftRecoveryModal from '$lib/components/paper/draft/DraftRecoveryModal.svelte';
 	import PaperHistory from './PaperHistory.svelte';
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
@@ -62,7 +62,7 @@
 	let showConfirmModal = $state(false);
 
 	// The page re-creates this component per paper, so the draft key is fixed for its lifetime.
-	const draft = new DraftAutosave<ReviewDraft, JSONContent>(
+	const draft = createDraftAutosave<ReviewDraft, JSONContent>(
 		`reviewDraft_${untrack(() => paperId)}`,
 		{
 			// Skip if content is empty

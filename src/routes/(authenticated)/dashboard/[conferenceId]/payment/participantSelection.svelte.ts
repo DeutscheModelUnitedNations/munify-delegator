@@ -7,57 +7,76 @@ export interface PayableUser {
 	familyName: string | null;
 }
 
+export type PaymentParticipantSelection = ReturnType<typeof createPaymentParticipantSelection>;
+
 /**
  * Who a payment covers. Starts out as everyone the caller may pay for (`defaults`) once those have
  * loaded (`ready`), and is locked once a transfer reference has been generated for it. Must be
- * created during component initialisation.
+ * called during component initialisation.
  */
-export class PaymentParticipantSelection {
-	selected = $state<PayableUser[]>([]);
-	isReferenceCreated = $state(false);
-
-	#defaults: () => PayableUser[] | undefined;
-
-	constructor(defaults: () => PayableUser[] | undefined, ready: () => boolean) {
-		this.#defaults = defaults;
-		let isInitialized = false;
-		$effect(() => {
-			if (ready() && !isInitialized) {
-				this.selectAll();
-				isInitialized = true;
-			}
-		});
-	}
+export function createPaymentParticipantSelection(
+	defaults: () => PayableUser[] | undefined,
+	ready: () => boolean
+) {
+	let selected = $state<PayableUser[]>([]);
+	let isReferenceCreated = $state(false);
 
 	/** Refuses, with a toast, to change a selection a reference was already generated for. */
-	#locked() {
-		if (this.isReferenceCreated) {
+	function locked() {
+		if (isReferenceCreated) {
 			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
 		}
-		return this.isReferenceCreated;
+		return isReferenceCreated;
 	}
 
-	isSelected(userId: string) {
-		return this.selected.some((user) => user.id === userId);
+	function isSelected(userId: string) {
+		return selected.some((user) => user.id === userId);
 	}
 
-	setSelected(user: PayableUser, selected: boolean) {
-		if (this.#locked()) return;
-		if (!selected) {
-			this.selected = this.selected.filter((x) => x.id !== user.id);
-		} else if (!this.isSelected(user.id)) {
-			this.selected = [...this.selected, user];
+	function setSelected(user: PayableUser, isSelectedNow: boolean) {
+		if (locked()) return;
+		if (!isSelectedNow) {
+			selected = selected.filter((x) => x.id !== user.id);
+		} else if (!isSelected(user.id)) {
+			selected = [...selected, user];
 		}
 	}
 
-	selectAll() {
-		if (this.#locked()) return;
-		const defaults = this.#defaults();
-		if (defaults) this.selected = defaults;
+	function selectAll() {
+		if (locked()) return;
+		const current = defaults();
+		if (current) selected = current;
 	}
 
-	clear() {
-		if (this.#locked()) return;
-		this.selected = [];
+	function clear() {
+		if (locked()) return;
+		selected = [];
 	}
+
+	let isInitialized = false;
+	$effect(() => {
+		if (ready() && !isInitialized) {
+			selectAll();
+			isInitialized = true;
+		}
+	});
+
+	return {
+		get selected() {
+			return selected;
+		},
+		set selected(value: PayableUser[]) {
+			selected = value;
+		},
+		get isReferenceCreated() {
+			return isReferenceCreated;
+		},
+		set isReferenceCreated(value: boolean) {
+			isReferenceCreated = value;
+		},
+		isSelected,
+		setSelected,
+		selectAll,
+		clear
+	};
 }

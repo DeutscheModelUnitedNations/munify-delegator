@@ -8,8 +8,9 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { inArray } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import { calendarEntryPubsub, calendarTrackPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/calendarTrack.ts
 abilityBuilder.calendarTrack.allow('read');
@@ -122,7 +123,7 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			if (deleted.length === 0) {
-				throw new GraphQLError('Calendar track not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			calendarTrackPubsub.removed();
 			if (orphanIds.length > 0) calendarEntryPubsub.removed();

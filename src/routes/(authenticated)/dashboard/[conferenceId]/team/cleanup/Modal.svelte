@@ -12,7 +12,7 @@
 </script>
 
 <div class="modal {open && 'modal-open'}">
-	<button class="modal-backdrop" onclick={closeModal} aria-label="Close modal"></button>
+	<button class="modal-backdrop" onclick={closeModal} aria-label={m.a11yCloseDialog()}></button>
 	<div class="modal-box relative flex flex-col gap-4">
 		<h1 class="text-2xl font-bold">{modalData?.message}</h1>
 		<p>{m.deleted()}: <span class="badge badge-primary">{modalData?.count}</span></p>
@@ -24,7 +24,7 @@
 		<button
 			class="btn btn-ghost absolute top-4 right-4"
 			onclick={closeModal}
-			aria-label="Close modal"
+			aria-label={m.a11yCloseDialog()}
 		>
 			<i class="fa fa-xmark"></i>
 		</button>

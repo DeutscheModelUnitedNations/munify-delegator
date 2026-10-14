@@ -34,6 +34,9 @@ async function pngOf(canvas: HTMLCanvasElement): Promise<Uint8Array> {
 function loadImage(url: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const image = new Image();
+		// Stored files come from the bucket, another origin: without CORS the image would taint
+		// the canvas, and encoding it would fail.
+		image.crossOrigin = 'anonymous';
 		image.onload = () => resolve(image);
 		image.onerror = () => reject(new Error(`Could not load ${url}`));
 		image.src = url;

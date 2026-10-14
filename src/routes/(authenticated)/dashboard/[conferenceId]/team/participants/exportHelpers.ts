@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import { m } from '$lib/paraglide/messages';
 import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 import {
@@ -37,7 +38,7 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 	phone: (row) => text(row.phone),
 	birthday: (row) =>
 		row.birthday
-			? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(row.birthday)
+			? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(row.birthday)
 			: '',
 	ageAtConference: (row) => numberText(row.ageAtConference),
 	hasOpenIssue: (row) => booleanText(row.hasOpenIssue),

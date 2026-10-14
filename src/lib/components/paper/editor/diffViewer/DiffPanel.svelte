@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import type { DiffSegment } from './types';
 	import { splitIntoDiffLines } from './diffUtils';
 	import { m } from '$lib/paraglide/messages';
@@ -21,8 +22,8 @@
 			<span class="font-semibold">{title}</span>
 			<span class="badge badge-sm badge-primary">{m.version()} {versionNumber}</span>
 			<span class="text-xs text-base-content/60">
-				{date.toLocaleDateString()}
-				{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+				{date.toLocaleDateString(getLocale())}
+				{date.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' })}
 			</span>
 		</div>
 	</div>

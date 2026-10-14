@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 import { renderComponent } from '$lib/components/tanStackTable';
 import { columnIdOf, type ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 import { m } from '$lib/paraglide/messages';
@@ -87,7 +88,7 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			header: m.birthday(),
 			cell: ({ row }) =>
 				row.original.birthday
-					? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+					? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(
 							row.original.birthday
 						)
 					: '',

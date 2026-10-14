@@ -20,6 +20,7 @@
 </script>
 
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
@@ -264,7 +265,7 @@
 									</span>
 								</td>
 								<td class="hidden sm:table-cell text-base-content/60">
-									{new Date(snippet.updatedAt).toLocaleDateString()}
+									{new Date(snippet.updatedAt).toLocaleDateString(getLocale())}
 								</td>
 								<td>
 									<div class="flex justify-end gap-2">

@@ -81,6 +81,44 @@ const userRef = (onDelete: UpdateDeleteAction) =>
 		.references(() => user.id, { onDelete, onUpdate: 'cascade' });
 
 /**
+ * A row's uploaded file. `restrict`, so a file is never deleted while anything points at it: the
+ * file cleanup job deletes only the unreferenced ones, and a reference landing at the same moment
+ * makes its delete fail instead of leaving a dangling key.
+ */
+const fileRef = () =>
+	text().references(() => storedFile.id, { onDelete: 'restrict', onUpdate: 'cascade' });
+
+/**
+ * An uploaded file. The bytes live in the S3 bucket under `key`; this row is what the app knows
+ * about them. A row is created when an upload is requested (`requestFileUpload`), and becomes a
+ * file of some row when a mutation stores its id there (`conference.logoFileId`, …). Rows nothing
+ * points at - uploads never used, replaced files, files of deleted rows - are removed together
+ * with their objects by the `file-cleanup` job.
+ */
+export const storedFile = snakeCase.table(
+	'stored_file',
+	{
+		...defaultIdAndTimestamps,
+		/** The object's key in the bucket. */
+		key: text().notNull().unique(),
+		/** Which file this is (`conference/logo`, …), see `FILE_SOURCES`; it is only ever stored there. */
+		purpose: text().notNull(),
+		mimeType: text().notNull(),
+		/** In bytes, as announced when the upload was requested and signed into its URL. */
+		size: integer().notNull(),
+		/** The name it was uploaded with, which downloads keep. */
+		fileName: text(),
+		/**
+		 * The conference the file was uploaded for. Not a foreign key: the file outlives a deleted
+		 * conference until the cleanup job removes its object.
+		 */
+		conferenceId: text().notNull(),
+		uploadedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' })
+	},
+	(table) => [index('stored_file_created_at_idx').on(table.createdAt)]
+);
+
+/**
  * Prisma's implicit many-to-many join table: columns `a` and `b` referencing the two sides
  * (cascading both ways), unique on the pair and indexed on `b`. The index names derive from the
  * table name, as Prisma generated them.
@@ -297,7 +335,7 @@ export const conference = snakeCase.table('conference', {
 	startAssignment: timestamp({ precision: 3 }).notNull(),
 	startConference: timestamp({ precision: 3 }).notNull(),
 	state: conferenceState().default('PRE').notNull(),
-	imageDataURL: text(),
+	imageFileId: fileRef(),
 	info: text(),
 	linkToPreparationGuide: text(),
 	accountHolder: text(),
@@ -305,28 +343,28 @@ export const conference = snakeCase.table('conference', {
 	bic: text(),
 	currency: text().default('EUR'),
 	feeAmount: doublePrecision(),
-	guardianConsentContent: text(),
+	guardianConsentFileId: fileRef(),
 	iban: text(),
-	mediaConsentContent: text(),
+	mediaConsentFileId: fileRef(),
 	postalApartment: text(),
 	postalCity: text(),
 	postalCountry: text(),
 	postalName: text(),
 	postalStreet: text(),
 	postalZip: text(),
-	termsAndConditionsContent: text(),
+	termsAndConditionsFileId: fileRef(),
 	unlockPayments: boolean().default(false).notNull(),
 	unlockPostals: boolean().default(false).notNull(),
 	linkToPaperInbox: text(),
-	contractContent: text(),
-	certificateContent: text(),
+	contractFileId: fileRef(),
+	certificateFileId: fileRef(),
 	registrationDeadlineGracePeriodMinutes: integer().default(30).notNull(),
 	isOpenPaperSubmission: boolean().default(false).notNull(),
-	emblemDataURL: text(),
+	emblemFileId: fileRef(),
 	showInfoExpanded: boolean().default(false).notNull(),
 	linkToServicesPage: text(),
 	linkToTeamWiki: text(),
-	logoDataURL: text(),
+	logoFileId: fileRef(),
 	showCalendar: boolean().default(false).notNull(),
 	timezone: text().default('Europe/Berlin').notNull(),
 	/** Whether participants see the roles they were assigned. The team always does. */
@@ -347,7 +385,7 @@ export const place = snakeCase.table(
 		directions: text(),
 		info: text(),
 		websiteUrl: text(),
-		sitePlanDataURL: text(),
+		sitePlanFileId: fileRef(),
 		conferenceId: conferenceRef('cascade')
 	},
 	(table) => [
@@ -1226,17 +1264,15 @@ export const reviewerSnippet = snakeCase.table(
 	]
 );
 
-/**
- * An adopted resolution, downloadable on the after-conference screen. The PDF is stored inline as a
- * data URL, like the conference's document templates.
- */
+/** An adopted resolution, downloadable on the after-conference screen. */
 export const resolution = snakeCase.table('resolution', {
 	...defaultIdAndTimestamps,
 	/** Shown to participants; the uploaded file name unless given. */
 	title: text().notNull(),
 	/** The uploaded file's name, which the download keeps. */
 	fileName: text().notNull(),
-	content: text().notNull(),
+	/** The PDF. */
+	fileId: fileRef().notNull(),
 	conferenceId: conferenceRef('cascade'),
 	/** Optional; kept as an untagged resolution when its committee is deleted. */
 	committeeId: text().references(() => committee.id, { onDelete: 'set null', onUpdate: 'cascade' })

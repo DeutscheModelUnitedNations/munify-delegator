@@ -8,8 +8,8 @@ import formatNames from '$lib/helpers/formatNames';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
+import { apiError } from '$api/services/apiError';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(
@@ -18,11 +18,11 @@ async function transferHeadDelegate(
 ) {
 	const current = members.find((member) => member.isHeadDelegate);
 	if (!current) {
-		throw new GraphQLError('No head delegate member found');
+		throw apiError('NOT_FOUND', m.delegationNoHeadDelegate());
 	}
 	const next = members.find((member) => member.userId === newHeadDelegateUserId);
 	if (!next) {
-		throw new GraphQLError('No new head delegate member found');
+		throw apiError('NOT_FOUND', m.delegationNoNewHeadDelegate());
 	}
 
 	// Order is safe here only because the caller checks `updatable` once, up front, and
@@ -124,7 +124,7 @@ export async function updateDelegationDetails(
 
 		if (args.applied) {
 			if (delegation.members.length < 2) {
-				throw new GraphQLError(m.notEnoughMembers());
+				throw apiError('CONFLICT', m.notEnoughMembers());
 			}
 			assertApplicationReady(delegation, args, 3);
 		}

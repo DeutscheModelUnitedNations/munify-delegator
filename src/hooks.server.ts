@@ -10,6 +10,7 @@ import {
 	refreshTokenCookieName
 } from '$api/services/OIDC';
 import { paraglideMiddleware } from '$lib/paraglide/server';
+import { localeOfRequest, runWithLocale } from '$api/services/requestLocale';
 import { building } from '$app/environment';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {
@@ -35,17 +36,22 @@ if (!building && SENTRY_DSN) {
 const paraglideHandle: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
 		event.request = localizedRequest;
-		return resolve(event, {
-			transformPageChunk: ({ html }) => {
-				return html
-					.replace('%lang%', locale)
-					.replace(
-						'%fontawesome.stylesheet%',
-						`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
-							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
-					);
-			}
-		});
+		const render = () =>
+			resolve(event, {
+				transformPageChunk: ({ html }) => {
+					return html
+						.replace('%lang%', locale)
+						.replace(
+							'%fontawesome.stylesheet%',
+							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
+								`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
+						);
+				}
+			});
+
+		// API calls carry no locale in their path; the client names its own in a header.
+		const requested = localeOfRequest(localizedRequest);
+		return requested && requested !== locale ? runWithLocale(requested, render) : render();
 	});
 
 // --- TEMPORARY: Migration notice handle (remove after migration period) ---

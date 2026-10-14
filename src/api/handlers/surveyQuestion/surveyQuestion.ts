@@ -9,9 +9,10 @@ import {
 	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { nullToUndefined } from '$api/services/args';
 import { surveyQuestionPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/surveyQuestion.ts
 abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -126,7 +127,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.surveyQuestion.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Survey question not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			surveyQuestionPubsub.removed();
 

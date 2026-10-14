@@ -37,7 +37,7 @@
 				if (e.key === 'Enter') save();
 			}}
 		/>
-		<button class="btn btn-square join-item" onclick={save} aria-label="Save">
+		<button class="btn btn-square join-item" onclick={save} aria-label={m.save()}>
 			<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		</button>
 	</div>

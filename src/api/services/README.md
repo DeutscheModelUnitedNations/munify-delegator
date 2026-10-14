@@ -12,6 +12,6 @@ live in one module, `authHelper.ts`, after `munify-chase`.
 | `account/`        | Login-time user upsert, email conflicts, team invitation tokens                                                                              |
 | `registration/`   | Application readiness, a user's participation in a conference, role application tidying/ranking, entry code generation                       |
 | `seatPlanning.ts` | Seat planning guards                                                                                                                         |
-| `files/`          | Stored files served from `/files/...` and the in-process reader behind them                                                                  |
+| `files/`          | The S3 bucket (s3mini), the registry of stored files, upload requests and claims, and the presigned download URLs                            |
 | `email/`          | Mail sending and the notification mails                                                                                                      |
 | `args.ts`         | Helper for optional GraphQL arguments in drizzle `set` calls                                                                                 |

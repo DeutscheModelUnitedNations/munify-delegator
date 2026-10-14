@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { LineChart } from '$lib/components/charts/echarts';
 	import { client } from '$lib/api/rumbleClient/client';
@@ -22,7 +23,7 @@
 	// Format date for display
 	const formatDate = (dateStr: string): string => {
 		const date = new Date(dateStr);
-		return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+		return date.toLocaleDateString(getLocale(), { month: 'short', day: 'numeric' });
 	};
 
 	const xAxisData = $derived(registrationTimeline.map((entry) => formatDate(entry.date)));

@@ -6,8 +6,9 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
-import { GraphQLError } from 'graphql';
 import { teamMemberPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 abilityBuilder.teamMember.allow(['read', 'delete']).when(systemAdmin);
 
@@ -43,7 +44,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.teamMember.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Team member not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			teamMemberPubsub.removed();
 

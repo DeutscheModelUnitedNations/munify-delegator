@@ -8,11 +8,12 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
-import { storedFileUrl } from '$api/services/files/files';
-import { findResolutionFileProblem } from '$lib/helpers/resolutionUpload';
+import { fileUrl } from '$api/services/files/storage';
+import { claimUploadedFile } from '$api/services/files/uploads';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { resolutionPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -29,11 +30,17 @@ abilityBuilder.resolution
 const ResolutionRef = object({
 	table: 'resolution',
 	adjust: (t) => ({
-		// The PDF is up to 10 MB; downloads go through this URL instead of selecting `content`.
+		/** The PDF, straight from the bucket, named as it was uploaded. */
 		contentUrl: t.field({
 			type: 'String',
-			resolve: (resolution) =>
-				storedFileUrl('resolution', resolution, 'content', resolution.content) ?? ''
+			resolve: async (resolution) =>
+				(await fileUrl(
+					'resolution',
+					'content',
+					resolution.conferenceId,
+					resolution.fileId,
+					resolution.fileName
+				)) ?? ''
 		})
 	})
 });
@@ -50,7 +57,7 @@ async function assertCommitteeInConference(
 		columns: { id: true }
 	});
 	if (!committee) {
-		throw new GraphQLError('The selected committee does not belong to this conference.');
+		throw apiError('INVALID_INPUT', m.resolutionCommitteeOtherConference());
 	}
 }
 
@@ -63,21 +70,18 @@ schemaBuilder.mutationFields((t) => ({
 			/** Defaults to the file name. */
 			title: t.arg.string(),
 			fileName: t.arg.string({ required: true }),
-			/** The PDF as a data URL. */
-			content: t.arg.string({ required: true })
+			/** The PDF, uploaded through `requestFileUpload`. */
+			fileId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, CONFERENCE_CONTENT_ROLES);
 			await assertCommitteeInConference(args.committeeId, args.conferenceId);
-
-			// The management page checks the same, but the mutation can be called directly.
-			const problem = findResolutionFileProblem(args.fileName, args.content);
-			if (problem === 'notPdf') {
-				throw new GraphQLError('Only PDF files can be uploaded as resolutions.');
-			}
-			if (problem === 'fileTooLarge') {
-				throw new GraphQLError('Resolution files must not exceed 10 MB.');
-			}
+			// Its type and size were checked when the upload was handed out.
+			const fileId = await claimUploadedFile(ctx, args.fileId, {
+				kind: 'resolution',
+				field: 'content',
+				conferenceId: args.conferenceId
+			});
 
 			const created = await db
 				.insert(schema.resolution)
@@ -86,7 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 					committeeId: args.committeeId ?? undefined,
 					title: args.title?.trim() || args.fileName,
 					fileName: args.fileName,
-					content: args.content
+					fileId
 				})
 				.returning({ id: schema.resolution.id })
 				.then(assertFirstEntryExists);
@@ -160,7 +164,7 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.returning({ id: schema.resolution.id });
 			if (deleted.length === 0) {
-				throw new GraphQLError('Resolution not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			resolutionPubsub.removed();
 			return true;

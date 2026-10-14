@@ -15,7 +15,7 @@
 		createEmptyResolution
 	} from '$lib/components/paper/editor/resolution';
 	import { get } from 'svelte/store';
-	import { DraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
+	import { createDraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
 	import DraftRecoveryModal from '$lib/components/paper/draft/DraftRecoveryModal.svelte';
 	import { createPaper } from '../paperSaving';
 	import { paperEntityName, resolutionHeader } from '../paperDisplay';
@@ -54,23 +54,26 @@
 
 	const resetResolution = () => resolutionStore.replaceResolution(createEmptyResolution(''));
 
-	const draft = new DraftAutosave<ResolutionDraft, Resolution>(`resolutionDraft_${conferenceId}`, {
-		// Skip saving if resolution has no meaningful content
-		readContent: () =>
-			isResolutionEmpty(resolutionStore.snapshot) ? undefined : resolutionStore.snapshot,
-		toDraft: (content, savedAt) => ({
-			agendaItemId: get(form.form).agendaItemId,
-			content,
-			savedAt
-		}),
-		applyDraft: (saved) => {
-			if (saved.agendaItemId) {
-				$formData.agendaItemId = saved.agendaItemId;
-			}
-			resolutionStore.replaceResolution(saved.content);
-		},
-		resetEditor: resetResolution
-	});
+	const draft = createDraftAutosave<ResolutionDraft, Resolution>(
+		`resolutionDraft_${conferenceId}`,
+		{
+			// Skip saving if resolution has no meaningful content
+			readContent: () =>
+				isResolutionEmpty(resolutionStore.snapshot) ? undefined : resolutionStore.snapshot,
+			toDraft: (content, savedAt) => ({
+				agendaItemId: get(form.form).agendaItemId,
+				content,
+				savedAt
+			}),
+			applyDraft: (saved) => {
+				if (saved.agendaItemId) {
+					$formData.agendaItemId = saved.agendaItemId;
+				}
+				resolutionStore.replaceResolution(saved.content);
+			},
+			resetEditor: resetResolution
+		}
+	);
 
 	const context = await fetchNewResolutionContext(conferenceId, currentUser.sub);
 	const delegationMember = $derived(context.delegationMember);

@@ -19,7 +19,7 @@
 		wishStatus
 	} from '$lib/assignment/board';
 	import { seatedRoles } from '$lib/assignment/capacity';
-	import { PendingMoves } from '$lib/assignment/pendingMoves.svelte';
+	import { createPendingMoves } from '$lib/assignment/pendingMoves.svelte';
 	import { liveSnapshot } from '$lib/api/liveSnapshot';
 	import { memoizeLast } from '$lib/helpers/memoizeLast';
 	import { targetKey, type AssignmentGroup } from '$lib/assignment/state';
@@ -41,7 +41,7 @@
 	import BoardToolbar from '../BoardToolbar.svelte';
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import GroupCard from '../GroupCard.svelte';
-	import { PoolPages } from '../poolPages.svelte';
+	import { createPoolPages, poolHasMore } from '../poolPages.svelte';
 	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
@@ -130,7 +130,7 @@
 	const poolKey = $derived(
 		`${routeParams.conferenceId}|${poolFilter.size}|${poolFilter.showDisqualified}`
 	);
-	const poolLoader = new PoolPages<BoardDelegation>();
+	const poolLoader = createPoolPages<BoardDelegation>();
 	$effect(() => {
 		const { conferenceId } = routeParams;
 		const filter = poolFilter;
@@ -140,7 +140,7 @@
 	});
 	const poolPages = $derived(poolLoader.pages(poolKey));
 	const poolLoading = $derived(poolLoader.pending(poolKey));
-	const morePages = $derived(PoolPages.more(poolPages.at(-1)));
+	const morePages = $derived(poolHasMore(poolPages.at(-1)));
 	const loadMore = () => {
 		const { conferenceId } = routeParams;
 		const filter = poolFilter;
@@ -185,7 +185,7 @@
 		const group = view.groups.find((candidate) => candidate.key === key);
 		return group ? (targetKey(group.target) ?? POOL_CONTAINER) : 'gone';
 	};
-	const moves = new PendingMoves(placeOf);
+	const moves = createPendingMoves(placeOf);
 	$effect(() => moves.settle());
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));

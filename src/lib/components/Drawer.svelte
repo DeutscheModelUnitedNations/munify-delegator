@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import DrawerHeader from './DrawerHeader.svelte';
 
@@ -58,7 +59,7 @@
 			{:else}
 				{@render children()}
 			{/if}
-			<button class="btn absolute top-4 right-4" onclick={close} aria-label="Close">
+			<button class="btn absolute top-4 right-4" onclick={close} aria-label={m.close()}>
 				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 		</div>

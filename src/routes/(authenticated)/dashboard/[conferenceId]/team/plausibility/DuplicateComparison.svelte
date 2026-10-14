@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import formatNames from '$lib/helpers/formatNames';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -45,7 +46,8 @@
 		SUPERVISOR: m.supervisor
 	};
 
-	const day = (date: Date | null) => date?.toLocaleDateString(undefined, { timeZone: 'UTC' }) ?? '';
+	const day = (date: Date | null) =>
+		date?.toLocaleDateString(getLocale(), { timeZone: 'UTC' }) ?? '';
 	const address = (a: Account) =>
 		[a.street, [a.zip, a.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
@@ -86,7 +88,7 @@
 			label: m.duplicateRowAccountSince(),
 			icon: 'calendar-plus',
 			reason: undefined,
-			value: (a: Account) => a.createdAt.toLocaleDateString()
+			value: (a: Account) => a.createdAt.toLocaleDateString(getLocale())
 		}
 	]);
 </script>
@@ -111,7 +113,7 @@
 				<button
 					class="btn btn-xs btn-ghost btn-square"
 					onclick={() => openUserCard(side.id)}
-					aria-label="Details"
+					aria-label={m.details()}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 				</button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { PUBLIC_MAINTENANCE_WINDOW_END, PUBLIC_MAINTENANCE_WINDOW_START } from '$app/env/public';
 	import { m } from '$lib/paraglide/messages';
 	import { maintenanceStatus } from './maintenanceWindow';
@@ -42,7 +43,7 @@
 					<div>
 						<div class="text-xs">
 							{m.start()}:
-							{start?.toLocaleString(undefined, {
+							{start?.toLocaleString(getLocale(), {
 								dateStyle: 'full',
 								timeStyle: 'short'
 							})}
@@ -50,7 +51,7 @@
 						</div>
 						<div class="text-xs">
 							{m.end()}:
-							{end?.toLocaleString(undefined, {
+							{end?.toLocaleString(getLocale(), {
 								dateStyle: 'full',
 								timeStyle: 'short'
 							})}
@@ -60,7 +61,7 @@
 				{:else}
 					<div class="text-xs">
 						{m.nowUntil()}
-						{end?.toLocaleString(undefined, {
+						{end?.toLocaleString(getLocale(), {
 							dateStyle: 'full',
 							timeStyle: 'short'
 						})}

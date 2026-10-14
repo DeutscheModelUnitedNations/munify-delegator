@@ -18,7 +18,7 @@
 		]);
 
 		if (supervisors.length === 0) {
-			toast.error('No data found');
+			toast.error(m.noDataFound());
 			return;
 		}
 

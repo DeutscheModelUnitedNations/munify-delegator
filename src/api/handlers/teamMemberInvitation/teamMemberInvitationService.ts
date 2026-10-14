@@ -10,7 +10,9 @@ import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail
 } from '$api/services/email/sendTeamInvitationEmail';
-import { translateTeamRole } from '$lib/utils/enumTranslations';
+import { m } from '$lib/paraglide/messages';
+import { getLocale } from '$lib/paraglide/runtime';
+import { localeOfUser } from '$api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 
@@ -27,7 +29,7 @@ async function updatableInvitation(ctx: ApiContext, invitationId: string) {
 
 async function inviterDisplayName(callerId: string) {
 	const inviter = await db.query.user.findFirst({ where: { id: callerId } });
-	return inviter ? `${inviter.givenName} ${inviter.familyName}` : 'Ein Teammitglied';
+	return inviter ? `${inviter.givenName} ${inviter.familyName}` : undefined;
 }
 
 /** Mails a regenerated invitation's new link. Sending happens in the background, best-effort. */
@@ -46,10 +48,11 @@ async function resendInvitationEmail(
 	sendTeamInvitationEmail({
 		recipientEmail: invitation.email,
 		conferenceTitle: conference.title,
-		roleName: translateTeamRole(invitation.role),
+		role: invitation.role,
 		inviterName: await inviterDisplayName(callerId),
 		inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
-		expiresAt
+		expiresAt,
+		locale: getLocale()
 	}).catch((err) => console.error('Failed to send invitation email:', err));
 }
 
@@ -100,13 +103,13 @@ export async function createInvitations(
 				where: { conferenceId, user: { email } }
 			});
 			if (existingTeamMember) {
-				errors.push({ email, error: 'User is already a team member' });
+				errors.push({ email, error: m.invitationAlreadyTeamMember() });
 				continue;
 			}
 
 			const pending = await findPendingInvitation(conferenceId, email);
 			if (pending) {
-				errors.push({ email, error: 'Pending invitation already exists' });
+				errors.push({ email, error: m.invitationAlreadyPending() });
 				continue;
 			}
 
@@ -150,9 +153,10 @@ export async function createInvitations(
 					recipientName: `${existingUser.givenName} ${existingUser.familyName}`,
 					recipientEmail: email,
 					conferenceTitle: conference.title,
-					roleName: translateTeamRole(invitation.role),
+					role: invitation.role,
 					inviterName,
-					dashboardUrl: `${ctx.url.origin}/dashboard/${conferenceId}`
+					dashboardUrl: `${ctx.url.origin}/dashboard/${conferenceId}`,
+					locale: localeOfUser(existingUser.locale)
 				}).catch((err) => console.error('Failed to send welcome email:', err));
 			} else {
 				// Unknown user: store only the hash, hand the plaintext token back to the caller.
@@ -183,16 +187,17 @@ export async function createInvitations(
 				sendTeamInvitationEmail({
 					recipientEmail: email,
 					conferenceTitle: conference.title,
-					roleName: translateTeamRole(invitation.role),
+					role: invitation.role,
 					inviterName,
 					inviteUrl: `${ctx.url.origin}/auth/accept-invitation?token=${token}`,
-					expiresAt
+					expiresAt,
+					locale: getLocale()
 				}).catch((err) => console.error('Failed to send invitation email:', err));
 			}
 		} catch (error) {
 			errors.push({
 				email,
-				error: error instanceof Error ? error.message : 'Unknown error'
+				error: error instanceof Error ? error.message : m.unknownError()
 			});
 		}
 	}
@@ -205,10 +210,10 @@ export async function revokeInvitation(ctx: ApiContext, invitationId: string) {
 	const invitation = await updatableInvitation(ctx, invitationId);
 
 	if (invitation.revokedAt) {
-		return { success: false, message: 'Invitation is already revoked' };
+		return { success: false, message: m.invitationAlreadyRevoked() };
 	}
 	if (invitation.usedAt) {
-		return { success: false, message: 'Invitation has already been used' };
+		return { success: false, message: m.invitationAlreadyUsed() };
 	}
 
 	await db
@@ -233,7 +238,7 @@ export async function regenerateInvitation(
 			success: false,
 			newToken: null,
 			newExpiresAt: null,
-			message: 'Invitation has already been used'
+			message: m.invitationAlreadyUsed()
 		};
 	}
 

@@ -134,7 +134,54 @@ services:
       retries: 5
       timeout: 5s
 
+  # RustFS - S3-compatible object storage for uploaded files
+  # S3 API: http://localhost:9100 (bucket `delegator`), Web UI: http://localhost:9101
+  # Login and S3 credentials: delegator / delegator-secret
+  s3:
+    image: rustfs/rustfs:latest
+    container_name: s3-dev-delegator
+    restart: unless-stopped
+    ports:
+      - '9100:9000'
+      - '9101:9001'
+    environment:
+      RUSTFS_ACCESS_KEY: delegator
+      RUSTFS_SECRET_KEY: delegator-secret
+      RUSTFS_CONSOLE_ENABLE: 'true'
+      # Browsers upload to and download from presigned URLs on this origin.
+      RUSTFS_CORS_ALLOWED_ORIGINS: '*'
+    healthcheck:
+      test: ['CMD', 'curl', '-fs', 'http://localhost:9000/health']
+      start_period: 10s
+      interval: 10s
+      retries: 6
+      timeout: 5s
+    volumes:
+      - s3-data:/data
+
+  # Creates the bucket once the storage is up. Creating an existing bucket is a no-op.
+  s3-init:
+    image: rustfs/rustfs:latest
+    container_name: s3-init-dev-delegator
+    depends_on:
+      s3:
+        condition: service_healthy
+    restart: 'no'
+    entrypoint:
+      [
+        'curl',
+        '-fsS',
+        '-X',
+        'PUT',
+        '--aws-sigv4',
+        'aws:amz:us-east-1:s3',
+        '--user',
+        'delegator:delegator-secret',
+        'http://s3:9000/delegator'
+      ]
+
 volumes:
   delegator-dev:
+  s3-data:
   listmonk-data:
   bugsink-data:

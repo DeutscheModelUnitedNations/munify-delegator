@@ -4,7 +4,11 @@ import { PAPER_ROLES, hasTeamRole } from '$api/services/authHelper';
 import { sendNewReviewNotification } from '$api/services/email';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, count, eq } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
+import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
+import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
+import { localeOfUser, runWithLocale } from '$api/services/requestLocale';
+import { apiError } from '$api/services/apiError';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
 type UnlockedPiece = {
@@ -18,17 +22,6 @@ type UnlockedPiece = {
 	foundCount: number;
 	totalCount: number;
 	isComplete: boolean;
-};
-
-const PAPER_TYPE_LABELS: Record<string, string> = {
-	POSITION_PAPER: 'Positionspapier',
-	WORKING_PAPER: 'Arbeitspapier',
-	INTRODUCTION_PAPER: 'Einführungspapier'
-};
-
-const STATUS_LABELS: Record<string, string> = {
-	CHANGES_REQUESTED: 'Änderungen angefordert',
-	ACCEPTED: 'Akzeptiert'
 };
 
 const REVIEWABLE_STATUSES = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEPTED'];
@@ -63,19 +56,22 @@ type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
 async function assertMayReview(ctx: Context, paper: PaperForReview, newStatus: string) {
 	// Reviewing is a reviewer's action; reading the paper is not enough.
 	if (!(await hasTeamRole(ctx, paper.conferenceId, PAPER_ROLES))) {
-		throw new GraphQLError('Only reviewers can create reviews');
+		throw apiError('FORBIDDEN', m.reviewOnlyReviewers());
 	}
 
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
-		throw new GraphQLError(`Cannot review a paper with status ${paper.status}`);
+		throw apiError(
+			'CONFLICT',
+			m.reviewStatusNotReviewable({ status: translatePaperStatus(paper.status) })
+		);
 	}
 	if (!ALLOWED_NEW_STATUSES.includes(newStatus)) {
-		throw new GraphQLError(`Invalid review status: ${newStatus}`);
+		throw apiError('INVALID_INPUT', m.reviewInvalidStatus({ status: newStatus }));
 	}
 
 	const latestVersion = paper.versions[0];
 	if (!latestVersion) {
-		throw new GraphQLError('Paper has no versions - cannot create review');
+		throw apiError('CONFLICT', m.reviewNoVersions());
 	}
 	return latestVersion;
 }
@@ -174,7 +170,7 @@ async function nationPiece(
 		flagAlpha2Code: nation.alpha2Code,
 		flagAlpha3Code: nation.alpha3Code,
 		fontAwesomeIcon: null,
-		pieceName: agendaItemLabel(paper) ?? 'Paper',
+		pieceName: agendaItemLabel(paper) ?? m.paperPieceFallback(),
 		foundCount: found.length,
 		totalCount: totalPieces,
 		isComplete: found.length >= totalPieces
@@ -201,8 +197,8 @@ async function nsaPiece(
 		fontAwesomeIcon: nsa.fontAwesomeIcon,
 		pieceName:
 			paper.type === 'INTRODUCTION_PAPER'
-				? 'Introduction Paper'
-				: (agendaItemLabel(paper) ?? `Paper ${found.length}`),
+				? m.paperTypeIntroductionPaper()
+				: (agendaItemLabel(paper) ?? m.paperPieceNumbered({ number: found.length })),
 		foundCount: Math.min(found.length, NSA_PIECE_COUNT),
 		totalCount: NSA_PIECE_COUNT,
 		isComplete: found.length >= NSA_PIECE_COUNT
@@ -223,19 +219,21 @@ async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
 function notifyAuthor(
 	paper: PaperForReview,
 	reviewer: Pick<ReturnType<Context['mustBeLoggedIn']>, 'given_name' | 'family_name' | 'email'>,
-	newStatus: string,
+	newStatus: PaperstatusEnum,
 	origin: string
 ) {
 	if (!paper.author) return;
-	const paperType = PAPER_TYPE_LABELS[paper.type] ?? paper.type;
+	const locale = localeOfUser(paper.author.locale);
 	sendNewReviewNotification({
 		recipientEmail: paper.author.email,
 		recipientName: `${paper.author.givenName} ${paper.author.familyName}`,
-		paperTitle: agendaItemLabel(paper) ?? paperType,
-		paperType,
+		locale,
+		paperTitle:
+			agendaItemLabel(paper) ?? runWithLocale(locale, () => translatePaperType(paper.type)),
+		paperType: paper.type,
 		reviewerName: `${reviewer.given_name} ${reviewer.family_name}`,
 		reviewerEmail: reviewer.email,
-		newStatus: STATUS_LABELS[newStatus] ?? newStatus,
+		newStatus,
 		conferenceTitle: paper.conference?.title ?? '',
 		paperUrl: `${origin}/dashboard/${paper.conferenceId}/paperhub/${paper.id}`
 	}).catch((error) => {

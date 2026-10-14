@@ -23,24 +23,33 @@ type DialogRequest =
 			resolve: (value: string | null) => void;
 	  };
 
-class DialogState {
-	current = $state<DialogRequest>();
+function createDialogState() {
+	let current = $state<DialogRequest>();
 
-	/** A dialog opened over another one dismisses the first as cancelled. */
-	open(request: DialogRequest) {
-		this.dismiss();
-		this.current = request;
-	}
-
-	dismiss() {
-		const request = this.current;
-		this.current = undefined;
+	function dismiss() {
+		const request = current;
+		current = undefined;
 		if (request?.kind === 'confirm') request.resolve(false);
 		else request?.resolve(null);
 	}
+
+	return {
+		get current() {
+			return current;
+		},
+		set current(value: DialogRequest | undefined) {
+			current = value;
+		},
+		/** A dialog opened over another one dismisses the first as cancelled. */
+		open(request: DialogRequest) {
+			dismiss();
+			current = request;
+		},
+		dismiss
+	};
 }
 
-export const dialogs = new DialogState();
+export const dialogs = createDialogState();
 
 export function confirmDialog(options: {
 	text: string;

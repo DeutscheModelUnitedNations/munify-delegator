@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { confirmDialog } from '$lib/state/dialogs.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import hotkeys from 'hotkeys-js';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { PersistedState } from '$lib/state/persistedState.svelte';
+	import { createPersistedState } from '$lib/state/persistedState.svelte';
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 	import { resolveScannedCode } from '$lib/components/scanner/userSearch';
@@ -19,7 +20,6 @@
 		findLogged,
 		fullName,
 		hasScanOf,
-		ALREADY_SCANNED,
 		hasUnsynced,
 		isAlreadyScanned,
 		queueFromEntries,
@@ -101,7 +101,7 @@
 
 	// One saved session per conference, so the store follows the conference in the URL.
 	const sessionStore = $derived(
-		new PersistedState<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
+		createPersistedState<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
 	);
 
 	// --- Queue ---
@@ -550,21 +550,26 @@
 
 	/** Records one scan's attendance, unless the session already holds it. */
 	async function syncEntry(entry: QueueEntry) {
+		// Duplicate check against full session history
+		if (hasScanOf(sessionStore.current?.entries, entry.userId, true)) {
+			markDuplicate(entry);
+			return;
+		}
 		try {
 			await sendEntry(entry);
 			markSynced(entry);
 		} catch (err) {
-			// Another device scanned the person in this session first
-			if (isAlreadyScanned(err)) markDuplicate(entry);
-			else markFailed(entry, err);
+			markRejected(entry, err);
 		}
 	}
 
+	function markRejected(entry: QueueEntry, err: unknown) {
+		// Another device scanned the person in this session first
+		if (isAlreadyScanned(err)) markDuplicate(entry);
+		else markFailed(entry, err);
+	}
+
 	async function sendEntry(entry: QueueEntry) {
-		// Duplicate check against full session history
-		if (hasScanOf(sessionStore.current?.entries, entry.userId, true)) {
-			throw new Error(ALREADY_SCANNED);
-		}
 		const session = await ensureSessionStarted();
 		if (!session) throw new Error('No session is running');
 		await client.mutate.createAttendanceEntry({
@@ -812,7 +817,10 @@
 						<div class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
 							{@render modeBadge(open.mode)}
 							<span>
-								{open.startedAt.toLocaleString('de', { dateStyle: 'short', timeStyle: 'short' })}
+								{open.startedAt.toLocaleString(getLocale(), {
+									dateStyle: 'short',
+									timeStyle: 'short'
+								})}
 							</span>
 						</div>
 					</div>

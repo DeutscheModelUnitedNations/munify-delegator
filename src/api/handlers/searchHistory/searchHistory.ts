@@ -2,8 +2,9 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
 import { assertTeamRole, systemAdmin, userId, where } from '$api/services/authHelper';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
 import { searchHistoryPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 /** How many searches a person keeps. The search only offers the newest five. */
 const KEPT_ENTRIES = 20;
@@ -35,10 +36,11 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId);
 			const id = userId(ctx);
-			if (!id) throw new GraphQLError('Must be logged in');
+			if (!id) throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 
 			const label = args.label.trim().slice(0, MAX_LABEL_LENGTH);
-			if (!label || !args.resultId) throw new GraphQLError('A result needs an id and a label');
+			if (!label || !args.resultId)
+				throw apiError('INVALID_INPUT', m.searchHistoryNeedsIdAndLabel());
 
 			const { searchHistory } = schema;
 			await db.transaction(async (tx) => {

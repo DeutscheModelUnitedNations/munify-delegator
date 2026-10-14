@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('$app/environment', () => ({ browser: true }));
 
-const { DraftAutosave } = await import('./draftAutosave.svelte');
+const { createDraftAutosave } = await import('./draftAutosave.svelte');
 
 interface Draft {
 	savedAt: number;
@@ -17,9 +17,9 @@ const DAY = 24 * 60 * 60 * 1000;
 function setup(content: { value: string | undefined }, withReset = true) {
 	const applied: Draft[] = [];
 	const resetEditor = vi.fn();
-	let draft!: InstanceType<typeof DraftAutosave<Draft, string>>;
+	let draft!: ReturnType<typeof createDraftAutosave<Draft, string>>;
 	const cleanup = $effect.root(() => {
-		draft = new DraftAutosave<Draft, string>(KEY, {
+		draft = createDraftAutosave<Draft, string>(KEY, {
 			readContent: () => content.value,
 			toDraft: (text, savedAt) => ({ text, savedAt }),
 			applyDraft: (d) => applied.push(d),
@@ -129,9 +129,9 @@ describe('DraftAutosave', () => {
 	test('content that cannot be serialized is skipped', () => {
 		const cyclic: Record<string, unknown> = {};
 		cyclic.self = cyclic;
-		let draft!: InstanceType<typeof DraftAutosave<{ savedAt: number }, unknown>>;
+		let draft!: ReturnType<typeof createDraftAutosave<{ savedAt: number }, unknown>>;
 		const cleanup = $effect.root(() => {
-			draft = new DraftAutosave<{ savedAt: number }, unknown>(KEY, {
+			draft = createDraftAutosave<{ savedAt: number }, unknown>(KEY, {
 				readContent: () => cyclic,
 				toDraft: (_content, savedAt) => ({ savedAt }),
 				applyDraft: () => {}

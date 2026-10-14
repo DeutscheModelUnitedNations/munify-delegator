@@ -1,4 +1,4 @@
-import { PersistedState } from './persistedState.svelte';
+import { createPersistedState } from './persistedState.svelte';
 
 export type CsvDelimiter = ';' | ',' | '\t' | '|';
 export type CsvEncoding = 'utf-8' | 'utf-8-bom' | 'iso-8859-1';
@@ -13,7 +13,7 @@ const defaultSettings: CsvSettings = {
 	encoding: 'utf-8'
 };
 
-export const csvSettings = new PersistedState<CsvSettings>('csvExportSettings', defaultSettings);
+export const csvSettings = createPersistedState<CsvSettings>('csvExportSettings', defaultSettings);
 
 // Helper to get the delimiter label for display
 export function getDelimiterLabel(delimiter: CsvDelimiter): string {

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { templateOrDefault, testPrintParticipant, testPrintRecipient } from './testPrintData';
+import { getLocale } from '$lib/paraglide/runtime';
 
 describe('testPrintRecipient', () => {
 	test('uses the entered postal address', () => {
@@ -37,7 +38,7 @@ describe('testPrintParticipant', () => {
 		expect(participant.id).toHaveLength(24);
 		expect(participant.name.toUpperCase()).toBe(participant.name);
 		expect(participant.name).toContain('GUTERRES');
-		expect(participant.birthday).toBe(new Date('1949-04-30').toLocaleDateString());
+		expect(participant.birthday).toBe(new Date('1949-04-30').toLocaleDateString(getLocale()));
 	});
 });
 

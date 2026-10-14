@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { PaperSortState, paperHasReviews, sortPapers, type SortablePaper } from './paperSorting';
+import {
+	createPaperSortState,
+	paperHasReviews,
+	sortPapers,
+	type SortablePaper
+} from './paperSorting';
 
 type Paper = SortablePaper & { name: string };
 
@@ -106,7 +111,7 @@ describe('paperHasReviews', () => {
 
 describe('PaperSortState', () => {
 	test('sorts ascending first, flips on the same column and resets on another', () => {
-		const state = new PaperSortState();
+		const state = createPaperSortState();
 		expect(state.get('g')).toBeNull();
 		state.toggle('g', 'type');
 		expect(state.get('g')).toEqual({ key: 'type', direction: 'asc' });

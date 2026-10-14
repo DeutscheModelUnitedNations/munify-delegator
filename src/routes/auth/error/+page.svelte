@@ -29,7 +29,7 @@
 </script>
 
 <main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-8 p-4 py-12">
-	<img src={illustration} alt="Authentication Error" class="w-1/3 max-w-[180px]" />
+	<img src={illustration} alt={m.authErrorGenericTitle()} class="w-1/3 max-w-[180px]" />
 
 	<h1 class="text-center text-3xl font-bold">{authErrorTitle(errorType)}</h1>
 

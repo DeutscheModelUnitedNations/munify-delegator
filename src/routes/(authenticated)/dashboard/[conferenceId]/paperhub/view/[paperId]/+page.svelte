@@ -5,7 +5,8 @@
 	import { buildResolutionHeaderData } from '../../paperDisplay';
 	import PaperHeaderCard from '../../PaperHeaderCard.svelte';
 	import PaperContent from '../../PaperContent.svelte';
-	import { LoadedPaper } from '../../loadedPaper.svelte';
+	import { createLoadedPaper } from '../../loadedPaper.svelte';
+	import { conferenceHeaderInfo } from '../../conferenceHeaderInfo';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -16,7 +17,7 @@
 			id: true,
 			type: true,
 			firstSubmittedAt: true,
-			conference: { title: true, longTitle: true, emblemDataURL: true },
+			conference: { title: true, longTitle: true, emblemUrl: true },
 			delegation: {
 				assignedNation: { alpha2Code: true, alpha3Code: true },
 				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
@@ -34,15 +35,17 @@
 		})
 	);
 
-	const loaded = new LoadedPaper();
+	const loaded = createLoadedPaper();
 
 	// Reset and reinitialize when paper changes
 	$effect(() => {
 		if (paperData) loaded.loadIfNew(paperData, paperData.versions.at(0)?.content);
 	});
 
+	const conferenceInfo = $derived(await conferenceHeaderInfo(paperData?.conference));
+
 	let resolutionHeaderData = $derived(
-		paperData ? buildResolutionHeaderData(paperData, paperData.conference) : undefined
+		paperData ? buildResolutionHeaderData(paperData, conferenceInfo) : undefined
 	);
 </script>
 

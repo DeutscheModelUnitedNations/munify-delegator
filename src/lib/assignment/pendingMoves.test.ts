@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PendingMoves } from './pendingMoves.svelte';
+import { createPendingMoves, type PendingMoves } from './pendingMoves.svelte';
 
 describe('PendingMoves', () => {
 	// Where the board shows each card; tests move cards by changing it.
@@ -9,7 +9,7 @@ describe('PendingMoves', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		places = new Map([['a', 'pool']]);
-		moves = new PendingMoves((key) => places.get(key) ?? 'gone');
+		moves = createPendingMoves((key) => places.get(key) ?? 'gone');
 	});
 	afterEach(() => vi.useRealTimers());
 

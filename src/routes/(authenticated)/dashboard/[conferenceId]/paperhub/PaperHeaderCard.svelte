@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import type { Snippet } from 'svelte';
 	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import Flag from '$lib/components/Flag.svelte';
@@ -64,7 +65,7 @@
 					<div class="tooltip" data-tip={m.createdAt()}>
 						<span class="flex items-center gap-1">
 							<i class="fa-sharp-duotone fa-solid fa-plus text-xs"></i>
-							{createdAt.toLocaleDateString()}
+							{createdAt.toLocaleDateString(getLocale())}
 						</span>
 					</div>
 				{/if}
@@ -73,7 +74,7 @@
 					<div class="tooltip" data-tip={m.submittedAt()}>
 						<span class="flex items-center gap-1">
 							<i class="fa-sharp-duotone fa-solid fa-paper-plane text-xs"></i>
-							{paper.firstSubmittedAt.toLocaleDateString()}
+							{paper.firstSubmittedAt.toLocaleDateString(getLocale())}
 						</span>
 					</div>
 				{/if}

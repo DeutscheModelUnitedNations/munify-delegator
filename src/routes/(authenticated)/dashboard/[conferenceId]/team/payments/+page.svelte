@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
@@ -136,7 +137,7 @@
 
 	/** What a remembered transaction is called: its payers, else its amount. */
 	const historyName = (amount: number) =>
-		payers || amount.toLocaleString(undefined, { style: 'currency', currency });
+		payers || amount.toLocaleString(getLocale(), { style: 'currency', currency });
 
 	$effect(() => {
 		const found = paymentTransaction;
@@ -194,7 +195,7 @@
 	// --- Display ---
 
 	const formatLongDate = (date: Date | string) =>
-		new Date(date).toLocaleDateString(undefined, {
+		new Date(date).toLocaleDateString(getLocale(), {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric'
@@ -358,7 +359,7 @@
 	<div class="mb-4">
 		<h1 class="font-mono text-2xl font-bold">{transaction.id}</h1>
 		<p class="opacity-60">
-			{new Date(transaction.createdAt).toLocaleString(undefined, {
+			{new Date(transaction.createdAt).toLocaleString(getLocale(), {
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric',
@@ -380,7 +381,7 @@
 	<!-- Amount display -->
 	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-field p-3">
 		<div class="font-mono text-3xl font-bold">
-			{transaction.amount.toLocaleString(undefined, {
+			{transaction.amount.toLocaleString(getLocale(), {
 				style: 'currency',
 				currency: conference?.currency ?? 'EUR'
 			})}

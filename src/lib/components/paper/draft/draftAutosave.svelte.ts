@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { PersistedState } from '$lib/state/persistedState.svelte';
+import { createPersistedState } from '$lib/state/persistedState.svelte';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -17,97 +17,125 @@ interface DraftAutosaveOptions<D extends { savedAt: number }, C> {
 	resetEditor?: () => void;
 }
 
+export type DraftAutosave<D extends { savedAt: number }, C> = ReturnType<
+	typeof createDraftAutosave<D, C>
+>;
+
+/** A plain JSON snapshot of the editor's content, or nothing when there is none or it cannot be serialised. */
+function snapshot(rawContent: unknown): string | undefined {
+	if (rawContent === undefined) return undefined;
+	try {
+		return JSON.stringify(rawContent);
+	} catch {
+		return undefined;
+	}
+}
+
 /**
  * A paper or review being written, mirrored to localStorage every second so a closed tab does not
  * lose it. On creation it looks for a draft younger than seven days and, if there is one, opens the
- * recovery modal (`DraftRecoveryModal`) before the editor mounts. Must be created during component
+ * recovery modal (`DraftRecoveryModal`) before the editor mounts. Must be called during component
  * initialisation: it registers the autosave effect.
  */
-export class DraftAutosave<D extends { savedAt: number }, C> {
-	showRecoveryModal = $state(false);
-	savedDraft: D | null = $state(null);
+export function createDraftAutosave<D extends { savedAt: number }, C>(
+	storageKey: string,
+	options: DraftAutosaveOptions<D, C>
+) {
+	let showRecoveryModal = $state(false);
+	let savedDraft: D | null = $state(null);
 	/** Bumped to remount the editor (`{#key}`) when its content is replaced from outside. */
-	editorKey = $state(0);
+	let editorKey = $state(0);
 
-	#store: PersistedState<D | null> | null;
-	#options: DraftAutosaveOptions<D, C>;
-	#lastSavedContent: string | null = null;
+	const store = browser ? createPersistedState<D | null>(storageKey, null) : null;
+	let lastSavedContent: string | null = null;
 
-	constructor(storageKey: string, options: DraftAutosaveOptions<D, C>) {
-		this.#options = options;
-		this.#store = browser ? new PersistedState<D | null>(storageKey, null) : null;
-		// Synchronously, so the editor mounts with the right content
-		this.#loadStoredDraft();
-
-		$effect(() => {
-			if (!this.#store) return;
-			const interval = setInterval(() => this.save(), 1000);
-			// Safety net: save on page unload
-			const handleBeforeUnload = () => this.save();
-			window.addEventListener('beforeunload', handleBeforeUnload);
-			return () => {
-				clearInterval(interval);
-				window.removeEventListener('beforeunload', handleBeforeUnload);
-			};
-		});
+	/** Forgets the stored draft, e.g. once the paper or review it held has been saved for real. */
+	function clear() {
+		if (store) store.current = null;
 	}
 
-	#loadStoredDraft() {
-		const storedDraft = this.#store?.current ?? null;
+	function save() {
+		if (!store || showRecoveryModal) return;
+
+		const contentString = snapshot(options.readContent());
+		if (contentString === undefined) return;
+
+		// Skip if content hasn't changed
+		if (contentString === lastSavedContent) return;
+		lastSavedContent = contentString;
+
+		const content: C = JSON.parse(contentString);
+		store.current = options.toDraft(content, Date.now());
+	}
+
+	function loadStoredDraft() {
+		const storedDraft = store?.current ?? null;
 		if (!storedDraft) {
-			this.#options.resetEditor?.();
+			options.resetEditor?.();
 			return;
 		}
 		if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
-			this.clear();
-			this.#options.resetEditor?.();
+			clear();
+			options.resetEditor?.();
 			return;
 		}
-		this.savedDraft = storedDraft;
-		this.showRecoveryModal = true;
+		savedDraft = storedDraft;
+		showRecoveryModal = true;
 	}
 
-	restore() {
-		if (this.savedDraft) {
-			this.#options.applyDraft(this.savedDraft);
-			this.editorKey++;
-		}
-		this.showRecoveryModal = false;
-	}
+	// Synchronously, so the editor mounts with the right content
+	loadStoredDraft();
 
-	startFresh() {
-		this.clear();
-		if (this.#options.resetEditor) {
-			this.#options.resetEditor();
-			this.editorKey++;
-		}
-		this.showRecoveryModal = false;
-	}
+	$effect(() => {
+		if (!store) return;
+		const interval = setInterval(() => save(), 1000);
+		// Safety net: save on page unload
+		const handleBeforeUnload = () => save();
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => {
+			clearInterval(interval);
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	});
 
-	/** Forgets the stored draft, e.g. once the paper or review it held has been saved for real. */
-	clear() {
-		if (this.#store) this.#store.current = null;
-	}
+	return {
+		get showRecoveryModal() {
+			return showRecoveryModal;
+		},
+		set showRecoveryModal(value: boolean) {
+			showRecoveryModal = value;
+		},
+		get savedDraft() {
+			return savedDraft;
+		},
+		set savedDraft(value: D | null) {
+			savedDraft = value;
+		},
+		get editorKey() {
+			return editorKey;
+		},
+		set editorKey(value: number) {
+			editorKey = value;
+		},
 
-	save() {
-		if (!this.#store || this.showRecoveryModal) return;
+		restore() {
+			if (savedDraft) {
+				options.applyDraft(savedDraft);
+				editorKey++;
+			}
+			showRecoveryModal = false;
+		},
 
-		const rawContent = this.#options.readContent();
-		if (rawContent === undefined) return;
+		startFresh() {
+			clear();
+			if (options.resetEditor) {
+				options.resetEditor();
+				editorKey++;
+			}
+			showRecoveryModal = false;
+		},
 
-		// Stringify to create a plain JSON snapshot
-		let contentString: string;
-		try {
-			contentString = JSON.stringify(rawContent);
-		} catch {
-			return;
-		}
-
-		// Skip if content hasn't changed
-		if (contentString === this.#lastSavedContent) return;
-		this.#lastSavedContent = contentString;
-
-		const content: C = JSON.parse(contentString);
-		this.#store.current = this.#options.toDraft(content, Date.now());
-	}
+		clear,
+		save
+	};
 }

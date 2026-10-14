@@ -1,3 +1,4 @@
+import { getLocale } from '$lib/paraglide/runtime';
 /**
  * Converts a datetime-local input value (e.g. "2026-02-20T18:00")
  * into a Date object as if the time was specified in the given timezone.
@@ -85,7 +86,7 @@ export function dateToDatetimeLocal(date: Date, timezone: string): string {
  * Formats a Date for display in the conference timezone.
  */
 export function formatInTimezone(date: Date, timezone: string): string {
-	return date.toLocaleString(undefined, {
+	return date.toLocaleString(getLocale(), {
 		timeZone: timezone,
 		year: 'numeric',
 		month: '2-digit',

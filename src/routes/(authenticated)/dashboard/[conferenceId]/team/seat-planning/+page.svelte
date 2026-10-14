@@ -8,8 +8,8 @@
 	import HintsSidebar from './HintsSidebar.svelte';
 	import NonStateActorTable from './NonStateActorTable.svelte';
 	import SeatMatrix from './SeatMatrix.svelte';
-	import { SeatPlanner } from './seatPlanner.svelte';
-	import { SizeLimitsStore } from './sizeLimits.svelte';
+	import { createSeatPlanner } from './seatPlanner.svelte';
+	import { createSizeLimitsStore } from './sizeLimits.svelte';
 
 	let { params: routeParams }: PageProps = $props();
 
@@ -52,9 +52,9 @@
 		])
 	);
 
-	const planner = new SeatPlanner(() => ({ committees, nonStateActors, assignments }));
+	const planner = createSeatPlanner(() => ({ committees, nonStateActors, assignments }));
 
-	const sizeLimits = $derived(new SizeLimitsStore(routeParams.conferenceId));
+	const sizeLimits = $derived(createSizeLimitsStore(routeParams.conferenceId));
 	// the limits live in the browser storage, which the server cannot read
 	$effect(() => sizeLimits.load());
 

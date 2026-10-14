@@ -1,3 +1,4 @@
+import { m } from '$lib/paraglide/messages';
 import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont, PDFName, PDFString } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
@@ -47,39 +48,32 @@ const defaultStyles: PageStyles = {
 };
 
 // Create common utility functions
-class PDFUtils {
-	private page: PDFPage;
-	private helvetica: PDFFont;
-	private helveticaBold: PDFFont;
-	private styles: PageStyles;
-
-	constructor(page: PDFPage, helvetica: PDFFont, helveticaBold: PDFFont, styles: PageStyles) {
-		this.page = page;
-		this.helvetica = helvetica;
-		this.helveticaBold = helveticaBold;
-		this.styles = styles;
-	}
-
-	drawWrappedText(text: string, startY: number, font = this.helvetica, indent = 0): number {
+function createPDFUtils(
+	page: PDFPage,
+	helvetica: PDFFont,
+	_helveticaBold: PDFFont,
+	styles: PageStyles
+) {
+	function drawWrappedText(text: string, startY: number, font = helvetica, indent = 0): number {
 		let currentY = startY;
 		const words = text.split(' ');
 		let currentLine = '';
-		const { width } = this.page.getSize();
-		const maxWidth = width - this.styles.margin.left - this.styles.margin.right - indent;
+		const { width } = page.getSize();
+		const maxWidth = width - styles.margin.left - styles.margin.right - indent;
 
 		words.forEach((word) => {
 			const testLine = currentLine + (currentLine ? ' ' : '') + word;
-			const lineWidth = font.widthOfTextAtSize(testLine, this.styles.fontSize.normal);
+			const lineWidth = font.widthOfTextAtSize(testLine, styles.fontSize.normal);
 
 			if (lineWidth > maxWidth) {
-				this.page.drawText(currentLine, {
-					x: this.styles.margin.left + indent,
+				page.drawText(currentLine, {
+					x: styles.margin.left + indent,
 					y: currentY,
-					size: this.styles.fontSize.normal,
+					size: styles.fontSize.normal,
 					font: font,
 					color: rgb(0, 0, 0)
 				});
-				currentY -= this.styles.fontSize.normal * this.styles.lineHeight.normal;
+				currentY -= styles.fontSize.normal * styles.lineHeight.normal;
 				currentLine = word;
 			} else {
 				currentLine = testLine;
@@ -87,10 +81,10 @@ class PDFUtils {
 		});
 
 		if (currentLine) {
-			this.page.drawText(currentLine, {
-				x: this.styles.margin.left + indent,
+			page.drawText(currentLine, {
+				x: styles.margin.left + indent,
 				y: currentY,
-				size: this.styles.fontSize.normal,
+				size: styles.fontSize.normal,
 				font: font,
 				color: rgb(0, 0, 0)
 			});
@@ -99,44 +93,48 @@ class PDFUtils {
 		return currentY;
 	}
 
-	drawCheckbox(x: number, y: number, text: string, size = 10): number {
-		// Draw checkbox
-		this.page.drawRectangle({
-			x,
-			y,
-			width: size,
-			height: size,
-			borderWidth: 1,
-			borderColor: rgb(0, 0, 0),
-			color: rgb(1, 1, 1),
-			opacity: 0
-		});
+	return {
+		drawWrappedText,
 
-		// Draw text with proper spacing
-		const textY = y + 2; // Align text with checkbox center
-		return this.drawWrappedText(text, textY, this.helvetica, size + 5);
-	}
-
-	drawFoldMarks() {
-		const { height } = this.page.getSize();
-		const foldHeight = 1; // Height of the fold mark
-
-		const marks = [
-			{ y: 105, width: 15 },
-			{ y: 148.5, width: 20 },
-			{ y: 210, width: 15 }
-		];
-
-		marks.forEach((mark) => {
-			this.page.drawRectangle({
-				x: 0,
-				y: height - millimeterToPixel(mark.y),
-				width: mark.width,
-				height: foldHeight,
-				color: rgb(0, 0, 0)
+		drawCheckbox(x: number, y: number, text: string, size = 10): number {
+			// Draw checkbox
+			page.drawRectangle({
+				x,
+				y,
+				width: size,
+				height: size,
+				borderWidth: 1,
+				borderColor: rgb(0, 0, 0),
+				color: rgb(1, 1, 1),
+				opacity: 0
 			});
-		});
-	}
+
+			// Draw text with proper spacing
+			const textY = y + 2; // Align text with checkbox center
+			return drawWrappedText(text, textY, helvetica, size + 5);
+		},
+
+		drawFoldMarks() {
+			const { height } = page.getSize();
+			const foldHeight = 1; // Height of the fold mark
+
+			const marks = [
+				{ y: 105, width: 15 },
+				{ y: 148.5, width: 20 },
+				{ y: 210, width: 15 }
+			];
+
+			marks.forEach((mark) => {
+				page.drawRectangle({
+					x: 0,
+					y: height - millimeterToPixel(mark.y),
+					width: mark.width,
+					height: foldHeight,
+					color: rgb(0, 0, 0)
+				});
+			});
+		}
+	};
 }
 
 function millimeterToPixel(mm: number): number {
@@ -145,169 +143,207 @@ function millimeterToPixel(mm: number): number {
 	return Math.round((mm * A4_PIXELS) / A4_MM);
 }
 
-// Create a base class for PDF pages
-abstract class PDFPageGenerator {
-	protected pdfDoc: PDFDocument;
-	protected styles: PageStyles;
-	protected helvetica!: PDFFont; // Add font properties
-	protected helveticaBold!: PDFFont; // Add font properties
-	protected courier!: PDFFont; // Add font properties
-	protected custfont!: PDFFont;
-	protected custfontBold!: PDFFont;
+interface PDFFonts {
+	helvetica: PDFFont;
+	helveticaBold: PDFFont;
+	courier: PDFFont;
+	custfont: PDFFont;
+	custfontBold: PDFFont;
+}
 
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles) {
-		this.pdfDoc = pdfDoc;
-		this.styles = styles;
-	}
+/** Embeds the standard fonts and the custom font into a document. */
+async function embedFonts(pdfDoc: PDFDocument): Promise<PDFFonts> {
+	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+	const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+	const courier = await pdfDoc.embedFont(StandardFonts.Courier);
+	//Load custom font
 
-	protected abstract generateContent(): Promise<void>;
+	pdfDoc.registerFontkit(fontkit);
+	const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) =>
+		res.arrayBuffer()
+	);
+	const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) =>
+		res.arrayBuffer()
+	);
 
-	protected async initialize(): Promise<void> {
-		this.helvetica = await this.pdfDoc.embedFont(StandardFonts.Helvetica);
-		this.helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
-		this.courier = await this.pdfDoc.embedFont(StandardFonts.Courier);
-		//Load custom font
+	const custfont = await pdfDoc.embedFont(custfontBytes);
+	const custfontBold = await pdfDoc.embedFont(custfontBoldBytes);
+	return { helvetica, helveticaBold, courier, custfont, custfontBold };
+}
 
-		this.pdfDoc.registerFontkit(fontkit);
-		const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) =>
-			res.arrayBuffer()
-		);
-		const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) =>
-			res.arrayBuffer()
-		);
+/** A generator that turns a template document into a finished one. */
+interface PDFPageGenerator {
+	generate(): Promise<PDFDocument>;
+}
 
-		this.custfont = await this.pdfDoc.embedFont(custfontBytes);
-		this.custfontBold = await this.pdfDoc.embedFont(custfontBoldBytes);
-	}
-
-	protected async drawFoldMarks() {
-		for (const page of this.pdfDoc.getPages()) {
-			const utils = new PDFUtils(page, this.helvetica, this.helveticaBold, this.styles);
-			utils.drawFoldMarks();
+/**
+ * The shared flow of every generator: embed the fonts, let `generateContent` draw, then mark the
+ * folds on every page.
+ */
+function createPDFPageGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	generateContent: (fonts: PDFFonts) => Promise<void>
+): PDFPageGenerator {
+	return {
+		async generate(): Promise<PDFDocument> {
+			const fonts = await embedFonts(pdfDoc);
+			await generateContent(fonts);
+			for (const page of pdfDoc.getPages()) {
+				const utils = createPDFUtils(page, fonts.helvetica, fonts.helveticaBold, styles);
+				utils.drawFoldMarks();
+			}
+			return pdfDoc;
 		}
-	}
-
-	public async generate(): Promise<PDFDocument> {
-		await this.initialize();
-		await this.generateContent();
-		await this.drawFoldMarks();
-		return this.pdfDoc;
-	}
+	};
 }
 
 /** A generator that fills a participant's details into the first page of a template. */
-abstract class ParticipantFormGenerator extends PDFPageGenerator {
-	protected participantData: ParticipantData;
-	protected page: PDFPage;
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, participantData: ParticipantData) {
-		super(pdfDoc, styles);
-		this.participantData = participantData;
-		this.page = this.pdfDoc.getPage(0);
-	}
-
-	/** Writes one form field value in the custom font at the left margin. */
-	protected drawField(text: string, y: number, size = this.styles.fontSize.heading) {
-		this.page.drawText(text, {
-			x: this.styles.margin.left,
-			y,
-			size,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-	}
-
-	/** Writes the participant's name and birthday, the second one `gap` points below the first. */
-	protected drawNameAndBirthday(nameY: number, gap: number) {
-		this.drawField(this.participantData.name, nameY);
-		this.drawField(this.participantData.birthday, nameY - gap);
-	}
-}
-
-class ContractGenerator extends ParticipantFormGenerator {
-	private recipientData: RecipientData;
-	constructor(
-		pdfDoc: PDFDocument,
-		styles = defaultStyles,
-		recipientData: RecipientData,
-		participantData: ParticipantData
-	) {
-		super(pdfDoc, styles, participantData);
-		this.recipientData = recipientData;
-	}
-	protected async generateContent(): Promise<void> {
-		const { width, height } = this.page.getSize();
-		let yPosition: number;
-
-		// Address Field
-		const recipientFields = [
-			{ label: this.recipientData.name },
-			{ label: this.recipientData.address },
-			{ label: `${this.recipientData.zip} ${this.recipientData.city}` },
-			{ label: this.recipientData.country }
-		];
-
-		// Only for orientation (marks the boundaries of the letter recipient address field)
-		// this.page.drawRectangle({
-		// 	x: millimeterToPixel(20),
-		// 	y: height - millimeterToPixel(50) - millimeterToPixel(40),
-		// 	width: millimeterToPixel(85),
-		// 	height: millimeterToPixel(40),
-		// 	borderWidth: 1,
-		// 	opacity: 0.2
-		// });
-
-		yPosition = height - millimeterToPixel(60);
-		recipientFields.forEach((field) => {
-			yPosition -= 15;
-			this.page.drawText(field.label, {
-				x: millimeterToPixel(25),
-				y: yPosition,
-				size: this.styles.fontSize.normal,
-				font: this.helvetica,
+function createParticipantFormGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	participantData: ParticipantData,
+	generateContent: (form: ParticipantForm, fonts: PDFFonts) => Promise<void>
+): PDFPageGenerator {
+	const page = pdfDoc.getPage(0);
+	return createPDFPageGenerator(pdfDoc, styles, async (fonts) => {
+		/** Writes one form field value in the custom font at the left margin. */
+		function drawField(text: string, y: number, size = styles.fontSize.heading) {
+			page.drawText(text, {
+				x: styles.margin.left,
+				y,
+				size,
+				font: fonts.custfont,
 				color: rgb(0, 0, 0)
 			});
-		});
+		}
 
-		// PDF417 Barcode
-		const barcodeData = this.participantData.id;
-
-		const barcodeCanvas = document.createElement('canvas');
-
-		bwipjs.toCanvas(barcodeCanvas, {
-			bcid: 'datamatrix',
-			text: barcodeData,
-			scale: 2,
-			rotate: 'L'
-		});
-
-		const barcodeImg = barcodeCanvas.toDataURL('image/png');
-		const pngImage = await this.pdfDoc.embedPng(barcodeImg);
-		const pngDims = pngImage.scale(1);
-		this.page.drawImage(pngImage, {
-			x: width - pngDims.width - this.styles.margin.right,
-			y: height - 100 - pngDims.height,
-			width: pngDims.width,
-			height: pngDims.height
-		});
-
-		// Participant Fields
-		this.drawNameAndBirthday(height - 320, 60);
-	}
+		await generateContent(
+			{
+				page,
+				participantData,
+				drawField,
+				/** Writes the participant's name and birthday, the second one `gap` points below the first. */
+				drawNameAndBirthday(nameY: number, gap: number) {
+					drawField(participantData.name, nameY);
+					drawField(participantData.birthday, nameY - gap);
+				}
+			},
+			fonts
+		);
+	});
 }
 
-class GuardianGenerator extends ParticipantFormGenerator {
-	protected async generateContent(): Promise<void> {
-		const { height } = this.page.getSize();
-		this.drawNameAndBirthday(height - 180, 60);
-	}
+interface ParticipantForm {
+	page: PDFPage;
+	participantData: ParticipantData;
+	drawField(text: string, y: number, size?: number): void;
+	drawNameAndBirthday(nameY: number, gap: number): void;
 }
 
-class MediaGenerator extends ParticipantFormGenerator {
-	protected async generateContent(): Promise<void> {
-		const { height } = this.page.getSize();
-		this.drawNameAndBirthday(height - 225, 42);
-		this.drawField(this.participantData.address, height - 225 - 84, 10);
-	}
+function createContractGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	recipientData: RecipientData,
+	participantData: ParticipantData
+): PDFPageGenerator {
+	return createParticipantFormGenerator(
+		pdfDoc,
+		styles,
+		participantData,
+		async ({ page, drawNameAndBirthday }, fonts) => {
+			const { width, height } = page.getSize();
+			let yPosition: number;
+
+			// Address Field
+			const recipientFields = [
+				{ label: recipientData.name },
+				{ label: recipientData.address },
+				{ label: `${recipientData.zip} ${recipientData.city}` },
+				{ label: recipientData.country }
+			];
+
+			// Only for orientation (marks the boundaries of the letter recipient address field)
+			// page.drawRectangle({
+			// 	x: millimeterToPixel(20),
+			// 	y: height - millimeterToPixel(50) - millimeterToPixel(40),
+			// 	width: millimeterToPixel(85),
+			// 	height: millimeterToPixel(40),
+			// 	borderWidth: 1,
+			// 	opacity: 0.2
+			// });
+
+			yPosition = height - millimeterToPixel(60);
+			recipientFields.forEach((field) => {
+				yPosition -= 15;
+				page.drawText(field.label, {
+					x: millimeterToPixel(25),
+					y: yPosition,
+					size: styles.fontSize.normal,
+					font: fonts.helvetica,
+					color: rgb(0, 0, 0)
+				});
+			});
+
+			// PDF417 Barcode
+			const barcodeData = participantData.id;
+
+			const barcodeCanvas = document.createElement('canvas');
+
+			bwipjs.toCanvas(barcodeCanvas, {
+				bcid: 'datamatrix',
+				text: barcodeData,
+				scale: 2,
+				rotate: 'L'
+			});
+
+			const barcodeImg = barcodeCanvas.toDataURL('image/png');
+			const pngImage = await pdfDoc.embedPng(barcodeImg);
+			const pngDims = pngImage.scale(1);
+			page.drawImage(pngImage, {
+				x: width - pngDims.width - styles.margin.right,
+				y: height - 100 - pngDims.height,
+				width: pngDims.width,
+				height: pngDims.height
+			});
+
+			// Participant Fields
+			drawNameAndBirthday(height - 320, 60);
+		}
+	);
+}
+
+function createGuardianGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	participantData: ParticipantData
+): PDFPageGenerator {
+	return createParticipantFormGenerator(
+		pdfDoc,
+		styles,
+		participantData,
+		async ({ page, drawNameAndBirthday }) => {
+			const { height } = page.getSize();
+			drawNameAndBirthday(height - 180, 60);
+		}
+	);
+}
+
+function createMediaGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	participantData: ParticipantData
+): PDFPageGenerator {
+	return createParticipantFormGenerator(
+		pdfDoc,
+		styles,
+		participantData,
+		async ({ page, drawNameAndBirthday, drawField }) => {
+			const { height } = page.getSize();
+			drawNameAndBirthday(height - 225, 42);
+			drawField(participantData.address, height - 225 - 84, 10);
+		}
+	);
 }
 
 function toRomanNumeral(num: number): string {
@@ -421,39 +457,37 @@ async function numerateDocument(
 	});
 }
 
-class CertificateGenerator extends PDFPageGenerator {
-	private data: ParticipantCertificateData;
-	private page: PDFPage;
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, data: ParticipantCertificateData) {
-		super(pdfDoc, styles);
-		this.data = data;
-		this.page = this.pdfDoc.getPage(0);
-	}
-	protected async generateContent(): Promise<void> {
-		if (!this.data.fullName) {
+function createCertificateGenerator(
+	pdfDoc: PDFDocument,
+	styles: PageStyles,
+	data: ParticipantCertificateData
+): PDFPageGenerator {
+	const page = pdfDoc.getPage(0);
+	return createPDFPageGenerator(pdfDoc, styles, async ({ custfont }) => {
+		if (!data.fullName) {
 			throw new Error('Full name is required for the certificate');
 		}
-		if (!this.data.jwt) {
+		if (!data.jwt) {
 			throw new Error('JWT is required for the certificate');
 		}
 
-		const { width, height } = this.page.getSize();
+		const { width, height } = page.getSize();
 		const yPosition = height - 215;
-		const text = this.data.fullName;
-		let textWidth = this.custfont.widthOfTextAtSize(text, this.styles.fontSize.title);
+		const text = data.fullName;
+		let textWidth = custfont.widthOfTextAtSize(text, styles.fontSize.title);
 		const xPosition = (width - textWidth) / 2;
 
-		this.page.drawText(text, {
+		page.drawText(text, {
 			x: xPosition,
 			y: yPosition,
-			size: this.styles.fontSize.title,
-			font: this.custfont,
+			size: styles.fontSize.title,
+			font: custfont,
 			color: rgb(0, 0, 0)
 		});
 
 		const origin = new URL(window.location.href).origin;
 
-		const barcodeData = `${origin}/vc/${this.data.jwt}`;
+		const barcodeData = `${origin}/vc/${data.jwt}`;
 
 		const barcodeCanvas = document.createElement('canvas');
 
@@ -464,33 +498,33 @@ class CertificateGenerator extends PDFPageGenerator {
 		});
 
 		const barcodeImg = barcodeCanvas.toDataURL('image/png');
-		const pngImage = await this.pdfDoc.embedPng(barcodeImg);
+		const pngImage = await pdfDoc.embedPng(barcodeImg);
 		const pngDims = pngImage.scale(0.5);
-		this.page.drawImage(pngImage, {
+		page.drawImage(pngImage, {
 			x: width - pngDims.width - 10,
 			y: 10,
 			width: pngDims.width,
 			height: pngDims.height
 		});
 
-		const verifyText = 'Verify Certificate';
-		textWidth = this.custfont.widthOfTextAtSize(verifyText, 8);
+		const verifyText = m.certificateVerify();
+		textWidth = custfont.widthOfTextAtSize(verifyText, 8);
 		const textX = width - pngDims.width - 10 + (pngDims.width - textWidth) / 2;
-		this.page.drawText(verifyText, {
+		page.drawText(verifyText, {
 			x: textX,
 			y: pngDims.height + 13,
 			size: 8,
-			font: this.custfont,
+			font: custfont,
 			color: rgb(0, 0, 0)
 		});
 
-		const link = this.pdfDoc.context.register(
-			this.pdfDoc.context.obj({
+		const link = pdfDoc.context.register(
+			pdfDoc.context.obj({
 				Type: 'Annot',
 				Subtype: 'Link',
 				Rect: [textX, pngDims.height + 13, textX + textWidth, pngDims.height + 13 + 8],
 				Border: [0, 0, 0],
-				A: this.pdfDoc.context.obj({
+				A: pdfDoc.context.obj({
 					Type: 'Action',
 					S: 'URI',
 					URI: PDFString.of(barcodeData)
@@ -498,8 +532,8 @@ class CertificateGenerator extends PDFPageGenerator {
 			})
 		);
 
-		this.page.node.set(PDFName.of('Annots'), this.pdfDoc.context.obj([link]));
-	}
+		page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([link]));
+	});
 }
 
 /**
@@ -536,19 +570,19 @@ async function generateCompletePostalRegistrationPDF(
 
 	// First PDF is always included
 	pageGenerators.push(
-		new ContractGenerator(await loadTemplate(contract), defaultStyles, recipient, participant)
+		createContractGenerator(await loadTemplate(contract), defaultStyles, recipient, participant)
 	);
 
 	if (!isOfAge) {
 		// Second PDF depends on age
 		pageGenerators.push(
-			new GuardianGenerator(await loadTemplate(guardianAgreement), defaultStyles, participant)
+			createGuardianGenerator(await loadTemplate(guardianAgreement), defaultStyles, participant)
 		);
 	}
 
 	// // Third page depends on age
 	pageGenerators.push(
-		new MediaGenerator(await loadTemplate(medialAgreement), defaultStyles, participant)
+		createMediaGenerator(await loadTemplate(medialAgreement), defaultStyles, participant)
 	);
 
 	const singlePDFs: PDFDocument[] = [];
@@ -595,10 +629,10 @@ export async function downloadCompletePostalRegistrationPDF(
 	termsAndConditions?: string | null,
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
-	const contractContent = requireContent(contract, 'Missing contract content');
-	const guardianContent = requireContent(guardianAgreement, 'Missing guardian agreement content');
-	const mediaContent = requireContent(medialAgreement, 'Missing media agreement content');
-	const termsContent = requireContent(termsAndConditions, 'Missing terms and conditions content');
+	const contractContent = requireContent(contract, m.pdfMissingContract());
+	const guardianContent = requireContent(guardianAgreement, m.pdfMissingGuardianAgreement());
+	const mediaContent = requireContent(medialAgreement, m.pdfMissingMediaAgreement());
+	const termsContent = requireContent(termsAndConditions, m.pdfMissingTerms());
 	try {
 		const pdfBytes = await generateCompletePostalRegistrationPDF(
 			isOfAge,
@@ -618,7 +652,7 @@ export async function downloadCompletePostalRegistrationPDF(
 }
 
 async function generateCertificatePDF(data: ParticipantCertificateData, certificate: string) {
-	const pageGenerator = new CertificateGenerator(
+	const pageGenerator = createCertificateGenerator(
 		await loadTemplate(certificate),
 		defaultStyles,
 		data
@@ -638,7 +672,7 @@ export async function downloadCompleteCertificate(
 ): Promise<void> {
 	try {
 		if (!certificate) {
-			toast.error('Missing certificate content');
+			toast.error(m.pdfMissingCertificate());
 			throw new Error('Missing required PDF content');
 		}
 		const pdfBytes = await generateCertificatePDF(data, certificate);

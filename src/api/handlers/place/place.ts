@@ -7,10 +7,12 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
-import { storedFileUrl } from '$api/services/files/files';
+import { fileUrl } from '$api/services/files/storage';
+import { claimUploadedFile } from '$api/services/files/uploads';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 import { placePubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/place.ts
 abilityBuilder.place.allow('read');
@@ -23,16 +25,14 @@ abilityBuilder.place
 const PlaceRef = object({
 	table: 'place',
 	adjust: (t) => ({
-		// The site plan is an uploaded image as a data URL, often megabytes. Lists only need to know
-		// whether there is one, so they can ask for this rather than the image itself.
 		hasSitePlan: t.field({
 			type: 'Boolean',
-			resolve: (place) => !!place.sitePlanDataURL
+			resolve: (place) => !!place.sitePlanFileId
 		}),
 		sitePlanUrl: t.field({
 			type: 'String',
 			nullable: true,
-			resolve: (place) => storedFileUrl('place', place, 'sitePlan', place.sitePlanDataURL)
+			resolve: (place) => fileUrl('place', 'sitePlan', place.conferenceId, place.sitePlanFileId)
 		})
 	})
 });
@@ -50,7 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 			directions: t.arg.string(),
 			info: t.arg.string(),
 			websiteUrl: t.arg.string(),
-			sitePlanDataURL: t.arg.string()
+			/** A file uploaded through `requestFileUpload`. */
+			sitePlanFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
@@ -66,7 +67,12 @@ schemaBuilder.mutationFields((t) => ({
 					directions: args.directions ?? undefined,
 					info: args.info ?? undefined,
 					websiteUrl: args.websiteUrl ?? undefined,
-					sitePlanDataURL: args.sitePlanDataURL ?? undefined
+					sitePlanFileId:
+						(await claimUploadedFile(ctx, args.sitePlanFileId, {
+							kind: 'place',
+							field: 'sitePlan',
+							conferenceId: args.conferenceId
+						})) ?? undefined
 				})
 				.returning()
 				.then(assertFirstEntryExists);
@@ -95,9 +101,22 @@ schemaBuilder.mutationFields((t) => ({
 			directions: t.arg.string(),
 			info: t.arg.string(),
 			websiteUrl: t.arg.string(),
-			sitePlanDataURL: t.arg.string()
+			/** A file uploaded through `requestFileUpload`. */
+			sitePlanFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const updateFilter = (await ctx.abilities.place.filter('update')).merge({
+				where: { id: args.id }
+			});
+			const place = await db.query.place
+				.findFirst({ ...updateFilter.query.single, columns: { conferenceId: true } })
+				.then(assertFindFirstExists);
+			const sitePlanFileId = await claimUploadedFile(ctx, args.sitePlanFileId, {
+				kind: 'place',
+				field: 'sitePlan',
+				conferenceId: place.conferenceId
+			});
+
 			await db
 				.update(schema.place)
 				// Every column but the name is nullable, so an explicit null clears it while an
@@ -110,11 +129,9 @@ schemaBuilder.mutationFields((t) => ({
 					directions: args.directions,
 					info: args.info,
 					websiteUrl: args.websiteUrl,
-					sitePlanDataURL: args.sitePlanDataURL
+					sitePlanFileId
 				})
-				.where(
-					(await ctx.abilities.place.filter('update')).merge({ where: { id: args.id } }).sql.where
-				);
+				.where(updateFilter.sql.where);
 
 			placePubsub.updated(args.id);
 
@@ -145,7 +162,7 @@ schemaBuilder.mutationFields((t) => ({
 				.returning({ id: schema.place.id });
 
 			if (deleted.length === 0) {
-				throw new GraphQLError('Place not found, or not yours to delete');
+				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
 			}
 			placePubsub.removed();
 

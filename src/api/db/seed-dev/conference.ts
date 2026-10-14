@@ -1,5 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { makeSeedConference } from '../seed-data/conference';
+import { conferenceImageJpeg } from '../seed-data/conferenceImage';
+import { addSeedFile } from './files';
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import { createConferenceSeed, type ConferenceSeed, type SeedWorld } from './context';
 import {
@@ -45,12 +47,13 @@ const AGENDA_TOPICS = [
 
 const REVIEW_HELP = ['UNSPECIFIED', 'HELP_NEEDED', 'NO_HELP_WANTED'] as const;
 
+/** The PDF templates a conference prints its documents on. */
 export interface ConferenceTemplates {
-	contract: string;
-	guardianConsent: string;
-	mediaConsent: string;
-	termsAndConditions: string;
-	certificate: string;
+	contract: Uint8Array;
+	guardianConsent: Uint8Array;
+	mediaConsent: Uint8Array;
+	termsAndConditions: Uint8Array;
+	certificate: Uint8Array;
 }
 
 /** The conference row and what every conference has: committees, agenda, actors and roles. */
@@ -65,6 +68,19 @@ export function buildConferenceStructure(
 	const endConference = at(plan.days.endConference);
 	endConference.setHours(17, 0, 0, 0);
 
+	const conferenceId = seedConferenceId(plan.key);
+	const file = (field: string, bytes: Uint8Array, mimeType = 'application/pdf') =>
+		addSeedFile(world.batch, {
+			conferenceId,
+			kind: 'conference',
+			field,
+			bytes,
+			mimeType,
+			fileName: `${field}.${mimeType === 'application/pdf' ? 'pdf' : 'jpg'}`
+		});
+	const template = (field: keyof ConferenceTemplates) =>
+		plan.with.templates ? file(field, templates[field]) : null;
+
 	const conference = {
 		...makeSeedConference({
 			state: plan.conference.state,
@@ -72,7 +88,7 @@ export function buildConferenceStructure(
 			startConference,
 			endConference
 		}),
-		id: seedConferenceId(plan.key),
+		id: conferenceId,
 		location: 'Hannover',
 		language: 'deu',
 		website: 'https://example.org',
@@ -80,11 +96,12 @@ export function buildConferenceStructure(
 		feeAmount: 85,
 		linkToPreparationGuide: 'https://example.org/vorbereitung',
 		info: null,
-		contractContent: plan.with.templates ? templates.contract : null,
-		guardianConsentContent: plan.with.templates ? templates.guardianConsent : null,
-		mediaConsentContent: plan.with.templates ? templates.mediaConsent : null,
-		termsAndConditionsContent: plan.with.templates ? templates.termsAndConditions : null,
-		certificateContent: plan.with.certificate ? templates.certificate : null,
+		imageFileId: file('image', conferenceImageJpeg, 'image/jpeg'),
+		contractFileId: template('contract'),
+		guardianConsentFileId: template('guardianConsent'),
+		mediaConsentFileId: template('mediaConsent'),
+		termsAndConditionsFileId: template('termsAndConditions'),
+		certificateFileId: plan.with.certificate ? file('certificate', templates.certificate) : null,
 		unlockPayments: false,
 		unlockPostals: false,
 		assignmentReleased: plan.assigned,

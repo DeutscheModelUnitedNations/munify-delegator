@@ -16,13 +16,14 @@ import {
 } from './conferenceSupervisorService';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
-import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
 import {
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/apiError';
 
 // Ported from abilities/entities/conferenceSupervisor.ts
 abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -91,7 +92,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 			const subjectId = args.userId ?? callerId;
 
@@ -162,7 +163,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = userId(ctx);
 			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
+				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 			const subjectId = args.userId ?? callerId;
 			// Connecting somebody else is participant care's job (the user card's supervisor modal);
@@ -211,7 +212,7 @@ schemaBuilder.mutationFields((t) => ({
 				columns: { id: true }
 			});
 			if (!supervisor) {
-				throw new GraphQLError('You are not allowed to rotate this connection code.');
+				throw apiError('FORBIDDEN', m.supervisorRotateForbidden());
 			}
 
 			await db

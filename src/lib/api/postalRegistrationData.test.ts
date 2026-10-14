@@ -4,6 +4,7 @@ import {
 	postalParticipant,
 	postalRecipient
 } from './postalRegistrationData';
+import { getLocale } from '$lib/paraglide/runtime';
 
 const conference = {
 	postalName: 'DMUN e.V.',
@@ -75,7 +76,7 @@ describe('postalParticipant', () => {
 				id: 'u1',
 				name: 'ERIKA MUSTERMANN',
 				address: 'Hauptstraße 5 Hinterhaus, 24103 Kiel, Deutschland',
-				birthday: birthday.toLocaleDateString()
+				birthday: birthday.toLocaleDateString(getLocale())
 			},
 			fileName: 'EM_postal_registration.pdf'
 		});

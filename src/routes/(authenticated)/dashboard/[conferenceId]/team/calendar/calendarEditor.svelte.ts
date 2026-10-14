@@ -90,7 +90,7 @@ interface CreateDrag {
 }
 
 /** What a finished pointer gesture asks the page to do. */
-export type DragOutcome =
+type DragOutcome =
 	| { type: 'none' }
 	| { type: 'click'; entryId: string }
 	| { type: 'create'; dayId: string; trackIds: string[]; span: Span };
@@ -180,170 +180,122 @@ function showError(error: unknown) {
  * the saves in flight. Like the seat planner, a change shows at once and is overlaid on the live
  * data until the server has answered; a failure drops it again and says why.
  */
-export class CalendarEditor {
-	// Set by the constructor, before any derived below is first read
-	#days: () => EditorDay[] = () => [];
-	#pending = new SvelteMap<string, { placement: Placement; settled: boolean }>();
-	#requests: Record<string, number> = {};
+export function createCalendarEditor(days: () => EditorDay[]) {
+	const pending = new SvelteMap<string, { placement: Placement; settled: boolean }>();
+	const requests: Record<string, number> = {};
 
 	/** The pointer gesture in progress, if any */
-	drag = $state<EntryDrag | CreateDrag | null>(null);
+	let drag = $state<EntryDrag | CreateDrag | null>(null);
 	/** Show 00:00 to 24:00 instead of the hours around the entries */
-	wholeDay = $state(false);
+	let wholeDay = $state(false);
 
-	constructor(days: () => EditorDay[]) {
-		this.#days = days;
-	}
-
-	#base = $derived(this.#days().flatMap((day) => day.entries.map((e) => toEditorEntry(day, e))));
+	const base = $derived(days().flatMap((day) => day.entries.map((e) => toEditorEntry(day, e))));
 
 	/** The entries with saves in flight applied */
-	#committed = $derived(
-		this.#base.map((entry) => {
-			const pending = this.#pending.get(entry.id);
-			return pending ? { ...entry, ...pending.placement } : entry;
+	const committed = $derived(
+		base.map((entry) => {
+			const inFlight = pending.get(entry.id);
+			return inFlight ? { ...entry, ...inFlight.placement } : entry;
 		})
 	);
 
 	/** The entries as drawn: also with the drag in progress applied */
-	entries = $derived.by(() => {
-		const drag = this.drag;
-		if (drag?.kind !== 'entry' || !drag.active) return this.#committed;
-		return this.#committed.map((entry) =>
-			entry.id === drag.entryId ? { ...entry, ...drag.target } : entry
+	const entries = $derived.by(() => {
+		const current = drag;
+		if (current?.kind !== 'entry' || !current.active) return committed;
+		return committed.map((entry) =>
+			entry.id === current.entryId ? { ...entry, ...current.target } : entry
 		);
 	});
 
 	/** The columns of all days */
-	grid = $derived(buildGrid(this.#days()));
+	const grid = $derived(buildGrid(days()));
 
 	/** The hours shown; it follows the saved entries, so it does not shift under a drag */
-	range = $derived(editorHourRange(this.#committed, this.wholeDay));
+	const range = $derived(editorHourRange(committed, wholeDay));
 
-	overlapping = $derived(overlappingIds(this.entries));
+	const overlapping = $derived(overlappingIds(entries));
 
 	/** The side-by-side lanes of overlapping entries; the dragged one keeps the full width */
-	#lanes = $derived.by(() => {
-		const dragged = this.drag?.kind === 'entry' && this.drag.active ? this.drag.entryId : null;
-		return assignLanes(this.entries.filter((entry) => entry.id !== dragged));
-	});
-
-	laneOf(entryId: string) {
-		return this.#lanes.get(entryId) ?? { lane: 0, lanes: 1 };
-	}
-
-	/** The range being selected on an empty slot */
-	creating = $derived.by(() => {
-		const drag = this.drag;
-		if (drag?.kind !== 'create' || !drag.active) return undefined;
-		return {
-			dayId: drag.dayId,
-			trackIds: this.#createdTracks(drag),
-			span: createSpan(drag.anchor, drag.current, true)
-		};
+	const lanes = $derived.by(() => {
+		const dragged = drag?.kind === 'entry' && drag.active ? drag.entryId : null;
+		return assignLanes(entries.filter((entry) => entry.id !== dragged));
 	});
 
 	/** The tracks a create drag has swept across, sideways */
-	#createdTracks(drag: CreateDrag) {
-		const block = this.grid.days.find((d) => d.dayId === drag.dayId);
+	function createdTracks(current: CreateDrag) {
+		const block = grid.days.find((d) => d.dayId === current.dayId);
 		if (!block) return [];
-		const range = drag.active
+		const columns = current.active
 			? {
-					first: Math.min(drag.anchorColumn, drag.currentColumn),
-					last: Math.max(drag.anchorColumn, drag.currentColumn)
+					first: Math.min(current.anchorColumn, current.currentColumn),
+					last: Math.max(current.anchorColumn, current.currentColumn)
 				}
-			: { first: drag.anchorColumn, last: drag.anchorColumn };
-		return tracksOfRange(block, range);
+			: { first: current.anchorColumn, last: current.anchorColumn };
+		return tracksOfRange(block, columns);
 	}
 
-	// === Pointer gestures ===
-
-	beginEntryDrag(entryId: string, mode: DragMode, pointer: PointerPosition) {
-		const entry = this.#committed.find((e) => e.id === entryId);
-		if (!entry) return;
-		const origin = {
-			dayId: entry.dayId,
-			trackIds: entry.trackIds,
-			start: entry.start,
-			end: entry.end
+	/** The range being selected on an empty slot */
+	const creating = $derived.by(() => {
+		const current = drag;
+		if (current?.kind !== 'create' || !current.active) return undefined;
+		return {
+			dayId: current.dayId,
+			trackIds: createdTracks(current),
+			span: createSpan(current.anchor, current.current, true)
 		};
-		this.drag = {
-			kind: 'entry',
-			entryId,
-			mode,
-			origin,
-			grabbed: pointer,
-			active: false,
-			target: origin
-		};
-	}
-
-	beginCreate(dayId: string, column: number, minutes: number) {
-		this.drag = {
-			kind: 'create',
-			dayId,
-			anchor: minutes,
-			anchorColumn: column,
-			current: minutes,
-			currentColumn: column,
-			active: false
-		};
-	}
-
-	/** `travelled` is how far the pointer has moved since the press, in pixels */
-	moveDrag(pointer: PointerPosition, travelled: number) {
-		const drag = this.drag;
-		if (!drag) return;
-		if (travelled >= DRAG_THRESHOLD) drag.active = true;
-		if (!drag.active) return;
-		if (drag.kind === 'create') {
-			drag.current = pointer.minutes;
-			const block = this.grid.days.find((d) => d.dayId === drag.dayId);
-			if (block) drag.currentColumn = clampedIndex(block, pointer.unit);
-		} else drag.target = this.#targetOf(drag, pointer);
-	}
+	});
 
 	/** Where a dragged entry lands with the pointer at `pointer` */
-	#targetOf(drag: EntryDrag, pointer: PointerPosition): Placement {
-		const span = dragSpan(drag.origin, drag.mode, pointer.minutes - drag.grabbed.minutes);
-		if (drag.mode === 'resize-left' || drag.mode === 'resize-right') {
-			const trackIds = stretchTracks(this.grid, drag.origin, drag.mode, pointer.unit);
-			return { ...drag.origin, trackIds };
+	function targetOf(current: EntryDrag, pointer: PointerPosition): Placement {
+		const span = dragSpan(current.origin, current.mode, pointer.minutes - current.grabbed.minutes);
+		if (current.mode === 'resize-left' || current.mode === 'resize-right') {
+			const trackIds = stretchTracks(grid, current.origin, current.mode, pointer.unit);
+			return { ...current.origin, trackIds };
 		}
-		if (drag.mode !== 'move') return { ...drag.origin, ...span };
-		const placement = dropPlacement(this.grid, pointer.unit, {
-			dayId: drag.origin.dayId,
-			trackIds: drag.origin.trackIds,
-			unit: drag.grabbed.unit
+		if (current.mode !== 'move') return { ...current.origin, ...span };
+		const placement = dropPlacement(grid, pointer.unit, {
+			dayId: current.origin.dayId,
+			trackIds: current.origin.trackIds,
+			unit: current.grabbed.unit
 		});
-		return { ...(placement ?? drag.origin), ...span };
+		return { ...(placement ?? current.origin), ...span };
 	}
 
-	cancelDrag() {
-		this.drag = null;
+	/** Shows a change at once; returns the id of this request, so a later one is not undone by it. */
+	function begin(entryId: string, placement: Placement) {
+		const request = (requests[entryId] ?? 0) + 1;
+		requests[entryId] = request;
+		pending.set(entryId, { placement, settled: false });
+		return request;
 	}
 
-	/** Ends the gesture: saves a moved or resized entry, and says what else the page should do. */
-	finishDrag(): DragOutcome {
-		const drag = this.drag;
-		this.drag = null;
-		if (!drag) return { type: 'none' };
-		if (drag.kind === 'create') {
-			// A click without a drag selects an hour from the slot; a drag the range it covered
-			const span = createSpan(drag.anchor, drag.current, drag.active);
-			return { type: 'create', dayId: drag.dayId, trackIds: this.#createdTracks(drag), span };
+	/** Marks a change as saved; the overlay goes once the live data shows it (see `settle`). */
+	function answered(entryId: string, request: number) {
+		if (requests[entryId] !== request) return;
+		const inFlight = pending.get(entryId);
+		if (inFlight) inFlight.settled = true;
+		settle();
+		// The fallback for an answer that never matches what was asked for
+		setTimeout(() => {
+			if (requests[entryId] === request) pending.delete(entryId);
+		}, PENDING_TIMEOUT_MS);
+	}
+
+	/** Drops saved changes the live data now shows. Call it where the live data is read. */
+	function settle() {
+		for (const [entryId, inFlight] of pending) {
+			const entry = base.find((e) => e.id === entryId);
+			if (inFlight.settled && entry && samePlacement(entry, inFlight.placement)) {
+				pending.delete(entryId);
+			}
 		}
-		if (!drag.active) return { type: 'click', entryId: drag.entryId };
-		if (!samePlacement(drag.origin, drag.target)) void this.place(drag.entryId, drag.target);
-		return { type: 'none' };
 	}
-
-	// === Saving ===
 
 	/** Moves an entry to a day, track and time; offers to undo it. */
-	async place(entryId: string, placement: Placement, undoable = true) {
-		const entry = this.#committed.find((e) => e.id === entryId);
-		const day = this.#days().find((d) => d.id === placement.dayId);
+	async function place(entryId: string, placement: Placement, undoable = true) {
+		const entry = committed.find((e) => e.id === entryId);
+		const day = days().find((d) => d.id === placement.dayId);
 		if (!entry || !day) return;
 		if (placement.trackIds.length === 0) {
 			showError(new Error(m.calendarDayNeedsTrack()));
@@ -356,7 +308,7 @@ export class CalendarEditor {
 			end: entry.end
 		};
 
-		const request = this.#begin(entryId, placement);
+		const request = begin(entryId, placement);
 		try {
 			await client.mutate.updateCalendarEntry({
 				__args: {
@@ -369,12 +321,12 @@ export class CalendarEditor {
 				id: true
 			});
 		} catch (error) {
-			if (this.#requests[entryId] === request) this.#pending.delete(entryId);
+			if (requests[entryId] === request) pending.delete(entryId);
 			showError(error);
 			return;
 		}
 
-		this.#answered(entryId, request);
+		answered(entryId, request);
 		if (undoable) {
 			const message = m.calendarEntryPlaced({
 				name: entry.name,
@@ -383,68 +335,152 @@ export class CalendarEditor {
 				end: formatClockMinutes(placement.end)
 			});
 			toast.success(message, {
-				action: { label: m.undo(), onClick: () => this.place(entryId, before, false) }
+				action: { label: m.undo(), onClick: () => place(entryId, before, false) }
 			});
 		}
 	}
 
-	/** Shows a change at once; returns the id of this request, so a later one is not undone by it. */
-	#begin(entryId: string, placement: Placement) {
-		const request = (this.#requests[entryId] ?? 0) + 1;
-		this.#requests[entryId] = request;
-		this.#pending.set(entryId, { placement, settled: false });
-		return request;
-	}
+	return {
+		get drag() {
+			return drag;
+		},
+		set drag(value: EntryDrag | CreateDrag | null) {
+			drag = value;
+		},
+		get wholeDay() {
+			return wholeDay;
+		},
+		set wholeDay(value: boolean) {
+			wholeDay = value;
+		},
+		get entries() {
+			return entries;
+		},
+		get grid() {
+			return grid;
+		},
+		get range() {
+			return range;
+		},
+		get overlapping() {
+			return overlapping;
+		},
+		get creating() {
+			return creating;
+		},
 
-	/** Marks a change as saved; the overlay goes once the live data shows it (see `settle`). */
-	#answered(entryId: string, request: number) {
-		if (this.#requests[entryId] !== request) return;
-		const pending = this.#pending.get(entryId);
-		if (pending) pending.settled = true;
-		this.settle();
-		// The fallback for an answer that never matches what was asked for
-		setTimeout(() => {
-			if (this.#requests[entryId] === request) this.#pending.delete(entryId);
-		}, PENDING_TIMEOUT_MS);
-	}
+		laneOf(entryId: string) {
+			return lanes.get(entryId) ?? { lane: 0, lanes: 1 };
+		},
 
-	/**
-	 * Moves an entry (or with `resize` its end, or on the tracks axis its right edge) by a quarter
-	 * hour or a track, for the keyboard.
-	 */
-	nudge(entryId: string, mode: 'move' | 'resize', axis: 'time' | 'tracks', direction: 1 | -1) {
-		const entry = this.#committed.find((e) => e.id === entryId);
-		if (!entry) return;
-		const next: Placement = {
-			dayId: entry.dayId,
-			trackIds: entry.trackIds,
-			start: entry.start,
-			end: entry.end
-		};
-		if (axis === 'time') {
-			Object.assign(
-				next,
-				dragSpan(entry, mode === 'move' ? 'move' : 'resize-end', direction * SNAP_MINUTES)
-			);
-		} else {
-			next.trackIds = nudgeTracks(
-				this.grid,
-				entry,
-				mode === 'move' ? 'move' : 'resize-right',
-				direction
-			);
-		}
-		if (samePlacement(entry, next)) return;
-		void this.place(entryId, next, false);
-	}
+		// === Pointer gestures ===
 
-	/** Drops saved changes the live data now shows. Call it where the live data is read. */
-	settle() {
-		for (const [entryId, pending] of this.#pending) {
-			const entry = this.#base.find((e) => e.id === entryId);
-			if (pending.settled && entry && samePlacement(entry, pending.placement)) {
-				this.#pending.delete(entryId);
+		beginEntryDrag(entryId: string, mode: DragMode, pointer: PointerPosition) {
+			const entry = committed.find((e) => e.id === entryId);
+			if (!entry) return;
+			const origin = {
+				dayId: entry.dayId,
+				trackIds: entry.trackIds,
+				start: entry.start,
+				end: entry.end
+			};
+			drag = {
+				kind: 'entry',
+				entryId,
+				mode,
+				origin,
+				grabbed: pointer,
+				active: false,
+				target: origin
+			};
+		},
+
+		beginCreate(dayId: string, column: number, minutes: number) {
+			drag = {
+				kind: 'create',
+				dayId,
+				anchor: minutes,
+				anchorColumn: column,
+				current: minutes,
+				currentColumn: column,
+				active: false
+			};
+		},
+
+		/** `travelled` is how far the pointer has moved since the press, in pixels */
+		moveDrag(pointer: PointerPosition, travelled: number) {
+			const current = drag;
+			if (!current) return;
+			if (travelled >= DRAG_THRESHOLD) current.active = true;
+			if (!current.active) return;
+			if (current.kind === 'create') {
+				current.current = pointer.minutes;
+				const block = grid.days.find((d) => d.dayId === current.dayId);
+				if (block) current.currentColumn = clampedIndex(block, pointer.unit);
+			} else current.target = targetOf(current, pointer);
+		},
+
+		cancelDrag() {
+			drag = null;
+		},
+
+		/** Ends the gesture: saves a moved or resized entry, and says what else the page should do. */
+		finishDrag(): DragOutcome {
+			const current = drag;
+			drag = null;
+			if (!current) return { type: 'none' };
+			if (current.kind === 'create') {
+				// A click without a drag selects an hour from the slot; a drag the range it covered
+				const span = createSpan(current.anchor, current.current, current.active);
+				return {
+					type: 'create',
+					dayId: current.dayId,
+					trackIds: createdTracks(current),
+					span
+				};
 			}
-		}
-	}
+			if (!current.active) return { type: 'click', entryId: current.entryId };
+			if (!samePlacement(current.origin, current.target))
+				void place(current.entryId, current.target);
+			return { type: 'none' };
+		},
+
+		// === Saving ===
+
+		place,
+
+		/**
+		 * Moves an entry (or with `resize` its end, or on the tracks axis its right edge) by a quarter
+		 * hour or a track, for the keyboard.
+		 */
+		nudge(entryId: string, mode: 'move' | 'resize', axis: 'time' | 'tracks', direction: 1 | -1) {
+			const entry = committed.find((e) => e.id === entryId);
+			if (!entry) return;
+			const next: Placement = {
+				dayId: entry.dayId,
+				trackIds: entry.trackIds,
+				start: entry.start,
+				end: entry.end
+			};
+			if (axis === 'time') {
+				Object.assign(
+					next,
+					dragSpan(entry, mode === 'move' ? 'move' : 'resize-end', direction * SNAP_MINUTES)
+				);
+			} else {
+				next.trackIds = nudgeTracks(
+					grid,
+					entry,
+					mode === 'move' ? 'move' : 'resize-right',
+					direction
+				);
+			}
+			if (samePlacement(entry, next)) return;
+			void place(entryId, next, false);
+		},
+
+		settle
+	};
 }
+
+type CalendarEditor = ReturnType<typeof createCalendarEditor>;

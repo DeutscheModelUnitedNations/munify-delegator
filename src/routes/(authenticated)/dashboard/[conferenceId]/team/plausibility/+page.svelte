@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
@@ -41,7 +42,7 @@
 		])
 	);
 
-	const date = (yearsBack: number) => yearsAgo(yearsBack).toLocaleDateString();
+	const date = (yearsBack: number) => yearsAgo(yearsBack).toLocaleDateString(getLocale());
 	const people = (users: { id: string; givenName: string | null; familyName: string | null }[]) =>
 		users.map((user) => ({
 			id: user.id,

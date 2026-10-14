@@ -1,3 +1,5 @@
+import { CombinedError } from '@urql/core';
+import { GraphQLError } from 'graphql';
 import { describe, expect, test } from 'vitest';
 import {
 	findLogged,
@@ -35,10 +37,17 @@ describe('attendanceSession', () => {
 		expect(scanErrorText('x', 'offline', 'generic')).toBe('generic');
 	});
 
-	test('isAlreadyScanned reads the server message', () => {
-		expect(isAlreadyScanned(new Error('Already scanned in this session'))).toBe(true);
-		expect(isAlreadyScanned(new Error('other'))).toBe(false);
-		expect(isAlreadyScanned('Already scanned')).toBe(false);
+	test('isAlreadyScanned reads the error code, not the message', () => {
+		const refused = (code: string, message: string) =>
+			new CombinedError({
+				graphQLErrors: [new GraphQLError(message, { extensions: { code } })]
+			});
+		expect(isAlreadyScanned(refused('ALREADY_SCANNED', 'Schon eingecheckt'))).toBe(true);
+		expect(isAlreadyScanned(refused('EMAIL_CONFLICT', 'Already scanned in this session'))).toBe(
+			false
+		);
+		expect(isAlreadyScanned(new Error('Already scanned in this session'))).toBe(false);
+		expect(isAlreadyScanned('ALREADY_SCANNED')).toBe(false);
 	});
 
 	test('hasUnsynced', () => {
