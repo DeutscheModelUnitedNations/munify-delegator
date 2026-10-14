@@ -12,7 +12,7 @@
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import Modal from '../Modal.svelte';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { closeUserCard } from './userCardState.svelte';
 	import type { UserCardRoles } from './userCardRoles';
 	import { badgeSessionBody, requestBadgeSession, seatBadgeValues } from './badgeSession';
@@ -107,10 +107,7 @@
 				id: userId,
 				mediaConsentStatus: status?.mediaConsentStatus
 			});
-			window.open(
-				await requestBadgeSession(configPublic.PUBLIC_BADGE_GENERATOR_URL, body),
-				'_blank'
-			);
+			window.open(await requestBadgeSession(PUBLIC_BADGE_GENERATOR_URL, body), '_blank');
 		} catch (e) {
 			console.error('Failed to open badge generator', e);
 			toast.error(m.genericToastError());
@@ -182,7 +179,7 @@
 
 			<!-- Action buttons -->
 			<div class="flex items-center gap-1">
-				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+				{#if PUBLIC_BADGE_GENERATOR_URL}
 					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
 						<button
 							class="btn btn-ghost btn-sm btn-square"

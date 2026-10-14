@@ -10,7 +10,7 @@
 	import UdQuestion from '$assets/undraw/question.svg';
 	import world from '$assets/undraw/world.svg';
 	import blob from '$assets/misc/blobs/blob_2.svg';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_FEEDBACK_URL } from '$app/env/public';
 	import AccentStripe from '$lib/components/AccentStripe.svelte';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import ConferenceStatusLight from './ConferenceStatusLight.svelte';
@@ -138,9 +138,9 @@
 					<p>{m.homeHelpWithTechnicalIssuesHeadline()}</p>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 					<p>{@html m.homeHelpWithTechnicalIssues()}</p>
-					{#if configPublic.PUBLIC_FEEDBACK_URL}
+					{#if PUBLIC_FEEDBACK_URL}
 						<a
-							href={configPublic.PUBLIC_FEEDBACK_URL}
+							href={PUBLIC_FEEDBACK_URL}
 							target="_blank"
 							rel="external"
 							class="link link-primary mt-2 font-bold"

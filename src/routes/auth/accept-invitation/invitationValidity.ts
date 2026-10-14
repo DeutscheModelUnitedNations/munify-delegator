@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { isTokenExpired } from '$api/services/auth/invitationToken';
+import { isTokenExpired } from '$api/services/account/invitationToken';
 
 interface InvitationState {
 	revokedAt: Date | null;

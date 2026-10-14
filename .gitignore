@@ -26,11 +26,9 @@ vite.config.ts.timestamp-*
 prisma/generated/*
 src/lib/paraglide
 
-# Tasks
-/tasksOut/*
-empheralData/*
+/jobsOut/*
 
-tasksOut
+jobsOut
 
 dev-get-data.sh
 

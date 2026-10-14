@@ -8,22 +8,26 @@ import {
 	isPublicRoute,
 	accessTokenCookieName,
 	refreshTokenCookieName
-} from '$api/services/auth/OIDC';
+} from '$api/services/OIDC';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { building } from '$app/environment';
-import { configPrivate } from '$config/private';
-import { configPublic } from '$config/public';
+import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
+import {
+	PUBLIC_FONTAWESOME_CSS_URL,
+	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL,
+	PUBLIC_OIDC_MIGRATION_NOTICE
+} from '$app/env/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
 import { MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION } from '$lib/data/migrationNotice';
 // --- END TEMPORARY ---
 
 // Initialize Sentry (only if DSN provided and not building)
-if (!building && configPrivate.SENTRY_DSN) {
+if (!building && SENTRY_DSN) {
 	Sentry.init({
-		dsn: configPrivate.SENTRY_DSN,
-		environment: configPrivate.NODE_ENV,
+		dsn: SENTRY_DSN,
+		environment: NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		dataCollection: sentryDataCollection(configPrivate.SENTRY_SEND_DEFAULT_PII ?? false)
+		dataCollection: sentryDataCollection(SENTRY_SEND_DEFAULT_PII ?? false)
 	});
 }
 
@@ -37,8 +41,8 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 					.replace('%lang%', locale)
 					.replace(
 						'%fontawesome.stylesheet%',
-						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />` +
-							`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
+						`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
+							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
 					);
 			}
 		});
@@ -54,7 +58,7 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
  */
 const migrationNoticeHandle: Handle = ({ event, resolve }) => {
 	if (
-		configPublic.PUBLIC_OIDC_MIGRATION_NOTICE &&
+		PUBLIC_OIDC_MIGRATION_NOTICE &&
 		AUTHENTICATED_ROUTES.some((route) => event.url.pathname.startsWith(route)) &&
 		!isPublicRoute(event.url.pathname) &&
 		!event.cookies.get(accessTokenCookieName) &&

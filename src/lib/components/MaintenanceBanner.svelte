@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { configPublic } from '$config/public';
+	import { PUBLIC_MAINTENANCE_WINDOW_END, PUBLIC_MAINTENANCE_WINDOW_START } from '$app/env/public';
 	import { m } from '$lib/paraglide/messages';
 	import { maintenanceStatus } from './maintenanceWindow';
-
-	const { PUBLIC_MAINTENANCE_WINDOW_START, PUBLIC_MAINTENANCE_WINDOW_END } = configPublic;
 
 	let start: Date | undefined = PUBLIC_MAINTENANCE_WINDOW_START
 		? new Date(PUBLIC_MAINTENANCE_WINDOW_START)

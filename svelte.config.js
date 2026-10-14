@@ -19,6 +19,9 @@ const config = {
 		// the schema in-process instead. See src/api/graphql.remote.ts.
 		experimental: {
 			remoteFunctions: true,
+			// Environment variables are declared and validated in `src/env.ts` and read from
+			// `$app/env/private` and `$app/env/public`; `$env/*` is off.
+			explicitEnvironmentVariables: true,
 			// OpenTelemetry: `src/instrumentation.server.ts` sets up the exporter before the app
 			// loads, and SvelteKit emits spans for handle, loads and remote functions into it. Both
 			// are inert unless OTEL_ENDPOINT_URL is set.
@@ -28,8 +31,7 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			$api: 'src/api',
-			$assets: 'src/assets',
-			$config: 'src/lib/config'
+			$assets: 'src/assets'
 		}
 	}
 };

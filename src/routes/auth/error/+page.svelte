@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';
 	import {
 		authErrorDescription,
 		authErrorTitle,
@@ -14,7 +14,7 @@
 
 	const errorType = $derived(parseAuthErrorType(page.url.searchParams.get('type')));
 	const errorDescription = $derived(page.url.searchParams.get('description'));
-	const supportEmail = configPublic.PUBLIC_SUPPORT_EMAIL;
+	const supportEmail = PUBLIC_SUPPORT_EMAIL;
 
 	// Determine which illustration to show based on error type
 	const illustration = $derived(isAccessError(errorType) ? accessDenied : svg500);

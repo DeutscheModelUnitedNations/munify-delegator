@@ -1,0 +1,49 @@
+import { pubsub } from '$api/rumble';
+
+/**
+ * One pubsub instance per table. Every resolver or service that writes a table publishes through
+ * its instance (`updated(id)`, `created()`, `removed()`), so a subscriber watching the table hears
+ * about it whoever wrote it.
+ */
+export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
+export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
+export const assignmentUnitPubsub = pubsub({ table: 'assignmentUnit' });
+export const assignmentUnitMemberPubsub = pubsub({ table: 'assignmentUnitMember' });
+export const assignmentWeightsPubsub = pubsub({ table: 'assignmentWeights' });
+export const attendanceEntryPubsub = pubsub({ table: 'attendanceEntry' });
+export const attendanceSessionPubsub = pubsub({ table: 'attendanceSession' });
+export const calendarDayPubsub = pubsub({ table: 'calendarDay' });
+export const calendarEntryPubsub = pubsub({ table: 'calendarEntry' });
+export const calendarTrackPubsub = pubsub({ table: 'calendarTrack' });
+export const committeePubsub = pubsub({ table: 'committee' });
+export const committeeAgendaItemPubsub = pubsub({ table: 'committeeAgendaItem' });
+export const conferencePubsub = pubsub({ table: 'conference' });
+export const conferenceParticipantStatusPubsub = pubsub({ table: 'conferenceParticipantStatus' });
+export const conferenceSupervisorPubsub = pubsub({ table: 'conferenceSupervisor' });
+export const customConferenceRolePubsub = pubsub({ table: 'customConferenceRole' });
+export const delegationPubsub = pubsub({ table: 'delegation' });
+export const delegationMemberPubsub = pubsub({ table: 'delegationMember' });
+export const nonStateActorPubsub = pubsub({ table: 'nonStateActor' });
+export const paperPubsub = pubsub({ table: 'paper' });
+export const paperReviewPubsub = pubsub({ table: 'paperReview' });
+export const paperVersionPubsub = pubsub({ table: 'paperVersion' });
+export const paymentTransactionPubsub = pubsub({ table: 'paymentTransaction' });
+export const placePubsub = pubsub({ table: 'place' });
+export const possibleDuplicatePubsub = pubsub({ table: 'possibleDuplicate' });
+export const resolutionPubsub = pubsub({ table: 'resolution' });
+export const reviewerSnippetPubsub = pubsub({ table: 'reviewerSnippet' });
+export const roleApplicationPubsub = pubsub({ table: 'roleApplication' });
+export const schoolSuggestionPubsub = pubsub({ table: 'schoolSuggestion' });
+export const schoolSuggestionVariantPubsub = pubsub({ table: 'schoolSuggestionVariant' });
+export const searchHistoryPubsub = pubsub({ table: 'searchHistory' });
+export const singleParticipantPubsub = pubsub({ table: 'singleParticipant' });
+export const surveyAnswerPubsub = pubsub({ table: 'surveyAnswer' });
+export const surveyOptionPubsub = pubsub({ table: 'surveyOption' });
+export const surveyQuestionPubsub = pubsub({ table: 'surveyQuestion' });
+export const teamMemberPubsub = pubsub({ table: 'teamMember' });
+export const teamMemberInvitationPubsub = pubsub({ table: 'teamMemberInvitation' });
+export const userPubsub = pubsub({ table: 'user' });
+export const userReferenceInPaymentTransactionPubsub = pubsub({
+	table: 'userReferenceInPaymentTransaction'
+});
+export const waitingListEntryPubsub = pubsub({ table: 'waitingListEntry' });

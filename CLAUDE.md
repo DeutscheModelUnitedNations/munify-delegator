@@ -123,7 +123,7 @@ bun run add-translation
 ### Building
 
 ```bash
-# Production build (app, then the compute worker threads in build/compute via tsdown, then the tasks)
+# Production build (app, then the compute worker threads in build/compute via tsdown, then nothing else: the jobs image builds itself with `bun run build:jobs`)
 bun run build
 
 # Preview production build
@@ -150,8 +150,10 @@ bun run preview
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
 
 - **`src/api/`** - Backend GraphQL API layer
-  - `handlers/` - One module per domain entity (a directory when the entity has its own helpers: `paper/paper.ts` beside `paper/paperSubmission.ts`), each holding that entity's abilities, object
-    reference, queries and mutations. `register.ts` imports them all and is the single place a
+  - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted. `paper/paper.ts`
+    holds the entity's abilities, object reference, queries and mutations - the GraphQL layer - and
+    `paper/paperService.ts` the business logic (after `avv`), which holds no schema, ability or
+    query definitions. `register.ts` is the only file beside the directories. `register.ts` imports them all and is the single place a
     new handler has to be listed.
   - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
     dev-time generator for the typed frontend client.
@@ -160,7 +162,8 @@ bun run preview
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
-  - `services/` - Backend business logic, one subdirectory per feature; `services/README.md` indexes them
+  - `services/` - Business logic shared by several handlers or routes, and `authHelper.ts`, the one
+    module holding the ability building blocks (after chase); `services/README.md` indexes them
 
 - **`src/lib/`** - Shared frontend code
   - `api/client.ts` - The urql client and its exchanges
@@ -171,13 +174,23 @@ bun run preview
   - `schemata/` - Zod validation schemas
   - `paraglide/` - Generated i18n code
 
-- **`src/config/`** - Environment configuration
-  - `public.ts` - Client-side config (PUBLIC\_\* env vars)
-  - `private.ts` - Server-side config (secrets, DB URLs)
+- **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit
+  (`kit.experimental.explicitEnvironmentVariables`). Import them by name:
+  `import { DATABASE_URL } from '$app/env/private'` (server only) or `'$app/env/public'`
+  (`public: true`, also the browser). A missing or malformed value stops the app at start-up
+  (or build) with one report listing every problem. `$env/*` is switched off. A variable that is
+  required at runtime but not during `vite build` goes through `requiredAtRuntime` there. A test
+  that needs one mocks the module (`vi.mock('$app/env/private', …)`): nothing fills them in
+  under vitest. `src/jobs/` runs outside SvelteKit and reads `process.env` itself.
 
-- **`src/tasks/`** - Background scheduled tasks (node-schedule)
-  - `conferenceStatus.ts` - Auto-update conference states
-  - `mailSync.ts` - Email synchronization with external systems
+- **`src/jobs/`** - One-shot jobs behind the `delegator-jobs` CLI (`cli.ts`, one file per job, after
+  avv), built by `bun run build:jobs` into `jobsOut/` and shipped as its own image
+  (`Dockerfile.jobs`). Run by an external scheduler; `bun run jobs <command>` runs one locally.
+  Jobs-only code lives here, not in `src/api`, and `db.ts` is the jobs' own client so a job needs
+  only `DATABASE_URL` and does not read the app's configuration.
+  - `refresh-statistics.ts` - Recomputes the statistics materialized views (every few minutes)
+  - `mailSync/` + `apis/listmonk/` - Mail list synchronisation with Listmonk (`mail-sync`)
+  - `invitationCleanup.ts` - Deletes team member invitations long after they expired
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -185,7 +198,7 @@ bun run preview
 
 #### 1. GraphQL API Layer (rumble)
 
-- **Code-first**, one file per entity under `src/api/handlers/`. A handler declares, in this order:
+- **Code-first**, one directory per entity under `src/api/handlers/`. A handler declares, in this order:
   its abilities, its object reference, its queries, its mutations.
 
   ```ts
@@ -196,12 +209,12 @@ bun run preview
   query({ table: 'committee' }); // generates `committee(id)` and `committees(where, limit, …)`
   ```
 
-- **Every mutation publishes.** A handler makes one pubsub instance per table it writes:
+- **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
 
   ```ts
-  const pubsub = rumblePubsub({ table: 'committee' });
+  import { committeePubsub } from '$api/pubsub';
   // …
-  pubsub.updated(args.id); // or created() / removed()
+  committeePubsub.updated(args.id); // or created() / removed()
   ```
 
   Publish for **every** table a resolver touches, not just its own — deleting a delegation has to
@@ -215,7 +228,7 @@ bun run preview
   ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
   ```
 
-  `services/auth/authHelper.ts` is the one place authorization is built from; its header holds the
+  `services/authHelper.ts` is the one place authorization is built from; its header holds the
   role matrix (who may do what). Rules of thumb, all of them enforced by `e2e/authorization/`:
 
   - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
@@ -437,7 +450,7 @@ bun run preview
 #### 3. Authentication & Authorization
 
 - **OIDC flow** via [`@m1212e/sveltekit-oidc`](https://github.com/m1212e/sveltekit-oidc), the same
-  library chase uses. `src/api/services/auth/OIDC.ts` builds the instance; its `handle` hook (wired up in
+  library chase uses. `src/api/services/OIDC.ts` builds the instance; its `handle` hook (wired up in
   `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
   `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
   session on `event.locals.oidc`. There is no auth code in route loads.
@@ -461,7 +474,7 @@ bun run preview
   preparation, active and post, so one login tours the stages. The seed prints the conference ids,
   join codes and invitation links at the end. A new state the UI branches on gets a persona or a
   conference flag here, so it stays reachable with one click.
-- **Login-time user upsert** lives in `src/api/services/auth/upsertSelf.ts`, passed to the library as
+- **Login-time user upsert** lives in `src/api/services/account/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.
 - **Impersonation is stalled** for this migration: the old implementation swapped session cookies
@@ -548,7 +561,7 @@ bun run preview
   project management and participant care, switchable both ways) decides whether participants and
   supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,
   `assignedNonStateActorId`, `assignedCommitteeId`, `assignedRoleId` and `assignmentDetails`
-  (`src/api/services/assignment/assignmentVisibility.ts`, two rules per participant-side ability:
+  (`src/api/services/authHelper.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
   follows the masks. A relation backed by a masked key (`assignedNation`, `assignedCommittee`, …)
   resolves to nothing, the relations pointing back (`nation.assignedDelegations`,
@@ -594,19 +607,23 @@ bun run preview
   member is on the team: there participant care reads them only through the pair. The new ones
   are in "Seed 2" - sign in as `dev-team-care` and open its plausibility page.
 
-#### 8. Background Tasks
+#### 8. Background Tasks and Jobs
 
-- **node-schedule** for cron jobs
-- Tasks registered in `src/tasks/index.ts`
-- Conference state auto-transitions, email list synchronization
-- Task output written to `tasksOut/` directory (configured in build)
+- **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
+  scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
+  timer. A new job is a file with a `run…` function and a sub-command in `cli.ts` that imports it
+  when it runs. Schedule:
+  - `refresh-statistics` - every few minutes. The app only reads the views; without the job they
+    go stale (`bun run db:seed:dev` refreshes them once).
+  - `mail-sync` - every 15 minutes; needs `LISTMONK_API_URL`, `LISTMONK_API_USER`,
+    `LISTMONK_API_KEY`
+  - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
 
 ### Path Aliases (svelte.config.js)
 
 ```
 $api → src/api
 $assets → src/assets
-$config → src/lib/config
 ```
 
 ### Important Integrations
@@ -615,7 +632,7 @@ $config → src/lib/config
 - **Barcode/QR**: `@bwip-js/browser`, `@svelte-put/qr`, `barcode-detector`
 - **Rich Text Editor**: TipTap for committee agenda items
 - **Maps**: Leaflet via `sveaflet` for delegation locations
-- **External APIs**: Listmonk email service integration in `src/tasks/apis/`
+- **External APIs**: Listmonk email service integration in `src/jobs/apis/`
 
 ### UI Component Patterns
 
@@ -705,12 +722,11 @@ Required variables (see `.env.example`):
 4. Update `src/api/db/seed-data/` if a new column is required
 5. Test with `bun run db:nuke && bun run db:seed:dev`
 
-### Adding Background Task
+### Adding a Background Job
 
-1. Create task file in `src/tasks/`
-2. Use `node-schedule` to define cron schedule
-3. Import task in `src/tasks/index.ts`
-4. Ensure task output directory exists
+1. Create the job in `src/jobs/` with a `run…` function that uses `./db`
+2. Add a sub-command to `src/jobs/cli.ts` that imports it when it runs
+3. Schedule `delegator-jobs <command>` in whatever runs the image
 
 ## Git Hooks (Lefthook)
 

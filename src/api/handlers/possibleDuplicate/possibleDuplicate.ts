@@ -1,22 +1,16 @@
 import { db, schema } from '$api/db/db';
-import {
-	abilityBuilder,
-	enum_,
-	object,
-	pubsub as rumblePubsub,
-	query,
-	schemaBuilder
-} from '$api/rumble';
+import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isManagedUser,
 	systemAdmin,
 	userId
-} from '$api/services/auth/authHelper';
+} from '$api/services/authHelper';
 import { scanConferenceForDuplicates } from './possibleDuplicates';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
+import { possibleDuplicatePubsub, userPubsub } from '$api/pubsub';
 
 // Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
 // *other* account, and how much of it, is a rule on the user table (`user.ts`).
@@ -97,8 +91,6 @@ const PossibleDuplicateRef = object({
 	})
 });
 query({ table: 'possibleDuplicate' });
-const pubsub = rumblePubsub({ table: 'possibleDuplicate' });
-const userPubsub = rumblePubsub({ table: 'user' });
 
 schemaBuilder.mutationFields((t) => ({
 	/** Looks for duplicates of everyone taking part in the conference; answers the pairs found. */
@@ -142,7 +134,7 @@ schemaBuilder.mutationFields((t) => ({
 			const [pair] = updated;
 			if (!pair) throw new GraphQLError('Possible duplicate not found or access denied');
 
-			pubsub.updated(args.id);
+			possibleDuplicatePubsub.updated(args.id);
 			// what of each account the care team may read follows the decision
 			userPubsub.updated(pair.userId);
 			userPubsub.updated(pair.candidateId);

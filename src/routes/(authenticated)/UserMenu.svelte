@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_FEEDBACK_URL } from '$app/env/public';
 	import { client } from '$lib/api/rumbleClient/client';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
@@ -70,9 +70,9 @@
 						{m.dashboard()}
 					</a>
 				</li>
-				{#if configPublic.PUBLIC_FEEDBACK_URL}
+				{#if PUBLIC_FEEDBACK_URL}
 					<li>
-						<a href={configPublic.PUBLIC_FEEDBACK_URL} target="_blank" rel="external">
+						<a href={PUBLIC_FEEDBACK_URL} target="_blank" rel="external">
 							<i class="fa-sharp-duotone fa-solid fa-comment w-4"></i>
 							{m.feedback()}
 						</a>

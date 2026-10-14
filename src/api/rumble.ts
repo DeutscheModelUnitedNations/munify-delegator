@@ -3,7 +3,12 @@ import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 import { trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import { configPrivate } from '$config/private';
+import {
+	OTEL_ENDPOINT_URL,
+	OTEL_SERVICE_NAME,
+	OTEL_SERVICE_VERSION,
+	REDIS_URL
+} from '$app/env/private';
 import { db, schema } from './db/db';
 import { context } from './context';
 
@@ -13,11 +18,11 @@ import { context } from './context';
  * single process needs.
  */
 let eventTarget: ReturnType<typeof createRedisEventTarget> | undefined;
-if (configPrivate.REDIS_URL) {
+if (REDIS_URL) {
 	// ioredis v6 defaults to the RESP3 wire protocol, which changes reply shapes for some
 	// commands - pin the previously-default RESP2 protocol to keep behavior unchanged.
-	const publishClient = new Redis(configPrivate.REDIS_URL, { protocol: 2 });
-	const subscribeClient = new Redis(configPrivate.REDIS_URL, { protocol: 2 });
+	const publishClient = new Redis(REDIS_URL, { protocol: 2 });
+	const subscribeClient = new Redis(REDIS_URL, { protocol: 2 });
 
 	eventTarget = createRedisEventTarget({ publishClient, subscribeClient });
 }
@@ -41,8 +46,8 @@ export const {
 	actions: ['read', 'update', 'delete'],
 	search: { enabled: true, threshold: 0.3 },
 	otel: {
-		enabled: !!configPrivate.OTEL_ENDPOINT_URL,
-		tracer: trace.getTracer(configPrivate.OTEL_SERVICE_NAME, configPrivate.OTEL_SERVICE_VERSION),
+		enabled: !!OTEL_ENDPOINT_URL,
+		tracer: trace.getTracer(OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION),
 		includeVariables: false
 	},
 	pothosConfig: {

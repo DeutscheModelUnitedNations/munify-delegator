@@ -40,7 +40,7 @@ import {
 import { conferencePlans } from './seed-dev/plans';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
-// through `$config/private`.
+// through `$app/env/private`.
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is not set');
 const db = drizzle(databaseUrl);

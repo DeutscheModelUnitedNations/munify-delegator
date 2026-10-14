@@ -1,5 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/auth/authHelper';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
 import { loadNametagBinGroups, loadNametagBins, loadOwnNametagTable } from './bins';
 import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 import { db } from '$api/db/db';

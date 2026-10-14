@@ -1,16 +1,16 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
-import { configPrivate } from '$config/private';
-import { oidcRoles } from './services/auth/OIDC';
+import { OIDC_ROLE_CLAIM } from '$app/env/private';
+import { oidcRoles } from './services/OIDC';
 
 /**
  * Reads the roles claim, whose shape depends on the provider: Logto sends an array of names or
  * role objects, Zitadel an object keyed by role name.
  */
 function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][] {
-	if (!configPrivate.OIDC_ROLE_CLAIM) return [];
+	if (!OIDC_ROLE_CLAIM) return [];
 
-	const claim = configPrivate.OIDC_ROLE_CLAIM;
+	const claim = OIDC_ROLE_CLAIM;
 	const rolesRaw =
 		(locals.oidc?.accessToken as Record<string, unknown> | undefined)?.[claim] ??
 		(locals.oidc?.idToken as Record<string, unknown> | undefined)?.[claim];

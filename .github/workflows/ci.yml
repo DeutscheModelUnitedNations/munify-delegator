@@ -64,7 +64,7 @@ jobs:
       OIDC_ROLE_CLAIM: roles
       SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
       CERTIFICATE_SECRET: e2e-ci-certificate-secret
-      # Must be `development`: src/api/services/auth/OIDC.ts only passes `allowInsecureRequests` to
+      # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
       # oauth4webapi under that value, and the mock OIDC provider (oidc-mock) is plain HTTP. Any
       # other value fails discovery with "only requests to HTTPS are allowed" and every login
       # times out.
@@ -402,7 +402,7 @@ jobs:
           echo "  - SENTRY_AUTH_TOKEN: Your Bugsink authentication token"
           echo "  - SENTRY_URL: Your Bugsink instance URL (e.g., https://bugsink.example.com/)"
 
-  docker-build-tasks:
+  docker-build-jobs:
     if: github.event_name == 'push'
     needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
@@ -411,73 +411,72 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Path filter: only build when task-relevant files changed
+      # Path filter: only build when job-relevant files changed
       - uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |
-            tasks:
-              - 'src/tasks/**'
-              - 'src/api/services/**'
-              - 'src/lib/services/formatNames.ts'
-              - 'src/api/db/**'
-              - 'tsdown.tasks.config.ts'
-              - 'Dockerfile.tasks'
+            jobs:
+              - 'src/jobs/**'
+              - 'src/api/db/schema.ts'
+              - 'src/api/db/relations.ts'
+              - 'tsdown.jobs.config.ts'
+              - 'Dockerfile.jobs'
               - 'package.json'
               - 'bun.lock'
 
       # Always build on tag push (release), conditionally on branch push
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         uses: docker/setup-buildx-action@v3
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository }}-tasks
-            deutschemodelunitednations/delegator-tasks
+            ghcr.io/${{ github.repository }}-jobs
+            deutschemodelunitednations/delegator-jobs
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         id: os-updates-date
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         uses: docker/build-push-action@v5
         with:
-          file: Dockerfile.tasks
+          file: Dockerfile.jobs
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=tasks
-          cache-to: type=gha,mode=max,scope=tasks
+          cache-from: type=gha,scope=jobs
+          cache-to: type=gha,mode=max,scope=jobs
           # Date-keyed build arg: rebuilds the OS-update layer once a day (see docker-build).
           build-args: |
             OS_UPDATES_DATE=${{ steps.os-updates-date.outputs.date }}
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         id: split-tags
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
 
-      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+      - if: steps.changes.outputs.jobs == 'true' || github.ref_type == 'tag'
         uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ${{ steps.split-tags.outputs.fragment }}
@@ -496,17 +495,16 @@ jobs:
   # Triggers a Dokploy redeploy once the new images have been built, pushed and
   # passed the Trivy scans above. Dokploy's per-app deploy webhook just needs a
   # POST to its URL — the application to redeploy is encoded in the URL itself,
-  # so no body or auth header is needed. The app and the background tasks are
-  # separate Dokploy applications, so each has its own webhook; an unconfigured
-  # one is skipped with a warning instead of failing the run.
+  # so no body or auth header is needed. An unconfigured webhook is skipped with a
+  # warning instead of failing the run. The jobs image needs no redeploy: the
+  # scheduler that runs it pulls the tag it is given.
 
   deploy:
     if: github.event_name == 'push'
-    needs: [docker-build, docker-build-tasks]
+    needs: [docker-build]
     runs-on: ubuntu-latest
     env:
       DOKPLOY_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}
-      DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL }}
     steps:
       - name: Trigger Dokploy deployment (app)
         if: env.DOKPLOY_DEPLOY_WEBHOOK_URL != ''
@@ -519,25 +517,13 @@ jobs:
           echo "To enable auto-deploy, add the DOKPLOY_DEPLOY_WEBHOOK_URL secret (from the"
           echo "application's Webhook URL in Dokploy's deployment logs) to this repository."
 
-      - name: Trigger Dokploy deployment (tasks)
-        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL != ''
-        run: curl --fail --silent --show-error -X POST "$DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL"
-
-      - name: Tasks deploy skipped
-        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL == ''
-        run: |
-          echo "::warning::Dokploy tasks deploy skipped - DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL not configured"
-          echo "To enable auto-deploy of the background tasks, add the"
-          echo "DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL secret (from the tasks application's"
-          echo "Webhook URL in Dokploy's deployment logs) to this repository."
-
   # ============================================
   # LAYER 3: RELEASE (tag push only)
   # ============================================
 
   release:
     if: github.ref_type == 'tag'
-    needs: [docker-build, docker-build-tasks]
+    needs: [docker-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -569,15 +555,15 @@ jobs:
             # App
             docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.number }}
 
-            # Background tasks
-            docker pull ghcr.io/${{ github.repository }}-tasks:${{ steps.version.outputs.number }}
+            # Background jobs
+            docker pull ghcr.io/${{ github.repository }}-jobs:${{ steps.version.outputs.number }}
             ```
 
             <details><summary>DockerHub mirror</summary>
 
             ```bash
             docker pull deutschemodelunitednations/delegator:${{ steps.version.outputs.number }}
-            docker pull deutschemodelunitednations/delegator-tasks:${{ steps.version.outputs.number }}
+            docker pull deutschemodelunitednations/delegator-jobs:${{ steps.version.outputs.number }}
             ```
 
             </details>

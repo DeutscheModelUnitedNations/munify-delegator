@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/auth/authHelper';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
 import {
 	applicationIdsSql,
 	deckSchema,

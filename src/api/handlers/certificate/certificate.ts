@@ -1,12 +1,12 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
 import { generateSeededRsa } from './deterministicRSAKeypair';
-import { configPrivate } from '$config/private';
+import { CERTIFICATE_SECRET } from '$app/env/private';
 import { certificateContents } from './certificatePayload';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { SignJWT, exportJWK } from 'jose';
-import { certificateAlg } from '../certificateConfig';
-import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '$api/services/auth/authHelper';
+import { certificateAlg } from '../certificateConfig/certificateConfig';
+import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '$api/services/authHelper';
 import { GraphQLError } from 'graphql';
 
 /**
@@ -14,7 +14,7 @@ import { GraphQLError } from 'graphql';
  * calling back into this app. The key pair is derived deterministically from a single secret so
  * it survives redeploys - rotating `CERTIFICATE_SECRET` invalidates every certificate issued.
  */
-const keyPair = generateSeededRsa(configPrivate.CERTIFICATE_SECRET, { bits: 2048 });
+const keyPair = generateSeededRsa(CERTIFICATE_SECRET, { bits: 2048 });
 
 const jwkPublicKey = exportJWK((await keyPair).publicKey).then((key) => {
 	key.alg = certificateAlg;

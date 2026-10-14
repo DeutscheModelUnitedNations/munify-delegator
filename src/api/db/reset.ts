@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 
 // Run outside SvelteKit (`bun run db:reset`), so the connection string comes straight off the
-// process rather than through `$config/private`.
+// process rather than through `$app/env/private`.
 const db = drizzle(process.env.DATABASE_URL!);
 
 console.info('Resetting database...');

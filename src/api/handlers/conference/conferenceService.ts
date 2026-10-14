@@ -1,0 +1,398 @@
+import { db, schema } from '$api/db/db';
+import type { ApiContext } from '$api/rumble';
+import {
+	assertTeamRole,
+	CONFERENCE_CONTENT_ROLES,
+	isSystemAdmin,
+	PARTICIPANT_CARE_ROLES
+} from '$api/services/authHelper';
+import { assertFirstEntryExists } from '@m1212e/rumble';
+import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
+import { m } from '$lib/paraglide/messages';
+import { and, eq, inArray } from 'drizzle-orm';
+import { GraphQLError } from 'graphql';
+import type { InferSelectModel } from 'drizzle-orm';
+import {
+	PARTICIPANT_MAX_AGE,
+	PARTICIPANT_MIN_AGE,
+	SUPERVISOR_MIN_AGE,
+	yearsAgo
+} from '$lib/helpers/plausibilityRules';
+import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { nullToUndefined } from '$api/services/args';
+import { normalizeSchoolName } from '$api/handlers/schoolSuggestion/conferenceAggregates';
+import { refreshSchoolSuggestions } from '$api/handlers/schoolSuggestion/schoolSuggestions';
+import { totalSeats } from '$api/services/seatPlanning';
+import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
+import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
+
+/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
+export async function countSeatedParticipants(conferenceId: string) {
+	const [members, participants] = await Promise.all([
+		db.query.delegationMember.findMany({
+			where: {
+				delegation: {
+					conferenceId: conferenceId,
+					OR: [
+						{ assignedNationAlpha3Code: { isNotNull: true } },
+						{ assignedNonStateActorId: { isNotNull: true } }
+					]
+				}
+			},
+			columns: { id: true }
+		}),
+		db.query.singleParticipant.findMany({
+			where: { conferenceId: conferenceId, assignedRoleId: { isNotNull: true } },
+			columns: { id: true }
+		})
+	]);
+
+	return members.length + participants.length;
+}
+
+/**
+ * Seats on offer: every nation of a committee is worth its `numOfSeatsPerDelegation`, every
+ * non-state actor its `seatAmount`.
+ */
+export async function countOfferedSeats(conferenceId: string) {
+	const [committees, nonStateActors] = await Promise.all([
+		db.query.committee.findMany({
+			where: { conferenceId: conferenceId },
+			columns: { numOfSeatsPerDelegation: true },
+			with: { nations: { columns: { alpha3Code: true } } }
+		}),
+		db.query.nonStateActor.findMany({
+			where: { conferenceId: conferenceId },
+			columns: { seatAmount: true }
+		})
+	]);
+
+	return totalSeats(committees, nonStateActors);
+}
+
+/** The settings with a closed set of values; an omitted or cleared one is left to the column. */
+function assertValidConferenceSettings(args: {
+	nametagBinCount?: number | null;
+	language?: string | null;
+}) {
+	if (
+		args.nametagBinCount != null &&
+		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
+	) {
+		throw new GraphQLError(`The nametag bins must be between 1 and ${MAX_NAMETAG_BINS}`);
+	}
+
+	if (args.language != null && !isConferenceLanguage(args.language)) {
+		throw new GraphQLError('The conference language is not one of the supported languages');
+	}
+}
+
+/**
+ * The arguments of `updateConference` that participant care and the content lead may send: links,
+ * postal address, templates, the conference status and the feature switches.
+ */
+const CONFERENCE_CONTENT_ARGS: readonly string[] = [
+	'id',
+	'linkToPreparationGuide',
+	'linkToTeamWiki',
+	'linkToServicesPage',
+	'postalName',
+	'postalStreet',
+	'postalApartment',
+	'postalZip',
+	'postalCity',
+	'postalCountry',
+	'contractContent',
+	'guardianConsentContent',
+	'mediaConsentContent',
+	'termsAndConditionsContent',
+	'certificateContent',
+	'state',
+	'unlockPayments',
+	'unlockPostals',
+	'isOpenPaperSubmission',
+	'showCalendar'
+];
+
+/**
+ * Merges several spellings of a school name into one, across both delegations and single
+ * participants.
+ */
+export async function mergeSchoolNames(
+	ctx: ApiContext,
+	args: { conferenceId: string; schoolsToMerge: string[]; newSchoolName: string }
+) {
+	const newSchoolName = normalizeSchoolName(args.newSchoolName);
+	if (!newSchoolName) throw new Error('The new school name must not be empty');
+
+	if (args.schoolsToMerge.length > 0) {
+		await db.transaction(async (tx) => {
+			await tx
+				.update(schema.delegation)
+				.set({ school: newSchoolName })
+				.where(
+					and(
+						(await ctx.abilities.delegation.filter('update')).merge({
+							where: { conferenceId: args.conferenceId }
+						}).sql.where,
+						inArray(schema.delegation.school, args.schoolsToMerge)
+					)
+				);
+
+			await tx
+				.update(schema.singleParticipant)
+				.set({ school: newSchoolName })
+				.where(
+					and(
+						(await ctx.abilities.singleParticipant.filter('update')).merge({
+							where: { conferenceId: args.conferenceId }
+						}).sql.where,
+						inArray(schema.singleParticipant.school, args.schoolsToMerge)
+					)
+				);
+		});
+	}
+	await refreshSchoolSuggestions(args.conferenceId, ctx);
+}
+
+type ConferenceInsert = typeof schema.conference.$inferInsert;
+/** The arguments of `updateConference`: any column but the id, left out or cleared with null. */
+export type ConferenceUpdateArgs = { id: string } & {
+	[K in keyof Omit<ConferenceInsert, 'id'>]?: ConferenceInsert[K] | null;
+};
+
+export async function updateConference(ctx: ApiContext, args: ConferenceUpdateArgs) {
+	// Project management edits everything; participant care and the content lead may only
+	// touch the links, the postal address, the templates, the status and the features. The update ability is project management's, so the link-only path
+	// checks the role itself and refuses any other argument rather than ignoring it.
+	const updateFilter = (await ctx.abilities.conference.filter('update')).merge({
+		where: { id: args.id }
+	});
+	const mayEditAll = !!(await db.query.conference.findFirst({
+		where: updateFilter.query.single.where,
+		columns: { id: true }
+	}));
+	const linksOnly = !mayEditAll;
+	if (linksOnly) {
+		await assertTeamRole(ctx, args.id, CONFERENCE_CONTENT_ROLES);
+		const forbidden = Object.entries(args).filter(
+			([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
+		);
+		if (forbidden.length > 0) {
+			throw new GraphQLError(
+				`Access denied - only project management may change: ${forbidden.map(([key]) => key).join(', ')}`
+			);
+		}
+	}
+
+	assertValidConferenceSettings(args);
+
+	// An omitted upload leaves the stored value untouched; only a supplied file replaces it.
+	const updated = await db
+		.update(schema.conference)
+		// An omitted argument arrives as `undefined` and leaves the column alone; an
+		// explicit `null` clears it. Only the non-nullable columns coerce null away.
+		.set({
+			title: nullToUndefined(args.title),
+			longTitle: args.longTitle,
+			location: args.location,
+			language: args.language,
+			website: args.website,
+			info: args.info,
+			showInfoExpanded: nullToUndefined(args.showInfoExpanded),
+			linkToPreparationGuide: args.linkToPreparationGuide,
+			linkToTeamWiki: args.linkToTeamWiki,
+			linkToServicesPage: args.linkToServicesPage,
+			linkToPaperInbox: args.linkToPaperInbox,
+			isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
+			showCalendar: nullToUndefined(args.showCalendar),
+			timezone: nullToUndefined(args.timezone),
+			nametagBinCount: nullToUndefined(args.nametagBinCount),
+			state: nullToUndefined(args.state),
+			startAssignment: nullToUndefined(args.startAssignment),
+			startConference: nullToUndefined(args.startConference),
+			endConference: nullToUndefined(args.endConference),
+			registrationDeadlineGracePeriodMinutes: nullToUndefined(
+				args.registrationDeadlineGracePeriodMinutes
+			),
+			unlockPayments: nullToUndefined(args.unlockPayments),
+			unlockPostals: nullToUndefined(args.unlockPostals),
+			feeAmount: args.feeAmount,
+			accountHolder: args.accountHolder,
+			iban: args.iban,
+			bic: args.bic,
+			bankName: args.bankName,
+			currency: args.currency,
+			postalName: args.postalName,
+			postalStreet: args.postalStreet,
+			postalApartment: args.postalApartment,
+			postalZip: args.postalZip,
+			postalCity: args.postalCity,
+			postalCountry: args.postalCountry,
+			imageDataURL: args.imageDataURL,
+			emblemDataURL: args.emblemDataURL,
+			logoDataURL: args.logoDataURL,
+			contractContent: args.contractContent,
+			guardianConsentContent: args.guardianConsentContent,
+			mediaConsentContent: args.mediaConsentContent,
+			termsAndConditionsContent: args.termsAndConditionsContent,
+			certificateContent: args.certificateContent
+		})
+		.where(linksOnly ? eq(schema.conference.id, args.id) : updateFilter.sql.where)
+		.returning({ id: schema.conference.id });
+
+	// The update ability filters the rows, so a caller who may not edit matches none.
+	if (updated.length === 0) {
+		throw new GraphQLError('Access denied - requires project management');
+	}
+}
+
+/**
+ * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
+ * document. Admin only.
+ */
+export async function seedConference(ctx: ApiContext, input: unknown) {
+	if (!isSystemAdmin(ctx)) {
+		throw new GraphQLError(m.unauthorized({ error: 'User is not admin' }));
+	}
+	if (!input) {
+		throw new GraphQLError(m.plausibilityIncompleteOrInvalidData());
+	}
+
+	const data = ConferenceSeedingSchema.parse(input);
+
+	// Checked before the transaction so every offending code can be reported at once: a
+	// nation with no row cannot be linked to a committee, and failing mid-transaction would
+	// only reveal the first one.
+	const knownAlpha2Codes = new Set(
+		(await db.query.nation.findMany({ columns: { alpha2Code: true } })).map((nation) =>
+			nation.alpha2Code.toLowerCase()
+		)
+	);
+	const unknownNations = data.committees.flatMap((committee) =>
+		committee.nations
+			.filter((nation) => !knownAlpha2Codes.has(nation.toLowerCase()))
+			.map((nation) => `${committee.abbreviation}: ${nation}`)
+	);
+	if (unknownNations.length > 0) {
+		throw new GraphQLError(
+			`Unknown nations in the seeding data (only UN member states can be assigned to a committee): ${unknownNations.join(', ')}`
+		);
+	}
+
+	const created = await db.transaction(async (tx) => {
+		const conference = await tx
+			.insert(schema.conference)
+			.values(data.conference)
+			.returning()
+			.then(assertFirstEntryExists);
+
+		for (const nsa of data.nsa) {
+			await tx.insert(schema.nonStateActor).values({ conferenceId: conference.id, ...nsa });
+		}
+
+		for (const role of data.customConferenceRole) {
+			await tx.insert(schema.customConferenceRole).values({ conferenceId: conference.id, ...role });
+		}
+
+		for (const committee of data.committees) {
+			const { nations, ...committeeData } = committee;
+			const row = await tx
+				.insert(schema.committee)
+				.values({ ...committeeData, conferenceId: conference.id })
+				.returning()
+				.then(assertFirstEntryExists);
+
+			// Committee-to-nation is a join table; the seeding document names nations by
+			// alpha-2 while the join stores alpha-3, so they are resolved here.
+			for (const alpha2 of nations) {
+				const nation = await tx.query.nation.findFirst({
+					where: { alpha2Code: alpha2.toLowerCase() },
+					columns: { alpha3Code: true }
+				});
+				if (!nation) continue;
+				await tx
+					.insert(schema.committeeToNation)
+					.values({ a: row.id, b: nation.alpha3Code })
+					.onConflictDoNothing();
+			}
+		}
+
+		return conference;
+	});
+
+	return created;
+}
+
+export type PlausibilityUser = InferSelectModel<typeof schema.user>;
+
+/**
+ * The registration form still names these two fields the way the OIDC claims do, so a database
+ * row has to be renamed into that shape before the form's schema can judge it complete.
+ */
+function toFormShape(user: PlausibilityUser) {
+	const { givenName, familyName, ...rest } = user;
+	return { ...rest, given_name: givenName, family_name: familyName };
+}
+
+/**
+ * Flags participants whose age does not fit the role they registered for, plus those whose
+ * account data no longer satisfies the registration form.
+ */
+export async function findPlausibilityIssues(ctx: ApiContext, conferenceId: string) {
+	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	const participating = {
+		OR: [
+			{ singleParticipant: { conferenceId: conferenceId } },
+			{ delegationMemberships: { conferenceId: conferenceId } }
+		]
+	};
+	const supervising = { conferenceSupervisor: { conferenceId: conferenceId } };
+	const readableUsers = await ctx.abilities.user.filter('read');
+
+	const [tooYoungUsers, tooOldUsers, shouldBeSupervisor, shouldNotBeSupervisor, candidates] =
+		await Promise.all([
+			db.query.user.findMany(
+				readableUsers.merge({
+					where: { ...participating, birthday: { gt: yearsAgo(PARTICIPANT_MIN_AGE) } }
+				}).query.many
+			),
+			db.query.user.findMany(
+				readableUsers.merge({
+					where: {
+						...participating,
+						birthday: { lt: yearsAgo(SUPERVISOR_MIN_AGE), gt: yearsAgo(PARTICIPANT_MAX_AGE) }
+					}
+				}).query.many
+			),
+			db.query.user.findMany(
+				readableUsers.merge({
+					where: { ...participating, birthday: { lt: yearsAgo(PARTICIPANT_MAX_AGE) } }
+				}).query.many
+			),
+			db.query.user.findMany(
+				readableUsers.merge({
+					where: { ...supervising, birthday: { gt: yearsAgo(SUPERVISOR_MIN_AGE) } }
+				}).query.many
+			),
+			db.query.user.findMany(
+				readableUsers.merge({
+					where: {
+						OR: [
+							{ singleParticipant: { conferenceId: conferenceId } },
+							{ delegationMemberships: { conferenceId: conferenceId } },
+							{ conferenceSupervisor: { conferenceId: conferenceId } }
+						]
+					}
+				}).query.many
+			)
+		]);
+
+	return {
+		tooYoungUsers,
+		tooOldUsers,
+		shouldBeSupervisor,
+		shouldNotBeSupervisor,
+		dataMissing: candidates.filter((user) => !userFormSchema.safeParse(toFormShape(user)).success)
+	};
+}

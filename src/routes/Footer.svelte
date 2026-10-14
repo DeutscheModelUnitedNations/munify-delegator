@@ -1,7 +1,7 @@
 <script lang="ts">
 	import dmunLogo from '$assets/logo/dmun-lang.svg';
 	import dmunLogoDark from '$assets/logo/dmun-lang-darkmode.svg';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_SHA, PUBLIC_VERSION } from '$app/env/public';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { resolve } from '$app/paths';
@@ -54,20 +54,20 @@
 				<div class="flex flex-col sm:flex-row sm:gap-2">
 					<div>{m.version()}:</div>
 					<div class="font-mono">
-						{#if !configPublic.PUBLIC_VERSION || configPublic.PUBLIC_VERSION.length === 0}
+						{#if !PUBLIC_VERSION || PUBLIC_VERSION.length === 0}
 							nightly
 						{:else}
-							{configPublic.PUBLIC_VERSION}
+							{PUBLIC_VERSION}
 						{/if}
 					</div>
 				</div>
 				<div class="flex max-w-[15ch] flex-col sm:flex-row sm:gap-2 md:max-w-max">
 					<div>{m.sha()}:</div>
 					<div class="overflow-hidden font-mono overflow-ellipsis">
-						{#if !configPublic.PUBLIC_SHA || configPublic.PUBLIC_SHA.length === 0}
+						{#if !PUBLIC_SHA || PUBLIC_SHA.length === 0}
 							unknown
 						{:else}
-							{configPublic.PUBLIC_SHA}
+							{PUBLIC_SHA}
 						{/if}
 					</div>
 				</div>

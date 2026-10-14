@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_OIDC_ACCOUNT_URL, PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 	import { page } from '$app/state';
 	import type { CurrentUser } from '$lib/state/currentUser.svelte';
 	import AccountRow from './AccountRow.svelte';
@@ -14,8 +14,7 @@
 
 	// Logto Account Center deep-link support
 	const accountCenterUrl =
-		configPublic.PUBLIC_OIDC_ACCOUNT_URL ??
-		configPublic.PUBLIC_OIDC_AUTHORITY.replace(/\/oidc\/?$/, '') + '/account';
+		PUBLIC_OIDC_ACCOUNT_URL ?? PUBLIC_OIDC_AUTHORITY.replace(/\/oidc\/?$/, '') + '/account';
 
 	function accountUrl(path: string) {
 		const back = `${page.url.origin}/my-account`;

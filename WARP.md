@@ -108,7 +108,7 @@ bun run machine-translate
   - `schemata/` - Zod validation schemas
   - `paraglide/` - Generated i18n code
 
-- **`src/tasks/`** - Background tasks (email sync, conference status updates)
+- **`src/jobs/`** - One-shot `delegator-jobs` CLI commands (`refresh-statistics`, `mail-sync`, `invitation-cleanup`), own image via `Dockerfile.jobs`
 
 - **`drizzle/`** - Generated migration history
 
@@ -146,10 +146,10 @@ bun run machine-translate
 #### Authentication & Authorization
 
 - **OIDC Integration**: `@m1212e/sveltekit-oidc` (recommended provider: Logto, but any OIDC provider
-  works). `src/api/services/auth/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
+  works). `src/api/services/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
   which guards the authenticated routes, serves both callback routes without `+page` files and puts
   the session on `event.locals.oidc`. The login-time user upsert is
-  `src/api/services/auth/upsertSelf.ts`
+  `src/api/services/account/upsertSelf.ts`
 - **Impersonation**: stalled during the migration — the library owns the session cookies the old
   implementation swapped. `$lib/data/impersonation` gates the UI
 - **Context Building**: `src/api/context.ts` constructs request context from `event.locals.oidc`
@@ -184,7 +184,7 @@ bun run machine-translate
 - **Delegations**: Groups of participants representing countries
 - **Single Participants**: Individuals applying for custom roles
 - **Committee Assignment**: Matching delegations to nations in committees
-- **Background Tasks**: `src/tasks/` contains scheduled jobs (mail sync, status updates)
+- **Background Tasks**: `src/jobs/` holds one-shot jobs run by an external scheduler (statistics refresh, mail sync, invitation cleanup)
 
 ### Testing Database Changes
 
@@ -206,7 +206,6 @@ After modifying `src/api/db/schema.ts`:
 - **Aliases**: Configured in `svelte.config.js`:
   - `$api` → `src/api`
   - `$assets` → `src/assets`
-  - `$config` → `src/lib/config`
 
 ## Development Workflow
 

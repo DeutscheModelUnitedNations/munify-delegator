@@ -1,13 +1,14 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/auth/authHelper';
+} from '$api/services/authHelper';
 import { refreshSchoolSuggestions } from './schoolSuggestions';
+import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '$api/pubsub';
 
 abilityBuilder.schoolSuggestion.allow(['read', 'update']).when(systemAdmin);
 abilityBuilder.schoolSuggestionVariant.allow('read').when(systemAdmin);
@@ -24,8 +25,6 @@ abilityBuilder.schoolSuggestionVariant.allow('read').when((ctx) => {
 object({ table: 'schoolSuggestion' });
 object({ table: 'schoolSuggestionVariant' });
 query({ table: 'schoolSuggestion' });
-const pubsub = rumblePubsub({ table: 'schoolSuggestion' });
-const variantPubsub = rumblePubsub({ table: 'schoolSuggestionVariant' });
 
 schemaBuilder.mutationFields((t) => ({
 	/** Looks for similar school names in the conference and fills the suggestion tables. */
@@ -35,8 +34,8 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 			await refreshSchoolSuggestions(args.conferenceId, ctx);
-			pubsub.updated();
-			variantPubsub.updated();
+			schoolSuggestionPubsub.updated();
+			schoolSuggestionVariantPubsub.updated();
 			return true;
 		}
 	}),
@@ -52,7 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 					(await ctx.abilities.schoolSuggestion.filter('update')).merge({ where: { id: args.id } })
 						.sql.where
 				);
-			pubsub.updated(args.id);
+			schoolSuggestionPubsub.updated(args.id);
 			return true;
 		}
 	})

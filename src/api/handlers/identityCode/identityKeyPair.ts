@@ -1,4 +1,4 @@
-import { configPrivate } from '$config/private';
+import { CERTIFICATE_SECRET } from '$app/env/private';
 import { encodeIdentityCode, identityCodeMessage } from '$lib/helpers/identityCode';
 
 /** DER prefix of a PKCS#8 Ed25519 private key, which ends in the 32-byte seed. */
@@ -14,7 +14,7 @@ const PKCS8_ED25519_PREFIX = Uint8Array.from([
 const keys = (async () => {
 	const secret = await crypto.subtle.importKey(
 		'raw',
-		new TextEncoder().encode(configPrivate.CERTIFICATE_SECRET),
+		new TextEncoder().encode(CERTIFICATE_SECRET),
 		{ name: 'HMAC', hash: 'SHA-256' },
 		false,
 		['sign']

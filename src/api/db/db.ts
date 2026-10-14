@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schemaInternal from './schema';
 import { relations } from './relations';
-import { configPrivate } from '$config/private';
+import { DATABASE_URL } from '$app/env/private';
 import { building } from '$app/environment';
 
 const conf = {
@@ -16,7 +16,7 @@ const conf = {
 export const db = building
 	? drizzle.mock(conf)
 	: drizzle({
-			connection: { connectionString: configPrivate.DATABASE_URL, options: '-c jit=off' },
+			connection: { connectionString: DATABASE_URL, options: '-c jit=off' },
 			...conf
 		});
 

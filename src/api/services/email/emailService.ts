@@ -1,6 +1,14 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import { emailConfig } from './emailConfig';
+import {
+	SMTP_FROM_ADDRESS,
+	SMTP_FROM_NAME,
+	SMTP_HOST,
+	SMTP_PASSWORD,
+	SMTP_PORT,
+	SMTP_SECURE,
+	SMTP_USER
+} from '$app/env/private';
 import type { EmailOptions, SendEmailResult } from './types';
 
 /**
@@ -18,10 +26,10 @@ class EmailService {
 	private getTransporter(): Transporter {
 		if (!this.transporter) {
 			this.transporter = nodemailer.createTransport({
-				host: emailConfig.host,
-				port: emailConfig.port,
-				secure: emailConfig.secure,
-				auth: emailConfig.auth
+				host: SMTP_HOST,
+				port: SMTP_PORT,
+				secure: SMTP_SECURE,
+				auth: SMTP_USER && SMTP_PASSWORD ? { user: SMTP_USER, pass: SMTP_PASSWORD } : undefined
 			});
 		}
 		return this.transporter;
@@ -38,7 +46,7 @@ class EmailService {
 			const transporter = this.getTransporter();
 
 			const result = await transporter.sendMail({
-				from: `"${emailConfig.from.name}" <${emailConfig.from.address}>`,
+				from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_ADDRESS}>`,
 				to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
 				subject: options.subject,
 				html: options.html,

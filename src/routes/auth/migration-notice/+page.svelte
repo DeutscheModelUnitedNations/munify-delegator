@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import movingSvg from '$assets/undraw/moving.svg';
 	import { m } from '$lib/paraglide/messages';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';
 
 	const next = $derived($page.url.searchParams.get('next') || '/');
 </script>
@@ -85,7 +85,7 @@
 				</h3>
 				<p class="text-base-content">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/, interpolating the deployment's configured support address -->
-					{@html m.migrationNoticeFaqHelpBody({ email: configPublic.PUBLIC_SUPPORT_EMAIL })}
+					{@html m.migrationNoticeFaqHelpBody({ email: PUBLIC_SUPPORT_EMAIL })}
 				</p>
 			</div>
 		</div>

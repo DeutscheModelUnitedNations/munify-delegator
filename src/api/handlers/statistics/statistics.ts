@@ -1,7 +1,6 @@
-import { building } from '$app/environment';
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { assertTeamRole } from '$api/services/auth/authHelper';
+import { assertTeamRole } from '$api/services/authHelper';
 import type { StatsFilterType } from './statisticsFilters';
 import {
 	addressesOf,
@@ -20,28 +19,13 @@ import {
 	supervisorStatsOf,
 	waitingListOf
 } from './statisticsViews';
-import {
-	refreshStatisticsViews,
-	statisticsRefreshedAt,
-	statisticsRowsOf,
-	type StatisticsRows
-} from './statisticsData';
+import { statisticsRefreshedAt, statisticsRowsOf, type StatisticsRows } from './statisticsData';
 import { zipCoordinates } from './zipCoordinates';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 // The statistics are aggregations over every registration of a conference, served from
-// materialized views rather than computed per request. They are refreshed on startup and then
-// every few minutes; several app instances share the work through an advisory lock.
-const STATISTICS_REFRESH_INTERVAL_MS = 5 * 60_000;
-
-if (!building) {
-	const refresh = () =>
-		refreshStatisticsViews().catch((err) =>
-			console.error('Failed to refresh statistics materialized views', err)
-		);
-	void refresh();
-	setInterval(refresh, STATISTICS_REFRESH_INTERVAL_MS);
-}
+// materialized views rather than computed per request. The `refresh-statistics` job
+// (`src/jobs/refreshStatistics.ts`) keeps them current.
 
 const StatsFilterEnum = schemaBuilder.enumType('StatsFilter', {
 	values: ['ALL', 'APPLIED', 'NOT_APPLIED', 'APPLIED_WITH_ROLE', 'APPLIED_WITHOUT_ROLE'] as const

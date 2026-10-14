@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';
 
 	function isValidScenario(value: string | null): value is 'new' | 'change' {
 		return value === 'new' || value === 'change';
@@ -35,7 +35,7 @@
 	const maskedExistingEmail = $derived(
 		existingEmailParam ? sanitizeMaskedEmail(existingEmailParam) : null
 	);
-	const supportEmail = configPublic.PUBLIC_SUPPORT_EMAIL;
+	const supportEmail = PUBLIC_SUPPORT_EMAIL;
 
 	const mailtoQuery = $derived.by(() => {
 		const subject = encodeURIComponent(`Email Conflict - Ref: ${referenceId}`);

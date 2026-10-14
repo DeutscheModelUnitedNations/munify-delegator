@@ -20,7 +20,7 @@ import {
 // The route guards keep the UI honest; these keep the API honest. Each one sends the request a
 // curious participant could type into the browser console, and expects the API to refuse it - or,
 // for reads, to hand back nothing it should not. They pin down the rules in
-// src/api/services/auth/authHelper.ts and the handlers built on them.
+// src/api/services/authHelper.ts and the handlers built on them.
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 

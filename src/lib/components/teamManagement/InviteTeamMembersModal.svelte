@@ -3,7 +3,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { configPublic } from '$config/public';
+	import { PUBLIC_TEAM_ORGANIZATION_DOMAIN } from '$app/env/public';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 
 	interface Props {
@@ -82,7 +82,7 @@
 		if (role) emailStatuses[index].role = role;
 	}
 
-	const organizationDomain = configPublic.PUBLIC_TEAM_ORGANIZATION_DOMAIN;
+	const organizationDomain = PUBLIC_TEAM_ORGANIZATION_DOMAIN;
 
 	function parseEmails(input: string): string[] {
 		const normalized = input

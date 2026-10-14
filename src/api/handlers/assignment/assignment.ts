@@ -1,20 +1,12 @@
 import { db, schema } from '$api/db/db';
-import {
-	abilityBuilder,
-	enum_,
-	object,
-	pubsub as rumblePubsub,
-	countQuery,
-	query,
-	schemaBuilder
-} from '$api/rumble';
+import { abilityBuilder, enum_, object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/auth/authHelper';
+} from '$api/services/authHelper';
 import { matchSingles } from './matching';
 import { loadExperiencedIds } from './assignmentExperience';
 import {
@@ -36,6 +28,17 @@ import {
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
+import {
+	assignmentReviewPubsub,
+	assignmentSingleRolePubsub,
+	assignmentUnitMemberPubsub,
+	assignmentUnitPubsub,
+	assignmentWeightsPubsub,
+	conferencePubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	singleParticipantPubsub
+} from '$api/pubsub';
 
 /*
  * The assignment draft is the team's working copy: project management and participant care plan
@@ -70,23 +73,16 @@ query({ table: 'assignmentWeights' });
 const markEffectEnum = enum_({ tsName: 'assignmentMarkEffect' });
 const experienceEffectEnum = enum_({ tsName: 'assignmentExperienceEffect' });
 
-const reviewPubsub = rumblePubsub({ table: 'assignmentReview' });
-const unitPubsub = rumblePubsub({ table: 'assignmentUnit' });
-const unitMemberPubsub = rumblePubsub({ table: 'assignmentUnitMember' });
-const singleRolePubsub = rumblePubsub({ table: 'assignmentSingleRole' });
-const weightsPubsub = rumblePubsub({ table: 'assignmentWeights' });
-// Applying rewrites the registrations themselves.
-const conferencePubsub = rumblePubsub({ table: 'conference' });
-const delegationPubsub = rumblePubsub({ table: 'delegation' });
-const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
-const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
-
 /**
  * Every draft table changed. A draft write creates, changes and deletes rows in one go, and the
  * board's lists only hear about rows coming and going, so all three are announced.
  */
 function publishDraft() {
-	for (const pubsub of [unitPubsub, unitMemberPubsub, singleRolePubsub]) {
+	for (const pubsub of [
+		assignmentUnitPubsub,
+		assignmentUnitMemberPubsub,
+		assignmentSingleRolePubsub
+	]) {
 		pubsub.created();
 		pubsub.removed();
 		pubsub.updated();
@@ -205,8 +201,8 @@ schemaBuilder.mutationFields((t) => ({
 				.onConflictDoUpdate({ target: reviewKey[application.kind], set: values })
 				.returning({ id: schema.assignmentReview.id });
 			// An upsert: the first rating creates the row.
-			reviewPubsub.created();
-			reviewPubsub.updated(row.id);
+			assignmentReviewPubsub.created();
+			assignmentReviewPubsub.updated(row.id);
 
 			return db.query.assignmentReview
 				.findFirst(
@@ -238,8 +234,8 @@ schemaBuilder.mutationFields((t) => ({
 				.values({ conferenceId, ...weights })
 				.onConflictDoUpdate({ target: schema.assignmentWeights.conferenceId, set: weights })
 				.returning({ id: schema.assignmentWeights.id });
-			weightsPubsub.created();
-			weightsPubsub.updated(row.id);
+			assignmentWeightsPubsub.created();
+			assignmentWeightsPubsub.updated(row.id);
 
 			return db.query.assignmentWeights
 				.findFirst(
@@ -613,7 +609,7 @@ schemaBuilder.mutationFields((t) => ({
 				delegationPubsub,
 				delegationMemberPubsub,
 				singleParticipantPubsub,
-				reviewPubsub
+				assignmentReviewPubsub
 			]) {
 				pubsub.created();
 				pubsub.removed();

@@ -1,10 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('$config/public', () => ({
-	configPublic: {
-		PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: 100,
-		PUBLIC_MAX_APPLICATION_TEXT_LENGTH: 1200
-	}
+vi.mock('$app/env/public', () => ({
+	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: 100,
+	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: 1200
 }));
 
 const { assertApplicationReady } = await import('./applicationReadiness');

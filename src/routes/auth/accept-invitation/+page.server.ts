@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
-import { hashToken, pendingInvitationCookieName } from '$api/services/auth/invitationToken';
-import { claimPendingInvitation } from '$api/services/auth/upsertSelf';
+import { hashToken, pendingInvitationCookieName } from '$api/services/account/invitationToken';
+import { claimPendingInvitation } from '$api/services/account/upsertSelf';
 import type { PageServerLoad } from './$types';
 import { assertInvitationUsable } from './invitationValidity';
 import { error, redirect } from '@sveltejs/kit';

@@ -1,13 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { refreshMaterializedViewsWithLock } from '$api/db/refreshMaterializedViews';
-import { STATISTICS_VIEWS } from '$api/db/statisticsViews';
 import { eq } from 'drizzle-orm';
-import { countdownsOf, registrationStatisticsOf } from './statisticsViews';
-
-/** Recomputes every statistics view; a no-op while another process is already doing so. */
-export function refreshStatisticsViews() {
-	return refreshMaterializedViewsWithLock('refresh_statistics', STATISTICS_VIEWS);
-}
 
 /** Runs `load` on the first call and hands every later call the same promise. */
 function once<T>(load: () => Promise<T>) {
@@ -56,22 +48,4 @@ export type StatisticsRows = ReturnType<typeof statisticsRowsOf>;
 export async function statisticsRefreshedAt() {
 	const [row] = await db.select().from(schema.statisticsRefreshedAt);
 	return row?.refreshedAt;
-}
-
-/** Countdowns and registration totals of a conference, for the Slack status report. */
-export async function registrationReport(conference: {
-	id: string;
-	startConference: Date;
-	startAssignment: Date;
-}) {
-	const rows = statisticsRowsOf(conference.id);
-	const [people, delegations, roleApplications] = await Promise.all([
-		rows.people(),
-		rows.delegations(),
-		rows.roleApplications()
-	]);
-	return {
-		countdowns: countdownsOf(conference),
-		registrationStatistics: registrationStatisticsOf(people, delegations, roleApplications, 'ALL')
-	};
 }

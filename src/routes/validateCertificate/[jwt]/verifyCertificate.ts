@@ -1,6 +1,9 @@
 import { importJWK, jwtVerify } from 'jose';
 import { client } from '$lib/api/rumbleClient/client';
-import { certificateAlg, certificateRequiredClaims } from '$api/handlers/certificateConfig';
+import {
+	certificateAlg,
+	certificateRequiredClaims
+} from '$api/handlers/certificateConfig/certificateConfig';
 import type { CertificateJWTPayload } from '$api/handlers/certificate/certificate';
 
 /**

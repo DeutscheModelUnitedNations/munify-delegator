@@ -1,6 +1,9 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { IDENTITY_CODE_VALIDITY_MS, verifyIdentityCode } from '$lib/helpers/identityCode';
-import { identityPublicKey, issueIdentityCode } from './identityKeyPair';
+
+vi.mock('$app/env/private', () => ({ CERTIFICATE_SECRET: 'a secret that only this test uses' }));
+
+const { identityPublicKey, issueIdentityCode } = await import('./identityKeyPair');
 
 const NOW = Date.UTC(2026, 9, 10, 9, 0, 0);
 

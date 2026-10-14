@@ -1,8 +1,8 @@
 import { inArray, sql } from 'drizzle-orm';
 import { db, schema } from '$api/db/db';
-import { pubsub as rumblePubsub } from '$api/rumble';
-import { participatesIn } from '../../services/auth/authHelper';
+import { participatesIn } from '../../services/authHelper';
 import { DuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
+import { possibleDuplicatePubsub } from '$api/pubsub';
 
 /*
  * Looks for accounts that may belong to the same person, so a care note survives a fresh signup.
@@ -21,8 +21,6 @@ import { DuplicateIndex, type DuplicatePair, type MatchProfile } from './duplica
  * for this purpose, are processing purposes of their own. The privacy policy has to name them,
  * with their legal basis, retention and the right to object, before this goes live.
  */
-
-const pubsub = rumblePubsub({ table: 'possibleDuplicate' });
 
 /** What the matcher reads of an account, and nothing else. */
 const PROFILE_COLUMNS = {
@@ -115,7 +113,7 @@ async function store(
 		}
 	});
 
-	pubsub.updated();
+	possibleDuplicatePubsub.updated();
 	return pairs.length;
 }
 
