@@ -1,5 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
+import { assertCanReadNametagBins } from './nametagBinsPermissions';
 import { loadNametagBinGroups, loadNametagBins, loadOwnNametagTable } from './bins';
 import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
 import { db } from '$api/db/db';
@@ -53,7 +53,7 @@ schemaBuilder.queryFields((t) => ({
 			binCount: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadNametagBins(ctx, args.conferenceId);
 
 			const conference = await db.query.conference
 				.findFirst({
@@ -110,7 +110,7 @@ schemaBuilder.queryFields((t) => ({
 			index: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadNametagBins(ctx, args.conferenceId);
 			const conference = await db.query.conference
 				.findFirst({ where: { id: args.conferenceId }, columns: { language: true } })
 				.then(assertFindFirstExists);

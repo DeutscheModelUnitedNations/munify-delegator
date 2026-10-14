@@ -17,7 +17,7 @@
 			id: true,
 			type: true,
 			firstSubmittedAt: true,
-			conference: { title: true, longTitle: true, emblemUrl: true },
+			conference: { title: true, longTitle: true, emblemFile: { url: true } },
 			delegation: {
 				assignedNation: { alpha2Code: true, alpha3Code: true },
 				assignedNonStateActor: { name: true, fontAwesomeIcon: true }

@@ -6,9 +6,7 @@ import { certificateContents } from './certificatePayload';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { SignJWT, exportJWK } from 'jose';
 import { certificateAlg } from '../certificateConfig/certificateConfig';
-import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { assertCanGetCertificate } from './certificatePermissions';
 
 /**
  * Participation certificates are signed so they can be verified offline, by anyone, without
@@ -63,14 +61,7 @@ schemaBuilder.queryFields((t) => ({
 			userId: t.arg.id({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			// A certificate is the participant's own, issued by participant care: reading somebody's
-			// status (a co-delegate's, say) is not enough to be handed a signed copy.
-			if (
-				args.userId !== ctx.mustBeLoggedIn().sub &&
-				!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))
-			) {
-				throw apiError('FORBIDDEN', m.certificateOnlyHolder());
-			}
+			await assertCanGetCertificate(ctx, args.conferenceId, args.userId);
 
 			const status = await db.query.conferenceParticipantStatus
 				.findFirst({

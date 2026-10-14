@@ -1,21 +1,9 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import { assertTeamRole, systemAdmin, userId, where } from '$api/services/authHelper';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { searchHistoryPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { assertCanRecordSearch, registerSearchHistoryAbilities } from './searchHistoryPermissions';
+import { recordSearch } from './searchHistoryService';
 
-/** How many searches a person keeps. The search only offers the newest five. */
-const KEPT_ENTRIES = 20;
-const MAX_LABEL_LENGTH = 200;
-
-// A history is only ever read by the person who made it, from any of their devices.
-abilityBuilder.searchHistory.allow(['read', 'update', 'delete']).when(systemAdmin);
-abilityBuilder.searchHistory.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return where(id ? { userId: id } : undefined);
-});
+registerSearchHistoryAbilities();
 
 object({ table: 'searchHistory' });
 query({ table: 'searchHistory' });
@@ -34,47 +22,8 @@ schemaBuilder.mutationFields((t) => ({
 			label: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId);
-			const id = userId(ctx);
-			if (!id) throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-
-			const label = args.label.trim().slice(0, MAX_LABEL_LENGTH);
-			if (!label || !args.resultId)
-				throw apiError('INVALID_INPUT', m.searchHistoryNeedsIdAndLabel());
-
-			const { searchHistory } = schema;
-			await db.transaction(async (tx) => {
-				await tx
-					.delete(searchHistory)
-					.where(
-						and(
-							eq(searchHistory.userId, id),
-							eq(searchHistory.conferenceId, args.conferenceId),
-							eq(searchHistory.resultId, args.resultId)
-						)
-					);
-				await tx.insert(searchHistory).values({
-					userId: id,
-					conferenceId: args.conferenceId,
-					originId: args.originId,
-					resultId: args.resultId,
-					label
-				});
-				const stale = await tx
-					.select({ id: searchHistory.id })
-					.from(searchHistory)
-					.where(eq(searchHistory.userId, id))
-					.orderBy(desc(searchHistory.createdAt))
-					.offset(KEPT_ENTRIES);
-				if (stale.length > 0) {
-					await tx.delete(searchHistory).where(
-						inArray(
-							searchHistory.id,
-							stale.map((entry) => entry.id)
-						)
-					);
-				}
-			});
+			const userId = await assertCanRecordSearch(ctx, args.conferenceId);
+			await recordSearch(userId, args);
 
 			searchHistoryPubsub.created();
 			return true;

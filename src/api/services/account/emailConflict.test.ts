@@ -1,47 +1,17 @@
-import { describe, expect, test } from 'vitest';
-import { describeEmailConflict, errorCause, isUniqueViolationOn, maskEmail } from './emailConflict';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import * as Sentry from '@sentry/sveltekit';
+import { hasErrorCode } from '$lib/api/errorCodes';
+import { CombinedError } from '@urql/core';
+import {
+	describeEmailConflict,
+	emailConflictError,
+	maskEmail,
+	reportEmailConflict
+} from './emailConflict';
 
-const violation = {
-	code: '23505',
-	constraint: 'user_email_unique',
-	detail: 'Key (email)=(x) exists'
-};
-
-describe('errorCause', () => {
-	test('unwraps the cause an error carries', () => {
-		const cause = { code: '23505' };
-		expect(errorCause(new Error('query failed', { cause }))).toBe(cause);
-	});
-
-	test('passes anything else through', () => {
-		const error = new Error('plain');
-		expect(errorCause(error)).toBe(error);
-		expect(errorCause(violation)).toBe(violation);
-		expect(errorCause(null)).toBeNull();
-	});
-});
-
-describe('isUniqueViolationOn', () => {
-	test('recognises a unique violation by constraint name or detail', () => {
-		expect(isUniqueViolationOn(violation, 'email')).toBe(true);
-		expect(isUniqueViolationOn({ code: '23505', constraint: 'user_email_key' }, 'email')).toBe(
-			true
-		);
-		expect(isUniqueViolationOn({ code: '23505', detail: 'Key (email)=(x)' }, 'email')).toBe(true);
-	});
-
-	test('ignores violations on other columns and other errors', () => {
-		expect(isUniqueViolationOn(violation, 'phone')).toBe(false);
-		expect(isUniqueViolationOn({ code: '23505' }, 'email')).toBe(false);
-		expect(isUniqueViolationOn({ ...violation, code: '23503' }, 'email')).toBe(false);
-	});
-
-	test('ignores values that are not error objects', () => {
-		expect(isUniqueViolationOn(null, 'email')).toBe(false);
-		expect(isUniqueViolationOn(undefined, 'email')).toBe(false);
-		expect(isUniqueViolationOn('23505 email', 'email')).toBe(false);
-	});
-});
+const findFirst = vi.hoisted(() => vi.fn());
+vi.mock('$api/db/db', () => ({ db: { query: { user: { findFirst } } } }));
+vi.mock('@sentry/sveltekit', () => ({ captureException: vi.fn() }));
 
 describe('maskEmail', () => {
 	test('keeps the first two characters of a longer local part, one of a short one, and the domain', () => {
@@ -93,9 +63,50 @@ describe('describeEmailConflict', () => {
 		expect(conflict.redirectTo).not.toContain('existingEmail');
 	});
 
-	test('masks with the given function', () => {
-		const conflict = describeEmailConflict('u1', 'new@example.org', { email: 'old@x' }, () => '#');
-		expect(conflict.maskedConflictingEmail).toBe('#');
-		expect(conflict.maskedExistingEmail).toBe('#');
+	test('answers as an EMAIL_CONFLICT error carrying the page to show', () => {
+		const conflict = describeEmailConflict('u1', 'new@example.org', { email: 'old@example.org' });
+		const error = emailConflictError(conflict);
+		expect(hasErrorCode(new CombinedError({ graphQLErrors: [error] }), 'EMAIL_CONFLICT')).toBe(
+			true
+		);
+		expect(error.extensions).toMatchObject({
+			isNewUser: false,
+			maskedConflictingEmail: 'ne***@example.org',
+			maskedExistingEmail: 'ol***@example.org',
+			refId: 'u1',
+			redirectTo: conflict.redirectTo
+		});
+	});
+});
+
+describe('reportEmailConflict', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+
+	test("looks up the caller's row to tell a new account from an email change", async () => {
+		findFirst.mockResolvedValueOnce({ email: 'old@example.org' });
+		const conflict = await reportEmailConflict('u1', 'new@example.org', new Error('taken'));
+		expect(findFirst).toHaveBeenCalledWith({ where: { id: 'u1' }, columns: { email: true } });
+		expect(conflict.isNewUser).toBe(false);
+		expect(conflict.maskedExistingEmail).toBe('ol***@example.org');
+	});
+
+	test('reports the masked conflict to Sentry, never the whole address', async () => {
+		findFirst.mockResolvedValueOnce(undefined);
+		const error = new Error('taken');
+		await reportEmailConflict('u1', 'new@example.org', error);
+		expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+			level: 'warning',
+			tags: { error_type: 'email_conflict', scenario: 'new_user' },
+			extra: {
+				userSubject: 'u1',
+				conflictingEmail: 'ne***@example.org',
+				existingUserEmail: 'N/A',
+				refId: 'u1'
+			}
+		});
+		expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('new@example.org');
 	});
 });

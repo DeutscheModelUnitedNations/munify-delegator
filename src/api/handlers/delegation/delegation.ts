@@ -1,71 +1,20 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, countQuery, query, schemaBuilder } from '$api/rumble';
-import {
-	DELEGATION_ASSIGNMENT,
-	isTeamMemberOfConference,
-	maskedUntilRelease,
-	onceReleased,
-	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	createDelegationWithHead,
 	previewDelegationByEntryCode,
 	updateDelegationDetails
 } from './delegationService';
+import {
+	assertCanDeleteDelegation,
+	assertCanUpdateDelegation,
+	registerDelegationAbilities
+} from './delegationPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import type { Context } from '$api/context';
+import { eq } from 'drizzle-orm';
 import { delegationMemberPubsub, delegationPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
 
-// Ported from abilities/entities/delegation.ts
-abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-/** The delegation the caller is a member of. */
-function ownDelegation(ctx: Context) {
-	const id = userId(ctx);
-	return id ? { members: { user: { id } } } : undefined;
-}
-
-/** The delegations the caller supervises. */
-function supervisedDelegation(ctx: Context) {
-	const id = userId(ctx);
-	return id ? { members: { supervisors: { user: { id } } } } : undefined;
-}
-
-// Delegates see their own delegation, and supervisors the ones they supervise - the assigned
-// nation or non-state actor only once the team has released the assignment.
-abilityBuilder.delegation
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(ownDelegation(ctx), DELEGATION_ASSIGNMENT));
-abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(ownDelegation(ctx)));
-abilityBuilder.delegation
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(supervisedDelegation(ctx), DELEGATION_ASSIGNMENT));
-abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
-
-// The head delegate may change the delegation until it has applied.
-abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? { where: { applied: false, members: { user: { id }, isHeadDelegate: true } } }
-		: undefined;
-});
-
-// Project management and participant care manage their conference's delegations.
-abilityBuilder.delegation
-	.allow(['read', 'update'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-// Any team member of the conference may see them - without the join code, which the members,
-// their supervisors and participant care hand out.
-abilityBuilder.delegation.allow('read').when((ctx) => {
-	const team = isTeamMemberOfConference(ctx);
-	return team ? { where: team, columns: { entryCode: false } } : undefined;
-});
+registerDelegationAbilities();
 
 const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
@@ -80,12 +29,7 @@ schemaBuilder.mutationFields((t) => ({
 			experience: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const id = userId(ctx);
-			if (!id) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
-
-			const createdId = await createDelegationWithHead(id, args);
+			const createdId = await createDelegationWithHead(ctx.mustBeLoggedIn().sub, args);
 
 			delegationPubsub.created();
 			delegationMemberPubsub.created();
@@ -113,7 +57,8 @@ schemaBuilder.mutationFields((t) => ({
 			motivation: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateDelegationDetails(ctx, args);
+			const delegation = await assertCanUpdateDelegation(ctx, args.id);
+			await updateDelegationDetails(delegation, args);
 
 			delegationPubsub.updated(args.id);
 			// A new head delegate flips the flag on two members.
@@ -136,16 +81,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.delegation)
-				.where(
-					(await ctx.abilities.delegation.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
-				.returning({ id: schema.delegation.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await assertCanDeleteDelegation(ctx, args.id);
+			await db.delete(schema.delegation).where(eq(schema.delegation.id, args.id));
 			delegationPubsub.removed();
 			delegationMemberPubsub.removed();
 

@@ -1,14 +1,6 @@
 import { db } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PROJECT_MANAGEMENT_ROLES,
-	TEAM_ADMIN_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { userId } from '$api/services/authHelper';
 import {
 	checkInvitationEmails,
 	createInvitations,
@@ -17,26 +9,15 @@ import {
 } from './teamMemberInvitationService';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
+import {
+	assertCanGrantInvitationRole,
+	assertCanManageInvitations,
+	assertCanUpdateInvitation,
+	registerTeamMemberInvitationAbilities
+} from './teamMemberInvitationPermissions';
 
-abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Only the hash of an invitation's token is stored, and nothing in the app needs even that back.
-const WITHOUT_TOKEN = { token: false };
-
-// Project management manages every invitation of its conference.
-abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-	const team = isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES);
-	return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
-});
-
-// Team coordinators manage the invitations they may hand out - everything but project management.
-abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-	const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
-	return team
-		? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } }, columns: WITHOUT_TOKEN }
-		: undefined;
-});
+registerTeamMemberInvitationAbilities();
 
 object({
 	table: 'teamMemberInvitation',
@@ -54,10 +35,6 @@ object({
 });
 query({ table: 'teamMemberInvitation' });
 const teamRoleEnum = enum_({ tsName: 'teamRole' });
-
-async function assertMayManageInvitations(ctx: Context, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, TEAM_ADMIN_ROLES);
-}
 
 const CreateInvitationInput = schemaBuilder.inputType('CreateInvitationInput', {
 	fields: (t) => ({
@@ -119,9 +96,15 @@ schemaBuilder.mutationFields((t) => ({
 			if (!callerId) {
 				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
-			await assertMayManageInvitations(ctx, args.conferenceId);
+			await assertCanManageInvitations(ctx, args.conferenceId);
 
-			const result = await createInvitations(ctx, callerId, args.conferenceId, args.invitations);
+			const result = await createInvitations(
+				callerId,
+				ctx.url.origin,
+				args.conferenceId,
+				args.invitations,
+				(role) => assertCanGrantInvitationRole(ctx, args.conferenceId, role)
+			);
 
 			teamMemberInvitationPubsub.created();
 			teamMemberPubsub.created();
@@ -134,7 +117,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: RevokeInvitationResult,
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const result = await revokeInvitation(ctx, args.invitationId);
+			const invitation = await assertCanUpdateInvitation(ctx, args.invitationId);
+			const result = await revokeInvitation(invitation);
 			if (!result.success) return result;
 
 			teamMemberInvitationPubsub.updated(args.invitationId);
@@ -155,7 +139,13 @@ schemaBuilder.mutationFields((t) => ({
 				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
 
-			const result = await regenerateInvitation(ctx, callerId, args.invitationId, args.sendEmail);
+			const invitation = await assertCanUpdateInvitation(ctx, args.invitationId);
+			const result = await regenerateInvitation(
+				invitation,
+				callerId,
+				ctx.url.origin,
+				args.sendEmail
+			);
 			if (result.success) teamMemberInvitationPubsub.updated(args.invitationId);
 
 			return result;
@@ -189,7 +179,7 @@ schemaBuilder.queryFields((t) => ({
 			emails: t.arg({ type: [CheckEmailInput], required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertMayManageInvitations(ctx, args.conferenceId);
+			await assertCanManageInvitations(ctx, args.conferenceId);
 
 			return checkInvitationEmails(args.conferenceId, args.emails);
 		}

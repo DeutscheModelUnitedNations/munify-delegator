@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-	requestFileUpload: vi.fn(async () => ({ fileId: 'f1', uploadUrl: 'https://s3.test/put' }))
+	requestFileUpload: vi.fn(async () => ({ id: 'f1', uploadUrl: 'https://s3.test/put' }))
 }));
 
 vi.mock('$lib/api/rumbleClient/client', () => ({ client: { mutate: mocks } }));

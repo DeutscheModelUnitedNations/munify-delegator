@@ -12,7 +12,7 @@ import { filePurpose } from './storageClient';
  *
  * The bytes live in the S3 bucket. A row holds the id of a `stored_file` (`column`). Uploads go
  * straight from the browser to the bucket through a presigned URL (`requestFileUpload`), and the
- * mutation saving the row then claims the file (`claimUploadedFile`). Downloads come straight
+ * mutation saving the row then claims the file (`assertCanClaimFile`, then `ensureUploadComplete`). Downloads come straight
  * from the bucket too: the row's `*Url` field is a presigned URL (`fileUrl`), null for a reader
  * whose column mask hides the file.
  *

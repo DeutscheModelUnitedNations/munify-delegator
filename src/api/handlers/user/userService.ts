@@ -1,28 +1,14 @@
 import { db, schema } from '$api/db/db';
 import type { Context } from '$api/context';
-import type { ApiContext } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, isManagedUser, isSystemAdmin } from '$api/services/authHelper';
-import { isUniqueViolationOn } from '$api/services/account/emailConflict';
-import { reportEmailConflict } from '$api/services/account/reportEmailConflict';
+import { emailConflictError, reportEmailConflict } from '$api/services/account/emailConflict';
+import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { and, count, eq, isNotNull, or, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, or, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 import { m } from '$lib/paraglide/messages';
-
-/** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
-export async function assertManagesUser(ctx: Context, id: string) {
-	ctx.mustBeLoggedIn();
-	const managed = isManagedUser(ctx);
-	const found = managed
-		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
-		: undefined;
-	if (!found) {
-		throw apiError('NOT_FOUND', m.userNotFoundOrNotSupervised());
-	}
-}
 
 /**
  * How many conferences this person actually took part in - registrations that never got a
@@ -53,15 +39,24 @@ export async function countConferenceParticipations(userId: string) {
 	return (memberships?.value ?? 0) + participations;
 }
 
+/** Where-clauses, one per table, that say which participation rows the caller may delete. */
+export type DeletableParticipation = {
+	delegationMember: SQL | undefined;
+	singleParticipant: SQL | undefined;
+	conferenceSupervisor: SQL | undefined;
+	conferenceParticipantStatus: SQL | undefined;
+};
+
 /**
  * Removes every trace of a user's participation in one conference - delegation membership,
  * single participant entry, supervisor entry and participant status - while leaving the user
- * account itself alone. Each delete carries its own ability filter, so a caller who may remove
- * one kind of participation but not another removes only what they are allowed to.
+ * account itself alone. Only the rows `deletable` (pre-authorized) matches are removed.
  */
-export async function removeParticipation(ctx: ApiContext, userId: string, conferenceId: string) {
-	const scope = { conferenceId, userId };
-
+export async function removeParticipation(
+	userId: string,
+	conferenceId: string,
+	deletable: DeletableParticipation
+) {
 	await db.transaction(async (tx) => {
 		const participant = await tx.query.user.findFirst({
 			where: {
@@ -79,33 +74,12 @@ export async function removeParticipation(ctx: ApiContext, userId: string, confe
 			throw apiError('NOT_FOUND', m.userNotFound());
 		}
 
-		// Each delete carries its own ability filter, merged with the conference/user scope, so
-		// a caller who may remove one kind of participation but not another removes only what
-		// they are allowed to.
+		await tx.delete(schema.delegationMember).where(deletable.delegationMember);
+		await tx.delete(schema.singleParticipant).where(deletable.singleParticipant);
+		await tx.delete(schema.conferenceSupervisor).where(deletable.conferenceSupervisor);
 		await tx
-			.delete(schema.delegationMember)
-			.where(
-				(await ctx.abilities.delegationMember.filter('delete')).merge({ where: scope }).sql.where
-			);
-
-		await tx
-			.delete(schema.singleParticipant)
-			.where(
-				(await ctx.abilities.singleParticipant.filter('delete')).merge({ where: scope }).sql.where
-			);
-
-		await tx
-			.delete(schema.conferenceSupervisor)
-			.where(
-				(await ctx.abilities.conferenceSupervisor.filter('delete')).merge({ where: scope }).sql
-					.where
-			);
-
-		await tx.delete(schema.conferenceParticipantStatus).where(
-			(await ctx.abilities.conferenceParticipantStatus.filter('delete')).merge({
-				where: scope
-			}).sql.where
-		);
+			.delete(schema.conferenceParticipantStatus)
+			.where(deletable.conferenceParticipantStatus);
 	});
 }
 
@@ -134,9 +108,10 @@ export type ProfileUpdate = {
 
 /**
  * The my-account form and the user card's. rumble's scalars normalize what they can; the same
- * zod schema the form uses then judges the rest.
+ * zod schema the form uses then judges the rest. Writes only the row `updatable` (pre-authorized)
+ * matches.
  */
-export async function updateProfile(ctx: ApiContext, args: ProfileUpdate) {
+export async function updateProfile(args: ProfileUpdate, updatable: SQL | undefined) {
 	const country = alpha2ToAlpha3(args.address.countryCode);
 	if (!country)
 		throw apiError('INVALID_INPUT', m.userUnknownCountry({ country: args.address.countryCode }));
@@ -180,26 +155,17 @@ export async function updateProfile(ctx: ApiContext, args: ProfileUpdate) {
 			wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
 			wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 		})
-		.where((await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where);
+		.where(updatable);
 }
 
 /**
- * Newsletter opt-ins, addressed by email rather than id. Opting in is consent, so only the
- * account itself may give it. Returns the ids of the rows that changed.
+ * Newsletter opt-ins, addressed by email rather than id. Returns the ids of the rows that changed.
  */
-export async function updateNewsletterPreferences(
-	ctx: Context,
-	args: {
-		email: string;
-		wantsToReceiveGeneralInformation?: boolean | null;
-		wantsJoinTeamInformation?: boolean | null;
-	}
-) {
-	const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
-	if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email) {
-		throw apiError('FORBIDDEN', m.userNewsletterOnlyOwn());
-	}
-
+export async function updateNewsletterPreferences(args: {
+	email: string;
+	wantsToReceiveGeneralInformation?: boolean | null;
+	wantsJoinTeamInformation?: boolean | null;
+}) {
 	const updated = await db
 		.update(schema.user)
 		.set({
@@ -213,36 +179,21 @@ export async function updateNewsletterPreferences(
 	return updated.map(({ id }) => id);
 }
 
-/** Enough of an address to recognise it in a log without writing the whole thing down. */
-function maskEmail(email: string): string {
-	const [localPart, domain] = email.split('@');
-	if (!localPart || !domain) {
-		return '***@***';
-	}
-	if (localPart.length <= 2) {
-		return `${localPart[0]}***@${domain}`;
-	}
-	return `${localPart.slice(0, 2)}***@${domain}`;
-}
-
 /** Answers an email conflict on the mutation with an error the frontend can tell apart. */
 async function throwEmailConflict(
 	userSubject: string,
 	email: string,
 	error: unknown
 ): Promise<never> {
-	const conflict = await reportEmailConflict(userSubject, email, error, maskEmail);
-
-	throw apiError('EMAIL_CONFLICT', m.userEmailInUse(), {
-		isNewUser: conflict.isNewUser,
-		maskedConflictingEmail: conflict.maskedConflictingEmail,
-		maskedExistingEmail: conflict.maskedExistingEmail,
-		refId: conflict.refId
-	});
+	const conflict = await reportEmailConflict(userSubject, email, error);
+	throw emailConflictError(conflict);
 }
 
+/** The signed-in caller, as the request context knows them. */
+type Caller = ReturnType<Context['mustBeLoggedIn']>;
+
 /** The claims the caller's own row is written from; an account without an email cannot have one. */
-function selfClaims(caller: ReturnType<Context['mustBeLoggedIn']>) {
+function selfClaims(caller: Caller) {
 	if (!caller.email) {
 		throw apiError('INVALID_INPUT', m.userEmailMissingFromProvider());
 	}
@@ -253,8 +204,7 @@ function selfClaims(caller: ReturnType<Context['mustBeLoggedIn']>) {
  * Creates or refreshes the caller's own row from their OIDC claims. Called right after login,
  * which is the only moment the app learns about a new account.
  */
-export async function upsertCallerRow(ctx: Context) {
-	const caller = ctx.mustBeLoggedIn();
+export async function upsertCallerRow(caller: Caller) {
 	const { email, locale } = selfClaims(caller);
 
 	try {
@@ -285,26 +235,11 @@ export async function upsertCallerRow(ctx: Context) {
 	}
 }
 
-/** Participant care, project management (of any conference) and admins may look users up. */
-async function assertMayPreviewUsers(ctx: Context) {
-	const caller = ctx.mustBeLoggedIn();
-	if (isSystemAdmin(ctx)) return;
-
-	const privileged = await db.query.teamMember.findFirst({
-		where: { userId: caller.sub, role: { in: [...PARTICIPANT_CARE_ROLES] } }
-	});
-	if (!privileged) {
-		throw apiError('FORBIDDEN', m.userPreviewForbidden());
-	}
-}
-
 /**
  * Looks a user up by id or email so management can add them to something. Not ability-filtered
- * on the target, so the check is on the caller instead.
+ * on the target, so the check is on the caller instead (`assertCanPreviewUsers`).
  */
-export async function previewUser(ctx: Context, emailOrId: string) {
-	await assertMayPreviewUsers(ctx);
-
+export async function previewUser(emailOrId: string) {
 	const found = await db.query.user
 		.findFirst({ where: { OR: [{ id: emailOrId }, { email: emailOrId }] } })
 		.then(assertFindFirstExists);

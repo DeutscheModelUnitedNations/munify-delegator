@@ -9,7 +9,7 @@ export interface CalendarPlace {
 	directions?: string | null;
 	info?: string | null;
 	websiteUrl?: string | null;
-	sitePlanUrl?: string | null;
+	sitePlanFile?: { url: string } | null;
 }
 
 export interface CalendarTrack {

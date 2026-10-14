@@ -1,9 +1,6 @@
 import { and, eq, inArray, lt, notExists, sql, type SQL } from 'drizzle-orm';
-import {
-	createStorage,
-	storageConfigFromProcessEnv,
-	type Storage
-} from '$api/services/files/storageClient';
+import { createStorage, type Storage } from '$api/handlers/storedFile/storageClient';
+import { storageConfig } from './config';
 import { db, schema } from './db';
 import { DEFAULT_GRACE_HOURS, fileReferenceColumns, orphanedObjectKeys } from './fileReferences';
 
@@ -24,7 +21,7 @@ export async function runFileCleanup(
 ): Promise<{ files: number; orphans: number }> {
 	const { graceHours = DEFAULT_GRACE_HOURS, dryRun = false, now = new Date() } = options;
 	const cutoff = new Date(now.getTime() - graceHours * 60 * 60 * 1000);
-	const storage = createStorage(storageConfigFromProcessEnv());
+	const storage = createStorage(storageConfig());
 	const unused = unusedSince(cutoff);
 
 	const files = dryRun ? await db.$count(file, unused) : await deleteFiles(storage, unused);

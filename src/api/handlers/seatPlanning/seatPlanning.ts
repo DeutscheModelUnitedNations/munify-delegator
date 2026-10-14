@@ -1,7 +1,7 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { SEAT_PLANNING_ROLES, assertTeamRole } from '$api/services/authHelper';
 import { lockedCommitteeSeats } from '$api/services/seatPlanning';
+import { assertCanReadSeatPlanning } from './seatPlanningPermissions';
 
 const SeatPlanningCommitteeSeat = schemaBuilder.simpleObject('SeatPlanningCommitteeSeat', {
 	fields: (t) => ({
@@ -41,7 +41,7 @@ schemaBuilder.queryFields((t) => ({
 		type: SeatPlanningAssignments,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, SEAT_PLANNING_ROLES);
+			await assertCanReadSeatPlanning(ctx, args.conferenceId);
 
 			const delegations = await db.query.delegation.findMany({
 				where: {

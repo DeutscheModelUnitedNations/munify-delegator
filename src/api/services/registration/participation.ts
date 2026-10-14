@@ -1,17 +1,14 @@
 import { db } from '$api/db/db';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /**
- * Drizzle port of `fetchUserParticipations.ts`.
- *
  * Finds how a user already takes part in a conference - as supervisor, single participant,
  * delegation member or team member - and optionally refuses when any of those exist. Registration
  * handlers use it for the state checks that abilities cannot express: "may this person register
- * at all", rather than "may they touch this row".
- *
- * The Prisma original stays in place until the legacy resolvers are deleted in Phase F.
+ * at all", rather than "may they touch this row". A waiting list entry is not a participation:
+ * it is how someone gets one.
  */
 export async function fetchUserParticipations({
 	conferenceId,

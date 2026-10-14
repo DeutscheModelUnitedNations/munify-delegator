@@ -1,4 +1,4 @@
-import { inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '$api/db/db';
 import { participatesIn } from '../../services/authHelper';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
@@ -157,4 +157,24 @@ export function scanUserForDuplicatesInBackground(userId: string) {
 	scan({ id: userId }).catch((error: unknown) => {
 		console.error('Scanning an account for possible duplicates failed:', error);
 	});
+}
+
+/**
+ * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`, which
+ * forgets who decided and when.
+ */
+export async function decidePossibleDuplicate(
+	id: string,
+	status: (typeof schema.possibleDuplicate.$inferSelect)['status'],
+	decidedById: string | null
+) {
+	const decided = status !== 'OPEN';
+	await db
+		.update(schema.possibleDuplicate)
+		.set({
+			status,
+			decidedById: decided ? decidedById : null,
+			decidedAt: decided ? new Date() : null
+		})
+		.where(eq(schema.possibleDuplicate.id, id));
 }

@@ -85,14 +85,14 @@
 	const storedFiles = $derived(
 		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			imageUrl: true,
-			emblemUrl: true,
-			logoUrl: true,
-			contractContentSet: true,
-			guardianConsentContentSet: true,
-			mediaConsentContentSet: true,
-			termsAndConditionsContentSet: true,
-			certificateContentSet: true
+			imageFile: { url: true },
+			emblemFile: { url: true },
+			logoFile: { url: true },
+			contractFile: { id: true },
+			guardianConsentFile: { id: true },
+			mediaConsentFile: { id: true },
+			termsAndConditionsFile: { id: true },
+			certificateFile: { id: true }
 		})
 	);
 
@@ -196,11 +196,11 @@
 						certificateFileId: await upload('certificate', certificateBasePDF)
 					},
 					id: true,
-					certificateContentSet: true,
-					termsAndConditionsContentSet: true,
-					mediaConsentContentSet: true,
-					guardianConsentContentSet: true,
-					contractContentSet: true
+					certificateFile: { id: true },
+					termsAndConditionsFile: { id: true },
+					mediaConsentFile: { id: true },
+					guardianConsentFile: { id: true },
+					contractFile: { id: true }
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
@@ -223,14 +223,14 @@
 					certificateFileId: await upload('certificate', certificateBasePDF)
 				},
 				id: true,
-				imageUrl: true,
-				emblemUrl: true,
-				logoUrl: true,
-				certificateContentSet: true,
-				termsAndConditionsContentSet: true,
-				mediaConsentContentSet: true,
-				guardianConsentContentSet: true,
-				contractContentSet: true
+				imageFile: { url: true },
+				emblemFile: { url: true },
+				logoFile: { url: true },
+				certificateFile: { id: true },
+				termsAndConditionsFile: { id: true },
+				mediaConsentFile: { id: true },
+				guardianConsentFile: { id: true },
+				contractFile: { id: true }
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
@@ -250,14 +250,14 @@
 			current: $formData,
 			tainted: $tainted,
 			existingFiles: {
-				image: !!storedFiles.imageUrl,
-				emblem: !!storedFiles.emblemUrl,
-				logo: !!storedFiles.logoUrl,
-				contractBasePDF: storedFiles.contractContentSet,
-				guardianConsentBasePDF: storedFiles.guardianConsentContentSet,
-				mediaConsentBasePDF: storedFiles.mediaConsentContentSet,
-				termsAndConditionsBasePDF: storedFiles.termsAndConditionsContentSet,
-				certificateBasePDF: storedFiles.certificateContentSet
+				image: !!storedFiles.imageFile,
+				emblem: !!storedFiles.emblemFile,
+				logo: !!storedFiles.logoFile,
+				contractBasePDF: !!storedFiles.contractFile,
+				guardianConsentBasePDF: !!storedFiles.guardianConsentFile,
+				mediaConsentBasePDF: !!storedFiles.mediaConsentFile,
+				termsAndConditionsBasePDF: !!storedFiles.termsAndConditionsFile,
+				certificateBasePDF: !!storedFiles.certificateFile
 			}
 		})
 	);

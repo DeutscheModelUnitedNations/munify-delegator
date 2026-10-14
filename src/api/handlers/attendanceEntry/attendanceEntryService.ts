@@ -1,54 +1,8 @@
 import { db, schema } from '$api/db/db';
-import { assertTeamRole, participatesIn, userId } from '$api/services/authHelper';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import type { Context } from '$api/context';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
-
-/**
- * Any team member of the conference may record attendance, not just management - the scanner is
- * on every team member's dashboard - and only for somebody who is part of the conference.
- */
-async function assertMayRecordAttendance(ctx: Context, conferenceId: string, subjectId: string) {
-	await assertTeamRole(ctx, conferenceId);
-	const subject = await db.query.user.findFirst({
-		where: {
-			id: subjectId,
-			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
-		},
-		columns: { id: true }
-	});
-	if (!subject) {
-		throw apiError('INVALID_INPUT', m.userNotInConference());
-	}
-}
-
-/** The session, once it is known to belong to the conference the scan is recorded for. */
-export async function assertSessionOfConference(sessionId: string, conferenceId: string) {
-	const session = await db.query.attendanceSession.findFirst({
-		where: { id: sessionId, conferenceId },
-		columns: { id: true }
-	});
-	if (!session) {
-		throw apiError('INVALID_INPUT', m.sessionNotInConference());
-	}
-}
-
-/** Who records the scan; refuses an anonymous caller and a foreign session. */
-export async function assertMayCreateEntry(
-	ctx: Context,
-	args: { userId: string; conferenceId: string; sessionId: string }
-) {
-	const callerId = userId(ctx);
-	if (!callerId) {
-		throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-	}
-
-	await assertMayRecordAttendance(ctx, args.conferenceId, args.userId);
-	await assertSessionOfConference(args.sessionId, args.conferenceId);
-	return callerId;
-}
+import { apiError } from '$api/services/errors/apiError';
 
 /**
  * The participant status row is created on demand, as the legacy upsert did. The no-op `set` is

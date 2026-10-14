@@ -150,11 +150,13 @@ bun run preview
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
 
 - **`src/api/`** - Backend GraphQL API layer
-  - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted. `paper/paper.ts`
-    holds the entity's abilities, object reference, queries and mutations - the GraphQL layer - and
-    `paper/paperService.ts` the business logic (after `avv`), which holds no schema, ability or
-    query definitions. `register.ts` is the only file beside the directories. `register.ts` imports them all and is the single place a
-    new handler has to be listed.
+  - `handlers/` - One directory per domain entity (`paper/`), so the IDE keeps them sorted, each
+    split three ways after `avv`: `paper/paper.ts` is the GraphQL layer (object reference, queries,
+    mutations), `paper/paperPermissions.ts` **all** of the entity's authorization (its abilities in
+    `registerPaperAbilities()` and every `assertCan…` / `can…` check a resolver runs), and
+    `paper/paperService.ts` the business logic, which holds no schema, ability or query definitions
+    and **never checks permissions**. `register.ts` is the only file beside the directories. It
+    imports them all and is the single place a new handler has to be listed.
   - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
     dev-time generator for the typed frontend client.
   - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
@@ -162,8 +164,9 @@ bun run preview
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
-  - `services/` - Business logic shared by several handlers or routes, and `authHelper.ts`, the one
-    module holding the ability building blocks (after chase); `services/README.md` indexes them
+  - `services/` - Business logic shared by several handlers or routes, and `authHelper.ts`, the
+    authorization building blocks every `*Permissions.ts` composes from (after chase);
+    `services/README.md` indexes them. Like handler services, these never check permissions.
 
 - **`src/lib/`** - Shared frontend code
   - `api/client.ts` - The urql client and its exchanges
@@ -181,7 +184,7 @@ bun run preview
   (or build) with one report listing every problem. `$env/*` is switched off. A variable that is
   required at runtime but not during `vite build` goes through `requiredAtRuntime` there. A test
   that needs one mocks the module (`vi.mock('$app/env/private', …)`): nothing fills them in
-  under vitest. `src/jobs/` runs outside SvelteKit and reads `process.env` itself.
+  under vitest. `src/jobs/` runs outside SvelteKit and validates its own variables with zod in `src/jobs/config.ts`, the only jobs module that reads `process.env`.
 
 - **`src/jobs/`** - One-shot jobs behind the `delegator-jobs` CLI (`cli.ts`, one file per job, after
   avv), built by `bun run build:jobs` into `jobsOut/` and shipped as its own image
@@ -199,16 +202,41 @@ bun run preview
 
 #### 1. GraphQL API Layer (rumble)
 
-- **Code-first**, one directory per entity under `src/api/handlers/`. A handler declares, in this order:
-  its abilities, its object reference, its queries, its mutations.
+- **Code-first**, one directory per entity under `src/api/handlers/`, in three files (after avv's
+  `ticket/`). The permissions file declares the abilities and the checks:
 
   ```ts
-  abilityBuilder.committee.allow('read');
-  abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
+  // committeePermissions.ts
+  export function registerCommitteeAbilities() {
+  	abilityBuilder.committee.allow('read');
+  	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
+  }
+  export function assertCanCreateCommittee(ctx: ApiContext, conferenceId: string) {
+  	return assertTeamRole(ctx, conferenceId, SEAT_PLANNING_ROLES);
+  }
+  ```
 
+  The handler registers them first, then declares its object reference, queries and mutations;
+  each resolver runs its permission checks, then calls the service:
+
+  ```ts
+  // committee.ts
+  registerCommitteeAbilities();
   export const CommitteeRef = object({ table: 'committee' });
   query({ table: 'committee' }); // generates `committee(id)` and `committees(where, limit, …)`
   ```
+
+- **Services never check permissions** - neither `<entity>Service.ts` nor anything in
+  `src/api/services/`. No `ctx.abilities`, no `assertTeamRole`, no role or ownership comparison:
+  they take the caller's id, or the rows and ids the permissions file already authorized, as
+  plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
+  checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
+  query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
+  check. A check several entities need goes into `authHelper.ts`, not into two permission files:
+  `assertAllowedRow` (a row through its own update/delete ability, else NOT_FOUND),
+  `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `assertParticipantsOf`,
+  `assertUserInConference`, `assertParticipantOfConference`. Permission functions take
+  `ApiContext` (`$api/rumble`), which carries `abilities`.
 
 - **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
 
@@ -435,18 +463,24 @@ bun run preview
   [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
   `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
   `stored_file` (`conference.logoFileId`, `place.sitePlanFileId`, `resolution.fileId`, …), which
-  knows the object's key, type, size and name. `FILE_SOURCES` in `$api/services/files/files.ts`
-  lists every file: its column, who may upload it, the allowed types and the size limit.
+  knows the object's key, type, size and name. All of it lives in the table's handler,
+  `$api/handlers/storedFile/`: `FILE_SOURCES` (`fileSources.ts`) lists every file - its column,
+  who may upload it, the allowed types and the size limit; `storedFilePermissions.ts` holds the
+  checks, `storedFileService.ts` the uploads and download URLs, and `storageClient.ts` the s3mini
+  wrapper the jobs and the seed build their own bucket from.
   - **Upload:** `requestFileUpload` checks the caller's team role, type and size, records the file
-    and returns a presigned PUT URL with type and length signed in; the browser PUTs the bytes
-    there; the mutation saving the row takes the id and `claimUploadedFile` checks that the
-    caller uploaded it, for that field of that conference, and that it arrived in full.
-  - **Download:** readers select the `*Url` field (`logoUrl`, `contractContentUrl`, `sitePlanUrl`,
-    `contentUrl`, …), which is a presigned GET URL of the bucket (`fileUrl` in
-    `$api/services/files/storage.ts`). There is no app route in between: the file id column's mask
-    is the access check, since a masked id reads as null and yields no URL
-    (`e2e/authorization/api-abilities.spec.ts` pins it for a template). The key follows from the
-    row (`objectKey(conferenceId, purpose, fileId)`), so no lookup is needed. A URL is reused for
+    and answers with it (the `StoredFile` object); its `uploadUrl` is a presigned PUT URL with type
+    and length signed in, null once something has arrived, so a stored file never changes. The
+    browser PUTs the bytes there; the mutation saving the row takes the id, `assertCanClaimFile` checks that the caller
+    uploaded it, for that field of that conference, and `ensureUploadComplete` that it arrived in
+    full.
+  - **Download:** rows never resolve a file themselves; readers select the relation
+    (`conference.logoFile { url }`, `contractFile`, `place.sitePlanFile`, `resolution.file`, …)
+    and read `id` / `url` from the `StoredFile`, whose `url` is a presigned GET URL of the bucket.
+    There is no app route in between: the file id column's mask is the access check, since a
+    relation behind a masked id resolves to nothing (`e2e/authorization/api-abilities.spec.ts`
+    pins it for a template). `stored_file` itself is readable by anyone who reaches it - there is
+    no query listing files - with `uploadedById` masked for all but the uploader. A URL is reused for
     six hours and valid for twelve, so browsers cache the (immutable) object and live queries do
     not see a new URL on every refetch. Browsers talk to the bucket directly: it needs CORS (GET
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
@@ -455,8 +489,9 @@ bun run preview
   - **Cleanup:** replaced and never-claimed files are not deleted by the mutations; the
     `file-cleanup` job removes every `stored_file` nothing points at (found through the foreign
     keys, which `restrict`) and objects without a row.
-  - A new file is a `fileRef()` column, an entry in `FILE_SOURCES`, a `*Url` field on the object,
-    a `claimUploadedFile` call in the mutations that set it, and a target in `uploadFile`.
+  - A new file is a `fileRef()` column, a relation to `storedFile` in `relations.ts`, an entry in
+    `FILE_SOURCES`, `assertCanClaimFile` + `ensureUploadComplete` in the mutations that set it,
+    and a target in `uploadFile`. A field that has to stay private needs its id column masked.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
   mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
   with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot
@@ -504,7 +539,7 @@ bun run preview
 - **rumble abilities** define fine-grained permissions per entity:
   - Actions: `read`, `update`, `delete` (declared in `src/api/rumble.ts`); impersonation, when it
     is redesigned, brings its own
-  - Each entity's abilities live at the top of its handler
+  - Each entity's abilities live in its `<entity>Permissions.ts`
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
   in `$lib/helpers/teamRoles.ts`, shared by the API (`authHelper.ts` re-exports them) and the UI.
   `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
@@ -526,7 +561,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
-- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`$lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
+- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`$lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -655,7 +690,7 @@ $assets → src/assets
 - **Rich Text Editor**: TipTap for committee agenda items
 - **Maps**: Leaflet via `sveaflet` for delegation locations
 - **External APIs**: Listmonk email service integration in `src/jobs/apis/`
-- **File storage**: an S3 bucket through `s3mini` (`$api/services/files/storageClient.ts`)
+- **File storage**: an S3 bucket through `s3mini` (`$api/handlers/storedFile/storageClient.ts`)
 
 ### UI Component Patterns
 
@@ -725,9 +760,12 @@ Required variables (see `.env.example`):
 
 ### Adding a New GraphQL Handler
 
-1. Create the module in `src/api/handlers/`
-2. Import it in `src/api/handlers/register.ts`
-3. Declare its abilities with `abilityBuilder` at the top of the file
+1. Create `src/api/handlers/<entity>/` with `<entity>.ts` (GraphQL layer),
+   `<entity>Permissions.ts` (`register<Entity>Abilities()` plus the `assertCan…` checks, built from
+   `authHelper.ts`) and, when there is logic beyond the resolvers, `<entity>Service.ts` (no
+   permission checks)
+2. Import `<entity>.ts` in `src/api/handlers/register.ts`
+3. Call `register<Entity>Abilities()` at the top of `<entity>.ts`
 4. Restart the dev server: it rebuilds the schema and regenerates
    `src/lib/api/rumbleClient/`
 

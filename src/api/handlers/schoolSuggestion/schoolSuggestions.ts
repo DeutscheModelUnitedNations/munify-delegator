@@ -1,22 +1,17 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
+import type { ReadableSchoolRegistrations } from './schoolSuggestionPermissions';
 import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';
 import { eq, inArray } from 'drizzle-orm';
 
-/** Applied registrations the caller may read, grouped by the school they named. */
-export async function loadSchoolRows(conferenceId: string, ctx: ApiContext) {
+/**
+ * Applied registrations the caller may read (`readableSchoolRegistrations`), grouped by the school
+ * they named.
+ */
+export async function loadSchoolRows(conferenceId: string, readable: ReadableSchoolRegistrations) {
 	const [delegations, participants] = await Promise.all([
-		db.query.delegation.findMany(
-			(await ctx.abilities.delegation.filter('read')).merge({
-				where: { conferenceId, applied: true, school: { isNotNull: true } }
-			}).query.many
-		),
-		db.query.singleParticipant.findMany(
-			(await ctx.abilities.singleParticipant.filter('read')).merge({
-				where: { conferenceId, applied: true, school: { isNotNull: true } }
-			}).query.many
-		)
+		db.query.delegation.findMany(readable.delegations),
+		db.query.singleParticipant.findMany(readable.singleParticipants)
 	]);
 
 	const memberCounts = await db.query.delegationMember.findMany({
@@ -32,11 +27,16 @@ export async function loadSchoolRows(conferenceId: string, ctx: ApiContext) {
  * line with them. A group found again keeps its row, and so the team's decision; groups that no
  * longer exist (merged, renamed, withdrawn) are removed.
  */
-export async function refreshSchoolSuggestions(conferenceId: string, ctx: ApiContext) {
-	const found = findSimilarSchools(await loadSchoolRows(conferenceId, ctx)).map((suggestion) => ({
-		...suggestion,
-		key: suggestionKey(suggestion.variants.map((variant) => variant.school))
-	}));
+export async function refreshSchoolSuggestions(
+	conferenceId: string,
+	readable: ReadableSchoolRegistrations
+) {
+	const found = findSimilarSchools(await loadSchoolRows(conferenceId, readable)).map(
+		(suggestion) => ({
+			...suggestion,
+			key: suggestionKey(suggestion.variants.map((variant) => variant.school))
+		})
+	);
 
 	await db.transaction(async (tx) => {
 		const existing = await tx

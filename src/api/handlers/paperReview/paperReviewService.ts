@@ -1,14 +1,13 @@
 import type { Context } from '$api/context';
 import { type Transaction, db, schema } from '$api/db/db';
-import { PAPER_ROLES, hasTeamRole } from '$api/services/authHelper';
-import { sendNewReviewNotification } from '$api/services/email';
+import { sendNewReviewNotification } from '$api/services/email/sendNewReviewNotification';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, count, eq } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
 import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
 import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 import { localeOfUser, runWithLocale } from '$api/services/requestLocale';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
 type UnlockedPiece = {
@@ -52,13 +51,11 @@ function fetchPaperForReview(tx: Transaction, paperId: string) {
 
 type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
 
-/** Rejects the review unless the reviewer may review, and the paper and verdict allow it. */
-async function assertMayReview(ctx: Context, paper: PaperForReview, newStatus: string) {
-	// Reviewing is a reviewer's action; reading the paper is not enough.
-	if (!(await hasTeamRole(ctx, paper.conferenceId, PAPER_ROLES))) {
-		throw apiError('FORBIDDEN', m.reviewOnlyReviewers());
-	}
-
+/**
+ * Rejects the review unless the paper and verdict allow it. Whether the caller may review at all
+ * is `assertCanReviewPaper`'s business.
+ */
+function assertReviewable(paper: PaperForReview, newStatus: string) {
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
 		throw apiError(
 			'CONFLICT',
@@ -216,9 +213,14 @@ async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
 	return null;
 }
 
+type Reviewer = Pick<
+	ReturnType<Context['mustBeLoggedIn']>,
+	'sub' | 'given_name' | 'family_name' | 'email'
+>;
+
 function notifyAuthor(
 	paper: PaperForReview,
-	reviewer: Pick<ReturnType<Context['mustBeLoggedIn']>, 'given_name' | 'family_name' | 'email'>,
+	reviewer: Reviewer,
 	newStatus: PaperstatusEnum,
 	origin: string
 ) {
@@ -251,18 +253,17 @@ function notifyAuthor(
  * other papers count up to two more.
  */
 export async function createPaperReview(
-	ctx: Context,
 	args: {
 		paperId: string;
 		comments?: (typeof schema.paperReview.$inferInsert)['comments'];
 		newStatus: (typeof schema.paper.$inferSelect)['status'];
-	}
+	},
+	reviewer: Reviewer,
+	origin: string
 ) {
-	const reviewer = ctx.mustBeLoggedIn();
-
 	return db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview(tx, args.paperId);
-		const latestVersion = await assertMayReview(ctx, paper, args.newStatus);
+		const latestVersion = assertReviewable(paper, args.newStatus);
 		const wasFirstReviewForPiece = await isFirstReviewForPiece(tx, paper);
 
 		const review = await tx
@@ -286,7 +287,7 @@ export async function createPaperReview(
 			.set({ status: args.newStatus })
 			.where(eq(schema.paperVersion.id, latestVersion.id));
 
-		notifyAuthor(paper, reviewer, args.newStatus, ctx.url.origin);
+		notifyAuthor(paper, reviewer, args.newStatus, origin);
 
 		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece(tx, paper) : null;
 

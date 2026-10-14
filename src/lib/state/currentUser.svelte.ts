@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { fetchCurrentUser, fetchOptionalCurrentUser, type CurrentUser } from '$lib/api/currentUser';
+import { fetchCurrentUser, type CurrentUser } from '$lib/api/currentUser';
 
 /**
  * The signed-in person, fetched once per browser session.
@@ -30,7 +30,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
 export async function getOptionalCurrentUser(): Promise<CurrentUser | null> {
 	if (cached) return cached;
 
-	const user = await fetchOptionalCurrentUser();
+	const user = await fetchCurrentUser().catch(() => null);
 	remember(user);
 	return user;
 }

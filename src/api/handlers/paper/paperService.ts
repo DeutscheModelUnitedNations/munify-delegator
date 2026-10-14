@@ -1,13 +1,9 @@
-import type { Context } from '$api/context';
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
-import { PAPER_ROLES, assertTeamRole, isSystemAdmin, userId } from '$api/services/authHelper';
-import { fetchUserParticipations } from '$api/services/registration/participation';
 import codenmz from '$lib/helpers/codenamize';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { type InferSelectModel, eq } from 'drizzle-orm';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -47,56 +43,16 @@ function assertSavableStatus(requested: PaperStatus | null | undefined, current?
 	throw apiError('CONFLICT', m.paperStatusOnlyThroughReview());
 }
 
-/**
- * A paper is written by the caller, for a delegation they are a member of in that conference, on
- * one of that conference's agenda items (or none, for an introduction paper). All three arrive as
- * arguments, so all three are checked: the author cannot be somebody else, and the delegation and
- * agenda item cannot belong to another conference.
- */
-async function assertMayAuthor(
-	ctx: Context,
-	args: {
-		conferenceId: string;
-		authorId: string;
-		delegationId: string;
-		agendaItemId?: string | null;
-	}
-) {
-	const caller = ctx.mustBeLoggedIn().sub;
-	if (args.authorId !== caller) {
-		throw apiError('FORBIDDEN', m.paperOnlyOwnName());
-	}
-	const membership = await db.query.delegationMember.findFirst({
-		where: { userId: caller, delegationId: args.delegationId, conferenceId: args.conferenceId },
-		columns: { id: true }
-	});
-	if (!membership) {
-		throw apiError('FORBIDDEN', m.paperOnlyOwnDelegation());
-	}
-	if (args.agendaItemId) {
-		await db.query.committeeAgendaItem
-			.findFirst({
-				where: { id: args.agendaItemId, committee: { conferenceId: args.conferenceId } },
-				columns: { id: true }
-			})
-			.then(assertFindFirstExists);
-	}
-}
-
 /** Writes a new paper together with its first version. */
-export async function createPaper(
-	ctx: Context,
-	args: {
-		conferenceId: string;
-		authorId: string;
-		delegationId: string;
-		agendaItemId?: string | null;
-		type: (typeof schema.paper.$inferSelect)['type'];
-		content?: PaperContent;
-		status?: PaperStatus | null;
-	}
-) {
-	await assertMayAuthor(ctx, args);
+export async function createPaper(args: {
+	conferenceId: string;
+	authorId: string;
+	delegationId: string;
+	agendaItemId?: string | null;
+	type: (typeof schema.paper.$inferSelect)['type'];
+	content?: PaperContent;
+	status?: PaperStatus | null;
+}) {
 	assertSavableStatus(args.status);
 	// REVISED answers a review, and a new paper has had none.
 	if (args.status === 'REVISED') {
@@ -139,20 +95,19 @@ export async function createPaper(
 	});
 }
 
-/** Each update appends a new version rather than editing the previous one. */
-export async function updatePaper(
-	ctx: ApiContext,
-	args: { paperId: string; content?: PaperContent; status?: PaperStatus | null }
-) {
-	if (!userId(ctx)) {
-		throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-	}
-
+/**
+ * Each update appends a new version rather than editing the previous one. The caller's right to
+ * update the paper is checked before (`assertCanUpdatePaper`).
+ */
+export async function updatePaper(args: {
+	paperId: string;
+	content?: PaperContent;
+	status?: PaperStatus | null;
+}) {
 	await db.transaction(async (tx) => {
 		const paper = await tx.query.paper
 			.findFirst({
-				...(await ctx.abilities.paper.filter('update')).merge({ where: { id: args.paperId } }).query
-					.single,
+				where: { id: args.paperId },
 				with: { versions: { with: { reviews: true } }, conference: true }
 			})
 			.then(assertFindFirstExists);
@@ -176,22 +131,6 @@ export async function updatePaper(
 			version: paper.versions.length + 1
 		});
 	});
-}
-
-/** Reviewers and conference management of the conference, or a system admin. */
-export function assertPaperReviewer(ctx: Context, conferenceId: string) {
-	return assertTeamRole(ctx, conferenceId, PAPER_ROLES);
-}
-
-/** Any participant of the conference - delegate, single participant or supervisor - or an admin. */
-export async function assertConferenceParticipant(ctx: Context, conferenceId: string) {
-	const caller = ctx.mustBeLoggedIn().sub;
-	if (isSystemAdmin(ctx)) return;
-	const { foundDelegationMember, foundSingleParticipant, foundSupervisor } =
-		await fetchUserParticipations({ conferenceId, userId: caller });
-	if (![foundDelegationMember, foundSingleParticipant, foundSupervisor].some(Boolean)) {
-		throw apiError('FORBIDDEN', m.accessDeniedParticipant());
-	}
 }
 
 type CommitteeRow = InferSelectModel<typeof schema.committee>;
@@ -328,17 +267,7 @@ export async function reviewStatsOf(conferenceId: string, callerId: string) {
  * The paper a reviewer should pick up next for an agenda item: the least recently touched
  * one, with never-reviewed submissions taking precedence over revisions.
  */
-export async function findNextPaperToReview(ctx: Context, agendaItemId: string) {
-	const agendaItem = await db.query.committeeAgendaItem
-		.findFirst({
-			where: { id: agendaItemId },
-			columns: {},
-			with: { committee: { columns: { conferenceId: true } } }
-		})
-		.then(assertFindFirstExists);
-
-	await assertPaperReviewer(ctx, agendaItem.committee.conferenceId);
-
+export async function findNextPaperToReview(agendaItemId: string) {
 	const papers = await db.query.paper.findMany({
 		where: { agendaItemId, status: { in: ['SUBMITTED', 'REVISED'] } },
 		orderBy: { updatedAt: 'asc' }
@@ -349,4 +278,13 @@ export async function findNextPaperToReview(ctx: Context, agendaItemId: string) 
 	}
 
 	return papers.find((paper) => paper.status === 'SUBMITTED') ?? papers[0];
+}
+
+/** The delegations of the conference with a member the user supervises. */
+export async function supervisedDelegationIds(conferenceId: string, supervisorId: string) {
+	const supervised = await db.query.delegationMember.findMany({
+		where: { conferenceId, supervisors: { userId: supervisorId } },
+		columns: { delegationId: true }
+	});
+	return [...new Set(supervised.map((member) => member.delegationId))];
 }

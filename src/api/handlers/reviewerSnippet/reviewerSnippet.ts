@@ -1,18 +1,17 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import { systemAdmin, userId } from '$api/services/authHelper';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
+import {
+	assertCanDeleteReviewerSnippet,
+	assertCanUpdateReviewerSnippet,
+	registerReviewerSnippetAbilities
+} from './reviewerSnippetPermissions';
 import { reviewerSnippetPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/reviewerSnippet.ts: users manage only their own snippets.
-abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { userId: id } } : undefined;
-});
+registerReviewerSnippetAbilities();
 
 const ReviewerSnippetRef = object({ table: 'reviewerSnippet' });
 query({ table: 'reviewerSnippet' });
@@ -22,7 +21,8 @@ query({ table: 'reviewerSnippet' });
  * database constraint - the legacy resolver did the same, for a clearer error.
  *
  * Ownership is enforced through the ability filter rather than a hand-written `userId` check:
- * the rule in this file already restricts every action to the caller's own snippets.
+ * the rule in `reviewerSnippetPermissions.ts` already restricts every action to the caller's own
+ * snippets.
  */
 schemaBuilder.mutationFields((t) => ({
 	createReviewerSnippet: t.drizzleField({
@@ -32,10 +32,7 @@ schemaBuilder.mutationFields((t) => ({
 			content: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const id = userId(ctx);
-			if (!id) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
+			const id = ctx.mustBeLoggedIn().sub;
 
 			const existing = await db.query.reviewerSnippet.findFirst({
 				where: { userId: id, name: args.name }
@@ -72,18 +69,11 @@ schemaBuilder.mutationFields((t) => ({
 			content: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updated = await db
+			await assertCanUpdateReviewerSnippet(ctx, args.id);
+			await db
 				.update(schema.reviewerSnippet)
 				.set({ name: args.name, content: args.content })
-				.where(
-					(await ctx.abilities.reviewerSnippet.filter('update')).merge({ where: { id: args.id } })
-						.sql.where
-				)
-				.returning({ id: schema.reviewerSnippet.id });
-
-			if (updated.length === 0) {
-				throw apiError('NOT_FOUND', m.snippetNotFound());
-			}
+				.where(eq(schema.reviewerSnippet.id, args.id));
 
 			reviewerSnippetPubsub.updated(args.id);
 
@@ -102,16 +92,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.reviewerSnippet)
-				.where(
-					(await ctx.abilities.reviewerSnippet.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
-				.returning({ id: schema.reviewerSnippet.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.snippetNotFound());
-			}
+			await assertCanDeleteReviewerSnippet(ctx, args.id);
+			await db.delete(schema.reviewerSnippet).where(eq(schema.reviewerSnippet.id, args.id));
 			reviewerSnippetPubsub.removed();
 
 			return true;

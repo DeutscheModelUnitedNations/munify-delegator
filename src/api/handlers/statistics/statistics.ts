@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { assertTeamRole } from '$api/services/authHelper';
+import { assertCanReadStatistics } from './statisticsPermissions';
 import type { StatsFilterType } from './statisticsFilters';
 import {
 	addressesOf,
@@ -486,7 +486,7 @@ schemaBuilder.queryFields((t) => ({
 			filter: t.arg({ type: StatsFilterEnum, defaultValue: 'ALL' })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId);
+			await assertCanReadStatistics(ctx, args.conferenceId);
 
 			const conference = await db.query.conference
 				.findFirst({

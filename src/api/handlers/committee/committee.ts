@@ -1,46 +1,29 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PROJECT_MANAGEMENT_ROLES,
-	SEAT_PLANNING_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
-import {
-	assertCommitteeDeletable,
-	assertRegionalBaselineTargets,
-	assertSeatsPerDelegationAllowed,
-	committeeUpdateData,
-	seatRemovalBlockersWhere
-} from '$api/services/seatPlanning';
+import { db } from '$api/db/db';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
-import formatNames from '$lib/helpers/formatNames';
-import { m } from '$lib/paraglide/messages';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq } from 'drizzle-orm';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
 	committeePubsub,
 	resolutionPubsub,
 	roleApplicationPubsub
 } from '$api/pubsub';
-import { apiError } from '$api/services/apiError';
+import {
+	assertCanCreateCommittee,
+	assertCanDeleteCommittee,
+	assertCanPlanCommitteeSeats,
+	assertCanUpdateCommittee,
+	registerCommitteeAbilities
+} from './committeePermissions';
+import {
+	createCommittee,
+	deleteCommittee,
+	setCommitteeNationSeat,
+	setCommitteeRegionalBaseline,
+	updateCommittee
+} from './committeeService';
 
-// Ported from abilities/entities/committee.ts
-abilityBuilder.committee.allow('read');
-abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
-
-// Project management sets up its committees. Which nations sit in them is the seat planning's
-// call, which the content lead shares (`setCommitteeNationSeat`, `setCommitteeRegionalBaseline`).
-abilityBuilder.committee
-	.allow('delete')
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
-// The content lead shapes the committees' content: names, headline and seats.
-abilityBuilder.committee
-	.allow('update')
-	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
+registerCommitteeAbilities();
 
 export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });
@@ -57,28 +40,16 @@ schemaBuilder.mutationFields((t) => ({
 			numOfSeatsPerDelegation: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			// creating a committee changes the conference set-up, which is the management's call
-			await assertTeamRole(ctx, args.conferenceId, PROJECT_MANAGEMENT_ROLES);
-			assertSeatsPerDelegationAllowed(args.numOfSeatsPerDelegation, []);
-
-			const created = await db
-				.insert(schema.committee)
-				.values({
-					conferenceId: args.conferenceId,
-					name: args.name,
-					abbreviation: args.abbreviation,
-					numOfSeatsPerDelegation: args.numOfSeatsPerDelegation
-				})
-				.returning({ id: schema.committee.id })
-				.then(assertFirstEntryExists);
+			await assertCanCreateCommittee(ctx, args.conferenceId);
+			const createdId = await createCommittee(args);
 
 			committeePubsub.created();
 
 			return db.query.committee
 				.findFirst(
 					query(
-						(await ctx.abilities.committee.filter('read')).merge({ where: { id: created.id } })
-							.query.single
+						(await ctx.abilities.committee.filter('read')).merge({ where: { id: createdId } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -95,26 +66,8 @@ schemaBuilder.mutationFields((t) => ({
 			numOfSeatsPerDelegation: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updateFilter = (await ctx.abilities.committee.filter('update')).merge({
-				where: { id: args.id }
-			});
-			const before = await db.query.committee
-				.findFirst({
-					where: updateFilter.query.single.where,
-					columns: { conferenceId: true, numOfSeatsPerDelegation: true },
-					with: {
-						nations: { columns: { alpha3Code: true } },
-						delegationMembers: { columns: { delegationId: true } }
-					}
-				})
-				.then(assertFindFirstExists);
-
-			assertSeatsPerDelegationAllowed(args.numOfSeatsPerDelegation, before.delegationMembers);
-
-			await db
-				.update(schema.committee)
-				.set(committeeUpdateData(args))
-				.where(updateFilter.sql.where);
+			const before = await assertCanUpdateCommittee(ctx, args.id);
+			await updateCommittee(args.id, before, args);
 
 			committeePubsub.updated(args.id);
 
@@ -146,36 +99,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleteFilter = (await ctx.abilities.committee.filter('delete')).merge({
-				where: { id: args.id }
-			});
-
-			const { conferenceId, nationAlpha3Codes } = await db.transaction(async (tx) => {
-				const existing = await tx.query.committee.findFirst({
-					where: deleteFilter.query.single.where,
-					columns: { id: true, conferenceId: true },
-					with: {
-						nations: { columns: { alpha3Code: true } },
-						delegationMembers: { columns: { id: true } }
-					}
-				});
-				if (!existing) {
-					throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-				}
-				const papers = await tx.query.paper.findMany({
-					where: { agendaItem: { committeeId: existing.id } },
-					columns: { id: true }
-				});
-
-				assertCommitteeDeletable(existing.delegationMembers.length, papers.length);
-
-				await tx.delete(schema.committee).where(eq(schema.committee.id, existing.id));
-
-				return {
-					conferenceId: existing.conferenceId,
-					nationAlpha3Codes: existing.nations.map((nation) => nation.alpha3Code)
-				};
-			});
+			await assertCanDeleteCommittee(ctx, args.id);
+			const { conferenceId, nationAlpha3Codes } = await deleteCommittee(args.id);
 
 			committeePubsub.removed();
 			// the agenda items go with it, its resolutions lose their committee
@@ -201,56 +126,13 @@ schemaBuilder.mutationFields((t) => ({
 			enabled: t.arg.boolean({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const committee = await db.query.committee
-				.findFirst({ where: { id: args.committeeId }, columns: { conferenceId: true } })
-				.then(assertFindFirstExists);
-			await assertTeamRole(ctx, committee.conferenceId, SEAT_PLANNING_ROLES);
-
-			const nation = await db.query.nation.findFirst({
-				where: { alpha3Code: args.nationAlpha3Code.toLowerCase() },
-				columns: { alpha3Code: true }
-			});
-			if (!nation) throw apiError('NOT_FOUND', m.nationNotFound());
-
-			if (args.enabled) {
-				await db
-					.insert(schema.committeeToNation)
-					.values({ a: args.committeeId, b: nation.alpha3Code })
-					.onConflictDoNothing();
-			} else {
-				await db.transaction(async (tx) => {
-					const blockers = await tx.query.delegationMember.findMany({
-						where: seatRemovalBlockersWhere(args.committeeId, nation.alpha3Code),
-						columns: { id: true },
-						with: { user: { columns: { givenName: true, familyName: true } } }
-					});
-
-					if (blockers.length > 0) {
-						throw apiError(
-							'CONFLICT',
-							m.seatRemovalBlocked({
-								members: blockers
-									.map(({ user }) => formatNames(user.givenName, user.familyName))
-									.join(', ')
-							})
-						);
-					}
-
-					await tx
-						.delete(schema.committeeToNation)
-						.where(
-							and(
-								eq(schema.committeeToNation.a, args.committeeId),
-								eq(schema.committeeToNation.b, nation.alpha3Code)
-							)
-						);
-				});
-
-				await tidyRoleApplicationsForRoles(committee.conferenceId, {
-					nationAlpha3Codes: [nation.alpha3Code]
-				});
-				roleApplicationPubsub.removed();
-			}
+			const committee = await assertCanPlanCommitteeSeats(ctx, args.committeeId);
+			await setCommitteeNationSeat(
+				{ id: args.committeeId, conferenceId: committee.conferenceId },
+				args.nationAlpha3Code,
+				args.enabled
+			);
+			if (!args.enabled) roleApplicationPubsub.removed();
 
 			committeePubsub.updated(args.committeeId);
 
@@ -278,21 +160,12 @@ schemaBuilder.mutationFields((t) => ({
 			targets: t.arg.intList()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const committee = await db.query.committee
-				.findFirst({
-					where: { id: args.committeeId },
-					columns: { conferenceId: true, regionalBaselineTargets: true }
-				})
-				.then(assertFindFirstExists);
-			await assertTeamRole(ctx, committee.conferenceId, SEAT_PLANNING_ROLES);
-
-			const targets = args.targets ?? committee.regionalBaselineTargets;
-			assertRegionalBaselineTargets(args.baseline, targets);
-
-			await db
-				.update(schema.committee)
-				.set({ regionalBaseline: args.baseline, regionalBaselineTargets: targets })
-				.where(eq(schema.committee.id, args.committeeId));
+			const committee = await assertCanPlanCommitteeSeats(ctx, args.committeeId);
+			await setCommitteeRegionalBaseline(
+				{ id: args.committeeId, regionalBaselineTargets: committee.regionalBaselineTargets },
+				args.baseline,
+				args.targets
+			);
 
 			committeePubsub.updated(args.committeeId);
 

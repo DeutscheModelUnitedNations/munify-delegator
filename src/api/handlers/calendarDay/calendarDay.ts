@@ -1,12 +1,11 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '$api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
+	assertCanCreateCalendarDay,
+	deletableCalendarDayWhere,
+	registerCalendarDayAbilities,
+	updatableCalendarDayWhere
+} from './calendarDayPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { createImportedDay, parseImportData } from './calendarDayService';
 import {
@@ -16,15 +15,9 @@ import {
 	placePubsub
 } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/calendarDay.ts
-abilityBuilder.calendarDay.allow('read');
-abilityBuilder.calendarDay.allow(['update', 'delete']).when(systemAdmin);
-
-abilityBuilder.calendarDay
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+registerCalendarDayAbilities();
 
 const CalendarDayRef = object({ table: 'calendarDay' });
 query({ table: 'calendarDay' });
@@ -38,7 +31,7 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreateCalendarDay(ctx, args.conferenceId);
 
 			const created = await db
 				.insert(schema.calendarDay)
@@ -80,10 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 					date: args.date ?? undefined,
 					sortOrder: args.sortOrder ?? undefined
 				})
-				.where(
-					(await ctx.abilities.calendarDay.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(await updatableCalendarDayWhere(ctx, args.id));
 
 			calendarDayPubsub.updated(args.id);
 
@@ -104,10 +94,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.calendarDay)
-				.where(
-					(await ctx.abilities.calendarDay.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
+				.where(await deletableCalendarDayWhere(ctx, args.id))
 				.returning({ id: schema.calendarDay.id });
 
 			if (deleted.length === 0) {
@@ -138,7 +125,7 @@ schemaBuilder.mutationFields((t) => ({
 			importData: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreateCalendarDay(ctx, args.conferenceId);
 
 			const importData = parseImportData(args.importData);
 

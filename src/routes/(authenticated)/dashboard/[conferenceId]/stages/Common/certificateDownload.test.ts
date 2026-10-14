@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { planCertificateDownload, type CertificateData } from './certificateDownload';
 
 const certificate: CertificateData = {
-	certificateContentUrl: '<p>Certificate</p>',
+	templateUrl: 'https://s3.test/certificate.pdf',
 	title: 'MUN SH 2026',
 	jwt: 'signed',
 	fullName: 'Ada Lovelace'
@@ -11,7 +11,7 @@ const certificate: CertificateData = {
 describe('planCertificateDownload', () => {
 	test('has nothing to download before the certificate is loaded or configured', () => {
 		expect(planCertificateDownload(undefined, 'u')).toEqual({ kind: 'unavailable' });
-		expect(planCertificateDownload({ ...certificate, certificateContentUrl: null }, 'u')).toEqual({
+		expect(planCertificateDownload({ ...certificate, templateUrl: null }, 'u')).toEqual({
 			kind: 'unavailable'
 		});
 		expect(planCertificateDownload(certificate, '')).toEqual({ kind: 'unavailable' });
@@ -30,7 +30,7 @@ describe('planCertificateDownload', () => {
 		expect(planCertificateDownload(certificate, 'u')).toEqual({
 			kind: 'ready',
 			holder: { fullName: 'Ada Lovelace', jwt: 'signed' },
-			content: '<p>Certificate</p>',
+			content: 'https://s3.test/certificate.pdf',
 			filename: 'Ada-Lovelace_MUN-SH 2026_certificate.pdf'
 		});
 	});

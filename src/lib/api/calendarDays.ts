@@ -28,7 +28,8 @@ export function fetchCalendarDays(conferenceId: string) {
 				longitude: true,
 				directions: true,
 				info: true,
-				websiteUrl: true
+				websiteUrl: true,
+				sitePlanFile: { url: true }
 			},
 			room: true,
 			tracks: { id: true }

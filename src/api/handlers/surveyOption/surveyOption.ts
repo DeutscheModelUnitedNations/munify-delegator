@@ -1,33 +1,17 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '$api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	isTeamMemberOfConference,
-	assertTeamRoleForSurveyQuestion,
-	isParticipantOfConference,
-	systemAdmin
-} from '$api/services/authHelper';
+	assertCanCreateSurveyOption,
+	deletableSurveyOptionWhere,
+	registerSurveyOptionAbilities,
+	updatableSurveyOptionWhere
+} from './surveyOptionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { surveyOptionPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/surveyOption.ts
-abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Participants see the options of the questions they may see.
-abilityBuilder.surveyOption.allow('read').when((ctx) => {
-	const participant = isParticipantOfConference(ctx);
-	return participant
-		? { where: { question: { ...participant, draft: false, hidden: false } } }
-		: undefined;
-});
-
-// Scoped through the question, which carries the conference.
-abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
-	const question = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return question ? { where: { question } } : undefined;
-});
+registerSurveyOptionAbilities();
 
 const SurveyOptionRef = object({
 	table: 'surveyOption',
@@ -58,7 +42,7 @@ schemaBuilder.mutationFields((t) => ({
 			upperLimit: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRoleForSurveyQuestion(ctx, args.questionId);
+			await assertCanCreateSurveyOption(ctx, args.questionId);
 
 			const created = await db
 				.insert(schema.surveyOption)
@@ -100,10 +84,7 @@ schemaBuilder.mutationFields((t) => ({
 					description: args.description ?? undefined,
 					upperLimit: args.upperLimit ?? undefined
 				})
-				.where(
-					(await ctx.abilities.surveyOption.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(await updatableSurveyOptionWhere(ctx, args.id));
 
 			surveyOptionPubsub.updated(args.id);
 
@@ -124,10 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.surveyOption)
-				.where(
-					(await ctx.abilities.surveyOption.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
+				.where(await deletableSurveyOptionWhere(ctx, args.id))
 				.returning({ id: schema.surveyOption.id });
 			if (deleted.length === 0) {
 				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());

@@ -2,12 +2,8 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { OIDC_ROLE_CLAIM } from '$app/env/private';
 import { oidcRoles } from './services/OIDC';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-/**
- * Reads the roles claim, whose shape depends on the provider: Logto sends an array of names or
- * role objects, Zitadel an object keyed by role name.
- */
 function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][] {
 	if (!OIDC_ROLE_CLAIM) return [];
 
@@ -32,12 +28,6 @@ function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][
 	);
 }
 
-/**
- * Builds the request context every handler sees.
- *
- * The session itself comes from `event.locals.oidc`, which `OIDC.handle` puts there — the app no
- * longer parses cookies or validates tokens of its own accord.
- */
 export function context(req: RequestEvent) {
 	const OIDCRoleNames = parseRoles(req.locals);
 	const parsedUser = req.locals.oidc?.user;

@@ -30,8 +30,9 @@
 	}
 
 	const conference = $derived(
-		await client.liveQuery.conference({ __args: { id: conferenceId }, emblemUrl: true })
+		await client.liveQuery.conference({ __args: { id: conferenceId }, emblemFile: { url: true } })
 	);
+	const emblemUrl = $derived(conference.emblemFile?.url);
 
 	onMount(() => {
 		void renew();
@@ -57,11 +58,11 @@
 						data: code,
 						shape: 'circle',
 						// a logo needs the highest correction; without one a lower level keeps the code coarser
-						errorCorrectionLevel: conference.emblemUrl ? 'H' : 'M',
+						errorCorrectionLevel: emblemUrl ? 'H' : 'M',
 						moduleFill: '#01548F',
 						anchorOuterFill: '#1B1837',
 						anchorInnerFill: '#01548F',
-						logo: conference.emblemUrl ?? undefined
+						logo: emblemUrl ?? undefined
 					}}
 					class="w-full"
 				></svg>

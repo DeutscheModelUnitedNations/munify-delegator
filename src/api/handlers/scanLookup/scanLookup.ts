@@ -1,6 +1,6 @@
 import { enum_, schemaBuilder } from '$api/rumble';
-import { assertTeamRole } from '$api/services/authHelper';
 import { lookupScan } from './scanLookupService';
+import { assertCanLookupScan } from './scanLookupPermissions';
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 
@@ -48,7 +48,7 @@ schemaBuilder.queryFields((t) => ({
 			code: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId);
+			await assertCanLookupScan(ctx, args.conferenceId);
 			return lookupScan(args.conferenceId, args.code);
 		}
 	})

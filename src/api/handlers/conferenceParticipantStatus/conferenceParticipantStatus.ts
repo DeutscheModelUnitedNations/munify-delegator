@@ -1,58 +1,21 @@
 import { db } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	isOwnUser,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { setAttendanceForAll, upsertParticipantStatus } from './conferenceParticipantStatusService';
+import {
+	createStatus,
+	planParticipantStatusUpsert,
+	setAttendanceForAll,
+	updateStatus
+} from './conferenceParticipantStatusService';
+import {
+	assertCanCreateParticipantStatus,
+	assertCanSetAttendanceForAll,
+	assertCanUpdateParticipantStatus,
+	registerConferenceParticipantStatusAbilities
+} from './conferenceParticipantStatusPermissions';
 import { conferenceParticipantStatusPubsub } from '$api/pubsub';
 
-// Ported from abilities/entities/conferenceParticipantStatus.ts
-abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users see their own status.
-abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => where(isOwnUser(ctx)));
-
-// Supervisors see the status of the participants they supervise, in the conference they supervise
-// them in.
-abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					conference: { conferenceSupervisors: { user: { id } } },
-					user: {
-						OR: [
-							{ delegationMemberships: { supervisors: { user: { id } } } },
-							{ singleParticipant: { supervisors: { user: { id } } } }
-						]
-					}
-				}
-			}
-		: undefined;
-});
-
-// Delegation members see the status of their co-delegates.
-abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					user: { delegationMemberships: { delegation: { members: { user: { id } } } } }
-				}
-			}
-		: undefined;
-});
-
-// Participant care and project management manage their conference's statuses.
-abilityBuilder.conferenceParticipantStatus
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+registerConferenceParticipantStatusAbilities();
 
 const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
 
@@ -94,7 +57,15 @@ schemaBuilder.mutationFields((t) => ({
 			accessCardId: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const statusId = await upsertParticipantStatus(ctx, args);
+			const upsert = await planParticipantStatusUpsert(args);
+			let statusId: string;
+			if (upsert.existingId !== undefined) {
+				await assertCanUpdateParticipantStatus(ctx, upsert.existingId);
+				statusId = await updateStatus(upsert.existingId, upsert.values);
+			} else {
+				await assertCanCreateParticipantStatus(ctx, args.conferenceId, upsert.userId);
+				statusId = await createStatus(upsert.values, args.conferenceId, upsert.userId);
+			}
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
 			conferenceParticipantStatusPubsub.updated(statusId);
@@ -119,7 +90,8 @@ schemaBuilder.mutationFields((t) => ({
 			didAttend: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			const changed = await setAttendanceForAll(ctx, args);
+			await assertCanSetAttendanceForAll(ctx, args.conferenceId);
+			const changed = await setAttendanceForAll(args);
 
 			conferenceParticipantStatusPubsub.created();
 

@@ -1,25 +1,18 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '$api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRoleForCalendarDay,
-	isTeamMemberOfConference,
-	systemAdmin
-} from '$api/services/authHelper';
+	assertCanCreateCalendarTrack,
+	deletableCalendarTrackWhere,
+	registerCalendarTrackAbilities,
+	updatableCalendarTrackWhere
+} from './calendarTrackPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { inArray } from 'drizzle-orm';
 import { calendarEntryPubsub, calendarTrackPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/calendarTrack.ts
-abilityBuilder.calendarTrack.allow('read');
-abilityBuilder.calendarTrack.allow(['update', 'delete']).when(systemAdmin);
-
-abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
-	const calendarDay = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return calendarDay ? { where: { calendarDay } } : undefined;
-});
+registerCalendarTrackAbilities();
 
 const CalendarTrackRef = object({ table: 'calendarTrack' });
 query({ table: 'calendarTrack' });
@@ -34,7 +27,7 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
+			await assertCanCreateCalendarTrack(ctx, args.calendarDayId);
 
 			const created = await db
 				.insert(schema.calendarTrack)
@@ -77,10 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 					sortOrder: args.sortOrder ?? undefined,
 					description: args.description
 				})
-				.where(
-					(await ctx.abilities.calendarTrack.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(await updatableCalendarTrackWhere(ctx, args.id));
 
 			calendarTrackPubsub.updated(args.id);
 
@@ -99,9 +89,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleteFilter = (await ctx.abilities.calendarTrack.filter('delete')).merge({
-				where: { id: args.id }
-			}).sql.where;
+			const deleteFilter = await deletableCalendarTrackWhere(ctx, args.id);
 
 			// Entries that run on this track alone would be left without one, so they go with it
 			const linked = await db.query.calendarEntry.findMany({

@@ -35,7 +35,7 @@ const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>(
 /**
  * Every environment variable the app reads, validated when it starts (or builds). Import them by
  * name from `$app/env/private` (server only) or `$app/env/public` (also the browser).
- * `src/jobs/` reads its own variables from `process.env`, since it runs outside SvelteKit.
+ * `src/jobs/` validates its own variables in `src/jobs/config.ts`, since it runs outside SvelteKit.
  */
 export const variables = defineEnvVars({
 	// --- Private ---

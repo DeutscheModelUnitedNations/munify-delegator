@@ -1,26 +1,15 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { refreshSchoolSuggestions } from './schoolSuggestions';
+import {
+	assertCanAnalyzeSchoolSuggestions,
+	readableSchoolRegistrations,
+	registerSchoolSuggestionAbilities,
+	updatableSchoolSuggestion
+} from './schoolSuggestionPermissions';
 import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '$api/pubsub';
 
-abilityBuilder.schoolSuggestion.allow(['read', 'update']).when(systemAdmin);
-abilityBuilder.schoolSuggestionVariant.allow('read').when(systemAdmin);
-
-// The cleanup page belongs to the people who manage the participants.
-abilityBuilder.schoolSuggestion
-	.allow(['read', 'update'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-abilityBuilder.schoolSuggestionVariant.allow('read').when((ctx) => {
-	const conference = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return conference ? { where: { suggestion: conference } } : undefined;
-});
+registerSchoolSuggestionAbilities();
 
 object({ table: 'schoolSuggestion' });
 object({ table: 'schoolSuggestionVariant' });
@@ -32,8 +21,11 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			await refreshSchoolSuggestions(args.conferenceId, ctx);
+			await assertCanAnalyzeSchoolSuggestions(ctx, args.conferenceId);
+			await refreshSchoolSuggestions(
+				args.conferenceId,
+				await readableSchoolRegistrations(ctx, args.conferenceId)
+			);
 			schoolSuggestionPubsub.updated();
 			schoolSuggestionVariantPubsub.updated();
 			return true;
@@ -47,10 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.schoolSuggestion)
 				.set({ dismissed: true })
-				.where(
-					(await ctx.abilities.schoolSuggestion.filter('update')).merge({ where: { id: args.id } })
-						.sql.where
-				);
+				.where(await updatableSchoolSuggestion(ctx, args.id));
 			schoolSuggestionPubsub.updated(args.id);
 			return true;
 		}

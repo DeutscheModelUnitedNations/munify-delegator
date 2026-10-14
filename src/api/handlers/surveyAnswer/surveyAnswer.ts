@@ -1,27 +1,11 @@
 import { db } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	isOwnUser,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
-import { saveSurveyAnswer } from './surveyAnswerService';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { loadAnswerOption, saveSurveyAnswer } from './surveyAnswerService';
+import { assertCanAnswerSurvey, registerSurveyAnswerAbilities } from './surveyAnswerPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { surveyAnswerPubsub, surveyOptionPubsub } from '$api/pubsub';
 
-// Ported from abilities/entities/surveyAnswer.ts
-abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users read and update their own answers (no delete, matching the CASL rule).
-abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => where(isOwnUser(ctx)));
-
-// Participant care and project management manage their conference's answers.
-abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
-	const question = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return question ? { where: { question } } : undefined;
-});
+registerSurveyAnswerAbilities();
 
 const SurveyAnswerRef = object({ table: 'surveyAnswer' });
 query({ table: 'surveyAnswer' });
@@ -41,7 +25,9 @@ schemaBuilder.mutationFields((t) => ({
 			optionId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const { answerId, existed } = await saveSurveyAnswer(ctx, args);
+			const option = await loadAnswerOption(args);
+			const answer = await assertCanAnswerSurvey(ctx, option, args);
+			const { answerId, existed } = await saveSurveyAnswer(option, answer);
 
 			// A new row has to reach list queries (`created`), which an update of its id does not.
 			if (existed) surveyAnswerPubsub.updated(answerId);

@@ -1,81 +1,29 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, countQuery, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isOwnUser,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	connectParticipantToSupervisor,
+	findSupervisorByConnectionCode,
 	previewSupervisorByCode,
-	registerSupervisor
+	registerSupervisor,
+	rotateConnectionCode
 } from './conferenceSupervisorService';
+import {
+	assertCanBeSupervised,
+	assertCanConnectToConferenceSupervisor,
+	assertCanCreateConferenceSupervisor,
+	assertCanPreviewConferenceSupervisor,
+	assertCanRotateSupervisorConnectionCode,
+	registerConferenceSupervisorAbilities,
+	updatableConferenceSupervisor
+} from './conferenceSupervisorPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
-import { eq } from 'drizzle-orm';
 import {
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
 
-// Ported from abilities/entities/conferenceSupervisor.ts
-abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Participant care and project management manage their conference's supervisors.
-abilityBuilder.conferenceSupervisor
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-/**
- * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is
- * the supervisor's to hand out: only they and participant care read it.
- */
-const WITHOUT_CONNECTION_CODE = { connectionCode: false };
-
-// Supervised participants see their own supervisors.
-abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					OR: [
-						{ supervisedDelegationMembers: { user: { id } } },
-						{ supervisedSingleParticipants: { user: { id } } }
-					]
-				},
-				columns: WITHOUT_CONNECTION_CODE
-			}
-		: undefined;
-});
-
-// Supervisors manage their own entry.
-abilityBuilder.conferenceSupervisor
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isOwnUser(ctx)));
-
-// Supervisors see the other supervisors of the participants they share - the group payment page
-// splits a fee between them.
-abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	if (!id) return undefined;
-	const supervisedByMe = { supervisors: { user: { id } } };
-	return {
-		where: {
-			OR: [
-				{ supervisedDelegationMembers: supervisedByMe },
-				{ supervisedSingleParticipants: supervisedByMe }
-			]
-		},
-		columns: WITHOUT_CONNECTION_CODE
-	};
-});
+registerConferenceSupervisorAbilities();
 
 const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
@@ -90,17 +38,8 @@ schemaBuilder.mutationFields((t) => ({
 			plansOwnAttendenceAtConference: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
-			const subjectId = args.userId ?? callerId;
-
-			// Assigning somebody else needs participant care, project management or admin. Registering
-			// yourself does not - which is why the check is gated on `args.userId` being present.
-			if (args.userId && args.userId !== callerId) {
-				await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			}
+			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
+			await assertCanCreateConferenceSupervisor(ctx, args.conferenceId, args.userId);
 
 			const createdId = await registerSupervisor({
 				conferenceId: args.conferenceId,
@@ -132,11 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.conferenceSupervisor)
 				.set({ plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined })
-				.where(
-					(await ctx.abilities.conferenceSupervisor.filter('update')).merge({
-						where: { id: args.id }
-					}).sql.where
-				);
+				.where(await updatableConferenceSupervisor(ctx, args.id));
 
 			conferenceSupervisorPubsub.updated(args.id);
 
@@ -161,22 +96,15 @@ schemaBuilder.mutationFields((t) => ({
 			userId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
-			const subjectId = args.userId ?? callerId;
-			// Connecting somebody else is participant care's job (the user card's supervisor modal);
-			// the code alone only lets a participant attach themselves.
-			if (subjectId !== callerId) {
-				await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			}
+			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
+			await assertCanConnectToConferenceSupervisor(ctx, args.conferenceId, subjectId);
 
-			const linked = await connectParticipantToSupervisor(
+			const supervisor = await findSupervisorByConnectionCode(
 				args.conferenceId,
-				args.connectionCode,
-				subjectId
+				args.connectionCode
 			);
+			const participation = await assertCanBeSupervised(args.conferenceId, subjectId);
+			const linked = await connectParticipantToSupervisor(supervisor.id, participation);
 
 			// Nothing on the supervisor row itself changed, but who it supervises did.
 			conferenceSupervisorPubsub.updated(linked.supervisorId);
@@ -203,22 +131,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceSupervisorRef,
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			// The supervisor themselves, participant care and project management, and admins: the
-			// row's update ability.
-			const supervisor = await db.query.conferenceSupervisor.findFirst({
-				...(await ctx.abilities.conferenceSupervisor.filter('update')).merge({
-					where: { id: args.id }
-				}).query.single,
-				columns: { id: true }
-			});
-			if (!supervisor) {
-				throw apiError('FORBIDDEN', m.supervisorRotateForbidden());
-			}
-
-			await db
-				.update(schema.conferenceSupervisor)
-				.set({ connectionCode: makeEntryCode() })
-				.where(eq(schema.conferenceSupervisor.id, supervisor.id));
+			const supervisor = await assertCanRotateSupervisorConnectionCode(ctx, args.id);
+			await rotateConnectionCode(supervisor.id);
 
 			conferenceSupervisorPubsub.updated(supervisor.id);
 
@@ -257,9 +171,9 @@ schemaBuilder.queryFields((t) => ({
 			connectionCode: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const caller = ctx.mustBeLoggedIn();
+			await assertCanPreviewConferenceSupervisor(ctx, args.conferenceId);
 
-			return previewSupervisorByCode(args.conferenceId, args.connectionCode, caller.sub);
+			return previewSupervisorByCode(args.conferenceId, args.connectionCode);
 		}
 	})
 }));

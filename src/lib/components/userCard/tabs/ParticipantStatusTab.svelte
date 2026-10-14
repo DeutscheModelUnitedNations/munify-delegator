@@ -144,7 +144,7 @@
 			const [conferenceData, jwtData, user] = await Promise.all([
 				client.query.conference({
 					__args: { id: conferenceId },
-					certificateContentUrl: true,
+					certificateFile: { url: true },
 					title: true
 				}),
 				client.query.getCertificateJWT({
@@ -162,7 +162,7 @@
 
 			await downloadCompleteCertificate(
 				jwtData,
-				conferenceData.certificateContentUrl ?? undefined,
+				conferenceData.certificateFile?.url,
 				`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 					givenNameFirst: false,
 					delimiter: '_'

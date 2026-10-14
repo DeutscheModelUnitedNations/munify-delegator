@@ -1,65 +1,20 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	CONFERENCE_CONTENT_ROLES,
-	assertTeamRole,
-	isParticipantOfConference,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
-import { fileUrl } from '$api/services/files/storage';
-import { claimUploadedFile } from '$api/services/files/uploads';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 import { resolutionPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import {
+	assertCanCreateResolution,
+	assertCanDeleteResolution,
+	assertCanUpdateResolution,
+	registerResolutionAbilities
+} from './resolutionPermissions';
 
-abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
+registerResolutionAbilities();
 
-// Everybody with a part in the conference downloads its adopted resolutions: participants,
-// supervisors and the team.
-abilityBuilder.resolution.allow('read').when((ctx) => where(isParticipantOfConference(ctx)));
-abilityBuilder.resolution.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
-
-// Project management, participant care and the content lead upload and curate them.
-abilityBuilder.resolution
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, CONFERENCE_CONTENT_ROLES)));
-
-const ResolutionRef = object({
-	table: 'resolution',
-	adjust: (t) => ({
-		/** The PDF, straight from the bucket, named as it was uploaded. */
-		contentUrl: t.field({
-			type: 'String',
-			resolve: async (resolution) =>
-				(await fileUrl(
-					'resolution',
-					'content',
-					resolution.conferenceId,
-					resolution.fileId,
-					resolution.fileName
-				)) ?? ''
-		})
-	})
-});
+const ResolutionRef = object({ table: 'resolution' });
 query({ table: 'resolution' });
-
-/** A committee tag is optional, but one that is given has to be the resolution's conference's. */
-async function assertCommitteeInConference(
-	committeeId: string | null | undefined,
-	conferenceId: string
-) {
-	if (!committeeId) return;
-	const committee = await db.query.committee.findFirst({
-		where: { id: committeeId, conferenceId },
-		columns: { id: true }
-	});
-	if (!committee) {
-		throw apiError('INVALID_INPUT', m.resolutionCommitteeOtherConference());
-	}
-}
 
 schemaBuilder.mutationFields((t) => ({
 	createResolution: t.drizzleField({
@@ -74,14 +29,9 @@ schemaBuilder.mutationFields((t) => ({
 			fileId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, CONFERENCE_CONTENT_ROLES);
-			await assertCommitteeInConference(args.committeeId, args.conferenceId);
+			await assertCanCreateResolution(ctx, args);
 			// Its type and size were checked when the upload was handed out.
-			const fileId = await claimUploadedFile(ctx, args.fileId, {
-				kind: 'resolution',
-				field: 'content',
-				conferenceId: args.conferenceId
-			});
+			const fileId = await ensureUploadComplete(args.fileId);
 
 			const created = await db
 				.insert(schema.resolution)
@@ -117,15 +67,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const resolution = await db.query.resolution
-				.findFirst({
-					...(await ctx.abilities.resolution.filter('update')).merge({ where: { id: args.id } })
-						.query.single,
-					columns: { id: true, conferenceId: true }
-				})
-				.then(assertFindFirstExists);
-
-			await assertCommitteeInConference(args.committeeId, resolution.conferenceId);
+			await assertCanUpdateResolution(ctx, args.id, args.committeeId);
 
 			await db
 				.update(schema.resolution)
@@ -134,10 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 					title: args.title?.trim() || undefined,
 					committeeId: args.committeeId
 				})
-				.where(
-					(await ctx.abilities.resolution.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(eq(schema.resolution.id, args.id));
 
 			resolutionPubsub.updated(args.id);
 
@@ -156,16 +95,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.resolution)
-				.where(
-					(await ctx.abilities.resolution.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
-				.returning({ id: schema.resolution.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await assertCanDeleteResolution(ctx, args.id);
+			await db.delete(schema.resolution).where(eq(schema.resolution.id, args.id));
 			resolutionPubsub.removed();
 			return true;
 		}

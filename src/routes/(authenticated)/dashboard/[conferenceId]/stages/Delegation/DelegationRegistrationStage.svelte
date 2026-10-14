@@ -7,6 +7,11 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import codenmz from '$lib/helpers/codenamize';
+	import {
+		applicationTextsComplete,
+		MIN_DELEGATION_MEMBERS,
+		MIN_ROLE_APPLICATIONS
+	} from '$lib/helpers/applicationReadiness';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
@@ -51,18 +56,14 @@
 
 	let invitePeopleCompleted = $derived(
 		delegationMember.delegation?.members?.length
-			? delegationMember.delegation?.members?.length > 1
+			? delegationMember.delegation?.members?.length >= MIN_DELEGATION_MEMBERS
 			: undefined
 	);
 
-	let answerQuestionaireCompleted = $derived(
-		!!delegationMember.delegation?.school &&
-			!!delegationMember.delegation?.motivation &&
-			!!delegationMember.delegation?.experience
-	);
+	let answerQuestionaireCompleted = $derived(applicationTextsComplete(delegationMember.delegation));
 
 	let enterDelegationPreferencesCompleted = $derived(
-		(delegationMember.delegation.appliedForRoles?.length ?? 0) >= 3
+		(delegationMember.delegation.appliedForRoles?.length ?? 0) >= MIN_ROLE_APPLICATIONS.delegation
 	);
 
 	let todos = $derived([

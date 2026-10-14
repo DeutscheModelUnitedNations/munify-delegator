@@ -1,6 +1,27 @@
 import { nanoid } from '../../../lib/helpers/nanoid';
-import { filePurpose, objectKey, type Storage } from '../../services/files/storageClient';
+import {
+	createStorage,
+	filePurpose,
+	objectKey,
+	type Storage
+} from '../../handlers/storedFile/storageClient';
 import type { SeedBatch } from './batch';
+
+/** The bucket, configured like the app from `.env`: the seed runs outside SvelteKit. */
+export function seedStorage(): Storage {
+	const required = (name: string) => {
+		const value = process.env[name];
+		if (!value) throw new Error(`${name} is not set`);
+		return value;
+	};
+	return createStorage({
+		endpoint: required('S3_ENDPOINT'),
+		publicEndpoint: process.env.S3_PUBLIC_ENDPOINT || undefined,
+		accessKeyId: required('S3_ACCESS_KEY_ID'),
+		secretAccessKey: required('S3_SECRET_ACCESS_KEY'),
+		region: process.env.S3_REGION || 'us-east-1'
+	});
+}
 
 /**
  * Adds an uploaded file to the batch, as if the team had uploaded it for `kind`/`field` of the

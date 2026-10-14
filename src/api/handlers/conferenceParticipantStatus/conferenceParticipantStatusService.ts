@@ -1,12 +1,9 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
-import type { Context } from '$api/context';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole, participatesIn } from '$api/services/authHelper';
 import { nullToUndefined } from '$api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { type SQL, eq, max } from 'drizzle-orm';
+import { eq, max } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
 async function targetUserIdOf(args: { userId?: string | null; userEmail?: string | null }) {
@@ -34,12 +31,15 @@ async function documentNumberOf(args: {
 
 type StatusValues = Partial<typeof schema.conferenceParticipantStatus.$inferInsert>;
 
-/** Updates the status row the caller's `update` ability narrowed down to. */
-async function updateStatus(updatable: SQL | undefined, values: StatusValues) {
+/**
+ * Updates the status row `id`; whether the caller may is checked before
+ * (`assertCanUpdateParticipantStatus`).
+ */
+export async function updateStatus(id: string, values: StatusValues) {
 	const [updated] = await db
 		.update(schema.conferenceParticipantStatus)
 		.set(values)
-		.where(updatable)
+		.where(eq(schema.conferenceParticipantStatus.id, id))
 		.returning({ id: schema.conferenceParticipantStatus.id });
 	if (!updated) {
 		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
@@ -48,29 +48,10 @@ async function updateStatus(updatable: SQL | undefined, values: StatusValues) {
 }
 
 /**
- * Creates a status row. There is no row for the update ability to judge yet, so this is the
- * conference's participant care asking, for somebody who actually belongs to the conference.
+ * Creates a status row; whether the caller may, for this user, is checked before
+ * (`assertCanCreateParticipantStatus`).
  */
-async function createStatus(
-	ctx: Context,
-	values: StatusValues,
-	conferenceId: string,
-	userId: string | undefined
-) {
-	if (!userId) {
-		throw apiError('INVALID_INPUT', m.participantStatusNeedsUser());
-	}
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
-	const member = await db.query.user.findFirst({
-		where: {
-			id: userId,
-			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
-		},
-		columns: { id: true }
-	});
-	if (!member) {
-		throw apiError('INVALID_INPUT', m.userNotInConference());
-	}
+export async function createStatus(values: StatusValues, conferenceId: string, userId: string) {
 	const created = await db
 		.insert(schema.conferenceParticipantStatus)
 		.values({ ...values, userId, conferenceId })
@@ -95,11 +76,29 @@ export type StatusUpdateArgs = {
 	accessCardId?: string | null;
 };
 
+/** Refuses an access card another participant of the conference already carries. */
+async function assertAccessCardFree(
+	conferenceId: string,
+	accessCardId: string,
+	ownId: string | undefined
+) {
+	const holder = await db.query.conferenceParticipantStatus.findFirst({
+		where: { conferenceId, accessCardId, ...(ownId ? { id: { ne: ownId } } : {}) },
+		columns: { id: true }
+	});
+	if (holder) throw apiError('CONFLICT', m.accessCardTaken());
+}
+
 /**
- * Upserts a participant's status and answers the id of the row that now holds it. The row is
- * addressed either by id, or by conference plus user id, or by conference plus user email.
+ * Works out what upserting a participant's status writes: the values, and either the existing row
+ * to update or the user to create one for. The row is addressed either by id, or by conference
+ * plus user id, or by conference plus user email.
  */
-export async function upsertParticipantStatus(ctx: ApiContext, args: StatusUpdateArgs) {
+export async function planParticipantStatusUpsert(
+	args: StatusUpdateArgs
+): Promise<
+	{ values: StatusValues } & ({ existingId: string } | { existingId?: undefined; userId: string })
+> {
 	if (!args.id && !args.userId && !args.userEmail) {
 		throw apiError('INVALID_INPUT', m.participantStatusNeedsLookup());
 	}
@@ -123,38 +122,21 @@ export async function upsertParticipantStatus(ctx: ApiContext, args: StatusUpdat
 	});
 
 	if (values.accessCardId) {
-		const holder = await db.query.conferenceParticipantStatus.findFirst({
-			where: {
-				conferenceId: args.conferenceId,
-				accessCardId: values.accessCardId,
-				...(existing ? { id: { ne: existing.id } } : {})
-			},
-			columns: { id: true }
-		});
-		if (holder) {
-			throw apiError('CONFLICT', m.accessCardTaken());
-		}
+		await assertAccessCardFree(args.conferenceId, values.accessCardId, existing?.id);
 	}
 
-	const statusId = existing
-		? await updateStatus(
-				(await ctx.abilities.conferenceParticipantStatus.filter('update')).merge({
-					where: { id: existing.id }
-				}).sql.where,
-				values
-			)
-		: await createStatus(ctx, values, args.conferenceId, targetUserId);
-
-	return statusId;
+	if (existing) return { values, existingId: existing.id };
+	if (!targetUserId) {
+		throw apiError('INVALID_INPUT', m.participantStatusNeedsUser());
+	}
+	return { values, userId: targetUserId };
 }
 
 /** Bulk attendance toggle across a whole conference; answers how many participants it touched. */
-export async function setAttendanceForAll(
-	ctx: ApiContext,
-	args: { conferenceId: string; didAttend?: boolean | null }
-) {
-	await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-
+export async function setAttendanceForAll(args: {
+	conferenceId: string;
+	didAttend?: boolean | null;
+}) {
 	const participants = await db.query.user.findMany({
 		where: {
 			OR: [

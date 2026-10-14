@@ -796,8 +796,10 @@ export type Conference = {
     search?: String | null | undefined,
     where?: CalendardayWhereInputArgument | null | undefined
   }) => Calendarday[],
-  certificateContentSet: Boolean,
-  certificateContentUrl: String | null,
+  certificateFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   certificateFileId: ID | null,
   committees: (p?: {
     limit?: Int | null | undefined,
@@ -820,8 +822,10 @@ export type Conference = {
     search?: String | null | undefined,
     where?: ConferenceparticipantstatusWhereInputArgument | null | undefined
   }) => Conferenceparticipantstatus[],
-  contractContentSet: Boolean,
-  contractContentUrl: String | null,
+  contractFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   contractFileId: ID | null,
   createdAt: DateTime,
   currency: String | null,
@@ -839,17 +843,25 @@ export type Conference = {
     search?: String | null | undefined,
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
+  emblemFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   emblemFileId: ID | null,
-  emblemUrl: String | null,
   endConference: DateTime,
   feeAmount: Float | null,
-  guardianConsentContentSet: Boolean,
-  guardianConsentContentUrl: String | null,
+  guardianConsentFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   guardianConsentFileId: ID | null,
   iban: String | null,
   id: ID,
+  imageFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   imageFileId: ID | null,
-  imageUrl: String | null,
   individualApplicationOptions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -865,11 +877,16 @@ export type Conference = {
   linkToServicesPage: String | null,
   linkToTeamWiki: String | null,
   location: String | null,
+  logoFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   logoFileId: ID | null,
-  logoUrl: String | null,
   longTitle: String | null,
-  mediaConsentContentSet: Boolean,
-  mediaConsentContentUrl: String | null,
+  mediaConsentFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   mediaConsentFileId: ID | null,
   nametagBinCount: Int,
   nextDocumentNumber: Int,
@@ -950,8 +967,10 @@ export type Conference = {
     search?: String | null | undefined,
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Teammember[],
-  termsAndConditionsContentSet: Boolean,
-  termsAndConditionsContentUrl: String | null,
+  termsAndConditionsFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   termsAndConditionsFileId: ID | null,
   timezone: String,
   title: String,
@@ -1033,21 +1052,26 @@ export type ConferenceWhereInputArgument = {
   bankName?: StringWhereInputArgument | null | undefined,
   bic?: StringWhereInputArgument | null | undefined,
   calendarDays?: CalendardayWhereInputArgument | null | undefined,
+  certificateFile?: StoredfileWhereInputArgument | null | undefined,
   certificateFileId?: IDWhereInputArgument | null | undefined,
   committees?: CommitteeWhereInputArgument | null | undefined,
   conferenceSupervisors?: ConferencesupervisorWhereInputArgument | null | undefined,
   conferenceUserStatus?: ConferenceparticipantstatusWhereInputArgument | null | undefined,
+  contractFile?: StoredfileWhereInputArgument | null | undefined,
   contractFileId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   currency?: StringWhereInputArgument | null | undefined,
   delegationMembers?: DelegationmemberWhereInputArgument | null | undefined,
   delegations?: DelegationWhereInputArgument | null | undefined,
+  emblemFile?: StoredfileWhereInputArgument | null | undefined,
   emblemFileId?: IDWhereInputArgument | null | undefined,
   endConference?: DateTimeWhereInputArgument | null | undefined,
   feeAmount?: FloatWhereInputArgument | null | undefined,
+  guardianConsentFile?: StoredfileWhereInputArgument | null | undefined,
   guardianConsentFileId?: IDWhereInputArgument | null | undefined,
   iban?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
+  imageFile?: StoredfileWhereInputArgument | null | undefined,
   imageFileId?: IDWhereInputArgument | null | undefined,
   individualApplicationOptions?: CustomconferenceroleWhereInputArgument | null | undefined,
   info?: StringWhereInputArgument | null | undefined,
@@ -1058,8 +1082,10 @@ export type ConferenceWhereInputArgument = {
   linkToServicesPage?: StringWhereInputArgument | null | undefined,
   linkToTeamWiki?: StringWhereInputArgument | null | undefined,
   location?: StringWhereInputArgument | null | undefined,
+  logoFile?: StoredfileWhereInputArgument | null | undefined,
   logoFileId?: IDWhereInputArgument | null | undefined,
   longTitle?: StringWhereInputArgument | null | undefined,
+  mediaConsentFile?: StoredfileWhereInputArgument | null | undefined,
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
   nonStateActors?: NonstateactorWhereInputArgument | null | undefined,
@@ -1083,6 +1109,7 @@ export type ConferenceWhereInputArgument = {
   surveyQuestions?: SurveyquestionWhereInputArgument | null | undefined,
   teamMemberInvitations?: TeammemberinvitationWhereInputArgument | null | undefined,
   teamMembers?: TeammemberWhereInputArgument | null | undefined,
+  termsAndConditionsFile?: StoredfileWhereInputArgument | null | undefined,
   termsAndConditionsFileId?: IDWhereInputArgument | null | undefined,
   timezone?: StringWhereInputArgument | null | undefined,
   title?: StringWhereInputArgument | null | undefined,
@@ -1529,11 +1556,6 @@ export type EmailStatusResult = {
   pendingInvitationId: String | null,
   status: String,
   userId: String | null    
-};
-		
-export type FileUpload = {
-  fileId: ID,
-  uploadUrl: String    
 };
 		
 export type FlagCollectionData = {
@@ -2034,7 +2056,7 @@ export type Mutation = {
     kind: String,
     mimeType: String,
     size: Int
-  }) => FileUpload,
+  }) => Storedfile,
   resetAssignmentSize: (p: {
     conferenceId: ID,
     seats: Int
@@ -2774,15 +2796,17 @@ export type Place = {
   conferenceId: ID,
   createdAt: DateTime,
   directions: String | null,
-  hasSitePlan: Boolean,
   id: ID,
   info: String | null,
   latitude: Float | null,
   longitude: Float | null,
   name: String,
   search_distance: Float | null,
+  sitePlanFile: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile | null,
   sitePlanFileId: ID | null,
-  sitePlanUrl: String | null,
   updatedAt: DateTime,
   websiteUrl: String | null    
 };
@@ -2817,6 +2841,7 @@ export type PlaceWhereInputArgument = {
   latitude?: FloatWhereInputArgument | null | undefined,
   longitude?: FloatWhereInputArgument | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
+  sitePlanFile?: StoredfileWhereInputArgument | null | undefined,
   sitePlanFileId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   websiteUrl?: StringWhereInputArgument | null | undefined    
@@ -3465,8 +3490,11 @@ export type Resolution = {
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference,
   conferenceId: ID,
-  contentUrl: String,
   createdAt: DateTime,
+  file: (p?: {
+    orderBy?: StoredfileOrderInputArgument | null | undefined,
+    where?: StoredfileWhereInputArgument | null | undefined
+  }) => Storedfile,
   fileId: ID,
   fileName: String,
   id: ID,
@@ -3495,6 +3523,7 @@ export type ResolutionWhereInputArgument = {
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
+  file?: StoredfileWhereInputArgument | null | undefined,
   fileId?: IDWhereInputArgument | null | undefined,
   fileName?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
@@ -4150,6 +4179,51 @@ export type StatisticsResultWaitingList = {
 };
 		
 export type StatsFilter = "ALL" | "APPLIED" | "APPLIED_WITHOUT_ROLE" | "APPLIED_WITH_ROLE" | "NOT_APPLIED";
+		
+export type Storedfile = {
+  conferenceId: ID,
+  createdAt: DateTime,
+  fileName: String | null,
+  id: ID,
+  key: String,
+  mimeType: String,
+  purpose: String,
+  search_distance: Float | null,
+  size: Int,
+  updatedAt: DateTime,
+  uploadUrl: String | null,
+  uploadedById: ID | null,
+  url: String    
+};
+		
+export type StoredfileOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  fileName?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  key?: SortingParameter | null | undefined,
+  mimeType?: SortingParameter | null | undefined,
+  purpose?: SortingParameter | null | undefined,
+  size?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  uploadedById?: SortingParameter | null | undefined    
+};
+		
+export type StoredfileWhereInputArgument = {
+  AND?: StoredfileWhereInputArgument[] | undefined,
+  NOT?: StoredfileWhereInputArgument | null | undefined,
+  OR?: StoredfileWhereInputArgument[] | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  fileName?: StringWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  key?: StringWhereInputArgument | null | undefined,
+  mimeType?: StringWhereInputArgument | null | undefined,
+  purpose?: StringWhereInputArgument | null | undefined,
+  size?: IntWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  uploadedById?: IDWhereInputArgument | null | undefined    
+};
 		
 export type String = string;
 		

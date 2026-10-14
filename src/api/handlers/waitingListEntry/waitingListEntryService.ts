@@ -1,0 +1,57 @@
+import { db } from '$api/db/db';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/errors/apiError';
+
+/**
+ * Refuses a waiting list entry the conference cannot take: the waiting list is only open during
+ * preparation, and it is for people without a place, so an applicant who was given a role cannot
+ * join it. Rejected applicants keep their registration and are sent here (`ApplicationRejected`),
+ * so a registration alone does not count. Until the assignment is released nobody knows whether
+ * they have a place, and refusing only those who do would tell them, so every applicant waits.
+ */
+export async function assertWaitingListOpenFor(conferenceId: string, userId: string) {
+	const where = { conferenceId, userId };
+	const [conference, existing, singleParticipant, delegationMember] = await Promise.all([
+		db.query.conference.findFirst({
+			where: { id: conferenceId },
+			columns: { state: true, assignmentReleased: true }
+		}),
+		db.query.waitingListEntry.findFirst({ where, columns: { id: true } }),
+		db.query.singleParticipant.findFirst({ where, columns: { assignedRoleId: true } }),
+		db.query.delegationMember.findFirst({
+			where,
+			columns: { id: true },
+			with: {
+				delegation: { columns: { assignedNationAlpha3Code: true, assignedNonStateActorId: true } }
+			}
+		})
+	]);
+
+	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
+	if (conference.state !== 'PREPARATION') {
+		throw apiError('CONFLICT', m.waitingListNotOpen());
+	}
+	if (existing) throw apiError('CONFLICT', m.waitingListAlreadyOn());
+
+	const registrations = [singleParticipant, delegationMember?.delegation].filter(
+		(registration) => registration !== undefined
+	);
+	if (registrations.length === 0) return;
+	if (!conference.assignmentReleased) {
+		throw apiError('CONFLICT', m.waitingListAfterAssignmentRelease());
+	}
+	if (registrations.some(holdsRole)) throw apiError('CONFLICT', m.waitingListAlreadyAccepted());
+}
+
+/** Whether a single participant was given a role, or a delegation a nation or non-state actor. */
+function holdsRole(registration: {
+	assignedRoleId?: string | null;
+	assignedNationAlpha3Code?: string | null;
+	assignedNonStateActorId?: string | null;
+}) {
+	return Boolean(
+		registration.assignedRoleId ??
+		registration.assignedNationAlpha3Code ??
+		registration.assignedNonStateActorId
+	);
+}

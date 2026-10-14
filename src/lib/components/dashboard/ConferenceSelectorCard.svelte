@@ -30,7 +30,7 @@
 				title: true,
 				longTitle: true,
 				location: true,
-				imageUrl: true,
+				imageFile: { url: true },
 				state: true,
 				startConference: true,
 				endConference: true,
@@ -79,7 +79,7 @@
 >
 	<figure>
 		<img
-			src={conference.imageUrl || defaultImage}
+			src={conference.imageFile?.url || defaultImage}
 			alt=""
 			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 {muted
 				? 'grayscale'

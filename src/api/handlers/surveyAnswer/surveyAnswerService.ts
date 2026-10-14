@@ -1,15 +1,8 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertParticipantsOf,
-	hasTeamRole
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** Organizers may overfill an option and answer past the deadline; participants may not. */
 function assertOptionOpen(option: {
@@ -26,66 +19,20 @@ function assertOptionOpen(option: {
 }
 
 /**
- * Who an answer may be given for: participant care answers for anybody in its conference, and
- * everybody else only for themselves, in a conference they take part in, while the option is open.
- * Returns the user the answer belongs to.
+ * The option an answer picks, with its question and the answers it holds. The answer has to be
+ * addressed either by id or by question and user.
  */
-async function answeringFor(
-	ctx: Context,
-	option: Parameters<typeof assertOptionOpen>[0] & { question: { conferenceId: string } },
-	requestedUserId: string | null | undefined
-) {
-	const caller = ctx.mustBeLoggedIn().sub;
-	const conferenceId = option.question.conferenceId;
-	const subject = requestedUserId ?? caller;
-
-	if (await hasTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES)) {
-		await assertParticipantsOf(conferenceId, [subject]);
-		return subject;
-	}
-	if (subject !== caller) {
-		throw apiError('FORBIDDEN', m.surveyAnswerOnlyOwn());
-	}
-	await assertParticipantsOf(conferenceId, [subject]);
-	assertOptionOpen(option);
-	return subject;
-}
-
-/**
- * Whom an answer is for, checked: the user it names, or, addressed by id alone, whoever the
- * answer already belongs to. The question it names has to be the option's.
- */
-async function answerSubject(
-	ctx: ApiContext,
-	option: Parameters<typeof answeringFor>[1] & { questionId: string },
-	args: { id?: string | null; questionId?: string | null; userId?: string | null }
-) {
-	if (args.questionId && args.questionId !== option.questionId) {
-		throw apiError('INVALID_INPUT', m.surveyAnswerOptionOtherQuestion());
-	}
-	const addressed = args.id
-		? await db.query.surveyAnswer.findFirst({
-				...(await ctx.abilities.surveyAnswer.filter('update')).merge({ where: { id: args.id } })
-					.query.single,
-				columns: { userId: true }
-			})
-		: undefined;
-	return answeringFor(ctx, option, args.userId ?? addressed?.userId);
-}
-
-/**
- * Stores the answer an option stands for, updating the one that exists or creating it. Reports
- * whether a row existed, which decides what the caller publishes.
- */
-export async function saveSurveyAnswer(
-	ctx: ApiContext,
-	args: { id?: string | null; questionId?: string | null; userId?: string | null; optionId: string }
-) {
+export async function loadAnswerOption(args: {
+	id?: string | null;
+	questionId?: string | null;
+	userId?: string | null;
+	optionId: string;
+}) {
 	if (!args.id && (!args.questionId || !args.userId)) {
 		throw apiError('INVALID_INPUT', m.surveyAnswerNeedsLookup());
 	}
 
-	const option = await db.query.surveyOption
+	return db.query.surveyOption
 		.findFirst({
 			where: { id: args.optionId },
 			with: {
@@ -94,24 +41,24 @@ export async function saveSurveyAnswer(
 			}
 		})
 		.then(assertFindFirstExists);
+}
 
-	const subject = await answerSubject(ctx, option, args);
+/**
+ * Stores the answer an option stands for, updating `updatableAnswerId` when given or creating it.
+ * Reports whether a row existed, which decides what the caller publishes.
+ */
+export async function saveSurveyAnswer(
+	option: Awaited<ReturnType<typeof loadAnswerOption>>,
+	answer: { subject: string; ignoresLimits: boolean; updatableAnswerId: string | undefined }
+) {
+	if (!answer.ignoresLimits) assertOptionOpen(option);
 
-	const existing = await db.query.surveyAnswer.findFirst({
-		...(await ctx.abilities.surveyAnswer.filter('update')).merge({
-			where: args.id
-				? { id: args.id, questionId: option.questionId, userId: subject }
-				: { questionId: option.questionId, userId: subject }
-		}).query.single,
-		columns: { id: true }
-	});
-
-	const answerId = existing
+	const answerId = answer.updatableAnswerId
 		? (
 				await db
 					.update(schema.surveyAnswer)
-					.set({ optionId: args.optionId })
-					.where(eq(schema.surveyAnswer.id, existing.id))
+					.set({ optionId: option.id })
+					.where(eq(schema.surveyAnswer.id, answer.updatableAnswerId))
 					.returning({ id: schema.surveyAnswer.id })
 			)[0].id
 		: (
@@ -119,16 +66,16 @@ export async function saveSurveyAnswer(
 					.insert(schema.surveyAnswer)
 					.values({
 						questionId: option.questionId,
-						userId: subject,
-						optionId: args.optionId
+						userId: answer.subject,
+						optionId: option.id
 					})
 					// Two tabs answering at once would otherwise collide on the unique index.
 					.onConflictDoUpdate({
 						target: [schema.surveyAnswer.questionId, schema.surveyAnswer.userId],
-						set: { optionId: args.optionId }
+						set: { optionId: option.id }
 					})
 					.returning({ id: schema.surveyAnswer.id })
 			)[0].id;
 
-	return { answerId, existed: Boolean(existing) };
+	return { answerId, existed: Boolean(answer.updatableAnswerId) };
 }

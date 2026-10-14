@@ -1,62 +1,23 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, countQuery, query, schemaBuilder } from '$api/rumble';
-import {
-	assertTeamRole,
-	isOwnUser,
-	isTeamMemberOfConference,
-	maskedUntilRelease,
-	onceReleased,
-	PARTICIPANT_CARE_ROLES,
-	SINGLE_PARTICIPANT_ASSIGNMENT,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
+import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	createAssignedSingleParticipant,
+	ownRegistrationToEdit,
 	registerSingleParticipant,
 	updateSingleParticipantApplication
 } from './singleParticipantService';
+import {
+	assertCanCreateAppliedSingleParticipant,
+	assertCanDeleteSingleParticipant,
+	assertCanUpdateSingleParticipant,
+	assertCustomRolesOf,
+	registerSingleParticipantAbilities
+} from './singleParticipantPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 import { singleParticipantPubsub, waitingListEntryPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
 
-// Ported from abilities/entities/singleParticipant.ts
-abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users see their own entry - the role they were given only once the team has released the
-// assignment.
-abilityBuilder.singleParticipant
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(isOwnUser(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
-abilityBuilder.singleParticipant.allow('read').when((ctx) => onceReleased(isOwnUser(ctx)));
-
-// Participant care and project management see and manage their conference's participants.
-abilityBuilder.singleParticipant
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-// Users may change their own entry only until they have applied.
-abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { user: { id }, applied: false } } : undefined;
-});
-
-/** The single participants the caller supervises. */
-function supervisedParticipant(ctx: Context) {
-	const id = userId(ctx);
-	return id ? { supervisors: { user: { id } } } : undefined;
-}
-
-// Supervisors see the participants they supervise, with their role once it is released.
-abilityBuilder.singleParticipant
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(supervisedParticipant(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
-abilityBuilder.singleParticipant
-	.allow('read')
-	.when((ctx) => onceReleased(supervisedParticipant(ctx)));
+registerSingleParticipantAbilities();
 
 const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
@@ -76,12 +37,11 @@ schemaBuilder.mutationFields((t) => ({
 			experience: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const id = userId(ctx);
-			if (!id) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
+			const id = ctx.mustBeLoggedIn().sub;
 
-			const rowId = await registerSingleParticipant(id, args);
+			const existing = await ownRegistrationToEdit(id, args);
+			await assertCustomRolesOf(args.conferenceId, [args.roleId]);
+			const rowId = await registerSingleParticipant(id, args, existing);
 
 			singleParticipantPubsub.created();
 
@@ -108,7 +68,8 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateSingleParticipantApplication(ctx, args);
+			await assertCanUpdateSingleParticipant(ctx, args.id, args.applyForRolesIdList ?? []);
+			await updateSingleParticipantApplication(args);
 
 			singleParticipantPubsub.updated(args.id);
 
@@ -127,16 +88,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.singleParticipant)
-				.where(
-					(await ctx.abilities.singleParticipant.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
-				.returning({ id: schema.singleParticipant.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await assertCanDeleteSingleParticipant(ctx, args.id);
+			await db.delete(schema.singleParticipant).where(eq(schema.singleParticipant.id, args.id));
 			singleParticipantPubsub.removed();
 
 			return true;
@@ -154,7 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreateAppliedSingleParticipant(ctx, args.conferenceId, args.roleId);
 
 			const createdId = await createAssignedSingleParticipant(args);
 

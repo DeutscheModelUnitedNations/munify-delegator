@@ -1,30 +1,18 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, countQuery, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	isOwnUser,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { nullToUndefined } from '$api/services/args';
+import {
+	assertCanDeleteWaitingListEntry,
+	registerWaitingListEntryAbilities,
+	updatableWaitingListEntry
+} from './waitingListEntryPermissions';
 import { waitingListEntryPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { assertWaitingListOpenFor } from './waitingListEntryService';
 
-// Ported from abilities/entities/waitingListEntry.ts
-abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users see their own entry.
-abilityBuilder.waitingListEntry.allow('read').when((ctx) => where(isOwnUser(ctx)));
-
-// Participant care and project management manage their conference's waiting list.
-abilityBuilder.waitingListEntry
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+registerWaitingListEntryAbilities();
 
 const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
@@ -41,10 +29,7 @@ schemaBuilder.mutationFields((t) => ({
 			requests: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const id = userId(ctx);
-			if (!id) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
+			const id = ctx.mustBeLoggedIn().sub;
 
 			// Same zod schema the registration form uses, so the length limits stay in one place.
 			waitingListFormSchema.parse({
@@ -54,12 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 				requests: args.requests
 			});
 
-			const existing = await db.query.waitingListEntry.findFirst({
-				where: { conferenceId: args.conferenceId, userId: id }
-			});
-			if (existing) {
-				throw apiError('CONFLICT', m.waitingListAlreadyOn());
-			}
+			await assertWaitingListOpenFor(args.conferenceId, id);
 
 			const created = await db
 				.insert(schema.waitingListEntry)
@@ -110,10 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 					hidden: nullToUndefined(args.hidden),
 					assigned: nullToUndefined(args.assigned)
 				})
-				.where(
-					(await ctx.abilities.waitingListEntry.filter('update')).merge({ where: { id: args.id } })
-						.sql.where
-				);
+				.where(await updatableWaitingListEntry(ctx, args.id));
 
 			waitingListEntryPubsub.updated(args.id);
 
@@ -132,16 +109,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.waitingListEntry)
-				.where(
-					(await ctx.abilities.waitingListEntry.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
-				.returning({ id: schema.waitingListEntry.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await assertCanDeleteWaitingListEntry(ctx, args.id);
+			await db.delete(schema.waitingListEntry).where(eq(schema.waitingListEntry.id, args.id));
 			waitingListEntryPubsub.removed();
 
 			return true;

@@ -1,6 +1,5 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
-import { assertMayGrantRole, type TeamRole } from '$api/services/authHelper';
+import type { TeamRole } from '$api/services/authHelper';
 import {
 	getInvitationExpiryDate,
 	hashToken,
@@ -16,16 +15,15 @@ import { localeOfUser } from '$api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 
-/** An invitation the caller may change, or an error. */
-async function updatableInvitation(ctx: ApiContext, invitationId: string) {
-	return db.query.teamMemberInvitation
-		.findFirst(
-			(await ctx.abilities.teamMemberInvitation.filter('update')).merge({
-				where: { id: invitationId }
-			}).query.single
-		)
-		.then(assertFindFirstExists);
-}
+/** An invitation as the service needs it, already authorized by the resolver. */
+type Invitation = {
+	id: string;
+	conferenceId: string;
+	email: string;
+	role: TeamRole;
+	revokedAt: Date | null;
+	usedAt: Date | null;
+};
 
 async function inviterDisplayName(callerId: string) {
 	const inviter = await db.query.user.findFirst({ where: { id: callerId } });
@@ -72,12 +70,16 @@ function findPendingInvitation(conferenceId: string, email: string) {
 /**
  * Invites several people at once. Each address is handled independently: one failure is
  * reported in `errors` and the rest still go through.
+ *
+ * `assertMayGrant` is the caller's permission check for one role; a role it refuses is reported
+ * for that address like any other failure.
  */
 export async function createInvitations(
-	ctx: ApiContext,
 	callerId: string,
+	origin: string,
 	conferenceId: string,
-	invitations: { email: string; role: TeamRole }[]
+	invitations: { email: string; role: TeamRole }[],
+	assertMayGrant: (role: TeamRole) => Promise<void>
 ) {
 	const conference = await db.query.conference
 		.findFirst({ where: { id: conferenceId } })
@@ -97,7 +99,7 @@ export async function createInvitations(
 	for (const invitation of invitations) {
 		const email = invitation.email.toLowerCase().trim();
 		try {
-			await assertMayGrantRole(ctx, conferenceId, invitation.role);
+			await assertMayGrant(invitation.role);
 
 			const existingTeamMember = await db.query.teamMember.findFirst({
 				where: { conferenceId, user: { email } }
@@ -155,7 +157,7 @@ export async function createInvitations(
 					conferenceTitle: conference.title,
 					role: invitation.role,
 					inviterName,
-					dashboardUrl: `${ctx.url.origin}/dashboard/${conferenceId}`,
+					dashboardUrl: `${origin}/dashboard/${conferenceId}`,
 					locale: localeOfUser(existingUser.locale)
 				}).catch((err) => console.error('Failed to send welcome email:', err));
 			} else {
@@ -189,7 +191,7 @@ export async function createInvitations(
 					conferenceTitle: conference.title,
 					role: invitation.role,
 					inviterName,
-					inviteUrl: `${ctx.url.origin}/auth/accept-invitation?token=${token}`,
+					inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
 					expiresAt,
 					locale: getLocale()
 				}).catch((err) => console.error('Failed to send invitation email:', err));
@@ -206,9 +208,7 @@ export async function createInvitations(
 }
 
 /** Marks an invitation revoked, unless it already was or has been used. */
-export async function revokeInvitation(ctx: ApiContext, invitationId: string) {
-	const invitation = await updatableInvitation(ctx, invitationId);
-
+export async function revokeInvitation(invitation: Invitation) {
 	if (invitation.revokedAt) {
 		return { success: false, message: m.invitationAlreadyRevoked() };
 	}
@@ -219,20 +219,18 @@ export async function revokeInvitation(ctx: ApiContext, invitationId: string) {
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ revokedAt: new Date() })
-		.where(eq(schema.teamMemberInvitation.id, invitationId));
+		.where(eq(schema.teamMemberInvitation.id, invitation.id));
 
 	return { success: true, message: null };
 }
 
 /** Issues a fresh token for an invitation, optionally mailing it. */
 export async function regenerateInvitation(
-	ctx: ApiContext,
+	invitation: Invitation,
 	callerId: string,
-	invitationId: string,
+	origin: string,
 	sendEmail: boolean | null | undefined
 ) {
-	const invitation = await updatableInvitation(ctx, invitationId);
-
 	if (invitation.usedAt) {
 		return {
 			success: false,
@@ -249,10 +247,10 @@ export async function regenerateInvitation(
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ token: hashToken(newToken), expiresAt: newExpiresAt, revokedAt: null })
-		.where(eq(schema.teamMemberInvitation.id, invitationId));
+		.where(eq(schema.teamMemberInvitation.id, invitation.id));
 
 	if (sendEmail) {
-		await resendInvitationEmail(invitation, callerId, ctx.url.origin, newToken, newExpiresAt);
+		await resendInvitationEmail(invitation, callerId, origin, newToken, newExpiresAt);
 	}
 
 	return { success: true, newToken, newExpiresAt, message: null };

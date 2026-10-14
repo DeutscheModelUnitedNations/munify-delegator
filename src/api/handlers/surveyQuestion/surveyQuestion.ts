@@ -1,34 +1,18 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '$api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	isParticipantOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
+	assertCanCreateSurveyQuestion,
+	deletableSurveyQuestionWhere,
+	registerSurveyQuestionAbilities,
+	updatableSurveyQuestionWhere
+} from './surveyQuestionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { nullToUndefined } from '$api/services/args';
 import { surveyQuestionPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/surveyQuestion.ts
-abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Participants see the published questions of their own conferences - not drafts, and not the
-// ones the organizers hid.
-abilityBuilder.surveyQuestion.allow('read').when((ctx) => {
-	const participant = isParticipantOfConference(ctx);
-	return participant ? { where: { ...participant, draft: false, hidden: false } } : undefined;
-});
-
-// Participant care and project management manage their conference's questions.
-// Creation stays in the mutation resolver, as it did under CASL.
-abilityBuilder.surveyQuestion
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+registerSurveyQuestionAbilities();
 
 const SurveyQuestionRef = object({ table: 'surveyQuestion' });
 query({ table: 'surveyQuestion' });
@@ -46,7 +30,7 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreateSurveyQuestion(ctx, args.conferenceId);
 
 			const created = await db
 				.insert(schema.surveyQuestion)
@@ -97,10 +81,7 @@ schemaBuilder.mutationFields((t) => ({
 					hidden: nullToUndefined(args.hidden),
 					showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
 				})
-				.where(
-					(await ctx.abilities.surveyQuestion.filter('update')).merge({ where: { id: args.id } })
-						.sql.where
-				);
+				.where(await updatableSurveyQuestionWhere(ctx, args.id));
 
 			surveyQuestionPubsub.updated(args.id);
 
@@ -121,10 +102,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.surveyQuestion)
-				.where(
-					(await ctx.abilities.surveyQuestion.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
+				.where(await deletableSurveyQuestionWhere(ctx, args.id))
 				.returning({ id: schema.surveyQuestion.id });
 			if (deleted.length === 0) {
 				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());

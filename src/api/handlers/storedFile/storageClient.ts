@@ -2,8 +2,8 @@ import { S3mini } from 's3mini';
 
 /**
  * The S3 bucket every uploaded file lives in, through s3mini. Nothing here reads the
- * environment, so the app (`storage.ts`), the dev seed and the jobs each build one from their
- * own configuration.
+ * environment, so the app (`storedFileService.ts`), the dev seed and the jobs each build one from
+ * their own configuration.
  */
 export interface StorageConfig {
 	/** The bucket's URL as the app reaches it. */
@@ -120,22 +120,6 @@ export function createStorage(config: StorageConfig) {
 }
 
 export type Storage = ReturnType<typeof createStorage>;
-
-/** The configuration of a process running outside SvelteKit (the seed, the jobs). */
-export function storageConfigFromProcessEnv(): StorageConfig {
-	const required = (name: string) => {
-		const value = process.env[name];
-		if (!value) throw new Error(`${name} is not set`);
-		return value;
-	};
-	return {
-		endpoint: required('S3_ENDPOINT'),
-		publicEndpoint: process.env.S3_PUBLIC_ENDPOINT || undefined,
-		accessKeyId: required('S3_ACCESS_KEY_ID'),
-		secretAccessKey: required('S3_SECRET_ACCESS_KEY'),
-		region: process.env.S3_REGION || 'us-east-1'
-	};
-}
 
 /**
  * `inline` with the file's name: in full as UTF-8 (`filename*`, RFC 6266), and as plain ASCII for

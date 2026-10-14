@@ -1,51 +1,19 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { db } from '$api/db/db';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { countGiven } from '$api/services/args';
+import { appendRoleApplication, removeRoleApplication, swapRanks } from './roleApplicationService';
 import {
-	PARTICIPANT_CARE_ROLES,
-	isInOwnDelegation,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { count, eq } from 'drizzle-orm';
-import { countGiven, nullToUndefined } from '$api/services/args';
-import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
+	assertCanCreateRoleApplication,
+	assertCanDeleteRoleApplication,
+	assertCanSwapRoleApplicationRanks,
+	registerRoleApplicationAbilities
+} from './roleApplicationPermissions';
 import { roleApplicationPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/roleApplication.ts
-abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Participant care and project management see their conference's applications.
-abilityBuilder.roleApplication.allow('read').when((ctx) => {
-	const delegation = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return delegation ? { where: { delegation } } : undefined;
-});
-
-// Delegation members see their own delegation's applications.
-abilityBuilder.roleApplication.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
-
-// Only the head delegate may change them, and only until the delegation has applied - the same
-// line the delegation's own update ability draws.
-abilityBuilder.roleApplication.allow(['update', 'delete']).when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					delegation: { applied: false, members: { user: { id }, isHeadDelegate: true } }
-				}
-			}
-		: undefined;
-});
-
-// Supervisors see the applications of the delegations they supervise.
-abilityBuilder.roleApplication.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { delegation: { members: { supervisors: { user: { id } } } } } } : undefined;
-});
+registerRoleApplicationAbilities();
 
 const RoleApplicationRef = object({ table: 'roleApplication' });
 query({ table: 'roleApplication' });
@@ -67,52 +35,11 @@ schemaBuilder.mutationFields((t) => ({
 				throw apiError('INVALID_INPUT', m.roleApplicationOneTarget());
 			}
 
-			// The caller must be allowed to update the delegation the application belongs to.
-			const delegation = await db.query.delegation
-				.findFirst({
-					...(await ctx.abilities.delegation.filter('update')).merge({
-						where: { id: args.delegationId }
-					}).query.single,
-					columns: { conferenceId: true }
-				})
-				.then(assertFindFirstExists);
+			// The caller must be allowed to update the delegation the application belongs to, and the
+			// role applied for must be on offer in that conference.
+			await assertCanCreateRoleApplication(ctx, args);
 
-			// ...and the role applied for must be on offer in that conference.
-			const onOffer = args.nationId
-				? await db.query.nation.findFirst({
-						where: {
-							alpha3Code: args.nationId,
-							committees: { conferenceId: delegation.conferenceId }
-						},
-						columns: { alpha3Code: true }
-					})
-				: await db.query.nonStateActor.findFirst({
-						where: { id: args.nonStateActorId ?? '', conferenceId: delegation.conferenceId },
-						columns: { id: true }
-					});
-			if (!onOffer) {
-				throw apiError('INVALID_INPUT', m.roleNotOnOffer());
-			}
-
-			const created = await db.transaction(async (tx) => {
-				// Close any gap first, so "one past the count" cannot collide with an existing rank.
-				await normalizeRoleApplicationRanks(args.delegationId, tx);
-				const [existing] = await tx
-					.select({ value: count() })
-					.from(schema.roleApplication)
-					.where(eq(schema.roleApplication.delegationId, args.delegationId));
-
-				return tx
-					.insert(schema.roleApplication)
-					.values({
-						delegationId: args.delegationId,
-						nationId: nullToUndefined(args.nationId),
-						nonStateActorId: nullToUndefined(args.nonStateActorId),
-						rank: (existing?.value ?? 0) + 1
-					})
-					.returning()
-					.then(assertFirstEntryExists);
-			});
+			const created = await appendRoleApplication(args);
 
 			roleApplicationPubsub.created();
 
@@ -132,20 +59,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.roleApplication)
-				.where(
-					(await ctx.abilities.roleApplication.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
-				.returning({
-					id: schema.roleApplication.id,
-					delegationId: schema.roleApplication.delegationId
-				});
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
-			await normalizeRoleApplicationRanks(deleted[0].delegationId);
+			const application = await assertCanDeleteRoleApplication(ctx, args.id);
+			await removeRoleApplication(application);
 			roleApplicationPubsub.removed();
 			roleApplicationPubsub.updated();
 
@@ -160,34 +75,12 @@ schemaBuilder.mutationFields((t) => ({
 			secondRoleApplicationId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const canUpdate = await ctx.abilities.roleApplication.filter('update');
-			const updateFilter = (id: string) => canUpdate.merge({ where: { id } });
-
-			await db.transaction(async (tx) => {
-				const [first, second] = await Promise.all([
-					tx.query.roleApplication
-						.findFirst(updateFilter(args.firstRoleApplicationId).query.single)
-						.then(assertFindFirstExists),
-					tx.query.roleApplication
-						.findFirst(updateFilter(args.secondRoleApplicationId).query.single)
-						.then(assertFindFirstExists)
-				]);
-
-				// (delegationId, rank) is unique, so the first row is parked on a sentinel rank
-				// before the two are swapped. The legacy resolver used -1 for the same reason.
-				await tx
-					.update(schema.roleApplication)
-					.set({ rank: -1 })
-					.where(updateFilter(args.firstRoleApplicationId).sql.where);
-				await tx
-					.update(schema.roleApplication)
-					.set({ rank: first.rank })
-					.where(updateFilter(args.secondRoleApplicationId).sql.where);
-				await tx
-					.update(schema.roleApplication)
-					.set({ rank: second.rank })
-					.where(updateFilter(args.firstRoleApplicationId).sql.where);
-			});
+			const [first, second] = await assertCanSwapRoleApplicationRanks(
+				ctx,
+				args.firstRoleApplicationId,
+				args.secondRoleApplicationId
+			);
+			await swapRanks(first, second);
 
 			roleApplicationPubsub.updated([args.firstRoleApplicationId, args.secondRoleApplicationId]);
 

@@ -5,8 +5,8 @@ import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '$api/db/db';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { errorCause, isUniqueViolationOn } from './emailConflict';
-import { reportEmailConflict } from './reportEmailConflict';
+import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
+import { reportEmailConflict } from './emailConflict';
 import { hashToken, isOpenInvitation, pendingInvitationCookieName } from './invitationToken';
 
 type Claims = {
@@ -75,7 +75,7 @@ export async function upsertSelfFromClaims(claims: Claims) {
 			.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
 			.returning();
 	} catch (error) {
-		if (!isUniqueViolationOn(errorCause(error), 'email')) throw error;
+		if (!isUniqueViolationOn(error, 'email')) throw error;
 		return redirectToEmailConflict(claims.sub, email, error);
 	}
 

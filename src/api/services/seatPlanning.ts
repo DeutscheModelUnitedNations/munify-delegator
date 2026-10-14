@@ -3,7 +3,7 @@ import formatNames from '$lib/helpers/formatNames';
 import type * as schema from '$api/db/schema';
 import { isValidManualTargets } from '$lib/helpers/seatPlanning/baselines';
 import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be

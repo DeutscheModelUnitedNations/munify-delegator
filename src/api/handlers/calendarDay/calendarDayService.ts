@@ -5,7 +5,7 @@ import {
 	calendarDayExportSchema
 } from '$lib/schemata/calendarDayExport';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** The import document arrives either as a JSON string or already parsed. */
 export function parseImportData(importData: unknown) {

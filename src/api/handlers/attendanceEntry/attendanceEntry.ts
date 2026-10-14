@@ -1,57 +1,25 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId
-} from '$api/services/authHelper';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
+import { ensureParticipantStatus, scanInSession, storeSessionCard } from './attendanceEntryService';
 import {
-	assertMayCreateEntry,
+	assertCanCreateAttendanceEntry,
+	assertCanEndAttendanceSession,
+	assertCanStartAttendanceSession,
 	assertSessionOfConference,
-	ensureParticipantStatus,
-	scanInSession,
-	storeSessionCard
-} from './attendanceEntryService';
+	deletableAttendanceEntryWhere,
+	registerAttendanceEntryAbilities
+} from './attendanceEntryPermissions';
 import {
 	attendanceEntryPubsub,
 	attendanceSessionPubsub,
 	conferenceParticipantStatusPubsub
 } from '$api/pubsub';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 import { m } from '$lib/paraglide/messages';
 
-// Ported from abilities/entities/attendanceEntry.ts
-abilityBuilder.attendanceEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users see their own attendance entries.
-abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { conferenceParticipantStatus: { user: { id } } } } : undefined;
-});
-
-// Every team member of the conference may read them.
-abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-	const conferenceParticipantStatus = isTeamMemberOfConference(ctx);
-	return conferenceParticipantStatus ? { where: { conferenceParticipantStatus } } : undefined;
-});
-
-// Participant care and project management manage them.
-abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
-	const conferenceParticipantStatus = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return conferenceParticipantStatus ? { where: { conferenceParticipantStatus } } : undefined;
-});
-
-// The sessions of a conference are the team's: every team member reads them, and starting and
-// ending one goes through the mutations below, which check the team role themselves.
-abilityBuilder.attendanceSession.allow(['read', 'update', 'delete']).when(systemAdmin);
-abilityBuilder.attendanceSession.allow('read').when((ctx) => {
-	const inTeamConference = isTeamMemberOfConference(ctx);
-	return inTeamConference ? { where: inTeamConference } : undefined;
-});
+registerAttendanceEntryAbilities();
 
 const attendanceSessionModeEnum = enum_({ tsName: 'attendanceSessionMode' });
 const AttendanceEntryRef = object({ table: 'attendanceEntry' });
@@ -69,14 +37,11 @@ schemaBuilder.mutationFields((t) => ({
 			mode: t.arg({ type: attendanceSessionModeEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
+			const callerId = ctx.mustBeLoggedIn().sub;
 			if (!args.occasion.trim()) {
 				throw apiError('INVALID_INPUT', m.attendanceOccasionEmpty());
 			}
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanStartAttendanceSession(ctx, args.conferenceId);
 
 			await db
 				.insert(schema.attendanceSession)
@@ -108,14 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const session = await db.query.attendanceSession.findFirst({
-				where: { id: args.id },
-				columns: { conferenceId: true }
-			});
-			if (!session) {
-				throw apiError('NOT_FOUND', m.sessionNotFound());
-			}
-			await assertTeamRole(ctx, session.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanEndAttendanceSession(ctx, args.id);
 
 			await db
 				.update(schema.attendanceSession)
@@ -139,7 +97,7 @@ schemaBuilder.mutationFields((t) => ({
 			accessCardId: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = await assertMayCreateEntry(ctx, args);
+			const callerId = await assertCanCreateAttendanceEntry(ctx, args);
 
 			const status = await ensureParticipantStatus(args.userId, args.conferenceId);
 
@@ -190,10 +148,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.attendanceEntry)
-				.where(
-					(await ctx.abilities.attendanceEntry.filter('delete')).merge({ where: { id: args.id } })
-						.sql.where
-				)
+				.where(await deletableAttendanceEntryWhere(ctx, args.id))
 				.returning({ id: schema.attendanceEntry.id });
 			if (deleted.length === 0) {
 				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());

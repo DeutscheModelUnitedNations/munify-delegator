@@ -1,15 +1,9 @@
 import { db, schema } from '$api/db/db';
 import type { ApiContext } from '$api/rumble';
-import {
-	assertTeamRole,
-	CONFERENCE_CONTENT_ROLES,
-	isSystemAdmin,
-	PARTICIPANT_CARE_ROLES
-} from '$api/services/authHelper';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 import { m } from '$lib/paraglide/messages';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, type SQL } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
 	PARTICIPANT_MAX_AGE,
@@ -20,13 +14,11 @@ import {
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
 import { normalizeSchoolName } from '$api/handlers/schoolSuggestion/conferenceAggregates';
-import { refreshSchoolSuggestions } from '$api/handlers/schoolSuggestion/schoolSuggestions';
 import { totalSeats } from '$api/services/seatPlanning';
 import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
-import { claimUploadedFile } from '$api/services/files/uploads';
-import type { FileField } from '$api/services/files/files';
-import { apiError } from '$api/services/apiError';
+import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
+import { apiError } from '$api/services/errors/apiError';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
@@ -73,7 +65,7 @@ export async function countOfferedSeats(conferenceId: string) {
 }
 
 /** The settings with a closed set of values; an omitted or cleared one is left to the column. */
-function assertValidConferenceSettings(args: {
+export function assertValidConferenceSettings(args: {
 	nametagBinCount?: number | null;
 	language?: string | null;
 }) {
@@ -90,39 +82,12 @@ function assertValidConferenceSettings(args: {
 }
 
 /**
- * The arguments of `updateConference` that participant care and the content lead may send: links,
- * postal address, templates, the conference status and the feature switches.
- */
-const CONFERENCE_CONTENT_ARGS: readonly string[] = [
-	'id',
-	'linkToPreparationGuide',
-	'linkToTeamWiki',
-	'linkToServicesPage',
-	'postalName',
-	'postalStreet',
-	'postalApartment',
-	'postalZip',
-	'postalCity',
-	'postalCountry',
-	'contractFileId',
-	'guardianConsentFileId',
-	'mediaConsentFileId',
-	'termsAndConditionsFileId',
-	'certificateFileId',
-	'state',
-	'unlockPayments',
-	'unlockPostals',
-	'isOpenPaperSubmission',
-	'showCalendar'
-];
-
-/**
  * Merges several spellings of a school name into one, across both delegations and single
- * participants.
+ * participants. `scope` holds the rows the caller may rename (`schoolMergeScope`).
  */
 export async function mergeSchoolNames(
-	ctx: ApiContext,
-	args: { conferenceId: string; schoolsToMerge: string[]; newSchoolName: string }
+	args: { conferenceId: string; schoolsToMerge: string[]; newSchoolName: string },
+	scope: { updatableDelegations: SQL | undefined; updatableSingleParticipants: SQL | undefined }
 ) {
 	const newSchoolName = normalizeSchoolName(args.newSchoolName);
 	if (!newSchoolName) throw new Error('The new school name must not be empty');
@@ -133,12 +98,7 @@ export async function mergeSchoolNames(
 				.update(schema.delegation)
 				.set({ school: newSchoolName })
 				.where(
-					and(
-						(await ctx.abilities.delegation.filter('update')).merge({
-							where: { conferenceId: args.conferenceId }
-						}).sql.where,
-						inArray(schema.delegation.school, args.schoolsToMerge)
-					)
+					and(scope.updatableDelegations, inArray(schema.delegation.school, args.schoolsToMerge))
 				);
 
 			await tx
@@ -146,15 +106,12 @@ export async function mergeSchoolNames(
 				.set({ school: newSchoolName })
 				.where(
 					and(
-						(await ctx.abilities.singleParticipant.filter('update')).merge({
-							where: { conferenceId: args.conferenceId }
-						}).sql.where,
+						scope.updatableSingleParticipants,
 						inArray(schema.singleParticipant.school, args.schoolsToMerge)
 					)
 				);
 		});
 	}
-	await refreshSchoolSuggestions(args.conferenceId, ctx);
 }
 
 type ConferenceInsert = typeof schema.conference.$inferInsert;
@@ -163,47 +120,22 @@ export type ConferenceUpdateArgs = { id: string } & {
 	[K in keyof Omit<ConferenceInsert, 'id'>]?: ConferenceInsert[K] | null;
 };
 
-export async function updateConference(ctx: ApiContext, args: ConferenceUpdateArgs) {
-	// Project management edits everything; participant care and the content lead may only
-	// touch the links, the postal address, the templates, the status and the features. The update ability is project management's, so the link-only path
-	// checks the role itself and refuses any other argument rather than ignoring it.
-	const updateFilter = (await ctx.abilities.conference.filter('update')).merge({
-		where: { id: args.id }
-	});
-	const mayEditAll = !!(await db.query.conference.findFirst({
-		where: updateFilter.query.single.where,
-		columns: { id: true }
-	}));
-	const linksOnly = !mayEditAll;
-	if (linksOnly) {
-		await assertTeamRole(ctx, args.id, CONFERENCE_CONTENT_ROLES);
-		const forbidden = Object.entries(args).filter(
-			([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
-		);
-		if (forbidden.length > 0) {
-			throw apiError(
-				'FORBIDDEN',
-				m.conferenceChangeProjectManagementOnly({
-					fields: forbidden.map(([key]) => key).join(', ')
-				})
-			);
-		}
-	}
-
-	assertValidConferenceSettings(args);
-
+/**
+ * Writes the conference's settings and answers whether there was a row to write. Who may send
+ * which argument, and store which file, is checked before (`assertCanUpdateConference`,
+ * `assertCanClaimConferenceFiles`), as are the settings (`assertValidConferenceSettings`).
+ */
+export async function updateConference(args: ConferenceUpdateArgs) {
 	// An omitted file leaves the stored one untouched; only a supplied file replaces it.
-	const file = <F extends FileField<'conference'>>(field: F, fileId: string | null | undefined) =>
-		claimUploadedFile(ctx, fileId, { kind: 'conference', field, conferenceId: args.id });
 	const files = {
-		imageFileId: await file('image', args.imageFileId),
-		emblemFileId: await file('emblem', args.emblemFileId),
-		logoFileId: await file('logo', args.logoFileId),
-		contractFileId: await file('contract', args.contractFileId),
-		guardianConsentFileId: await file('guardianConsent', args.guardianConsentFileId),
-		mediaConsentFileId: await file('mediaConsent', args.mediaConsentFileId),
-		termsAndConditionsFileId: await file('termsAndConditions', args.termsAndConditionsFileId),
-		certificateFileId: await file('certificate', args.certificateFileId)
+		imageFileId: await ensureUploadComplete(args.imageFileId),
+		emblemFileId: await ensureUploadComplete(args.emblemFileId),
+		logoFileId: await ensureUploadComplete(args.logoFileId),
+		contractFileId: await ensureUploadComplete(args.contractFileId),
+		guardianConsentFileId: await ensureUploadComplete(args.guardianConsentFileId),
+		mediaConsentFileId: await ensureUploadComplete(args.mediaConsentFileId),
+		termsAndConditionsFileId: await ensureUploadComplete(args.termsAndConditionsFileId),
+		certificateFileId: await ensureUploadComplete(args.certificateFileId)
 	};
 
 	const updated = await db
@@ -249,23 +181,17 @@ export async function updateConference(ctx: ApiContext, args: ConferenceUpdateAr
 			postalCountry: args.postalCountry,
 			...files
 		})
-		.where(linksOnly ? eq(schema.conference.id, args.id) : updateFilter.sql.where)
+		.where(eq(schema.conference.id, args.id))
 		.returning({ id: schema.conference.id });
 
-	// The update ability filters the rows, so a caller who may not edit matches none.
-	if (updated.length === 0) {
-		throw apiError('FORBIDDEN', m.accessDeniedProjectManagement());
-	}
+	return updated.length > 0;
 }
 
 /**
  * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
  * document. Admin only.
  */
-export async function seedConference(ctx: ApiContext, input: unknown) {
-	if (!isSystemAdmin(ctx)) {
-		throw apiError('FORBIDDEN', m.unauthorized({ error: 'User is not admin' }));
-	}
+export async function seedConference(input: unknown) {
 	if (!input) {
 		throw apiError('INVALID_INPUT', m.plausibilityIncompleteOrInvalidData());
 	}
@@ -347,12 +273,14 @@ function toFormShape(user: PlausibilityUser) {
 	return { ...rest, given_name: givenName, family_name: familyName };
 }
 
+/** The caller's `read` filter on users, which decides who the plausibility lists may show. */
+export type ReadableUsers = Awaited<ReturnType<ApiContext['abilities']['user']['filter']>>;
+
 /**
  * Flags participants whose age does not fit the role they registered for, plus those whose
  * account data no longer satisfies the registration form.
  */
-export async function findPlausibilityIssues(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+export async function findPlausibilityIssues(conferenceId: string, readableUsers: ReadableUsers) {
 	const participating = {
 		OR: [
 			{ singleParticipant: { conferenceId: conferenceId } },
@@ -360,7 +288,6 @@ export async function findPlausibilityIssues(ctx: ApiContext, conferenceId: stri
 		]
 	};
 	const supervising = { conferenceSupervisor: { conferenceId: conferenceId } };
-	const readableUsers = await ctx.abilities.user.filter('read');
 
 	const [tooYoungUsers, tooOldUsers, shouldBeSupervisor, shouldNotBeSupervisor, candidates] =
 		await Promise.all([

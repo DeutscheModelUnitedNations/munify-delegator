@@ -26,8 +26,8 @@
 			state: true,
 			startConference: true,
 			endConference: true,
-			emblemUrl: true,
-			logoUrl: true,
+			emblemFile: { url: true },
+			logoFile: { url: true },
 			info: true,
 			showInfoExpanded: true,
 			timezone: true
@@ -41,8 +41,8 @@
 	state={conference.state}
 	startDate={conference.startConference}
 	endDate={conference.endConference}
-	emblemUrl={conference.emblemUrl}
-	logoUrl={conference.logoUrl}
+	emblemUrl={conference.emblemFile?.url}
+	logoUrl={conference.logoFile?.url}
 />
 {#if conference.info && !isTeamMember}
 	<AnnouncementContent

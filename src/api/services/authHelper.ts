@@ -1,4 +1,6 @@
 import { db } from '$api/db/db';
+import { sql, type SQL } from 'drizzle-orm';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context } from '$api/context';
 import type { teamRole } from '$api/db/schema';
 
@@ -62,7 +64,7 @@ import {
 } from '$lib/helpers/teamRoles';
 import { m } from '$lib/paraglide/messages';
 import { translateTeamRole } from '$lib/utils/enumTranslations';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {
@@ -258,6 +260,27 @@ export async function assertTeamRoleForSurveyQuestion(
 }
 
 /**
+ * Refuses with NOT_FOUND unless a row of `table` matches `allowed`: the row's own ability filter
+ * merged with its id, `(await ctx.abilities.x.filter('delete')).merge({ where: { id } }).sql.where`.
+ * This is how an update or delete is authorized when the resolver needs nothing of the row; a
+ * missing row and a forbidden one look the same, so neither leaks the other.
+ */
+export async function assertAllowedRow(
+	table: PgTable,
+	allowed: SQL | undefined,
+	message: () => string = m.deleteNotFoundOrForbidden
+) {
+	const [row] = await db
+		.select({ found: sql`1` })
+		.from(table)
+		.where(allowed)
+		.limit(1);
+	if (!row) {
+		throw apiError('NOT_FOUND', message());
+	}
+}
+
+/**
  * Refuses unless every one of `userIds` takes part in the conference (delegate, single
  * participant or supervisor). Guards writes that name other people by id.
  */
@@ -270,6 +293,97 @@ export async function assertParticipantsOf(conferenceId: string, userIds: readon
 	});
 	if (found.length !== unique.length) {
 		throw apiError('INVALID_INPUT', m.usersNotInConference());
+	}
+}
+
+/**
+ * Refuses unless the user takes part in the conference or is on its team. Guards writes about one
+ * person, such as attendance or a participant status, that name them by id.
+ */
+export async function assertUserInConference(conferenceId: string, userId: string) {
+	const user = await db.query.user.findFirst({
+		where: {
+			id: userId,
+			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
+		},
+		columns: { id: true }
+	});
+	if (!user) {
+		throw apiError('INVALID_INPUT', m.userNotInConference());
+	}
+}
+
+/**
+ * Refuses unless the caller takes part in the conference (delegate, single participant or
+ * supervisor), or is a system admin.
+ */
+export async function assertParticipantOfConference(ctx: Context, conferenceId: string) {
+	const caller = ctx.mustBeLoggedIn().sub;
+	if (isSystemAdmin(ctx)) return;
+	const participant = await db.query.user.findFirst({
+		where: { id: caller, ...participatesIn({ id: conferenceId }) },
+		columns: { id: true }
+	});
+	if (!participant) {
+		throw apiError('FORBIDDEN', m.accessDeniedParticipant());
+	}
+}
+
+/**
+ * Whether the conference has every nation, non-state actor and committee the arguments name; an
+ * absent one passes. A nation is the conference's when one of its committees seats it.
+ */
+export async function offeredIn(
+	conferenceId: string,
+	role: {
+		assignedNationAlpha3Code?: string | null;
+		assignedNonStateActorId?: string | null;
+		assignedCommitteeId?: string | null;
+	}
+) {
+	const [nation, nsa, committee] = await Promise.all([
+		role.assignedNationAlpha3Code
+			? db.query.nation.findFirst({
+					where: {
+						alpha3Code: role.assignedNationAlpha3Code,
+						committees: { conferenceId }
+					},
+					columns: { alpha3Code: true }
+				})
+			: true,
+		role.assignedNonStateActorId
+			? db.query.nonStateActor.findFirst({
+					where: { id: role.assignedNonStateActorId, conferenceId },
+					columns: { id: true }
+				})
+			: true,
+		role.assignedCommitteeId
+			? db.query.committee.findFirst({
+					where: { id: role.assignedCommitteeId, conferenceId },
+					columns: { id: true }
+				})
+			: true
+	]);
+	return Boolean(nation && nsa && committee);
+}
+
+/** Refuses a nation, non-state actor or committee that the conference does not have. */
+export async function assertOfferedIn(conferenceId: string, role: Parameters<typeof offeredIn>[1]) {
+	if (!(await offeredIn(conferenceId, role))) {
+		throw apiError('INVALID_INPUT', m.roleNotOnOffer());
+	}
+}
+
+/** Refuses role ids that are not custom roles of the given conference. */
+export async function assertCustomRolesOf(conferenceId: string, roleIds: readonly string[]) {
+	const unique = [...new Set(roleIds)];
+	if (unique.length === 0) return;
+	const roles = await db.query.customConferenceRole.findMany({
+		where: { id: { in: unique }, conferenceId },
+		columns: { id: true }
+	});
+	if (roles.length !== unique.length) {
+		throw apiError('INVALID_INPUT', m.rolesNotInConference());
 	}
 }
 

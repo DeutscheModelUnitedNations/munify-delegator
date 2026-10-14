@@ -9,7 +9,7 @@ export async function downloadResolution(id: string) {
 	const resolution = await client.query.resolution({
 		__args: { id },
 		fileName: true,
-		contentUrl: true
+		file: { url: true }
 	});
-	await downloadFromURL(resolution.contentUrl, resolution.fileName);
+	await downloadFromURL(resolution.file.url, resolution.fileName);
 }

@@ -1,41 +1,21 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { eq } from 'drizzle-orm';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
-import { fileUrl } from '$api/services/files/storage';
-import { claimUploadedFile } from '$api/services/files/uploads';
+	assertCanCreatePlace,
+	assertCanUpdatePlace,
+	deletablePlaceWhere,
+	registerPlaceAbilities
+} from './placePermissions';
+import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { placePubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/place.ts
-abilityBuilder.place.allow('read');
-abilityBuilder.place.allow(['update', 'delete']).when(systemAdmin);
+registerPlaceAbilities();
 
-abilityBuilder.place
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-const PlaceRef = object({
-	table: 'place',
-	adjust: (t) => ({
-		hasSitePlan: t.field({
-			type: 'Boolean',
-			resolve: (place) => !!place.sitePlanFileId
-		}),
-		sitePlanUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (place) => fileUrl('place', 'sitePlan', place.conferenceId, place.sitePlanFileId)
-		})
-	})
-});
+const PlaceRef = object({ table: 'place' });
 query({ table: 'place' });
 
 schemaBuilder.mutationFields((t) => ({
@@ -54,7 +34,7 @@ schemaBuilder.mutationFields((t) => ({
 			sitePlanFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreatePlace(ctx, args.conferenceId, args.sitePlanFileId);
 
 			const created = await db
 				.insert(schema.place)
@@ -67,12 +47,7 @@ schemaBuilder.mutationFields((t) => ({
 					directions: args.directions ?? undefined,
 					info: args.info ?? undefined,
 					websiteUrl: args.websiteUrl ?? undefined,
-					sitePlanFileId:
-						(await claimUploadedFile(ctx, args.sitePlanFileId, {
-							kind: 'place',
-							field: 'sitePlan',
-							conferenceId: args.conferenceId
-						})) ?? undefined
+					sitePlanFileId: (await ensureUploadComplete(args.sitePlanFileId)) ?? undefined
 				})
 				.returning()
 				.then(assertFirstEntryExists);
@@ -105,17 +80,8 @@ schemaBuilder.mutationFields((t) => ({
 			sitePlanFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updateFilter = (await ctx.abilities.place.filter('update')).merge({
-				where: { id: args.id }
-			});
-			const place = await db.query.place
-				.findFirst({ ...updateFilter.query.single, columns: { conferenceId: true } })
-				.then(assertFindFirstExists);
-			const sitePlanFileId = await claimUploadedFile(ctx, args.sitePlanFileId, {
-				kind: 'place',
-				field: 'sitePlan',
-				conferenceId: place.conferenceId
-			});
+			await assertCanUpdatePlace(ctx, args.id, args.sitePlanFileId);
+			const sitePlanFileId = await ensureUploadComplete(args.sitePlanFileId);
 
 			await db
 				.update(schema.place)
@@ -131,7 +97,7 @@ schemaBuilder.mutationFields((t) => ({
 					websiteUrl: args.websiteUrl,
 					sitePlanFileId
 				})
-				.where(updateFilter.sql.where);
+				.where(eq(schema.place.id, args.id));
 
 			placePubsub.updated(args.id);
 
@@ -156,9 +122,7 @@ schemaBuilder.mutationFields((t) => ({
 			// caller their delete succeeded is worse than either.
 			const deleted = await db
 				.delete(schema.place)
-				.where(
-					(await ctx.abilities.place.filter('delete')).merge({ where: { id: args.id } }).sql.where
-				)
+				.where(await deletablePlaceWhere(ctx, args.id))
 				.returning({ id: schema.place.id });
 
 			if (deleted.length === 0) {

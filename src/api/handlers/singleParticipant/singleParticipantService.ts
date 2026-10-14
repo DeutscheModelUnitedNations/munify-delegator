@@ -1,5 +1,4 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -7,33 +6,36 @@ import {
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { nullToUndefined } from '$api/services/args';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import { MIN_ROLE_APPLICATIONS } from '$lib/helpers/applicationReadiness';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '$api/services/apiError';
-
-/** Refuses role ids that are not custom roles of the given conference. */
-async function assertRolesOf(conferenceId: string, roleIds: readonly string[]) {
-	const unique = [...new Set(roleIds)];
-	if (unique.length === 0) return;
-	const roles = await db.query.customConferenceRole.findMany({
-		where: { id: { in: unique }, conferenceId },
-		columns: { id: true }
-	});
-	if (roles.length !== unique.length) {
-		throw apiError('INVALID_INPUT', m.rolesNotInConference());
-	}
-}
+import { apiError } from '$api/services/errors/apiError';
 
 /**
  * The caller's existing single registration in the conference, if any, after making sure they may
  * register (again): not already in the conference in another way - unlike the delegation flow an
  * existing single registration is tolerated, and edited - and not already sent in, which is the
- * same line the update ability draws. The role applied for has to be one of the conference's.
+ * same line the update ability draws. That the role applied for is one of the conference's is
+ * checked next (`assertRolesOf`).
  */
-async function ownRegistrationToEdit(conferenceId: string, userId: string, roleId: string) {
+export async function ownRegistrationToEdit(
+	userId: string,
+	args: {
+		conferenceId: string;
+		school?: string | null;
+		motivation?: string | null;
+		experience?: string | null;
+	}
+) {
+	applicationFormSchema.parse({
+		school: args.school,
+		motivation: args.motivation,
+		experience: args.experience
+	});
+
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
-		await fetchUserParticipations({ conferenceId, userId });
+		await fetchUserParticipations({ conferenceId: args.conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
 		throw apiError(
 			'CONFLICT',
@@ -43,7 +45,6 @@ async function ownRegistrationToEdit(conferenceId: string, userId: string, roleI
 	if (foundSingleParticipant?.applied) {
 		throw apiError('CONFLICT', m.youAreAlreadySingleParticipant());
 	}
-	await assertRolesOf(conferenceId, [roleId]);
 	return foundSingleParticipant;
 }
 
@@ -70,7 +71,8 @@ async function unapplyForRoles(singleParticipantId: string, roleIds: string[]) {
 
 /**
  * Registering as a single participant. If the user already has an entry for this conference
- * the legacy resolver updated it instead of failing, so this does the same. Returns the row id.
+ * the legacy resolver updated it instead of failing, so this does the same: `existing` is what
+ * `ownRegistrationToEdit` found. Returns the row id.
  */
 export async function registerSingleParticipant(
 	userId: string,
@@ -80,16 +82,9 @@ export async function registerSingleParticipant(
 		school?: string | null;
 		motivation?: string | null;
 		experience?: string | null;
-	}
+	},
+	existing: { id: string } | undefined
 ) {
-	applicationFormSchema.parse({
-		school: args.school,
-		motivation: args.motivation,
-		experience: args.experience
-	});
-
-	const existing = await ownRegistrationToEdit(args.conferenceId, userId, args.roleId);
-
 	let rowId: string;
 	if (existing) {
 		await db
@@ -121,39 +116,28 @@ export async function registerSingleParticipant(
 	return rowId;
 }
 
-/** Updates a single participant's application and the roles it applies for. */
-export async function updateSingleParticipantApplication(
-	ctx: ApiContext,
-	args: {
-		id: string;
-		school?: string | null;
-		experience?: string | null;
-		motivation?: string | null;
-		applyForRolesIdList?: string[] | null;
-		unApplyForRolesIdList?: string[] | null;
-		applied?: boolean | null;
-	}
-) {
-	const updatable = (await ctx.abilities.singleParticipant.filter('update')).merge({
-		where: { id: args.id }
-	});
-
-	// Checked up front: the role changes below go to the join table directly, so an update
-	// that matched no row would otherwise not stop them.
-	const target = await db.query.singleParticipant
-		.findFirst({ ...updatable.query.single, columns: { id: true, conferenceId: true } })
-		.then(assertFindFirstExists);
-	await assertRolesOf(target.conferenceId, args.applyForRolesIdList ?? []);
-
+/**
+ * Updates a single participant's application and the roles it applies for. The caller checks
+ * first that it may (`assertCanUpdateSingleParticipant`).
+ */
+export async function updateSingleParticipantApplication(args: {
+	id: string;
+	school?: string | null;
+	experience?: string | null;
+	motivation?: string | null;
+	applyForRolesIdList?: string[] | null;
+	unApplyForRolesIdList?: string[] | null;
+	applied?: boolean | null;
+}) {
 	if (args.applied) {
 		const participant = await db.query.singleParticipant
 			.findFirst({
-				...updatable.query.single,
+				where: { id: args.id },
 				with: { appliedForRoles: true, conference: true }
 			})
 			.then(assertFindFirstExists);
 
-		assertApplicationReady(participant, args, 1);
+		assertApplicationReady(participant, args, MIN_ROLE_APPLICATIONS.singleParticipant);
 	}
 
 	applicationFormSchema.parse({
@@ -172,20 +156,25 @@ export async function updateSingleParticipantApplication(
 	// A call that only changes role applications has nothing to set, and drizzle rejects an
 	// empty `set` ("No values to set").
 	if (Object.values(values).some((value) => value !== undefined)) {
-		await db.update(schema.singleParticipant).set(values).where(updatable.sql.where);
+		await db
+			.update(schema.singleParticipant)
+			.set(values)
+			.where(eq(schema.singleParticipant.id, args.id));
 	}
 
 	await applyForRoles(args.id, args.applyForRolesIdList ?? []);
 	await unapplyForRoles(args.id, args.unApplyForRolesIdList ?? []);
 }
 
-/** Management assigning a user directly as a single participant with a role. Returns the row id. */
+/**
+ * Management assigning a user directly as a single participant with a role, which the caller
+ * checked (`assertCanCreateAppliedSingleParticipant`). Returns the row id.
+ */
 export async function createAssignedSingleParticipant(args: {
 	userId: string;
 	conferenceId: string;
 	roleId: string;
 }) {
-	await assertRolesOf(args.conferenceId, [args.roleId]);
 	if (await isUserAlreadyRegistered({ userId: args.userId, conferenceId: args.conferenceId })) {
 		throw apiError('CONFLICT', m.singleParticipantUserHasOtherRole());
 	}

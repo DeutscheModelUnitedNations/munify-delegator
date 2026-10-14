@@ -18,11 +18,11 @@
 		form: SuperForm<ConferenceSettings>;
 		/** Which templates the server already holds; a test print needs them stored. */
 		storedDocuments: {
-			contractContentSet: boolean;
-			guardianConsentContentSet: boolean;
-			mediaConsentContentSet: boolean;
-			termsAndConditionsContentSet: boolean;
-			certificateContentSet: boolean;
+			contractFile: { id: string } | null;
+			guardianConsentFile: { id: string } | null;
+			mediaConsentFile: { id: string } | null;
+			termsAndConditionsFile: { id: string } | null;
+			certificateFile: { id: string } | null;
 		};
 	}
 
@@ -38,20 +38,17 @@
 			// Fetched on demand: only the test print needs the templates.
 			const templates = await client.query.conference({
 				__args: { id: conferenceId },
-				contractContentUrl: true,
-				guardianConsentContentUrl: true,
-				mediaConsentContentUrl: true,
-				termsAndConditionsContentUrl: true
+				contractFile: { url: true },
+				guardianConsentFile: { url: true },
+				mediaConsentFile: { url: true },
+				termsAndConditionsFile: { url: true }
 			});
 
 			await downloadCompletePostalRegistrationPDF(
 				false,
 				testPrintParticipant(),
 				testPrintRecipient($formData),
-				templateOrDefault(templates.contractContentUrl),
-				templateOrDefault(templates.guardianConsentContentUrl),
-				templateOrDefault(templates.mediaConsentContentUrl),
-				templateOrDefault(templates.termsAndConditionsContentUrl),
+				templates,
 				'test_postal_registration.pdf'
 			);
 		} catch (error) {
@@ -76,7 +73,7 @@
 		try {
 			const templates = await client.query.conference({
 				__args: { id: conferenceId },
-				certificateContentUrl: true
+				certificateFile: { url: true }
 			});
 
 			await downloadCompleteCertificate(
@@ -84,7 +81,7 @@
 					fullName: 'Antonio Guterres',
 					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
 				},
-				templateOrDefault(templates.certificateContentUrl),
+				templateOrDefault(templates.certificateFile?.url),
 				`test_certificate.pdf`
 			);
 		} finally {
@@ -121,37 +118,37 @@
 			name="contractBasePDF"
 			label={m.postalTemplateContract()}
 			accept="*.pdf"
-			inputClass={storedDocuments.contractContentSet ? 'file-input-success' : undefined}
+			inputClass={storedDocuments.contractFile ? 'file-input-success' : undefined}
 		/>
 		<FormFile
 			{form}
 			name="guardianConsentBasePDF"
 			label={m.postalTemplateGuardianConsent()}
 			accept="*.pdf"
-			inputClass={storedDocuments.guardianConsentContentSet ? 'file-input-success' : undefined}
+			inputClass={storedDocuments.guardianConsentFile ? 'file-input-success' : undefined}
 		/>
 		<FormFile
 			{form}
 			name="mediaConsentBasePDF"
 			label={m.postalTemplateMediaConsent()}
 			accept="*.pdf"
-			inputClass={storedDocuments.mediaConsentContentSet ? 'file-input-success' : undefined}
+			inputClass={storedDocuments.mediaConsentFile ? 'file-input-success' : undefined}
 		/>
 		<FormFile
 			{form}
 			name="termsAndConditionsBasePDF"
 			label={m.postalTemplateTermsAndConditions()}
 			accept="*.pdf"
-			inputClass={storedDocuments.termsAndConditionsContentSet ? 'file-input-success' : undefined}
+			inputClass={storedDocuments.termsAndConditionsFile ? 'file-input-success' : undefined}
 		/>
 	</div>
 	<div>
 		<button
 			class="btn btn-sm dark:btn-outline {loading ||
-			!storedDocuments.contractContentSet ||
-			!storedDocuments.guardianConsentContentSet ||
-			!storedDocuments.mediaConsentContentSet ||
-			!storedDocuments.termsAndConditionsContentSet
+			!storedDocuments.contractFile ||
+			!storedDocuments.guardianConsentFile ||
+			!storedDocuments.mediaConsentFile ||
+			!storedDocuments.termsAndConditionsFile
 				? 'btn-disabled'
 				: ''}"
 			onclick={async (e) => {
@@ -173,11 +170,11 @@
 		name="certificateBasePDF"
 		label={m.certificateTemplate()}
 		accept="*.pdf"
-		inputClass={storedDocuments.certificateContentSet ? 'file-input-success' : undefined}
+		inputClass={storedDocuments.certificateFile ? 'file-input-success' : undefined}
 	/>
 	<div>
 		<button
-			class="btn btn-sm dark:btn-outline {loading || !storedDocuments.certificateContentSet
+			class="btn btn-sm dark:btn-outline {loading || !storedDocuments.certificateFile
 				? 'btn-disabled'
 				: ''}"
 			onclick={async (e) => {

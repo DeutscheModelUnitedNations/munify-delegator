@@ -5,7 +5,7 @@ import { CombinedError } from '@urql/core';
  *
  * The message of an error is text for a person and is translated into their language, so code
  * must never branch on it. An error the client has to recognise carries one of these in
- * `extensions.code` (the server side is `apiError` in `$api/services/apiError`). Add a code here
+ * `extensions.code` (the server side is `apiError` in `$api/services/errors/apiError`). Add a code here
  * first; both sides then fail to compile until they agree.
  */
 const ERROR_CODES = [

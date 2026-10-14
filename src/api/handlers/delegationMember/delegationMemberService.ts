@@ -6,11 +6,11 @@ import {
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assignedRoleConditions, nullToUndefined } from '$api/services/args';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
-import type { ApiContext } from '$api/rumble';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '$api/services/apiError';
+import { and, eq, inArray, type SQL } from 'drizzle-orm';
+import { apiError } from '$api/services/errors/apiError';
+import type { CommitteeMove } from './delegationMemberPermissions';
 
 /** Joining a delegation by entry code. Returns the id of the new member. */
 export async function joinDelegationByEntryCode(
@@ -52,17 +52,14 @@ export async function joinDelegationByEntryCode(
 /**
  * Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is
  * left, the delegation itself goes. Same ordering as the legacy resolver. Returns the id of the
- * delegation, or undefined when it went with its last member.
+ * delegation, or undefined when it went with its last member. The caller checks first that the
+ * delegate may be removed (`assertCanDeleteDelegationMember`).
  */
-export async function removeDelegationMember(ctx: ApiContext, id: string) {
-	const deletable = (await ctx.abilities.delegationMember.filter('delete')).merge({
-		where: { id }
-	});
-
+export async function removeDelegationMember(id: string) {
 	const delegationId = await db.transaction(async (tx) => {
 		const [deleted] = await tx
 			.delete(schema.delegationMember)
-			.where(deletable.sql.where)
+			.where(eq(schema.delegationMember.id, id))
 			.returning({
 				id: schema.delegationMember.id,
 				delegationId: schema.delegationMember.delegationId,
@@ -98,43 +95,6 @@ export async function removeDelegationMember(ctx: ApiContext, id: string) {
 	}
 
 	return delegationId;
-}
-
-/** Refuses a nation, non-state actor or committee that the conference does not have. */
-export async function assertOfferedIn(
-	conferenceId: string,
-	role: {
-		assignedNationAlpha3Code?: string | null;
-		assignedNonStateActorId?: string | null;
-		assignedCommitteeId?: string | null;
-	}
-) {
-	const [nation, nsa, committee] = await Promise.all([
-		role.assignedNationAlpha3Code
-			? db.query.nation.findFirst({
-					where: {
-						alpha3Code: role.assignedNationAlpha3Code,
-						committees: { conferenceId }
-					},
-					columns: { alpha3Code: true }
-				})
-			: true,
-		role.assignedNonStateActorId
-			? db.query.nonStateActor.findFirst({
-					where: { id: role.assignedNonStateActorId, conferenceId },
-					columns: { id: true }
-				})
-			: true,
-		role.assignedCommitteeId
-			? db.query.committee.findFirst({
-					where: { id: role.assignedCommitteeId, conferenceId },
-					columns: { id: true }
-				})
-			: true
-	]);
-	if (!nation || !nsa || !committee) {
-		throw apiError('INVALID_INPUT', m.roleNotOnOffer());
-	}
 }
 
 /** Placeholder details, so an assigned delegation looks "applied" like any other. */
@@ -263,32 +223,13 @@ export async function placeUserInAssignedDelegation(args: {
 /**
  * Moves a delegate into a committee. Committees have a per-delegation seat limit, so when the
  * target is already full for this delegation the longest-untouched occupant is displaced into
- * the seat this member is leaving - a swap, rather than a refusal.
+ * the seat this member is leaving - a swap, rather than a refusal. Takes what
+ * `assertCanMoveDelegationMemberToCommittee` checked and loaded.
  */
-export async function moveMemberToCommittee(
-	ctx: ApiContext,
-	id: string,
-	assignedCommitteeId: string
-) {
-	const updatable = (await ctx.abilities.delegationMember.filter('update')).merge({
-		where: { id }
-	});
-
+export async function moveMemberToCommittee({ member, committee }: CommitteeMove) {
 	await db.transaction(async (tx) => {
-		const member = await tx.query.delegationMember
-			.findFirst({
-				...updatable.query.single,
-				with: { delegation: { with: { members: true } } }
-			})
-			.then(assertFindFirstExists);
-
-		// A committee of the member's own conference, not any committee id at all.
-		const committee = await tx.query.committee
-			.findFirst({ where: { id: assignedCommitteeId, conferenceId: member.conferenceId } })
-			.then(assertFindFirstExists);
-
 		const siblings = (member.delegation?.members ?? []).filter((x) => x.id !== member.id);
-		const occupying = siblings.filter((x) => x.assignedCommitteeId === assignedCommitteeId);
+		const occupying = siblings.filter((x) => x.assignedCommitteeId === committee.id);
 
 		if (occupying.length >= committee.numOfSeatsPerDelegation) {
 			const displaced = [...occupying].sort(
@@ -304,35 +245,25 @@ export async function moveMemberToCommittee(
 
 		await tx
 			.update(schema.delegationMember)
-			.set({ assignedCommitteeId })
-			.where(updatable.sql.where);
+			.set({ assignedCommitteeId: committee.id })
+			.where(eq(schema.delegationMember.id, member.id));
 	});
 }
 
-/** Bulk committee (un)assignment; a null committee clears the assignment. Returns the count. */
+/**
+ * Bulk committee (un)assignment; a null committee clears the assignment. Only the delegates
+ * matching `updatableWhere` (`authorizeDelegationMemberCommitteeMoves`) are written. Returns the
+ * count.
+ */
 export async function moveManyMembersToCommittee(
-	ctx: ApiContext,
-	conferenceId: string,
 	ids: string[],
-	assignedCommitteeId: string | null | undefined
+	assignedCommitteeId: string | null | undefined,
+	updatableWhere: SQL | undefined
 ) {
-	if (assignedCommitteeId) {
-		await db.query.committee
-			.findFirst({ where: { id: assignedCommitteeId, conferenceId } })
-			.then(assertFindFirstExists);
-	}
-
 	const updated = await db
 		.update(schema.delegationMember)
 		.set({ assignedCommitteeId: assignedCommitteeId ?? null })
-		.where(
-			and(
-				(await ctx.abilities.delegationMember.filter('update')).merge({
-					where: { conferenceId }
-				}).sql.where,
-				inArray(schema.delegationMember.id, ids)
-			)
-		)
+		.where(and(updatableWhere, inArray(schema.delegationMember.id, ids)))
 		.returning({ id: schema.delegationMember.id });
 
 	return updated.length;
@@ -372,45 +303,19 @@ async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
 }
 
 /**
- * Applies the committee assignment produced by the assignment assistant.
- *
- * Each pairing is validated before it is written: the committee must belong to the same
- * conference as the delegate, and it must actually seat the delegation's assigned nation.
- * One bad pairing rolls the whole batch back, which is why this runs in a transaction rather
- * than writing as it goes.
+ * Applies the committee assignment produced by the assignment assistant, whose pairings
+ * `assertCanAssignCommittees` checked. One pairing that breaks a seat limit rolls the whole batch
+ * back, which is why this runs in a transaction rather than writing as it goes.
  */
 export async function assignCommittees(
-	ctx: ApiContext,
 	assignments: { delegationMemberId: string; committeeId: string }[]
 ) {
 	await db.transaction(async (tx) => {
 		for (const assignment of assignments) {
-			const committee = await tx.query.committee
-				.findFirst({ where: { id: assignment.committeeId }, with: { nations: true } })
-				.then(assertFindFirstExists);
-
-			const member = await tx.query.delegationMember
-				.findFirst({
-					...(await ctx.abilities.delegationMember.filter('update')).merge({
-						where: { id: assignment.delegationMemberId }
-					}).query.single,
-					with: { delegation: true }
-				})
-				.then(assertFindFirstExists);
-
-			if (committee.conferenceId !== member.conferenceId) {
-				throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
-			}
-
-			const nationCode = member.delegation?.assignedNationAlpha3Code ?? '';
-			if (!committee.nations.some((nation) => nation.alpha3Code === nationCode)) {
-				throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
-			}
-
 			await tx
 				.update(schema.delegationMember)
 				.set({ assignedCommitteeId: assignment.committeeId })
-				.where(eq(schema.delegationMember.id, member.id));
+				.where(eq(schema.delegationMember.id, assignment.delegationMemberId));
 		}
 
 		// Each committee seats a fixed number of every delegation; the assignment page checks

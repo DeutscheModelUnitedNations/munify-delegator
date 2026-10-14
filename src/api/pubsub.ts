@@ -1,10 +1,5 @@
 import { pubsub } from '$api/rumble';
 
-/**
- * One pubsub instance per table. Every resolver or service that writes a table publishes through
- * its instance (`updated(id)`, `created()`, `removed()`), so a subscriber watching the table hears
- * about it whoever wrote it.
- */
 export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
 export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
 export const assignmentUnitPubsub = pubsub({ table: 'assignmentUnit' });
@@ -37,6 +32,7 @@ export const schoolSuggestionPubsub = pubsub({ table: 'schoolSuggestion' });
 export const schoolSuggestionVariantPubsub = pubsub({ table: 'schoolSuggestionVariant' });
 export const searchHistoryPubsub = pubsub({ table: 'searchHistory' });
 export const singleParticipantPubsub = pubsub({ table: 'singleParticipant' });
+export const storedFilePubsub = pubsub({ table: 'storedFile' });
 export const surveyAnswerPubsub = pubsub({ table: 'surveyAnswer' });
 export const surveyOptionPubsub = pubsub({ table: 'surveyOption' });
 export const surveyQuestionPubsub = pubsub({ table: 'surveyQuestion' });

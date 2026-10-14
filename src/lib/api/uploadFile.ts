@@ -1,7 +1,7 @@
 import { client } from '$lib/api/rumbleClient/client';
 import { m } from '$lib/paraglide/messages';
 
-/** Which file an upload is for, as `FILE_SOURCES` in `$api/services/files/files` lists them. */
+/** Which file an upload is for, as `FILE_SOURCES` in `$api/handlers/storedFile/fileSources` lists them. */
 export type UploadTarget =
 	| { kind: 'conference'; field: ConferenceFileField; conferenceId: string }
 	| { kind: 'place'; field: 'sitePlan'; conferenceId: string }
@@ -33,9 +33,11 @@ export async function uploadFile(
 
 	const upload = await client.mutate.requestFileUpload({
 		__args: { ...target, fileName: file.name, mimeType, size: file.size },
-		fileId: true,
+		id: true,
 		uploadUrl: true
 	});
+	// A file just recorded has nothing uploaded yet, so its URL is always there.
+	if (!upload.uploadUrl) throw new Error(m.fileUploadFailed({ fileName: file.name }));
 	// Type and length are signed into the URL, so they have to be sent exactly as announced.
 	const response = await fetch(upload.uploadUrl, {
 		method: 'PUT',
@@ -43,5 +45,5 @@ export async function uploadFile(
 		headers: { 'Content-Type': mimeType }
 	});
 	if (!response.ok) throw new Error(m.fileUploadFailed({ fileName: file.name }));
-	return upload.fileId;
+	return upload.id;
 }

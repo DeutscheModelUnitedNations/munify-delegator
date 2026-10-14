@@ -24,7 +24,7 @@
 			latitude: true,
 			longitude: true,
 			// Whether there is a site plan, not the plan itself: it is an uploaded file and can be large.
-			hasSitePlan: true
+			sitePlanFile: { id: true }
 		})
 	);
 
@@ -81,7 +81,7 @@
 			<td class="max-w-xs truncate">{place.address ?? '–'}</td>
 			<td>{formatCoordinates(place)}</td>
 			<td>
-				{#if place.hasSitePlan}
+				{#if place.sitePlanFile}
 					<i class="fas fa-file-pdf text-success"></i>
 				{:else}
 					–

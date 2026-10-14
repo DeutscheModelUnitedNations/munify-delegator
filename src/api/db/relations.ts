@@ -202,6 +202,38 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	conference: {
+		imageFile: r.one.storedFile({
+			from: r.conference.imageFileId,
+			to: r.storedFile.id
+		}),
+		emblemFile: r.one.storedFile({
+			from: r.conference.emblemFileId,
+			to: r.storedFile.id
+		}),
+		logoFile: r.one.storedFile({
+			from: r.conference.logoFileId,
+			to: r.storedFile.id
+		}),
+		contractFile: r.one.storedFile({
+			from: r.conference.contractFileId,
+			to: r.storedFile.id
+		}),
+		guardianConsentFile: r.one.storedFile({
+			from: r.conference.guardianConsentFileId,
+			to: r.storedFile.id
+		}),
+		mediaConsentFile: r.one.storedFile({
+			from: r.conference.mediaConsentFileId,
+			to: r.storedFile.id
+		}),
+		termsAndConditionsFile: r.one.storedFile({
+			from: r.conference.termsAndConditionsFileId,
+			to: r.storedFile.id
+		}),
+		certificateFile: r.one.storedFile({
+			from: r.conference.certificateFileId,
+			to: r.storedFile.id
+		}),
 		WaitingListEntry: r.many.waitingListEntry({
 			from: r.conference.id,
 			to: r.waitingListEntry.conferenceId
@@ -473,6 +505,10 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	place: {
+		sitePlanFile: r.one.storedFile({
+			from: r.place.sitePlanFileId,
+			to: r.storedFile.id
+		}),
 		calendarEntries: r.many.calendarEntry({
 			from: r.place.id,
 			to: r.calendarEntry.placeId
@@ -484,6 +520,11 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	resolution: {
+		file: r.one.storedFile({
+			from: r.resolution.fileId,
+			to: r.storedFile.id,
+			optional: false
+		}),
 		conference: r.one.conference({
 			from: r.resolution.conferenceId,
 			to: r.conference.id,

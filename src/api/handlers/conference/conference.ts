@@ -1,21 +1,18 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	isParticipantOfConference,
-	isTeamMemberOf,
-	PROJECT_MANAGEMENT_ROLES,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { NationRef } from '$api/handlers/nation/nation';
 import { enum_ } from '$api/rumble';
 import { eq, max } from 'drizzle-orm';
 import { UserRef } from '$api/handlers/user/user';
 import { distinctNationCodes } from '$api/handlers/schoolSuggestion/conferenceAggregates';
-import { loadSchoolRows } from '$api/handlers/schoolSuggestion/schoolSuggestions';
-import { fileUrl } from '$api/services/files/storage';
 import {
+	loadSchoolRows,
+	refreshSchoolSuggestions
+} from '$api/handlers/schoolSuggestion/schoolSuggestions';
+import { readableSchoolRegistrations } from '$api/handlers/schoolSuggestion/schoolSuggestionPermissions';
+import {
+	assertValidConferenceSettings,
 	countOfferedSeats,
 	countSeatedParticipants,
 	findPlausibilityIssues,
@@ -24,6 +21,15 @@ import {
 	updateConference,
 	type PlausibilityUser
 } from './conferenceService';
+import {
+	assertCanClaimConferenceFiles,
+	assertCanReadPlausibility,
+	assertCanSeedConference,
+	assertCanUpdateConference,
+	conferenceUpdateRefused,
+	registerConferenceAbilities,
+	schoolMergeScope
+} from './conferencePermissions';
 import {
 	committeePubsub,
 	conferencePubsub,
@@ -45,129 +51,11 @@ const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	})
 });
 
-/** Where the fee goes, where postal documents go, and the documents themselves. */
-const MEMBERS_ONLY = {
-	accountHolder: false,
-	iban: false,
-	bic: false,
-	bankName: false,
-	postalName: false,
-	postalStreet: false,
-	postalApartment: false,
-	postalZip: false,
-	postalCity: false,
-	postalCountry: false,
-	contractFileId: false,
-	guardianConsentFileId: false,
-	mediaConsentFileId: false,
-	termsAndConditionsFileId: false,
-	certificateFileId: false
-};
-/** The team's internal tools. */
-const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
-
-// Everyone can see the conferences that are open for registration (or, from the assignment on,
-// for the waiting list) and their details - short of the members-only and team-only columns. Any
-// other conference is only visible to the people who have a part in it (the rules below).
-abilityBuilder.conference.allow('read').when(() => ({
-	where: { state: { in: ['PARTICIPANT_REGISTRATION', 'PREPARATION'] } },
-	columns: { ...MEMBERS_ONLY, ...TEAM_ONLY }
-}));
-abilityBuilder.conference.allow('read').when(systemAdmin);
-
-// Participants and supervisors also read the members-only columns.
-abilityBuilder.conference.allow('read').when((ctx) => {
-	const participant = isParticipantOfConference(ctx);
-	return participant ? { where: participant.conference, columns: TEAM_ONLY } : undefined;
-});
-
-// The team reads all of it.
-abilityBuilder.conference.allow('read').when((ctx) => where(isTeamMemberOf(ctx)));
-
-// Update and delete are limited to the conference's own project management.
-abilityBuilder.conference
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
+registerConferenceAbilities();
 
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
-		// Whether each document template has been uploaded, for the configuration UI.
-		contractContentSet: t.field({
-			type: 'Boolean',
-			resolve: (conference) => !!conference.contractFileId
-		}),
-		guardianConsentContentSet: t.field({
-			type: 'Boolean',
-			resolve: (conference) => !!conference.guardianConsentFileId
-		}),
-		mediaConsentContentSet: t.field({
-			type: 'Boolean',
-			resolve: (conference) => !!conference.mediaConsentFileId
-		}),
-		termsAndConditionsContentSet: t.field({
-			type: 'Boolean',
-			resolve: (conference) => !!conference.termsAndConditionsFileId
-		}),
-		certificateContentSet: t.field({
-			type: 'Boolean',
-			resolve: (conference) => !!conference.certificateFileId
-		}),
-
-		// The uploaded images and templates, straight from the bucket; null when nothing is stored
-		// (or the reader may not see it, since a masked file id reads as null).
-		imageUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) => fileUrl('conference', 'image', conference.id, conference.imageFileId)
-		}),
-		emblemUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl('conference', 'emblem', conference.id, conference.emblemFileId)
-		}),
-		logoUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) => fileUrl('conference', 'logo', conference.id, conference.logoFileId)
-		}),
-		contractContentUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl('conference', 'contract', conference.id, conference.contractFileId)
-		}),
-		guardianConsentContentUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl('conference', 'guardianConsent', conference.id, conference.guardianConsentFileId)
-		}),
-		mediaConsentContentUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl('conference', 'mediaConsent', conference.id, conference.mediaConsentFileId)
-		}),
-		termsAndConditionsContentUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl(
-					'conference',
-					'termsAndConditions',
-					conference.id,
-					conference.termsAndConditionsFileId
-				)
-		}),
-		certificateContentUrl: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: (conference) =>
-				fileUrl('conference', 'certificate', conference.id, conference.certificateFileId)
-		}),
-
 		/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 		totalParticipants: t.field({
 			type: 'Int',
@@ -208,7 +96,8 @@ const ConferenceRef = object({
 		 */
 		schools: t.field({
 			type: [ConferenceSchools],
-			resolve: async (conference, _args, ctx) => loadSchoolRows(conference.id, ctx)
+			resolve: async (conference, _args, ctx) =>
+				loadSchoolRows(conference.id, await readableSchoolRegistrations(ctx, conference.id))
 		})
 	})
 });
@@ -229,7 +118,11 @@ schemaBuilder.mutationFields((t) => ({
 			newSchoolName: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await mergeSchoolNames(ctx, args);
+			await mergeSchoolNames(args, await schoolMergeScope(ctx, args.conferenceId));
+			await refreshSchoolSuggestions(
+				args.conferenceId,
+				await readableSchoolRegistrations(ctx, args.conferenceId)
+			);
 
 			delegationPubsub.updated();
 			singleParticipantPubsub.updated();
@@ -301,7 +194,11 @@ schemaBuilder.mutationFields((t) => ({
 			certificateFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateConference(ctx, args);
+			await assertCanUpdateConference(ctx, args);
+			assertValidConferenceSettings(args);
+			await assertCanClaimConferenceFiles(ctx, args);
+			// Nothing matches when the conference is gone.
+			if (!(await updateConference(args))) throw conferenceUpdateRefused();
 
 			conferencePubsub.updated(args.id);
 
@@ -314,10 +211,8 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.then(assertFindFirstExists);
 		}
-	})
-}));
+	}),
 
-schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
 	 * document. Admin only.
@@ -326,7 +221,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceRef,
 		args: { data: t.arg({ type: 'JSON', required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const created = await seedConference(ctx, args.data);
+			assertCanSeedConference(ctx);
+			const created = await seedConference(args.data);
 
 			conferencePubsub.created();
 			committeePubsub.created();
@@ -408,7 +304,8 @@ schemaBuilder.queryFields((t) => ({
 		type: PlausibilityResult,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			return findPlausibilityIssues(ctx, args.conferenceId);
+			await assertCanReadPlausibility(ctx, args.conferenceId);
+			return findPlausibilityIssues(args.conferenceId, await ctx.abilities.user.filter('read'));
 		}
 	})
 }));

@@ -611,9 +611,20 @@ async function generateCompletePostalRegistrationPDF(
 	return mergedPdfBytes;
 }
 
-/** The template content, or a toast naming what is missing and an error when there is none. */
-function requireContent(content: string | null | undefined, missingMessage: string): string {
-	if (content) return content;
+/** A stored template as the API selects it; missing until the team uploads one. */
+type TemplateFile = { url: string } | null | undefined;
+
+/** The four templates a postal registration is built from, as a conference selects them. */
+interface PostalTemplateFiles {
+	contractFile?: TemplateFile;
+	guardianConsentFile?: TemplateFile;
+	mediaConsentFile?: TemplateFile;
+	termsAndConditionsFile?: TemplateFile;
+}
+
+/** The template's URL, or a toast naming what is missing and an error when there is none. */
+function requireContent(file: TemplateFile, missingMessage: string): string {
+	if (file) return file.url;
 	toast.error(missingMessage);
 	throw new Error('Missing required PDF content');
 }
@@ -623,16 +634,16 @@ export async function downloadCompletePostalRegistrationPDF(
 	isOfAge: boolean,
 	participant: ParticipantData,
 	recipient: RecipientData,
-	contract?: string | null,
-	guardianAgreement?: string | null,
-	medialAgreement?: string | null,
-	termsAndConditions?: string | null,
+	templates: PostalTemplateFiles,
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
-	const contractContent = requireContent(contract, m.pdfMissingContract());
-	const guardianContent = requireContent(guardianAgreement, m.pdfMissingGuardianAgreement());
-	const mediaContent = requireContent(medialAgreement, m.pdfMissingMediaAgreement());
-	const termsContent = requireContent(termsAndConditions, m.pdfMissingTerms());
+	const contractContent = requireContent(templates.contractFile, m.pdfMissingContract());
+	const guardianContent = requireContent(
+		templates.guardianConsentFile,
+		m.pdfMissingGuardianAgreement()
+	);
+	const mediaContent = requireContent(templates.mediaConsentFile, m.pdfMissingMediaAgreement());
+	const termsContent = requireContent(templates.termsAndConditionsFile, m.pdfMissingTerms());
 	try {
 		const pdfBytes = await generateCompletePostalRegistrationPDF(
 			isOfAge,

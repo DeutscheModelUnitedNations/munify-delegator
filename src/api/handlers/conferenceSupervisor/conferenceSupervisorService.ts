@@ -1,12 +1,10 @@
 import { db, schema } from '$api/db/db';
-import {
-	fetchUserParticipations,
-	isUserAlreadyRegistered
-} from '$api/services/registration/participation';
+import { isUserAlreadyRegistered } from '$api/services/registration/participation';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
+import { eq } from 'drizzle-orm';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
 const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
@@ -35,71 +33,53 @@ export async function registerSupervisor(args: {
 	return created.id;
 }
 
-/**
- * Attaches a participant to the supervisor holding the connection code. Returns the supervisor
- * and the participations that now have a link, so the caller can announce them.
- */
-export async function connectParticipantToSupervisor(
-	conferenceId: string,
-	connectionCode: string,
-	subjectId: string
-) {
-	const supervisor = await db.query.conferenceSupervisor
+/** The supervisor holding the connection code in the conference. */
+export async function findSupervisorByConnectionCode(conferenceId: string, connectionCode: string) {
+	return db.query.conferenceSupervisor
 		.findFirst({
 			where: { conferenceId, connectionCode: normalizeConnectionCode(connectionCode) }
 		})
 		.then(assertFindFirstExists);
+}
 
-	const participation = await fetchUserParticipations({ conferenceId, userId: subjectId });
-
-	if (participation.foundSupervisor || participation.foundTeamMember) {
-		throw apiError('CONFLICT', m.supervisorAlreadySupervisorOrTeam());
+/**
+ * Attaches a participant to a supervisor, through the participations `assertCanBeSupervised`
+ * found. Returns the supervisor and the participations that now have a link, so the caller can
+ * announce them.
+ */
+export async function connectParticipantToSupervisor(
+	supervisorId: string,
+	participation: {
+		foundDelegationMember?: { id: string } | null;
+		foundSingleParticipant?: { id: string } | null;
 	}
-	if (!participation.foundDelegationMember && !participation.foundSingleParticipant) {
-		throw apiError('FORBIDDEN', m.supervisorNotParticipant());
-	}
-
+) {
 	// Both supervision links are many-to-many join tables.
 	if (participation.foundDelegationMember) {
 		await db
 			.insert(schema.conferenceSupervisorToDelegationMember)
-			.values({ a: supervisor.id, b: participation.foundDelegationMember.id })
+			.values({ a: supervisorId, b: participation.foundDelegationMember.id })
 			.onConflictDoNothing();
 	}
 	if (participation.foundSingleParticipant) {
 		await db
 			.insert(schema.conferenceSupervisorToSingleParticipant)
-			.values({ a: supervisor.id, b: participation.foundSingleParticipant.id })
+			.values({ a: supervisorId, b: participation.foundSingleParticipant.id })
 			.onConflictDoNothing();
 	}
 
 	return {
-		supervisorId: supervisor.id,
+		supervisorId,
 		delegationMemberId: participation.foundDelegationMember?.id,
 		singleParticipantId: participation.foundSingleParticipant?.id
 	};
 }
 
 /**
- * Shows whose supervision a participant is about to accept, before they connect. The caller has
- * to take part in the conference in some role, so an arbitrary logged-in user cannot probe codes.
+ * Shows whose supervision a participant is about to accept, before they connect. The caller
+ * checks first that they may look (`assertCanPreviewConferenceSupervisor`).
  */
-export async function previewSupervisorByCode(
-	conferenceId: string,
-	connectionCode: string,
-	callerId: string
-) {
-	const participation = await fetchUserParticipations({ conferenceId, userId: callerId });
-
-	if (
-		!participation.foundDelegationMember &&
-		!participation.foundSingleParticipant &&
-		!participation.foundTeamMember &&
-		!participation.foundSupervisor
-	) {
-		throw apiError('FORBIDDEN', m.notRegisteredForConference());
-	}
-
+export async function previewSupervisorByCode(conferenceId: string, connectionCode: string) {
 	const supervisor = await db.query.conferenceSupervisor
 		.findFirst({
 			where: { conferenceId, connectionCode: normalizeConnectionCode(connectionCode) },
@@ -111,4 +91,12 @@ export async function previewSupervisorByCode(
 		given_name: supervisor.user?.givenName ?? null,
 		family_name: supervisor.user?.familyName ?? null
 	};
+}
+
+/** Hands the supervisor a new connection code; the old one stops working. */
+export async function rotateConnectionCode(supervisorId: string) {
+	await db
+		.update(schema.conferenceSupervisor)
+		.set({ connectionCode: makeEntryCode() })
+		.where(eq(schema.conferenceSupervisor.id, supervisorId));
 }

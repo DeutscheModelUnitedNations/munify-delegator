@@ -1,21 +1,10 @@
-import { m } from '$lib/paraglide/messages';
 import { db, schema } from '$api/db/db';
 import { eq } from 'drizzle-orm';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PAPER_ROLES,
-	isManagedUser,
-	isTeamMemberOf,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
-import type { Context } from '$api/context';
 import { scanUserForDuplicatesInBackground } from '$api/handlers/possibleDuplicate/possibleDuplicates';
 import {
-	assertManagesUser,
 	countConferenceParticipations,
 	previewUser,
 	removeParticipation,
@@ -24,179 +13,23 @@ import {
 	upsertCallerRow
 } from './userService';
 import {
+	assertCanImpersonate,
+	assertCanManageUser,
+	assertCanPreviewUsers,
+	assertCanUpdateNewsletterPreferences,
+	deletableParticipation,
+	registerUserAbilities,
+	updatableUser
+} from './userPermissions';
+import {
 	conferenceParticipantStatusPubsub,
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
 	singleParticipantPubsub,
 	userPubsub
 } from '$api/pubsub';
-import { apiError } from '$api/services/apiError';
 
-/**
- * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
- * masks columns per row: each rule's `columns` apply to the rows that rule matched.
- *
- * - the person themselves: everything but the care team's notes about them;
- * - who looks after them (participant care, project management, admins): everything;
- * - their supervisors: everything but those notes;
- * - teammates: who someone is, plus their phone number - team coordinators: everything but the
- *   care notes;
- * - everybody else who may see the row at all (co-delegates, co-supervisors, reviewers reading an
- *   author): who someone is - name, email, pronouns, birthday for the age checks.
- */
-const IDENTITY = {
-	id: true,
-	createdAt: true,
-	updatedAt: true,
-	email: true,
-	givenName: true,
-	familyName: true,
-	preferredUsername: true,
-	locale: true,
-	pronouns: true,
-	birthday: true
-};
-const WITHOUT_CARE_NOTES = { globalNotes: false };
-
-// System admins may do anything to any account.
-abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Users see and edit themselves - but not what the care team noted about them.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { id }, columns: WITHOUT_CARE_NOTES } : undefined;
-});
-abilityBuilder.user.allow('update').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { id } } : undefined;
-});
-
-// Project management and participant care see everybody they look after - the participants,
-// waiting-list entrants and team of the conferences they manage - in full.
-abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
-
-// Participant care sees the other account of a possible duplicate of someone they look after:
-// who it is and, while the pair stands (open or confirmed), the care notes on it - the reason the
-// pair is shown - but no contact details. A dismissed pair keeps the name only, so the page can
-// still list it and the dismissal can be undone; the notes are withheld again.
-function duplicateOfManaged(ctx: Context, status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[]) {
-	const managed = isManagedUser(ctx);
-	if (!managed) return undefined;
-	const standing = { status: { in: status } };
-	return {
-		OR: [
-			{ duplicatesAsUser: { ...standing, candidate: managed } },
-			{ duplicatesAsCandidate: { ...standing, user: managed } }
-		]
-	};
-}
-abilityBuilder.user.allow('read').when((ctx) => {
-	const filter = duplicateOfManaged(ctx, ['OPEN', 'CONFIRMED']);
-	return filter ? { where: filter, columns: { ...IDENTITY, globalNotes: true } } : undefined;
-});
-abilityBuilder.user.allow('read').when((ctx) => {
-	const filter = duplicateOfManaged(ctx, ['DISMISSED']);
-	return filter ? { where: filter, columns: IDENTITY } : undefined;
-});
-
-/** A delegation membership or single participation the caller supervises. */
-function supervisedByCaller(ctx: Context) {
-	const id = userId(ctx);
-	return id ? { supervisors: { user: { id } } } : undefined;
-}
-
-// Supervisors see the participants they supervise, contact details included.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const supervised = supervisedByCaller(ctx);
-	return supervised
-		? {
-				where: { OR: [{ delegationMemberships: supervised }, { singleParticipant: supervised }] },
-				columns: WITHOUT_CARE_NOTES
-			}
-		: undefined;
-});
-
-// Team coordinators see their team in full but for the care notes: the team members page lists
-// everybody's address, gender and food preference for planning.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const conference = isTeamMemberOf(ctx, ['TEAM_COORDINATOR']);
-	return conference
-		? { where: { teamMember: { conference } }, columns: WITHOUT_CARE_NOTES }
-		: undefined;
-});
-
-// Team members see each other, phone numbers included.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: { teamMember: { conference: { teamMembers: { user: { id } } } } },
-				columns: { ...IDENTITY, phone: true }
-			}
-		: undefined;
-});
-
-// Delegates see each other.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
-				columns: IDENTITY
-			}
-		: undefined;
-});
-
-// Participants see their own supervisors.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					conferenceSupervisor: {
-						OR: [
-							{ supervisedDelegationMembers: { user: { id } } },
-							{ supervisedSingleParticipants: { user: { id } } }
-						]
-					}
-				},
-				columns: IDENTITY
-			}
-		: undefined;
-});
-
-// Supervisors see the other supervisors of the participants they share.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const supervised = supervisedByCaller(ctx);
-	return supervised
-		? {
-				where: {
-					conferenceSupervisor: {
-						OR: [
-							{ supervisedDelegationMembers: supervised },
-							{ supervisedSingleParticipants: supervised }
-						]
-					}
-				},
-				columns: IDENTITY
-			}
-		: undefined;
-});
-
-// Reviewers and conference management see the authors of the conference's papers. They can read
-// every paper there, and a paper's `author` is non-nullable, so without this a single paper by
-// someone the team member may not otherwise read fails the whole review page.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					papers: { conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } } }
-				},
-				columns: IDENTITY
-			}
-		: undefined;
-});
+registerUserAbilities();
 
 const genderEnum = enum_({ tsName: 'gender' });
 // The column is an enum; the legacy arg was a loose string that Prisma rejected at runtime.
@@ -231,7 +64,11 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await removeParticipation(ctx, args.userId, args.conferenceId);
+			await removeParticipation(
+				args.userId,
+				args.conferenceId,
+				await deletableParticipation(ctx, args.userId, args.conferenceId)
+			);
 
 			delegationMemberPubsub.removed();
 			singleParticipantPubsub.removed();
@@ -274,7 +111,7 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateProfile(ctx, args);
+			await updateProfile(args, await updatableUser(ctx, args.id));
 
 			userPubsub.updated(args.id);
 			// a completed or changed profile may now look like an account from before
@@ -304,7 +141,8 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			const updated = await updateNewsletterPreferences(ctx, args);
+			assertCanUpdateNewsletterPreferences(ctx, args);
+			const updated = await updateNewsletterPreferences(args);
 
 			for (const id of updated) userPubsub.updated(id);
 
@@ -320,7 +158,7 @@ schemaBuilder.mutationFields((t) => ({
 			globalNotes: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertManagesUser(ctx, args.id);
+			await assertCanManageUser(ctx, args.id);
 
 			await db
 				.update(schema.user)
@@ -349,7 +187,7 @@ schemaBuilder.mutationFields((t) => ({
 			birthday: t.arg({ type: 'Date' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertManagesUser(ctx, args.id);
+			await assertCanManageUser(ctx, args.id);
 
 			await db
 				.update(schema.user)
@@ -371,12 +209,8 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.then(assertFindFirstExists);
 		}
-	})
-}));
+	}),
 
-const impersonationStalled = () => m.impersonationUnavailable();
-
-schemaBuilder.mutationFields((t) => ({
 	/*
 	 * Impersonation is stalled while the login flow moves to `@m1212e/sveltekit-oidc`.
 	 *
@@ -395,16 +229,12 @@ schemaBuilder.mutationFields((t) => ({
 			targetUserId: t.arg.id({ required: true }),
 			scope: t.arg.string()
 		},
-		resolve: () => {
-			throw apiError('FORBIDDEN', impersonationStalled());
-		}
+		resolve: () => assertCanImpersonate()
 	}),
 
 	stopImpersonation: t.field({
 		type: 'Boolean',
-		resolve: () => {
-			throw apiError('FORBIDDEN', impersonationStalled());
-		}
+		resolve: () => assertCanImpersonate()
 	})
 }));
 
@@ -426,7 +256,7 @@ schemaBuilder.mutationFields((t) => ({
 	upsertSelf: t.field({
 		type: UpsertSelfResult,
 		resolve: async (_root, _args, ctx) => {
-			const result = await upsertCallerRow(ctx);
+			const result = await upsertCallerRow(ctx.mustBeLoggedIn());
 			// An upsert on sign-in, so one notification on whichever row now holds the account.
 			userPubsub.updated(result.userId);
 			return result;
@@ -481,7 +311,8 @@ schemaBuilder.queryFields((t) => ({
 		type: UserPreview,
 		args: { emailOrId: t.arg.string({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			return previewUser(ctx, args.emailOrId);
+			await assertCanPreviewUsers(ctx);
+			return previewUser(args.emailOrId);
 		}
 	})
 }));

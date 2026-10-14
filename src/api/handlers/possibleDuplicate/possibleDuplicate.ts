@@ -1,25 +1,16 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db } from '$api/db/db';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { userId } from '$api/services/authHelper';
+import { decidePossibleDuplicate, scanConferenceForDuplicates } from './possibleDuplicates';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
-	isManagedUser,
-	systemAdmin,
-	userId
-} from '$api/services/authHelper';
-import { scanConferenceForDuplicates } from './possibleDuplicates';
+	assertCanDecidePossibleDuplicate,
+	assertCanScanPossibleDuplicates,
+	registerPossibleDuplicateAbilities
+} from './possibleDuplicatePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { possibleDuplicatePubsub, userPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
 
-// Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
-// *other* account, and how much of it, is a rule on the user table (`user.ts`).
-abilityBuilder.possibleDuplicate.allow(['read', 'update']).when(systemAdmin);
-abilityBuilder.possibleDuplicate.allow(['read', 'update']).when((ctx) => {
-	const managed = isManagedUser(ctx);
-	return managed ? { where: { OR: [{ user: managed }, { candidate: managed }] } } : undefined;
-});
+registerPossibleDuplicateAbilities();
 
 const statusEnum = enum_({ tsName: 'possibleDuplicateStatus' });
 
@@ -99,7 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanScanPossibleDuplicates(ctx, args.conferenceId);
 			return scanConferenceForDuplicates(args.conferenceId);
 		}
 	}),
@@ -115,25 +106,8 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: statusEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const decided = args.status !== 'OPEN';
-			const updated = await db
-				.update(schema.possibleDuplicate)
-				.set({
-					status: args.status,
-					decidedById: decided ? (userId(ctx) ?? null) : null,
-					decidedAt: decided ? new Date() : null
-				})
-				.where(
-					(await ctx.abilities.possibleDuplicate.filter('update')).merge({
-						where: { id: args.id }
-					}).sql.where
-				)
-				.returning({
-					userId: schema.possibleDuplicate.userId,
-					candidateId: schema.possibleDuplicate.candidateId
-				});
-			const [pair] = updated;
-			if (!pair) throw apiError('NOT_FOUND', m.possibleDuplicateNotFound());
+			const pair = await assertCanDecidePossibleDuplicate(ctx, args.id);
+			await decidePossibleDuplicate(args.id, args.status, userId(ctx) ?? null);
 
 			possibleDuplicatePubsub.updated(args.id);
 			// what of each account the care team may read follows the decision

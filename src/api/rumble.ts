@@ -12,17 +12,10 @@ import {
 import { db, schema } from './db/db';
 import { context } from './context';
 
-/**
- * Subscription events go through Redis when one is configured, so several app instances see each
- * other's publishes. Without `REDIS_URL` rumble keeps its in-memory event target, which is all a
- * single process needs.
- */
 let eventTarget: ReturnType<typeof createRedisEventTarget> | undefined;
 if (REDIS_URL) {
-	// ioredis v6 defaults to the RESP3 wire protocol, which changes reply shapes for some
-	// commands - pin the previously-default RESP2 protocol to keep behavior unchanged.
-	const publishClient = new Redis(REDIS_URL, { protocol: 2 });
-	const subscribeClient = new Redis(REDIS_URL, { protocol: 2 });
+	const publishClient = new Redis(REDIS_URL);
+	const subscribeClient = new Redis(REDIS_URL);
 
 	eventTarget = createRedisEventTarget({ publishClient, subscribeClient });
 }
@@ -51,11 +44,8 @@ export const {
 		includeVariables: false
 	},
 	pothosConfig: {
-		// SimpleObjects backs the ad-hoc result types a few mutations return (invitation batches,
-		// review results). Rumble does not load it by default.
 		plugins: [SimpleObjectsPlugin]
 	}
 });
 
-/** The context resolvers receive: the request context plus the caller's `abilities`. */
 export type ApiContext = (typeof schemaBuilder)['$inferSchemaTypes']['Context'];

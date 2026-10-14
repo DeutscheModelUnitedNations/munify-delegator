@@ -42,19 +42,22 @@ export async function loadSheetAssets(conferenceId: string) {
 		client.query.conference({
 			__args: { id: conferenceId },
 			title: true,
-			logoUrl: true,
-			emblemUrl: true
+			logoFile: { url: true },
+			emblemFile: { url: true }
 		}),
 		fetch(outfitRegularUrl).then((response) => response.arrayBuffer()),
 		fetch(outfitBoldUrl).then((response) => response.arrayBuffer())
 	]);
-	const logoSource = conference.logoUrl ?? conference.emblemUrl;
-	return {
-		conferenceTitle: conference.title,
-		logo: logoSource ? await urlToPng(logoSource) : null,
-		emblem: conference.emblemUrl ? await urlToPng(conference.emblemUrl) : null,
-		fonts: { regular, bold }
-	};
+	const [logo, emblem] = await Promise.all([
+		fileToPng(conference.logoFile ?? conference.emblemFile),
+		fileToPng(conference.emblemFile)
+	]);
+	return { conferenceTitle: conference.title, logo, emblem, fonts: { regular, bold } };
+}
+
+/** A stored image as PNG; `null` when there is none or it cannot be read. */
+async function fileToPng(file: { url: string } | null) {
+	return file ? urlToPng(file.url) : null;
 }
 
 /** Draws each flag or icon once, however many tables show it. */

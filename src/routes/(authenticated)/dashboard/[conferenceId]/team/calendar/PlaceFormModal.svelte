@@ -30,7 +30,7 @@
 				directions: true,
 				info: true,
 				websiteUrl: true,
-				sitePlanUrl: true
+				sitePlanFile: { url: true }
 			})
 		: undefined;
 
@@ -45,7 +45,7 @@
 	let placeWebsiteUrl = $state(place?.websiteUrl ?? '');
 	// The stored plan is served from a URL; a plan picked in this modal is uploaded on save and
 	// shown from memory until then. Leaving it untouched sends nothing, which keeps the stored one.
-	const storedSitePlanUrl = place?.sitePlanUrl ?? null;
+	const storedSitePlanUrl = place?.sitePlanFile?.url ?? null;
 	let uploadedSitePlan = $state<File | null>(null);
 	let uploadedSitePlanUrl = $state<string | null>(null);
 	const sitePlanHref = $derived(uploadedSitePlanUrl ?? storedSitePlanUrl);

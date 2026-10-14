@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /**
  * The delegation members and single participants of a conference whose person was accepted to an

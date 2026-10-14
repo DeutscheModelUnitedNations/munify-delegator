@@ -53,4 +53,11 @@ describe('assertApplicationReady', () => {
 		expect(() => assertApplicationReady({ ...ready, appliedForRoles: [1] }, {}, 3)).toThrow();
 		expect(() => assertApplicationReady({ ...ready, school: null }, {}, 3)).toThrow();
 	});
+
+	test('judges the texts with the edits of the same update applied', () => {
+		expect(() =>
+			assertApplicationReady({ ...ready, school: null }, { school: 'Gymnasium Kiel' }, 3)
+		).not.toThrow();
+		expect(() => assertApplicationReady(ready, { motivation: null }, 3)).toThrow();
+	});
 });

@@ -1,49 +1,25 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	SEAT_PLANNING_ROLES,
-	assertTeamRole,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
-import { errorCause, isUniqueViolationOn } from '$api/services/account/emailConflict';
-import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
-import {
-	assertNonStateActorDeletable,
-	assertSeatsPerDelegationAllowed,
-	nonStateActorUpdateData
-} from '$api/services/seatPlanning';
+import { db } from '$api/db/db';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { nonStateActorUpdateData } from '$api/services/seatPlanning';
 import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
-import { m } from '$lib/paraglide/messages';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import { nonStateActorPubsub, roleApplicationPubsub } from '$api/pubsub';
-import { apiError } from '$api/services/apiError';
+import {
+	assertCanCreateNonStateActor,
+	assertCanDeleteNonStateActor,
+	assertCanUpdateNonStateActor,
+	registerNonStateActorAbilities
+} from './nonStateActorPermissions';
+import {
+	createNonStateActor,
+	deleteNonStateActor,
+	updateNonStateActor
+} from './nonStateActorService';
 
-abilityBuilder.nonStateActor.allow('read');
-abilityBuilder.nonStateActor.allow(['update', 'delete']).when(systemAdmin);
-
-// The non-state actors are part of the seat planning, which project management shares with the
-// content lead. Deleting one is blocked while a delegation is assigned to it.
-abilityBuilder.nonStateActor
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
+registerNonStateActorAbilities();
 
 const NonStateActorRef = object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
-
-/** Names and abbreviations are unique per conference; the database says so as a 23505. */
-async function withUniqueNameCheck<T>(operation: Promise<T>) {
-	try {
-		return await operation;
-	} catch (error) {
-		if (isUniqueViolationOn(errorCause(error), 'non_state_actor_conference_id')) {
-			throw apiError('CONFLICT', m.nonStateActorNotUnique());
-		}
-		throw error;
-	}
-}
 
 schemaBuilder.mutationFields((t) => ({
 	createNonStateActor: t.drizzleField({
@@ -57,23 +33,8 @@ schemaBuilder.mutationFields((t) => ({
 			seatAmount: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, SEAT_PLANNING_ROLES);
-			assertSeatsPerDelegationAllowed(args.seatAmount, []);
-
-			const created = await withUniqueNameCheck(
-				db
-					.insert(schema.nonStateActor)
-					.values({
-						conferenceId: args.conferenceId,
-						name: args.name,
-						abbreviation: args.abbreviation,
-						description: args.description,
-						fontAwesomeIcon: args.fontAwesomeIcon || null,
-						seatAmount: args.seatAmount
-					})
-					.returning({ id: schema.nonStateActor.id })
-					.then(assertFirstEntryExists)
-			);
+			await assertCanCreateNonStateActor(ctx, args.conferenceId);
+			const createdId = await createNonStateActor(args);
 
 			nonStateActorPubsub.created();
 
@@ -81,7 +42,7 @@ schemaBuilder.mutationFields((t) => ({
 				.findFirst(
 					query(
 						(await ctx.abilities.nonStateActor.filter('read')).merge({
-							where: { id: created.id }
+							where: { id: createdId }
 						}).query.single
 					)
 				)
@@ -100,21 +61,9 @@ schemaBuilder.mutationFields((t) => ({
 			seatAmount: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updateFilter = (await ctx.abilities.nonStateActor.filter('update')).merge({
-				where: { id: args.id }
-			});
 			const data = nonStateActorUpdateData(args);
-
-			const before = await db.query.nonStateActor
-				.findFirst({
-					where: updateFilter.query.single.where,
-					columns: { id: true, conferenceId: true, seatAmount: true }
-				})
-				.then(assertFindFirstExists);
-
-			await withUniqueNameCheck(
-				db.update(schema.nonStateActor).set(data).where(updateFilter.sql.where)
-			);
+			const before = await assertCanUpdateNonStateActor(ctx, args.id);
+			await updateNonStateActor(args.id, data);
 
 			nonStateActorPubsub.updated(args.id);
 
@@ -140,33 +89,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleteFilter = (await ctx.abilities.nonStateActor.filter('delete')).merge({
-				where: { id: args.id }
-			});
-
-			await db.transaction(async (tx) => {
-				const existing = await tx.query.nonStateActor.findFirst({
-					where: deleteFilter.query.single.where,
-					columns: { id: true },
-					with: { assignedDelegations: { columns: { id: true } } }
-				});
-				if (!existing) {
-					throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-				}
-
-				assertNonStateActorDeletable(existing.assignedDelegations.length);
-
-				// applications for it go with it, closing the gaps they leave in the rankings
-				const applications = await tx
-					.delete(schema.roleApplication)
-					.where(eq(schema.roleApplication.nonStateActorId, existing.id))
-					.returning({ delegationId: schema.roleApplication.delegationId });
-				for (const delegationId of new Set(applications.map((a) => a.delegationId))) {
-					await normalizeRoleApplicationRanks(delegationId, tx);
-				}
-
-				await tx.delete(schema.nonStateActor).where(eq(schema.nonStateActor.id, existing.id));
-			});
+			await assertCanDeleteNonStateActor(ctx, args.id);
+			await deleteNonStateActor(args.id);
 
 			nonStateActorPubsub.removed();
 			roleApplicationPubsub.removed();

@@ -1,81 +1,34 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, countQuery, enum_, object, query, schemaBuilder } from '$api/rumble';
+import { countQuery, enum_, object, query, schemaBuilder } from '$api/rumble';
+import { userId } from '$api/services/authHelper';
 import {
-	PAPER_ROLES,
-	hasTeamRole,
-	PROJECT_MANAGEMENT_ROLES,
-	isInOwnDelegation,
-	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
-import {
-	assertConferenceParticipant,
-	assertPaperReviewer,
 	createPaper,
 	findNextPaperToReview,
 	groupPapersByCommittee,
 	reviewStatsOf,
 	reviewerLeaderboard,
+	supervisedDelegationIds,
 	updatePaper,
 	type AgendaItemGroup,
 	type CommitteeGroup
 } from './paperService';
+import {
+	assertCanCreatePaper,
+	assertCanDeletePaper,
+	assertCanReadConferencePapers,
+	assertCanReviewAgendaItemPapers,
+	assertCanReviewPapers,
+	assertCanUpdatePaper,
+	canReviewPapers,
+	registerPaperAbilities
+} from './paperPermissions';
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 import { paperPubsub, paperVersionPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
 
-const paperTeam = (id: string) => ({
-	teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } }
-});
-
-// Ported from abilities/entities/paper/paper.ts
-abilityBuilder.paper.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Authors see and edit their own papers, and may delete one while it is still a draft.
-abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { author: { id } } } : undefined;
-});
-abilityBuilder.paper.allow('delete').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { author: { id }, status: 'DRAFT' } } : undefined;
-});
-
-// Reviewers and conference management see the conference's papers and may edit their text (the
-// reviewer edit mode); verdicts go through reviews.
-abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { conference: paperTeam(id) } } : undefined;
-});
-
-// Only project management deletes somebody else's paper.
-abilityBuilder.paper
-	.allow('delete')
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
-
-// Supervisors see the submitted papers of the delegations they supervise.
-abilityBuilder.paper.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					delegation: { members: { supervisors: { user: { id } } } },
-					status: { ne: 'DRAFT' }
-				}
-			}
-		: undefined;
-});
-
-// Delegates see the submitted papers of their own delegation - nobody else's.
-abilityBuilder.paper.allow('read').when((ctx) => {
-	const delegation = isInOwnDelegation(ctx);
-	return delegation ? { where: { ...delegation, status: { ne: 'DRAFT' } } } : undefined;
-});
+registerPaperAbilities();
 
 const PaperRef = object({ table: 'paper' });
 
@@ -97,7 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const created = await createPaper(ctx, args);
+			await assertCanCreatePaper(ctx, args);
+			const created = await createPaper(args);
 
 			paperPubsub.created();
 			paperVersionPubsub.created();
@@ -122,7 +76,8 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updatePaper(ctx, args);
+			await assertCanUpdatePaper(ctx, args.paperId);
+			await updatePaper(args);
 
 			paperPubsub.updated(args.paperId);
 			paperVersionPubsub.created();
@@ -142,15 +97,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.paper)
-				.where(
-					(await ctx.abilities.paper.filter('delete')).merge({ where: { id: args.id } }).sql.where
-				)
-				.returning({ id: schema.paper.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await assertCanDeletePaper(ctx, args.id);
+			await db.delete(schema.paper).where(eq(schema.paper.id, args.id));
 			paperPubsub.removed();
 
 			return true;
@@ -167,7 +115,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertPaperReviewer(ctx, args.conferenceId);
+			await assertCanReviewPapers(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
 				query(
@@ -188,17 +136,9 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
+			const callerId = ctx.mustBeLoggedIn().sub;
 
-			const supervised = await db.query.delegationMember.findMany({
-				where: { conferenceId: args.conferenceId, supervisors: { userId: callerId } },
-				columns: { delegationId: true }
-			});
-
-			const delegationIds = [...new Set(supervised.map((member) => member.delegationId))];
+			const delegationIds = await supervisedDelegationIds(args.conferenceId, callerId);
 			if (delegationIds.length === 0) return [];
 
 			return db.query.paper.findMany(
@@ -222,7 +162,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertConferenceParticipant(ctx, args.conferenceId);
+			await assertCanReadConferencePapers(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
 				query(
@@ -291,7 +231,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertPaperReviewer(ctx, args.conferenceId);
+			await assertCanReviewPapers(ctx, args.conferenceId);
 			return groupPapersByCommittee(
 				await db.query.paper.findMany({
 					...(await ctx.abilities.paper.filter('read')).merge({
@@ -308,7 +248,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertConferenceParticipant(ctx, args.conferenceId);
+			await assertCanReadConferencePapers(ctx, args.conferenceId);
 			return groupPapersByCommittee(
 				await db.query.paper.findMany({
 					...(await ctx.abilities.paper.filter('read')).merge({
@@ -345,7 +285,7 @@ schemaBuilder.queryFields((t) => ({
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const callerId = userId(ctx);
-			await assertPaperReviewer(ctx, args.conferenceId);
+			await assertCanReviewPapers(ctx, args.conferenceId);
 
 			return reviewerLeaderboard(args.conferenceId, callerId);
 		}
@@ -360,7 +300,7 @@ schemaBuilder.queryFields((t) => ({
 			const callerId = userId(ctx);
 			if (!callerId) return null;
 
-			if (!(await hasTeamRole(ctx, args.conferenceId, PAPER_ROLES))) return null;
+			if (!(await canReviewPapers(ctx, args.conferenceId))) return null;
 
 			return reviewStatsOf(args.conferenceId, callerId);
 		}
@@ -376,7 +316,8 @@ schemaBuilder.queryFields((t) => ({
 		type: PaperRef,
 		args: { agendaItemId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			return findNextPaperToReview(ctx, args.agendaItemId);
+			await assertCanReviewAgendaItemPapers(ctx, args.agendaItemId);
+			return findNextPaperToReview(args.agendaItemId);
 		}
 	})
 }));

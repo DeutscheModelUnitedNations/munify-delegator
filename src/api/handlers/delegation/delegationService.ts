@@ -1,15 +1,16 @@
 import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
 import { fetchUserParticipations } from '$api/services/registration/participation';
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import formatNames from '$lib/helpers/formatNames';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '$lib/helpers/applicationReadiness';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(
@@ -25,9 +26,9 @@ async function transferHeadDelegate(
 		throw apiError('NOT_FOUND', m.delegationNoNewHeadDelegate());
 	}
 
-	// Order is safe here only because the caller checks `updatable` once, up front, and
-	// these writes go by raw id rather than re-deriving an ability filter per statement.
-	// The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
+	// Order is safe here only because the resolver checks the update ability once, up front
+	// (`assertCanUpdateDelegation`), and these writes go by raw id rather than re-deriving an
+	// ability filter per statement. The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
 	// ability on every statement inside the transaction, so demoting the acting head
 	// delegate first revoked their own permission before the promotion ran. Don't
 	// reintroduce a per-statement ability re-check here without also promoting first.
@@ -93,10 +94,13 @@ export async function createDelegationWithHead(
 	return created.id;
 }
 
-/** Applies the changes of `updateDelegation`; the caller publishes afterwards. */
+/**
+ * Applies the changes of `updateDelegation` to a delegation the caller may update
+ * (`assertCanUpdateDelegation`); the caller publishes afterwards.
+ */
 // fallow-ignore-next-line complexity
 export async function updateDelegationDetails(
-	ctx: ApiContext,
+	delegation: UpdatableDelegation,
 	args: {
 		id: string;
 		applied?: boolean | null;
@@ -107,29 +111,26 @@ export async function updateDelegationDetails(
 		motivation?: string | null;
 	}
 ) {
-	const updatable = (await ctx.abilities.delegation.filter('update')).merge({
-		where: { id: args.id }
+	applicationFormSchema.parse({
+		school: args.school,
+		experience: args.experience,
+		motivation: args.motivation
 	});
 
-	const delegation = await db.query.delegation
-		.findFirst({
-			...updatable.query.single,
-			with: { members: true, conference: true, appliedForRoles: true }
-		})
-		.then(assertFindFirstExists);
+	const byId = eq(schema.delegation.id, delegation.id);
 
 	if (args.applied !== undefined && args.applied !== null) {
 		// Drop applications the delegation has outgrown before judging whether it may apply.
 		await tidyRoleApplications(delegation.id);
 
 		if (args.applied) {
-			if (delegation.members.length < 2) {
+			if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
 				throw apiError('CONFLICT', m.notEnoughMembers());
 			}
-			assertApplicationReady(delegation, args, 3);
+			assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
 		}
 
-		await db.update(schema.delegation).set({ applied: args.applied }).where(updatable.sql.where);
+		await db.update(schema.delegation).set({ applied: args.applied }).where(byId);
 	}
 
 	if (args.school || args.experience || args.motivation) {
@@ -140,14 +141,11 @@ export async function updateDelegationDetails(
 				experience: args.experience,
 				motivation: args.motivation
 			})
-			.where(updatable.sql.where);
+			.where(byId);
 	}
 
 	if (args.resetEntryCode) {
-		await db
-			.update(schema.delegation)
-			.set({ entryCode: makeEntryCode() })
-			.where(updatable.sql.where);
+		await db.update(schema.delegation).set({ entryCode: makeEntryCode() }).where(byId);
 	}
 
 	if (args.newHeadDelegateUserId) {

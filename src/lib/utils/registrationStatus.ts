@@ -2,6 +2,11 @@ import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
 
 export type RegistrationStatus = 'OPEN' | 'CLOSED' | 'WAITING_LIST' | 'NOT_YET_OPEN' | 'UNKNOWN';
 
+/**
+ * The registration status participants are shown. It closes at the advertised deadline
+ * (`startAssignment`) on purpose: the API keeps taking applications for the grace period after it
+ * (`acceptsApplications` in `$lib/helpers/applicationReadiness`), as a buffer nobody is told about.
+ */
 export const getRegistrationStatus = (
 	conferenceState: ConferencestateEnum,
 	startAssignment: Date

@@ -1,6 +1,5 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
 import {
 	applicationIdsSql,
 	deckSchema,
@@ -10,9 +9,10 @@ import {
 	schoolRowSchema,
 	schoolsSql
 } from './sightingDeckQuery';
+import { assertCanReadSightingDeck } from './sightingDeckPermissions';
 import codenmz from '$lib/helpers/codenamize';
 import { z } from 'zod';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 	description: 'One application under review: what the deck orders, filters and colours it by.',
@@ -96,7 +96,7 @@ schemaBuilder.queryFields((t) => ({
 			revision: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadSightingDeck(ctx, args.conferenceId);
 			const result = await db.execute<{ result: unknown }>(
 				deckSql({
 					conferenceId: args.conferenceId,
@@ -121,7 +121,7 @@ schemaBuilder.queryFields((t) => ({
 			school: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadSightingDeck(ctx, args.conferenceId);
 			const ids = args.ids.slice(0, MAX_ENTRIES);
 			if (ids.length === 0) return [];
 			const result = await db.execute<{ result: unknown }>(
@@ -142,7 +142,7 @@ schemaBuilder.queryFields((t) => ({
 			search: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadSightingDeck(ctx, args.conferenceId);
 			const term = args.search.trim().toLowerCase();
 			if (!term) return [];
 			const result = await db.execute<{ id: string }>(applicationIdsSql(args.conferenceId));
@@ -165,7 +165,7 @@ schemaBuilder.queryFields((t) => ({
 			limit: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadSightingDeck(ctx, args.conferenceId);
 			const search = (args.search ?? '').trim().replace(/[\\%_]/g, '\\$&');
 			const result = await db.execute(
 				schoolsSql(args.conferenceId, `%${search}%`, Math.min(args.limit ?? 20, 50))

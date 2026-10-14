@@ -3,7 +3,7 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '$lib/helpers/conferenceLanguage';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import dayjs from 'dayjs';
+	import { technicalRegistrationDeadline } from '$lib/helpers/applicationReadiness';
 	import FormSection from '$lib/components/form/FormSection.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
@@ -15,9 +15,9 @@
 		form: SuperForm<ConferenceSettings>;
 		/** The images as currently stored, previewed until a new file is picked. */
 		storedImages: {
-			imageUrl: string | null;
-			emblemUrl: string | null;
-			logoUrl: string | null;
+			imageFile: { url: string } | null;
+			emblemFile: { url: string } | null;
+			logoFile: { url: string } | null;
 		};
 	}
 
@@ -29,10 +29,11 @@
 	})).sort((a, b) => a.label.localeCompare(b.label, getLocale()));
 	let formData = $derived(form.form);
 
-	const technicalRegistrationDeadline = $derived(
-		dayjs($formData.startAssignment)
-			.add($formData.registrationDeadlineGracePeriodMinutes, 'minute')
-			.toDate()
+	const technicalDeadline = $derived(
+		technicalRegistrationDeadline({
+			startAssignment: $formData.startAssignment,
+			registrationDeadlineGracePeriodMinutes: $formData.registrationDeadlineGracePeriodMinutes
+		})
 	);
 </script>
 
@@ -68,7 +69,12 @@
 </FormSection>
 
 <FormSection title={m.conferenceImagery()} icon="images">
-	<FormImage {form} name="image" label={m.conferenceImage()} storedUrl={storedImages.imageUrl} />
+	<FormImage
+		{form}
+		name="image"
+		label={m.conferenceImage()}
+		storedUrl={storedImages.imageFile?.url ?? null}
+	/>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<FormImage
 			{form}
@@ -76,14 +82,14 @@
 			label={m.conferenceEmblem()}
 			description={m.conferenceEmblemHint()}
 			accept="image/svg+xml"
-			storedUrl={storedImages.emblemUrl}
+			storedUrl={storedImages.emblemFile?.url ?? null}
 		/>
 		<FormImage
 			{form}
 			name="logo"
 			label={m.conferenceLogo()}
 			description={m.conferenceLogoHint()}
-			storedUrl={storedImages.logoUrl}
+			storedUrl={storedImages.logoFile?.url ?? null}
 		/>
 	</div>
 </FormSection>
@@ -103,9 +109,7 @@
 				label={m.registrationDeadlineGracePeriod()}
 			/>
 			<p class="text-base-content/60 mt-1 text-xs">
-				{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString(
-					getLocale()
-				)}
+				{m.technicalRegistrationDeadline()}: {technicalDeadline.toLocaleString(getLocale())}
 			</p>
 		</div>
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />

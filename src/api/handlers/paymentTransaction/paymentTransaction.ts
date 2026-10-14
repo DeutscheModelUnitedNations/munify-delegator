@@ -1,57 +1,23 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertParticipantsOf,
-	hasTeamRole,
-	isOwnUser,
-	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '$api/services/authHelper';
+import { db } from '$api/db/db';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
 import {
 	conferenceParticipantStatusPubsub,
 	paymentTransactionPubsub,
 	userReferenceInPaymentTransactionPubsub
 } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import {
+	assertCanCreatePaymentTransaction,
+	assertCanUpdatePaymentTransaction,
+	registerPaymentTransactionAbilities
+} from './paymentTransactionPermissions';
+import { applyPaymentStatus, createPaymentTransaction } from './paymentTransactionService';
 
-// Ported from abilities/entities/paymentTransaction.ts
-abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-// Only project management and participant care of the conference, as in the CASL rules.
-abilityBuilder.paymentTransaction
-	.allow(['read', 'update'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
-// its creator, whose reference is the whole point of the payment pages. The legacy resolver
-// returned it without a read check, so this is what keeps that working through the ability layer.
-abilityBuilder.paymentTransaction.allow('read').when((ctx) => where(isOwnUser(ctx)));
+registerPaymentTransactionAbilities();
 
 const PaymentTransactionRef = object({ table: 'paymentTransaction' });
 query({ table: 'paymentTransaction' });
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
-
-/**
- * Payment reference ids are printed on transfer forms, so they avoid characters that are easy to
- * misread and are grouped in fours. Same alphabet and shape as the legacy generator.
- */
-function generateSEPASafeId() {
-	const chars = 'ACDEFHJKMNPRTUVWXY3479';
-	const length = 16;
-	let id = '';
-	for (let i = 0; i < length; i++) {
-		id += chars[Math.floor(Math.random() * chars.length)];
-		if (i % 4 === 3 && i !== length - 1) {
-			id += '-';
-		}
-	}
-	return id;
-}
 
 schemaBuilder.mutationFields((t) => ({
 	createPaymentTransaction: t.drizzleField({
@@ -63,61 +29,13 @@ schemaBuilder.mutationFields((t) => ({
 			paymentFor: t.arg.idList({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const caller = ctx.mustBeLoggedIn().sub;
+			ctx.mustBeLoggedIn();
 			const conference = await db.query.conference
 				.findFirst({ where: { id: args.conferenceId } })
 				.then(assertFindFirstExists);
+			await assertCanCreatePaymentTransaction(ctx, args);
 
-			// A reference is made by its payer, for people that payer can see in the conference -
-			// themselves, their delegation, the participants they supervise. Participant care may
-			// make one on anybody's behalf.
-			if (!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))) {
-				if (args.userId !== caller) {
-					throw apiError('FORBIDDEN', m.paymentOnlyOwnName());
-				}
-				const visible = await db.query.user.findMany({
-					...(await ctx.abilities.user.filter('read')).merge({
-						where: { id: { in: [...new Set(args.paymentFor)] } }
-					}).query.many,
-					columns: { id: true }
-				});
-				if (visible.length !== new Set(args.paymentFor).size) {
-					throw apiError('FORBIDDEN', m.paymentOnlyForOwn());
-				}
-			}
-			await assertParticipantsOf(args.conferenceId, args.paymentFor);
-
-			// Captured in a const so the narrowing survives into the transaction closure below,
-			// rather than reaching for a non-null assertion there.
-			const feeAmount = conference.feeAmount;
-			if (!feeAmount) {
-				throw apiError('INVALID_INPUT', m.paymentFeeNotSet());
-			}
-
-			// The id is caller-generated rather than a nanoid, so retry until it is free.
-			let id = generateSEPASafeId();
-			for (let attempt = 0; attempt < 10_000; attempt++) {
-				const clash = await db.query.paymentTransaction.findFirst({ where: { id } });
-				if (!clash) break;
-				if (attempt === 9_999) {
-					throw apiError('INVALID_INPUT', m.paymentIdGenerationFailed());
-				}
-				id = generateSEPASafeId();
-			}
-
-			await db.transaction(async (tx) => {
-				await tx.insert(schema.paymentTransaction).values({
-					id,
-					amount: args.paymentFor.length * feeAmount,
-					conferenceId: args.conferenceId,
-					userId: args.userId
-				});
-				if (args.paymentFor.length > 0) {
-					await tx
-						.insert(schema.userReferenceInPaymentTransaction)
-						.values(args.paymentFor.map((userId) => ({ paymentTransactionId: id, userId })));
-				}
-			});
+			const id = await createPaymentTransaction(conference, args.userId, args.paymentFor);
 
 			paymentTransactionPubsub.created();
 			userReferenceInPaymentTransactionPubsub.created();
@@ -141,41 +59,9 @@ schemaBuilder.mutationFields((t) => ({
 			recievedAt: t.arg({ type: 'DateTime' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updatable = (await ctx.abilities.paymentTransaction.filter('update')).merge({
-				where: { id: args.id }
-			});
+			const transaction = await assertCanUpdatePaymentTransaction(ctx, args.id);
 
-			const transaction = await db.query.paymentTransaction
-				.findFirst({ ...updatable.query.single, with: { paymentFor: true } })
-				.then(assertFindFirstExists);
-
-			await db.transaction(async (tx) => {
-				if (args.assignedStatus === 'DONE') {
-					await tx
-						.update(schema.paymentTransaction)
-						.set({ recievedAt: args.recievedAt ?? undefined })
-						.where(eq(schema.paymentTransaction.id, args.id));
-				}
-
-				// The payment status is carried over to every participant the transaction covers,
-				// creating their status row if it does not exist yet.
-				for (const reference of transaction.paymentFor) {
-					await tx
-						.insert(schema.conferenceParticipantStatus)
-						.values({
-							userId: reference.userId,
-							conferenceId: transaction.conferenceId,
-							paymentStatus: args.assignedStatus
-						})
-						.onConflictDoUpdate({
-							target: [
-								schema.conferenceParticipantStatus.userId,
-								schema.conferenceParticipantStatus.conferenceId
-							],
-							set: { paymentStatus: args.assignedStatus }
-						});
-				}
-			});
+			await applyPaymentStatus(transaction, args.assignedStatus, args.recievedAt);
 
 			paymentTransactionPubsub.updated(args.id);
 			conferenceParticipantStatusPubsub.updated();

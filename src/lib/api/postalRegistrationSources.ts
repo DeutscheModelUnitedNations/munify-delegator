@@ -36,10 +36,10 @@ export async function fetchPostalRegistrationSources(userId: string, conferenceI
 			postalZip: true,
 			postalCity: true,
 			postalCountry: true,
-			contractContentUrl: true,
-			guardianConsentContentUrl: true,
-			mediaConsentContentUrl: true,
-			termsAndConditionsContentUrl: true
+			contractFile: { url: true },
+			guardianConsentFile: { url: true },
+			mediaConsentFile: { url: true },
+			termsAndConditionsFile: { url: true }
 		})
 	]);
 	return { user, conference };
@@ -71,10 +71,7 @@ export async function downloadPostalRegistrationDocuments({
 		ofAgeAtConference(conference.startConference, birthday),
 		participant,
 		recipient,
-		conference.contractContentUrl,
-		conference.guardianConsentContentUrl,
-		conference.mediaConsentContentUrl,
-		conference.termsAndConditionsContentUrl,
+		conference,
 		fileName
 	);
 }

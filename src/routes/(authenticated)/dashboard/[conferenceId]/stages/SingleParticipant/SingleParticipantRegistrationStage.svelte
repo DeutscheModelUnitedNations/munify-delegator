@@ -6,6 +6,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { applicationTextsComplete } from '$lib/helpers/applicationReadiness';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
@@ -91,6 +92,8 @@
 		await promise;
 	};
 
+	const answerQuestionaireCompleted = $derived(applicationTextsComplete(singleParticipant));
+
 	let todos = $derived([
 		{
 			title: m.todoApplyForRole(),
@@ -99,20 +102,14 @@
 		},
 		{
 			title: m.todoAnswerQuestionaire(),
-			completed:
-				!!singleParticipant.school &&
-				!!singleParticipant.motivation &&
-				!!singleParticipant.experience,
+			completed: answerQuestionaireCompleted,
 			help: m.todoAnswerQuestionaireHelp()
 		},
 		{
 			title: m.todoCompleteSignup(),
 			completed: singleParticipant.applied,
 			help: m.todoCompleteSignupHelp(),
-			arrowDown:
-				!!singleParticipant.school &&
-				!!singleParticipant.motivation &&
-				!!singleParticipant.experience
+			arrowDown: answerQuestionaireCompleted
 		}
 	]);
 

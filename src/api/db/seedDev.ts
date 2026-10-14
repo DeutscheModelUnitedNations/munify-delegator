@@ -22,8 +22,7 @@ import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user'
 import { devAccounts } from './seed-data/devAccounts';
 import { pdfTemplate } from './seed-data/content';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
-import { replaceSeedObjects } from './seed-dev/files';
-import { createStorage, storageConfigFromProcessEnv } from '../services/files/storageClient';
+import { replaceSeedObjects, seedStorage } from './seed-dev/files';
 import type { CrowdKind, SeedWorld } from './seed-dev/context';
 import { addCrowd, addWaitingList, buildConferenceStructure } from './seed-dev/conference';
 import { addAssignmentDraft } from './seed-dev/assignmentDraft';
@@ -47,7 +46,7 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is not set');
 const db = drizzle(databaseUrl);
 // The uploaded files go to the bucket, which is emptied along with the database.
-const storage = createStorage(storageConfigFromProcessEnv());
+const storage = seedStorage();
 
 // A fixed faker seed keeps the generated data identical between runs (dates aside, which are
 // relative to now so every stage stays where it belongs).

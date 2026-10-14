@@ -38,7 +38,7 @@ export async function fetchNewResolutionContext(conferenceId: string, userId: st
 			id: true,
 			title: true,
 			longTitle: true,
-			emblemUrl: true
+			emblemFile: { url: true }
 		})
 	]);
 

@@ -58,7 +58,7 @@
 		void Promise.all([
 			client.query.conference({
 				__args: { id: requestedFor.conferenceId },
-				certificateContentUrl: true,
+				certificateFile: { url: true },
 				title: true
 			}),
 			client.query.getCertificateJWT({
@@ -68,7 +68,12 @@
 			})
 		]).then(([conference, jwt]) => {
 			if (cancelled) return;
-			certificate = { ...conference, ...jwt };
+			certificate = {
+				templateUrl: conference.certificateFile?.url ?? null,
+				title: conference.title,
+				jwt: jwt.jwt,
+				fullName: jwt.fullName
+			};
 		});
 
 		return () => {
@@ -126,7 +131,7 @@
 	description={m.certificateDescription()}
 >
 	{#if certificate}
-		{#if !certificate.certificateContentUrl}
+		{#if !certificate.templateUrl}
 			<div class="alert alert-warning">
 				<i class="fas fa-hourglass-half"></i>
 				<p>{m.certificateNotYetAvailable()}</p>

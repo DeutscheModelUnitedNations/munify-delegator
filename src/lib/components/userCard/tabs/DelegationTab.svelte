@@ -4,11 +4,8 @@
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import NoAssignmentNotice from '../NoAssignmentNotice.svelte';
 	import QuotedText from '../QuotedText.svelte';
-	import {
-		changeDelegationSchool,
-		revokeDelegationApplication,
-		rotateDelegationEntryCode
-	} from '$lib/api/delegationActions';
+	import { confirmDialog, promptDialog } from '$lib/state/dialogs.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from '$lib/components/registrationAdmin/CommitteeAssignmentModal.svelte';
@@ -71,6 +68,47 @@
 		})
 	);
 	const currentMember = $derived(delegation.members.find((member) => member.user.id === userId));
+
+	/** Withdraws the delegation's application after the user confirms it. */
+	async function revokeApplication() {
+		if (!(await confirmDialog({ text: m.confirmRevokeApplication(), danger: true }))) return;
+		const promise = client.mutate.updateDelegation({
+			__args: { id: delegationId, applied: false },
+			id: true,
+			applied: true
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+	}
+
+	/** Asks for a new school name and saves it; cancelling the prompt does nothing. */
+	async function changeSchool() {
+		const newSchool = await promptDialog({ text: m.enterNewSchoolName() });
+		if (!newSchool) return;
+		try {
+			const promise = client.mutate.updateDelegation({
+				__args: { id: delegationId, school: newSchool },
+				id: true,
+				school: true
+			});
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
+		} catch (error) {
+			console.error('Failed to change school name:', error);
+		}
+	}
+
+	/** Issues the delegation a new entry code after the user confirms it. */
+	async function rotateEntryCode() {
+		if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
+		const promise = client.mutate.updateDelegation({
+			__args: { id: delegationId, resetEntryCode: true },
+			id: true,
+			entryCode: true
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+	}
 
 	let committeeAssignmentModalOpen = $state(false);
 	let headDelegateModalOpen = $state(false);
@@ -142,7 +180,7 @@
 
 {#snippet actionButtons()}
 	<div class="flex gap-2">
-		<button class="btn btn-sm" onclick={() => rotateDelegationEntryCode(delegationId)}>
+		<button class="btn btn-sm" onclick={rotateEntryCode}>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
@@ -162,7 +200,7 @@
 		{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
 			<button
 				class="btn btn-error btn-sm {!delegation.applied && 'btn-disabled'}"
-				onclick={() => revokeDelegationApplication(delegationId)}
+				onclick={revokeApplication}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-file-slash"></i>
 				{m.revokeApplication()}
@@ -186,7 +224,7 @@
 				<span>{delegation.school ?? 'N/A'}</span>
 				<button
 					class="btn btn-ghost btn-xs btn-square ml-1"
-					onclick={() => changeDelegationSchool(delegationId)}
+					onclick={changeSchool}
 					aria-label={m.a11yEditSchool()}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>

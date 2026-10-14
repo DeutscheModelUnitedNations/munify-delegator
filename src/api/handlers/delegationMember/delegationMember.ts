@@ -1,21 +1,7 @@
 import { db } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
-import {
-	assertTeamRole,
-	DELEGATION_MEMBER_ASSIGNMENT,
-	isInOwnDelegation,
-	isTeamMemberOfConference,
-	maskedUntilRelease,
-	onceReleased,
-	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where
-} from '$api/services/authHelper';
+import { object, query, schemaBuilder } from '$api/rumble';
 import { countGiven } from '$api/services/args';
-import type { Context } from '$api/context';
 import {
-	assertOfferedIn,
 	assignCommittees,
 	joinDelegationByEntryCode,
 	moveManyMembersToCommittee,
@@ -23,6 +9,15 @@ import {
 	placeUserInAssignedDelegation,
 	removeDelegationMember
 } from './delegationMemberService';
+import {
+	assertCanAssignCommittees,
+	assertCanCreateAppliedDelegationMember,
+	assertCanDeleteDelegationMember,
+	assertCanMoveDelegationMemberToCommittee,
+	assertOfferedIn,
+	authorizeDelegationMemberCommitteeMoves,
+	registerDelegationMemberAbilities
+} from './delegationMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	delegationMemberPubsub,
@@ -31,63 +26,9 @@ import {
 	waitingListEntryPubsub
 } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/delegationMember.ts
-abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
-
-/** The delegates of the delegations the caller supervises. */
-function supervisedMember(ctx: Context) {
-	const id = userId(ctx);
-	return id ? { delegation: { members: { supervisors: { user: { id } } } } } : undefined;
-}
-
-// Co-delegates see each other, and supervisors the delegates they supervise - the committee they
-// were seated in only once the team has released the assignment.
-abilityBuilder.delegationMember
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(isInOwnDelegation(ctx), DELEGATION_MEMBER_ASSIGNMENT));
-abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(isInOwnDelegation(ctx)));
-abilityBuilder.delegationMember
-	.allow('read')
-	.when((ctx) => maskedUntilRelease(supervisedMember(ctx), DELEGATION_MEMBER_ASSIGNMENT));
-abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(supervisedMember(ctx)));
-
-// Project management and participant care manage their conference's delegation members.
-abilityBuilder.delegationMember
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
-
-// Only the head delegate may remove a delegate, and only before the delegation has applied.
-abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					delegation: { applied: false, members: { isHeadDelegate: true, user: { id } } }
-				}
-			}
-		: undefined;
-});
-
-// Anyone may leave a delegation that has not applied yet.
-abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { user: { id }, delegation: { applied: false } } } : undefined;
-});
-
-// The head delegate may edit members who have no committee assigned yet.
-abilityBuilder.delegationMember.allow('update').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					assignedCommitteeId: { isNull: true },
-					delegation: { members: { isHeadDelegate: true, user: { id } } }
-				}
-			}
-		: undefined;
-});
+registerDelegationMemberAbilities();
 
 const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
@@ -100,12 +41,11 @@ schemaBuilder.mutationFields((t) => ({
 			entryCode: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const id = userId(ctx);
-			if (!id) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
-			}
-
-			const createdId = await joinDelegationByEntryCode(id, args.conferenceId, args.entryCode);
+			const createdId = await joinDelegationByEntryCode(
+				ctx.mustBeLoggedIn().sub,
+				args.conferenceId,
+				args.entryCode
+			);
 
 			delegationMemberPubsub.created();
 
@@ -129,7 +69,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const delegationId = await removeDelegationMember(ctx, args.id);
+			await assertCanDeleteDelegationMember(ctx, args.id);
+			const delegationId = await removeDelegationMember(args.id);
 
 			delegationMemberPubsub.removed();
 			// The delegation either lost its last member and went with it, or had a new head
@@ -161,7 +102,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignedCommitteeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanCreateAppliedDelegationMember(ctx, args.conferenceId);
 
 			if (countGiven(args.assignedNationAlpha3Code, args.assignedNonStateActorId) === 0) {
 				throw apiError('INVALID_INPUT', m.delegationMemberNeedsRole());
@@ -201,7 +142,9 @@ schemaBuilder.mutationFields((t) => ({
 			assignedCommitteeId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await moveMemberToCommittee(ctx, args.id, args.assignedCommitteeId);
+			await moveMemberToCommittee(
+				await assertCanMoveDelegationMemberToCommittee(ctx, args.id, args.assignedCommitteeId)
+			);
 
 			delegationMemberPubsub.updated(args.id);
 
@@ -226,11 +169,15 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			if (args.ids.length === 0) return 0;
-			const count = await moveManyMembersToCommittee(
+			const updatableWhere = await authorizeDelegationMemberCommitteeMoves(
 				ctx,
 				args.conferenceId,
-				args.ids,
 				args.assignedCommitteeId
+			);
+			const count = await moveManyMembersToCommittee(
+				args.ids,
+				args.assignedCommitteeId,
+				updatableWhere
 			);
 
 			delegationMemberPubsub.updated(args.ids);
@@ -263,7 +210,8 @@ schemaBuilder.mutationFields((t) => ({
 			assignments: t.arg({ type: [CommitteeAssignmentInput], required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assignCommittees(ctx, args.assignments);
+			await assertCanAssignCommittees(ctx, args.assignments);
+			await assignCommittees(args.assignments);
 
 			delegationMemberPubsub.updated();
 

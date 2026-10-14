@@ -53,13 +53,4 @@ export async function fetchCurrentUser() {
 	};
 }
 
-/** Like `fetchCurrentUser`, for pages that also serve visitors who are not signed in. */
-export async function fetchOptionalCurrentUser() {
-	try {
-		return await fetchCurrentUser();
-	} catch {
-		return null;
-	}
-}
-
 export type CurrentUser = Awaited<ReturnType<typeof fetchCurrentUser>>;

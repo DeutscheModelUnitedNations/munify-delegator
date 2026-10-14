@@ -10,7 +10,7 @@ import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
 import { sameTarget, type Target } from '$lib/assignment/state';
 import { m } from '$lib/paraglide/messages';
 import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
 type Reader = Transaction | typeof db;
 
@@ -84,36 +84,6 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
 			roleSeats: new Map(roles.map((role) => [role.id, role.seatAmount]))
 		}
 	};
-}
-
-/** Refuses a nation or non-state actor the conference does not offer. */
-export async function assertTargetOf(tx: Reader, conferenceId: string, target: Target) {
-	if (target.nationAlpha3Code && target.nonStateActorId) {
-		throw apiError('INVALID_INPUT', m.assignmentDelegationNationOrNsa());
-	}
-	if (target.nationAlpha3Code) {
-		const offered = await tx.query.nation.findFirst({
-			where: { alpha3Code: target.nationAlpha3Code, committees: { conferenceId } },
-			columns: { alpha3Code: true }
-		});
-		if (!offered)
-			throw apiError(
-				'INVALID_INPUT',
-				m.assignmentNationNotInConference({ nation: target.nationAlpha3Code })
-			);
-	}
-	if (target.nonStateActorId) {
-		const offered = await tx.query.nonStateActor.findFirst({
-			where: { id: target.nonStateActorId, conferenceId },
-			columns: { id: true }
-		});
-		if (!offered) {
-			throw apiError(
-				'INVALID_INPUT',
-				m.assignmentNsaNotInConference({ nonStateActor: target.nonStateActorId })
-			);
-		}
-	}
 }
 
 /**

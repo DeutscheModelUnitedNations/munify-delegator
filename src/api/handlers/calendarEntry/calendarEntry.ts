@@ -1,26 +1,20 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRoleForCalendarDay,
-	isTeamMemberOfConference,
-	systemAdmin
-} from '$api/services/authHelper';
+import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { eq } from 'drizzle-orm';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { nullToUndefined } from '$api/services/args';
-import { assertReferences, setTracks } from './calendarEntryService';
+import { setTracks } from './calendarEntryService';
+import {
+	assertCanCreateCalendarEntry,
+	assertCanUpdateCalendarEntry,
+	deletableCalendarEntryWhere,
+	registerCalendarEntryAbilities
+} from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '$api/pubsub';
 import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/apiError';
+import { apiError } from '$api/services/errors/apiError';
 
-// Ported from abilities/entities/calendarEntry.ts
-abilityBuilder.calendarEntry.allow('read');
-abilityBuilder.calendarEntry.allow(['update', 'delete']).when(systemAdmin);
-
-abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
-	const calendarDay = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return calendarDay ? { where: { calendarDay } } : undefined;
-});
+registerCalendarEntryAbilities();
 
 const CalendarEntryRef = object({ table: 'calendarEntry' });
 query({ table: 'calendarEntry' });
@@ -43,12 +37,7 @@ schemaBuilder.mutationFields((t) => ({
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
-			await assertReferences(day.conferenceId, {
-				calendarDayId: args.calendarDayId,
-				calendarTrackIds: args.calendarTrackIds ?? [],
-				placeId: args.placeId
-			});
+			await assertCanCreateCalendarEntry(ctx, args);
 
 			const created = await db
 				.insert(schema.calendarEntry)
@@ -96,24 +85,7 @@ schemaBuilder.mutationFields((t) => ({
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const entry = await db.query.calendarEntry
-				.findFirst({
-					...(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } })
-						.query.single,
-					columns: { calendarDayId: true },
-					with: {
-						calendarDay: { columns: { conferenceId: true } },
-						tracks: { columns: { id: true } }
-					}
-				})
-				.then(assertFindFirstExists);
-			const calendarDayId = args.calendarDayId ?? entry.calendarDayId;
-			await assertReferences(entry.calendarDay.conferenceId, {
-				calendarDayId,
-				// Moving to another day takes the tracks along only if they are that day's too.
-				calendarTrackIds: args.calendarTrackIds ?? entry.tracks.map((track) => track.id),
-				placeId: args.placeId
-			});
+			await assertCanUpdateCalendarEntry(ctx, args);
 
 			await db
 				.update(schema.calendarEntry)
@@ -130,10 +102,7 @@ schemaBuilder.mutationFields((t) => ({
 					room: args.room,
 					placeId: args.placeId
 				})
-				.where(
-					(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
+				.where(eq(schema.calendarEntry.id, args.id));
 
 			if (args.calendarTrackIds) await setTracks(args.id, args.calendarTrackIds);
 
@@ -156,10 +125,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.calendarEntry)
-				.where(
-					(await ctx.abilities.calendarEntry.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
+				.where(await deletableCalendarEntryWhere(ctx, args.id))
 				.returning({ id: schema.calendarEntry.id });
 
 			if (deleted.length === 0) {

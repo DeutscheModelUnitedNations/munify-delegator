@@ -1,5 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import { assertPaperReviewer } from '$api/handlers/paper/paperService';
+import { assertCanReviewPapers } from '$api/handlers/paper/paperPermissions';
 import type {
 	FlagCollectionData,
 	FlagCollectionStats,
@@ -75,7 +75,7 @@ schemaBuilder.queryFields((t) => ({
 		type: FlagCollectionDataRef,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertPaperReviewer(ctx, args.conferenceId);
+			await assertCanReviewPapers(ctx, args.conferenceId);
 
 			return buildFlagCollection(args.conferenceId);
 		}

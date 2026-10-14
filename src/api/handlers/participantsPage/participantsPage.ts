@@ -1,6 +1,6 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
+import { assertCanReadParticipantsPage } from './participantsPagePermissions';
 import { participantsCountSql, participantsPageSql } from './participantsQuery';
 
 const ParticipantFilterInput = schemaBuilder.inputType('ParticipantFilterInput', {
@@ -56,7 +56,7 @@ schemaBuilder.queryFields((t) => ({
 			offset: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await assertCanReadParticipantsPage(ctx, args.conferenceId);
 			const limit = Math.min(Math.max(args.limit, 1), 1000);
 			const offset = Math.max(args.offset, 0);
 
