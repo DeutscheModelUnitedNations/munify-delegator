@@ -1,4 +1,4 @@
-import { Renderer, toPlainText } from 'better-svelte-email';
+import { Renderer, toPlainText } from '@better-svelte-email/server';
 import type { Component } from 'svelte';
 
 /**

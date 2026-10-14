@@ -40,4 +40,5 @@
 	<img src={getPicture(page.status)} alt="404" class="w-1/2" />
 	<h1 class="text-center text-3xl">{getErrorText(page.status)}</h1>
 	<p>{page.error?.message}</p>
+	<a href="/" class="btn btn-primary">{m.backToHome()}</a>
 </main>

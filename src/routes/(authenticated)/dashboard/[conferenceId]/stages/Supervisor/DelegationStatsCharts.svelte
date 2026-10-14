@@ -1,52 +1,85 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-
-	type DelegationMember = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
-	>['supervisedDelegationMembers'][number];
-
-	type Paper = NonNullable<DelegationMember['delegation']['papers']>[number];
+	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 
 	interface Props {
-		members: DelegationMember[];
-		papers: Paper[];
 		conferenceId: string;
-		conferenceStartDate?: Date | null;
+		supervisorId: string;
 	}
 
-	let { members, papers, conferenceId, conferenceStartDate }: Props = $props();
+	let { conferenceId, supervisorId }: Props = $props();
+
+	const [supervisor, conference] = $derived(
+		await Promise.all([
+			client.liveQuery.conferenceSupervisor({
+				__args: { id: supervisorId },
+				supervisedDelegationMembers: {
+					id: true,
+					user: {
+						birthday: true,
+						conferenceParticipantStatus: {
+							termsAndConditions: true,
+							guardianConsent: true,
+							mediaConsent: true,
+							paymentStatus: true,
+							conference: { id: true }
+						}
+					},
+					delegation: {
+						id: true,
+						assignedNation: { alpha3Code: true },
+						assignedNonStateActor: { id: true },
+						papers: { id: true, status: true }
+					}
+				}
+			}),
+			client.liveQuery.conference({ __args: { id: conferenceId }, startConference: true })
+		])
+	);
+	const conferenceStartDate = $derived(conference.startConference);
+
+	/** Only students who got a role count: the charts are about preparing for the conference. */
+	const members = $derived(
+		supervisor.supervisedDelegationMembers.filter(
+			(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
+		)
+	);
+
+	/** Each delegation's papers once, however many of its members this supervisor supervises. */
+	const papers = $derived(
+		[...new Map(members.map((x) => [x.delegation.id, x.delegation])).values()].flatMap(
+			(delegation) => delegation.papers
+		)
+	);
+
+	/** How many students' payment or postal status is done, pending, or has a problem. */
+	const countStatuses = (
+		statusOf: (member: (typeof members)[number]) => AdministrativestatusEnum
+	) => {
+		const counts = { DONE: 0, PENDING: 0, PROBLEM: 0 };
+		members.forEach((member) => counts[statusOf(member)]++);
+		return counts;
+	};
+
+	const participantStatusOf = (member: (typeof members)[number]) =>
+		member.user.conferenceParticipantStatus?.find((s) => s.conference.id === conferenceId);
 
 	// Calculate payment status counts
-	let paymentStats = $derived.by(() => {
-		const counts = { DONE: 0, PENDING: 0, PROBLEM: 0 };
-		members.forEach((member) => {
-			const status = member.user.conferenceParticipantStatus?.find(
-				(s) => s.conference.id === conferenceId
-			);
-			const paymentStatus = status?.paymentStatus ?? 'PENDING';
-			counts[paymentStatus]++;
-		});
-		return counts;
-	});
+	let paymentStats = $derived(
+		countStatuses((member) => participantStatusOf(member)?.paymentStatus ?? 'PENDING')
+	);
 
 	// Calculate postal status counts (using simplified status)
-	let postalStats = $derived.by(() => {
-		const counts = { DONE: 0, PENDING: 0, PROBLEM: 0 };
-		members.forEach((member) => {
-			const status = member.user.conferenceParticipantStatus?.find(
-				(s) => s.conference.id === conferenceId
-			);
+	let postalStats = $derived(
+		countStatuses((member) => {
 			const isOfAge = conferenceStartDate
 				? ofAgeAtConference(conferenceStartDate, member.user.birthday)
 				: true;
-			const postalStatus = getSimplifiedPostalStatus(status, isOfAge) ?? 'PENDING';
-			counts[postalStatus]++;
-		});
-		return counts;
-	});
+			return getSimplifiedPostalStatus(participantStatusOf(member), isOfAge) ?? 'PENDING';
+		})
+	);
 
 	// Calculate paper status counts
 	let paperStats = $derived.by(() => {
@@ -64,9 +97,9 @@
 
 <div class="flex flex-wrap gap-4">
 	<!-- Payment Status -->
-	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
+	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-duotone fa-money-bill-transfer text-primary"></i>
+			<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer text-primary"></i>
 			<span class="text-sm font-medium">{m.payment()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">
@@ -97,9 +130,9 @@
 	</div>
 
 	<!-- Postal Status -->
-	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
+	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-duotone fa-envelopes-bulk text-primary"></i>
+			<i class="fa-sharp-duotone fa-solid fa-envelopes-bulk text-primary"></i>
 			<span class="text-sm font-medium">{m.postalRegistration()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">
@@ -130,9 +163,9 @@
 	</div>
 
 	<!-- Paper Status -->
-	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
+	<div class="bg-base-100 rounded-box p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
-			<i class="fa-duotone fa-file-lines text-primary"></i>
+			<i class="fa-sharp-duotone fa-solid fa-file-lines text-primary"></i>
 			<span class="text-sm font-medium">{m.papers()}</span>
 		</div>
 		<div class="flex h-2 rounded-full overflow-hidden">

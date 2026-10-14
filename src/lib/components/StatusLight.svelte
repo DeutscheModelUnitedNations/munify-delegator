@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		color?: 'info' | 'success' | 'warning' | 'error';
 		blink?: boolean;
@@ -42,8 +43,11 @@
 </script>
 
 <div class="tooltip tooltip-top inline-grid *:[grid-area:1/1]" data-tip={tooltip}>
-	<div aria-label="status" class="status {getSizeClass()} {getColorClass()}"></div>
+	<div aria-label={m.status()} class="status {getSizeClass()} {getColorClass()}"></div>
 	{#if blink}
-		<div aria-label="status" class="status {getSizeClass()} {getColorClass()} animate-ping"></div>
+		<div
+			aria-label={m.status()}
+			class="status {getSizeClass()} {getColorClass()} animate-ping"
+		></div>
 	{/if}
 </div>

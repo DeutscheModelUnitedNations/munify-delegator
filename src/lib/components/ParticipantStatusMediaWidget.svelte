@@ -1,21 +1,20 @@
 <script lang="ts">
-	import hotkeys from 'hotkeys-js';
 	import StatusWidget from './StatusWidget.svelte';
-	import { type MediaConsentStatus$options } from '$houdini';
+	import type { MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
 
 	interface Props {
 		title: string;
-		status: MediaConsentStatus$options;
-		changeStatus: (status: MediaConsentStatus$options) => Promise<void>;
+		status: MediaconsentstatusEnum;
+		changeStatus: (status: MediaconsentstatusEnum) => Promise<void>;
 		/** @deprecated Use `hotkeys` instead */
 		doneHotkey?: string;
 		/** Per-status hotkey mapping */
-		hotkeys?: Partial<Record<MediaConsentStatus$options, string>>;
+		hotkeys?: Partial<Record<MediaconsentstatusEnum, string>>;
 	}
 
 	let { title, status, changeStatus, doneHotkey, hotkeys: hotkeyMap }: Props = $props();
 
-	const btnClick = async (status: MediaConsentStatus$options) => {
+	const btnClick = async (status: MediaconsentstatusEnum) => {
 		await changeStatus(status);
 	};
 </script>

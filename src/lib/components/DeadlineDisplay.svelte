@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -15,7 +16,7 @@
 	let timezoneDiffers = $derived(userTimezone !== conferenceTimezone);
 
 	let conferenceTimeFormatted = $derived(
-		deadlineDate.toLocaleString(undefined, {
+		deadlineDate.toLocaleString(getLocale(), {
 			timeZone: conferenceTimezone,
 			year: 'numeric',
 			month: '2-digit',
@@ -27,7 +28,7 @@
 	);
 
 	let userTimeFormatted = $derived(
-		deadlineDate.toLocaleString(undefined, {
+		deadlineDate.toLocaleString(getLocale(), {
 			timeZone: userTimezone,
 			hour: '2-digit',
 			minute: '2-digit',

@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
 test('a new user can register as an individual participant', async ({ page }) => {
 	const user = makeTestUser('individual');
-	await loginAs(page, user, { startUrl: '/registration' });
+	await loginAs(page, user, { startUrl: '/login?next=/dashboard' });
 
 	await openFirstConferenceForRegistration(page);
 

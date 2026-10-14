@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { getRegistrationStatus } from '$lib/services/registrationStatus';
-	import { getWaitingListStatus } from '$lib/services/waitingListStatus';
+	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
+	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
 	import StatusLight from './StatusLight.svelte';
 
 	interface Props {

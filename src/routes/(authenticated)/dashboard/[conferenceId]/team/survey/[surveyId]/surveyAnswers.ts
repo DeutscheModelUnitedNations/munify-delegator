@@ -1,0 +1,66 @@
+import { client } from '$lib/api/rumbleClient/client';
+
+const answeringUser = { id: true, givenName: true, familyName: true } as const;
+
+/** One survey's options and answers, plus everyone who still owes an answer. */
+export async function fetchSurveyResults(conferenceId: string, surveyId: string) {
+	/** Anyone who holds a seat but has not answered this question yet. */
+	const notAnswered = { NOT: { surveyAnswers: { questionId: { eq: surveyId } } } };
+
+	const [survey, delegationMembers, singleParticipants] = await Promise.all([
+		client.liveQuery.surveyQuestion({
+			__args: { id: surveyId },
+			id: true,
+			options: {
+				id: true,
+				title: true,
+				description: true,
+				countSurveyAnswers: true,
+				upperLimit: true
+			},
+			surveyAnswers: {
+				id: true,
+				createdAt: true,
+				option: { id: true },
+				user: answeringUser
+			}
+		}),
+		client.liveQuery.delegationMembers({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					delegation: {
+						OR: [
+							{ assignedNationAlpha3Code: { isNotNull: true } },
+							{ assignedNonStateActorId: { isNotNull: true } }
+						]
+					},
+					user: notAnswered
+				}
+			},
+			user: answeringUser
+		}),
+		client.liveQuery.singleParticipants({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					assignedRoleId: { isNotNull: true },
+					user: notAnswered
+				}
+			},
+			user: answeringUser
+		})
+	]);
+
+	return {
+		survey,
+		// A getter over the live lists, so an answer coming in takes its author off the list.
+		// Somebody can hold both kinds of registration, so the two are deduplicated by user.
+		get usersNotAnswered() {
+			const byId = new Map(
+				[...delegationMembers, ...singleParticipants].map((row) => [row.user.id, row.user])
+			);
+			return [...byId.values()];
+		}
+	};
+}

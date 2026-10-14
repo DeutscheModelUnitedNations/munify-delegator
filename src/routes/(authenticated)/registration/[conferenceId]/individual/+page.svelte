@@ -1,11 +1,21 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import { resolve } from '$app/paths';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import PlainCard from '$lib/components/PlainCard.svelte';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
-	let query = $derived(data.RoleSelectionQuery);
-	let roles = $derived($query.data?.findManyCustomConferenceRoles ?? []);
+	let { params }: PageProps = $props();
+
+	const roles = $derived(
+		await client.liveQuery.customConferenceRoles({
+			__args: { where: { conferenceId: { eq: params.conferenceId } } },
+			id: true,
+			name: true,
+			description: true,
+			fontAwesomeIcon: true
+		})
+	);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
@@ -22,12 +32,12 @@
 				? 'lg:grid-cols-3'
 				: ''}"
 		>
-			{#each roles as { description, fontAwesomeIcon, id, name }}
+			{#each roles as { description, fontAwesomeIcon, id, name } (id)}
 				<PlainCard
 					title={name}
 					{description}
 					fontAwesomeIcon={fontAwesomeIcon ?? 'fa-user-tie'}
-					link={`./individual/${id}`}
+					link={resolve(`/registration/${params.conferenceId}/individual/${id}`)}
 				/>
 			{/each}
 		</section>

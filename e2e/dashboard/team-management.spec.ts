@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
-// Team management (invitations + the TeamMemberInvitation resolver) had no coverage. It is also
-// permission-sensitive: the layout only admits system admins, PROJECT_MANAGEMENT and
+// Team members (invitations + the TeamMemberInvitation resolver) had no coverage. It is also
+// permission-sensitive: the route registry only admits system admins, PROJECT_MANAGEMENT and
 // TEAM_COORDINATOR, so this doubles as a check that a PROJECT_MANAGEMENT member is admitted.
 
 test('a project manager can invite a team member by email', async ({ page }) => {
@@ -12,7 +12,7 @@ test('a project manager can invite a team member by email', async ({ page }) => 
 	const invitee = `e2e-invitee-${Date.now()}@e2e.test`;
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team-management/invitations`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/invitations`
 	});
 	await waitForHydration(page);
 
@@ -36,10 +36,10 @@ test('a project manager can invite a team member by email', async ({ page }) => 
 			async () => {
 				const res = await page.request.post('/api/graphql', {
 					data: {
-						query: `query { findManyTeamMemberInvitations(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, email: { equals: "${invitee}" } }) { email role } }`
+						query: `query { teamMemberInvitations(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, email: { eq: "${invitee}" } }) { email role } }`
 					}
 				});
-				return (await res.json())?.data?.findManyTeamMemberInvitations?.length ?? 0;
+				return (await res.json())?.data?.teamMemberInvitations?.length ?? 0;
 			},
 			{ timeout: 15_000 }
 		)

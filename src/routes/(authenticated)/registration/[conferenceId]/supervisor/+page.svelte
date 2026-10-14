@@ -1,33 +1,20 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
-	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { resolve } from '$app/paths';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
+	import type { PageProps } from './$types';
+	import RegistrationStepPage from '../RegistrationStepPage.svelte';
 
-	const createSupervisorMutation = graphql(`
-		mutation CreateConferenceSupervisorMutation(
-			$conferenceId: ID!
-			$plansOwnAttendenceAtConference: Boolean!
-		) {
-			createOneConferenceSupervisor(
-				conferenceId: $conferenceId
-				plansOwnAttendenceAtConference: $plansOwnAttendenceAtConference
-			) {
-				id
-			}
-		}
-	`);
-
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
 	let plansOwnAttendenceAtConference = $state(true);
 
 	const signup = async () => {
-		const promise = createSupervisorMutation.mutate({
-			conferenceId: data.conferenceId,
-			plansOwnAttendenceAtConference
+		const promise = client.mutate.createConferenceSupervisor({
+			__args: { conferenceId: params.conferenceId, plansOwnAttendenceAtConference },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -35,45 +22,37 @@
 			error: m.genericToastError()
 		});
 		await promise;
-		goto(`/dashboard/${data.conferenceId}`);
+		goto(resolve(`/dashboard/${params.conferenceId}`));
 	};
 </script>
 
-<div class="flex min-h-screen w-full flex-col items-center p-4">
-	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
-		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signupForSupervisors()}</h1>
-		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
-			<div class="flex flex-col items-center">
-				<p class="max-ch-sm mb-10">
-					{m.signupForSupervisorsDescription()}
-				</p>
-
-				<div class="card bg-base-100 border-base-200 w-full max-w-md border shadow-lg">
-					<div class="card-body items-center justify-center">
-						<label class="label cursor-pointer">
-							<span class="mr-4">{m.presentAtConference()}</span>
-							<input
-								type="checkbox"
-								class="toggle toggle-success"
-								checked={plansOwnAttendenceAtConference}
-								onchange={() => (plansOwnAttendenceAtConference = !plansOwnAttendenceAtConference)}
-							/>
-						</label>
-						<i class="fa-duotone fa-arrow-down"></i>
-						<p class="text-center text-sm italic">
-							{@html plansOwnAttendenceAtConference
-								? m.willBePresentAtConference()
-								: m.willNotBePresentAtConference()}
-						</p>
-						<button class="btn btn-primary mt-10 w-full" onclick={() => signup()}>
-							{m.signupNow()}
-							<i class="fas fa-paper-plane"></i>
-						</button>
-					</div>
-				</div>
-
-				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>
-			</div>
+<RegistrationStepPage
+	conferenceId={params.conferenceId}
+	title={m.signupForSupervisors()}
+	description={m.signupForSupervisorsDescription()}
+>
+	<div class="card bg-base-100 border-base-200 w-full max-w-md border shadow-lg">
+		<div class="card-body items-center justify-center">
+			<label class="label cursor-pointer">
+				<span class="mr-4">{m.presentAtConference()}</span>
+				<input
+					type="checkbox"
+					class="toggle toggle-success"
+					checked={plansOwnAttendenceAtConference}
+					onchange={() => (plansOwnAttendenceAtConference = !plansOwnAttendenceAtConference)}
+				/>
+			</label>
+			<i class="fa-sharp-duotone fa-solid fa-arrow-down"></i>
+			<p class="text-center text-sm italic">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
+				{@html plansOwnAttendenceAtConference
+					? m.willBePresentAtConference()
+					: m.willNotBePresentAtConference()}
+			</p>
+			<button class="btn btn-primary mt-10 w-full" onclick={() => signup()}>
+				{m.signupNow()}
+				<i class="fas fa-paper-plane"></i>
+			</button>
 		</div>
-	</main>
-</div>
+	</div>
+</RegistrationStepPage>

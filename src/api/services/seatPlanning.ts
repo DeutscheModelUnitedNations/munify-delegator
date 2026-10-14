@@ -1,23 +1,22 @@
-import type { Prisma, RegionalBaseline } from '@prisma/client';
-import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
-import formatNames from '$lib/services/formatNames';
-import { isValidManualTargets } from '$lib/services/seatPlanning/baselines';
-import { regionalGroups } from '$lib/services/seatPlanning/unMembers';
+import formatNames from '$lib/helpers/formatNames';
+import type * as schema from '$api/db/schema';
+import { isValidManualTargets } from '$lib/helpers/seatPlanning/baselines';
+import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
+import { apiError } from '$api/services/errors/apiError';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
  * unit tested; the resolvers feed them with what they queried.
  */
 
+type RegionalBaseline = (typeof schema.regionalBaseline.enumValues)[number];
+
 /**
  * Delegation members that block removing `nationAlpha3Code` from `committeeId`: members of the
  * delegation holding that nation who are assigned to exactly that committee.
  */
-export function seatRemovalBlockersWhere(
-	committeeId: string,
-	nationAlpha3Code: string
-): Prisma.DelegationMemberWhereInput {
+export function seatRemovalBlockersWhere(committeeId: string, nationAlpha3Code: string) {
 	return {
 		assignedCommitteeId: committeeId,
 		delegation: { assignedNationAlpha3Code: nationAlpha3Code }
@@ -72,11 +71,11 @@ export function assertSeatsPerDelegationAllowed(
 	// not part of the update
 	if (numOfSeatsPerDelegation == null) return;
 	if (numOfSeatsPerDelegation < 1) {
-		throw new GraphQLError(m.seatsPerDelegationAtLeastOne());
+		throw apiError('INVALID_INPUT', m.seatsPerDelegationAtLeastOne());
 	}
 	const min = minSeatsPerDelegation(assignedMembers);
 	if (numOfSeatsPerDelegation < min) {
-		throw new GraphQLError(m.seatsPerDelegationBelowAssigned({ min }));
+		throw apiError('CONFLICT', m.seatsPerDelegationBelowAssigned({ min }));
 	}
 }
 
@@ -84,7 +83,7 @@ interface DelegationWithMembers {
 	assignedNationAlpha3Code: string | null;
 	members: {
 		assignedCommitteeId: string | null;
-		user: { given_name: string; family_name: string };
+		user: { givenName: string; familyName: string };
 	}[];
 }
 
@@ -100,7 +99,7 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 		for (const { assignedCommitteeId, user } of members) {
 			if (!assignedCommitteeId) continue;
 			const names = namesByCommittee.get(assignedCommitteeId) ?? [];
-			names.push(formatNames(user.given_name, user.family_name));
+			names.push(formatNames(user.givenName, user.familyName));
 			namesByCommittee.set(assignedCommitteeId, names);
 		}
 
@@ -121,12 +120,12 @@ interface NonStateActorUpdateInput {
 }
 
 /**
- * Maps the optional GraphQL update arguments of a non state actor to Prisma update data: omitted
- * fields stay untouched, an empty icon clears the icon and the seat amount has to be positive.
+ * Maps the optional GraphQL update arguments of a non state actor to update data: omitted fields
+ * stay untouched, an empty icon clears the icon and the seat amount has to be positive.
  */
 export function nonStateActorUpdateData(
 	data: NonStateActorUpdateInput
-): Prisma.NonStateActorUpdateInput {
+): Partial<typeof schema.nonStateActor.$inferInsert> {
 	assertSeatsPerDelegationAllowed(data.seatAmount, []);
 
 	return {
@@ -145,8 +144,13 @@ interface CommitteeUpdateInput {
 	numOfSeatsPerDelegation?: number | null;
 }
 
-/** Maps the optional GraphQL update arguments of a committee to Prisma update data */
-export function committeeUpdateData(data: CommitteeUpdateInput): Prisma.CommitteeUpdateInput {
+/**
+ * Maps the optional GraphQL update arguments of a committee to update data. The headline is passed
+ * through as is, so sending null clears it rather than leaving it untouched.
+ */
+export function committeeUpdateData(
+	data: CommitteeUpdateInput
+): Partial<typeof schema.committee.$inferInsert> {
 	return {
 		name: data.name ?? undefined,
 		abbreviation: data.abbreviation ?? undefined,
@@ -161,26 +165,26 @@ export function committeeUpdateData(data: CommitteeUpdateInput): Prisma.Committe
  */
 export function assertCommitteeDeletable(assignedMembers: number, papers: number) {
 	if (assignedMembers > 0) {
-		throw new GraphQLError(m.committeeDeleteBlocked({ count: assignedMembers }));
+		throw apiError('CONFLICT', m.committeeDeleteBlocked({ count: assignedMembers }));
 	}
 	if (papers > 0) {
-		throw new GraphQLError(m.committeeDeleteBlockedByPapers({ count: papers }));
+		throw apiError('CONFLICT', m.committeeDeleteBlockedByPapers({ count: papers }));
 	}
 }
 
 /** A non-state actor cannot be deleted while a delegation is assigned to it */
 export function assertNonStateActorDeletable(assignedDelegations: number) {
 	if (assignedDelegations > 0) {
-		throw new GraphQLError(m.nonStateActorDeleteBlocked());
+		throw apiError('CONFLICT', m.nonStateActorDeleteBlocked());
 	}
 }
 
 /** Manual baselines need usable targets; templates ignore them (they are kept for later) */
 export function assertRegionalBaselineTargets(baseline: RegionalBaseline, targets: number[]) {
 	if (baseline === 'MANUAL' && !isValidManualTargets(targets)) {
-		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
+		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
 	}
 	if (targets.length > 0 && targets.length !== regionalGroups.length) {
-		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
+		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
 	}
 }

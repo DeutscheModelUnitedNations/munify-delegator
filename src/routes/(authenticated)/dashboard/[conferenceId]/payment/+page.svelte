@@ -1,19 +1,21 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import singlePayment from '$assets/undraw/single_payment.svg';
 	import delegationPayment from '$assets/undraw/delegation_payment.svg';
 	import groupPayment from '$assets/undraw/group_payment.svg';
-	import { type PageData } from './$houdini';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
-	let isDelegation = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
-	let isSupervisor = $derived(!!data.conferenceQueryData?.findUniqueConferenceSupervisor);
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
+
+	let isDelegation = $derived(!!participation?.delegationMember);
+	let isSupervisor = $derived(!!participation?.supervisor);
 	let supervisorIsNotPresent = $derived(
-		data.conferenceQueryData?.findUniqueConferenceSupervisor
-			? !data.conferenceQueryData.findUniqueConferenceSupervisor.plansOwnAttendenceAtConference
-			: false
+		participation?.supervisor ? !participation.supervisor.plansOwnAttendenceAtConference : false
 	);
 </script>
 
@@ -25,7 +27,7 @@
 		<UndrawCard
 			title={m.singlePayment()}
 			btnText={m.singlePaymentBtn()}
-			btnLink="./payment/single"
+			btnLink={resolve(`/dashboard/${params.conferenceId}/payment/single`)}
 			img={singlePayment}
 			disabled={supervisorIsNotPresent}
 			disabledText={m.paymentMethodNotAvailable()}
@@ -36,7 +38,7 @@
 			<UndrawCard
 				title={m.delegationPayment()}
 				btnText={m.delegationPaymentBtn()}
-				btnLink="./payment/delegation"
+				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/delegation`)}
 				img={delegationPayment}
 				disabled={!isDelegation}
 				disabledText={m.paymentMethodNotAvailable()}
@@ -48,7 +50,7 @@
 			<UndrawCard
 				title={m.groupPayment()}
 				btnText={m.groupPaymentBtn()}
-				btnLink="./payment/group"
+				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/group`)}
 				img={groupPayment}
 				disabled={!isSupervisor}
 				disabledText={m.paymentMethodNotAvailable()}

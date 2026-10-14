@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import codenmz from '$lib/services/codenamize';
-	import GenericWidget from './DelegationStats/GenericWidget.svelte';
+	import codenmz from '$lib/helpers/codenamize';
+	import GenericWidget from './delegationStats/GenericWidget.svelte';
 
 	interface Props {
 		delegationId: string;

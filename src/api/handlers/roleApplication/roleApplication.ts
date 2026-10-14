@@ -1,0 +1,96 @@
+import { db } from '$api/db/db';
+import { object, query, schemaBuilder } from '$api/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { countGiven } from '$api/services/args';
+import { appendRoleApplication, removeRoleApplication, swapRanks } from './roleApplicationService';
+import {
+	assertCanCreateRoleApplication,
+	assertCanDeleteRoleApplication,
+	assertCanSwapRoleApplicationRanks,
+	registerRoleApplicationAbilities
+} from './roleApplicationPermissions';
+import { roleApplicationPubsub } from '$api/pubsub';
+import { m } from '$lib/paraglide/messages';
+import { apiError } from '$api/services/errors/apiError';
+
+registerRoleApplicationAbilities();
+
+const RoleApplicationRef = object({ table: 'roleApplication' });
+query({ table: 'roleApplication' });
+
+schemaBuilder.mutationFields((t) => ({
+	createRoleApplication: t.drizzleField({
+		type: RoleApplicationRef,
+		args: {
+			delegationId: t.arg.id({ required: true }),
+			nationId: t.arg.id(),
+			nonStateActorId: t.arg.id()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const targets = countGiven(args.nationId, args.nonStateActorId);
+			if (targets === 0) {
+				throw apiError('INVALID_INPUT', m.roleApplicationNeedsTarget());
+			}
+			if (targets > 1) {
+				throw apiError('INVALID_INPUT', m.roleApplicationOneTarget());
+			}
+
+			// The caller must be allowed to update the delegation the application belongs to, and the
+			// role applied for must be on offer in that conference.
+			await assertCanCreateRoleApplication(ctx, args);
+
+			const created = await appendRoleApplication(args);
+
+			roleApplicationPubsub.created();
+
+			return db.query.roleApplication
+				.findFirst(
+					query(
+						(await ctx.abilities.roleApplication.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	deleteRoleApplication: t.field({
+		type: 'Boolean',
+		args: { id: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const application = await assertCanDeleteRoleApplication(ctx, args.id);
+			await removeRoleApplication(application);
+			roleApplicationPubsub.removed();
+			roleApplicationPubsub.updated();
+
+			return true;
+		}
+	}),
+
+	swapRoleApplicationRanks: t.drizzleField({
+		type: [RoleApplicationRef],
+		args: {
+			firstRoleApplicationId: t.arg.id({ required: true }),
+			secondRoleApplicationId: t.arg.id({ required: true })
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const [first, second] = await assertCanSwapRoleApplicationRanks(
+				ctx,
+				args.firstRoleApplicationId,
+				args.secondRoleApplicationId
+			);
+			await swapRanks(first, second);
+
+			roleApplicationPubsub.updated([args.firstRoleApplicationId, args.secondRoleApplicationId]);
+
+			return db.query.roleApplication.findMany(
+				query(
+					(await ctx.abilities.roleApplication.filter('read')).merge({
+						where: { id: { in: [args.firstRoleApplicationId, args.secondRoleApplicationId] } }
+					}).query.many
+				)
+			);
+		}
+	})
+}));

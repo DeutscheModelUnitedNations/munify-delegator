@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Claims submitted through the oidc-mock "custom claims" login form (oidc-mock.yaml)
- * and normalized by src/api/services/OIDC.ts into an OIDCUser.
+ * Claims the oidc-mock login page (oidc-mock.yaml, served by `vite dev`) signs into the tokens,
+ * normalized by src/api/services/OIDC.ts into an OIDCUser.
  */
 export interface TestUserClaims {
 	email: string;
@@ -28,7 +28,7 @@ export function makeTestUser(
 	const unique = `e2e-${prefix}-${Date.now()}-${counter++}`;
 	return {
 		email: `${unique}@e2e.test`,
-		given_name: 'E2E',
+		given_name: 'Testperson',
 		family_name: prefix,
 		preferred_username: unique,
 		locale: 'de',
@@ -37,17 +37,25 @@ export function makeTestUser(
 }
 
 /**
+ * The id as a name the `PersonName` scalar accepts, which allows no digits: each digit becomes a
+ * letter, so ids that differ only in a digit (`…-member-1`, `…-member-2`) keep distinct names.
+ */
+function asPersonName(id: string): string {
+	return id.replace(/\d/g, (digit) => String.fromCharCode(65 + Number(digit)));
+}
+
+/**
  * Claims for a user with a fixed, predictable id - use this (instead of `makeTestUser`) whenever
  * a test needs the DB fixtures (TeamMember, DelegationMember, ...) seeded ahead of time in
  * e2e/seed/seed.ts, since those rows are created against a fixed userId that must match this
- * user's OIDC `sub`. `loginAs` submits `preferred_username` as the token's `sub`, so `id` must
- * be exactly the id used when seeding.
+ * user's OIDC `sub`. `loginAs` signs in with `preferred_username` as the token's `sub`, so `id`
+ * must be exactly the id used when seeding.
  */
 export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {}): TestUserClaims {
 	return {
 		email: `${id}@e2e.test`,
-		given_name: 'E2E',
-		family_name: id,
+		given_name: 'Testperson',
+		family_name: asPersonName(id),
 		preferred_username: id,
 		locale: 'de',
 		...overrides
@@ -55,47 +63,48 @@ export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {
 }
 
 /**
- * Origin and path prefix of the mock OIDC provider, derived from the same env var the app itself
- * uses. oidc-mock runs inside the Vite dev server: the app's server talks to its back channel
- * (`PUBLIC_OIDC_AUTHORITY`), while the browser is sent to the same endpoints under the issuer's
- * path on the app's own origin. Both count as "on the provider".
+ * Path the oidc-mock provider lives under (`base_path` in oidc-mock.yaml), derived from the same
+ * env var the app uses. Its Vite plugin serves the login page on the app's own origin and
+ * rewrites the app's redirects to it into relative ones, so the provider is recognised by path,
+ * not by origin.
  */
-const OIDC_ISSUER = new URL(
+const OIDC_BASE_PATH = new URL(
 	(
 		process.env.PUBLIC_OIDC_AUTHORITY ??
 		'http://127.0.0.1:8090/oidc/.well-known/openid-configuration'
 	).replace(/\/\.well-known\/openid-configuration$/, '')
-);
+).pathname;
 
 /** True while `url` is on the mock OIDC provider rather than the app under test. */
-export function isOidcUrl(url: string | URL): boolean {
+function isOidcUrl(url: string | URL): boolean {
 	try {
-		const parsed = new URL(url.toString());
-		const prefix = OIDC_ISSUER.pathname.replace(/\/$/, '') + '/';
-		return parsed.origin === OIDC_ISSUER.origin || parsed.pathname.startsWith(prefix);
+		const { pathname } = new URL(url.toString());
+		return pathname === OIDC_BASE_PATH || pathname.startsWith(`${OIDC_BASE_PATH}/`);
 	} catch {
 		return false;
 	}
 }
 
 /**
- * Drives the oidc-mock login page (served by the Vite dev server, see oidc-mock.yaml) to
- * authenticate as `claims` via its "custom claims" form, then - for a brand new user - completes
- * the mandatory "additional info" profile form the app requires before granting access to the
- * rest of the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ * Signs in on the oidc-mock login page as `claims`, then - for a brand new user - completes the
+ * mandatory "additional info" profile form the app requires before granting access to the rest
+ * of the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
  */
 export async function loginAs(
 	page: Page,
 	claims: TestUserClaims,
 	opts: { startUrl?: string } = {}
 ): Promise<void> {
-	const startUrl = opts.startUrl ?? '/dashboard';
+	const startUrl = opts.startUrl ?? '/login?next=/dashboard';
 	await page.goto(startUrl);
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });
-	await page.locator('details summary').click();
-	await page.locator('input[name="custom_sub"]').fill(claims.preferred_username);
-	await page.locator('textarea[name="custom_claims"]').fill(JSON.stringify(claims));
+	// The page's "custom claims" form: any `sub`, any claims. Its per-user buttons are for the
+	// fixed accounts in oidc-mock.yaml, which the suite does not use. The form sits in a collapsed
+	// <details>, so it is opened first.
+	await page.getByText('Sign in with custom claims').click();
+	await page.locator('#custom_sub').fill(claims.preferred_username);
+	await page.locator('#custom_claims').fill(JSON.stringify(claims));
 	await page.locator('button[name="custom"]').click();
 
 	await page.waitForURL((url) => !isOidcUrl(url), { timeout: 15_000 });
@@ -109,47 +118,47 @@ export async function loginAs(
 	// few extra round trips to finish hydrating before a test's first real interaction. Without
 	// that buffer, an interaction fired immediately after this function returns can race
 	// SvelteKit's hydration (the click/input fires before the handler is attached and is lost).
-	// `networkidle` is a reasonable proxy for "hydration + initial data fetch settled".
-	await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+	await waitForHydration(page);
 }
 
 /**
  * `page.reload()` (or any fresh navigation) followed immediately by an interaction is prone to
- * the same hydration race as a fresh `loginAs` login (see the `networkidle` wait there) - the
+ * the same hydration race as a fresh `loginAs` login (see the hydration wait there) - the
  * click/input can fire before Svelte's handler is attached. Use this after any `page.reload()`
  * a test does mid-flow, right before the next interaction.
  */
 export async function waitForHydration(page: Page): Promise<void> {
-	await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+	// The root layout sets this in `onMount`. Not `networkidle`: the subscription stream stays open
+	// for as long as the page shows live data, so the network never goes idle on most pages.
+	await page.waitForFunction(() => document.body.dataset.hydrated === 'true', undefined, {
+		timeout: 15_000
+	});
 }
 
 /**
- * Fills the profile fields the app requires (see my-account/form-schema.ts) using the
- * dev-only "Fake User" helper for the fields it covers, and fills in the one field it
- * doesn't (gender) by hand, then saves.
+ * Fills the profile fields the app requires (see my-account/form-schema.ts), then saves.
  */
 async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Promise<void> {
-	// The "Fake User" dev helper fills every field it can, but not the legal name (which is
-	// deliberately kept separate from the OIDC given/family name claims) or gender. Fill the
-	// legal name from `claims` (not a fixed literal) so tests that need to tell users apart by
-	// name (e.g. multiple delegation members in one table) still can - see delegation-member-
-	// management.spec.ts, which broke when this used to hardcode 'E2E'/'Tester' for everyone.
-	// Retry the click: on a freshly-loaded page the button can be present before hydration
-	// attaches its handler, in which case the first click is a no-op.
-	// FakeUser.svelte always writes this exact phone number - check for that literal value
-	// rather than "any non-empty value", since a pre-seeded user (fixedTestUser fixtures) can
-	// already have a non-empty (and possibly invalid) phone number before the button ever fires.
-	const fakeUserButton = page.getByRole('button', { name: /fake user/i });
-	const phoneInput = page.locator('input[name="phone"]');
-	await expect(fakeUserButton).toBeVisible({ timeout: 10_000 });
-	await expect(async () => {
-		await fakeUserButton.click();
-		await expect(phoneInput).toHaveValue(/176\s?12345678/, { timeout: 2_000 });
-	}).toPass({ timeout: 15_000 });
-
+	// Input fired before hydration attaches the handlers is lost.
+	await waitForHydration(page);
+	// The legal name comes from `claims` (not a fixed literal) so tests that need to tell users
+	// apart by name (e.g. multiple delegation members in one table) still can - see
+	// delegation-member-management.spec.ts. Every field is overwritten, since a pre-seeded user
+	// (fixedTestUser fixtures) can already hold an invalid value.
 	await page.locator('input[name="given_name"]').fill(claims.given_name);
 	await page.locator('input[name="family_name"]').fill(claims.family_name);
-	await page.locator('#gender').selectOption('NO_STATEMENT');
+	await page.locator('input[name="phone"]').fill('+4917612345678');
+	await page.locator('input[name="street"]').fill('Teststraße 1');
+	await page.locator('input[name="zip"]').fill('24103');
+	await page.locator('input[name="city"]').fill('Kiel');
+	await page.locator('select[name="country"]').selectOption('DEU');
+	await page
+		.locator('textarea[name="emergencyContacts"]')
+		.fill('Emergency contact: +49 176 12345678');
+	await page.locator('input[name="birthday"]').fill('2005-05-05');
+	await page.locator('select[name="foodPreference"]').selectOption('VEGAN');
+	// formsnap generates a random `id` per field (`useId()`), so fields are selected by `name`.
+	await page.locator('select[name="gender"]').selectOption('NO_STATEMENT');
 
 	const beforePath = new URL(page.url()).pathname;
 	const saveButton = page.locator('.card-body form button.btn-primary').first();

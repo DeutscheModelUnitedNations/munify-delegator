@@ -1,238 +1,90 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
-	import PaperEnum from '$lib/components/Paper/PaperEnum';
-	import { type PaperType$options } from '$houdini';
+	import { fetchMyPaperHubRoles } from './myPaperHubRoles';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 	import GlobalPapersView from './GlobalPapersView.svelte';
-	import { queryParam } from 'sveltekit-search-params';
+	import ParticipantPaperView from './ParticipantPaperView.svelte';
+	import { queryParameters } from 'sveltekit-search-params';
+	import {
+		effectivePaperHubView,
+		isPaperHubView,
+		paperHubAccess,
+		showPaperHubViewToggle,
+		type PaperHubView
+	} from './paperHubViews';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params: routeParams }: PageProps = $props();
 
-	let paperQuery = $derived(data.GetMyPapersQuery);
-	let paperQueryData = $derived($paperQuery?.data?.findManyPapers);
-
-	// Check if user is team member with review access (data comes from layout load)
-	let isTeamMember = $derived((data.teamMembers?.length ?? 0) > 0);
-
-	// Check if user is a supervisor with supervised students
-	let isSupervisor = $derived(!!data.supervisor && (data.supervisedDelegationIds?.length ?? 0) > 0);
-
-	// Check if user is a paper author (only delegation members can submit papers)
-	let isPaperAuthor = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
-
-	// Check if user is a single participant (they can only view papers, not submit)
-	let isSingleParticipant = $derived(
-		!!data.conferenceQueryData?.findUniqueSingleParticipant &&
-			!data.conferenceQueryData?.findUniqueDelegationMember
+	const [participation, myRoles] = $derived(
+		await Promise.all([
+			fetchMyParticipation(routeParams.conferenceId),
+			fetchMyPaperHubRoles(routeParams.conferenceId)
+		])
 	);
 
-	// Check if user is a participant (delegation member, single participant, or supervisor)
-	let isParticipant = $derived(
-		!!data.conferenceQueryData?.findUniqueDelegationMember ||
-			!!data.conferenceQueryData?.findUniqueSingleParticipant ||
-			!!data.conferenceQueryData?.findUniqueConferenceSupervisor
-	);
+	let access = $derived(paperHubAccess(participation, myRoles));
+	let isTeamMember = $derived(access.isTeamMember);
+	let isSupervisor = $derived(access.isSupervisor);
+	let isParticipant = $derived(access.isParticipant);
+	let isPaperAuthor = $derived(access.isPaperAuthor);
 
 	// View toggle state persisted in URL search params
-	const validViews = ['participant', 'team', 'supervisor', 'global'] as const;
-	type ViewType = (typeof validViews)[number];
-	const viewParam = queryParam('view');
-	let viewToggle = $derived<ViewType>(
-		validViews.includes($viewParam as ViewType) ? ($viewParam as ViewType) : 'participant'
+	const params = queryParameters({ view: true });
+	let viewToggle = $derived<PaperHubView>(
+		isPaperHubView(params.view) ? params.view : 'participant'
 	);
 
 	// Effective view based on user roles
-	let currentView = $derived.by(() => {
-		// Single participants only see global view - no toggle needed
-		if (isSingleParticipant && !isTeamMember && !isSupervisor) return 'global';
+	let currentView = $derived(effectivePaperHubView(access, viewToggle));
 
-		// Respect viewToggle if the user has access to that view
-		if (viewToggle === 'team' && isTeamMember) return 'team';
-		if (viewToggle === 'supervisor' && isSupervisor) return 'supervisor';
-		if (viewToggle === 'global' && isParticipant) return 'global';
-		if (viewToggle === 'participant' && isPaperAuthor) return 'participant';
+	// Single participants only see the global view; everyone else gets tabs for their views
+	let showViewToggle = $derived(showPaperHubViewToggle(access));
 
-		// Default views for users who don't have access to their selected view
-		if (isPaperAuthor) return 'participant';
-		if (isSupervisor) return 'supervisor';
-		if (isTeamMember) return 'team';
-		return 'global'; // participant without paper authoring ability
-	});
+	// The tabs, in order, and whether this user can see each view
+	let viewTabs = $derived([
+		{ view: 'participant', available: isPaperAuthor, icon: 'fa-file-lines', label: m.myPapers },
+		{
+			view: 'supervisor',
+			available: isSupervisor,
+			icon: 'fa-chalkboard-user',
+			label: m.supervisorView
+		},
+		{ view: 'team', available: isTeamMember, icon: 'fa-user-group', label: m.teamView },
+		{ view: 'global', available: isParticipant, icon: 'fa-globe', label: m.conferencePapers }
+	] satisfies { view: PaperHubView; available: boolean; icon: string; label: () => string }[]);
 
-	// Determine which view toggle buttons to show
-	// Single participants only see global view - no toggle needed
-	// Show toggle if user has multiple roles or can switch between views
-	let showViewToggle = $derived(
-		!isSingleParticipant &&
-			((isTeamMember && isParticipant) ||
-				(isTeamMember && isSupervisor) ||
-				isSupervisor || // Supervisors can switch between supervisor and global views
-				isPaperAuthor) // Paper authors can switch between my papers and global
-	);
-
-	let isNSA = $derived(
-		!!data.conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor
-	);
+	let isNSA = $derived(!!participation?.delegationMember?.delegation?.assignedNonStateActor);
 </script>
 
-{#snippet PaperTypeBlock(paperType: PaperType$options, description: string, href: string)}
-	<div class="card w-full bg-base-300 shadow-md flex flex-col items-center p-4 gap-4">
-		<PaperEnum.Type type={paperType} size="md" />
-		<p class="text-sm text-center">{description}</p>
-		<a class="btn btn-primary border-b border-base-300" {href}>
-			<i class="fas fa-plus mr-2"></i>
-			{m.paperCreateNew()}
-		</a>
-	</div>
-{/snippet}
-
-<div class="flex flex-col gap-6 w-full">
+<div class="flex flex-col gap-4 w-full p-6">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.paperHub()}</h2>
-		<p>{m.paperHubDescription()}</p>
-
 		{#if showViewToggle}
 			<div role="tablist" class="tabs tabs-border mt-2">
-				{#if isPaperAuthor}
+				{#each viewTabs.filter((tab) => tab.available) as tab (tab.view)}
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={currentView === 'participant'}
-						onclick={() => ($viewParam = 'participant')}
+						class:tab-active={currentView === tab.view}
+						onclick={() => (params.view = tab.view)}
 					>
-						<i class="fa-solid fa-file-lines mr-1"></i>
-						{m.myPapers()}
+						<i class="fa-sharp-duotone fa-solid {tab.icon} mr-1"></i>
+						{tab.label()}
 					</button>
-				{/if}
-				{#if isSupervisor}
-					<button
-						role="tab"
-						class="tab"
-						class:tab-active={currentView === 'supervisor'}
-						onclick={() => ($viewParam = 'supervisor')}
-					>
-						<i class="fa-solid fa-chalkboard-user mr-1"></i>
-						{m.supervisorView()}
-					</button>
-				{/if}
-				{#if isTeamMember}
-					<button
-						role="tab"
-						class="tab"
-						class:tab-active={currentView === 'team'}
-						onclick={() => ($viewParam = 'team')}
-					>
-						<i class="fa-solid fa-user-group mr-1"></i>
-						{m.teamView()}
-					</button>
-				{/if}
-				{#if isParticipant}
-					<button
-						role="tab"
-						class="tab"
-						class:tab-active={currentView === 'global'}
-						onclick={() => ($viewParam = 'global')}
-					>
-						<i class="fa-solid fa-globe mr-1"></i>
-						{m.conferencePapers()}
-					</button>
-				{/if}
+				{/each}
 			</div>
 		{/if}
 	</div>
 
 	{#if currentView === 'team' && isTeamMember}
-		<PaperHubOverview conferenceId={data.conferenceId} />
+		<PaperHubOverview conferenceId={routeParams.conferenceId} />
 	{:else if currentView === 'supervisor' && isSupervisor}
-		<SupervisorPaperHubView conferenceId={data.conferenceId} />
+		<SupervisorPaperHubView conferenceId={routeParams.conferenceId} />
 	{:else if currentView === 'global' && isParticipant}
-		<GlobalPapersView conferenceId={data.conferenceId} />
+		<GlobalPapersView conferenceId={routeParams.conferenceId} />
 	{:else}
-		{#if paperQueryData && paperQueryData.length > 0}
-			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
-				<h3 class="text-xl">{m.yourPapers()}</h3>
-				<div class="overflow-x-auto w-full">
-					<table class="table table-sm w-full">
-						<thead>
-							<tr>
-								<th class="w-0">{m.paperType()}</th>
-								<th class="w-0">{m.paperStatus()}</th>
-								<th>{m.paperTopic()}</th>
-								<th class="w-0 whitespace-nowrap">{m.paperCreatedAt()}</th>
-								<th class="w-0 whitespace-nowrap">{m.paperUpdatedAt()}</th>
-								<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
-								<th class="w-0"></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each paperQueryData as paper}
-								<tr>
-									<td class="align-middle">
-										<PaperEnum.Type type={paper.type} size="xs" />
-									</td>
-									<td class="align-middle">
-										<PaperEnum.Status status={paper.status} size="xs" />
-									</td>
-									<td class="align-middle">
-										{#if paper.type !== 'INTRODUCTION_PAPER'}
-											{paper.agendaItem?.title}
-										{/if}
-									</td>
-									<td class="align-middle whitespace-nowrap text-base-content/60">
-										{new Date(paper.createdAt).toLocaleDateString()}
-									</td>
-									<td class="align-middle whitespace-nowrap text-base-content/60">
-										{new Date(paper.updatedAt).toLocaleDateString()}
-									</td>
-									<td class="align-middle whitespace-nowrap">
-										{#if paper.firstSubmittedAt}
-											{new Date(paper.firstSubmittedAt).toLocaleDateString()}
-										{:else}
-											<span class="text-base-content/40">{m.notYetSubmitted()}</span>
-										{/if}
-									</td>
-									<td class="align-middle">
-										<a href="./paperhub/{paper.id}" class="btn btn-primary btn-sm">
-											{m.openPaper()}
-											<i class="fas fa-arrow-right"></i>
-										</a>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		{/if}
-
-		<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
-			<h3 class="text-xl">{m.submitAPaper()}</h3>
-
-			<div class="flex flex-col md:flex-row justify-center md:justify-start gap-4 mt-4">
-				{#if isNSA}
-					{@render PaperTypeBlock(
-						'INTRODUCTION_PAPER',
-						m.paperTypeIntroductionPaperDescription(),
-						'./paperhub/newPaper?type=INTRODUCTION_PAPER'
-					)}
-				{/if}
-
-				{@render PaperTypeBlock(
-					'POSITION_PAPER',
-					m.paperTypePositionPaperDescription(),
-					'./paperhub/newPaper?type=POSITION_PAPER'
-				)}
-
-				{#if !isNSA}
-					{@render PaperTypeBlock(
-						'WORKING_PAPER',
-						m.paperTypeWorkingPaperDescription(),
-						'./paperhub/newResolution'
-					)}
-				{/if}
-			</div>
-		</div>
+		<ParticipantPaperView conferenceId={routeParams.conferenceId} {isNSA} />
 	{/if}
 </div>

@@ -1,143 +1,137 @@
 <script lang="ts">
-	import { graphql, type PaymentLayoutQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import type { ConferencePaymentData } from './conferencePaymentData';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {
 		users: {
 			id: string;
-			given_name: string;
-			family_name: string;
+			givenName: string | null;
+			familyName: string | null;
 		}[];
 		ownUserId: string;
-		conferencePaymentData?: PaymentLayoutQuery$result['findUniqueConference'];
-		isReferenceCreated?: boolean;
+		conferencePaymentData?: ConferencePaymentData;
+		/** Called once a reference has been generated, so the parent can lock its selection. */
+		onReferenceCreated?: () => void;
 	}
 
-	let {
-		users,
-		conferencePaymentData,
-		ownUserId,
-		isReferenceCreated = $bindable(false)
-	}: Props = $props();
+	let { users, conferencePaymentData, ownUserId, onReferenceCreated }: Props = $props();
 
 	let reference = $state<string>();
 	let referenceLoading = $state(false);
 
 	let paymentFor = $derived(users.map((x) => x.id));
 
-	const createPaymentTransaction = graphql(`
-		mutation CreateOnePaymentTransactionMutation(
-			$conferenceId: ID!
-			$userId: ID!
-			$paymentFor: [ID!]!
-		) {
-			createOnePaymentTransaction(
-				conferenceId: $conferenceId
-				userId: $userId
-				paymentFor: $paymentFor
-			) {
-				id
-			}
-		}
-	`);
+	/** The total to transfer, or `undefined` while the conference has no fee set. */
+	let totalAmount = $derived(
+		conferencePaymentData?.feeAmount ? conferencePaymentData.feeAmount * users.length : undefined
+	);
+	let currency = $derived(conferencePaymentData?.currency);
+
+	let transferDetails = $derived([
+		{ label: m.accountHolder(), value: conferencePaymentData?.accountHolder ?? '' },
+		{ label: m.iban(), value: conferencePaymentData?.iban ?? '' },
+		{ label: m.bic(), value: conferencePaymentData?.bic ?? '' },
+		{ label: m.bankName(), value: conferencePaymentData?.bankName ?? '' },
+		{ label: `${m.amount()} (${currency})`, value: totalAmount?.toFixed(2) ?? '' }
+	]);
 
 	async function generateReference() {
-		referenceLoading = true;
-
 		if (!conferencePaymentData) {
 			console.error('No conference payment data found');
 			return;
 		}
 
-		const paymentTransaction = await createPaymentTransaction.mutate({
-			conferenceId: conferencePaymentData?.id,
-			userId: ownUserId,
-			paymentFor: paymentFor
-		});
+		referenceLoading = true;
+		try {
+			const paymentTransaction = await client.mutate.createPaymentTransaction({
+				__args: {
+					conferenceId: conferencePaymentData.id,
+					userId: ownUserId,
+					paymentFor
+				},
+				id: true
+			});
 
-		reference = paymentTransaction.data?.createOnePaymentTransaction.id;
-		referenceLoading = false;
-		isReferenceCreated = true;
-		toast.success(m.referenceGeneratedSuccessfully());
+			reference = paymentTransaction.id;
+			onReferenceCreated?.();
+			toast.success(m.referenceGeneratedSuccessfully());
+		} catch (error) {
+			// Without this the button stays disabled on its spinner, with no hint anything failed.
+			console.error(error);
+			toast.error(m.genericToastError());
+		} finally {
+			referenceLoading = false;
+		}
 	}
 </script>
 
-<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-lg p-4 shadow-lg">
+{#snippet participantsToPayFor()}
+	<p class="font-bold">{m.youPayForXParticipants({ numParticipants: users.length })}</p>
+	<div class="mb-4 flex flex-wrap gap-1">
+		{#each users as user (user.id)}
+			<span class="badge badge-neutral"
+				>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</span
+			>
+		{:else}
+			<span class="italic">&mdash;</span>
+		{/each}
+	</div>
+
+	<button
+		class="btn btn-primary max-w-md {(referenceLoading || users.length == 0) && 'btn-disabled'}"
+		onclick={generateReference}
+	>
+		<i class="fas {referenceLoading ? 'fa-spinner fa-spin' : 'fa-sparkles'} mr-2"
+		></i>{m.generateReference()}
+	</button>
+{/snippet}
+
+{#snippet transfer(reference: string)}
+	<div class="mt-10 flex w-full flex-col items-start gap-14 xl:flex-row">
+		<div class="grid w-full grid-cols-1 items-center justify-center gap-4 sm:grid-cols-[auto_1fr]">
+			<div class="col-span-2 flex flex-col gap-4">
+				<h2 class="text-2xl font-bold">{m.transactionDetails()}</h2>
+				<p>{m.referenceMakerGeneratedDescription()}</p>
+			</div>
+			{#each transferDetails as detail (detail.label)}
+				<h3 class="font-bold">{detail.label}:</h3>
+				<DisabledInput value={detail.value} />
+			{/each}
+
+			<h3 class="font-bold">{m.reason()}:</h3>
+			<DisabledInput value={reference} />
+		</div>
+		<GiroCode
+			name={conferencePaymentData?.accountHolder ?? ''}
+			iban={conferencePaymentData?.iban ?? ''}
+			amount={(totalAmount ?? '').toString()}
+			currency={currency ?? ''}
+			reason={reference}
+		/>
+	</div>
+{/snippet}
+
+<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-box p-4 shadow-lg">
 	<h2 class="text-2xl font-bold">
-		<i class="fa-duotone fa-money-bill-transfer mr-4"></i>{m.referenceMaker()}
+		<i class="fa-sharp-duotone fa-solid fa-money-bill-transfer mr-4"></i>{m.referenceMaker()}
 	</h2>
 	<p>{m.referenceMakerDescription()}</p>
-	{#if !reference}
-		<p class="font-bold">{m.youPayForXParticipants({ numParticipants: users.length })}</p>
-		<div class="mb-4 flex flex-wrap gap-1">
-			{#each users as user (user.id)}
-				<span class="badge badge-neutral">{formatNames(user.given_name, user.family_name)}</span>
-			{/each}
-			{#if users.length == 0}
-				<span class="italic">&mdash;</span>
-			{/if}
-		</div>
-
-		<button
-			class="btn btn-primary max-w-md {(referenceLoading || users.length == 0) && 'btn-disabled'}"
-			onclick={generateReference}
-		>
-			<i class="fas {referenceLoading ? 'fa-spinner fa-spin' : 'fa-sparkles'} mr-2"
-			></i>{m.generateReference()}
-		</button>
+	{#if reference}
+		{@render transfer(reference)}
 	{:else}
-		<div class="mt-10 flex w-full flex-col items-start gap-14 xl:flex-row">
-			<div
-				class="grid w-full grid-cols-1 items-center justify-center gap-4 sm:grid-cols-[auto_1fr]"
-			>
-				<div class="col-span-2 flex flex-col gap-4">
-					<h2 class="text-2xl font-bold">{m.transactionDetails()}</h2>
-					<p>{m.referenceMakerGeneratedDescription()}</p>
-				</div>
-				<h3 class="font-bold">{m.accountHolder()}:</h3>
-				<DisabledInput value={conferencePaymentData?.accountHolder ?? ''} />
-
-				<h3 class="font-bold">{m.iban()}:</h3>
-				<DisabledInput value={conferencePaymentData?.iban ?? ''} />
-
-				<h3 class="font-bold">{m.bic()}:</h3>
-				<DisabledInput value={conferencePaymentData?.bic ?? ''} />
-
-				<h3 class="font-bold">{m.bankName()}:</h3>
-				<DisabledInput value={conferencePaymentData?.bankName ?? ''} />
-
-				<h3 class="font-bold">{m.amount()} ({conferencePaymentData?.currency}):</h3>
-				<DisabledInput
-					value={conferencePaymentData?.feeAmount
-						? (conferencePaymentData?.feeAmount * users.length).toFixed(2)
-						: ''}
-				/>
-
-				<h3 class="font-bold">{m.reason()}:</h3>
-				<DisabledInput value={reference} />
-			</div>
-			<GiroCode
-				name={conferencePaymentData?.accountHolder ?? ''}
-				iban={conferencePaymentData?.iban ?? ''}
-				amount={(conferencePaymentData?.feeAmount
-					? conferencePaymentData?.feeAmount * users.length
-					: ''
-				).toString()}
-				currency={conferencePaymentData?.currency ?? ''}
-				reason={reference}
-			/>
-		</div>
+		{@render participantsToPayFor()}
 	{/if}
 	<div class="alert alert-warning mt-8">
 		<i class="fas fa-exclamation-triangle mr-2 text-3xl"></i>
 		<div class="flex flex-col gap-2">
 			<h3 class="font-bold">{m.abroadTransaction()}</h3>
 			<p>
-				{m.abroadTransactionWarning({ currency: conferencePaymentData?.currency ?? 'unknown' })}
+				{m.abroadTransactionWarning({ currency: currency ?? 'unknown' })}
 			</p>
 		</div>
 	</div>

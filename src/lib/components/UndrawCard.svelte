@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
@@ -6,7 +7,7 @@
 		title: string;
 		img: string;
 		btnText: string;
-		btnLink: string;
+		btnLink: ResolvedPathname;
 		disabled?: boolean;
 		disabledText?: string;
 		children?: Snippet;
@@ -21,7 +22,7 @@
 	<figure
 		class="bg-base-200 dark:bg-base-content relative flex h-60 items-center justify-center p-6"
 	>
-		<img src={img} alt="Illustration" class="h-full w-full {disabled && 'blur-sm'}" />
+		<img src={img} alt={m.a11yIllustration()} class="h-full w-full {disabled && 'blur-sm'}" />
 		{#if disabled}
 			<div class="absolute flex items-center justify-center">
 				<div class="badge badge-lg">{disabledText ?? m.RegistrationNotPossible()}</div>

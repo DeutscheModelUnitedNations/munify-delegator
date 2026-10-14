@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import type { ResolvedPathname } from '$app/types';
 
 	interface Props {
 		caption?: string;
@@ -9,7 +10,7 @@
 			title: string;
 			class?: string;
 			onClick?: () => void;
-			href?: string;
+			href?: ResolvedPathname;
 		}[];
 		delay?: number;
 	}
@@ -35,11 +36,11 @@
 		</h3>
 	{/if}
 
-	{#each choices as btn}
+	{#each choices as btn (btn.title)}
 		{#if btn.href}
 			<a class="btn w-full {btn.class ?? ''}" href={btn.href}>
 				{#if btn.icon}
-					<i class={`fa-solid fa-${btn.icon} w-5`}></i>
+					<i class={`fa-sharp-duotone fa-solid fa-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</a>
@@ -55,7 +56,7 @@
 				}}
 			>
 				{#if btn.icon}
-					<i class={`fa-solid fa-${btn.icon} w-5`}></i>
+					<i class={`fa-sharp-duotone fa-solid fa-${btn.icon} w-5`}></i>
 				{/if}
 				<div>{btn.title}</div>
 			</button>

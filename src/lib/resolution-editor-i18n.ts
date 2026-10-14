@@ -108,25 +108,3 @@ export function getResolutionLabels(): ResolutionEditorLabels {
 		copy: m.copy()
 	};
 }
-
-/**
- * Creates localized import button text with count interpolation.
- * Use this for dynamic labels that need count interpolation.
- */
-export function getImportButtonLabel(count: number): string {
-	return m.resolutionImportButton({ count: count.toString() });
-}
-
-/**
- * Creates localized import preview text with count interpolation.
- */
-export function getImportPreviewLabel(count: number): string {
-	return m.resolutionImportPreview({ count: count.toString() });
-}
-
-/**
- * Creates localized disclaimer text with conference name interpolation.
- */
-export function getDisclaimerText(conferenceName: string): string {
-	return m.resolutionDisclaimer({ conferenceName });
-}

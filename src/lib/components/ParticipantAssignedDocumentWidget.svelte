@@ -47,15 +47,15 @@
 	});
 </script>
 
-<div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
+<div class="card flex min-w-0 flex-col gap-2 p-0 md:p-4">
 	<h3 class="font-bold">
-		<i class="fa-duotone fa-hashtag mr-2"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hashtag mr-2"></i>
 		{m.documentNumber()}
 	</h3>
 	{#if editing}
-		<div class="join">
+		<div class="join min-w-0">
 			<input
-				class="input join-item w-full"
+				class="input join-item w-full min-w-0 flex-1"
 				bind:value={assignedDocumentNumberLocal}
 				type="number"
 			/>
@@ -64,9 +64,9 @@
 				onclick={() => {
 					editing = false;
 				}}
-				aria-label="Exit Editing"
+				aria-label={m.a11yExitEditing()}
 			>
-				<i class="fa-solid fa-xmark"></i>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 
 			<button
@@ -78,9 +78,9 @@
 					}
 					onSaveFn(assignedDocumentNumberLocal);
 				}}
-				aria-label="Save"
+				aria-label={m.save()}
 			>
-				<i class="fa-solid fa-save"></i>
+				<i class="fa-sharp-duotone fa-solid fa-save"></i>
 			</button>
 			<button
 				class="btn join-item tooltip {disabledShortcut ? 'btn-square' : ''}"
@@ -88,9 +88,9 @@
 				onclick={() => {
 					onSaveFn();
 				}}
-				aria-label="SaveNext"
+				aria-label={m.a11ySaveAndNext()}
 			>
-				<i class="fa-solid fa-arrow-right-to-line"></i>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right-to-line"></i>
 				{#if !disabledShortcut}
 					<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
 				{/if}
@@ -101,8 +101,8 @@
 			<div class="badge badge-xl badge-primary font-mono font-bold">
 				# {assignedDocumentNumber}
 			</div>
-			<button class="btn btn-square" onclick={() => (editing = true)} aria-label="Edit">
-				<i class="fa-solid fa-pen-to-square"></i>
+			<button class="btn btn-square" onclick={() => (editing = true)} aria-label={m.edit()}>
+				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 			</button>
 		</div>
 	{/if}

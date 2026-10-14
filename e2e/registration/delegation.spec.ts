@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -9,7 +9,7 @@ test('a head delegate can create a delegation and a second user can join it with
 	const headDelegatePage = await headDelegateContext.newPage();
 
 	const headDelegate = makeTestUser('head-delegate');
-	await loginAs(headDelegatePage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headDelegatePage, headDelegate, { startUrl: '/login?next=/dashboard' });
 
 	const conferenceId = await openFirstConferenceForRegistration(headDelegatePage);
 

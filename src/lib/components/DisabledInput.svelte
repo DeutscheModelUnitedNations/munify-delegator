@@ -26,12 +26,8 @@
 			e.target.select()}
 	/>
 	<div class="tooltip tooltip-left" data-tip={m.copy()}>
-		<button
-			class="btn btn-ghost"
-			onclick={() => copyToClipboard(value)}
-			aria-label="Copy to clipboard"
-		>
-			<i class="fa-duotone fa-copy text-xl"></i>
+		<button class="btn btn-ghost" onclick={() => copyToClipboard(value)} aria-label={m.copy()}>
+			<i class="fa-sharp-duotone fa-solid fa-copy text-xl"></i>
 		</button>
 	</div>
 </div>

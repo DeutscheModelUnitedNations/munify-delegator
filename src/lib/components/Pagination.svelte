@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		active: number;
 		total: number;
@@ -13,12 +14,12 @@
 		class="btn join-item btn-sm"
 		disabled={active === 1}
 		onclick={() => setPage(active - 1)}
-		aria-label="Previous page"
+		aria-label={m.a11yPreviousPage()}
 	>
 		<i class="fas fa-chevron-left"></i>
 	</button>
 
-	{#each Array.from({ length: total }, (_, i) => i) as index}
+	{#each { length: total }, index}
 		<button
 			class="btn join-item btn-sm {active === index + 1 && 'btn-primary'}"
 			onclick={() => setPage(index + 1)}
@@ -29,7 +30,7 @@
 
 	<button
 		class="btn join-item btn-sm"
-		aria-label="Next page"
+		aria-label={m.a11yNextPage()}
 		disabled={active === total}
 		onclick={() => setPage(active + 1)}
 	>

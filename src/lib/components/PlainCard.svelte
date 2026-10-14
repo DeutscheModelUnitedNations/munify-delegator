@@ -1,11 +1,12 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 
 	interface Props {
 		title: string;
 		description: string;
 		fontAwesomeIcon: string;
-		link: string;
+		link: ResolvedPathname;
 		btnText?: string;
 	}
 

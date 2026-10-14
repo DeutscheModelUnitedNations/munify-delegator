@@ -1,26 +1,25 @@
 #!/usr/bin/env bun
 /**
  * Runs the Playwright e2e suite against the app served under plain Node (not Bun) with V8's
- * built-in coverage recording enabled, then turns the raw coverage into a c8/istanbul report
- * scoped to the backend (src/api).
+ * built-in coverage recording enabled, and records the browser's coverage alongside it
+ * (e2e/support/test.ts). scripts/serverCoverage.ts then maps the server's raw coverage back to
+ * the sources, and scripts/mergeCoverage.ts folds both, with any unit coverage, into
+ * coverage/coverage-final.json - the file `fallow health` scores CRAP with - and an HTML report.
+ * Arguments are passed on to `playwright test`.
  *
- * Why Node instead of Bun for the server: V8 coverage collection (what c8 reads) requires the
- * V8 engine; Bun runs on JavaScriptCore and doesn't expose it. `.env` isn't auto-loaded by Node
- * the way Bun auto-loads it, so this passes `--env-file=.env` explicitly.
- *
- * Why report generation runs under `bun` rather than `node`: c8's CLI (via its bundled yargs)
- * currently throws under recent Node (24/25) due to a CJS/ESM module-detection change upstream -
- * unrelated to this project. Bun's module loader doesn't hit that bug, so we invoke c8's JS
- * entrypoint with `bun` for the report step (the dev server itself still runs under `node`,
- * since coverage collection needs the real V8 engine).
+ * Why Node instead of Bun for the server: V8 coverage collection requires the V8 engine; Bun runs
+ * on JavaScriptCore and doesn't expose it. `.env` isn't auto-loaded by Node the way Bun
+ * auto-loads it, so this passes `--env-file=.env` explicitly.
  */
+/* global Bun -- this script only runs under bun, which provides the Bun global; bun-types is not installed */
 import { existsSync, rmSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = 5173;
 const BASE_URL = `http://localhost:${PORT}`;
 const RAW_DIR = 'coverage/e2e-raw';
-const REPORT_DIR = 'coverage/e2e-report';
+const BROWSER_DIR = 'coverage/e2e-browser';
+const SERVER_DIR = 'coverage/e2e-server';
 
 /** A 5xx still means something is listening, so treat anything below it as "up". */
 async function serverResponds(url: string): Promise<boolean> {
@@ -42,7 +41,8 @@ async function waitForServer(url: string, timeoutMs: number) {
 }
 
 if (existsSync(RAW_DIR)) rmSync(RAW_DIR, { recursive: true });
-if (existsSync(REPORT_DIR)) rmSync(REPORT_DIR, { recursive: true });
+if (existsSync(BROWSER_DIR)) rmSync(BROWSER_DIR, { recursive: true });
+if (existsSync(SERVER_DIR)) rmSync(SERVER_DIR, { recursive: true });
 
 console.log('[e2e-coverage] syncing SvelteKit types...');
 await Bun.spawn(['bunx', 'svelte-kit', 'sync'], { stdout: 'inherit', stderr: 'inherit' }).exited;
@@ -57,12 +57,14 @@ const server = Bun.spawn(
 	}
 );
 
-let exitCode = 0;
+let exitCode: number;
 try {
 	await waitForServer(BASE_URL, 60_000);
 
 	console.log('[e2e-coverage] running Playwright e2e suite...');
-	const playwright = Bun.spawn(['bunx', 'playwright', 'test'], {
+	const playwright = Bun.spawn(['bunx', 'playwright', 'test', ...process.argv.slice(2)], {
+		// Read by e2e/support/test.ts, which records the browser's coverage into it
+		env: { ...process.env, E2E_BROWSER_COVERAGE_DIR: BROWSER_DIR },
 		stdout: 'inherit',
 		stderr: 'inherit'
 	});
@@ -75,29 +77,12 @@ try {
 	await sleep(1_000);
 }
 
-console.log('[e2e-coverage] generating report scoped to src/api...');
-const report = Bun.spawn(
-	[
-		'bun',
-		'node_modules/c8/bin/c8.js',
-		'report',
-		'--temp-directory',
-		RAW_DIR,
-		'--reporter=text',
-		'--reporter=html',
-		'--reporter=json-summary',
-		'--reports-dir',
-		REPORT_DIR,
-		'--include',
-		'src/api/**',
-		'--exclude',
-		'**/*.spec.ts',
-		'--exclude',
-		'**/*.d.ts'
-	],
+console.log('[e2e-coverage] mapping the server coverage back to the sources...');
+await Bun.spawn(
+	['bun', 'scripts/serverCoverage.ts', RAW_DIR, `${SERVER_DIR}/coverage-final.json`],
 	{ stdout: 'inherit', stderr: 'inherit' }
-);
-await report.exited;
+).exited;
+await Bun.spawn(['bun', 'scripts/mergeCoverage.ts'], { stdout: 'inherit', stderr: 'inherit' })
+	.exited;
 
-console.log(`[e2e-coverage] done. Report: ${REPORT_DIR}/index.html`);
 process.exit(exitCode);

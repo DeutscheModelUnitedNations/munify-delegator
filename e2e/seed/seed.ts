@@ -1,31 +1,36 @@
 /**
  * Minimal, deterministic fixture data for the Playwright e2e suite.
  *
- * This intentionally does NOT reuse prisma/seed/dev/seed.ts: that script seeds ~1000 users and
- * five fully-populated conferences (including assignment data for non-PARTICIPANT_REGISTRATION
- * conferences), which is slow and randomised. e2e fixtures should be small, fast, and owned by
- * the e2e suite so they don't drift or break with unrelated dev-seed changes.
+ * This intentionally does NOT reuse src/api/db/seedDev.ts: that script seeds hundreds of users and
+ * eight fully-populated conferences (one per stage, with persona accounts in each), which is both
+ * slow and calls `reset()`, wiping every table - the opposite of
+ * what a suite that runs repeatedly against a persistent database wants. e2e fixtures should be
+ * small, fast, and owned by the e2e suite so they don't drift or break with unrelated dev-seed
+ * changes.
  *
  * Idempotent: safe to run against an already-seeded database (upserts by fixed id).
  * Used both as Playwright's `globalSetup` (default export) and standalone (`bun e2e/seed/seed.ts`).
  *
  * ID scheme: "actor" users (team members/reviewers/etc that log in during a test) get a fixed,
  * predictable id so a spec can seed their DB rows here and then log in as them - the app derives
- * a user's DB id straight from the OIDC `sub` claim, and the e2e login helper submits
- * `preferred_username` as the token's `sub` to oidc-mock (see e2e/support/auth.ts
+ * a user's DB id straight from the OIDC `sub` claim, and `loginAs` signs in on the oidc-mock
+ * login page with `preferred_username` as the token's `sub` (see e2e/support/auth.ts
  * `fixedTestUser`). "Target" users (acted upon, never log in themselves) are just plain seeded
  * rows.
  */
-import { PrismaClient, ConferenceState } from '@prisma/client';
-import { makeSeedConference } from '../../prisma/seed/dev/conference';
-import { makeSeedCustomConferenceRole } from '../../prisma/seed/dev/customConferenceRole';
-import { makeSeedCommittee } from '../../prisma/seed/dev/committee';
-import { makeSeedUser } from '../../prisma/seed/dev/user';
-import { makeSeedTeamMember } from '../../prisma/seed/dev/teamMember';
-import { makeSeedSingleParticipant } from '../../prisma/seed/dev/singleParticipant';
-import { makeSeedDelegation } from '../../prisma/seed/dev/delegation';
-import { makeSeedDelegationMember } from '../../prisma/seed/dev/delegationMember';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq, and, inArray } from 'drizzle-orm';
+import * as schema from '../../src/api/db/schema';
+import { makeSeedConference } from '../../src/api/db/seed-data/conference';
+import { makeSeedCustomConferenceRole } from '../../src/api/db/seed-data/customConferenceRole';
+import { makeSeedCommittee } from '../../src/api/db/seed-data/committee';
+import { makeSeedUser } from '../../src/api/db/seed-data/user';
+import { makeSeedSingleParticipant } from '../../src/api/db/seed-data/singleParticipant';
+import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
+import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
+import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { seedSeatPlanning } from './seatPlanning';
+import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
 export const E2E_ROLE_ID = 'e2e00000role0000000000001';
@@ -37,21 +42,21 @@ export const E2E_COMMITTEE_ID = 'e2e00000committee000000001';
 export const E2E_AGENDA_ITEM_ID = 'e2e00000agendaitem00000001';
 
 // A Delegation can only be assigned one nation per conference at a time
-// (@@unique([conferenceId, assignedNationAlpha3Code])) - the paper fixture below already
+// (delegation_conference_id_assigned_nation_alpha3_code_key) - the paper fixture below already
 // occupies E2E_NATION_ALPHA3, so the assignment flow gets its own nation to assign.
 export const E2E_ASSIGNMENT_NATION_ALPHA3 = 'FRA';
 export const E2E_ASSIGNMENT_NATION_ALPHA2 = 'FR';
 
 // The committee-assignment fixture needs a delegation that ALREADY holds a nation, but it must
 // not be the one assignment.spec.ts assigns: that spec upserts FRA onto its own delegation, and
-// @@unique([conferenceId, assignedNationAlpha3Code]) means only one delegation per conference
+// the per-conference nation-assignment unique index means only one delegation per conference
 // can hold a given nation. Sharing one constant made the two fixtures collide.
 export const E2E_COMMITTEE_ASSIGN_NATION_ALPHA3 = 'ITA';
 export const E2E_COMMITTEE_ASSIGN_NATION_ALPHA2 = 'IT';
 
 // A published survey (draft=false, hidden=false) with two options, so the participant-facing
 // answering flow has something deterministic to answer. The admin spec creates its own survey
-// rather than reusing this one, so the two never contend for @@unique([conferenceId, title]).
+// rather than reusing this one, so the two never contend for the per-conference title uniqueness.
 // A second conference, already past registration (PREPARATION). Features that only exist for
 // assigned participants - surveys, attendance, the committee views - are gated on both an
 // assignment AND a post-registration state, which the main PARTICIPANT_REGISTRATION conference
@@ -63,6 +68,16 @@ export const E2E_PREP_COMMITTEE_ID = 'e2e00000committee00000002';
 export const E2E_PREP_DELEGATION_ID = 'e2e00000delegation00000005';
 export const E2E_PREP_PARTICIPANT_USER_ID = 'e2e-prep-participant';
 
+// A third conference past registration whose assignment is NOT released: its participant holds a
+// nation and a committee the API must not show them yet. Only the release spec flips the flag, and
+// the seed resets it, so no other spec may rely on this conference.
+export const E2E_UNRELEASED_CONFERENCE_ID = 'e2e00000conference0000004';
+export const E2E_UNRELEASED_NATION_ALPHA3 = 'PRT';
+export const E2E_UNRELEASED_NATION_ALPHA2 = 'PT';
+export const E2E_UNRELEASED_COMMITTEE_ID = 'e2e00000committee000000004';
+export const E2E_UNRELEASED_DELEGATION_ID = 'e2e00000delegation00000006';
+export const E2E_UNRELEASED_PARTICIPANT_USER_ID = 'e2e-unreleased-participant';
+
 export const E2E_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0001';
 export const E2E_SURVEY_QUESTION_TITLE = 'E2E Seeded Survey';
 export const E2E_SURVEY_OPTION_A_ID = 'e2e00000surveyoption000001';
@@ -73,8 +88,15 @@ export const E2E_SURVEY_OPTION_B_TITLE = 'Seeded Option B';
 // Management: admin views/updates a pre-registered participant's status.
 export const E2E_MGMT_ADMIN_ID = 'e2e-mgmt-admin';
 export const E2E_MGMT_TARGET_USER_ID = 'e2e-mgmt-target';
-export const E2E_MGMT_TARGET_FAMILY_NAME = 'E2EMgmtTarget';
+export const E2E_MGMT_TARGET_FAMILY_NAME = 'ETwoEMgmtTarget';
 export const E2E_MGMT_TARGET_SINGLE_PARTICIPANT_ID = 'e2e00000singlepart00000001';
+
+// Possible duplicates: an earlier account, in none of the e2e conferences, with a care note, paired
+// with the management target. Participant care may read its name and note, not its phone.
+export const E2E_DUPLICATE_EARLIER_USER_ID = 'e2e-duplicate-earlier';
+export const E2E_DUPLICATE_EARLIER_NOTE = 'Earlier account: talk to project management first.';
+export const E2E_DUPLICATE_EARLIER_PHONE = '+4917611122233';
+export const E2E_POSSIBLE_DUPLICATE_ID = 'e2e00000possibleduplicate1';
 
 // Payments: a participant generates a reference, an admin marks it received.
 export const E2E_PAYMENT_ADMIN_ID = 'e2e-payment-admin';
@@ -97,13 +119,13 @@ export const E2E_COMMITTEE_ASSIGN_HEAD_USER_ID = 'e2e-committee-assign-head';
 export const E2E_SUPERVISED_PARTICIPANT_USER_ID = 'e2e-supervised-participant';
 export const E2E_SUPERVISED_SINGLE_PARTICIPANT_ID = 'e2e00000singlepart00000003';
 
-// Assignment: PROJECT_MANAGEMENT admin applies an assignment JSON to a real delegation.
+// Assignment: PROJECT_MANAGEMENT admin plans a nation for a real delegation and applies it.
 export const E2E_ASSIGNMENT_ADMIN_ID = 'e2e-assignment-admin';
 export const E2E_ASSIGNMENT_DELEGATION_ID = 'e2e00000delegation00000001';
 export const E2E_ASSIGNMENT_DELEGATE_USER_ID = 'e2e-assignment-delegate';
 
 // Assignment (splitting): a 2-member delegation split into two 1-member delegations.
-// Kept separate from E2E_ASSIGNMENT_DELEGATION_ID above since splitting hard-deletes the
+// Kept separate from E2E_ASSIGNMENT_DELEGATION_ID above since applying a split deletes the
 // parent delegation - reusing the same fixture would make the two assignment tests order-dependent.
 export const E2E_SPLIT_DELEGATION_ID = 'e2e00000delegation00000003';
 export const E2E_SPLIT_MEMBER_1_ID = 'e2e-split-member-1';
@@ -122,42 +144,50 @@ export const E2E_DRAFT_PAPER_VERSION_ID = 'e2e00000paperversion0001';
 
 // Papers: a delegate (already assigned to the committee) submits a paper, a reviewer reviews it.
 export const E2E_PAPER_REVIEWER_ID = 'e2e-paper-reviewer';
+/** A team coordinator: manages the team, but may not hand out project management. */
+export const E2E_TEAM_COORDINATOR_ID = 'e2e-team-coordinator';
 export const E2E_PAPER_DELEGATE_USER_ID = 'e2e-paper-delegate';
 export const E2E_PAPER_DELEGATION_ID = 'e2e00000delegation00000002';
 
 export default async function seed() {
-	const db = new PrismaClient();
+	const db = drizzle(process.env.DATABASE_URL!);
+
+	async function upsertNation(alpha3Code: string, alpha2Code: string) {
+		await db
+			.insert(schema.nation)
+			.values({ alpha3Code, alpha2Code })
+			.onConflictDoUpdate({ target: schema.nation.alpha3Code, set: { alpha2Code } });
+	}
 
 	const conference = {
 		...makeSeedConference({
-			state: ConferenceState.PARTICIPANT_REGISTRATION,
+			state: 'PARTICIPANT_REGISTRATION',
 			// Registration only shows as OPEN while startAssignment is in the future
-			// (see src/lib/services/registrationStatus.ts) - the dev seed helper defaults this
+			// (see src/lib/helpers/registrationStatus.ts) - the dev seed helper defaults this
 			// to a past date for PARTICIPANT_REGISTRATION, which would leave it CLOSED here.
 			startAssignment: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 		}),
 		id: E2E_CONFERENCE_ID,
 		title: 'E2E Test Conference',
-		isOpenPaperSubmission: true
+		isOpenPaperSubmission: true,
+		// Several fixtures here already hold a nation (papers, committee assignment) and their
+		// specs need the participants to see it.
+		assignmentReleased: true
 	};
-
-	await db.conference.upsert({
-		where: { id: conference.id },
-		update: conference,
-		create: conference
-	});
+	await db
+		.insert(schema.conference)
+		.values(conference)
+		.onConflictDoUpdate({ target: schema.conference.id, set: conference });
 
 	const role = {
 		...makeSeedCustomConferenceRole({ conferenceId: conference.id }),
 		id: E2E_ROLE_ID,
 		name: 'E2E Test Role'
 	};
-
-	await db.customConferenceRole.upsert({
-		where: { id: role.id },
-		update: role,
-		create: role
-	});
+	await db
+		.insert(schema.customConferenceRole)
+		.values(role)
+		.onConflictDoUpdate({ target: schema.customConferenceRole.id, set: role });
 
 	// A second role so single-participant dashboard tests can exercise "add another application"
 	// with a genuinely different role, then delete the first one.
@@ -166,71 +196,71 @@ export default async function seed() {
 		id: E2E_ROLE_2_ID,
 		name: 'E2E Test Role 2'
 	};
-	await db.customConferenceRole.upsert({
-		where: { id: role2.id },
-		update: role2,
-		create: role2
-	});
+	await db
+		.insert(schema.customConferenceRole)
+		.values(role2)
+		.onConflictDoUpdate({ target: schema.customConferenceRole.id, set: role2 });
 
-	await db.nation.upsert({
-		where: { alpha3Code: E2E_NATION_ALPHA3 },
-		update: { alpha2Code: E2E_NATION_ALPHA2 },
-		create: { alpha3Code: E2E_NATION_ALPHA3, alpha2Code: E2E_NATION_ALPHA2 }
-	});
-	await db.nation.upsert({
-		where: { alpha3Code: E2E_ASSIGNMENT_NATION_ALPHA3 },
-		update: { alpha2Code: E2E_ASSIGNMENT_NATION_ALPHA2 },
-		create: {
-			alpha3Code: E2E_ASSIGNMENT_NATION_ALPHA3,
-			alpha2Code: E2E_ASSIGNMENT_NATION_ALPHA2
-		}
-	});
-
-	await db.nation.upsert({
-		where: { alpha3Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA3 },
-		update: { alpha2Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA2 },
-		create: {
-			alpha3Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA3,
-			alpha2Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA2
-		}
-	});
+	await upsertNation(E2E_NATION_ALPHA3, E2E_NATION_ALPHA2);
+	await upsertNation(E2E_ASSIGNMENT_NATION_ALPHA3, E2E_ASSIGNMENT_NATION_ALPHA2);
+	await upsertNation(E2E_COMMITTEE_ASSIGN_NATION_ALPHA3, E2E_COMMITTEE_ASSIGN_NATION_ALPHA2);
 
 	const committee = {
-		...makeSeedCommittee({
-			conferenceId: conference.id,
-			// also connected to the "assignment" nation (FRA) so the committee-assignment fixture
-			// can use a nation the paper fixture below hasn't already claimed (a Delegation can
-			// only be assigned one nation per conference: @@unique([conferenceId, assignedNationAlpha3Code])).
-			nations: {
-				connect: [
-					{ alpha3Code: E2E_NATION_ALPHA3 },
-					{ alpha3Code: E2E_ASSIGNMENT_NATION_ALPHA3 },
-					{ alpha3Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA3 }
-				]
-			}
-		}),
+		...makeSeedCommittee({ conferenceId: conference.id }),
 		id: E2E_COMMITTEE_ID,
 		name: 'E2E Test Committee',
 		abbreviation: 'E2E',
 		numOfSeatsPerDelegation: 1
 	};
+	await db
+		.insert(schema.committee)
+		.values(committee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: committee });
 
-	await db.committee.upsert({
-		where: { id: committee.id },
-		update: committee,
-		create: committee
-	});
+	// Also connected to the "assignment" nation (FRA) so the committee-assignment fixture can use
+	// a nation the paper fixture above hasn't already claimed (a Delegation can only be assigned
+	// one nation per conference).
+	await db
+		.insert(schema.committeeToNation)
+		.values(
+			[E2E_NATION_ALPHA3, E2E_ASSIGNMENT_NATION_ALPHA3, E2E_COMMITTEE_ASSIGN_NATION_ALPHA3].map(
+				(alpha3Code) => ({ a: committee.id, b: alpha3Code })
+			)
+		)
+		.onConflictDoNothing();
 
-	await db.committeeAgendaItem.upsert({
-		where: { id: E2E_AGENDA_ITEM_ID },
-		update: { title: 'E2E Test Agenda Item', committeeId: committee.id },
-		create: { id: E2E_AGENDA_ITEM_ID, title: 'E2E Test Agenda Item', committeeId: committee.id }
-	});
+	const agendaItem = {
+		id: E2E_AGENDA_ITEM_ID,
+		title: 'E2E Test Agenda Item',
+		committeeId: committee.id
+	};
+	await db
+		.insert(schema.committeeAgendaItem)
+		.values(agendaItem)
+		.onConflictDoUpdate({ target: schema.committeeAgendaItem.id, set: agendaItem });
 
 	// --- users that log in during a test (id must match the OIDC claims used to log in) ---
-	async function upsertActorUser(id: string, overrides: Partial<{ family_name: string }> = {}) {
-		const user = { ...makeSeedUser(), id, email: `${id}@e2e.test`, ...overrides };
-		await db.user.upsert({ where: { id }, update: user, create: user });
+	async function upsertActorUser(id: string, overrides: Partial<{ familyName: string }> = {}) {
+		const user = {
+			...makeSeedUser(),
+			id,
+			email: `${id}@e2e.test`,
+			// `userFormSchema` (src/routes/(authenticated)/my-account/form-schema.ts) is what decides
+			// whether a login redirects to /my-account - and `makeSeedUser()` never satisfies it:
+			// `country` is a full name (`faker.location.country()`), not the ISO-3166 alpha-3 code the
+			// schema validates, and `emergencyContacts` isn't set at all. Without this override every
+			// fixedTestUser login here would redirect to /my-account instead of the intended page.
+			country: 'DEU',
+			// German postal codes have five digits; the seed user may have been made for elsewhere
+			zip: '24103',
+			phone: '+4917612345678',
+			emergencyContacts: 'Emergency contact: +49 176 12345678',
+			...overrides
+		};
+		await db
+			.insert(schema.user)
+			.values(user)
+			.onConflictDoUpdate({ target: schema.user.id, set: user });
 		return user;
 	}
 
@@ -242,31 +272,23 @@ export default async function seed() {
 	await upsertActorUser(E2E_SPLIT_MEMBER_2_ID);
 	await upsertActorUser(E2E_PAPER_REVIEWER_ID);
 	await upsertActorUser(E2E_PAPER_DELEGATE_USER_ID);
-	await upsertActorUser(E2E_MGMT_TARGET_USER_ID, { family_name: E2E_MGMT_TARGET_FAMILY_NAME });
+	await upsertActorUser(E2E_MGMT_TARGET_USER_ID, { familyName: E2E_MGMT_TARGET_FAMILY_NAME });
 	await upsertActorUser(E2E_SUPERVISOR_FOR_CONNECT_USER_ID);
 	await upsertActorUser(E2E_CONNECT_PARTICIPANT_ID);
 	await upsertActorUser(E2E_SUPERVISED_PARTICIPANT_USER_ID);
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID);
+	await upsertActorUser(E2E_TEAM_COORDINATOR_ID);
 
-	async function upsertTeamMember(
+	const upsertTeamMember = (
 		userId: string,
-		role: 'PARTICIPANT_CARE' | 'PROJECT_MANAGEMENT' | 'REVIEWER'
-	) {
-		const teamMember = {
-			...makeSeedTeamMember({ conferenceId: conference.id, userId, role }),
-			id: `e2e-team-${userId}`
-		};
-		await db.teamMember.upsert({
-			where: { id: teamMember.id },
-			update: teamMember,
-			create: teamMember
-		});
-	}
+		role: 'PARTICIPANT_CARE' | 'PROJECT_MANAGEMENT' | 'REVIEWER' | 'TEAM_COORDINATOR'
+	) => upsertSharedTeamMember(db, conference.id, userId, role);
 
 	await upsertTeamMember(E2E_MGMT_ADMIN_ID, 'PARTICIPANT_CARE');
 	await upsertTeamMember(E2E_PAYMENT_ADMIN_ID, 'PARTICIPANT_CARE');
 	await upsertTeamMember(E2E_ASSIGNMENT_ADMIN_ID, 'PROJECT_MANAGEMENT');
 	await upsertTeamMember(E2E_PAPER_REVIEWER_ID, 'REVIEWER');
+	await upsertTeamMember(E2E_TEAM_COORDINATOR_ID, 'TEAM_COORDINATOR');
 
 	// --- management fixture: a participant who never logs in, just gets acted on ---
 	const mgmtTargetParticipant = {
@@ -281,11 +303,32 @@ export default async function seed() {
 		}),
 		id: E2E_MGMT_TARGET_SINGLE_PARTICIPANT_ID
 	};
-	await db.singleParticipant.upsert({
-		where: { id: mgmtTargetParticipant.id },
-		update: mgmtTargetParticipant,
-		create: mgmtTargetParticipant
-	});
+	await db
+		.insert(schema.singleParticipant)
+		.values(mgmtTargetParticipant)
+		.onConflictDoUpdate({ target: schema.singleParticipant.id, set: mgmtTargetParticipant });
+
+	// --- possible duplicate fixture: reset to OPEN on every run, since the spec decides it ---
+	await upsertActorUser(E2E_DUPLICATE_EARLIER_USER_ID);
+	await db
+		.update(schema.user)
+		.set({ globalNotes: E2E_DUPLICATE_EARLIER_NOTE, phone: E2E_DUPLICATE_EARLIER_PHONE })
+		.where(eq(schema.user.id, E2E_DUPLICATE_EARLIER_USER_ID));
+	const possibleDuplicate = {
+		id: E2E_POSSIBLE_DUPLICATE_ID,
+		// the smaller id first, as the scan stores pairs
+		userId: E2E_DUPLICATE_EARLIER_USER_ID,
+		candidateId: E2E_MGMT_TARGET_USER_ID,
+		score: 0.7,
+		reasons: ['birthday', 'name'],
+		status: 'OPEN' as const,
+		decidedById: null,
+		decidedAt: null
+	};
+	await db
+		.insert(schema.possibleDuplicate)
+		.values(possibleDuplicate)
+		.onConflictDoUpdate({ target: schema.possibleDuplicate.id, set: possibleDuplicate });
 
 	// --- connect-supervisor fixture: a supervisor with a fixed code, and a single participant
 	// who isn't connected to them yet, ready to type the code in ---
@@ -296,11 +339,10 @@ export default async function seed() {
 		userId: E2E_SUPERVISOR_FOR_CONNECT_USER_ID,
 		connectionCode: E2E_SUPERVISOR_CONNECTION_CODE
 	};
-	await db.conferenceSupervisor.upsert({
-		where: { id: connectSupervisor.id },
-		update: connectSupervisor,
-		create: connectSupervisor
-	});
+	await db
+		.insert(schema.conferenceSupervisor)
+		.values(connectSupervisor)
+		.onConflictDoUpdate({ target: schema.conferenceSupervisor.id, set: connectSupervisor });
 	const connectParticipant = {
 		...makeSeedSingleParticipant({
 			conferenceId: conference.id,
@@ -309,28 +351,29 @@ export default async function seed() {
 		}),
 		id: E2E_CONNECT_SINGLE_PARTICIPANT_ID
 	};
-	await db.singleParticipant.upsert({
-		where: { id: connectParticipant.id },
-		update: connectParticipant,
-		create: connectParticipant
-	});
+	await db
+		.insert(schema.singleParticipant)
+		.values(connectParticipant)
+		.onConflictDoUpdate({ target: schema.singleParticipant.id, set: connectParticipant });
 
 	// pre-linked to the same supervisor (via seed, not the connect-supervisor test's own
 	// mutation) so the group-payment default selection has more than just the supervisor.
-	const { id: _skipId, ...supervisedParticipantFields } = makeSeedSingleParticipant({
-		conferenceId: conference.id,
-		userId: E2E_SUPERVISED_PARTICIPANT_USER_ID,
-		applied: false
-	});
-	await db.singleParticipant.upsert({
-		where: { id: E2E_SUPERVISED_SINGLE_PARTICIPANT_ID },
-		update: { ...supervisedParticipantFields, supervisors: { connect: { id: E2E_SUPERVISOR_ID } } },
-		create: {
-			...supervisedParticipantFields,
-			id: E2E_SUPERVISED_SINGLE_PARTICIPANT_ID,
-			supervisors: { connect: { id: E2E_SUPERVISOR_ID } }
-		}
-	});
+	const supervisedParticipant = {
+		...makeSeedSingleParticipant({
+			conferenceId: conference.id,
+			userId: E2E_SUPERVISED_PARTICIPANT_USER_ID,
+			applied: false
+		}),
+		id: E2E_SUPERVISED_SINGLE_PARTICIPANT_ID
+	};
+	await db
+		.insert(schema.singleParticipant)
+		.values(supervisedParticipant)
+		.onConflictDoUpdate({ target: schema.singleParticipant.id, set: supervisedParticipant });
+	await db
+		.insert(schema.conferenceSupervisorToSingleParticipant)
+		.values({ a: E2E_SUPERVISOR_ID, b: E2E_SUPERVISED_SINGLE_PARTICIPANT_ID })
+		.onConflictDoNothing();
 
 	// --- assignment fixture: a real delegation the admin assigns a nation to ---
 	const assignmentDelegation = {
@@ -338,11 +381,10 @@ export default async function seed() {
 		id: E2E_ASSIGNMENT_DELEGATION_ID,
 		entryCode: 'ASSIGN'
 	};
-	await db.delegation.upsert({
-		where: { id: assignmentDelegation.id },
-		update: assignmentDelegation,
-		create: assignmentDelegation
-	});
+	await db
+		.insert(schema.delegation)
+		.values(assignmentDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: assignmentDelegation });
 	const assignmentDelegationMember = {
 		...makeSeedDelegationMember({
 			conferenceId: conference.id,
@@ -352,33 +394,42 @@ export default async function seed() {
 		}),
 		id: 'e2e00000delegationmember0001'
 	};
-	await db.delegationMember.upsert({
-		where: { id: assignmentDelegationMember.id },
-		update: assignmentDelegationMember,
-		create: assignmentDelegationMember
-	});
+	await db
+		.insert(schema.delegationMember)
+		.values(assignmentDelegationMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: assignmentDelegationMember });
+
+	// The assignment specs plan their changes in the draft; whatever a failed run left there would
+	// end up in the next run's apply.
+	await db
+		.delete(schema.assignmentUnit)
+		.where(eq(schema.assignmentUnit.conferenceId, conference.id));
+	await db
+		.delete(schema.assignmentSingleRole)
+		.where(eq(schema.assignmentSingleRole.conferenceId, conference.id));
 
 	// --- split fixture: a 2-member delegation for the delegation-splitting assignment path ---
-	// sendAssignmentData splits by re-parenting members into brand new child Delegations, which
-	// conflicts with @@unique([conferenceId, userId]) if a previous test run already moved these
-	// users into a (now-orphaned) child delegation - clear their membership first so this stays
-	// idempotent across repeated runs.
-	await db.delegationMember.deleteMany({
-		where: {
-			conferenceId: conference.id,
-			userId: { in: [E2E_SPLIT_MEMBER_1_ID, E2E_SPLIT_MEMBER_2_ID] }
-		}
-	});
+	// Applying a split moves the members into brand new delegations, which conflicts with the
+	// per-conference user uniqueness if a previous test run already moved these users into a (now
+	// orphaned) child delegation - clear their membership first so this stays idempotent across
+	// repeated runs.
+	await db
+		.delete(schema.delegationMember)
+		.where(
+			and(
+				eq(schema.delegationMember.conferenceId, conference.id),
+				inArray(schema.delegationMember.userId, [E2E_SPLIT_MEMBER_1_ID, E2E_SPLIT_MEMBER_2_ID])
+			)
+		);
 	const splitDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
 		id: E2E_SPLIT_DELEGATION_ID,
 		entryCode: 'SPLITX'
 	};
-	await db.delegation.upsert({
-		where: { id: splitDelegation.id },
-		update: splitDelegation,
-		create: splitDelegation
-	});
+	await db
+		.insert(schema.delegation)
+		.values(splitDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: splitDelegation });
 	for (const [i, userId] of [E2E_SPLIT_MEMBER_1_ID, E2E_SPLIT_MEMBER_2_ID].entries()) {
 		const member = {
 			...makeSeedDelegationMember({
@@ -387,41 +438,35 @@ export default async function seed() {
 				userId,
 				isHeadDelegate: i === 0
 			}),
-			id: `e2e00000delegationmember000${3 + i}`
+			// Their own ids: `…member0004` belongs to the committee-assignment fixture below, whose
+			// upsert used to move the second split member out of this delegation.
+			id: `e2e00000delegationmembersplit${i + 1}`
 		};
-		await db.delegationMember.upsert({
-			where: { id: member.id },
-			update: member,
-			create: member
-		});
+		await db
+			.insert(schema.delegationMember)
+			.values(member)
+			.onConflictDoUpdate({ target: schema.delegationMember.id, set: member });
 	}
 
 	// --- delegation preferences fixture: nations with plenty of seats to pick as preferences ---
 	for (let i = 0; i < E2E_PREFS_NATION_ALPHA3S.length; i++) {
-		await db.nation.upsert({
-			where: { alpha3Code: E2E_PREFS_NATION_ALPHA3S[i] },
-			update: { alpha2Code: E2E_PREFS_NATION_ALPHA2S[i] },
-			create: {
-				alpha3Code: E2E_PREFS_NATION_ALPHA3S[i],
-				alpha2Code: E2E_PREFS_NATION_ALPHA2S[i]
-			}
-		});
+		await upsertNation(E2E_PREFS_NATION_ALPHA3S[i], E2E_PREFS_NATION_ALPHA2S[i]);
 	}
 	const prefsCommittee = {
-		...makeSeedCommittee({
-			conferenceId: conference.id,
-			nations: { connect: E2E_PREFS_NATION_ALPHA3S.map((alpha3Code) => ({ alpha3Code })) }
-		}),
+		...makeSeedCommittee({ conferenceId: conference.id }),
 		id: E2E_PREFS_COMMITTEE_ID,
 		name: 'E2E Preferences Committee',
 		abbreviation: 'PREF',
 		numOfSeatsPerDelegation: 3
 	};
-	await db.committee.upsert({
-		where: { id: prefsCommittee.id },
-		update: prefsCommittee,
-		create: prefsCommittee
-	});
+	await db
+		.insert(schema.committee)
+		.values(prefsCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: prefsCommittee });
+	await db
+		.insert(schema.committeeToNation)
+		.values(E2E_PREFS_NATION_ALPHA3S.map((alpha3Code) => ({ a: prefsCommittee.id, b: alpha3Code })))
+		.onConflictDoNothing();
 
 	// --- paper fixture: a delegation already assigned to the committee/nation, ready to submit ---
 	const paperDelegation = {
@@ -430,11 +475,10 @@ export default async function seed() {
 		entryCode: 'PAPERS',
 		assignedNationAlpha3Code: E2E_NATION_ALPHA3
 	};
-	await db.delegation.upsert({
-		where: { id: paperDelegation.id },
-		update: paperDelegation,
-		create: paperDelegation
-	});
+	await db
+		.insert(schema.delegation)
+		.values(paperDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: paperDelegation });
 	const paperDelegationMember = {
 		...makeSeedDelegationMember({
 			conferenceId: conference.id,
@@ -445,11 +489,10 @@ export default async function seed() {
 		}),
 		id: 'e2e00000delegationmember0002'
 	};
-	await db.delegationMember.upsert({
-		where: { id: paperDelegationMember.id },
-		update: paperDelegationMember,
-		create: paperDelegationMember
-	});
+	await db
+		.insert(schema.delegationMember)
+		.values(paperDelegationMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: paperDelegationMember });
 
 	// --- draft paper fixture: ready for paper-editing.spec.ts to edit and submit ---
 	const draftPaper = {
@@ -459,97 +502,91 @@ export default async function seed() {
 		authorId: E2E_PAPER_DELEGATE_USER_ID,
 		conferenceId: conference.id,
 		delegationId: paperDelegation.id,
-		agendaItemId: E2E_AGENDA_ITEM_ID
+		agendaItemId: E2E_AGENDA_ITEM_ID,
+		firstSubmittedAt: null
 	};
-	await db.paper.upsert({
-		where: { id: draftPaper.id },
-		update: { ...draftPaper, firstSubmittedAt: null },
-		create: draftPaper
-	});
+	await db
+		.insert(schema.paper)
+		.values(draftPaper)
+		.onConflictDoUpdate({ target: schema.paper.id, set: draftPaper });
 	// Make the fixture idempotent across runs against a persistent database. A previous run
 	// submits this paper (and paper-review.spec can leave an accepted version behind), which
 	// adds PaperVersion rows and sets firstSubmittedAt - after which the app treats a further
 	// submit as a REVISED resubmission rather than SUBMITTED. Drop every version so the paper
 	// starts each run as a never-submitted draft. Reviews cascade with their version.
-	await db.paperVersion.deleteMany({ where: { paperId: draftPaper.id } });
+	await db.delete(schema.paperVersion).where(eq(schema.paperVersion.paperId, draftPaper.id));
 	const draftPaperVersion = {
 		id: E2E_DRAFT_PAPER_VERSION_ID,
 		version: 1,
 		status: 'DRAFT' as const,
-		// The app stores the editor doc as a JSON *string* inside the Json column (see
+		// The app stores the editor doc as a JSON *string* inside the jsonb column (see
 		// paperhub/[paperId] save path), and `PaperVersion.contentHash` md5-hashes that value
 		// directly - handing it a raw object makes hash-wasm throw "Invalid data type!" and
-		// nulls the whole findUniquePaper query. Match the app's real storage format.
+		// nulls the whole `paper` query. Match the app's real storage format.
 		content: JSON.stringify({
 			type: 'doc',
 			content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Seeded draft content.' }] }]
 		}),
 		paperId: draftPaper.id
 	};
-	await db.paperVersion.upsert({
-		where: { id: draftPaperVersion.id },
-		update: draftPaperVersion,
-		create: draftPaperVersion
-	});
+	await db
+		.insert(schema.paperVersion)
+		.values(draftPaperVersion)
+		.onConflictDoUpdate({ target: schema.paperVersion.id, set: draftPaperVersion });
 
 	// --- second conference, already in PREPARATION, with one assigned participant ---
 	const prepConference = {
-		...makeSeedConference({ state: ConferenceState.PREPARATION }),
+		...makeSeedConference({ state: 'PREPARATION' }),
 		id: E2E_PREP_CONFERENCE_ID,
-		title: 'E2E Prep Conference'
+		title: 'E2E Prep Conference',
+		// Its participant sees their role: the assignment is out.
+		assignmentReleased: true
 	};
-	await db.conference.upsert({
-		where: { id: prepConference.id },
-		update: prepConference,
-		create: prepConference
-	});
-	await db.nation.upsert({
-		where: { alpha3Code: E2E_PREP_NATION_ALPHA3 },
-		update: { alpha2Code: E2E_PREP_NATION_ALPHA2 },
-		create: { alpha3Code: E2E_PREP_NATION_ALPHA3, alpha2Code: E2E_PREP_NATION_ALPHA2 }
-	});
+	await db
+		.insert(schema.conference)
+		.values(prepConference)
+		.onConflictDoUpdate({ target: schema.conference.id, set: prepConference });
+	await upsertNation(E2E_PREP_NATION_ALPHA3, E2E_PREP_NATION_ALPHA2);
 	const prepCommittee = {
-		...makeSeedCommittee({
-			conferenceId: prepConference.id,
-			nations: { connect: [{ alpha3Code: E2E_PREP_NATION_ALPHA3 }] }
-		}),
+		...makeSeedCommittee({ conferenceId: prepConference.id }),
 		id: E2E_PREP_COMMITTEE_ID,
 		name: 'E2E Prep Committee',
 		abbreviation: 'PREP',
 		numOfSeatsPerDelegation: 1
 	};
-	await db.committee.upsert({
-		where: { id: prepCommittee.id },
-		update: prepCommittee,
-		create: prepCommittee
-	});
+	await db
+		.insert(schema.committee)
+		.values(prepCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: prepCommittee });
+	await db
+		.insert(schema.committeeToNation)
+		.values({ a: prepCommittee.id, b: E2E_PREP_NATION_ALPHA3 })
+		.onConflictDoNothing();
 	const prepDelegation = {
 		...makeSeedDelegation({ conferenceId: prepConference.id, applied: true }),
 		id: E2E_PREP_DELEGATION_ID,
 		entryCode: 'PREPEC',
 		assignedNationAlpha3Code: E2E_PREP_NATION_ALPHA3
 	};
-	await db.delegation.upsert({
-		where: { id: prepDelegation.id },
-		update: prepDelegation,
-		create: prepDelegation
-	});
+	await db
+		.insert(schema.delegation)
+		.values(prepDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: prepDelegation });
 	await upsertActorUser(E2E_PREP_PARTICIPANT_USER_ID);
 	const prepMember = {
 		...makeSeedDelegationMember({
 			conferenceId: prepConference.id,
 			delegationId: prepDelegation.id,
 			userId: E2E_PREP_PARTICIPANT_USER_ID,
-			isHeadDelegate: true
+			isHeadDelegate: true,
+			assignedCommitteeId: prepCommittee.id
 		}),
-		id: 'e2e00000delegationmember0005',
-		assignedCommitteeId: prepCommittee.id
+		id: 'e2e00000delegationmember0005'
 	};
-	await db.delegationMember.upsert({
-		where: { id: prepMember.id },
-		update: prepMember,
-		create: prepMember
-	});
+	await db
+		.insert(schema.delegationMember)
+		.values(prepMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: prepMember });
 
 	// --- survey fixture: a published question with two options, ready to be answered ---
 	const surveyQuestion = {
@@ -562,11 +599,10 @@ export default async function seed() {
 		showSelectionOnDashboard: true,
 		deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 	};
-	await db.surveyQuestion.upsert({
-		where: { id: surveyQuestion.id },
-		update: surveyQuestion,
-		create: surveyQuestion
-	});
+	await db
+		.insert(schema.surveyQuestion)
+		.values(surveyQuestion)
+		.onConflictDoUpdate({ target: schema.surveyQuestion.id, set: surveyQuestion });
 	for (const option of [
 		{ id: E2E_SURVEY_OPTION_A_ID, title: E2E_SURVEY_OPTION_A_TITLE },
 		{ id: E2E_SURVEY_OPTION_B_ID, title: E2E_SURVEY_OPTION_B_TITLE }
@@ -577,15 +613,14 @@ export default async function seed() {
 			description: 'Seeded option.',
 			upperLimit: 0
 		};
-		await db.surveyOption.upsert({
-			where: { id: surveyOption.id },
-			update: surveyOption,
-			create: surveyOption
-		});
+		await db
+			.insert(schema.surveyOption)
+			.values(surveyOption)
+			.onConflictDoUpdate({ target: schema.surveyOption.id, set: surveyOption });
 	}
-	// Answers are @@unique([questionId, userId]); clearing them keeps the "has not answered yet"
+	// Answers are unique per (questionId, userId); clearing them keeps the "has not answered yet"
 	// precondition true on every run against a persistent database.
-	await db.surveyAnswer.deleteMany({ where: { questionId: surveyQuestion.id } });
+	await db.delete(schema.surveyAnswer).where(eq(schema.surveyAnswer.questionId, surveyQuestion.id));
 
 	// --- committee assignment fixture: a delegation assigned a nation, member needs a committee ---
 	const committeeAssignDelegation = {
@@ -594,34 +629,98 @@ export default async function seed() {
 		entryCode: 'COMASN',
 		assignedNationAlpha3Code: E2E_COMMITTEE_ASSIGN_NATION_ALPHA3
 	};
-	await db.delegation.upsert({
-		where: { id: committeeAssignDelegation.id },
-		update: committeeAssignDelegation,
-		create: committeeAssignDelegation
-	});
+	await db
+		.insert(schema.delegation)
+		.values(committeeAssignDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: committeeAssignDelegation });
 	const committeeAssignMember = {
 		...makeSeedDelegationMember({
 			conferenceId: conference.id,
 			delegationId: committeeAssignDelegation.id,
 			userId: E2E_COMMITTEE_ASSIGN_HEAD_USER_ID,
-			isHeadDelegate: true
+			isHeadDelegate: true,
+			assignedCommitteeId: null
 		}),
-		id: 'e2e00000delegationmember0004',
-		assignedCommitteeId: null
+		id: 'e2e00000delegationmember0004'
 	};
-	await db.delegationMember.upsert({
-		where: { id: committeeAssignMember.id },
-		update: committeeAssignMember,
-		create: committeeAssignMember
-	});
+	await db
+		.insert(schema.delegationMember)
+		.values(committeeAssignMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeAssignMember });
+
+	// --- unreleased fixture: assigned in the database, not yet visible to the participant ---
+	const unreleasedConference = {
+		...makeSeedConference({ state: 'PREPARATION' }),
+		id: E2E_UNRELEASED_CONFERENCE_ID,
+		title: 'E2E Unreleased Conference',
+		assignmentReleased: false,
+		assignmentReleasedAt: null
+	};
+	await db
+		.insert(schema.conference)
+		.values(unreleasedConference)
+		.onConflictDoUpdate({ target: schema.conference.id, set: unreleasedConference });
+	await upsertNation(E2E_UNRELEASED_NATION_ALPHA3, E2E_UNRELEASED_NATION_ALPHA2);
+	const unreleasedCommittee = {
+		...makeSeedCommittee({ conferenceId: unreleasedConference.id }),
+		id: E2E_UNRELEASED_COMMITTEE_ID,
+		name: 'E2E Unreleased Committee',
+		abbreviation: 'UNRL',
+		numOfSeatsPerDelegation: 1
+	};
+	await db
+		.insert(schema.committee)
+		.values(unreleasedCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: unreleasedCommittee });
+	await db
+		.insert(schema.committeeToNation)
+		.values({ a: unreleasedCommittee.id, b: E2E_UNRELEASED_NATION_ALPHA3 })
+		.onConflictDoNothing();
+	const unreleasedDelegation = {
+		...makeSeedDelegation({ conferenceId: unreleasedConference.id, applied: true }),
+		id: E2E_UNRELEASED_DELEGATION_ID,
+		entryCode: 'UNRLSD',
+		assignedNationAlpha3Code: E2E_UNRELEASED_NATION_ALPHA3
+	};
+	await db
+		.insert(schema.delegation)
+		.values(unreleasedDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: unreleasedDelegation });
+	await upsertActorUser(E2E_UNRELEASED_PARTICIPANT_USER_ID);
+	const unreleasedMember = {
+		...makeSeedDelegationMember({
+			conferenceId: unreleasedConference.id,
+			delegationId: unreleasedDelegation.id,
+			userId: E2E_UNRELEASED_PARTICIPANT_USER_ID,
+			isHeadDelegate: true,
+			assignedCommitteeId: unreleasedCommittee.id
+		}),
+		id: 'e2e00000delegationmember0006'
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(unreleasedMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: unreleasedMember });
+	// Its own row id: the shared helper keys rows by user, and the admin is on the main team too.
+	const unreleasedTeamMember = {
+		...makeSeedTeamMember({
+			conferenceId: unreleasedConference.id,
+			userId: E2E_ASSIGNMENT_ADMIN_ID,
+			role: 'PARTICIPANT_CARE'
+		}),
+		id: `e2e-team-unreleased-${E2E_ASSIGNMENT_ADMIN_ID}`
+	};
+	await db
+		.insert(schema.teamMember)
+		.values(unreleasedTeamMember)
+		.onConflictDoUpdate({ target: schema.teamMember.id, set: unreleasedTeamMember });
 
 	await seedSeatPlanning(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
-
-	await db.$disconnect();
 }
 
 if (import.meta.main) {
 	await seed();
+	process.exit(0);
 }

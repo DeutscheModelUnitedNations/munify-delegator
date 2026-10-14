@@ -7,12 +7,11 @@
 
 	let { diagram }: Props = $props();
 
-	let container = $state<HTMLSpanElement>();
+	let svg = $state('');
 
 	async function renderDiagram() {
-		const { svg } = await mermaid.render('mermaid', diagram);
-		if (!container) return;
-		container.innerHTML = svg;
+		const rendered = await mermaid.render('mermaid', diagram);
+		svg = rendered.svg;
 	}
 
 	$effect(() => {
@@ -22,4 +21,5 @@
 	});
 </script>
 
-<span class="w-full" bind:this={container}></span>
+<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: SVG mermaid renders from a developer-authored diagram (its only caller passes a literal built from translation strings) -->
+<span class="w-full">{@html svg}</span>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 
@@ -25,6 +26,6 @@
 	class="text-success flex items-center justify-center gap-3 pb-4"
 	in:fly={{ y: 0, duration: 300, delay }}
 >
-	<i class="fa-solid fa-circle-check"></i>
-	<p class="text-center tracking-wider uppercase">Chat beendet</p>
+	<i class="fa-sharp-duotone fa-solid fa-circle-check"></i>
+	<p class="text-center tracking-wider uppercase">{m.chatEnded()}</p>
 </div>

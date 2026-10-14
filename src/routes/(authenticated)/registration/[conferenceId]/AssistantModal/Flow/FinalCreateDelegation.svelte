@@ -3,23 +3,25 @@
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
 
-	const choices = [
+	const choices = $derived([
 		{
 			icon: 'arrow-right',
 			title: m.createDelegation(),
 			class: 'btn-primary',
-			href: `${conferenceId}/create-delegation`
+			href: resolve(`/registration/${conferenceId}/create-delegation`)
 		}
-	];
+	]);
 </script>
 
 <ChatBot delay={400}>
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 	<p>{@html m.assistantFlowFinalCreateDelegation1()}</p>
 	<p>{m.assistantFlowFinalCreateDelegation2()}</p>
 </ChatBot>

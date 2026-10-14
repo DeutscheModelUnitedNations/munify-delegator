@@ -19,30 +19,44 @@ import { parseArgs } from 'util';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
-// Load environment variables from .env.bugsink
-function loadEnv(): { url: string; token: string; projectId: number } {
-	const envPath = resolve(import.meta.dir, '../../.env.bugsink');
+const REQUIRED_ENV = ['BUGSINK_URL', 'BUGSINK_TOKEN', 'BUGSINK_PROJECT_ID'];
 
-	if (!existsSync(envPath)) {
-		console.error('Error: .env.bugsink not found');
-		console.error('Create it with BUGSINK_URL, BUGSINK_TOKEN, and BUGSINK_PROJECT_ID');
-		process.exit(1);
-	}
+/** Prints the lines as errors and exits with a failure. */
+function fail(...lines: string[]): never {
+	for (const line of lines) console.error(line);
+	process.exit(1);
+}
 
-	const envContent = readFileSync(envPath, 'utf-8');
+/** The `KEY=value` lines of an env file; a value may itself contain `=`. */
+function parseEnvFile(content: string): Record<string, string> {
 	const env: Record<string, string> = {};
-
-	for (const line of envContent.split('\n')) {
+	for (const line of content.split('\n')) {
 		const [key, ...valueParts] = line.split('=');
 		if (key && valueParts.length > 0) {
 			env[key.trim()] = valueParts.join('=').trim();
 		}
 	}
+	return env;
+}
 
-	if (!env.BUGSINK_URL || !env.BUGSINK_TOKEN || !env.BUGSINK_PROJECT_ID) {
-		console.error('Error: Missing required environment variables');
-		console.error('Required: BUGSINK_URL, BUGSINK_TOKEN, BUGSINK_PROJECT_ID');
-		process.exit(1);
+// Load environment variables from .env.bugsink
+function loadEnv(): { url: string; token: string; projectId: number } {
+	const envPath = resolve(import.meta.dir, '../../.env.bugsink');
+
+	if (!existsSync(envPath)) {
+		fail(
+			'Error: .env.bugsink not found',
+			'Create it with BUGSINK_URL, BUGSINK_TOKEN, and BUGSINK_PROJECT_ID'
+		);
+	}
+
+	const env = parseEnvFile(readFileSync(envPath, 'utf-8'));
+
+	if (REQUIRED_ENV.some((name) => !env[name])) {
+		fail(
+			'Error: Missing required environment variables',
+			'Required: BUGSINK_URL, BUGSINK_TOKEN, BUGSINK_PROJECT_ID'
+		);
 	}
 
 	return {
@@ -168,6 +182,11 @@ async function fetchIssueEvents(
 	return response.results.slice(0, limit);
 }
 
+function issueStatus(issue: BugsinkIssue) {
+	if (issue.is_resolved) return 'Resolved';
+	return issue.is_muted ? 'Muted' : 'Open';
+}
+
 function formatIssue(issue: BugsinkIssue, index: number): string {
 	const lines: string[] = [];
 
@@ -181,7 +200,7 @@ function formatIssue(issue: BugsinkIssue, index: number): string {
 
 	lines.push(`Route: ${issue.transaction}`);
 	lines.push(`Events: ${issue.digested_event_count}`);
-	lines.push(`Status: ${issue.is_resolved ? 'Resolved' : issue.is_muted ? 'Muted' : 'Open'}`);
+	lines.push(`Status: ${issueStatus(issue)}`);
 	lines.push(`First: ${new Date(issue.first_seen).toLocaleString()}`);
 	lines.push(`Last:  ${new Date(issue.last_seen).toLocaleString()}`);
 	lines.push(`ID: ${issue.id}`);
@@ -189,21 +208,7 @@ function formatIssue(issue: BugsinkIssue, index: number): string {
 	return lines.join('\n');
 }
 
-async function main() {
-	const { values } = parseArgs({
-		args: Bun.argv.slice(2),
-		options: {
-			limit: { type: 'string', default: '10' },
-			resolved: { type: 'boolean', default: false },
-			output: { type: 'string' },
-			verbose: { type: 'boolean', default: false },
-			issue: { type: 'string' },
-			help: { type: 'boolean', default: false }
-		}
-	});
-
-	if (values.help) {
-		console.log(`
+const HELP = `
 Bugsink Issue Fetcher
 
 Usage:
@@ -221,49 +226,104 @@ Examples:
   bun scripts/bugsink/fetch-issues.ts --limit 5 --verbose
   bun scripts/bugsink/fetch-issues.ts --issue 47939e95-6263-4eba-ad2f-b69ab29058c1
   bun scripts/bugsink/fetch-issues.ts --output bugs.json
-`);
-		process.exit(0);
+`;
+
+type Env = ReturnType<typeof loadEnv>;
+
+/** The stack trace of an issue's most recent event, if it has one. */
+async function latestStacktrace(env: Env, issueId: string) {
+	const events = await fetchIssueEvents(env, issueId, 1);
+	if (events.length === 0) return null;
+	return fetchStacktrace(env, events[0].id);
+}
+
+function printStacktrace(stacktrace: string) {
+	console.log('\n┌─ Stack Trace ─────────────────────────────────────────────────────────────────');
+	console.log(stacktrace);
+	console.log('└───────────────────────────────────────────────────────────────────────────────');
+}
+
+async function showIssue(env: Env, issueId: string) {
+	console.log(`Fetching issue ${issueId}...`);
+
+	const issue = await fetchFromBugsink<BugsinkIssue>(`/api/canonical/0/issues/${issueId}/`, env);
+	if (!issue) {
+		console.error('Issue not found');
+		process.exit(1);
 	}
 
-	const env = loadEnv();
-	const limit = parseInt(values.limit || '10', 10);
-	const includeResolved = values.resolved || false;
-	const verbose = values.verbose || false;
-	const specificIssue = values.issue;
+	console.log(formatIssue(issue, 0));
 
-	// If fetching a specific issue
-	if (specificIssue) {
-		console.log(`Fetching issue ${specificIssue}...`);
+	const stacktrace = await latestStacktrace(env, issueId);
+	if (stacktrace) printStacktrace(stacktrace);
+}
 
-		const issue = await fetchFromBugsink<BugsinkIssue>(
-			`/api/canonical/0/issues/${specificIssue}/`,
-			env
-		);
+interface IssueData {
+	issue: BugsinkIssue;
+	stacktrace?: string | null;
+}
 
-		if (!issue) {
-			console.error('Issue not found');
-			process.exit(1);
+/** Prints each issue, with its stack trace when verbose, and collects what was printed. */
+async function printIssues(env: Env, issues: BugsinkIssue[], verbose: boolean) {
+	const fullData: IssueData[] = [];
+
+	for (const [i, issue] of issues.entries()) {
+		console.log(formatIssue(issue, i));
+
+		const stacktrace = verbose ? await latestStacktrace(env, issue.id) : null;
+		if (stacktrace) {
+			printStacktrace(stacktrace);
+			fullData.push({ issue, stacktrace });
+		} else {
+			fullData.push({ issue });
 		}
-
-		console.log(formatIssue(issue, 0));
-
-		const events = await fetchIssueEvents(env, specificIssue, 1);
-		if (events.length > 0) {
-			const stacktrace = await fetchStacktrace(env, events[0].id);
-			if (stacktrace) {
-				console.log(
-					'\n┌─ Stack Trace ─────────────────────────────────────────────────────────────────'
-				);
-				console.log(stacktrace);
-				console.log(
-					'└───────────────────────────────────────────────────────────────────────────────'
-				);
-			}
-		}
-
-		return;
 	}
+	return fullData;
+}
 
+function parseOptions() {
+	const { values } = parseArgs({
+		args: process.argv.slice(2),
+		options: {
+			limit: { type: 'string', default: '10' },
+			resolved: { type: 'boolean', default: false },
+			output: { type: 'string' },
+			verbose: { type: 'boolean', default: false },
+			issue: { type: 'string' },
+			help: { type: 'boolean', default: false }
+		}
+	});
+	return {
+		help: values.help,
+		issue: values.issue,
+		output: values.output,
+		limit: parseInt(values.limit || '10', 10),
+		includeResolved: values.resolved || false,
+		verbose: values.verbose || false
+	};
+}
+
+type Options = ReturnType<typeof parseOptions>;
+
+function saveOutput(output: string | undefined, fullData: IssueData[]) {
+	if (!output) return;
+	const outputPath = resolve(process.cwd(), output);
+	writeFileSync(outputPath, JSON.stringify(fullData, null, 2));
+	console.log(`\nSaved full data to: ${outputPath}`);
+}
+
+function printSummary(issueCount: number, verbose: boolean) {
+	console.log(`\n${'━'.repeat(80)}`);
+	console.log('Summary:');
+	console.log(`  Total issues: ${issueCount}`);
+	if (!verbose) {
+		console.log('  Run with --verbose to see full stack traces');
+	}
+	console.log('  Run with --output issues.json to save for analysis');
+	console.log('  Run with --issue <uuid> to fetch a specific issue');
+}
+
+async function listIssues(env: Env, { limit, includeResolved, verbose, output }: Options) {
 	// Fetch all issues
 	console.log(`Fetching ${limit} ${includeResolved ? '' : 'unresolved '}issues from ${env.url}...`);
 	console.log();
@@ -277,55 +337,27 @@ Examples:
 
 	console.log(`Found ${issues.length} issues:\n`);
 
-	interface IssueData {
-		issue: BugsinkIssue;
-		stacktrace?: string | null;
+	const fullData = await printIssues(env, issues, verbose);
+	saveOutput(output, fullData);
+	printSummary(issues.length, verbose);
+}
+
+async function main() {
+	const options = parseOptions();
+
+	if (options.help) {
+		console.log(HELP);
+		process.exit(0);
 	}
 
-	const fullData: IssueData[] = [];
+	const env = loadEnv();
 
-	for (let i = 0; i < issues.length; i++) {
-		const issue = issues[i];
-		console.log(formatIssue(issue, i));
-
-		if (verbose) {
-			const events = await fetchIssueEvents(env, issue.id, 1);
-			if (events.length > 0) {
-				const stacktrace = await fetchStacktrace(env, events[0].id);
-				if (stacktrace) {
-					console.log(
-						'\n┌─ Stack Trace ─────────────────────────────────────────────────────────────────'
-					);
-					console.log(stacktrace);
-					console.log(
-						'└───────────────────────────────────────────────────────────────────────────────'
-					);
-					fullData.push({ issue, stacktrace });
-				} else {
-					fullData.push({ issue });
-				}
-			} else {
-				fullData.push({ issue });
-			}
-		} else {
-			fullData.push({ issue });
-		}
+	if (options.issue) {
+		await showIssue(env, options.issue);
+		return;
 	}
 
-	if (values.output) {
-		const outputPath = resolve(process.cwd(), values.output);
-		writeFileSync(outputPath, JSON.stringify(fullData, null, 2));
-		console.log(`\nSaved full data to: ${outputPath}`);
-	}
-
-	console.log(`\n${'━'.repeat(80)}`);
-	console.log('Summary:');
-	console.log(`  Total issues: ${issues.length}`);
-	if (!verbose) {
-		console.log('  Run with --verbose to see full stack traces');
-	}
-	console.log('  Run with --output issues.json to save for analysis');
-	console.log('  Run with --issue <uuid> to fetch a specific issue');
+	await listIssues(env, options);
 }
 
 main().catch(console.error);

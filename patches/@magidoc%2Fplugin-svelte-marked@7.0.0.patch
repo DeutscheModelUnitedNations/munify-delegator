@@ -1,0 +1,25 @@
+diff --git a/build/markdown/suppressWarnings.js b/build/markdown/suppressWarnings.js
+index e16f726e5edec786eec89d036aaf0cbd504c934f..a9bce928d4b1fc0a0b0ccf5bf576d8ee690703ad 100644
+--- a/build/markdown/suppressWarnings.js
++++ b/build/markdown/suppressWarnings.js
+@@ -2,12 +2,16 @@ import { onMount } from 'svelte';
+ export function suppressWarnings() {
+     // biome-ignore lint/suspicious/noConsole: This is fine here
+     const origWarn = console.warn;
+-    console.warn = (message) => {
+-        if (message.includes('unknown prop'))
++    // Until mount this replaces the global `console.warn`, so it sees every warning the app logs
++    // meanwhile - not only strings (Svelte's own warnings pass format arguments), and with more
++    // than one argument. Check the type, and forward everything unchanged.
++    console.warn = (...args) => {
++        const [message] = args;
++        if (typeof message === 'string' && message.includes('unknown prop'))
+             return;
+-        if (message.includes('unexpected slot'))
++        if (typeof message === 'string' && message.includes('unexpected slot'))
+             return;
+-        origWarn(message);
++        origWarn(...args);
+     };
+     onMount(() => {
+         console.warn = origWarn;
