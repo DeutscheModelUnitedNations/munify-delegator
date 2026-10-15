@@ -44,7 +44,7 @@
 
 	/** The postal paperwork we are here to tick off. */
 	const flow = createScannedUserFlow(async (userId) => {
-		const statuses = await client.query.conferenceParticipantStatuses({
+		const statuses = await client.query.conferenceParticipants({
 			__args: {
 				where: { conferenceId: { eq: routeParams.conferenceId }, userId: { eq: userId } }
 			},
@@ -61,7 +61,7 @@
 		change: StatusChange
 	) =>
 		flow.changeStatus(userId, (userId) =>
-			client.mutate.updateConferenceParticipantStatus({
+			client.mutate.updateConferenceParticipant({
 				__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
 				...postalStatusFields
 			})

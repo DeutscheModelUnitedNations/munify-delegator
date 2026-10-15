@@ -69,10 +69,11 @@ export async function assertCanUpdateSingleParticipant(
 		.findFirst({
 			...(await ctx.abilities.singleParticipant.filter('update')).merge({ where: { id } }).query
 				.single,
-			columns: { id: true, conferenceId: true }
+			columns: { id: true },
+			with: { participant: { columns: { conferenceId: true } } }
 		})
 		.then(assertFindFirstExists);
-	await assertCustomRolesOf(target.conferenceId, applyForRolesIdList);
+	await assertCustomRolesOf(target.participant.conferenceId, applyForRolesIdList);
 }
 
 /** Refuses unless the caller may delete the single participant (the row's delete ability). */

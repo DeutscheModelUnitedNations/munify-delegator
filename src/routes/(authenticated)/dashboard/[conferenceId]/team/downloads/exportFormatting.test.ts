@@ -69,8 +69,8 @@ describe('supervisorRow', () => {
 
 describe('nonStateActorName', () => {
 	test('is empty without a non-state actor', () => {
-		expect(nonStateActorName({ assignedNonStateActor: { name: 'Greenpeace' } })).toBe('Greenpeace');
-		expect(nonStateActorName({ assignedNonStateActor: null })).toBe('');
+		expect(nonStateActorName({ assignedRole: { name: 'Greenpeace' } })).toBe('Greenpeace');
+		expect(nonStateActorName({ assignedRole: null })).toBe('');
 		expect(nonStateActorName({})).toBe('');
 	});
 });

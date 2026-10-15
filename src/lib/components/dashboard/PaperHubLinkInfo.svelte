@@ -15,7 +15,7 @@
 	// Drafts are not submitted yet and nobody can review them, so they are left out.
 	const countWith = (status: PaperstatusEnum) =>
 		client.liveQuery.papersCount({
-			__args: { where: { conferenceId: { eq: conferenceId }, status } }
+			__args: { where: { conference: { id: { eq: conferenceId } }, status } }
 		});
 
 	const counts = $derived(

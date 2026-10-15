@@ -19,8 +19,12 @@
 			firstSubmittedAt: true,
 			conference: { title: true, longTitle: true, emblemFile: { url: true } },
 			delegation: {
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+				assignedRole: {
+					kind: true,
+					name: true,
+					fontAwesomeIcon: true,
+					nation: { alpha2Code: true, alpha3Code: true }
+				}
 			},
 			agendaItem: {
 				title: true,

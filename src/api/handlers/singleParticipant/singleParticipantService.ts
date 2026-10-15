@@ -1,4 +1,5 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
+import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -49,22 +50,22 @@ export async function ownRegistrationToEdit(
 }
 
 /** Links a single participant to a custom conference role (the join table behind `appliedForRoles`). */
-async function applyForRoles(singleParticipantId: string, roleIds: string[]) {
+async function applyForRoles(tx: Transaction, singleParticipantId: string, roleIds: string[]) {
 	if (roleIds.length === 0) return;
-	await db
-		.insert(schema.customConferenceRoleToSingleParticipant)
+	await tx
+		.insert(schema.singleParticipantRoleWish)
 		.values(roleIds.map((roleId) => ({ a: roleId, b: singleParticipantId })))
 		.onConflictDoNothing();
 }
 
-async function unapplyForRoles(singleParticipantId: string, roleIds: string[]) {
+async function unapplyForRoles(tx: Transaction, singleParticipantId: string, roleIds: string[]) {
 	if (roleIds.length === 0) return;
-	await db
-		.delete(schema.customConferenceRoleToSingleParticipant)
+	await tx
+		.delete(schema.singleParticipantRoleWish)
 		.where(
 			and(
-				eq(schema.customConferenceRoleToSingleParticipant.b, singleParticipantId),
-				inArray(schema.customConferenceRoleToSingleParticipant.a, roleIds)
+				eq(schema.singleParticipantRoleWish.b, singleParticipantId),
+				inArray(schema.singleParticipantRoleWish.a, roleIds)
 			)
 		);
 }
@@ -85,40 +86,43 @@ export async function registerSingleParticipant(
 	},
 	existing: { id: string } | undefined
 ) {
-	let rowId: string;
-	if (existing) {
-		await db
-			.update(schema.singleParticipant)
-			.set({
-				school: args.school,
-				motivation: args.motivation,
-				experience: args.experience
-			})
-			.where(eq(schema.singleParticipant.id, existing.id));
-		rowId = existing.id;
-	} else {
-		const created = await db
-			.insert(schema.singleParticipant)
-			.values({
-				conferenceId: args.conferenceId,
-				userId,
-				school: nullToUndefined(args.school),
-				motivation: nullToUndefined(args.motivation),
-				experience: nullToUndefined(args.experience)
-			})
-			.returning()
-			.then(assertFirstEntryExists);
-		rowId = created.id;
-	}
+	// The person's row, the registration and the role it applies for go in together, so a refused
+	// insert leaves none of them.
+	return db.transaction(async (tx) => {
+		let rowId: string;
+		if (existing) {
+			await tx
+				.update(schema.singleParticipant)
+				.set({
+					school: args.school,
+					motivation: args.motivation,
+					experience: args.experience
+				})
+				.where(eq(schema.singleParticipant.id, existing.id));
+			rowId = existing.id;
+		} else {
+			const created = await tx
+				.insert(schema.singleParticipant)
+				.values({
+					conferenceParticipantId: await ensureConferenceParticipant(tx, args.conferenceId, userId),
+					school: nullToUndefined(args.school),
+					motivation: nullToUndefined(args.motivation),
+					experience: nullToUndefined(args.experience)
+				})
+				.returning()
+				.then(assertFirstEntryExists);
+			rowId = created.id;
+		}
 
-	await applyForRoles(rowId, [args.roleId]);
+		await applyForRoles(tx, rowId, [args.roleId]);
 
-	return rowId;
+		return rowId;
+	});
 }
 
 /**
- * Updates a single participant's application and the roles it applies for. The caller checks
- * first that it may (`assertCanUpdateSingleParticipant`).
+ * Updates a single participant's application and the roles it applies for, in one transaction.
+ * The caller checks first that it may (`assertCanUpdateSingleParticipant`).
  */
 export async function updateSingleParticipantApplication(args: {
 	id: string;
@@ -155,15 +159,17 @@ export async function updateSingleParticipantApplication(args: {
 	};
 	// A call that only changes role applications has nothing to set, and drizzle rejects an
 	// empty `set` ("No values to set").
-	if (Object.values(values).some((value) => value !== undefined)) {
-		await db
-			.update(schema.singleParticipant)
-			.set(values)
-			.where(eq(schema.singleParticipant.id, args.id));
-	}
+	await db.transaction(async (tx) => {
+		if (Object.values(values).some((value) => value !== undefined)) {
+			await tx
+				.update(schema.singleParticipant)
+				.set(values)
+				.where(eq(schema.singleParticipant.id, args.id));
+		}
 
-	await applyForRoles(args.id, args.applyForRolesIdList ?? []);
-	await unapplyForRoles(args.id, args.unApplyForRolesIdList ?? []);
+		await applyForRoles(tx, args.id, args.applyForRolesIdList ?? []);
+		await unapplyForRoles(tx, args.id, args.unApplyForRolesIdList ?? []);
+	});
 }
 
 /**
@@ -194,8 +200,11 @@ export async function createAssignedSingleParticipant(args: {
 		return tx
 			.insert(schema.singleParticipant)
 			.values({
-				conferenceId: args.conferenceId,
-				userId: args.userId,
+				conferenceParticipantId: await ensureConferenceParticipant(
+					tx,
+					args.conferenceId,
+					args.userId
+				),
 				applied: true,
 				assignedRoleId: args.roleId
 			})

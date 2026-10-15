@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import Flag from '$lib/components/Flag.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 	import { m } from '$lib/paraglide/messages';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
@@ -24,8 +25,7 @@
 
 	let { paper, status, versionNumber, createdAt, actions, footer }: Props = $props();
 
-	let nation = $derived(paper.delegation.assignedNation);
-	let nsa = $derived(paper.delegation.assignedNonStateActor);
+	let { nation, nonStateActor: nsa } = $derived(splitRole(paper.delegation.assignedRole));
 </script>
 
 <div class="card bg-base-200 border border-base-300">

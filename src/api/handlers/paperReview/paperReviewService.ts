@@ -8,6 +8,7 @@ import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTransla
 import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 import { localeOfUser, runWithLocale } from '$api/services/requestLocale';
 import { apiError } from '$api/services/errors/apiError';
+import { splitRole } from '$lib/helpers/conferenceRole';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
 type UnlockedPiece = {
@@ -27,9 +28,8 @@ const REVIEWABLE_STATUSES = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEP
 const ALLOWED_NEW_STATUSES = ['CHANGES_REQUESTED', 'ACCEPTED'];
 
 /** Papers that are past draft and already carry at least one review. */
-const reviewedPaperWhere = (delegationId: string, conferenceId: string) => ({
+const reviewedPaperWhere = (delegationId: string) => ({
 	delegationId,
-	conferenceId,
 	status: { ne: 'DRAFT' as const },
 	versions: { reviews: {} }
 });
@@ -42,7 +42,7 @@ function fetchPaperForReview(tx: Transaction, paperId: string) {
 				versions: { orderBy: { version: 'desc' }, limit: 1 },
 				author: true,
 				agendaItem: { with: { committee: true } },
-				delegation: { with: { assignedNation: true, assignedNonStateActor: true } },
+				delegation: { with: { assignedRole: { with: { nation: true } } } },
 				conference: true
 			}
 		})
@@ -99,8 +99,7 @@ async function isFirstNationPieceReview(
 		.where(
 			and(
 				eq(schema.paper.delegationId, paper.delegationId),
-				eq(schema.paper.agendaItemId, agendaItemId),
-				eq(schema.paper.conferenceId, paper.conferenceId)
+				eq(schema.paper.agendaItemId, agendaItemId)
 			)
 		);
 	return isZeroCount(existing);
@@ -113,7 +112,7 @@ async function isFirstNationPieceReview(
 async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
 	const reviewedOfKind = await tx.query.paper.findMany({
 		where: {
-			...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+			...reviewedPaperWhere(paper.delegationId),
 			type:
 				paper.type === 'INTRODUCTION_PAPER' ? 'INTRODUCTION_PAPER' : { ne: 'INTRODUCTION_PAPER' }
 		},
@@ -132,11 +131,11 @@ async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
 
 /** Whether this review, written before it is inserted, finds a new piece of the flag. */
 function isFirstReviewForPiece(tx: Transaction, paper: PaperForReview) {
-	const delegation = paper.delegation;
-	if (delegation?.assignedNationAlpha3Code && paper.agendaItemId) {
+	const kind = paper.delegation?.assignedRole?.kind;
+	if (kind === 'NATION' && paper.agendaItemId) {
 		return isFirstNationPieceReview(tx, paper, paper.agendaItemId);
 	}
-	if (delegation?.assignedNonStateActorId) {
+	if (kind === 'NON_STATE_ACTOR') {
 		return isFirstNsaPieceReview(tx, paper);
 	}
 	return false;
@@ -145,16 +144,17 @@ function isFirstReviewForPiece(tx: Transaction, paper: PaperForReview) {
 async function nationPiece(
 	tx: Transaction,
 	paper: PaperForReview,
+	roleId: string,
 	nation: { alpha2Code: string; alpha3Code: string }
 ): Promise<UnlockedPiece> {
 	const committees = await tx.query.committee.findMany({
-		where: { conferenceId: paper.conferenceId, nations: { alpha3Code: nation.alpha3Code } },
+		where: { conferenceId: paper.delegation.conferenceId, roles: { id: roleId } },
 		with: { agendaItems: { columns: { id: true } } }
 	});
 	const totalPieces = committees.reduce((sum, committee) => sum + committee.agendaItems.length, 0);
 	const found = await tx.query.paper.findMany({
 		where: {
-			...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+			...reviewedPaperWhere(paper.delegationId),
 			agendaItemId: { isNotNull: true }
 		},
 		columns: { id: true }
@@ -179,15 +179,15 @@ const NSA_PIECE_COUNT = 3;
 async function nsaPiece(
 	tx: Transaction,
 	paper: PaperForReview,
-	nsa: { id: string; name: string; fontAwesomeIcon: string | null }
+	nsa: { id: string; name: string | null; fontAwesomeIcon: string | null }
 ): Promise<UnlockedPiece> {
 	const found = await tx.query.paper.findMany({
-		where: reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+		where: reviewedPaperWhere(paper.delegationId),
 		columns: { id: true }
 	});
 	return {
 		flagId: nsa.id,
-		flagName: nsa.name,
+		flagName: nsa.name ?? '',
 		flagType: 'NSA',
 		flagAlpha2Code: null,
 		flagAlpha3Code: null,
@@ -204,12 +204,10 @@ async function nsaPiece(
 
 /** The flag piece a first review just uncovered, counted after the review was written. */
 async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
-	const delegation = paper.delegation;
-	if (!delegation) return null;
-	if (delegation.assignedNation) return nationPiece(tx, paper, delegation.assignedNation);
-	if (delegation.assignedNonStateActor) {
-		return nsaPiece(tx, paper, delegation.assignedNonStateActor);
-	}
+	const role = paper.delegation?.assignedRole;
+	const { nation, nonStateActor } = splitRole(role);
+	if (role && nation) return nationPiece(tx, paper, role.id, nation);
+	if (nonStateActor) return nsaPiece(tx, paper, nonStateActor);
 	return null;
 }
 
@@ -237,7 +235,7 @@ function notifyAuthor(
 		reviewerEmail: reviewer.email,
 		newStatus,
 		conferenceTitle: paper.conference?.title ?? '',
-		paperUrl: `${origin}/dashboard/${paper.conferenceId}/paperhub/${paper.id}`
+		paperUrl: `${origin}/dashboard/${paper.delegation.conferenceId}/paperhub/${paper.id}`
 	}).catch((error) => {
 		console.error('Failed to send review notification email:', error);
 	});
@@ -261,7 +259,7 @@ export async function createPaperReview(
 	reviewer: Reviewer,
 	origin: string
 ) {
-	return db.transaction(async (tx) => {
+	const { paper, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview(tx, args.paperId);
 		const latestVersion = assertReviewable(paper, args.newStatus);
 		const wasFirstReviewForPiece = await isFirstReviewForPiece(tx, paper);
@@ -287,14 +285,20 @@ export async function createPaperReview(
 			.set({ status: args.newStatus })
 			.where(eq(schema.paperVersion.id, latestVersion.id));
 
-		notifyAuthor(paper, reviewer, args.newStatus, origin);
-
 		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece(tx, paper) : null;
 
 		return {
-			reviewId: review.id,
-			pieceUnlocked: wasFirstReviewForPiece && unlockedPieceData !== null,
-			unlockedPieceData
+			paper,
+			result: {
+				reviewId: review.id,
+				pieceUnlocked: wasFirstReviewForPiece && unlockedPieceData !== null,
+				unlockedPieceData
+			}
 		};
 	});
+
+	// Only once the review is committed: a rollback must not leave the author a mail about it.
+	notifyAuthor(paper, reviewer, args.newStatus, origin);
+
+	return result;
 }

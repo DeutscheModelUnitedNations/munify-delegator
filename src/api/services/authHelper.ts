@@ -3,6 +3,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context } from '$api/context';
 import type { teamRole } from '$api/db/schema';
+import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 /** The TeamRole enum values, taken from the schema so role lists stay type-checked. */
 export type TeamRole = (typeof teamRole.enumValues)[number];
@@ -124,9 +125,9 @@ export function isParticipantOfConference(ctx: Context) {
 	return {
 		conference: {
 			OR: [
-				{ delegations: { members: { userId: id } } },
-				{ singleParticipants: { userId: id } },
-				{ conferenceSupervisors: { userId: id } }
+				{ delegations: { members: { participant: { userId: id } } } },
+				{ singleParticipants: { participant: { userId: id } } },
+				{ conferenceSupervisors: { participant: { userId: id } } }
 			]
 		}
 	};
@@ -281,19 +282,28 @@ export async function assertAllowedRow(
 }
 
 /**
- * Refuses unless every one of `userIds` takes part in the conference (delegate, single
- * participant or supervisor). Guards writes that name other people by id.
+ * The `conferenceParticipant` ids of `userIds` in the conference, by user id. Refuses unless every
+ * one of them takes part in it (delegate, single participant or supervisor), so writes that name
+ * other people by id can use it as their guard and get the rows to point at in one go.
  */
-export async function assertParticipantsOf(conferenceId: string, userIds: readonly string[]) {
+export async function participantIdsOf(
+	conferenceId: string,
+	userIds: readonly string[]
+): Promise<Map<string, string>> {
 	const unique = [...new Set(userIds)];
-	if (unique.length === 0) return;
-	const found = await db.query.user.findMany({
-		where: { id: { in: unique }, ...participatesIn({ id: conferenceId }) },
-		columns: { id: true }
+	if (unique.length === 0) return new Map();
+	const found = await db.query.conferenceParticipant.findMany({
+		where: {
+			conferenceId,
+			userId: { in: unique },
+			user: participatesIn({ id: conferenceId })
+		},
+		columns: { id: true, userId: true }
 	});
 	if (found.length !== unique.length) {
 		throw apiError('INVALID_INPUT', m.usersNotInConference());
 	}
+	return new Map(found.map((row) => [row.userId, row.id]));
 }
 
 /**
@@ -330,46 +340,39 @@ export async function assertParticipantOfConference(ctx: Context, conferenceId: 
 }
 
 /**
- * Whether the conference has every nation, non-state actor and committee the arguments name; an
- * absent one passes. A nation is the conference's when one of its committees seats it.
+ * Whether the conference has the role and committee the arguments name, and the role is of one
+ * of `roleKinds` (a delegation's by default); an absent one passes. A nation is the conference's
+ * while one of its committees seats it, which `setCommitteeNationSeat` keeps its role row for.
  */
 export async function offeredIn(
 	conferenceId: string,
-	role: {
-		assignedNationAlpha3Code?: string | null;
-		assignedNonStateActorId?: string | null;
-		assignedCommitteeId?: string | null;
-	}
+	ref: { roleId?: string | null; committeeId?: string | null },
+	roleKinds: readonly ConferenceRoleKind[] = DELEGATION_ROLE_KINDS
 ) {
-	const [nation, nsa, committee] = await Promise.all([
-		role.assignedNationAlpha3Code
-			? db.query.nation.findFirst({
-					where: {
-						alpha3Code: role.assignedNationAlpha3Code,
-						committees: { conferenceId }
-					},
-					columns: { alpha3Code: true }
-				})
-			: true,
-		role.assignedNonStateActorId
-			? db.query.nonStateActor.findFirst({
-					where: { id: role.assignedNonStateActorId, conferenceId },
+	const [role, committee] = await Promise.all([
+		ref.roleId
+			? db.query.conferenceRole.findFirst({
+					where: { id: ref.roleId, conferenceId, kind: { in: [...roleKinds] } },
 					columns: { id: true }
 				})
 			: true,
-		role.assignedCommitteeId
+		ref.committeeId
 			? db.query.committee.findFirst({
-					where: { id: role.assignedCommitteeId, conferenceId },
+					where: { id: ref.committeeId, conferenceId },
 					columns: { id: true }
 				})
 			: true
 	]);
-	return Boolean(nation && nsa && committee);
+	return Boolean(role && committee);
 }
 
-/** Refuses a nation, non-state actor or committee that the conference does not have. */
-export async function assertOfferedIn(conferenceId: string, role: Parameters<typeof offeredIn>[1]) {
-	if (!(await offeredIn(conferenceId, role))) {
+/** Refuses a role or committee that the conference does not have. */
+export async function assertOfferedIn(
+	conferenceId: string,
+	ref: Parameters<typeof offeredIn>[1],
+	roleKinds?: readonly ConferenceRoleKind[]
+) {
+	if (!(await offeredIn(conferenceId, ref, roleKinds))) {
 		throw apiError('INVALID_INPUT', m.roleNotOnOffer());
 	}
 }
@@ -378,8 +381,8 @@ export async function assertOfferedIn(conferenceId: string, role: Parameters<typ
 export async function assertCustomRolesOf(conferenceId: string, roleIds: readonly string[]) {
 	const unique = [...new Set(roleIds)];
 	if (unique.length === 0) return;
-	const roles = await db.query.customConferenceRole.findMany({
-		where: { id: { in: unique }, conferenceId },
+	const roles = await db.query.conferenceRole.findMany({
+		where: { id: { in: unique }, conferenceId, kind: 'CUSTOM' },
 		columns: { id: true }
 	});
 	if (roles.length !== unique.length) {
@@ -396,11 +399,8 @@ export async function assertCustomRolesOf(conferenceId: string, roleIds: readonl
  * follows the masks everywhere else (relations, `where`, `orderBy`), so nothing else is needed.
  */
 
-/** The columns that carry a delegation's assignment. */
-export const DELEGATION_ASSIGNMENT = {
-	assignedNationAlpha3Code: false,
-	assignedNonStateActorId: false
-} as const;
+/** The column that carries a delegation's assignment. */
+export const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
 
 /** The column that carries the committee a delegate was seated in. */
 export const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;

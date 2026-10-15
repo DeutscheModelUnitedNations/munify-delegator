@@ -14,7 +14,7 @@
 	let { conferenceId }: Props = $props();
 
 	// In one derived, so none of the three waits on another.
-	const [committees, nations, delegations] = $derived(
+	const [committees, nationRoles, delegations] = $derived(
 		await Promise.all([
 			client.liveQuery.committees({
 				__args: { where: { conferenceId: { eq: conferenceId } } },
@@ -23,21 +23,27 @@
 				abbreviation: true,
 				numOfSeatsPerDelegation: true
 			}),
-			client.liveQuery.nations({
-				__args: { where: { committees: { conferenceId: { eq: conferenceId } } } },
-				alpha2Code: true,
-				alpha3Code: true,
+			client.liveQuery.conferenceRoles({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						kind: 'NATION',
+						committees: { conferenceId: { eq: conferenceId } }
+					}
+				},
+				id: true,
+				nation: { alpha2Code: true, alpha3Code: true },
 				committees: { id: true, numOfSeatsPerDelegation: true }
 			}),
 			client.liveQuery.delegations({
 				__args: {
 					where: {
 						conferenceId: { eq: conferenceId },
-						assignedNationAlpha3Code: { isNotNull: true }
+						assignedRole: { kind: 'NATION' }
 					}
 				},
 				id: true,
-				assignedNation: { alpha3Code: true },
+				assignedRoleId: true,
 				members: {
 					id: true,
 					assignedCommittee: { id: true },
@@ -45,6 +51,22 @@
 				}
 			})
 		])
+	);
+
+	/** The nations seated in the conference's committees, each with the id of its role. */
+	const nations = $derived(
+		nationRoles.flatMap((role) =>
+			role.nation
+				? [
+						{
+							roleId: role.id,
+							alpha2Code: role.nation.alpha2Code,
+							alpha3Code: role.nation.alpha3Code,
+							committees: role.committees
+						}
+					]
+				: []
+		)
 	);
 
 	const sortedNations = $derived(
@@ -57,13 +79,13 @@
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
-	const addParticipant = async (alpha3Code: string, committeeId: string) => {
+	const addParticipant = async (roleId: string, committeeId: string) => {
 		if (!user?.id) return;
 		await client.mutate.createAppliedDelegationMember({
 			__args: {
 				userId: user.id,
 				conferenceId,
-				assignedNationAlpha3Code: alpha3Code,
+				assignedRoleId: roleId,
 				assignedCommitteeId: committeeId
 			},
 			id: true
@@ -115,7 +137,7 @@
 	<AddParticipantBtn
 		bind:user
 		targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
-		addParticipant={async () => await addParticipant(nation.alpha3Code, committee.id)}
+		addParticipant={async () => await addParticipant(nation.roleId, committee.id)}
 		{warning}
 	/>
 {/snippet}
@@ -169,7 +191,7 @@
 {/snippet}
 
 {#snippet nationRow(nation: Nation)}
-	{@const delegation = delegations.find((d) => d.assignedNation?.alpha3Code === nation.alpha3Code)}
+	{@const delegation = delegations.find((d) => d.assignedRoleId === nation.roleId)}
 	{@const sumSeats = nationSeatTotal(nation)}
 	<tr>
 		<th class="z-10! bg-inherit text-left font-normal">

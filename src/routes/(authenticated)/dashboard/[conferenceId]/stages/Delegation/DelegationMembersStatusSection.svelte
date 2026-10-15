@@ -29,7 +29,7 @@
 						pronouns: true,
 						email: true,
 						birthday: true,
-						conferenceParticipantStatus: {
+						conferenceParticipants: {
 							termsAndConditions: true,
 							guardianConsent: true,
 							mediaConsent: true,
@@ -51,7 +51,7 @@
 >
 	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
 		{#each delegation.members as member (member.id)}
-			{@const participantStatus = member.user.conferenceParticipantStatus.find(
+			{@const participantStatus = member.user.conferenceParticipants.find(
 				(x) => x.conference.id === conferenceId
 			)}
 			<DelegationStatusTableEntry

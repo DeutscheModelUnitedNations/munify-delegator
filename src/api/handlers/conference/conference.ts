@@ -5,7 +5,6 @@ import { NationRef } from '$api/handlers/nation/nation';
 import { enum_ } from '$api/rumble';
 import { eq, max } from 'drizzle-orm';
 import { UserRef } from '$api/handlers/user/user';
-import { distinctNationCodes } from '$api/handlers/schoolSuggestion/conferenceAggregates';
 import {
 	loadSchoolRows,
 	refreshSchoolSuggestions
@@ -33,9 +32,8 @@ import {
 import {
 	committeePubsub,
 	conferencePubsub,
-	customConferenceRolePubsub,
+	conferenceRolePubsub,
 	delegationPubsub,
-	nonStateActorPubsub,
 	schoolSuggestionPubsub,
 	schoolSuggestionVariantPubsub,
 	singleParticipantPubsub
@@ -82,9 +80,9 @@ const ConferenceRef = object({
 			type: 'Int',
 			resolve: async (conference) => {
 				const [highest] = await db
-					.select({ max: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
-					.from(schema.conferenceParticipantStatus)
-					.where(eq(schema.conferenceParticipantStatus.conferenceId, conference.id));
+					.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
+					.from(schema.conferenceParticipant)
+					.where(eq(schema.conferenceParticipant.conferenceId, conference.id));
 
 				return (highest?.max ?? 0) + 1;
 			}
@@ -226,8 +224,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			conferencePubsub.created();
 			committeePubsub.created();
-			customConferenceRolePubsub.created();
-			nonStateActorPubsub.created();
+			conferenceRolePubsub.created();
 
 			return db.query.conference
 				.findFirst(
@@ -242,30 +239,25 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Every nation seated in any of a conference's committees, deduplicated.
-	 *
-	 * A nation can sit in several committees, so the flattened list has repeats; dedup is by
-	 * alpha-2 code, matching the legacy behaviour.
-	 */
+	/** Every nation seated in any of a conference's committees, each once. */
 	getAllConferenceNations: t.drizzleField({
 		type: [NationRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const conference = await db.query.conference
+			await db.query.conference
 				.findFirst({
 					...(await ctx.abilities.conference.filter('read')).merge({
 						where: { id: args.conferenceId }
 					}).query.single,
-					with: { committees: { with: { nations: true } } }
+					columns: { id: true }
 				})
 				.then(assertFindFirstExists);
 
-			const alpha3Codes = distinctNationCodes(conference.committees);
-			if (alpha3Codes.length === 0) return [];
-
-			// Re-queried through `query()` so the caller's field selection is honoured.
-			return db.query.nation.findMany(query({ where: { alpha3Code: { in: alpha3Codes } } }));
+			return db.query.nation.findMany(
+				query({
+					where: { conferenceRoles: { conferenceId: args.conferenceId, committees: true } }
+				})
+			);
 		}
 	})
 }));

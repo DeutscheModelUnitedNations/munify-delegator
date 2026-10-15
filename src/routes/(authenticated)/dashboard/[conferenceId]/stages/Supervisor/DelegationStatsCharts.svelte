@@ -19,7 +19,7 @@
 					id: true,
 					user: {
 						birthday: true,
-						conferenceParticipantStatus: {
+						conferenceParticipants: {
 							termsAndConditions: true,
 							guardianConsent: true,
 							mediaConsent: true,
@@ -29,8 +29,7 @@
 					},
 					delegation: {
 						id: true,
-						assignedNation: { alpha3Code: true },
-						assignedNonStateActor: { id: true },
+						assignedRole: { id: true },
 						papers: { id: true, status: true }
 					}
 				}
@@ -42,9 +41,7 @@
 
 	/** Only students who got a role count: the charts are about preparing for the conference. */
 	const members = $derived(
-		supervisor.supervisedDelegationMembers.filter(
-			(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
-		)
+		supervisor.supervisedDelegationMembers.filter((x) => x.delegation.assignedRole)
 	);
 
 	/** Each delegation's papers once, however many of its members this supervisor supervises. */
@@ -64,7 +61,7 @@
 	};
 
 	const participantStatusOf = (member: (typeof members)[number]) =>
-		member.user.conferenceParticipantStatus?.find((s) => s.conference.id === conferenceId);
+		member.user.conferenceParticipants?.find((s) => s.conference.id === conferenceId);
 
 	// Calculate payment status counts
 	let paymentStats = $derived(

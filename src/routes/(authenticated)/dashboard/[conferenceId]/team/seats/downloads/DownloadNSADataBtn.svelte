@@ -13,12 +13,12 @@
 			client.query.delegationMembers({
 				__args: {
 					where: {
-						delegation: { assignedNonStateActorId: { isNotNull: true } },
-						conferenceId: { eq: conferenceId }
+						delegation: { assignedRole: { kind: 'NON_STATE_ACTOR' } },
+						conference: { id: { eq: conferenceId } }
 					}
 				},
 				id: true,
-				delegation: { id: true, assignedNonStateActor: { id: true, abbreviation: true } },
+				delegation: { id: true, assignedRole: { abbreviation: true } },
 				user: { id: true, givenName: true, familyName: true, email: true }
 			}),
 			fetchConferenceTitle(conferenceId)
@@ -33,9 +33,9 @@
 			[
 				[m.name(), m.firstName(), m.lastName(), m.email()],
 				...[...members]
-					.sort(compareByText((member) => member.delegation.assignedNonStateActor?.abbreviation))
+					.sort(compareByText((member) => member.delegation.assignedRole?.abbreviation))
 					.map((member) => [
-						member.delegation.assignedNonStateActor?.abbreviation,
+						member.delegation.assignedRole?.abbreviation,
 						member.user.givenName,
 						member.user.familyName,
 						member.user.email

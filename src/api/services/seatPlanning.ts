@@ -13,13 +13,13 @@ import { apiError } from '$api/services/errors/apiError';
 type RegionalBaseline = (typeof schema.regionalBaseline.enumValues)[number];
 
 /**
- * Delegation members that block removing `nationAlpha3Code` from `committeeId`: members of the
- * delegation holding that nation who are assigned to exactly that committee.
+ * Delegation members that block removing the nation role `roleId` from `committeeId`: members of
+ * the delegation holding that role who are assigned to exactly that committee.
  */
-export function seatRemovalBlockersWhere(committeeId: string, nationAlpha3Code: string) {
+export function seatRemovalBlockersWhere(committeeId: string, roleId: string) {
 	return {
 		assignedCommitteeId: committeeId,
-		delegation: { assignedNationAlpha3Code: nationAlpha3Code }
+		delegation: { assignedRoleId: roleId }
 	};
 }
 
@@ -41,7 +41,7 @@ function minSeatsPerDelegation(assignedMembers: AssignedMember[]) {
 
 interface SeatCountCommittee {
 	numOfSeatsPerDelegation: number;
-	nations: unknown[];
+	roles: unknown[];
 }
 
 /**
@@ -50,13 +50,13 @@ interface SeatCountCommittee {
  */
 export function totalSeats(
 	committees: SeatCountCommittee[],
-	nonStateActors: { seatAmount: number }[]
+	nonStateActors: { seatAmount: number | null }[]
 ) {
 	const committeeSeats = committees.reduce(
-		(sum, committee) => sum + committee.nations.length * committee.numOfSeatsPerDelegation,
+		(sum, committee) => sum + committee.roles.length * committee.numOfSeatsPerDelegation,
 		0
 	);
-	const nsaSeats = nonStateActors.reduce((sum, nsa) => sum + nsa.seatAmount, 0);
+	const nsaSeats = nonStateActors.reduce((sum, nsa) => sum + (nsa.seatAmount ?? 0), 0);
 	return committeeSeats + nsaSeats;
 }
 
@@ -80,7 +80,8 @@ export function assertSeatsPerDelegationAllowed(
 }
 
 interface DelegationWithMembers {
-	assignedNationAlpha3Code: string | null;
+	/** Set when the delegation holds a nation. */
+	nationAlpha3Code: string | null;
 	members: {
 		assignedCommitteeId: string | null;
 		user: { givenName: string; familyName: string };
@@ -92,8 +93,8 @@ interface DelegationWithMembers {
  * assigned to that committee, with the names of those members.
  */
 export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
-	return delegations.flatMap(({ assignedNationAlpha3Code, members }) => {
-		if (!assignedNationAlpha3Code) return [];
+	return delegations.flatMap(({ nationAlpha3Code, members }) => {
+		if (!nationAlpha3Code) return [];
 
 		const namesByCommittee = new Map<string, string[]>();
 		for (const { assignedCommitteeId, user } of members) {
@@ -105,7 +106,7 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 
 		return [...namesByCommittee].map(([committeeId, memberNames]) => ({
 			committeeId,
-			nationAlpha3Code: assignedNationAlpha3Code,
+			nationAlpha3Code,
 			memberNames
 		}));
 	});
@@ -125,7 +126,7 @@ interface NonStateActorUpdateInput {
  */
 export function nonStateActorUpdateData(
 	data: NonStateActorUpdateInput
-): Partial<typeof schema.nonStateActor.$inferInsert> {
+): Partial<typeof schema.conferenceRole.$inferInsert> {
 	assertSeatsPerDelegationAllowed(data.seatAmount, []);
 
 	return {

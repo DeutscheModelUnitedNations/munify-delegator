@@ -70,7 +70,7 @@ describe('seatBadgeValues', () => {
 		expect(
 			seatBadgeValues(
 				{
-					delegation: { assignedNation: { alpha3Code: 'DEU', alpha2Code: 'DE' } },
+					delegation: { assignedRole: { nation: { alpha3Code: 'DEU', alpha2Code: 'DE' } } },
 					assignedCommittee: { abbreviation: 'GA' }
 				},
 				(code) => `name of ${code}`

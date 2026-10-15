@@ -1,18 +1,32 @@
 import { describe, expect, test } from 'vitest';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import type { PaperDelegationRole } from './paperDisplay';
 import { groupPapersByDelegation } from './supervisedPapers';
 
-const germany = {
+interface Delegation {
+	id: string;
+	assignedRole: PaperDelegationRole | null;
+}
+
+const germany: Delegation = {
 	id: 'deu',
-	assignedNation: { alpha2Code: 'de', alpha3Code: 'DEU' },
-	assignedNonStateActor: null
+	assignedRole: {
+		kind: 'NATION',
+		name: null,
+		fontAwesomeIcon: null,
+		nation: { alpha2Code: 'de', alpha3Code: 'DEU' }
+	}
 };
-const amnesty = {
+const amnesty: Delegation = {
 	id: 'ai',
-	assignedNation: null,
-	assignedNonStateActor: { name: 'Amnesty', fontAwesomeIcon: 'candle' }
+	assignedRole: {
+		kind: 'NON_STATE_ACTOR',
+		name: 'Amnesty',
+		fontAwesomeIcon: 'candle',
+		nation: null
+	}
 };
-const nobody = { id: 'x', assignedNation: null, assignedNonStateActor: null };
+const nobody: Delegation = { id: 'x', assignedRole: null };
 
 describe('groupPapersByDelegation', () => {
 	test('is empty without papers', () => {

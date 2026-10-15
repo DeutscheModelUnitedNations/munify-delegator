@@ -49,7 +49,11 @@ export async function loadAnswerOption(args: {
  */
 export async function saveSurveyAnswer(
 	option: Awaited<ReturnType<typeof loadAnswerOption>>,
-	answer: { subject: string; ignoresLimits: boolean; updatableAnswerId: string | undefined }
+	answer: {
+		subjectParticipantId: string;
+		ignoresLimits: boolean;
+		updatableAnswerId: string | undefined;
+	}
 ) {
 	if (!answer.ignoresLimits) assertOptionOpen(option);
 
@@ -66,12 +70,12 @@ export async function saveSurveyAnswer(
 					.insert(schema.surveyAnswer)
 					.values({
 						questionId: option.questionId,
-						userId: answer.subject,
+						conferenceParticipantId: answer.subjectParticipantId,
 						optionId: option.id
 					})
 					// Two tabs answering at once would otherwise collide on the unique index.
 					.onConflictDoUpdate({
-						target: [schema.surveyAnswer.questionId, schema.surveyAnswer.userId],
+						target: [schema.surveyAnswer.questionId, schema.surveyAnswer.conferenceParticipantId],
 						set: { optionId: option.id }
 					})
 					.returning({ id: schema.surveyAnswer.id })

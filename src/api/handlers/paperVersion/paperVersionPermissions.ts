@@ -7,7 +7,7 @@ export function registerPaperVersionAbilities() {
 
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {
 		const id = userId(ctx);
-		return id ? { where: { paper: { author: { id } } } } : undefined;
+		return id ? { where: { paper: { authorParticipant: { userId: id } } } } : undefined;
 	});
 
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {
@@ -34,7 +34,7 @@ export function registerPaperVersionAbilities() {
 						status: { ne: 'DRAFT' },
 						paper: {
 							status: { ne: 'DRAFT' },
-							delegation: { members: { supervisors: { user: { id } } } }
+							delegation: { members: { supervisors: { participant: { userId: id } } } }
 						}
 					}
 				}

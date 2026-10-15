@@ -16,7 +16,7 @@ export async function fetchNewResolutionContext(conferenceId: string, userId: st
 	const [delegationMembers, conference] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
+				where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 			},
 			id: true,
 			assignedCommittee: {
@@ -28,8 +28,7 @@ export async function fetchNewResolutionContext(conferenceId: string, userId: st
 			},
 			delegation: {
 				id: true,
-				assignedNation: { alpha3Code: true },
-				assignedNonStateActor: { id: true, name: true }
+				assignedRole: { kind: true, name: true, nation: { alpha3Code: true } }
 			}
 		}),
 		// What the resolution header prints about the conference

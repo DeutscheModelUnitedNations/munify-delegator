@@ -15,22 +15,20 @@ export interface SeedBatch {
 	storedObject: { key: string; bytes: Uint8Array; mimeType: string }[];
 	conference: (typeof schema.conference.$inferInsert)[];
 	committee: (typeof schema.committee.$inferInsert)[];
-	committeeToNation: (typeof schema.committeeToNation.$inferInsert)[];
+	conferenceRole: (typeof schema.conferenceRole.$inferInsert)[];
+	committeeToRole: (typeof schema.committeeToRole.$inferInsert)[];
 	committeeAgendaItem: (typeof schema.committeeAgendaItem.$inferInsert)[];
-	nonStateActor: (typeof schema.nonStateActor.$inferInsert)[];
-	customConferenceRole: (typeof schema.customConferenceRole.$inferInsert)[];
 	delegation: (typeof schema.delegation.$inferInsert)[];
 	delegationMember: (typeof schema.delegationMember.$inferInsert)[];
 	roleApplication: (typeof schema.roleApplication.$inferInsert)[];
 	singleParticipant: (typeof schema.singleParticipant.$inferInsert)[];
-	customConferenceRoleToSingleParticipant: (typeof schema.customConferenceRoleToSingleParticipant.$inferInsert)[];
+	singleParticipantRoleWish: (typeof schema.singleParticipantRoleWish.$inferInsert)[];
 	conferenceSupervisor: (typeof schema.conferenceSupervisor.$inferInsert)[];
-	conferenceSupervisorToDelegationMember: (typeof schema.conferenceSupervisorToDelegationMember.$inferInsert)[];
-	conferenceSupervisorToSingleParticipant: (typeof schema.conferenceSupervisorToSingleParticipant.$inferInsert)[];
+	supervision: (typeof schema.supervision.$inferInsert)[];
 	teamMember: (typeof schema.teamMember.$inferInsert)[];
 	teamMemberInvitation: (typeof schema.teamMemberInvitation.$inferInsert)[];
 	waitingListEntry: (typeof schema.waitingListEntry.$inferInsert)[];
-	conferenceParticipantStatus: (typeof schema.conferenceParticipantStatus.$inferInsert)[];
+	conferenceParticipant: (typeof schema.conferenceParticipant.$inferInsert)[];
 	attendanceSession: (typeof schema.attendanceSession.$inferInsert)[];
 	attendanceEntry: (typeof schema.attendanceEntry.$inferInsert)[];
 	paymentTransaction: (typeof schema.paymentTransaction.$inferInsert)[];
@@ -63,22 +61,20 @@ export function emptyBatch(): SeedBatch {
 		storedObject: [],
 		conference: [],
 		committee: [],
-		committeeToNation: [],
+		conferenceRole: [],
+		committeeToRole: [],
 		committeeAgendaItem: [],
-		nonStateActor: [],
-		customConferenceRole: [],
 		delegation: [],
 		delegationMember: [],
 		roleApplication: [],
 		singleParticipant: [],
-		customConferenceRoleToSingleParticipant: [],
+		singleParticipantRoleWish: [],
 		conferenceSupervisor: [],
-		conferenceSupervisorToDelegationMember: [],
-		conferenceSupervisorToSingleParticipant: [],
+		supervision: [],
 		teamMember: [],
 		teamMemberInvitation: [],
 		waitingListEntry: [],
-		conferenceParticipantStatus: [],
+		conferenceParticipant: [],
 		attendanceSession: [],
 		attendanceEntry: [],
 		paymentTransaction: [],
@@ -121,15 +117,13 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
 	await insertChunked(batch.conference, (rows) => db.insert(s.conference).values(rows));
 	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));
-	await insertChunked(batch.committeeToNation, (rows) =>
-		db.insert(s.committeeToNation).values(rows)
-	);
+	await insertChunked(batch.conferenceRole, (rows) => db.insert(s.conferenceRole).values(rows));
+	await insertChunked(batch.committeeToRole, (rows) => db.insert(s.committeeToRole).values(rows));
 	await insertChunked(batch.committeeAgendaItem, (rows) =>
 		db.insert(s.committeeAgendaItem).values(rows)
 	);
-	await insertChunked(batch.nonStateActor, (rows) => db.insert(s.nonStateActor).values(rows));
-	await insertChunked(batch.customConferenceRole, (rows) =>
-		db.insert(s.customConferenceRole).values(rows)
+	await insertChunked(batch.conferenceParticipant, (rows) =>
+		db.insert(s.conferenceParticipant).values(rows)
 	);
 	await insertChunked(batch.delegation, (rows) => db.insert(s.delegation).values(rows));
 	await insertChunked(batch.delegationMember, (rows) => db.insert(s.delegationMember).values(rows));
@@ -137,26 +131,18 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.singleParticipant, (rows) =>
 		db.insert(s.singleParticipant).values(rows)
 	);
-	await insertChunked(batch.customConferenceRoleToSingleParticipant, (rows) =>
-		db.insert(s.customConferenceRoleToSingleParticipant).values(rows)
+	await insertChunked(batch.singleParticipantRoleWish, (rows) =>
+		db.insert(s.singleParticipantRoleWish).values(rows)
 	);
 	await insertChunked(batch.conferenceSupervisor, (rows) =>
 		db.insert(s.conferenceSupervisor).values(rows)
 	);
-	await insertChunked(batch.conferenceSupervisorToDelegationMember, (rows) =>
-		db.insert(s.conferenceSupervisorToDelegationMember).values(rows)
-	);
-	await insertChunked(batch.conferenceSupervisorToSingleParticipant, (rows) =>
-		db.insert(s.conferenceSupervisorToSingleParticipant).values(rows)
-	);
+	await insertChunked(batch.supervision, (rows) => db.insert(s.supervision).values(rows));
 	await insertChunked(batch.teamMember, (rows) => db.insert(s.teamMember).values(rows));
 	await insertChunked(batch.teamMemberInvitation, (rows) =>
 		db.insert(s.teamMemberInvitation).values(rows)
 	);
 	await insertChunked(batch.waitingListEntry, (rows) => db.insert(s.waitingListEntry).values(rows));
-	await insertChunked(batch.conferenceParticipantStatus, (rows) =>
-		db.insert(s.conferenceParticipantStatus).values(rows)
-	);
 	await insertChunked(batch.attendanceSession, (rows) =>
 		db.insert(s.attendanceSession).values(rows)
 	);

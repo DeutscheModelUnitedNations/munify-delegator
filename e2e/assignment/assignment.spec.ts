@@ -9,6 +9,7 @@ import {
 	E2E_SPLIT_MEMBER_1_ID,
 	E2E_SPLIT_MEMBER_2_ID
 } from '../seed/seed';
+import { nationRoleId } from '../support/roles';
 
 // The draft is planned through the API: the board's drag and drop (@thisux/sveltednd) is flaky to
 // drive from Playwright and not what is under test here. Applying goes through the finish tab,
@@ -43,18 +44,19 @@ test('an admin plans a nation for a delegation and applies it', async ({ page })
 
 	const planned = await gql(
 		page,
-		`mutation ($d: ID!, $n: String) { assignDelegation(delegationId: $d, nationAlpha3Code: $n) }`,
-		{ d: E2E_ASSIGNMENT_DELEGATION_ID, n: E2E_ASSIGNMENT_NATION_ALPHA3 }
+		`mutation ($d: ID!, $r: ID) { assignDelegation(delegationId: $d, roleId: $r) }`,
+		{
+			d: E2E_ASSIGNMENT_DELEGATION_ID,
+			r: await nationRoleId(page, E2E_CONFERENCE_ID, E2E_ASSIGNMENT_NATION_ALPHA3)
+		}
 	);
 	expect(planned.data?.assignDelegation, JSON.stringify(planned)).toBe(true);
 
 	// Planned is not applied: the registration is untouched until the finish tab writes it.
-	const before = await gql(
-		page,
-		`query ($d: ID!) { delegation(id: $d) { assignedNationAlpha3Code } }`,
-		{ d: E2E_ASSIGNMENT_DELEGATION_ID }
-	);
-	expect(before.data?.delegation).toEqual({ assignedNationAlpha3Code: null });
+	const before = await gql(page, `query ($d: ID!) { delegation(id: $d) { assignedRoleId } }`, {
+		d: E2E_ASSIGNMENT_DELEGATION_ID
+	});
+	expect(before.data?.delegation).toEqual({ assignedRoleId: null });
 
 	await applyFromFinishTab(page);
 
@@ -63,12 +65,12 @@ test('an admin plans a nation for a delegation and applies it', async ({ page })
 			async () => {
 				const json = await gql(
 					page,
-					`query ($d: ID!) { delegation(id: $d) { assignedNation { alpha3Code } } }`,
+					`query ($d: ID!) { delegation(id: $d) { assignedRole { nationAlpha3Code } } }`,
 					{ d: E2E_ASSIGNMENT_DELEGATION_ID }
 				);
 				const delegation = json.data?.delegation as
-					{ assignedNation: { alpha3Code: string } | null } | undefined;
-				return delegation?.assignedNation?.alpha3Code;
+					{ assignedRole: { nationAlpha3Code: string | null } | null } | undefined;
+				return delegation?.assignedRole?.nationAlpha3Code;
 			},
 			{ timeout: 15_000 }
 		)
@@ -102,7 +104,7 @@ test('an admin splits a delegation into two single-member delegations', async ({
 				const json = await gql(
 					page,
 					`query {
-						delegationMembers(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, userId: { in: ${userIds} } }) {
+						delegationMembers(where: { conference: { id: { eq: "${E2E_CONFERENCE_ID}" } }, user: { id: { in: ${userIds} } } }) {
 							delegation { id members { id } }
 						}
 					}`

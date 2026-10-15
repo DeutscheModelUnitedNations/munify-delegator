@@ -1,0 +1,195 @@
+import { snakeCase, text, integer, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { defaultIdAndTimestamps, implicitManyToMany, trigramIndex } from './helpers';
+import { userRef } from './users';
+import { conferenceRef } from './conference';
+import { committee } from './committees';
+import { conferenceRole } from './roles';
+import { participantRef } from './participants';
+
+/** Registrations: delegations, their members, single participants and their wishes. */
+
+/**
+ * What a delegation or a single participant applied with, and whether they sent it. `applied`
+ * is the step from registering to applying; the texts are the application's.
+ */
+const applicationColumns = () => ({
+	applied: boolean().default(false).notNull(),
+	school: text(),
+	motivation: text(),
+	experience: text()
+});
+
+export const delegation = snakeCase.table(
+	'delegation',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('restrict'),
+		entryCode: text().notNull(),
+		...applicationColumns(),
+		/** A nation or non-state actor. */
+		assignedRoleId: text().references(() => conferenceRole.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		}),
+		/**
+		 * How many members the delegation has. Kept by a trigger on `delegation_member` (see the
+		 * `delegation_member_count` migration), so the assignment board can ask for the delegations
+		 * of one group size instead of reading them all.
+		 */
+		memberCount: integer().default(0).notNull()
+	},
+	(table) => [
+		// The assignment board's pool: the delegations of one size in a conference.
+		index('delegation_conference_id_member_count_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.memberCount.asc().nullsLast()
+		),
+		// A role belongs to one conference, so this is one delegation per role and conference.
+		uniqueIndex('delegation_assigned_role_id_key').using(
+			'btree',
+			table.assignedRoleId.asc().nullsLast()
+		),
+		uniqueIndex('delegation_conference_id_entry_code_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.entryCode.asc().nullsLast()
+		),
+		// rumble's `search` argument; see `trigramIndex`.
+		trigramIndex('delegation_id_trgm', table.id),
+		trigramIndex('delegation_school_trgm', table.school),
+		// The management tables search these with `ilike '%word%'`, which the same indexes serve.
+		trigramIndex('delegation_entry_code_trgm', table.entryCode),
+		trigramIndex('delegation_motivation_trgm', table.motivation),
+		trigramIndex('delegation_experience_trgm', table.experience),
+		// paging through a conference's delegations, newest first
+		index('delegation_conference_id_created_at_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.createdAt.desc().nullsLast()
+		)
+	]
+);
+
+export const delegationMember = snakeCase.table(
+	'delegation_member',
+	{
+		...defaultIdAndTimestamps,
+		delegationId: text()
+			.notNull()
+			.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		/** Who the member is; the delegation and this row are in the same conference (trigger). */
+		conferenceParticipantId: participantRef(),
+		isHeadDelegate: boolean().notNull(),
+		assignedCommitteeId: text().references(() => committee.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		})
+	},
+	(table) => [
+		// a delegation's members: the relation, the member counts and the cascade from the delegation
+		index('delegation_member_delegation_id_idx').using(
+			'btree',
+			table.delegationId.asc().nullsLast()
+		),
+		// One membership per person and conference: the participant row is per person and conference.
+		uniqueIndex('delegation_member_conference_participant_id_key').using(
+			'btree',
+			table.conferenceParticipantId.asc().nullsLast()
+		)
+	]
+);
+
+export const singleParticipant = snakeCase.table(
+	'single_participant',
+	{
+		...defaultIdAndTimestamps,
+		/** Who applies; it says which conference and who. */
+		conferenceParticipantId: participantRef(),
+		...applicationColumns(),
+		/** A custom role. */
+		assignedRoleId: text().references(() => conferenceRole.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		}),
+		assignmentDetails: text()
+	},
+	(table) => [
+		// One single registration per person and conference.
+		uniqueIndex('single_participant_conference_participant_id_key').using(
+			'btree',
+			table.conferenceParticipantId.asc().nullsLast()
+		),
+		trigramIndex('single_participant_id_trgm', table.id),
+		trigramIndex('single_participant_school_trgm', table.school),
+		trigramIndex('single_participant_motivation_trgm', table.motivation),
+		trigramIndex('single_participant_experience_trgm', table.experience)
+	]
+);
+
+/** The custom roles a single participant applies for (`a` the role, `b` the participant). */
+export const singleParticipantRoleWish = implicitManyToMany(
+	'single_participant_role_wish',
+	() => conferenceRole.id,
+	() => singleParticipant.id
+);
+
+export const roleApplication = snakeCase.table(
+	'role_application',
+	{
+		...defaultIdAndTimestamps,
+		/** A nation or non-state actor. A wish goes with its role. */
+		roleId: text()
+			.notNull()
+			.references(() => conferenceRole.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		rank: integer().notNull(),
+		delegationId: text()
+			.notNull()
+			.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+	},
+	(table) => [
+		uniqueIndex('role_application_delegation_id_role_id_key').using(
+			'btree',
+			table.delegationId.asc().nullsLast(),
+			table.roleId.asc().nullsLast()
+		),
+		index('role_application_role_id_idx').using('btree', table.roleId.asc().nullsLast()),
+		uniqueIndex('role_application_delegation_id_rank_key').using(
+			'btree',
+			table.delegationId.asc().nullsLast(),
+			table.rank.asc().nullsLast()
+		)
+	]
+);
+
+export const waitingListEntry = snakeCase.table(
+	'waiting_list_entry',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict'),
+		school: text().notNull(),
+		experience: text().notNull(),
+		motivation: text().notNull(),
+		requests: text(),
+		assigned: boolean().default(false).notNull(),
+		hidden: boolean().default(false).notNull()
+	},
+	(table) => [
+		uniqueIndex('waiting_list_entry_conference_id_user_id_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.userId.asc().nullsLast()
+		),
+		trigramIndex('waiting_list_entry_school_trgm', table.school),
+		trigramIndex('waiting_list_entry_experience_trgm', table.experience),
+		trigramIndex('waiting_list_entry_motivation_trgm', table.motivation),
+		trigramIndex('waiting_list_entry_requests_trgm', table.requests),
+		index('waiting_list_entry_conference_id_assigned_created_at_idx').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.assigned.asc().nullsLast(),
+			table.createdAt.asc().nullsLast()
+		)
+	]
+);

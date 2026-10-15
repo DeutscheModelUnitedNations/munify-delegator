@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import allNations from 'world-countries';
 
 /**
@@ -186,14 +186,13 @@ export function splitIntoNametagBins(
  */
 async function seatedSupervisorUserIds(conferenceId: string): Promise<string[]> {
 	const supervisors = await db.query.conferenceSupervisor.findMany({
-		where: { conferenceId, plansOwnAttendenceAtConference: true },
-		columns: { userId: true },
+		where: { participant: { conferenceId }, plansOwnAttendenceAtConference: true },
+		columns: {},
 		with: {
+			participant: { columns: { userId: true } },
 			supervisedDelegationMembers: {
 				columns: {},
-				with: {
-					delegation: { columns: { assignedNationAlpha3Code: true, assignedNonStateActorId: true } }
-				}
+				with: { delegation: { columns: { assignedRoleId: true } } }
 			},
 			supervisedSingleParticipants: { columns: { assignedRoleId: true } }
 		}
@@ -201,30 +200,44 @@ async function seatedSupervisorUserIds(conferenceId: string): Promise<string[]> 
 	return supervisors
 		.filter(
 			(supervisor) =>
-				supervisor.supervisedDelegationMembers.some(
-					(member) =>
-						member.delegation.assignedNationAlpha3Code || member.delegation.assignedNonStateActorId
-				) || supervisor.supervisedSingleParticipants.some((single) => single.assignedRoleId)
+				supervisor.supervisedDelegationMembers.some((member) => member.delegation.assignedRoleId) ||
+				supervisor.supervisedSingleParticipants.some((single) => single.assignedRoleId)
 		)
-		.map((supervisor) => supervisor.userId);
+		.map((supervisor) => supervisor.participant.userId);
+}
+
+/** The delegations that hold a nation, with its code. */
+async function nationDelegationsOf(conferenceId: string) {
+	const delegations = await db.query.delegation.findMany({
+		where: { conferenceId, assignedRole: { kind: 'NATION' } },
+		columns: { memberCount: true },
+		with: { assignedRole: { columns: { nationAlpha3Code: true } } }
+	});
+	return delegations.map((delegation) => ({
+		code: delegation.assignedRole?.nationAlpha3Code ?? null,
+		memberCount: delegation.memberCount
+	}));
 }
 
 /** The bins of a conference's seated participants. Everyone who holds a seat gets a nametag. */
 export async function loadNametagBins(conferenceId: string, binCount: number, language: string) {
 	const [nationDelegations, nonStateActorDelegations, pressAndIndividuals, supervisors] =
 		await Promise.all([
+			nationDelegationsOf(conferenceId),
 			db.query.delegation.findMany({
-				where: { conferenceId, assignedNationAlpha3Code: { isNotNull: true } },
-				columns: { assignedNationAlpha3Code: true, memberCount: true }
-			}),
-			db.query.delegation.findMany({
-				where: { conferenceId, assignedNonStateActorId: { isNotNull: true } },
+				where: { conferenceId, assignedRole: { kind: 'NON_STATE_ACTOR' } },
 				columns: { memberCount: true }
 			}),
 			db.$count(
 				schema.singleParticipant,
 				and(
-					eq(schema.singleParticipant.conferenceId, conferenceId),
+					inArray(
+						schema.singleParticipant.conferenceParticipantId,
+						db
+							.select({ id: schema.conferenceParticipant.id })
+							.from(schema.conferenceParticipant)
+							.where(eq(schema.conferenceParticipant.conferenceId, conferenceId))
+					),
 					isNotNull(schema.singleParticipant.assignedRoleId)
 				)
 			),
@@ -232,13 +245,8 @@ export async function loadNametagBins(conferenceId: string, binCount: number, la
 		]);
 
 	const letterCounts = nationDelegations.flatMap((delegation) =>
-		delegation.assignedNationAlpha3Code
-			? [
-					{
-						letter: nationInitial(delegation.assignedNationAlpha3Code, language),
-						count: delegation.memberCount
-					}
-				]
+		delegation.code
+			? [{ letter: nationInitial(delegation.code, language), count: delegation.memberCount }]
 			: []
 	);
 	const others =
@@ -268,12 +276,9 @@ async function nationGroups(
 	letters: string[],
 	language: string
 ): Promise<NametagBinGroup[]> {
-	const delegations = await db.query.delegation.findMany({
-		where: { conferenceId, assignedNationAlpha3Code: { isNotNull: true } },
-		columns: { assignedNationAlpha3Code: true, memberCount: true }
-	});
+	const delegations = await nationDelegationsOf(conferenceId);
 	return delegations.flatMap((delegation) => {
-		const code = delegation.assignedNationAlpha3Code;
+		const code = delegation.code;
 		if (!code || !letters.includes(nationInitial(code, language))) return [];
 		return [
 			{
@@ -303,7 +308,7 @@ function roleGroup(name: string, icon: string | null, participants: number): Nam
 
 /** Every single participant holds a role of their own; the supervisors form one group. */
 function singleRoleGroups(
-	singles: { assignedRole: { name: string; fontAwesomeIcon: string | null } | null }[],
+	singles: { assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null }[],
 	supervisors: number,
 	language: string
 ) {
@@ -327,12 +332,12 @@ function singleRoleGroups(
 async function otherGroups(conferenceId: string, language: string): Promise<NametagBinGroup[]> {
 	const [nonStateActors, singles, supervisors] = await Promise.all([
 		db.query.delegation.findMany({
-			where: { conferenceId, assignedNonStateActorId: { isNotNull: true } },
+			where: { conferenceId, assignedRole: { kind: 'NON_STATE_ACTOR' } },
 			columns: { memberCount: true },
-			with: { assignedNonStateActor: { columns: { name: true, fontAwesomeIcon: true } } }
+			with: { assignedRole: { columns: { name: true, fontAwesomeIcon: true } } }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { conferenceId, assignedRoleId: { isNotNull: true } },
+			where: { participant: { conferenceId }, assignedRoleId: { isNotNull: true } },
 			columns: {},
 			with: { assignedRole: { columns: { name: true, fontAwesomeIcon: true } } }
 		}),
@@ -341,8 +346,8 @@ async function otherGroups(conferenceId: string, language: string): Promise<Name
 
 	const groups = nonStateActors.map((delegation) =>
 		roleGroup(
-			delegation.assignedNonStateActor?.name ?? '',
-			delegation.assignedNonStateActor?.fontAwesomeIcon ?? null,
+			delegation.assignedRole?.name ?? '',
+			delegation.assignedRole?.fontAwesomeIcon ?? null,
 			delegation.memberCount
 		)
 	);
@@ -388,25 +393,24 @@ export async function loadOwnNametagTable(
 ): Promise<OwnNametagTable | null> {
 	const [member, single, supervisor] = await Promise.all([
 		db.query.delegationMember.findFirst({
-			where: { conferenceId, userId },
+			where: { participant: { conferenceId, userId } },
 			columns: {},
 			with: {
-				delegation: { columns: { assignedNationAlpha3Code: true, assignedNonStateActorId: true } }
+				delegation: {
+					columns: { assignedRoleId: true },
+					with: { assignedRole: { columns: { nationAlpha3Code: true } } }
+				}
 			}
 		}),
 		db.query.singleParticipant.findFirst({
-			where: { conferenceId, userId },
+			where: { participant: { conferenceId, userId } },
 			columns: { assignedRoleId: true }
 		}),
 		seatedSupervisorUserIds(conferenceId).then((ids) => ids.includes(userId))
 	]);
 
-	const nation = member?.delegation.assignedNationAlpha3Code ?? null;
-	const seated =
-		!!nation ||
-		!!supervisor ||
-		!!member?.delegation.assignedNonStateActorId ||
-		!!single?.assignedRoleId;
+	const nation = member?.delegation.assignedRole?.nationAlpha3Code ?? null;
+	const seated = !!supervisor || !!member?.delegation.assignedRoleId || !!single?.assignedRoleId;
 	if (!seated) return null;
 
 	const bins = await loadNametagBins(conferenceId, binCount, language);

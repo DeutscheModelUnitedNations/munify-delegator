@@ -11,7 +11,7 @@ test('a single participant can manage role applications and complete their signu
 	await acceptDialogs(page);
 
 	const participant = makeTestUser('single-signup');
-	await loginAs(page, participant, { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, participant);
 	const conferenceId = await openFirstConferenceForRegistration(page);
 
 	await page.locator('a[href$="/individual"]').click();
@@ -58,7 +58,7 @@ test('a single participant can manage role applications and complete their signu
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { singleParticipants(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${participant.preferred_username}" } }) { applied appliedForRoles { id } } }`
+			query: `query { singleParticipants(where: { conference: { id: { eq: "${conferenceId}" } }, user: { id: { eq: "${participant.preferred_username}" } } }) { applied appliedForRoles { id } } }`
 		}
 	});
 	const data = (await res.json())?.data?.singleParticipants?.[0];

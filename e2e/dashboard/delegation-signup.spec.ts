@@ -19,7 +19,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await acceptDialogs(headPage);
 
 	const headDelegate = makeTestUser('signup-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
+	await loginAs(headPage, headDelegate);
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();
@@ -80,7 +80,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 		// wait for the mutation to land (pool shrinks by one) before adding the next
 		await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
 	}
-	await modal.locator('button[aria-label="Close"]').click();
+	await modal.getByRole('button', { name: /dialog schließen|close dialog/i }).click();
 	await expect(modal).toBeHidden({ timeout: 15_000 });
 
 	const completeSignupButton = headPage.getByRole('button', {

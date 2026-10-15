@@ -17,8 +17,8 @@
 		await client.liveQuery.papers({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
-					authorId: { eq: userId },
+					conference: { id: { eq: conferenceId } },
+					author: { id: { eq: userId } },
 					NOT: { status: 'DRAFT' }
 				}
 			},

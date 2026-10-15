@@ -49,23 +49,6 @@ export function schoolRows(
 }
 
 /**
- * The alpha-3 codes of every nation seated in any of the committees, each once. A nation can sit
- * in several committees; it is deduplicated by alpha-2 code, matching the legacy behaviour.
- */
-export function distinctNationCodes(
-	committees: { nations: { alpha2Code: string; alpha3Code: string }[] }[]
-): string[] {
-	const seen = new Set<string>();
-	const alpha3Codes: string[] = [];
-	for (const nation of committees.flatMap((committee) => committee.nations)) {
-		if (seen.has(nation.alpha2Code)) continue;
-		seen.add(nation.alpha2Code);
-		alpha3Codes.push(nation.alpha3Code);
-	}
-	return alpha3Codes;
-}
-
-/**
  * Cleans a hand-typed school name: commas and periods become spaces, runs of whitespace
  * collapse and the ends are trimmed.
  */

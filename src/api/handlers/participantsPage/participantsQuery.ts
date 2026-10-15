@@ -198,40 +198,48 @@ function orderOf(sort: ParticipantsPageQuery['sort']) {
 	});
 }
 
-/** Every registration of the conference as one row: the person, how they take part, whether seated. */
+/**
+ * Every registration of the conference as one row: the person, how they take part, whether seated.
+ * Delegates, singles and supervisors name their conference and person through their
+ * `conference_participant` (`p`); a supervisor is seated once someone they supervise is.
+ */
 function registrations(conferenceId: string) {
-	const seated = sql`(d.assigned_nation_alpha3_code is not null or d.assigned_non_state_actor_id is not null)`;
+	const seated = sql`(d.assigned_role_id is not null)`;
+	// a nation role has no name of its own, so `dr.name` is the non-state actor's
 	return sql`
-		select dm.user_id, 'DELEGATION_MEMBER' as role, d.assigned_nation_alpha3_code as nation_code,
-			nsa.name as nsa_name, com.name as committee, d.school as school,
+		select p.user_id, 'DELEGATION_MEMBER' as role, dr.nation_alpha3_code as nation_code,
+			dr.name as nsa_name, com.name as committee, d.school as school,
 			dm.is_head_delegate as is_head_delegate, null::text as assigned_role_name,
 			null::text as team_role, null::boolean as plans_own_attendance, ${seated} as accepted
 		from delegation_member dm
+		join conference_participant p on p.id = dm.conference_participant_id
 		join delegation d on d.id = dm.delegation_id
-		left join non_state_actor nsa on nsa.id = d.assigned_non_state_actor_id
+		left join conference_role dr on dr.id = d.assigned_role_id
 		left join committee com on com.id = dm.assigned_committee_id
-		where dm.conference_id = ${conferenceId}
+		where p.conference_id = ${conferenceId}
 		union all
-		select cs.user_id, 'SUPERVISOR', null, null, null, null, null, null, null,
+		select p.user_id, 'SUPERVISOR', null, null, null, null, null, null, null,
 			cs.plans_own_attendence_at_conference,
 			(exists (
-				select 1 from conference_supervisor_to_delegation_member j
-				join delegation_member dm2 on dm2.id = j.b
+				select 1 from supervision j
+				join delegation_member dm2 on dm2.conference_participant_id = j.b
 				join delegation d on d.id = dm2.delegation_id
 				where j.a = cs.id and ${seated}
 			) or exists (
-				select 1 from conference_supervisor_to_single_participant j
-				join single_participant sp2 on sp2.id = j.b
+				select 1 from supervision j
+				join single_participant sp2 on sp2.conference_participant_id = j.b
 				where j.a = cs.id and sp2.assigned_role_id is not null
 			))
 		from conference_supervisor cs
-		where cs.conference_id = ${conferenceId}
+		join conference_participant p on p.id = cs.conference_participant_id
+		where p.conference_id = ${conferenceId}
 		union all
-		select sp.user_id, 'SINGLE_PARTICIPANT', null, null, null, sp.school, null,
+		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, sp.school, null,
 			role.name, null, null, sp.assigned_role_id is not null
 		from single_participant sp
-		left join custom_conference_role role on role.id = sp.assigned_role_id
-		where sp.conference_id = ${conferenceId}
+		join conference_participant p on p.id = sp.conference_participant_id
+		left join conference_role role on role.id = sp.assigned_role_id
+		where p.conference_id = ${conferenceId}
 		union all
 		select tm.user_id, 'TEAM_MEMBER', null, null, null, null, null, null,
 			tm.role::text, null, true
@@ -255,11 +263,14 @@ function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 	const participationCounts = usesCount
 		? sql`left join (
 			select seats.user_id, count(*) as n from (
-				select dm.user_id from delegation_member dm
+				select p.user_id from delegation_member dm
+				join conference_participant p on p.id = dm.conference_participant_id
 				join delegation d on d.id = dm.delegation_id
-				where d.assigned_nation_alpha3_code is not null or d.assigned_non_state_actor_id is not null
+				where d.assigned_role_id is not null
 				union all
-				select sp.user_id from single_participant sp where sp.assigned_role_id is not null
+				select p.user_id from single_participant sp
+				join conference_participant p on p.id = sp.conference_participant_id
+				where sp.assigned_role_id is not null
 			) seats group by seats.user_id
 		) pc on pc.user_id = reg.user_id`
 		: sql``;
@@ -268,7 +279,7 @@ function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 		join "user" u on u.id = reg.user_id
 		${participationCounts}
 		join conference c on c.id = ${args.conferenceId}
-		left join conference_participant_status s
+		left join conference_participant s
 			on s.user_id = reg.user_id and s.conference_id = ${args.conferenceId}
 		${conditions.length > 0 ? sql`where ${sql.join(conditions, sql` and `)}` : sql``}
 	`;

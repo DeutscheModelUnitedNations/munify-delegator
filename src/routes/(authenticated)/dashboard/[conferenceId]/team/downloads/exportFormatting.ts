@@ -67,11 +67,11 @@ export function supervisorRow(
 	];
 }
 
-/** The name of the non-state actor a delegation represents, or an empty cell. */
+/** The name of the non-state actor (the role) a delegation represents, or an empty cell. */
 export function nonStateActorName(delegation: {
-	assignedNonStateActor?: { name: string } | null;
+	assignedRole?: { name?: string | null } | null;
 }): string {
-	return delegation.assignedNonStateActor?.name ?? '';
+	return delegation.assignedRole?.name ?? '';
 }
 
 export interface Badge {

@@ -49,12 +49,11 @@ function delegationMemberListTypes(dm: DelegationMembership): ConferenceListType
 		return [delegation.applied ? 'REGISTRATION_COMPLETED' : 'REGISTRATION_NOT_COMPLETED'];
 	}
 
-	const hasRole = Boolean(
-		delegation.assignedNationAlpha3Code || delegation.assignedNonStateActorId
-	);
+	const kind = delegation.assignedRole?.kind;
+	const hasRole = Boolean(delegation.assignedRoleId);
 	const types: ConferenceListType[] = [];
-	if (delegation.assignedNationAlpha3Code) types.push('DELEGATION_MEMBERS_NATIONS');
-	else if (delegation.assignedNonStateActorId) types.push('DELEGATION_MEMBERS_NSA');
+	if (kind === 'NATION') types.push('DELEGATION_MEMBERS_NATIONS');
+	else if (kind === 'NON_STATE_ACTOR') types.push('DELEGATION_MEMBERS_NSA');
 	if (dm.isHeadDelegate && hasRole) types.push('HEAD_DELEGATES');
 	return [...types, ...releasedRegistrationTypes(delegation.applied, hasRole)];
 }
@@ -64,6 +63,13 @@ function releasedRegistrationTypes(applied: boolean, hasRole: boolean): Conferen
 	if (!applied) return ['REGISTRATION_NOT_COMPLETED'];
 	return hasRole ? ['REGISTRATION_COMPLETED'] : ['REGISTRATION_COMPLETED', 'REJECTED_PARTICIPANTS'];
 }
+
+/** The subscriber role a delegation's role gives its members; a custom role is no delegate's. */
+const DELEGATE_ROLES = {
+	NATION: 'DELEGATE_NATION',
+	NON_STATE_ACTOR: 'DELEGATE_NSA',
+	CUSTOM: undefined
+} as const;
 
 const delegationMemberRule: ListAssignmentRule = {
 	description:
@@ -76,19 +82,15 @@ const delegationMemberRule: ListAssignmentRule = {
 			const { conference } = dm.delegation;
 
 			conferenceAttribs.push({
-				id: dm.conferenceId,
-				role: !conference.assignmentReleased
-					? undefined
-					: dm.delegation.assignedNationAlpha3Code
-						? 'DELEGATE_NATION'
-						: dm.delegation.assignedNonStateActorId
-							? 'DELEGATE_NSA'
-							: undefined,
+				id: conference.id,
+				role: conference.assignmentReleased
+					? DELEGATE_ROLES[dm.delegation.assignedRole?.kind ?? 'CUSTOM']
+					: undefined,
 				title: conference.title
 			});
 
 			for (const type of delegationMemberListTypes(dm)) {
-				listNames.push(createConferenceListName(conference.title, dm.conferenceId, type));
+				listNames.push(createConferenceListName(conference.title, conference.id, type));
 			}
 		}
 
@@ -106,14 +108,14 @@ const singleParticipantRule: ListAssignmentRule = {
 
 		for (const sp of user.singleParticipant) {
 			conferenceAttribs.push({
-				id: sp.conferenceId,
+				id: sp.conference.id,
 				role: 'SINGLE_PARTICIPANT',
 				title: sp.conference.title
 			});
 
 			if (sp.applied) {
 				listNames.push(
-					createConferenceListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_COMPLETED')
+					createConferenceListName(sp.conference.title, sp.conference.id, 'REGISTRATION_COMPLETED')
 				);
 
 				// Nobody hears whether they got a role before the team releases it.
@@ -121,7 +123,7 @@ const singleParticipantRule: ListAssignmentRule = {
 					listNames.push(
 						createConferenceListName(
 							sp.conference.title,
-							sp.conferenceId,
+							sp.conference.id,
 							sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
 						)
 					);
@@ -130,7 +132,7 @@ const singleParticipantRule: ListAssignmentRule = {
 				listNames.push(
 					createConferenceListName(
 						sp.conference.title,
-						sp.conferenceId,
+						sp.conference.id,
 						'REGISTRATION_NOT_COMPLETED'
 					)
 				);
@@ -158,8 +160,7 @@ function supervisorListTypes(supervisor: Supervision): ConferenceListType[] {
 		supervisor.conference.assignmentReleased
 	) {
 		const anyWithRole =
-			delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId) ||
-			singles.some((d) => d.assignedRoleId);
+			delegations.some((d) => d.assignedRoleId) || singles.some((d) => d.assignedRoleId);
 		return anyWithRole ? ['SUPERVISORS'] : [];
 	}
 
@@ -181,14 +182,14 @@ const supervisorRule: ListAssignmentRule = {
 
 		for (const supervisor of user.conferenceSupervisor) {
 			conferenceAttribs.push({
-				id: supervisor.conferenceId,
+				id: supervisor.conference.id,
 				role: 'SUPERVISOR',
 				title: supervisor.conference.title
 			});
 
 			for (const type of supervisorListTypes(supervisor)) {
 				listNames.push(
-					createConferenceListName(supervisor.conference.title, supervisor.conferenceId, type)
+					createConferenceListName(supervisor.conference.title, supervisor.conference.id, type)
 				);
 			}
 		}

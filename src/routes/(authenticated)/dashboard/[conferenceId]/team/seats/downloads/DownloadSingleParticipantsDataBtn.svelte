@@ -14,7 +14,7 @@
 				__args: {
 					where: {
 						assignedRoleId: { isNotNull: true },
-						conferenceId: { eq: conferenceId }
+						conference: { id: { eq: conferenceId } }
 					}
 				},
 				id: true,

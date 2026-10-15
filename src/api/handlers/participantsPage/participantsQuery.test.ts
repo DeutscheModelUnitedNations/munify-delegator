@@ -20,8 +20,7 @@ function whereOf(...filters: ParticipantFilter[]) {
 	const flat = sql.replace(/\s+/g, ' ');
 	const at = flat.lastIndexOf(' where ');
 	// the registrations subquery has `where`s of its own; the filters' one follows the status join
-	const filterWhere =
-		flat.indexOf('conference_participant_status s') < at ? flat.slice(at + 7) : '';
+	const filterWhere = flat.indexOf('conference_participant s') < at ? flat.slice(at + 7) : '';
 	const own = params.filter((p) => p !== 'c');
 	const skipped = params.length - own.length;
 	return {

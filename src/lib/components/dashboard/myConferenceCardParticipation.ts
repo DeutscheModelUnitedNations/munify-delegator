@@ -1,6 +1,7 @@
 import { m } from '$lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { translateTeamRole } from '$lib/utils/enumTranslations';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 export type ApplicationStatus = 'accepted' | 'pending' | 'applied' | 'rejected';
 
@@ -9,13 +10,16 @@ interface AssignedNation {
 	alpha3Code: string;
 }
 
-interface AssignedNonStateActor {
-	name: string;
+/** A delegation's role: a nation (with `nation` set) or a non-state actor (with a name). */
+interface AssignedDelegationRole {
+	kind: ConferenceRoleKind;
+	name: string | null;
 	fontAwesomeIcon: string | null;
+	nation: AssignedNation | null;
 }
 
 interface AssignedRole {
-	name: string;
+	name: string | null;
 	fontAwesomeIcon: string | null;
 }
 
@@ -32,8 +36,7 @@ export interface ParticipationInput {
 		assignedCommittee: AssignedCommittee | null;
 		delegation: {
 			applied: boolean;
-			assignedNation: AssignedNation | null;
-			assignedNonStateActor: AssignedNonStateActor | null;
+			assignedRole: AssignedDelegationRole | null;
 		};
 	} | null;
 	singleParticipant: { applied: boolean; assignedRole: AssignedRole | null } | null;
@@ -42,7 +45,7 @@ export interface ParticipationInput {
 /** What the card reads of a supervisor's students. */
 export interface SupervisedStudentsInput {
 	supervisedDelegationMembers?: ReadonlyArray<{
-		delegation: { assignedNation: object | null; assignedNonStateActor: object | null };
+		delegation: { assignedRole: object | null };
 	}> | null;
 	supervisedSingleParticipants?: ReadonlyArray<{ assignedRole: object | null }> | null;
 }
@@ -66,12 +69,12 @@ function delegationParticipation(
 	conferenceState: string
 ) {
 	const delegation = delegationMember.delegation;
-	const hasAssignment = !!delegation.assignedNation || !!delegation.assignedNonStateActor;
+	const { nation, nonStateActor } = splitRole(delegation.assignedRole);
 	return {
 		type: 'delegation' as const,
-		status: applicationStatus(hasAssignment, delegation.applied, conferenceState),
-		country: delegation.assignedNation,
-		nonStateActor: delegation.assignedNonStateActor,
+		status: applicationStatus(!!delegation.assignedRole, delegation.applied, conferenceState),
+		country: nation,
+		nonStateActor,
 		committee: delegationMember.assignedCommittee,
 		isHeadDelegate: delegationMember.isHeadDelegate
 	};
@@ -85,9 +88,8 @@ export function supervisorParticipation(
 	const delegationMembers = supervisor.supervisedDelegationMembers ?? [];
 	const singleParticipants = supervisor.supervisedSingleParticipants ?? [];
 	const acceptedStudentCount =
-		delegationMembers.filter(
-			(dm) => dm.delegation.assignedNation || dm.delegation.assignedNonStateActor
-		).length + singleParticipants.filter((sp) => sp.assignedRole).length;
+		delegationMembers.filter((dm) => dm.delegation.assignedRole).length +
+		singleParticipants.filter((sp) => sp.assignedRole).length;
 
 	let status: ApplicationStatus = 'rejected';
 	if (acceptedStudentCount > 0) status = 'accepted';
@@ -166,7 +168,7 @@ function delegationRoleText(participation: ReturnType<typeof delegationParticipa
 			country: getFullTranslatedCountryNameFromISO3Code(participation.country.alpha3Code)
 		});
 	}
-	if (participation.nonStateActor) {
+	if (participation.nonStateActor?.name) {
 		return m.delegateFor({ country: participation.nonStateActor.name });
 	}
 	return m.delegation();

@@ -33,7 +33,7 @@
 	}: Props = $props();
 
 	const participantStatus = $derived(
-		user.conferenceParticipantStatus.find((x) => x.conference.id === conferenceId)
+		user.conferenceParticipants.find((x) => x.conference.id === conferenceId)
 	);
 </script>
 

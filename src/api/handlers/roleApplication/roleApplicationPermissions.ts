@@ -54,7 +54,7 @@ export function registerRoleApplicationAbilities() {
  */
 export async function assertCanCreateRoleApplication(
 	ctx: ApiContext,
-	args: { delegationId: string; nationId?: string | null; nonStateActorId?: string | null }
+	args: { delegationId: string; roleId: string }
 ) {
 	const delegation = await db.query.delegation
 		.findFirst({
@@ -65,10 +65,7 @@ export async function assertCanCreateRoleApplication(
 		})
 		.then(assertFindFirstExists);
 
-	await assertOfferedIn(delegation.conferenceId, {
-		assignedNationAlpha3Code: args.nationId,
-		assignedNonStateActorId: args.nonStateActorId
-	});
+	await assertOfferedIn(delegation.conferenceId, { roleId: args.roleId });
 }
 
 /**

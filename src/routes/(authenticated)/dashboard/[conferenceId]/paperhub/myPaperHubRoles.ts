@@ -12,6 +12,11 @@ import { canOpenPaperHub, paperHubAccess } from './paperHubViews';
 export async function fetchMyPaperHubRoles(conferenceId: string) {
 	const user = await getCurrentUser();
 	const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } };
+	// A supervisor reaches the conference and the user through its participant row.
+	const forSupervisor = {
+		conference: { id: { eq: conferenceId } },
+		user: { id: { eq: user.sub } }
+	};
 
 	const [teamMembers, supervisors] = await Promise.all([
 		client.liveQuery.teamMembers({
@@ -23,7 +28,7 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 			role: true
 		}),
 		client.liveQuery.conferenceSupervisors({
-			__args: { where: forUser },
+			__args: { where: forSupervisor },
 			id: true,
 			supervisedDelegationMembers: { delegation: { id: true } }
 		})

@@ -5,7 +5,7 @@
 	import UserSuggestions from './UserSuggestions.svelte';
 	import AssignmentTarget from './AssignmentTarget.svelte';
 	import { untrack, type Snippet } from 'svelte';
-	import { queryParameters } from 'sveltekit-search-params';
+	import { getAssignUser } from './assignUser.svelte';
 	import { page } from '$app/state';
 
 	interface Props {
@@ -24,18 +24,16 @@
 		children
 	}: Props = $props();
 
-	const params = queryParameters({
-		assignUserId: true
-	});
+	const assignUser = getAssignUser();
 
-	let search = $state(params.assignUserId ?? '');
+	let search = $state(assignUser.userId ?? '');
 	let loading = $state(false);
 
 	// Every seat button holds its own modal, so all of them were prefilled from the URL. Follow the
 	// param when it changes, otherwise clearing it after an assignment leaves the old id (and the
 	// user it resolved to) in every other modal.
 	$effect(() => {
-		const prefill = params.assignUserId ?? '';
+		const prefill = assignUser.userId ?? '';
 		untrack(() => {
 			if (prefill === search) return;
 			search = prefill;
@@ -62,6 +60,8 @@
 
 		let stale = false;
 		const forConference = { where: { conferenceId: { eq: conferenceId ?? '' } } };
+		// registrations reach their conference through the participant row
+		const ofConference = { where: { conference: { id: { eq: conferenceId ?? '' } } } };
 		loading = true;
 		const timeout = setTimeout(() => {
 			client.query
@@ -71,9 +71,9 @@
 					givenName: true,
 					familyName: true,
 					email: true,
-					delegationMemberships: { __args: forConference, id: true },
-					singleParticipant: { __args: forConference, id: true },
-					conferenceSupervisor: { __args: forConference, id: true },
+					delegationMemberships: { __args: ofConference, id: true },
+					singleParticipant: { __args: ofConference, id: true },
+					conferenceSupervisor: { __args: ofConference, id: true },
 					teamMember: { __args: forConference, id: true }
 				})
 				.then((found) => {
@@ -135,9 +135,7 @@
 			open = false;
 			user = undefined;
 			search = '';
-			if (params.assignUserId) {
-				params.assignUserId = null;
-			}
+			if (assignUser.userId) assignUser.clear();
 		}}>{m.addUser()}</button
 	>
 {/snippet}

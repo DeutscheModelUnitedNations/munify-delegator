@@ -2,7 +2,7 @@ import { db } from '$api/db/db';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
-	conferenceParticipantStatusPubsub,
+	conferenceParticipantPubsub,
 	paymentTransactionPubsub,
 	userReferenceInPaymentTransactionPubsub
 } from '$api/pubsub';
@@ -33,9 +33,16 @@ schemaBuilder.mutationFields((t) => ({
 			const conference = await db.query.conference
 				.findFirst({ where: { id: args.conferenceId } })
 				.then(assertFindFirstExists);
-			await assertCanCreatePaymentTransaction(ctx, args);
+			const { payerParticipantId, coveredParticipantIds } = await assertCanCreatePaymentTransaction(
+				ctx,
+				args
+			);
 
-			const id = await createPaymentTransaction(conference, args.userId, args.paymentFor);
+			const id = await createPaymentTransaction(
+				conference,
+				payerParticipantId,
+				coveredParticipantIds
+			);
 
 			paymentTransactionPubsub.created();
 			userReferenceInPaymentTransactionPubsub.created();
@@ -64,7 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 			await applyPaymentStatus(transaction, args.assignedStatus, args.recievedAt);
 
 			paymentTransactionPubsub.updated(args.id);
-			conferenceParticipantStatusPubsub.updated();
+			conferenceParticipantPubsub.updated();
 
 			return db.query.paymentTransaction
 				.findFirst(

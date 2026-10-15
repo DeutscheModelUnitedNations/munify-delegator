@@ -31,9 +31,11 @@
 	// it. Read once: this is the form's initial value, and re-reading it mid-edit would discard
 	// what was typed.
 	const [role, [existing]] = await Promise.all([
-		client.liveQuery.customConferenceRole({ __args: { id: roleId }, name: true }),
+		client.liveQuery.conferenceRole({ __args: { id: roleId }, name: true }),
 		client.query.singleParticipants({
-			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+			__args: {
+				where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: user.sub } } }
+			},
 			experience: true,
 			motivation: true,
 			school: true

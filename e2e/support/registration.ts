@@ -16,7 +16,8 @@ export async function openFirstConferenceForRegistration(
 	// one conference, the registration list has no guaranteed order, and picking whichever card
 	// happened to render first made every caller intermittently register for the wrong
 	// conference - which then failed much later, in an unrelated assertion.
-	const registerButton = page.locator(`main a[href*="${conferenceId}"]`).first();
+	// The selector page has no <main>; the conference id in the link is what picks the card.
+	const registerButton = page.locator(`a[href*="${conferenceId}"]`).first();
 	await expect(
 		registerButton,
 		`expected conference ${conferenceId} to be open for registration - is the e2e seed loaded?`

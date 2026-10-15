@@ -6,21 +6,21 @@ import {
 	planParticipantStatusUpsert,
 	setAttendanceForAll,
 	updateStatus
-} from './conferenceParticipantStatusService';
+} from './conferenceParticipantService';
 import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
-	registerConferenceParticipantStatusAbilities
-} from './conferenceParticipantStatusPermissions';
-import { conferenceParticipantStatusPubsub } from '$api/pubsub';
+	registerConferenceParticipantAbilities
+} from './conferenceParticipantPermissions';
+import { conferenceParticipantPubsub } from '$api/pubsub';
 
-registerConferenceParticipantStatusAbilities();
+registerConferenceParticipantAbilities();
 
-const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
+const ConferenceParticipantRef = object({ table: 'conferenceParticipant' });
 
 const BulkStatusUpdateResult = schemaBuilder.simpleObject(
-	'UpdateAllConferenceParticipantStatusResponse',
+	'UpdateAllConferenceParticipantsResponse',
 	{
 		fields: (t) => ({
 			/** How many participants the bulk update touched. */
@@ -28,7 +28,7 @@ const BulkStatusUpdateResult = schemaBuilder.simpleObject(
 		})
 	}
 );
-query({ table: 'conferenceParticipantStatus' });
+query({ table: 'conferenceParticipant' });
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
@@ -39,8 +39,8 @@ schemaBuilder.mutationFields((t) => ({
 	 * user id, or by conference plus user email - the management UI knows different things in
 	 * different places, which is why all three are accepted.
 	 */
-	updateConferenceParticipantStatus: t.drizzleField({
-		type: ConferenceParticipantStatusRef,
+	updateConferenceParticipant: t.drizzleField({
+		type: ConferenceParticipantRef,
 		args: {
 			id: t.arg.id(),
 			conferenceId: t.arg.id({ required: true }),
@@ -68,12 +68,12 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
-			conferenceParticipantStatusPubsub.updated(statusId);
+			conferenceParticipantPubsub.updated(statusId);
 
-			return db.query.conferenceParticipantStatus
+			return db.query.conferenceParticipant
 				.findFirst(
 					query(
-						(await ctx.abilities.conferenceParticipantStatus.filter('read')).merge({
+						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
 							where: { id: statusId }
 						}).query.single
 					)
@@ -83,7 +83,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	/** Bulk attendance toggle across a whole conference, for its participant care. */
-	updateAllConferenceParticipantStatus: t.field({
+	updateAllConferenceParticipants: t.field({
 		type: BulkStatusUpdateResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -93,7 +93,7 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanSetAttendanceForAll(ctx, args.conferenceId);
 			const changed = await setAttendanceForAll(args);
 
-			conferenceParticipantStatusPubsub.created();
+			conferenceParticipantPubsub.created();
 
 			return { changed };
 		}

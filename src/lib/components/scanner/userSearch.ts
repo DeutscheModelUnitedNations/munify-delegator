@@ -1,5 +1,5 @@
 import { client } from '$lib/api/rumbleClient/client';
-import { participation } from '$lib/components/commandPalette/commandPaletteSearch';
+import { participation, registrationIn } from '$lib/components/commandPalette/commandPaletteSearch';
 import { looksLikeUserId, takesPart, type UserSuggestion } from './suggestions';
 
 const SUGGESTION_LIMIT = 5;
@@ -10,7 +10,7 @@ const MIN_SEARCH_LENGTH = 2;
  * Only rows the caller may read come back.
  */
 async function searchCardHolders(conferenceId: string, term: string): Promise<UserSuggestion[]> {
-	const statuses = await client.query.conferenceParticipantStatuses({
+	const statuses = await client.query.conferenceParticipants({
 		__args: {
 			where: { conferenceId: { eq: conferenceId }, accessCardId: { ilike: `%${term}%` } },
 			limit: SUGGESTION_LIMIT
@@ -38,14 +38,15 @@ async function searchCardHolders(conferenceId: string, term: string): Promise<Us
  */
 async function searchNames(conferenceId: string, term: string): Promise<UserSuggestion[]> {
 	const inConference = { conferenceId: { eq: conferenceId } };
+	const registeredIn = registrationIn(conferenceId);
 	const users = await client.query.users({
 		__args: {
 			search: term,
 			where: {
 				OR: [
-					{ delegationMemberships: inConference },
-					{ singleParticipant: inConference },
-					{ conferenceSupervisor: inConference },
+					{ delegationMemberships: registeredIn },
+					{ singleParticipant: registeredIn },
+					{ conferenceSupervisor: registeredIn },
 					{ teamMember: inConference },
 					{ waitingListEntry: inConference }
 				]
@@ -92,7 +93,7 @@ export async function searchUsers(conferenceId: string, term: string): Promise<U
 export async function resolveScannedCode(conferenceId: string, code: string): Promise<string> {
 	if (looksLikeUserId(code)) return code;
 	try {
-		const statuses = await client.query.conferenceParticipantStatuses({
+		const statuses = await client.query.conferenceParticipants({
 			__args: {
 				where: { conferenceId: { eq: conferenceId }, accessCardId: { eq: code } },
 				limit: 1

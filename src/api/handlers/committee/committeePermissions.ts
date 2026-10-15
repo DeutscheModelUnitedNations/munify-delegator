@@ -34,7 +34,7 @@ export async function assertCanCreateCommittee(ctx: ApiContext, conferenceId: st
 
 /**
  * Loads the committee through the caller's update ability, with what an update has to check
- * against: its seats per delegation, nations and assigned members.
+ * against: its seats per delegation, nation roles and assigned members.
  */
 export async function assertCanUpdateCommittee(ctx: ApiContext, id: string) {
 	const updateFilter = (await ctx.abilities.committee.filter('update')).merge({
@@ -45,7 +45,7 @@ export async function assertCanUpdateCommittee(ctx: ApiContext, id: string) {
 			where: updateFilter.query.single.where,
 			columns: { conferenceId: true, numOfSeatsPerDelegation: true },
 			with: {
-				nations: { columns: { alpha3Code: true } },
+				roles: { columns: { id: true } },
 				delegationMembers: { columns: { delegationId: true } }
 			}
 		})

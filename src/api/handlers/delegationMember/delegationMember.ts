@@ -1,6 +1,5 @@
 import { db } from '$api/db/db';
 import { object, query, schemaBuilder } from '$api/rumble';
-import { countGiven } from '$api/services/args';
 import {
 	assignCommittees,
 	joinDelegationByEntryCode,
@@ -25,8 +24,6 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/errors/apiError';
 
 registerDelegationMemberAbilities();
 
@@ -89,25 +86,24 @@ schemaBuilder.mutationFields((t) => ({
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Management placing a user straight into an assigned delegation, bypassing the normal
-	 * application flow. The delegation is created on demand for the nation or non-state actor if
-	 * none exists yet.
+	 * application flow. The delegation is created on demand for the role if none holds it yet.
 	 */
 	createAppliedDelegationMember: t.drizzleField({
 		type: DelegationMemberRef,
 		args: {
 			userId: t.arg.id({ required: true }),
 			conferenceId: t.arg.id({ required: true }),
-			assignedNationAlpha3Code: t.arg.string(),
-			assignedNonStateActorId: t.arg.id(),
+			/** A nation or non-state actor of the conference. */
+			assignedRoleId: t.arg.id({ required: true }),
 			assignedCommitteeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateAppliedDelegationMember(ctx, args.conferenceId);
 
-			if (countGiven(args.assignedNationAlpha3Code, args.assignedNonStateActorId) === 0) {
-				throw apiError('INVALID_INPUT', m.delegationMemberNeedsRole());
-			}
-			await assertOfferedIn(args.conferenceId, args);
+			await assertOfferedIn(args.conferenceId, {
+				roleId: args.assignedRoleId,
+				committeeId: args.assignedCommitteeId
+			});
 
 			const memberId = await placeUserInAssignedDelegation(args);
 
@@ -218,7 +214,7 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegationMember.findMany(
 				query(
 					(await ctx.abilities.delegationMember.filter('read')).merge({
-						where: { conferenceId: args.conferenceId }
+						where: { participant: { conferenceId: args.conferenceId } }
 					}).query.many
 				)
 			);

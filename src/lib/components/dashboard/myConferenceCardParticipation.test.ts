@@ -19,23 +19,31 @@ const none: ParticipationInput = {
 	delegationMember: null,
 	singleParticipant: null
 };
-const nation = { alpha2Code: 'fr', alpha3Code: 'FRA' };
-const nsa = { name: 'Greenpeace', fontAwesomeIcon: 'fa-leaf' };
+type DelegationRole = NonNullable<
+	ParticipationInput['delegationMember']
+>['delegation']['assignedRole'];
 
-function delegationMember(
-	assigned: { nation?: typeof nation; nsa?: typeof nsa } = {},
-	applied = true
-): ParticipationInput {
+const nation = { alpha2Code: 'fr', alpha3Code: 'FRA' };
+const nationRole: DelegationRole = {
+	kind: 'NATION',
+	name: null,
+	fontAwesomeIcon: null,
+	nation
+};
+const nsa: DelegationRole = {
+	kind: 'NON_STATE_ACTOR',
+	name: 'Greenpeace',
+	fontAwesomeIcon: 'fa-leaf',
+	nation: null
+};
+
+function delegationMember(assignedRole: DelegationRole = null, applied = true): ParticipationInput {
 	return {
 		...none,
 		delegationMember: {
 			isHeadDelegate: true,
 			assignedCommittee: { name: 'Security Council', abbreviation: 'SC' },
-			delegation: {
-				applied,
-				assignedNation: assigned.nation ?? null,
-				assignedNonStateActor: assigned.nsa ?? null
-			}
+			delegation: { applied, assignedRole }
 		}
 	};
 }
@@ -56,9 +64,9 @@ describe('supervisorParticipation', () => {
 			supervisorParticipation(
 				{
 					supervisedDelegationMembers: [
-						{ delegation: { assignedNation: {}, assignedNonStateActor: null } },
-						{ delegation: { assignedNation: null, assignedNonStateActor: {} } },
-						{ delegation: { assignedNation: null, assignedNonStateActor: null } }
+						{ delegation: { assignedRole: {} } },
+						{ delegation: { assignedRole: {} } },
+						{ delegation: { assignedRole: null } }
 					],
 					supervisedSingleParticipants: [{ assignedRole: {} }, { assignedRole: null }]
 				},
@@ -85,7 +93,7 @@ describe('participationOf', () => {
 	});
 
 	test('a delegation member', () => {
-		expect(participationOf(delegationMember({ nation }), undefined, PREP)).toEqual({
+		expect(participationOf(delegationMember(nationRole), undefined, PREP)).toEqual({
 			type: 'delegation',
 			status: 'accepted',
 			country: nation,
@@ -93,8 +101,8 @@ describe('participationOf', () => {
 			committee: { name: 'Security Council', abbreviation: 'SC' },
 			isHeadDelegate: true
 		});
-		expect(participationOf(delegationMember({ nsa }), undefined, PREP).status).toBe('accepted');
-		expect(participationOf(delegationMember({}, true), undefined, REG).status).toBe('applied');
+		expect(participationOf(delegationMember(nsa), undefined, PREP).status).toBe('accepted');
+		expect(participationOf(delegationMember(null, true), undefined, REG).status).toBe('applied');
 	});
 
 	test('a single participant', () => {
@@ -169,10 +177,10 @@ describe('roleIcon', () => {
 
 describe('roleText', () => {
 	test('delegation: nation, NSA or neither', () => {
-		expect(roleText(participationOf(delegationMember({ nation }), undefined, REG))).toBe(
+		expect(roleText(participationOf(delegationMember(nationRole), undefined, REG))).toBe(
 			m.delegateFor({ country: getFullTranslatedCountryNameFromISO3Code('FRA') })
 		);
-		expect(roleText(participationOf(delegationMember({ nsa }), undefined, REG))).toBe(
+		expect(roleText(participationOf(delegationMember(nsa), undefined, REG))).toBe(
 			m.delegateFor({ country: 'Greenpeace' })
 		);
 		expect(roleText(participationOf(delegationMember(), undefined, REG))).toBe(m.delegation());

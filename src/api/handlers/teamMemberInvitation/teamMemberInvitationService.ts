@@ -119,27 +119,32 @@ export async function createInvitations(
 
 			if (existingUser) {
 				// Known user: add straight to the team and record an already-used invitation so
-				// the audit trail still shows who invited them.
-				const teamMember = await db
-					.insert(schema.teamMember)
-					.values({
-						conferenceId,
-						userId: existingUser.id,
-						role: invitation.role
-					})
-					.returning()
-					.then(assertFirstEntryExists);
-
+				// the audit trail still shows who invited them. Both or neither: a membership
+				// without its record would hide who granted it.
 				const now = new Date();
-				await db.insert(schema.teamMemberInvitation).values({
-					email,
-					role: invitation.role,
-					token: hashToken(makeInvitationToken()),
-					expiresAt: now,
-					usedAt: now,
-					conferenceId,
-					invitedById: callerId,
-					acceptedById: existingUser.id
+				const teamMember = await db.transaction(async (tx) => {
+					const member = await tx
+						.insert(schema.teamMember)
+						.values({
+							conferenceId,
+							userId: existingUser.id,
+							role: invitation.role
+						})
+						.returning()
+						.then(assertFirstEntryExists);
+
+					await tx.insert(schema.teamMemberInvitation).values({
+						email,
+						role: invitation.role,
+						token: hashToken(makeInvitationToken()),
+						expiresAt: now,
+						usedAt: now,
+						conferenceId,
+						invitedById: callerId,
+						acceptedById: existingUser.id
+					});
+
+					return member;
 				});
 
 				created.push({

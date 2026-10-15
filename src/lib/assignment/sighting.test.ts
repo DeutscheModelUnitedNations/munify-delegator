@@ -42,9 +42,9 @@ describe('application details', () => {
 					{ isHeadDelegate: false, user: person('2'), supervisors: [supervisor] }
 				],
 				appliedForRoles: [
-					{ rank: 2, nation: null, nonStateActor: { name: 'Amnesty' } },
-					{ rank: 1, nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } },
-					{ rank: 3 }
+					{ rank: 2, role: { name: 'Amnesty', nation: null } },
+					{ rank: 1, role: { nation: { alpha3Code: 'FRA', alpha2Code: 'FR' } } },
+					{ rank: 3, role: {} }
 				]
 			},
 			(code) => `name of ${code}`

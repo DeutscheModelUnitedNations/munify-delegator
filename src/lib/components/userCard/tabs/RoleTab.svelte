@@ -8,6 +8,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { userInConference } from '../userCardRoles';
 
 	interface Props {
 		userId: string;
@@ -18,10 +19,10 @@
 
 	/** The person's single participant application or team role, and whether it can be revoked. */
 	async function fetchRole(userId: string, conferenceId: string) {
-		const forUser = { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } };
+		const { forUser, registrationOfUser } = userInConference(userId, conferenceId);
 		const [singleParticipants, teamMembers, conference] = await Promise.all([
 			client.liveQuery.singleParticipants({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				applied: true,
 				school: true,

@@ -17,8 +17,10 @@
 	// In one derived, so neither waits on the other.
 	const [nonStateActors, delegations] = $derived(
 		await Promise.all([
-			client.liveQuery.nonStateActors({
-				__args: { where: { conferenceId: { eq: conferenceId } } },
+			client.liveQuery.conferenceRoles({
+				__args: {
+					where: { conferenceId: { eq: conferenceId }, kind: 'NON_STATE_ACTOR' }
+				},
 				id: true,
 				name: true,
 				abbreviation: true,
@@ -29,11 +31,11 @@
 				__args: {
 					where: {
 						conferenceId: { eq: conferenceId },
-						assignedNonStateActorId: { isNotNull: true }
+						assignedRole: { kind: 'NON_STATE_ACTOR' }
 					}
 				},
 				id: true,
-				assignedNonStateActor: { id: true },
+				assignedRoleId: true,
 				members: { id: true, user: { id: true, givenName: true, familyName: true } }
 			})
 		])
@@ -41,13 +43,13 @@
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
-	const addParticipant = async (nonStateActorId: string) => {
+	const addParticipant = async (roleId: string) => {
 		if (!user?.id) return;
 		await client.mutate.createAppliedDelegationMember({
 			__args: {
 				userId: user.id,
 				conferenceId,
-				assignedNonStateActorId: nonStateActorId
+				assignedRoleId: roleId
 			},
 			id: true
 		});
@@ -62,12 +64,12 @@
 	<SeatsIconHeader icon="fa-megaphone" />
 	<tbody>
 		{#each nonStateActors as nsa (nsa.id)}
-			{@const delegation = delegations.find((d) => d.assignedNonStateActor?.id === nsa.id)}
+			{@const delegation = delegations.find((d) => d.assignedRoleId === nsa.id)}
 			<tr>
 				<td>
 					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
 						<Flag nsa icon={nsa.fontAwesomeIcon ?? ''} size="xs" />
-						{nsa.abbreviation.toUpperCase()}
+						{(nsa.abbreviation ?? '').toUpperCase()}
 						<span class="hidden truncate text-left text-xs text-gray-400 lg:block">
 							{nsa.name}
 						</span>
@@ -78,7 +80,7 @@
 						{#snippet addParticipantBtn()}
 							<AddParticipantBtn
 								bind:user
-								targetRole={`${nsa.abbreviation} (${m.nonStateActors()})`}
+								targetRole={`${nsa.abbreviation ?? ''} (${m.nonStateActors()})`}
 								addParticipant={async () => await addParticipant(nsa.id)}
 							/>
 						{/snippet}
@@ -90,7 +92,7 @@
 									userId={member.user.id}
 								/>
 							{/each}
-							{#if delegation.members.length < nsa.seatAmount}
+							{#if delegation.members.length < (nsa.seatAmount ?? 0)}
 								{@render addParticipantBtn()}
 							{/if}
 						{:else}
@@ -100,7 +102,7 @@
 				</td>
 				<td>
 					{delegation?.members.length ?? 0}
-					{#if nsa.seatAmount !== (delegation?.members.length ?? 0)}
+					{#if (nsa.seatAmount ?? 0) !== (delegation?.members.length ?? 0)}
 						<span class="text-xs">/ {nsa.seatAmount} </span>
 					{/if}
 				</td>

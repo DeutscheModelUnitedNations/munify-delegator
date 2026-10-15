@@ -327,6 +327,17 @@ to …" selects in the entry form set the first and last track.
 - **Unit tests run Svelte's server build**, where a `$derived` is computed once; read derived state
   after the last change in a test, and leave the live overlay to `e2e/calendar/`.
 
+## RoleFlag Component
+
+`$lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
+actor's icon (through `Flag`), nothing for no role. Pass the role as selected
+(`assignedRole { kind fontAwesomeIcon nation { alpha2Code } }`) and an optional `size` (`xs` by
+default). For the name next to it, narrow the role with `splitRole` from `$lib/helpers/conferenceRole`.
+
+```svelte
+<RoleFlag role={delegation.assignedRole} />
+```
+
 ## Kbd Component
 
 `src/lib/components/Kbd.svelte`

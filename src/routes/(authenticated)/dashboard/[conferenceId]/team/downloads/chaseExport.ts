@@ -1,4 +1,5 @@
 import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 /** Builds the import file munify-chase reads (the input of `src/api/handlers/import.ts` there). */
 
@@ -15,8 +16,11 @@ interface ExportDelegationMember {
 	assignedCommittee?: Maybe<{ id: string }>;
 	user: ExportUser;
 	delegation?: Maybe<{
-		assignedNation?: Maybe<{ alpha3Code: string }>;
-		assignedNonStateActor?: Maybe<{ id: string }>;
+		assignedRole?: Maybe<{
+			id: string;
+			kind: ConferenceRoleKind;
+			nation?: Maybe<{ alpha3Code: string }>;
+		}>;
 	}>;
 }
 
@@ -35,7 +39,7 @@ export interface ChaseConferenceData {
 		assignedRole?: Maybe<{ id: string }>;
 	}[];
 	conferenceSupervisors: readonly { id: string; user: ExportUser }[];
-	nonStateActors: readonly { id: string; name: string; fontAwesomeIcon?: Maybe<string> }[];
+	nonStateActors: readonly { id: string; name?: Maybe<string>; fontAwesomeIcon?: Maybe<string> }[];
 	delegationMembers: readonly ExportDelegationMember[];
 	teamMembers: readonly { id: string; role: string; user: ExportUser }[];
 }
@@ -65,11 +69,11 @@ export function transformRegionalGroup(regionalGroup: string | undefined) {
 }
 
 function nationOf(dm: ExportDelegationMember) {
-	return dm.delegation?.assignedNation?.alpha3Code;
+	return splitRole(dm.delegation?.assignedRole).nation?.alpha3Code;
 }
 
 function nonStateActorOf(dm: ExportDelegationMember) {
-	return dm.delegation?.assignedNonStateActor?.id;
+	return splitRole(dm.delegation?.assignedRole).nonStateActor?.id;
 }
 
 /** One committee member per (nation, committee) pair, keyed `<alpha3Code>_<committeeId>`. */

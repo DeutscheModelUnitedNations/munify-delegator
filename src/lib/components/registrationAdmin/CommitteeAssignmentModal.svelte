@@ -15,11 +15,17 @@
 	interface Props {
 		open: boolean;
 		members?: Member[];
-		nation?: { alpha3Code: string } | null;
+		/** The delegation's nation role; a non-state actor sits in no committee */
+		nationRoleId?: string | null;
 		conferenceId: string;
 	}
 
-	let { open = $bindable(false), members: unsortedMembers, nation, conferenceId }: Props = $props();
+	let {
+		open = $bindable(false),
+		members: unsortedMembers,
+		nationRoleId,
+		conferenceId
+	}: Props = $props();
 
 	// Only fetched while the modal is open: a closed modal shows nothing.
 	const committees = $derived(
@@ -28,16 +34,14 @@
 					__args: { where: { conferenceId: { eq: conferenceId } } },
 					id: true,
 					abbreviation: true,
-					nations: { alpha3Code: true }
+					roles: { id: true }
 				})
 			: []
 	);
 
 	// Only the committees the delegation's nation actually holds a seat in.
 	let filteredCommittees = $derived(
-		committees.filter((committee) =>
-			committee.nations.some((n) => n.alpha3Code === nation?.alpha3Code)
-		)
+		committees.filter((committee) => committee.roles.some((role) => role.id === nationRoleId))
 	);
 
 	const sortKey = (member: Member) =>

@@ -1,10 +1,10 @@
 import { db } from '$api/db/db';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
-import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
 	committeePubsub,
+	conferenceRolePubsub,
 	resolutionPubsub,
 	roleApplicationPubsub
 } from '$api/pubsub';
@@ -67,18 +67,10 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const before = await assertCanUpdateCommittee(ctx, args.id);
-			await updateCommittee(args.id, before, args);
+			const { applicationsTidied } = await updateCommittee(args.id, before, args);
 
 			committeePubsub.updated(args.id);
-
-			// fewer seats per delegation shrink every nation of the committee
-			const seatsAfter = args.numOfSeatsPerDelegation ?? before.numOfSeatsPerDelegation;
-			if (seatsAfter < before.numOfSeatsPerDelegation) {
-				await tidyRoleApplicationsForRoles(before.conferenceId, {
-					nationAlpha3Codes: before.nations.map((nation) => nation.alpha3Code)
-				});
-				roleApplicationPubsub.removed();
-			}
+			if (applicationsTidied) roleApplicationPubsub.removed();
 
 			return db.query.committee
 				.findFirst(
@@ -100,14 +92,13 @@ schemaBuilder.mutationFields((t) => ({
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanDeleteCommittee(ctx, args.id);
-			const { conferenceId, nationAlpha3Codes } = await deleteCommittee(args.id);
+			const { droppedRoleIds } = await deleteCommittee(args.id);
 
 			committeePubsub.removed();
+			if (droppedRoleIds.length > 0) conferenceRolePubsub.removed();
 			// the agenda items go with it, its resolutions lose their committee
 			committeeAgendaItemPubsub.removed();
 			resolutionPubsub.updated();
-
-			await tidyRoleApplicationsForRoles(conferenceId, { nationAlpha3Codes });
 			roleApplicationPubsub.removed();
 
 			return true;
@@ -127,12 +118,16 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const committee = await assertCanPlanCommitteeSeats(ctx, args.committeeId);
-			await setCommitteeNationSeat(
+			const { rolesChanged } = await setCommitteeNationSeat(
 				{ id: args.committeeId, conferenceId: committee.conferenceId },
 				args.nationAlpha3Code,
 				args.enabled
 			);
 			if (!args.enabled) roleApplicationPubsub.removed();
+			if (rolesChanged) {
+				if (args.enabled) conferenceRolePubsub.created();
+				else conferenceRolePubsub.removed();
+			}
 
 			committeePubsub.updated(args.committeeId);
 

@@ -41,7 +41,7 @@ bunx lefthook install
 ### Database Operations
 
 ```bash
-# Write a migration for the current schema.ts
+# Write a migration for the current schema (src/api/db/schema/)
 bun run db:generate
 
 # Apply pending migrations
@@ -160,7 +160,9 @@ bun run preview
   - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
     dev-time generator for the typed frontend client.
   - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
-  - `db/` - `schema.ts` (tables), `relations.ts` (the relational API's graph), `db.ts` (client),
+  - `db/` - `schema/` (tables, one file per part of the app: `registration.ts`, `roles.ts`,
+    `papers.ts`, …; `index.ts` exports them all, `columns.ts` holds the shared column helpers),
+    `relations.ts` (the relational API's graph), `db.ts` (client),
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
@@ -234,7 +236,7 @@ bun run preview
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
   check. A check several entities need goes into `authHelper.ts`, not into two permission files:
   `assertAllowedRow` (a row through its own update/delete ability, else NOT_FOUND),
-  `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `assertParticipantsOf`,
+  `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
   `assertUserInConference`, `assertParticipantOfConference`. Permission functions take
   `ApiContext` (`$api/rumble`), which carries `abilities`.
 
@@ -573,11 +575,49 @@ bun run preview
   `typeof schema.conference.$inferInsert`, with `import type * as schema from '$api/db/schema'`)
   rather than from a generated client
 - Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
+- **A person's part in a conference is one `conferenceParticipant` row** (per user and conference),
+  created by `ensureConferenceParticipant` the first time they register there - as delegate, single
+  participant or supervisor - and kept while they take part. It holds what is about the person
+  (payment, postal documents, attendance, access card); `delegationMember`, `singleParticipant` and
+  `conferenceSupervisor` point at it (`conferenceParticipantId`). **Supervision links people**
+  (`supervision`: supervisor → `conferenceParticipant`), so it survives whatever happens to the
+  registration; `delegationMember.supervisors`, `singleParticipant.supervisors` and
+  `conferenceSupervisor.supervisedDelegationMembers` / `supervisedSingleParticipants` read it
+  through the participant row. A rule that relates a supervisor to someone goes through these
+  relations, never through `user`, which would match the person's part in another conference.
+- **No row says which conference it is in twice.** Whatever is about a person in a conference
+  points at their `conferenceParticipant`: delegation members, single participants, supervisors,
+  paper authors (`paper.authorParticipantId`), payers (`paymentTransaction.payerParticipantId`), the
+  people a payment covers and survey answers. None of these rows has its own `conferenceId` or
+  `userId`; the relations `user` and `conference` on them run through the participant row (or the
+  delegation, for papers), so filter with `conference: { id: { eq } }` / `user: { id: { eq } }`
+  in the client and `participant: { conferenceId, userId }` in server code. Team-side actors
+  (reviewer, scanner, inviter, search history) stay plain `user` references: a system admin acts
+  without a team row. The team and the waiting list have no participant row. Removing someone's
+  participation keeps their participant row while papers or payments name it.
+- **The database keeps rows inside one conference.** A row whose parents reach a conference by two
+  ways (a member: delegation and person; a paper: delegation, author and agenda item; an answer:
+  question and person; …) must reach the same one: deferred constraint triggers check it at
+  commit (`assert_same_conference`, 18 tables, in the `conference_anchor` migration), so an
+  application step may write in any order within its transaction. A `conference_id` a row keeps
+  cannot change (`conference_id_is_immutable`); rewriting the same value passes. Neither is
+  drizzle-managed: a new table with two such parents gets its trigger in its migration, and
+  `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
+- Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
 - Paper submission system with versioning and reviews
 
 #### 6. Assignment
+
+- **A role is one row of `conference_role`**: a nation, a non-state actor or a custom role for
+  single participants (`kind`). Everything naming a role - `delegation.assignedRoleId`,
+  `singleParticipant.assignedRoleId`, `roleApplication.roleId`, the single participants' wishes,
+  the draft's `roleId`s - is one foreign key to it, which also ties the role to its conference.
+  Nations are global reference data; a conference offers one while a committee seats it
+  (`committee_to_role`), and `setCommitteeNationSeat` keeps the nation's role row with its seats.
+  A nation row carries only `nationAlpha3Code`; `$lib/helpers/conferenceRole` counts a role's seats
+  (`roleSeats`) and splits a selected role into its nation or non-state actor (`splitRole`).
 
 - **Draft, apply, release - three separate things.** The team plans in draft tables
   (`assignmentReview`, `assignmentUnit` + `assignmentUnitMember`, `assignmentSingleRole`,
@@ -592,8 +632,8 @@ bun run preview
   (only roles with _exactly_ as many free seats as the group has members). The board in
   `team/assignment/` and `applyAssignment` (`src/api/handlers/assignment/assignmentDraft.ts`) both go
   through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
-  of re-creating them, so supervision links and statuses survive, and clears the draft (ratings
-  and weights stay).
+  of re-creating them and clears the draft (ratings and weights stay); supervision and statuses
+  hang on the person's `conferenceParticipant`, so they survive either way.
 - **The tabs never read a whole conference, and the backend does the sorting.** A conference can
   hold more applications than a list query returns (1000). `team/assignment/board.ts` reads
   the draft with the applications it touches (each unit and planned single role brings its source
@@ -614,12 +654,12 @@ bun run preview
   "Batch has scheduled effects" invariant (5.57.1).
 - **Release is only visibility.** `conference.assignmentReleased` (`setAssignmentReleased`,
   project management and participant care, switchable both ways) decides whether participants and
-  supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,
-  `assignedNonStateActorId`, `assignedCommitteeId`, `assignedRoleId` and `assignmentDetails`
+  supervisors see roles. Until then their read rules mask the delegation's and the single
+  participant's `assignedRoleId`, `assignedCommitteeId` and `assignmentDetails`
   (`src/api/services/authHelper.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
-  follows the masks. A relation backed by a masked key (`assignedNation`, `assignedCommittee`, …)
-  resolves to nothing, the relations pointing back (`nation.assignedDelegations`,
+  follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
+  resolves to nothing, the relations pointing back (`conferenceRole.assignedDelegations`,
   `committee.delegationMembers`, …) list only rows exposing their key, and `where` / `orderBy`
   arguments only match rows exposing the column they name - so a participant cannot find a role
   by filtering or sorting either. Do not hand-write any of this in a handler. The dashboard shows
@@ -778,8 +818,9 @@ Required variables (see `.env.example`):
 
 ### Database Schema Changes
 
-1. Edit `src/api/db/schema.ts`, and `src/api/db/relations.ts` if the change adds or removes a
-   relation
+1. Edit the matching file in `src/api/db/schema/` (a new table goes into the file of its part of
+   the app, and into the exports of `schema/index.ts`), and `src/api/db/relations.ts` if the
+   change adds or removes a relation
 2. Run `bun run db:generate` to write the migration, then `bun run db:migrate` to apply it
 3. Restart the dev server so the schema and the generated client pick the change up
 4. Update `src/api/db/seed-data/` if a new column is required
@@ -839,7 +880,7 @@ This codebase supports **100% end-to-end type safety** from database to frontend
 
 4. **Fix type errors at the source** - When encountering type mismatches:
    - Check if the selection or the handler's args need updating
-   - Verify `src/api/db/schema.ts` is correct
+   - Verify `src/api/db/schema/` is correct
    - Ensure the client has been regenerated (restart `bun run dev`)
    - Never silence errors with `as any` or `@ts-ignore`
 
@@ -847,7 +888,7 @@ This codebase supports **100% end-to-end type safety** from database to frontend
 
 ### Why This Matters
 
-- **Drizzle** infers row and insert types from `src/api/db/schema.ts`
+- **Drizzle** infers row and insert types from `src/api/db/schema/`
 - **rumble** builds the GraphQL schema from those tables, and its abilities are drizzle filters, so
   authorization is type-checked too
 - **`clientCreator`** generates the frontend client from the live schema, so a selection that asks
@@ -930,12 +971,6 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   relation nullability, correlated column-mask flags and the generator's write-if-changed all
   landed upstream, together with the mask-aware filter arguments described under "Release is only
   visibility". Rumble itself drops live-query updates whose data did not change.
-
-- **s3mini is patched** (`patches/s3mini@1.0.2.patch`): it built the canonical query string with
-  `encodeURIComponent`, which leaves `*'()!` unescaped where SigV4 escapes them, so any signed
-  query value holding one failed with `SignatureDoesNotMatch` - among them the
-  `filename*=UTF-8''…` download names. The patch uses s3mini's own RFC 3986 `uriEscape` there.
-  Drop it once upstream fixes `_buildCanonicalQueryString`.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

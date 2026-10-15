@@ -151,7 +151,7 @@ export async function schoolMergeScope(ctx: ApiContext, conferenceId: string) {
 			where: { conferenceId }
 		}).sql.where,
 		updatableSingleParticipants: (await ctx.abilities.singleParticipant.filter('update')).merge({
-			where: { conferenceId }
+			where: { participant: { conferenceId } }
 		}).sql.where
 	};
 }

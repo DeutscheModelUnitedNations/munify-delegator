@@ -19,7 +19,8 @@ interface SeatPlannerCommittee {
 	numOfSeatsPerDelegation: number;
 	regionalBaseline: RegionalBaseline;
 	regionalBaselineTargets: number[];
-	nations: { alpha3Code: string }[];
+	/** the nation roles the committee seats */
+	roles: { nation?: { alpha3Code: string } | null }[];
 }
 
 interface SeatPlannerNonStateActor {
@@ -29,7 +30,8 @@ interface SeatPlannerNonStateActor {
 
 interface SeatPlannerAssignments {
 	committeeSeats: { committeeId: string; nationAlpha3Code: string; memberNames: string[] }[];
-	roles: { nationAlpha3Code: string | null; nonStateActorId: string | null; memberCount: number }[];
+	/** a nation's role carries its code, any other role only its id */
+	roles: { roleId: string; nationAlpha3Code?: string | null; memberCount: number }[];
 }
 
 interface SeatPlannerSource {
@@ -53,7 +55,13 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 
 	/** nations per committee, including the optimistic changes */
 	const seats: Map<string, Set<string>> = $derived(
-		seatsWithPending(source().committees, [...pending.values()])
+		seatsWithPending(
+			source().committees.map((committee) => ({
+				id: committee.id,
+				nations: committee.roles.flatMap((role) => (role.nation ? [role.nation] : []))
+			})),
+			[...pending.values()]
+		)
 	);
 
 	const committees: BaselineCommittee[] = $derived(
@@ -82,7 +90,15 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 	);
 
 	const memberCounts: { nations: Map<string, number>; nonStateActors: Map<string, number> } =
-		$derived(assignedMemberCounts(source().assignments.roles));
+		$derived(
+			assignedMemberCounts(
+				source().assignments.roles.map(({ roleId, nationAlpha3Code, memberCount }) => ({
+					nationAlpha3Code: nationAlpha3Code ?? null,
+					nonStateActorId: nationAlpha3Code ? null : roleId,
+					memberCount
+				}))
+			)
+		);
 
 	/** shows the clicked state until the server answered; returns the id of this request */
 	function begin(key: string, committeeId: string, nationAlpha3Code: string, enabled: boolean) {
@@ -122,7 +138,7 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 		try {
 			await client.mutate.setCommitteeNationSeat({
 				__args: { committeeId, nationAlpha3Code, enabled },
-				nations: { alpha3Code: true }
+				roles: { id: true }
 			});
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : m.genericToastError());

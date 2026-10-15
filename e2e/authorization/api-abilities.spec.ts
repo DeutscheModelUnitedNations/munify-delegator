@@ -11,7 +11,9 @@ import {
 	E2E_PAYMENT_ADMIN_ID,
 	E2E_PREP_CONFERENCE_ID,
 	E2E_PREP_PARTICIPANT_USER_ID,
+	E2E_SUPERVISED_PARTICIPANT_USER_ID,
 	E2E_SUPERVISOR_CONNECTION_CODE,
+	E2E_SUPERVISOR_FOR_CONNECT_USER_ID,
 	E2E_SURVEY_OPTION_A_ID,
 	E2E_SURVEY_QUESTION_ID,
 	E2E_TEAM_COORDINATOR_ID
@@ -38,14 +40,14 @@ function expectRefused(result: GraphQLResult, reason: RegExp) {
 }
 
 test('a participant cannot write on somebody else’s behalf', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-writer'), { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, makeTestUser('authz-writer'));
 
 	// A status row for another user - the create path used to have no check at all.
 	expectRefused(
 		await gql(
 			page,
 			`mutation ($c: ID!, $u: ID!) {
-				updateConferenceParticipantStatus(conferenceId: $c, userId: $u, paymentStatus: DONE) { id }
+				updateConferenceParticipant(conferenceId: $c, userId: $u, paymentStatus: DONE) { id }
 			}`,
 			{ c: E2E_CONFERENCE_ID, u: E2E_CONNECT_PARTICIPANT_ID }
 		),
@@ -120,7 +122,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 });
 
 test('a participant reads nothing of conferences they are not part of', async ({ page }) => {
-	await loginAs(page, makeTestUser('authz-reader'), { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, makeTestUser('authz-reader'));
 
 	const result = await gql(
 		page,
@@ -148,9 +150,9 @@ test('co-delegates see each other’s names, not each other’s contact details'
 }) => {
 	const head = await (await browser.newContext()).newPage();
 	const member = await (await browser.newContext()).newPage();
-	await loginAs(head, makeTestUser('authz-head'), { startUrl: '/login?next=/dashboard' });
+	await loginAs(head, makeTestUser('authz-head'));
 	const memberClaims = makeTestUser('authz-member');
-	await loginAs(member, memberClaims, { startUrl: '/login?next=/dashboard' });
+	await loginAs(member, memberClaims);
 
 	const created = await gql(
 		head,
@@ -197,9 +199,7 @@ test('co-delegates see each other’s names, not each other’s contact details'
 });
 
 test('a team coordinator cannot hand out project management', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID), {
-		startUrl: '/login?next=/dashboard'
-	});
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
 
 	const invited = await gql(
 		page,
@@ -239,13 +239,13 @@ test('payment details and documents are for people with a part in the conference
 
 	// A member of its team reads them.
 	const page = await (await browser.newContext()).newPage();
-	await loginAs(page, fixedTestUser(E2E_PAYMENT_ADMIN_ID), { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_PAYMENT_ADMIN_ID));
 	const member = await read(page.request.post.bind(page.request));
 	expect(member.iban).toBeTruthy();
 });
 
 test('a reviewer reads delegations without their join codes', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID), { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID));
 
 	// The delegation itself is readable...
 	const delegation = await gql(page, `query ($id: ID!) { delegation(id: $id) { id school } }`, {
@@ -270,7 +270,7 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 }) => {
 	const as = async (claims: Parameters<typeof loginAs>[1]) => {
 		const page = await (await browser.newContext()).newPage();
-		await loginAs(page, claims, { startUrl: '/login?next=/dashboard' });
+		await loginAs(page, claims);
 		return page;
 	};
 	const requestUpload = `mutation ($c: ID!, $n: String!, $t: String!, $s: Int!) {
@@ -365,7 +365,7 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 test('a members-only template hands its URL to members only', async ({ browser }) => {
 	const as = async (claims: Parameters<typeof loginAs>[1]) => {
 		const page = await (await browser.newContext()).newPage();
-		await loginAs(page, claims, { startUrl: '/login?next=/dashboard' });
+		await loginAs(page, claims);
 		return page;
 	};
 	const pdf = Buffer.from('%PDF-1.4 contract');
@@ -409,4 +409,33 @@ test('a members-only template hands its URL to members only', async ({ browser }
 	} finally {
 		await gql(management, setContract, { id: E2E_CONFERENCE_ID, f: null });
 	}
+});
+
+test('a supervisor reaches a student only in the conference they supervise them in', async ({
+	page
+}) => {
+	await loginAs(page, fixedTestUser(E2E_SUPERVISOR_FOR_CONNECT_USER_ID));
+
+	// Supervision links the student's part in one conference; their part in another stays theirs.
+	const ofStudent = (conferenceId: string) =>
+		`conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${E2E_SUPERVISED_PARTICIPANT_USER_ID}" }`;
+	// registrations reach conference and person through the participant row
+	const registrationOfStudent = (conferenceId: string) =>
+		`conference: { id: { eq: "${conferenceId}" } }, user: { id: { eq: "${E2E_SUPERVISED_PARTICIPANT_USER_ID}" } }`;
+	const result = await gql(
+		page,
+		`query {
+			supervised: conferenceParticipants(where: { ${ofStudent(E2E_CONFERENCE_ID)} }) { id }
+			supervisedRegistration: singleParticipants(where: { ${registrationOfStudent(E2E_CONFERENCE_ID)} }) { id }
+			elsewhere: conferenceParticipants(where: { ${ofStudent(E2E_PREP_CONFERENCE_ID)} }) { id }
+			elsewhereRegistration: singleParticipants(where: { ${registrationOfStudent(E2E_PREP_CONFERENCE_ID)} }) { id }
+		}`
+	);
+	expect(result.errors, JSON.stringify(result)).toBeUndefined();
+	expect(result.data).toEqual({
+		supervised: [{ id: expect.any(String) }],
+		supervisedRegistration: [{ id: expect.any(String) }],
+		elsewhere: [],
+		elsewhereRegistration: []
+	});
 });

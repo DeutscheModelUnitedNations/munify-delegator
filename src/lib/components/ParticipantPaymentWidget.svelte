@@ -31,7 +31,10 @@
 		void client.query
 			.paymentTransactions({
 				__args: {
-					where: { conferenceId: { eq: conferenceId }, paymentFor: { userId: { eq: userId } } },
+					where: {
+						conference: { id: { eq: conferenceId } },
+						paymentFor: { user: { id: { eq: userId } } }
+					},
 					orderBy: { createdAt: 'desc' }
 				},
 				id: true,

@@ -10,7 +10,7 @@
 	import { unMembers } from '$lib/helpers/seatPlanning/unMembers';
 	import { DataTable } from '$lib/components/tanStackTable/ui';
 	import CountryInfoPopover from './CountryInfoPopover.svelte';
-	import { useSeatPlanningParams } from './filters';
+	import { useSeatPlanningParams } from './filters.svelte';
 	import SeatMatrixFilters from './SeatMatrixFilters.svelte';
 	import SeatMatrixRow from './SeatMatrixRow.svelte';
 	import SeatMatrixTotals from './SeatMatrixTotals.svelte';

@@ -27,19 +27,14 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	assignmentSingleRole: {
-		conference: r.one.conference({
-			from: r.assignmentSingleRole.conferenceId,
-			to: r.conference.id,
-			optional: false
-		}),
 		singleParticipant: r.one.singleParticipant({
 			from: r.assignmentSingleRole.singleParticipantId,
 			to: r.singleParticipant.id,
 			optional: false
 		}),
-		role: r.one.customConferenceRole({
+		role: r.one.conferenceRole({
 			from: r.assignmentSingleRole.roleId,
-			to: r.customConferenceRole.id
+			to: r.conferenceRole.id
 		})
 	},
 	assignmentUnit: {
@@ -56,13 +51,9 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.assignmentUnit.sourceSingleParticipantId,
 			to: r.singleParticipant.id
 		}),
-		nation: r.one.nation({
-			from: r.assignmentUnit.nationAlpha3Code,
-			to: r.nation.alpha3Code
-		}),
-		nonStateActor: r.one.nonStateActor({
-			from: r.assignmentUnit.nonStateActorId,
-			to: r.nonStateActor.id
+		role: r.one.conferenceRole({
+			from: r.assignmentUnit.roleId,
+			to: r.conferenceRole.id
 		}),
 		members: r.many.assignmentUnitMember({
 			from: r.assignmentUnit.id,
@@ -71,8 +62,8 @@ export const relations = defineRelations(schema, (r) => ({
 	},
 	assignmentUnitMember: {
 		conference: r.one.conference({
-			from: r.assignmentUnitMember.conferenceId,
-			to: r.conference.id,
+			from: r.assignmentUnitMember.unitId.through(r.assignmentUnit.id),
+			to: r.conference.id.through(r.assignmentUnit.conferenceId),
 			optional: false
 		}),
 		unit: r.one.assignmentUnit({
@@ -94,9 +85,9 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	attendanceEntry: {
-		conferenceParticipantStatus: r.one.conferenceParticipantStatus({
-			from: r.attendanceEntry.conferenceParticipantStatusId,
-			to: r.conferenceParticipantStatus.id,
+		conferenceParticipant: r.one.conferenceParticipant({
+			from: r.attendanceEntry.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
 			optional: false
 		}),
 		recordedBy: r.one.user({
@@ -181,9 +172,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.committee.id,
 			to: r.delegationMember.assignedCommitteeId
 		}),
-		nations: r.many.nation({
-			from: r.committee.id.through(r.committeeToNation.a),
-			to: r.nation.alpha3Code.through(r.committeeToNation.b)
+		// the nation roles the committee seats
+		roles: r.many.conferenceRole({
+			from: r.committee.id.through(r.committeeToRole.a),
+			to: r.conferenceRole.id.through(r.committeeToRole.b)
 		}),
 		resolutions: r.many.resolution({
 			from: r.committee.id,
@@ -247,36 +239,32 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.committee.conferenceId
 		}),
 		conferenceSupervisors: r.many.conferenceSupervisor({
-			from: r.conference.id,
-			to: r.conferenceSupervisor.conferenceId
+			from: r.conference.id.through(r.conferenceParticipant.conferenceId),
+			to: r.conferenceSupervisor.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
-		conferenceUserStatus: r.many.conferenceParticipantStatus({
+		conferenceParticipants: r.many.conferenceParticipant({
 			from: r.conference.id,
-			to: r.conferenceParticipantStatus.conferenceId
+			to: r.conferenceParticipant.conferenceId
 		}),
 		delegationMembers: r.many.delegationMember({
-			from: r.conference.id,
-			to: r.delegationMember.conferenceId
+			from: r.conference.id.through(r.conferenceParticipant.conferenceId),
+			to: r.delegationMember.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		delegations: r.many.delegation({
 			from: r.conference.id,
 			to: r.delegation.conferenceId
 		}),
-		individualApplicationOptions: r.many.customConferenceRole({
+		roles: r.many.conferenceRole({
 			from: r.conference.id,
-			to: r.customConferenceRole.conferenceId
-		}),
-		nonStateActors: r.many.nonStateActor({
-			from: r.conference.id,
-			to: r.nonStateActor.conferenceId
+			to: r.conferenceRole.conferenceId
 		}),
 		papers: r.many.paper({
-			from: r.conference.id,
-			to: r.paper.conferenceId
+			from: r.conference.id.through(r.delegation.conferenceId),
+			to: r.paper.delegationId.through(r.delegation.id)
 		}),
 		paymentTransactions: r.many.paymentTransaction({
-			from: r.conference.id,
-			to: r.paymentTransaction.conferenceId
+			from: r.conference.id.through(r.conferenceParticipant.conferenceId),
+			to: r.paymentTransaction.payerParticipantId.through(r.conferenceParticipant.id)
 		}),
 		places: r.many.place({
 			from: r.conference.id,
@@ -287,8 +275,8 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.resolution.conferenceId
 		}),
 		singleParticipants: r.many.singleParticipant({
-			from: r.conference.id,
-			to: r.singleParticipant.conferenceId
+			from: r.conference.id.through(r.conferenceParticipant.conferenceId),
+			to: r.singleParticipant.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		surveyQuestions: r.many.surveyQuestion({
 			from: r.conference.id,
@@ -303,55 +291,100 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.teamMember.conferenceId
 		})
 	},
-	conferenceParticipantStatus: {
+	conferenceParticipant: {
 		attendanceEntries: r.many.attendanceEntry({
-			from: r.conferenceParticipantStatus.id,
-			to: r.attendanceEntry.conferenceParticipantStatusId
+			from: r.conferenceParticipant.id,
+			to: r.attendanceEntry.conferenceParticipantId
 		}),
 		conference: r.one.conference({
-			from: r.conferenceParticipantStatus.conferenceId,
+			from: r.conferenceParticipant.conferenceId,
 			to: r.conference.id,
 			optional: false
 		}),
 		user: r.one.user({
-			from: r.conferenceParticipantStatus.userId,
+			from: r.conferenceParticipant.userId,
 			to: r.user.id,
 			optional: false
+		}),
+		// who supervises the person
+		supervisors: r.many.conferenceSupervisor({
+			from: r.conferenceParticipant.id.through(r.supervision.b),
+			to: r.conferenceSupervisor.id.through(r.supervision.a)
+		}),
+		delegationMember: r.one.delegationMember({
+			from: r.conferenceParticipant.id,
+			to: r.delegationMember.conferenceParticipantId
+		}),
+		singleParticipant: r.one.singleParticipant({
+			from: r.conferenceParticipant.id,
+			to: r.singleParticipant.conferenceParticipantId
+		}),
+		// the person as a supervisor themselves
+		conferenceSupervisor: r.one.conferenceSupervisor({
+			from: r.conferenceParticipant.id,
+			to: r.conferenceSupervisor.conferenceParticipantId
 		})
 	},
 	conferenceSupervisor: {
 		conference: r.one.conference({
-			from: r.conferenceSupervisor.conferenceId,
-			to: r.conference.id,
+			from: r.conferenceSupervisor.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
+		// Supervision links people (`conferenceParticipant`); these two read it as the registrations
+		// the supervised people hold, which is what most of the app wants to show.
+		supervised: r.many.conferenceParticipant({
+			from: r.conferenceSupervisor.id.through(r.supervision.a),
+			to: r.conferenceParticipant.id.through(r.supervision.b)
+		}),
 		supervisedDelegationMembers: r.many.delegationMember({
-			from: r.conferenceSupervisor.id.through(r.conferenceSupervisorToDelegationMember.a),
-			to: r.delegationMember.id.through(r.conferenceSupervisorToDelegationMember.b)
+			from: r.conferenceSupervisor.id.through(r.supervision.a),
+			to: r.delegationMember.conferenceParticipantId.through(r.supervision.b)
 		}),
 		supervisedSingleParticipants: r.many.singleParticipant({
-			from: r.conferenceSupervisor.id.through(r.conferenceSupervisorToSingleParticipant.a),
-			to: r.singleParticipant.id.through(r.conferenceSupervisorToSingleParticipant.b)
+			from: r.conferenceSupervisor.id.through(r.supervision.a),
+			to: r.singleParticipant.conferenceParticipantId.through(r.supervision.b)
+		}),
+		participant: r.one.conferenceParticipant({
+			from: r.conferenceSupervisor.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
 		}),
 		user: r.one.user({
-			from: r.conferenceSupervisor.userId,
-			to: r.user.id,
+			from: r.conferenceSupervisor.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},
-	customConferenceRole: {
+	conferenceRole: {
 		conference: r.one.conference({
-			from: r.customConferenceRole.conferenceId,
+			from: r.conferenceRole.conferenceId,
 			to: r.conference.id,
 			optional: false
 		}),
-		singleParticipant: r.many.singleParticipant({
-			from: r.customConferenceRole.id.through(r.customConferenceRoleToSingleParticipant.a),
-			to: r.singleParticipant.id.through(r.customConferenceRoleToSingleParticipant.b)
+		nation: r.one.nation({
+			from: r.conferenceRole.nationAlpha3Code,
+			to: r.nation.alpha3Code
 		}),
-		singleParticipantAssignments: r.many.singleParticipant({
-			from: r.customConferenceRole.id,
+		committees: r.many.committee({
+			from: r.conferenceRole.id.through(r.committeeToRole.b),
+			to: r.committee.id.through(r.committeeToRole.a)
+		}),
+		assignedDelegations: r.many.delegation({
+			from: r.conferenceRole.id,
+			to: r.delegation.assignedRoleId
+		}),
+		assignedSingleParticipants: r.many.singleParticipant({
+			from: r.conferenceRole.id,
 			to: r.singleParticipant.assignedRoleId
+		}),
+		roleApplications: r.many.roleApplication({
+			from: r.conferenceRole.id,
+			to: r.roleApplication.roleId
+		}),
+		appliedSingleParticipants: r.many.singleParticipant({
+			from: r.conferenceRole.id.through(r.singleParticipantRoleWish.a),
+			to: r.singleParticipant.id.through(r.singleParticipantRoleWish.b)
 		})
 	},
 	delegation: {
@@ -359,18 +392,14 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.delegation.id,
 			to: r.roleApplication.delegationId
 		}),
-		assignedNation: r.one.nation({
-			from: r.delegation.assignedNationAlpha3Code,
-			to: r.nation.alpha3Code
+		assignedRole: r.one.conferenceRole({
+			from: r.delegation.assignedRoleId,
+			to: r.conferenceRole.id
 		}),
 		// The team's review of the application, so lists of delegations can filter by it.
 		assignmentReview: r.one.assignmentReview({
 			from: r.delegation.id,
 			to: r.assignmentReview.delegationId
-		}),
-		assignedNonStateActor: r.one.nonStateActor({
-			from: r.delegation.assignedNonStateActorId,
-			to: r.nonStateActor.id
 		}),
 		conference: r.one.conference({
 			from: r.delegation.conferenceId,
@@ -392,8 +421,8 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.committee.id
 		}),
 		conference: r.one.conference({
-			from: r.delegationMember.conferenceId,
-			to: r.conference.id,
+			from: r.delegationMember.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
 		delegation: r.one.delegation({
@@ -401,58 +430,46 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.delegation.id,
 			optional: false
 		}),
+		participant: r.one.conferenceParticipant({
+			from: r.delegationMember.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
+		// the person's supervisors, through their `conferenceParticipant`
 		supervisors: r.many.conferenceSupervisor({
-			from: r.delegationMember.id.through(r.conferenceSupervisorToDelegationMember.b),
-			to: r.conferenceSupervisor.id.through(r.conferenceSupervisorToDelegationMember.a)
+			from: r.delegationMember.conferenceParticipantId.through(r.supervision.b),
+			to: r.conferenceSupervisor.id.through(r.supervision.a)
 		}),
 		user: r.one.user({
-			from: r.delegationMember.userId,
-			to: r.user.id,
+			from: r.delegationMember.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},
 	nation: {
-		assignedDelegations: r.many.delegation({
+		conferenceRoles: r.many.conferenceRole({
 			from: r.nation.alpha3Code,
-			to: r.delegation.assignedNationAlpha3Code
-		}),
-		committees: r.many.committee({
-			from: r.nation.alpha3Code.through(r.committeeToNation.b),
-			to: r.committee.id.through(r.committeeToNation.a)
-		}),
-		roleApplications: r.many.roleApplication({
-			from: r.nation.alpha3Code,
-			to: r.roleApplication.nationId
-		})
-	},
-	nonStateActor: {
-		assignedDelegations: r.many.delegation({
-			from: r.nonStateActor.id,
-			to: r.delegation.assignedNonStateActorId
-		}),
-		conference: r.one.conference({
-			from: r.nonStateActor.conferenceId,
-			to: r.conference.id,
-			optional: false
-		}),
-		roleApplications: r.many.roleApplication({
-			from: r.nonStateActor.id,
-			to: r.roleApplication.nonStateActorId
+			to: r.conferenceRole.nationAlpha3Code
 		})
 	},
 	paper: {
+		authorParticipant: r.one.conferenceParticipant({
+			from: r.paper.authorParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
 		agendaItem: r.one.committeeAgendaItem({
 			from: r.paper.agendaItemId,
 			to: r.committeeAgendaItem.id
 		}),
 		author: r.one.user({
-			from: r.paper.authorId,
-			to: r.user.id,
+			from: r.paper.authorParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		}),
 		conference: r.one.conference({
-			from: r.paper.conferenceId,
-			to: r.conference.id,
+			from: r.paper.delegationId.through(r.delegation.id),
+			to: r.conference.id.through(r.delegation.conferenceId),
 			optional: false
 		}),
 		delegation: r.one.delegation({
@@ -489,9 +506,14 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	paymentTransaction: {
+		payer: r.one.conferenceParticipant({
+			from: r.paymentTransaction.payerParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
 		conference: r.one.conference({
-			from: r.paymentTransaction.conferenceId,
-			to: r.conference.id,
+			from: r.paymentTransaction.payerParticipantId.through(r.conferenceParticipant.id),
+			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
 		paymentFor: r.many.userReferenceInPaymentTransaction({
@@ -499,8 +521,8 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.userReferenceInPaymentTransaction.paymentTransactionId
 		}),
 		user: r.one.user({
-			from: r.paymentTransaction.userId,
-			to: r.user.id,
+			from: r.paymentTransaction.payerParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},
@@ -548,47 +570,53 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.delegation.id,
 			optional: false
 		}),
-		nation: r.one.nation({
-			from: r.roleApplication.nationId,
-			to: r.nation.alpha3Code,
-			optional: false
-		}),
-		nonStateActor: r.one.nonStateActor({
-			from: r.roleApplication.nonStateActorId,
-			to: r.nonStateActor.id,
+		role: r.one.conferenceRole({
+			from: r.roleApplication.roleId,
+			to: r.conferenceRole.id,
 			optional: false
 		})
 	},
 	singleParticipant: {
-		appliedForRoles: r.many.customConferenceRole({
-			from: r.singleParticipant.id.through(r.customConferenceRoleToSingleParticipant.b),
-			to: r.customConferenceRole.id.through(r.customConferenceRoleToSingleParticipant.a)
+		appliedForRoles: r.many.conferenceRole({
+			from: r.singleParticipant.id.through(r.singleParticipantRoleWish.b),
+			to: r.conferenceRole.id.through(r.singleParticipantRoleWish.a)
 		}),
 		// The team's review of the application, so the board can read it along with the participant.
 		assignmentReview: r.one.assignmentReview({
 			from: r.singleParticipant.id,
 			to: r.assignmentReview.singleParticipantId
 		}),
-		assignedRole: r.one.customConferenceRole({
+		assignedRole: r.one.conferenceRole({
 			from: r.singleParticipant.assignedRoleId,
-			to: r.customConferenceRole.id
+			to: r.conferenceRole.id
 		}),
 		conference: r.one.conference({
-			from: r.singleParticipant.conferenceId,
-			to: r.conference.id,
+			from: r.singleParticipant.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
+		participant: r.one.conferenceParticipant({
+			from: r.singleParticipant.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
+		// the person's supervisors, through their `conferenceParticipant`
 		supervisors: r.many.conferenceSupervisor({
-			from: r.singleParticipant.id.through(r.conferenceSupervisorToSingleParticipant.b),
-			to: r.conferenceSupervisor.id.through(r.conferenceSupervisorToSingleParticipant.a)
+			from: r.singleParticipant.conferenceParticipantId.through(r.supervision.b),
+			to: r.conferenceSupervisor.id.through(r.supervision.a)
 		}),
 		user: r.one.user({
-			from: r.singleParticipant.userId,
-			to: r.user.id,
+			from: r.singleParticipant.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},
 	surveyAnswer: {
+		participant: r.one.conferenceParticipant({
+			from: r.surveyAnswer.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
 		option: r.one.surveyOption({
 			from: r.surveyAnswer.optionId,
 			to: r.surveyOption.id,
@@ -600,8 +628,8 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		}),
 		user: r.one.user({
-			from: r.surveyAnswer.userId,
-			to: r.user.id,
+			from: r.surveyAnswer.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},
@@ -713,17 +741,17 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.possibleDuplicate.decidedById,
 			alias: 'possibleDuplicateDecidedBy'
 		}),
-		conferenceParticipantStatus: r.many.conferenceParticipantStatus({
+		conferenceParticipants: r.many.conferenceParticipant({
 			from: r.user.id,
-			to: r.conferenceParticipantStatus.userId
+			to: r.conferenceParticipant.userId
 		}),
 		conferenceSupervisor: r.many.conferenceSupervisor({
-			from: r.user.id,
-			to: r.conferenceSupervisor.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.conferenceSupervisor.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		delegationMemberships: r.many.delegationMember({
-			from: r.user.id,
-			to: r.delegationMember.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.delegationMember.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		invitationsAccepted: r.many.teamMemberInvitation({
 			from: r.user.id,
@@ -734,20 +762,20 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.teamMemberInvitation.invitedById
 		}),
 		ownPaymentTransactions: r.many.paymentTransaction({
-			from: r.user.id,
-			to: r.paymentTransaction.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.paymentTransaction.payerParticipantId.through(r.conferenceParticipant.id)
 		}),
 		paperReviews: r.many.paperReview({
 			from: r.user.id,
 			to: r.paperReview.reviewerId
 		}),
 		papers: r.many.paper({
-			from: r.user.id,
-			to: r.paper.authorId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.paper.authorParticipantId.through(r.conferenceParticipant.id)
 		}),
 		paymentTransactionsReferences: r.many.userReferenceInPaymentTransaction({
-			from: r.user.id,
-			to: r.userReferenceInPaymentTransaction.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		recordedAttendanceEntries: r.many.attendanceEntry({
 			from: r.user.id,
@@ -758,12 +786,12 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.reviewerSnippet.userId
 		}),
 		singleParticipant: r.many.singleParticipant({
-			from: r.user.id,
-			to: r.singleParticipant.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.singleParticipant.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		surveyAnswers: r.many.surveyAnswer({
-			from: r.user.id,
-			to: r.surveyAnswer.userId
+			from: r.user.id.through(r.conferenceParticipant.userId),
+			to: r.surveyAnswer.conferenceParticipantId.through(r.conferenceParticipant.id)
 		}),
 		teamMember: r.many.teamMember({
 			from: r.user.id,
@@ -775,14 +803,19 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	userReferenceInPaymentTransaction: {
+		participant: r.one.conferenceParticipant({
+			from: r.userReferenceInPaymentTransaction.conferenceParticipantId,
+			to: r.conferenceParticipant.id,
+			optional: false
+		}),
 		paymentTransaction: r.one.paymentTransaction({
 			from: r.userReferenceInPaymentTransaction.paymentTransactionId,
 			to: r.paymentTransaction.id,
 			optional: false
 		}),
 		user: r.one.user({
-			from: r.userReferenceInPaymentTransaction.userId,
-			to: r.user.id,
+			from: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.user.id.through(r.conferenceParticipant.userId),
 			optional: false
 		})
 	},

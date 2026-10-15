@@ -42,15 +42,17 @@ function user(overrides: Partial<MailSyncUser> = {}): MailSyncUser {
 function delegation(overrides: Partial<Delegation> = {}): Delegation {
 	return {
 		applied: true,
-		assignedNationAlpha3Code: null,
-		assignedNonStateActorId: null,
+		assignedRoleId: null,
+		assignedRole: null,
 		conference: preparation,
 		...overrides
 	};
 }
 
+const nation = { assignedRoleId: 'nation-deu', assignedRole: { kind: 'NATION' as const } };
+const nonStateActor = { assignedRoleId: 'nsa', assignedRole: { kind: 'NON_STATE_ACTOR' as const } };
+
 const asMember = (d: Delegation, isHeadDelegate = false) => ({
-	conferenceId: d.conference.id,
 	isHeadDelegate,
 	delegation: d
 });
@@ -80,7 +82,7 @@ describe('computeSubscriberState', () => {
 			computeSubscriberState(user({ delegationMemberships: [asMember(d, isHeadDelegate)] }));
 
 		test('put a nation head delegate on the nation, head delegate and completed lists', () => {
-			const state = listsOf(delegation({ assignedNationAlpha3Code: 'DEU' }), true);
+			const state = listsOf(delegation(nation), true);
 			expect(state.listNames).toEqual([
 				list(preparation, 'DELEGATION_MEMBERS_NATIONS'),
 				list(preparation, 'HEAD_DELEGATES'),
@@ -92,7 +94,7 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('put a non-state actor delegate on the NSA list', () => {
-			const state = listsOf(delegation({ assignedNonStateActorId: 'nsa' }));
+			const state = listsOf(delegation(nonStateActor));
 			expect(state.listNames).toEqual([
 				list(preparation, 'DELEGATION_MEMBERS_NSA'),
 				list(preparation, 'REGISTRATION_COMPLETED')
@@ -110,10 +112,7 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('hold back every role list until the assignment is released', () => {
-			const state = listsOf(
-				delegation({ assignedNationAlpha3Code: 'DEU', conference: unreleased }),
-				true
-			);
+			const state = listsOf(delegation({ ...nation, conference: unreleased }), true);
 			expect(state.listNames).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
 			expect(state.attribs.conferences[0].role).toBeUndefined();
 			expect(listsOf(delegation({ conference: unreleased })).listNames).toEqual([
@@ -133,7 +132,7 @@ describe('computeSubscriberState', () => {
 			applied: boolean,
 			assignedRoleId: string | null,
 			conference: Conference = preparation
-		) => ({ conferenceId: conference.id, applied, assignedRoleId, conference });
+		) => ({ applied, assignedRoleId, conference });
 
 		test('sort applications by whether they applied and got a role', () => {
 			const state = computeSubscriberState(
@@ -170,15 +169,13 @@ describe('computeSubscriberState', () => {
 			delegations: Supervision['supervisedDelegationMembers'][number]['delegation'][],
 			singles: Supervision['supervisedSingleParticipants']
 		): Supervision => ({
-			conferenceId: conference.id,
 			conference,
 			supervisedDelegationMembers: delegations.map((d) => ({ delegation: d })),
 			supervisedSingleParticipants: singles
 		});
-		const supervised = (applied: boolean, assignedNationAlpha3Code: string | null = null) => ({
+		const supervised = (applied: boolean, assignedRoleId: string | null = null) => ({
 			applied,
-			assignedNationAlpha3Code,
-			assignedNonStateActorId: null
+			assignedRoleId
 		});
 		const listsOf = (s: Supervision) =>
 			computeSubscriberState(user({ conferenceSupervisor: [s] })).listNames;
@@ -202,17 +199,11 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('afterwards, keep only supervisors of someone who got a role', () => {
-			expect(listsOf(supervisor(preparation, [supervised(true, 'DEU')], []))).toEqual([
+			expect(listsOf(supervisor(preparation, [supervised(true, 'nation-deu')], []))).toEqual([
 				list(preparation, 'SUPERVISORS')
 			]);
 			expect(
-				listsOf(
-					supervisor(
-						preparation,
-						[{ applied: true, assignedNationAlpha3Code: null, assignedNonStateActorId: 'nsa' }],
-						[]
-					)
-				)
+				listsOf(supervisor(preparation, [{ applied: true, assignedRoleId: 'nsa' }], []))
 			).toEqual([list(preparation, 'SUPERVISORS')]);
 			expect(
 				listsOf(supervisor(preparation, [], [{ applied: true, assignedRoleId: 'press' }]))

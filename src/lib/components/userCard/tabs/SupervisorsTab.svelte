@@ -22,7 +22,9 @@
 
 	/** Supervisors reach a participant through either kind of registration, so both are asked. */
 	async function fetchSupervisors(userId: string, conferenceId: string) {
-		const forUser = { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } };
+		const forUser = {
+			where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
+		};
 		const [delegationMembers, singleParticipants] = await Promise.all([
 			client.liveQuery.delegationMembers({
 				__args: forUser,

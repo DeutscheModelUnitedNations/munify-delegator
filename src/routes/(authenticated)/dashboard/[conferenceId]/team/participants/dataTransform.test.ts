@@ -58,8 +58,12 @@ describe('transformParticipants', () => {
 						assignedCommittee: { name: 'GA' },
 						delegation: {
 							school: 'Gymnasium',
-							assignedNation: { alpha2Code: 'de', alpha3Code: 'deu' },
-							assignedNonStateActor: null
+							assignedRole: {
+								kind: 'NATION',
+								name: null,
+								fontAwesomeIcon: null,
+								nation: { alpha2Code: 'de', alpha3Code: 'deu' }
+							}
 						},
 						user: user('a', { phone: '123', conferenceParticipationsCount: 3 })
 					}
@@ -100,8 +104,12 @@ describe('transformParticipants', () => {
 						assignedCommittee: null,
 						delegation: {
 							school: null,
-							assignedNation: null,
-							assignedNonStateActor: { name: 'Greenpeace', fontAwesomeIcon: 'leaf' }
+							assignedRole: {
+								kind: 'NON_STATE_ACTOR',
+								name: 'Greenpeace',
+								fontAwesomeIcon: 'leaf',
+								nation: null
+							}
 						},
 						user: user('b')
 					}
@@ -129,7 +137,7 @@ describe('transformParticipants', () => {
 					{
 						isHeadDelegate: false,
 						assignedCommittee: null,
-						delegation: { school: null, assignedNation: null, assignedNonStateActor: null },
+						delegation: { school: null, assignedRole: null },
 						user: user('c')
 					}
 				]
@@ -166,16 +174,8 @@ describe('transformParticipants', () => {
 			plansOwnAttendance: true,
 			accepted: false
 		});
-		expect(
-			supervisor(
-				[{ delegation: { assignedNation: { alpha3Code: 'deu' }, assignedNonStateActor: null } }],
-				[]
-			).accepted
-		).toBe(true);
-		expect(
-			supervisor([{ delegation: { assignedNation: null, assignedNonStateActor: { id: 'n' } } }], [])
-				.accepted
-		).toBe(true);
+		expect(supervisor([{ delegation: { assignedRoleId: 'r' } }], []).accepted).toBe(true);
+		expect(supervisor([{ delegation: { assignedRoleId: null } }], []).accepted).toBe(false);
 		expect(supervisor([], [{ assignedRole: { id: 'r' } }]).accepted).toBe(true);
 		expect(supervisor([], [{ assignedRole: null }]).accepted).toBe(false);
 	});

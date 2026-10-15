@@ -41,15 +41,15 @@ const CONFERENCE_COLUMNS = { columns: { id: true, title: true, startConference: 
 async function attendancesOf(id: string): Promise<Attendance[]> {
 	const [memberships, singles, supervisions] = await Promise.all([
 		db.query.delegationMember.findMany({
-			where: { userId: id },
+			where: { participant: { userId: id } },
 			with: { delegation: { columns: {}, with: { conference: CONFERENCE_COLUMNS } } }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { userId: id },
+			where: { participant: { userId: id } },
 			with: { conference: CONFERENCE_COLUMNS }
 		}),
 		db.query.conferenceSupervisor.findMany({
-			where: { userId: id },
+			where: { participant: { userId: id } },
 			with: { conference: CONFERENCE_COLUMNS }
 		})
 	]);

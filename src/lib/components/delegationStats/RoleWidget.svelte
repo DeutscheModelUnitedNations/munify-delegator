@@ -10,11 +10,11 @@
 		committees?:
 			Pick<typeof schema.committee.$inferSelect, 'name' | 'numOfSeatsPerDelegation'>[] | null;
 		nonStateActor?: Pick<
-			typeof schema.nonStateActor.$inferSelect,
+			typeof schema.conferenceRole.$inferSelect,
 			'name' | 'fontAwesomeIcon' | 'seatAmount'
 		> | null;
 		customConferenceRole?: Pick<
-			typeof schema.customConferenceRole.$inferSelect,
+			typeof schema.conferenceRole.$inferSelect,
 			'name' | 'fontAwesomeIcon'
 		> | null;
 	}

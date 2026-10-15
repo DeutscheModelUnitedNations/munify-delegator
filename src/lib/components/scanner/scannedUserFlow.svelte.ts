@@ -6,7 +6,7 @@ import { genericPromiseToastMessages } from '$lib/utils/toast';
 
 /** A status change a scan flow makes, minus the identifying fields the flow fills in. */
 export type StatusChange = Omit<
-	Parameters<Mutation['updateConferenceParticipantStatus']>[0],
+	Parameters<Mutation['updateConferenceParticipant']>[0],
 	'conferenceId' | 'id' | 'userId'
 >;
 

@@ -22,7 +22,7 @@ import {
 	updatableUser
 } from './userPermissions';
 import {
-	conferenceParticipantStatusPubsub,
+	conferenceParticipantPubsub,
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
 	singleParticipantPubsub,
@@ -73,7 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 			delegationMemberPubsub.removed();
 			singleParticipantPubsub.removed();
 			conferenceSupervisorPubsub.removed();
-			conferenceParticipantStatusPubsub.removed();
+			conferenceParticipantPubsub.removed();
 
 			return db.query.user
 				.findFirst(

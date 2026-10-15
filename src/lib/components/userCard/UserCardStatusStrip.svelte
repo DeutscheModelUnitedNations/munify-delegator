@@ -13,7 +13,7 @@
 	type AdministrativeStatus = 'DONE' | 'PROBLEM' | 'PENDING';
 
 	const statuses = $derived(
-		await client.liveQuery.conferenceParticipantStatuses({
+		await client.liveQuery.conferenceParticipants({
 			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 			id: true,
 			paymentStatus: true,

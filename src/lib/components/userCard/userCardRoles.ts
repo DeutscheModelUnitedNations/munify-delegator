@@ -1,13 +1,27 @@
 import { client } from '$lib/api/rumbleClient/client';
 
 /**
+ * The filters for one person's rows in one conference: `forUser` for tables naming them directly
+ * (team members), `registrationOfUser` for registrations, which reach the conference and the user
+ * through their participant row.
+ */
+export function userInConference(userId: string, conferenceId: string) {
+	return {
+		forUser: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
+		registrationOfUser: {
+			where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
+		}
+	};
+}
+
+/**
  * Who someone is in one conference: their name, and which registrations they hold there.
  *
  * This is what the user card's header renders and what decides which tabs it offers. Every tab
  * fetches the rest of what it shows on its own, once it is opened.
  */
 export async function fetchUserCardRoles(userId: string, conferenceId: string) {
-	const forUser = { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } };
+	const { forUser, registrationOfUser } = userInConference(userId, conferenceId);
 
 	const [user, delegationMembers, singleParticipants, conferenceSupervisors, teamMembers] =
 		await Promise.all([
@@ -20,32 +34,33 @@ export async function fetchUserCardRoles(userId: string, conferenceId: string) {
 				gender: true
 			}),
 			client.liveQuery.delegationMembers({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				isHeadDelegate: true,
 				assignedCommittee: { id: true, abbreviation: true },
 				delegation: {
 					id: true,
-					assignedNation: { alpha2Code: true, alpha3Code: true },
-					assignedNonStateActor: { id: true, name: true, fontAwesomeIcon: true }
+					assignedRole: {
+						id: true,
+						kind: true,
+						name: true,
+						fontAwesomeIcon: true,
+						nation: { alpha2Code: true, alpha3Code: true }
+					}
 				}
 			}),
 			client.liveQuery.singleParticipants({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				applied: true,
 				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
 			}),
 			client.liveQuery.conferenceSupervisors({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				supervisedDelegationMembers: {
 					id: true,
-					delegation: {
-						id: true,
-						assignedNation: { alpha2Code: true },
-						assignedNonStateActor: { id: true }
-					}
+					delegation: { id: true, assignedRole: { id: true } }
 				},
 				supervisedSingleParticipants: { id: true, assignedRole: { id: true } }
 			}),
@@ -78,16 +93,11 @@ export function hasConferenceAccess({
 	teamMember
 }: UserCardRoles) {
 	if (teamMember) return true;
-	if (
-		delegationMember &&
-		(delegationMember.delegation.assignedNation ||
-			delegationMember.delegation.assignedNonStateActor)
-	)
-		return true;
+	if (delegationMember?.delegation.assignedRole) return true;
 	if (singleParticipant?.assignedRole) return true;
 	if (conferenceSupervisor) {
 		const anyDelegationAssigned = conferenceSupervisor.supervisedDelegationMembers.some(
-			(dm) => dm.delegation.assignedNation || dm.delegation.assignedNonStateActor
+			(dm) => dm.delegation.assignedRole
 		);
 		const anySingleAssigned = conferenceSupervisor.supervisedSingleParticipants.some(
 			(sp) => sp.assignedRole

@@ -71,7 +71,11 @@ export async function assertCanUpdateDelegation(ctx: ApiContext, id: string) {
 	return db.query.delegation
 		.findFirst({
 			...updatable.query.single,
-			with: { members: true, conference: true, appliedForRoles: true }
+			with: {
+				members: { with: { participant: { columns: { userId: true } } } },
+				conference: true,
+				appliedForRoles: true
+			}
 		})
 		.then(assertFindFirstExists);
 }

@@ -25,7 +25,11 @@ export function registerUserReferenceInPaymentTransactionAbilities() {
 	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
 		const id = userId(ctx);
 		return id
-			? { where: { OR: [{ paymentTransaction: { user: { id } } }, { user: { id } }] } }
+			? {
+					where: {
+						OR: [{ paymentTransaction: { payer: { userId: id } } }, { participant: { userId: id } }]
+					}
+				}
 			: undefined;
 	});
 }

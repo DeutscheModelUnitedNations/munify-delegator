@@ -5,11 +5,12 @@
  * itself on the table, and an open page refreshes.
  */
 export function duplicatesOfConference(conferenceId: string) {
+	const inConference = { conference: { id: { eq: conferenceId } } };
 	const takesPart = {
 		OR: [
-			{ delegationMemberships: { conferenceId: { eq: conferenceId } } },
-			{ singleParticipant: { conferenceId: { eq: conferenceId } } },
-			{ conferenceSupervisor: { conferenceId: { eq: conferenceId } } }
+			{ delegationMemberships: inConference },
+			{ singleParticipant: inConference },
+			{ conferenceSupervisor: inConference }
 		]
 	};
 	return { OR: [{ user: takesPart }, { candidate: takesPart }] };

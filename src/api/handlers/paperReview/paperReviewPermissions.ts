@@ -12,7 +12,9 @@ export function registerPaperReviewAbilities() {
 
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
 		const id = userId(ctx);
-		return id ? { where: { paperVersion: { paper: { author: { id } } } } } : undefined;
+		return id
+			? { where: { paperVersion: { paper: { authorParticipant: { userId: id } } } } }
+			: undefined;
 	});
 
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
@@ -34,11 +36,15 @@ export function registerPaperReviewAbilities() {
 /** Rejects the review unless the paper exists and the caller is one of its conference's reviewers. */
 export async function assertCanReviewPaper(ctx: Context, paperId: string) {
 	const paper = await db.query.paper
-		.findFirst({ where: { id: paperId }, columns: { conferenceId: true } })
+		.findFirst({
+			where: { id: paperId },
+			columns: {},
+			with: { delegation: { columns: { conferenceId: true } } }
+		})
 		.then(assertFindFirstExists);
 
 	// Reviewing is a reviewer's action; reading the paper is not enough.
-	if (!(await hasTeamRole(ctx, paper.conferenceId, PAPER_ROLES))) {
+	if (!(await hasTeamRole(ctx, paper.delegation.conferenceId, PAPER_ROLES))) {
 		throw apiError('FORBIDDEN', m.reviewOnlyReviewers());
 	}
 }

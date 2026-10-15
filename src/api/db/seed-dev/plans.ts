@@ -344,9 +344,14 @@ export const joinCodes = {
 	lateDelegation: 'DLG999',
 	/** Assigned conferences: the German delegation. */
 	germanDelegation: 'DLGBRD',
-	/** Supervisors: dev-reg-supervisor / dev-supervisor. */
+	/**
+	 * Supervisors; connection codes are unique across conferences. "Registration open":
+	 * dev-reg-supervisor.
+	 */
 	supervisor: 'TCH777',
+	/** "Preparation": dev-supervisor-absent. */
 	supervisorAbsent: 'TCH888',
+	/** "Preparation": dev-supervisor-rejected. */
 	supervisorRejected: 'TCH999'
 } as const;
 

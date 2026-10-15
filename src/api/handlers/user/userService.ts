@@ -5,7 +5,7 @@ import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { and, count, eq, isNotNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { apiError } from '$api/services/errors/apiError';
 import { m } from '$lib/paraglide/messages';
@@ -15,28 +15,30 @@ import { m } from '$lib/paraglide/messages';
  * seat do not count.
  */
 export async function countConferenceParticipations(userId: string) {
-	const { delegation, delegationMember, singleParticipant } = schema;
-	const [[memberships], participations] = await Promise.all([
+	const { delegation, delegationMember, singleParticipant, conferenceParticipant } = schema;
+	const [[memberships], [participations]] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(delegationMember)
+			.innerJoin(
+				conferenceParticipant,
+				eq(conferenceParticipant.id, delegationMember.conferenceParticipantId)
+			)
 			.innerJoin(delegation, eq(delegation.id, delegationMember.delegationId))
+			.where(and(eq(conferenceParticipant.userId, userId), isNotNull(delegation.assignedRoleId))),
+		db
+			.select({ value: count() })
+			.from(singleParticipant)
+			.innerJoin(
+				conferenceParticipant,
+				eq(conferenceParticipant.id, singleParticipant.conferenceParticipantId)
+			)
 			.where(
-				and(
-					eq(delegationMember.userId, userId),
-					or(
-						isNotNull(delegation.assignedNationAlpha3Code),
-						isNotNull(delegation.assignedNonStateActorId)
-					)
-				)
-			),
-		db.$count(
-			singleParticipant,
-			and(eq(singleParticipant.userId, userId), isNotNull(singleParticipant.assignedRoleId))
-		)
+				and(eq(conferenceParticipant.userId, userId), isNotNull(singleParticipant.assignedRoleId))
+			)
 	]);
 
-	return (memberships?.value ?? 0) + participations;
+	return (memberships?.value ?? 0) + (participations?.value ?? 0);
 }
 
 /** Where-clauses, one per table, that say which participation rows the caller may delete. */
@@ -44,7 +46,7 @@ export type DeletableParticipation = {
 	delegationMember: SQL | undefined;
 	singleParticipant: SQL | undefined;
 	conferenceSupervisor: SQL | undefined;
-	conferenceParticipantStatus: SQL | undefined;
+	conferenceParticipant: SQL | undefined;
 };
 
 /**
@@ -62,9 +64,9 @@ export async function removeParticipation(
 			where: {
 				id: userId,
 				OR: [
-					{ delegationMemberships: { conferenceId } },
-					{ singleParticipant: { conferenceId } },
-					{ conferenceSupervisor: { conferenceId } }
+					{ delegationMemberships: { participant: { conferenceId } } },
+					{ singleParticipant: { participant: { conferenceId } } },
+					{ conferenceSupervisor: { participant: { conferenceId } } }
 				]
 			},
 			columns: { id: true }
@@ -77,9 +79,29 @@ export async function removeParticipation(
 		await tx.delete(schema.delegationMember).where(deletable.delegationMember);
 		await tx.delete(schema.singleParticipant).where(deletable.singleParticipant);
 		await tx.delete(schema.conferenceSupervisor).where(deletable.conferenceSupervisor);
+		// The person's row goes too, unless papers or payments still name them: those stay the
+		// conference's record, and the row with them (as it does after leaving a delegation).
 		await tx
-			.delete(schema.conferenceParticipantStatus)
-			.where(deletable.conferenceParticipantStatus);
+			.delete(schema.conferenceParticipant)
+			.where(
+				and(
+					deletable.conferenceParticipant,
+					notExists(
+						tx
+							.select({ id: schema.paper.id })
+							.from(schema.paper)
+							.where(eq(schema.paper.authorParticipantId, schema.conferenceParticipant.id))
+					),
+					notExists(
+						tx
+							.select({ id: schema.paymentTransaction.id })
+							.from(schema.paymentTransaction)
+							.where(
+								eq(schema.paymentTransaction.payerParticipantId, schema.conferenceParticipant.id)
+							)
+					)
+				)
+			);
 	});
 }
 

@@ -12,7 +12,7 @@
 		if (!(await confirmDialog({ text: m.switchAttendanceStateConfirmation() }))) return;
 		loading = true;
 		try {
-			await client.mutate.updateAllConferenceParticipantStatus({
+			await client.mutate.updateAllConferenceParticipants({
 				__args: { conferenceId: params.conferenceId, didAttend: value },
 				changed: true
 			});

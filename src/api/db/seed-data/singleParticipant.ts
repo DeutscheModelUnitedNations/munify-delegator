@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type * as schema from '../schema';
 
 export function makeSeedSingleParticipant(
-	options: Pick<typeof schema.singleParticipant.$inferInsert, 'conferenceId' | 'userId'> &
+	options: Pick<typeof schema.singleParticipant.$inferInsert, 'conferenceParticipantId'> &
 		Partial<Pick<typeof schema.singleParticipant.$inferInsert, 'applied' | 'assignedRoleId'>>
 ): typeof schema.singleParticipant.$inferInsert {
 	return {

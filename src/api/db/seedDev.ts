@@ -23,7 +23,7 @@ import { devAccounts } from './seed-data/devAccounts';
 import { pdfTemplate } from './seed-data/content';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
 import { replaceSeedObjects, seedStorage } from './seed-dev/files';
-import type { CrowdKind, SeedWorld } from './seed-dev/context';
+import { createUniqueCode, type CrowdKind, type SeedWorld } from './seed-dev/context';
 import { addCrowd, addWaitingList, buildConferenceStructure } from './seed-dev/conference';
 import { addAssignmentDraft } from './seed-dev/assignmentDraft';
 import { addAssignedPersonas, addRegistrationPersonas } from './seed-dev/personas';
@@ -72,7 +72,8 @@ const world: SeedWorld = {
 		if (kind === 'participant') user.globalNotes = careNoteFor(participantCount++);
 		batch.user.push(user);
 		return user.id;
-	}
+	},
+	uniqueCode: createUniqueCode('the seed')
 };
 
 for (const account of devAccounts) {

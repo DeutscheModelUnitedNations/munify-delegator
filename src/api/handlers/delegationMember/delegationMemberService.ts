@@ -1,10 +1,11 @@
 import { type Transaction, db, schema } from '$api/db/db';
+import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
 } from '$api/services/registration/participation';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
-import { assignedRoleConditions, nullToUndefined } from '$api/services/args';
+import { nullToUndefined } from '$api/services/args';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -32,19 +33,27 @@ export async function joinDelegationByEntryCode(
 		throwIfAnyIsFound: true
 	});
 
-	const created = await db
-		.insert(schema.delegationMember)
-		.values({
-			conferenceId: delegation.conferenceId,
-			delegationId: delegation.id,
-			userId,
-			isHeadDelegate: false
-		})
-		.returning()
-		.then(assertFirstEntryExists);
+	// The person's row and the membership go in together, so a refused insert leaves neither.
+	const created = await db.transaction(async (tx) => {
+		const member = await tx
+			.insert(schema.delegationMember)
+			.values({
+				delegationId: delegation.id,
+				conferenceParticipantId: await ensureConferenceParticipant(
+					tx,
+					delegation.conferenceId,
+					userId
+				),
+				isHeadDelegate: false
+			})
+			.returning()
+			.then(assertFirstEntryExists);
 
-	// The delegation just grew, so applications it can no longer seat are dropped.
-	await tidyRoleApplications(delegation.id);
+		// The delegation just grew, so applications it can no longer seat are dropped.
+		await tidyRoleApplications(delegation.id, tx);
+
+		return member;
+	});
 
 	return created.id;
 }
@@ -86,13 +95,11 @@ export async function removeDelegationMember(id: string) {
 				.where(eq(schema.delegationMember.id, successor.id));
 		}
 
+		// Only meaningful while the delegation still exists.
+		await tidyRoleApplications(deleted.delegationId, tx);
+
 		return deleted.delegationId;
 	});
-
-	// Only meaningful while the delegation still exists.
-	if (delegationId) {
-		await tidyRoleApplications(delegationId);
-	}
 
 	return delegationId;
 }
@@ -109,25 +116,24 @@ const ASSIGNED_DELEGATION_INFOS = {
 async function clearParticipation(tx: Transaction, conferenceId: string, userId: string) {
 	if (!(await isUserAlreadyRegistered({ userId, conferenceId }))) return;
 
+	const participant = await tx.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId },
+		columns: { id: true }
+	});
+	// Registered, but only on the team: nothing to clear, and nothing to move either.
+	if (!participant) {
+		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
+	}
+
 	const removedMember = await tx
 		.delete(schema.delegationMember)
-		.where(
-			and(
-				eq(schema.delegationMember.conferenceId, conferenceId),
-				eq(schema.delegationMember.userId, userId)
-			)
-		)
+		.where(eq(schema.delegationMember.conferenceParticipantId, participant.id))
 		.returning({ id: schema.delegationMember.id });
 	if (removedMember.length > 0) return;
 
 	const removedSingle = await tx
 		.delete(schema.singleParticipant)
-		.where(
-			and(
-				eq(schema.singleParticipant.conferenceId, conferenceId),
-				eq(schema.singleParticipant.userId, userId)
-			)
-		)
+		.where(eq(schema.singleParticipant.conferenceParticipantId, participant.id))
 		.returning({ id: schema.singleParticipant.id });
 	if (removedSingle.length === 0) {
 		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
@@ -143,7 +149,7 @@ type AssignedDelegation = { id: string; members: { isHeadDelegate: boolean }[] }
 async function prepareAssignedDelegation(
 	tx: Transaction,
 	conferenceId: string,
-	role: { assignedNationAlpha3Code?: string | null; assignedNonStateActorId?: string | null },
+	assignedRoleId: string,
 	existing: AssignedDelegation | undefined
 ): Promise<AssignedDelegation> {
 	if (!existing) {
@@ -151,8 +157,7 @@ async function prepareAssignedDelegation(
 			.insert(schema.delegation)
 			.values({
 				conferenceId,
-				assignedNationAlpha3Code: nullToUndefined(role.assignedNationAlpha3Code),
-				assignedNonStateActorId: nullToUndefined(role.assignedNonStateActorId),
+				assignedRoleId,
 				entryCode: makeEntryCode(),
 				...ASSIGNED_DELEGATION_INFOS
 			})
@@ -172,26 +177,30 @@ async function prepareAssignedDelegation(
 
 /**
  * Management placing a user straight into an assigned delegation, bypassing the normal
- * application flow. The delegation is created on demand for the nation or non-state actor if
- * none exists yet. Returns the id of the new member.
+ * application flow. The delegation is created on demand for the role if none holds it yet.
+ * Returns the id of the new member.
  */
 export async function placeUserInAssignedDelegation(args: {
 	conferenceId: string;
 	userId: string;
-	assignedNationAlpha3Code?: string | null;
-	assignedNonStateActorId?: string | null;
+	assignedRoleId: string;
 	assignedCommitteeId?: string | null;
 }) {
 	return db.transaction(async (tx) => {
 		const existing = await tx.query.delegation.findFirst({
-			where: { conferenceId: args.conferenceId, OR: assignedRoleConditions(args) },
+			where: { conferenceId: args.conferenceId, assignedRoleId: args.assignedRoleId },
 			with: { members: true }
 		});
 
 		// Existing participation is cleared first, so the user can be moved.
 		await clearParticipation(tx, args.conferenceId, args.userId);
 
-		const delegation = await prepareAssignedDelegation(tx, args.conferenceId, args, existing);
+		const delegation = await prepareAssignedDelegation(
+			tx,
+			args.conferenceId,
+			args.assignedRoleId,
+			existing
+		);
 
 		// Best-effort: not every assigned user came from the waiting list.
 		await tx
@@ -207,8 +216,11 @@ export async function placeUserInAssignedDelegation(args: {
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({
-				conferenceId: args.conferenceId,
-				userId: args.userId,
+				conferenceParticipantId: await ensureConferenceParticipant(
+					tx,
+					args.conferenceId,
+					args.userId
+				),
 				delegationId: delegation.id,
 				assignedCommitteeId: nullToUndefined(args.assignedCommitteeId),
 				isHeadDelegate: !delegation.members.some((m) => m.isHeadDelegate)

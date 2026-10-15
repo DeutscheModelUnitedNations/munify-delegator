@@ -4,6 +4,7 @@
 	import Flag from '../Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { UserCardRoles } from './userCardRoles';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 
 	let { delegationMember, singleParticipant, conferenceSupervisor, teamMember }: UserCardRoles =
 		$props();
@@ -11,24 +12,27 @@
 	type DelegationMember = NonNullable<UserCardRoles['delegationMember']>;
 	type SingleParticipant = NonNullable<UserCardRoles['singleParticipant']>;
 	type TeamMember = NonNullable<UserCardRoles['teamMember']>;
+	type Role = NonNullable<DelegationMember['delegation']['assignedRole']>;
 
-	const assignmentName = (delegation: DelegationMember['delegation']) =>
-		delegation.assignedNonStateActor?.name ??
-		(delegation.assignedNation &&
-			getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code));
+	const assignmentName = (role: Role | null) => {
+		const { nation, nonStateActor } = splitRole(role);
+		return (
+			nonStateActor?.name ?? (nation && getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code))
+		);
+	};
 </script>
 
 {#snippet delegationMemberSummary(member: DelegationMember)}
-	{@const delegation = member.delegation}
-	{#if delegation.assignedNation || delegation.assignedNonStateActor}
+	{@const role = splitRole(member.delegation.assignedRole)}
+	{#if role.nation || role.nonStateActor}
 		<span class="bg-base-100 rounded-box flex items-center gap-2 py-1 pr-3 pl-1 font-semibold">
 			<Flag
 				size="xs"
-				alpha2Code={delegation.assignedNation?.alpha2Code}
-				nsa={!!delegation.assignedNonStateActor}
-				icon={delegation.assignedNonStateActor?.fontAwesomeIcon}
+				alpha2Code={role.nation?.alpha2Code}
+				nsa={!!role.nonStateActor}
+				icon={role.nonStateActor?.fontAwesomeIcon}
 			/>
-			{assignmentName(delegation)}
+			{assignmentName(member.delegation.assignedRole)}
 		</span>
 	{:else}
 		<span class="badge badge-error badge-soft">{m.noAssignment()}</span>

@@ -10,6 +10,7 @@
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 	import DelegationMembersStatusSection from './DelegationMembersStatusSection.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 
 	interface Props {
 		conferenceId: string;
@@ -24,7 +25,9 @@
 
 	let { conferenceId, delegationMember, user, status, ofAgeAtConference }: Props = $props();
 
-	const assignedNation = $derived(delegationMember.delegation.assignedNation);
+	const assignedRole = $derived(splitRole(delegationMember.delegation.assignedRole));
+	const assignedNation = $derived(assignedRole.nation);
+	const assignedRoleId = $derived(delegationMember.delegation.assignedRole?.id);
 	// A primitive, so the queries below only run again when the delegation actually changes rather
 	// than on every live update of the membership they were handed.
 	const delegationId = $derived(delegationMember.delegation.id);
@@ -41,7 +44,7 @@
 					id: true,
 					name: true,
 					numOfSeatsPerDelegation: true,
-					nations: { alpha3Code: true }
+					roles: { id: true }
 				}
 			})
 		])
@@ -79,10 +82,8 @@
 		<RoleWidget
 			country={assignedNation}
 			committees={assignedNation &&
-				conference.committees.filter((c) =>
-					c.nations.some((n) => n.alpha3Code === assignedNation.alpha3Code)
-				)}
-			nonStateActor={delegationMember.delegation.assignedNonStateActor}
+				conference.committees.filter((c) => c.roles.some((role) => role.id === assignedRoleId))}
+			nonStateActor={assignedRole.nonStateActor}
 		/>
 	</div>
 	<GenericWidget content={delegationStats} />
@@ -101,8 +102,8 @@
 	>
 		<CountryStats countryCode={assignedNation.alpha3Code} />
 	</DashboardSection>
-{:else if delegationMember.delegation.assignedNonStateActor}
-	{@const nsa = delegationMember.delegation.assignedNonStateActor}
+{:else if assignedRole.nonStateActor}
+	{@const nsa = assignedRole.nonStateActor}
 	<DashboardSection
 		icon="building-ngo"
 		title={m.informationOnYourNSA()}

@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
 import { apiError } from '$api/services/errors/apiError';
 
@@ -23,12 +23,13 @@ function generateSEPASafeId() {
 }
 
 /**
- * Records a payment reference paid by `userId` for the participants `paymentFor`, at the
- * conference's fee per participant. Returns the new reference's id.
+ * Records a payment reference paid by the participant `payerParticipantId` for the participants
+ * `paymentFor` (participant row ids), at the conference's fee per participant. Returns the new
+ * reference's id.
  */
 export async function createPaymentTransaction(
-	conference: { id: string; feeAmount: number | null },
-	userId: string,
+	conference: { feeAmount: number | null },
+	payerParticipantId: string,
 	paymentFor: readonly string[]
 ) {
 	// Captured in a const so the narrowing survives into the transaction closure below,
@@ -53,13 +54,15 @@ export async function createPaymentTransaction(
 		await tx.insert(schema.paymentTransaction).values({
 			id,
 			amount: paymentFor.length * feeAmount,
-			conferenceId: conference.id,
-			userId
+			payerParticipantId
 		});
 		if (paymentFor.length > 0) {
-			await tx
-				.insert(schema.userReferenceInPaymentTransaction)
-				.values(paymentFor.map((userId) => ({ paymentTransactionId: id, userId })));
+			await tx.insert(schema.userReferenceInPaymentTransaction).values(
+				paymentFor.map((conferenceParticipantId) => ({
+					paymentTransactionId: id,
+					conferenceParticipantId
+				}))
+			);
 		}
 	});
 
@@ -71,7 +74,7 @@ export async function createPaymentTransaction(
  * status over to everybody it covers.
  */
 export async function applyPaymentStatus(
-	transaction: { id: string; conferenceId: string; paymentFor: { userId: string }[] },
+	transaction: { id: string; paymentFor: { conferenceParticipantId: string }[] },
 	assignedStatus: AdministrativeStatus,
 	recievedAt: Date | null | undefined
 ) {
@@ -83,23 +86,13 @@ export async function applyPaymentStatus(
 				.where(eq(schema.paymentTransaction.id, transaction.id));
 		}
 
-		// The payment status is carried over to every participant the transaction covers,
-		// creating their status row if it does not exist yet.
-		for (const reference of transaction.paymentFor) {
+		// The payment status is carried over to every participant the transaction covers.
+		const covered = transaction.paymentFor.map((reference) => reference.conferenceParticipantId);
+		if (covered.length > 0) {
 			await tx
-				.insert(schema.conferenceParticipantStatus)
-				.values({
-					userId: reference.userId,
-					conferenceId: transaction.conferenceId,
-					paymentStatus: assignedStatus
-				})
-				.onConflictDoUpdate({
-					target: [
-						schema.conferenceParticipantStatus.userId,
-						schema.conferenceParticipantStatus.conferenceId
-					],
-					set: { paymentStatus: assignedStatus }
-				});
+				.update(schema.conferenceParticipant)
+				.set({ paymentStatus: assignedStatus })
+				.where(inArray(schema.conferenceParticipant.id, covered));
 		}
 	});
 }

@@ -4,8 +4,7 @@ import { assignmentGroups } from './state';
 
 const delegation = (id: string, size: number) => ({
 	id,
-	nationAlpha3Code: null,
-	nonStateActorId: null,
+	roleId: null,
 	members: Array.from({ length: size }, (_, i) => ({ id: `${id}-${i}`, isHeadDelegate: i === 0 }))
 });
 
@@ -31,16 +30,14 @@ describe('experienceShare', () => {
 					id: 'u1',
 					sourceDelegationId: 'a',
 					sourceSingleParticipantId: null,
-					nationAlpha3Code: null,
-					nonStateActorId: null,
+					roleId: null,
 					memberIds: ['a-0', 'a-1']
 				},
 				{
 					id: 'u2',
 					sourceDelegationId: 'a',
 					sourceSingleParticipantId: null,
-					nationAlpha3Code: null,
-					nonStateActorId: null,
+					roleId: null,
 					memberIds: ['a-2']
 				}
 			]
@@ -69,8 +66,7 @@ describe('experienceShare', () => {
 					id: 'u',
 					sourceDelegationId: null,
 					sourceSingleParticipantId: 's',
-					nationAlpha3Code: null,
-					nonStateActorId: null,
+					roleId: null,
 					memberIds: []
 				}
 			]

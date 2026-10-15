@@ -18,7 +18,7 @@
 	let delegation = $derived(delegationMember?.delegation);
 	let committees = $derived(
 		assignment.committees.filter((c) =>
-			c.nations.some((n) => n.alpha3Code === delegation?.assignedNation?.alpha3Code)
+			c.roles.some((role) => role.id === delegation?.assignedRole?.id)
 		)
 	);
 

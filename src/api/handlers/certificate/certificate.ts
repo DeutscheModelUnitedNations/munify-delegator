@@ -63,9 +63,9 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanGetCertificate(ctx, args.conferenceId, args.userId);
 
-			const status = await db.query.conferenceParticipantStatus
+			const status = await db.query.conferenceParticipant
 				.findFirst({
-					...(await ctx.abilities.conferenceParticipantStatus.filter('read')).merge({
+					...(await ctx.abilities.conferenceParticipant.filter('read')).merge({
 						where: { conferenceId: args.conferenceId, userId: args.userId }
 					}).query.single,
 					with: {

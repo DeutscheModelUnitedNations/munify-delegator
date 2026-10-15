@@ -13,8 +13,9 @@ const SeatPlanningCommitteeSeat = schemaBuilder.simpleObject('SeatPlanningCommit
 
 const SeatPlanningAssignedRole = schemaBuilder.simpleObject('SeatPlanningAssignedRole', {
 	fields: (t) => ({
+		roleId: t.id(),
+		/** Set when the role is a nation. */
 		nationAlpha3Code: t.string({ nullable: true }),
-		nonStateActorId: t.id({ nullable: true }),
 		memberCount: t.int()
 	})
 });
@@ -44,15 +45,10 @@ schemaBuilder.queryFields((t) => ({
 			await assertCanReadSeatPlanning(ctx, args.conferenceId);
 
 			const delegations = await db.query.delegation.findMany({
-				where: {
-					conferenceId: args.conferenceId,
-					OR: [
-						{ assignedNationAlpha3Code: { isNotNull: true } },
-						{ assignedNonStateActorId: { isNotNull: true } }
-					]
-				},
-				columns: { assignedNationAlpha3Code: true, assignedNonStateActorId: true },
+				where: { conferenceId: args.conferenceId, assignedRoleId: { isNotNull: true } },
+				columns: { assignedRoleId: true },
 				with: {
+					assignedRole: { columns: { nationAlpha3Code: true } },
 					members: {
 						columns: { assignedCommitteeId: true },
 						with: { user: { columns: { givenName: true, familyName: true } } }
@@ -60,12 +56,24 @@ schemaBuilder.queryFields((t) => ({
 				}
 			});
 
+			const assigned = delegations.flatMap(({ assignedRoleId, assignedRole, members }) =>
+				assignedRoleId
+					? [
+							{
+								roleId: assignedRoleId,
+								nationAlpha3Code: assignedRole?.nationAlpha3Code ?? null,
+								members
+							}
+						]
+					: []
+			);
+
 			return {
-				committeeSeats: lockedCommitteeSeats(delegations),
-				roles: delegations.map((delegation) => ({
-					nationAlpha3Code: delegation.assignedNationAlpha3Code,
-					nonStateActorId: delegation.assignedNonStateActorId,
-					memberCount: delegation.members.length
+				committeeSeats: lockedCommitteeSeats(assigned),
+				roles: assigned.map(({ roleId, nationAlpha3Code, members }) => ({
+					roleId,
+					nationAlpha3Code,
+					memberCount: members.length
 				}))
 			};
 		}

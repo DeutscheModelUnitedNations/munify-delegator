@@ -4,8 +4,9 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertCustomRolesOf,
 	assertTeamRole,
+	isTeamMemberOf,
 	isTeamMemberOfConference,
-	offeredIn,
+	assertOfferedIn,
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
@@ -22,6 +23,12 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 const assignmentTeam = (ctx: Parameters<typeof isTeamMemberOfConference>[0]) =>
 	where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES));
 
+/** The same for a planned single role, which reaches its conference through the participant. */
+const singleRoleAssignmentTeam = (ctx: Parameters<typeof isTeamMemberOf>[0]) => {
+	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+	return conference === undefined ? undefined : { where: { singleParticipant: { conference } } };
+};
+
 export function registerAssignmentAbilities() {
 	abilityBuilder.assignmentReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.assignmentReview.allow(['read', 'update', 'delete']).when(assignmentTeam);
@@ -30,7 +37,9 @@ export function registerAssignmentAbilities() {
 	abilityBuilder.assignmentUnitMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.assignmentUnitMember.allow(['read', 'update', 'delete']).when(assignmentTeam);
 	abilityBuilder.assignmentSingleRole.allow(['read', 'update', 'delete']).when(systemAdmin);
-	abilityBuilder.assignmentSingleRole.allow(['read', 'update', 'delete']).when(assignmentTeam);
+	abilityBuilder.assignmentSingleRole
+		.allow(['read', 'update', 'delete'])
+		.when(singleRoleAssignmentTeam);
 	abilityBuilder.assignmentWeights.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.assignmentWeights.allow(['read', 'update', 'delete']).when(assignmentTeam);
 }
@@ -45,22 +54,14 @@ export async function assertCanAssignDelegation(ctx: ApiContext, id: string) {
 	const delegation = await db.query.delegation
 		.findFirst({
 			where: { id, applied: true },
-			columns: {
-				id: true,
-				conferenceId: true,
-				assignedNationAlpha3Code: true,
-				assignedNonStateActorId: true
-			},
+			columns: { id: true, conferenceId: true, assignedRoleId: true },
 			with: { members: { columns: { id: true } } }
 		})
 		.then(assertFindFirstExists);
 	await assertTeamRole(ctx, delegation.conferenceId, PARTICIPANT_CARE_ROLES);
 	return {
 		...delegation,
-		liveTarget: {
-			nationAlpha3Code: delegation.assignedNationAlpha3Code,
-			nonStateActorId: delegation.assignedNonStateActorId
-		}
+		liveTarget: { roleId: delegation.assignedRoleId }
 	};
 }
 
@@ -69,11 +70,13 @@ export async function assertCanAssignSingleParticipant(ctx: ApiContext, id: stri
 	const participant = await db.query.singleParticipant
 		.findFirst({
 			where: { id, applied: true },
-			columns: { id: true, conferenceId: true, assignedRoleId: true }
+			columns: { id: true, assignedRoleId: true },
+			with: { participant: { columns: { conferenceId: true } } }
 		})
 		.then(assertFindFirstExists);
-	await assertTeamRole(ctx, participant.conferenceId, PARTICIPANT_CARE_ROLES);
-	return participant;
+	const conferenceId = participant.participant.conferenceId;
+	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	return { id: participant.id, assignedRoleId: participant.assignedRoleId, conferenceId };
 }
 
 /** The conference of the application a review is about, once the caller may assign there. */
@@ -99,29 +102,9 @@ export async function assertCanAssignUnit(ctx: ApiContext, unitId: string) {
 		.then(assertFindFirstExists);
 }
 
-/** Refuses a nation or non-state actor the conference does not offer. */
+/** Refuses a nation or non-state actor the conference does not offer; no role passes. */
 export async function assertTargetOf(conferenceId: string, target: Target) {
-	if (target.nationAlpha3Code && target.nonStateActorId) {
-		throw apiError('INVALID_INPUT', m.assignmentDelegationNationOrNsa());
-	}
-	if (
-		target.nationAlpha3Code &&
-		!(await offeredIn(conferenceId, { assignedNationAlpha3Code: target.nationAlpha3Code }))
-	) {
-		throw apiError(
-			'INVALID_INPUT',
-			m.assignmentNationNotInConference({ nation: target.nationAlpha3Code })
-		);
-	}
-	if (
-		target.nonStateActorId &&
-		!(await offeredIn(conferenceId, { assignedNonStateActorId: target.nonStateActorId }))
-	) {
-		throw apiError(
-			'INVALID_INPUT',
-			m.assignmentNsaNotInConference({ nonStateActor: target.nonStateActorId })
-		);
-	}
+	if (target.roleId) await assertOfferedIn(conferenceId, { roleId: target.roleId });
 }
 
 /** Refuses a custom role of another conference; `null` (no role) passes. */

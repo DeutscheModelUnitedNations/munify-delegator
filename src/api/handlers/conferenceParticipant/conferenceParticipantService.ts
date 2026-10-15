@@ -1,9 +1,31 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
 import { nullToUndefined } from '$api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq, max } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
 import { apiError } from '$api/services/errors/apiError';
+
+/**
+ * The person's row in the conference, created the first time they register there (as delegate,
+ * single participant or supervisor) and returned on every later call. The no-op `set` is how
+ * Postgres returns the existing row on conflict. Returns its id.
+ */
+export async function ensureConferenceParticipant(
+	tx: Transaction | typeof db,
+	conferenceId: string,
+	userId: string
+) {
+	const row = await tx
+		.insert(schema.conferenceParticipant)
+		.values({ userId, conferenceId })
+		.onConflictDoUpdate({
+			target: [schema.conferenceParticipant.userId, schema.conferenceParticipant.conferenceId],
+			set: { userId }
+		})
+		.returning({ id: schema.conferenceParticipant.id })
+		.then(assertFirstEntryExists);
+	return row.id;
+}
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
 async function targetUserIdOf(args: { userId?: string | null; userEmail?: string | null }) {
@@ -23,13 +45,13 @@ async function documentNumberOf(args: {
 }) {
 	if (!args.assignNextDocumentNumber) return args.assignedDocumentNumber ?? undefined;
 	const [highest] = await db
-		.select({ value: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
-		.from(schema.conferenceParticipantStatus)
-		.where(eq(schema.conferenceParticipantStatus.conferenceId, args.conferenceId));
+		.select({ value: max(schema.conferenceParticipant.assignedDocumentNumber) })
+		.from(schema.conferenceParticipant)
+		.where(eq(schema.conferenceParticipant.conferenceId, args.conferenceId));
 	return (highest?.value ?? 0) + 1;
 }
 
-type StatusValues = Partial<typeof schema.conferenceParticipantStatus.$inferInsert>;
+type StatusValues = Partial<typeof schema.conferenceParticipant.$inferInsert>;
 
 /**
  * Updates the status row `id`; whether the caller may is checked before
@@ -37,10 +59,10 @@ type StatusValues = Partial<typeof schema.conferenceParticipantStatus.$inferInse
  */
 export async function updateStatus(id: string, values: StatusValues) {
 	const [updated] = await db
-		.update(schema.conferenceParticipantStatus)
+		.update(schema.conferenceParticipant)
 		.set(values)
-		.where(eq(schema.conferenceParticipantStatus.id, id))
-		.returning({ id: schema.conferenceParticipantStatus.id });
+		.where(eq(schema.conferenceParticipant.id, id))
+		.returning({ id: schema.conferenceParticipant.id });
 	if (!updated) {
 		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
 	}
@@ -53,7 +75,7 @@ export async function updateStatus(id: string, values: StatusValues) {
  */
 export async function createStatus(values: StatusValues, conferenceId: string, userId: string) {
 	const created = await db
-		.insert(schema.conferenceParticipantStatus)
+		.insert(schema.conferenceParticipant)
 		.values({ ...values, userId, conferenceId })
 		.returning()
 		.then(assertFirstEntryExists);
@@ -82,7 +104,7 @@ async function assertAccessCardFree(
 	accessCardId: string,
 	ownId: string | undefined
 ) {
-	const holder = await db.query.conferenceParticipantStatus.findFirst({
+	const holder = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, accessCardId, ...(ownId ? { id: { ne: ownId } } : {}) },
 		columns: { id: true }
 	});
@@ -117,7 +139,7 @@ export async function planParticipantStatusUpsert(
 		accessCardId: nullToUndefined(args.accessCardId)
 	};
 
-	const existing = await db.query.conferenceParticipantStatus.findFirst({
+	const existing = await db.query.conferenceParticipant.findFirst({
 		where: args.id ? { id: args.id } : { conferenceId: args.conferenceId, userId: targetUserId }
 	});
 
@@ -140,9 +162,9 @@ export async function setAttendanceForAll(args: {
 	const participants = await db.query.user.findMany({
 		where: {
 			OR: [
-				{ conferenceSupervisor: { conferenceId: args.conferenceId } },
-				{ singleParticipant: { conferenceId: args.conferenceId } },
-				{ delegationMemberships: { conferenceId: args.conferenceId } }
+				{ conferenceSupervisor: { participant: { conferenceId: args.conferenceId } } },
+				{ singleParticipant: { participant: { conferenceId: args.conferenceId } } },
+				{ delegationMemberships: { participant: { conferenceId: args.conferenceId } } }
 			]
 		},
 		columns: { id: true }
@@ -152,20 +174,17 @@ export async function setAttendanceForAll(args: {
 	await db.transaction(async (tx) => {
 		for (const participant of participants) {
 			const row = await tx
-				.insert(schema.conferenceParticipantStatus)
+				.insert(schema.conferenceParticipant)
 				.values({
 					userId: participant.id,
 					conferenceId: args.conferenceId,
 					didAttend: args.didAttend ?? undefined
 				})
 				.onConflictDoUpdate({
-					target: [
-						schema.conferenceParticipantStatus.userId,
-						schema.conferenceParticipantStatus.conferenceId
-					],
+					target: [schema.conferenceParticipant.userId, schema.conferenceParticipant.conferenceId],
 					set: { didAttend: args.didAttend ?? undefined }
 				})
-				.returning({ id: schema.conferenceParticipantStatus.id })
+				.returning({ id: schema.conferenceParticipant.id })
 				.then(assertFirstEntryExists);
 			changed.push(row.id);
 		}

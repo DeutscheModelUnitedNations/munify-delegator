@@ -1,29 +1,28 @@
 import { db } from '$api/db/db';
 import { object, query, schemaBuilder } from '$api/rumble';
 import { nonStateActorUpdateData } from '$api/services/seatPlanning';
-import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { nonStateActorPubsub, roleApplicationPubsub } from '$api/pubsub';
+import { conferenceRolePubsub, roleApplicationPubsub } from '$api/pubsub';
 import {
 	assertCanCreateNonStateActor,
 	assertCanDeleteNonStateActor,
 	assertCanUpdateNonStateActor,
-	registerNonStateActorAbilities
-} from './nonStateActorPermissions';
+	registerConferenceRoleAbilities
+} from './conferenceRolePermissions';
 import {
 	createNonStateActor,
 	deleteNonStateActor,
 	updateNonStateActor
-} from './nonStateActorService';
+} from './conferenceRoleService';
 
-registerNonStateActorAbilities();
+registerConferenceRoleAbilities();
 
-const NonStateActorRef = object({ table: 'nonStateActor' });
-query({ table: 'nonStateActor' });
+const ConferenceRoleRef = object({ table: 'conferenceRole' });
+query({ table: 'conferenceRole' });
 
 schemaBuilder.mutationFields((t) => ({
 	createNonStateActor: t.drizzleField({
-		type: NonStateActorRef,
+		type: ConferenceRoleRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			name: t.arg.string({ required: true }),
@@ -36,12 +35,12 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanCreateNonStateActor(ctx, args.conferenceId);
 			const createdId = await createNonStateActor(args);
 
-			nonStateActorPubsub.created();
+			conferenceRolePubsub.created();
 
-			return db.query.nonStateActor
+			return db.query.conferenceRole
 				.findFirst(
 					query(
-						(await ctx.abilities.nonStateActor.filter('read')).merge({
+						(await ctx.abilities.conferenceRole.filter('read')).merge({
 							where: { id: createdId }
 						}).query.single
 					)
@@ -51,7 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateNonStateActor: t.drizzleField({
-		type: NonStateActorRef,
+		type: ConferenceRoleRef,
 		args: {
 			id: t.arg.id({ required: true }),
 			name: t.arg.string(),
@@ -63,20 +62,15 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const data = nonStateActorUpdateData(args);
 			const before = await assertCanUpdateNonStateActor(ctx, args.id);
-			await updateNonStateActor(args.id, data);
+			const { applicationsTidied } = await updateNonStateActor(before, data);
 
-			nonStateActorPubsub.updated(args.id);
+			conferenceRolePubsub.updated(args.id);
+			if (applicationsTidied) roleApplicationPubsub.removed();
 
-			// lowering the seats is allowed, but applications that no longer fit are dropped
-			if ((args.seatAmount ?? before.seatAmount) < before.seatAmount) {
-				await tidyRoleApplicationsForRoles(before.conferenceId, { nonStateActorIds: [before.id] });
-				roleApplicationPubsub.removed();
-			}
-
-			return db.query.nonStateActor
+			return db.query.conferenceRole
 				.findFirst(
 					query(
-						(await ctx.abilities.nonStateActor.filter('read')).merge({
+						(await ctx.abilities.conferenceRole.filter('read')).merge({
 							where: { id: args.id }
 						}).query.single
 					)
@@ -92,7 +86,7 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanDeleteNonStateActor(ctx, args.id);
 			await deleteNonStateActor(args.id);
 
-			nonStateActorPubsub.removed();
+			conferenceRolePubsub.removed();
 			roleApplicationPubsub.removed();
 
 			return true;

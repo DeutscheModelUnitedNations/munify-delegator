@@ -1,11 +1,11 @@
-import { paperEntityName } from './paperDisplay';
+import { splitRole } from '$lib/helpers/conferenceRole';
+import { paperEntityName, type PaperDelegationRole } from './paperDisplay';
 
 /** The delegation fields a paper is grouped and labelled by. */
 interface GroupablePaper {
 	delegation: {
 		id: string;
-		assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-		assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
+		assignedRole: PaperDelegationRole | null;
 	};
 }
 
@@ -28,11 +28,11 @@ export function groupPapersByDelegation<P extends GroupablePaper>(
 		const { delegation } = paper;
 		let group = groups.get(delegation.id);
 		if (!group) {
-			const nsa = delegation.assignedNonStateActor;
+			const { nation, nonStateActor: nsa } = splitRole(delegation.assignedRole);
 			group = {
 				delegationId: delegation.id,
 				delegationName: paperEntityName(delegation) ?? 'Unknown',
-				alpha2Code: delegation.assignedNation?.alpha2Code,
+				alpha2Code: nation?.alpha2Code,
 				nsa: !!nsa,
 				icon: nsa?.fontAwesomeIcon,
 				papers: []

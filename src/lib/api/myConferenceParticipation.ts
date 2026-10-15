@@ -20,19 +20,25 @@ export async function fetchMyConferenceParticipation({
 	userId: string;
 	conferenceId: string;
 }) {
+	// Participant and team rows carry the ids themselves; registrations reach them through the
+	// participant row.
 	const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: userId } };
+	const registrationOfUser = {
+		conference: { id: { eq: conferenceId } },
+		user: { id: { eq: userId } }
+	};
 
 	const [
 		user,
 		participantStatuses,
-		conference,
+		conferences,
 		delegationMembers,
 		supervisors,
 		singleParticipants,
 		teamMembers
 	] = await Promise.all([
 		client.liveQuery.user({ __args: { id: userId }, id: true, birthday: true }),
-		client.liveQuery.conferenceParticipantStatuses({
+		client.liveQuery.conferenceParticipants({
 			__args: { where: forUser },
 			id: true,
 			paymentStatus: true,
@@ -41,8 +47,9 @@ export async function fetchMyConferenceParticipation({
 			mediaConsent: true,
 			didAttend: true
 		}),
-		client.liveQuery.conference({
-			__args: { id: conferenceId },
+		// a list, so a conference id that does not exist yields nothing rather than an error
+		client.liveQuery.conferences({
+			__args: { where: { id: { eq: conferenceId } } },
 			id: true,
 			title: true,
 			state: true,
@@ -50,31 +57,32 @@ export async function fetchMyConferenceParticipation({
 			assignmentReleased: true
 		}),
 		client.liveQuery.delegationMembers({
-			__args: { where: forUser },
+			__args: { where: registrationOfUser },
 			id: true,
 			isHeadDelegate: true,
 			assignedCommittee: { id: true, abbreviation: true, name: true },
 			delegation: {
 				id: true,
 				applied: true,
-				assignedNation: { alpha3Code: true, alpha2Code: true },
-				assignedNonStateActor: {
+				assignedRole: {
 					id: true,
+					kind: true,
 					abbreviation: true,
 					name: true,
 					description: true,
 					fontAwesomeIcon: true,
-					seatAmount: true
+					seatAmount: true,
+					nation: { alpha3Code: true, alpha2Code: true }
 				}
 			}
 		}),
 		client.liveQuery.conferenceSupervisors({
-			__args: { where: forUser },
+			__args: { where: registrationOfUser },
 			id: true,
 			plansOwnAttendenceAtConference: true
 		}),
 		client.liveQuery.singleParticipants({
-			__args: { where: forUser },
+			__args: { where: registrationOfUser },
 			id: true,
 			applied: true,
 			assignedRole: { id: true, name: true, description: true, fontAwesomeIcon: true }
@@ -87,7 +95,9 @@ export async function fetchMyConferenceParticipation({
 	// was on load and freeze it there, so the single rows are getters that read the list each time.
 	return {
 		user,
-		conference,
+		get conference() {
+			return conferences.at(0) ?? null;
+		},
 		get participantStatus() {
 			return participantStatuses.at(0) ?? null;
 		},

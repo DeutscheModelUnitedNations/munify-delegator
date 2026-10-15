@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { ResolvedPathname } from '$app/types';
-	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import RoleFlag from '$lib/components/RoleFlag.svelte';
 	import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import { paperEntityName, type PaperDelegationRole } from './paperDisplay';
 	import PaperMatrixCell from './PaperMatrixCell.svelte';
 	import { matrixRows } from './paperMatrixRows';
 
@@ -13,8 +13,7 @@
 		firstSubmittedAt: Date | null;
 		delegation: {
 			id: string;
-			assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-			assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
+			assignedRole: PaperDelegationRole | null;
 		};
 	}
 
@@ -30,10 +29,7 @@
 
 	let { columns, paperHref }: Props = $props();
 
-	const nameOf = ({ delegation }: Paper) =>
-		delegation.assignedNation
-			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-			: (delegation.assignedNonStateActor?.name ?? '');
+	const nameOf = ({ delegation }: Paper) => paperEntityName(delegation) ?? '';
 
 	const rows = $derived(matrixRows<Paper['delegation'], Paper>(columns, nameOf));
 </script>
@@ -55,15 +51,7 @@
 				<tr class="hover:bg-base-200/50">
 					<th class="sticky left-0 z-10 bg-base-100 font-normal">
 						<div class="flex items-center gap-2">
-							{#if row.delegation.assignedNation}
-								<Flag size="xs" alpha2Code={row.delegation.assignedNation.alpha2Code} />
-							{:else if row.delegation.assignedNonStateActor}
-								<Flag
-									size="xs"
-									nsa={true}
-									icon={row.delegation.assignedNonStateActor.fontAwesomeIcon}
-								/>
-							{/if}
+							<RoleFlag role={row.delegation.assignedRole} />
 							<span class="truncate max-w-36" title={row.name}>{row.name}</span>
 						</div>
 					</th>

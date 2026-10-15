@@ -3,7 +3,7 @@
 	import SingleParticipants from './sections/SingleParticipants.svelte';
 	import Supervisors from './sections/Supervisors.svelte';
 	import Delegations from './sections/Delegations.svelte';
-	import { queryParameters } from 'sveltekit-search-params';
+	import { provideAssignUser } from './assignUser.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
@@ -15,9 +15,7 @@
 
 	let conferenceId = $derived(routeParams.conferenceId);
 
-	const params = queryParameters({
-		assignUserId: true
-	});
+	const assignUserParam = provideAssignUser();
 	function lookupUser(id: string) {
 		return client.query.user({ __args: { id }, id: true, familyName: true, givenName: true });
 	}
@@ -26,12 +24,13 @@
 	let assignUserLoading = $state(false);
 
 	$effect(() => {
-		if (!params.assignUserId) {
+		const assignUserId = assignUserParam.userId;
+		if (!assignUserId) {
 			assignUser = undefined;
 			return;
 		}
 		assignUserLoading = true;
-		const promise = lookupUser(params.assignUserId);
+		const promise = lookupUser(assignUserId);
 		toast.promise(promise, genericPromiseToastMessages);
 		void promise
 			.then((result) => {
@@ -44,7 +43,7 @@
 </script>
 
 <div class="flex w-full flex-col items-start gap-10 p-4">
-	{#if params.assignUserId}
+	{#if assignUserParam.userId}
 		<div class="w-full">
 			<div class="alert alert-warning w-full">
 				{#if assignUserLoading}

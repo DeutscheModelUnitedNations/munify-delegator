@@ -1,4 +1,5 @@
 import { db } from '$api/db/db';
+import { splitRole } from '$lib/helpers/conferenceRole';
 
 const NOTHING_FOUND = {
 	found: false,
@@ -26,7 +27,9 @@ const NOTHING_FOUND = {
 
 async function findScannedPerson(conferenceId: string, code: string) {
 	const inConference = { conferenceId };
-	const byCard = await db.query.conferenceParticipantStatus.findFirst({
+	// the registrations reach their conference through the person's part in it
+	const throughParticipant = { participant: inConference };
+	const byCard = await db.query.conferenceParticipant.findFirst({
 		where: { ...inConference, accessCardId: code },
 		columns: { userId: true }
 	});
@@ -35,25 +38,27 @@ async function findScannedPerson(conferenceId: string, code: string) {
 		columns: { id: true, givenName: true, familyName: true, birthday: true },
 		with: {
 			delegationMemberships: {
-				where: inConference,
+				where: throughParticipant,
 				columns: { isHeadDelegate: true },
 				with: {
 					assignedCommittee: { columns: { abbreviation: true } },
 					delegation: {
 						columns: {},
 						with: {
-							assignedNation: { columns: { alpha2Code: true, alpha3Code: true } },
-							assignedNonStateActor: { columns: { name: true, fontAwesomeIcon: true } }
+							assignedRole: {
+								columns: { kind: true, name: true, fontAwesomeIcon: true },
+								with: { nation: { columns: { alpha2Code: true, alpha3Code: true } } }
+							}
 						}
 					}
 				}
 			},
 			singleParticipant: {
-				where: inConference,
+				where: throughParticipant,
 				columns: {},
 				with: { assignedRole: { columns: { name: true } } }
 			},
-			conferenceSupervisor: { where: inConference, columns: { id: true } },
+			conferenceSupervisor: { where: throughParticipant, columns: { id: true } },
 			teamMember: { where: inConference, columns: { id: true } },
 			waitingListEntry: { where: inConference, columns: { id: true } }
 		}
@@ -61,20 +66,22 @@ async function findScannedPerson(conferenceId: string, code: string) {
 }
 
 type ScannedPerson = NonNullable<Awaited<ReturnType<typeof findScannedPerson>>>;
-type ScannedStatus = Awaited<ReturnType<typeof db.query.conferenceParticipantStatus.findFirst>>;
+type ScannedStatus = Awaited<ReturnType<typeof db.query.conferenceParticipant.findFirst>>;
 
-type Member = ScannedPerson['delegationMemberships'][number];
+type Role = NonNullable<
+	ScannedPerson['delegationMemberships'][number]['delegation']['assignedRole']
+>;
 
 const NO_NATION = { nationAlpha2Code: null, nationAlpha3Code: null };
 const NO_ACTOR = { nonStateActorName: null, nonStateActorIcon: null };
 
-function nationSeat(nation: Member['delegation']['assignedNation'] | undefined) {
+function nationSeat(nation: Role['nation'] | null) {
 	return nation
 		? { nationAlpha2Code: nation.alpha2Code, nationAlpha3Code: nation.alpha3Code }
 		: NO_NATION;
 }
 
-function actorSeat(actor: Member['delegation']['assignedNonStateActor'] | undefined) {
+function actorSeat(actor: Role | null) {
 	return actor
 		? { nonStateActorName: actor.name, nonStateActorIcon: actor.fontAwesomeIcon }
 		: NO_ACTOR;
@@ -83,10 +90,11 @@ function actorSeat(actor: Member['delegation']['assignedNonStateActor'] | undefi
 function describeSeat(person: ScannedPerson) {
 	const member = person.delegationMemberships.at(0);
 	const single = person.singleParticipant.at(0);
+	const { nation, nonStateActor } = splitRole(member?.delegation.assignedRole);
 	return {
 		isHeadDelegate: member?.isHeadDelegate ?? false,
-		...nationSeat(member?.delegation.assignedNation),
-		...actorSeat(member?.delegation.assignedNonStateActor),
+		...nationSeat(nation),
+		...actorSeat(nonStateActor),
 		committeeAbbreviation: member?.assignedCommittee?.abbreviation ?? null,
 		singleRoleName: single?.assignedRole?.name ?? null
 	};
@@ -135,7 +143,7 @@ function describePerson(person: ScannedPerson, status: ScannedStatus) {
 export async function lookupScan(conferenceId: string, code: string) {
 	const person = await findScannedPerson(conferenceId, code);
 	if (!person) return NOTHING_FOUND;
-	const status = await db.query.conferenceParticipantStatus.findFirst({
+	const status = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: person.id }
 	});
 	return describePerson(person, status);

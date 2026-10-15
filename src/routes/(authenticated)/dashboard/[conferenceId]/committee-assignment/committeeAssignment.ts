@@ -5,14 +5,14 @@ export async function fetchCommitteeAssignment(conferenceId: string, userId: str
 	const [delegationMembers, committees] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
+				where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 			},
 			id: true,
 			isHeadDelegate: true,
 			assignedCommittee: { id: true },
 			delegation: {
 				id: true,
-				assignedNation: { alpha3Code: true, alpha2Code: true },
+				assignedRole: { id: true },
 				members: {
 					id: true,
 					user: { id: true, familyName: true, givenName: true },
@@ -25,7 +25,7 @@ export async function fetchCommitteeAssignment(conferenceId: string, userId: str
 			id: true,
 			abbreviation: true,
 			name: true,
-			nations: { alpha3Code: true, alpha2Code: true },
+			roles: { id: true },
 			numOfSeatsPerDelegation: true
 		})
 	]);

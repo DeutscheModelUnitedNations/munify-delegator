@@ -54,13 +54,16 @@ export async function requestBadgeSession(baseUrl: string | undefined, body: Bad
 export function seatBadgeValues(
 	member:
 		| {
-				delegation: { assignedNation?: { alpha3Code: string; alpha2Code: string } | null };
+				delegation: {
+					assignedRole?: { nation: { alpha3Code: string; alpha2Code: string } | null } | null;
+				};
 				assignedCommittee?: { abbreviation: string } | null;
 		  }
 		| undefined,
 	countryName: (alpha3Code: string) => string
 ) {
-	const nation = member?.delegation.assignedNation;
+	// Only a nation role has a nation; a non-state actor shows no country on the badge.
+	const nation = member?.delegation.assignedRole?.nation;
 	return {
 		countryName: nation && countryName(nation.alpha3Code),
 		countryAlpha2Code: nation?.alpha2Code,

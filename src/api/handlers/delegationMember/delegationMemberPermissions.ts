@@ -115,7 +115,7 @@ export async function assertCanMoveDelegationMemberToCommittee(
 		.then(assertFindFirstExists);
 
 	const committee = await db.query.committee
-		.findFirst({ where: { id: assignedCommitteeId, conferenceId: member.conferenceId } })
+		.findFirst({ where: { id: assignedCommitteeId, conferenceId: member.delegation.conferenceId } })
 		.then(assertFindFirstExists);
 
 	return { member, committee };
@@ -140,7 +140,7 @@ export async function authorizeDelegationMemberCommitteeMoves(
 	}
 
 	return (await ctx.abilities.delegationMember.filter('update')).merge({
-		where: { conferenceId }
+		where: { participant: { conferenceId } }
 	}).sql.where;
 }
 
@@ -158,7 +158,10 @@ export async function assertCanAssignCommittees(
 
 	for (const assignment of assignments) {
 		const committee = await db.query.committee
-			.findFirst({ where: { id: assignment.committeeId }, with: { nations: true } })
+			.findFirst({
+				where: { id: assignment.committeeId },
+				with: { roles: { columns: { id: true } } }
+			})
 			.then(assertFindFirstExists);
 
 		const member = await db.query.delegationMember
@@ -168,12 +171,12 @@ export async function assertCanAssignCommittees(
 			})
 			.then(assertFindFirstExists);
 
-		if (committee.conferenceId !== member.conferenceId) {
+		if (committee.conferenceId !== member.delegation.conferenceId) {
 			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 		}
 
-		const nationCode = member.delegation?.assignedNationAlpha3Code ?? '';
-		if (!committee.nations.some((nation) => nation.alpha3Code === nationCode)) {
+		const roleId = member.delegation?.assignedRoleId;
+		if (!committee.roles.some((role) => role.id === roleId)) {
 			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 		}
 	}

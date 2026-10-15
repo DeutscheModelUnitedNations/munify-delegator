@@ -9,7 +9,7 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	page
 }) => {
 	const supervisor = makeTestUser('supervisor');
-	await loginAs(page, supervisor, { startUrl: '/login?next=/dashboard' });
+	await loginAs(page, supervisor);
 	await openFirstConferenceForRegistration(page);
 
 	await page.locator('a[href$="/supervisor"]').click();
@@ -40,7 +40,7 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 
 	// --- rotate the connection code ---
 	const originalCode = (await connectionCode.textContent())?.trim();
-	await page.getByRole('button', { name: 'Rotate entry code' }).click();
+	await page.getByRole('button', { name: /code erneuern|rotate code/i }).click();
 	await expect(connectionCode).not.toHaveText(originalCode!, { timeout: 15_000 });
 
 	// --- verify both changes actually persisted server-side, not just client-side state ---

@@ -26,8 +26,12 @@ function workingPaper(overrides: Partial<PaperIdentity> = {}): PaperIdentity {
 			committee: { abbreviation: 'GA', name: 'General Assembly', resolutionHeadline: 'Resolves' }
 		},
 		delegation: {
-			assignedNation: { alpha2Code: 'DE', alpha3Code: 'DEU' },
-			assignedNonStateActor: null
+			assignedRole: {
+				kind: 'NATION',
+				name: null,
+				fontAwesomeIcon: null,
+				nation: { alpha2Code: 'DE', alpha3Code: 'DEU' }
+			}
 		},
 		...overrides
 	};
@@ -57,9 +61,11 @@ describe('paperEntityName', () => {
 			getFullTranslatedCountryNameFromISO3Code('DEU')
 		);
 		expect(
-			paperEntityName({ assignedNation: null, assignedNonStateActor: { name: 'Amnesty' } })
+			paperEntityName({
+				assignedRole: { kind: 'NON_STATE_ACTOR', name: 'Amnesty', nation: null }
+			})
 		).toBe('Amnesty');
-		expect(paperEntityName({ assignedNation: null, assignedNonStateActor: null })).toBeUndefined();
+		expect(paperEntityName({ assignedRole: null })).toBeUndefined();
 	});
 });
 
@@ -99,8 +105,12 @@ describe('buildResolutionHeaderData', () => {
 			workingPaper({
 				agendaItem: null,
 				delegation: {
-					assignedNation: null,
-					assignedNonStateActor: { name: 'Amnesty', fontAwesomeIcon: null }
+					assignedRole: {
+						kind: 'NON_STATE_ACTOR',
+						name: 'Amnesty',
+						fontAwesomeIcon: null,
+						nation: null
+					}
 				}
 			}),
 			undefined

@@ -2,7 +2,7 @@ import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/api/rumbleClient/client';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { paperEntityName } from '../paperDisplay';
 import { newPaperSchema } from './form-schema';
 
 const VALID_TYPES = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
@@ -20,14 +20,13 @@ export async function fetchNewPaperContext(
 	const [delegationMembers, conferenceAgendaItems] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
+				where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 			},
 			id: true,
 			assignedCommittee: { id: true, name: true, agendaItems: { id: true, title: true } },
 			delegation: {
 				id: true,
-				assignedNation: { alpha3Code: true },
-				assignedNonStateActor: { id: true, name: true }
+				assignedRole: { kind: true, name: true, nation: { alpha3Code: true } }
 			}
 		}),
 		client.liveQuery.committeeAgendaItems({
@@ -50,9 +49,7 @@ export async function fetchNewPaperContext(
 
 	const form = defaults(
 		{
-			delegation: delegation.assignedNation
-				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-				: (delegation.assignedNonStateActor?.name ?? ''),
+			delegation: paperEntityName(delegation) ?? '',
 			committee: committee?.name,
 			type
 		},

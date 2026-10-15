@@ -8,7 +8,7 @@ export const supervisedUserSelection = {
 	pronouns: true,
 	email: true,
 	birthday: true,
-	conferenceParticipantStatus: {
+	conferenceParticipants: {
 		termsAndConditions: true,
 		guardianConsent: true,
 		mediaConsent: true,
@@ -24,7 +24,7 @@ export interface SupervisedUser {
 	pronouns: string | null;
 	email: string;
 	birthday: Date | null;
-	conferenceParticipantStatus: {
+	conferenceParticipants: {
 		termsAndConditions: AdministrativestatusEnum;
 		guardianConsent: AdministrativestatusEnum;
 		mediaConsent: AdministrativestatusEnum;

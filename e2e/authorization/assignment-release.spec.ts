@@ -7,10 +7,14 @@ import {
 	E2E_UNRELEASED_NATION_ALPHA3,
 	E2E_UNRELEASED_PARTICIPANT_USER_ID
 } from '../seed/seed';
+import { nationRoleId } from '../support/roles';
+
+const roleIdAs = (page: Page) =>
+	nationRoleId(page, E2E_UNRELEASED_CONFERENCE_ID, E2E_UNRELEASED_NATION_ALPHA3);
 
 // Until the team releases the assignment, a participant must not learn their role through any
 // path the API offers: the masked columns, the relations they back, and the relations pointing
-// back from the nation and the committee. The release toggle then shows it, and hides it again.
+// back from the role and the committee. The release toggle then shows it, and hides it again.
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
@@ -26,16 +30,16 @@ async function gql(page: Page, query: string, variables: Record<string, unknown>
 async function whatTheParticipantSees(page: Page) {
 	const result = await gql(
 		page,
-		`query ($n: ID!, $k: ID!) {
-			delegationMembers(where: { conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" }, userId: { eq: "${E2E_UNRELEASED_PARTICIPANT_USER_ID}" } }) {
+		`query ($r: ID!, $k: ID!) {
+			delegationMembers(where: { conference: { id: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }, user: { id: { eq: "${E2E_UNRELEASED_PARTICIPANT_USER_ID}" } } }) {
 				assignedCommitteeId
 				assignedCommittee { id }
-				delegation { assignedNationAlpha3Code assignedNation { alpha3Code } }
+				delegation { assignedRoleId assignedRole { nationAlpha3Code } }
 			}
-			nation(id: $n) { assignedDelegations { id } }
+			conferenceRole(id: $r) { assignedDelegations { id } }
 			committee(id: $k) { delegationMembers { id } }
 		}`,
-		{ n: E2E_UNRELEASED_NATION_ALPHA3, k: E2E_UNRELEASED_COMMITTEE_ID }
+		{ r: await roleIdAs(page), k: E2E_UNRELEASED_COMMITTEE_ID }
 	);
 	expect(result.errors, JSON.stringify(result)).toBeUndefined();
 	return result.data;
@@ -53,9 +57,7 @@ async function setReleased(page: Page, released: boolean) {
 test('a participant sees their role only while the assignment is released', async ({ browser }) => {
 	const participant = await (await browser.newContext()).newPage();
 	const admin = await (await browser.newContext()).newPage();
-	await loginAs(participant, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
-	});
+	await loginAs(participant, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
 	await loginAs(admin, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
 		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}/team/assignment/finish`
 	});
@@ -68,10 +70,10 @@ test('a participant sees their role only while the assignment is released', asyn
 				{
 					assignedCommitteeId: null,
 					assignedCommittee: null,
-					delegation: { assignedNationAlpha3Code: null, assignedNation: null }
+					delegation: { assignedRoleId: null, assignedRole: null }
 				}
 			],
-			nation: { assignedDelegations: [] },
+			conferenceRole: { assignedDelegations: [] },
 			committee: { delegationMembers: [] }
 		});
 
@@ -90,8 +92,8 @@ test('a participant sees their role only while the assignment is released', asyn
 				assignedCommitteeId: E2E_UNRELEASED_COMMITTEE_ID,
 				assignedCommittee: { id: E2E_UNRELEASED_COMMITTEE_ID },
 				delegation: {
-					assignedNationAlpha3Code: E2E_UNRELEASED_NATION_ALPHA3,
-					assignedNation: { alpha3Code: E2E_UNRELEASED_NATION_ALPHA3 }
+					assignedRoleId: await roleIdAs(participant),
+					assignedRole: { nationAlpha3Code: E2E_UNRELEASED_NATION_ALPHA3 }
 				}
 			}
 		]);
@@ -102,7 +104,7 @@ test('a participant sees their role only while the assignment is released', asyn
 			{
 				assignedCommitteeId: null,
 				assignedCommittee: null,
-				delegation: { assignedNationAlpha3Code: null, assignedNation: null }
+				delegation: { assignedRoleId: null, assignedRole: null }
 			}
 		]);
 	} finally {
@@ -111,9 +113,7 @@ test('a participant sees their role only while the assignment is released', asyn
 });
 
 test('only the assignment team may release, and nobody else reads the draft', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
-	});
+	await loginAs(page, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
 
 	const release = await gql(
 		page,
@@ -137,18 +137,20 @@ test('only the assignment team may release, and nobody else reads the draft', as
 // not, the participant would learn their role without ever reading it. Rumble therefore applies the
 // column masks to filter arguments too: a filter only matches rows exposing the column.
 const conference = `conferenceId: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" }`;
-const me = `userId: { eq: "${E2E_UNRELEASED_PARTICIPANT_USER_ID}" }`;
+const me = `user: { id: { eq: "${E2E_UNRELEASED_PARTICIPANT_USER_ID}" } }`;
+// delegation members reach their conference through the participant row
+const memberConference = `conference: { id: { eq: "${E2E_UNRELEASED_CONFERENCE_ID}" } }`;
 
 /** One probe per way of asking "does this delegation hold that role?". */
-function probes(nation: string, committee: string) {
+function probes(roleId: string, nation: string, committee: string) {
 	return {
-		byColumn: `delegations(where: { ${conference}, assignedNationAlpha3Code: { eq: "${nation}" } }) { id }`,
-		byRelation: `delegations(where: { ${conference}, assignedNation: { alpha3Code: { eq: "${nation}" } } }) { id }`,
-		byCommitteeColumn: `delegationMembers(where: { ${conference}, ${me}, assignedCommitteeId: { eq: "${committee}" } }) { id }`,
-		byCommitteeRelation: `delegationMembers(where: { ${conference}, ${me}, assignedCommittee: { id: { eq: "${committee}" } } }) { id }`,
-		nationOfMine: `nations(where: { alpha3Code: { eq: "${nation}" }, assignedDelegations: { members: { ${me} } } }) { alpha3Code }`,
+		byColumn: `delegations(where: { ${conference}, assignedRoleId: { eq: "${roleId}" } }) { id }`,
+		byRelation: `delegations(where: { ${conference}, assignedRole: { nationAlpha3Code: { eq: "${nation}" } } }) { id }`,
+		byCommitteeColumn: `delegationMembers(where: { ${memberConference}, ${me}, assignedCommitteeId: { eq: "${committee}" } }) { id }`,
+		byCommitteeRelation: `delegationMembers(where: { ${memberConference}, ${me}, assignedCommittee: { id: { eq: "${committee}" } } }) { id }`,
+		roleOfMine: `conferenceRoles(where: { nationAlpha3Code: { eq: "${nation}" }, assignedDelegations: { members: { ${me} } } }) { id }`,
 		committeeOfMine: `committees(where: { id: { eq: "${committee}" }, delegationMembers: { ${me} } }) { id }`,
-		sortedByNation: `delegations(where: { ${conference} }, orderBy: { assignedNationAlpha3Code: asc }) { id }`
+		sortedByRole: `delegations(where: { ${conference}, assignedRoleId: { isNotNull: true } }, orderBy: { assignedRoleId: asc }) { id }`
 	};
 }
 
@@ -156,38 +158,34 @@ test('a participant cannot find their unreleased role by filtering or sorting', 
 	browser
 }) => {
 	const participant = await (await browser.newContext()).newPage();
-	await loginAs(participant, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
-	});
+	await loginAs(participant, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
 
 	for (const [name, probe] of Object.entries(
-		probes(E2E_UNRELEASED_NATION_ALPHA3, E2E_UNRELEASED_COMMITTEE_ID)
+		probes(await roleIdAs(participant), E2E_UNRELEASED_NATION_ALPHA3, E2E_UNRELEASED_COMMITTEE_ID)
 	)) {
 		const result = await gql(participant, `query { ${probe} }`);
-		expect(result.errors?.[0]?.message, `${name}: ${JSON.stringify(result)}`).toMatch(
-			/cannot be filtered or sorted/
-		);
-		expect(result.data ?? null, name).toBeNull();
+		expect(result.errors, `${name}: ${JSON.stringify(result)}`).toBeUndefined();
+		// A filter on a masked column matches nothing, whether the role it names is right or not.
+		expect(Object.values(result.data ?? {})[0], name).toEqual([]);
 	}
 
 	// What a participant legitimately asks for is untouched.
 	const own = await gql(
 		participant,
-		`query { delegationMembers(where: { ${conference}, ${me} }) { id } }`
+		`query { delegationMembers(where: { ${memberConference}, ${me} }) { id } }`
 	);
 	expect(own.errors, JSON.stringify(own)).toBeUndefined();
 	expect(own.data?.delegationMembers).toHaveLength(1);
 });
 
 test('the team can still filter by assignment', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}`
-	});
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
 	const { byColumn, byRelation } = probes(
+		await roleIdAs(page),
 		E2E_UNRELEASED_NATION_ALPHA3,
 		E2E_UNRELEASED_COMMITTEE_ID
 	);
-	const wrong = probes('XXX', 'not-a-committee');
+	const wrong = probes('not-a-role', 'XXX', 'not-a-committee');
 
 	const found = await gql(page, `query { found: ${byColumn} viaRelation: ${byRelation} }`);
 	expect(found.errors, JSON.stringify(found)).toBeUndefined();

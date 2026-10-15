@@ -4,7 +4,7 @@ import type * as schema from '../schema';
 export function makeSeedDelegationMember(
 	options: Pick<
 		typeof schema.delegationMember.$inferInsert,
-		'conferenceId' | 'delegationId' | 'userId'
+		'delegationId' | 'conferenceParticipantId'
 	> &
 		Partial<
 			Pick<typeof schema.delegationMember.$inferInsert, 'assignedCommitteeId' | 'isHeadDelegate'>

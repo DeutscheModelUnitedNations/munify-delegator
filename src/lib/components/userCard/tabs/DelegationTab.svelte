@@ -13,6 +13,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import codenmz from '$lib/helpers/codenamize';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 
 	interface Props {
 		delegationId: string;
@@ -33,12 +34,13 @@
 				applied: true,
 				motivation: true,
 				experience: true,
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: {
+				assignedRole: {
 					id: true,
+					kind: true,
 					name: true,
 					abbreviation: true,
-					fontAwesomeIcon: true
+					fontAwesomeIcon: true,
+					nation: { alpha2Code: true, alpha3Code: true }
 				},
 				members: {
 					id: true,
@@ -49,8 +51,12 @@
 				appliedForRoles: {
 					id: true,
 					rank: true,
-					nation: { alpha2Code: true, alpha3Code: true },
-					nonStateActor: { name: true, fontAwesomeIcon: true }
+					role: {
+						kind: true,
+						name: true,
+						fontAwesomeIcon: true,
+						nation: { alpha2Code: true, alpha3Code: true }
+					}
 				}
 			}),
 			client.liveQuery.conference({ __args: { id: conferenceId }, id: true, state: true })
@@ -68,6 +74,9 @@
 		})
 	);
 	const currentMember = $derived(delegation.members.find((member) => member.user.id === userId));
+	const assignedRole = $derived(splitRole(delegation.assignedRole));
+	const assignedNation = $derived(assignedRole.nation);
+	const assignedNonStateActor = $derived(assignedRole.nonStateActor);
 
 	/** Withdraws the delegation's application after the user confirms it. */
 	async function revokeApplication() {
@@ -125,20 +134,16 @@
 </script>
 
 {#snippet assignment()}
-	{#if delegation.assignedNation}
-		<Flag alpha2Code={delegation.assignedNation.alpha2Code} size="xs" />
+	{#if assignedNation}
+		<Flag alpha2Code={assignedNation.alpha2Code} size="xs" />
 		<span class="text-lg font-bold">
-			{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+			{getFullTranslatedCountryNameFromISO3Code(assignedNation.alpha3Code)}
 		</span>
-	{:else if delegation.assignedNonStateActor}
-		<Flag
-			nsa
-			icon={delegation.assignedNonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'}
-			size="xs"
-		/>
+	{:else if assignedNonStateActor}
+		<Flag nsa icon={assignedNonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'} size="xs" />
 		<span class="text-lg font-bold">
-			{delegation.assignedNonStateActor.name}
-			({delegation.assignedNonStateActor.abbreviation})
+			{assignedNonStateActor.name}
+			({assignedNonStateActor.abbreviation})
 		</span>
 	{:else}
 		<NoAssignmentNotice applied={delegation.applied} />
@@ -161,18 +166,19 @@
 	</div>
 {/snippet}
 
-{#snippet appliedForRole(role: (typeof appliedForRoles)[number], index: number)}
+{#snippet appliedForRole(application: (typeof appliedForRoles)[number], index: number)}
+	{@const { nation, nonStateActor } = splitRole(application.role)}
 	<span class="text-sm text-base-content/60">{index + 1}.</span>
 	<Flag
-		alpha2Code={role.nation?.alpha2Code}
-		icon={role.nonStateActor?.fontAwesomeIcon}
-		nsa={!!role.nonStateActor}
+		alpha2Code={nation?.alpha2Code}
+		icon={nonStateActor?.fontAwesomeIcon}
+		nsa={!!nonStateActor}
 		size="xs"
 	/>
-	{#if role.nation}
-		{getFullTranslatedCountryNameFromISO3Code(role.nation.alpha3Code)}
-	{:else if role.nonStateActor}
-		{role.nonStateActor.name}
+	{#if nation}
+		{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
+	{:else if nonStateActor}
+		{nonStateActor.name}
 	{:else}
 		N/A
 	{/if}
@@ -184,7 +190,7 @@
 			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
-		{#if delegation.assignedNation}
+		{#if assignedNation}
 			<button
 				class="btn btn-sm {members.length === 0 && 'btn-disabled'}"
 				onclick={() => (committeeAssignmentModalOpen = true)}
@@ -242,7 +248,7 @@
 					</code>
 				</button>
 			</div>
-			{#if delegation.assignedNation && currentMember}
+			{#if assignedNation && currentMember}
 				{@render currentMemberCommittee(currentMember.assignedCommittee)}
 			{/if}
 		</div>
@@ -314,6 +320,6 @@
 <CommitteeAssignmentModal
 	bind:open={committeeAssignmentModalOpen}
 	{members}
-	nation={delegation.assignedNation}
+	nationRoleId={assignedNation ? delegation.assignedRole?.id : null}
 	{conferenceId}
 />

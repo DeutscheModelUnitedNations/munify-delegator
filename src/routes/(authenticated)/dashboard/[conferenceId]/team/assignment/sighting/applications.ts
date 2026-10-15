@@ -37,8 +37,11 @@ const delegationCard = {
 	appliedForRoles: {
 		id: true,
 		rank: true,
-		nation: { alpha3Code: true, alpha2Code: true },
-		nonStateActor: { id: true, name: true, fontAwesomeIcon: true }
+		role: {
+			name: true,
+			fontAwesomeIcon: true,
+			nation: { alpha3Code: true, alpha2Code: true }
+		}
 	}
 } as const;
 
@@ -240,16 +243,17 @@ export async function searchApplications(conferenceId: string, search: string, f
 	const term = search.trim();
 	if (!term) return { delegations: [], singleParticipants: [], entries: [] };
 	const userIds = (await matchingUserIds(term)) ?? [];
-	const inConference = { conferenceId: { eq: conferenceId }, applied: { eq: true } };
+	const applied = { applied: { eq: true } };
 	const like = containing(term);
 	const texts = [{ school: like }, { motivation: like }, { experience: like }];
-	const people = { userId: { in: userIds } };
+	const people = { user: { id: { in: userIds } } };
 
 	const [delegations, singleParticipants, nameMatches] = await Promise.all([
 		client.query.delegations({
 			__args: {
 				where: {
-					...inConference,
+					conferenceId: { eq: conferenceId },
+					...applied,
 					OR: [...texts, { members: people }, { members: { supervisors: people } }]
 				},
 				limit: SEARCH_LIMIT
@@ -259,7 +263,8 @@ export async function searchApplications(conferenceId: string, search: string, f
 		client.query.singleParticipants({
 			__args: {
 				where: {
-					...inConference,
+					conference: { id: { eq: conferenceId } },
+					...applied,
 					OR: [...texts, people, { supervisors: people }]
 				},
 				limit: SEARCH_LIMIT

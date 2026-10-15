@@ -1,27 +1,7 @@
 import { db, schema } from '$api/db/db';
-import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import { m } from '$lib/paraglide/messages';
 import { apiError } from '$api/services/errors/apiError';
-
-/**
- * The participant status row is created on demand, as the legacy upsert did. The no-op `set` is
- * how Postgres returns the existing row on conflict.
- */
-export async function ensureParticipantStatus(userId: string, conferenceId: string) {
-	return db
-		.insert(schema.conferenceParticipantStatus)
-		.values({ userId, conferenceId })
-		.onConflictDoUpdate({
-			target: [
-				schema.conferenceParticipantStatus.userId,
-				schema.conferenceParticipantStatus.conferenceId
-			],
-			set: { userId }
-		})
-		.returning()
-		.then(assertFirstEntryExists);
-}
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
@@ -29,7 +9,7 @@ export async function ensureParticipantStatus(userId: string, conferenceId: stri
  */
 export async function scanInSession(sessionId: string, statusId: string) {
 	return db.query.attendanceEntry.findFirst({
-		where: { sessionId, conferenceParticipantStatusId: statusId },
+		where: { sessionId, conferenceParticipantId: statusId },
 		columns: { id: true }
 	});
 }
@@ -52,7 +32,7 @@ export async function storeSessionCard(
 	if (session?.mode !== 'BADGE') {
 		throw apiError('INVALID_INPUT', m.sessionNoAccessCards());
 	}
-	const holder = await db.query.conferenceParticipantStatus.findFirst({
+	const holder = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, accessCardId, id: { ne: statusId } },
 		columns: { id: true }
 	});
@@ -60,7 +40,7 @@ export async function storeSessionCard(
 		throw apiError('CONFLICT', m.accessCardTaken());
 	}
 	await db
-		.update(schema.conferenceParticipantStatus)
+		.update(schema.conferenceParticipant)
 		.set({ accessCardId })
-		.where(eq(schema.conferenceParticipantStatus.id, statusId));
+		.where(eq(schema.conferenceParticipant.id, statusId));
 }

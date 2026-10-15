@@ -19,14 +19,14 @@ export async function fetchUserParticipations({
 	userId: string;
 	throwIfAnyIsFound?: boolean;
 }) {
-	const where = { conferenceId, userId };
+	const participant = { participant: { conferenceId, userId } };
 
 	const [foundSupervisor, foundSingleParticipant, foundDelegationMember, foundTeamMember] =
 		await Promise.all([
-			db.query.conferenceSupervisor.findFirst({ where }),
-			db.query.singleParticipant.findFirst({ where }),
-			db.query.delegationMember.findFirst({ where }),
-			db.query.teamMember.findFirst({ where })
+			db.query.conferenceSupervisor.findFirst({ where: participant }),
+			db.query.singleParticipant.findFirst({ where: participant }),
+			db.query.delegationMember.findFirst({ where: participant }),
+			db.query.teamMember.findFirst({ where: { conferenceId, userId } })
 		]);
 
 	if (throwIfAnyIsFound) {

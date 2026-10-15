@@ -91,8 +91,7 @@ function addPaper(cs: ConferenceSeed, plan: PaperPlan) {
 
 	cs.batch.paper.push({
 		id: paperId,
-		conferenceId: cs.id,
-		authorId: plan.authorId,
+		authorParticipantId: cs.participant(plan.authorId).id,
 		delegationId: plan.delegationId,
 		type: plan.type,
 		agendaItemId: plan.agendaItemId,

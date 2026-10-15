@@ -129,14 +129,17 @@ export function seatNamesOf(
 		| {
 				delegationMember?: {
 					assignedCommittee?: Named | null;
-					delegation: { assignedNonStateActor?: Named | null };
+					delegation: {
+						assignedRole?: { name: string | null; abbreviation: string | null } | null;
+					};
 				} | null;
-				singleParticipant?: { assignedRole?: { name: string } | null } | null;
+				singleParticipant?: { assignedRole?: { name: string | null } | null } | null;
 		  }
 		| undefined
 ): string[] {
 	const committee = participation?.delegationMember?.assignedCommittee;
-	const actor = participation?.delegationMember?.delegation.assignedNonStateActor;
+	// Only a non-state actor has a name of its own; a nation role's name and abbreviation are null.
+	const actor = participation?.delegationMember?.delegation.assignedRole;
 	const role = participation?.singleParticipant?.assignedRole;
 	return [
 		committee?.name,

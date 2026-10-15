@@ -46,11 +46,11 @@
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
-					assignedNationAlpha3Code: { isNotNull: true }
+					assignedRole: { kind: 'NATION' }
 				}
 			},
 			id: true,
-			assignedNation: { alpha3Code: true },
+			assignedRole: { nation: { alpha3Code: true } },
 			members: {
 				id: true,
 				user: listedUser,
@@ -64,11 +64,11 @@
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
-					assignedNonStateActorId: { isNotNull: true }
+					assignedRole: { kind: 'NON_STATE_ACTOR' }
 				}
 			},
 			id: true,
-			assignedNonStateActor: { id: true, name: true },
+			assignedRole: { name: true },
 			members: { id: true, user: listedUser }
 		});
 	}
@@ -77,7 +77,7 @@
 		return client.query.singleParticipants({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
+					conference: { id: { eq: conferenceId } },
 					assignedRoleId: { isNotNull: true }
 				}
 			},
@@ -89,7 +89,7 @@
 
 	function fetchSupervisors() {
 		return client.query.conferenceSupervisors({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
+			__args: { where: { conference: { id: { eq: conferenceId } } } },
 			id: true,
 			user: listedUser,
 			plansOwnAttendenceAtConference: true
@@ -146,7 +146,7 @@
 		const header = [m.country(), m.committee(), ...participantHeader()];
 
 		const nationName = (delegation: (typeof delegations)[number]) =>
-			getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation?.alpha3Code ?? '');
+			getFullTranslatedCountryNameFromISO3Code(delegation.assignedRole?.nation?.alpha3Code ?? '');
 
 		const data = delegations
 			.sort((a, b) => nationName(a).localeCompare(nationName(b)))

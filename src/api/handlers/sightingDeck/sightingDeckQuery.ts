@@ -27,8 +27,9 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
 };
 
 /**
- * Every application under review - applied delegations, then single participants - with its size,
- * its review and how far the sighting has come with it (`status`). The one place that says what
+ * Every application under review - applied delegations, then single participants (whose conference
+ * is their `conference_participant`'s) - with its size, its review and how far the sighting has
+ * come with it (`status`). The one place that says what
  * the sighting's deck is; everything else filters and orders this.
  */
 function applications(conferenceId: string): SQL {
@@ -51,8 +52,9 @@ function applications(conferenceId: string): SQL {
 				when coalesce(r.flagged, false) then 'flagged'
 				else 'unrated' end
 		from single_participant s
+		join conference_participant p on p.id = s.conference_participant_id
 		left join assignment_review r on r.single_participant_id = s.id
-		where s.conference_id = ${conferenceId} and s.applied`;
+		where p.conference_id = ${conferenceId} and s.applied`;
 }
 
 /** The deck's order: delegations before singles, the largest first, ties by id. */
@@ -200,5 +202,7 @@ export function applicationIdsSql(conferenceId: string): SQL {
 	return sql`
 		select id from delegation where conference_id = ${conferenceId} and applied
 		union all
-		select id from single_participant where conference_id = ${conferenceId} and applied`;
+		select s.id from single_participant s
+		join conference_participant p on p.id = s.conference_participant_id
+		where p.conference_id = ${conferenceId} and s.applied`;
 }

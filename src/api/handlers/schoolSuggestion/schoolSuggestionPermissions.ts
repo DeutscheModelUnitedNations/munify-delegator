@@ -48,7 +48,7 @@ export async function readableSchoolRegistrations(ctx: ApiContext, conferenceId:
 			where: { conferenceId, applied: true, school: { isNotNull: true } }
 		}).query.many,
 		singleParticipants: singleParticipants.merge({
-			where: { conferenceId, applied: true, school: { isNotNull: true } }
+			where: { participant: { conferenceId }, applied: true, school: { isNotNull: true } }
 		}).query.many
 	};
 }

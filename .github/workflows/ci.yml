@@ -424,7 +424,7 @@ jobs:
           filters: |
             jobs:
               - 'src/jobs/**'
-              - 'src/api/db/schema.ts'
+              - 'src/api/db/schema/**'
               - 'src/api/db/relations.ts'
               - 'tsdown.jobs.config.ts'
               - 'Dockerfile.jobs'

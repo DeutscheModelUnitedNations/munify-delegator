@@ -78,7 +78,8 @@ export function addRegistrationPersonas(cs: ConferenceSeed) {
 		addSupervisor(cs, {
 			id: 'supervisor',
 			userId: 'dev-reg-supervisor',
-			code: joinCodes.supervisor,
+			// Connection codes are unique across conferences; "Closed" draws a random one.
+			code: cs.plan.key === 'registration' ? joinCodes.supervisor : undefined,
 			attends: true,
 			memberIds: [...(ready?.memberIds.values() ?? []), ...applied.memberIds.values()]
 		});
@@ -237,10 +238,12 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		preferences: cs.customRoleIds.slice(1, 3)
 	});
 
+	// Connection codes are unique across conferences: the fixed ones belong to "Seed 5", and
+	// "Seed 2" holds `joinCodes.supervisor`.
+	const fixedCodes = cs.plan.key === 'preparation';
 	addSupervisor(cs, {
 		id: 'supervisor',
 		userId: 'dev-supervisor',
-		code: joinCodes.supervisor,
 		attends: true,
 		memberIds: [...german.memberIds.values(), ...rejected.memberIds.values()]
 	});
@@ -255,14 +258,14 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 	addSupervisor(cs, {
 		id: 'supervisor-absent',
 		userId: 'dev-supervisor-absent',
-		code: joinCodes.supervisorAbsent,
+		code: fixedCodes ? joinCodes.supervisorAbsent : undefined,
 		attends: false,
 		singleIds: [single]
 	});
 	addSupervisor(cs, {
 		id: 'supervisor-rejected',
 		userId: 'dev-supervisor-rejected',
-		code: joinCodes.supervisorRejected,
+		code: fixedCodes ? joinCodes.supervisorRejected : undefined,
 		attends: true,
 		memberIds: [...rejected.memberIds.values()]
 	});

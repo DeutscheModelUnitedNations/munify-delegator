@@ -30,10 +30,9 @@ import {
 import { seatedRoles } from './capacity';
 import type { AssignmentGroup } from './state';
 
-const delegation = (id: string, size: number, nation: string | null = null) => ({
+const delegation = (id: string, size: number, roleId: string | null = null) => ({
 	id,
-	assignedNationAlpha3Code: nation,
-	assignedNonStateActorId: null,
+	assignedRoleId: roleId,
 	members: Array.from({ length: size }, (_, i) => ({ id: `${id}-${i}`, isHeadDelegate: i === 0 }))
 });
 
@@ -42,26 +41,32 @@ const roles: BoardRoles = {
 		{
 			abbreviation: 'GA',
 			numOfSeatsPerDelegation: 2,
-			nations: [
-				{ alpha2Code: 'fr', alpha3Code: 'FRA' },
-				{ alpha2Code: 'de', alpha3Code: 'DEU' }
+			roles: [
+				{ id: 'nation-fra', nation: { alpha2Code: 'fr', alpha3Code: 'FRA' } },
+				{ id: 'nation-deu', nation: { alpha2Code: 'de', alpha3Code: 'DEU' } }
 			]
 		},
 		{
 			abbreviation: 'SC',
 			numOfSeatsPerDelegation: 1,
-			nations: [{ alpha2Code: 'fr', alpha3Code: 'FRA' }]
+			roles: [{ id: 'nation-fra', nation: { alpha2Code: 'fr', alpha3Code: 'FRA' } }]
 		}
 	],
 	nonStateActors: [
-		{ id: 'amn', name: 'Amnesty', abbreviation: 'AI', fontAwesomeIcon: 'dove', seatAmount: 2 }
+		{
+			id: 'nsa-amnesty',
+			name: 'Amnesty',
+			abbreviation: 'AI',
+			fontAwesomeIcon: 'dove',
+			seatAmount: 2
+		}
 	]
 };
 
 const seated = seatedRoles(roles.committees, roles.nonStateActors);
 
 const rows = (overrides: Partial<BoardRows> = {}): BoardRows => ({
-	delegations: [delegation('a', 2), delegation('b', 3, 'FRA'), delegation('c', 2)],
+	delegations: [delegation('a', 2), delegation('b', 3, 'nation-fra'), delegation('c', 2)],
 	singleParticipants: [{ id: 's', assignedRoleId: null }],
 	units: [],
 	draftSingleRoles: [],
@@ -77,11 +82,11 @@ describe('boardState', () => {
 
 	it('seats every nation across its committees and the non-state actors', () => {
 		expect(view.seated.map((role) => [role.key, role.seats])).toEqual([
-			['nation:FRA', 3],
-			['nation:DEU', 2],
-			['nsa:amn', 2]
+			['nation-fra', 3],
+			['nation-deu', 2],
+			['nsa-amnesty', 2]
 		]);
-		expect(view.taken.get('nation:FRA')).toBe(3);
+		expect(view.taken.get('nation-fra')).toBe(3);
 	});
 
 	it('finds the review of a group by its application', () => {
@@ -95,7 +100,7 @@ describe('boardState', () => {
 			{ size: 2, openGroups: 1, unfilledRoles: 2 },
 			{ size: 3, openGroups: 0, unfilledRoles: 0 }
 		]);
-		const halfFull = boardState(rows({ delegations: [delegation('d', 1, 'DEU')] }), seated);
+		const halfFull = boardState(rows({ delegations: [delegation('d', 1, 'nation-deu')] }), seated);
 		expect(sizeOptions(halfFull).find((option) => option.size === 2)?.unfilledRoles).toBe(2);
 	});
 
@@ -136,7 +141,7 @@ describe('boardState', () => {
 
 	it('lists the roles of a seat count with what is planned onto them', () => {
 		expect(rolesWithSeats(view, 3)).toMatchObject([
-			{ key: 'nation:FRA', taken: 3, groups: [{ key: 'b' }] }
+			{ key: 'nation-fra', taken: 3, groups: [{ key: 'b' }] }
 		]);
 	});
 
@@ -147,7 +152,7 @@ describe('boardState', () => {
 					{
 						id: 'u',
 						sourceSingleParticipantId: 's',
-						nationAlpha3Code: 'DEU',
+						roleId: 'nation-deu',
 						members: []
 					}
 				]
@@ -155,7 +160,7 @@ describe('boardState', () => {
 			seated
 		);
 		expect(converted.singles).toEqual([]);
-		expect(converted.taken.get('nation:DEU')).toBe(1);
+		expect(converted.taken.get('nation-deu')).toBe(1);
 	});
 });
 
@@ -164,8 +169,8 @@ describe('poolCountsBesidesDraft', () => {
 		[2, 3],
 		[4, 1]
 	]);
-	const touched = (id: string, size: number, nation: string | null = null) => ({
-		...delegation(id, size, nation),
+	const touched = (id: string, size: number, roleId: string | null = null) => ({
+		...delegation(id, size, roleId),
 		members: Array.from({ length: size }, (_, i) => ({ id: `${id}-${i}` }))
 	});
 
@@ -181,7 +186,7 @@ describe('poolCountsBesidesDraft', () => {
 		// a live role, an exclusion while excluded ones are hidden, a size without a count
 		const result = poolCountsBesidesDraft(
 			counts,
-			[touched('held', 2, 'FRA'), touched('out', 2), touched('big', 7)],
+			[touched('held', 2, 'nation-fra'), touched('out', 2), touched('big', 7)],
 			(id) => id === 'out'
 		);
 		expect([...result]).toEqual([...counts]);
@@ -215,18 +220,18 @@ describe('dropAction', () => {
 	const view = boardState(rows(), seated);
 
 	it('unassigns a group dropped into the pool', () => {
-		expect(dropAction(view, 'b', roleContainer('nation:FRA'), POOL_CONTAINER)).toMatchObject({
+		expect(dropAction(view, 'b', roleContainer('nation-fra'), POOL_CONTAINER)).toMatchObject({
 			type: 'assign',
 			target: null
 		});
 	});
 
 	it('assigns a group to a role with room for it and refuses one without', () => {
-		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation:DEU'))).toMatchObject({
+		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation-deu'))).toMatchObject({
 			type: 'assign',
-			target: { nationAlpha3Code: 'DEU' }
+			target: { roleId: 'nation-deu' }
 		});
-		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation:FRA'))).toEqual({
+		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation-fra'))).toEqual({
 			type: 'full'
 		});
 	});
@@ -234,8 +239,8 @@ describe('dropAction', () => {
 	it('ignores drops that go nowhere', () => {
 		expect(dropAction(view, 'a', POOL_CONTAINER, POOL_CONTAINER)).toBeUndefined();
 		expect(dropAction(view, 'a', POOL_CONTAINER, null)).toBeUndefined();
-		expect(dropAction(view, 'x', POOL_CONTAINER, roleContainer('nation:DEU'))).toBeUndefined();
-		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation:XXX'))).toBeUndefined();
+		expect(dropAction(view, 'x', POOL_CONTAINER, roleContainer('nation-deu'))).toBeUndefined();
+		expect(dropAction(view, 'a', POOL_CONTAINER, roleContainer('nation-xxx'))).toBeUndefined();
 	});
 });
 
@@ -249,8 +254,8 @@ describe('assignmentMutation', () => {
 		size: 1,
 		whole: true,
 		part: false,
-		target: { nationAlpha3Code: null, nonStateActorId: null },
-		liveTarget: { nationAlpha3Code: null, nonStateActorId: null },
+		target: { roleId: null },
+		liveTarget: { roleId: null },
 		pending: false,
 		...overrides
 	});
@@ -282,11 +287,9 @@ describe('assignmentMutation', () => {
 	});
 
 	it('passes no nulls as arguments', () => {
-		expect(roleArgs(null)).toEqual({ nationAlpha3Code: undefined, nonStateActorId: undefined });
-		expect(roleArgs({ nationAlpha3Code: 'FRA', nonStateActorId: null })).toEqual({
-			nationAlpha3Code: 'FRA',
-			nonStateActorId: undefined
-		});
+		expect(roleArgs(null)).toEqual({ roleId: undefined });
+		expect(roleArgs({ roleId: null })).toEqual({ roleId: undefined });
+		expect(roleArgs({ roleId: 'nation-fra' })).toEqual({ roleId: 'nation-fra' });
 	});
 });
 
@@ -294,7 +297,7 @@ describe('describeRole and wishRank', () => {
 	const name = (code: string) => `name of ${code}`;
 
 	it('names a nation with its committees and flag', () => {
-		expect(describeRole({ nationAlpha3Code: 'FRA', nonStateActorId: null }, roles, name)).toEqual({
+		expect(describeRole({ roleId: 'nation-fra' }, roles, name)).toEqual({
 			title: 'name of FRA',
 			subtitle: 'GA, SC',
 			alpha2Code: 'fr',
@@ -303,59 +306,55 @@ describe('describeRole and wishRank', () => {
 	});
 
 	it('names a non-state actor with its icon', () => {
-		expect(describeRole({ nationAlpha3Code: null, nonStateActorId: 'amn' }, roles, name)).toEqual({
+		expect(describeRole({ roleId: 'nsa-amnesty' }, roles, name)).toEqual({
 			title: 'AI',
 			subtitle: 'Amnesty',
 			alpha2Code: undefined,
 			icon: 'dove'
 		});
-		expect(describeRole({ nationAlpha3Code: null, nonStateActorId: 'x' }, roles, name).title).toBe(
-			''
-		);
+		expect(describeRole({ roleId: 'x' }, roles, name).title).toBe('');
 	});
 
 	it('finds the rank of a wished role', () => {
 		const wishes = [
-			{ rank: 1, nation: { alpha3Code: 'FRA' }, nonStateActor: null },
-			{ rank: 2, nation: null, nonStateActor: { id: 'amn' } }
+			{ rank: 1, roleId: 'nation-fra' },
+			{ rank: 2, roleId: 'nsa-amnesty' }
 		];
-		expect(wishRank(wishes, { nationAlpha3Code: 'FRA', nonStateActorId: null })).toBe(1);
-		expect(wishRank(wishes, { nationAlpha3Code: null, nonStateActorId: 'amn' })).toBe(2);
-		expect(wishRank(wishes, { nationAlpha3Code: 'DEU', nonStateActorId: null })).toBeUndefined();
-		expect(wishRank(wishes, { nationAlpha3Code: null, nonStateActorId: null })).toBeUndefined();
-		expect(wishRank(undefined, { nationAlpha3Code: 'FRA', nonStateActorId: null })).toBeUndefined();
+		expect(wishRank(wishes, { roleId: 'nation-fra' })).toBe(1);
+		expect(wishRank(wishes, { roleId: 'nsa-amnesty' })).toBe(2);
+		expect(wishRank(wishes, { roleId: 'nation-deu' })).toBeUndefined();
+		expect(wishRank(wishes, { roleId: null })).toBeUndefined();
+		expect(wishRank(undefined, { roleId: 'nation-fra' })).toBeUndefined();
 	});
 
 	describe('wishList', () => {
 		const wishes = [
-			{ rank: 2, nation: { alpha3Code: 'FRA' }, nonStateActor: null },
-			{ rank: 1, nation: null, nonStateActor: { id: 'amn', abbreviation: 'AI' } },
-			{ rank: 3, nation: null, nonStateActor: null }
+			{ rank: 2, roleId: 'nation-fra', role: { nation: { alpha3Code: 'FRA' } } },
+			{ rank: 1, roleId: 'nsa-amnesty', role: { abbreviation: 'AI' } },
+			{ rank: 3, roleId: 'nameless', role: {} }
 		];
 
 		it('lists the wishes by rank while no role is held', () => {
-			expect(wishList(wishes, { nationAlpha3Code: null, nonStateActorId: null }, name)).toEqual([
-				{ key: 'amn', rank: 1, name: 'AI', matches: false },
-				{ key: 'FRA', rank: 2, name: 'name of FRA', matches: false },
-				{ key: '3', rank: 3, name: '', matches: false }
+			expect(wishList(wishes, { roleId: null }, name)).toEqual([
+				{ key: 'nsa-amnesty', rank: 1, name: 'AI', matches: false },
+				{ key: 'nation-fra', rank: 2, name: 'name of FRA', matches: false },
+				{ key: 'nameless', rank: 3, name: '', matches: false }
 			]);
 		});
 
 		it('puts the wish matching the role first', () => {
-			const nation = wishList(wishes, { nationAlpha3Code: 'FRA', nonStateActorId: null }, name);
+			const nation = wishList(wishes, { roleId: 'nation-fra' }, name);
 			expect(nation.map((wish) => [wish.key, wish.matches])).toEqual([
-				['FRA', true],
-				['amn', false],
-				['3', false]
+				['nation-fra', true],
+				['nsa-amnesty', false],
+				['nameless', false]
 			]);
-			const nsa = wishList(wishes, { nationAlpha3Code: null, nonStateActorId: 'amn' }, name);
-			expect(nsa.filter((wish) => wish.matches).map((wish) => wish.key)).toEqual(['amn']);
+			const nsa = wishList(wishes, { roleId: 'nsa-amnesty' }, name);
+			expect(nsa.filter((wish) => wish.matches).map((wish) => wish.key)).toEqual(['nsa-amnesty']);
 		});
 
 		it('has nothing to list without wishes', () => {
-			expect(wishList(undefined, { nationAlpha3Code: 'FRA', nonStateActorId: null }, name)).toEqual(
-				[]
-			);
+			expect(wishList(undefined, { roleId: 'nation-fra' }, name)).toEqual([]);
 		});
 	});
 });
@@ -366,7 +365,7 @@ describe('pendingCount', () => {
 		expect(
 			pendingCount(
 				rows({
-					units: [{ id: 'u', sourceDelegationId: 'a', nationAlpha3Code: 'DEU', members: [] }],
+					units: [{ id: 'u', sourceDelegationId: 'a', roleId: 'nation-deu', members: [] }],
 					draftSingleRoles: [{ singleParticipantId: 's', roleId: 'press' }]
 				})
 			)
@@ -396,10 +395,10 @@ describe('singleDropAction', () => {
 describe('finish tab', () => {
 	it('names the roles applying would merge', () => {
 		const merging = boardState(
-			rows({ units: [{ id: 'u', sourceDelegationId: 'a', nationAlpha3Code: 'FRA', members: [] }] }),
+			rows({ units: [{ id: 'u', sourceDelegationId: 'a', roleId: 'nation-fra', members: [] }] }),
 			seated
 		);
-		expect([...mergedRoles(merging.groups)]).toEqual(['nation:FRA']);
+		expect([...mergedRoles(merging.groups)]).toEqual(['nation-fra']);
 		expect(mergedRoles(boardState(rows(), seated).groups).size).toBe(0);
 	});
 
@@ -412,12 +411,12 @@ describe('finish tab', () => {
 
 describe('card details', () => {
 	it('relates a planned role to the wishes', () => {
-		const wishes = [{ rank: 1, nation: { alpha3Code: 'FRA' } }];
-		const fra = { nationAlpha3Code: 'FRA', nonStateActorId: null };
+		const wishes = [{ rank: 1, roleId: 'nation-fra' }];
+		const fra = { roleId: 'nation-fra' };
 		expect(wishStatus(wishes, fra)).toEqual({ rank: 1 });
 		expect(wishStatus([], fra)).toEqual({ rank: undefined });
 		expect(wishStatus(undefined, fra)).toBeUndefined();
-		expect(wishStatus(wishes, { nationAlpha3Code: null, nonStateActorId: null })).toBeUndefined();
+		expect(wishStatus(wishes, { roleId: null })).toBeUndefined();
 	});
 
 	it('borders a card by what matters most', () => {

@@ -13,7 +13,7 @@ import type * as schema from '$api/db/schema';
 export default function getSimplifiedPostalStatus(
 	participantStatus:
 		| (Pick<
-				typeof schema.conferenceParticipantStatus.$inferSelect,
+				typeof schema.conferenceParticipant.$inferSelect,
 				'termsAndConditions' | 'guardianConsent' | 'mediaConsent'
 		  > & {
 				[key: string]: unknown;

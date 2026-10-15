@@ -28,13 +28,8 @@ export async function fetchSurveyResults(conferenceId: string, surveyId: string)
 		client.liveQuery.delegationMembers({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
-					delegation: {
-						OR: [
-							{ assignedNationAlpha3Code: { isNotNull: true } },
-							{ assignedNonStateActorId: { isNotNull: true } }
-						]
-					},
+					conference: { id: { eq: conferenceId } },
+					delegation: { assignedRoleId: { isNotNull: true } },
 					user: notAnswered
 				}
 			},
@@ -43,7 +38,7 @@ export async function fetchSurveyResults(conferenceId: string, surveyId: string)
 		client.liveQuery.singleParticipants({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
+					conference: { id: { eq: conferenceId } },
 					assignedRoleId: { isNotNull: true },
 					user: notAnswered
 				}

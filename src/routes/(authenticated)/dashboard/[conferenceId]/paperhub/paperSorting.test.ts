@@ -16,7 +16,7 @@ function paper(name: string, overrides: Partial<SortablePaper> = {}): Paper {
 		createdAt: null,
 		updatedAt: null,
 		firstSubmittedAt: null,
-		delegation: { assignedNation: null, assignedNonStateActor: null },
+		delegation: { assignedRole: null },
 		...overrides
 	};
 }
@@ -30,14 +30,14 @@ describe('sortPapers', () => {
 		createdAt: new Date('2026-01-03'),
 		updatedAt: new Date('2026-02-01'),
 		firstSubmittedAt: new Date('2026-01-05'),
-		delegation: { assignedNation: { alpha3Code: 'DEU' }, assignedNonStateActor: null }
+		delegation: { assignedRole: { kind: 'NATION', name: null, nation: { alpha3Code: 'DEU' } } }
 	});
 	const amnesty = paper('amnesty', {
 		type: 'INTRODUCTION_PAPER',
 		status: 'ACCEPTED',
 		createdAt: new Date('2026-01-01'),
 		updatedAt: new Date('2026-03-01'),
-		delegation: { assignedNation: null, assignedNonStateActor: { name: 'Amnesty' } }
+		delegation: { assignedRole: { kind: 'NON_STATE_ACTOR', name: 'Amnesty', nation: null } }
 	});
 	const nobody = paper('nobody', {
 		createdAt: new Date('2026-01-02')

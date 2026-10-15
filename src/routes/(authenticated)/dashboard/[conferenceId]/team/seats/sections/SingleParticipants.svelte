@@ -15,8 +15,8 @@
 	let { conferenceId }: Props = $props();
 
 	const roles = $derived(
-		await client.liveQuery.customConferenceRoles({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
+		await client.liveQuery.conferenceRoles({
+			__args: { where: { conferenceId: { eq: conferenceId }, kind: 'CUSTOM' } },
 			id: true,
 			name: true,
 			fontAwesomeIcon: true,
@@ -26,7 +26,7 @@
 
 	const singleParticipants = $derived(
 		await client.liveQuery.singleParticipants({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
+			__args: { where: { conference: { id: { eq: conferenceId } } } },
 			id: true,
 			user: { id: true, givenName: true, familyName: true },
 			assignedRole: { id: true }

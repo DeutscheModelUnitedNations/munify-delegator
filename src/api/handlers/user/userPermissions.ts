@@ -218,19 +218,21 @@ export async function deletableParticipation(
 	conferenceId: string
 ) {
 	const scope = { conferenceId, userId };
+	// the registrations name the conference and the user through the person's part in it
+	const throughParticipant = { participant: scope };
 	return {
 		delegationMember: (await ctx.abilities.delegationMember.filter('delete')).merge({
-			where: scope
+			where: throughParticipant
 		}).sql.where,
 		singleParticipant: (await ctx.abilities.singleParticipant.filter('delete')).merge({
-			where: scope
+			where: throughParticipant
 		}).sql.where,
 		conferenceSupervisor: (await ctx.abilities.conferenceSupervisor.filter('delete')).merge({
-			where: scope
+			where: throughParticipant
 		}).sql.where,
-		conferenceParticipantStatus: (
-			await ctx.abilities.conferenceParticipantStatus.filter('delete')
-		).merge({ where: scope }).sql.where
+		conferenceParticipant: (await ctx.abilities.conferenceParticipant.filter('delete')).merge({
+			where: scope
+		}).sql.where
 	};
 }
 

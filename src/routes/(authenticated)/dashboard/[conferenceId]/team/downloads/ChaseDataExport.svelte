@@ -25,6 +25,8 @@
 	/** One lean list query per table the import needs, run side by side. */
 	async function fetchConferenceData() {
 		const inConference = { where: { conferenceId: { eq: conferenceId } } };
+		// people in the conference reach it through their participant row
+		const ofConference = { where: { conference: { id: { eq: conferenceId } } } };
 		const [
 			conference,
 			committees,
@@ -43,27 +45,28 @@
 				agendaItems: { id: true, title: true }
 			}),
 			client.query.singleParticipants({
-				__args: inConference,
+				__args: ofConference,
 				id: true,
 				user: exportUser,
 				assignedRole: { id: true }
 			}),
-			client.query.conferenceSupervisors({ __args: inConference, id: true, user: exportUser }),
-			client.query.nonStateActors({
-				__args: inConference,
+			client.query.conferenceSupervisors({ __args: ofConference, id: true, user: exportUser }),
+			client.query.conferenceRoles({
+				__args: {
+					where: { conferenceId: { eq: conferenceId }, kind: 'NON_STATE_ACTOR' }
+				},
 				id: true,
 				name: true,
 				fontAwesomeIcon: true
 			}),
 			client.query.delegationMembers({
-				__args: inConference,
+				__args: ofConference,
 				id: true,
 				assignedCommittee: { id: true },
 				user: exportUser,
 				delegation: {
 					id: true,
-					assignedNation: { alpha3Code: true },
-					assignedNonStateActor: { id: true }
+					assignedRole: { id: true, kind: true, nation: { alpha3Code: true } }
 				}
 			}),
 			client.query.teamMembers({ __args: inConference, id: true, role: true, user: exportUser })

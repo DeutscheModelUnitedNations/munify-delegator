@@ -8,8 +8,8 @@
 	let { params }: PageProps = $props();
 
 	const roles = $derived(
-		await client.liveQuery.customConferenceRoles({
-			__args: { where: { conferenceId: { eq: params.conferenceId } } },
+		await client.liveQuery.conferenceRoles({
+			__args: { where: { conferenceId: { eq: params.conferenceId }, kind: 'CUSTOM' } },
 			id: true,
 			name: true,
 			description: true,
@@ -34,8 +34,8 @@
 		>
 			{#each roles as { description, fontAwesomeIcon, id, name } (id)}
 				<PlainCard
-					title={name}
-					{description}
+					title={name ?? ''}
+					description={description ?? ''}
 					fontAwesomeIcon={fontAwesomeIcon ?? 'fa-user-tie'}
 					link={resolve(`/registration/${params.conferenceId}/individual/${id}`)}
 				/>

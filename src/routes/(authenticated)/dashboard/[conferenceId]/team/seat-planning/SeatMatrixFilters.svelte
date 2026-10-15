@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { translateRegionalGroup } from '$lib/utils/enumTranslations';
 	import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
-	import { useSeatPlanningParams } from './filters';
+	import { useSeatPlanningParams } from './filters.svelte';
 
 	interface Props {
 		/** delegation sizes that currently occur */

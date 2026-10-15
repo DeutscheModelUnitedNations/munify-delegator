@@ -6,6 +6,7 @@
 	import InfoGrid from '$lib/components/infoGrid';
 	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';
@@ -35,11 +36,14 @@
 				appliedForRoles: {
 					id: true,
 					rank: true,
-					nation: { alpha2Code: true },
-					nonStateActor: { fontAwesomeIcon: true }
+					role: { kind: true, fontAwesomeIcon: true, nation: { alpha2Code: true } }
 				},
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: { name: true, fontAwesomeIcon: true },
+				assignedRole: {
+					kind: true,
+					name: true,
+					fontAwesomeIcon: true,
+					nation: { alpha2Code: true, alpha3Code: true }
+				},
 				// Every member, for the count and the "hidden member" rows; only the ones this
 				// supervisor supervises are readable in detail, and those come from `members` below.
 				members: { id: true, isHeadDelegate: true },
@@ -65,6 +69,7 @@
 		delegation.members.filter((x) => !members.some((member) => member.id === x.id))
 	);
 	const roleApplications = $derived(delegation.appliedForRoles.toSorted((a, b) => a.rank - b.rank));
+	const assignedRole = $derived(splitRole(delegation.assignedRole));
 </script>
 
 <SupervisorContentCard
@@ -88,9 +93,9 @@
 					{#snippet role(roleApplication)}
 						<Flag
 							size="xs"
-							alpha2Code={roleApplication.nation?.alpha2Code}
-							nsa={!!roleApplication.nonStateActor}
-							icon={roleApplication.nonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+							alpha2Code={roleApplication.role.nation?.alpha2Code}
+							nsa={roleApplication.role.kind === 'NON_STATE_ACTOR'}
+							icon={roleApplication.role.fontAwesomeIcon ?? 'fa-hand-point-up'}
 						/>
 					{/snippet}
 				</RoleApplicationsEntry>
@@ -99,14 +104,14 @@
 					<div class="flex items-center gap-2">
 						<Flag
 							size="xs"
-							alpha2Code={delegation.assignedNation?.alpha2Code}
-							nsa={!!delegation.assignedNonStateActor}
-							icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+							alpha2Code={assignedRole.nation?.alpha2Code}
+							nsa={!!assignedRole.nonStateActor}
+							icon={assignedRole.nonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
 						/>
-						{#if delegation.assignedNation}
-							{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
-						{:else if delegation.assignedNonStateActor}
-							{delegation.assignedNonStateActor.name}
+						{#if assignedRole.nation}
+							{getFullTranslatedCountryNameFromISO3Code(assignedRole.nation.alpha3Code)}
+						{:else if assignedRole.nonStateActor}
+							{assignedRole.nonStateActor.name}
 						{/if}
 					</div>
 				</InfoGrid.Entry>

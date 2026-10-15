@@ -95,8 +95,10 @@ export async function loginAs(
 	claims: TestUserClaims,
 	opts: { startUrl?: string } = {}
 ): Promise<void> {
-	const startUrl = opts.startUrl ?? '/login?next=/dashboard';
-	await page.goto(startUrl);
+	// Through `/login`: a conference's dashboard and seat overview are public and never send a
+	// visitor to the provider on their own.
+	const startUrl = opts.startUrl ?? '/dashboard';
+	await page.goto(`/login?next=${encodeURIComponent(startUrl)}`);
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });
 	// The page's "custom claims" form: any `sub`, any claims. Its per-user buttons are for the

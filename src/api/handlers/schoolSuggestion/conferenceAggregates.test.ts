@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { distinctNationCodes, normalizeSchoolName, schoolRows } from './conferenceAggregates';
+import { normalizeSchoolName, schoolRows } from './conferenceAggregates';
 
 describe('schoolRows', () => {
 	test('counts delegations, their members and single participants per school', () => {
@@ -50,30 +50,6 @@ describe('schoolRows', () => {
 
 	test('leaves out an empty school name', () => {
 		expect(schoolRows([{ id: 'd1', school: '' }], [], [{ school: '' }])).toEqual([]);
-	});
-});
-
-describe('distinctNationCodes', () => {
-	const deu = { alpha2Code: 'de', alpha3Code: 'DEU' };
-	const fra = { alpha2Code: 'fr', alpha3Code: 'FRA' };
-
-	test('lists each nation once, in the order the committees seat them', () => {
-		expect(
-			distinctNationCodes([{ nations: [deu, fra] }, { nations: [fra] }, { nations: [] }])
-		).toEqual(['DEU', 'FRA']);
-	});
-
-	test('deduplicates by alpha-2 code', () => {
-		expect(
-			distinctNationCodes([
-				{ nations: [deu] },
-				{ nations: [{ alpha2Code: 'de', alpha3Code: 'XXX' }] }
-			])
-		).toEqual(['DEU']);
-	});
-
-	test('is empty without committees', () => {
-		expect(distinctNationCodes([])).toEqual([]);
 	});
 });
 

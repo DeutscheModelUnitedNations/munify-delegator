@@ -4,19 +4,16 @@
  * draft the same way.
  */
 
-/** A role a delegation can hold. Both null: no role. */
+/** A role a delegation can hold: a nation or non-state actor (`conference_role`), null for none. */
 export interface Target {
-	nationAlpha3Code: string | null;
-	nonStateActorId: string | null;
+	roleId: string | null;
 }
 
-export const NO_TARGET: Target = { nationAlpha3Code: null, nonStateActorId: null };
+export const NO_TARGET: Target = { roleId: null };
 
 /** One key per role, `undefined` for no role - what groups are bucketed and seats counted by. */
 export function targetKey(target: Target): string | undefined {
-	if (target.nationAlpha3Code) return `nation:${target.nationAlpha3Code}`;
-	if (target.nonStateActorId) return `nsa:${target.nonStateActorId}`;
-	return undefined;
+	return target.roleId ?? undefined;
 }
 
 export function sameTarget(a: Target, b: Target) {
@@ -25,8 +22,7 @@ export function sameTarget(a: Target, b: Target) {
 
 export interface LiveDelegation {
 	id: string;
-	nationAlpha3Code: string | null;
-	nonStateActorId: string | null;
+	roleId: string | null;
 	members: { id: string; isHeadDelegate: boolean }[];
 }
 
@@ -39,8 +35,7 @@ export interface DraftUnit {
 	id: string;
 	sourceDelegationId: string | null;
 	sourceSingleParticipantId: string | null;
-	nationAlpha3Code: string | null;
-	nonStateActorId: string | null;
+	roleId: string | null;
 	/** The delegation members of one part of a split delegation; empty for a whole delegation. */
 	memberIds: string[];
 }
@@ -80,10 +75,7 @@ interface IncompleteSplit {
 	memberIds: string[];
 }
 
-const targetOf = (row: Target): Target => ({
-	nationAlpha3Code: row.nationAlpha3Code,
-	nonStateActorId: row.nonStateActorId
-});
+const targetOf = (row: Target): Target => ({ roleId: row.roleId });
 
 function groupsOfDelegation(delegation: LiveDelegation, units: DraftUnit[]) {
 	const liveTarget = targetOf(delegation);

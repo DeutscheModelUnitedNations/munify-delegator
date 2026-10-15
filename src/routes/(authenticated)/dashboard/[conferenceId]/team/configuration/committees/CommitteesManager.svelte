@@ -32,7 +32,7 @@
 				abbreviation: true,
 				numOfSeatsPerDelegation: true,
 				resolutionHeadline: true,
-				nations: { alpha3Code: true },
+				roles: { id: true },
 				delegationMembers: { id: true },
 				agendaItems: { id: true, title: true, teaserText: true, papers: { id: true } }
 			}),

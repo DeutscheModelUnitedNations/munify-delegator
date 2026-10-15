@@ -52,7 +52,7 @@ to run repeatedly against a database that already has data. Two conferences exis
 Rules worth keeping when adding fixtures:
 
 - **A nation can only be assigned to one delegation per conference**
-  (`@@unique([conferenceId, assignedNationAlpha3Code])`). Two fixtures sharing a nation constant
+  (`delegation_assigned_role_id_key`; a nation's role belongs to one conference). Two fixtures sharing a nation constant
   will collide as soon as a spec tries to assign it.
 - **`PaperVersion.content` is a JSON _string_, not an object.** `PaperVersion.contentHash`
   md5-hashes the stored value directly, and hash-wasm throws `Invalid data type!` on an object -

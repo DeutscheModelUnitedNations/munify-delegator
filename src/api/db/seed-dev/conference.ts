@@ -128,7 +128,9 @@ export function buildConferenceStructure(
 			numOfSeatsPerDelegation: index === 0 ? 1 : faker.number.int({ min: 1, max: 2 }),
 			resolutionHeadline: faker.helpers.maybe(() => `Resolution der ${entry.name}`) ?? null
 		});
-		world.batch.committeeToNation.push(...nations.map((nation) => ({ a: committeeId, b: nation })));
+		world.batch.committeeToRole.push(
+			...nations.map((nation) => ({ a: committeeId, b: cs.nationRoleId(nation) }))
+		);
 
 		const agendaItemIds = [0, 1].map((item) => {
 			const agendaItemId = `${committeeId}-agenda-${item}`;
@@ -153,9 +155,10 @@ export function buildConferenceStructure(
 
 	NSA_CATALOG.slice(0, plan.crowd.nonStateActors).forEach((entry, index) => {
 		const nonStateActorId = cs.rowId(`nsa-${entry.abbreviation.toLowerCase()}`);
-		world.batch.nonStateActor.push({
+		world.batch.conferenceRole.push({
 			id: nonStateActorId,
 			conferenceId: cs.id,
+			kind: 'NON_STATE_ACTOR',
 			name: entry.name,
 			abbreviation: entry.abbreviation,
 			description: faker.lorem.sentence(),
@@ -168,9 +171,10 @@ export function buildConferenceStructure(
 
 	CUSTOM_ROLE_CATALOG.slice(0, plan.crowd.customRoles).forEach((entry, index) => {
 		const roleId = cs.rowId(`role-${index}`);
-		world.batch.customConferenceRole.push({
+		world.batch.conferenceRole.push({
 			id: roleId,
 			conferenceId: cs.id,
+			kind: 'CUSTOM',
 			name: entry.name,
 			description: entry.description,
 			fontAwesomeIcon: entry.icon,

@@ -12,22 +12,27 @@ const nobody: ParticipationRoles = {
 };
 
 function delegationMember(
-	delegation: NonNullable<ParticipationRoles['delegationMember']>['delegation'],
+	delegation: Delegation,
 	committee: { abbreviation: string } | null = null
 ): ParticipationRoles {
 	return { ...nobody, delegationMember: { assignedCommittee: committee, delegation } };
 }
 
+type Delegation = NonNullable<ParticipationRoles['delegationMember']>['delegation'];
+
+function nationRole(alpha2Code: string, alpha3Code: string): Delegation['assignedRole'] {
+	return {
+		kind: 'NATION',
+		name: null,
+		fontAwesomeIcon: null,
+		nation: { alpha2Code, alpha3Code }
+	};
+}
+
 describe('describeParticipant', () => {
 	test('a delegation member with a nation shows the nation, committee and flag code', () => {
 		const info = describeParticipant(
-			delegationMember(
-				{
-					assignedNation: { alpha2Code: 'DE', alpha3Code: 'DEU' },
-					assignedNonStateActor: null
-				},
-				{ abbreviation: 'GA' }
-			)
+			delegationMember({ assignedRole: nationRole('DE', 'DEU') }, { abbreviation: 'GA' })
 		);
 		expect(info).toEqual({
 			type: 'delegation',
@@ -38,12 +43,7 @@ describe('describeParticipant', () => {
 	});
 
 	test('a delegation member without a committee has no committee abbreviation', () => {
-		const info = describeParticipant(
-			delegationMember({
-				assignedNation: { alpha2Code: 'FR', alpha3Code: 'FRA' },
-				assignedNonStateActor: null
-			})
-		);
+		const info = describeParticipant(delegationMember({ assignedRole: nationRole('FR', 'FRA') }));
 		expect(info.committeeAbbreviation).toBeUndefined();
 		expect(info.alpha2Code).toBe('fr');
 	});
@@ -51,8 +51,12 @@ describe('describeParticipant', () => {
 	test('a delegation member of a non-state actor shows its name and icon', () => {
 		const info = describeParticipant(
 			delegationMember({
-				assignedNation: null,
-				assignedNonStateActor: { name: 'Amnesty International', fontAwesomeIcon: 'candle' }
+				assignedRole: {
+					kind: 'NON_STATE_ACTOR',
+					name: 'Amnesty International',
+					fontAwesomeIcon: 'candle',
+					nation: null
+				}
 			})
 		);
 		expect(info).toEqual({
@@ -64,9 +68,7 @@ describe('describeParticipant', () => {
 	});
 
 	test('a delegation member without an assignment is unassigned', () => {
-		const info = describeParticipant(
-			delegationMember({ assignedNation: null, assignedNonStateActor: null })
-		);
+		const info = describeParticipant(delegationMember({ assignedRole: null }));
 		expect(info).toEqual({ type: 'unassigned', roleDisplay: '' });
 	});
 
@@ -105,7 +107,7 @@ describe('describeParticipant', () => {
 
 	test('a delegation membership wins over the other roles', () => {
 		const info = describeParticipant({
-			...delegationMember({ assignedNation: null, assignedNonStateActor: null }),
+			...delegationMember({ assignedRole: null }),
 			teamMember: { role: 'MEMBER' },
 			supervisor: {}
 		});

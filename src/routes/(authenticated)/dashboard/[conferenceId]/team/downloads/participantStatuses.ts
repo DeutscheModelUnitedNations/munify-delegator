@@ -5,7 +5,7 @@ import { client } from '$lib/api/rumbleClient/client';
  * lists and the status export both join their rows against this.
  */
 export async function fetchParticipantStatusesByUser(conferenceId: string) {
-	const statuses = await client.query.conferenceParticipantStatuses({
+	const statuses = await client.query.conferenceParticipants({
 		__args: { where: { conferenceId: { eq: conferenceId } } },
 		id: true,
 		userId: true,

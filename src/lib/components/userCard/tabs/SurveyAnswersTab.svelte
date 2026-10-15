@@ -22,7 +22,7 @@
 			client.liveQuery.surveyAnswers({
 				__args: {
 					where: {
-						userId: { eq: userId },
+						user: { id: { eq: userId } },
 						question: { conferenceId: { eq: conferenceId } }
 					}
 				},

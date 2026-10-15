@@ -51,8 +51,7 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 		school: plan.withoutTexts ? null : APPLICATION_TEXTS.school(),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
-		assignedNationAlpha3Code: plan.nation ?? null,
-		assignedNonStateActorId: plan.nonStateActorId ?? null
+		assignedRoleId: plan.nation ? cs.nationRoleId(plan.nation) : (plan.nonStateActorId ?? null)
 	});
 
 	const memberIds = new Map<string, string>();
@@ -61,11 +60,12 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 			? cs.rowId(`${plan.id}-member-${index}`)
 			: faker.database.mongodbObjectId();
 		memberIds.set(member.userId, memberId);
+		const participantId = cs.participant(member.userId).id;
+		cs.participantOfRow.set(memberId, participantId);
 		cs.batch.delegationMember.push({
 			id: memberId,
-			conferenceId: cs.id,
 			delegationId,
-			userId: member.userId,
+			conferenceParticipantId: participantId,
 			isHeadDelegate: member.head ?? index === 0,
 			assignedCommitteeId: member.committeeId ?? null
 		});
@@ -76,9 +76,8 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 			delegationId,
 			// Ranks run 1..n, as `normalizeRoleApplicationRanks` keeps them.
 			rank: index + 1,
-			...('nation' in preference
-				? { nationId: preference.nation }
-				: { nonStateActorId: preference.nonStateActorId })
+			roleId:
+				'nation' in preference ? cs.nationRoleId(preference.nation) : preference.nonStateActorId
 		});
 	});
 
@@ -109,10 +108,11 @@ export interface SinglePlan {
 
 export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
 	const singleId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
+	const participantId = cs.participant(plan.userId).id;
+	cs.participantOfRow.set(singleId, participantId);
 	cs.batch.singleParticipant.push({
 		id: singleId,
-		conferenceId: cs.id,
-		userId: plan.userId,
+		conferenceParticipantId: participantId,
 		applied: plan.applied,
 		school: plan.withoutTexts ? null : APPLICATION_TEXTS.school(),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
@@ -121,7 +121,7 @@ export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
 		assignmentDetails: plan.roleId ? 'Ausschuss nach Absprache mit der Konferenzleitung' : null
 	});
 	for (const roleId of plan.preferences ?? []) {
-		cs.batch.customConferenceRoleToSingleParticipant.push({ a: roleId, b: singleId });
+		cs.batch.singleParticipantRoleWish.push({ a: roleId, b: singleId });
 	}
 	if (plan.roleId) cs.acceptedUsers.push(plan.userId);
 	return singleId;
@@ -141,23 +141,22 @@ export function addSupervisor(cs: ConferenceSeed, plan: SupervisorPlan) {
 	const fixedCode = plan.code;
 	cs.batch.conferenceSupervisor.push({
 		id: supervisorId,
-		conferenceId: cs.id,
-		userId: plan.userId,
+		conferenceParticipantId: cs.participant(plan.userId).id,
 		plansOwnAttendenceAtConference: plan.attends,
-		connectionCode: cs.uniqueCode(fixedCode ? () => fixedCode : entryCode)
+		// Connection codes are unique across conferences, so a fixed one names one conference.
+		connectionCode: cs.world.uniqueCode(fixedCode ? () => fixedCode : entryCode)
 	});
-	for (const memberId of plan.memberIds ?? []) {
-		cs.batch.conferenceSupervisorToDelegationMember.push({ a: supervisorId, b: memberId });
-	}
-	for (const singleId of plan.singleIds ?? []) {
-		cs.batch.conferenceSupervisorToSingleParticipant.push({ a: supervisorId, b: singleId });
+	// Supervision links the people behind the registrations.
+	for (const rowId of [...(plan.memberIds ?? []), ...(plan.singleIds ?? [])]) {
+		const participantId = cs.participantOfRow.get(rowId);
+		if (participantId) cs.batch.supervision.push({ a: supervisorId, b: participantId });
 	}
 	return supervisorId;
 }
 
 export type StatusPlan = Partial<
 	Pick<
-		typeof schema.conferenceParticipantStatus.$inferInsert,
+		typeof schema.conferenceParticipant.$inferInsert,
 		| 'paymentStatus'
 		| 'termsAndConditions'
 		| 'guardianConsent'
@@ -168,18 +167,16 @@ export type StatusPlan = Partial<
 	>
 > & { withDocumentNumber?: boolean; withAccessCard?: boolean };
 
+/** Fills in the person's status in the conference; returns their `conferenceParticipant` id. */
 export function addStatus(cs: ConferenceSeed, userId: string, plan: StatusPlan) {
 	const { withDocumentNumber, withAccessCard, ...status } = plan;
-	const statusId = faker.database.mongodbObjectId();
-	cs.batch.conferenceParticipantStatus.push({
-		id: statusId,
-		conferenceId: cs.id,
-		userId,
+	const row = cs.participant(userId);
+	Object.assign(row, {
 		assignedDocumentNumber: withDocumentNumber ? ++cs.documentNumber : null,
 		accessCardId: withAccessCard ? `CARD-${++cs.accessCardNumber}` : null,
 		...status
 	});
-	return statusId;
+	return row.id;
 }
 
 /** Everything signed and paid, as most people are once the conference runs. */
@@ -202,19 +199,22 @@ export function addPayment(
 	forUserIds: string[],
 	received: boolean
 ) {
-	const id = cs.uniqueCode(paymentReference);
+	// The reference is the row's primary key, unique across conferences.
+	const id = cs.world.uniqueCode(paymentReference);
 	const createdAt = faker.date.recent({ days: 20 });
 	cs.batch.paymentTransaction.push({
 		id,
-		conferenceId: cs.id,
-		userId: payerId,
+		payerParticipantId: cs.participant(payerId).id,
 		amount: (cs.conference.feeAmount ?? 0) * forUserIds.length,
 		createdAt,
 		updatedAt: createdAt,
 		recievedAt: received ? faker.date.between({ from: createdAt, to: new Date() }) : null
 	});
 	for (const userId of forUserIds) {
-		cs.batch.userReferenceInPaymentTransaction.push({ paymentTransactionId: id, userId });
+		cs.batch.userReferenceInPaymentTransaction.push({
+			paymentTransactionId: id,
+			conferenceParticipantId: cs.participant(userId).id
+		});
 	}
 }
 
@@ -245,7 +245,7 @@ export function addAttendance(
 			});
 		}
 		cs.batch.attendanceEntry.push({
-			conferenceParticipantStatusId: statusId,
+			conferenceParticipantId: statusId,
 			sessionId,
 			timestamp,
 			recordedById

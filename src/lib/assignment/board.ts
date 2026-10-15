@@ -31,8 +31,7 @@ export interface BoardReviewRow {
 export interface BoardRows {
 	delegations: readonly {
 		id: string;
-		assignedNationAlpha3Code?: Nullable<string>;
-		assignedNonStateActorId?: Nullable<string>;
+		assignedRoleId?: Nullable<string>;
 		members: readonly { id: string; isHeadDelegate: boolean }[];
 	}[];
 	singleParticipants: readonly { id: string; assignedRoleId?: Nullable<string> }[];
@@ -40,8 +39,7 @@ export interface BoardRows {
 		id: string;
 		sourceDelegationId?: Nullable<string>;
 		sourceSingleParticipantId?: Nullable<string>;
-		nationAlpha3Code?: Nullable<string>;
-		nonStateActorId?: Nullable<string>;
+		roleId?: Nullable<string>;
 		members: readonly { delegationMemberId: string }[];
 	}[];
 	draftSingleRoles: readonly { singleParticipantId: string; roleId?: Nullable<string> }[];
@@ -52,34 +50,24 @@ export interface BoardRoles {
 	committees: readonly {
 		abbreviation: string;
 		numOfSeatsPerDelegation: number;
-		nations: readonly { alpha2Code: string; alpha3Code: string }[];
+		/** The nation roles the committee seats. */
+		roles: readonly { id: string; nation?: Nullable<{ alpha2Code: string; alpha3Code: string }> }[];
 	}[];
 	nonStateActors: readonly {
 		id: string;
-		name: string;
-		abbreviation: string;
+		name?: Nullable<string>;
+		abbreviation?: Nullable<string>;
 		fontAwesomeIcon?: Nullable<string>;
-		seatAmount: number;
+		seatAmount?: Nullable<number>;
 	}[];
 }
 
 const orNull = <T>(value: Nullable<T>) => value ?? null;
 
-const targetOf = (row: {
-	nationAlpha3Code?: Nullable<string>;
-	nonStateActorId?: Nullable<string>;
-}): Target => ({
-	nationAlpha3Code: orNull(row.nationAlpha3Code),
-	nonStateActorId: orNull(row.nonStateActorId)
-});
-
 function liveDelegation(delegation: BoardRows['delegations'][number]): LiveDelegation {
 	return {
 		id: delegation.id,
-		...targetOf({
-			nationAlpha3Code: delegation.assignedNationAlpha3Code,
-			nonStateActorId: delegation.assignedNonStateActorId
-		}),
+		roleId: orNull(delegation.assignedRoleId),
 		members: delegation.members.map(({ id, isHeadDelegate }) => ({ id, isHeadDelegate }))
 	};
 }
@@ -89,7 +77,7 @@ function draftUnit(unit: BoardRows['units'][number]): DraftUnit {
 		id: unit.id,
 		sourceDelegationId: orNull(unit.sourceDelegationId),
 		sourceSingleParticipantId: orNull(unit.sourceSingleParticipantId),
-		...targetOf(unit),
+		roleId: orNull(unit.roleId),
 		memberIds: unit.members.map((member) => member.delegationMemberId)
 	};
 }
@@ -205,15 +193,14 @@ export function poolCountsBesidesDraft(
 	counts: ReadonlyMap<number, number>,
 	touched: readonly {
 		id: string;
-		assignedNationAlpha3Code?: Nullable<string>;
-		assignedNonStateActorId?: Nullable<string>;
+		assignedRoleId?: Nullable<string>;
 		members: readonly unknown[];
 	}[],
 	disqualified: (delegationId: string) => boolean
 ) {
 	const result = new Map(counts);
 	for (const delegation of touched) {
-		if (delegation.assignedNationAlpha3Code || delegation.assignedNonStateActorId) continue;
+		if (delegation.assignedRoleId) continue;
 		if (disqualified(delegation.id)) continue;
 		const size = delegation.members.length;
 		const count = result.get(size);
@@ -308,26 +295,29 @@ export const canSplit = (group: AssignmentGroup) =>
 	!!group.delegationId && group.whole && !group.part && group.size > 1;
 
 /** A target as mutation arguments, which take no `null`. */
-export const roleArgs = (target: Target | null) => ({
-	nationAlpha3Code: target?.nationAlpha3Code ?? undefined,
-	nonStateActorId: target?.nonStateActorId ?? undefined
-});
+export const roleArgs = (target: Target | null) => ({ roleId: target?.roleId ?? undefined });
 
-function describeNation(code: string, roles: BoardRoles, nationName: (code: string) => string) {
+/** How a role is shown: its name, where its seats are, and the flag or icon it goes by. */
+export function describeRole(
+	target: Target,
+	roles: BoardRoles,
+	nationName: (code: string) => string
+) {
 	const committees = roles.committees.filter((committee) =>
-		committee.nations.some((nation) => nation.alpha3Code === code)
+		committee.roles.some((role) => role.id === target.roleId)
 	);
-	const nation = committees.flatMap((c) => c.nations).find((n) => n.alpha3Code === code);
-	return {
-		title: nationName(code),
-		subtitle: committees.map((committee) => committee.abbreviation).join(', '),
-		alpha2Code: nation?.alpha2Code,
-		icon: undefined
-	};
-}
-
-function describeNonStateActor(id: Nullable<string>, roles: BoardRoles) {
-	const nsa = roles.nonStateActors.find((actor) => actor.id === id);
+	const nation = committees
+		.flatMap((committee) => committee.roles)
+		.find((role) => role.id === target.roleId)?.nation;
+	if (nation) {
+		return {
+			title: nationName(nation.alpha3Code),
+			subtitle: committees.map((committee) => committee.abbreviation).join(', '),
+			alpha2Code: nation.alpha2Code,
+			icon: undefined
+		};
+	}
+	const nsa = roles.nonStateActors.find((actor) => actor.id === target.roleId);
 	return {
 		title: nsa?.abbreviation ?? '',
 		subtitle: nsa?.name ?? '',
@@ -336,27 +326,12 @@ function describeNonStateActor(id: Nullable<string>, roles: BoardRoles) {
 	};
 }
 
-/** How a role is shown: its name, where its seats are, and the flag or icon it goes by. */
-export function describeRole(
-	target: Target,
-	roles: BoardRoles,
-	nationName: (code: string) => string
-) {
-	return target.nationAlpha3Code
-		? describeNation(target.nationAlpha3Code, roles, nationName)
-		: describeNonStateActor(target.nonStateActorId, roles);
-}
-
 interface Wish {
 	rank: number;
-	nation?: Nullable<{ alpha3Code: string }>;
-	nonStateActor?: Nullable<{ id: string }>;
+	roleId: string;
 }
 
-const wishTarget = (wish: Wish): Target => ({
-	nationAlpha3Code: wish.nation?.alpha3Code ?? null,
-	nonStateActorId: wish.nonStateActor?.id ?? null
-});
+const wishTarget = (wish: Wish): Target => ({ roleId: wish.roleId });
 
 /**
  * How a planned role relates to the wishes: undefined without a role or without wishes to compare
@@ -382,15 +357,15 @@ export function wishRank(wishes: readonly Wish[] | undefined, target: Target) {
 }
 
 interface ListedWish extends Wish {
-	nonStateActor?: Nullable<{ id: string; abbreviation: string }>;
+	role: {
+		abbreviation?: Nullable<string>;
+		nation?: Nullable<{ alpha3Code: string }>;
+	};
 }
 
 /** Whether a wish is the role a group holds; never, while it holds none. */
 function wishMatches(wish: ListedWish, target: Target) {
-	if (!targetKey(target)) return false;
-	return wish.nation
-		? wish.nation.alpha3Code === target.nationAlpha3Code
-		: wish.nonStateActor?.id === target.nonStateActorId;
+	return !!targetKey(target) && wish.roleId === target.roleId;
 }
 
 /** Every wish of a delegation as a card lists it: the one matching its role first, then by rank. */
@@ -401,11 +376,11 @@ export function wishList(
 ) {
 	return (wishes ?? [])
 		.map((wish) => ({
-			key: wish.nation?.alpha3Code ?? wish.nonStateActor?.id ?? String(wish.rank),
+			key: wish.roleId,
 			rank: wish.rank,
-			name: wish.nation
-				? nationName(wish.nation.alpha3Code)
-				: (wish.nonStateActor?.abbreviation ?? ''),
+			name: wish.role.nation
+				? nationName(wish.role.nation.alpha3Code)
+				: (wish.role.abbreviation ?? ''),
 			matches: wishMatches(wish, target)
 		}))
 		.toSorted((a, b) => Number(b.matches) - Number(a.matches) || a.rank - b.rank);

@@ -80,7 +80,7 @@
 	});
 	let { form: formData } = $derived(form);
 
-	let isNSA = $derived(!!delegation?.assignedNonStateActor);
+	let isNSA = $derived(delegation?.assignedRole?.kind === 'NON_STATE_ACTOR');
 
 	const typeOptions = $derived(paperTypeOptions(isNSA));
 

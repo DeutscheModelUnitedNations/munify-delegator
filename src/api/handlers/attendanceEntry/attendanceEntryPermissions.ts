@@ -19,19 +19,19 @@ export function registerAttendanceEntryAbilities() {
 	// Users see their own attendance entries.
 	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
 		const id = userId(ctx);
-		return id ? { where: { conferenceParticipantStatus: { user: { id } } } } : undefined;
+		return id ? { where: { conferenceParticipant: { user: { id } } } } : undefined;
 	});
 
 	// Every team member of the conference may read them.
 	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-		const conferenceParticipantStatus = isTeamMemberOfConference(ctx);
-		return conferenceParticipantStatus ? { where: { conferenceParticipantStatus } } : undefined;
+		const conferenceParticipant = isTeamMemberOfConference(ctx);
+		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
 	});
 
 	// Participant care and project management manage them.
 	abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
-		const conferenceParticipantStatus = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-		return conferenceParticipantStatus ? { where: { conferenceParticipantStatus } } : undefined;
+		const conferenceParticipant = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
 	});
 
 	// The sessions of a conference are the team's: every team member reads them, and starting and

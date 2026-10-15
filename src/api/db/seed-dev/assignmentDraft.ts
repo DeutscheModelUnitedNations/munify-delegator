@@ -75,7 +75,7 @@ function addPlannedNations(cs: ConferenceSeed, delegationIds: string[]) {
 		cs.batch.assignmentUnit.push({
 			conferenceId: cs.id,
 			sourceDelegationId: delegationId,
-			nationAlpha3Code: nation
+			roleId: cs.nationRoleId(nation)
 		});
 	}
 }
@@ -83,11 +83,11 @@ function addPlannedNations(cs: ConferenceSeed, delegationIds: string[]) {
 /** The first two single participants get a custom role. */
 function addPlannedSingleRoles(cs: ConferenceSeed) {
 	const singleIds = cs.batch.singleParticipant.flatMap((single) =>
-		single.conferenceId === cs.id && single.applied && single.id ? [single.id] : []
+		// `participantOfRow` holds this conference's registrations only.
+		single.id && single.applied && cs.participantOfRow.has(single.id) ? [single.id] : []
 	);
 	singleIds.slice(0, 2).forEach((singleParticipantId, index) => {
 		cs.batch.assignmentSingleRole.push({
-			conferenceId: cs.id,
 			singleParticipantId,
 			roleId: cs.customRoleIds[index % cs.customRoleIds.length]
 		});

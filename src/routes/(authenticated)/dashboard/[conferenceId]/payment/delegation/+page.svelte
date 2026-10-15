@@ -21,7 +21,9 @@
 			user,
 			fetchConferencePaymentData(conferenceId),
 			client.liveQuery.delegationMembers({
-				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+				__args: {
+					where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: user.sub } } }
+				},
 				delegation: {
 					members: { id: true, user: { id: true, givenName: true, familyName: true } }
 				}

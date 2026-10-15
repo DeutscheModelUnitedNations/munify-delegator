@@ -35,7 +35,7 @@
 	function fetchPaymentReference(reference: string, conferenceId: string) {
 		return Promise.all([
 			client.query.paymentTransactions({
-				__args: { where: { id: { eq: reference }, conferenceId: { eq: conferenceId } } },
+				__args: { where: { id: { eq: reference }, conference: { id: { eq: conferenceId } } } },
 				id: true,
 				amount: true,
 				createdAt: true,
@@ -49,7 +49,7 @@
 				},
 				id: true,
 				// only this conference's status, not every one the person ever had
-				conferenceParticipantStatus: {
+				conferenceParticipants: {
 					__args: { where: { conferenceId: { eq: conferenceId } } },
 					id: true,
 					paymentStatus: true
@@ -65,7 +65,7 @@
 	function fetchLastConfirmed(conferenceId: string) {
 		return client.query.paymentTransactions({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, recievedAt: { isNotNull: true } },
+				where: { conference: { id: { eq: conferenceId } }, recievedAt: { isNotNull: true } },
 				orderBy: { updatedAt: 'desc' },
 				limit: 1
 			},
@@ -103,7 +103,7 @@
 
 	const getPaymentStatus = (userId: string) => {
 		const user = referencedUsers?.find((user) => user.id === userId);
-		return user?.conferenceParticipantStatus[0]?.paymentStatus ?? 'PENDING';
+		return user?.conferenceParticipants[0]?.paymentStatus ?? 'PENDING';
 	};
 
 	// --- Effects ---

@@ -1,7 +1,6 @@
 import { db } from '$api/db/db';
 import { object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { countGiven } from '$api/services/args';
 import { appendRoleApplication, removeRoleApplication, swapRanks } from './roleApplicationService';
 import {
 	assertCanCreateRoleApplication,
@@ -10,8 +9,6 @@ import {
 	registerRoleApplicationAbilities
 } from './roleApplicationPermissions';
 import { roleApplicationPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
-import { apiError } from '$api/services/errors/apiError';
 
 registerRoleApplicationAbilities();
 
@@ -23,18 +20,10 @@ schemaBuilder.mutationFields((t) => ({
 		type: RoleApplicationRef,
 		args: {
 			delegationId: t.arg.id({ required: true }),
-			nationId: t.arg.id(),
-			nonStateActorId: t.arg.id()
+			/** A nation or non-state actor of the delegation's conference. */
+			roleId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const targets = countGiven(args.nationId, args.nonStateActorId);
-			if (targets === 0) {
-				throw apiError('INVALID_INPUT', m.roleApplicationNeedsTarget());
-			}
-			if (targets > 1) {
-				throw apiError('INVALID_INPUT', m.roleApplicationOneTarget());
-			}
-
 			// The caller must be allowed to update the delegation the application belongs to, and the
 			// role applied for must be on offer in that conference.
 			await assertCanCreateRoleApplication(ctx, args);

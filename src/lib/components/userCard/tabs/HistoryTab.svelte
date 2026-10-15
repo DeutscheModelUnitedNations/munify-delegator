@@ -32,28 +32,36 @@
 		const forUser = {
 			where: { userId: { eq: userId }, conferenceId: { ne: conferenceId } }
 		};
+		// Registrations reach the user and the conference through their participant row.
+		const registrationOfUser = {
+			where: { user: { id: { eq: userId } }, conference: { id: { ne: conferenceId } } }
+		};
 
 		const [delegationMembers, singleParticipants, supervisors, teamMembers] = await Promise.all([
 			client.liveQuery.delegationMembers({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				isHeadDelegate: true,
 				conference: conferenceSummary,
 				delegation: {
 					id: true,
-					assignedNation: { alpha2Code: true, alpha3Code: true },
-					assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+					assignedRole: {
+						kind: true,
+						name: true,
+						fontAwesomeIcon: true,
+						nation: { alpha2Code: true, alpha3Code: true }
+					}
 				},
 				assignedCommittee: { id: true, abbreviation: true }
 			}),
 			client.liveQuery.singleParticipants({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				conference: conferenceSummary,
 				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
 			}),
 			client.liveQuery.conferenceSupervisors({
-				__args: forUser,
+				__args: registrationOfUser,
 				id: true,
 				conference: conferenceSummary
 			}),

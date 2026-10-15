@@ -10,7 +10,7 @@
 	const downloadSupervisorData = async () => {
 		const [supervisors, title] = await Promise.all([
 			client.query.conferenceSupervisors({
-				__args: { where: { conferenceId: { eq: conferenceId } } },
+				__args: { where: { conference: { id: { eq: conferenceId } } } },
 				id: true,
 				user: { id: true, givenName: true, familyName: true, email: true }
 			}),

@@ -4,10 +4,12 @@
 	import { goto } from '$app/navigation';
 	import type { ResolvedPathname } from '$app/types';
 	import Flag from '$lib/components/Flag.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/utils/enumIcons';
 	import { translatePaperType, translatePaperStatus } from '$lib/utils/enumTranslations';
 	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import type { PaperDelegationRole } from './paperDisplay';
 	import type { PaperSortKey, SortConfig } from './paperSorting';
 
 	interface Paper {
@@ -16,10 +18,7 @@
 		status: PaperstatusEnum;
 		updatedAt: Date | null;
 		firstSubmittedAt: Date | null;
-		delegation: {
-			assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-			assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
-		};
+		delegation: { assignedRole: PaperDelegationRole | null };
 	}
 
 	interface Props {
@@ -126,16 +125,17 @@
 {/snippet}
 
 {#snippet delegationCell(delegation: Paper['delegation'])}
+	{@const { nation, nonStateActor } = splitRole(delegation.assignedRole)}
 	<div class="flex items-center gap-2">
-		{#if delegation.assignedNation}
-			<Flag size="xs" alpha2Code={delegation.assignedNation.alpha2Code} />
+		{#if nation}
+			<Flag size="xs" alpha2Code={nation.alpha2Code} />
 			<span class="truncate max-w-32">
-				{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+				{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 			</span>
-		{:else if delegation.assignedNonStateActor}
-			<Flag size="xs" nsa={true} icon={delegation.assignedNonStateActor.fontAwesomeIcon} />
+		{:else if nonStateActor}
+			<Flag size="xs" nsa={true} icon={nonStateActor.fontAwesomeIcon} />
 			<span class="truncate max-w-32">
-				{delegation.assignedNonStateActor.name}
+				{nonStateActor.name}
 			</span>
 		{/if}
 	</div>

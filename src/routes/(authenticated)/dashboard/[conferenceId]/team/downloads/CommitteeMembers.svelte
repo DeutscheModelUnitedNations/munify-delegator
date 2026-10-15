@@ -30,7 +30,7 @@
 		const [members, title] = await Promise.all([
 			client.query.delegationMembers({
 				__args: { where: { assignedCommitteeId: { eq: committee.id } } },
-				delegation: { assignedNation: { alpha3Code: true } },
+				delegation: { assignedRole: { nation: { alpha3Code: true } } },
 				user: { givenName: true, familyName: true, email: true }
 			}),
 			fetchConferenceTitle(conferenceId)
@@ -45,17 +45,17 @@
 			[
 				[m.alpha3Code(), m.nation(), m.firstName(), m.lastName(), m.email()],
 				...[...members]
-					.sort(compareByText((member) => member.delegation.assignedNation?.alpha3Code))
-					.map((member) => [
-						member.delegation.assignedNation?.alpha3Code.toUpperCase(),
-						member.delegation.assignedNation?.alpha3Code
-							? getFullTranslatedCountryNameFromISO3Code(
-									member.delegation.assignedNation.alpha3Code
-								)
-							: '',
-						member.user.givenName,
-						member.user.familyName,
-						member.user.email
+					.map((member) => ({
+						alpha3Code: member.delegation.assignedRole?.nation?.alpha3Code,
+						user: member.user
+					}))
+					.sort(compareByText((member) => member.alpha3Code))
+					.map(({ alpha3Code, user }) => [
+						alpha3Code?.toUpperCase(),
+						alpha3Code ? getFullTranslatedCountryNameFromISO3Code(alpha3Code) : '',
+						user.givenName,
+						user.familyName,
+						user.email
 					])
 			],
 			`${fileNamePrefix(title)}_${committee.abbreviation}_delegation_members.csv`

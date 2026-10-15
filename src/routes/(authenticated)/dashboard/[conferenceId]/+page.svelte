@@ -16,12 +16,22 @@
 	import RegistrationLanding from '../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 
 	let { params }: PageProps = $props();
 
-	// Only who the caller is here; every section below fetches what it shows itself.
-	const [currentUser, participation] = $derived(
-		await Promise.all([getOptionalCurrentUser(), fetchMyParticipation(params.conferenceId)])
+	// Only who the caller is here, and whether the conference exists; every section below fetches
+	// what it shows itself.
+	const [currentUser, participation, existing] = $derived(
+		await Promise.all([
+			getOptionalCurrentUser(),
+			fetchMyParticipation(params.conferenceId),
+			client.liveQuery.conferences({
+				__args: { where: { id: { eq: params.conferenceId } } },
+				id: true
+			})
+		])
 	);
 	const isOfAgeAtConference = $derived(
 		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
@@ -39,15 +49,15 @@
 	const delegationMemberId = $derived(delegationMember?.id);
 	const supervisorId = $derived(supervisor?.id);
 
-	const delegationAccepted = $derived(
-		!!delegationMember?.delegation.assignedNation ||
-			!!delegationMember?.delegation.assignedNonStateActor
-	);
+	const delegationRole = $derived(splitRole(delegationMember?.delegation.assignedRole));
+	const delegationAccepted = $derived(!!delegationMember?.delegation.assignedRole);
 	const hasAssignedRole = $derived(!!singleParticipant?.assignedRole || delegationAccepted);
 </script>
 
 <div class="flex w-full flex-col items-center">
-	{#if !currentUser}
+	{#if existing.length === 0}
+		<NoConferenceIndicator />
+	{:else if !currentUser}
 		<!-- A visitor who is not signed in sees the conference and what taking part would take -->
 		<div class="flex w-full flex-col gap-10">
 			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false} />
@@ -103,8 +113,8 @@
 						{status}
 						ofAge={isOfAgeAtConference}
 						certificateRole={{
-							country: delegationMember.delegation.assignedNation,
-							nonStateActor: delegationMember.delegation.assignedNonStateActor,
+							country: delegationRole.nation,
+							nonStateActor: delegationRole.nonStateActor,
 							assignedCommittee: delegationMember.assignedCommittee
 						}}
 					>

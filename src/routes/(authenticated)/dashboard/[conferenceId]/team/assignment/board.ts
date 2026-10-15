@@ -19,13 +19,15 @@ export const POOL_PAGE = 250;
 
 const inConference = (conferenceId: string) => ({ conferenceId: { eq: conferenceId } });
 
+/** The same for single participants, which reach their conference through their participant row. */
+const singlesInConference = (conferenceId: string) => ({ conference: { id: { eq: conferenceId } } });
+
 /** What the board shows of a delegation. */
 const delegationCard = {
 	id: true,
 	applied: true,
 	school: true,
-	assignedNationAlpha3Code: true,
-	assignedNonStateActorId: true,
+	assignedRoleId: true,
 	members: {
 		id: true,
 		isHeadDelegate: true,
@@ -33,8 +35,8 @@ const delegationCard = {
 	},
 	appliedForRoles: {
 		rank: true,
-		nation: { alpha3Code: true },
-		nonStateActor: { id: true, abbreviation: true }
+		roleId: true,
+		role: { abbreviation: true, nation: { alpha3Code: true } }
 	}
 } as const;
 
@@ -88,14 +90,13 @@ export async function fetchAssignmentDraft(conferenceId: string) {
 			id: true,
 			sourceDelegationId: true,
 			sourceSingleParticipantId: true,
-			nationAlpha3Code: true,
-			nonStateActorId: true,
+			roleId: true,
 			members: { delegationMemberId: true },
 			sourceDelegation: delegationCardWithReview,
 			sourceSingleParticipant: singleCardWithReview
 		}),
 		client.liveQuery.assignmentSingleRoles({
-			__args: { where: inConference(conferenceId) },
+			__args: { where: { singleParticipant: singlesInConference(conferenceId) } },
 			singleParticipantId: true,
 			roleId: true,
 			singleParticipant: singleCardWithReview
@@ -118,22 +119,16 @@ export interface ApplicationIds {
  * the draft, so a move on the board asks for nothing new.
  */
 export async function fetchSeatedApplications(conferenceId: string) {
-	const applied = { ...inConference(conferenceId), applied: { eq: true } };
+	const seated = { applied: { eq: true }, assignedRoleId: { isNotNull: true } };
 	const [delegations, singleParticipants] = await Promise.all([
 		client.liveQuery.delegations({
 			__args: {
-				where: {
-					...applied,
-					OR: [
-						{ assignedNationAlpha3Code: { isNotNull: true } },
-						{ assignedNonStateActorId: { isNotNull: true } }
-					]
-				}
+				where: { ...inConference(conferenceId), ...seated }
 			},
 			...delegationCardWithReview
 		}),
 		client.liveQuery.singleParticipants({
-			__args: { where: { ...applied, assignedRoleId: { isNotNull: true } } },
+			__args: { where: { ...singlesInConference(conferenceId), ...seated } },
 			...singleCardWithReview
 		})
 	]);
@@ -252,8 +247,7 @@ function delegationPoolWhere(
 	return {
 		...inConference(conferenceId),
 		applied: { eq: true },
-		assignedNationAlpha3Code: { isNull: true },
-		assignedNonStateActorId: { isNull: true },
+		assignedRoleId: { isNull: true },
 		...(filter.size === undefined ? {} : { memberCount: { eq: filter.size } }),
 		...(filter.showDisqualified
 			? {}
@@ -385,7 +379,7 @@ export async function fetchDelegationPoolSizes(conferenceId: string, showDisqual
 
 /** The single participants of the pool: applied, without a custom role. */
 const singlePoolWhere = (conferenceId: string): SingleparticipantWhereInputArgument => ({
-	...inConference(conferenceId),
+	...singlesInConference(conferenceId),
 	applied: { eq: true },
 	assignedRoleId: { isNull: true }
 });
@@ -470,24 +464,26 @@ export type BoardReview = Awaited<ReturnType<typeof fetchReviews>>[number];
 
 /** The nations, non-state actors and custom roles of a conference, with their seats. */
 export async function fetchAssignmentRoles(conferenceId: string) {
-	const inConference = { where: { conferenceId: { eq: conferenceId } } };
+	const ofKind = (kind: 'NON_STATE_ACTOR' | 'CUSTOM') => ({
+		where: { conferenceId: { eq: conferenceId }, kind: kind }
+	});
 	const [committees, nonStateActors, customRoles] = await Promise.all([
 		client.liveQuery.committees({
-			__args: inConference,
+			__args: { where: inConference(conferenceId) },
 			abbreviation: true,
 			numOfSeatsPerDelegation: true,
-			nations: { alpha2Code: true, alpha3Code: true }
+			roles: { id: true, nation: { alpha2Code: true, alpha3Code: true } }
 		}),
-		client.liveQuery.nonStateActors({
-			__args: inConference,
+		client.liveQuery.conferenceRoles({
+			__args: ofKind('NON_STATE_ACTOR'),
 			id: true,
 			name: true,
 			abbreviation: true,
 			fontAwesomeIcon: true,
 			seatAmount: true
 		}),
-		client.liveQuery.customConferenceRoles({
-			__args: inConference,
+		client.liveQuery.conferenceRoles({
+			__args: ofKind('CUSTOM'),
 			id: true,
 			name: true,
 			fontAwesomeIcon: true,

@@ -36,7 +36,7 @@
 	/** The status row plus the two dates that decide whether a guardian has to consent. */
 	async function fetchStatus(userId: string, conferenceId: string) {
 		const [statuses, user, conference] = await Promise.all([
-			client.liveQuery.conferenceParticipantStatuses({
+			client.liveQuery.conferenceParticipants({
 				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 				id: true,
 				paymentStatus: true,
@@ -60,13 +60,10 @@
 	const isAdult = $derived(ofAgeAtConference(data.conference.startConference, data.user.birthday));
 
 	/** The mutation's own argument type minus the identifying fields this component fills in. */
-	type StatusChange = Omit<
-		Parameters<Mutation['updateConferenceParticipantStatus']>[0],
-		'conferenceId'
-	>;
+	type StatusChange = Omit<Parameters<Mutation['updateConferenceParticipant']>[0], 'conferenceId'>;
 
 	const changeAdministrativeStatus = async (input: StatusChange) => {
-		const promise = client.mutate.updateConferenceParticipantStatus({
+		const promise = client.mutate.updateConferenceParticipant({
 			__args: { ...input, id: status?.id, conferenceId, userId },
 			id: true,
 			termsAndConditions: true,

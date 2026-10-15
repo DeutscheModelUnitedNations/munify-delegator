@@ -41,7 +41,7 @@
 				__args: {
 					where: {
 						question: { conferenceId: { eq: conferenceId }, hidden: { eq: false } },
-						userId: { eq: userId }
+						user: { id: { eq: userId } }
 					}
 				},
 				id: true,

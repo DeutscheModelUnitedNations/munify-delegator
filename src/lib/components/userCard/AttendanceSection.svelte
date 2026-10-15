@@ -17,7 +17,7 @@
 		await client.liveQuery.attendanceEntries({
 			__args: {
 				where: {
-					conferenceParticipantStatus: {
+					conferenceParticipant: {
 						conferenceId: { eq: conferenceId },
 						userId: { eq: userId }
 					}

@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import type { ApiContext } from '$api/rumble';
-import { assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 import { m } from '$lib/paraglide/messages';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
@@ -25,18 +25,12 @@ export async function countSeatedParticipants(conferenceId: string) {
 	const [members, participants] = await Promise.all([
 		db.query.delegationMember.findMany({
 			where: {
-				delegation: {
-					conferenceId: conferenceId,
-					OR: [
-						{ assignedNationAlpha3Code: { isNotNull: true } },
-						{ assignedNonStateActorId: { isNotNull: true } }
-					]
-				}
+				delegation: { conferenceId: conferenceId, assignedRoleId: { isNotNull: true } }
 			},
 			columns: { id: true }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { conferenceId: conferenceId, assignedRoleId: { isNotNull: true } },
+			where: { participant: { conferenceId }, assignedRoleId: { isNotNull: true } },
 			columns: { id: true }
 		})
 	]);
@@ -53,10 +47,10 @@ export async function countOfferedSeats(conferenceId: string) {
 		db.query.committee.findMany({
 			where: { conferenceId: conferenceId },
 			columns: { numOfSeatsPerDelegation: true },
-			with: { nations: { columns: { alpha3Code: true } } }
+			with: { roles: { columns: { id: true } } }
 		}),
-		db.query.nonStateActor.findMany({
-			where: { conferenceId: conferenceId },
+		db.query.conferenceRole.findMany({
+			where: { conferenceId: conferenceId, kind: 'NON_STATE_ACTOR' },
 			columns: { seatAmount: true }
 		})
 	]);
@@ -226,11 +220,15 @@ export async function seedConference(input: unknown) {
 			.then(assertFirstEntryExists);
 
 		for (const nsa of data.nsa) {
-			await tx.insert(schema.nonStateActor).values({ conferenceId: conference.id, ...nsa });
+			await tx
+				.insert(schema.conferenceRole)
+				.values({ conferenceId: conference.id, kind: 'NON_STATE_ACTOR', ...nsa });
 		}
 
 		for (const role of data.customConferenceRole) {
-			await tx.insert(schema.customConferenceRole).values({ conferenceId: conference.id, ...role });
+			await tx
+				.insert(schema.conferenceRole)
+				.values({ conferenceId: conference.id, kind: 'CUSTOM', seatAmount: 1, ...role });
 		}
 
 		for (const committee of data.committees) {
@@ -241,8 +239,8 @@ export async function seedConference(input: unknown) {
 				.returning()
 				.then(assertFirstEntryExists);
 
-			// Committee-to-nation is a join table; the seeding document names nations by
-			// alpha-2 while the join stores alpha-3, so they are resolved here.
+			// The seeding document names nations by alpha-2; each one seated becomes a nation role
+			// of the conference (once, however many committees seat it) and is linked to the committee.
 			for (const alpha2 of nations) {
 				const nation = await tx.query.nation.findFirst({
 					where: { alpha2Code: alpha2.toLowerCase() },
@@ -250,8 +248,22 @@ export async function seedConference(input: unknown) {
 				});
 				if (!nation) continue;
 				await tx
-					.insert(schema.committeeToNation)
-					.values({ a: row.id, b: nation.alpha3Code })
+					.insert(schema.conferenceRole)
+					.values({
+						conferenceId: conference.id,
+						kind: 'NATION',
+						nationAlpha3Code: nation.alpha3Code
+					})
+					.onConflictDoNothing();
+				const role = await tx.query.conferenceRole
+					.findFirst({
+						where: { conferenceId: conference.id, nationAlpha3Code: nation.alpha3Code },
+						columns: { id: true }
+					})
+					.then(assertFindFirstExists);
+				await tx
+					.insert(schema.committeeToRole)
+					.values({ a: row.id, b: role.id })
 					.onConflictDoNothing();
 			}
 		}
@@ -283,11 +295,11 @@ export type ReadableUsers = Awaited<ReturnType<ApiContext['abilities']['user']['
 export async function findPlausibilityIssues(conferenceId: string, readableUsers: ReadableUsers) {
 	const participating = {
 		OR: [
-			{ singleParticipant: { conferenceId: conferenceId } },
-			{ delegationMemberships: { conferenceId: conferenceId } }
+			{ singleParticipant: { participant: { conferenceId } } },
+			{ delegationMemberships: { participant: { conferenceId } } }
 		]
 	};
-	const supervising = { conferenceSupervisor: { conferenceId: conferenceId } };
+	const supervising = { conferenceSupervisor: { participant: { conferenceId } } };
 
 	const [tooYoungUsers, tooOldUsers, shouldBeSupervisor, shouldNotBeSupervisor, candidates] =
 		await Promise.all([
@@ -318,9 +330,9 @@ export async function findPlausibilityIssues(conferenceId: string, readableUsers
 				readableUsers.merge({
 					where: {
 						OR: [
-							{ singleParticipant: { conferenceId: conferenceId } },
-							{ delegationMemberships: { conferenceId: conferenceId } },
-							{ conferenceSupervisor: { conferenceId: conferenceId } }
+							{ singleParticipant: { participant: { conferenceId } } },
+							{ delegationMemberships: { participant: { conferenceId } } },
+							{ conferenceSupervisor: { participant: { conferenceId } } }
 						]
 					}
 				}).query.many

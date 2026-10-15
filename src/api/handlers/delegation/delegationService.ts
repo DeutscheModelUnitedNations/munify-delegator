@@ -1,4 +1,5 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
+import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import { fetchUserParticipations } from '$api/services/registration/participation';
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
@@ -14,14 +15,15 @@ import { apiError } from '$api/services/errors/apiError';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(
-	members: { id: string; userId: string; isHeadDelegate: boolean }[],
+	tx: Transaction,
+	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[],
 	newHeadDelegateUserId: string
 ) {
 	const current = members.find((member) => member.isHeadDelegate);
 	if (!current) {
 		throw apiError('NOT_FOUND', m.delegationNoHeadDelegate());
 	}
-	const next = members.find((member) => member.userId === newHeadDelegateUserId);
+	const next = members.find((member) => member.participant.userId === newHeadDelegateUserId);
 	if (!next) {
 		throw apiError('NOT_FOUND', m.delegationNoNewHeadDelegate());
 	}
@@ -32,16 +34,14 @@ async function transferHeadDelegate(
 	// ability on every statement inside the transaction, so demoting the acting head
 	// delegate first revoked their own permission before the promotion ran. Don't
 	// reintroduce a per-statement ability re-check here without also promoting first.
-	await db.transaction(async (tx) => {
-		await tx
-			.update(schema.delegationMember)
-			.set({ isHeadDelegate: false })
-			.where(eq(schema.delegationMember.id, current.id));
-		await tx
-			.update(schema.delegationMember)
-			.set({ isHeadDelegate: true })
-			.where(eq(schema.delegationMember.id, next.id));
-	});
+	await tx
+		.update(schema.delegationMember)
+		.set({ isHeadDelegate: false })
+		.where(eq(schema.delegationMember.id, current.id));
+	await tx
+		.update(schema.delegationMember)
+		.set({ isHeadDelegate: true })
+		.where(eq(schema.delegationMember.id, next.id));
 }
 
 /** Creates a delegation with the caller as its head delegate. Returns the delegation's id. */
@@ -82,9 +82,12 @@ export async function createDelegationWithHead(
 
 		// The creator becomes the head delegate.
 		await tx.insert(schema.delegationMember).values({
-			conferenceId: delegation.conferenceId,
 			delegationId: delegation.id,
-			userId,
+			conferenceParticipantId: await ensureConferenceParticipant(
+				tx,
+				delegation.conferenceId,
+				userId
+			),
 			isHeadDelegate: true
 		});
 
@@ -96,7 +99,8 @@ export async function createDelegationWithHead(
 
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
- * (`assertCanUpdateDelegation`); the caller publishes afterwards.
+ * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
+ * leaves the delegation as it was. The caller publishes afterwards.
  */
 // fallow-ignore-next-line complexity
 export async function updateDelegationDetails(
@@ -119,38 +123,40 @@ export async function updateDelegationDetails(
 
 	const byId = eq(schema.delegation.id, delegation.id);
 
-	if (args.applied !== undefined && args.applied !== null) {
-		// Drop applications the delegation has outgrown before judging whether it may apply.
-		await tidyRoleApplications(delegation.id);
+	await db.transaction(async (tx) => {
+		if (args.applied !== undefined && args.applied !== null) {
+			// Drop applications the delegation has outgrown before judging whether it may apply.
+			await tidyRoleApplications(delegation.id, tx);
 
-		if (args.applied) {
-			if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
-				throw apiError('CONFLICT', m.notEnoughMembers());
+			if (args.applied) {
+				if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
+					throw apiError('CONFLICT', m.notEnoughMembers());
+				}
+				assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
 			}
-			assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
+
+			await tx.update(schema.delegation).set({ applied: args.applied }).where(byId);
 		}
 
-		await db.update(schema.delegation).set({ applied: args.applied }).where(byId);
-	}
+		if (args.school || args.experience || args.motivation) {
+			await tx
+				.update(schema.delegation)
+				.set({
+					school: args.school,
+					experience: args.experience,
+					motivation: args.motivation
+				})
+				.where(byId);
+		}
 
-	if (args.school || args.experience || args.motivation) {
-		await db
-			.update(schema.delegation)
-			.set({
-				school: args.school,
-				experience: args.experience,
-				motivation: args.motivation
-			})
-			.where(byId);
-	}
+		if (args.resetEntryCode) {
+			await tx.update(schema.delegation).set({ entryCode: makeEntryCode() }).where(byId);
+		}
 
-	if (args.resetEntryCode) {
-		await db.update(schema.delegation).set({ entryCode: makeEntryCode() }).where(byId);
-	}
-
-	if (args.newHeadDelegateUserId) {
-		await transferHeadDelegate(delegation.members, args.newHeadDelegateUserId);
-	}
+		if (args.newHeadDelegateUserId) {
+			await transferHeadDelegate(tx, delegation.members, args.newHeadDelegateUserId);
+		}
+	});
 }
 
 /** What somebody sees after entering a delegation's join code, before committing to join. */

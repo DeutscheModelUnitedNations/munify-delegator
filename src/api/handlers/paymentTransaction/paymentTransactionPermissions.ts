@@ -2,11 +2,11 @@ import { db } from '$api/db/db';
 import { abilityBuilder, type ApiContext } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertParticipantsOf,
 	hasTeamRole,
-	isOwnUser,
 	isTeamMemberOfConference,
+	participantIdsOf,
 	systemAdmin,
+	userId,
 	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
@@ -25,12 +25,16 @@ export function registerPaymentTransactionAbilities() {
 	// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
 	// its creator, whose reference is the whole point of the payment pages. The legacy resolver
 	// returned it without a read check, so this is what keeps that working through the ability layer.
-	abilityBuilder.paymentTransaction.allow('read').when((ctx) => where(isOwnUser(ctx)));
+	abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
+		const id = userId(ctx);
+		return id ? { where: { payer: { userId: id } } } : undefined;
+	});
 }
 
 /**
  * Refuses unless the caller may make a payment reference in `conferenceId`, paid by `userId`, for
- * the participants `paymentFor`.
+ * the participants `paymentFor`. The payer has to take part in the conference too. Answers with
+ * the participant rows of the payer and of everybody the payment covers (each once).
  */
 export async function assertCanCreatePaymentTransaction(
 	ctx: ApiContext,
@@ -55,7 +59,18 @@ export async function assertCanCreatePaymentTransaction(
 			throw apiError('FORBIDDEN', m.paymentOnlyForOwn());
 		}
 	}
-	await assertParticipantsOf(args.conferenceId, args.paymentFor);
+	const payer = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId: args.conferenceId, userId: args.userId },
+		columns: { id: true }
+	});
+	if (!payer) {
+		throw apiError('INVALID_INPUT', m.paymentPayerNotParticipant());
+	}
+	const covered = await participantIdsOf(args.conferenceId, args.paymentFor);
+	return {
+		payerParticipantId: payer.id,
+		coveredParticipantIds: [...covered.values()]
+	};
 }
 
 /** The payment transaction `id` with whom it covers, if the caller may update it; an error otherwise. */

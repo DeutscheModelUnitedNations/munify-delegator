@@ -1,6 +1,7 @@
 import type { AdministrativeStatus, ParticipantRow } from './types';
 import { getAgeAtConference, ofAgeAtConference } from '$lib/helpers/ageChecker';
 import type { ConferenceParticipants } from './conferenceParticipants';
+import { splitRole } from '$lib/helpers/conferenceRole';
 
 type Registrations = Omit<ConferenceParticipants, 'conference'>;
 
@@ -167,29 +168,29 @@ export function transformParticipants(
 		buildRow(user, statusMap.get(user.id), roleFields, startConference, endConference);
 
 	return [
-		...queryData.delegationMembers.map((entry) =>
-			row(entry.user, {
+		...queryData.delegationMembers.map((entry) => {
+			const { nation, nonStateActor } = splitRole(entry.delegation.assignedRole);
+			return row(entry.user, {
 				...noRoleFields,
 				role: 'DELEGATION_MEMBER',
-				nationAlpha2Code: entry.delegation.assignedNation?.alpha2Code ?? null,
-				nationAlpha3Code: entry.delegation.assignedNation?.alpha3Code ?? null,
-				nsaName: entry.delegation.assignedNonStateActor?.name ?? null,
-				nsaIcon: entry.delegation.assignedNonStateActor?.fontAwesomeIcon ?? null,
+				nationAlpha2Code: nation?.alpha2Code ?? null,
+				nationAlpha3Code: nation?.alpha3Code ?? null,
+				nsaName: nonStateActor?.name ?? null,
+				nsaIcon: nonStateActor?.fontAwesomeIcon ?? null,
 				committee: entry.assignedCommittee?.name ?? null,
 				delegationSchool: entry.delegation.school ?? null,
 				isHeadDelegate: entry.isHeadDelegate,
-				accepted: !!entry.delegation.assignedNation || !!entry.delegation.assignedNonStateActor
-			})
-		),
+				accepted: !!entry.delegation.assignedRole
+			});
+		}),
 		...queryData.conferenceSupervisors.map((entry) =>
 			row(entry.user, {
 				...noRoleFields,
 				role: 'SUPERVISOR',
 				plansOwnAttendance: entry.plansOwnAttendenceAtConference,
 				accepted:
-					entry.supervisedDelegationMembers.some(
-						(dm) => !!dm.delegation.assignedNation || !!dm.delegation.assignedNonStateActor
-					) || entry.supervisedSingleParticipants.some((sp) => !!sp.assignedRole)
+					entry.supervisedDelegationMembers.some((dm) => !!dm.delegation.assignedRoleId) ||
+					entry.supervisedSingleParticipants.some((sp) => !!sp.assignedRole)
 			})
 		),
 		...queryData.singleParticipants.map((entry) =>

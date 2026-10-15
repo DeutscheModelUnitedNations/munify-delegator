@@ -30,7 +30,7 @@
 		{
 			id: 'nations',
 			header: m.nations(),
-			accessorFn: (row) => row.nations.length,
+			accessorFn: (row) => row.roles.length,
 			filter: { type: 'range' }
 		},
 		{

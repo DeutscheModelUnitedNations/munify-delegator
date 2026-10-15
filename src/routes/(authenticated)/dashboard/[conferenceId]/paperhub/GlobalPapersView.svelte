@@ -6,7 +6,8 @@
 	import PaperMatrix from './PaperMatrix.svelte';
 	import PaperGroupsState from './PaperGroupsState.svelte';
 	import { createPaperGroupsSnapshot } from './paperGroups.svelte';
-	import Flag from '$lib/components/Flag.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
+	import RoleFlag from '$lib/components/RoleFlag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
 	interface Props {
@@ -27,8 +28,13 @@
 		firstSubmittedAt: true,
 		delegation: {
 			id: true,
-			assignedNation: { alpha2Code: true, alpha3Code: true },
-			assignedNonStateActor: { name: true, abbreviation: true, fontAwesomeIcon: true }
+			assignedRole: {
+				kind: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true,
+				nation: { alpha2Code: true, alpha3Code: true }
+			}
 		}
 	} as const;
 
@@ -60,12 +66,12 @@
 	let committeeGroups = $derived(snapshot.grouped ?? []);
 
 	/** What a paper is searched by: the name of the nation or non-state actor of its delegation */
-	const roleText = ({ delegation }: Paper) =>
-		delegation.assignedNation
-			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-			: [delegation.assignedNonStateActor?.name, delegation.assignedNonStateActor?.abbreviation]
-					.filter(Boolean)
-					.join(' ');
+	const roleText = ({ delegation }: Paper) => {
+		const { nation, nonStateActor } = splitRole(delegation.assignedRole);
+		return nation
+			? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
+			: [nonStateActor?.name, nonStateActor?.abbreviation].filter(Boolean).join(' ');
+	};
 
 	// Filter papers by search query (delegation name), keeping the order of the papers
 	const filterPapersBySearch = (papers: Paper[]) => {
@@ -153,15 +159,7 @@
 				<div class="flex flex-wrap gap-2 p-4 pt-2">
 					{#each filteredIntroPapers as paper (paper.id)}
 						<a href={paperHref(paper.id)} class="btn btn-ghost btn-sm border border-base-300 gap-2">
-							{#if paper.delegation.assignedNation}
-								<Flag size="xs" alpha2Code={paper.delegation.assignedNation.alpha2Code} />
-							{:else if paper.delegation.assignedNonStateActor}
-								<Flag
-									size="xs"
-									nsa={true}
-									icon={paper.delegation.assignedNonStateActor.fontAwesomeIcon}
-								/>
-							{/if}
+							<RoleFlag role={paper.delegation.assignedRole} />
 							<span>{roleText(paper)}</span>
 						</a>
 					{/each}

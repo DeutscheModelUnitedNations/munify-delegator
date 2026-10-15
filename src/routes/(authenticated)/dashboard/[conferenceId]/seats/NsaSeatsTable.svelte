@@ -7,7 +7,7 @@
 	import type { ConferenceSeats } from './conferenceSeats';
 
 	interface Props {
-		nonStateActors: ConferenceSeats['nonStateActors'];
+		nonStateActors: ConferenceSeats['roles'];
 	}
 
 	let { nonStateActors }: Props = $props();
@@ -21,7 +21,7 @@
 			accessorFn: (row) => row.name,
 			cell: ({ row }) =>
 				renderComponent(FlagNameCell, {
-					name: row.original.name,
+					name: row.original.name ?? '',
 					nsa: true,
 					nsaIcon: row.original.fontAwesomeIcon
 				})

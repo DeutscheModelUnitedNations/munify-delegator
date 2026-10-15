@@ -10,7 +10,7 @@ const positionPaper: ExportablePaper = {
 	type: 'POSITION_PAPER',
 	conference: { title: 'MUN-SH' },
 	agendaItem: { title: 'Water', committee: { name: 'General Assembly', abbreviation: 'GA' } },
-	delegation: { assignedNation: null, assignedNonStateActor: { name: 'Amnesty' } }
+	delegation: { assignedRole: { kind: 'NON_STATE_ACTOR', name: 'Amnesty', nation: null } }
 };
 
 describe('committeeLine', () => {

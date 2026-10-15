@@ -15,38 +15,46 @@ import {
 const start = new Date('2025-03-01');
 const end = new Date('2025-03-04');
 const conference = { id: 'c1', title: 'MUN-SH', startConference: start, endConference: end };
-const nation = { alpha2Code: 'fr', alpha3Code: 'FRA' };
-const nsa = { name: 'Greenpeace', fontAwesomeIcon: 'fa-leaf' };
+type Role = NonNullable<Parameters<typeof delegationFlag>[0]>['assignedRole'];
+const nation: Role = {
+	kind: 'NATION',
+	name: null,
+	fontAwesomeIcon: null,
+	nation: { alpha2Code: 'fr', alpha3Code: 'FRA' }
+};
+const nsa: Role = {
+	kind: 'NON_STATE_ACTOR',
+	name: 'Greenpeace',
+	fontAwesomeIcon: 'fa-leaf',
+	nation: null
+};
 
 describe('delegationFlag', () => {
-	test('nation first, then NSA, else none', () => {
-		expect(delegationFlag({ assignedNation: nation, assignedNonStateActor: nsa })).toEqual({
+	test('the nation, the NSA, else none', () => {
+		expect(delegationFlag({ assignedRole: nation })).toEqual({
 			type: 'nation',
 			alpha2Code: 'fr'
 		});
-		expect(delegationFlag({ assignedNation: null, assignedNonStateActor: nsa })).toEqual({
+		expect(delegationFlag({ assignedRole: nsa })).toEqual({
 			type: 'nsa',
 			fontAwesomeIcon: 'fa-leaf'
 		});
 		expect(
 			delegationFlag({
-				assignedNation: null,
-				assignedNonStateActor: { name: 'X', fontAwesomeIcon: null }
+				assignedRole: { kind: 'NON_STATE_ACTOR', name: 'X', fontAwesomeIcon: null, nation: null }
 			})
 		).toEqual({ type: 'nsa', fontAwesomeIcon: 'fa-hand-point-up' });
-		expect(delegationFlag({ assignedNation: null, assignedNonStateActor: null })).toBeUndefined();
+		expect(delegationFlag({ assignedRole: null })).toBeUndefined();
 		expect(delegationFlag(null)).toBeUndefined();
 	});
 });
 
 describe('delegationAssignmentName', () => {
 	test('translated nation, NSA name, or nothing', () => {
-		expect(delegationAssignmentName({ assignedNation: nation, assignedNonStateActor: null })).toBe(
+		expect(delegationAssignmentName({ assignedRole: nation })).toBe(
 			getFullTranslatedCountryNameFromISO3Code('FRA')
 		);
-		expect(delegationAssignmentName({ assignedNation: null, assignedNonStateActor: nsa })).toBe(
-			'Greenpeace'
-		);
+		expect(delegationAssignmentName({ assignedRole: nsa })).toBe('Greenpeace');
 		expect(delegationAssignmentName(null)).toBeUndefined();
 	});
 });
@@ -56,7 +64,7 @@ describe('entries', () => {
 		expect(
 			delegationMemberEntry({
 				conference,
-				delegation: { assignedNation: nation, assignedNonStateActor: null },
+				delegation: { assignedRole: nation },
 				assignedCommittee: { abbreviation: 'GA' },
 				isHeadDelegate: true
 			})

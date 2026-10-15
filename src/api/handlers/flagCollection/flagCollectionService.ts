@@ -63,12 +63,13 @@ async function fetchFlagSources(conferenceId: string) {
 	const [committees, nsas, delegations, papers] = await Promise.all([
 		db.query.committee.findMany({
 			where: { conferenceId },
-			with: { nations: true, agendaItems: true }
+			with: { roles: { with: { nation: true } }, agendaItems: true }
 		}),
-		db.query.nonStateActor.findMany({ where: { conferenceId } }),
+		db.query.conferenceRole.findMany({ where: { conferenceId, kind: 'NON_STATE_ACTOR' } }),
 		db.query.delegation.findMany({
 			where: { conferenceId },
-			columns: { id: true, assignedNationAlpha3Code: true, assignedNonStateActorId: true }
+			columns: { id: true },
+			with: { assignedRole: { columns: { id: true, kind: true, nationAlpha3Code: true } } }
 		}),
 		db.query.paper.findMany({
 			where: { conferenceId, status: { ne: 'DRAFT' } },
@@ -102,8 +103,9 @@ function tallyPapers({ papers, delegations }: FlagSources) {
 	for (const paper of papers) {
 		const hasReview = paper.versions.some((version) => version.reviews.length > 0);
 		const delegation = delegationsById.get(paper.delegationId);
-		const nationAlpha3 = delegation?.assignedNationAlpha3Code;
-		const nsaId = delegation?.assignedNonStateActorId;
+		const role = delegation?.assignedRole;
+		const nationAlpha3 = role?.nationAlpha3Code;
+		const nsaId = role?.kind === 'NON_STATE_ACTOR' ? role.id : null;
 
 		if (nationAlpha3 && paper.agendaItemId) {
 			const key = `${nationAlpha3}:${paper.agendaItemId}`;
@@ -127,11 +129,16 @@ type NationAgendaItem = {
 	committeeAbbreviation: string;
 };
 
+/** The nations a committee seats; its roles are all nation roles. */
+function committeeNations(committee: FlagSources['committees'][number]) {
+	return committee.roles.flatMap((role) => (role.nation ? [role.nation] : []));
+}
+
 /** A nation gets one piece per agenda item of every committee it sits in. */
 function nationAgendaItemsOf(committees: FlagSources['committees']) {
 	const nationAgendaItems = new Map<string, NationAgendaItem[]>();
 	for (const committee of committees) {
-		for (const nation of committee.nations) {
+		for (const nation of committeeNations(committee)) {
 			const existing = nationAgendaItems.get(nation.alpha3Code) ?? [];
 			for (const agendaItem of committee.agendaItems) {
 				existing.push({
@@ -156,7 +163,7 @@ function nationFlagsOf(
 		if (agendaItems.length === 0) continue;
 
 		const nation = committees
-			.flatMap((committee) => committee.nations)
+			.flatMap(committeeNations)
 			.find((candidate) => candidate.alpha3Code === alpha3Code);
 		if (!nation) continue;
 
@@ -213,7 +220,7 @@ function nsaFlagsOf(
 			type: 'NSA',
 			alpha2Code: null,
 			alpha3Code: null,
-			name: nsa.name,
+			name: nsa.name ?? '',
 			abbreviation: nsa.abbreviation,
 			fontAwesomeIcon: nsa.fontAwesomeIcon,
 			totalPieces: NSA_PIECE_COUNT,

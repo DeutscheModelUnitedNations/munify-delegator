@@ -1,4 +1,5 @@
 import formatNames from '$lib/helpers/formatNames';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 /** Pure helpers behind the survey CSV exports. */
 
@@ -14,15 +15,18 @@ export interface ExportUser {
 export interface ExportDelegationMember {
 	user: ExportUser;
 	delegation: {
-		assignedNation: { alpha3Code: string } | null;
-		assignedNonStateActor: { name: string } | null;
+		assignedRole: {
+			kind: ConferenceRoleKind;
+			name?: string | null;
+			nation?: { alpha3Code: string } | null;
+		} | null;
 	};
 	assignedCommittee: { name: string } | null;
 }
 
 export interface ExportSingleParticipant {
 	user: ExportUser;
-	assignedRole: { name: string } | null;
+	assignedRole: { name?: string | null } | null;
 }
 
 export interface RoleInfo {
@@ -37,7 +41,7 @@ function delegationMemberRole(
 	dm: ExportDelegationMember,
 	nationName: (alpha3Code: string) => string
 ): RoleInfo | undefined {
-	const { assignedNation: nation, assignedNonStateActor: nsa } = dm.delegation;
+	const { nation, nonStateActor: nsa } = splitRole(dm.delegation.assignedRole);
 	if (nation) {
 		return {
 			roleType: 'Delegation',
@@ -45,7 +49,7 @@ function delegationMemberRole(
 			committee: dm.assignedCommittee?.name ?? ''
 		};
 	}
-	if (nsa) return { roleType: 'NSA', roleName: nsa.name, committee: '' };
+	if (nsa) return { roleType: 'NSA', roleName: nsa.name ?? '', committee: '' };
 	return undefined;
 }
 
@@ -67,7 +71,7 @@ export function buildUserRoleMap(
 		if (sp.assignedRole) {
 			userRoleMap.set(sp.user.id, {
 				roleType: 'SingleParticipant',
-				roleName: sp.assignedRole.name,
+				roleName: sp.assignedRole.name ?? '',
 				committee: ''
 			});
 		}

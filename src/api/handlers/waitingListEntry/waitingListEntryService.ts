@@ -11,19 +11,22 @@ import { apiError } from '$api/services/errors/apiError';
  */
 export async function assertWaitingListOpenFor(conferenceId: string, userId: string) {
 	const where = { conferenceId, userId };
+	// a registration names the conference and the user through the person's part in it
+	const registration = { participant: where };
 	const [conference, existing, singleParticipant, delegationMember] = await Promise.all([
 		db.query.conference.findFirst({
 			where: { id: conferenceId },
 			columns: { state: true, assignmentReleased: true }
 		}),
 		db.query.waitingListEntry.findFirst({ where, columns: { id: true } }),
-		db.query.singleParticipant.findFirst({ where, columns: { assignedRoleId: true } }),
+		db.query.singleParticipant.findFirst({
+			where: registration,
+			columns: { assignedRoleId: true }
+		}),
 		db.query.delegationMember.findFirst({
-			where,
+			where: registration,
 			columns: { id: true },
-			with: {
-				delegation: { columns: { assignedNationAlpha3Code: true, assignedNonStateActorId: true } }
-			}
+			with: { delegation: { columns: { assignedRoleId: true } } }
 		})
 	]);
 
@@ -44,14 +47,6 @@ export async function assertWaitingListOpenFor(conferenceId: string, userId: str
 }
 
 /** Whether a single participant was given a role, or a delegation a nation or non-state actor. */
-function holdsRole(registration: {
-	assignedRoleId?: string | null;
-	assignedNationAlpha3Code?: string | null;
-	assignedNonStateActorId?: string | null;
-}) {
-	return Boolean(
-		registration.assignedRoleId ??
-		registration.assignedNationAlpha3Code ??
-		registration.assignedNonStateActorId
-	);
+function holdsRole(registration: { assignedRoleId: string | null }) {
+	return Boolean(registration.assignedRoleId);
 }

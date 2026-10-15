@@ -34,7 +34,7 @@ async function assertCommitteeInConference(
 	committeeId: string | null | undefined,
 	conferenceId: string
 ) {
-	if (!(await offeredIn(conferenceId, { assignedCommitteeId: committeeId }))) {
+	if (!(await offeredIn(conferenceId, { committeeId }))) {
 		throw apiError('INVALID_INPUT', m.resolutionCommitteeOtherConference());
 	}
 }

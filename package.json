@@ -135,7 +135,7 @@
 		"prettier-plugin-sort-json": "^4.2.0",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.1",
-		"s3mini": "^1.0.2",
+		"s3mini": "^1.0.3",
 		"sveaflet": "^0.1.5",
 		"sveaflet-markercluster": "^0.0.3",
 		"svelte": "^5.57.1",
@@ -230,7 +230,6 @@
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
-		"@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch",
-		"s3mini@1.0.2": "patches/s3mini@1.0.2.patch"
+		"@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch"
 	}
 }

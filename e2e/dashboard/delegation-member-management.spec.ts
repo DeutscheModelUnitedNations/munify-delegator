@@ -18,7 +18,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await acceptDialogs(headPage);
 
 	const headDelegate = makeTestUser('member-mgmt-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/login?next=/dashboard' });
+	await loginAs(headPage, headDelegate);
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
 	await headPage.locator('a[href$="/create-delegation"]').click();
@@ -87,7 +87,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	// --- rotate the entry code ---
 	const dashboardEntryCode = headPage.locator('p.font-mono');
 	await expect(dashboardEntryCode).toHaveText(originalEntryCode!, { timeout: 15_000 });
-	await headPage.getByRole('button', { name: 'Rotate entry code' }).click();
+	await headPage.getByRole('button', { name: /code erneuern|rotate code/i }).click();
 	await expect(dashboardEntryCode).not.toHaveText(originalEntryCode!, { timeout: 15_000 });
 
 	// --- remove member C ---
@@ -100,7 +100,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await waitForHydration(headPage);
 
 	const memberCData = await graphql(
-		`query { delegationMembers(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${memberCUserId}" } }) { id } }`
+		`query { delegationMembers(where: { conference: { id: { eq: "${conferenceId}" } }, user: { id: { eq: "${memberCUserId}" } } }) { id } }`
 	);
 	expect(memberCData?.delegationMembers).toEqual([]);
 
@@ -109,7 +109,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 
 	async function isMemberBHeadDelegate() {
 		const data = await graphql(
-			`query { delegationMembers(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${memberBUserId}" } }) { isHeadDelegate } }`
+			`query { delegationMembers(where: { conference: { id: { eq: "${conferenceId}" } }, user: { id: { eq: "${memberBUserId}" } } }) { isHeadDelegate } }`
 		);
 		return data?.delegationMembers?.[0]?.isHeadDelegate;
 	}

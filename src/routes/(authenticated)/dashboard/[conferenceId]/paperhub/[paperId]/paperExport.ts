@@ -1,5 +1,6 @@
 import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
 import type { ResolutionHeaderData } from '$lib/components/paper/editor/resolution';
+import type { ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 import type { PaperTypstMeta } from '$lib/helpers/paperTypst';
 import { m } from '$lib/paraglide/messages';
 import { translatePaperType } from '$lib/utils/enumTranslations';
@@ -12,8 +13,11 @@ export interface ExportablePaper {
 	conference: { title: string | null };
 	agendaItem: { title: string; committee: { name: string; abbreviation: string } } | null;
 	delegation: {
-		assignedNation: { alpha3Code: string } | null;
-		assignedNonStateActor: { name: string } | null;
+		assignedRole: {
+			kind: ConferenceRoleKind;
+			name: string | null;
+			nation: { alpha3Code: string } | null;
+		} | null;
 	};
 }
 

@@ -24,8 +24,12 @@
 			agendaItem: { title: true, committee: { abbreviation: true } },
 			delegation: {
 				id: true,
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+				assignedRole: {
+					kind: true,
+					name: true,
+					fontAwesomeIcon: true,
+					nation: { alpha2Code: true, alpha3Code: true }
+				}
 			},
 			author: { id: true, givenName: true, familyName: true }
 		});

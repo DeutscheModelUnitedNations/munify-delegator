@@ -28,7 +28,7 @@ export function printOverview() {
 	);
 	line(`  Join "Seed 3"/"Seed 4": late delegation ${joinCodes.lateDelegation}`);
 	line(
-		`  Supervisor codes: ${joinCodes.supervisor} (attending), ${joinCodes.supervisorAbsent} (absent), ${joinCodes.supervisorRejected} (rejected students)`
+		`  Supervisor codes: ${joinCodes.supervisor} in "Seed 2" (attending); ${joinCodes.supervisorAbsent} (absent), ${joinCodes.supervisorRejected} (rejected students) in "Seed 5"`
 	);
 
 	line();

@@ -15,8 +15,7 @@ const delegation = (id: string, applied = true, rated = false) => ({
 	id,
 	applied,
 	school: null,
-	assignedNationAlpha3Code: null,
-	assignedNonStateActorId: null,
+	assignedRoleId: null,
 	members: [],
 	appliedForRoles: [],
 	assignmentReview: rated ? review(id) : null

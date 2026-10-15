@@ -2,20 +2,20 @@
 	import { renderComponent } from '$lib/components/tanStackTable';
 	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { getUniqueNations } from '$lib/helpers/getUniqueNations';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
-	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
+	import { roleSeats } from '$lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import FlagNameCell from './FlagNameCell.svelte';
 	import SeatsCell from './SeatsCell.svelte';
-	import type { ConferenceSeats } from './conferenceSeats';
+	import type { ConferenceSeats, SeatedNation } from './conferenceSeats';
 
 	interface Props {
 		committees: ConferenceSeats['committees'];
+		nations: SeatedNation[];
 	}
 
-	let { committees }: Props = $props();
+	let { committees, nations }: Props = $props();
 
 	type NationRow = {
 		alpha2Code: string;
@@ -27,20 +27,20 @@
 	};
 
 	const rows = $derived<NationRow[]>(
-		getUniqueNations(committees).map((nation) => ({
-			alpha2Code: nation.alpha2Code,
-			alpha3Code: nation.alpha3Code,
-			name: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-			region: getNationRegionalGroup(nation.alpha3Code) ?? '',
+		nations.map((role) => ({
+			alpha2Code: role.nation.alpha2Code,
+			alpha3Code: role.nation.alpha3Code,
+			name: getFullTranslatedCountryNameFromISO3Code(role.nation.alpha3Code),
+			region: getNationRegionalGroup(role.nation.alpha3Code) ?? '',
 			seatsByCommittee: Object.fromEntries(
 				committees.map((committee) => [
 					committee.id,
-					committee.nations.some((n) => n.alpha3Code === nation.alpha3Code)
+					committee.roles.some((seated) => seated.id === role.id)
 						? committee.numOfSeatsPerDelegation
 						: 0
 				])
 			),
-			total: getNumOfSeatsPerNation(nation, committees)
+			total: roleSeats(role, committees)
 		}))
 	);
 

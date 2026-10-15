@@ -50,8 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreatePaper(ctx, args);
-			const created = await createPaper(args);
+			const { authorParticipantId } = await assertCanCreatePaper(ctx, args);
+			const created = await createPaper({ ...args, authorParticipantId });
 
 			paperPubsub.created();
 			paperVersionPubsub.created();
@@ -121,7 +121,7 @@ schemaBuilder.queryFields((t) => ({
 				query(
 					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
-							conferenceId: args.conferenceId,
+							delegation: { conferenceId: args.conferenceId },
 							status: { ne: 'DRAFT' },
 							agendaItemId: { isNull: true }
 						}
@@ -145,7 +145,7 @@ schemaBuilder.queryFields((t) => ({
 				query(
 					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
-							conferenceId: args.conferenceId,
+							delegation: { conferenceId: args.conferenceId },
 							delegationId: { in: delegationIds },
 							status: { ne: 'DRAFT' }
 						}
@@ -168,7 +168,7 @@ schemaBuilder.queryFields((t) => ({
 				query(
 					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
-							conferenceId: args.conferenceId,
+							delegation: { conferenceId: args.conferenceId },
 							status: { ne: 'DRAFT' },
 							agendaItemId: { isNull: true }
 						}
@@ -235,7 +235,7 @@ schemaBuilder.queryFields((t) => ({
 			return groupPapersByCommittee(
 				await db.query.paper.findMany({
 					...(await ctx.abilities.paper.filter('read')).merge({
-						where: { conferenceId: args.conferenceId, status: { ne: 'DRAFT' } }
+						where: { delegation: { conferenceId: args.conferenceId }, status: { ne: 'DRAFT' } }
 					}).query.many,
 					with: { agendaItem: { with: { committee: true } } }
 				})
@@ -252,7 +252,7 @@ schemaBuilder.queryFields((t) => ({
 			return groupPapersByCommittee(
 				await db.query.paper.findMany({
 					...(await ctx.abilities.paper.filter('read')).merge({
-						where: { conferenceId: args.conferenceId, status: { ne: 'DRAFT' } }
+						where: { delegation: { conferenceId: args.conferenceId }, status: { ne: 'DRAFT' } }
 					}).query.many,
 					with: { agendaItem: { with: { committee: true } } }
 				})

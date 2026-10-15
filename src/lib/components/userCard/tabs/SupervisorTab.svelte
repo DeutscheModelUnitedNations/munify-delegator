@@ -9,6 +9,7 @@
 	import codenmz from '$lib/helpers/codenamize';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { splitRole } from '$lib/helpers/conferenceRole';
 
 	interface Props {
 		supervisorId: string;
@@ -34,8 +35,12 @@
 					entryCode: true,
 					applied: true,
 					members: { id: true },
-					assignedNation: { alpha2Code: true, alpha3Code: true },
-					assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+					assignedRole: {
+						kind: true,
+						name: true,
+						fontAwesomeIcon: true,
+						nation: { alpha2Code: true, alpha3Code: true }
+					}
 				},
 				assignedCommittee: { id: true, abbreviation: true }
 			},
@@ -139,24 +144,21 @@
 {/snippet}
 
 {#snippet delegationAssignment(delegation: Group['delegation'])}
-	{#if delegation.assignedNation}
-		<Flag alpha2Code={delegation.assignedNation.alpha2Code} size="xs" />
-	{:else if delegation.assignedNonStateActor}
-		<Flag
-			nsa
-			icon={delegation.assignedNonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'}
-			size="xs"
-		/>
+	{@const { nation, nonStateActor } = splitRole(delegation.assignedRole)}
+	{#if nation}
+		<Flag alpha2Code={nation.alpha2Code} size="xs" />
+	{:else if nonStateActor}
+		<Flag nsa icon={nonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'} size="xs" />
 	{/if}
 	<div class="flex flex-col">
 		<div>
 			<span class="font-bold">{codenmz(delegation.id)}</span>
-			{#if delegation.assignedNation}
+			{#if nation}
 				<span class="text-base-content/60 text-xs"
-					>({getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)})</span
+					>({getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)})</span
 				>
-			{:else if delegation.assignedNonStateActor}
-				<span class="text-base-content/60 text-xs">({delegation.assignedNonStateActor.name})</span>
+			{:else if nonStateActor}
+				<span class="text-base-content/60 text-xs">({nonStateActor.name})</span>
 			{/if}
 		</div>
 		{#if delegation.school}

@@ -2,7 +2,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
+	import { roleSeats, splitRole } from '$lib/helpers/conferenceRole';
 
 	interface Props {
 		delegationId: string;
@@ -18,8 +18,14 @@
 				appliedForRoles: {
 					id: true,
 					rank: true,
-					nation: { alpha2Code: true, alpha3Code: true },
-					nonStateActor: { name: true, fontAwesomeIcon: true, seatAmount: true }
+					role: {
+						id: true,
+						kind: true,
+						name: true,
+						fontAwesomeIcon: true,
+						seatAmount: true,
+						nation: { alpha2Code: true, alpha3Code: true }
+					}
 				}
 			}),
 			client.liveQuery.conference({
@@ -27,7 +33,7 @@
 				committees: {
 					abbreviation: true,
 					numOfSeatsPerDelegation: true,
-					nations: { alpha2Code: true, alpha3Code: true }
+					roles: { id: true }
 				}
 			})
 		])
@@ -47,17 +53,15 @@
 	</thead>
 	<tbody>
 		{#each roleApplications as application, index (application.id)}
+			{@const { nation, nonStateActor } = splitRole(application.role)}
 			{@const committeesOfRoleApplication =
-				application.nation?.alpha2Code &&
-				committees.filter((x) =>
-					x.nations.map((y) => y.alpha2Code).includes(application.nation!.alpha2Code)
-				)}
+				nation && committees.filter((x) => x.roles.some((role) => role.id === application.role.id))}
 			<tr>
 				<td class="text-center">{index + 1}</td>
-				{#if application?.nation}
-					<td class="text-center"><Flag alpha2Code={application.nation.alpha2Code} size="xs" /></td>
+				{#if nation}
+					<td class="text-center"><Flag alpha2Code={nation.alpha2Code} size="xs" /></td>
 					<td class="w-full">
-						{getFullTranslatedCountryNameFromISO3Code(application.nation.alpha3Code)}
+						{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 						{#if committeesOfRoleApplication}
 							<br />
 							<span class="text-base-content/70">
@@ -65,13 +69,11 @@
 							</span>
 						{/if}
 					</td>
-					<td class="text-center">{getNumOfSeatsPerNation(application.nation, committees)}</td>
-				{:else if application?.nonStateActor}
-					<td class="text-center"
-						><Flag nsa size="xs" icon={application.nonStateActor.fontAwesomeIcon} /></td
-					>
-					<td class="w-full">{application.nonStateActor.name}</td>
-					<td class="text-center">{application.nonStateActor.seatAmount}</td>
+					<td class="text-center">{roleSeats(application.role, committees)}</td>
+				{:else if nonStateActor}
+					<td class="text-center"><Flag nsa size="xs" icon={nonStateActor.fontAwesomeIcon} /></td>
+					<td class="w-full">{nonStateActor.name}</td>
+					<td class="text-center">{nonStateActor.seatAmount}</td>
 				{/if}
 			</tr>
 		{/each}

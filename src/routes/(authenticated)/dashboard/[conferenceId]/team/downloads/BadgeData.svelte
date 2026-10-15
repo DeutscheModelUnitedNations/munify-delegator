@@ -28,7 +28,7 @@
 			givenName: true,
 			familyName: true,
 			pronouns: true,
-			conferenceParticipantStatus: {
+			conferenceParticipants: {
 				__args: { where: { conferenceId: { eq: conferenceId } } },
 				id: true,
 				mediaConsentStatus: true
@@ -46,7 +46,7 @@
 				user: badgeUser(),
 				delegation: {
 					id: true,
-					assignedNation: { alpha2Code: true, alpha3Code: true }
+					assignedRole: { nation: { alpha2Code: true, alpha3Code: true } }
 				}
 			}
 		});
@@ -56,15 +56,15 @@
 		return client.query.delegationMembers({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
-					delegation: { assignedNonStateActorId: { isNotNull: true } }
+					conference: { id: { eq: conferenceId } },
+					delegation: { assignedRole: { kind: 'NON_STATE_ACTOR' } }
 				}
 			},
 			id: true,
 			user: badgeUser(),
 			delegation: {
 				id: true,
-				assignedNonStateActor: { id: true, name: true, abbreviation: true }
+				assignedRole: { name: true }
 			}
 		});
 	}
@@ -73,7 +73,7 @@
 		return client.query.singleParticipants({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
+					conference: { id: { eq: conferenceId } },
 					assignedRoleId: { isNotNull: true }
 				}
 			},
@@ -85,14 +85,13 @@
 
 	function fetchSupervisorBadgeData() {
 		return client.query.conferenceSupervisors({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
+			__args: { where: { conference: { id: { eq: conferenceId } } } },
 			id: true,
 			user: badgeUser(),
 			supervisedDelegationMembers: {
 				delegation: {
 					applied: true,
-					assignedNation: { alpha3Code: true },
-					assignedNonStateActor: { id: true }
+					assignedRoleId: true
 				}
 			},
 			supervisedSingleParticipants: { applied: true, assignedRole: { id: true } }
@@ -127,9 +126,9 @@
 
 	/** The person's media consent in this conference, as `badgeUser` selects it. */
 	function mediaConsentOf(user: {
-		conferenceParticipantStatus: { mediaConsentStatus: MediaconsentstatusEnum }[];
+		conferenceParticipants: { mediaConsentStatus: MediaconsentstatusEnum }[];
 	}): MediaconsentstatusEnum {
-		return user.conferenceParticipantStatus[0]?.mediaConsentStatus ?? 'NOT_SET';
+		return user.conferenceParticipants[0]?.mediaConsentStatus ?? 'NOT_SET';
 	}
 
 	/** Sorts by `label`, then by family name. */
@@ -145,7 +144,7 @@
 		const resData = await fetchCommitteeBadgeData(committeeId);
 
 		const badgeData = resData.delegationMembers.flatMap((member) => {
-			const nation = member.delegation.assignedNation;
+			const nation = member.delegation.assignedRole?.nation;
 			return nation ? [{ user: member.user, nation }] : [];
 		});
 		const countryName = (member: (typeof badgeData)[number]) =>
@@ -168,8 +167,8 @@
 		const resData = await fetchNsaBadgeData();
 
 		const badgeData = resData.flatMap((member) => {
-			const nsa = member.delegation.assignedNonStateActor;
-			return nsa ? [{ user: member.user, label: nsa.name }] : [];
+			const nsa = member.delegation.assignedRole;
+			return nsa ? [{ user: member.user, label: nsa.name ?? '' }] : [];
 		});
 
 		exportBadgeCSV(
@@ -188,7 +187,7 @@
 		const resData = await fetchSingleParticipantBadgeData();
 
 		const badgeData = resData.flatMap((member) =>
-			member.assignedRole ? [{ user: member.user, label: member.assignedRole.name }] : []
+			member.assignedRole ? [{ user: member.user, label: member.assignedRole.name ?? '' }] : []
 		);
 
 		exportBadgeCSV(
@@ -210,9 +209,7 @@
 			.filter(
 				(supervisor) =>
 					supervisor.supervisedDelegationMembers.some(
-						(dm) =>
-							dm.delegation.applied &&
-							(dm.delegation.assignedNation || dm.delegation.assignedNonStateActor)
+						(dm) => dm.delegation.applied && dm.delegation.assignedRoleId
 					) || supervisor.supervisedSingleParticipants.some((sp) => sp.applied && sp.assignedRole)
 			)
 			.sort(compareByFamilyName)

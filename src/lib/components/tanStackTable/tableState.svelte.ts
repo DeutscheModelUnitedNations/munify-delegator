@@ -1,4 +1,5 @@
 import { untrack } from 'svelte';
+import { browser } from '$app/environment';
 import { queryParameters, ssp } from 'sveltekit-search-params';
 import type {
 	ColumnFiltersState,
@@ -33,6 +34,17 @@ function defaultFiltersOf(defaults: TableStateOptions['defaultFilters']): Column
 }
 
 /**
+ * Reads a URL parameter. On the server the URL can only be read while the component renders, not
+ * after an `await` in it (a backend table's query reads the state there), so it is read once, up
+ * front; the browser reads it live.
+ */
+function urlReader<T>(read: () => T): () => T {
+	if (browser) return read;
+	const value = read();
+	return () => value;
+}
+
+/**
  * What a viewer has set on a table - search, sorting, filters, page - kept in the URL so a copied
  * link shows the same table. `ManagedTable` builds one for itself; a page that lets the backend do
  * the work builds it first, reads `search`, `sorting`, `columnFilters` and `pagination` to run its
@@ -58,7 +70,11 @@ export function createTableState({
 		},
 		{ pushHistory: false, showDefaults: false }
 	);
-	const searchInUrl = () => searchParams[searchKey] ?? '';
+	const searchInUrl = urlReader(() => searchParams[searchKey] ?? '');
+	const sortInUrl = urlReader(() => params.sort);
+	const pageInUrl = urlReader(() => params.page);
+	const sizeInUrl = urlReader(() => params.size);
+	const filtersInUrl = urlReader(() => params.filters);
 
 	/** What is in the search box right now */
 	const typedSearch = $derived(searchInUrl());
@@ -72,10 +88,10 @@ export function createTableState({
 
 	// Searching shows the best match first, so it replaces the sorting until one is chosen again
 	const defaultSorting = $derived(typedSearch.trim() ? [] : initialSorting);
-	const sorting = $derived<SortingState>(params.sort ?? defaultSorting);
-	const pagination = $derived(paginationOf(params.page, params.size, pageSize));
+	const sorting = $derived<SortingState>(sortInUrl() ?? defaultSorting);
+	const pagination = $derived(paginationOf(pageInUrl(), sizeInUrl(), pageSize));
 	const columnFilters = $derived<ColumnFiltersState>(
-		params.filters ?? defaultFiltersOf(defaultFilters)
+		filtersInUrl() ?? defaultFiltersOf(defaultFilters)
 	);
 
 	return {

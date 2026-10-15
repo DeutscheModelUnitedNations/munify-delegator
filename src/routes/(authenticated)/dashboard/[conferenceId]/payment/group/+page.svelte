@@ -32,12 +32,14 @@
 	 */
 	async function fetchGroupPayment(conferenceId: string) {
 		const user = await getCurrentUser();
-		const sharesAParticipant = { supervisors: { userId: { eq: user.sub } } };
+		const sharesAParticipant = { supervisors: { user: { id: { eq: user.sub } } } };
 		return Promise.all([
 			user,
 			fetchConferencePaymentData(conferenceId),
 			client.liveQuery.conferenceSupervisors({
-				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+				__args: {
+					where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: user.sub } } }
+				},
 				id: true,
 				user: { id: true, givenName: true, familyName: true },
 				supervisedDelegationMembers: studentSelection,
@@ -46,7 +48,7 @@
 			client.liveQuery.conferenceSupervisors({
 				__args: {
 					where: {
-						conferenceId: { eq: conferenceId },
+						conference: { id: { eq: conferenceId } },
 						OR: [
 							{ supervisedDelegationMembers: sharesAParticipant },
 							{ supervisedSingleParticipants: sharesAParticipant }

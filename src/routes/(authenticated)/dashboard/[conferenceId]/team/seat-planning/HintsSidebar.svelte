@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { Role } from '$lib/helpers/seatPlanning/hints';
-	import { useSeatPlanningParams } from './filters';
+	import { useSeatPlanningParams } from './filters.svelte';
 	import CommitteeSizes from './hints/CommitteeSizes.svelte';
 	import RegionalBalanceHints from './hints/RegionalBalanceHints.svelte';
 	import SizeHistogram from './hints/SizeHistogram.svelte';

@@ -22,9 +22,9 @@ const member = (
 
 describe('seatRemovalBlockersWhere', () => {
 	test('only matches members of the nation assigned to exactly that committee', () => {
-		expect(seatRemovalBlockersWhere('gv', 'deu')).toEqual({
+		expect(seatRemovalBlockersWhere('gv', 'nation-deu')).toEqual({
 			assignedCommitteeId: 'gv',
-			delegation: { assignedNationAlpha3Code: 'deu' }
+			delegation: { assignedRoleId: 'nation-deu' }
 		});
 	});
 });
@@ -33,7 +33,7 @@ describe('lockedCommitteeSeats', () => {
 	test('groups the assigned members of a nation by committee', () => {
 		const seats = lockedCommitteeSeats([
 			{
-				assignedNationAlpha3Code: 'deu',
+				nationAlpha3Code: 'deu',
 				members: [
 					member('gv', 'ada', 'lovelace'),
 					member('sr', 'grace', 'hopper'),
@@ -52,8 +52,8 @@ describe('lockedCommitteeSeats', () => {
 	test('ignores delegations without a nation (NSAs) and members without a committee', () => {
 		expect(
 			lockedCommitteeSeats([
-				{ assignedNationAlpha3Code: null, members: [member('gv')] },
-				{ assignedNationAlpha3Code: 'fra', members: [member(null)] }
+				{ nationAlpha3Code: null, members: [member('gv')] },
+				{ nationAlpha3Code: 'fra', members: [member(null)] }
 			])
 		).toEqual([]);
 	});
@@ -80,9 +80,12 @@ describe('assertSeatsPerDelegationAllowed', () => {
 describe('totalSeats', () => {
 	test('weights nation entries by seats per delegation and adds the NSA seat amounts', () => {
 		const committees = [
-			{ numOfSeatsPerDelegation: 1, nations: ['deu', 'fra', 'usa'] },
-			{ numOfSeatsPerDelegation: 2, nations: ['deu', 'chn'] },
-			{ numOfSeatsPerDelegation: 3, nations: [] }
+			{
+				numOfSeatsPerDelegation: 1,
+				roles: [{ id: 'nation-deu' }, { id: 'nation-fra' }, { id: 'nation-usa' }]
+			},
+			{ numOfSeatsPerDelegation: 2, roles: [{ id: 'nation-deu' }, { id: 'nation-chn' }] },
+			{ numOfSeatsPerDelegation: 3, roles: [] }
 		];
 		expect(totalSeats(committees, [{ seatAmount: 5 }, { seatAmount: 1 }])).toBe(3 + 4 + 6);
 	});

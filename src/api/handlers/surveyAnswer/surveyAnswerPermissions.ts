@@ -2,12 +2,11 @@ import { db } from '$api/db/db';
 import { type ApiContext, abilityBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertParticipantsOf,
 	hasTeamRole,
-	isOwnUser,
 	isTeamMemberOfConference,
+	participantIdsOf,
 	systemAdmin,
-	where
+	userId
 } from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { apiError } from '$api/services/errors/apiError';
@@ -17,7 +16,10 @@ export function registerSurveyAnswerAbilities() {
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Users read and update their own answers (no delete, matching the CASL rule).
-	abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => where(isOwnUser(ctx)));
+	abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => {
+		const id = userId(ctx);
+		return id ? { where: { participant: { userId: id } } } : undefined;
+	});
 
 	// Participant care and project management manage their conference's answers.
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
@@ -34,9 +36,9 @@ interface AnsweredOption {
 
 /**
  * Who an answer may be given for: participant care answers for anybody in its conference, and
- * everybody else only for themselves, in a conference they take part in. Returns the user the
- * answer belongs to, and whether the caller answers as participant care - organizers may overfill
- * an option and answer past the deadline; participants may not.
+ * everybody else only for themselves, in a conference they take part in. Returns the participant
+ * row the answer belongs to, and whether the caller answers as participant care - organizers may
+ * overfill an option and answer past the deadline; participants may not.
  */
 async function answeringFor(
 	ctx: ApiContext,
@@ -47,15 +49,16 @@ async function answeringFor(
 	const conferenceId = option.question.conferenceId;
 	const subject = requestedUserId ?? caller;
 
-	if (await hasTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES)) {
-		await assertParticipantsOf(conferenceId, [subject]);
-		return { subject, ignoresLimits: true };
-	}
-	if (subject !== caller) {
+	const ignoresLimits = await hasTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	if (!ignoresLimits && subject !== caller) {
 		throw apiError('FORBIDDEN', m.surveyAnswerOnlyOwn());
 	}
-	await assertParticipantsOf(conferenceId, [subject]);
-	return { subject, ignoresLimits: false };
+	const participantIds = await participantIdsOf(conferenceId, [subject]);
+	const subjectParticipantId = participantIds.get(subject);
+	if (!subjectParticipantId) {
+		throw apiError('INVALID_INPUT', m.usersNotInConference());
+	}
+	return { subjectParticipantId, ignoresLimits };
 }
 
 /**
@@ -74,32 +77,35 @@ async function answerSubject(
 		? await db.query.surveyAnswer.findFirst({
 				...(await ctx.abilities.surveyAnswer.filter('update')).merge({ where: { id: args.id } })
 					.query.single,
-				columns: { userId: true }
+				columns: {},
+				with: { participant: { columns: { userId: true } } }
 			})
 		: undefined;
-	return answeringFor(ctx, option, args.userId ?? addressed?.userId);
+	return answeringFor(ctx, option, args.userId ?? addressed?.participant.userId);
 }
 
 /**
- * Refuses unless the caller may give the answer `option` stands for. Returns whom it is for,
- * whether the option's limits apply to the caller, and the caller's answer to replace, if there is
- * one they may update.
+ * Refuses unless the caller may give the answer `option` stands for. Returns whom it is for (their
+ * participant row in the question's conference), whether the option's limits apply to the caller,
+ * and the caller's answer to replace, if there is one they may update.
  */
 export async function assertCanAnswerSurvey(
 	ctx: ApiContext,
 	option: AnsweredOption,
 	args: { id?: string | null; questionId?: string | null; userId?: string | null }
 ) {
-	const { subject, ignoresLimits } = await answerSubject(ctx, option, args);
+	const { subjectParticipantId, ignoresLimits } = await answerSubject(ctx, option, args);
 
+	const subjectsAnswer = {
+		questionId: option.questionId,
+		conferenceParticipantId: subjectParticipantId
+	};
 	const existing = await db.query.surveyAnswer.findFirst({
 		...(await ctx.abilities.surveyAnswer.filter('update')).merge({
-			where: args.id
-				? { id: args.id, questionId: option.questionId, userId: subject }
-				: { questionId: option.questionId, userId: subject }
+			where: args.id ? { id: args.id, ...subjectsAnswer } : subjectsAnswer
 		}).query.single,
 		columns: { id: true }
 	});
 
-	return { subject, ignoresLimits, updatableAnswerId: existing?.id };
+	return { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id };
 }

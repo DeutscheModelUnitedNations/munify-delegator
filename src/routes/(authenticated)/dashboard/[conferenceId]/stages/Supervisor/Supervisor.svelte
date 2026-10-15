@@ -55,12 +55,11 @@
 					id: true,
 					givenName: true,
 					familyName: true,
-					conferenceParticipantStatus: { paymentStatus: true, conference: { id: true } }
+					conferenceParticipants: { paymentStatus: true, conference: { id: true } }
 				},
 				delegation: {
 					id: true,
-					assignedNation: { alpha3Code: true },
-					assignedNonStateActor: { id: true }
+					assignedRole: { id: true, kind: true }
 				}
 			},
 			supervisedSingleParticipants: {
@@ -69,7 +68,7 @@
 					id: true,
 					givenName: true,
 					familyName: true,
-					conferenceParticipantStatus: { paymentStatus: true, conference: { id: true } }
+					conferenceParticipants: { paymentStatus: true, conference: { id: true } }
 				},
 				assignedRole: { id: true }
 			}
@@ -79,9 +78,7 @@
 	let isStateParticipantRegistration = $derived(conferenceState === 'PARTICIPANT_REGISTRATION');
 
 	const acceptedDelegationMembers = $derived(
-		supervisor.supervisedDelegationMembers.filter(
-			(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
-		)
+		supervisor.supervisedDelegationMembers.filter((x) => x.delegation.assignedRole)
 	);
 	const acceptedSingleParticipants = $derived(
 		supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
@@ -105,7 +102,7 @@
 			? []
 			: [
 					...supervisor.supervisedDelegationMembers
-						.filter((x) => !x.delegation.assignedNation && !x.delegation.assignedNonStateActor)
+						.filter((x) => !x.delegation.assignedRole)
 						.map((x) => x.user),
 					...supervisor.supervisedSingleParticipants
 						.filter((x) => !x.assignedRole)
@@ -157,8 +154,8 @@
 	]);
 
 	const isPaid = (person: (typeof delegationMembers)[number]['user']) =>
-		person.conferenceParticipantStatus.find((s) => s.conference.id === conferenceId)
-			?.paymentStatus === 'DONE';
+		person.conferenceParticipants.find((s) => s.conference.id === conferenceId)?.paymentStatus ===
+		'DONE';
 
 	// The supervisor's own payment plus every listed student's
 	let allPaymentsComplete = $derived(
@@ -177,7 +174,7 @@
 		<DelegationStatsCharts {conferenceId} {supervisorId} />
 	</DashboardSection>
 
-	{#if delegationMembers.some((x) => x.delegation.assignedNation && !x.assignedCommittee)}
+	{#if delegationMembers.some((x) => x.delegation.assignedRole?.kind === 'NATION' && !x.assignedCommittee)}
 		<div class="alert alert-warning">
 			<i class="fas fa-arrows-turn-to-dots text-2xl"></i>
 			<div>

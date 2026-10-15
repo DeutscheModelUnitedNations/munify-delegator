@@ -35,11 +35,11 @@
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
-					assignedNationAlpha3Code: { isNotNull: true }
+					assignedRole: { kind: 'NATION' }
 				}
 			},
 			id: true,
-			assignedNation: { alpha3Code: true },
+			assignedRole: { nation: { alpha3Code: true } },
 			members: {
 				id: true,
 				user: exportUser,
@@ -54,11 +54,11 @@
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
-					assignedNonStateActorId: { isNotNull: true }
+					assignedRole: { kind: 'NON_STATE_ACTOR' }
 				}
 			},
 			id: true,
-			assignedNonStateActor: { name: true },
+			assignedRole: { name: true },
 			members: { id: true, user: exportUser, supervisors: supervisorNames }
 		});
 	}
@@ -67,7 +67,7 @@
 		return client.query.singleParticipants({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
+					conference: { id: { eq: conferenceId } },
 					assignedRoleId: { isNotNull: true }
 				}
 			},
@@ -82,7 +82,7 @@
 		return client.query.conferenceSupervisors({
 			__args: {
 				where: {
-					conferenceId: { eq: conferenceId },
+					conference: { id: { eq: conferenceId } },
 					plansOwnAttendenceAtConference: { eq: true }
 				}
 			},
@@ -110,7 +110,7 @@
 				// Delegations (nation assigned)
 				...nationDelegations.flatMap((delegation) => {
 					const nationName = getFullTranslatedCountryNameFromISO3Code(
-						delegation.assignedNation?.alpha3Code ?? ''
+						delegation.assignedRole?.nation?.alpha3Code ?? ''
 					);
 					return delegation.members.map((member) =>
 						row(member.user, {
@@ -126,7 +126,7 @@
 					delegation.members.map((member) =>
 						row(member.user, {
 							roleType: 'NSA',
-							roleName: delegation.assignedNonStateActor?.name ?? '',
+							roleName: delegation.assignedRole?.name ?? '',
 							supervisors: formatSupervisorNames(member.supervisors)
 						})
 					)

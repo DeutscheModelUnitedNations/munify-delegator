@@ -23,9 +23,10 @@ const participantUser = {
  * the table's columns show and export. Everything else about a person is fetched by the user card when a row is opened.
  */
 export async function fetchConferenceParticipants(conferenceId: string, userIds: string[]) {
-	const inConference = {
-		where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } }
-	};
+	const ofPeople = { conferenceId: { eq: conferenceId }, userId: { in: userIds } };
+	const inConference = { where: ofPeople };
+	// registrations reach the conference and the person through their participant row
+	const throughParticipant = { where: { participant: ofPeople } };
 
 	const [
 		conference,
@@ -42,41 +43,42 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 			endConference: true
 		}),
 		client.liveQuery.delegationMembers({
-			__args: inConference,
+			__args: throughParticipant,
 			isHeadDelegate: true,
 			assignedCommittee: { name: true },
 			delegation: {
 				school: true,
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+				assignedRole: {
+					kind: true,
+					name: true,
+					fontAwesomeIcon: true,
+					nation: { alpha2Code: true, alpha3Code: true }
+				}
 			},
 			user: participantUser
 		}),
 		client.liveQuery.conferenceSupervisors({
-			__args: inConference,
+			__args: throughParticipant,
 			plansOwnAttendenceAtConference: true,
 			supervisedDelegationMembers: {
-				delegation: {
-					assignedNation: { alpha3Code: true },
-					assignedNonStateActor: { id: true }
-				}
+				delegation: { assignedRoleId: true }
 			},
 			supervisedSingleParticipants: { assignedRole: { id: true } },
 			user: participantUser
 		}),
 		client.liveQuery.singleParticipants({
-			__args: inConference,
+			__args: throughParticipant,
 			applied: true,
 			school: true,
 			assignedRole: { name: true, fontAwesomeIcon: true },
 			user: participantUser
 		}),
 		client.liveQuery.teamMembers({ __args: inConference, role: true, user: participantUser }),
-		client.liveQuery.conferenceParticipantStatuses({
+		client.liveQuery.conferenceParticipants({
 			__args: {
 				// Only the statuses of the people on this page, who are registered here and are the
 				// rows the table joins them onto.
-				where: { conferenceId: { eq: conferenceId }, userId: { in: userIds } }
+				where: ofPeople
 			},
 			user: { id: true },
 			paymentStatus: true,

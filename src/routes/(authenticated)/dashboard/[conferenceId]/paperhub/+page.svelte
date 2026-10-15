@@ -56,7 +56,9 @@
 		{ view: 'global', available: isParticipant, icon: 'fa-globe', label: m.conferencePapers }
 	] satisfies { view: PaperHubView; available: boolean; icon: string; label: () => string }[]);
 
-	let isNSA = $derived(!!participation?.delegationMember?.delegation?.assignedNonStateActor);
+	let isNSA = $derived(
+		participation?.delegationMember?.delegation?.assignedRole?.kind === 'NON_STATE_ACTOR'
+	);
 </script>
 
 <div class="flex flex-col gap-4 w-full p-6">

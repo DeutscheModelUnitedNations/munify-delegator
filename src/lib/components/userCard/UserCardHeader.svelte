@@ -94,7 +94,7 @@
 	const openBadgeGenerator = async () => {
 		try {
 			// Only the badge needs it, so it is read when a badge is asked for.
-			const [status] = await client.query.conferenceParticipantStatuses({
+			const [status] = await client.query.conferenceParticipants({
 				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 				id: true,
 				mediaConsentStatus: true

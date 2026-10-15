@@ -4,7 +4,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageProps } from './$types';
-	import { useSeatPlanningParams } from './filters';
+	import { provideSeatPlanningParams } from './filters.svelte';
 	import HintsSidebar from './HintsSidebar.svelte';
 	import NonStateActorTable from './NonStateActorTable.svelte';
 	import SeatMatrix from './SeatMatrix.svelte';
@@ -13,7 +13,10 @@
 
 	let { params: routeParams }: PageProps = $props();
 
-	const [conference, committees, nonStateActors, assignments] = $derived(
+	// before the first `await`: the matrix, its filters and the sidebar read it from the context
+	const params = provideSeatPlanningParams();
+
+	const [conference, committees, nonStateActorRoles, assignments] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
 				__args: { id: routeParams.conferenceId },
@@ -30,11 +33,14 @@
 				numOfSeatsPerDelegation: true,
 				regionalBaseline: true,
 				regionalBaselineTargets: true,
-				nations: { alpha2Code: true, alpha3Code: true }
+				roles: { nation: { alpha2Code: true, alpha3Code: true } }
 			}),
-			client.liveQuery.nonStateActors({
+			client.liveQuery.conferenceRoles({
 				__args: {
-					where: { conferenceId: { eq: routeParams.conferenceId } },
+					where: {
+						conferenceId: { eq: routeParams.conferenceId },
+						kind: 'NON_STATE_ACTOR'
+					},
 					orderBy: { createdAt: 'asc' }
 				},
 				id: true,
@@ -47,9 +53,21 @@
 			client.liveQuery.seatPlanningAssignments({
 				__args: { conferenceId: routeParams.conferenceId },
 				committeeSeats: { committeeId: true, nationAlpha3Code: true, memberNames: true },
-				roles: { nationAlpha3Code: true, nonStateActorId: true, memberCount: true }
+				roles: { roleId: true, nationAlpha3Code: true, memberCount: true }
 			})
 		])
+	);
+
+	// A non-state actor's role always fills these columns; the shared role type cannot say so.
+	const nonStateActors = $derived(
+		nonStateActorRoles.map((role) => ({
+			id: role.id,
+			name: role.name ?? '',
+			abbreviation: role.abbreviation ?? '',
+			description: role.description ?? '',
+			fontAwesomeIcon: role.fontAwesomeIcon ?? null,
+			seatAmount: role.seatAmount ?? 0
+		}))
 	);
 
 	const planner = createSeatPlanner(() => ({ committees, nonStateActors, assignments }));
@@ -58,7 +76,6 @@
 	// the limits live in the browser storage, which the server cannot read
 	$effect(() => sizeLimits.load());
 
-	const params = useSeatPlanningParams();
 </script>
 
 <div class="flex w-full flex-col gap-4 py-4">

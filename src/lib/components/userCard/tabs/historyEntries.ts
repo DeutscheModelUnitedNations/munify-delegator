@@ -1,6 +1,7 @@
 import { m } from '$lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { translateTeamRole } from '$lib/utils/enumTranslations';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 export interface HistoryEntry {
 	conferenceId: string;
@@ -24,8 +25,12 @@ interface ConferenceSummary {
 }
 
 interface HistoryDelegation {
-	assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-	assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
+	assignedRole: {
+		kind: ConferenceRoleKind;
+		name: string | null;
+		fontAwesomeIcon: string | null;
+		nation: { alpha2Code: string; alpha3Code: string } | null;
+	} | null;
 }
 
 /** The fields every entry takes from the conference it belongs to. */
@@ -40,20 +45,17 @@ function conferenceFields(conference: ConferenceSummary) {
 
 /** A delegation's flag: its nation's, or its NSA's icon (a pointing hand when it has none). */
 export function delegationFlag(delegation: HistoryDelegation | null): HistoryEntry['flag'] {
-	const { assignedNation, assignedNonStateActor } = delegation ?? {};
-	if (assignedNation) return { type: 'nation', alpha2Code: assignedNation.alpha2Code };
-	if (!assignedNonStateActor) return undefined;
-	return {
-		type: 'nsa',
-		fontAwesomeIcon: assignedNonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'
-	};
+	const { nation, nonStateActor } = splitRole(delegation?.assignedRole);
+	if (nation) return { type: 'nation', alpha2Code: nation.alpha2Code };
+	if (!nonStateActor) return undefined;
+	return { type: 'nsa', fontAwesomeIcon: nonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up' };
 }
 
 /** What a delegation was assigned: the nation's translated name, or the NSA's name. */
 export function delegationAssignmentName(delegation: HistoryDelegation | null) {
-	const alpha3Code = delegation?.assignedNation?.alpha3Code;
-	if (alpha3Code) return getFullTranslatedCountryNameFromISO3Code(alpha3Code);
-	return delegation?.assignedNonStateActor?.name;
+	const { nation, nonStateActor } = splitRole(delegation?.assignedRole);
+	if (nation) return getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code);
+	return nonStateActor?.name ?? undefined;
 }
 
 export function delegationMemberEntry(dm: {
@@ -76,7 +78,7 @@ export function delegationMemberEntry(dm: {
 
 export function singleParticipantEntry(sp: {
 	conference: ConferenceSummary;
-	assignedRole: { name: string; fontAwesomeIcon: string | null } | null;
+	assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null;
 }): HistoryEntry {
 	const icon = sp.assignedRole?.fontAwesomeIcon;
 	return {
@@ -85,7 +87,7 @@ export function singleParticipantEntry(sp: {
 		roleLabel: m.singleParticipant(),
 		icon: 'fa-user',
 		flag: icon ? { type: 'nsa', fontAwesomeIcon: icon } : undefined,
-		assignmentName: sp.assignedRole?.name
+		assignmentName: sp.assignedRole?.name ?? undefined
 	};
 }
 

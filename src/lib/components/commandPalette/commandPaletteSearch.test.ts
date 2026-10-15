@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	committees: vi.fn(),
 	committeeAgendaItems: vi.fn(),
 	paymentTransactions: vi.fn(),
-	conferenceParticipantStatuses: vi.fn()
+	conferenceParticipants: vi.fn()
 }));
 
 vi.mock('$lib/api/rumbleClient/client', () => ({ client: { query: mocks } }));
@@ -17,6 +17,8 @@ import { searchConference } from './commandPaletteSearch';
 
 const conferenceId = 'conf-1';
 const inConference = { conferenceId: { eq: conferenceId } };
+/** Registrations reach their conference through the participant row. */
+const registeredIn = { conference: { id: { eq: conferenceId } } };
 const noRoles = {
 	teamMember: [],
 	conferenceSupervisor: [],
@@ -79,9 +81,9 @@ describe('searchConference', () => {
 
 			const { OR } = argsOf(mocks.users, 0).where;
 			expect(OR).toEqual([
-				{ delegationMemberships: inConference },
-				{ singleParticipant: inConference },
-				{ conferenceSupervisor: inConference },
+				{ delegationMemberships: registeredIn },
+				{ singleParticipant: registeredIn },
+				{ conferenceSupervisor: registeredIn },
 				{ teamMember: inConference },
 				{ waitingListEntry: inConference }
 			]);
@@ -103,12 +105,12 @@ describe('searchConference', () => {
 				...noRoles,
 				singleParticipant: [{}]
 			};
-			mocks.conferenceParticipantStatuses.mockResolvedValue([{ user: owner }]);
+			mocks.conferenceParticipants.mockResolvedValue([{ user: owner }]);
 			mocks.users.mockResolvedValueOnce([owner]);
 
 			const { users } = await searchConference(conferenceId, 'CARD-0007');
 
-			expect(argsOf(mocks.conferenceParticipantStatuses).where).toEqual({
+			expect(argsOf(mocks.conferenceParticipants).where).toEqual({
 				...inConference,
 				accessCardId: { ilike: '%CARD-0007%' }
 			});
@@ -147,7 +149,7 @@ describe('searchConference', () => {
 
 			const { where } = argsOf(mocks.delegations, 1);
 			expect(where.conferenceId).toEqual(inConference.conferenceId);
-			expect(where.OR[0].assignedNationAlpha3Code.in).toContain('FRA');
+			expect(where.OR[0].assignedRole.nationAlpha3Code.in).toContain('FRA');
 		});
 
 		test('non-state actors are matched by name or abbreviation', async () => {
@@ -157,7 +159,7 @@ describe('searchConference', () => {
 			// No nation resembles the term, so the nation condition is left out entirely
 			expect(where.OR).toEqual([
 				{
-					assignedNonStateActor: {
+					assignedRole: {
 						OR: [{ name: { ilike: '%zzzzqqq%' } }, { abbreviation: { ilike: '%zzzzqqq%' } }]
 					}
 				}
@@ -168,7 +170,7 @@ describe('searchConference', () => {
 			await searchConference(conferenceId, 'press');
 
 			expect(argsOf(mocks.singleParticipants).where).toEqual({
-				...inConference,
+				...registeredIn,
 				assignedRole: { name: { ilike: '%press%' } }
 			});
 		});
@@ -178,8 +180,7 @@ describe('searchConference', () => {
 				{
 					id: 'd1',
 					school: 'Gym',
-					assignedNationAlpha3Code: 'FRA',
-					assignedNonStateActor: null,
+					assignedRole: { nationAlpha3Code: 'FRA', name: null },
 					members: [
 						{ isHeadDelegate: false, user: { id: 'u1' } },
 						{ isHeadDelegate: true, user: { id: 'u2' } }
@@ -200,10 +201,10 @@ describe('searchConference', () => {
 		});
 
 		test('a delegation seat without a nation is named after its non-state actor, or its id', async () => {
-			const base = { school: null, assignedNationAlpha3Code: null, members: [] };
+			const base = { school: null, members: [] };
 			answerDelegations('seats', [
-				{ ...base, id: 'd1', assignedNonStateActor: { name: 'Red Cross' } },
-				{ ...base, id: 'd2', assignedNonStateActor: null }
+				{ ...base, id: 'd1', assignedRole: { nationAlpha3Code: null, name: 'Red Cross' } },
+				{ ...base, id: 'd2', assignedRole: null }
 			]);
 
 			const { seats } = await searchConference(conferenceId, 'cross');
@@ -272,8 +273,7 @@ describe('searchConference', () => {
 				{
 					id: 'd1',
 					school: 'Gym',
-					assignedNationAlpha3Code: null,
-					assignedNonStateActor: null,
+					assignedRole: null,
 					members: [
 						{ isHeadDelegate: true, user: { id: 'u1' } },
 						{ isHeadDelegate: false, user: { id: 'u2' } }

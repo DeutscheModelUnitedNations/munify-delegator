@@ -82,13 +82,7 @@ const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
 	fields: (t) => ({ memberIds: t.idList({ required: true }) })
 });
 
-const targetFrom = (args: {
-	nationAlpha3Code?: string | null;
-	nonStateActorId?: string | null;
-}): Target => ({
-	nationAlpha3Code: args.nationAlpha3Code || null,
-	nonStateActorId: args.nonStateActorId || null
-});
+const targetFrom = (args: { roleId?: string | null }): Target => ({ roleId: args.roleId || null });
 
 const REVIEW_PROBLEMS = {
 	application: () => m.assignmentReviewNameOneApplication(),
@@ -159,13 +153,12 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/** Plans a nation, a non-state actor or (with neither) no role for a whole delegation. */
+	/** Plans a nation or non-state actor, or (without a role) none, for a whole delegation. */
 	assignDelegation: t.field({
 		type: 'Boolean',
 		args: {
 			delegationId: t.arg.id({ required: true }),
-			nationAlpha3Code: t.arg.string({ required: false }),
-			nonStateActorId: t.arg.string({ required: false })
+			roleId: t.arg.id({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation(ctx, args.delegationId);
@@ -182,8 +175,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: {
 			unitId: t.arg.id({ required: true }),
-			nationAlpha3Code: t.arg.string({ required: false }),
-			nonStateActorId: t.arg.string({ required: false })
+			roleId: t.arg.id({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
 			const unit = await assertCanAssignUnit(ctx, args.unitId);

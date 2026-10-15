@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
 import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
+import { tidyRoleApplicationsForRoles } from '$api/services/registration/tidyRoleApplications';
 import {
 	assertNonStateActorDeletable,
 	assertSeatsPerDelegationAllowed
@@ -15,7 +16,7 @@ async function withUniqueNameCheck<T>(operation: Promise<T>) {
 	try {
 		return await operation;
 	} catch (error) {
-		if (isUniqueViolationOn(error, 'non_state_actor_conference_id')) {
+		if (isUniqueViolationOn(error, 'conference_role_conference_id')) {
 			throw apiError('CONFLICT', m.nonStateActorNotUnique());
 		}
 		throw error;
@@ -35,29 +36,41 @@ export async function createNonStateActor(data: {
 
 	const created = await withUniqueNameCheck(
 		db
-			.insert(schema.nonStateActor)
+			.insert(schema.conferenceRole)
 			.values({
 				conferenceId: data.conferenceId,
+				kind: 'NON_STATE_ACTOR',
 				name: data.name,
 				abbreviation: data.abbreviation,
 				description: data.description,
 				fontAwesomeIcon: data.fontAwesomeIcon || null,
 				seatAmount: data.seatAmount
 			})
-			.returning({ id: schema.nonStateActor.id })
+			.returning({ id: schema.conferenceRole.id })
 			.then(assertFirstEntryExists)
 	);
 	return created.id;
 }
 
-/** Writes the update data of `nonStateActorUpdateData` to a non-state actor. */
+/**
+ * Writes the update data of `nonStateActorUpdateData` to a non-state actor. Lowering the seats is
+ * allowed, but the applications that no longer fit are dropped in the same transaction. Returns
+ * whether that happened.
+ */
 export async function updateNonStateActor(
-	id: string,
-	data: Partial<typeof schema.nonStateActor.$inferInsert>
+	before: { id: string; conferenceId: string; seatAmount: number | null },
+	data: Partial<typeof schema.conferenceRole.$inferInsert>
 ) {
-	await withUniqueNameCheck(
-		db.update(schema.nonStateActor).set(data).where(eq(schema.nonStateActor.id, id))
-	);
+	const seatsBefore = before.seatAmount ?? 0;
+	const shrunk = (data.seatAmount ?? seatsBefore) < seatsBefore;
+
+	await db.transaction(async (tx) => {
+		await withUniqueNameCheck(
+			tx.update(schema.conferenceRole).set(data).where(eq(schema.conferenceRole.id, before.id))
+		);
+		if (shrunk) await tidyRoleApplicationsForRoles(before.conferenceId, [before.id], tx);
+	});
+	return { applicationsTidied: shrunk };
 }
 
 /**
@@ -66,8 +79,8 @@ export async function updateNonStateActor(
  */
 export async function deleteNonStateActor(id: string) {
 	await db.transaction(async (tx) => {
-		const existing = await tx.query.nonStateActor.findFirst({
-			where: { id },
+		const existing = await tx.query.conferenceRole.findFirst({
+			where: { id, kind: 'NON_STATE_ACTOR' },
 			columns: { id: true },
 			with: { assignedDelegations: { columns: { id: true } } }
 		});
@@ -80,12 +93,12 @@ export async function deleteNonStateActor(id: string) {
 		// applications for it go with it, closing the gaps they leave in the rankings
 		const applications = await tx
 			.delete(schema.roleApplication)
-			.where(eq(schema.roleApplication.nonStateActorId, existing.id))
+			.where(eq(schema.roleApplication.roleId, existing.id))
 			.returning({ delegationId: schema.roleApplication.delegationId });
 		for (const delegationId of new Set(applications.map((a) => a.delegationId))) {
 			await normalizeRoleApplicationRanks(delegationId, tx);
 		}
 
-		await tx.delete(schema.nonStateActor).where(eq(schema.nonStateActor.id, existing.id));
+		await tx.delete(schema.conferenceRole).where(eq(schema.conferenceRole.id, existing.id));
 	});
 }

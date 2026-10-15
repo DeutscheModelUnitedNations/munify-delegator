@@ -132,7 +132,7 @@ describe('seatNamesOf', () => {
 			seatNamesOf({
 				delegationMember: {
 					assignedCommittee: { name: 'Security Council', abbreviation: 'SC' },
-					delegation: { assignedNonStateActor: { name: 'Red Cross', abbreviation: null } }
+					delegation: { assignedRole: { name: 'Red Cross', abbreviation: null } }
 				},
 				singleParticipant: { assignedRole: { name: 'Press' } }
 			})

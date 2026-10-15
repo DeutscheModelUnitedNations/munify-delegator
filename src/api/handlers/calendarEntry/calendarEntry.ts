@@ -1,9 +1,8 @@
 import { db, schema } from '$api/db/db';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
-import { eq } from 'drizzle-orm';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import { nullToUndefined } from '$api/services/args';
-import { setTracks } from './calendarEntryService';
+import { createCalendarEntry, updateCalendarEntry } from './calendarEntryService';
 import {
 	assertCanCreateCalendarEntry,
 	assertCanUpdateCalendarEntry,
@@ -39,9 +38,8 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCalendarEntry(ctx, args);
 
-			const created = await db
-				.insert(schema.calendarEntry)
-				.values({
+			const created = await createCalendarEntry(
+				{
 					calendarDayId: args.calendarDayId,
 					name: args.name,
 					startTime: args.startTime,
@@ -51,10 +49,9 @@ schemaBuilder.mutationFields((t) => ({
 					color: nullToUndefined(args.color),
 					room: nullToUndefined(args.room),
 					placeId: nullToUndefined(args.placeId)
-				})
-				.returning()
-				.then(assertFirstEntryExists);
-			if (args.calendarTrackIds?.length) await setTracks(created.id, args.calendarTrackIds);
+				},
+				args.calendarTrackIds
+			);
 
 			calendarEntryPubsub.created();
 
@@ -87,11 +84,11 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateCalendarEntry(ctx, args);
 
-			await db
-				.update(schema.calendarEntry)
+			await updateCalendarEntry(
+				args.id,
 				// An omitted argument arrives as `undefined` and leaves the column alone; an
 				// explicit `null` clears it. Only the non-nullable columns coerce null away.
-				.set({
+				{
 					name: nullToUndefined(args.name),
 					startTime: nullToUndefined(args.startTime),
 					endTime: nullToUndefined(args.endTime),
@@ -101,10 +98,9 @@ schemaBuilder.mutationFields((t) => ({
 					fontAwesomeIcon: args.fontAwesomeIcon,
 					room: args.room,
 					placeId: args.placeId
-				})
-				.where(eq(schema.calendarEntry.id, args.id));
-
-			if (args.calendarTrackIds) await setTracks(args.id, args.calendarTrackIds);
+				},
+				args.calendarTrackIds
+			);
 
 			calendarEntryPubsub.updated(args.id);
 

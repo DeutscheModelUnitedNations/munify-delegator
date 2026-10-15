@@ -1,5 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 
 export type PaperSortKey =
 	'country' | 'type' | 'status' | 'createdAt' | 'updatedAt' | 'firstSubmittedAt';
@@ -17,8 +18,11 @@ export interface SortablePaper {
 	updatedAt: Date | null;
 	firstSubmittedAt: Date | null;
 	delegation: {
-		assignedNation: { alpha3Code: string } | null;
-		assignedNonStateActor: { name: string } | null;
+		assignedRole: {
+			kind: ConferenceRoleKind;
+			name: string | null;
+			nation: { alpha3Code: string } | null;
+		} | null;
 	};
 }
 
@@ -27,8 +31,10 @@ const timeOf = (date: Date | null) => (date ? new Date(date).getTime() : 0);
 
 /** The value each column sorts by: the nation's code, else the non-state actor's name. */
 const SORT_VALUES: Record<PaperSortKey, (paper: SortablePaper) => string | number> = {
-	country: ({ delegation }) =>
-		delegation.assignedNation?.alpha3Code || delegation.assignedNonStateActor?.name || '',
+	country: ({ delegation }) => {
+		const { nation, nonStateActor } = splitRole(delegation.assignedRole);
+		return nation?.alpha3Code || nonStateActor?.name || '';
+	},
 	type: (paper) => paper.type,
 	status: (paper) => paper.status,
 	createdAt: (paper) => timeOf(paper.createdAt),

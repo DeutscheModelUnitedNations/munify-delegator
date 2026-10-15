@@ -46,7 +46,8 @@ function assertSavableStatus(requested: PaperStatus | null | undefined, current?
 /** Writes a new paper together with its first version. */
 export async function createPaper(args: {
 	conferenceId: string;
-	authorId: string;
+	/** The author's part in the conference, which `assertCanCreatePaper` found. */
+	authorParticipantId: string;
 	delegationId: string;
 	agendaItemId?: string | null;
 	type: (typeof schema.paper.$inferSelect)['type'];
@@ -71,8 +72,7 @@ export async function createPaper(args: {
 		const paper = await tx
 			.insert(schema.paper)
 			.values({
-				conferenceId: args.conferenceId,
-				authorId: args.authorId,
+				authorParticipantId: args.authorParticipantId,
 				delegationId: args.delegationId,
 				agendaItemId: args.agendaItemId ?? undefined,
 				type: args.type,
@@ -191,7 +191,7 @@ export function groupPapersByCommittee(
  */
 async function fetchConferenceReviews(conferenceId: string) {
 	return db.query.paperReview.findMany({
-		where: { paperVersion: { paper: { conferenceId } } },
+		where: { paperVersion: { paper: { delegation: { conferenceId } } } },
 		columns: { id: true, reviewerId: true, createdAt: true },
 		with: { paperVersion: { columns: { paperId: true } } },
 		orderBy: { createdAt: 'asc', id: 'asc' }
@@ -283,7 +283,10 @@ export async function findNextPaperToReview(agendaItemId: string) {
 /** The delegations of the conference with a member the user supervises. */
 export async function supervisedDelegationIds(conferenceId: string, supervisorId: string) {
 	const supervised = await db.query.delegationMember.findMany({
-		where: { conferenceId, supervisors: { userId: supervisorId } },
+		where: {
+			participant: { conferenceId },
+			supervisors: { participant: { userId: supervisorId } }
+		},
 		columns: { delegationId: true }
 	});
 	return [...new Set(supervised.map((member) => member.delegationId))];

@@ -22,14 +22,23 @@ import {
 const RESULT_LIMIT = 10;
 const MIN_SEARCH_LENGTH = 2;
 
+/**
+ * Registrations (delegation members, single participants, supervisors) and payments reach their
+ * conference through the participant row, so they filter by the relation instead of a column.
+ */
+export function registrationIn(conferenceId: string) {
+	return { conference: { id: { eq: conferenceId } } };
+}
+
 /** Membership in the conference through any of the four possible roles. */
 function participatesIn(conferenceId: string) {
 	const inConference = { conferenceId: { eq: conferenceId } };
+	const registeredIn = registrationIn(conferenceId);
 	return {
 		OR: [
-			{ delegationMemberships: inConference },
-			{ singleParticipant: inConference },
-			{ conferenceSupervisor: inConference },
+			{ delegationMemberships: registeredIn },
+			{ singleParticipant: registeredIn },
+			{ conferenceSupervisor: registeredIn },
 			{ teamMember: inConference },
 			{ waitingListEntry: inConference }
 		]
@@ -53,21 +62,22 @@ function matchingNationCodes(term: string) {
  */
 function delegationSeatTitle(delegation: {
 	id: string;
-	assignedNationAlpha3Code: string | null;
-	assignedNonStateActor: { name: string } | null;
+	assignedRole: { nationAlpha3Code: string | null; name: string | null } | null;
 }) {
-	if (delegation.assignedNationAlpha3Code) {
-		return getFullTranslatedCountryNameFromISO3Code(delegation.assignedNationAlpha3Code);
-	}
-	return delegation.assignedNonStateActor?.name ?? delegation.id;
+	const role = delegation.assignedRole;
+	if (role?.nationAlpha3Code)
+		return getFullTranslatedCountryNameFromISO3Code(role.nationAlpha3Code);
+	return role?.name ?? delegation.id;
 }
 
 async function searchSeats(conferenceId: string, term: string): Promise<SearchSeat[]> {
 	const nameLike = { ilike: `%${term}%` };
 	const nationCodes = matchingNationCodes(term);
 	const heldSeat = [
-		...(nationCodes.length > 0 ? [{ assignedNationAlpha3Code: { in: nationCodes } }] : []),
-		{ assignedNonStateActor: { OR: [{ name: nameLike }, { abbreviation: nameLike }] } }
+		...(nationCodes.length > 0
+			? [{ assignedRole: { nationAlpha3Code: { in: nationCodes } } }]
+			: []),
+		{ assignedRole: { OR: [{ name: nameLike }, { abbreviation: nameLike }] } }
 	];
 
 	const [delegations, singles] = await Promise.all([
@@ -78,13 +88,12 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 			},
 			id: true,
 			school: true,
-			assignedNationAlpha3Code: true,
-			assignedNonStateActor: { name: true },
+			assignedRole: { nationAlpha3Code: true, name: true },
 			members: { isHeadDelegate: true, user: { id: true } }
 		}),
 		client.query.singleParticipants({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, assignedRole: { name: nameLike } },
+				where: { ...registrationIn(conferenceId), assignedRole: { name: nameLike } },
 				limit: RESULT_LIMIT
 			},
 			id: true,
@@ -155,10 +164,11 @@ interface SearchResults {
 /** The parts a person may hold in one conference, which decide whether they take part in it. */
 export function participation(conferenceId: string) {
 	const inConference = { conferenceId: { eq: conferenceId } };
+	const registeredIn = registrationIn(conferenceId);
 	return {
-		delegationMemberships: { __args: { where: inConference }, id: true },
-		singleParticipant: { __args: { where: inConference }, id: true },
-		conferenceSupervisor: { __args: { where: inConference }, id: true },
+		delegationMemberships: { __args: { where: registeredIn }, id: true },
+		singleParticipant: { __args: { where: registeredIn }, id: true },
+		conferenceSupervisor: { __args: { where: registeredIn }, id: true },
 		teamMember: { __args: { where: inConference }, id: true },
 		waitingListEntry: { __args: { where: inConference }, id: true }
 	} as const;
@@ -196,7 +206,7 @@ export async function searchConference(
 			}),
 			// The access card of the external ID card, so scanning or typing it finds its owner. Only
 			// rows the caller may read come back.
-			client.query.conferenceParticipantStatuses({
+			client.query.conferenceParticipants({
 				__args: {
 					where: { ...inConference, accessCardId: { ilike: `%${searchTerm.trim()}%` } },
 					limit: RESULT_LIMIT
@@ -229,7 +239,11 @@ export async function searchConference(
 				members: { isHeadDelegate: true, user: { id: true } }
 			}),
 			client.query.paymentTransactions({
-				__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
+				__args: {
+					search: searchTerm.trim(),
+					where: registrationIn(conferenceId),
+					limit: RESULT_LIMIT
+				},
 				id: true,
 				amount: true,
 				recievedAt: true,

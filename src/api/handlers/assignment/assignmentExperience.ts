@@ -17,34 +17,43 @@ export async function loadExperiencedIds(conferenceId: string) {
 
 	const [members, singles, seatedMembers, seatedSingles] = await Promise.all([
 		db.query.delegationMember.findMany({
-			where: { conferenceId, delegation: { applied: true } },
-			columns: { id: true, userId: true }
+			where: { participant: { conferenceId }, delegation: { applied: true } },
+			columns: { id: true },
+			with: { participant: { columns: { userId: true } } }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { conferenceId, applied: true },
-			columns: { id: true, userId: true }
+			where: { participant: { conferenceId }, applied: true },
+			columns: { id: true },
+			with: { participant: { columns: { userId: true } } }
 		}),
 		db.query.delegationMember.findMany({
 			where: {
-				conference: earlier,
+				participant: { conference: earlier },
 				delegation: {
 					applied: true,
-					OR: [
-						{ assignedNationAlpha3Code: { isNotNull: true } },
-						{ assignedNonStateActorId: { isNotNull: true } }
-					]
+					assignedRoleId: { isNotNull: true }
 				}
 			},
-			columns: { userId: true }
+			columns: { id: true },
+			with: { participant: { columns: { userId: true } } }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { conference: earlier, applied: true, assignedRoleId: { isNotNull: true } },
-			columns: { userId: true }
+			where: {
+				participant: { conference: earlier },
+				applied: true,
+				assignedRoleId: { isNotNull: true }
+			},
+			columns: { id: true },
+			with: { participant: { columns: { userId: true } } }
 		})
 	]);
 
-	const experienced = new Set([...seatedMembers, ...seatedSingles].map(({ userId }) => userId));
+	const experienced = new Set(
+		[...seatedMembers, ...seatedSingles].map(({ participant }) => participant.userId)
+	);
 	return new Set(
-		[...members, ...singles].filter(({ userId }) => experienced.has(userId)).map(({ id }) => id)
+		[...members, ...singles]
+			.filter(({ participant }) => experienced.has(participant.userId))
+			.map(({ id }) => id)
 	);
 }

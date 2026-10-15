@@ -65,24 +65,30 @@ describe('buildChaseImport', () => {
 				id: 'dm1',
 				assignedCommittee: { id: 'ga' },
 				user: person('A', 'One'),
-				delegation: { assignedNation: { alpha3Code: 'DEU' }, assignedNonStateActor: null }
+				delegation: {
+					assignedRole: { id: 'deu', kind: 'NATION', nation: { alpha3Code: 'DEU' } }
+				}
 			},
 			{
 				id: 'dm2',
 				assignedCommittee: { id: 'ga' },
 				user: person('B', 'Two'),
-				delegation: { assignedNation: { alpha3Code: 'DEU' }, assignedNonStateActor: null }
+				delegation: {
+					assignedRole: { id: 'deu', kind: 'NATION', nation: { alpha3Code: 'DEU' } }
+				}
 			},
 			{
 				id: 'dm3',
 				assignedCommittee: null,
 				user: person('C', 'Three'),
-				delegation: { assignedNation: { alpha3Code: 'DEU' }, assignedNonStateActor: null }
+				delegation: {
+					assignedRole: { id: 'deu', kind: 'NATION', nation: { alpha3Code: 'DEU' } }
+				}
 			},
 			{
 				id: 'dm4',
 				user: person('D', 'Four'),
-				delegation: { assignedNation: null, assignedNonStateActor: { id: 'nsa1' } }
+				delegation: { assignedRole: { id: 'nsa1', kind: 'NON_STATE_ACTOR', nation: null } }
 			},
 			{ id: 'dm5', user: person('E', 'Five'), delegation: null }
 		],

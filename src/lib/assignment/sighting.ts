@@ -130,15 +130,18 @@ export interface SightedDelegation extends ApplicationTexts {
 	members: readonly { isHeadDelegate: boolean; user: Person; supervisors: readonly Supervisor[] }[];
 	appliedForRoles: readonly {
 		rank: number;
-		nation?: Nullable<{ alpha3Code: string; alpha2Code: string }>;
-		nonStateActor?: Nullable<{ name: string; fontAwesomeIcon?: Nullable<string> }>;
+		role: {
+			name?: Nullable<string>;
+			fontAwesomeIcon?: Nullable<string>;
+			nation?: Nullable<{ alpha3Code: string; alpha2Code: string }>;
+		};
 	}[];
 }
 
 export interface SightedSingleParticipant extends ApplicationTexts {
 	user: Person;
 	supervisors: readonly Supervisor[];
-	appliedForRoles: readonly { name: string }[];
+	appliedForRoles: readonly { name?: Nullable<string> }[];
 }
 
 const texts = (application: ApplicationTexts) => ({
@@ -158,12 +161,9 @@ const wishOf = (
 	wish: SightedDelegation['appliedForRoles'][number],
 	nationName: (code: string) => string
 ): Wish =>
-	wish.nation
-		? { name: nationName(wish.nation.alpha3Code), alpha2Code: wish.nation.alpha2Code }
-		: {
-				name: wish.nonStateActor?.name ?? '',
-				icon: wish.nonStateActor?.fontAwesomeIcon ?? undefined
-			};
+	wish.role.nation
+		? { name: nationName(wish.role.nation.alpha3Code), alpha2Code: wish.role.nation.alpha2Code }
+		: { name: wish.role.name ?? '', icon: wish.role.fontAwesomeIcon ?? undefined };
 
 /** A delegation's application as the sighting shows it; wishes in the order they were ranked. */
 export function delegationApplication(
@@ -189,7 +189,7 @@ export function singleApplication(single: SightedSingleParticipant) {
 		...texts(single),
 		people: [{ ...single.user, isHeadDelegate: false }],
 		supervisors: [...single.supervisors],
-		wishes: single.appliedForRoles.map((role): Wish => ({ name: role.name }))
+		wishes: single.appliedForRoles.map((role): Wish => ({ name: role.name ?? '' }))
 	};
 }
 

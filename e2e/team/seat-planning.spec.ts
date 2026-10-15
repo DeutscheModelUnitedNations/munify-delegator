@@ -32,9 +32,9 @@ async function graphql<T = unknown>(page: Page, query: string): Promise<GraphQLR
 
 async function committeeNations(page: Page, committeeId: string) {
 	const { data } = await graphql<{
-		committee: { nations: { alpha3Code: string }[] } | null;
-	}>(page, `query { committee(id: "${committeeId}") { nations { alpha3Code } } }`);
-	return (data?.committee?.nations ?? []).map((nation) => nation.alpha3Code).sort();
+		committee: { roles: { nationAlpha3Code: string | null }[] } | null;
+	}>(page, `query { committee(id: "${committeeId}") { roles { nationAlpha3Code } } }`);
+	return (data?.committee?.roles ?? []).flatMap((role) => role.nationAlpha3Code ?? []).sort();
 }
 
 test('the project management sets a seat live and can undo it', async ({ page }) => {
@@ -118,18 +118,17 @@ test('non-state actors are created, edited and deleted in the list', async ({ pa
 	await expect(rows).toHaveCount(1);
 });
 
-test('a content lead only reaches the seat planning', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_SEAT_CONTENT_LEAD_ID), {
-		startUrl: `${MANAGEMENT}/stats`
-	});
+test('a content lead reaches the seat planning, not the care pages', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_CONTENT_LEAD_ID), { startUrl: SEAT_PLANNING });
+	expect(new URL(page.url()).pathname).toBe(SEAT_PLANNING);
 
-	await page.waitForURL((url) => url.pathname === SEAT_PLANNING, { timeout: 15_000 });
-	await page.goto(`${MANAGEMENT}/participants`);
-	await page.waitForURL((url) => url.pathname === SEAT_PLANNING, { timeout: 15_000 });
-
-	// the only management entry is the seat planning
-	await expect(page.getByRole('listitem', { name: 'Sitzplanung', exact: true })).toBeVisible();
-	await expect(page.locator(`a[href="${MANAGEMENT}/stats"]`)).toHaveCount(0);
+	// the team guard answers a page the role may not open with a 403, it does not redirect
+	const participants = await page.goto(`${MANAGEMENT}/participants`);
+	expect(participants?.status()).toBe(403);
+	const seatPlanning = await page.goto(SEAT_PLANNING);
+	expect(seatPlanning?.status()).toBeLessThan(400);
+	await expect(page.locator(`a[href="${SEAT_PLANNING}"]`).first()).toBeVisible();
+	await expect(page.locator(`a[href="${MANAGEMENT}/participants"]`)).toHaveCount(0);
 
 	// may plan seats, but not change the committee set-up
 	const seat = await graphql(
@@ -145,9 +144,10 @@ test('a content lead only reaches the seat planning', async ({ page }) => {
 });
 
 test('participant care cannot open the seat planning', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_SEAT_PARTICIPANT_CARE_ID), { startUrl: SEAT_PLANNING });
+	await loginAs(page, fixedTestUser(E2E_SEAT_PARTICIPANT_CARE_ID));
 
-	await page.waitForURL((url) => url.pathname !== SEAT_PLANNING, { timeout: 15_000 });
+	const res = await page.goto(SEAT_PLANNING);
+	expect(res?.status()).toBe(403);
 	const seat = await graphql(
 		page,
 		`mutation { setCommitteeNationSeat(committeeId: "${E2E_SEAT_SR_ID}", nationAlpha3Code: "fra", enabled: true) { id } }`

@@ -52,7 +52,7 @@
 		planApply({
 			...view.live,
 			seats: seatsByKey(view.seated),
-			roleSeats: new Map(roles.customRoles.map((role) => [role.id, role.seatAmount]))
+			roleSeats: new Map(roles.customRoles.map((role) => [role.id, role.seatAmount ?? 0]))
 		})
 	);
 	const empty = $derived(planIsEmpty(preview.plan));

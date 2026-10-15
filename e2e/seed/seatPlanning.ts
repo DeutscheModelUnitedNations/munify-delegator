@@ -13,6 +13,8 @@ import { makeSeedConference } from '../../src/api/db/seed-data/conference';
 import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
+import { upsertParticipant } from './participant';
+import { seatNations, upsertNationRole } from './conferenceRole';
 import { upsertTeamMember } from './teamMember';
 
 export const E2E_SEAT_CONFERENCE_ID = 'e2e00000conference0000003';
@@ -45,6 +47,16 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 		await db.insert(schema.nation).values({ alpha3Code, alpha2Code }).onConflictDoNothing();
 	}
 
+	// nation roles are recreated with the seats below, so seats a previous run added leave nothing
+	await db
+		.delete(schema.conferenceRole)
+		.where(
+			and(
+				eq(schema.conferenceRole.conferenceId, conference.id),
+				eq(schema.conferenceRole.kind, 'NATION')
+			)
+		);
+
 	// committees and NSAs a previous run created
 	await db
 		.delete(schema.committee)
@@ -55,11 +67,12 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 			)
 		);
 	await db
-		.delete(schema.nonStateActor)
+		.delete(schema.conferenceRole)
 		.where(
 			and(
-				eq(schema.nonStateActor.conferenceId, conference.id),
-				ne(schema.nonStateActor.id, E2E_SEAT_ASSIGNED_NSA_ID)
+				eq(schema.conferenceRole.conferenceId, conference.id),
+				eq(schema.conferenceRole.kind, 'NON_STATE_ACTOR'),
+				ne(schema.conferenceRole.id, E2E_SEAT_ASSIGNED_NSA_ID)
 			)
 		);
 
@@ -89,15 +102,14 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 			.values(committee)
 			.onConflictDoUpdate({ target: schema.committee.id, set: committee });
 
-		await db.delete(schema.committeeToNation).where(eq(schema.committeeToNation.a, id));
-		await db
-			.insert(schema.committeeToNation)
-			.values(nations.map((alpha3Code) => ({ a: id, b: alpha3Code })));
+		await db.delete(schema.committeeToRole).where(eq(schema.committeeToRole.a, id));
+		await seatNations(db, committee, nations);
 	}
 
 	const nsa = {
 		id: E2E_SEAT_ASSIGNED_NSA_ID,
 		conferenceId: conference.id,
+		kind: 'NON_STATE_ACTOR' as const,
 		name: E2E_SEAT_ASSIGNED_NSA_NAME,
 		abbreviation: 'E2EN',
 		description: 'Has a delegation assigned',
@@ -105,9 +117,9 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 		seatAmount: 2
 	};
 	await db
-		.insert(schema.nonStateActor)
+		.insert(schema.conferenceRole)
 		.values(nsa)
-		.onConflictDoUpdate({ target: schema.nonStateActor.id, set: nsa });
+		.onConflictDoUpdate({ target: schema.conferenceRole.id, set: nsa });
 
 	const users = [
 		...[E2E_SEAT_PM_ID, E2E_SEAT_CONTENT_LEAD_ID, E2E_SEAT_PARTICIPANT_CARE_ID].map((id) => ({
@@ -147,12 +159,12 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 	const lockedDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
 		id: LOCKED_DELEGATION_ID,
-		assignedNationAlpha3Code: 'nld'
+		assignedRoleId: await upsertNationRole(db, conference.id, 'nld')
 	};
 	const nsaDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
 		id: NSA_DELEGATION_ID,
-		assignedNonStateActorId: E2E_SEAT_ASSIGNED_NSA_ID
+		assignedRoleId: E2E_SEAT_ASSIGNED_NSA_ID
 	};
 	for (const delegation of [lockedDelegation, nsaDelegation]) {
 		await db
@@ -163,9 +175,8 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 
 	const lockedMember = {
 		...makeSeedDelegationMember({
-			conferenceId: conference.id,
 			delegationId: lockedDelegation.id,
-			userId: E2E_SEAT_DELEGATE_ID,
+			conferenceParticipantId: await upsertParticipant(db, conference.id, E2E_SEAT_DELEGATE_ID),
 			isHeadDelegate: true,
 			assignedCommitteeId: E2E_SEAT_GV_ID
 		}),

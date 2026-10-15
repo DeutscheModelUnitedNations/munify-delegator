@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
+	import { roleSeats, splitRole } from '$lib/helpers/conferenceRole';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
@@ -21,6 +21,16 @@
 
 	let { onClose, conferenceId, delegationId }: Props = $props();
 
+	const roleFields = {
+		id: true,
+		kind: true,
+		name: true,
+		description: true,
+		seatAmount: true,
+		fontAwesomeIcon: true,
+		nation: { alpha3Code: true, alpha2Code: true }
+	} as const;
+
 	const [conference, delegation] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
@@ -30,73 +40,49 @@
 					abbreviation: true,
 					name: true,
 					numOfSeatsPerDelegation: true,
-					nations: { alpha3Code: true, alpha2Code: true }
+					roles: { id: true }
 				},
-				nonStateActors: {
-					id: true,
-					name: true,
-					seatAmount: true,
-					description: true,
-					fontAwesomeIcon: true
-				}
+				roles: roleFields
 			}),
 			client.liveQuery.delegation({
 				__args: { id: delegationId },
 				id: true,
 				members: { id: true },
-				appliedForRoles: {
-					id: true,
-					rank: true,
-					nonStateActor: {
-						id: true,
-						fontAwesomeIcon: true,
-						name: true,
-						seatAmount: true
-					},
-					nation: { alpha3Code: true, alpha2Code: true }
-				}
+				appliedForRoles: { id: true, rank: true, role: roleFields }
 			})
 		])
 	);
 
 	const appliedForRoles = $derived(delegation.appliedForRoles.toSorted((a, b) => a.rank - b.rank));
+	const appliedRoleIds = $derived(new Set(delegation.appliedForRoles.map((a) => a.role.id)));
 
-	type CommitteeNation = (typeof conference)['committees'][number]['nations'][number];
-
-	let nations = $derived.by(() => {
-		const nations = new Array<CommitteeNation>();
-		conference.committees.forEach((committee) => {
-			committee.nations.forEach((nation) => {
-				if (!nations.find((n) => n.alpha3Code === nation.alpha3Code)) nations.push(nation);
-			});
-		});
-		return nations.sort((a, b) =>
-			getFullTranslatedCountryNameFromISO3Code(a.alpha3Code).localeCompare(
-				getFullTranslatedCountryNameFromISO3Code(b.alpha3Code)
+	let nations = $derived(
+		conference.roles
+			.flatMap((role) =>
+				role.kind === 'NATION' && role.nation
+					? [{ id: role.id, kind: role.kind, seatAmount: role.seatAmount, nation: role.nation }]
+					: []
 			)
-		);
-	});
-
-	let nationPool = $derived(
-		nations
-			.filter(
-				(nation) =>
-					!delegation.appliedForRoles.find((role) => role.nation?.alpha3Code === nation.alpha3Code)
-			)
-			.filter(
-				(nation) =>
-					getNumOfSeatsPerNation(nation, conference.committees) >= (delegation.members?.length ?? 0)
+			.sort((a, b) =>
+				getFullTranslatedCountryNameFromISO3Code(a.nation.alpha3Code).localeCompare(
+					getFullTranslatedCountryNameFromISO3Code(b.nation.alpha3Code)
+				)
 			)
 	);
 
-	let nonStateActors = $derived(conference.nonStateActors || []);
+	let nationPool = $derived(
+		nations
+			.filter((nation) => !appliedRoleIds.has(nation.id))
+			.filter(
+				(nation) => roleSeats(nation, conference.committees) >= (delegation.members?.length ?? 0)
+			)
+	);
 
 	let nonStateActorPool = $derived(
-		nonStateActors
-			.filter(
-				(nsa) => !delegation.appliedForRoles.find((role) => role.nonStateActor?.id === nsa.id)
-			)
-			.filter((nsa) => nsa.seatAmount >= (delegation.members.length ?? 0))
+		conference.roles
+			.filter((role) => role.kind === 'NON_STATE_ACTOR')
+			.filter((nsa) => !appliedRoleIds.has(nsa.id))
+			.filter((nsa) => (nsa.seatAmount ?? 0) >= (delegation.members.length ?? 0))
 	);
 
 	const maxDelegationSizeReached = $derived(
@@ -115,9 +101,9 @@
 		await promise;
 	};
 
-	const applyFor = async (role: { nationId: string } | { nonStateActorId: string }) => {
+	const applyFor = async (roleId: string) => {
 		const promise = client.mutate.createRoleApplication({
-			__args: { ...role, delegationId: delegation.id },
+			__args: { roleId, delegationId: delegation.id },
 			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
@@ -127,10 +113,8 @@
 	type RoleApplication = (typeof appliedForRoles)[number];
 	type Committee = (typeof conference)['committees'][number];
 
-	const seatsOf = (role: RoleApplication) => {
-		if (role.nonStateActor) return role.nonStateActor.seatAmount;
-		return role.nation ? getNumOfSeatsPerNation(role.nation, conference.committees) : 0;
-	};
+	const seatsOf = (application: RoleApplication) =>
+		roleSeats(application.role, conference.committees);
 
 	const deleteEntry = async (id: string) => {
 		const promise = Promise.resolve(client.mutate.deleteRoleApplication({ __args: { id } }));
@@ -139,26 +123,26 @@
 	};
 </script>
 
-{#snippet roleName(role: RoleApplication)}
+{#snippet roleName(application: RoleApplication)}
+	{@const { nation, nonStateActor } = splitRole(application.role)}
 	<div class="flex items-center gap-4">
-		{#if role.nonStateActor}
-			<Flag nsa size="xs" icon={role.nonStateActor.fontAwesomeIcon ?? undefined} />
-			<span>{role.nonStateActor.name}</span>
+		{#if nonStateActor}
+			<Flag nsa size="xs" icon={nonStateActor.fontAwesomeIcon ?? undefined} />
+			<span>{nonStateActor.name}</span>
 		{:else}
-			<Flag alpha2Code={role.nation?.alpha2Code} size="xs" />
-			<span>{getFullTranslatedCountryNameFromISO3Code(role.nation?.alpha3Code ?? 'Not Found')}</span
-			>
+			<Flag alpha2Code={nation?.alpha2Code} size="xs" />
+			<span>{getFullTranslatedCountryNameFromISO3Code(nation?.alpha3Code ?? 'Not Found')}</span>
 		{/if}
 	</div>
 {/snippet}
 
 <!-- A nation's seats in a committee; non-state actors have none -->
-{#snippet committeeCell(role: RoleApplication, committee: Committee)}
-	{#if role.nonStateActor}
+{#snippet committeeCell(application: RoleApplication, committee: Committee)}
+	{#if application.role.kind === 'NON_STATE_ACTOR'}
 		<td class="text-center"><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
 	{:else}
 		<td class="text-center">
-			{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
+			{#if committee.roles.some((seated) => seated.id === application.role.id)}
 				<div class="tooltip" data-tip={committee.abbreviation}>
 					{#each Array.from({ length: committee.numOfSeatsPerDelegation }, (_, seat) => seat) as seat (seat)}
 						<i class="fa-sharp-duotone fa-solid fa-check"></i>
@@ -170,17 +154,15 @@
 {/snippet}
 
 {#snippet roleRow(role: RoleApplication, index: number)}
+	{@const nation = role.role.nation}
 	<tr>
 		<td>
 			{@render roleName(role)}
 		</td>
-		{#if role.nonStateActor}
+		{#if role.role.kind === 'NON_STATE_ACTOR'}
 			<td><i class="fa-sharp-duotone fa-solid fa-minus"></i></td>
 		{:else}
-			<td
-				class="tooltip"
-				data-tip={role.nation ? getNationRegionalGroup(role.nation.alpha3Code) : undefined}
-			>
+			<td class="tooltip" data-tip={nation ? getNationRegionalGroup(nation.alpha3Code) : undefined}>
 				<i class="fa-sharp-duotone fa-solid fa-earth"></i>
 			</td>
 		{/if}
@@ -276,11 +258,11 @@
 		{nationPool}
 		delegationSize={delegation.members.length}
 	>
-		{#snippet actionCell(nation: (typeof nations)[number])}
+		{#snippet actionCell(nation)}
 			<SquareButtonWithLoadingState
 				icon="fa-chevrons-up"
 				cssClass="bg-base-300"
-				onClick={async () => applyFor({ nationId: nation.alpha3Code })}
+				onClick={async () => applyFor(nation.id)}
 			/>
 		{/snippet}
 	</NationPool>
@@ -292,7 +274,7 @@
 			<SquareButtonWithLoadingState
 				icon="fa-chevrons-up"
 				cssClass="bg-base-300"
-				onClick={async () => applyFor({ nonStateActorId: nsa.id })}
+				onClick={async () => applyFor(nsa.id)}
 			/>
 		{/snippet}
 	</NsaPool>

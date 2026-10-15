@@ -72,26 +72,20 @@
 			client.query.delegationMembers({
 				__args: {
 					where: {
-						conferenceId: { eq: conferenceId },
-						delegation: {
-							OR: [
-								{ assignedNationAlpha3Code: { isNotNull: true } },
-								{ assignedNonStateActorId: { isNotNull: true } }
-							]
-						}
+						conference: { id: { eq: conferenceId } },
+						delegation: { assignedRoleId: { isNotNull: true } }
 					}
 				},
 				user: exportUser,
 				delegation: {
-					assignedNation: { alpha3Code: true },
-					assignedNonStateActor: { name: true }
+					assignedRole: { kind: true, name: true, nation: { alpha3Code: true } }
 				},
 				assignedCommittee: { name: true }
 			}),
 			client.query.singleParticipants({
 				__args: {
 					where: {
-						conferenceId: { eq: conferenceId },
+						conference: { id: { eq: conferenceId } },
 						assignedRoleId: { isNotNull: true }
 					}
 				},

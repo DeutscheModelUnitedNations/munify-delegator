@@ -27,22 +27,22 @@ const nationName = (alpha3: string) => `Nation ${alpha3}`;
 
 const nationMember: ExportDelegationMember = {
 	user: user('dm1'),
-	delegation: { assignedNation: { alpha3Code: 'deu' }, assignedNonStateActor: null },
+	delegation: { assignedRole: { kind: 'NATION', nation: { alpha3Code: 'deu' } } },
 	assignedCommittee: { name: 'GA' }
 };
 const nationMemberWithoutCommittee: ExportDelegationMember = {
 	user: user('dm2'),
-	delegation: { assignedNation: { alpha3Code: 'fra' }, assignedNonStateActor: null },
+	delegation: { assignedRole: { kind: 'NATION', nation: { alpha3Code: 'fra' } } },
 	assignedCommittee: null
 };
 const nsaMember: ExportDelegationMember = {
 	user: user('dm3'),
-	delegation: { assignedNation: null, assignedNonStateActor: { name: 'Greenpeace' } },
+	delegation: { assignedRole: { kind: 'NON_STATE_ACTOR', name: 'Greenpeace' } },
 	assignedCommittee: null
 };
 const unassignedMember: ExportDelegationMember = {
 	user: user('dm4'),
-	delegation: { assignedNation: null, assignedNonStateActor: null },
+	delegation: { assignedRole: null },
 	assignedCommittee: null
 };
 const single: ExportSingleParticipant = { user: user('sp1'), assignedRole: { name: 'Press' } };

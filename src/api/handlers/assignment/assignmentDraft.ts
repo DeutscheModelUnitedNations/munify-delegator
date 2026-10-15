@@ -9,61 +9,86 @@ import {
 import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
 import { sameTarget, type Target } from '$lib/assignment/state';
 import { m } from '$lib/paraglide/messages';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { and, eq, inArray } from 'drizzle-orm';
 import { apiError } from '$api/services/errors/apiError';
 
 type Reader = Transaction | typeof db;
 
+/**
+ * The ids of a conference's single participants, as a subquery: a planned single role reaches its
+ * conference only through the participant.
+ */
+function singleParticipantIdsOf(tx: Reader, conferenceId: string) {
+	return tx
+		.select({ id: schema.singleParticipant.id })
+		.from(schema.singleParticipant)
+		.innerJoin(
+			schema.conferenceParticipant,
+			eq(schema.conferenceParticipant.id, schema.singleParticipant.conferenceParticipantId)
+		)
+		.where(eq(schema.conferenceParticipant.conferenceId, conferenceId));
+}
+
 /** The registrations of a conference and the draft on top of them, as `planApply` takes them. */
 export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
-	const [delegations, singleParticipants, units, draftSingleRoles, conference, roles] =
-		await Promise.all([
-			tx.query.delegation.findMany({
-				where: { conferenceId, applied: true },
-				columns: { id: true, assignedNationAlpha3Code: true, assignedNonStateActorId: true },
-				with: {
-					members: { columns: { id: true, isHeadDelegate: true } },
-					papers: { columns: { id: true }, limit: 1 }
+	const [delegations, singleParticipants, units, draftSingleRoles, conference] = await Promise.all([
+		tx.query.delegation.findMany({
+			where: { conferenceId, applied: true },
+			columns: { id: true, assignedRoleId: true },
+			with: {
+				members: { columns: { id: true, isHeadDelegate: true } },
+				papers: { columns: { id: true }, limit: 1 }
+			}
+		}),
+		tx.query.singleParticipant.findMany({
+			where: { participant: { conferenceId }, applied: true },
+			columns: { id: true, assignedRoleId: true }
+		}),
+		tx.query.assignmentUnit.findMany({
+			where: { conferenceId },
+			with: { members: { columns: { delegationMemberId: true } } }
+		}),
+		tx.query.assignmentSingleRole.findMany({
+			where: { singleParticipant: { participant: { conferenceId } } },
+			columns: { singleParticipantId: true, roleId: true }
+		}),
+		tx.query.conference.findFirst({
+			where: { id: conferenceId },
+			columns: { id: true },
+			with: {
+				committees: {
+					columns: { numOfSeatsPerDelegation: true },
+					with: { roles: { columns: { id: true } } }
+				},
+				roles: {
+					columns: { id: true, kind: true, name: true, seatAmount: true },
+					with: { nation: { columns: { alpha3Code: true } } }
 				}
-			}),
-			tx.query.singleParticipant.findMany({
-				where: { conferenceId, applied: true },
-				columns: { id: true, assignedRoleId: true }
-			}),
-			tx.query.assignmentUnit.findMany({
-				where: { conferenceId },
-				with: { members: { columns: { delegationMemberId: true } } }
-			}),
-			tx.query.assignmentSingleRole.findMany({
-				where: { conferenceId },
-				columns: { singleParticipantId: true, roleId: true }
-			}),
-			tx.query.conference.findFirst({
-				where: { id: conferenceId },
-				columns: { id: true },
-				with: {
-					committees: {
-						columns: { abbreviation: true, numOfSeatsPerDelegation: true },
-						with: { nations: { columns: { alpha2Code: true, alpha3Code: true } } }
-					},
-					nonStateActors: { columns: { id: true, seatAmount: true } }
-				}
-			}),
-			tx.query.customConferenceRole.findMany({
-				where: { conferenceId },
-				columns: { id: true, seatAmount: true }
-			})
-		]);
+			}
+		})
+	]);
 	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
 
-	const seated = seatedRoles(conference.committees, conference.nonStateActors);
+	const roles = conference.roles;
+	const seated = seatedRoles(
+		conference.committees,
+		roles.filter((role) => role.kind === 'NON_STATE_ACTOR')
+	);
 	return {
 		roles: seated,
+		roleNames: new Map(
+			roles.map((role) => [
+				role.id,
+				role.nation
+					? getFullTranslatedCountryNameFromISO3Code(role.nation.alpha3Code)
+					: (role.name ?? '')
+			])
+		),
 		input: {
 			delegations: delegations.map((delegation) => ({
 				id: delegation.id,
-				nationAlpha3Code: delegation.assignedNationAlpha3Code,
-				nonStateActorId: delegation.assignedNonStateActorId,
+				roleId: delegation.assignedRoleId,
 				members: delegation.members,
 				hasPapers: delegation.papers.length > 0
 			})),
@@ -75,13 +100,14 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
 				id: unit.id,
 				sourceDelegationId: unit.sourceDelegationId,
 				sourceSingleParticipantId: unit.sourceSingleParticipantId,
-				nationAlpha3Code: unit.nationAlpha3Code,
-				nonStateActorId: unit.nonStateActorId,
+				roleId: unit.roleId,
 				memberIds: unit.members.map((member) => member.delegationMemberId)
 			})),
 			draftSingleRoles,
 			seats: seatsByKey(seated),
-			roleSeats: new Map(roles.map((role) => [role.id, role.seatAmount]))
+			roleSeats: new Map(
+				roles.flatMap((role) => (role.kind === 'CUSTOM' ? [[role.id, role.seatAmount ?? 0]] : []))
+			)
 		}
 	};
 }
@@ -108,10 +134,7 @@ export async function draftDelegationTarget(
 			.where(eq(schema.assignmentUnit.sourceDelegationId, delegation.id));
 		return;
 	}
-	const values = {
-		nationAlpha3Code: target.nationAlpha3Code,
-		nonStateActorId: target.nonStateActorId
-	};
+	const values = { roleId: target.roleId };
 	const existing = units.at(0);
 	if (existing) {
 		await tx
@@ -128,7 +151,7 @@ export async function draftDelegationTarget(
 }
 
 /** One readable line per problem, for the error the team sees when applying is refused. */
-function describeApplyErrors(errors: ApplyError[]) {
+function describeApplyErrors(errors: ApplyError[], roleNames: ReadonlyMap<string, string>) {
 	return errors
 		.map((error) => {
 			switch (error.type) {
@@ -136,7 +159,7 @@ function describeApplyErrors(errors: ApplyError[]) {
 					return m.assignmentErrorIncompleteSplit({ count: error.memberIds.length });
 				case 'overCapacity':
 					return m.assignmentErrorOverCapacity({
-						role: error.target.nationAlpha3Code ?? error.target.nonStateActorId ?? '',
+						role: roleNames.get(error.target.roleId ?? '') ?? '',
 						seats: error.seats,
 						assigned: error.assigned
 					});
@@ -176,7 +199,10 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
 	return (ref: DelegationRef) => ('existing' in ref ? ref.existing : created[ref.created]);
 }
 
-/** Single participants become members, keeping their supervisors, and stop being singles. */
+/**
+ * Single participants become members and stop being singles. Their supervisors stay: supervision
+ * hangs on the person (`conferenceParticipant`), not on the registration.
+ */
 async function convertSingles(
 	tx: Transaction,
 	conferenceId: string,
@@ -185,29 +211,19 @@ async function convertSingles(
 ) {
 	for (const conversion of plan.convertSingles) {
 		const participant = await tx.query.singleParticipant.findFirst({
-			where: { id: conversion.singleParticipantId, conferenceId },
-			columns: { userId: true },
-			with: { supervisors: { columns: { id: true } } }
+			where: { id: conversion.singleParticipantId, participant: { conferenceId } },
+			columns: { conferenceParticipantId: true }
 		});
 		if (!participant) continue;
-		const [member] = await tx
-			.insert(schema.delegationMember)
-			.values({
-				conferenceId,
-				delegationId: idOf(conversion.to),
-				userId: participant.userId,
-				isHeadDelegate: conversion.isHeadDelegate
-			})
-			.returning({ id: schema.delegationMember.id });
-		if (participant.supervisors.length > 0) {
-			await tx
-				.insert(schema.conferenceSupervisorToDelegationMember)
-				.values(participant.supervisors.map((supervisor) => ({ a: supervisor.id, b: member.id })))
-				.onConflictDoNothing();
-		}
+		// The single row goes first: a person holds one registration per conference.
 		await tx
 			.delete(schema.singleParticipant)
 			.where(eq(schema.singleParticipant.id, conversion.singleParticipantId));
+		await tx.insert(schema.delegationMember).values({
+			delegationId: idOf(conversion.to),
+			conferenceParticipantId: participant.conferenceParticipantId,
+			isHeadDelegate: conversion.isHeadDelegate
+		});
 	}
 }
 
@@ -217,16 +233,13 @@ async function setTargets(tx: Transaction, plan: ApplyPlan, idOf: (ref: Delegati
 	if (plan.clearTargets.length > 0) {
 		await tx
 			.update(schema.delegation)
-			.set({ assignedNationAlpha3Code: null, assignedNonStateActorId: null })
+			.set({ assignedRoleId: null })
 			.where(inArray(schema.delegation.id, plan.clearTargets));
 	}
 	for (const { delegation, target } of plan.setTargets) {
 		await tx
 			.update(schema.delegation)
-			.set({
-				assignedNationAlpha3Code: target.nationAlpha3Code,
-				assignedNonStateActorId: target.nonStateActorId
-			})
+			.set({ assignedRoleId: target.roleId })
 			.where(eq(schema.delegation.id, idOf(delegation)));
 	}
 }
@@ -246,15 +259,30 @@ async function moveMembers(tx: Transaction, plan: ApplyPlan, idOf: (ref: Delegat
 	}
 }
 
+/** Removes the conference's planned changes: its units (with their members) and single roles. */
+export async function clearDraft(tx: Transaction, conferenceId: string) {
+	await tx
+		.delete(schema.assignmentUnit)
+		.where(eq(schema.assignmentUnit.conferenceId, conferenceId));
+	await tx
+		.delete(schema.assignmentSingleRole)
+		.where(
+			inArray(
+				schema.assignmentSingleRole.singleParticipantId,
+				singleParticipantIdsOf(tx, conferenceId)
+			)
+		);
+}
+
 /**
  * Writes the draft into the registrations and clears it. The ratings and weights stay: they are
  * the team's notes, not part of the change.
  */
 export async function applyAssignmentDraft(conferenceId: string) {
 	return db.transaction(async (tx) => {
-		const { input } = await loadAssignmentInput(tx, conferenceId);
+		const { input, roleNames } = await loadAssignmentInput(tx, conferenceId);
 		const { plan, errors } = planApply(input);
-		if (errors.length > 0) throw apiError('CONFLICT', describeApplyErrors(errors));
+		if (errors.length > 0) throw apiError('CONFLICT', describeApplyErrors(errors, roleNames));
 
 		const idOf = await createDelegations(tx, conferenceId, plan);
 		await setTargets(tx, plan, idOf);
@@ -278,12 +306,7 @@ export async function applyAssignmentDraft(conferenceId: string) {
 				.where(eq(schema.singleParticipant.id, singleParticipantId));
 		}
 
-		await tx
-			.delete(schema.assignmentUnit)
-			.where(eq(schema.assignmentUnit.conferenceId, conferenceId));
-		await tx
-			.delete(schema.assignmentSingleRole)
-			.where(eq(schema.assignmentSingleRole.conferenceId, conferenceId));
+		await clearDraft(tx, conferenceId);
 
 		return plan;
 	});

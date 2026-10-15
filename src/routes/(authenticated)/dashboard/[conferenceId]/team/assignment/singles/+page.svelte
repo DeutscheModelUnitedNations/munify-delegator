@@ -247,11 +247,11 @@
 				{@const holders = holdersOf(role.id)}
 				<RoleCard
 					container={roleContainer(role.id)}
-					title={role.name}
+					title={role.name ?? ''}
 					icon={role.fontAwesomeIcon ?? undefined}
-					seats={role.seatAmount}
+					seats={role.seatAmount ?? 0}
 					taken={holders.length}
-					highlight={dragging && holders.length < role.seatAmount}
+					highlight={dragging && holders.length < (role.seatAmount ?? 0)}
 					{onDrop}
 				>
 					{#snippet children(listHeight)}

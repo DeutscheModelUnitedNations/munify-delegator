@@ -11,7 +11,8 @@ export interface ManagedCommittee {
 	abbreviation: string;
 	numOfSeatsPerDelegation: number;
 	resolutionHeadline: string | null;
-	nations: { alpha3Code: string }[];
+	/** the nation roles the committee seats */
+	roles: { id: string }[];
 	delegationMembers: { id: string }[];
 	agendaItems: AgendaItem[];
 }

@@ -121,7 +121,13 @@ export function addSurveys(cs: ConferenceSeed) {
 	const answer = (userId: string, questionKey: string, optionTitle: string) => {
 		const questionId = questionIds.get(questionKey);
 		const optionId = optionIds.get(`${questionKey}/${optionTitle}`);
-		if (questionId && optionId) cs.batch.surveyAnswer.push({ questionId, optionId, userId });
+		if (questionId && optionId) {
+			cs.batch.surveyAnswer.push({
+				questionId,
+				optionId,
+				conferenceParticipantId: cs.participant(userId).id
+			});
+		}
 	};
 
 	for (const [userId, questionKey, optionTitle] of PERSONA_ANSWERS) {

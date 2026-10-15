@@ -6,8 +6,17 @@ import {
 	type ResolutionHeaderData
 } from '$lib/components/paper/editor/resolution';
 import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
+import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
 import { translatePaperType } from '$lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+
+/** The role of a paper's delegation as the paper pages select it: a nation or a non-state actor. */
+export interface PaperDelegationRole {
+	kind: ConferenceRoleKind;
+	name: string | null;
+	fontAwesomeIcon: string | null;
+	nation: { alpha2Code: string; alpha3Code: string } | null;
+}
 
 /**
  * What the paper pages need to name a paper and its authoring delegation. Structural, so both the
@@ -20,10 +29,7 @@ export interface PaperIdentity {
 		title: string;
 		committee: { abbreviation: string; name: string; resolutionHeadline?: string | null };
 	} | null;
-	delegation: {
-		assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-		assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
-	};
+	delegation: { assignedRole: PaperDelegationRole | null };
 }
 
 export interface PaperConferenceInfo {
@@ -41,13 +47,16 @@ export function paperTitle(paper: PaperIdentity) {
 
 /** The nation's translated name, or the non-state actor's name. */
 export function paperEntityName(delegation: {
-	assignedNation: { alpha3Code: string } | null;
-	assignedNonStateActor: { name: string } | null;
+	assignedRole: {
+		kind: ConferenceRoleKind;
+		name: string | null;
+		nation: { alpha3Code: string } | null;
+	} | null;
 }) {
-	const nation = delegation.assignedNation;
+	const { nation, nonStateActor } = splitRole(delegation.assignedRole);
 	return nation
 		? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
-		: delegation.assignedNonStateActor?.name;
+		: (nonStateActor?.name ?? undefined);
 }
 
 /** What a resolution header prints besides the conference. */

@@ -124,7 +124,7 @@
 
 		await Promise.all(
 			presentUsers.map(async (user) => {
-				await client.mutate.updateConferenceParticipantStatus({
+				await client.mutate.updateConferenceParticipant({
 					__args: {
 						conferenceId: params.conferenceId,
 						didAttend: true,
@@ -148,7 +148,7 @@
 
 		await Promise.all(
 			absentUsers.map(async (user) => {
-				await client.mutate.updateConferenceParticipantStatus({
+				await client.mutate.updateConferenceParticipant({
 					__args: {
 						conferenceId: params.conferenceId,
 						didAttend: false,

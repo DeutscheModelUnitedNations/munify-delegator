@@ -24,36 +24,26 @@ const mailSyncUserQuery = {
 	},
 	with: {
 		delegationMemberships: {
-			columns: { conferenceId: true, isHeadDelegate: true },
+			columns: { isHeadDelegate: true },
 			with: {
 				delegation: {
-					columns: {
-						applied: true,
-						assignedNationAlpha3Code: true,
-						assignedNonStateActorId: true
-					},
-					with: { conference: conferenceColumns }
+					columns: { applied: true, assignedRoleId: true },
+					with: { conference: conferenceColumns, assignedRole: { columns: { kind: true } } }
 				}
 			}
 		},
 		singleParticipant: {
-			columns: { conferenceId: true, applied: true, assignedRoleId: true },
+			columns: { applied: true, assignedRoleId: true },
 			with: { conference: conferenceColumns }
 		},
 		conferenceSupervisor: {
-			columns: { conferenceId: true },
+			columns: {},
 			with: {
 				conference: conferenceColumns,
 				supervisedDelegationMembers: {
 					columns: {},
 					with: {
-						delegation: {
-							columns: {
-								applied: true,
-								assignedNationAlpha3Code: true,
-								assignedNonStateActorId: true
-							}
-						}
+						delegation: { columns: { applied: true, assignedRoleId: true } }
 					}
 				},
 				supervisedSingleParticipants: { columns: { applied: true, assignedRoleId: true } }

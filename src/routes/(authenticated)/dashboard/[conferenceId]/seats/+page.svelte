@@ -4,9 +4,8 @@
 	import Tabs from '$lib/components/tabs/Tabs.svelte';
 	import Tab from '$lib/components/tabs/Tab.svelte';
 	import AccentStripe from '$lib/components/AccentStripe.svelte';
-	import { getUniqueNations } from '$lib/helpers/getUniqueNations';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { fetchConferenceSeats } from './conferenceSeats';
+	import { fetchConferenceSeats, nonStateActorsOf, seatedNations } from './conferenceSeats';
 	import CommitteePool from './CommitteePool.svelte';
 	import NationSeatsTable from './NationSeatsTable.svelte';
 	import NsaSeatsTable from './NsaSeatsTable.svelte';
@@ -16,7 +15,8 @@
 
 	const conferenceId = $derived(routeParams.conferenceId);
 	const conference = $derived(await fetchConferenceSeats(conferenceId));
-	const nationCount = $derived(getUniqueNations(conference.committees).length);
+	const nations = $derived(seatedNations(conference));
+	const nonStateActors = $derived(nonStateActorsOf(conference));
 
 	const params = queryParameters({ tab: true });
 	const tab = $derived(
@@ -43,13 +43,13 @@
 			onclick={() => (params.tab = null)}
 		/>
 		<Tab
-			title="{m.nationsPool()} ({nationCount})"
+			title="{m.nationsPool()} ({nations.length})"
 			icon="flag"
 			active={tab === 'nations'}
 			onclick={() => (params.tab = 'nations')}
 		/>
 		<Tab
-			title="{m.nsaPool()} ({conference.nonStateActors.length})"
+			title="{m.nsaPool()} ({nonStateActors.length})"
 			icon="megaphone"
 			active={tab === 'nsas'}
 			onclick={() => (params.tab = 'nsas')}
@@ -57,9 +57,9 @@
 	</Tabs>
 
 	{#if tab === 'nations'}
-		<NationSeatsTable committees={conference.committees} />
+		<NationSeatsTable committees={conference.committees} {nations} />
 	{:else if tab === 'nsas'}
-		<NsaSeatsTable nonStateActors={conference.nonStateActors} />
+		<NsaSeatsTable {nonStateActors} />
 	{:else}
 		<CommitteePool committees={conference.committees} />
 	{/if}

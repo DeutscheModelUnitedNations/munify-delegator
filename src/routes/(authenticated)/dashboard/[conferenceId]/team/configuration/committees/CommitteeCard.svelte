@@ -44,10 +44,10 @@
 			</h3>
 			<span
 				class="text-base-content/70 flex items-center gap-1 text-sm"
-				title={m.committeeNationCount({ count: committee.nations.length })}
+				title={m.committeeNationCount({ count: committee.roles.length })}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-flag"></i>
-				{committee.nations.length}
+				{committee.roles.length}
 			</span>
 			<span
 				class="text-base-content/70 flex items-center gap-1 text-sm"

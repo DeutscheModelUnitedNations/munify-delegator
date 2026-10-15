@@ -1,9 +1,10 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
 import { apiError } from '$api/services/errors/apiError';
 import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
 import { experienceShare } from '$lib/assignment/experience';
 import type { reviewRow } from '$lib/assignment/review';
 import {
+	NO_TARGET,
 	assignmentGroups,
 	singleRoles,
 	targetKey,
@@ -12,7 +13,7 @@ import {
 } from '$lib/assignment/state';
 import { m } from '$lib/paraglide/messages';
 import { eq } from 'drizzle-orm';
-import { draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
+import { clearDraft, draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
 import { loadExperiencedIds } from './assignmentExperience';
 import { matchSingles } from './matching';
 
@@ -49,24 +50,33 @@ export async function setAssignmentWeights(
 }
 
 /** Plans `target` for a group, whether it is a whole delegation or a unit of its own. */
-async function draftGroupTarget(conferenceId: string, group: AssignmentGroup, target: Target) {
+async function draftGroupTarget(
+	tx: Transaction,
+	conferenceId: string,
+	group: AssignmentGroup,
+	target: Target
+) {
 	if (group.unitId && (group.part || group.singleParticipantId)) {
-		await draftUnitTarget(group.unitId, target);
+		await draftUnitTarget(group.unitId, target, tx);
 		return;
 	}
 	if (!group.delegationId) return;
 	await draftDelegationTarget(
-		db,
+		tx,
 		{ id: group.delegationId, conferenceId, liveTarget: group.liveTarget },
 		target
 	);
 }
 
 /** Plans `target` for one part of a split delegation or a converted single participant. */
-export async function draftUnitTarget(unitId: string, target: Target) {
-	await db
+export async function draftUnitTarget(
+	unitId: string,
+	target: Target,
+	tx: Transaction | typeof db = db
+) {
+	await tx
 		.update(schema.assignmentUnit)
-		.set({ nationAlpha3Code: target.nationAlpha3Code, nonStateActorId: target.nonStateActorId })
+		.set({ roleId: target.roleId })
 		.where(eq(schema.assignmentUnit.id, unitId));
 }
 
@@ -100,7 +110,6 @@ export async function splitDelegation(
 				.returning({ id: schema.assignmentUnit.id });
 			await tx.insert(schema.assignmentUnitMember).values(
 				part.map((delegationMemberId) => ({
-					conferenceId: delegation.conferenceId,
 					unitId: unit.id,
 					delegationMemberId
 				}))
@@ -135,21 +144,18 @@ export async function revertSingleParticipantConversion(singleParticipantId: str
 
 /** Plans a custom role for a single participant, or (without one) none. */
 export async function planSingleParticipantRole(
-	participant: { id: string; conferenceId: string; assignedRoleId: string | null },
-	roleId: string | null
+	participant: { id: string; assignedRoleId: string | null },
+	roleId: string | null,
+	tx: Transaction | typeof db = db
 ) {
 	if (roleId === participant.assignedRoleId) {
-		await db
+		await tx
 			.delete(schema.assignmentSingleRole)
 			.where(eq(schema.assignmentSingleRole.singleParticipantId, participant.id));
 	} else {
-		await db
+		await tx
 			.insert(schema.assignmentSingleRole)
-			.values({
-				conferenceId: participant.conferenceId,
-				singleParticipantId: participant.id,
-				roleId
-			})
+			.values({ singleParticipantId: participant.id, roleId })
 			.onConflictDoUpdate({
 				target: schema.assignmentSingleRole.singleParticipantId,
 				set: { roleId }
@@ -181,7 +187,7 @@ export async function autoAssignDelegations(conferenceId: string, size: number) 
 		loadScoringBasis(conferenceId),
 		db.query.roleApplication.findMany({
 			where: { delegation: { conferenceId } },
-			columns: { delegationId: true, nationId: true, nonStateActorId: true, rank: true }
+			columns: { delegationId: true, roleId: true, rank: true }
 		})
 	]);
 	const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
@@ -201,15 +207,15 @@ export async function autoAssignDelegations(conferenceId: string, size: number) 
 			wishes.find(
 				(wish) =>
 					wish.delegationId === group.delegationId &&
-					targetKey({
-						nationAlpha3Code: wish.nationId,
-						nonStateActorId: wish.nonStateActorId
-					}) === targetKey(target)
+					targetKey({ roleId: wish.roleId }) === targetKey(target)
 			)?.rank
 	});
-	for (const { group, target } of matches) {
-		await draftGroupTarget(conferenceId, group, target);
-	}
+	// One matching, so it is planned whole or not at all.
+	await db.transaction(async (tx) => {
+		for (const { group, target } of matches) {
+			await draftGroupTarget(tx, conferenceId, group, target);
+		}
+	});
 	return matches.length;
 }
 
@@ -222,12 +228,12 @@ export async function autoAssignSingleParticipants(conferenceId: string) {
 	const [{ input, weights, reviews, experiencedIds }, applicants, customRoles] = await Promise.all([
 		loadScoringBasis(conferenceId),
 		db.query.singleParticipant.findMany({
-			where: { conferenceId, applied: true },
+			where: { participant: { conferenceId }, applied: true },
 			columns: { id: true, assignedRoleId: true },
 			with: { appliedForRoles: { columns: { id: true } } }
 		}),
-		db.query.customConferenceRole.findMany({
-			where: { conferenceId },
+		db.query.conferenceRole.findMany({
+			where: { conferenceId, kind: 'CUSTOM' },
 			columns: { id: true, seatAmount: true }
 		})
 	]);
@@ -250,7 +256,7 @@ export async function autoAssignSingleParticipants(conferenceId: string) {
 		weights,
 		roles: customRoles.map((role) => ({
 			id: role.id,
-			freeSeats: role.seatAmount - (held.get(role.id) ?? 0)
+			freeSeats: (role.seatAmount ?? 0) - (held.get(role.id) ?? 0)
 		})),
 		candidates: singles
 			.filter((single) => !single.roleId)
@@ -263,16 +269,19 @@ export async function autoAssignSingleParticipants(conferenceId: string) {
 				experience: experiencedIds.has(single.singleParticipantId) ? 1 : 0
 			}))
 	});
-	for (const { singleParticipantId, roleId } of matches) {
-		await planSingleParticipantRole(
-			{
-				id: singleParticipantId,
-				conferenceId,
-				assignedRoleId: applicantById.get(singleParticipantId)?.assignedRoleId ?? null
-			},
-			roleId
-		);
-	}
+	// One matching, so it is planned whole or not at all.
+	await db.transaction(async (tx) => {
+		for (const { singleParticipantId, roleId } of matches) {
+			await planSingleParticipantRole(
+				{
+					id: singleParticipantId,
+					assignedRoleId: applicantById.get(singleParticipantId)?.assignedRoleId ?? null
+				},
+				roleId,
+				tx
+			);
+		}
+	});
 	return matches.length;
 }
 
@@ -281,24 +290,18 @@ export async function resetAssignmentSize(conferenceId: string, seats: number) {
 	const { input, roles } = await loadAssignmentInput(db, conferenceId);
 	const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
 	const ofSize = new Set(roles.filter((role) => role.seats === seats).map((r) => r.key));
-	for (const group of groups) {
-		if (ofSize.has(targetKey(group.target) ?? '')) {
-			await draftGroupTarget(conferenceId, group, {
-				nationAlpha3Code: null,
-				nonStateActorId: null
-			});
+	await db.transaction(async (tx) => {
+		for (const group of groups) {
+			if (ofSize.has(targetKey(group.target) ?? '')) {
+				await draftGroupTarget(tx, conferenceId, group, NO_TARGET);
+			}
 		}
-	}
+	});
 }
 
 /** Throws the planned changes away. Ratings and weights stay. */
 export async function discardAssignmentDraft(conferenceId: string) {
-	await db
-		.delete(schema.assignmentUnit)
-		.where(eq(schema.assignmentUnit.conferenceId, conferenceId));
-	await db
-		.delete(schema.assignmentSingleRole)
-		.where(eq(schema.assignmentSingleRole.conferenceId, conferenceId));
+	await db.transaction((tx) => clearDraft(tx, conferenceId));
 }
 
 /** Shows participants their assigned roles, or hides them again. */

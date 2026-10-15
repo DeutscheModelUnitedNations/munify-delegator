@@ -3,7 +3,7 @@
 	import UserSearchModal from './UserSearchModal.svelte';
 	import type { UserPreview } from '$lib/api/rumbleClient/client';
 	import type { Snippet } from 'svelte';
-	import { queryParameters } from 'sveltekit-search-params';
+	import { getAssignUser } from './assignUser.svelte';
 
 	interface Props {
 		warning?: boolean;
@@ -23,9 +23,7 @@
 
 	let open = $state(false);
 
-	const params = queryParameters({
-		assignUserId: true
-	});
+	const assignUser = getAssignUser();
 </script>
 
 <div
@@ -34,7 +32,7 @@
 >
 	<button
 		aria-label={m.addParticipant()}
-		class="btn {params.assignUserId ? '' : 'btn-outline'} {warning
+		class="btn {assignUser.userId ? '' : 'btn-outline'} {warning
 			? 'btn-warning'
 			: 'btn-success'} btn-sm w-10"
 		onclick={() => (open = true)}
@@ -42,7 +40,7 @@
 		{#if warning}
 			<i class="fas fa-diamond-exclamation"></i>
 		{:else}
-			<i class="fas fa-plus {params.assignUserId ? 'fa-beat' : ''}"></i>
+			<i class="fas fa-plus {assignUser.userId ? 'fa-beat' : ''}"></i>
 		{/if}
 	</button>
 </div>

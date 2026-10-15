@@ -32,8 +32,8 @@
 			? await client.liveQuery.conferenceSupervisors({
 					__args: {
 						where: {
-							conferenceId: { eq: conferenceId },
-							...(userIds ? { userId: { in: userIds } } : {})
+							conference: { id: { eq: conferenceId } },
+							...(userIds ? { user: { id: { in: userIds } } } : {})
 						},
 						limit: SUPERVISOR_LIMIT,
 						orderBy: { createdAt: 'desc', id: 'asc' }

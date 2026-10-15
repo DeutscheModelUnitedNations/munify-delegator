@@ -2,7 +2,8 @@ import { db, schema } from '$api/db/db';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
-import { ensureParticipantStatus, scanInSession, storeSessionCard } from './attendanceEntryService';
+import { scanInSession, storeSessionCard } from './attendanceEntryService';
+import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	assertCanCreateAttendanceEntry,
 	assertCanEndAttendanceSession,
@@ -14,7 +15,7 @@ import {
 import {
 	attendanceEntryPubsub,
 	attendanceSessionPubsub,
-	conferenceParticipantStatusPubsub
+	conferenceParticipantPubsub
 } from '$api/pubsub';
 import { apiError } from '$api/services/errors/apiError';
 import { m } from '$lib/paraglide/messages';
@@ -99,7 +100,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = await assertCanCreateAttendanceEntry(ctx, args);
 
-			const status = await ensureParticipantStatus(args.userId, args.conferenceId);
+			const participantId = await ensureConferenceParticipant(db, args.conferenceId, args.userId);
 
 			const readEntry = async (id: string) =>
 				db.query.attendanceEntry
@@ -113,19 +114,19 @@ schemaBuilder.mutationFields((t) => ({
 
 			const accessCardId = args.accessCardId?.trim();
 			if (accessCardId) {
-				await storeSessionCard(args.sessionId, args.conferenceId, status.id, accessCardId);
-				conferenceParticipantStatusPubsub.updated(status.id);
+				await storeSessionCard(args.sessionId, args.conferenceId, participantId, accessCardId);
+				conferenceParticipantPubsub.updated(participantId);
 			}
 
 			// A repeated scan that brought a card has done its work by storing it
-			const scanned = await scanInSession(args.sessionId, status.id);
+			const scanned = await scanInSession(args.sessionId, participantId);
 			if (scanned && accessCardId) return readEntry(scanned.id);
 			if (scanned) throw apiError('ALREADY_SCANNED', m.alreadyScannedInSession());
 
 			const created = await db
 				.insert(schema.attendanceEntry)
 				.values({
-					conferenceParticipantStatusId: status.id,
+					conferenceParticipantId: participantId,
 					recordedById: callerId,
 					sessionId: args.sessionId,
 					checkPassed: args.checkPassed ?? undefined
@@ -134,7 +135,7 @@ schemaBuilder.mutationFields((t) => ({
 				.then(assertFirstEntryExists);
 
 			attendanceEntryPubsub.created();
-			conferenceParticipantStatusPubsub.updated();
+			conferenceParticipantPubsub.updated();
 			// The session's entry count changed, which its readers show
 			attendanceSessionPubsub.updated(args.sessionId);
 

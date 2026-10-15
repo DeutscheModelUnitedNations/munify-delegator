@@ -36,7 +36,7 @@ test('a participant can connect themselves to a supervisor via connection code',
 	// not the supervisor's full supervised-participant list, so verify from their own side.
 	const data = await graphql(
 		page,
-		`query { singleParticipants(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, userId: { eq: "${E2E_CONNECT_PARTICIPANT_ID}" } }) { supervisors { id } } }`
+		`query { singleParticipants(where: { conference: { id: { eq: "${E2E_CONFERENCE_ID}" } }, user: { id: { eq: "${E2E_CONNECT_PARTICIPANT_ID}" } } }) { supervisors { id } } }`
 	);
 	const supervisorIds = data?.singleParticipants?.[0]?.supervisors?.map(
 		(s: { id: string }) => s.id

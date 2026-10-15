@@ -28,11 +28,11 @@ export function registerPaperAbilities() {
 	// Authors see and edit their own papers, and may delete one while it is still a draft.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
 		const id = userId(ctx);
-		return id ? { where: { author: { id } } } : undefined;
+		return id ? { where: { authorParticipant: { userId: id } } } : undefined;
 	});
 	abilityBuilder.paper.allow('delete').when((ctx) => {
 		const id = userId(ctx);
-		return id ? { where: { author: { id }, status: 'DRAFT' } } : undefined;
+		return id ? { where: { authorParticipant: { userId: id }, status: 'DRAFT' } } : undefined;
 	});
 
 	// Reviewers and conference management see the conference's papers and may edit their text (the
@@ -53,7 +53,7 @@ export function registerPaperAbilities() {
 		return id
 			? {
 					where: {
-						delegation: { members: { supervisors: { user: { id } } } },
+						delegation: { members: { supervisors: { participant: { userId: id } } } },
 						status: { ne: 'DRAFT' }
 					}
 				}
@@ -102,7 +102,8 @@ export function assertCanReadConferencePapers(ctx: ApiContext, conferenceId: str
  * A paper is written by the caller, for a delegation they are a member of in that conference, on
  * one of that conference's agenda items (or none, for an introduction paper). All three arrive as
  * arguments, so all three are checked: the author cannot be somebody else, and the delegation and
- * agenda item cannot belong to another conference.
+ * agenda item cannot belong to another conference. Answers with the caller's participant row,
+ * which the paper is written under.
  */
 export async function assertCanCreatePaper(
 	ctx: ApiContext,
@@ -118,8 +119,11 @@ export async function assertCanCreatePaper(
 		throw apiError('FORBIDDEN', m.paperOnlyOwnName());
 	}
 	const membership = await db.query.delegationMember.findFirst({
-		where: { userId: caller, delegationId: args.delegationId, conferenceId: args.conferenceId },
-		columns: { id: true }
+		where: {
+			delegationId: args.delegationId,
+			participant: { userId: caller, conferenceId: args.conferenceId }
+		},
+		columns: { conferenceParticipantId: true }
 	});
 	if (!membership) {
 		throw apiError('FORBIDDEN', m.paperOnlyOwnDelegation());
@@ -132,6 +136,7 @@ export async function assertCanCreatePaper(
 			})
 			.then(assertFindFirstExists);
 	}
+	return { authorParticipantId: membership.conferenceParticipantId };
 }
 
 /** Refuses unless the paper exists and the caller may update it (authors, reviewers, admins). */
