@@ -49,6 +49,9 @@ CVE-2026-42499  # net/mail: consumePhrase DoS (esbuild, lefthook)
 CVE-2026-27145  # crypto/x509 DoS via excessive DNS name processing (esbuild, lefthook)
 CVE-2026-39822  # os.Root symlink following directory traversal (esbuild, lefthook)
 CVE-2026-42504  # mime: DoS via maliciously-crafted MIME header (esbuild, lefthook)
+CVE-2026-78667  # net/http: DoS via crafted HTTP Range headers (esbuild, tsc native, lefthook)
+CVE-2026-78669  # net/http2: DoS via excessive HTTP/2 SETTINGS frames (esbuild, tsc native, lefthook)
+CVE-2026-97031  # crypto/tls: DoS via multiple ECH outer extension references (esbuild, tsc native, lefthook)
 
 # Already remediated - suppresses stale-scan artifacts
 # undici is pinned to 7.29.0 via package.json "overrides" (above the fixed
