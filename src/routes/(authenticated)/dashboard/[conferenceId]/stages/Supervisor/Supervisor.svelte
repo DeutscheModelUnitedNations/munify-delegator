@@ -544,7 +544,7 @@
 			>
 				{#snippet detailSpace()}
 					<InfoGrid.Grid>
-						{#if !singleParticipant.assignedRole}
+						{#if isStateParticipantRegistration || !singleParticipant.assignedRole}
 							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="masks-theater">
 								{#if singleParticipant.appliedForRoles.length > 0}
 									<div class="flex flex-wrap gap-2">

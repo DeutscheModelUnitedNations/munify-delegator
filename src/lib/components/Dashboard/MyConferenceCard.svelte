@@ -5,6 +5,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import type { TeamRole } from '@prisma/client';
+	import { getApplicationStatus, type ApplicationStatus } from '$lib/services/applicationStatus';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 
 	interface DelegationMember {
@@ -71,6 +72,8 @@
 
 	let { conference }: Props = $props();
 
+	const isRegistrationPhase = $derived(conference.state === 'PARTICIPANT_REGISTRATION');
+
 	// Determine participation type and details
 	const participation = $derived.by(() => {
 		const delegationMember = conference.delegationMembers?.[0];
@@ -88,46 +91,34 @@
 
 		if (delegationMember) {
 			const delegation = delegationMember.delegation;
-			const hasAssignment = !!delegation.assignedNation || !!delegation.assignedNonStateActor;
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
-
-			if (hasAssignment) {
-				status = 'accepted';
-			} else if (!delegation.applied) {
-				status = 'pending';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
-				status = 'applied';
-			} else {
-				status = 'rejected';
-			}
+			const status = getApplicationStatus(
+				isRegistrationPhase,
+				!!delegation.assignedNation || !!delegation.assignedNonStateActor,
+				delegation.applied
+			);
+			const hasAssignment = status === 'accepted';
 
 			return {
 				type: 'delegation' as const,
 				status,
-				country: delegation.assignedNation,
-				nonStateActor: delegation.assignedNonStateActor,
-				committee: delegationMember.assignedCommittee,
+				country: hasAssignment ? delegation.assignedNation : null,
+				nonStateActor: hasAssignment ? delegation.assignedNonStateActor : null,
+				committee: hasAssignment ? delegationMember.assignedCommittee : null,
 				isHeadDelegate: delegationMember.isHeadDelegate
 			};
 		}
 
 		if (singleParticipant) {
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
-
-			if (singleParticipant.assignedRole) {
-				status = 'accepted';
-			} else if (!singleParticipant.applied) {
-				status = 'pending';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
-				status = 'applied';
-			} else {
-				status = 'rejected';
-			}
+			const status = getApplicationStatus(
+				isRegistrationPhase,
+				!!singleParticipant.assignedRole,
+				singleParticipant.applied
+			);
 
 			return {
 				type: 'singleParticipant' as const,
 				status,
-				customRole: singleParticipant.assignedRole
+				customRole: status === 'accepted' ? singleParticipant.assignedRole : null
 			};
 		}
 
@@ -144,13 +135,15 @@
 			const acceptedSingleParticipants = supervisedSingleParticipants.filter(
 				(sp) => sp.assignedRole
 			);
-			const acceptedStudentCount = acceptedDelegations.length + acceptedSingleParticipants.length;
+			const acceptedStudentCount = isRegistrationPhase
+				? 0
+				: acceptedDelegations.length + acceptedSingleParticipants.length;
 
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
+			let status: ApplicationStatus;
 
 			if (acceptedStudentCount > 0) {
 				status = 'accepted';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
+			} else if (isRegistrationPhase) {
 				status = 'pending';
 			} else {
 				status = 'rejected';
