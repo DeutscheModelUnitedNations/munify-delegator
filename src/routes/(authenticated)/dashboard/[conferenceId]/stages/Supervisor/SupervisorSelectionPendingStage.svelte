@@ -71,7 +71,6 @@
 						<th>{m.name()}</th>
 						<th>{m.pronouns()}</th>
 						<th>{m.participationType()}</th>
-						<th>{m.application()}</th>
 						<th>{m.selectionProcess()}</th>
 					</tr>
 				</thead>

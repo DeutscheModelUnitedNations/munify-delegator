@@ -1503,6 +1503,7 @@
 	"selectUser": "Select User",
 	"selectionInProgressDescription": "The registration phase has ended. We are currently reviewing all applications and assigning the roles.",
 	"selectionInProgressDuration": "This can take some time. As soon as the process is complete, you will be notified by email and the result will be shown here in the dashboard.",
+	"selectionInProgressNoGuarantee": "Please note: a completed registration does not guarantee a spot at the conference. Spots are allocated in the selection process.",
 	"selectionInProgressNoInquiries": "Please refrain from inquiries about the status of the selection process.",
 	"selectionInProgressTitle": "Selection process in progress",
 	"selectionProcess": "Selection process",

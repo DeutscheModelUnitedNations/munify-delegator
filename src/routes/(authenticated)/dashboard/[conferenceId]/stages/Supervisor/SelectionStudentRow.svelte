@@ -23,22 +23,11 @@
 	<td>
 		{#if applied}
 			<span class="badge badge-success gap-2 whitespace-nowrap">
-				<i class="fa-solid fa-circle-check"></i>{m.applicationCompletedTitle()}
+				<i class="fa-solid fa-circle-check"></i>{m.inSelectionProcess()}
 			</span>
 		{:else}
 			<span class="badge badge-warning gap-2 whitespace-nowrap">
-				<i class="fa-solid fa-exclamation-triangle"></i>{m.applicationNotCompletedTitle()}
-			</span>
-		{/if}
-	</td>
-	<td>
-		{#if applied}
-			<span class="text-success inline-flex items-center gap-2 whitespace-nowrap">
-				<i class="fa-duotone fa-hourglass-half"></i>{m.inSelectionProcess()}
-			</span>
-		{:else}
-			<span class="text-base-content/60 inline-flex items-center gap-2 whitespace-nowrap">
-				<i class="fa-duotone fa-circle-xmark"></i>{m.notInSelectionProcess()}
+				<i class="fa-solid fa-exclamation-triangle"></i>{m.notInSelectionProcess()}
 			</span>
 		{/if}
 	</td>

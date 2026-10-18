@@ -1503,6 +1503,7 @@
 	"selectUser": "Nutzer*in auswählen",
 	"selectionInProgressDescription": "Die Anmeldephase ist beendet. Wir sichten derzeit alle Bewerbungen und nehmen die Zuteilung der Rollen vor.",
 	"selectionInProgressDuration": "Das kann einige Zeit in Anspruch nehmen. Sobald das Verfahren abgeschlossen ist, wirst du per E-Mail informiert und das Ergebnis wird hier im Dashboard angezeigt.",
+	"selectionInProgressNoGuarantee": "Bitte beachte: Eine abgeschlossene Anmeldung ist keine Garantie für einen Platz auf der Konferenz. Die Plätze werden im Auswahlverfahren vergeben.",
 	"selectionInProgressNoInquiries": "Bitte seht von Nachfragen zum Stand des Auswahlverfahrens ab.",
 	"selectionInProgressTitle": "Auswahlverfahren läuft",
 	"selectionProcess": "Auswahlverfahren",
