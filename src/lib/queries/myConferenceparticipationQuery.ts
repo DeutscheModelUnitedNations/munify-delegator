@@ -31,6 +31,7 @@ export const myConferenceparticipationQuery = graphql(`
 			state
 			startConference
 			startAssignment
+			registrationDeadlineGracePeriodMinutes
 			endConference
 			unlockPayments
 			unlockPostals
