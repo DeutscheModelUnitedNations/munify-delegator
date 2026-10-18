@@ -99,7 +99,7 @@
 		"jose": "^6.1.3",
 		"jsdom": "^27.2.0",
 		"leaflet": "^1.9.4",
-		"lefthook": "^1.13.6",
+		"lefthook": "^2.2.2",
 		"mermaid": "^11.12.2",
 		"munkres-algorithm": "^1.0.2",
 		"nanoid": "^5.1.16",
