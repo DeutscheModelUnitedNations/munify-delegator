@@ -17,28 +17,28 @@
 </script>
 
 <tr>
-	<td class="font-medium">{name}</td>
+	<td class="font-medium whitespace-nowrap">{name}</td>
 	<td>{pronouns}</td>
-	<td><i class="fa-duotone {typeIcon} mr-2"></i>{typeLabel}</td>
+	<td class="whitespace-nowrap"><i class="fa-duotone {typeIcon} mr-2"></i>{typeLabel}</td>
 	<td>
 		{#if applied}
-			<span class="badge badge-success">
-				<i class="fa-solid fa-circle-check mr-2"></i>{m.applicationCompletedTitle()}
+			<span class="badge badge-success gap-2 whitespace-nowrap">
+				<i class="fa-solid fa-circle-check"></i>{m.applicationCompletedTitle()}
 			</span>
 		{:else}
-			<span class="badge badge-warning">
-				<i class="fa-solid fa-exclamation-triangle mr-2"></i>{m.applicationNotCompletedTitle()}
+			<span class="badge badge-warning gap-2 whitespace-nowrap">
+				<i class="fa-solid fa-exclamation-triangle"></i>{m.applicationNotCompletedTitle()}
 			</span>
 		{/if}
 	</td>
 	<td>
 		{#if applied}
-			<span class="text-success">
-				<i class="fa-duotone fa-hourglass-half mr-2"></i>{m.inSelectionProcess()}
+			<span class="text-success inline-flex items-center gap-2 whitespace-nowrap">
+				<i class="fa-duotone fa-hourglass-half"></i>{m.inSelectionProcess()}
 			</span>
 		{:else}
-			<span class="text-base-content/60">
-				<i class="fa-duotone fa-circle-xmark mr-2"></i>{m.notInSelectionProcess()}
+			<span class="text-base-content/60 inline-flex items-center gap-2 whitespace-nowrap">
+				<i class="fa-duotone fa-circle-xmark"></i>{m.notInSelectionProcess()}
 			</span>
 		{/if}
 	</td>
