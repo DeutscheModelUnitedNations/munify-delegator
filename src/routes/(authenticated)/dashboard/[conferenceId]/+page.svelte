@@ -17,7 +17,10 @@
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 	import SelectionPendingStage from './stages/Common/SelectionPendingStage.svelte';
 	import SupervisorSelectionPendingStage from './stages/Supervisor/SupervisorSelectionPendingStage.svelte';
-	import { isRegistrationDeadlinePassed } from '$lib/services/registrationStatus';
+	import {
+		getTechnicalRegistrationDeadline,
+		isRegistrationDeadlinePassed
+	} from '$lib/services/registrationStatus';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -32,11 +35,26 @@
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
 	// Between the technical registration deadline and the switch to PREPARATION the selection
 	// process runs. Assignments may already exist in the database but must not be revealed yet.
+	// `now` is reactive so a dashboard left open across the deadline switches stages on its own.
+	let now = $state(new Date());
+	$effect(() => {
+		if (!conference || conference.state !== 'PARTICIPANT_REGISTRATION') return;
+		const deadline = getTechnicalRegistrationDeadline(
+			new Date(conference.startAssignment),
+			conference.registrationDeadlineGracePeriodMinutes
+		);
+		const delay = deadline.getTime() - now.getTime() + 1000;
+		if (delay <= 0) return;
+		// setTimeout cannot wait longer than ~24.8 days; a clamped timer re-arms itself via `now`
+		const timeout = setTimeout(() => (now = new Date()), Math.min(delay, 2_147_483_647));
+		return () => clearTimeout(timeout);
+	});
 	let selectionInProgress = $derived(
 		conference?.state === 'PARTICIPANT_REGISTRATION' &&
 			isRegistrationDeadlinePassed(
 				new Date(conference.startAssignment),
-				conference.registrationDeadlineGracePeriodMinutes
+				conference.registrationDeadlineGracePeriodMinutes,
+				now
 			)
 	);
 </script>

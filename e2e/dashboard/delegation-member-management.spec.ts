@@ -9,6 +9,10 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can rotate the entry code, remove a member, and transfer head delegate', async ({
 	browser
 }) => {
+	// Three fresh-user logins (each completing the mandatory profile form), two joins and four
+	// confirm()-gated mutations run close to the default 30 s budget on CI runners; triple it.
+	test.slow();
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
 	headPage.on('dialog', (dialog) => dialog.accept());
