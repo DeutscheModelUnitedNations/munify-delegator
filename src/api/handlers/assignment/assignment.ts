@@ -1,8 +1,9 @@
 import { db } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { enum_, object, countQuery, query, schemaBuilder } from '$api/rumble';
 import { applyAssignmentDraft, draftDelegationTarget } from './assignmentDraft';
-import { reviewProblem, reviewRow } from '$lib/assignment/review';
-import type { Target } from '$lib/assignment/state';
+import { reviewProblem, reviewRow } from '#lib/assignment/review.js';
+import type { Target } from '#lib/assignment/state.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	assignmentReviewPubsub,
@@ -15,7 +16,7 @@ import {
 	delegationPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 import {
 	assertCanAssignDelegation,
@@ -337,6 +338,7 @@ schemaBuilder.mutationFields((t) => ({
 				pubsub.removed();
 				pubsub.updated();
 			}
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 			return true;
 		}
 	}),
@@ -357,6 +359,7 @@ schemaBuilder.mutationFields((t) => ({
 			delegationPubsub.updated();
 			delegationMemberPubsub.updated();
 			singleParticipantPubsub.updated();
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 			return true;
 		}
 	})

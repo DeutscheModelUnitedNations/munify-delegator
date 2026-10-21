@@ -1,4 +1,4 @@
-import { splitRole } from '$lib/helpers/conferenceRole';
+import { splitRole } from '#lib/helpers/conferenceRole.js';
 import { paperEntityName, type PaperDelegationRole } from './paperDisplay';
 
 /** The delegation fields a paper is grouped and labelled by. */

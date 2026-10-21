@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import DashboardSection from './DashboardSection.svelte';
-	import SurveyCard from '$lib/components/survey/SurveyCard.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import SurveyCard from '#lib/components/survey/SurveyCard.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		conferenceId: string;

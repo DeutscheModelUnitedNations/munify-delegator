@@ -1,5 +1,5 @@
 import Blockquote from '@tiptap/extension-blockquote';
-import { findAndHighlightCite, type FindCiteResult } from '$lib/helpers/citeNavigation';
+import { findAndHighlightCite, type FindCiteResult } from '#lib/helpers/citeNavigation.js';
 
 interface BlockquoteWithFindOptions {
 	/**

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PaginationState } from '$lib/components/tanStackTable';
-	import { m } from '$lib/paraglide/messages';
+	import type { PaginationState } from '#lib/components/tanStackTable/index.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * The slice of a v9 table this component drives. A structural type rather than

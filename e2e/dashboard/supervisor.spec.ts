@@ -19,7 +19,7 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	// land before hydration attaches the handler. The success handler itself does a client-side
 	// `goto()`, not a full navigation, so there's no 'load' event to wait for - just poll the URL.
 	await expect(async () => {
-		await page.getByRole('button', { name: 'Jetzt anmelden' }).click();
+		await page.getByRole('button', { name: 'Als Betreuer*in registrieren' }).click();
 		await page.waitForURL(/\/dashboard(\/.+)?$/, { timeout: 3_000, waitUntil: 'commit' });
 	}).toPass({ timeout: 20_000 });
 	await waitForHydration(page);

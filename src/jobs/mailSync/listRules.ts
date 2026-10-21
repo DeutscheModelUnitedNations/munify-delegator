@@ -6,7 +6,7 @@ import type {
 	ComputedSubscriberState
 } from './types';
 import { createGlobalListName, createConferenceListName } from './listNames';
-import formatNames from '$lib/helpers/formatNames';
+import formatNames from '#lib/helpers/formatNames.js';
 
 // Rule: Global newsletter subscription
 

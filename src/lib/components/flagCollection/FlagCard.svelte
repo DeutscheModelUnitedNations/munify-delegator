@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FlagRevealGrid from './FlagRevealGrid.svelte';
-	import { toggleButtonProps } from '$lib/helpers/toggleButtonProps';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { toggleButtonProps } from '#lib/helpers/toggleButtonProps.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 	interface Piece {
 		id: string;

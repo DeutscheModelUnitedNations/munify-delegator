@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** The editable fields of a survey option, for creating one and for editing one. */
 	interface Props {

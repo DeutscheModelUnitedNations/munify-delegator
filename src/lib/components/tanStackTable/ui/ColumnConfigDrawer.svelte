@@ -1,13 +1,13 @@
 <script lang="ts" generics="TData extends object">
-	import { m } from '$lib/paraglide/messages';
-	import type { ColumnVisibilityState, Table } from '$lib/components/tanStackTable';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ColumnVisibilityState, Table } from '#lib/components/tanStackTable/index.js';
 	import {
 		columnHeaderOf,
 		columnIdOf,
 		defaultColumnVisibility,
 		type ManagedColumn,
 		type ManagedTableFeatures
-	} from '$lib/components/tanStackTable/managedTable';
+	} from '#lib/components/tanStackTable/managedTable.js';
 	import SideDrawer from './SideDrawer.svelte';
 	import ColumnGroups from './ColumnGroups.svelte';
 

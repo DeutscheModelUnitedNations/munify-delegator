@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
 	import StatusWidget from './StatusWidget.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		title: string;
@@ -24,16 +25,19 @@
 	status={[
 		{
 			value: 'PENDING',
+			title: m.statusPending(),
 			faIcon: 'fa-hourglass-half',
 			color: 'btn-warning'
 		},
 		{
 			value: 'PROBLEM',
+			title: m.statusProblem(),
 			faIcon: 'fa-triangle-exclamation',
 			color: 'btn-error'
 		},
 		{
 			value: 'DONE',
+			title: m.statusDone(),
 			faIcon: 'fa-check',
 			color: 'btn-success',
 			hotkey: doneHotkey

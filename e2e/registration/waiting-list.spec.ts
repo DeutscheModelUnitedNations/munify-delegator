@@ -10,7 +10,7 @@ test('a participant can submit a waiting-list entry', async ({ page }) => {
 		startUrl: `/registration/${E2E_PREP_CONFERENCE_ID}/waiting-list`
 	});
 
-	await page.locator('input[name="school"]').fill('E2E Test School');
+	await page.locator('input[name="schoolName"]').fill('E2E Test School');
 	await page.locator('textarea[name="motivation"]').fill('I want to be on the waiting list.');
 	await page.locator('textarea[name="experience"]').fill('Some experience.');
 	await page.locator('form button.btn-primary').first().click();
@@ -21,11 +21,11 @@ test('a participant can submit a waiting-list entry', async ({ page }) => {
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { waitingListEntries(where: { conferenceId: { eq: "${E2E_PREP_CONFERENCE_ID}" }, userId: { eq: "${participant.preferred_username}" } }) { school } }`
+			query: `query { waitingListEntries(where: { conferenceId: { eq: "${E2E_PREP_CONFERENCE_ID}" }, userId: { eq: "${participant.preferred_username}" } }) { school { name } } }`
 		}
 	});
 	const entry = (await res.json())?.data?.waitingListEntries?.[0];
-	expect(entry?.school).toBe('E2E Test School');
+	expect(entry?.school?.name).toBe('E2E Test School');
 });
 
 test('the waiting list refuses entries outside preparation', async ({ page }) => {
@@ -33,7 +33,7 @@ test('the waiting list refuses entries outside preparation', async ({ page }) =>
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `mutation { createWaitingListEntry(conferenceId: "${E2E_CONFERENCE_ID}", school: "School", motivation: "Motivation", experience: "Experience") { id } }`
+			query: `mutation { createWaitingListEntry(conferenceId: "${E2E_CONFERENCE_ID}", schoolName: "School", motivation: "Motivation", experience: "Experience") { id } }`
 		}
 	});
 	const json = await res.json();

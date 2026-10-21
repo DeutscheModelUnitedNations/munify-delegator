@@ -1,9 +1,9 @@
 <script lang="ts">
 	import BusyOverlay from '../BusyOverlay.svelte';
-	import { cardBorder, type BoardReviewRow } from '$lib/assignment/board';
-	import StarRating from '$lib/components/StarRating.svelte';
-	import formatNames from '$lib/helpers/formatNames';
-	import { m } from '$lib/paraglide/messages';
+	import { cardBorder, type BoardReviewRow } from '#lib/assignment/board.js';
+	import StarRating from '#lib/components/StarRating.svelte';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
 	import { sightingHref } from '../sightingLink';
@@ -74,8 +74,10 @@
 				{formatNames(single.user.givenName, single.user.familyName)}
 			</span>
 		{/if}
-		{#if single?.school}
-			<span class="text-base-content/60 truncate" title={single.school}>{single.school}</span>
+		{#if single?.school?.name}
+			<span class="text-base-content/60 truncate" title={single.school.name}
+				>{single.school.name}</span
+			>
 		{/if}
 		<div class="flex items-center gap-1">
 			<StarRating rating={review?.evaluation ?? 0} size="xs" />

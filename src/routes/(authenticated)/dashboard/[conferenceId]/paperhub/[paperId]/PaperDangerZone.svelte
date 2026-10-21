@@ -2,8 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		paperId: string;
@@ -29,9 +29,9 @@
 			success: m.paperDeletedSuccessfully(),
 			error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
 		});
-		await promise;
 
-		goto(resolve(`/dashboard/${conferenceId}/paperhub`));
+		await promise;
+		goto(resolve(`dashboard/${conferenceId}/paperhub`));
 	};
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
-	import RegistrationStatusLight from '$lib/components/RegistrationStatusLight.svelte';
-	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
-	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
+	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+	import RegistrationStatusLight from '#lib/components/RegistrationStatusLight.svelte';
+	import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
+	import { getWaitingListStatus } from '#lib/helpers/waitingListStatus.js';
 
 	interface Props {
 		conference: {

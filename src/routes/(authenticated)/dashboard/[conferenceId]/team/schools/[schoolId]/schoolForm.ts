@@ -1,0 +1,42 @@
+import { z } from 'zod';
+
+/** What the team edits of a school. Empty fields are cleared on save. */
+export const schoolFormSchema = z.object({
+	name: z.string().trim().min(1),
+	street: z.string().optional(),
+	apartment: z.string().optional(),
+	zip: z.string().optional(),
+	city: z.string().optional(),
+	region: z.string().nullish(),
+	/** ISO 3166-1 alpha-3 */
+	country: z.string().nullish(),
+	website: z.union([z.literal(''), z.url()]).optional(),
+	contactName: z.string().optional(),
+	contactEmail: z.union([z.literal(''), z.email()]).optional(),
+	contactPhone: z.string().optional(),
+	notes: z.string().optional()
+});
+
+export type SchoolFormValues = z.infer<typeof schoolFormSchema>;
+
+/** A form value as `updateSchool` takes it: an empty field clears the column. */
+const orNull = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
+
+/** The form's values as the arguments of `updateSchool`. */
+export function toUpdateSchoolArgs(id: string, values: SchoolFormValues) {
+	return {
+		id,
+		name: values.name.trim(),
+		street: orNull(values.street),
+		apartment: orNull(values.apartment),
+		zip: orNull(values.zip),
+		city: orNull(values.city),
+		region: orNull(values.region),
+		country: orNull(values.country),
+		website: orNull(values.website),
+		contactName: orNull(values.contactName),
+		contactEmail: orNull(values.contactEmail),
+		contactPhone: orNull(values.contactPhone),
+		notes: orNull(values.notes)
+	};
+}

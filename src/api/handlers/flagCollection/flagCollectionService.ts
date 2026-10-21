@@ -72,7 +72,7 @@ async function fetchFlagSources(conferenceId: string) {
 			with: { assignedRole: { columns: { id: true, kind: true, nationAlpha3Code: true } } }
 		}),
 		db.query.paper.findMany({
-			where: { conferenceId, status: { ne: 'DRAFT' } },
+			where: { conference: { id: conferenceId }, status: { ne: 'DRAFT' } },
 			columns: { id: true, delegationId: true, agendaItemId: true },
 			with: {
 				versions: {

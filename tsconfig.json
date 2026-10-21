@@ -1,19 +1,13 @@
 {
 	"compilerOptions": {
-		"allowJs": true,
-		"allowSyntheticDefaultImports": true, // This should be true as well
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"module": "ESNext", // or "CommonJS"
-		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"module": "ESNext",
 		"noImplicitAny": false,
-		"resolveJsonModule": true,
 		"rootDirs": [".", "./.svelte-kit/types"],
-		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"target": "ESNext" // or "ES6"
+		"target": "ESNext"
 	},
-	"extends": "./.svelte-kit/tsconfig.json"
+	"extends": "$app/tsconfig",
+	"include": ["src", "vite.config.ts", "playwright.config.ts"]
 }

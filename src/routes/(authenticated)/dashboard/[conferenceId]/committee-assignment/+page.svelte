@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { resolve } from '$app/paths';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { fetchCommitteeAssignment } from './committeeAssignment';
-	import formatNames from '$lib/helpers/formatNames';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -111,7 +111,7 @@
 		<a
 			class="btn btn-square"
 			aria-label={m.back()}
-			href={resolve(`/dashboard/${params.conferenceId}`)}
+			href={resolve(`dashboard/${params.conferenceId}`)}
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left text-xl"></i>
 		</a>
@@ -132,8 +132,8 @@
 		<div class="flex flex-col gap-1">
 			{#each committees ?? [] as committee (committee.id)}
 				<div class="badge badge-primary badge-lg">
-					<span class="font-bold">{committee.abbreviation}</span
-					>&emsp;{committee.name}&emsp;({committee.numOfSeatsPerDelegation}
+					<span class="font-bold">{committee.abbreviation}</span>
+					{committee.name} ({committee.numOfSeatsPerDelegation}
 					{committee.numOfSeatsPerDelegation > 1 ? m.seats() : m.seat()})
 				</div>
 			{/each}

@@ -5,6 +5,7 @@
  * are for the schema files only.
  */
 export { storedFile } from './storedFile';
+export { school } from './schools';
 export { gender, foodPreference, user, possibleDuplicateStatus, possibleDuplicate } from './users';
 export {
 	conferenceState,
@@ -50,6 +51,7 @@ export {
 	assignmentWeights
 } from './assignment';
 export { attendanceSessionMode, attendanceSession, attendanceEntry } from './attendance';
+export { emailKind, emailStatus, conferenceEmailSetting, emailLog } from './emails';
 export {
 	paperStatus,
 	paperType,

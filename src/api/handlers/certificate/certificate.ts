@@ -2,7 +2,7 @@ import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
 import { generateSeededRsa } from './deterministicRSAKeypair';
 import { CERTIFICATE_SECRET } from '$app/env/private';
-import { certificateContents } from './certificatePayload';
+import { certificateContents, certificateSessions } from './certificatePayload';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { SignJWT, exportJWK } from 'jose';
 import { certificateAlg } from '../certificateConfig/certificateConfig';
@@ -42,10 +42,19 @@ const JWK = schemaBuilder.simpleObject('JWK', {
 	})
 });
 
+const CertificateSession = schemaBuilder.simpleObject('CertificateSession', {
+	fields: (t) => ({
+		name: t.string(),
+		attended: t.boolean()
+	})
+});
+
 const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 	fields: (t) => ({
 		jwt: t.string({ nullable: true }),
-		fullName: t.string({ nullable: true })
+		fullName: t.string({ nullable: true }),
+		/** The conference's check-in occasions, ticked where the holder was checked in. */
+		sessions: t.field({ type: [CertificateSession] })
 	})
 });
 
@@ -82,9 +91,31 @@ schemaBuilder.queryFields((t) => ({
 				})
 				.then(assertFindFirstExists);
 
-			const contents = certificateContents(status);
+			const sessions = certificateSessions(
+				(
+					await db.query.attendanceSession.findMany({
+						where: { conferenceId: args.conferenceId },
+						columns: { occasion: true, startedAt: true, showOnCertificate: true },
+						// only the holder's own scan, if any
+						with: {
+							entries: {
+								where: { conferenceParticipantId: status.id },
+								columns: { id: true },
+								limit: 1
+							}
+						}
+					})
+				).map((session) => ({
+					occasion: session.occasion,
+					startedAt: session.startedAt,
+					showOnCertificate: session.showOnCertificate,
+					attended: session.entries.length > 0
+				}))
+			);
+
+			const contents = certificateContents({ ...status, sessions });
 			if (!contents) {
-				return { jwt: null, fullName: null };
+				return { jwt: null, fullName: null, sessions: [] };
 			}
 
 			const jwt = await new SignJWT(contents.payload)
@@ -92,7 +123,7 @@ schemaBuilder.queryFields((t) => ({
 				.setIssuedAt()
 				.sign((await keyPair).privateKey);
 
-			return { jwt, fullName: contents.fullName };
+			return { jwt, fullName: contents.fullName, sessions };
 		}
 	}),
 

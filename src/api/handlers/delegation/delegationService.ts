@@ -4,14 +4,18 @@ import { fetchUserParticipations } from '$api/services/registration/participatio
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
-import formatNames from '$lib/helpers/formatNames';
-import { applicationFormSchema } from '$lib/schemata/applicationForm';
-import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '$lib/helpers/applicationReadiness';
-import { m } from '$lib/paraglide/messages';
+import formatNames from '#lib/helpers/formatNames.js';
+import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+import {
+	MIN_DELEGATION_MEMBERS,
+	MIN_ROLE_APPLICATIONS
+} from '#lib/helpers/applicationReadiness.js';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
 import { apiError } from '$api/services/errors/apiError';
+import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(
@@ -47,15 +51,15 @@ async function transferHeadDelegate(
 /** Creates a delegation with the caller as its head delegate. Returns the delegation's id. */
 export async function createDelegationWithHead(
 	userId: string,
-	args: {
+	args: SchoolChoice & {
 		conferenceId: string;
-		school?: string | null;
 		motivation?: string | null;
 		experience?: string | null;
 	}
 ) {
 	applicationFormSchema.parse({
-		school: args.school,
+		schoolId: args.schoolId,
+		schoolName: args.schoolName,
 		motivation: args.motivation,
 		experience: args.experience
 	});
@@ -72,7 +76,7 @@ export async function createDelegationWithHead(
 			.insert(schema.delegation)
 			.values({
 				conferenceId: args.conferenceId,
-				school: args.school ?? undefined,
+				schoolId: (await resolveSchoolChoice(args, tx)) ?? undefined,
 				motivation: args.motivation ?? undefined,
 				experience: args.experience ?? undefined,
 				entryCode: makeEntryCode()
@@ -105,18 +109,18 @@ export async function createDelegationWithHead(
 // fallow-ignore-next-line complexity
 export async function updateDelegationDetails(
 	delegation: UpdatableDelegation,
-	args: {
+	args: SchoolChoice & {
 		id: string;
 		applied?: boolean | null;
 		resetEntryCode?: boolean | null;
 		newHeadDelegateUserId?: string | null;
-		school?: string | null;
 		experience?: string | null;
 		motivation?: string | null;
 	}
 ) {
 	applicationFormSchema.parse({
-		school: args.school,
+		schoolId: args.schoolId,
+		schoolName: args.schoolName,
 		experience: args.experience,
 		motivation: args.motivation
 	});
@@ -138,11 +142,15 @@ export async function updateDelegationDetails(
 			await tx.update(schema.delegation).set({ applied: args.applied }).where(byId);
 		}
 
-		if (args.school || args.experience || args.motivation) {
+		const schoolId = await resolveSchoolChoice(args, tx);
+		if (schoolId !== undefined) {
+			await tx.update(schema.delegation).set({ schoolId }).where(byId);
+		}
+
+		if (args.experience || args.motivation) {
 			await tx
 				.update(schema.delegation)
 				.set({
-					school: args.school,
 					experience: args.experience,
 					motivation: args.motivation
 				})
@@ -166,6 +174,7 @@ export async function previewDelegationByEntryCode(conferenceId: string, entryCo
 			where: { conferenceId, entryCode },
 			with: {
 				conference: { columns: { title: true } },
+				school: { columns: { name: true } },
 				members: { with: { user: { columns: { givenName: true, familyName: true } } } }
 			}
 		})
@@ -178,7 +187,7 @@ export async function previewDelegationByEntryCode(conferenceId: string, entryCo
 		conferenceId: delegation.conferenceId,
 		entryCode: delegation.entryCode,
 		motivation: delegation.motivation,
-		school: delegation.school,
+		school: delegation.school?.name ?? null,
 		experience: delegation.experience,
 		memberCount: delegation.members.length,
 		headDelegateFullName: formatNames(

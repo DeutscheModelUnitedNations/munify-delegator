@@ -1,6 +1,6 @@
 import type { Exchange } from '@urql/core';
 import { pipe, tap } from 'wonka';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { hasErrorCode } from './errorCodes';
 
 const REDIRECTED_AT_KEY = 'loginRedirectedAt';

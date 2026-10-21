@@ -1,8 +1,8 @@
-import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
+import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
 import valiator from 'validator';
 import IBAN from 'iban';
 import { z } from 'zod';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 export const conferenceSettingsFormSchema = z.object({
 	title: z.string().min(3, {
@@ -49,6 +49,8 @@ export const conferenceSettingsFormSchema = z.object({
 		message: m.pleaseEnterAValidDate()
 	}),
 	registrationDeadlineGracePeriodMinutes: z.coerce.number(),
+	/** Seats one school may get before the assignment warns; empty for no limit. */
+	maxSeatsPerSchool: z.number().int().min(1).nullish(),
 	startConference: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),

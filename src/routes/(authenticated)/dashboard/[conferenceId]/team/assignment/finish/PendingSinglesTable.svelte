@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
-	import codenamize from '$lib/helpers/codenamize';
-	import { m } from '$lib/paraglide/messages';
+	import Flag from '#lib/components/Flag.svelte';
+	import codenamize from '#lib/helpers/codenamize.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { sightingHref } from '../sightingLink';
 
 	/** The single participants applying the draft gives a different role, before and after. */

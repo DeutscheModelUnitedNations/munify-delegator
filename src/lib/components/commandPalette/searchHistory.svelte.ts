@@ -1,5 +1,5 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { nanoid } from '$lib/helpers/nanoid';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { nanoid } from '#lib/helpers/nanoid.js';
 
 /** How long a search made on another device stays on offer as a hint. */
 export const HANDOFF_WINDOW_MS = 20_000;

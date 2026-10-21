@@ -13,6 +13,7 @@ import './conferenceRole/conferenceRole';
 import './conferenceSupervisor/conferenceSupervisor';
 import './delegation/delegation';
 import './delegationMember/delegationMember';
+import './email/email';
 import './flagCollection/flagCollection';
 import './nation/nation';
 import './paper/paper';
@@ -27,6 +28,7 @@ import './searchHistory/searchHistory';
 import './roleApplication/roleApplication';
 import './statistics/statistics';
 import './participantsPage/participantsPage';
+import './school/school';
 import './schoolSuggestion/schoolSuggestion';
 import './scanLookup/scanLookup';
 import './identityCode/identityCode';
@@ -44,7 +46,7 @@ import './user/user';
 import './userReferenceInPaymentTransaction/userReferenceInPaymentTransaction';
 import './waitingListEntry/waitingListEntry';
 
-import { building, dev } from '$app/environment';
+import { building, dev } from '$app/env';
 import { clientCreator } from '$api/rumble';
 
 if (dev || building) {

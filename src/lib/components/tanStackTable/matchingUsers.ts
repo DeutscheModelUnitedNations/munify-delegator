@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 const USER_MATCH_LIMIT = 100;
 

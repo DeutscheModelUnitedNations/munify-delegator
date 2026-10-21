@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cache, DataFields, ResolveInfo, Variables } from '@urql/exchange-graphcache';
-import { liveQueryUpdates } from '$lib/api/cacheUpdates';
-import { schema } from '$lib/api/rumbleClient/schema';
+import { liveQueryUpdates } from '#lib/api/cacheUpdates.js';
+import { schema } from '#lib/api/rumbleClient/schema.js';
 
 describe('liveQueryUpdates', () => {
 	const updates = liveQueryUpdates(schema);

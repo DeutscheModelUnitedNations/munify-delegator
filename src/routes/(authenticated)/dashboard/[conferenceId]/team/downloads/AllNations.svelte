@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { downloadCSV } from '$lib/utils/downloadHelpers';
-	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { downloadCSV } from '#lib/utils/downloadHelpers.js';
+	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {

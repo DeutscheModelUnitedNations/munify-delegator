@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 // @ts-nocheck
 export function isMobileOrTablet() {

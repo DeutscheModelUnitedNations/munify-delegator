@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ResolvedPathname } from '$app/types';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { getPaperStatusIcon } from '$lib/utils/enumIcons';
+	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getPaperStatusIcon } from '#lib/utils/enumIcons.js';
 
 	/** The status a review moves the paper to, one toggle button per allowed transition. */
 	interface Props {

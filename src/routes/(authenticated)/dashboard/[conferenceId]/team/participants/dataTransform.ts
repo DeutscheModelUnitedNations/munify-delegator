@@ -1,7 +1,7 @@
 import type { AdministrativeStatus, ParticipantRow } from './types';
-import { getAgeAtConference, ofAgeAtConference } from '$lib/helpers/ageChecker';
+import { getAgeAtConference, ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 import type { ConferenceParticipants } from './conferenceParticipants';
-import { splitRole } from '$lib/helpers/conferenceRole';
+import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 type Registrations = Omit<ConferenceParticipants, 'conference'>;
 
@@ -57,6 +57,16 @@ function hasBirthdayDuring(
 
 type ParticipantUser = QueryData['delegationMembers'][number]['user'];
 type ParticipantStatus = QueryData['participantStatuses'][number];
+type WaitingListEntry = QueryData['waitingListEntries'][number];
+
+/** The waiting list columns of a person's row, from their entry if they have one. */
+function waitingListFields(entry: WaitingListEntry | undefined) {
+	return {
+		onWaitingList: !!entry && !entry.assigned,
+		waitingListSince: entry ? new Date(entry.createdAt) : null,
+		seatedFromWaitingListAt: entry?.assignedAt ? new Date(entry.assignedAt) : null
+	} satisfies Partial<ParticipantRow>;
+}
 
 /** The registration-specific part of a row; everything else comes from the user and status. */
 type RoleFields = Pick<
@@ -137,6 +147,7 @@ function hasOpenIssue(roleFields: RoleFields, status: ReturnType<typeof statusFi
 function buildRow(
 	user: ParticipantUser,
 	status: ParticipantStatus | undefined,
+	waiting: WaitingListEntry | undefined,
 	roleFields: RoleFields,
 	startConference: Date | string | undefined,
 	endConference: Date | string | undefined
@@ -147,6 +158,7 @@ function buildRow(
 		...userFields(user, birthday),
 		...roleFields,
 		...statuses,
+		...waitingListFields(waiting),
 		hasOpenIssue: hasOpenIssue(roleFields, statuses),
 		ageAtConference:
 			birthday && startConference ? (getAgeAtConference(birthday, startConference) ?? null) : null,
@@ -164,10 +176,19 @@ export function transformParticipants(
 		statusMap.set(s.user.id, s);
 	}
 
-	const row = (user: ParticipantUser, roleFields: RoleFields) =>
-		buildRow(user, statusMap.get(user.id), roleFields, startConference, endConference);
+	const waitingMap = new Map(queryData.waitingListEntries.map((entry) => [entry.user.id, entry]));
 
-	return [
+	const row = (user: ParticipantUser, roleFields: RoleFields) =>
+		buildRow(
+			user,
+			statusMap.get(user.id),
+			waitingMap.get(user.id),
+			roleFields,
+			startConference,
+			endConference
+		);
+
+	const registered = [
 		...queryData.delegationMembers.map((entry) => {
 			const { nation, nonStateActor } = splitRole(entry.delegation.assignedRole);
 			return row(entry.user, {
@@ -178,7 +199,7 @@ export function transformParticipants(
 				nsaName: nonStateActor?.name ?? null,
 				nsaIcon: nonStateActor?.fontAwesomeIcon ?? null,
 				committee: entry.assignedCommittee?.name ?? null,
-				delegationSchool: entry.delegation.school ?? null,
+				delegationSchool: entry.delegation.school?.name ?? null,
 				isHeadDelegate: entry.isHeadDelegate,
 				accepted: !!entry.delegation.assignedRole
 			});
@@ -187,6 +208,7 @@ export function transformParticipants(
 			row(entry.user, {
 				...noRoleFields,
 				role: 'SUPERVISOR',
+				delegationSchool: entry.school?.name ?? null,
 				plansOwnAttendance: entry.plansOwnAttendenceAtConference,
 				accepted:
 					entry.supervisedDelegationMembers.some((dm) => !!dm.delegation.assignedRoleId) ||
@@ -197,7 +219,7 @@ export function transformParticipants(
 			row(entry.user, {
 				...noRoleFields,
 				role: 'SINGLE_PARTICIPANT',
-				delegationSchool: entry.school ?? null,
+				delegationSchool: entry.school?.name ?? null,
 				assignedRoleName: entry.assignedRole?.name ?? null,
 				assignedRoleIcon: entry.assignedRole?.fontAwesomeIcon ?? null,
 				accepted: !!entry.assignedRole
@@ -212,4 +234,19 @@ export function transformParticipants(
 			})
 		)
 	];
+
+	// People still waiting who hold no registration here are rows of their own.
+	const registeredUsers = new Set(registered.map((entry) => entry.userId));
+	const waiting = queryData.waitingListEntries
+		.filter((entry) => !entry.assigned && !registeredUsers.has(entry.user.id))
+		.map((entry) =>
+			row(entry.user, {
+				...noRoleFields,
+				role: 'WAITING_LIST',
+				delegationSchool: entry.school?.name ?? null,
+				accepted: false
+			})
+		);
+
+	return [...registered, ...waiting];
 }

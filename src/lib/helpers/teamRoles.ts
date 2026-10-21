@@ -1,4 +1,4 @@
-import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
 
 /**
  * Which team roles may do what, shared by the API's abilities (`authHelper.ts`) and the team
@@ -38,8 +38,8 @@ export const SEAT_PLANNING_ROLES = [
 
 /**
  * Roles that maintain the conference's content: the links, the postal address, the mail and
- * certificate templates, the adopted resolutions, the conference status and the feature
- * switches. The rest of the settings is project management's.
+ * certificate templates, the participants' announcement, the adopted resolutions, the conference
+ * status and the feature switches. The rest of the settings is project management's.
  */
 export const CONFERENCE_CONTENT_ROLES = [
 	'PROJECT_MANAGEMENT',

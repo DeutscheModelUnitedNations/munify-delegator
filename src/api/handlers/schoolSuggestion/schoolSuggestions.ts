@@ -9,9 +9,18 @@ import { eq, inArray } from 'drizzle-orm';
  * they named.
  */
 export async function loadSchoolRows(conferenceId: string, readable: ReadableSchoolRegistrations) {
+	const school = { id: schema.school.id, name: schema.school.name };
 	const [delegations, participants] = await Promise.all([
-		db.query.delegation.findMany(readable.delegations),
-		db.query.singleParticipant.findMany(readable.singleParticipants)
+		db
+			.select({ id: schema.delegation.id, school })
+			.from(schema.delegation)
+			.innerJoin(schema.school, eq(schema.school.id, schema.delegation.schoolId))
+			.where(readable.delegations),
+		db
+			.select({ school })
+			.from(schema.singleParticipant)
+			.innerJoin(schema.school, eq(schema.school.id, schema.singleParticipant.schoolId))
+			.where(readable.singleParticipants)
 	]);
 
 	const memberCounts = await db.query.delegationMember.findMany({
@@ -23,7 +32,7 @@ export async function loadSchoolRows(conferenceId: string, readable: ReadableSch
 }
 
 /**
- * Finds the groups of similar school names in a conference and brings the suggestion tables in
+ * Finds the groups of similar schools among those a conference's applications name and brings the suggestion tables in
  * line with them. A group found again keeps its row, and so the team's decision; groups that no
  * longer exist (merged, renamed, withdrawn) are removed.
  */
@@ -34,7 +43,7 @@ export async function refreshSchoolSuggestions(
 	const found = findSimilarSchools(await loadSchoolRows(conferenceId, readable)).map(
 		(suggestion) => ({
 			...suggestion,
-			key: suggestionKey(suggestion.variants.map((variant) => variant.school))
+			key: suggestionKey(suggestion.variants.map((variant) => variant.schoolId))
 		})
 	);
 
@@ -83,7 +92,7 @@ export async function refreshSchoolSuggestions(
 				found.flatMap((suggestion) =>
 					suggestion.variants.map((variant) => ({
 						suggestionId: idByKey.get(suggestion.key) ?? '',
-						school: variant.school,
+						schoolId: variant.schoolId,
 						sumParticipants: variant.sumParticipants
 					}))
 				)

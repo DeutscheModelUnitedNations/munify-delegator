@@ -1,6 +1,6 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import {
 	assignedMemberCounts,
 	nationSeatCounts,
@@ -8,8 +8,8 @@ import {
 	seatsWithPending,
 	type PendingSeat,
 	type Role
-} from '$lib/helpers/seatPlanning/hints';
-import type { BaselineCommittee, RegionalBaseline } from '$lib/helpers/seatPlanning/baselines';
+} from '#lib/helpers/seatPlanning/hints.js';
+import type { BaselineCommittee, RegionalBaseline } from '#lib/helpers/seatPlanning/baselines.js';
 import { SvelteMap } from 'svelte/reactivity';
 import { toast } from 'svelte-sonner';
 

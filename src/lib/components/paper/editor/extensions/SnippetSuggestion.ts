@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import type { SuggestionOptions } from '@tiptap/suggestion';
-import { createFuzzySearch } from '$lib/components/tanStackTable/search';
+import { createFuzzySearch } from '#lib/components/tanStackTable/search.js';
 import { createSuggestionRenderer, type SnippetItem } from './suggestionRenderer';
 
 export type { SnippetItem } from './suggestionRenderer';

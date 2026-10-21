@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { m } from '$lib/paraglide/messages';
-import { translateTeamRole } from '$lib/utils/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { m } from '#lib/paraglide/messages.js';
+import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { describeParticipant, type ParticipationRoles } from './participantInfo';
 
 const nobody: ParticipationRoles = {

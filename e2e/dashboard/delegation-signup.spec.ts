@@ -25,7 +25,7 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await headPage.locator('a[href$="/create-delegation"]').click();
 	await headPage.waitForURL(/\/create-delegation$/);
 
-	const schoolInput = headPage.locator('input[name="school"]');
+	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
 		await headPage.getByRole('button', { name: /weiter|next/i }).click();
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });
@@ -80,11 +80,11 @@ test('a head delegate can set preferences and complete their delegation signup',
 		// wait for the mutation to land (pool shrinks by one) before adding the next
 		await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
 	}
-	await modal.getByRole('button', { name: /dialog schließen|close dialog/i }).click();
+	await modal.getByRole('button', { name: 'Schließen', exact: true }).click();
 	await expect(modal).toBeHidden({ timeout: 15_000 });
 
 	const completeSignupButton = headPage.getByRole('button', {
-		name: 'Anmeldung verbindlich abschließen und damit am Auswahlverfahren teilnehmen'
+		name: 'Bewerbung verbindlich abschließen und damit am Auswahlverfahren teilnehmen'
 	});
 	// The button is gated on the delegation's member and role-application counts. Closing the
 	// preferences modal does not always land the cache invalidation that refreshes them, leaving

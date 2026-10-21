@@ -10,7 +10,7 @@ import {
 	schoolsSql
 } from './sightingDeckQuery';
 import { assertCanReadSightingDeck } from './sightingDeckPermissions';
-import codenmz from '$lib/helpers/codenamize';
+import codenmz from '#lib/helpers/codenamize.js';
 import { z } from 'zod';
 import { apiError } from '$api/services/errors/apiError';
 
@@ -167,7 +167,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadSightingDeck(ctx, args.conferenceId);
 			const search = (args.search ?? '').trim().replace(/[\\%_]/g, '\\$&');
-			const result = await db.execute(
+			const result = await db.execute<Record<string, unknown>>(
 				schoolsSql(args.conferenceId, `%${search}%`, Math.min(args.limit ?? 20, 50))
 			);
 			return z.array(schoolRowSchema).parse(result.rows);

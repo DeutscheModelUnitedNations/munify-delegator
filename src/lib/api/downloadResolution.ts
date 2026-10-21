@@ -1,5 +1,5 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { downloadFromURL } from '$lib/utils/downloadHelpers';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { downloadFromURL } from '#lib/utils/downloadHelpers.js';
 
 /**
  * Fetches one resolution's PDF and hands it to the browser as a download. Lists never fetch the

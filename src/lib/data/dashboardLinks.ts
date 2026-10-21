@@ -1,9 +1,9 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
-import { m } from '$lib/paraglide/messages';
-import CalendarLinkInfo from '$lib/components/dashboard/CalendarLinkInfo.svelte';
-import generatePaperInboxLinkWithParams from '$lib/helpers/paperInboxLink';
+import { m } from '#lib/paraglide/messages.js';
+import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
+import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink.js';
 
 export type UserType = 'delegation' | 'singleParticipant' | 'supervisor';
 
@@ -75,7 +75,8 @@ const dashboardLinks: DashboardLink[] = [
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => ctx.conferenceState === 'ACTIVE',
+		// Already in preparation, so everybody can try it on their phone before they arrive.
+		isVisible: (ctx) => ctx.conferenceState === 'PREPARATION' || ctx.conferenceState === 'ACTIVE',
 		isDisabled: () => false
 	},
 	{

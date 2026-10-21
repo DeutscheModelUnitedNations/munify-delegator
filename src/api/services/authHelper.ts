@@ -3,7 +3,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context } from '$api/context';
 import type { teamRole } from '$api/db/schema';
-import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
+import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
 
 /** The TeamRole enum values, taken from the schema so role lists stay type-checked. */
 export type TeamRole = (typeof teamRole.enumValues)[number];
@@ -48,7 +48,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * rumble has no global wildcard.
  */
 
-// The role lists live in `$lib/helpers/teamRoles`, where the pages' own checks share them.
+// The role lists live in `#lib/helpers/teamRoles`, where the pages' own checks share them.
 export {
 	CONFERENCE_CONTENT_ROLES,
 	PAPER_ROLES,
@@ -56,15 +56,15 @@ export {
 	PROJECT_MANAGEMENT_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
-} from '$lib/helpers/teamRoles';
+} from '#lib/helpers/teamRoles.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
-} from '$lib/helpers/teamRoles';
-import { m } from '$lib/paraglide/messages';
-import { translateTeamRole } from '$lib/utils/enumTranslations';
+} from '#lib/helpers/teamRoles.js';
+import { m } from '#lib/paraglide/messages.js';
+import { translateTeamRole } from '#lib/utils/enumTranslations.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */

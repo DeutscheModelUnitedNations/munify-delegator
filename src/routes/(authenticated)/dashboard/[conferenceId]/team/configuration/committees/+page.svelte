@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import CommitteesManager from './CommitteesManager.svelte';
 	import type { PageProps } from './$types';
 

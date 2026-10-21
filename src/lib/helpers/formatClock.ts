@@ -1,4 +1,4 @@
-import { getLocale } from '$lib/paraglide/runtime';
+import { getLocale } from '#lib/paraglide/runtime.js';
 
 /** Calendar times are UTC wall-clock times, so they are shown in UTC, in the app's locale. */
 const formatter = (locale: string) =>

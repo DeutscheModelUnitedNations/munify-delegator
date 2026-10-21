@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { page } from '$app/state';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import formatNames from '$lib/helpers/formatNames';
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import SquareButtonWithLoadingState from '#lib/components/SquareButtonWithLoadingState.svelte';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import EntryCode from '../Common/EntryCode.svelte';
 

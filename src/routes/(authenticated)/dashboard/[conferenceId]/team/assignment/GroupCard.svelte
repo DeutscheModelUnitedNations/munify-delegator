@@ -6,12 +6,12 @@
 		wishList,
 		wishStatus,
 		type BoardReviewRow
-	} from '$lib/assignment/board';
-	import type { AssignmentGroup } from '$lib/assignment/state';
-	import StarRating from '$lib/components/StarRating.svelte';
-	import formatNames from '$lib/helpers/formatNames';
-	import { m } from '$lib/paraglide/messages';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	} from '#lib/assignment/board.js';
+	import type { AssignmentGroup } from '#lib/assignment/state.js';
+	import StarRating from '#lib/components/StarRating.svelte';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
@@ -80,7 +80,7 @@
 	const wishTone = (matches: boolean) =>
 		matches ? 'text-success font-semibold' : unwished ? 'text-warning' : 'text-base-content/60';
 	/** Under the names: the school. */
-	const subtitle = $derived(single ? single.school : delegation?.school);
+	const subtitle = $derived(single ? single.school?.name : delegation?.school?.name);
 	const applicationId = $derived(group.singleParticipantId ?? group.delegationId);
 	const sightingLink = $derived(
 		applicationId ? sightingHref(conferenceId, applicationId) : undefined

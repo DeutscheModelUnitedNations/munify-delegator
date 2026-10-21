@@ -3,9 +3,9 @@
 	import worldCountries from 'world-countries';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import {
 		emptyRequestForm,
 		fromSeedJsonText,
@@ -14,8 +14,8 @@
 		newNsa,
 		newRole,
 		toSeedJson
-	} from '$lib/seeding/conferenceRequest';
-	import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
+	} from '#lib/seeding/conferenceRequest.js';
+	import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
 
 	const DRAFT_STORAGE_KEY = 'conference-request-draft';
 
@@ -309,7 +309,7 @@
 				<div class="flex flex-col gap-4">
 					{#each form.customConferenceRole as role (role.key)}
 						<div class="bg-base-100 rounded-box border-base-300 flex flex-col gap-3 border p-4">
-							<div class="grid grid-cols-1 gap-3 md:grid-cols-[2fr_2fr_auto] md:items-end">
+							<div class="grid grid-cols-1 gap-3 md:grid-cols-[2fr_2fr_1fr_auto] md:items-end">
 								<label class="flex flex-col">
 									<span class="label mb-2 whitespace-break-spaces">{m.name()}</span>
 									<input class="input w-full" bind:value={role.name} />
@@ -321,6 +321,10 @@
 										placeholder="fa-camera"
 										bind:value={role.fontAwesomeIcon}
 									/>
+								</label>
+								<label class="flex flex-col">
+									<span class="label mb-2 whitespace-break-spaces">{m.seatAmount()}</span>
+									<input type="number" min="1" class="input w-full" bind:value={role.seatAmount} />
 								</label>
 								<button
 									type="button"

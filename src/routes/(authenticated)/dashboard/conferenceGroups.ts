@@ -1,5 +1,5 @@
-import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
+import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
 
 export type ConferenceGroupKey = 'active' | 'registration' | 'preparation' | 'upcoming' | 'past';
 

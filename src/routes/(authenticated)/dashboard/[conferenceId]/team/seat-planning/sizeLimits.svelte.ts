@@ -1,4 +1,4 @@
-import { parseSizeLimits, type SizeLimits } from '$lib/helpers/seatPlanning/hints';
+import { parseSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints.js';
 
 /**
  * Min/max delegation size of the seat planning. Only a planning aid, so it lives in the browser

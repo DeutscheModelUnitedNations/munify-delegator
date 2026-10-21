@@ -5,7 +5,15 @@ import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript-eslint';
-import svelteConfig from './svelte.config.js';
+import { loadConfig } from '@sveltejs/load-config';
+
+// Only what eslint-plugin-svelte reads: the rest of the SvelteKit config holds functions
+// (`typescript.config`), which ESLint's cache cannot serialize.
+const loadedSvelteConfig = (await loadConfig('./', { traverse: false }))?.config;
+const svelteConfig = loadedSvelteConfig && {
+	compilerOptions: loadedSvelteConfig.compilerOptions,
+	preprocess: loadedSvelteConfig.preprocess
+};
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default ts.config(

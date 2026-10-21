@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
+	import { client, type UserPreview } from '#lib/api/rumbleClient/client.js';
 	import InitialsButton from '../InitialsButton.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import Flag from '$lib/components/Flag.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import Flag from '#lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {

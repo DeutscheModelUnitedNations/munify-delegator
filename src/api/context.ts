@@ -1,7 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { OIDC_ROLE_CLAIM } from '$app/env/private';
 import { oidcRoles } from './services/OIDC';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][] {
@@ -49,7 +49,14 @@ export function context(req: RequestEvent) {
 
 	return {
 		oidc: { user, claims },
-		url: req.url,
+		/**
+		 * A function, read only by the resolvers that need it: SvelteKit 3 throws on `event.url`
+		 * inside a remote query, which is how SSR runs the schema (`graphql.remote.ts`), and rumble
+		 * spreads this object, so a getter would be read anyway. The resolvers calling it are
+		 * mutations and browser-only queries, which arrive over `/api/graphql`. Not named `url`:
+		 * envelop assigns the context onto the request event, whose `url` is read-only.
+		 */
+		requestUrl: () => req.url,
 		event: req,
 		mustBeLoggedIn: () => {
 			if (!user) {

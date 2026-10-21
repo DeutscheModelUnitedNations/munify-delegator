@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ResolvedPathname } from '$app/types';
-	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import CardInfoSectionWithIcons from '#lib/components/CardInfoSectionWithIcons.svelte';
 
 	interface Props {
 		title: string;

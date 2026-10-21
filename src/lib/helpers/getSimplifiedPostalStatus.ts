@@ -1,4 +1,4 @@
-import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
 import type * as schema from '$api/db/schema';
 
 /**

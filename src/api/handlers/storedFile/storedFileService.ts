@@ -7,8 +7,8 @@ import {
 } from '$app/env/private';
 import { apiError } from '$api/services/errors/apiError';
 import { db, schema } from '$api/db/db';
-import { nanoid } from '$lib/helpers/nanoid';
-import { m } from '$lib/paraglide/messages';
+import { nanoid } from '#lib/helpers/nanoid.js';
+import { m } from '#lib/paraglide/messages.js';
 import { formatMegabytes, type findFileSource } from './fileSources';
 import { createStorage, objectKey, type Storage } from './storageClient';
 

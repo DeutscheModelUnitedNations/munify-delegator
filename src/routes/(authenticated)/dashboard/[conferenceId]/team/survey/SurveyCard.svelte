@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
-	import { formatInTimezone } from '$lib/helpers/conferenceTimezoneDate';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import PieChart from '#lib/components/charts/echarts/PieChart.svelte';
+	import { formatInTimezone } from '#lib/helpers/conferenceTimezoneDate.js';
 
 	interface Props {
 		surveyId: string;
@@ -36,12 +36,8 @@
 	const totalAnswers = $derived(
 		survey.options.reduce((sum, opt) => sum + opt.countSurveyAnswers, 0)
 	);
-
 	const chartData = $derived(
-		survey.options.map((opt) => ({
-			name: opt.title,
-			value: opt.countSurveyAnswers
-		}))
+		survey.options.map((opt) => ({ name: opt.title, value: opt.countSurveyAnswers }))
 	);
 
 	const formatDeadline = (date: Date) => {
@@ -195,7 +191,7 @@
 		</label>
 		<a
 			class="btn btn-sm btn-primary"
-			href={resolve(`/dashboard/${conferenceId}/team/survey/${survey.id}`)}
+			href={resolve(`dashboard/${conferenceId}/team/survey/${survey.id}`)}
 		>
 			{m.details()}
 			<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>

@@ -67,7 +67,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
+	import DetailedPaperStats from '#lib/components/paperHub/DetailedPaperStats.svelte';
 
 	// allPapers: flat array of all papers across committees
 	// committeesWithPapers: array of committees with their papers grouped
@@ -81,7 +81,7 @@ interface Props {
 
 ### Chart Subcomponents
 
-This component uses the following chart components from `$lib/components/charts/echarts/`:
+This component uses the following chart components from `#lib/components/charts/echarts//index.js`:
 
 | Component             | Purpose                                    |
 | --------------------- | ------------------------------------------ |
@@ -124,7 +124,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import InviteTeamMembersModal from '#lib/components/teamManagement/InviteTeamMembersModal.svelte';
 
 	let inviteModalOpen = $state(false);
 </script>
@@ -176,7 +176,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
+	import PendingInvitationsTable from '#lib/components/teamManagement/PendingInvitationsTable.svelte';
 </script>
 
 <PendingInvitationsTable invitations={data.pendingInvitations} />
@@ -214,7 +214,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
+	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
 </script>
 
 <CalendarDisplay days={previewDays} timezone="Europe/Berlin" />
@@ -329,10 +329,10 @@ to …" selects in the entry form set the first and last track.
 
 ## RoleFlag Component
 
-`$lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
+`#lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
 actor's icon (through `Flag`), nothing for no role. Pass the role as selected
 (`assignedRole { kind fontAwesomeIcon nation { alpha2Code } }`) and an optional `size` (`xs` by
-default). For the name next to it, narrow the role with `splitRole` from `$lib/helpers/conferenceRole`.
+default). For the name next to it, narrow the role with `splitRole` from `#lib/helpers/conferenceRole.js`.
 
 ```svelte
 <RoleFlag role={delegation.assignedRole} />
@@ -355,7 +355,7 @@ Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, re
 
 ```svelte
 <script lang="ts">
-	import Kbd from '$lib/components/Kbd.svelte';
+	import Kbd from '#lib/components/Kbd.svelte';
 </script>
 
 <!-- In a button -->
@@ -395,9 +395,9 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 
 ```svelte
 <script lang="ts">
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import FormSelect from '#lib/components/form/FormSelect.svelte';
 </script>
 
 <FormFieldset title="Personal Information">
@@ -425,16 +425,25 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 | `FormFile`           | File upload                     | `form`, `name`, `label`                                                                          |
 | `FormSubmitButton`   | Submit with loading state       | `form`, `disabled`, `loading`                                                                    |
 | `AddressRegionField` | State/province of an address    | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
+| `SchoolPicker`       | School combobox                 | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
+
+**`SchoolPicker`** is how every form asks for a school (applications, waiting list, supervisors).
+It binds the two fields every school mutation takes (`schoolChoiceSchema` in
+`#lib/schemata/schoolChoice.ts`): typing searches `searchSchools` (from two characters, debounced)
+and clears `schoolId`, so a new name creates a school on save; picking a suggestion sets both;
+"Keine Schule angeben" clears both, because a school is always optional. A hint line says which of
+the three it is. To change the school of an existing row, open `SchoolChangeForm`
+(`current`, `save(choice)`, `onSaved`) in a `Modal`.
 
 ### Complete Form Example
 
 ```svelte
 <script lang="ts">
-	import Form from '$lib/components/form/Form.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/form/FormSelect.svelte';
-	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
+	import Form from '#lib/components/form/Form.svelte';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import FormSelect from '#lib/components/form/FormSelect.svelte';
+	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import { superForm } from 'sveltekit-superforms';
 
 	let { data } = $props();
@@ -483,8 +492,8 @@ Use `Modal` for dialogs. It handles backdrop clicks and accessibility.
 
 ```svelte
 <script lang="ts">
-	import Modal from '$lib/components/Modal.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 
 	let modalOpen = $state(false);
 </script>
@@ -579,7 +588,7 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ```svelte
 <script lang="ts">
-	import Drawer from '$lib/components/Drawer.svelte';
+	import Drawer from '#lib/components/Drawer.svelte';
 
 	let drawerOpen = $state(false);
 	let loading = $state(false);
@@ -616,7 +625,7 @@ Use `TopDrawer` for overlay panels that slide down from the top of the screen. B
 
 ```svelte
 <script lang="ts">
-	import TopDrawer from '$lib/components/TopDrawer.svelte';
+	import TopDrawer from '#lib/components/TopDrawer.svelte';
 
 	let drawerOpen = $state(false);
 </script>
@@ -641,7 +650,7 @@ Use `TopDrawer` for overlay panels that slide down from the top of the screen. B
 
 ## SlidePanel Component
 
-`$lib/components/SlidePanel.svelte` is the shared base for animated edge panels (`TopDrawer`, the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
+`#lib/components/SlidePanel.svelte` is the shared base for animated edge panels (`TopDrawer`, the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
 
 | Prop        | Type                           | Description                                |
 | ----------- | ------------------------------ | ------------------------------------------ |
@@ -677,7 +686,7 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 
 ```svelte
 <script lang="ts">
-	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
+	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 
 	const params = queryParameters({ queryUserId: true });
@@ -708,7 +717,7 @@ Main section wrapper with icon, title, and description:
 
 ```svelte
 <script lang="ts">
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 </script>
 
 <DashboardSection
@@ -734,7 +743,7 @@ Main section wrapper with icon, title, and description:
 
 ### DashboardLinkCard
 
-A link card of the dashboard (`$lib/components/dashboard/DashboardLinkCard.svelte`). Beside the
+A link card of the dashboard (`#lib/components/dashboard/DashboardLinkCard.svelte`). Beside the
 title and description it takes an `info` snippet for live details the card carries itself: the
 schedule's card shows a small timeline of what is on now and the next two things on the signed-in person's track (`CalendarLinkInfo`), the team's
 card the caller's roles (`TeamEntryInfo`). A link definition (`dashboardLinks.ts`,
@@ -748,7 +757,7 @@ Simple card container for content:
 
 ```svelte
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '#lib/components/dashboard/DashboardContentCard.svelte';
 </script>
 
 <DashboardContentCard title="Statistics" description="Overview of current data">
@@ -777,7 +786,7 @@ Checklist table with status icons:
 
 ```svelte
 <script lang="ts">
-	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
+	import TodoTable from '#lib/components/dashboard/TodoTable.svelte';
 </script>
 
 <TodoTable
@@ -858,17 +867,17 @@ Shows an open/closed badge with the deadline formatted in the conference timezon
 ### ManagedTable
 
 The table of the management pages, built on TanStack Table
-(`$lib/components/tanStackTable/ui/ManagedTable.svelte`): sortable, paginated, with a search box
+(`#lib/components/tanStackTable/ui/ManagedTable.svelte`): sortable, paginated, with a search box
 kept in the URL (`?filter=`), an export button and the size / zebra settings. Columns are
 `ManagedColumn<Row>` definitions; the accessor is what gets sorted and searched (every term must
 occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 
 ```svelte
 <script lang="ts">
-	import { renderComponent } from '$lib/components/tanStackTable';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import BadgeCell from '$lib/components/tanStackTable/cells/BadgeCell.svelte';
+	import { renderComponent } from '#lib/components/tanStackTable/index.js';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
 
 	const columns: ManagedColumn<Row>[] = [
 		{ id: 'name', header: 'Name', accessorFn: (row) => row.name },
@@ -979,7 +988,7 @@ Statistics widgets using DaisyUI stats component:
 
 ```svelte
 <script lang="ts">
-	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
+	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
 </script>
 
 <GenericWidget
@@ -997,8 +1006,8 @@ Key-value pair display:
 
 ```svelte
 <script lang="ts">
-	import Grid from '$lib/components/infoGrid/Grid.svelte';
-	import Entry from '$lib/components/infoGrid/Entry.svelte';
+	import Grid from '#lib/components/infoGrid/Grid.svelte';
+	import Entry from '#lib/components/infoGrid/Entry.svelte';
 </script>
 
 <Grid>
@@ -1021,7 +1030,7 @@ The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/tea
 | File                                          | Role                                                                                                                                                                                                                                                                                                                                         |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                                                                                        |
-| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `DataTable.Root` shell (`$lib/components/tanStackTable/ui`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
+| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `DataTable.Root` shell (`#lib/components/tanStackTable/ui`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
 | `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                                                                                                |
 | `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                                                                                     |
 | `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets)                                                                     |
@@ -1061,7 +1070,7 @@ tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.sv
 
 | File                                      | Role                                                                                                                                                                                                  |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `board.ts`                                | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `$lib/assignment`), `describeRole`                                                                 |
+| `board.ts`                                | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `#lib/assignment`), `describeRole`                                                                 |
 | `GroupCard.svelte`                        | A draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign                                                                    |
 | `RoleCard.svelte`                         | A drop zone for a nation, non-state actor or custom role: seats taken / total, its groups, free slots, over-capacity in red                                                                           |
 | `SplitModal.svelte`                       | Splits a delegation by picking a part per member (radio grid, no drag and drop)                                                                                                                       |
@@ -1082,10 +1091,35 @@ tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.sv
   refetch after a save has to change one (see `revision` of `sightingDeck`).
 - Cards keyed by props that come from live data pull their keys into their own `$derived` before
   querying (`ApplicationCard`), or a rebuilt parent list re-runs their queries in a loop.
-- `$lib/components/assignment/AssignmentReleaseToggle.svelte` is the release switch; it saves on
+- `#lib/components/assignment/AssignmentReleaseToggle.svelte` is the release switch; it saves on
   its own and appears both on the finish tab and in the conference settings.
-- `$lib/components/AssignmentPending.svelte` is what participants and supervisors see between the
+- `#lib/components/AssignmentPending.svelte` is what participants and supervisors see between the
   end of registration and the release, in place of `ApplicationRejected`.
+- `SchoolSeatsPanel.svelte` lists the seats the plan gives each school against
+  `conference.maxSeatsPerSchool` (sidebar of the delegations and singles boards, finish tab); the
+  counting is `#lib/assignment/schoolSeats.ts`. Dropping a group or single that takes its school
+  past the limit toasts a warning; nothing is blocked.
+
+---
+
+## Badge Generator
+
+Nametags and table placards ("Länderschilder") are printed with the external generator at
+`PUBLIC_BADGE_GENERATOR_URL` (default https://badges.dmun.de), which takes a CSV. `#lib/components/BadgeGeneratorLinks.svelte`
+is the one way to hand it over: a joined "CSV herunterladen" button and a link to the generator,
+with a short hint.
+
+| Prop       | Purpose                                                      |
+| ---------- | ------------------------------------------------------------ |
+| `badges`   | `() => Badge[] \| Promise<Badge[]>`, built only when clicked |
+| `filename` | Without extension                                            |
+| `label`    | The tile's / button's title                                  |
+| `variant`  | `'inline'` (default) or `'tile'` (the downloads page)        |
+| `showHint` | Shows the "upload it there, pick the badge type, print" hint |
+
+The rows come from `#lib/helpers/badgeCsv.ts` (`personBadge`, `placardBadges`, `badgeRow`), which
+keeps the generator's rules: its exact header, comma-separated UTF-8, and a flag
+(`countryAlpha2Code`) or an image (`alternativeImage`), never both.
 
 ---
 
@@ -1114,9 +1148,9 @@ Sidebar navigation:
 
 ```svelte
 <script lang="ts">
-	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
+	import NavMenu from '#lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
 </script>
 
 <NavMenu>
@@ -1153,7 +1187,7 @@ A crumb for a folder with no page of its own (`team`) is shown as plain text, no
 
 The team side navigation around a page (`team/TeamShell.svelte`). The team layout and the paper hub
 both render inside it, so the menu stays the same. The menu is not written out: it is
-`$lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page is in
+`#lib/data/teamRoutes.ts` (the route registry) filtered by what the caller may open, so a page is in
 the menu exactly when the route guard lets them in. The dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`, which links no team page directly), the
 command palette's page entries and the guard in `team/+layout.ts` read the same registry. A new team
 page is one entry there; its `roles` say who may open it. Members and invitations share a tab layout
@@ -1165,8 +1199,8 @@ Tab navigation:
 
 ```svelte
 <script lang="ts">
-	import Tabs from '$lib/components/tabs/Tabs.svelte';
-	import Tab from '$lib/components/tabs/Tab.svelte';
+	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import Tab from '#lib/components/tabs/Tab.svelte';
 
 	let activeTab = $state('overview');
 </script>
@@ -1203,7 +1237,7 @@ Colored status indicator with optional blink:
 
 ```svelte
 <script lang="ts">
-	import StatusLight from '$lib/components/StatusLight.svelte';
+	import StatusLight from '#lib/components/StatusLight.svelte';
 </script>
 
 <StatusLight color="success" blink={true} tooltip="Online" />

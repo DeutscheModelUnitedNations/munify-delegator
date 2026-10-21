@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import formatNames from '$lib/helpers/formatNames';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import {
 		DUPLICATE_THRESHOLD,
 		PARTICIPANT_MAX_AGE,
 		PARTICIPANT_MIN_AGE,
 		SUPERVISOR_MIN_AGE,
 		yearsAgo
-	} from '$lib/helpers/plausibilityRules';
+	} from '#lib/helpers/plausibilityRules.js';
 	import PlausibilityCheck from './PlausibilityCheck.svelte';
 	import PossibleDuplicates from './PossibleDuplicates.svelte';
 	import { duplicatesOfConference } from './possibleDuplicatesWhere';

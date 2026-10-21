@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { MultiSeriesBarChart } from '$lib/components/charts/echarts';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { MultiSeriesBarChart } from '#lib/components/charts/echarts/index.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { statsQueryFilter } from '../stats.svelte';
 	import { ageChartSeries, getCategoryColor, getCategoryDisplayName } from './chartData';
 

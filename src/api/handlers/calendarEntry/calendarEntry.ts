@@ -10,7 +10,7 @@ import {
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 registerCalendarEntryAbilities();

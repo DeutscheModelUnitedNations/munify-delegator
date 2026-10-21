@@ -5,7 +5,8 @@ const certificate: CertificateData = {
 	templateUrl: 'https://s3.test/certificate.pdf',
 	title: 'MUN SH 2026',
 	jwt: 'signed',
-	fullName: 'Ada Lovelace'
+	fullName: 'Ada Lovelace',
+	sessions: [{ name: 'Eröffnung', attended: true }]
 };
 
 describe('planCertificateDownload', () => {
@@ -29,7 +30,11 @@ describe('planCertificateDownload', () => {
 	test('names the file after the participant and the conference', () => {
 		expect(planCertificateDownload(certificate, 'u')).toEqual({
 			kind: 'ready',
-			holder: { fullName: 'Ada Lovelace', jwt: 'signed' },
+			holder: {
+				fullName: 'Ada Lovelace',
+				jwt: 'signed',
+				sessions: [{ name: 'Eröffnung', attended: true }]
+			},
 			content: 'https://s3.test/certificate.pdf',
 			filename: 'Ada-Lovelace_MUN-SH 2026_certificate.pdf'
 		});

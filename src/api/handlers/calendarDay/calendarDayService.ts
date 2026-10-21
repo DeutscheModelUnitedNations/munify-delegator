@@ -3,8 +3,8 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import {
 	type CalendarDayExportData,
 	calendarDayExportSchema
-} from '$lib/schemata/calendarDayExport';
-import { m } from '$lib/paraglide/messages';
+} from '#lib/schemata/calendarDayExport.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /** The import document arrives either as a JSON string or already parsed. */

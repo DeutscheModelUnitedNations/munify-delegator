@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import UserMenu from './(authenticated)/UserMenu.svelte';
 
 	// Only whether a session exists; the menu fetches the person itself.
@@ -19,11 +19,11 @@
 			class="link link-hover hidden sm:inline"
 			href="https://github.com/DeutscheModelUnitedNations/munify-delegator"
 			target="_blank"
-			rel="noopener noreferrer"
+			rel="noopener noreferrer">GitHub</a
 		>
-			GitHub
-		</a>
-		<a class="btn btn-primary btn-sm" href={resolve('/dashboard')}>{m.homeConferencesBtn()}</a>
+
+		<a class="btn btn-primary btn-sm" href={resolve('dashboard')}>{m.homeConferencesBtn()}</a>
+
 		{#if signedIn}
 			<UserMenu />
 		{/if}

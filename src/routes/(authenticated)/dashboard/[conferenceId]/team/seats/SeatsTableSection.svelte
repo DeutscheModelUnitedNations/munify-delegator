@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DataTable } from '$lib/components/tanStackTable/ui';
+	import { DataTable } from '#lib/components/tanStackTable/ui/index.js';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

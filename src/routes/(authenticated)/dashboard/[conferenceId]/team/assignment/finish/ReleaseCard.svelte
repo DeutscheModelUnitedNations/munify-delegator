@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { releaseNotice } from '$lib/assignment/board';
+	import { releaseNotice } from '#lib/assignment/board.js';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * Whether participants see the assignment - and, right after applying while it is still hidden,

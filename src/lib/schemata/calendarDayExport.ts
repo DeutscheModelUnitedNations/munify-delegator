@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { allColors } from '$lib/components/calendar/calendarColors';
+import { allColors } from '#lib/components/calendar/calendarColors.js';
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 

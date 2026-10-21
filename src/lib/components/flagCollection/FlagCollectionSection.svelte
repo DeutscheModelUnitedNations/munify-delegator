@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/stores';
-	import { browser } from '$app/environment';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { page } from '$app/state';
+	import { browser } from '$app/env';
 	import FlagCard from './FlagCard.svelte';
 	import CollectionStats from './CollectionStats.svelte';
-	import CollapsibleCard from '$lib/components/CollapsibleCard.svelte';
-	import LoadState from '$lib/components/LoadState.svelte';
+	import CollapsibleCard from '#lib/components/CollapsibleCard.svelte';
+	import LoadState from '#lib/components/LoadState.svelte';
 	import { filterAndSortFlags } from './flagCollectionLayout';
 
 	interface Props {
@@ -19,7 +19,7 @@
 	let isExpanded = $state(false);
 
 	$effect(() => {
-		if (browser && $page.url.hash === '#flag-collection') {
+		if (browser && page.url.hash === '#flag-collection') {
 			isExpanded = true;
 		}
 	});
@@ -113,9 +113,8 @@
 					class="tab"
 					class:tab-active={filterState === option.id}
 					onclick={() => (filterState = option.id)}
+					>{option.label()} ({data.flags.filter(option.keep).length})</button
 				>
-					{option.label()} ({data.flags.filter(option.keep).length})
-				</button>
 			{/each}
 		</div>
 	</div>

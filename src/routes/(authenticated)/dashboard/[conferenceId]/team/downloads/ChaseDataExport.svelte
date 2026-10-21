@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { downloadJSON } from '$lib/utils/downloadHelpers';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { downloadJSON } from '#lib/utils/downloadHelpers.js';
 	import { nanoid } from 'nanoid';
 	import DownloadButton from './DownloadButton.svelte';
 	import { buildChaseImport } from './chaseExport';

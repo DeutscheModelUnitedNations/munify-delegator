@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { resolve } from '$app/paths';
-	import { reveal } from '$lib/attachments/reveal';
-	import SHLogo from '$assets/logo/mun-sh_logo.png';
-	import BWLogo from '$assets/logo/munbw_logo.png';
-	import zweig from '$assets/logo/dmun-zweig-halbtransparent.svg';
-	import UdteamUp from '$assets/undraw/team-up.svg';
-	import UdQuestion from '$assets/undraw/question.svg';
-	import world from '$assets/undraw/world.svg';
-	import blob from '$assets/misc/blobs/blob_2.svg';
+	import { reveal } from '#lib/attachments/reveal.js';
+	import SHLogo from '#assets/logo/mun-sh_logo.png';
+	import BWLogo from '#assets/logo/munbw_logo.png';
+	import zweig from '#assets/logo/dmun-zweig-halbtransparent.svg';
+	import UdteamUp from '#assets/undraw/team-up.svg';
+	import UdQuestion from '#assets/undraw/question.svg';
+	import world from '#assets/undraw/world.svg';
+	import blob from '#assets/misc/blobs/blob_2.svg';
 	import { PUBLIC_FEEDBACK_URL } from '$app/env/public';
-	import AccentStripe from '$lib/components/AccentStripe.svelte';
-	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import AccentStripe from '#lib/components/AccentStripe.svelte';
+	import CardInfoSectionWithIcons from '#lib/components/CardInfoSectionWithIcons.svelte';
 	import ConferenceStatusLight from './ConferenceStatusLight.svelte';
 	import HomeCard from './HomeCard.svelte';
 	import HomeNavbar from './HomeNavbar.svelte';
@@ -79,10 +79,9 @@
 			>
 				{m.homeHeroSub()}
 			</p>
+
 			<div class="enter-up mt-1 flex flex-wrap gap-3" style="--enter-delay: 550ms">
-				<a class="btn btn-primary btn-lg" href={resolve('/dashboard')}>
-					{m.homeConferencesBtn()}
-				</a>
+				<a class="btn btn-primary btn-lg" href={resolve('dashboard')}>{m.homeConferencesBtn()}</a>
 			</div>
 			<div class="mt-2 flex flex-wrap gap-2">
 				{#each badges as label, i (label)}
@@ -125,7 +124,7 @@
 					src={UdteamUp}
 					header={m.homeConferencesCardTitle()}
 					btnText={m.homeConferencesBtn()}
-					btnLink={resolve('/dashboard')}
+					btnLink={resolve('dashboard')}
 				>
 					<p>{m.homeConferencesCardSub()}</p>
 					{#each conferencesToDisplay as conference (conference.id)}

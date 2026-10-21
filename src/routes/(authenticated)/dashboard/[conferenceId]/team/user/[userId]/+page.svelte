@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import UserCardContent from '$lib/components/userCard/UserCardContent.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import UserCardContent from '#lib/components/userCard/UserCardContent.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -14,7 +14,7 @@
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
 		<a
-			href={resolve(`/dashboard/${params.conferenceId}/team/participants`)}
+			href={resolve(`dashboard/${params.conferenceId}/team/participants`)}
 			class="btn btn-ghost btn-sm"
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>

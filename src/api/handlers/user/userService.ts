@@ -3,12 +3,12 @@ import type { Context } from '$api/context';
 import { emailConflictError, reportEmailConflict } from '$api/services/account/emailConflict';
 import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
-import { alpha2ToAlpha3 } from '$lib/helpers/countryCodes';
+import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { apiError } from '$api/services/errors/apiError';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * How many conferences this person actually took part in - registrations that never got a

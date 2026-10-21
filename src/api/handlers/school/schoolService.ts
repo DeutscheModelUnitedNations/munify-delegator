@@ -1,0 +1,338 @@
+import { db, schema, type Transaction } from '$api/db/db';
+import { apiError } from '$api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages.js';
+import { PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH } from '$app/env/public';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { z } from 'zod';
+
+/**
+ * What an application, a supervisor or a waiting list entry says about its school: an existing
+ * school (`schoolId`), the name of one to find or create (`schoolName`), or neither. Leaving both
+ * out of an update keeps the school; passing both as null removes it.
+ */
+export type SchoolChoice = { schoolId?: string | null; schoolName?: string | null };
+
+/** `text` for an `ilike` pattern, its wildcards escaped. */
+function escapeLike(text: string) {
+	return text.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+/** A typed school name as it is stored: trimmed, with runs of whitespace collapsed. */
+function cleanSchoolName(name: string) {
+	return name.replace(/\s+/g, ' ').trim();
+}
+
+type Db = Transaction | typeof db;
+
+async function existingSchool(id: string, tx: Db) {
+	const existing = await tx.query.school.findFirst({ where: { id }, columns: { id: true } });
+	if (!existing) throw apiError('NOT_FOUND', m.schoolNotFound());
+	return existing.id;
+}
+
+/** The school of that name (ignoring case and spacing), created when there is none. */
+async function schoolNamed(typed: string, tx: Db) {
+	const name = cleanSchoolName(typed);
+	if (!name) return null;
+	if (name.length > PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH) {
+		throw apiError('INVALID_INPUT', m.schoolNameTooLong());
+	}
+	const [existing] = await tx
+		.select({ id: schema.school.id })
+		.from(schema.school)
+		.where(sql`lower(${schema.school.name}) = lower(${name})`)
+		.orderBy(schema.school.createdAt)
+		.limit(1);
+	if (existing) return existing.id;
+	const [created] = await tx.insert(schema.school).values({ name }).returning();
+	return created?.id ?? null;
+}
+
+/**
+ * The school a choice names: the given one, an existing school of that name (ignoring case and
+ * spacing), or a new one. `null` for no school, `undefined` when the choice leaves it unchanged.
+ */
+export async function resolveSchoolChoice(
+	choice: SchoolChoice,
+	tx: Db = db
+): Promise<string | null | undefined> {
+	if (choice.schoolId) return existingSchool(choice.schoolId, tx);
+	if (typeof choice.schoolName === 'string') return schoolNamed(choice.schoolName, tx);
+	// both left out keeps the school; either one null removes it
+	return choice.schoolId === null || choice.schoolName === null ? null : undefined;
+}
+
+type SchoolInsert = typeof schema.school.$inferInsert;
+type EditableSchoolField =
+	| 'name'
+	| 'street'
+	| 'apartment'
+	| 'zip'
+	| 'city'
+	| 'region'
+	| 'country'
+	| 'website'
+	| 'contactName'
+	| 'contactEmail'
+	| 'contactPhone'
+	| 'notes';
+
+/** The fields of a school the team edits; an omitted field stays, `null` clears it (not the name). */
+export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null };
+
+export async function updateSchool(id: string, update: SchoolUpdate) {
+	const name =
+		update.name === undefined || update.name === null ? undefined : cleanSchoolName(update.name);
+	if (name === '') throw apiError('INVALID_INPUT', m.schoolNameRequired());
+	await db
+		.update(schema.school)
+		.set({ ...update, name })
+		.where(eq(schema.school.id, id));
+}
+
+/**
+ * Folds `sourceIds` into `targetId`: everything naming a source names the target afterwards, the
+ * target takes over details it has none of and the notes of all of them, and the sources are
+ * deleted. Merging is how duplicates typed by applicants are cleaned up.
+ */
+export async function mergeSchools(targetId: string, sourceIds: readonly string[], name?: string) {
+	const sources = [...new Set(sourceIds)].filter((id) => id !== targetId);
+	if (sources.length === 0) return;
+
+	await db.transaction(async (tx) => {
+		const rows = await tx.query.school.findMany({ where: { id: { in: [targetId, ...sources] } } });
+		const target = rows.find((row) => row.id === targetId);
+		if (!target) throw apiError('NOT_FOUND', m.schoolNotFound());
+		const merged = rows.filter((row) => row.id !== targetId);
+
+		const fill = <K extends keyof typeof target>(key: K) =>
+			target[key] ?? merged.find((row) => row[key] !== null)?.[key] ?? null;
+		const notes = [target.notes, ...merged.map((row) => row.notes)]
+			.filter((note): note is string => !!note?.trim())
+			.join('\n\n');
+
+		for (const table of [
+			schema.delegation,
+			schema.singleParticipant,
+			schema.conferenceSupervisor,
+			schema.waitingListEntry
+		]) {
+			await tx.update(table).set({ schoolId: targetId }).where(inArray(table.schoolId, sources));
+		}
+
+		await tx
+			.update(schema.school)
+			.set({
+				name: name ? cleanSchoolName(name) : target.name,
+				street: fill('street'),
+				apartment: fill('apartment'),
+				zip: fill('zip'),
+				city: fill('city'),
+				region: fill('region'),
+				country: fill('country'),
+				website: fill('website'),
+				contactName: fill('contactName'),
+				contactEmail: fill('contactEmail'),
+				contactPhone: fill('contactPhone'),
+				notes: notes || null
+			})
+			.where(eq(schema.school.id, targetId));
+
+		// Suggestions naming a source go with it (the variants cascade).
+		await tx.delete(schema.school).where(inArray(schema.school.id, sources));
+	});
+}
+
+/**
+ * Ids of schools matching `search`, best first: names starting with it, then names containing a
+ * word starting with it, then by trigram similarity, the most used schools first among equals.
+ */
+export async function searchSchoolIds(search: string, limit: number) {
+	const term = cleanSchoolName(search);
+	if (!term) return [];
+	const escaped = escapeLike(term);
+	const result = await db.execute<{ id: string }>(sql`
+		select s.id
+		from school s
+		where s.name ilike ${`%${escaped}%`} or s.name % ${term} or s.city ilike ${`%${escaped}%`}
+		order by
+			(s.name ilike ${`${escaped}%`}) desc,
+			(s.name ilike ${`% ${escaped}%`}) desc,
+			similarity(s.name, ${term}) desc,
+			(select count(*) from delegation d where d.school_id = s.id)
+				+ (select count(*) from single_participant sp where sp.school_id = s.id) desc,
+			s.name
+		limit ${limit}`);
+	return result.rows.map((row) => row.id);
+}
+
+const schoolMetricsRowSchema = z.object({
+	conferenceId: z.string(),
+	conferenceTitle: z.string(),
+	startConference: z.coerce.date(),
+	delegations: z.number(),
+	participants: z.number(),
+	applied: z.number(),
+	seated: z.number(),
+	attended: z.number(),
+	supervisors: z.number(),
+	waitingList: z.number(),
+	fromWaitingList: z.number()
+});
+
+/** Per conference, how many people from the school registered, applied, got a seat and came. */
+export async function schoolMetrics(schoolId: string) {
+	const result = await db.execute<{ result: unknown }>(sql`
+		with people as (
+			select d.conference_id, d.id as delegation_id, dm.conference_participant_id as participant_id,
+				d.applied, d.assigned_role_id is not null as seated, false as supervisor
+			from delegation d join delegation_member dm on dm.delegation_id = d.id
+			where d.school_id = ${schoolId}
+			union all
+			select cp.conference_id, null, sp.conference_participant_id, sp.applied,
+				sp.assigned_role_id is not null, false
+			from single_participant sp join conference_participant cp on cp.id = sp.conference_participant_id
+			where sp.school_id = ${schoolId}
+			union all
+			select cp.conference_id, null, cs.conference_participant_id, true, false, true
+			from conference_supervisor cs join conference_participant cp on cp.id = cs.conference_participant_id
+			where cs.school_id = ${schoolId}
+		),
+		waiting as (
+			select conference_id, count(*)::int as entries, count(*) filter (where assigned)::int as assigned
+			from waiting_list_entry where school_id = ${schoolId} group by conference_id
+		),
+		conferences as (
+			select conference_id from people union select conference_id from waiting
+		)
+		select json_build_object(
+			'conferenceId', c.id,
+			'conferenceTitle', c.title,
+			'startConference', c.start_conference,
+			'delegations', (select count(distinct p.delegation_id) from people p where p.conference_id = c.id),
+			'participants', (select count(*) from people p where p.conference_id = c.id and not p.supervisor),
+			'applied', (select count(*) from people p where p.conference_id = c.id and not p.supervisor and p.applied),
+			'seated', (select count(*) from people p where p.conference_id = c.id and p.seated),
+			'attended', (select count(*) from people p join conference_participant cp on cp.id = p.participant_id
+				where p.conference_id = c.id and not p.supervisor and cp.did_attend),
+			'supervisors', (select count(*) from people p where p.conference_id = c.id and p.supervisor),
+			'waitingList', coalesce(w.entries, 0),
+			'fromWaitingList', coalesce(w.assigned, 0)
+		) as result
+		from conferences x
+		join conference c on c.id = x.conference_id
+		left join waiting w on w.conference_id = c.id
+		order by c.start_conference desc`);
+	return z
+		.array(z.object({ result: schoolMetricsRowSchema }))
+		.parse(result.rows)
+		.map((row) => row.result);
+}
+
+export const CONFERENCE_SCHOOL_SORT_COLUMNS = [
+	'name',
+	'city',
+	'delegations',
+	'participants',
+	'applied',
+	'seated',
+	'supervisors',
+	'waitingList'
+] as const;
+export type ConferenceSchoolSortColumn = (typeof CONFERENCE_SCHOOL_SORT_COLUMNS)[number];
+
+const conferenceSchoolRowSchema = z.object({
+	schoolId: z.string(),
+	name: z.string(),
+	city: z.string().nullable(),
+	delegations: z.number(),
+	participants: z.number(),
+	applied: z.number(),
+	seated: z.number(),
+	supervisors: z.number(),
+	waitingList: z.number()
+});
+
+/**
+ * The schools named in one conference - by delegations, single participants, supervisors or the
+ * waiting list - with how many people each sends, one page at a time.
+ */
+export async function conferenceSchoolsPage(args: {
+	conferenceId: string;
+	search?: string | null;
+	sortColumn: ConferenceSchoolSortColumn;
+	sortDesc: boolean;
+	limit: number;
+	offset: number;
+}) {
+	const term = args.search ? cleanSchoolName(args.search) : '';
+	const like = `%${escapeLike(term)}%`;
+	const direction = args.sortDesc ? sql`desc` : sql`asc`;
+	const orderColumn = sql.identifier(
+		args.sortColumn === 'waitingList' ? 'waiting_list' : args.sortColumn
+	);
+
+	const result = await db.execute<{ result: unknown; total: unknown }>(sql`
+		with people as (
+			select d.school_id, d.id as delegation_id, d.applied, d.assigned_role_id is not null as seated,
+				'MEMBER' as kind
+			from delegation d join delegation_member dm on dm.delegation_id = d.id
+			where d.conference_id = ${args.conferenceId} and d.school_id is not null
+			union all
+			select sp.school_id, null, sp.applied, sp.assigned_role_id is not null, 'SINGLE'
+			from single_participant sp join conference_participant cp on cp.id = sp.conference_participant_id
+			where cp.conference_id = ${args.conferenceId} and sp.school_id is not null
+			union all
+			select cs.school_id, null, true, false, 'SUPERVISOR'
+			from conference_supervisor cs join conference_participant cp on cp.id = cs.conference_participant_id
+			where cp.conference_id = ${args.conferenceId} and cs.school_id is not null
+			union all
+			select w.school_id, null, false, false, 'WAITING'
+			from waiting_list_entry w
+			where w.conference_id = ${args.conferenceId} and w.school_id is not null and not w.assigned
+		),
+		rows as (
+			select s.id as school_id, s.name, s.city,
+				count(distinct p.delegation_id)::int as delegations,
+				count(*) filter (where p.kind in ('MEMBER', 'SINGLE'))::int as participants,
+				count(*) filter (where p.kind in ('MEMBER', 'SINGLE') and p.applied)::int as applied,
+				count(*) filter (where p.seated)::int as seated,
+				count(*) filter (where p.kind = 'SUPERVISOR')::int as supervisors,
+				count(*) filter (where p.kind = 'WAITING')::int as waiting_list
+			from people p join school s on s.id = p.school_id
+			where ${term ? sql`(s.name ilike ${like} or s.city ilike ${like})` : sql`true`}
+			group by s.id
+		)
+		select json_build_object(
+			'schoolId', school_id, 'name', name, 'city', city, 'delegations', delegations,
+			'participants', participants, 'applied', applied, 'seated', seated,
+			'supervisors', supervisors, 'waitingList', waiting_list
+		) as result, count(*) over ()::int as total
+		from rows
+		order by ${orderColumn} ${direction} nulls last, name, school_id
+		limit ${args.limit + 1} offset ${args.offset}`);
+
+	const rows = z
+		.array(z.object({ result: conferenceSchoolRowSchema, total: z.number() }))
+		.parse(result.rows);
+	return {
+		rows: rows.slice(0, args.limit).map((row) => row.result),
+		hasMore: rows.length > args.limit,
+		total:
+			rows[0]?.total ??
+			(args.offset > 0 ? await countConferenceSchools(args.conferenceId, term) : 0)
+	};
+}
+
+/** How many schools a page past the end would have listed, for its total. */
+async function countConferenceSchools(conferenceId: string, term: string) {
+	const page = await conferenceSchoolsPage({
+		conferenceId,
+		search: term,
+		sortColumn: 'name',
+		sortDesc: false,
+		limit: 1,
+		offset: 0
+	});
+	return page.total;
+}

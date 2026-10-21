@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import formatNames from '$lib/helpers/formatNames';
+	import formatNames from '#lib/helpers/formatNames.js';
 
 	interface Props {
 		userId: string;

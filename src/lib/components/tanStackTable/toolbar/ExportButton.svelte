@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { downloadCSV, downloadJSON } from '$lib/utils/downloadHelpers';
+	import { m } from '#lib/paraglide/messages.js';
+	import { downloadCSV, downloadJSON } from '#lib/utils/downloadHelpers.js';
 	import type { TableExport } from '../managedTable';
 
 	interface Props {

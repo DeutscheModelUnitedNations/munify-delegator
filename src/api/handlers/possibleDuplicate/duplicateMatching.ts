@@ -5,8 +5,8 @@ import {
 	parsePhoneNumberFromString
 } from 'libphonenumber-js';
 import type { CountryCode } from 'libphonenumber-js';
-import { alpha3ToAlpha2 } from '$lib/helpers/countryCodes';
-import { DUPLICATE_THRESHOLD } from '$lib/helpers/plausibilityRules';
+import { alpha3ToAlpha2 } from '#lib/helpers/countryCodes.js';
+import { DUPLICATE_THRESHOLD } from '#lib/helpers/plausibilityRules.js';
 
 /**
  * Finds accounts that may belong to the same person: someone who got a care note and came back

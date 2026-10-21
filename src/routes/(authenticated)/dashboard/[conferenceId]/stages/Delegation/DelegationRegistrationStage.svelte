@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import codenmz from '$lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import codenmz from '#lib/helpers/codenamize.js';
 	import {
 		applicationTextsComplete,
 		MIN_DELEGATION_MEMBERS,
 		MIN_ROLE_APPLICATIONS
-	} from '$lib/helpers/applicationReadiness';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	} from '#lib/helpers/applicationReadiness.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
 	import CompleteSignupCard from '../Common/CompleteSignupCard.svelte';
@@ -36,7 +36,7 @@
 			isHeadDelegate: true,
 			delegation: {
 				id: true,
-				school: true,
+				school: { id: true, name: true },
 				experience: true,
 				motivation: true,
 				applied: true,
@@ -67,10 +67,7 @@
 	);
 
 	let todos = $derived([
-		{
-			title: m.todoCreateDelegation(),
-			completed: true
-		},
+		{ title: m.todoCreateDelegation(), completed: true },
 		{
 			title: m.todoInvitePeople(),
 			completed: invitePeopleCompleted,
@@ -100,13 +97,16 @@
 			console.error('Error: Delegation Data not found');
 			return;
 		}
+
 		if (!(await confirmDialog({ text: m.leaveDelegationConfirmation(), danger: true }))) return;
+
 		const promise = Promise.resolve(
 			client.mutate.deleteDelegationMember({ __args: { id: delegationMember.id } })
 		);
+
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		goto(resolve('/dashboard'));
+		goto(resolve('dashboard'));
 	};
 
 	const deleteDelegation = async () => {
@@ -114,13 +114,16 @@
 			console.error('Error: Delegation Data not found');
 			return;
 		}
+
 		if (!(await confirmDialog({ text: m.deleteDelegationConfirmation(), danger: true }))) return;
+
 		const promise = Promise.resolve(
 			client.mutate.deleteDelegation({ __args: { id: delegationId } })
 		);
+
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		goto(resolve('/dashboard'));
+		goto(resolve('dashboard'));
 	};
 
 	const saveApplication = (answers: ApplicationAnswers) =>
@@ -131,11 +134,14 @@
 			console.error('Error: Delegation Data not found');
 			return;
 		}
+
 		if (!(await confirmDialog({ text: m.completeSignupConfirmation() }))) return;
+
 		const promise = client.mutate.updateDelegation({
 			__args: { id: delegationId, applied: true },
 			id: true
 		});
+
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 	};
@@ -168,7 +174,7 @@
 					{m.setDelegationPreferences()}</button
 				>
 			{:else}
-				<a class="btn btn-primary mt-4" href={resolve(`/dashboard/${conferenceId}/seats`)}>
+				<a class="btn btn-primary mt-4" href={resolve(`dashboard/${conferenceId}/seats`)}>
 					<i class="fas fa-arrow-right"></i>
 					{m.conferenceSeats()}
 				</a>
@@ -209,6 +215,7 @@
 					save={saveApplication}
 					disabled={applied || !userIsHeadDelegate}
 					showSubmitButton={!applied && userIsHeadDelegate}
+					schoolLabel={m.whichSchoolDoesYourDelegationComeFrom()}
 					motivationLabel={m.whyDoYouWantToJoinTheConference()}
 					experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 				/>

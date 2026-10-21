@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import Flag from '$lib/components/Flag.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import Flag from '#lib/components/Flag.svelte';
 	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
 	import { groupPapersByDelegation } from './supervisedPapers';
 	import { goto } from '$app/navigation';
@@ -64,7 +64,7 @@
 	});
 
 	const handlePaperClick = (paperId: string) => {
-		goto(resolve(`/dashboard/${conferenceId}/paperhub/${paperId}`));
+		goto(resolve(`dashboard/${conferenceId}/paperhub/${paperId}`));
 	};
 
 	const formatDate = (date: Date | string | null | undefined) => {
@@ -153,16 +153,15 @@
 										onkeydown={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
 									>
 										<PaperTypeStatusColumns {paper} />
-										<td class="align-middle break-words">
-											{@render topic(paper.agendaItem)}
-										</td>
-										<td class="align-middle whitespace-nowrap">
-											{paper.author.givenName}
-											{paper.author.familyName}
-										</td>
-										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap">
-											{formatDate(paper.firstSubmittedAt)}
-										</td>
+										<td class="align-middle break-words">{@render topic(paper.agendaItem)}</td>
+										<td class="align-middle whitespace-nowrap"
+											>{paper.author.givenName} {paper.author.familyName}</td
+										>
+
+										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap"
+											>{formatDate(paper.firstSubmittedAt)}</td
+										>
+
 										<td class="align-middle">
 											<button class="btn btn-ghost btn-xs" aria-label={m.openPaper()}>
 												<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>

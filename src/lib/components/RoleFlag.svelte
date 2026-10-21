@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
-	import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
+	import Flag from '#lib/components/Flag.svelte';
+	import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		/** A delegation's role: a nation shows its flag, a non-state actor its icon, anything else nothing. */

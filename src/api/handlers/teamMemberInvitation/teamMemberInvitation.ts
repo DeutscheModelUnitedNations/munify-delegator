@@ -8,7 +8,7 @@ import {
 	revokeInvitation
 } from './teamMemberInvitationService';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 import {
 	assertCanGrantInvitationRole,
@@ -100,7 +100,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			const result = await createInvitations(
 				callerId,
-				ctx.url.origin,
+				ctx.requestUrl().origin,
 				args.conferenceId,
 				args.invitations,
 				(role) => assertCanGrantInvitationRole(ctx, args.conferenceId, role)
@@ -143,7 +143,7 @@ schemaBuilder.mutationFields((t) => ({
 			const result = await regenerateInvitation(
 				invitation,
 				callerId,
-				ctx.url.origin,
+				ctx.requestUrl().origin,
 				args.sendEmail
 			);
 			if (result.success) teamMemberInvitationPubsub.updated(args.invitationId);

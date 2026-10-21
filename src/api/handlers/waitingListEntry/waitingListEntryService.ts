@@ -1,5 +1,6 @@
-import { db } from '$api/db/db';
-import { m } from '$lib/paraglide/messages';
+import { db, schema, type Transaction } from '$api/db/db';
+import { and, eq, sql } from 'drizzle-orm';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**
@@ -49,4 +50,30 @@ export async function assertWaitingListOpenFor(conferenceId: string, userId: str
 /** Whether a single participant was given a role, or a delegation a nation or non-state actor. */
 function holdsRole(registration: { assignedRoleId: string | null }) {
 	return Boolean(registration.assignedRoleId);
+}
+
+/**
+ * Marks the user's waiting list entry in the conference as given a seat, keeping the date it
+ * first was, and answers with the school the entry named so the new registration can carry it.
+ * Not every user the team seats came from the waiting list: then this changes nothing.
+ */
+export async function markSeatedFromWaitingList(
+	tx: Transaction,
+	conferenceId: string,
+	userId: string
+): Promise<{ schoolId: string | null } | undefined> {
+	const [entry] = await tx
+		.update(schema.waitingListEntry)
+		.set({
+			assigned: true,
+			assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())`
+		})
+		.where(
+			and(
+				eq(schema.waitingListEntry.conferenceId, conferenceId),
+				eq(schema.waitingListEntry.userId, userId)
+			)
+		)
+		.returning({ schoolId: schema.waitingListEntry.schoolId });
+	return entry;
 }

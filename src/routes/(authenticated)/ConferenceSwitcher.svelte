@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import {
 		conferenceGroupIcon,
 		conferenceGroupLabel,

@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'vitest';
-import { normalizeSchoolName, schoolRows } from './conferenceAggregates';
+import { schoolRows } from './conferenceAggregates';
+
+const kiel = { id: 's1', name: 'Gymnasium Kiel' };
+const luebeck = { id: 's2', name: 'Schule Lübeck' };
+const flensburg = { id: 's3', name: 'Realschule Flensburg' };
 
 describe('schoolRows', () => {
 	test('counts delegations, their members and single participants per school', () => {
 		const rows = schoolRows(
 			[
-				{ id: 'd1', school: 'Gymnasium Kiel' },
-				{ id: 'd2', school: 'Gymnasium Kiel' },
-				{ id: 'd3', school: 'Schule Lübeck' },
+				{ id: 'd1', school: kiel },
+				{ id: 'd2', school: kiel },
+				{ id: 'd3', school: luebeck },
 				{ id: 'd4', school: null }
 			],
 			[
@@ -16,11 +20,12 @@ describe('schoolRows', () => {
 				{ delegationId: 'd2' },
 				{ delegationId: 'd4' }
 			],
-			[{ school: 'Schule Lübeck' }, { school: 'Realschule Flensburg' }, { school: null }]
+			[{ school: luebeck }, { school: flensburg }, { school: null }]
 		);
 
 		expect(rows).toEqual([
 			{
+				schoolId: 's1',
 				school: 'Gymnasium Kiel',
 				delegationCount: 2,
 				delegationMembers: 3,
@@ -28,6 +33,7 @@ describe('schoolRows', () => {
 				sumParticipants: 3
 			},
 			{
+				schoolId: 's2',
 				school: 'Schule Lübeck',
 				delegationCount: 1,
 				delegationMembers: 0,
@@ -35,6 +41,7 @@ describe('schoolRows', () => {
 				sumParticipants: 1
 			},
 			{
+				schoolId: 's3',
 				school: 'Realschule Flensburg',
 				delegationCount: 0,
 				delegationMembers: 0,
@@ -48,17 +55,10 @@ describe('schoolRows', () => {
 		expect(schoolRows([], [], [])).toEqual([]);
 	});
 
-	test('leaves out an empty school name', () => {
-		expect(schoolRows([{ id: 'd1', school: '' }], [], [{ school: '' }])).toEqual([]);
-	});
-});
-
-describe('normalizeSchoolName', () => {
-	test('replaces every comma and period and tidies whitespace', () => {
-		expect(normalizeSchoolName('  Gym., Musterstadt. Nord ')).toBe('Gym Musterstadt Nord');
-	});
-
-	test('is empty for punctuation only', () => {
-		expect(normalizeSchoolName(' ., ')).toBe('');
+	test('keeps two schools of the same name apart', () => {
+		const other = { id: 's4', name: 'Gymnasium Kiel' };
+		expect(
+			schoolRows([{ id: 'd1', school: kiel }], [], [{ school: other }]).map((row) => row.schoolId)
+		).toEqual(['s1', 's4']);
 	});
 });

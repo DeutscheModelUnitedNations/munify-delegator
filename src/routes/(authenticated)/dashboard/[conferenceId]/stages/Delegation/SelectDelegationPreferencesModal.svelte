@@ -1,17 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Flag from '$lib/components/Flag.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { roleSeats, splitRole } from '$lib/helpers/conferenceRole';
-	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
-	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import NationPool from '$lib/components/NationPool.svelte';
-	import NsaPool from '$lib/components/NSAPool.svelte';
+	import Flag from '#lib/components/Flag.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import SquareButtonWithLoadingState from '#lib/components/SquareButtonWithLoadingState.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { roleSeats, splitRole } from '#lib/helpers/conferenceRole.js';
+	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup.js';
+	import NationsWithCommitteesTable from '#lib/components/NationsWithCommitteesTable.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import NationPool from '#lib/components/NationPool.svelte';
+	import NsaPool from '#lib/components/NSAPool.svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 
 	interface Props {
 		onClose: () => void;

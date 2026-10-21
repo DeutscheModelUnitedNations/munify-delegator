@@ -1,5 +1,5 @@
 import { stringify } from 'csv-stringify/browser/esm/sync';
-import { csvSettings, type CsvEncoding, type CsvDelimiter } from '$lib/state/csvSettings';
+import { csvSettings, type CsvEncoding, type CsvDelimiter } from '#lib/state/csvSettings.js';
 
 // UTF-8 BOM for Excel compatibility
 const UTF8_BOM = '\uFEFF';
@@ -28,20 +28,22 @@ const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
 };
 
 /**
- * Downloads data as a CSV file using the stored settings
+ * Downloads data as a CSV file using the stored settings, unless the file's reader dictates its
+ * delimiter or encoding (the badge generator reads comma-separated UTF-8 only).
  */
 export const downloadCSV = (
 	header: string[],
 	data: string[][],
 	filename: string,
-	overrideDelimiter?: CsvDelimiter
+	overrideDelimiter?: CsvDelimiter,
+	overrideEncoding?: CsvEncoding
 ): void => {
 	const settings = csvSettings.current;
 	const delimiter = overrideDelimiter ?? settings.delimiter;
 
 	const csv = [header, ...data];
 	const csvContent = stringify(csv, { delimiter });
-	const blob = encodeContent(csvContent, settings.encoding);
+	const blob = encodeContent(csvContent, overrideEncoding ?? settings.encoding);
 	triggerDownload(blob, filename);
 };
 

@@ -2,7 +2,13 @@ import { db, schema } from '$api/db/db';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
-import { scanInSession, storeSessionCard } from './attendanceEntryService';
+import {
+	certificateFlagOf,
+	certificateOccasions,
+	scanInSession,
+	setOccasionOnCertificate,
+	storeSessionCard
+} from './attendanceEntryService';
 import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	assertCanCreateAttendanceEntry,
@@ -18,7 +24,7 @@ import {
 	conferenceParticipantPubsub
 } from '$api/pubsub';
 import { apiError } from '$api/services/errors/apiError';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 registerAttendanceEntryAbilities();
 
@@ -51,7 +57,8 @@ schemaBuilder.mutationFields((t) => ({
 					conferenceId: args.conferenceId,
 					occasion: args.occasion.trim(),
 					mode: args.mode,
-					createdById: callerId
+					createdById: callerId,
+					showOnCertificate: await certificateFlagOf(args.conferenceId, args.occasion)
 				})
 				.onConflictDoNothing();
 			// A repeated start must find the session where it was made, not in another conference
@@ -66,6 +73,25 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
+		}
+	}),
+
+	/**
+	 * Lists an occasion - every session of that name - on the participation certificates, or takes
+	 * it off them.
+	 */
+	setAttendanceOccasionOnCertificate: t.field({
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			occasion: t.arg.string({ required: true }),
+			show: t.arg.boolean({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanStartAttendanceSession(ctx, args.conferenceId);
+			await setOccasionOnCertificate(args.conferenceId, args.occasion, args.show);
+			attendanceSessionPubsub.updated();
+			return true;
 		}
 	}),
 
@@ -157,6 +183,34 @@ schemaBuilder.mutationFields((t) => ({
 			attendanceEntryPubsub.removed();
 
 			return true;
+		}
+	})
+}));
+
+const CertificateOccasion = schemaBuilder.simpleObject('CertificateOccasion', {
+	description:
+		'An occasion of the scanner as the certificates list it: its sessions merged by name.',
+	fields: (t) => ({
+		name: t.string(),
+		sessions: t.int(),
+		entries: t.int(),
+		firstStartedAt: t.field({ type: 'DateTime' }),
+		showOnCertificate: t.boolean()
+	})
+});
+
+schemaBuilder.queryFields((t) => ({
+	/** The conference's scanner occasions and whether each is on the certificates. */
+	certificateOccasions: t.field({
+		type: [CertificateOccasion],
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			/** Ignored; a new value makes the client ask again after a change. */
+			revision: t.arg.int()
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanStartAttendanceSession(ctx, args.conferenceId);
+			return certificateOccasions(args.conferenceId);
 		}
 	})
 }));

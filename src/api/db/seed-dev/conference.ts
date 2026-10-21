@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { makeSeedConference } from '../seed-data/conference';
 import { conferenceImageJpeg } from '../seed-data/conferenceImage';
 import { addSeedFile } from './files';
+import { seedSchoolId } from './schools';
 import type { DevAccountSub } from '../seed-data/devAccounts';
 import { createConferenceSeed, type ConferenceSeed, type SeedWorld } from './context';
 import {
@@ -101,7 +102,7 @@ export function buildConferenceStructure(
 		guardianConsentFileId: template('guardianConsent'),
 		mediaConsentFileId: template('mediaConsent'),
 		termsAndConditionsFileId: template('termsAndConditions'),
-		certificateFileId: plan.with.certificate ? file('certificate', templates.certificate) : null,
+		certificateFileId: template('certificate'),
 		unlockPayments: false,
 		unlockPostals: false,
 		assignmentReleased: plan.assigned,
@@ -361,11 +362,12 @@ export function addWaitingListEntry(
 	cs.batch.waitingListEntry.push({
 		conferenceId: cs.id,
 		userId,
-		school: `Gymnasium ${faker.location.city()}`,
+		schoolId: faker.helpers.maybe(() => seedSchoolId(cs.batch), { probability: 0.9 }) ?? null,
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentences(2),
 		requests: faker.helpers.maybe(() => 'Gerne zusammen mit meiner Freundin') ?? null,
 		assigned: plan.assigned ?? false,
+		assignedAt: plan.assigned ? faker.date.recent({ days: 20 }) : null,
 		hidden: plan.hidden ?? false,
 		...(plan.createdAt ? { createdAt: plan.createdAt, updatedAt: plan.createdAt } : {})
 	});

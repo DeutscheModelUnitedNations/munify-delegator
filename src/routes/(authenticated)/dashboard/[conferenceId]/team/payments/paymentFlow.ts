@@ -1,4 +1,4 @@
-import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
 
 interface LoadedTransaction {
 	id: string;

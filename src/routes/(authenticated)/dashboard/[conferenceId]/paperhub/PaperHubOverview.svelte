@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import type { PaperstatusEnum, ReviewhelpstatusEnum } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { PaperstatusEnum, ReviewhelpstatusEnum } from '#lib/api/rumbleClient/client.js';
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperStatusDistribution from './PaperStatusDistribution.svelte';
 	import PaperTable from './PaperTable.svelte';
@@ -12,10 +12,10 @@
 	import ReviewHelpStatusToggle from './ReviewHelpStatusToggle.svelte';
 	import MyReviewStats from './MyReviewStats.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { FlagCollectionSection } from '$lib/components/flagCollection';
-	import ReviewerLeaderboard from '$lib/components/paperHub/ReviewerLeaderboard.svelte';
-	import { createPersistedState } from '$lib/state/persistedState.svelte';
-	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
+	import { FlagCollectionSection } from '#lib/components/flagCollection/index.js';
+	import ReviewerLeaderboard from '#lib/components/paperHub/ReviewerLeaderboard.svelte';
+	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
+	import DetailedPaperStats from '#lib/components/paperHub/DetailedPaperStats.svelte';
 	import { createPaperSortState, paperHasReviews, sortPapers } from './paperSorting';
 	import { createExpandedPaperGroup, createPaperGroupsSnapshot } from './paperGroups.svelte';
 	import { page } from '$app/state';
@@ -223,7 +223,7 @@
 			sortable={true}
 			sortConfig={sortState.get(groupId)}
 			onSort={(key) => sortState.toggle(groupId, key)}
-			paperHref={(paperId) => resolve(`/dashboard/${conferenceId}/paperhub/${paperId}`)}
+			paperHref={(paperId) => resolve(`dashboard/${conferenceId}/paperhub/${paperId}`)}
 		/>
 	</div>
 {/snippet}
@@ -248,7 +248,7 @@
 						</label>
 					</div>
 					<a
-						href={resolve(`/dashboard/${conferenceId}/paperhub/snippets`)}
+						href={resolve(`dashboard/${conferenceId}/paperhub/snippets`)}
 						class="btn btn-ghost btn-sm"
 						title={m.reviewerSnippetsShortDescription()}
 					>
@@ -285,6 +285,7 @@
 				{@const helpNeededCount = committeeGroup.agendaItems.filter(
 					(ai) => helpStatusOf(ai.agendaItem) === 'HELP_NEEDED'
 				).length}
+
 				<CommitteePaperGroup committee={committeeGroup.committee} {openGroup}>
 					{#snippet aside()}
 						<div class="flex items-center gap-2">

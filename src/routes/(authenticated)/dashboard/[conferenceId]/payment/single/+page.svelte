@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import type { PageProps } from './$types';

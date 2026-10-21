@@ -5,9 +5,9 @@
 	theirs to read, so every count comes back 0. Only fetches; `PaperHubStats` draws.
 -->
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
-	import { asCount } from '$lib/components/tanStackTable/serverQuery';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { asCount } from '#lib/components/tanStackTable/serverQuery.js';
 	import PaperHubStats from './PaperHubStats.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

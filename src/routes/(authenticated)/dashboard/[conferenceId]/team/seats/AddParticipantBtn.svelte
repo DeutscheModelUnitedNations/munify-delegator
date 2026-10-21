@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import UserSearchModal from './UserSearchModal.svelte';
-	import type { UserPreview } from '$lib/api/rumbleClient/client';
+	import type { UserPreview } from '#lib/api/rumbleClient/client.js';
 	import type { Snippet } from 'svelte';
 	import { getAssignUser } from './assignUser.svelte';
 

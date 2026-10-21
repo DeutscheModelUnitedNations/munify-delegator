@@ -1,4 +1,4 @@
-import type { CalendarDayExportData } from '$lib/schemata/calendarDayExport';
+import type { CalendarDayExportData } from '#lib/schemata/calendarDayExport.js';
 import { toTimeString } from './calendarTime';
 
 type ExportEntry = CalendarDayExportData['entries'][number];

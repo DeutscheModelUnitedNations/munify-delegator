@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
+	import NavMenu from '#lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
 	import {
 		teamRouteForPath,
 		teamRouteGroupTitle,
 		type groupedTeamRoutes,
 		type TeamRoute
-	} from '$lib/data/teamRoutes';
+	} from '#lib/data/teamRoutes.js';
 	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 
 	/** The menu itself: the registry's sections, each page a button, the open one marked. */
@@ -28,7 +28,7 @@
 		maintenance: 'fa-toolbox'
 	} as const;
 
-	const hrefOf = (route: TeamRoute) => resolve(`/dashboard/${conferenceId}/${route.path}`);
+	const hrefOf = (route: TeamRoute) => resolve(`dashboard/${conferenceId}/${route.path}`);
 </script>
 
 {#snippet entry(route: TeamRoute)}
@@ -36,6 +36,7 @@
 		<!-- the count is fetched on its own, so the menu does not wait for it -->
 		<svelte:boundary>
 			<PlausibilityNavButton {conferenceId} active={openRoute?.id === route.id} />
+
 			{#snippet pending()}
 				<NavMenuButton
 					href={hrefOf(route)}

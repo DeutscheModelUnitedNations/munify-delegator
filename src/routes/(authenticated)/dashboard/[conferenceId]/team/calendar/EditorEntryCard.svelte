@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { formatClockMinutes } from '$lib/helpers/formatClock';
-	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
-	import { getColorConfig } from '$lib/components/calendar/calendarColors';
-	import { m } from '$lib/paraglide/messages';
+	import { formatClockMinutes } from '#lib/helpers/formatClock.js';
+	import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
+	import { getColorConfig } from '#lib/components/calendar/calendarColors.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * An entry in the calendar editor. The editor owns the pointer handling (it needs the pointer

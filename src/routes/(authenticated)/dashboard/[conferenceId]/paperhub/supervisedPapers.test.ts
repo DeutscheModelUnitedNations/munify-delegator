@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type { PaperDelegationRole } from './paperDisplay';
 import { groupPapersByDelegation } from './supervisedPapers';
 

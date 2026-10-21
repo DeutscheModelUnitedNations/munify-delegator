@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import Tab from '$lib/components/tabs/Tab.svelte';
-	import Tabs from '$lib/components/tabs/Tabs.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import Tab from '#lib/components/tabs/Tab.svelte';
+	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { LayoutProps } from './$types';
 	import DraftStatus from './DraftStatus.svelte';
 

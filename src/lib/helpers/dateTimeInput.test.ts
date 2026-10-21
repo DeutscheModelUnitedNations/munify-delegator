@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateToFormValue, dateToInputValue, inputValueToDate } from '$lib/helpers/dateTimeInput';
+import { dateToFormValue, dateToInputValue, inputValueToDate } from '#lib/helpers/dateTimeInput.js';
 
 describe('dateTimeInput', () => {
 	describe('dateToFormValue', () => {

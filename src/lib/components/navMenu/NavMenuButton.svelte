@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResolvedPathname } from '$app/types';
-	import { browser } from '$app/environment';
-	import { page } from '$app/stores';
+	import { browser } from '$app/env';
+	import { page } from '$app/state';
 
 	interface Props {
 		title: string;
@@ -32,13 +32,14 @@
 	}
 
 	let showAsActive = $derived(
-		active ?? (browser && isActivePath($page.url.pathname, href, includeSubpages))
+		active ?? (browser && isActivePath(page.url.pathname, href, includeSubpages))
 	);
 </script>
 
 <li class="w-full" {title}>
 	<a {href} class="flex w-full items-center gap-2 {showAsActive ? 'menu-active' : ''}">
 		<i class="{showAsActive ? 'fas ' : 'fa-sharp-duotone fa-solid'} {icon} w-5 text-center"></i>
+
 		<span class="truncate">{title}</span>
 		{#if attention}
 			<span class="relative ml-auto flex size-2.5 shrink-0" title={attentionLabel}>

@@ -1,12 +1,12 @@
-import { m } from '$lib/paraglide/messages';
-import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
-import { hasAnyRole, isOnTeam, type TeamAccess } from '$lib/helpers/teamAccess';
+import { m } from '#lib/paraglide/messages.js';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
+import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess.js';
 import {
 	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
-} from '$lib/helpers/teamRoles';
+} from '#lib/helpers/teamRoles.js';
 
 /**
  * Every page of a conference's team area, once. The side navigation, the dashboard's team entry, the command
@@ -110,6 +110,16 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'main',
 		category: 'tables',
 		keywords: ['warteliste', 'waiting list', 'nachrücker', 'wartend'],
+		roles: PARTICIPANT_CARE_ROLES
+	},
+	{
+		id: 'schools',
+		path: teamPath('schools'),
+		title: () => m.schools(),
+		icon: 'fa-school',
+		group: 'main',
+		category: 'tables',
+		keywords: ['schulen', 'schools', 'schule', 'school', 'institution'],
 		roles: PARTICIPANT_CARE_ROLES
 	},
 	{

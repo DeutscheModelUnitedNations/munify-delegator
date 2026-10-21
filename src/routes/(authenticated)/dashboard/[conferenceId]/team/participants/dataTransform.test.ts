@@ -41,7 +41,8 @@ const empty: QueryData = {
 	conferenceSupervisors: [],
 	singleParticipants: [],
 	teamMembers: [],
-	participantStatuses: []
+	participantStatuses: [],
+	waitingListEntries: []
 };
 
 const start = new Date('2026-03-12T09:00:00Z');
@@ -57,7 +58,7 @@ describe('transformParticipants', () => {
 						isHeadDelegate: true,
 						assignedCommittee: { name: 'GA' },
 						delegation: {
-							school: 'Gymnasium',
+							school: { name: 'Gymnasium' },
 							assignedRole: {
 								kind: 'NATION',
 								name: null,
@@ -159,6 +160,7 @@ describe('transformParticipants', () => {
 					conferenceSupervisors: [
 						{
 							plansOwnAttendenceAtConference: true,
+							school: null,
 							supervisedDelegationMembers: delegations,
 							supervisedSingleParticipants: singles,
 							user: user('s')
@@ -187,7 +189,7 @@ describe('transformParticipants', () => {
 				singleParticipants: [
 					{
 						applied: true,
-						school: 'School',
+						school: { name: 'School' },
 						assignedRole: { name: 'Press', fontAwesomeIcon: 'newspaper' },
 						user: user('p1')
 					},
@@ -209,6 +211,86 @@ describe('transformParticipants', () => {
 			assignedRoleName: null,
 			assignedRoleIcon: null,
 			accepted: false
+		});
+	});
+
+	test('people waiting without a registration are rows of their own, others carry the dates', () => {
+		const rows = transformParticipants(
+			{
+				...empty,
+				delegationMembers: [
+					{
+						isHeadDelegate: false,
+						assignedCommittee: null,
+						delegation: { school: null, assignedRole: null },
+						user: user('rejected')
+					}
+				],
+				waitingListEntries: [
+					{
+						createdAt: new Date('2026-02-01T10:00:00Z'),
+						assigned: false,
+						assignedAt: null,
+						school: { name: 'Gymnasium' },
+						user: user('waiting')
+					},
+					{
+						createdAt: new Date('2026-02-02T10:00:00Z'),
+						assigned: false,
+						assignedAt: null,
+						school: null,
+						user: user('rejected')
+					},
+					{
+						createdAt: new Date('2026-02-03T10:00:00Z'),
+						assigned: true,
+						assignedAt: new Date('2026-02-10T10:00:00Z'),
+						school: null,
+						user: user('seated')
+					}
+				]
+			},
+			start,
+			end
+		);
+		expect(rows.map((row) => [row.userId, row.role])).toEqual([
+			['rejected', 'DELEGATION_MEMBER'],
+			['waiting', 'WAITING_LIST']
+		]);
+		expect(rows[0]).toMatchObject({
+			onWaitingList: true,
+			waitingListSince: new Date('2026-02-02T10:00:00Z')
+		});
+		expect(rows[1]).toMatchObject({
+			delegationSchool: 'Gymnasium',
+			accepted: false,
+			hasOpenIssue: false,
+			onWaitingList: true,
+			seatedFromWaitingListAt: null
+		});
+	});
+
+	test('someone seated from the waiting list keeps the date', () => {
+		const [row] = transformParticipants(
+			{
+				...empty,
+				singleParticipants: [{ applied: true, school: null, assignedRole: null, user: user('p') }],
+				waitingListEntries: [
+					{
+						createdAt: new Date('2026-02-03T10:00:00Z'),
+						assigned: true,
+						assignedAt: new Date('2026-02-10T10:00:00Z'),
+						school: null,
+						user: user('p')
+					}
+				]
+			},
+			start,
+			end
+		);
+		expect(row).toMatchObject({
+			onWaitingList: false,
+			seatedFromWaitingListAt: new Date('2026-02-10T10:00:00Z')
 		});
 	});
 

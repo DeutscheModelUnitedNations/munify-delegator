@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		title: string;

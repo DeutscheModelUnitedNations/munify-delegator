@@ -1,12 +1,12 @@
 import type { Component } from 'svelte';
 import { resolve } from '$app/paths';
-import CalendarLinkInfo from '$lib/components/dashboard/CalendarLinkInfo.svelte';
-import PaperHubLinkInfo from '$lib/components/dashboard/PaperHubLinkInfo.svelte';
-import TeamEntryInfo from '$lib/components/dashboard/TeamEntryInfo.svelte';
-import { m } from '$lib/paraglide/messages';
+import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
+import PaperHubLinkInfo from '#lib/components/dashboard/PaperHubLinkInfo.svelte';
+import TeamEntryInfo from '#lib/components/dashboard/TeamEntryInfo.svelte';
+import { m } from '#lib/paraglide/messages.js';
 import type { DashboardHref } from './dashboardLinks';
 import { publicCalendarPath, publicSeatsPath, teamRoutesFor } from './teamRoutes';
-import type { TeamAccess } from '$lib/helpers/teamAccess';
+import type { TeamAccess } from '#lib/helpers/teamAccess.js';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
@@ -43,7 +43,7 @@ export function getTeamEntryLink(
 		info: TeamEntryInfo,
 		getTitle: () => m.team(),
 		getDescription: () => m.manageConference(),
-		getHref: (ctx) => resolve(`/dashboard/${ctx.conferenceId}/${first.path}`)
+		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/${first.path}`)
 	};
 }
 
@@ -60,7 +60,7 @@ export function getPaperHubLink(canSeePaperHub: boolean): TeamDashboardLink | un
 		info: PaperHubLinkInfo,
 		getTitle: () => m.paperHub(),
 		getDescription: () => m.reviewPapers(),
-		getHref: (ctx) => resolve(`/dashboard/${ctx.conferenceId}/paperhub`)
+		getHref: (ctx) => resolve(`dashboard/${ctx.conferenceId}/paperhub`)
 	};
 }
 
@@ -93,7 +93,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 			icon: 'person-seat',
 			getTitle: () => m.conferenceSeats(),
 			getDescription: () => m.seatsLinkDescription(),
-			getHref: (linkCtx) => resolve(`/dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
+			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
 		},
 		externalLink(ctx.docsUrl, {
 			id: 'appDocs',
@@ -107,7 +107,7 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 			icon: 'calendar-days',
 			getTitle: () => m.calendarSectionTitle(),
 			getDescription: () => m.calendarSectionDescription(),
-			getHref: (linkCtx) => resolve(`/dashboard/${linkCtx.conferenceId}/${publicCalendarPath}`)
+			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicCalendarPath}`)
 		}
 	].filter((link) => link !== undefined);
 }

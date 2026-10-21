@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import { createPersistedState } from '$lib/state/persistedState.svelte';
+import { browser } from '$app/env';
+import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 

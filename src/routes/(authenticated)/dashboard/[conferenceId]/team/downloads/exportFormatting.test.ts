@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import {
-	badgeHeader,
-	badgeRow,
 	compareByFamilyName,
 	compareByName,
 	formatRegistrationStatus,
@@ -72,41 +70,5 @@ describe('nonStateActorName', () => {
 		expect(nonStateActorName({ assignedRole: { name: 'Greenpeace' } })).toBe('Greenpeace');
 		expect(nonStateActorName({ assignedRole: null })).toBe('');
 		expect(nonStateActorName({})).toBe('');
-	});
-});
-
-describe('badgeRow', () => {
-	test('matches the header and fills missing values', () => {
-		const full = badgeRow({
-			name: 'Ada Lovelace',
-			committee: 'GA',
-			countryName: 'Germany',
-			countryAlpha2Code: 'de',
-			alternativeImage: 'img',
-			pronouns: 'she/her',
-			id: 'u',
-			mediaConsentStatus: 'ALLOWED_ALL'
-		});
-		expect(full).toHaveLength(badgeHeader.length);
-		expect(full).toEqual([
-			'Ada Lovelace',
-			'GA',
-			'Germany',
-			'de',
-			'img',
-			'she/her',
-			'u',
-			'ALLOWED_ALL'
-		]);
-		expect(badgeRow({ name: 'Ada', countryName: 'Team' })).toEqual([
-			'Ada',
-			'',
-			'Team',
-			'',
-			'',
-			'',
-			'',
-			'NOT_SET'
-		]);
 	});
 });

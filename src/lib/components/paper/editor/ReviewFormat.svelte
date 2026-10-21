@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { promptDialog } from '$lib/state/dialogs.svelte';
+	import { promptDialog } from '#lib/state/dialogs.svelte.js';
 	import { onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { createEditor, Editor, EditorContent } from 'svelte-tiptap';
@@ -11,11 +11,11 @@
 	import Heading from '@tiptap/extension-heading';
 	import Menu from './menu';
 	import SnippetDropdown from './menu/SnippetDropdown.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { Readable } from 'svelte/store';
 	import { SnippetSuggestion, type SnippetItem } from './extensions/SnippetSuggestion';
 	import PlaceholderPromptModal from './PlaceholderPromptModal.svelte';
-	import { extractPlaceholders, replacePlaceholders } from '$lib/helpers/snippetPlaceholders';
+	import { extractPlaceholders, replacePlaceholders } from '#lib/helpers/snippetPlaceholders.js';
 	import type { JSONContent } from '@tiptap/core';
 	import { getSafeTipTapContent, isEmptyTipTapDocument } from './contentValidation';
 	import { UndoRedo } from '@tiptap/extensions';

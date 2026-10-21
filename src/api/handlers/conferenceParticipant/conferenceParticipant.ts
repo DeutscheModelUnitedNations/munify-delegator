@@ -1,4 +1,5 @@
 import { db } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { enum_, object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
@@ -69,6 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
 			conferenceParticipantPubsub.updated(statusId);
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.conferenceParticipant
 				.findFirst(
@@ -94,6 +96,7 @@ schemaBuilder.mutationFields((t) => ({
 			const changed = await setAttendanceForAll(args);
 
 			conferenceParticipantPubsub.created();
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return { changed };
 		}

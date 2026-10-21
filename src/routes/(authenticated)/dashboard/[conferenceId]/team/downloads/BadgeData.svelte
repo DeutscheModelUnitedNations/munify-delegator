@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { client, type MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { downloadCSV } from '$lib/utils/downloadHelpers';
-	import DownloadButton from './DownloadButton.svelte';
-	import { badgeHeader, badgeRow, compareByFamilyName, type Badge } from './exportFormatting';
+	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import BadgeGeneratorLinks from '#lib/components/BadgeGeneratorLinks.svelte';
+	import { compareByFamilyName } from './exportFormatting';
+	import { personBadge, placardBadges } from '#lib/helpers/badgeCsv.js';
 
 	interface Props {
 		conferenceId: string;
@@ -114,13 +114,14 @@
 	}
 
 	/** The fields every badge takes from the person wearing it. */
-	function personOnBadge(user: BadgeUser) {
+	function personOnBadge(user: BadgeUser, mediaConsentStatus: MediaconsentstatusEnum) {
 		return {
 			name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 				familyNameUppercase: false
 			}),
 			pronouns: user.pronouns,
-			id: user.id
+			id: user.id,
+			mediaConsentStatus
 		};
 	}
 
@@ -136,9 +137,8 @@
 		return (a: T, b: T) => label(a).localeCompare(label(b)) || compareByFamilyName(a, b);
 	}
 
-	const exportBadgeCSV = (badgeData: Badge[], filename: string) => {
-		downloadCSV(badgeHeader, badgeData.map(badgeRow), filename);
-	};
+	// the day of the export, in every file name
+	const stamp = new Date().toISOString().slice(0, 10);
 
 	const getCommitteeBadgeData = async (committeeId: string) => {
 		const resData = await fetchCommitteeBadgeData(committeeId);
@@ -150,62 +150,45 @@
 		const countryName = (member: (typeof badgeData)[number]) =>
 			getFullTranslatedCountryNameFromISO3Code(member.nation.alpha3Code);
 
-		exportBadgeCSV(
-			badgeData.sort(compareByLabelThenFamilyName(countryName)).map((member) => ({
-				...personOnBadge(member.user),
-				committee: resData.abbreviation,
+		return badgeData.sort(compareByLabelThenFamilyName(countryName)).map((member) =>
+			personBadge(personOnBadge(member.user, mediaConsentOf(member.user)), {
+				kind: 'nation',
+				alpha2Code: member.nation.alpha2Code,
 				countryName: countryName(member),
-				countryAlpha2Code: member.nation.alpha2Code,
-				alternativeImage: '',
-				mediaConsentStatus: mediaConsentOf(member.user)
-			})),
-			`${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`
+				committee: resData.abbreviation
+			})
 		);
 	};
 
-	const getNSAData = async () => {
-		const resData = await fetchNsaBadgeData();
-
-		const badgeData = resData.flatMap((member) => {
-			const nsa = member.delegation.assignedRole;
-			return nsa ? [{ user: member.user, label: nsa.name ?? '' }] : [];
-		});
-
-		exportBadgeCSV(
-			badgeData.sort(compareByLabelThenFamilyName((member) => member.label)).map((member) => ({
-				...personOnBadge(member.user),
-				countryName: member.label,
-				countryAlpha2Code: 'un',
-				alternativeImage: '',
-				mediaConsentStatus: mediaConsentOf(member.user)
-			})),
-			`NSA_badge_data_${new Date().toISOString()}.csv`
+	/** People holding a role that has no flag: shown by the role's name under the UN flag. */
+	function labelBadges(
+		rows: { user: BadgeUser & Parameters<typeof mediaConsentOf>[0]; label: string }[]
+	) {
+		return rows.sort(compareByLabelThenFamilyName((row) => row.label)).map((row) =>
+			personBadge(personOnBadge(row.user, mediaConsentOf(row.user)), {
+				kind: 'label',
+				label: row.label
+			})
 		);
-	};
+	}
 
-	const getSingleParticipantsData = async () => {
-		const resData = await fetchSingleParticipantBadgeData();
-
-		const badgeData = resData.flatMap((member) =>
-			member.assignedRole ? [{ user: member.user, label: member.assignedRole.name ?? '' }] : []
+	const getNSAData = async () =>
+		labelBadges(
+			(await fetchNsaBadgeData()).flatMap((member) => {
+				const nsa = member.delegation.assignedRole;
+				return nsa ? [{ user: member.user, label: nsa.name ?? '' }] : [];
+			})
 		);
 
-		exportBadgeCSV(
-			badgeData.sort(compareByLabelThenFamilyName((member) => member.label)).map((member) => ({
-				...personOnBadge(member.user),
-				countryName: member.label,
-				countryAlpha2Code: 'un',
-				alternativeImage: '',
-				mediaConsentStatus: mediaConsentOf(member.user)
-			})),
-			`single_participants_badge_data_${new Date().toISOString()}.csv`
+	const getSingleParticipantsData = async () =>
+		labelBadges(
+			(await fetchSingleParticipantBadgeData()).flatMap((member) =>
+				member.assignedRole ? [{ user: member.user, label: member.assignedRole.name ?? '' }] : []
+			)
 		);
-	};
 
-	const getSupervisorData = async () => {
-		const resData = await fetchSupervisorBadgeData();
-
-		const badgeData = resData
+	const getSupervisorData = async () =>
+		(await fetchSupervisorBadgeData())
 			.filter(
 				(supervisor) =>
 					supervisor.supervisedDelegationMembers.some(
@@ -213,36 +196,95 @@
 					) || supervisor.supervisedSingleParticipants.some((sp) => sp.applied && sp.assignedRole)
 			)
 			.sort(compareByFamilyName)
-			.map((supervisor) => ({
-				...personOnBadge(supervisor.user),
-				countryName: m.supervisor(),
-				countryAlpha2Code: '',
-				alternativeImage: 'supervisor',
-				mediaConsentStatus: mediaConsentOf(supervisor.user)
-			}));
+			.map((supervisor) =>
+				personBadge(personOnBadge(supervisor.user, mediaConsentOf(supervisor.user)), {
+					kind: 'image',
+					label: m.supervisor(),
+					image: 'supervisor'
+				})
+			);
 
-		exportBadgeCSV(badgeData, `supervisors_badge_data_${new Date().toISOString()}.csv`);
-	};
+	const getTeamMemberData = async () =>
+		(await fetchTeamMemberBadgeData()).sort(compareByFamilyName).map((member) =>
+			personBadge(personOnBadge(member.user, 'ALLOWED_ALL'), {
+				kind: 'label',
+				label: m.teamBadge()
+			})
+		);
 
-	const getTeamMemberData = async () => {
-		const resData = await fetchTeamMemberBadgeData();
-
-		const badgeData = resData.sort(compareByFamilyName).map((member) => ({
-			...personOnBadge(member.user),
-			countryName: m.teamBadge(),
-			countryAlpha2Code: 'un',
-			alternativeImage: '',
-			mediaConsentStatus: 'ALLOWED_ALL' as const
+	/** Table placards for every seat of every committee: the nations and the non-state actors. */
+	const getPlacardData = async () => {
+		const [committeeSeats, nonStateActors] = await Promise.all([
+			client.query.committees({
+				__args: { where: { conferenceId: { eq: conferenceId } } },
+				abbreviation: true,
+				roles: { nation: { alpha2Code: true, alpha3Code: true } },
+				delegationMembers: {
+					delegation: { assignedRole: { kind: true, name: true } }
+				}
+			}),
+			client.query.conferenceRoles({
+				__args: { where: { conferenceId: { eq: conferenceId }, kind: { eq: 'NON_STATE_ACTOR' } } },
+				name: true
+			})
+		]);
+		const committees = committeeSeats.map((committee) => ({
+			abbreviation: committee.abbreviation,
+			nations: committee.roles.flatMap((role) => (role.nation ? [role.nation] : [])),
+			nonStateActors: committee.delegationMembers.flatMap(({ delegation }) =>
+				delegation.assignedRole?.kind === 'NON_STATE_ACTOR' && delegation.assignedRole.name
+					? [delegation.assignedRole.name]
+					: []
+			)
 		}));
-
-		exportBadgeCSV(badgeData, `team_members_badge_data_${new Date().toISOString()}.csv`);
+		const seated = new Set(committees.flatMap((committee) => committee.nonStateActors));
+		return placardBadges(
+			committees,
+			nonStateActors.flatMap((role) => (role.name && !seated.has(role.name) ? [role.name] : [])),
+			getFullTranslatedCountryNameFromISO3Code
+		);
 	};
 </script>
 
+<p class="text-base-content/60 col-span-full text-sm">
+	<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+	{m.badgeGeneratorHint()}
+</p>
 {#each committees as committee (committee.id)}
-	<DownloadButton onclick={() => getCommitteeBadgeData(committee.id)} title={committee.name} />
+	<BadgeGeneratorLinks
+		variant="tile"
+		badges={() => getCommitteeBadgeData(committee.id)}
+		filename="{committee.name}_badges_{stamp}"
+		label={committee.name}
+	/>
 {/each}
-<DownloadButton onclick={getNSAData} title={m.nonStateActors()} />
-<DownloadButton onclick={getSingleParticipantsData} title={m.singleParticipants()} />
-<DownloadButton onclick={getSupervisorData} title={m.supervisors()} />
-<DownloadButton onclick={getTeamMemberData} title={m.teamMembers()} />
+<BadgeGeneratorLinks
+	variant="tile"
+	badges={getNSAData}
+	filename="NSA_badges_{stamp}"
+	label={m.nonStateActors()}
+/>
+<BadgeGeneratorLinks
+	variant="tile"
+	badges={getSingleParticipantsData}
+	filename="single_participants_badges_{stamp}"
+	label={m.singleParticipants()}
+/>
+<BadgeGeneratorLinks
+	variant="tile"
+	badges={getSupervisorData}
+	filename="supervisors_badges_{stamp}"
+	label={m.supervisors()}
+/>
+<BadgeGeneratorLinks
+	variant="tile"
+	badges={getTeamMemberData}
+	filename="team_members_badges_{stamp}"
+	label={m.teamMembers()}
+/>
+<BadgeGeneratorLinks
+	variant="tile"
+	badges={getPlacardData}
+	filename="placards_{stamp}"
+	label={m.badgePlacards()}
+/>

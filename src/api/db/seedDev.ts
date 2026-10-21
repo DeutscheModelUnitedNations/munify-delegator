@@ -20,7 +20,7 @@ import * as schema from './schema';
 import { unMemberNations } from './seed-data/nations';
 import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user';
 import { devAccounts } from './seed-data/devAccounts';
-import { pdfTemplate } from './seed-data/content';
+import { conferenceTemplatePdfs } from './seed-data/pdfDocuments';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
 import { replaceSeedObjects, seedStorage } from './seed-dev/files';
 import { createUniqueCode, type CrowdKind, type SeedWorld } from './seed-dev/context';
@@ -30,8 +30,10 @@ import { addAssignedPersonas, addRegistrationPersonas } from './seed-dev/persona
 import { addReviewerSnippets, addTeam } from './seed-dev/team';
 import { addPapers } from './seed-dev/papers';
 import { addSurveys } from './seed-dev/surveys';
+import { addEmails } from './seed-dev/emails';
 import { addBulk } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
+import { addResolutions } from './seed-dev/resolutions';
 import { printOverview } from './seed-dev/overview';
 import {
 	addDuplicateScenarioAccounts,
@@ -82,15 +84,10 @@ for (const account of devAccounts) {
 addReviewerSnippets(batch);
 addDuplicateScenarioAccounts(batch);
 
-const templates = {
-	contract: await pdfTemplate('Teilnahmevertrag'),
-	guardianConsent: await pdfTemplate('Einverständniserklärung der Erziehungsberechtigten'),
-	mediaConsent: await pdfTemplate('Einwilligung zu Foto- und Filmaufnahmen'),
-	termsAndConditions: await pdfTemplate('Teilnahmebedingungen'),
-	certificate: await pdfTemplate('Teilnahmezertifikat')
-};
-
 for (const plan of conferencePlans) {
+	const templates = await conferenceTemplatePdfs(
+		plan.conference.longTitle ?? plan.conference.title
+	);
 	const cs = buildConferenceStructure(world, plan, templates);
 	if (plan.key === 'elsewhere') {
 		// Another organizer's conference: nothing of the dev team in it, only the duplicate scenarios.
@@ -107,7 +104,9 @@ for (const plan of conferencePlans) {
 	addWaitingList(cs, 'dev-waitlist');
 	addPapers(cs);
 	addSurveys(cs);
-	addCalendar(cs);
+	addEmails(cs);
+	await addCalendar(cs);
+	await addResolutions(cs);
 	addBulk(cs);
 	addDuplicateScenarioParticipants(cs);
 }

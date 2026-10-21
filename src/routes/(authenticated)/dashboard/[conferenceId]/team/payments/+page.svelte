@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { queryParameters } from 'sveltekit-search-params';
-	import ScanHistory, { type ScanHistoryEntry } from '$lib/components/scanner/ScanHistory.svelte';
-	import ScanSearchBar from '$lib/components/scanner/ScanSearchBar.svelte';
-	import Kbd from '$lib/components/Kbd.svelte';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import ScanHistory, { type ScanHistoryEntry } from '#lib/components/scanner/ScanHistory.svelte';
+	import ScanSearchBar from '#lib/components/scanner/ScanSearchBar.svelte';
+	import Kbd from '#lib/components/Kbd.svelte';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import type { PageProps } from './$types';
 	import { canMarkReceived, transactionReadyFor, transactionStatusUpdate } from './paymentFlow';
 

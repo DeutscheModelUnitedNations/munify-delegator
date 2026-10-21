@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { templateOrDefault, testPrintParticipant, testPrintRecipient } from './testPrintData';
-import { getLocale } from '$lib/paraglide/runtime';
+import { getLocale } from '#lib/paraglide/runtime.js';
 
 describe('testPrintRecipient', () => {
 	test('uses the entered postal address', () => {

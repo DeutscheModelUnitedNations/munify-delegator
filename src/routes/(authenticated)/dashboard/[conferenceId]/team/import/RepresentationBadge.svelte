@@ -1,5 +1,5 @@
 <script lang="ts">
-	import AssignmentBadge from '$lib/components/tanStackTable/cells/AssignmentBadge.svelte';
+	import AssignmentBadge from '#lib/components/tanStackTable/cells/AssignmentBadge.svelte';
 
 	interface Props {
 		representation: {

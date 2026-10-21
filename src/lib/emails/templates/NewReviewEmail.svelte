@@ -8,8 +8,8 @@
 		Text,
 		Link
 	} from '@better-svelte-email/components';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		recipientName: string;

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import codenamize from '$lib/helpers/codenamize';
-	import Flag from '$lib/components/Flag.svelte';
-	import InfoGrid from '$lib/components/infoGrid';
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { splitRole } from '$lib/helpers/conferenceRole';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import codenamize from '#lib/helpers/codenamize.js';
+	import Flag from '#lib/components/Flag.svelte';
+	import InfoGrid from '#lib/components/infoGrid/index.js';
+	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';
@@ -30,7 +30,7 @@
 				id: true,
 				applied: true,
 				entryCode: true,
-				school: true,
+				school: { name: true },
 				experience: true,
 				motivation: true,
 				appliedForRoles: {
@@ -123,7 +123,7 @@
 			/>
 			{#if isStateParticipantRegistration}
 				<ApplicationDetailsEntries
-					school={delegation.school}
+					school={delegation.school?.name ?? null}
 					experience={delegation.experience}
 					motivation={delegation.motivation}
 				/>

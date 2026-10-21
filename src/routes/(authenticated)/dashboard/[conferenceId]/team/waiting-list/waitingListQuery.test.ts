@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
-import type { ColumnFiltersState } from '$lib/components/tanStackTable';
+import type { ColumnFiltersState } from '#lib/components/tanStackTable/index.js';
 
-vi.mock('$lib/api/rumbleClient/client', () => ({ client: {} }));
+vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
 
 const { waitingListWhere } = await import('./waitingListQuery');
 
@@ -10,20 +10,37 @@ const base = { conferenceId: { eq: 'c1' }, assigned: { eq: false } };
 interface Options {
 	search?: string;
 	hideHidden?: boolean;
+	showSeated?: boolean;
 	start?: Date | null;
 	userIds?: string[];
 }
 
 function where(
 	columnFilters: ColumnFiltersState,
-	{ search = '', hideHidden = false, start = new Date(2026, 5, 1), userIds }: Options = {}
+	{
+		search = '',
+		hideHidden = false,
+		showSeated = false,
+		start = new Date(2026, 5, 1),
+		userIds
+	}: Options = {}
 ) {
-	return waitingListWhere('c1', { columnFilters, search }, hideHidden, start, userIds);
+	return waitingListWhere(
+		'c1',
+		{ columnFilters, search },
+		{ hideHidden, showSeated },
+		start,
+		userIds
+	);
 }
 
 describe('waitingListWhere', () => {
 	test('without search or filters only the open entries of the conference are left', () => {
 		expect(where([])).toEqual(base);
+	});
+
+	test('the seated entries are left out unless the toolbar asks for them', () => {
+		expect(where([], { showSeated: true })).toEqual({ conferenceId: { eq: 'c1' } });
 	});
 
 	test('the toolbar toggle hides the hidden entries', () => {
@@ -46,7 +63,7 @@ describe('waitingListWhere', () => {
 			])
 		).toEqual({
 			...base,
-			school: { eq: 'Gymnasium' },
+			school: { name: { eq: 'Gymnasium' } },
 			AND: [{ user: { email: { isNull: true } } }]
 		});
 	});
@@ -61,6 +78,6 @@ describe('waitingListWhere', () => {
 		const and = where([], { search: 'anna gym', userIds: ['u1'] }).AND ?? [];
 		expect(and).toHaveLength(1);
 		expect(and[0].OR).toContainEqual({ userId: { in: ['u1'] } });
-		expect(and[0].OR).toContainEqual({ school: { ilike: '%anna gym%' } });
+		expect(and[0].OR).toContainEqual({ school: { name: { ilike: '%anna gym%' } } });
 	});
 });

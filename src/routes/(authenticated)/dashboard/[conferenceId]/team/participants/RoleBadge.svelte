@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { ParticipationRole } from './types';
 
 	interface Props {
@@ -19,7 +19,8 @@
 		},
 		SINGLE_PARTICIPANT: { label: m.singleParticipant, icon: 'fa-user', color: 'badge-accent' },
 		SUPERVISOR: { label: m.supervisor, icon: 'fa-chalkboard-user', color: 'badge-success' },
-		TEAM_MEMBER: { label: m.teamMember, icon: 'fa-user-group', color: 'badge-info' }
+		TEAM_MEMBER: { label: m.teamMember, icon: 'fa-user-group', color: 'badge-info' },
+		WAITING_LIST: { label: m.waitingList, icon: 'fa-user-clock', color: 'badge-warning' }
 	};
 
 	const config = $derived(roleBadges[role]);

@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 /**
  * What the paper page itself renders: the paper's identity for the header and export, who wrote

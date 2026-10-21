@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
-	import AnnouncementContent from '$lib/components/dashboard/AnnouncementContent.svelte';
-	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import ConferenceHeader from '#lib/components/dashboard/ConferenceHeader.svelte';
+	import AnnouncementContent from '#lib/components/dashboard/AnnouncementContent.svelte';
+	import SurveySection from '#lib/components/dashboard/SurveySection.svelte';
 
 	interface Props {
 		conferenceId: string;

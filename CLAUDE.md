@@ -179,8 +179,8 @@ bun run preview
   - `schemata/` - Zod validation schemas
   - `paraglide/` - Generated i18n code
 
-- **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit
-  (`kit.experimental.explicitEnvironmentVariables`). Import them by name:
+- **`src/env.ts`** - Every environment variable, declared and validated by SvelteKit (3's
+  explicit environment variables). Import them by name:
   `import { DATABASE_URL } from '$app/env/private'` (server only) or `'$app/env/public'`
   (`public: true`, also the browser). A missing or malformed value stops the app at start-up
   (or build) with one report listing every problem. `$env/*` is switched off. A variable that is
@@ -197,6 +197,7 @@ bun run preview
   - `mailSync/` + `apis/listmonk/` - Mail list synchronisation with Listmonk (`mail-sync`)
   - `invitationCleanup.ts` - Deletes team member invitations long after they expired
   - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
+  - `sendEmails.ts` - Calls the app's `/api/jobs/send-emails` until no automatic mail is left due
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -303,7 +304,7 @@ bun run preview
   GraphQL document:
 
   ```ts
-  import { client } from '$lib/api/rumbleClient/client';
+  import { client } from '#lib/api/rumbleClient/client.js';
 
   const conference = await client.query.conference({
   	__args: { id: conferenceId },
@@ -350,7 +351,7 @@ bun run preview
     cannot normalize a selection without it - it stores it embedded, overwrites the link other
     queries of the same field hold, and their next read comes back `undefined`. A type keyed by
     something else (a nation, by `alpha3Code`) belongs in `customKeyFields` in
-    `$lib/api/cacheKeys.ts`, and then that field has to be selected.
+    `#lib/api/cacheKeys.ts`, and then that field has to be selected.
   - **Key a query by primitives, never by reading through another live result inside the same
     `$derived`.** Reading a field of a live result subscribes the reading `$derived` to that
     result's updates, so a `$derived` that also issues a query would issue it again on every update.
@@ -362,8 +363,8 @@ bun run preview
     `createSubscriber` on each read, and each call creates a render effect; a `$derived` that walks
     a live array row by row creates one per row, and renews them all every time it runs. A page
     that computes over many live rows reads each result once into a plain copy
-    (`$lib/api/liveSnapshot`, which uses `slice`, a single read) in its own `$derived`, and
-    computes over the copies; `memoizeLast` (`$lib/helpers/memoizeLast`) then skips the work when
+    (`#lib/api/liveSnapshot`, which uses `slice`, a single read) in its own `$derived`, and
+    computes over the copies; `memoizeLast` (`#lib/helpers/memoizeLast.js`) then skips the work when
     a derived runs again over the same copies. On the assignment board this took a tab switch
     from ~45 board computations and a 0.5 s stall to 2 and ~0.1 s. Do not read live results in an
     `$effect` there instead: during the page's first async work that trips Svelte's "Batch has
@@ -398,7 +399,7 @@ bun run preview
   layouts too: every navigation, a query-only one included, hands over a fresh `params` object,
   and an awaited derived reading `params.x` directly asks for everything again each time.
 
-- **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
+- **Global state lives in `#lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
   Cache such a singleton **only in the browser**: module state on the server is shared by every
   request the process serves, so caching there hands one visitor's identity to the next. For the
@@ -431,36 +432,37 @@ bun run preview
   someone is typing would discard their edits. Build the object field by field rather than
   spreading a query result: the generated client returns a subscribeable proxy, and spreading it
   drags `subscribe` along and widens every field to `unknown`. Where the initial values need
-  massaging, put that in a helper (`$lib/api/userFormValues.ts`) so two forms on the same table
+  massaging, put that in a helper (`#lib/api/userFormValues.ts`) so two forms on the same table
   cannot drift.
 
 - **Fields are [Formsnap](https://formsnap.dev) components underneath.** The `Form*` wrappers in
-  `$lib/components/form/` own the styling and pass `name`/`label`/`description` through to
+  `#lib/components/form/` own the styling and pass `name`/`label`/`description` through to
   Formsnap's `Field`/`Control`/`Label`/`Description`/`FieldErrors`, which generate the ids and wire
   `for`, `aria-describedby`, `aria-invalid` and the `aria-live` error region. Spread the `props`
   the `Control` snippet hands you onto the input and never set `id`/`name` by hand. A field
   component is generic over `N extends FormPath<A> & keyof A`, so a misspelled field name is a
   compile error; for a typed `bind:` (a boolean or a `Date`) reach for `formFieldProxy`, which is
   what keeps those bindings type-safe without a cast.
-- **Uploads** go through `fileProxy`, then `uploadFile` (`$lib/api/uploadFile`), which puts the file
+- **Uploads** go through `fileProxy`, then `uploadFile` (`#lib/api/uploadFile.js`), which puts the file
   straight into the S3 bucket and returns its id for the mutation (`logoFileId`, …). An untouched
   field must yield `undefined` so the stored file survives; `null` removes it. See "Files" below.
 - **Personal data goes in through rumble's scalars**: `PersonName`, `EmailAddress`,
   `PhoneNumber` (stored as E.164), `Date` for a calendar day and `AddressInput` for an address
   (validated against libaddressinput's metadata, alpha-2 country codes; the user table keeps
-  alpha-3, `$lib/helpers/countryCodes` converts). Values that arrive some other way, such as
+  alpha-3, `#lib/helpers/countryCodes.js` converts). Values that arrive some other way, such as
   OIDC claims in `upsertSelf.ts`, go through rumble's exported `normalizePersonName` /
   `normalizeEmailAddress` / `parsePhoneNumber`. The account forms check the same rules first:
   `isPersonName`, and `addressRules`/`addressIssues` for which of postal code, city and region
   (`AddressRegionField`) a country uses. A `Date` value is UTC midnight on the wire; a date picker
-  yields local midnight, so convert with `$lib/helpers/calendarDay` (`toUpdateUserArgs` does).
+  yields local midnight, so convert with `#lib/helpers/calendarDay` (`toUpdateUserArgs` does).
 - **Regeneration** happens on dev server start, so a handler change is only visible to the
   frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
 - **SSR** goes through `src/api/graphql.remote.ts`, which executes the schema in-process.
   `ssrExchange` in `src/lib/api/client.ts` routes there whenever `browser` is false, which is why
   server-side fetching works without the app being able to fetch its own relative URL. It has to
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
-  stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
+  stubbed out there. Needs `experimental.remoteFunctions` in the `sveltekit()` options in
+  `vite.config.ts`.
 - **Files live in an S3 bucket** (any S3-compatible service, through
   [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
   `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
@@ -534,7 +536,7 @@ bun run preview
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.
 - **Impersonation is stalled** for this migration: the old implementation swapped session cookies
-  the library now owns. `$lib/data/impersonation` holds the flag the UI is gated on, and the two
+  the library now owns. `#lib/data/impersonation.js` holds the flag the UI is gated on, and the two
   mutations reject with an explanatory error.
 - User context injected into the GraphQL context via `src/api/context.ts`, which reads
   `event.locals.oidc`
@@ -543,16 +545,16 @@ bun run preview
     is redesigned, brings its own
   - Each entity's abilities live in its `<entity>Permissions.ts`
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
-  in `$lib/helpers/teamRoles.ts`, shared by the API (`authHelper.ts` re-exports them) and the UI.
+  in `#lib/helpers/teamRoles.ts`, shared by the API (`authHelper.ts` re-exports them) and the UI.
   `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
   postal address, templates, status, resolutions) next to the scanner and the settings.
 
 - **Team area.** Everything a conference's team works in is under `dashboard/[conferenceId]/team/`,
-  behind **one guard** (`team/+layout.ts`) and **one registry** (`$lib/data/teamRoutes.ts`): each
+  behind **one guard** (`team/+layout.ts`) and **one registry** (`#lib/data/teamRoutes.ts`): each
   entry holds the path, title, icon, section, command palette keywords and the roles that may open
   it. The side navigation (`team/TeamShell.svelte`), the dashboard's team entry (`stages/TeamMember/TeamMemberDashboard.svelte`: one card that opens the first page the caller may open, plus the conference's resource links), the command palette and the guard are all
   generated from it, so they cannot disagree. What a caller may open comes from `TeamAccess`
-  (`$lib/helpers/teamAccess.ts`: every role they hold, plus the admin flag; fetch it with
+  (`#lib/helpers/teamAccess.ts`: every role they hold, plus the admin flag; fetch it with
   `fetchTeamAccess`). The page-level predicates (`canEditConference`, `canEditCommittees`, …) take
   that and mirror the API's abilities. There are no redirect stubs: a path that is not a page is a
   404, a page the caller may not open a 403. Folder names are kebab-case.
@@ -563,7 +565,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
-- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`$lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
+- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -607,6 +609,19 @@ bun run preview
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
 - Paper submission system with versioning and reviews
+- **Seats from the waiting list are dated**: seating a user who has a waiting list entry
+  (`markSeatedFromWaitingList`, called by `createAppliedDelegationMember` /
+  `createAppliedSingleParticipant`) sets the entry's `assigned` and `assignedAt` and hands its
+  school to the new registration. The participants table shows waiting people as `WAITING_LIST`
+  rows and everybody's `waitingListSince` / `seatedFromWaitingListAt`.
+- **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
+  conference's scanner occasions the holder was scanned at (`certificateSessions`, merged by name)
+  and signs them into the optional `a` claim, so the PDF and `/validateCertificate` show the same
+  list. A certificate never mentions an occasion someone missed; claims of earlier certificates
+  that still list those (with 0) are read without them (`sessionsFromClaim`). Participant care takes an occasion off the
+  certificates on the scanner page (`attendanceSession.showOnCertificate`, set for every session of
+  the occasion by `setAttendanceOccasionOnCertificate`; a new session inherits its occasion's
+  setting).
 
 #### 6. Assignment
 
@@ -616,7 +631,7 @@ bun run preview
   the draft's `roleId`s - is one foreign key to it, which also ties the role to its conference.
   Nations are global reference data; a conference offers one while a committee seats it
   (`committee_to_role`), and `setCommitteeNationSeat` keeps the nation's role row with its seats.
-  A nation row carries only `nationAlpha3Code`; `$lib/helpers/conferenceRole` counts a role's seats
+  A nation row carries only `nationAlpha3Code`; `#lib/helpers/conferenceRole` counts a role's seats
   (`roleSeats`) and splits a selected role into its nation or non-state actor (`splitRole`).
 
 - **Draft, apply, release - three separate things.** The team plans in draft tables
@@ -626,7 +641,7 @@ bun run preview
   role"; units with members are the parts of a split; a unit with a `sourceSingleParticipantId`
   turns a single participant into a delegation. Every row cascades with the registration it points
   at, so withdrawn applications drop out on their own.
-- **One pure model, used on both sides.** `$lib/assignment/state.ts` turns live rows + draft into
+- **One pure model, used on both sides.** `#lib/assignment/state.ts` turns live rows + draft into
   `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
   dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
   (only roles with _exactly_ as many free seats as the group has members). The board in
@@ -649,7 +664,7 @@ bun run preview
   (`poolCountsBesidesDraft` takes the touched delegations out). Pages are copied out of the query
   results once and never re-read.
 - **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
-  holds them as state and mirrors them into the URL with `replaceState` on the next task: a
+  holds them as state and mirrors them into the URL with a shallow `goto` on the next task: a
   navigation or a `page` write landing while the board's async loads are pending trips Svelte's
   "Batch has scheduled effects" invariant (5.57.1).
 - **Release is only visibility.** `conference.assignmentReleased` (`setAssignmentReleased`,
@@ -686,7 +701,7 @@ bun run preview
   down.
 - **Confirmed means the notes follow the person.** The user card shows the care notes of accounts
   confirmed to be the same person (`LinkedAccountNotes`), and the sighting's red warning counts them
-  with the person's own (`careNotesOf` in `$lib/helpers/linkedNotes`; select
+  with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes.js`; select
   `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
   nothing over.
 - **The dev seed replays the ways a returning person's data can differ**
@@ -702,7 +717,55 @@ bun run preview
   member is on the team: there participant care reads them only through the pair. The new ones
   are in "Seed 2" - sign in as `dev-team-care` and open its plausibility page.
 
-#### 8. Background Tasks and Jobs
+#### 8. Schools
+
+- **A school is one row of `school`, shared by every conference** (`schema/schools.ts`).
+  Delegations, single participants, supervisors and waiting list entries point at it with an
+  optional `schoolId` (`schoolRef()`, `set null` on delete); no row names a school as text any
+  more. Every mutation that sets one takes the pair `schoolId` / `schoolName`
+  (`SchoolChoice`): an existing school, or a name that `resolveSchoolChoice`
+  (`$api/handlers/school/schoolService.ts`) finds (ignoring case and spacing) or creates. Both
+  left out keeps the school, both `null` removes it - **a school is always optional**, so
+  `applicationTextsComplete` no longer asks for one.
+- **Visibility:** everybody reads a school's name and place (applicants pick from
+  `searchSchools`); address, contact and the team's `notes` are masked except for participant
+  care and project management of a conference the school appears in (an application,
+  supervisor or waiting list entry), who also edit it (`updateSchool`) and merge duplicates
+  (`mergeSchools`, which repoints everything across all conferences and deletes the sources).
+  `conferenceSchools` (the team's schools page) and `schoolMetrics` (per conference: registered,
+  applied, seated, attended, from the waiting list) are participant care's.
+- **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
+  assignment board counts the seats its plan gives each school and warns past the limit; it never
+  blocks.
+- The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools a conference's
+  applications name; a suggestion's variants point at schools, and merging goes through
+  `mergeSchools`. The `statistics_delegations` view reads the school's name.
+
+#### 9. Automatic emails
+
+- **Every mail follows from state, not from an event.** `dueEmails` (`$api/handlers/email/`) is
+  pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
+  conference owes - acceptances and rejections once the assignment is released, seats from the
+  waiting list, postal/payment unlocked, received or with a problem, the reminders before the
+  application deadline and the conference, certificates, students linked to a supervisor. The
+  rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
+  there; the settings tab explains them in the same words.
+- **`emailLog` makes each mail happen once.** The sweep (`emailSweep.ts`) claims a mail by writing
+  its row, unique per conference, kind, person and `subjectKey`, before sending, so concurrent
+  sweeps and instances never double-send; failures are retried three times, a claim left by a dead
+  process frees up after 15 minutes. Every row (sent, failed, skipped) is shown in the log.
+- **Per conference and kind, off by default** (`conferenceEmailSetting`, settings tab "E-Mails",
+  participant care). Switching a kind on asks whether the people it already applies to get it now
+  (`notifyExisting`) or are marked `SKIPPED`.
+- **Two triggers, one path:** the mutations that change what is due (release, applying the draft,
+  conference settings, participant statuses, seating someone, a supervisor link) call
+  `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
+  calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
+  and anything missed. The app renders the mails (one template, `NotificationEmail.svelte`, text per
+  kind in `emailContent.ts`) in the recipient's locale; links use the origin of the request that
+  triggered the sweep.
+
+#### 10. Background Tasks and Jobs
 
 - **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
   scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
@@ -715,12 +778,20 @@ bun run preview
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
   - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
     `--dry-run`; needs the `S3_*` variables
+  - `send-emails` - every few minutes; asks the app to send the automatic mails that are due (it
+    renders them). Needs `APP_URL` and `JOBS_SECRET` (the same as the app's)
 
-### Path Aliases (svelte.config.js)
+### Path Aliases
+
+SvelteKit 3 has no `svelte.config.js`: its options are the `sveltekit()` plugin's, in
+`vite.config.ts`. `#lib` and `#assets` are subpath imports (`imports` in `package.json`); a
+`#lib` import is written with the file extension (`#lib/helpers/formatNames.js`). `$api` is still
+the plugin's `alias`, which SvelteKit 3 deprecates (it warns on every start) but still honours:
 
 ```
+#lib → src/lib
+#assets → src/assets
 $api → src/api
-$assets → src/assets
 ```
 
 ### Important Integrations
@@ -950,7 +1021,10 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 Some versions are held back or wired up on purpose. Check here before "updating to latest":
 
 - **drizzle-orm / drizzle-kit / drizzle-seed track the `1.0.0-rc.5` builds, not npm's `latest`**,
-  which is the 0.x line without the relational API v2 this app is built on. After any drizzle bump,
+  which is the 0.x line without the relational API v2 this app is built on. They are pinned to
+  `1.0.0-rc.5-5935859`: the tagged `1.0.0-rc.5` release breaks the row type Pothos hands to every
+  `adjust` resolver (`object({ adjust })`), which silently becomes an index signature of `any`;
+  check `src/api/handlers/storedFile/storedFile.ts` type-checks before moving on. After any drizzle bump,
   regenerate the client and check `git diff src/lib/api/rumbleClient` for `| null` creeping into
   relations: newer builds wrap relation columns in a `RelationsBuilderColumn`, which our rumble patch
   unwraps.
@@ -958,19 +1032,27 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   fine because armor only parses and walks documents (verified: depth and alias limits still reject
   over-limit queries on a production build). Anything else that brings its own graphql copy would
   not be - schema building fails every `instanceof` check across two copies.
-- **TypeScript is installed twice.** svelte-check needs TypeScript 6 (`typescript`); `tsc` itself is
-  TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+- **TypeScript is installed twice.** svelte-check and SvelteKit 3 need TypeScript 6 (`typescript`);
+  `tsc` itself is TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+- **OpenTelemetry 3** has no `sdk-trace-node`: `src/instrumentation.server.ts` builds a
+  `TracerProvider` from `@opentelemetry/sdk-trace` and registers the async-hooks context manager
+  and the W3C propagators itself, which `NodeTracerProvider.register()` used to do.
+- **adapter-node 6 ignores `ORIGIN`.** Behind a TLS-terminating proxy, set `PROTOCOL_HEADER` and
+  `HOST_HEADER` (see `.env.example`), or request URLs - and the links in the automatic emails - come
+  out as `http://` on the internal host.
 - **Sentry**: `dataCollection` is derived from `*_SENTRY_SEND_DEFAULT_PII` in
-  `$lib/sentryDataCollection.ts` (Sentry 11 collects everything by default), and the Vite plugin
+  `#lib/sentryDataCollection.ts` (Sentry 11 collects everything by default), and the Vite plugin
   runs with `buildTimeInstrumentation: false` - tracing is off, and that instrumentation inlines
   graphql into the server bundle, breaking rumble's client generator during `vite build`.
 - **Emails** import from `@better-svelte-email/components` and `@better-svelte-email/server`, not
   the `better-svelte-email` umbrella, whose root re-exports a preview module with raw `.svelte`
   files that Node cannot load during SSR.
-- **rumble is no longer patched** (since 0.26.0): the live-query timing, nested `autoIncludeIdField`,
-  relation nullability, correlated column-mask flags and the generator's write-if-changed all
-  landed upstream, together with the mask-aware filter arguments described under "Release is only
-  visibility". Rumble itself drops live-query updates whose data did not change.
+- **rumble is not patched.** The live-query timing, nested `autoIncludeIdField`, relation
+  nullability, correlated column-mask flags, the generator's write-if-changed and the mask-aware
+  filter arguments ("Release is only visibility") landed upstream in 0.26.0. Since 0.26.2 a live
+  result's Svelte subscriber also skips the replay it is handed when it subscribes (the data the
+  reader already shows), which, announced as an update while a page's first async work was
+  pending, tripped Svelte's "Batch has scheduled effects" invariant. Keep rumble at ≥ 0.26.2.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

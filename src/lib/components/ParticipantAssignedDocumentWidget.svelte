@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';

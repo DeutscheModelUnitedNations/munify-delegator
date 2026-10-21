@@ -1,8 +1,8 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { client } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
-import { genericPromiseToastMessages } from '$lib/utils/toast';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
+import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 import { toast } from 'svelte-sonner';
 
 /**
@@ -14,7 +14,7 @@ export async function startImpersonation(targetUserId: string) {
 		const promise = Promise.resolve(client.mutate.startImpersonation({ __args: { targetUserId } }));
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await goto(resolve('/dashboard'));
+		await goto(resolve('dashboard'));
 		window.location.reload();
 	} catch (error) {
 		console.error('Failed to start impersonation:', error);

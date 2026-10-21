@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { Snippet } from 'svelte';
-	import { dev } from '$app/environment';
+	import { dev } from '$app/env';
 
 	interface Props {
 		children: Snippet;

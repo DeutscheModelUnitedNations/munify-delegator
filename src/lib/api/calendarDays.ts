@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 /** The conference's schedule: its days with their tracks and entries, in the order they happen */
 export function fetchCalendarDays(conferenceId: string) {

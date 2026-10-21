@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
+	import Flag from '#lib/components/Flag.svelte';
 	import Wrapper from './Wrapper.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import type * as schema from '$api/db/schema';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type * as schema from '../../../api/db/schema';
 
 	interface Props {
 		country?: Pick<typeof schema.nation.$inferSelect, 'alpha2Code' | 'alpha3Code'> | null;

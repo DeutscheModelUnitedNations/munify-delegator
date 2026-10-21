@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 /**
  * A value mirrored to localStorage under `key`, JSON encoded. Reading `current` is reactive;

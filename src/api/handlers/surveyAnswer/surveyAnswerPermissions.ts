@@ -8,7 +8,7 @@ import {
 	systemAdmin,
 	userId
 } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 export function registerSurveyAnswerAbilities() {

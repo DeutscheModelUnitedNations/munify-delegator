@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

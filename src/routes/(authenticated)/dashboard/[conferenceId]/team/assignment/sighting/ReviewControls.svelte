@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { clearsRatingKey, ratingForKey } from '$lib/assignment/deckKeys';
-	import type { SightingReview } from '$lib/assignment/sighting';
-	import StarRating from '$lib/components/StarRating.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { clearsRatingKey, ratingForKey } from '#lib/assignment/deckKeys.js';
+	import type { SightingReview } from '#lib/assignment/sighting.js';
+	import StarRating from '#lib/components/StarRating.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** The team's rating, flag and exclusion of one application. */
 	interface Props {

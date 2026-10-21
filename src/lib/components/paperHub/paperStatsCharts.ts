@@ -1,6 +1,6 @@
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
-import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
+import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type TooltipPoint = Extract<TooltipComponentFormatterCallbackParams, unknown[]>[number];
 

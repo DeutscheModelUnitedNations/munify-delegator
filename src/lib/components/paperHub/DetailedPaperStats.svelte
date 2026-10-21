@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 	import type { EChartsOption, TooltipComponentFormatterCallbackParams } from 'echarts';
-	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
-	import MultiSeriesBarChart from '$lib/components/charts/echarts/MultiSeriesBarChart.svelte';
-	import GaugeChart from '$lib/components/charts/echarts/GaugeChart.svelte';
-	import EChartsBase from '$lib/components/charts/echarts/EChartsBase.svelte';
+	import BarChart from '#lib/components/charts/echarts/BarChart.svelte';
+	import MultiSeriesBarChart from '#lib/components/charts/echarts/MultiSeriesBarChart.svelte';
+	import GaugeChart from '#lib/components/charts/echarts/GaugeChart.svelte';
+	import EChartsBase from '#lib/components/charts/echarts/EChartsBase.svelte';
 	import { committeeTooltip, paperTypeChartColors, paperTypeLabel } from './paperStatsCharts';
 
 	interface Paper {

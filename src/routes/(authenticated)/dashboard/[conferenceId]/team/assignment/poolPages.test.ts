@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { POOL_PAGE, type PoolPage } from './board';
 import { createPoolPages, poolHasMore } from './poolPages.svelte';
 
-vi.mock('$lib/api/rumbleClient/client', () => ({ client: {} }));
+vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
 
 type Row = { id: string };
 const page = (size: number, from = 0): PoolPage<Row> => ({

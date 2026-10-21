@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * An open modal with a title, a body and a cancel/confirm footer. Render it inside an `{#if}`:

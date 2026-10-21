@@ -1,8 +1,8 @@
 import { toast } from 'svelte-sonner';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { client, type PapertypeEnum } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
+import { client, type PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** The toast shown while an author saves a paper as a draft or submits it. */
 export function paperSaveToastMessages(submit: boolean) {
@@ -47,6 +47,6 @@ export async function createPaper(
 	const created = await promise;
 	if (created.id) {
 		onCreated();
-		goto(resolve(`/dashboard/${paper.conferenceId}/paperhub`));
+		goto(resolve(`dashboard/${paper.conferenceId}/paperhub`));
 	}
 }

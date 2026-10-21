@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import { client, type MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
-	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
-	import formatNames from '$lib/helpers/formatNames';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import { toast } from 'svelte-sonner';
-	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
-	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
-	import Kbd from '$lib/components/Kbd.svelte';
-	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
-	import ScanFlowPage from '$lib/components/scanner/ScanFlowPage.svelte';
+	import StatusWidget from '#lib/components/ParticipantStatusWidget.svelte';
+	import ParticipantStatusMediaWidget from '#lib/components/ParticipantStatusMediaWidget.svelte';
+	import ParticipantAssignedDocumentWidget from '#lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import Kbd from '#lib/components/Kbd.svelte';
+	import GuardianConsentNotNeeded from '#lib/components/GuardianConsentNotNeeded.svelte';
+	import ScanFlowPage from '#lib/components/scanner/ScanFlowPage.svelte';
 	import {
 		createScannedUserFlow,
 		type StatusChange
-	} from '$lib/components/scanner/scannedUserFlow.svelte';
+	} from '#lib/components/scanner/scannedUserFlow.svelte.js';
 	import type { PageProps } from './$types';
 	import { confirmAllChange, scannedUserWithStatus } from './postalConfirm';
-	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 
 	let { params: routeParams }: PageProps = $props();
 

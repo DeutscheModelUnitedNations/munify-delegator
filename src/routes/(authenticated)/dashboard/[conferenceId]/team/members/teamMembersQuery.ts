@@ -1,10 +1,10 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 import type {
 	TeammemberOrderInputArgument,
 	TeammemberWhereInputArgument,
 	TeamroleEnum
-} from '$lib/api/rumbleClient/client';
-import type { TableState } from '$lib/components/tanStackTable/tableState.svelte';
+} from '#lib/api/rumbleClient/client.js';
+import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 import {
 	allOf,
 	asCount,
@@ -13,8 +13,8 @@ import {
 	orderFrom,
 	pageArgs,
 	pageOf
-} from '$lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
+} from '#lib/components/tanStackTable/serverQuery.js';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
 
 /** Every role a team member can hold, for the role filter. */
 export const TEAM_ROLES = [

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import ParticipantSelectionCard from '../ParticipantSelectionCard.svelte';
 	import SelectableParticipantsFieldset from '../SelectableParticipantsFieldset.svelte';
 	import SelectableParticipant from '../SelectableParticipant.svelte';
 	import { createPaymentParticipantSelection } from '../participantSelection.svelte';
-	import Selection from '$lib/components/selection';
-	import { sortByNames } from '$lib/helpers/formatNames';
+	import Selection from '#lib/components/selection/index.js';
+	import { sortByNames } from '#lib/helpers/formatNames.js';
 	import { findOtherSupervisors } from './otherSupervisors';
 	import type { PageProps } from './$types';
 

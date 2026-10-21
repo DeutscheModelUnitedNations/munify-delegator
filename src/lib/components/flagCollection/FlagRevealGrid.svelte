@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PuzzlePiece from './PuzzlePiece.svelte';
-	import { getNsaGradients } from '$lib/helpers/nsaGradient';
+	import { getNsaGradients } from '#lib/helpers/nsaGradient.js';
 	import { computeGridLayout } from './flagCollectionLayout';
 
 	interface Piece {

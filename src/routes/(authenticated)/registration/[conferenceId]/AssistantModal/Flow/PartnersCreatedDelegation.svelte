@@ -2,7 +2,7 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Question from '../Question.svelte';
 	import QuestionFlowState from '../flowEnum';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;

@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { MAX_RESOLUTION_UPLOAD_FILES, type ResolutionUploadProblem } from './resolutionUpload';
 
 // Kept apart from resolutionUpload.ts so the validation logic stays free of the

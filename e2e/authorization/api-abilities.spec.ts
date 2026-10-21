@@ -248,7 +248,7 @@ test('a reviewer reads delegations without their join codes', async ({ page }) =
 	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID));
 
 	// The delegation itself is readable...
-	const delegation = await gql(page, `query ($id: ID!) { delegation(id: $id) { id school } }`, {
+	const delegation = await gql(page, `query ($id: ID!) { delegation(id: $id) { id applied } }`, {
 		id: E2E_PAPER_DELEGATION_ID
 	});
 	expect(delegation.data?.delegation, JSON.stringify(delegation)).toMatchObject({
@@ -438,4 +438,48 @@ test('a supervisor reaches a student only in the conference they supervise them 
 		elsewhere: [],
 		elsewhereRegistration: []
 	});
+});
+
+test('anybody finds schools by name, but only their participants’ care team reads the details', async ({
+	page
+}) => {
+	await loginAs(page, makeTestUser('authz-school-reader'));
+
+	// Applicants pick an existing school, so its name is public...
+	const created = await gql(
+		page,
+		`mutation ($c: ID!) {
+			createWaitingListEntry(conferenceId: $c, schoolName: "E2E Schule Ablesbar", motivation: "m", experience: "e") { id }
+		}`,
+		{ c: E2E_PREP_CONFERENCE_ID }
+	);
+	const found = await gql(
+		page,
+		`query { searchSchools(search: "E2E Schule Ablesbar") { id name notes contactEmail street } }`
+	);
+	expect(found.errors, JSON.stringify(found)).toBeUndefined();
+	const schools = found.data?.searchSchools;
+	// The waiting list may be closed for this conference; then the school was never created and
+	// there is nothing to read - the rule below still holds for every school there is.
+	if (!created.errors) {
+		expect(schools).toEqual(
+			expect.arrayContaining([expect.objectContaining({ name: 'E2E Schule Ablesbar' })])
+		);
+	}
+
+	// ...while address, contact and the team's notes stay with the team.
+	const any = await gql(page, `query { schools(limit: 25) { notes contactEmail street } }`);
+	expect(any.errors, JSON.stringify(any)).toBeUndefined();
+	for (const school of [
+		...(Array.isArray(schools) ? schools : []),
+		...(Array.isArray(any.data?.schools) ? any.data.schools : [])
+	]) {
+		expect(school).toMatchObject({ notes: null, contactEmail: null, street: null });
+	}
+
+	// Nor may they edit or merge one.
+	expectRefused(
+		await gql(page, `mutation { updateSchool(id: "missing", notes: "x") { id } }`),
+		/not found/i
+	);
 });

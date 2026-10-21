@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import hotkeys from 'hotkeys-js';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import { createPersistedState } from '$lib/state/persistedState.svelte';
+	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import { onDestroy, onMount, untrack } from 'svelte';
-	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
-	import { resolveScannedCode } from '$lib/components/scanner/userSearch';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import { canWriteAccessCards } from '$lib/helpers/teamAccess';
-	import { fetchTeamAccess } from '$lib/api/teamAccess';
+	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
+	import { resolveScannedCode } from '#lib/components/scanner/userSearch.js';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { canWriteAccessCards } from '#lib/helpers/teamAccess.js';
+	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
 	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
 	import ScanCheckResult from './ScanCheckResult.svelte';
+	import CertificateOccasions from './CertificateOccasions.svelte';
 	import { isNetworkError, retryDelay, type QueueEntry } from './attendanceQueue';
 	import { scanIssues, type ScanIssue } from './scanCheck';
 	import {
@@ -34,8 +35,8 @@
 		type ShownPerson,
 		type ServerMode
 	} from './attendanceSession';
-	import ScanPageHeader from '$lib/components/scanner/ScanPageHeader.svelte';
-	import { acceptScannedCode, warmUpIdentityKey } from '$lib/api/identityCodeCheck';
+	import ScanPageHeader from '#lib/components/scanner/ScanPageHeader.svelte';
+	import { acceptScannedCode, warmUpIdentityKey } from '#lib/api/identityCodeCheck.js';
 	import { loadScannedPerson, type FoundPerson } from './scanLoad';
 	import type { PageProps } from './$types';
 
@@ -730,6 +731,9 @@
 	{/if}
 	{@render openSessionList()}
 	{@render infoEntry()}
+	{#if maySetUpSessions}
+		<CertificateOccasions {conferenceId} />
+	{/if}
 {/snippet}
 
 <!-- Looking people up needs no session, and anyone on the team may do it -->

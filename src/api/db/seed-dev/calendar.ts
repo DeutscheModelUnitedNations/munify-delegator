@@ -5,8 +5,10 @@ import {
 	makeSeedCalendarTrack,
 	makeSeedPlace
 } from '../seed-data/calendarDay';
-import { wallClockNow } from '$lib/components/calendar/calendarNow';
+import { wallClockNow } from '#lib/components/calendar/calendarNow.js';
 import type { ConferenceSeed } from './context';
+import { sitePlanPdf } from '../seed-data/pdfDocuments';
+import { addSeedFile } from './files';
 
 const MINUTE_MS = 60 * 1000;
 
@@ -20,7 +22,7 @@ const MINUTE_MS = 60 * 1000;
  * falls inside its second day, which is "today": there is always something on now and something
  * coming up.
  */
-export function addCalendar(cs: ConferenceSeed) {
+export async function addCalendar(cs: ConferenceSeed) {
 	if (!cs.plan.with.calendar) return;
 	const conferenceId = cs.id;
 	const timezone = cs.conference.timezone ?? 'Europe/Berlin';
@@ -64,6 +66,17 @@ export function addCalendar(cs: ConferenceSeed) {
 	);
 	cs.batch.calendarTrack.push(...tracksPerDay.flat());
 
+	/** A venue's floor plan, uploaded the way participant care would. */
+	const sitePlan = async (venue: string, rooms: string[]) =>
+		addSeedFile(cs.batch, {
+			conferenceId,
+			kind: 'place',
+			field: 'sitePlan',
+			bytes: await sitePlanPdf(venue, rooms),
+			mimeType: 'application/pdf',
+			fileName: `Lageplan ${venue}.pdf`
+		});
+
 	const landtag = makeSeedPlace({
 		conferenceId,
 		name: 'Landtag Niedersachsen',
@@ -71,14 +84,21 @@ export function addCalendar(cs: ConferenceSeed) {
 		latitude: 52.3613,
 		longitude: 9.7414,
 		directions: 'Vom Hauptbahnhof mit der U-Bahn Linie 3 oder 7 bis Waterloo, dann 5 Min zu Fuß.',
-		info: 'Bitte Personalausweis mitbringen. Keine Getränke im Plenarsaal.'
+		info: 'Bitte Personalausweis mitbringen. Keine Getränke im Plenarsaal.',
+		sitePlanFileId: await sitePlan('Landtag Niedersachsen', [
+			'Plenarsaal',
+			'Raum 201',
+			'Raum 202',
+			'Raum 203'
+		])
 	});
 	const kulturzentrum = makeSeedPlace({
 		conferenceId,
 		name: 'Kulturzentrum',
 		address: 'Beispielstr. 42, 30159 Hannover',
 		latitude: 52.374,
-		longitude: 9.7385
+		longitude: 9.7385,
+		sitePlanFileId: await sitePlan('Kulturzentrum', ['Großer Saal', 'Workshop 1', 'Workshop 2'])
 	});
 	cs.batch.place.push(landtag, kulturzentrum);
 

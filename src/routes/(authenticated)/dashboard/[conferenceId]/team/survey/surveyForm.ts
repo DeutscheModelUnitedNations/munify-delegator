@@ -1,4 +1,4 @@
-import { datetimeLocalToDate } from '$lib/helpers/conferenceTimezoneDate';
+import { datetimeLocalToDate } from '#lib/helpers/conferenceTimezoneDate.js';
 
 /**
  * The fields a survey form writes, or `undefined` while one is still empty. The deadline is a

@@ -1,7 +1,7 @@
-import { m } from '$lib/paraglide/messages';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-import { translateTeamRole } from '$lib/utils/enumTranslations';
-import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
+import { m } from '#lib/paraglide/messages.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
 
 export interface HistoryEntry {
 	conferenceId: string;

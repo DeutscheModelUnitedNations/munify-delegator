@@ -1,16 +1,16 @@
 <script lang="ts">
-	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
-	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
-	import CountryStats from '$lib/components/countryStats/CountryStats.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
+	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
+	import CountryStats from '#lib/components/countryStats/CountryStats.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
-	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
+	import DelegationNameDisplay from '#lib/components/DelegationNameDisplay.svelte';
 	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 	import DelegationMembersStatusSection from './DelegationMembersStatusSection.svelte';
-	import { splitRole } from '$lib/helpers/conferenceRole';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		conferenceId: string;

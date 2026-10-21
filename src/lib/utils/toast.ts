@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 export const genericPromiseToastMessages = {
 	loading: m.genericToastLoading(),

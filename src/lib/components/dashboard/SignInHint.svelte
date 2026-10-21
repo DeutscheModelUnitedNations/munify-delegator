@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import undrawSignIn from '$assets/undraw/around_the_world.svg';
+	import undrawSignIn from '#assets/undraw/around_the_world.svg';
 	import { page } from '$app/state';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** What a visitor who is not signed in is missing, and the way back to this page after signing in. */
 	interface Props {
@@ -22,8 +22,10 @@
 	<div class="flex flex-1 flex-col items-center gap-4 text-center sm:items-start sm:text-left">
 		<h2 class="text-2xl font-bold tracking-tight">{title}</h2>
 		<p class="text-base-content/70 max-w-xl">{text}</p>
-		<a class="btn btn-primary gap-2" href={resolve(`/login?next=${next}`)} rel="external">
+
+		<a class="btn btn-primary gap-2" href={resolve(`login?next=${next}`)} rel="external">
 			<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
+
 			{m.signIn()}
 		</a>
 	</div>

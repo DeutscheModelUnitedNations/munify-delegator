@@ -3,12 +3,12 @@
 		distinctSupervisors,
 		memberSummary,
 		type delegationApplication
-	} from '$lib/assignment/sighting';
-	import Flag from '$lib/components/Flag.svelte';
-	import formatNames from '$lib/helpers/formatNames';
-	import { m } from '$lib/paraglide/messages';
+	} from '#lib/assignment/sighting.js';
+	import Flag from '#lib/components/Flag.svelte';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import ApplicationText from './ApplicationText.svelte';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import PersonLine from './PersonLine.svelte';
 
 	/** Who applied in a first row (members, school, supervisors, wishes), what they wrote below. */

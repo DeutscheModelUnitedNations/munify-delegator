@@ -17,7 +17,9 @@ test('a team member can mark a participant payment status as done from the parti
 	await expect(statusTab).toBeVisible({ timeout: 15_000 });
 	await statusTab.click();
 
-	const paymentDoneButton = page.locator('.card:has(.fa-money-bill) button[aria-label="DONE"]');
+	const paymentDoneButton = page
+		.locator('.card:has(.fa-money-bill)')
+		.getByRole('button', { name: /^(erledigt|done)$/i });
 	await expect(paymentDoneButton).toBeVisible({ timeout: 15_000 });
 	await paymentDoneButton.click();
 

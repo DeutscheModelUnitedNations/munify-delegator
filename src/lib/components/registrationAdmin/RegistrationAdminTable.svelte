@@ -1,10 +1,10 @@
 <script lang="ts" generics="T extends { id: string }">
 	import type { Snippet } from 'svelte';
 	import { queryParameters } from 'sveltekit-search-params';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-	import type { TableState } from '$lib/components/tanStackTable/tableState.svelte';
-	import Drawer from '$lib/components/Drawer.svelte';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
+	import Drawer from '#lib/components/Drawer.svelte';
 
 	/**
 	 * A management table whose rows open a drawer, kept in the `selected` URL parameter.

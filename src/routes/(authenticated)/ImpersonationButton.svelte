@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
 
 	/**
@@ -35,7 +35,7 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
 			await promise;
-			await goto(resolve('/dashboard'));
+			await goto(resolve('dashboard'));
 			window.location.reload();
 		} catch (error) {
 			console.error('Failed to stop impersonation:', error);

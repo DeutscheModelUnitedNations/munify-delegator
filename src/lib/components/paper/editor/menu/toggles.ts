@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 // Type-only: these bring the heading and list commands into `ChainedCommands`.
 import type {} from '@tiptap/extension-heading';
 import type {} from '@tiptap/extension-list';

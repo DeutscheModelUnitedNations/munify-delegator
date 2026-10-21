@@ -11,8 +11,8 @@
 		type RowData,
 		type Table,
 		type TableFeatures
-	} from '$lib/components/tanStackTable';
-	import { m } from '$lib/paraglide/messages';
+	} from '#lib/components/tanStackTable/index.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import TableRoot from './Table.svelte';
 	import SortButton from './SortButton.svelte';
 	import TableHeader from './TableHeader.svelte';

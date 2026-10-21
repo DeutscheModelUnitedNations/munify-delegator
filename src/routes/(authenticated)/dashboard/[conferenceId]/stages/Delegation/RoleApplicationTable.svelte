@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { roleSeats, splitRole } from '$lib/helpers/conferenceRole';
+	import Flag from '#lib/components/Flag.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { roleSeats, splitRole } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		delegationId: string;

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	// Unsubscribe links carry the address, so the field starts filled in.
 	let email = $state(page.url.searchParams.get('email') ?? '');
@@ -45,7 +45,8 @@
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>
 				<h3 class="mt-6 text-lg">{m.usubscribeSomeOnly()}</h3>
-				<a class="btn btn-primary" href={resolve('/my-account')}>{m.goToProfile()}</a>
+
+				<a class="btn btn-primary" href={resolve('my-account')}>{m.goToProfile()}</a>
 			</div>
 		</div>
 	{:else}
@@ -53,10 +54,10 @@
 			<div class="card-body">
 				<h1 class="text-xl">{m.unsubscribedAll()}</h1>
 				<h3 class="mt-10 text-lg">{m.unsubscribeRegret()}</h3>
-				<a class="btn btn-primary" href={resolve('/my-account')}>{m.goToProfile()}</a>
-				<p class="max-w-lg text-xs">
-					{m.unsubscribeNote()}
-				</p>
+
+				<a class="btn btn-primary" href={resolve('my-account')}>{m.goToProfile()}</a>
+
+				<p class="max-w-lg text-xs">{m.unsubscribeNote()}</p>
 			</div>
 		</div>
 	{/if}

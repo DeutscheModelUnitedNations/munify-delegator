@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
-	import SignInHint from '$lib/components/dashboard/SignInHint.svelte';
-	import ConferenceSelectorHeader from '$lib/components/dashboard/ConferenceSelectorHeader.svelte';
-	import MyConferencesSection from '$lib/components/dashboard/MyConferencesSection.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
+	import ConferenceSelectorHeader from '#lib/components/dashboard/ConferenceSelectorHeader.svelte';
+	import MyConferencesSection from '#lib/components/dashboard/MyConferencesSection.svelte';
 	import ConferenceStateGroup from './ConferenceStateGroup.svelte';
-	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
+	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
+	import ConferenceSelectorCard from '#lib/components/dashboard/ConferenceSelectorCard.svelte';
 	import { fetchMyConferenceIds, fetchSelectableConferences } from './conferenceSelector';
 	import { groupConferencesByState } from './conferenceGroups';
 
@@ -34,7 +34,7 @@
 	<div class="flex w-full flex-col items-center gap-4">
 		<NoConferenceIndicator />
 		{#if currentUser?.isAdmin}
-			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/create')}>
+			<a class="btn btn-ghost btn-sm" href={resolve('dashboard/create')}>
 				<i class="fa-sharp-duotone fa-solid fa-seedling"></i>
 				{m.seedConference()}
 			</a>

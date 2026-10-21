@@ -6,13 +6,13 @@
 	when nothing is left. Ticks along every minute so it stays true.
 -->
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { fetchCalendarDays } from '$lib/api/calendarDays';
-	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
-	import { entriesForSeat, seatNamesOf, timelineOf } from '$lib/components/calendar/calendarNow';
-	import { formatClock } from '$lib/helpers/formatClock';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { fetchCalendarDays } from '#lib/api/calendarDays.js';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { entriesForSeat, seatNamesOf, timelineOf } from '#lib/components/calendar/calendarNow.js';
+	import { formatClock } from '#lib/helpers/formatClock.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 

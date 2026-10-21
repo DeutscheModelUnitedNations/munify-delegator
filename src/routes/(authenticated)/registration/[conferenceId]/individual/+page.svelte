@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import PlainCard from '$lib/components/PlainCard.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import PlainCard from '#lib/components/PlainCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -37,7 +37,7 @@
 					title={name ?? ''}
 					description={description ?? ''}
 					fontAwesomeIcon={fontAwesomeIcon ?? 'fa-user-tie'}
-					link={resolve(`/registration/${params.conferenceId}/individual/${id}`)}
+					link={resolve(`registration/${params.conferenceId}/individual/${id}`)}
 				/>
 			{/each}
 		</section>

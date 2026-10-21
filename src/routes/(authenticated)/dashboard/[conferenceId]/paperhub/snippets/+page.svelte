@@ -20,27 +20,27 @@
 </script>
 
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import Modal from '$lib/components/Modal.svelte';
+	import Modal from '#lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Heading from '@tiptap/extension-heading';
 	import Blockquote from '@tiptap/extension-blockquote';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import { UndoRedo } from '@tiptap/extensions';
-	import { getCommonExtensions } from '$lib/components/paper/editor/settings/common.svelte';
+	import { getCommonExtensions } from '#lib/components/paper/editor/settings/common.svelte.js';
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
-	import Menu from '$lib/components/paper/editor/menu';
+	import Menu from '#lib/components/paper/editor/menu/index.js';
 	import { checkSnippet, saveErrorMessage } from './snippetValidation';
-	import { PlaceholderHighlight } from '$lib/components/paper/editor/extensions/PlaceholderHighlight';
+	import { PlaceholderHighlight } from '#lib/components/paper/editor/extensions/PlaceholderHighlight.js';
 	import {
 		isValidTipTapContent,
 		getEmptyTipTapDocument
-	} from '$lib/components/paper/editor/contentValidation';
+	} from '#lib/components/paper/editor/contentValidation.js';
 
 	const snippets = $derived(
 		await client.liveQuery.myReviewerSnippets({

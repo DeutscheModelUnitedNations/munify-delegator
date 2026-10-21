@@ -1,4 +1,5 @@
 import { db, schema } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	createAssignedSingleParticipant,
@@ -32,7 +33,9 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			roleId: t.arg.id({ required: true }),
-			school: t.arg.string(),
+			/** An existing school, or `schoolName` to find or create one; neither for no school. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			motivation: t.arg.string(),
 			experience: t.arg.string()
 		},
@@ -60,7 +63,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			school: t.arg.string(),
+			/** Both null removes the school; both left out keeps it. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			experience: t.arg.string(),
 			motivation: t.arg.string(),
 			applyForRolesIdList: t.arg.idList(),
@@ -113,6 +118,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			singleParticipantPubsub.created();
 			waitingListEntryPubsub.updated();
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.singleParticipant
 				.findFirst(

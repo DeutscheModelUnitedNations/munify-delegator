@@ -1,4 +1,4 @@
-import { hasErrorCode } from '$lib/api/errorCodes';
+import { hasErrorCode } from '#lib/api/errorCodes.js';
 import { isNetworkError, type QueueEntry } from './attendanceQueue';
 import type { ScanIssue } from './scanCheck';
 import type { FoundPerson } from './scanLoad';

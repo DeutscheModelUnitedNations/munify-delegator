@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
+	badgeSeatOf,
 	badgeSessionBody,
 	badgeSessionUrl,
 	requestBadgeSession,
@@ -83,5 +84,44 @@ describe('seatBadgeValues', () => {
 		expect(values.countryName).toBeFalsy();
 		expect(values.committee).toBeUndefined();
 		expect(seatBadgeValues(undefined, () => 'unused').countryAlpha2Code).toBeUndefined();
+	});
+});
+
+describe('badgeSeatOf', () => {
+	const labels = {
+		countryName: (alpha3: string) => (alpha3 === 'deu' ? 'Deutschland' : alpha3),
+		supervisor: 'Betreuung',
+		team: 'Team'
+	};
+
+	test('shows a delegate by nation and committee, or by their non-state actor', () => {
+		expect(
+			badgeSeatOf(
+				{
+					delegationMember: {
+						assignedCommittee: { abbreviation: 'GV' },
+						delegation: { assignedRole: { nation: { alpha2Code: 'de', alpha3Code: 'deu' } } }
+					}
+				},
+				labels
+			)
+		).toEqual({ kind: 'nation', alpha2Code: 'de', countryName: 'Deutschland', committee: 'GV' });
+		expect(
+			badgeSeatOf(
+				{ delegationMember: { delegation: { assignedRole: { name: 'Amnesty', nation: null } } } },
+				labels
+			)
+		).toEqual({ kind: 'label', label: 'Amnesty', committee: undefined });
+	});
+
+	test('falls back to the single role, the supervisor image, the team, else nothing', () => {
+		expect(
+			badgeSeatOf({ singleParticipant: { assignedRole: { name: 'Presse' } } }, labels)
+		).toEqual({ kind: 'label', label: 'Presse' });
+		expect(badgeSeatOf({ conferenceSupervisor: {} }, labels)?.kind).toBe('image');
+		expect(badgeSeatOf({ teamMember: {} }, labels)).toEqual({ kind: 'label', label: 'Team' });
+		expect(
+			badgeSeatOf({ delegationMember: { delegation: { assignedRole: null } } }, labels)
+		).toBeUndefined();
 	});
 });

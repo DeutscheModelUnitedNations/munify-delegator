@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';

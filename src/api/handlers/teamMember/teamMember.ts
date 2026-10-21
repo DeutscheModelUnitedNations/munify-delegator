@@ -2,7 +2,7 @@ import { db, schema } from '$api/db/db';
 import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import { eq } from 'drizzle-orm';
 import { teamMemberPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 import { assertCanDeleteTeamMember, registerTeamMemberAbilities } from './teamMemberPermissions';
 

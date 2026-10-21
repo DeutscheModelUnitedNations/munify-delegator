@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
-	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
-	import GaugeChart from '$lib/components/charts/echarts/GaugeChart.svelte';
-	import LineChart from '$lib/components/charts/echarts/LineChart.svelte';
-	import CollapsibleParticipantList from '$lib/components/CollapsibleParticipantList.svelte';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import PieChart from '#lib/components/charts/echarts/PieChart.svelte';
+	import BarChart from '#lib/components/charts/echarts/BarChart.svelte';
+	import GaugeChart from '#lib/components/charts/echarts/GaugeChart.svelte';
+	import LineChart from '#lib/components/charts/echarts/LineChart.svelte';
+	import CollapsibleParticipantList from '#lib/components/CollapsibleParticipantList.svelte';
 	import SurveyExportButtons from './SurveyExportButtons.svelte';
 	import { fetchSurveyResults } from './surveyAnswers';
 	import { compareByDisplayName } from './surveyExport';

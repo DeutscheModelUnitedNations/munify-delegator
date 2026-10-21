@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { toWaitingListRow, type WaitingListSourceEntry } from './waitingListRows';
+import {
+	toWaitingListRow,
+	waitingListPositions,
+	type WaitingListSourceEntry
+} from './waitingListRows';
 
 const entry: WaitingListSourceEntry = {
 	id: 'w1',
@@ -13,7 +17,7 @@ const entry: WaitingListSourceEntry = {
 		birthday: new Date('2008-03-20T00:00:00Z'),
 		conferenceParticipationsCount: 2
 	},
-	school: 'School',
+	school: { name: 'School' },
 	experience: 'Some',
 	motivation: 'Lots',
 	requests: 'None',
@@ -41,6 +45,8 @@ describe('toWaitingListRow', () => {
 			id: 'w1',
 			userId: 'u1',
 			createdAt: new Date('2026-01-02T03:04:05.000Z'),
+			position: undefined,
+			assignedAt: null,
 			family_name: 'Lovelace',
 			given_name: 'Ada',
 			email: 'ada@example.org',
@@ -54,6 +60,15 @@ describe('toWaitingListRow', () => {
 			requests: 'None',
 			hidden: false
 		});
+	});
+
+	test('takes the place on the list and the date a seat was given', () => {
+		const positions = waitingListPositions([{ id: 'w0' }, { id: 'w1' }]);
+		expect(toWaitingListRow(entry, null, positions).position).toBe(2);
+		expect(toWaitingListRow(bare, null, positions).position).toBeUndefined();
+		expect(
+			toWaitingListRow({ ...bare, assignedAt: '2026-02-01T10:00:00.000Z' }, null).assignedAt
+		).toEqual(new Date('2026-02-01T10:00:00.000Z'));
 	});
 
 	test('has no age without a conference start', () => {

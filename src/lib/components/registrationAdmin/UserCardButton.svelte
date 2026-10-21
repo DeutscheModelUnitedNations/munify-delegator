@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 
 	interface Props {
 		userId: string;

@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { toast } from 'svelte-sonner';
 
 /** Shows why a draft mutation failed: the server's message, or the generic one. */

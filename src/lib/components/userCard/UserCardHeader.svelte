@@ -1,21 +1,28 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import formatNames from '$lib/helpers/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
 	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
 	import LinkedAccountNotes from './LinkedAccountNotes.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
-	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
+	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
 	import Modal from '../Modal.svelte';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { closeUserCard } from './userCardState.svelte';
 	import type { UserCardRoles } from './userCardRoles';
-	import { badgeSessionBody, requestBadgeSession, seatBadgeValues } from './badgeSession';
+	import {
+		badgeSeatOf,
+		badgeSessionBody,
+		requestBadgeSession,
+		seatBadgeValues
+	} from './badgeSession';
+	import BadgeGeneratorLinks from '../BadgeGeneratorLinks.svelte';
+	import { personBadge } from '#lib/helpers/badgeCsv.js';
 
 	interface Props extends UserCardRoles {
 		userId: string;
@@ -114,6 +121,35 @@
 		}
 	};
 
+	// What the person's badge shows, if they hold anything a badge could show.
+	const badgeSeat = $derived(
+		badgeSeatOf(
+			{ delegationMember, singleParticipant, conferenceSupervisor, teamMember },
+			{
+				countryName: getFullTranslatedCountryNameFromISO3Code,
+				supervisor: m.supervisor(),
+				team: m.teamBadge()
+			}
+		)
+	);
+
+	const badgeName = $derived(
+		formatNames(givenName ?? undefined, familyName ?? undefined, { familyNameUppercase: false })
+	);
+
+	/** The person's nametag as the one row of a badge CSV. */
+	const badgeRows = async () => {
+		if (!badgeSeat) return [];
+		const [status] = await client.query.conferenceParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
+			id: true,
+			mediaConsentStatus: true
+		});
+		// The team is photographed anyway; a participant's own consent decides for them
+		const mediaConsentStatus = teamMember ? 'ALLOWED_ALL' : status?.mediaConsentStatus;
+		return [personBadge({ name: badgeName, pronouns, id: userId, mediaConsentStatus }, badgeSeat)];
+	};
+
 	// --- Delete participant ---
 	let deleteModalOpen = $state(false);
 	let deleteConfirmInput = $state('');
@@ -179,15 +215,39 @@
 
 			<!-- Action buttons -->
 			<div class="flex items-center gap-1">
-				{#if PUBLIC_BADGE_GENERATOR_URL}
-					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
-						<button
-							class="btn btn-ghost btn-sm btn-square"
-							aria-label={m.generateBadge()}
-							onclick={openBadgeGenerator}
+				{#if badgeSeat}
+					<div class="dropdown dropdown-end">
+						<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
+							<div
+								tabindex="0"
+								role="button"
+								class="btn btn-ghost btn-sm btn-square"
+								aria-label={m.generateBadge()}
+							>
+								<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
+							</div>
+						</div>
+						<div
+							tabindex="-1"
+							class="dropdown-content bg-base-100 rounded-box border-base-300 z-20 mt-2 flex w-80 flex-col gap-3 border p-4 shadow-lg"
 						>
-							<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
-						</button>
+							<p class="font-semibold">{m.badgeForPerson()}</p>
+							{#if PUBLIC_BADGE_GENERATOR_URL}
+								<button class="btn btn-sm btn-outline" onclick={openBadgeGenerator}>
+									<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
+									{m.badgeGeneratorPrefilled()}
+								</button>
+							{/if}
+							<BadgeGeneratorLinks
+								badges={badgeRows}
+								filename="badge_{formatNames(givenName ?? undefined, familyName ?? undefined, {
+									givenNameFirst: false,
+									delimiter: '_'
+								})}"
+								label={m.badgeCsvDownload()}
+								showHint
+							/>
+						</div>
 					</div>
 				{/if}
 

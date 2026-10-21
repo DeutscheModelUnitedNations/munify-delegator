@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchMyPaperHubRoles } from '../myPaperHubRoles';
-	import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
-	import { compareEditorContentHash } from '$lib/components/paper/editor/contentHash';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { editorContentStore, resolutionStore } from '#lib/components/paper/editor/editorStore.js';
+	import { compareEditorContentHash } from '#lib/components/paper/editor/contentHash.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
 	import {
 		buildResolutionHeaderData,

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ActionModal from '$lib/components/ActionModal.svelte';
+	import ActionModal from '#lib/components/ActionModal.svelte';
 	import TargetDayField from './TargetDayField.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { copiedEntryArgs } from './copyDayEntries';
 
 	interface Props {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { SIGHTING_STATUSES, type SightingStatus } from '$lib/assignment/sighting';
-	import { m } from '$lib/paraglide/messages';
+	import { SIGHTING_STATUSES, type SightingStatus } from '#lib/assignment/sighting.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { searchSchools } from './applications';
 
 	/** The status and school filters of the sighting. */

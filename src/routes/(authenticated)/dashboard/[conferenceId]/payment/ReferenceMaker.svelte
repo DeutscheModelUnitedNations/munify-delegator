@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import type { ConferencePaymentData } from './conferencePaymentData';
-	import DisabledInput from '$lib/components/DisabledInput.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
+	import DisabledInput from '#lib/components/DisabledInput.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import { toast } from 'svelte-sonner';
 	import GiroCode from './GiroCode.svelte';
 

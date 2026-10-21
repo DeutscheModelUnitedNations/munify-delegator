@@ -1,5 +1,5 @@
-import { ofAgeAtConference } from '$lib/helpers/ageChecker';
-import type { StatusChange } from '$lib/components/scanner/scannedUserFlow.svelte';
+import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+import type { StatusChange } from '#lib/components/scanner/scannedUserFlow.svelte.js';
 
 /** The scanned user together with their status row, or `undefined` when either is missing. */
 export function scannedUserWithStatus<U, S>(

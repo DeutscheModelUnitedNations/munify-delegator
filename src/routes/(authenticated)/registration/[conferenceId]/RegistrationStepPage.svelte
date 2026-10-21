@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { resolve } from '$app/paths';
 
 	/**
@@ -29,7 +29,7 @@
 
 				{@render children()}
 
-				<a class="btn btn-warning mt-16" href={resolve(`/dashboard/${conferenceId}`)}>{m.back()}</a>
+				<a class="btn btn-warning mt-16" href={resolve(`dashboard/${conferenceId}`)}>{m.back()}</a>
 			</div>
 		</div>
 	</main>

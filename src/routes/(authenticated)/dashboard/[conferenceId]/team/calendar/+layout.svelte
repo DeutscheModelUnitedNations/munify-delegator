@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import LabeledField from '$lib/components/form/LabeledField.svelte';
-	import { saveWithToast } from '$lib/helpers/saveWithToast';
-	import { m } from '$lib/paraglide/messages';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import LabeledField from '#lib/components/form/LabeledField.svelte';
+	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { trackFields } from './calendarEditing';
 	import type { MatrixDay, TrackRow } from './trackMatrix';
 

@@ -331,6 +331,10 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
+		school: r.one.school({
+			from: r.conferenceSupervisor.schoolId,
+			to: r.school.id
+		}),
 		// Supervision links people (`conferenceParticipant`); these two read it as the registrations
 		// the supervised people hold, which is what most of the app wants to show.
 		supervised: r.many.conferenceParticipant({
@@ -391,6 +395,10 @@ export const relations = defineRelations(schema, (r) => ({
 		appliedForRoles: r.many.roleApplication({
 			from: r.delegation.id,
 			to: r.roleApplication.delegationId
+		}),
+		school: r.one.school({
+			from: r.delegation.schoolId,
+			to: r.school.id
 		}),
 		assignedRole: r.one.conferenceRole({
 			from: r.delegation.assignedRoleId,
@@ -581,6 +589,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.singleParticipant.id.through(r.singleParticipantRoleWish.b),
 			to: r.conferenceRole.id.through(r.singleParticipantRoleWish.a)
 		}),
+		school: r.one.school({
+			from: r.singleParticipant.schoolId,
+			to: r.school.id
+		}),
 		// The team's review of the application, so the board can read it along with the participant.
 		assignmentReview: r.one.assignmentReview({
 			from: r.singleParticipant.id,
@@ -687,6 +699,29 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.schoolSuggestionVariant.suggestionId,
 			to: r.schoolSuggestion.id,
 			optional: false
+		}),
+		school: r.one.school({
+			from: r.schoolSuggestionVariant.schoolId,
+			to: r.school.id,
+			optional: false
+		})
+	},
+	school: {
+		delegations: r.many.delegation({
+			from: r.school.id,
+			to: r.delegation.schoolId
+		}),
+		singleParticipants: r.many.singleParticipant({
+			from: r.school.id,
+			to: r.singleParticipant.schoolId
+		}),
+		conferenceSupervisors: r.many.conferenceSupervisor({
+			from: r.school.id,
+			to: r.conferenceSupervisor.schoolId
+		}),
+		waitingListEntries: r.many.waitingListEntry({
+			from: r.school.id,
+			to: r.waitingListEntry.schoolId
 		})
 	},
 	possibleDuplicate: {
@@ -775,7 +810,9 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		paymentTransactionsReferences: r.many.userReferenceInPaymentTransaction({
 			from: r.user.id.through(r.conferenceParticipant.userId),
-			to: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(r.conferenceParticipant.id)
+			to: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(
+				r.conferenceParticipant.id
+			)
 		}),
 		recordedAttendanceEntries: r.many.attendanceEntry({
 			from: r.user.id,
@@ -814,8 +851,29 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		}),
 		user: r.one.user({
-			from: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(r.conferenceParticipant.id),
+			from: r.userReferenceInPaymentTransaction.conferenceParticipantId.through(
+				r.conferenceParticipant.id
+			),
 			to: r.user.id.through(r.conferenceParticipant.userId),
+			optional: false
+		})
+	},
+	conferenceEmailSetting: {
+		conference: r.one.conference({
+			from: r.conferenceEmailSetting.conferenceId,
+			to: r.conference.id,
+			optional: false
+		})
+	},
+	emailLog: {
+		conference: r.one.conference({
+			from: r.emailLog.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		user: r.one.user({
+			from: r.emailLog.userId,
+			to: r.user.id,
 			optional: false
 		})
 	},
@@ -824,6 +882,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.waitingListEntry.conferenceId,
 			to: r.conference.id,
 			optional: false
+		}),
+		school: r.one.school({
+			from: r.waitingListEntry.schoolId,
+			to: r.school.id
 		}),
 		user: r.one.user({
 			from: r.waitingListEntry.userId,

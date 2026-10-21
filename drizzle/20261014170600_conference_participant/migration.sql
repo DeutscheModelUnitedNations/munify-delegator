@@ -206,7 +206,7 @@ SELECT
 FROM statistics_participation p
 JOIN "user" u ON u.id = p.user_id
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-WITH DATA;--> statement-breakpoint
+WITH NO DATA;--> statement-breakpoint
 CREATE UNIQUE INDEX "statistics_people_key" ON "statistics_people" (
 	"conference_id", "kind", "applied", "has_role", "has_nation", "has_committee", "accepted",
 	"attends", "gender", "food_preference"
@@ -237,7 +237,7 @@ SELECT
 	sum(members)::int AS members
 FROM registrations
 GROUP BY 1, 2, 3, 4, 5
-WITH DATA;--> statement-breakpoint
+WITH NO DATA;--> statement-breakpoint
 CREATE UNIQUE INDEX "statistics_registration_days_key" ON "statistics_registration_days" (
 	"conference_id", "day", "kind", "applied", "has_role"
 );--> statement-breakpoint
@@ -282,7 +282,7 @@ JOIN conference conf ON conf.id = c.conference_id
 JOIN "user" u ON u.id = c.user_id
 LEFT JOIN committee co ON co.id = c.committee_id
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-WITH DATA;--> statement-breakpoint
+WITH NO DATA;--> statement-breakpoint
 CREATE UNIQUE INDEX "statistics_ages_key" ON "statistics_ages" (
 	"conference_id", "category_id", "committee_id", "applied", "has_role", "age"
 ) NULLS NOT DISTINCT;--> statement-breakpoint
@@ -299,7 +299,7 @@ FROM statistics_participation p
 JOIN "user" u ON u.id = p.user_id
 WHERE p.kind IN ('DELEGATION_MEMBER', 'SINGLE_PARTICIPANT')
 GROUP BY 1, 2, 3, 4, 5
-WITH DATA;--> statement-breakpoint
+WITH NO DATA;--> statement-breakpoint
 CREATE UNIQUE INDEX "statistics_addresses_key" ON "statistics_addresses" (
 	"conference_id", "applied", "has_role", "country", "zip_prefix"
 ) NULLS NOT DISTINCT;--> statement-breakpoint
@@ -355,7 +355,7 @@ SELECT
 	count(*)::int AS count
 FROM judged
 GROUP BY 1, 2, 3, 4, 5, 6, 7
-WITH DATA;--> statement-breakpoint
+WITH NO DATA;--> statement-breakpoint
 CREATE UNIQUE INDEX "statistics_participant_status_key" ON "statistics_participant_status" (
 	"conference_id", "expected", "has_status", "payment_status", "postal_done", "postal_problem",
 	"did_attend"

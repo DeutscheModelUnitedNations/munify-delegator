@@ -4,7 +4,7 @@
 		conferenceGroupLabel,
 		type ConferenceGroupKey
 	} from './conferenceGroups';
-	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
+	import ConferenceSelectorCard from '#lib/components/dashboard/ConferenceSelectorCard.svelte';
 
 	interface Props {
 		groupKey: ConferenceGroupKey;

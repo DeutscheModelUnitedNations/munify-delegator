@@ -7,20 +7,24 @@
 	conference changes.
 -->
 <script lang="ts">
-	import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
-	import { m } from '$lib/paraglide/messages';
+	import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { untrack } from 'svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { client } from '$lib/api/rumbleClient/client';
-	import Form from '$lib/components/form/Form.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import { uploadFile, type ConferenceFileField } from '$lib/api/uploadFile';
-	import { canEditConference, canEditConferenceContent } from '$lib/helpers/teamAccess';
-	import { fetchTeamAccess } from '$lib/api/teamAccess';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import Form from '#lib/components/form/Form.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile.js';
+	import {
+		canEditConference,
+		canEditConferenceContent,
+		canManageEmails
+	} from '#lib/helpers/teamAccess.js';
+	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges } from './changePreview';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
@@ -32,6 +36,7 @@
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
 	import ResolutionManager from './ResolutionManager.svelte';
+	import EmailSettings from './emails/EmailSettings.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -45,6 +50,7 @@
 		longTitle: true,
 		startAssignment: true,
 		registrationDeadlineGracePeriodMinutes: true,
+		maxSeatsPerSchool: true,
 		startConference: true,
 		state: true,
 		website: true,
@@ -109,6 +115,7 @@
 		website: storedConference.website ?? undefined,
 		startAssignment: storedConference.startAssignment,
 		registrationDeadlineGracePeriodMinutes: storedConference.registrationDeadlineGracePeriodMinutes,
+		maxSeatsPerSchool: storedConference.maxSeatsPerSchool ?? null,
 		startConference: storedConference.startConference,
 		endConference: storedConference.endConference,
 		state: storedConference.state,
@@ -212,6 +219,8 @@
 			const promise = client.mutate.updateConference({
 				__args: {
 					...settings,
+					// an emptied field lifts the limit rather than leaving it as it was
+					maxSeatsPerSchool: settings.maxSeatsPerSchool ?? null,
 					id: conferenceId,
 					imageFileId: await upload('image', image),
 					emblemFileId: await upload('emblem', emblem),
@@ -270,7 +279,15 @@
 		return counts;
 	});
 
-	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
+	const validTabs = [
+		'general',
+		'committees',
+		'status',
+		'links',
+		'payments',
+		'documents',
+		'emails'
+	] as const;
 	type TabType = (typeof validTabs)[number];
 	const params = queryParameters({ tab: true });
 	let currentTab = $derived<TabType>(validTabs.find((tab) => tab === params.tab) ?? 'general');
@@ -285,7 +302,8 @@
 		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
 		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
 		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
-		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' },
+		{ value: 'emails', label: m.emailSettingsTab(), icon: 'fa-envelope' }
 	]);
 
 	const tabIntros: Record<TabType, () => string> = {
@@ -294,7 +312,8 @@
 		status: m.tabExplanationStatus,
 		links: m.tabExplanationLinks,
 		payments: m.tabExplanationPayments,
-		documents: m.tabExplanationDocuments
+		documents: m.tabExplanationDocuments,
+		emails: m.tabExplanationEmails
 	};
 	let tabIntro = $derived(tabIntros[currentTab]());
 
@@ -372,6 +391,11 @@
 			<i class="fas fa-save"></i>
 		</button>
 	</div>
+
+	<!-- Automatic emails (outside main form; each switch saves on its own) -->
+	{#if currentTab === 'emails'}
+		<EmailSettings {conferenceId} canManage={canManageEmails(access)} />
+	{/if}
 
 	<!-- Committees Tab (outside main form) -->
 	<div class:hidden={currentTab !== 'committees'}>

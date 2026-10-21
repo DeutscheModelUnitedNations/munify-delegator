@@ -1,11 +1,11 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
-	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import RowActionButton from './RowActionButton.svelte';
 	import TrackRowFormModal from './TrackRowFormModal.svelte';
 	import { exportCalendarDay } from './exportCalendarDay';

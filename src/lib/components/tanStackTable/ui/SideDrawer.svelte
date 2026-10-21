@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
-	import SlidePanel from '$lib/components/SlidePanel.svelte';
+	import SlidePanel from '#lib/components/SlidePanel.svelte';
 
 	interface Props {
 		open: boolean;

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { surveyFields } from './surveyForm';
 	import SurveyCard from './SurveyCard.svelte';
 	import type { PageProps } from './$types';

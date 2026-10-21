@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePhrasePatterns, validatePhrase } from '$lib/helpers/phraseValidation';
+import { parsePhrasePatterns, validatePhrase } from '#lib/helpers/phraseValidation.js';
 
 describe('phraseValidation', () => {
 	describe('parsePhrasePatterns', () => {

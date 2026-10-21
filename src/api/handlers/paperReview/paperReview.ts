@@ -57,7 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
 			await assertCanReviewPaper(ctx, args.paperId);
-			const result = await createPaperReview(args, reviewer, ctx.url.origin);
+			const result = await createPaperReview(args, reviewer, ctx.requestUrl().origin);
 
 			// After the commit, so subscribers refetch the review rather than the state before it.
 			paperReviewPubsub.created();

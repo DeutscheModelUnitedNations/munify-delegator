@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { client } from '$lib/api/rumbleClient/client';
-	import FormSection from '$lib/components/form/FormSection.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import PdfTemplateHelp from '$lib/components/form/PdfTemplateHelp.svelte';
-	import FormFile from '$lib/components/form/FormFile.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import FormSection from '#lib/components/form/FormSection.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import PdfTemplateHelp from '#lib/components/form/PdfTemplateHelp.svelte';
+	import FormFile from '#lib/components/form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
 		downloadCompletePostalRegistrationPDF
-	} from '$lib/utils/pdfGenerator';
+	} from '#lib/utils/pdfGenerator.js';
 	import { templateOrDefault, testPrintParticipant, testPrintRecipient } from './testPrintData';
 	import type { ConferenceSettings } from '../form-schema';
 
@@ -79,7 +79,14 @@
 			await downloadCompleteCertificate(
 				{
 					fullName: 'Antonio Guterres',
-					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
+					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350),
+					// sample check-in sessions, so the layout shows in the test print
+					sessions: [
+						{ name: m.certificateSampleSessionOpening(), attended: true },
+						{ name: m.certificateSampleSessionCommittees(), attended: true },
+						{ name: m.certificateSampleSessionEvening(), attended: false },
+						{ name: m.certificateSampleSessionClosing(), attended: true }
+					]
 				},
 				templateOrDefault(templates.certificateFile?.url),
 				`test_certificate.pdf`

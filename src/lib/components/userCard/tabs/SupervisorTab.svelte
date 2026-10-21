@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import PersonName from '../PersonName.svelte';
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import codenmz from '$lib/helpers/codenamize';
-	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { splitRole } from '$lib/helpers/conferenceRole';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import codenmz from '#lib/helpers/codenamize.js';
+	import Flag from '#lib/components/Flag.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		supervisorId: string;
@@ -25,13 +25,14 @@
 			id: true,
 			plansOwnAttendenceAtConference: true,
 			connectionCode: true,
+			school: { name: true },
 			supervisedDelegationMembers: {
 				id: true,
 				isHeadDelegate: true,
 				user: studentSelection,
 				delegation: {
 					id: true,
-					school: true,
+					school: { name: true },
 					entryCode: true,
 					applied: true,
 					members: { id: true },
@@ -48,7 +49,7 @@
 				id: true,
 				applied: true,
 				user: studentSelection,
-				school: true,
+				school: { name: true },
 				assignedRole: { id: true, name: true }
 			}
 		})
@@ -162,7 +163,7 @@
 			{/if}
 		</div>
 		{#if delegation.school}
-			<span class="text-base-content/60 text-xs">{delegation.school}</span>
+			<span class="text-base-content/60 text-xs">{delegation.school.name}</span>
 		{/if}
 	</div>
 {/snippet}
@@ -233,7 +234,7 @@
 							familyName={participant.user.familyName}
 						/>
 					</td>
-					<td>{participant.school ?? 'N/A'}</td>
+					<td>{participant.school?.name ?? 'N/A'}</td>
 					<td>{participant.assignedRole?.name ?? 'N/A'}</td>
 					<td>
 						<OpenUserCardButton user={participant.user} />
@@ -263,6 +264,10 @@
 			<div class="flex items-center gap-1">
 				<span class="text-base-content/60">{m.attendancePlan()}:</span>
 				{@render attendancePlanBadge()}
+			</div>
+			<div class="flex items-center gap-1">
+				<span class="text-base-content/60">{m.schoolOrInstitution()}:</span>
+				<span>{conferenceSupervisor.school?.name ?? m.noSchoolGiven()}</span>
 			</div>
 		</div>
 	</div>

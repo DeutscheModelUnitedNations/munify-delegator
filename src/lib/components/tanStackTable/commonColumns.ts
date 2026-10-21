@@ -1,6 +1,6 @@
-import { m } from '$lib/paraglide/messages';
-import { renderComponent } from '$lib/components/tanStackTable';
-import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+import { m } from '#lib/paraglide/messages.js';
+import { renderComponent } from '#lib/components/tanStackTable/index.js';
+import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
 import AppliedIcon from './cells/AppliedIcon.svelte';
 import PersonName from './cells/PersonName.svelte';
 import UserCardButton from './cells/UserCardButton.svelte';

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import DashboardContentCard from '#lib/components/dashboard/DashboardContentCard.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { entryCodeLength } from '$api/services/registration/entryCodeGenerator';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { entryCodeLength } from '../../../../../api/services/registration/entryCodeGenerator';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -41,7 +41,7 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 
-		goto(resolve(`/dashboard/${conferenceId}`));
+		goto(resolve(`dashboard/${conferenceId}`));
 	};
 
 	$effect(() => {

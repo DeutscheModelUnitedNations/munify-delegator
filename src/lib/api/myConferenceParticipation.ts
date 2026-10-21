@@ -1,5 +1,5 @@
 import { client } from './rumbleClient/client';
-import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
+import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 
 /**
  * Who the caller is in one conference: which role they hold, and just enough about it to decide

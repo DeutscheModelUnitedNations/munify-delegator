@@ -169,7 +169,8 @@ const STATUS_HOLDERS: DevAccountSub[] = [
 ];
 
 const attendance: Partial<Record<DevAccountSub, string[]>> = {
-	'dev-head-delegate': ['Check-in Tag 1', 'Check-in Tag 2'],
+	// The scanner test run is taken off the certificates (`HIDDEN_FROM_CERTIFICATES`)
+	'dev-head-delegate': ['Check-in Tag 1', 'Check-in Tag 2', 'Scanner-Test'],
 	'dev-delegate': ['Check-in Tag 1'],
 	'dev-nsa-delegate': ['Check-in Tag 1'],
 	'dev-single': ['Check-in Tag 1'],

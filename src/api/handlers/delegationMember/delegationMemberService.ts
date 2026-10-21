@@ -7,10 +7,11 @@ import {
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { nullToUndefined } from '$api/services/args';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
 import { apiError } from '$api/services/errors/apiError';
+import { markSeatedFromWaitingList } from '$api/handlers/waitingListEntry/waitingListEntryService';
 import type { CommitteeMove } from './delegationMemberPermissions';
 
 /** Joining a delegation by entry code. Returns the id of the new member. */
@@ -108,7 +109,6 @@ export async function removeDelegationMember(id: string) {
 const ASSIGNED_DELEGATION_INFOS = {
 	applied: true,
 	experience: 'No Info',
-	school: 'No Info',
 	motivation: 'Assigned by management'
 };
 
@@ -150,7 +150,8 @@ async function prepareAssignedDelegation(
 	tx: Transaction,
 	conferenceId: string,
 	assignedRoleId: string,
-	existing: AssignedDelegation | undefined
+	existing: AssignedDelegation | undefined,
+	schoolId: string | null | undefined
 ): Promise<AssignedDelegation> {
 	if (!existing) {
 		const created = await tx
@@ -159,6 +160,7 @@ async function prepareAssignedDelegation(
 				conferenceId,
 				assignedRoleId,
 				entryCode: makeEntryCode(),
+				schoolId: schoolId ?? undefined,
 				...ASSIGNED_DELEGATION_INFOS
 			})
 			.returning()
@@ -169,7 +171,7 @@ async function prepareAssignedDelegation(
 	if (existing.members.length === 0) {
 		await tx
 			.update(schema.delegation)
-			.set(ASSIGNED_DELEGATION_INFOS)
+			.set({ ...ASSIGNED_DELEGATION_INFOS, schoolId: schoolId ?? null })
 			.where(eq(schema.delegation.id, existing.id));
 	}
 	return existing;
@@ -195,23 +197,14 @@ export async function placeUserInAssignedDelegation(args: {
 		// Existing participation is cleared first, so the user can be moved.
 		await clearParticipation(tx, args.conferenceId, args.userId);
 
+		const waiting = await markSeatedFromWaitingList(tx, args.conferenceId, args.userId);
 		const delegation = await prepareAssignedDelegation(
 			tx,
 			args.conferenceId,
 			args.assignedRoleId,
-			existing
+			existing,
+			waiting?.schoolId
 		);
-
-		// Best-effort: not every assigned user came from the waiting list.
-		await tx
-			.update(schema.waitingListEntry)
-			.set({ assigned: true })
-			.where(
-				and(
-					eq(schema.waitingListEntry.conferenceId, args.conferenceId),
-					eq(schema.waitingListEntry.userId, args.userId)
-				)
-			);
 
 		const member = await tx
 			.insert(schema.delegationMember)

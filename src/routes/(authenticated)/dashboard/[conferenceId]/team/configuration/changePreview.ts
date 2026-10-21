@@ -1,5 +1,5 @@
-import { m } from '$lib/paraglide/messages';
-import { getLocale } from '$lib/paraglide/runtime';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import type { ConferenceSettings } from './form-schema';
 
 type SettingsFieldKey = keyof ConferenceSettings;
@@ -70,7 +70,7 @@ function conferenceStateLabel(value: unknown): string {
 }
 
 /**
- * Date-only fields are stored as UTC midnight (see `$lib/helpers/dateTimeInput`),
+ * Date-only fields are stored as UTC midnight (see `#lib/helpers/dateTimeInput.js`),
  * so they must be read back in UTC - rendering them in the browser timezone would
  * move them to the previous day for anyone west of UTC and append a meaningless
  * 00:00. Mirrors how FormDateTimeInput displays the same value.
@@ -128,6 +128,12 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	registrationDeadlineGracePeriodMinutes: {
 		group: 'general',
 		label: () => m.registrationDeadlineGracePeriod()
+	},
+	maxSeatsPerSchool: {
+		group: 'general',
+		label: () => m.conferenceMaxSeatsPerSchool(),
+		format: (value) =>
+			typeof value === 'number' ? String(value) : m.conferenceMaxSeatsPerSchoolNone()
 	},
 	startConference: { group: 'general', label: () => m.conferenceStart(), format: formatDateOnly },
 	endConference: { group: 'general', label: () => m.conferenceEnd(), format: formatDateOnly },

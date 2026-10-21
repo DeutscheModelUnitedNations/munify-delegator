@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { dev } from '$app/environment';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import AccentStripe from '$lib/components/AccentStripe.svelte';
-	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
-	import { fetchCalendarDays } from '$lib/api/calendarDays';
+	import { dev } from '$app/env';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import AccentStripe from '#lib/components/AccentStripe.svelte';
+	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
+	import { fetchCalendarDays } from '#lib/api/calendarDays.js';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();

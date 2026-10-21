@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Selection from '$lib/components/selection';
-	import formatNames from '$lib/helpers/formatNames';
+	import Selection from '#lib/components/selection/index.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
 
 	/** One person a payment can cover, as a checkbox. Labelled with their name unless `label` is given. */

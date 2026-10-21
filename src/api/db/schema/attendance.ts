@@ -26,7 +26,12 @@ export const attendanceSession = snakeCase.table('attendance_session', {
 		.notNull(),
 	endedAt: timestamp({ precision: 3 }),
 	createdById: userRef('restrict'),
-	mode: attendanceSessionMode().default('RECORD').notNull()
+	mode: attendanceSessionMode().default('RECORD').notNull(),
+	/**
+	 * Whether the occasion is listed on the participation certificates. Kept alike for every
+	 * session of one occasion: certificates list occasions, not sessions.
+	 */
+	showOnCertificate: boolean().default(true).notNull()
 });
 
 export const attendanceEntry = snakeCase.table('attendance_entry', {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import SurveyResults from './SurveyResults.svelte';
 	import SurveyDetailsCard from './SurveyDetailsCard.svelte';
 	import SurveyOptionsEditor from './SurveyOptionsEditor.svelte';
@@ -56,7 +56,7 @@
 		<div class="flex min-w-0 items-center gap-3">
 			<a
 				class="btn btn-square btn-ghost btn-sm"
-				href={resolve(`/dashboard/${params.conferenceId}/team/survey`)}
+				href={resolve(`dashboard/${params.conferenceId}/team/survey`)}
 				title={m.survey()}
 				aria-label={m.survey()}
 			>

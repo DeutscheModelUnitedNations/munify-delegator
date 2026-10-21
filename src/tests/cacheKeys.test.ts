@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { graphcacheKeys } from '$lib/api/cacheKeys';
-import { schema } from '$lib/api/rumbleClient/schema';
+import { graphcacheKeys } from '#lib/api/cacheKeys.js';
+import { schema } from '#lib/api/rumbleClient/schema.js';
 
 describe('graphcacheKeys', () => {
 	const keys = graphcacheKeys(schema);

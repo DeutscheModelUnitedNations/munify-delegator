@@ -1,5 +1,5 @@
 <script lang="ts" generics="T">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { Snippet } from 'svelte';
 	import VirtualList from 'svelte-virtual-list';
 

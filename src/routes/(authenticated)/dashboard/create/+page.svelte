@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
-	import { m } from '$lib/paraglide/messages';
+	import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { z } from 'zod';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 
 	let rawFile = $state<File | null>(null);
 	let validationErrors = $state<string | null>(null);

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import ParticipantSelectionCard from '../ParticipantSelectionCard.svelte';
 	import SelectableParticipantsFieldset from '../SelectableParticipantsFieldset.svelte';

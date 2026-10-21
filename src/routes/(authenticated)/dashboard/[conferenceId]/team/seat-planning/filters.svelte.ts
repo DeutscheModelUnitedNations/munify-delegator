@@ -1,5 +1,5 @@
 import { createContext } from 'svelte';
-import { replaceState } from '$app/navigation';
+import { goto } from '$app/navigation';
 import { page } from '$app/state';
 
 /**
@@ -17,7 +17,7 @@ interface SeatPlanningParams {
 	desc: boolean | null;
 }
 
-function readParams(search: URLSearchParams): SeatPlanningParams {
+function readParams(search: Pick<URLSearchParams, 'get' | 'has'>): SeatPlanningParams {
 	const flag = (key: string) => (search.has(key) ? search.get(key) !== 'false' : null);
 	const size = Number.parseFloat(search.get('size') ?? '');
 	return {
@@ -31,7 +31,9 @@ function readParams(search: URLSearchParams): SeatPlanningParams {
 	};
 }
 
-function withParams(url: URL, params: SeatPlanningParams) {
+/** `href` with the parameters in it; empty ones are left out. */
+function withParams(href: string, params: SeatPlanningParams) {
+	const url = new URL(href);
 	for (const [key, value] of Object.entries(params)) {
 		if (value === null || value === '') url.searchParams.delete(key);
 		else url.searchParams.set(key, String(value));
@@ -52,9 +54,11 @@ export function provideSeatPlanningParams() {
 	$effect(() => {
 		const next = { ...params };
 		const timer = setTimeout(() => {
-			// The browser's own URL: `page.url` does not follow shallow `replaceState` calls.
-			const url = withParams(new URL(location.href), next);
-			if (url.search !== location.search) replaceState(url, page.state);
+			// The browser's own URL: `page.url` does not follow shallow navigations.
+			const url = withParams(location.href, next);
+			if (url.search !== location.search)
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with other query parameters
+				goto(url, { shallow: true, replace: true, state: page.state });
 		});
 		return () => clearTimeout(timer);
 	});

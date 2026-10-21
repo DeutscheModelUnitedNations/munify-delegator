@@ -1,5 +1,5 @@
 import { createContext } from 'svelte';
-import { replaceState } from '$app/navigation';
+import { goto } from '$app/navigation';
 import { page } from '$app/state';
 
 const PARAM = 'assignUserId';
@@ -22,11 +22,12 @@ function createAssignUser() {
 		clear() {
 			userId = null;
 			setTimeout(() => {
-				// The browser's own URL: `page.url` does not follow shallow `replaceState` calls.
+				// The browser's own URL: `page.url` does not follow shallow navigations.
 				const url = new URL(location.href);
 				if (!url.searchParams.has(PARAM)) return;
 				url.searchParams.delete(PARAM);
-				replaceState(url, page.state);
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with other query parameters
+				goto(url, { shallow: true, replace: true, state: page.state });
 			});
 		}
 	};

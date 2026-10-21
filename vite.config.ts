@@ -1,3 +1,5 @@
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
@@ -61,7 +63,26 @@ export default defineConfig({
 		// it has to come before SvelteKit so it can answer the login page itself.
 		oidcMock(),
 		rebuildRumbleOnSchemaChange(),
-		sveltekit(),
+		sveltekit({
+			preprocess: vitePreprocess(),
+			compilerOptions: {
+				// Components fetch through `client.liveQuery`, which is awaited at the top level of
+				// `<script>`. Svelte only allows that in async mode.
+				experimental: { async: true }
+			},
+			experimental: {
+				// Remote functions are how the urql client reaches the GraphQL schema during SSR: a
+				// relative endpoint URL cannot be fetched from Node, so server-side operations execute
+				// the schema in-process instead. See src/api/graphql.remote.ts.
+				remoteFunctions: true
+			},
+			// OpenTelemetry: `src/instrumentation.server.ts` (picked up on its own) sets up the exporter
+			// before the app loads, and SvelteKit emits spans for handle, loads and remote functions
+			// into it. Both are inert unless OTEL_ENDPOINT_URL is set.
+			tracing: { server: true },
+			adapter: adapter(),
+			alias: { $api: 'src/api' }
+		}),
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',

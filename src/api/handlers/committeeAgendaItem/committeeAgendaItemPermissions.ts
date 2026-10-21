@@ -8,7 +8,7 @@ import {
 	SEAT_PLANNING_ROLES,
 	systemAdmin
 } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAgendaItemAbilities() {

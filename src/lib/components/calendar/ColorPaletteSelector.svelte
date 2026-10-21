@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
+	import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
 	import { allColors, getColorConfig } from './calendarColors';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		value: CalendarentrycolorEnum;

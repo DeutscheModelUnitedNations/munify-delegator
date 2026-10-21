@@ -1,6 +1,6 @@
 <script module lang="ts">
 	import type { Component } from 'svelte';
-	import type { DashboardHref } from '$lib/data/dashboardLinks';
+	import type { DashboardHref } from '#lib/data/dashboardLinks.js';
 
 	interface LinkShape<C> {
 		id: string;

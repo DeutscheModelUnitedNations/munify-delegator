@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { PUBLIC_MAINTENANCE_WINDOW_END, PUBLIC_MAINTENANCE_WINDOW_START } from '$app/env/public';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { maintenanceStatus } from './maintenanceWindow';
 
 	let start: Date | undefined = PUBLIC_MAINTENANCE_WINDOW_START

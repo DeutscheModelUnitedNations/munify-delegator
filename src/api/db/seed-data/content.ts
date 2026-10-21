@@ -1,11 +1,9 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-
 /**
  * Stored document formats, built the way the app's editors would have saved them.
  *
  * Position and introduction papers, review comments and reviewer snippets are TipTap documents;
- * working papers are the resolution editor's own shape. The conference's contract, consent,
- * terms and certificate templates are PDFs that pdf-lib loads and draws on.
+ * working papers are the resolution editor's own shape. The PDFs a team uploads are in
+ * `pdfDocuments.ts`.
  */
 
 type TipTapNode = {
@@ -128,25 +126,4 @@ export function reviewComments(verdict: 'CHANGES_REQUESTED' | 'ACCEPTED') {
 /** A reviewer snippet; `{{…}}` marks a placeholder the reviewer fills in on insertion. */
 export function snippetDocument(body: string) {
 	return { type: 'doc', content: [paragraph(text(body))] };
-}
-
-/**
- * A one-page A4 PDF, standing in for an uploaded template. The postal registration
- * and the certificate draw the participant's details onto its first page, so one page with a
- * visible title is all a template needs to be usable.
- */
-export async function pdfTemplate(title: string): Promise<Uint8Array> {
-	const pdf = await PDFDocument.create();
-	pdf.setTitle(title);
-	const page = pdf.addPage([595.28, 841.89]);
-	const font = await pdf.embedFont(StandardFonts.HelveticaBold);
-	page.drawText(title, { x: 50, y: 780, size: 22, font, color: rgb(0.1, 0.2, 0.45) });
-	page.drawText('Seed template - replace in the conference configuration', {
-		x: 50,
-		y: 755,
-		size: 10,
-		font,
-		color: rgb(0.5, 0.5, 0.5)
-	});
-	return pdf.save();
 }

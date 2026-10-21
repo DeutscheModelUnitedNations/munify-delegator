@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
 	import { toast } from 'svelte-sonner';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import SchoolSuggestions from './SchoolSuggestions.svelte';
-	import Kbd from '$lib/components/Kbd.svelte';
+	import Kbd from '#lib/components/Kbd.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -16,6 +16,7 @@
 	let { conferenceId }: Props = $props();
 
 	const schoolSelection = {
+		schoolId: true,
 		school: true,
 		delegationCount: true,
 		delegationMembers: true,
@@ -50,14 +51,18 @@
 		if (conferenceId) void loadSchools();
 	});
 
+	/** A school picked for merging. */
+	type PickedSchool = { id: string; name: string };
+
 	let newSchoolName = $state('');
-	let selectedSchools = $state<string[]>([]);
+	let selectedSchools = $state<PickedSchool[]>([]);
 
 	const schools = $derived(loadedSchools);
+	const isSelected = (id: string) => selectedSchools.some((school) => school.id === id);
 
 	$effect(() => {
 		if (selectedSchools.length === 1) {
-			newSchoolName = selectedSchools[0];
+			newSchoolName = selectedSchools[0].name;
 		}
 	});
 
@@ -97,36 +102,38 @@
 	);
 
 	function toggleSchool(row: SchoolRow) {
-		selectedSchools = selectedSchools.includes(row.school)
-			? selectedSchools.filter((school) => school !== row.school)
-			: [...selectedSchools, row.school];
+		selectedSchools = isSelected(row.schoolId)
+			? selectedSchools.filter((school) => school.id !== row.schoolId)
+			: [...selectedSchools, { id: row.schoolId, name: row.school }];
 	}
 
-	async function mergeSchools(schoolsToMerge: string[], newName: string) {
-		if (schoolsToMerge.length < 1) {
-			toast.error(m.cleanupNormalizeSchoolsSelectAtLeastOne());
-			return;
-		}
+	/** The school the others are merged into: the one the most participants named. */
+	function targetOf(ids: readonly string[]) {
+		const participants = (id: string) =>
+			schools.find((school) => school.schoolId === id)?.sumParticipants ?? 0;
+		return ids.toSorted((a, b) => participants(b) - participants(a))[0];
+	}
 
-		if (!newName.trim()) {
-			toast.error(m.cleanupNormalizeSchoolsEnterNewName());
-			return;
-		}
-
+	/**
+	 * Folds `sourceIds` into `targetId`, everywhere the schools are named, and names the result
+	 * `name` if given. One school alone is just renamed.
+	 */
+	async function mergeSchools(targetId: string, sourceIds: string[], name?: string) {
 		normalizing = true;
 		try {
-			await client.mutate.normalizeSchoolsInConference({
-				__args: {
-					conferenceId,
-					schoolsToMerge: [...schoolsToMerge],
-					newSchoolName: newName.trim()
-				},
-				id: true,
-				schools: schoolSelection
-			});
+			const sources = sourceIds.filter((id) => id !== targetId);
+			if (sources.length === 0) {
+				if (name) await client.mutate.updateSchool({ __args: { id: targetId, name }, id: true });
+			} else {
+				await client.mutate.mergeSchools({
+					__args: { targetId, sourceIds: sources, name },
+					id: true
+				});
+			}
 
-			toast.success(m.cleanupNormalizeSchoolsSuccess({ count: schoolsToMerge.length }));
-			selectedSchools = selectedSchools.filter((school) => !schoolsToMerge.includes(school));
+			toast.success(m.cleanupNormalizeSchoolsSuccess({ count: sources.length + 1 }));
+			const merged = new Set([targetId, ...sources]);
+			selectedSchools = selectedSchools.filter((school) => !merged.has(school.id));
 			newSchoolName = '';
 			await loadSchools();
 		} catch (error) {
@@ -137,11 +144,23 @@
 		}
 	}
 
-	const handleNormalize = () => mergeSchools(selectedSchools, newSchoolName);
+	function handleNormalize() {
+		if (selectedSchools.length < 1) {
+			toast.error(m.cleanupNormalizeSchoolsSelectAtLeastOne());
+			return;
+		}
+		const name = newSchoolName.trim();
+		if (!name) {
+			toast.error(m.cleanupNormalizeSchoolsEnterNewName());
+			return;
+		}
+		const ids = selectedSchools.map((school) => school.id);
+		void mergeSchools(targetOf(ids), ids, name);
+	}
 
-	function selectSuggestion(names: string[]) {
-		selectedSchools = names;
-		newSchoolName = names[0];
+	function selectSuggestion(picked: PickedSchool[]) {
+		selectedSchools = picked;
+		newSchoolName = picked[0]?.name ?? '';
 	}
 
 	onMount(() => {
@@ -172,13 +191,14 @@
 		<div class="mb-4 flex flex-col gap-3">
 			{#if selectedSchools.length > 0}
 				<div class="flex flex-wrap items-center gap-2">
-					{#each selectedSchools as school (school)}
+					{#each selectedSchools as school (school.id)}
 						<button
 							type="button"
 							class="badge badge-primary badge-soft gap-1"
-							onclick={() => (selectedSchools = selectedSchools.filter((s) => s !== school))}
+							onclick={() =>
+								(selectedSchools = selectedSchools.filter((picked) => picked.id !== school.id))}
 						>
-							{school}
+							{school.name}
 							<i class="fa-sharp-duotone fa-solid fa-xmark text-xs"></i>
 						</button>
 					{/each}
@@ -228,7 +248,7 @@
 			rows={schools}
 			{columnClasses}
 			onRowClick={toggleSchool}
-			isRowSelected={(row) => selectedSchools.includes(row.school)}
+			isRowSelected={(row) => isSelected(row.schoolId)}
 			initialSorting={[{ id: 'school', desc: false }]}
 		/>
 	</div>

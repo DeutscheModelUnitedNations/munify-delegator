@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import FormSection from '$lib/components/form/FormSection.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSection from '#lib/components/form/FormSection.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
 	let { form }: { form: SuperForm<ConferenceSettings> } = $props();

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { uploadFile } from '$lib/api/uploadFile';
-	import { findResolutionUploadProblem, uploadEach } from '$lib/helpers/resolutionUpload';
-	import { resolutionUploadProblemMessages } from '$lib/helpers/resolutionUploadMessages';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import Modal from '$lib/components/Modal.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { uploadFile } from '#lib/api/uploadFile.js';
+	import { findResolutionUploadProblem, uploadEach } from '#lib/helpers/resolutionUpload.js';
+	import { resolutionUploadProblemMessages } from '#lib/helpers/resolutionUploadMessages.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import ResolutionRow from './ResolutionRow.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

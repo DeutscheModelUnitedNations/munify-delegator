@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { dev } from '$app/environment';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
+	import { dev } from '$app/env';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
 	import {
 		openCommandPalette,
 		isCommandPaletteAvailable
-	} from '$lib/components/commandPalette/commandPaletteState.svelte';
-	import Kbd from '$lib/components/Kbd.svelte';
-	import { getAvailableHandoff } from '$lib/components/commandPalette/searchHistory.svelte';
-	import { headerState } from '$lib/state/authenticatedHeaderStatus.svelte';
-	import { page } from '$app/stores';
+	} from '#lib/components/commandPalette/commandPaletteState.svelte.js';
+	import Kbd from '#lib/components/Kbd.svelte';
+	import { getAvailableHandoff } from '#lib/components/commandPalette/searchHistory.svelte.js';
+	import { headerState } from '#lib/state/authenticatedHeaderStatus.svelte.js';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import Breadcrumbs from './Breadcrumbs.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import UserMenu from './UserMenu.svelte';
 
 	//TODO
-	// import ExportButtons from '$lib/components/dataTable/ExportButtons.svelte';
+	// import ExportButtons from '#lib/components/dataTable/ExportButtons.svelte';
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
 	function fetchImpersonationStatus() {
@@ -98,8 +98,9 @@
 			bind:this={titleScroller}
 			class="flex min-w-0 flex-1 items-center gap-x-4 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden"
 		>
-			<a class="shrink-0 text-lg leading-none whitespace-nowrap" href={resolve('/dashboard')}>
-				<span class="font-light">MUNify</span> <span class="font-bold">DELEGATOR</span>
+			<a class="shrink-0 text-lg leading-none whitespace-nowrap" href={resolve('dashboard')}>
+				<span class="font-light">MUNify</span>
+				<span class="font-bold">DELEGATOR</span>
 			</a>
 
 			<div

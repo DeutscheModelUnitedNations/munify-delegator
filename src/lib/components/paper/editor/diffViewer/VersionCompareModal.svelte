@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Modal from '$lib/components/Modal.svelte';
+	import Modal from '#lib/components/Modal.svelte';
 	import DiffPanel from './DiffPanel.svelte';
 	import { computeDiff, areContentsEqual } from './diffUtils';
 	import type { VersionForComparison } from './types';
 	import { orderVersions } from './orderVersions';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		open: boolean;

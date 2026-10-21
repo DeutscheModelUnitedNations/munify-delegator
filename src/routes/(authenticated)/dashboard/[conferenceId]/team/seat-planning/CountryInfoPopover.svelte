@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { translateRegionalGroup } from '$lib/utils/enumTranslations';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import type { UnMember } from '$lib/helpers/seatPlanning/unMembers';
+	import Flag from '#lib/components/Flag.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { translateRegionalGroup } from '#lib/utils/enumTranslations.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import type { UnMember } from '#lib/helpers/seatPlanning/unMembers.js';
 
 	let popover = $state<HTMLDivElement>();
 	let member = $state<UnMember>();

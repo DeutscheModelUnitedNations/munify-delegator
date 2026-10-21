@@ -1,6 +1,6 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { assignmentMutation, roleArgs } from '$lib/assignment/board';
-import type { AssignmentGroup, Target } from '$lib/assignment/state';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { assignmentMutation, roleArgs } from '#lib/assignment/board.js';
+import type { AssignmentGroup, Target } from '#lib/assignment/state.js';
 import { succeeded } from './toastError';
 
 type Mutation = NonNullable<ReturnType<typeof assignmentMutation>>;

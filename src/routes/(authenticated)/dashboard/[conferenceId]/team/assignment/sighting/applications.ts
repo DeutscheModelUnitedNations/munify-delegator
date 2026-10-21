@@ -1,8 +1,8 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { confirmedLinkedAccounts } from '$lib/helpers/linkedNotes';
-import type { DeckWindowData, WindowEntry } from '$lib/assignment/deckWindow';
-import { containing } from '$lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes.js';
+import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow.js';
+import { containing } from '#lib/components/tanStackTable/serverQuery.js';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
 
 const person = {
 	id: true,
@@ -25,7 +25,7 @@ const supervisors = {
 /** What a card shows of a delegation. */
 const delegationCard = {
 	id: true,
-	school: true,
+	school: { name: true },
 	motivation: true,
 	experience: true,
 	members: {
@@ -48,7 +48,7 @@ const delegationCard = {
 /** What a card shows of a single participant. */
 const singleCard = {
 	id: true,
-	school: true,
+	school: { name: true },
 	motivation: true,
 	experience: true,
 	user: person,
@@ -245,7 +245,7 @@ export async function searchApplications(conferenceId: string, search: string, f
 	const userIds = (await matchingUserIds(term)) ?? [];
 	const applied = { applied: { eq: true } };
 	const like = containing(term);
-	const texts = [{ school: like }, { motivation: like }, { experience: like }];
+	const texts = [{ school: { name: like } }, { motivation: like }, { experience: like }];
 	const people = { user: { id: { in: userIds } } };
 
 	const [delegations, singleParticipants, nameMatches] = await Promise.all([

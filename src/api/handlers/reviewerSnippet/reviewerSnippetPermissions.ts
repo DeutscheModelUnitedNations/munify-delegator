@@ -1,7 +1,7 @@
 import { schema } from '$api/db/db';
 import { abilityBuilder, type ApiContext } from '$api/rumble';
 import { assertAllowedRow, systemAdmin, userId } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 export function registerReviewerSnippetAbilities() {
 	// Ported from abilities/entities/reviewerSnippet.ts: users manage only their own snippets.

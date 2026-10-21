@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 /**
  * Every participant status of one conference, keyed by the user it belongs to. The registration

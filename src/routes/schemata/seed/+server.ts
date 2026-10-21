@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
+import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
 import { z } from 'zod';
 
 export const GET: RequestHandler = () => {

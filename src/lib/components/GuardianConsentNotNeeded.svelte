@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 </script>
 
 <div class="flex flex-col items-center justify-center gap-2 rounded-box p-0 md:bg-base-100 md:p-4">

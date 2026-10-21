@@ -11,7 +11,7 @@
 	import { Control, Field, Label } from 'formsnap';
 	import FormDescription from './FormDescription.svelte';
 	import FormFieldErrors from './FormFieldErrors.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * An image upload: a drop zone that takes a click or a dropped file and previews what was picked,

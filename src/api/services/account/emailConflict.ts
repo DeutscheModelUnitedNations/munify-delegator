@@ -6,7 +6,7 @@
 import * as Sentry from '@sentry/sveltekit';
 import { db } from '$api/db/db';
 import { apiError } from '$api/services/errors/apiError';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Enough of an address to recognise it in a log without writing the whole thing down. */
 export function maskEmail(email: string): string {

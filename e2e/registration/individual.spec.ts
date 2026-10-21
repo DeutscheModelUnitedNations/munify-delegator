@@ -15,7 +15,7 @@ test('a new user can register as an individual participant', async ({ page }) =>
 	await page.locator('main a.btn-primary').first().click();
 	await page.waitForURL(/\/individual\/[^/]+$/);
 
-	await page.locator('input[name="school"]').fill('E2E Test School');
+	await page.locator('input[name="schoolName"]').fill('E2E Test School');
 	await page.locator('textarea[name="motivation"]').fill('I want to represent my country.');
 	await page.locator('textarea[name="experience"]').fill('This is my first conference.');
 

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import UndrawCard from '$lib/components/UndrawCard.svelte';
-	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
-	import { m } from '$lib/paraglide/messages';
-	import singlePayment from '$assets/undraw/single_payment.svg';
-	import delegationPayment from '$assets/undraw/delegation_payment.svg';
-	import groupPayment from '$assets/undraw/group_payment.svg';
+	import UndrawCard from '#lib/components/UndrawCard.svelte';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import singlePayment from '#assets/undraw/single_payment.svg';
+	import delegationPayment from '#assets/undraw/delegation_payment.svg';
+	import groupPayment from '#assets/undraw/group_payment.svg';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -27,7 +27,7 @@
 		<UndrawCard
 			title={m.singlePayment()}
 			btnText={m.singlePaymentBtn()}
-			btnLink={resolve(`/dashboard/${params.conferenceId}/payment/single`)}
+			btnLink={resolve(`dashboard/${params.conferenceId}/payment/single`)}
 			img={singlePayment}
 			disabled={supervisorIsNotPresent}
 			disabledText={m.paymentMethodNotAvailable()}
@@ -38,7 +38,7 @@
 			<UndrawCard
 				title={m.delegationPayment()}
 				btnText={m.delegationPaymentBtn()}
-				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/delegation`)}
+				btnLink={resolve(`dashboard/${params.conferenceId}/payment/delegation`)}
 				img={delegationPayment}
 				disabled={!isDelegation}
 				disabledText={m.paymentMethodNotAvailable()}
@@ -50,7 +50,7 @@
 			<UndrawCard
 				title={m.groupPayment()}
 				btnText={m.groupPaymentBtn()}
-				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/group`)}
+				btnLink={resolve(`dashboard/${params.conferenceId}/payment/group`)}
 				img={groupPayment}
 				disabled={!isSupervisor}
 				disabledText={m.paymentMethodNotAvailable()}

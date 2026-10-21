@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
-	import { getPaperStatusIcon } from '$lib/utils/enumIcons';
-	import { translatePaperStatus } from '$lib/utils/enumTranslations';
+	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { getPaperStatusIcon } from '#lib/utils/enumIcons.js';
+	import { translatePaperStatus } from '#lib/utils/enumTranslations.js';
 	import Common from './Common.svelte';
 
 	interface Props {

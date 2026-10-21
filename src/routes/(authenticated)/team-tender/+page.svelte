@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { resolve } from '$app/paths';
 
 	// The signed-in person does not change while the page is open.
@@ -69,9 +69,10 @@
 			{/if}
 
 			<div class="divider"></div>
-			<a class="link link-hover text-sm" href={resolve('/my-account')}>
-				{m.teamTenderManagePreferences()}
-			</a>
+
+			<a class="link link-hover text-sm" href={resolve('my-account')}
+				>{m.teamTenderManagePreferences()}</a
+			>
 		</div>
 	</div>
 </div>

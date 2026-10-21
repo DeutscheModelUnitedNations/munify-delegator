@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { applicationTextsComplete } from '$lib/helpers/applicationReadiness';
-	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
-	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
-	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { applicationTextsComplete } from '#lib/helpers/applicationReadiness.js';
+	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
+	import DashboardContentCard from '#lib/components/dashboard/DashboardContentCard.svelte';
+	import SquareButtonWithLoadingState from '#lib/components/SquareButtonWithLoadingState.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
@@ -28,7 +28,7 @@
 		await client.liveQuery.singleParticipant({
 			__args: { id: singleParticipantId },
 			id: true,
-			school: true,
+			school: { id: true, name: true },
 			motivation: true,
 			experience: true,
 			applied: true,
@@ -66,15 +66,17 @@
 			console.error('Error: singleParticipant not found');
 			return;
 		}
+
 		if (!(await confirmDialog({ text: m.deleteAllApplicationsConfirmation(), danger: true })))
 			return;
 
 		const promise = Promise.resolve(
 			client.mutate.deleteSingleParticipant({ __args: { id: singleParticipant.id } })
 		);
+
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		goto(resolve('/dashboard'));
+		goto(resolve('dashboard'));
 	};
 
 	const deleteApplication = async (id: string) => {
@@ -132,9 +134,11 @@
 </script>
 
 <RegistrationStatusAlert {applied} pendingText={m.completeSignupWarningTextSingleParticipant()} />
+
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.status()}</h2>
 	<GenericWidget content={stats} />
+
 	<SupervisorTable singleParticipantId={singleParticipant.id} {conferenceId} />
 </section>
 
@@ -185,7 +189,7 @@
 		{#if !applied}
 			<a
 				class="btn btn-primary btn-wide mt-4"
-				href={resolve(`/registration/${conferenceId}/individual`)}
+				href={resolve(`registration/${conferenceId}/individual`)}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 				{m.addAnotherApplication()}
@@ -209,6 +213,7 @@
 				save={saveApplication}
 				disabled={applied}
 				showSubmitButton={!applied}
+				schoolLabel={m.whichSchoolAreYouFrom()}
 				motivationLabel={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
 				experienceLabel={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
 			/>

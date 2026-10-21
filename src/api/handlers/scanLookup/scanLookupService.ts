@@ -1,5 +1,5 @@
 import { db } from '$api/db/db';
-import { splitRole } from '$lib/helpers/conferenceRole';
+import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 const NOTHING_FOUND = {
 	found: false,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DeckWindowData, WindowEntry } from '$lib/assignment/deckWindow';
+import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow.js';
 
 const fetchSightingDeck = vi.fn();
 vi.mock('./applications', () => ({

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type * as schema from '$api/db/schema';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { roleSeats, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
+	import type * as schema from '../../api/db/schema';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { roleSeats, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 	import NationsWithCommitteesTable from './NationsWithCommitteesTable.svelte';
 	import PoolSorting from './PoolSorting.svelte';
-	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
-	import { m } from '$lib/paraglide/messages';
+	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** A conference's nation role, with the nation it stands for */
 	type Nation = {

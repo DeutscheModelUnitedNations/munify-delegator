@@ -1,11 +1,11 @@
 import { untrack } from 'svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { queryParameters, ssp } from 'sveltekit-search-params';
 import type {
 	ColumnFiltersState,
 	PaginationState,
 	SortingState
-} from '$lib/components/tanStackTable';
+} from '#lib/components/tanStackTable/index.js';
 import { filtersParam, sameSorting, sortingParam } from './managedTable';
 
 export interface TableStateOptions {

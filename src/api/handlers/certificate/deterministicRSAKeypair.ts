@@ -1,4 +1,4 @@
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import forge from 'node-forge';
 import { subtle } from 'node:crypto';
 

@@ -1,7 +1,7 @@
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { createYoga } from '$api/rumble';
-import { dev } from '$app/environment';
-import { GRAPHQL_STREAM_ENDPOINT } from '$lib/api/streamEndpoint';
+import { dev } from '$app/env';
+import { GRAPHQL_STREAM_ENDPOINT } from '#lib/api/streamEndpoint.js';
 
 import '$api/handlers/register';
 

@@ -18,7 +18,7 @@ test('a head delegate can create a delegation and a second user can join it with
 
 	// step 0: informational step. Retry the click: a click just after client-side navigation
 	// can land before hydration attaches the handler.
-	const schoolInput = headDelegatePage.locator('input[name="school"]');
+	const schoolInput = headDelegatePage.locator('input[name="schoolName"]');
 	await expect(async () => {
 		await headDelegatePage.getByRole('button', { name: /weiter|next/i }).click();
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });

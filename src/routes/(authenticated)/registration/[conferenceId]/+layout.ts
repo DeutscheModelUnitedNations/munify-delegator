@@ -1,5 +1,5 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { getRegistrationStatus } from '$lib/utils/registrationStatus';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 

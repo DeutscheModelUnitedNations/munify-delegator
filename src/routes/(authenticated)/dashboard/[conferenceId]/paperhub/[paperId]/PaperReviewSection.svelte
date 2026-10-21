@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { client, type PaperstatusEnum } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
 	import { writable, get } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import type { JSONContent } from '@tiptap/core';
-	import PaperEditor from '$lib/components/paper/editor';
-	import { PieceFoundModal } from '$lib/components/flagCollection';
-	import Modal from '$lib/components/Modal.svelte';
-	import { getEmptyTipTapDocument } from '$lib/components/paper/editor/contentValidation';
+	import PaperEditor from '#lib/components/paper/editor/index.js';
+	import { PieceFoundModal } from '#lib/components/flagCollection/index.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import { getEmptyTipTapDocument } from '#lib/components/paper/editor/contentValidation.js';
 	import { untrack } from 'svelte';
-	import { createDraftAutosave } from '$lib/components/paper/draft/draftAutosave.svelte';
-	import DraftRecoveryModal from '$lib/components/paper/draft/DraftRecoveryModal.svelte';
+	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';
+	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';
 	import PaperHistory from './PaperHistory.svelte';
 	import ReviewStatusPicker from './ReviewStatusPicker.svelte';
 	import { hasTextContent } from '../tiptapText';
@@ -110,7 +110,7 @@
 
 	const jumpToNextPaper = () => {
 		reviewed = false;
-		goto(resolve(`/dashboard/${conferenceId}/paperhub/${nextPaperId}`));
+		goto(resolve(`dashboard/${conferenceId}/paperhub/${nextPaperId}`));
 	};
 
 	/** The next paper of the agenda item waiting for a review, if there is one. */
@@ -248,9 +248,8 @@
 
 	{#snippet action()}
 		<div class="flex gap-2">
-			<button class="btn" onclick={() => (showConfirmModal = false)}>
-				{m.cancel()}
-			</button>
+			<button class="btn" onclick={() => (showConfirmModal = false)}>{m.cancel()}</button>
+
 			<button class="btn btn-primary" onclick={handleSubmitReview}>
 				<i class="fa-sharp-duotone fa-solid fa-paper-plane"></i>
 				{m.submitReview()}
@@ -276,7 +275,7 @@
 		totalCount={pieceFoundData.totalCount}
 		onclose={() => (pieceFoundData = null)}
 		onViewCollection={() => {
-			goto(resolve(`/dashboard/${conferenceId}/paperhub#flag-collection`));
+			goto(resolve(`dashboard/${conferenceId}/paperhub#flag-collection`));
 		}}
 	/>
 {/if}

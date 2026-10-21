@@ -3,7 +3,7 @@ import { client } from './rumbleClient/client';
 /**
  * The signed-in person, as the API reports them.
  *
- * Plain and uncached, so a server `load` can call it too; `$lib/state/currentUser.svelte` wraps it
+ * Plain and uncached, so a server `load` can call it too; `#lib/state/currentUser.svelte.js` wraps it
  * with the browser-side singleton components use.
  */
 export async function fetchCurrentUser() {

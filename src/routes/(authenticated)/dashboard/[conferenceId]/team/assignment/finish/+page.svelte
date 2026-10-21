@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { planApply, planIsEmpty } from '$lib/assignment/applyPlan';
-	import { boardState, describeRole, mergedRoles } from '$lib/assignment/board';
-	import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
-	import { targetKey, type Target } from '$lib/assignment/state';
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { planApply, planIsEmpty } from '#lib/assignment/applyPlan.js';
+	import { boardState, describeRole, mergedRoles } from '#lib/assignment/board.js';
+	import { seatedRoles, seatsByKey } from '#lib/assignment/capacity.js';
+	import { targetKey, type Target } from '#lib/assignment/state.js';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { toast } from 'svelte-sonner';
 	import {
 		fetchAssignmentDraft,
@@ -15,6 +15,8 @@
 		fetchSeatedApplications,
 		seatedSnapshot
 	} from '../board';
+	import { schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats.js';
+	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { toastError } from '../toastError';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
@@ -31,7 +33,8 @@
 			fetchAssignmentRoles(params.conferenceId),
 			client.liveQuery.conference({
 				__args: { id: params.conferenceId },
-				assignmentReleased: true
+				assignmentReleased: true,
+				maxSeatsPerSchool: true
 			}),
 			fetchSeatedApplications(params.conferenceId)
 		])
@@ -69,6 +72,16 @@
 		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
 
 	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
+	const singleById = $derived(new Map(rows.singleParticipants.map((s) => [s.id, s])));
+	const maxSeatsPerSchool = $derived(conference.maxSeatsPerSchool ?? null);
+	const schoolCounts = $derived(
+		schoolSeats(
+			view,
+			(id) => delegationById.get(id)?.school,
+			(id) => singleById.get(id)?.school
+		)
+	);
+	const schoolsOver = $derived(schoolsOverLimit(schoolCounts, maxSeatsPerSchool));
 	const pendingGroups = $derived(
 		view.groups
 			.filter((group) => group.pending)
@@ -104,6 +117,25 @@
 
 <div class="flex flex-col gap-6">
 	<ApplyProblems errors={preview.errors} warnings={preview.warnings} {roleName} {customRoleName} />
+	{#if schoolsOver.length > 0}
+		<div class="alert alert-warning alert-soft">
+			<i class="fa-sharp-duotone fa-solid fa-school text-xl"></i>
+			<div class="flex flex-col gap-1">
+				<h3 class="font-bold">{m.assignmentSchoolSeatsOverLimitTitle()}</h3>
+				<ul class="list-inside list-disc text-sm">
+					{#each schoolsOver as school (school.schoolId)}
+						<li>
+							{m.assignmentSchoolSeatsWarning({
+								school: school.name,
+								seats: school.seats,
+								limit: maxSeatsPerSchool ?? 0
+							})}
+						</li>
+					{/each}
+				</ul>
+			</div>
+		</div>
+	{/if}
 
 	<section class="card bg-base-100 border-base-200 border shadow-sm">
 		<div class="card-body gap-4">
@@ -159,6 +191,8 @@
 			{/if}
 		</div>
 	</section>
+
+	<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} />
 
 	<ReleaseCard
 		conferenceId={params.conferenceId}

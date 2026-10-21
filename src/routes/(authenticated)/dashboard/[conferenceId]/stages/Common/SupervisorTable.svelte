@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 
 	/** The supervisors of one registration: a delegation membership or a single participant. */
 	type Props = { conferenceId: string } & (
@@ -57,7 +57,7 @@
 
 	<a
 		class="btn btn-primary mt-4 self-start"
-		href={resolve(`/dashboard/${conferenceId}/connect-supervisor`)}
+		href={resolve(`dashboard/${conferenceId}/connect-supervisor`)}
 	>
 		<i class="fas fa-plus mr-2"></i>
 		{m.connectSupervisor()}

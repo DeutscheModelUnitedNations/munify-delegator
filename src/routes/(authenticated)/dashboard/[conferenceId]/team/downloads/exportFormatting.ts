@@ -1,4 +1,4 @@
-import formatNames from '$lib/helpers/formatNames';
+import formatNames from '#lib/helpers/formatNames.js';
 
 interface NamedUser {
 	givenName: string | null;
@@ -72,41 +72,4 @@ export function nonStateActorName(delegation: {
 	assignedRole?: { name?: string | null } | null;
 }): string {
 	return delegation.assignedRole?.name ?? '';
-}
-
-export interface Badge {
-	name: string;
-	committee?: string | null;
-	countryName: string;
-	countryAlpha2Code?: string | null;
-	alternativeImage?: string | null;
-	pronouns?: string | null;
-	id?: string | null;
-	mediaConsentStatus?: string;
-}
-
-/** The columns of the badge CSV, in the order the badge printer expects. */
-export const badgeHeader = [
-	'name',
-	'committee',
-	'countryName',
-	'countryAlpha2Code',
-	'alternativeImage',
-	'pronouns',
-	'id',
-	'mediaConsentStatus'
-];
-
-/** One badge as a CSV row matching `badgeHeader`; missing values become empty cells. */
-export function badgeRow(badge: Badge): string[] {
-	return [
-		badge.name,
-		badge.committee ?? '',
-		badge.countryName,
-		badge.countryAlpha2Code ?? '',
-		badge.alternativeImage ?? '',
-		badge.pronouns ?? '',
-		badge.id ?? '',
-		badge.mediaConsentStatus ?? 'NOT_SET'
-	];
 }

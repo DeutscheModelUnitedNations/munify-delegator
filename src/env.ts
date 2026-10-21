@@ -82,6 +82,9 @@ export const variables = defineEnvVars({
 	SMTP_PASSWORD: { schema: z.string().optional() },
 	SMTP_FROM_ADDRESS: { schema: z.string().email().default('noreply@munify.cloud') },
 	SMTP_FROM_NAME: { schema: z.string().default('MUNify Delegator') },
+	// Shared with the jobs image: the `send-emails` job sends it to `/api/jobs/send-emails`, which
+	// sends the automatic mails that are due. Unset, that endpoint refuses every call.
+	JOBS_SECRET: { schema: unlessEmpty(z.string().min(16).optional()) },
 
 	// Object storage (any S3-compatible service) for every uploaded file. The endpoint names the
 	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted
@@ -160,8 +163,11 @@ export const variables = defineEnvVars({
 	PUBLIC_SENTRY_DSN: { public: true, schema: unlessEmpty(z.string().url().optional()) },
 	PUBLIC_SENTRY_SEND_DEFAULT_PII: { public: true, schema: z.stringbool().optional() },
 
-	// Badge generator URL (optional)
-	PUBLIC_BADGE_GENERATOR_URL: { public: true, schema: unlessEmpty(z.string().url().optional()) },
+	// The external name tag and Länderschild generator the badge downloads link to
+	PUBLIC_BADGE_GENERATOR_URL: {
+		public: true,
+		schema: unlessEmpty(z.string().url().default('https://badges.dmun.de'))
+	},
 
 	// Documentation URL (optional) - global link to DELEGATOR app documentation
 	PUBLIC_DOCS_URL: { public: true, schema: unlessEmpty(z.string().url().optional()) },

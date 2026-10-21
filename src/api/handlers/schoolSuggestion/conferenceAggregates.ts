@@ -1,5 +1,6 @@
 /** Applied registrations of one school, as the organizers' school overview lists them. */
 export type SchoolRow = {
+	schoolId: string;
 	school: string;
 	delegationCount: number;
 	delegationMembers: number;
@@ -7,31 +8,35 @@ export type SchoolRow = {
 	sumParticipants: number;
 };
 
+type NamedSchool = { id: string; name: string } | null;
+
 /**
  * Groups registrations by the school they named, in the order schools first appear (delegations
  * first). Registrations without a school are left out.
  */
 export function schoolRows(
-	delegations: { id: string; school: string | null }[],
+	delegations: { id: string; school: NamedSchool }[],
 	members: { delegationId: string }[],
-	singleParticipants: { school: string | null }[]
+	singleParticipants: { school: NamedSchool }[]
 ): SchoolRow[] {
 	const bySchool = new Map<string, SchoolRow>();
-	const entryFor = (school: string) => {
-		const existing = bySchool.get(school) ?? {
-			school,
+	const entryFor = (school: { id: string; name: string }) => {
+		const existing = bySchool.get(school.id) ?? {
+			schoolId: school.id,
+			school: school.name,
 			delegationCount: 0,
 			delegationMembers: 0,
 			singleParticipants: 0,
 			sumParticipants: 0
 		};
-		bySchool.set(school, existing);
+		bySchool.set(school.id, existing);
 		return existing;
 	};
 
+	const membersOf = Map.groupBy(members, (member) => member.delegationId);
 	for (const delegation of delegations) {
 		if (!delegation.school) continue;
-		const memberCount = members.filter((member) => member.delegationId === delegation.id).length;
+		const memberCount = membersOf.get(delegation.id)?.length ?? 0;
 		const entry = entryFor(delegation.school);
 		entry.delegationCount++;
 		entry.delegationMembers += memberCount;
@@ -46,12 +51,4 @@ export function schoolRows(
 	}
 
 	return [...bySchool.values()];
-}
-
-/**
- * Cleans a hand-typed school name: commas and periods become spaces, runs of whitespace
- * collapse and the ends are trimmed.
- */
-export function normalizeSchoolName(name: string) {
-	return name.replace(/[,.]/g, ' ').replace(/\s+/g, ' ').trim();
 }

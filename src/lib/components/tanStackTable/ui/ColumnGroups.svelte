@@ -1,6 +1,6 @@
 <script lang="ts" generics="E extends { group?: string; col: { id: string } }">
 	import type { Snippet } from 'svelte';
-	import { groupEntries } from '$lib/components/tanStackTable/columnEntries';
+	import { groupEntries } from '#lib/components/tanStackTable/columnEntries.js';
 
 	interface Props {
 		/** The columns to list, each with the group it is listed under */

@@ -1,6 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
-import { m } from '$lib/paraglide/messages';
-import { validatePlaceholders } from '$lib/helpers/snippetPlaceholders';
+import { m } from '#lib/paraglide/messages.js';
+import { validatePlaceholders } from '#lib/helpers/snippetPlaceholders.js';
 import { hasTextContent } from '../tiptapText';
 
 /**

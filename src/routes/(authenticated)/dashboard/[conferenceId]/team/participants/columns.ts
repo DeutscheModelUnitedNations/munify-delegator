@@ -1,16 +1,16 @@
-import { getLocale } from '$lib/paraglide/runtime';
-import { renderComponent } from '$lib/components/tanStackTable';
-import { columnIdOf, type ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-import { m } from '$lib/paraglide/messages';
-import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { renderComponent } from '#lib/components/tanStackTable/index.js';
+import { columnIdOf, type ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+import { m } from '#lib/paraglide/messages.js';
+import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter.js';
 import {
 	translateAdministrativeStatus,
 	translateFoodPreference,
 	translateGender,
 	translateParticipationRole,
 	translateTeamRole
-} from '$lib/utils/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+} from '#lib/utils/enumTranslations.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type { ParticipantRow } from './types';
 import { getPlainTextValue } from './exportHelpers';
 import RoleBadge from './RoleBadge.svelte';
@@ -28,7 +28,8 @@ const PARTICIPATION_ROLES = [
 	'DELEGATION_MEMBER',
 	'SINGLE_PARTICIPANT',
 	'SUPERVISOR',
-	'TEAM_MEMBER'
+	'TEAM_MEMBER',
+	'WAITING_LIST'
 ];
 const TEAM_ROLES = [
 	'PROJECT_MANAGEMENT',
@@ -39,6 +40,10 @@ const TEAM_ROLES = [
 	'CONTENT_LEAD'
 ];
 const ADMINISTRATIVE_STATUSES = ['DONE', 'PENDING', 'PROBLEM'];
+
+function formatDate(date: Date | null) {
+	return date ? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(date) : '';
+}
 
 function participantColumns(): ManagedColumn<ParticipantRow>[] {
 	return [
@@ -250,6 +255,30 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 				options: [...TEAM_ROLES, '—'],
 				label: translateTeamRole
 			}
+		},
+		{
+			accessorKey: 'onWaitingList',
+			header: m.onWaitingList(),
+			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.onWaitingList }),
+			group: m.participation(),
+			defaultVisible: false,
+			description: m.onWaitingListDescription(),
+			filter: { type: 'boolean', alwaysAvailable: true }
+		},
+		{
+			accessorKey: 'waitingListSince',
+			header: m.waitingListSince(),
+			cell: ({ row }) => formatDate(row.original.waitingListSince),
+			group: m.participation(),
+			defaultVisible: false
+		},
+		{
+			accessorKey: 'seatedFromWaitingListAt',
+			header: m.seatedFromWaitingListAt(),
+			cell: ({ row }) => formatDate(row.original.seatedFromWaitingListAt),
+			group: m.participation(),
+			defaultVisible: false,
+			description: m.seatedFromWaitingListAtDescription()
 		},
 		{
 			accessorKey: 'plansOwnAttendance',

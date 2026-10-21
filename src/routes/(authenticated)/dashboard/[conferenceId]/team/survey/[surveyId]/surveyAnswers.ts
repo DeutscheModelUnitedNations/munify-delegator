@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 const answeringUser = { id: true, givenName: true, familyName: true } as const;
 

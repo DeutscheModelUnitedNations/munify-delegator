@@ -1,12 +1,12 @@
 <script lang="ts">
 	import StudentsAcceptedStat from './StudentsAcceptedStat.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { downloadCompleteCertificate } from '$lib/utils/pdfGenerator';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator.js';
 	import { toast } from 'svelte-sonner';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import ResolutionDownloads from './ResolutionDownloads.svelte';
-	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
+	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
 	import type { ComponentProps } from 'svelte';
 	import { planCertificateDownload, type CertificateData } from './certificateDownload';
 
@@ -64,7 +64,8 @@
 			client.query.getCertificateJWT({
 				__args: requestedFor,
 				jwt: true,
-				fullName: true
+				fullName: true,
+				sessions: { name: true, attended: true }
 			})
 		]).then(([conference, jwt]) => {
 			if (cancelled) return;
@@ -72,7 +73,11 @@
 				templateUrl: conference.certificateFile?.url ?? null,
 				title: conference.title,
 				jwt: jwt.jwt,
-				fullName: jwt.fullName
+				fullName: jwt.fullName,
+				sessions: jwt.sessions.map((session) => ({
+					name: session.name,
+					attended: session.attended
+				}))
 			};
 		});
 

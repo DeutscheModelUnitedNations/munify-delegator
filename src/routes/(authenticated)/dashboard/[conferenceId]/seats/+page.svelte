@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { dev } from '$app/environment';
-	import { m } from '$lib/paraglide/messages';
-	import Tabs from '$lib/components/tabs/Tabs.svelte';
-	import Tab from '$lib/components/tabs/Tab.svelte';
-	import AccentStripe from '$lib/components/AccentStripe.svelte';
+	import { dev } from '$app/env';
+	import { m } from '#lib/paraglide/messages.js';
+	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import Tab from '#lib/components/tabs/Tab.svelte';
+	import AccentStripe from '#lib/components/AccentStripe.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { fetchConferenceSeats, nonStateActorsOf, seatedNations } from './conferenceSeats';
 	import CommitteePool from './CommitteePool.svelte';

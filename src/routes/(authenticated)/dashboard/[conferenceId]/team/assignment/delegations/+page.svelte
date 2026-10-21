@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import {
 		POOL_CONTAINER,
 		boardState,
@@ -17,14 +17,14 @@
 		rolesWithSeats,
 		sizeOptions,
 		wishStatus
-	} from '$lib/assignment/board';
-	import { seatedRoles } from '$lib/assignment/capacity';
-	import { createPendingMoves } from '$lib/assignment/pendingMoves.svelte';
-	import { liveSnapshot } from '$lib/api/liveSnapshot';
-	import { memoizeLast } from '$lib/helpers/memoizeLast';
-	import { targetKey, type AssignmentGroup } from '$lib/assignment/state';
-	import { m } from '$lib/paraglide/messages';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	} from '#lib/assignment/board.js';
+	import { seatedRoles } from '#lib/assignment/capacity.js';
+	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
+	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
+	import { memoizeLast } from '#lib/helpers/memoizeLast.js';
+	import { targetKey, type AssignmentGroup } from '#lib/assignment/state.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
 	import { assignGroup } from '../assignGroup';
@@ -33,10 +33,13 @@
 		fetchAssignmentRoles,
 		fetchDelegationPoolPage,
 		fetchDelegationPoolSizes,
+		fetchSchoolSeatLimit,
 		fetchSeatedApplications,
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
+	import { exceededBy, schoolOfGroup, schoolSeats } from '#lib/assignment/schoolSeats.js';
+	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
 	import BusyOverlay from '../BusyOverlay.svelte';
@@ -55,29 +58,33 @@
 	// navigation (what `sveltekit-search-params` does) lands in a batch of its own while the pool
 	// of the new size is still loading, and Svelte trips its "Batch has scheduled effects"
 	// invariant on the overlap, leaving the board half updated. The URL is written on the next
-	// task for the same reason: `replaceState` writes `page`, which must not happen while Svelte
+	// task for the same reason: a shallow `goto` writes `page`, which must not happen while Svelte
 	// is still committing the change it follows.
 	const params = $state(boardParams(page.url.searchParams));
 	$effect(() => {
 		const next = { size: params.size, disqualified: params.disqualified };
 		const timer = setTimeout(() => {
-			// The browser's own URL: `page.url` does not follow shallow `replaceState` calls.
+			// The browser's own URL: `page.url` does not follow shallow navigations.
 			const url = withBoardParams(new URL(location.href), next);
-			if (url.search !== location.search) replaceState(url, page.state);
+			if (url.search !== location.search)
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with other query parameters
+				goto(url, { shallow: true, replace: true, state: page.state });
 		});
 		return () => clearTimeout(timer);
 	});
 
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
-	const [roles, draft, seated, poolCounts] = $derived(
+	const [roles, draft, seated, poolCounts, schoolLimit] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(routeParams.conferenceId),
 			fetchAssignmentDraft(routeParams.conferenceId),
 			fetchSeatedApplications(routeParams.conferenceId),
-			fetchDelegationPoolSizes(routeParams.conferenceId, !!params.disqualified)
+			fetchDelegationPoolSizes(routeParams.conferenceId, !!params.disqualified),
+			fetchSchoolSeatLimit(routeParams.conferenceId)
 		])
 	);
+	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
 	// Plain copies of the live results the board works over (see `liveSnapshot`): everything
 	// below reads plain arrays, and `memoizeLast` hands back the last board when they are the same.
 	const roleSnapshot = {
@@ -190,6 +197,29 @@
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
 	const singleById = $derived(new Map(seatedSingles.map((s) => [s.id, s])));
+	const schoolOfDelegation = (id: string) => delegationById.get(id)?.school;
+	const schoolOfSingle = (id: string) => singleById.get(id)?.school;
+	// Every group holding a role is seated or touched by the draft, so the seated rows know them all.
+	const schoolCounts = $derived(schoolSeats(view, schoolOfDelegation, schoolOfSingle));
+
+	/** Warns (never blocks) when a group taking a role takes its school past the limit. */
+	function warnAboutSchool(group: AssignmentGroup) {
+		const exceeded = exceededBy(
+			schoolCounts,
+			schoolOfGroup(group, schoolOfDelegation, schoolOfSingle),
+			hasRole(group) ? 0 : group.size,
+			maxSeatsPerSchool
+		);
+		if (exceeded) {
+			toast.warning(
+				m.assignmentSchoolSeatsWarning({
+					school: exceeded.name,
+					seats: exceeded.seats,
+					limit: exceeded.limit
+				})
+			);
+		}
+	}
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
 	const isBadFit = (group: AssignmentGroup) => {
@@ -213,7 +243,10 @@
 		);
 		if (!action) return;
 		if (action.type === 'full') toast.error(m.assignmentNotEnoughSeats());
-		else void moves.track(action.group.key, () => assignGroup(action.group, action.target));
+		else {
+			if (action.target) warnAboutSchool(action.group);
+			void moves.track(action.group.key, () => assignGroup(action.group, action.target));
+		}
 	}
 
 	async function run(kind: 'autoAssign' | 'reset', action: () => Promise<unknown>) {
@@ -292,21 +325,26 @@
 		{#if busy}
 			<BusyOverlay size="lg" />
 		{/if}
-		<PoolSection
-			container={POOL_CONTAINER}
-			count={poolCount}
-			hint={m.assignmentPoolHint({ size })}
-			highlight={hasRole(dragging)}
-			class="xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
-			virtual
-			{onDrop}
+		<div
+			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
 		>
-			<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
-				{#snippet row(group)}
-					{@render groupCard(group, POOL_CONTAINER, true)}
-				{/snippet}
-			</PoolList>
-		</PoolSection>
+			<PoolSection
+				container={POOL_CONTAINER}
+				count={poolCount}
+				hint={m.assignmentPoolHint({ size })}
+				highlight={hasRole(dragging)}
+				class="min-h-0 xl:flex-1"
+				virtual
+				{onDrop}
+			>
+				<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
+					{#snippet row(group)}
+						{@render groupCard(group, POOL_CONTAINER, true)}
+					{/snippet}
+				</PoolList>
+			</PoolSection>
+			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} />
+		</div>
 
 		<section
 			class="grid grow grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] content-start items-start gap-3"

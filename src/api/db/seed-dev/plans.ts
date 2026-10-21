@@ -36,8 +36,8 @@ export interface ConferencePlan {
 	assigned: boolean;
 	/** Which optional parts of the conference are filled in. */
 	with: {
+		/** The contract, consent, terms and certificate PDFs. */
 		templates: boolean;
-		certificate: boolean;
 		calendar: boolean;
 		papers: boolean;
 		surveys: boolean;
@@ -51,6 +51,8 @@ export interface ConferencePlan {
 		invitations: boolean;
 		/** An assignment draft in progress: ratings, a split and a few planned roles. */
 		assignmentDraft?: boolean;
+		/** The automatic mails' settings and a log for the personas (`seed-dev/emails.ts`). */
+		emails?: boolean;
 	};
 	/** How much anonymous crowd to add around the personas. */
 	crowd: {
@@ -85,7 +87,6 @@ const fullCrowd: ConferencePlan['crowd'] = {
 
 const noExtras: ConferencePlan['with'] = {
 	templates: false,
-	certificate: false,
 	calendar: false,
 	papers: false,
 	surveys: false,
@@ -145,11 +146,13 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'closed',
 		summary:
-			'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned (draft in progress)',
+			'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned (draft in progress, 4 seats per school)',
 		conference: {
 			title: 'Seed 4 · Registration closed',
 			longTitle: 'Seed-Konferenz nach Anmeldeschluss, Zuteilung läuft',
-			state: 'PARTICIPANT_REGISTRATION'
+			state: 'PARTICIPANT_REGISTRATION',
+			// Low, so the assignment board's per-school warning shows with the seeded schools
+			maxSeatsPerSchool: 4
 		},
 		days: { startAssignment: -3, startConference: 40, endConference: 43 },
 		assigned: false,
@@ -159,7 +162,7 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'preparation',
 		summary:
-			'PREPARATION: payments, postal and papers unlocked; surveys, invitations, waiting list (vacancies)',
+			'PREPARATION: payments, postal and papers unlocked; surveys, invitations, waiting list (vacancies), email log',
 		conference: {
 			title: 'Seed 5 · Preparation',
 			longTitle: 'Seed-Konferenz in der Vorbereitung',
@@ -178,14 +181,14 @@ export const conferencePlans: ConferencePlan[] = [
 		assigned: true,
 		with: {
 			templates: true,
-			certificate: false,
 			calendar: true,
 			papers: true,
 			surveys: true,
 			attendance: false,
 			participantStatus: true,
 			waitingList: 'VACANCIES',
-			invitations: true
+			invitations: true,
+			emails: true
 		},
 		crowd: { ...fullCrowd, bulk: { delegations: 8000, singles: 1000, supervisors: 2000 } }
 	},
@@ -236,7 +239,6 @@ export const conferencePlans: ConferencePlan[] = [
 		assigned: true,
 		with: {
 			templates: true,
-			certificate: false,
 			calendar: true,
 			papers: true,
 			surveys: true,
@@ -251,7 +253,8 @@ export const conferencePlans: ConferencePlan[] = [
 	},
 	{
 		key: 'post',
-		summary: 'POST: ended a month ago; certificates (attended vs. not), papers read-only',
+		summary:
+			'POST: ended a month ago; certificates (attended vs. not, a scanner test run left off), papers read-only, email log',
 		conference: {
 			title: 'Seed 8 · Post',
 			longTitle: 'Seed-Konferenz, die vorbei ist',
@@ -265,13 +268,13 @@ export const conferencePlans: ConferencePlan[] = [
 		assigned: true,
 		with: {
 			templates: true,
-			certificate: true,
 			calendar: true,
 			papers: true,
 			surveys: false,
 			attendance: true,
 			participantStatus: true,
-			invitations: false
+			invitations: false,
+			emails: true
 		},
 		crowd: {
 			...fullCrowd,
@@ -281,13 +284,14 @@ export const conferencePlans: ConferencePlan[] = [
 	{
 		key: 'second',
 		summary:
-			'PREPARATION: a second, smaller conference - dev-admin takes part in none, so its management dashboard shows without a role',
+			'PREPARATION: a second, smaller conference - dev-admin takes part in none, so its management dashboard shows without a role; no seat limit per school',
 		conference: {
 			title: 'Seed 9 · Second conference',
 			longTitle: 'Zweite Seed-Konferenz',
 			state: 'PREPARATION',
 			unlockPayments: true,
-			unlockPostals: true
+			unlockPostals: true,
+			maxSeatsPerSchool: null
 		},
 		days: { startAssignment: -25, startConference: 21, endConference: 24 },
 		assigned: true,
@@ -318,7 +322,7 @@ export const conferencePlans: ConferencePlan[] = [
 		},
 		days: { startAssignment: -420, startConference: -380, endConference: -377 },
 		assigned: true,
-		with: noExtras,
+		with: { ...noExtras, templates: true },
 		crowd: {
 			committees: 0,
 			nationsPerCommittee: [0, 0],

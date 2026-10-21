@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import PaperGroupCollapse from './PaperGroupCollapse.svelte';
 	import type { ExpandedPaperGroup } from './paperGroups.svelte';
 

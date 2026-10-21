@@ -9,7 +9,7 @@ import {
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { inArray } from 'drizzle-orm';
 import { calendarEntryPubsub, calendarTrackPubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 registerCalendarTrackAbilities();

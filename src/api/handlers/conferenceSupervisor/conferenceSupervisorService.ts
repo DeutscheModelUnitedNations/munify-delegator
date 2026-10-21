@@ -1,9 +1,10 @@
 import { db, schema } from '$api/db/db';
+import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
 import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import { isUserAlreadyRegistered } from '$api/services/registration/participation';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 import { eq } from 'drizzle-orm';
 
@@ -27,11 +28,13 @@ async function unusedConnectionCode() {
 }
 
 /** Registers a user as supervisor of a conference. Returns the new row's id. */
-export async function registerSupervisor(args: {
-	conferenceId: string;
-	subjectId: string;
-	plansOwnAttendenceAtConference?: boolean | null;
-}) {
+export async function registerSupervisor(
+	args: SchoolChoice & {
+		conferenceId: string;
+		subjectId: string;
+		plansOwnAttendenceAtConference?: boolean | null;
+	}
+) {
 	if (await isUserAlreadyRegistered({ userId: args.subjectId, conferenceId: args.conferenceId })) {
 		throw apiError('CONFLICT', m.supervisorUserHasOtherRole());
 	}
@@ -48,7 +51,8 @@ export async function registerSupervisor(args: {
 					args.subjectId
 				),
 				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
-				connectionCode
+				connectionCode,
+				schoolId: (await resolveSchoolChoice(args, tx)) ?? undefined
 			})
 			.returning()
 			.then(assertFirstEntryExists)

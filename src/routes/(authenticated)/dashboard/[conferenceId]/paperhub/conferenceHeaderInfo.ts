@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import type { PaperConferenceInfo } from './paperDisplay';
 
 /**
@@ -7,7 +7,11 @@ import type { PaperConferenceInfo } from './paperDisplay';
  */
 export async function conferenceHeaderInfo(
 	conference:
-		| { title: string; longTitle: string | null; emblemFile: { url: string } | null }
+		| {
+				title: string;
+				longTitle: string | null;
+				emblemFile: { url: string } | null;
+		  }
 		| null
 		| undefined
 ): Promise<PaperConferenceInfo | undefined> {

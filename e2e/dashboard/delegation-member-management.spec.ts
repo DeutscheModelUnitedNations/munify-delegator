@@ -24,7 +24,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await headPage.locator('a[href$="/create-delegation"]').click();
 	await headPage.waitForURL(/\/create-delegation$/);
 
-	const schoolInput = headPage.locator('input[name="school"]');
+	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
 		await headPage.getByRole('button', { name: /weiter|next/i }).click();
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });
@@ -119,6 +119,9 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	// invalidateAll re-render is still settling), leaving the button frozen mid-request.
 	await expect(async () => {
 		await memberBRow.locator('button.btn-warning').click();
+		// The confirm dialog is accepted by the `acceptDialogs` handler, which Playwright only runs
+		// before a page action or assertion - a GraphQL poll alone would leave it open.
+		await expect(headPage.getByRole('alertdialog')).toBeHidden({ timeout: 5_000 });
 		await expect.poll(isMemberBHeadDelegate, { timeout: 5_000 }).toBe(true);
 	}).toPass({ timeout: 20_000 });
 });

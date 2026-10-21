@@ -1,9 +1,13 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont, PDFName, PDFString } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
-import { downloadPDF } from '$lib/utils/downloadHelpers';
+import { downloadPDF } from '#lib/utils/downloadHelpers.js';
+import {
+	layoutCertificateSessions,
+	type CertificateSessionMark
+} from '#lib/utils/certificateSessionLayout.js';
 
 export interface ParticipantData {
 	id: string;
@@ -23,6 +27,56 @@ export interface RecipientData {
 export interface ParticipantCertificateData {
 	fullName?: string | null;
 	jwt?: string | null;
+	/** The check-in sessions the holder was checked in at. */
+	sessions?: readonly CertificateSessionMark[];
+}
+
+/**
+ * Draws the check-in sessions the holder was at below the name: a heading, then each session with a
+ * checkmark drawn as two lines (no font glyph needed). Sessions they missed are not on the list.
+ */
+function drawCertificateSessions(
+	page: PDFPage,
+	font: PDFFont,
+	sessions: readonly CertificateSessionMark[],
+	top: number,
+	bottom: number
+) {
+	const heading = m.certificateSessionsHeading();
+	const layout = layoutCertificateSessions(sessions, heading, {
+		pageWidth: page.getSize().width,
+		top,
+		bottom,
+		measure: (text, size) => font.widthOfTextAtSize(text, size)
+	});
+	if (!layout) return;
+
+	const black = rgb(0, 0, 0);
+	page.drawText(heading, { ...layout.heading, font, color: black });
+	for (const row of layout.rows) {
+		const { box } = layout;
+		const boxY = row.y - box * 0.1;
+		const thickness = Math.max(0.9, box / 7);
+		page.drawLine({
+			start: { x: row.x + box * 0.08, y: boxY + box * 0.5 },
+			end: { x: row.x + box * 0.36, y: boxY + box * 0.15 },
+			thickness,
+			color: black
+		});
+		page.drawLine({
+			start: { x: row.x + box * 0.36, y: boxY + box * 0.15 },
+			end: { x: row.x + box * 0.92, y: boxY + box * 0.9 },
+			thickness,
+			color: black
+		});
+		page.drawText(row.name, {
+			x: row.x + box + 5,
+			y: row.y,
+			size: layout.size,
+			font,
+			color: black
+		});
+	}
 }
 
 interface PageStyles {
@@ -533,6 +587,15 @@ function createCertificateGenerator(
 		);
 
 		page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([link]));
+
+		// Below the name, kept clear of the QR code and its caption in the bottom right corner.
+		drawCertificateSessions(
+			page,
+			custfont,
+			data.sessions ?? [],
+			yPosition - 40,
+			pngDims.height + 40
+		);
 	});
 }
 

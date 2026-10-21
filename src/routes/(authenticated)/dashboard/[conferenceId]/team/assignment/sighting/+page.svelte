@@ -1,5 +1,5 @@
 <script lang="ts">
-	import codenamize from '$lib/helpers/codenamize';
+	import codenamize from '#lib/helpers/codenamize.js';
 	import {
 		SIGHTING_STATUSES,
 		delegationApplication,
@@ -8,12 +8,12 @@
 		singleApplication,
 		type SightingReview,
 		type SightingStatus
-	} from '$lib/assignment/sighting';
-	import { m } from '$lib/paraglide/messages';
+	} from '#lib/assignment/sighting.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { fly } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { queryParameters, ssp } from 'sveltekit-search-params';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { untrack } from 'svelte';
 	import {
 		fetchApplication,

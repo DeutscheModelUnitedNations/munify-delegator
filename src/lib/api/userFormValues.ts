@@ -11,9 +11,9 @@ import type {
 	adminUserFormSchema,
 	userFormSchema
 } from '../../routes/(authenticated)/my-account/form-schema';
-import { alpha3ToAlpha2 } from '$lib/helpers/countryCodes';
-import { addressRules } from '$lib/helpers/addressRules';
-import { fromCalendarDay, toCalendarDay } from '$lib/helpers/calendarDay';
+import { alpha3ToAlpha2 } from '#lib/helpers/countryCodes.js';
+import { addressRules } from '#lib/helpers/addressRules.js';
+import { fromCalendarDay, toCalendarDay } from '#lib/helpers/calendarDay.js';
 
 type Gender = 'MALE' | 'FEMALE' | 'DIVERSE' | 'NO_STATEMENT';
 type FoodPreference = 'OMNIVORE' | 'VEGETARIAN' | 'VEGAN';

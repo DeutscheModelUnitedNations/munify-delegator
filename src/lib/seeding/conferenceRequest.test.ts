@@ -7,8 +7,8 @@ import {
 	localToIso,
 	newCommittee,
 	toSeedJson
-} from '$lib/seeding/conferenceRequest';
-import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
+} from '#lib/seeding/conferenceRequest.js';
+import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
 
 describe('conferenceRequest', () => {
 	describe('localToIso', () => {

@@ -1,7 +1,7 @@
-import { getLocale } from '$lib/paraglide/runtime';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import type { ConfigEntry, PageEntry } from './pageRegistry';
 
 export interface SearchUser {

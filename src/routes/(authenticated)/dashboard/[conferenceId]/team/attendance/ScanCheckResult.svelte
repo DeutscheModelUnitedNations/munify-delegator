@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import Kbd from '$lib/components/Kbd.svelte';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import Kbd from '#lib/components/Kbd.svelte';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import ScanStatusStrip from './ScanStatusStrip.svelte';
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import ParticipantRoleSummary from './ParticipantRoleSummary.svelte';

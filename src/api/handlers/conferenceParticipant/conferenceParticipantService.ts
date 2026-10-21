@@ -2,7 +2,7 @@ import { type Transaction, db, schema } from '$api/db/db';
 import { nullToUndefined } from '$api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq, max } from 'drizzle-orm';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**

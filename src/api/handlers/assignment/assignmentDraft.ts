@@ -5,11 +5,11 @@ import {
 	type ApplyError,
 	type ApplyPlan,
 	type DelegationRef
-} from '$lib/assignment/applyPlan';
-import { seatedRoles, seatsByKey } from '$lib/assignment/capacity';
-import { sameTarget, type Target } from '$lib/assignment/state';
-import { m } from '$lib/paraglide/messages';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+} from '#lib/assignment/applyPlan.js';
+import { seatedRoles, seatsByKey } from '#lib/assignment/capacity.js';
+import { sameTarget, type Target } from '#lib/assignment/state.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { and, eq, inArray } from 'drizzle-orm';
 import { apiError } from '$api/services/errors/apiError';
 
@@ -177,11 +177,11 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
 			'delegationId' in copyFrom
 				? await tx.query.delegation.findFirst({
 						where: { id: copyFrom.delegationId },
-						columns: { school: true, motivation: true, experience: true }
+						columns: { schoolId: true, motivation: true, experience: true }
 					})
 				: await tx.query.singleParticipant.findFirst({
 						where: { id: copyFrom.singleParticipantId },
-						columns: { school: true, motivation: true, experience: true }
+						columns: { schoolId: true, motivation: true, experience: true }
 					});
 		const [row] = await tx
 			.insert(schema.delegation)
@@ -189,7 +189,7 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
 				conferenceId,
 				entryCode: makeEntryCode(),
 				applied: true,
-				school: source?.school,
+				schoolId: source?.schoolId,
 				motivation: source?.motivation,
 				experience: source?.experience
 			})

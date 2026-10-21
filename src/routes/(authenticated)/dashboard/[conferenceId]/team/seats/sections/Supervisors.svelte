@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
+	import { client, type UserPreview } from '#lib/api/rumbleClient/client.js';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';

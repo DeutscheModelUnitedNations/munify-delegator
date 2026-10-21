@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { downloadPostalRegistration } from '$lib/api/postalRegistrationPdf';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf.js';
 	import { page } from '$app/state';
 	import type { PageProps } from './$types';
 
@@ -80,7 +80,7 @@
 					<a
 						class="btn no-underline"
 						href={resolve(
-							`/my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${params.conferenceId}`)}`
+							`my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${params.conferenceId}`)}`
 						)}
 					>
 						{m.updateProfile()}
@@ -113,7 +113,8 @@
 								: ''}
 						</div>
 					</div>
-					<a class="btn no-underline" href={resolve('/my-account')}>
+
+					<a class="btn no-underline" href={resolve('my-account')}>
 						{m.updateProfile()}
 						<i class="fas fa-user-edit"></i>
 					</a>

@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 /** The columns every participant table row needs, whatever the registration type. */
 const participantUser = {
@@ -34,7 +34,8 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 		conferenceSupervisors,
 		singleParticipants,
 		teamMembers,
-		participantStatuses
+		participantStatuses,
+		waitingListEntries
 	] = await Promise.all([
 		client.liveQuery.conference({
 			__args: { id: conferenceId },
@@ -47,7 +48,7 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 			isHeadDelegate: true,
 			assignedCommittee: { name: true },
 			delegation: {
-				school: true,
+				school: { name: true },
 				assignedRole: {
 					kind: true,
 					name: true,
@@ -60,6 +61,7 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 		client.liveQuery.conferenceSupervisors({
 			__args: throughParticipant,
 			plansOwnAttendenceAtConference: true,
+			school: { name: true },
 			supervisedDelegationMembers: {
 				delegation: { assignedRoleId: true }
 			},
@@ -69,7 +71,7 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 		client.liveQuery.singleParticipants({
 			__args: throughParticipant,
 			applied: true,
-			school: true,
+			school: { name: true },
 			assignedRole: { name: true, fontAwesomeIcon: true },
 			user: participantUser
 		}),
@@ -88,6 +90,16 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 			didAttend: true,
 			assignedDocumentNumber: true,
 			accessCardId: true
+		}),
+		// whether and since when each person waits, or when they got a seat from the list; people
+		// waiting without any registration are rows of their own
+		client.liveQuery.waitingListEntries({
+			__args: inConference,
+			createdAt: true,
+			assigned: true,
+			assignedAt: true,
+			school: { name: true },
+			user: participantUser
 		})
 	]);
 
@@ -97,7 +109,8 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 		conferenceSupervisors,
 		singleParticipants,
 		teamMembers,
-		participantStatuses
+		participantStatuses,
+		waitingListEntries
 	};
 }
 

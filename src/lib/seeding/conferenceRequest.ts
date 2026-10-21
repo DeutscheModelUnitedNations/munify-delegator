@@ -36,6 +36,8 @@ export type RoleDraft = {
 	name: string;
 	description: string;
 	fontAwesomeIcon: string;
+	/** How many single participants the role seats (the press: as many as it has places). */
+	seatAmount: number;
 };
 
 export type DateField = 'startAssignment' | 'startConference' | 'endConference';
@@ -96,7 +98,8 @@ export const newRole = (): RoleDraft => ({
 	key: crypto.randomUUID(),
 	name: '',
 	description: '',
-	fontAwesomeIcon: ''
+	fontAwesomeIcon: '',
+	seatAmount: 1
 });
 
 const zonedParts = (utcMs: number) => {
@@ -204,7 +207,8 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 	customConferenceRole: state.customConferenceRole.map((role) => ({
 		name: role.name.trim(),
 		description: role.description.trim(),
-		fontAwesomeIcon: role.fontAwesomeIcon.trim()
+		fontAwesomeIcon: role.fontAwesomeIcon.trim(),
+		seatAmount: role.seatAmount
 	}))
 });
 
@@ -247,7 +251,7 @@ const importSchema = z.object({
 		)
 		.default([]),
 	customConferenceRole: z
-		.array(z.object({ name: text, description: text, fontAwesomeIcon: text }))
+		.array(z.object({ name: text, description: text, fontAwesomeIcon: text, seatAmount: count }))
 		.default([])
 });
 

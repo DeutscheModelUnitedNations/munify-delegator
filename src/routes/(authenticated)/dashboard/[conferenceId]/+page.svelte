@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
-	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
-	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
-	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
 	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
 	import SingleParticipantPreparationStage from './stages/SingleParticipant/SingleParticipantPreparationStage.svelte';
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
@@ -10,14 +10,14 @@
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import ParticipantStages from './stages/Common/ParticipantStages.svelte';
-	import SignInHint from '$lib/components/dashboard/SignInHint.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
 	import RegistrationLanding from '../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { splitRole } from '$lib/helpers/conferenceRole';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	let { params }: PageProps = $props();
 

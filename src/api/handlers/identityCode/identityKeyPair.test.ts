@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { IDENTITY_CODE_VALIDITY_MS, verifyIdentityCode } from '$lib/helpers/identityCode';
+import { IDENTITY_CODE_VALIDITY_MS, verifyIdentityCode } from '#lib/helpers/identityCode.js';
 
 vi.mock('$app/env/private', () => ({ CERTIFICATE_SECRET: 'a secret that only this test uses' }));
 

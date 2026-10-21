@@ -62,6 +62,10 @@ const columns: Record<string, { expr: SQL; kind: Kind }> = {
 	documentNumber: { expr: sql`s.assigend_document_number::text`, kind: 'text' },
 	accessCardId: { expr: sql`s.access_card_id`, kind: 'text' },
 	accepted: { expr: sql`reg.accepted`, kind: 'bool' },
+	// the person's waiting list entry in the conference, if any (see `matching`)
+	waitingListSince: { expr: sql`wl.created_at`, kind: 'number' },
+	seatedFromWaitingListAt: { expr: sql`wl.assigned_at`, kind: 'number' },
+	onWaitingList: { expr: sql`(wl.id is not null and not wl.assigned)`, kind: 'bool' },
 	hasOpenIssue: {
 		expr: sql`(reg.accepted and reg.role <> 'TEAM_MEMBER' and (
 			coalesce(s.payment_status::text, 'PENDING') <> 'DONE'
@@ -201,14 +205,15 @@ function orderOf(sort: ParticipantsPageQuery['sort']) {
 /**
  * Every registration of the conference as one row: the person, how they take part, whether seated.
  * Delegates, singles and supervisors name their conference and person through their
- * `conference_participant` (`p`); a supervisor is seated once someone they supervise is.
+ * `conference_participant` (`p`); a supervisor is seated once someone they supervise is. People
+ * still waiting on the waiting list without any registration are rows too (`WAITING_LIST`).
  */
 function registrations(conferenceId: string) {
 	const seated = sql`(d.assigned_role_id is not null)`;
 	// a nation role has no name of its own, so `dr.name` is the non-state actor's
 	return sql`
 		select p.user_id, 'DELEGATION_MEMBER' as role, dr.nation_alpha3_code as nation_code,
-			dr.name as nsa_name, com.name as committee, d.school as school,
+			dr.name as nsa_name, com.name as committee, (select sc.name from school sc where sc.id = d.school_id) as school,
 			dm.is_head_delegate as is_head_delegate, null::text as assigned_role_name,
 			null::text as team_role, null::boolean as plans_own_attendance, ${seated} as accepted
 		from delegation_member dm
@@ -218,7 +223,8 @@ function registrations(conferenceId: string) {
 		left join committee com on com.id = dm.assigned_committee_id
 		where p.conference_id = ${conferenceId}
 		union all
-		select p.user_id, 'SUPERVISOR', null, null, null, null, null, null, null,
+		select p.user_id, 'SUPERVISOR', null, null, null,
+			(select sc.name from school sc where sc.id = cs.school_id), null, null, null,
 			cs.plans_own_attendence_at_conference,
 			(exists (
 				select 1 from supervision j
@@ -234,7 +240,7 @@ function registrations(conferenceId: string) {
 		join conference_participant p on p.id = cs.conference_participant_id
 		where p.conference_id = ${conferenceId}
 		union all
-		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, sp.school, null,
+		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, (select sc.name from school sc where sc.id = sp.school_id), null,
 			role.name, null, null, sp.assigned_role_id is not null
 		from single_participant sp
 		join conference_participant p on p.id = sp.conference_participant_id
@@ -245,6 +251,19 @@ function registrations(conferenceId: string) {
 			tm.role::text, null, true
 		from team_member tm
 		where tm.conference_id = ${conferenceId}
+		union all
+		select w.user_id, 'WAITING_LIST', null, null, null,
+			(select sc.name from school sc where sc.id = w.school_id), null, null, null, null, false
+		from waiting_list_entry w
+		where w.conference_id = ${conferenceId} and not w.assigned
+			and not exists (
+				select 1 from conference_participant p
+				where p.user_id = w.user_id and p.conference_id = w.conference_id and (
+					exists (select 1 from delegation_member dm where dm.conference_participant_id = p.id)
+					or exists (select 1 from single_participant sp where sp.conference_participant_id = p.id)
+					or exists (select 1 from conference_supervisor cs where cs.conference_participant_id = p.id)
+				)
+			)
 	`;
 }
 
@@ -281,6 +300,8 @@ function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 		join conference c on c.id = ${args.conferenceId}
 		left join conference_participant s
 			on s.user_id = reg.user_id and s.conference_id = ${args.conferenceId}
+		left join waiting_list_entry wl
+			on wl.user_id = reg.user_id and wl.conference_id = ${args.conferenceId}
 		${conditions.length > 0 ? sql`where ${sql.join(conditions, sql` and `)}` : sql``}
 	`;
 	return { from, orders };

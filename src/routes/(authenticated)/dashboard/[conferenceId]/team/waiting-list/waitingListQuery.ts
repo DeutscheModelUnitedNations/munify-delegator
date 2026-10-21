@@ -1,9 +1,9 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 import type {
 	WaitinglistentryOrderInputArgument,
 	WaitinglistentryWhereInputArgument
-} from '$lib/api/rumbleClient/client';
-import type { TableState } from '$lib/components/tanStackTable/tableState.svelte';
+} from '#lib/api/rumbleClient/client.js';
+import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 import {
 	allOf,
 	asCount,
@@ -15,9 +15,9 @@ import {
 	pageOf,
 	rangeFilter,
 	stringFilter
-} from '$lib/components/tanStackTable/serverQuery';
-import { matchingUserIds } from '$lib/components/tanStackTable/matchingUsers';
-import { birthdayBoundsForAge } from '$lib/helpers/ageChecker';
+} from '#lib/components/tanStackTable/serverQuery.js';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
+import { birthdayBoundsForAge } from '#lib/helpers/ageChecker.js';
 
 /** The names of the columns the user can filter by text, and where their value lives. */
 const userTextColumns = {
@@ -50,11 +50,17 @@ function userTextWhere(filters: Map<string, unknown>) {
 	});
 }
 
+/** What the toolbar toggles leave out: hidden entries, and entries that already got a seat. */
+export interface WaitingListToggles {
+	hideHidden: boolean;
+	showSeated: boolean;
+}
+
 /** The entries the table's search and filters leave, as a filter for the backend. */
 export function waitingListWhere(
 	conferenceId: string,
 	state: Pick<TableState, 'columnFilters' | 'search'>,
-	hideHidden: boolean,
+	toggles: WaitingListToggles,
 	startConference: Date | string | null | undefined,
 	userIds: string[] | undefined
 ): WaitinglistentryWhereInputArgument {
@@ -62,9 +68,9 @@ export function waitingListWhere(
 	const school = stringFilter(filters.get('school'));
 	return {
 		conferenceId: { eq: conferenceId },
-		assigned: { eq: false },
-		...hiddenWhere(booleanFilter(filters.get('hidden')), hideHidden),
-		...(school ? { school } : {}),
+		...(toggles.showSeated ? {} : { assigned: { eq: false } }),
+		...hiddenWhere(booleanFilter(filters.get('hidden')), toggles.hideHidden),
+		...(school ? { school: { name: school } } : {}),
 		...allOf([
 			...userTextWhere(filters),
 			...birthdayWhere(filters.get('conferenceAge'), startConference),
@@ -79,7 +85,7 @@ function searchMatches(text: string, userIds: string[]): WaitinglistentryWhereIn
 	return {
 		OR: [
 			{ userId: { in: userIds } },
-			{ school: like },
+			{ school: { name: like } },
 			{ motivation: like },
 			{ experience: like },
 			{ requests: like }
@@ -90,19 +96,24 @@ function searchMatches(text: string, userIds: string[]): WaitinglistentryWhereIn
 function listEntries(
 	conferenceId: string,
 	state: TableState,
-	hideHidden: boolean,
+	toggles: WaitingListToggles,
 	startConference: Date | string | null | undefined,
 	userIds: string[] | undefined,
 	paging: { limit: number; offset: number }
 ) {
 	return client.liveQuery.waitingListEntries({
 		__args: {
-			where: waitingListWhere(conferenceId, state, hideHidden, startConference, userIds),
+			where: waitingListWhere(conferenceId, state, toggles, startConference, userIds),
 			orderBy: orderFrom<WaitinglistentryOrderInputArgument>(
 				state.sorting,
 				{
+					// the signup time is the place on the list
 					createdAt: (direction) => ({ createdAt: direction }),
-					school: (direction) => ({ school: direction }),
+					position: (direction) => ({ createdAt: direction }),
+					assignedAt: (direction) => ({ assignedAt: direction }),
+					// the backend orders by the entry's own columns only: this groups the entries of
+					// one school together rather than sorting them by name
+					school: (direction) => ({ schoolId: direction }),
 					hidden: (direction) => ({ hidden: direction })
 				},
 				{ id: 'asc' }
@@ -120,28 +131,49 @@ function listEntries(
 			birthday: true,
 			conferenceParticipationsCount: true
 		},
-		school: true,
+		school: { name: true },
 		experience: true,
 		motivation: true,
 		requests: true,
 		hidden: true,
+		assigned: true,
+		assignedAt: true,
 		createdAt: true
 	});
 }
 
-/** One page of the entries still waiting, searched, filtered and ordered by the backend. */
+/**
+ * Each still waiting, visible entry's place on the list: first come, first served. Only the ids
+ * are read, so this stays cheap however long the list is.
+ */
+export async function fetchWaitingListPositions(conferenceId: string) {
+	const entries = await client.liveQuery.waitingListEntries({
+		__args: {
+			where: {
+				conferenceId: { eq: conferenceId },
+				assigned: { eq: false },
+				hidden: { eq: false }
+			},
+			orderBy: { createdAt: 'asc', id: 'asc' }
+		},
+		id: true
+	});
+	return entries;
+}
+
+/** One page of the entries (by default those still waiting), searched, filtered and ordered by the backend. */
 export async function fetchWaitingListPage(
 	conferenceId: string,
 	state: TableState,
-	hideHidden: boolean,
+	toggles: WaitingListToggles,
 	startConference: Date | string | null | undefined
 ) {
 	const userIds = await matchingUserIds(state.search);
 	const [entries, total] = await Promise.all([
-		listEntries(conferenceId, state, hideHidden, startConference, userIds, pageArgs(state)),
+		listEntries(conferenceId, state, toggles, startConference, userIds, pageArgs(state)),
 		client.liveQuery.waitingListEntriesCount({
 			__args: {
-				where: waitingListWhere(conferenceId, state, hideHidden, startConference, userIds)
+				where: waitingListWhere(conferenceId, state, toggles, startConference, userIds)
 			}
 		})
 	]);
@@ -152,11 +184,11 @@ export async function fetchWaitingListPage(
 export async function fetchAllWaitingListEntries(
 	conferenceId: string,
 	state: TableState,
-	hideHidden: boolean,
+	toggles: WaitingListToggles,
 	startConference: Date | string | null | undefined
 ) {
 	const userIds = await matchingUserIds(state.search);
 	return fetchEveryRow((paging) =>
-		listEntries(conferenceId, state, hideHidden, startConference, userIds, paging)
+		listEntries(conferenceId, state, toggles, startConference, userIds, paging)
 	);
 }

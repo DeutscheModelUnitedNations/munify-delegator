@@ -34,7 +34,7 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
  */
 function applications(conferenceId: string): SQL {
 	return sql`
-		select d.id, 'delegation'::text as kind, 0 as kind_rank, d.school, d.member_count as size,
+		select d.id, 'delegation'::text as kind, 0 as kind_rank, (select sc.name from school sc where sc.id = d.school_id) as school, d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
 			coalesce(r.disqualified, false) as disqualified, r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
@@ -45,7 +45,7 @@ function applications(conferenceId: string): SQL {
 		left join assignment_review r on r.delegation_id = d.id
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
-		select s.id, 'single'::text, 1, s.school, 1,
+		select s.id, 'single'::text, 1, (select sc.name from school sc where sc.id = s.school_id), 1,
 			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false), r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
 				when r.evaluation is not null then 'rated'

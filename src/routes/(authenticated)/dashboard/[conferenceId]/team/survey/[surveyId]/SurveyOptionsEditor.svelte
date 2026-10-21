@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import SurveyOptionFields from './SurveyOptionFields.svelte';
 
 	interface Props {

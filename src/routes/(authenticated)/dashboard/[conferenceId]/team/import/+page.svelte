@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { readSelectedTextFile } from '$lib/helpers/readSelectedTextFile';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { readSelectedTextFile } from '#lib/helpers/readSelectedTextFile.js';
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import Section from '../helper/Section.svelte';
-	import { renderComponent } from '$lib/components/tanStackTable';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import { renderComponent } from '#lib/components/tanStackTable/index.js';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import RepresentationBadge from './RepresentationBadge.svelte';
 	import { toast } from 'svelte-sonner';
-	import Modal from '$lib/components/Modal.svelte';
-	import { getLocale } from '$lib/paraglide/runtime';
+	import Modal from '#lib/components/Modal.svelte';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -21,12 +21,7 @@
 
 	interface CHASECommitteeMember {
 		id: string;
-		user:
-			| {
-					userEmail: string;
-			  }
-			| null
-			| undefined;
+		user: { userEmail: string } | null | undefined;
 		committeeId: string;
 		representation: {
 			id: string;
@@ -75,6 +70,7 @@
 	let presentUsers = $derived(users?.filter((x) => x.attendancePercentage >= threshold));
 	let absentUsers = $derived(users?.filter((x) => x.attendancePercentage < threshold));
 	let selectedUser = $state<NonNullable<typeof presentUsers>[number] | undefined>(undefined);
+
 	let selectedUserTimestamps = $derived(
 		[
 			...(parsedUsers?.find((u) => u.user?.userEmail === selectedUser?.email)
@@ -240,7 +236,7 @@
 {#snippet gotoUser()}
 	<a
 		href={resolve(
-			`/dashboard/${params.conferenceId}/team/participants?selected=${selectedUser?.email}`
+			`dashboard/${params.conferenceId}/team/participants?selected=${selectedUser?.email}`
 		)}
 		target="_blank"
 	>

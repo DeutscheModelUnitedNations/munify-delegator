@@ -86,6 +86,18 @@ const mailSync = defineCommand({
 	}
 });
 
+const sendEmails = defineCommand({
+	meta: {
+		description: 'Send the automatic emails that are due (asks the app to, it renders them)'
+	},
+	async run() {
+		const { runSendEmails } = await import('./sendEmails');
+		console.info('Starting send-emails job');
+		await runSendEmails();
+		process.exit(0);
+	}
+});
+
 const main = defineCommand({
 	meta: {
 		name: 'delegator-jobs',
@@ -95,7 +107,8 @@ const main = defineCommand({
 		'file-cleanup': fileCleanup,
 		'invitation-cleanup': invitationCleanup,
 		'mail-sync': mailSync,
-		'refresh-statistics': refreshStatistics
+		'refresh-statistics': refreshStatistics,
+		'send-emails': sendEmails
 	}
 });
 

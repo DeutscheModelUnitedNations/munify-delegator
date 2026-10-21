@@ -3,7 +3,7 @@ import { db } from '$api/db/db';
 import type { Context } from '$api/context';
 import { abilityBuilder } from '$api/rumble';
 import { assertTeamRole, systemAdmin, userId } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 
 // A stored file is reached through the relation of the row holding it (`conference.logoFile`,

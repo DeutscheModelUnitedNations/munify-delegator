@@ -3,12 +3,12 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
-	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import Form from '$lib/components/form/Form.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import Form from '#lib/components/form/Form.svelte';
+	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
+	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import { makeApplicationForm, type ApplicationAnswers } from '../../applicationForm';
 
 	/**
@@ -21,12 +21,20 @@
 		save: (answers: ApplicationAnswers) => Promise<unknown>;
 		disabled: boolean;
 		showSubmitButton: boolean;
+		schoolLabel: string;
 		motivationLabel: string;
 		experienceLabel: string;
 	}
 
-	let { initial, save, disabled, showSubmitButton, motivationLabel, experienceLabel }: Props =
-		$props();
+	let {
+		initial,
+		save,
+		disabled,
+		showSubmitButton,
+		schoolLabel,
+		motivationLabel,
+		experienceLabel
+	}: Props = $props();
 
 	const form = superForm(makeApplicationForm(untrack(() => initial)), {
 		SPA: true,
@@ -47,12 +55,12 @@
 
 <Form {form} {showSubmitButton}>
 	<div class="flex flex-col gap-2">
-		<FormTextInput
-			name="school"
-			label={m.whichSchoolDoesYourDelegationComeFrom()}
+		<SchoolPicker
 			{form}
-			placeholder={m.answerHere()}
-			type="text"
+			name="schoolName"
+			idName="schoolId"
+			label={schoolLabel}
+			description={m.schoolPickerDescription()}
 			{disabled}
 		/>
 		<FormTextArea

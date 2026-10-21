@@ -1,4 +1,5 @@
 import { db } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '$api/rumble';
 import {
 	assignCommittees,
@@ -112,6 +113,7 @@ schemaBuilder.mutationFields((t) => ({
 			waitingListEntryPubsub.updated();
 			// An existing single registration for the same person is cleared out of the way.
 			singleParticipantPubsub.removed();
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.delegationMember
 				.findFirst(

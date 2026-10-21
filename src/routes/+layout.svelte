@@ -1,24 +1,24 @@
 <script lang="ts">
-	import DialogHost from '$lib/components/DialogHost.svelte';
-	import CookieBanner from '$lib/components/CookieBanner.svelte';
-	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
+	import DialogHost from '#lib/components/DialogHost.svelte';
+	import CookieBanner from '#lib/components/CookieBanner.svelte';
+	import MaintenanceBanner from '#lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-sonner';
 	import Inspect from 'svelte-inspect-value';
-	import { locales, localizeHref } from '$lib/paraglide/runtime';
+	import { locales, localizeHref } from '#lib/paraglide/runtime.js';
 
-	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
-	// import CookieBanner from '$lib/components/CookieBanner.svelte';
+	// import GlobalErrorToast from '#lib/components/ErrorToast.svelte';
+	// import CookieBanner from '#lib/components/CookieBanner.svelte';
 
 	// global stylesheet
 	import '../app.css';
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
-	import { dev } from '$app/environment';
+	import { dev } from '$app/env';
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
-	import DevTools from '$lib/components/DevTools.svelte';
+	import DevTools from '#lib/components/DevTools.svelte';
 	import { onMount } from 'svelte';
 
 	let { children }: LayoutProps = $props();

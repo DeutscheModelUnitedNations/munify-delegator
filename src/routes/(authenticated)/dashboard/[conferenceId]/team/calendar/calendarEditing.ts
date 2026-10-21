@@ -1,4 +1,4 @@
-import { calendarDayExportSchema } from '$lib/schemata/calendarDayExport';
+import { calendarDayExportSchema } from '#lib/schemata/calendarDayExport.js';
 import { dateAtMinutes } from './calendarGrid';
 
 /** Pure decisions behind the calendar management tabs. */

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import {
 	agendaItemOptions,
 	newPaperAgendaItemId,

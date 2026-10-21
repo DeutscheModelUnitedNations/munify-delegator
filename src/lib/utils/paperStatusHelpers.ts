@@ -1,4 +1,4 @@
-import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
+import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
 
 /**
  * Returns the appropriate DaisyUI badge class for a paper status

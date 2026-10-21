@@ -7,7 +7,7 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 export function registerCalendarEntryAbilities() {

@@ -2,7 +2,7 @@ import type { Context } from '$api/context';
 import { db } from '$api/db/db';
 import { abilityBuilder } from '$api/rumble';
 import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '$api/services/errors/apiError';
 

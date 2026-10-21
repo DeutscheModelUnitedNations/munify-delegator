@@ -3,7 +3,7 @@ import {
 	columnIdOf,
 	type ColumnFilter,
 	type ManagedColumn
-} from '$lib/components/tanStackTable/managedTable';
+} from '#lib/components/tanStackTable/managedTable.js';
 
 /** What the drawers need to know of a table column. */
 interface DrawerColumn {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/**
 	 * Covers its (relatively positioned) parent while a change to it is on its way: a card being

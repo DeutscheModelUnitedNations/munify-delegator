@@ -1,5 +1,5 @@
 import { object, query } from '$api/rumble';
-import { hashEditorContent } from '$lib/components/paper/editor/contentHash';
+import { hashEditorContent } from '#lib/components/paper/editor/contentHash.js';
 import { registerPaperVersionAbilities } from './paperVersionPermissions';
 
 registerPaperVersionAbilities();

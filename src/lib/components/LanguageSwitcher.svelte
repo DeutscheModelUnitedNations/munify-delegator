@@ -1,5 +1,5 @@
 <script>
-	import { locales, getLocale, setLocale } from '$lib/paraglide/runtime';
+	import { locales, getLocale, setLocale } from '#lib/paraglide/runtime.js';
 	import Flag from './Flag.svelte';
 
 	const alpha2CodeLookup = {

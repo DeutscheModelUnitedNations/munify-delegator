@@ -10,7 +10,7 @@ import {
 	where
 } from '$api/services/authHelper';
 import { fetchUserParticipations } from '$api/services/registration/participation';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**

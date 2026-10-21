@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	interface Props {
 		headline: string;
 		/** The rule that decides what is listed, in words. */

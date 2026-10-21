@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { m } from '$lib/paraglide/messages';
-	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
-	import { entryCodeLength } from '$api/services/registration/entryCodeGenerator';
+	import { m } from '#lib/paraglide/messages.js';
+	import DelegationPreview from '#lib/components/DelegationPreview.svelte';
+	import { entryCodeLength } from '../../../../../api/services/registration/entryCodeGenerator';
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';
 

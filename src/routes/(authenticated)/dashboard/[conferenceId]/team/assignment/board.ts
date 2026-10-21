@@ -3,9 +3,9 @@ import {
 	type AssignmentreviewWhereInputArgument,
 	type DelegationWhereInputArgument,
 	type SingleparticipantWhereInputArgument
-} from '$lib/api/rumbleClient/client';
-import { liveSnapshot } from '$lib/api/liveSnapshot';
-import type { BoardReviewRow } from '$lib/assignment/board';
+} from '#lib/api/rumbleClient/client.js';
+import { liveSnapshot } from '#lib/api/liveSnapshot.js';
+import type { BoardReviewRow } from '#lib/assignment/board.js';
 
 /*
  * The assignment tabs never read a whole conference: it can hold tens of thousands of
@@ -20,13 +20,15 @@ export const POOL_PAGE = 250;
 const inConference = (conferenceId: string) => ({ conferenceId: { eq: conferenceId } });
 
 /** The same for single participants, which reach their conference through their participant row. */
-const singlesInConference = (conferenceId: string) => ({ conference: { id: { eq: conferenceId } } });
+const singlesInConference = (conferenceId: string) => ({
+	conference: { id: { eq: conferenceId } }
+});
 
 /** What the board shows of a delegation. */
 const delegationCard = {
 	id: true,
 	applied: true,
-	school: true,
+	school: { id: true, name: true },
 	assignedRoleId: true,
 	members: {
 		id: true,
@@ -44,7 +46,7 @@ const delegationCard = {
 const singleCard = {
 	id: true,
 	applied: true,
-	school: true,
+	school: { id: true, name: true },
 	assignedRoleId: true,
 	user: { givenName: true, familyName: true },
 	appliedForRoles: { id: true, name: true }
@@ -491,4 +493,9 @@ export async function fetchAssignmentRoles(conferenceId: string) {
 		})
 	]);
 	return { committees, nonStateActors, customRoles };
+}
+
+/** How many seats one school may get (`null` for no limit), live. */
+export function fetchSchoolSeatLimit(conferenceId: string) {
+	return client.liveQuery.conference({ __args: { id: conferenceId }, maxSeatsPerSchool: true });
 }

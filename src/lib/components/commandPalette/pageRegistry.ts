@@ -1,8 +1,8 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
-import { m } from '$lib/paraglide/messages';
-import { teamRoutesFor } from '$lib/data/teamRoutes';
-import type { TeamAccess } from '$lib/helpers/teamAccess';
+import { m } from '#lib/paraglide/messages.js';
+import { teamRoutesFor } from '#lib/data/teamRoutes.js';
+import type { TeamAccess } from '#lib/helpers/teamAccess.js';
 
 export interface PageEntry {
 	id: string;
@@ -34,7 +34,7 @@ export function getAllPages(
 		id: route.id,
 		title: route.title,
 		icon: route.icon,
-		href: resolve(`/dashboard/${conferenceId}/${route.path}`),
+		href: resolve(`dashboard/${conferenceId}/${route.path}`),
 		category: route.category,
 		keywords: [...route.keywords]
 	}));

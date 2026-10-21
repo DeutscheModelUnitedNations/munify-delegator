@@ -1,8 +1,8 @@
 <script lang="ts" generics="S">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import Kbd from '$lib/components/Kbd.svelte';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import Kbd from '#lib/components/Kbd.svelte';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import type { ScannedUserData, ScannedUserFlow } from './scannedUserFlow.svelte';
 
 	interface Props {

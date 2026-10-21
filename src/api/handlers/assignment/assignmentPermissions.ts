@@ -11,9 +11,9 @@ import {
 	where
 } from '$api/services/authHelper';
 import { apiError } from '$api/services/errors/apiError';
-import type { reviewRow } from '$lib/assignment/review';
-import type { Target } from '$lib/assignment/state';
-import { m } from '$lib/paraglide/messages';
+import type { reviewRow } from '#lib/assignment/review.js';
+import type { Target } from '#lib/assignment/state.js';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 /*

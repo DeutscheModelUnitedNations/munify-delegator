@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Modal from '$lib/components/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import Modal from '#lib/components/Modal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { qr } from '@svelte-put/qr/svg';
 	import { toast } from 'svelte-sonner';
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as Sentry from '@sentry/sveltekit';
-import { hasErrorCode } from '$lib/api/errorCodes';
+import { hasErrorCode } from '#lib/api/errorCodes.js';
 import { CombinedError } from '@urql/core';
 import {
 	describeEmailConflict,

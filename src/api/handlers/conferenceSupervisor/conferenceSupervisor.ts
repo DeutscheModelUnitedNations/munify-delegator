@@ -1,4 +1,5 @@
 import { db, schema } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import {
 	connectParticipantToSupervisor,
@@ -20,8 +21,10 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
+	schoolPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
+import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
 
 registerConferenceSupervisorAbilities();
 
@@ -35,7 +38,10 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceId: t.arg.id({ required: true }),
 			/** Omitted when someone registers themselves; set when a team member assigns another user. */
 			userId: t.arg.id(),
-			plansOwnAttendenceAtConference: t.arg.boolean()
+			plansOwnAttendenceAtConference: t.arg.boolean(),
+			/** An existing school, or `schoolName` to find or create one; neither for no school. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
@@ -44,10 +50,13 @@ schemaBuilder.mutationFields((t) => ({
 			const createdId = await registerSupervisor({
 				conferenceId: args.conferenceId,
 				subjectId,
-				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
+				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
+				schoolId: args.schoolId,
+				schoolName: args.schoolName
 			});
 
 			conferenceSupervisorPubsub.created();
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
 				.findFirst(
@@ -65,15 +74,23 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceSupervisorRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			plansOwnAttendenceAtConference: t.arg.boolean()
+			plansOwnAttendenceAtConference: t.arg.boolean(),
+			/** Both null removes the school; both left out keeps it. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const where = await updatableConferenceSupervisor(ctx, args.id);
 			await db
 				.update(schema.conferenceSupervisor)
-				.set({ plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined })
-				.where(await updatableConferenceSupervisor(ctx, args.id));
+				.set({
+					plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined,
+					schoolId: await resolveSchoolChoice(args)
+				})
+				.where(where);
 
 			conferenceSupervisorPubsub.updated(args.id);
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
 				.findFirst(
@@ -114,6 +131,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (linked.singleParticipantId) {
 				singleParticipantPubsub.updated(linked.singleParticipantId);
 			}
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.conferenceSupervisor
 				.findFirst(

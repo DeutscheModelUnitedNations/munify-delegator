@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schemaInternal from './schema';
 import { relations } from './relations';
 import { DATABASE_URL } from '$app/env/private';
-import { building } from '$app/environment';
+import { building } from '$app/env';
 
 const conf = {
 	relations,

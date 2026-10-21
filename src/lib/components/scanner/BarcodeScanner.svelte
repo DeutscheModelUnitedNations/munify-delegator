@@ -3,8 +3,8 @@
 	import { onDestroy, onMount, tick, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { readAimIdentifier } from './aimIdentifier';
-	import { createPersistedState } from '$lib/state/persistedState.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import ScanSearchBar from './ScanSearchBar.svelte';
 	import ScanSuggestions from './ScanSuggestions.svelte';
 	import ScanViewfinder from './ScanViewfinder.svelte';

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
-	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
-	import { client } from '$lib/api/rumbleClient/client';
-	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import StatusCard from '$lib/components/statusCubes/StatusCard.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import DashboardLinksGrid from '#lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import StatusCard from '#lib/components/statusCubes/StatusCard.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		conferenceId: string;

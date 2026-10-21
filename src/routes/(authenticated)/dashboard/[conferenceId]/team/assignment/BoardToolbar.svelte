@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** Which group size and role seat count the board shows, and the bulk actions for them. */
 	interface Props {

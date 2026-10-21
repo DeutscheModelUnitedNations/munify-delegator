@@ -1,6 +1,6 @@
-import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
-import { getRegistrationStatus } from '$lib/utils/registrationStatus';
-import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
+import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
+import { getWaitingListStatus } from '#lib/helpers/waitingListStatus.js';
 
 /** The fields of a conference that decide whether, and how, people can still register. */
 export interface ConferenceRegistrationFields {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TableSizeControl from './SizeControl.svelte';
 	import ZebraControl from './ZebraControl.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 
 	let confirmDialogOpen = $state(false);
 </script>

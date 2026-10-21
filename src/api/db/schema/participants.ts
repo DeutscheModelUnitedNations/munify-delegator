@@ -9,6 +9,7 @@ import {
 	type UpdateDeleteAction
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
+import { schoolRef } from './schools';
 import { userRef } from './users';
 import { conferenceRef } from './conference';
 
@@ -92,7 +93,9 @@ export const conferenceSupervisor = snakeCase.table(
 		/** The supervisor's own part in the conference; it says which conference and who. */
 		conferenceParticipantId: participantRef(),
 		plansOwnAttendenceAtConference: boolean().notNull(),
-		connectionCode: text().notNull()
+		connectionCode: text().notNull(),
+		/** The school the supervisor comes from, if any. */
+		schoolId: schoolRef()
 	},
 	(table) => [
 		// Unique across conferences, so a code alone names its supervisor.

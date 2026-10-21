@@ -13,12 +13,10 @@ const open = {
 };
 
 describe('applicationTextsComplete', () => {
-	test('needs all three texts', () => {
-		expect(applicationTextsComplete({ school: 'a', motivation: 'b', experience: 'c' })).toBe(true);
-		expect(applicationTextsComplete({ school: 'a', motivation: '', experience: 'c' })).toBe(false);
-		expect(applicationTextsComplete({ school: 'a', motivation: 'b', experience: null })).toBe(
-			false
-		);
+	test('needs motivation and experience, but no school', () => {
+		expect(applicationTextsComplete({ motivation: 'b', experience: 'c' })).toBe(true);
+		expect(applicationTextsComplete({ motivation: '', experience: 'c' })).toBe(false);
+		expect(applicationTextsComplete({ motivation: 'b', experience: null })).toBe(false);
 	});
 });
 

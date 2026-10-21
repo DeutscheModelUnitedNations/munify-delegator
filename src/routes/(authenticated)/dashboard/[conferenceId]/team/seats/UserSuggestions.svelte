@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { UserPreview } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
+	import type { UserPreview } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 
 	interface Props {
 		suggestions: UserPreview[];

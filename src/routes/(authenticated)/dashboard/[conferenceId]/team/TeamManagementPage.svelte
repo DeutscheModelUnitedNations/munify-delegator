@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { m } from '$lib/paraglide/messages';
-	import Tabs from '$lib/components/tabs/Tabs.svelte';
-	import Tab from '$lib/components/tabs/Tab.svelte';
-	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import Tab from '#lib/components/tabs/Tab.svelte';
+	import InviteTeamMembersModal from '#lib/components/teamManagement/InviteTeamMembersModal.svelte';
 
 	/**
 	 * A team management page: the Members / Invitations tabs with the invite button, and the

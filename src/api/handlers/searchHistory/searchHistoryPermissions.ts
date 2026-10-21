@@ -1,7 +1,7 @@
 import { abilityBuilder } from '$api/rumble';
 import { assertTeamRole, systemAdmin, userId, where } from '$api/services/authHelper';
 import type { Context } from '$api/context';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 export function registerSearchHistoryAbilities() {

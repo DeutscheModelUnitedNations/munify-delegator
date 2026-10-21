@@ -1,4 +1,4 @@
-import { getLocale } from '$lib/paraglide/runtime';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import {
 	autoFilterFns,
 	autoSortFns,
@@ -19,7 +19,7 @@ import {
 	type ColumnFiltersState,
 	type ColumnVisibilityState,
 	type SortingState
-} from '$lib/components/tanStackTable';
+} from '#lib/components/tanStackTable/index.js';
 import type { FilterType } from './filters';
 
 /** Everything `ManagedTable` uses, and the row models that implement it. */
@@ -151,7 +151,7 @@ export function tableExport<TData extends object>(
 export function soleFilteredRow<R>(
 	rows: readonly R[],
 	queryParamKey: string | undefined,
-	searchParams: URLSearchParams
+	searchParams: Pick<URLSearchParams, 'get'>
 ): R | undefined {
 	if (rows.length !== 1 || !queryParamKey) return undefined;
 	return searchParams.get(queryParamKey) ? rows[0] : undefined;

@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { toast } from 'svelte-sonner';
 import { postalParticipant, postalRecipient } from './postalRegistrationData';
 import {

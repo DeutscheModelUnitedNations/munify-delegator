@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import ActionModal from './ActionModal.svelte';
 
 	/** Asks before deleting something; render it inside an `{#if}` while the question is open. */

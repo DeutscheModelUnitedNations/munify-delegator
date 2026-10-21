@@ -2,9 +2,9 @@ import {
 	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES
-} from '$lib/helpers/teamRoles';
-import { MAX_RESOLUTION_FILE_SIZE } from '$lib/helpers/resolutionUpload';
-import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
+} from '#lib/helpers/teamRoles.js';
+import { MAX_RESOLUTION_FILE_SIZE } from '#lib/helpers/resolutionUpload.js';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
 import { filePurpose } from './storageClient';
 
 /**

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import InfoGrid from '$lib/components/infoGrid';
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import formatNames from '$lib/helpers/formatNames';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import InfoGrid from '#lib/components/infoGrid/index.js';
+	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
+	import formatNames from '#lib/helpers/formatNames.js';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';
@@ -23,7 +23,7 @@
 			client.liveQuery.singleParticipant({
 				__args: { id: singleParticipantId },
 				id: true,
-				school: true,
+				school: { name: true },
 				motivation: true,
 				experience: true,
 				applied: true,
@@ -76,7 +76,7 @@
 			{/if}
 			{#if isStateParticipantRegistration}
 				<ApplicationDetailsEntries
-					school={singleParticipant.school}
+					school={singleParticipant.school?.name ?? null}
 					experience={singleParticipant.experience}
 					motivation={singleParticipant.motivation}
 				/>

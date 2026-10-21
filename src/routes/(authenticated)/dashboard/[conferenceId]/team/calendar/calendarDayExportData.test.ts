@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { calendarDayExportSchema } from '$lib/schemata/calendarDayExport';
+import { calendarDayExportSchema } from '#lib/schemata/calendarDayExport.js';
 import { toCalendarDayExport, type CalendarDayExportSource } from './calendarDayExportData';
 
 describe('toCalendarDayExport', () => {

@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { db } from '$api/db/db';
 import { abilityBuilder, type ApiContext } from '$api/rumble';
 import {

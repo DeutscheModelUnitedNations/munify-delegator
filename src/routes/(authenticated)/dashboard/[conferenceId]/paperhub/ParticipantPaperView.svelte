@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import PaperEnum from '$lib/components/paper/paperEnum';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import PaperEnum from '#lib/components/paper/paperEnum/index.js';
 	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
-	import { client, type PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import { client, type PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 	import type { ResolvedPathname } from '$app/types';
 
 	interface Props {
@@ -43,7 +43,9 @@
 		class="card w-full bg-base-100 border border-base-content/10 rounded-box flex flex-col items-start p-5 gap-3 transition-colors hover:border-primary/40"
 	>
 		<PaperEnum.Type type={paperType} size="md" />
+
 		<p class="text-sm text-base-content/70 leading-relaxed grow">{description}</p>
+
 		<a class="btn btn-primary btn-sm mt-1" {href}>
 			<i class="fa-sharp-duotone fa-solid fa-plus"></i>
 			{m.paperCreateNew()}
@@ -90,7 +92,7 @@
 							</td>
 							<td class="align-middle">
 								<a
-									href={resolve(`/dashboard/${conferenceId}/paperhub/${paper.id}`)}
+									href={resolve(`dashboard/${conferenceId}/paperhub/${paper.id}`)}
 									class="btn btn-primary btn-sm"
 								>
 									{m.openPaper()}
@@ -113,21 +115,21 @@
 			{@render PaperTypeBlock(
 				'INTRODUCTION_PAPER',
 				m.paperTypeIntroductionPaperDescription(),
-				resolve(`/dashboard/${conferenceId}/paperhub/newPaper?type=INTRODUCTION_PAPER`)
+				resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=INTRODUCTION_PAPER`)
 			)}
 		{/if}
 
 		{@render PaperTypeBlock(
 			'POSITION_PAPER',
 			m.paperTypePositionPaperDescription(),
-			resolve(`/dashboard/${conferenceId}/paperhub/newPaper?type=POSITION_PAPER`)
+			resolve(`dashboard/${conferenceId}/paperhub/newPaper?type=POSITION_PAPER`)
 		)}
 
 		{#if !isNSA}
 			{@render PaperTypeBlock(
 				'WORKING_PAPER',
 				m.paperTypeWorkingPaperDescription(),
-				resolve(`/dashboard/${conferenceId}/paperhub/newResolution`)
+				resolve(`dashboard/${conferenceId}/paperhub/newResolution`)
 			)}
 		{/if}
 	</div>

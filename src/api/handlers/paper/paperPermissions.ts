@@ -13,7 +13,7 @@ import {
 	userId,
 	where
 } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '$api/services/errors/apiError';
 

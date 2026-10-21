@@ -1,14 +1,14 @@
-import { getLocale } from '$lib/paraglide/runtime';
-import { m } from '$lib/paraglide/messages';
-import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages.js';
+import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter.js';
 import {
 	translateGender,
 	translateTeamRole,
 	translateAdministrativeStatus,
 	translateParticipationRole,
 	translateFoodPreference
-} from '$lib/utils/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+} from '#lib/utils/enumTranslations.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type { ParticipantRow } from './types';
 
 function booleanText(value: boolean | null): string {
@@ -27,6 +27,10 @@ function text(value: string | null): string {
 
 function numberText(value: number | null): string {
 	return value !== null ? String(value) : '';
+}
+
+function dateText(value: Date | null): string {
+	return value ? new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium' }).format(value) : '';
 }
 
 /** Each exportable column as plain text, keyed by column id. */
@@ -60,6 +64,9 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 	assignedRoleName: (row) => text(row.assignedRoleName),
 	teamRole: (row) => (row.teamRole ? translateTeamRole(row.teamRole) : ''),
 	plansOwnAttendance: (row) => booleanText(row.plansOwnAttendance),
+	onWaitingList: (row) => booleanText(row.onWaitingList),
+	waitingListSince: (row) => dateText(row.waitingListSince),
+	seatedFromWaitingListAt: (row) => dateText(row.seatedFromWaitingListAt),
 	paymentStatus: (row) => statusText(row.paymentStatus),
 	postalRegistrationStatus: (row) => statusText(row.postalRegistrationStatus),
 	termsAndConditions: (row) => statusText(row.termsAndConditions),

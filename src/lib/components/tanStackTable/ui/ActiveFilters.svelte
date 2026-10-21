@@ -1,12 +1,12 @@
 <script lang="ts" generics="TData extends object">
-	import { m } from '$lib/paraglide/messages';
-	import type { ColumnFiltersState, Table } from '$lib/components/tanStackTable';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { ColumnFiltersState, Table } from '#lib/components/tanStackTable/index.js';
 	import {
 		columnHeaderOf,
 		columnIdOf,
 		type ManagedColumn,
 		type ManagedTableFeatures
-	} from '$lib/components/tanStackTable/managedTable';
+	} from '#lib/components/tanStackTable/managedTable.js';
 
 	/** One chip per active column filter, each removing its filter, and a button to drop them all. */
 	interface Props {

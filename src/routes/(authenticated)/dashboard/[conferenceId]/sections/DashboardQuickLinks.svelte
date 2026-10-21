@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '#lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '#lib/components/dashboard/DashboardLinkCard.svelte';
 	import {
 		getLinksForUserType,
 		type DashboardLinkContext,
 		type UserType
-	} from '$lib/data/dashboardLinks';
-	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
-	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	} from '#lib/data/dashboardLinks.js';
+	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import PhoneReadyHint from './PhoneReadyHint.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -57,6 +58,8 @@
 
 	const visibleLinks = $derived(getLinksForUserType(userType, linkContext));
 </script>
+
+<PhoneReadyHint {conferenceId} conferenceState={conference.state} />
 
 <DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
 	<DashboardLinksGrid>

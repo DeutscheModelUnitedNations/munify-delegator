@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
-import { m } from '$lib/paraglide/messages';
-import { fetchTeamAccess } from '$lib/api/teamAccess';
-import { isOnTeam } from '$lib/helpers/teamAccess';
-import { mayOpenTeamRoute, teamRouteForPath } from '$lib/data/teamRoutes';
+import { m } from '#lib/paraglide/messages.js';
+import { fetchTeamAccess } from '#lib/api/teamAccess.js';
+import { isOnTeam } from '#lib/helpers/teamAccess.js';
+import { mayOpenTeamRoute, teamRouteForPath } from '#lib/data/teamRoutes.js';
 
 /**
  * The one guard of the team area. Holding a privileged role in another conference grants nothing

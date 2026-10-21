@@ -1,29 +1,33 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
-	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import BooleanStatusWidget from '$lib/components/BooleanStatusWidget.svelte';
-	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
-	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
-	import ParticipantPaymentWidget from '$lib/components/ParticipantPaymentWidget.svelte';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import {
+		client,
+		type MediaconsentstatusEnum,
+		type Mutation
+	} from '#lib/api/rumbleClient/client.js';
+	import ParticipantStatusWidget from '#lib/components/ParticipantStatusWidget.svelte';
+	import BooleanStatusWidget from '#lib/components/BooleanStatusWidget.svelte';
+	import ParticipantStatusMediaWidget from '#lib/components/ParticipantStatusMediaWidget.svelte';
+	import ParticipantAssignedDocumentWidget from '#lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import AccessCardSection from '../AccessCardSection.svelte';
 	import AttendanceSection from '../AttendanceSection.svelte';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
-	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
-	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import GuardianConsentNotNeeded from '#lib/components/GuardianConsentNotNeeded.svelte';
 	import {
 		downloadPostalRegistrationDocuments,
 		fetchPostalRegistrationSources,
 		formatPostalParticipantName
-	} from '$lib/api/postalRegistrationSources';
+	} from '#lib/api/postalRegistrationSources.js';
 	import {
 		downloadCompleteCertificate,
 		type ParticipantData,
 		type RecipientData
-	} from '$lib/utils/pdfGenerator';
-	import formatNames from '$lib/helpers/formatNames';
+	} from '#lib/utils/pdfGenerator.js';
+	import formatNames from '#lib/helpers/formatNames.js';
 
 	interface Props {
 		userId: string;
@@ -147,7 +151,8 @@
 				client.query.getCertificateJWT({
 					__args: { conferenceId, userId },
 					jwt: true,
-					fullName: true
+					fullName: true,
+					sessions: { name: true, attended: true }
 				}),
 				client.query.user({ __args: { id: userId }, id: true, givenName: true, familyName: true })
 			]);
@@ -158,7 +163,14 @@
 			}
 
 			await downloadCompleteCertificate(
-				jwtData,
+				{
+					fullName: jwtData.fullName,
+					jwt: jwtData.jwt,
+					sessions: jwtData.sessions.map((session) => ({
+						name: session.name,
+						attended: session.attended
+					}))
+				},
 				conferenceData.certificateFile?.url,
 				`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 					givenNameFirst: false,

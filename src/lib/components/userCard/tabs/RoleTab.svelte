@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import Flag from '$lib/components/Flag.svelte';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import Flag from '#lib/components/Flag.svelte';
 	import NoAssignmentNotice from '../NoAssignmentNotice.svelte';
 	import QuotedText from '../QuotedText.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { userInConference } from '../userCardRoles';
 
 	interface Props {
@@ -25,7 +25,7 @@
 				__args: registrationOfUser,
 				id: true,
 				applied: true,
-				school: true,
+				school: { name: true },
 				motivation: true,
 				experience: true,
 				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
@@ -72,7 +72,7 @@
 		{#if participant.school}
 			<div class="mt-3 text-sm">
 				<span class="text-base-content/60">{m.schoolOrInstitution()}:</span>
-				<span>{participant.school}</span>
+				<span>{participant.school.name}</span>
 			</div>
 		{/if}
 	</div>

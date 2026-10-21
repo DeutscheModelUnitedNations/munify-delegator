@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { qr } from '@svelte-put/qr/svg';
 	import { onMount } from 'svelte';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 
 	interface Props {
 		/** Whose conference's emblem sits in the middle of the code. */

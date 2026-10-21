@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import AccentStripe from '$lib/components/AccentStripe.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import AccentStripe from '#lib/components/AccentStripe.svelte';
 
 	interface Props {
 		isAdmin: boolean;
@@ -18,7 +18,7 @@
 			<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
 		</div>
 		{#if isAdmin}
-			<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('/dashboard/create')}>
+			<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('dashboard/create')}>
 				<i class="fa-sharp-duotone fa-solid fa-plus text-2xl"></i>
 				{m.seedConference()}
 			</a>

@@ -1,6 +1,6 @@
 import { schema, type Transaction } from '$api/db/db';
 import { inArray } from 'drizzle-orm';
-import { roleSeats } from '$lib/helpers/conferenceRole';
+import { roleSeats } from '#lib/helpers/conferenceRole.js';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /**

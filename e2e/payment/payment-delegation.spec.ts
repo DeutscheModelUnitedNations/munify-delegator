@@ -23,7 +23,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 	await headPage.locator('a[href$="/create-delegation"]').click();
 	await headPage.waitForURL(/\/create-delegation$/);
 
-	const schoolInput = headPage.locator('input[name="school"]');
+	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
 		await headPage.getByRole('button', { name: /weiter|next/i }).click();
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });

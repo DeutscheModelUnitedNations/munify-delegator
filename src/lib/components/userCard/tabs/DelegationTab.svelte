@@ -1,19 +1,21 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import PersonName from '../PersonName.svelte';
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import NoAssignmentNotice from '../NoAssignmentNotice.svelte';
 	import QuotedText from '../QuotedText.svelte';
-	import { confirmDialog, promptDialog } from '$lib/state/dialogs.svelte';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import Flag from '$lib/components/Flag.svelte';
-	import CommitteeAssignmentModal from '$lib/components/registrationAdmin/CommitteeAssignmentModal.svelte';
-	import HeadDelegateModal from '$lib/components/registrationAdmin/HeadDelegateModal.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import SchoolChangeForm from '#lib/components/form/SchoolChangeForm.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import Flag from '#lib/components/Flag.svelte';
+	import CommitteeAssignmentModal from '#lib/components/registrationAdmin/CommitteeAssignmentModal.svelte';
+	import HeadDelegateModal from '#lib/components/registrationAdmin/HeadDelegateModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import codenmz from '$lib/helpers/codenamize';
-	import { splitRole } from '$lib/helpers/conferenceRole';
+	import codenmz from '#lib/helpers/codenamize.js';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		delegationId: string;
@@ -29,7 +31,7 @@
 			client.liveQuery.delegation({
 				__args: { id: delegationId },
 				id: true,
-				school: true,
+				school: { id: true, name: true },
 				entryCode: true,
 				applied: true,
 				motivation: true,
@@ -90,22 +92,18 @@
 		await promise;
 	}
 
-	/** Asks for a new school name and saves it; cancelling the prompt does nothing. */
-	async function changeSchool() {
-		const newSchool = await promptDialog({ text: m.enterNewSchoolName() });
-		if (!newSchool) return;
-		try {
-			const promise = client.mutate.updateDelegation({
-				__args: { id: delegationId, school: newSchool },
-				id: true,
-				school: true
-			});
-			toast.promise(promise, genericPromiseToastMessages);
-			await promise;
-		} catch (error) {
-			console.error('Failed to change school name:', error);
-		}
-	}
+	let changingSchool = $state(false);
+
+	/** Saves another school for the delegation: a known one, a new name, or none. */
+	const saveSchool = (choice: { schoolId?: string | null; schoolName?: string | null }) =>
+		client.mutate.updateDelegation({
+			__args: {
+				id: delegationId,
+				schoolId: choice.schoolId ?? null,
+				schoolName: choice.schoolName ?? null
+			},
+			id: true
+		});
 
 	/** Issues the delegation a new entry code after the user confirms it. */
 	async function rotateEntryCode() {
@@ -227,10 +225,10 @@
 		<div class="mt-3 flex flex-col gap-1 text-sm">
 			<div class="flex items-center gap-1">
 				<span class="text-base-content/60">{m.schoolOrInstitution()}:</span>
-				<span>{delegation.school ?? 'N/A'}</span>
+				<span>{delegation.school?.name ?? m.noSchoolGiven()}</span>
 				<button
 					class="btn btn-ghost btn-xs btn-square ml-1"
-					onclick={changeSchool}
+					onclick={() => (changingSchool = true)}
 					aria-label={m.a11yEditSchool()}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>
@@ -323,3 +321,12 @@
 	nationRoleId={assignedNation ? delegation.assignedRole?.id : null}
 	{conferenceId}
 />
+
+<Modal bind:open={changingSchool} title={m.changeSchool()}>
+	<SchoolChangeForm
+		current={delegation.school}
+		label={m.schoolOrInstitution()}
+		save={saveSchool}
+		onSaved={() => (changingSchool = false)}
+	/>
+</Modal>

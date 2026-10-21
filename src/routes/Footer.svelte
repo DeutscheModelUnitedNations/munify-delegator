@@ -1,9 +1,9 @@
 <script lang="ts">
-	import dmunLogo from '$assets/logo/dmun-lang.svg';
-	import dmunLogoDark from '$assets/logo/dmun-lang-darkmode.svg';
+	import dmunLogo from '#assets/logo/dmun-lang.svg';
+	import dmunLogoDark from '#assets/logo/dmun-lang-darkmode.svg';
 	import { PUBLIC_SHA, PUBLIC_VERSION } from '$app/env/public';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { resolve } from '$app/paths';
 </script>
 

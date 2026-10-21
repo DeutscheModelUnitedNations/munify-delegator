@@ -1,12 +1,14 @@
 <script lang="ts">
-	import Tab from '$lib/components/tabs/Tab.svelte';
-	import Tabs from '$lib/components/tabs/Tabs.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { customRoleRow } from './customRoles';
+	import Tab from '#lib/components/tabs/Tab.svelte';
+	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { PageProps } from './$types';
 	import { provideSeatPlanningParams } from './filters.svelte';
 	import HintsSidebar from './HintsSidebar.svelte';
 	import NonStateActorTable from './NonStateActorTable.svelte';
+	import CustomRoleTable from './CustomRoleTable.svelte';
 	import SeatMatrix from './SeatMatrix.svelte';
 	import { createSeatPlanner } from './seatPlanner.svelte';
 	import { createSizeLimitsStore } from './sizeLimits.svelte';
@@ -16,7 +18,7 @@
 	// before the first `await`: the matrix, its filters and the sidebar read it from the context
 	const params = provideSeatPlanningParams();
 
-	const [conference, committees, nonStateActorRoles, assignments] = $derived(
+	const [conference, committees, nonStateActorRoles, customRoleRows, assignments] = $derived(
 		await Promise.all([
 			client.liveQuery.conference({
 				__args: { id: routeParams.conferenceId },
@@ -50,6 +52,18 @@
 				fontAwesomeIcon: true,
 				seatAmount: true
 			}),
+			client.liveQuery.conferenceRoles({
+				__args: {
+					where: { conferenceId: { eq: routeParams.conferenceId }, kind: 'CUSTOM' },
+					orderBy: { createdAt: 'asc' }
+				},
+				id: true,
+				name: true,
+				description: true,
+				fontAwesomeIcon: true,
+				seatAmount: true,
+				assignedSingleParticipants: { id: true }
+			}),
 			client.liveQuery.seatPlanningAssignments({
 				__args: { conferenceId: routeParams.conferenceId },
 				committeeSeats: { committeeId: true, nationAlpha3Code: true, memberNames: true },
@@ -70,12 +84,13 @@
 		}))
 	);
 
+	const customRoles = $derived(customRoleRows.map(customRoleRow));
+
 	const planner = createSeatPlanner(() => ({ committees, nonStateActors, assignments }));
 
 	const sizeLimits = $derived(createSizeLimitsStore(routeParams.conferenceId));
 	// the limits live in the browser storage, which the server cannot read
 	$effect(() => sizeLimits.load());
-
 </script>
 
 <div class="flex w-full flex-col gap-4 py-4">
@@ -93,7 +108,7 @@
 		<Tab
 			title={m.seatPlanningStatesTab()}
 			icon="flag"
-			active={params.tab !== 'nsa'}
+			active={params.tab !== 'nsa' && params.tab !== 'custom'}
 			onclick={() => (params.tab = null)}
 		/>
 		<Tab
@@ -101,6 +116,12 @@
 			icon="hand-point-up"
 			active={params.tab === 'nsa'}
 			onclick={() => (params.tab = 'nsa')}
+		/>
+		<Tab
+			title={m.seatPlanningCustomRolesTab()}
+			icon="newspaper"
+			active={params.tab === 'custom'}
+			onclick={() => (params.tab = 'custom')}
 		/>
 	</Tabs>
 
@@ -115,6 +136,8 @@
 					{nonStateActors}
 					{sizeLimits}
 				/>
+			{:else if params.tab === 'custom'}
+				<CustomRoleTable conferenceId={routeParams.conferenceId} {customRoles} />
 			{:else if committees.length === 0}
 				<div class="alert alert-info">
 					<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>

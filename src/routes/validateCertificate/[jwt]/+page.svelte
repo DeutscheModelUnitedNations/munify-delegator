@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
-	import { escapeHtml } from '$lib/helpers/escapeHtml';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { escapeHtml } from '#lib/helpers/escapeHtml.js';
 	import { blur } from 'svelte/transition';
 	import { verifyCertificate } from './verifyCertificate';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	const { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate } = $derived(
+	const { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate, sessions } = $derived(
 		await verifyCertificate(params.jwt)
 	);
 </script>
@@ -34,6 +34,19 @@
 							: m.unknownDate()
 					})}
 				</p>
+				{#if sessions.length > 0}
+					<div class="w-full text-left">
+						<h3 class="mb-2 text-center font-bold">{m.certificateSessionsHeading()}</h3>
+						<ul class="flex flex-col gap-1">
+							{#each sessions as session, index (index)}
+								<li class="flex items-center gap-2">
+									<i class="fa-sharp-duotone fa-solid fa-check text-success" aria-hidden="true"></i>
+									<span>{session.name}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
 				<i class="fas fa-check-circle text-success text-4xl"></i>
 				<i
 					class="fas fa-seal text-primary absolute top-0 right-0 -translate-x-1/2 -translate-y-1/2 text-6xl"

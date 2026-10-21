@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
-	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
+	import CardInfoSectionWithIcons from '#lib/components/CardInfoSectionWithIcons.svelte';
+	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchExistingRegistrations } from './existingRegistrations';
-	import UndrawCard from '$lib/components/UndrawCard.svelte';
+	import UndrawCard from '#lib/components/UndrawCard.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
-	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
+	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
 
-	import UndrawNew from '$assets/undraw/new.svg';
-	import UndrawTeam from '$assets/undraw/team.svg';
-	import UndrawLetter from '$assets/undraw/letter.svg';
-	import UndrawEducator from '$assets/undraw/educator.svg';
+	import UndrawNew from '#assets/undraw/new.svg';
+	import UndrawTeam from '#assets/undraw/team.svg';
+	import UndrawLetter from '#assets/undraw/letter.svg';
+	import UndrawEducator from '#assets/undraw/educator.svg';
 
-	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
+	import MermaidWrapper from '#lib/components/MermaidWrapper.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -56,7 +56,8 @@
 {#if status === 'WAITING_LIST'}
 	<div class="flex w-full flex-col items-center gap-6 p-4 pt-20">
 		<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
-		<a class="btn btn-primary" href={resolve(`/registration/${conferenceId}/waiting-list`)}
+
+		<a class="btn btn-primary" href={resolve(`registration/${conferenceId}/waiting-list`)}
 			>{m.signupNow()}</a
 		>
 	</div>
@@ -84,10 +85,7 @@
 					>
 				</div>
 			</div>
-			<a
-				class="btn btn-outline btn-primary mt-4"
-				href={resolve(`/dashboard/${conferenceId}/seats`)}
-			>
+			<a class="btn btn-outline btn-primary mt-4" href={resolve(`dashboard/${conferenceId}/seats`)}>
 				<i class="fa-sharp-duotone fa-solid fa-person-seat"></i>
 				{m.conferenceSeats()}
 			</a>
@@ -101,7 +99,7 @@
 					title={m.createDelegation()}
 					img={UndrawNew}
 					btnText={m.createDelegation()}
-					btnLink={resolve(`/registration/${conferenceId}/create-delegation`)}
+					btnLink={resolve(`registration/${conferenceId}/create-delegation`)}
 					disabled={alreadyRegistered}
 				>
 					<CardInfoSectionWithIcons
@@ -118,7 +116,7 @@
 					title={m.joinDelegation()}
 					img={UndrawTeam}
 					btnText={m.enterCode()}
-					btnLink={resolve(`/registration/${conferenceId}/join-delegation`)}
+					btnLink={resolve(`registration/${conferenceId}/join-delegation`)}
 					disabled={alreadyRegistered}
 				>
 					<CardInfoSectionWithIcons
@@ -135,7 +133,7 @@
 					title={m.individualApplication()}
 					img={UndrawLetter}
 					btnText={m.individualApplication()}
-					btnLink={resolve(`/registration/${conferenceId}/individual`)}
+					btnLink={resolve(`registration/${conferenceId}/individual`)}
 					disabled={individualBlocked}
 				>
 					<CardInfoSectionWithIcons
@@ -152,7 +150,7 @@
 					title={m.supervisor()}
 					img={UndrawEducator}
 					btnText={m.applyAsSupervisor()}
-					btnLink={resolve(`/registration/${conferenceId}/supervisor`)}
+					btnLink={resolve(`registration/${conferenceId}/supervisor`)}
 					disabled={alreadyRegistered}
 				>
 					<CardInfoSectionWithIcons
@@ -214,7 +212,7 @@
 						click Individual "/registration/${conferenceId}/individual"
 						click G "/registration/${conferenceId}/supervisor"
 				`}
-					></MermaidWrapper>
+					/>
 				</div>
 			</section>
 		</main>

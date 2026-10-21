@@ -7,7 +7,7 @@ import {
 	assertSeatsPerDelegationAllowed
 } from '$api/services/seatPlanning';
 import { apiError } from '$api/services/errors/apiError';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 
@@ -101,4 +101,76 @@ export async function deleteNonStateActor(id: string) {
 
 		await tx.delete(schema.conferenceRole).where(eq(schema.conferenceRole.id, existing.id));
 	});
+}
+
+/** Creates a custom role for single participants (the press, …) and returns its id. */
+export async function createCustomRole(data: {
+	conferenceId: string;
+	name: string;
+	description?: string | null;
+	fontAwesomeIcon?: string | null;
+	seatAmount: number;
+}) {
+	if (data.seatAmount < 1) throw apiError('INVALID_INPUT', m.customRoleSeatsRange());
+	const created = await withUniqueNameCheck(
+		db
+			.insert(schema.conferenceRole)
+			.values({
+				conferenceId: data.conferenceId,
+				kind: 'CUSTOM',
+				name: data.name,
+				description: data.description || null,
+				fontAwesomeIcon: data.fontAwesomeIcon || null,
+				seatAmount: data.seatAmount
+			})
+			.returning({ id: schema.conferenceRole.id })
+			.then(assertFirstEntryExists)
+	);
+	return created.id;
+}
+
+/**
+ * Updates a custom role. Its seats may not drop below the people already holding it: unlike a
+ * non-state actor's applications, an assignment is not something to drop quietly.
+ */
+export async function updateCustomRole(
+	id: string,
+	data: {
+		name?: string | null;
+		description?: string | null;
+		fontAwesomeIcon?: string | null;
+		seatAmount?: number | null;
+	}
+) {
+	if (data.seatAmount !== undefined && data.seatAmount !== null) {
+		if (data.seatAmount < 1) throw apiError('INVALID_INPUT', m.customRoleSeatsRange());
+		const holders = await db.$count(
+			schema.singleParticipant,
+			eq(schema.singleParticipant.assignedRoleId, id)
+		);
+		if (data.seatAmount < holders) {
+			throw apiError('CONFLICT', m.customRoleSeatsBelowAssigned({ assigned: holders }));
+		}
+	}
+	await withUniqueNameCheck(
+		db
+			.update(schema.conferenceRole)
+			.set({
+				name: data.name || undefined,
+				description: data.description,
+				fontAwesomeIcon: data.fontAwesomeIcon,
+				seatAmount: data.seatAmount ?? undefined
+			})
+			.where(eq(schema.conferenceRole.id, id))
+	);
+}
+
+/** Deletes a custom role unless somebody holds it; the wishes for it go with it. */
+export async function deleteCustomRole(id: string) {
+	const holders = await db.$count(
+		schema.singleParticipant,
+		eq(schema.singleParticipant.assignedRoleId, id)
+	);
+	if (holders > 0) throw apiError('CONFLICT', m.customRoleStillAssigned());
+	await db.delete(schema.conferenceRole).where(eq(schema.conferenceRole.id, id));
 }

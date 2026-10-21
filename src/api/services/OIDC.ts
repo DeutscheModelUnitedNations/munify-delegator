@@ -1,4 +1,4 @@
-import { building, dev } from '$app/environment';
+import { building, dev } from '$app/env';
 import { makeOIDC } from '@m1212e/sveltekit-oidc';
 import { OIDC_CLIENT_SECRET, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';

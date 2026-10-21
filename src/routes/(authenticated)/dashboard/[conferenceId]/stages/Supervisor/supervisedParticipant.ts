@@ -1,4 +1,4 @@
-import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
 
 /** What a supervisor sees of a participant they supervise: contact details and paperwork status. */
 export const supervisedUserSelection = {

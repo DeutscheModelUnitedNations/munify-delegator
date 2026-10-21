@@ -1,19 +1,19 @@
 <script lang="ts">
-	import Steps from '$lib/components/Steps.svelte';
+	import Steps from '#lib/components/Steps.svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import Form from '$lib/components/form/Form.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import Form from '#lib/components/form/Form.svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import { toast } from 'svelte-sonner';
-	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import type { Snippet } from 'svelte';
 	import { qr } from '@svelte-put/qr/svg';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -24,7 +24,10 @@
 	let entryCode = $state<string>();
 
 	const form = superForm(
-		defaults({ school: '', motivation: '', experience: '' }, zod4Client(applicationFormSchema)),
+		defaults(
+			{ schoolId: null, schoolName: '', motivation: '', experience: '' },
+			zod4Client(applicationFormSchema)
+		),
 		{
 			SPA: true,
 			resetForm: false,
@@ -65,21 +68,23 @@
 			{#if step === 0}
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				{@html m.createDelegationProcessExplaination()}
+
 				<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}
 					>{m.next()}</button
 				>
-				<a class="btn btn-warning" href={resolve(`/dashboard/${conferenceId}`)}>{m.back()}</a>
+
+				<a class="btn btn-warning" href={resolve(`dashboard/${conferenceId}`)}>{m.back()}</a>
 			{:else}
 				<Form {form}>
-					<p>
-						{m.pleaseAnswerTheFollowingQuestions()}
-					</p>
+					<p>{m.pleaseAnswerTheFollowingQuestions()}</p>
+
 					<FormFieldset title={m.questionnaire()}>
-						<FormTextInput
+						<SchoolPicker
 							{form}
-							name="school"
-							placeholder={m.answerHere()}
+							name="schoolName"
+							idName="schoolId"
 							label={m.whichSchoolDoesYourDelegationComeFrom()}
+							description={m.schoolPickerDescription()}
 						/>
 						<FormTextArea
 							{form}
@@ -130,7 +135,7 @@
 			})}
 			{#snippet QRCode()}
 				<div class="flex w-full items-center justify-center">
-					<svg use:qr={{ data: referralLink, shape: 'circle' }} class="max-w-32" />
+					<svg use:qr={{ data: referralLink, shape: 'circle' }} class="max-w-32"></svg>
 				</div>
 			{/snippet}
 			{@render CopyCard(QRCode)}

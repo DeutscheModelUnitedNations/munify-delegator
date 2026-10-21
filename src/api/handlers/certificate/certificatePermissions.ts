@@ -1,6 +1,6 @@
 import type { Context } from '$api/context';
 import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import formatNames, { formatInitials } from '#lib/helpers/formatNames.js';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 
 	interface Props {
 		given_name: string;

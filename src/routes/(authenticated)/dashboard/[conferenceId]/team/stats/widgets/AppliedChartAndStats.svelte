@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { getSelectedHistoryEntry, statsQueryFilter } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-	import { StackedBarChart } from '$lib/components/charts/echarts';
+	import { StackedBarChart } from '#lib/components/charts/echarts/index.js';
 	import { acceptanceChartData, acceptedOf, rejectedOf } from './chartData';
 
 	let { conferenceId }: { conferenceId: string } = $props();

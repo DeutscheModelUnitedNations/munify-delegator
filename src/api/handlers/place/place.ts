@@ -10,7 +10,7 @@ import {
 import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { placePubsub } from '$api/pubsub';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 registerPlaceAbilities();

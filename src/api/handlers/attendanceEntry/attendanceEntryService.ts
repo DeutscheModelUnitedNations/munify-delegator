@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
-import { eq } from 'drizzle-orm';
-import { m } from '$lib/paraglide/messages';
+import { and, eq, sql } from 'drizzle-orm';
+import { z } from 'zod';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**
@@ -43,4 +44,66 @@ export async function storeSessionCard(
 		.update(schema.conferenceParticipant)
 		.set({ accessCardId })
 		.where(eq(schema.conferenceParticipant.id, statusId));
+}
+
+/** Sessions of the conference with this occasion, ignoring case and surrounding spaces. */
+function sameOccasion(conferenceId: string, occasion: string) {
+	return and(
+		eq(schema.attendanceSession.conferenceId, conferenceId),
+		sql`lower(btrim(${schema.attendanceSession.occasion})) = lower(btrim(${occasion}))`
+	);
+}
+
+/**
+ * Whether a new session of `occasion` goes on the certificates: as the occasion's earlier sessions
+ * do, so all sessions of one occasion agree; a new occasion does.
+ */
+export async function certificateFlagOf(conferenceId: string, occasion: string) {
+	const [earlier] = await db
+		.select({ show: schema.attendanceSession.showOnCertificate })
+		.from(schema.attendanceSession)
+		.where(sameOccasion(conferenceId, occasion))
+		.limit(1);
+	return earlier?.show ?? true;
+}
+
+/** Lists every session of the occasion on the certificates, or none of them. */
+export async function setOccasionOnCertificate(
+	conferenceId: string,
+	occasion: string,
+	show: boolean
+) {
+	await db
+		.update(schema.attendanceSession)
+		.set({ showOnCertificate: show })
+		.where(sameOccasion(conferenceId, occasion));
+}
+
+const occasionRowSchema = z.object({
+	name: z.string(),
+	sessions: z.number(),
+	entries: z.number(),
+	firstStartedAt: z.coerce.date(),
+	showOnCertificate: z.boolean()
+});
+
+/** The conference's occasions as the certificates merge them, in the order they first ran. */
+export async function certificateOccasions(conferenceId: string) {
+	const result = await db.execute<{ result: unknown }>(sql`
+		select json_build_object(
+			'name', min(btrim(s.occasion)),
+			'sessions', count(distinct s.id),
+			'entries', count(e.id),
+			'firstStartedAt', min(s.started_at),
+			'showOnCertificate', bool_and(s.show_on_certificate)
+		) as result
+		from attendance_session s
+		left join attendance_entry e on e.session_id = s.id
+		where s.conference_id = ${conferenceId} and btrim(s.occasion) <> ''
+		group by lower(btrim(s.occasion))
+		order by min(s.started_at)`);
+	return z
+		.array(z.object({ result: occasionRowSchema }))
+		.parse(result.rows)
+		.map((row) => row.result);
 }

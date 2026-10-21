@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
-	import { downloadCSV } from '$lib/utils/downloadHelpers';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import { downloadCSV } from '#lib/utils/downloadHelpers.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import DownloadButton from './DownloadButton.svelte';
 	import { fetchConferenceStart, fetchParticipantStatusesByUser } from './participantStatuses';
 	import {

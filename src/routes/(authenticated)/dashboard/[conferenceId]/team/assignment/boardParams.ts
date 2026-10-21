@@ -5,7 +5,7 @@ export interface BoardParams {
 }
 
 /** The board's parameters from a URL, in the format links to it have always used. */
-export function boardParams(search: URLSearchParams): BoardParams {
+export function boardParams(search: Pick<URLSearchParams, 'get'>): BoardParams {
 	const size = Number(search.get('size'));
 	return {
 		size: Number.isInteger(size) && size > 0 ? size : 0,

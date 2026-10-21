@@ -4,7 +4,7 @@
 	import { createEditor, Editor, EditorContent, BubbleMenu } from 'svelte-tiptap';
 	import { editorContentStore } from './editorStore';
 	import { paperStatsStore, type PaperStats } from './paperStatsStore';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { EditorOptions, Editor as CoreEditor } from '@tiptap/core';
 	import type { EditorState } from '@tiptap/pm/state';
 	import { getSafeTipTapContent } from './contentValidation';

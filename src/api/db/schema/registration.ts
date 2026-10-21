@@ -1,10 +1,19 @@
-import { snakeCase, text, integer, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+	snakeCase,
+	text,
+	integer,
+	boolean,
+	index,
+	uniqueIndex,
+	timestamp
+} from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps, implicitManyToMany, trigramIndex } from './helpers';
 import { userRef } from './users';
 import { conferenceRef } from './conference';
 import { committee } from './committees';
 import { conferenceRole } from './roles';
 import { participantRef } from './participants';
+import { schoolRef } from './schools';
 
 /** Registrations: delegations, their members, single participants and their wishes. */
 
@@ -14,7 +23,8 @@ import { participantRef } from './participants';
  */
 const applicationColumns = () => ({
 	applied: boolean().default(false).notNull(),
-	school: text(),
+	/** Empty when the applicants named no school. */
+	schoolId: schoolRef(),
 	motivation: text(),
 	experience: text()
 });
@@ -57,7 +67,7 @@ export const delegation = snakeCase.table(
 		),
 		// rumble's `search` argument; see `trigramIndex`.
 		trigramIndex('delegation_id_trgm', table.id),
-		trigramIndex('delegation_school_trgm', table.school),
+		index('delegation_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
 		// The management tables search these with `ilike '%word%'`, which the same indexes serve.
 		trigramIndex('delegation_entry_code_trgm', table.entryCode),
 		trigramIndex('delegation_motivation_trgm', table.motivation),
@@ -121,7 +131,7 @@ export const singleParticipant = snakeCase.table(
 			table.conferenceParticipantId.asc().nullsLast()
 		),
 		trigramIndex('single_participant_id_trgm', table.id),
-		trigramIndex('single_participant_school_trgm', table.school),
+		index('single_participant_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
 		trigramIndex('single_participant_motivation_trgm', table.motivation),
 		trigramIndex('single_participant_experience_trgm', table.experience)
 	]
@@ -168,11 +178,13 @@ export const waitingListEntry = snakeCase.table(
 		...defaultIdAndTimestamps,
 		conferenceId: conferenceRef('restrict'),
 		userId: userRef('restrict'),
-		school: text().notNull(),
+		schoolId: schoolRef(),
 		experience: text().notNull(),
 		motivation: text().notNull(),
 		requests: text(),
 		assigned: boolean().default(false).notNull(),
+		/** When the entrant was given a seat; empty while they wait. */
+		assignedAt: timestamp({ precision: 3 }),
 		hidden: boolean().default(false).notNull()
 	},
 	(table) => [
@@ -181,7 +193,7 @@ export const waitingListEntry = snakeCase.table(
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
 		),
-		trigramIndex('waiting_list_entry_school_trgm', table.school),
+		index('waiting_list_entry_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
 		trigramIndex('waiting_list_entry_experience_trgm', table.experience),
 		trigramIndex('waiting_list_entry_motivation_trgm', table.motivation),
 		trigramIndex('waiting_list_entry_requests_trgm', table.requests),

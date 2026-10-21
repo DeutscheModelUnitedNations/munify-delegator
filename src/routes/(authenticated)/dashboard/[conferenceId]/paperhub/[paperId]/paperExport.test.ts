@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { m } from '$lib/paraglide/messages';
-import { translatePaperType } from '$lib/utils/enumTranslations';
+import { m } from '#lib/paraglide/messages.js';
+import { translatePaperType } from '#lib/utils/enumTranslations.js';
 import { committeeLine, paperExportJob, paperTypstMeta, type ExportablePaper } from './paperExport';
 
 const year = new Date().getFullYear();

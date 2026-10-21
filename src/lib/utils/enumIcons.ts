@@ -1,4 +1,4 @@
-import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
+import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 
 export function getPaperTypeIcon(type: PapertypeEnum) {
 	switch (type) {

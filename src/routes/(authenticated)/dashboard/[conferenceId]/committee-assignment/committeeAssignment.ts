@@ -1,4 +1,4 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 
 /** The caller's delegation membership plus the committees they could be assigned to. */
 export async function fetchCommitteeAssignment(conferenceId: string, userId: string) {

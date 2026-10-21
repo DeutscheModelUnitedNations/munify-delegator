@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { exactSizeWarnings, singleSeatRoles, type Role } from '$lib/helpers/seatPlanning/hints';
+	import { m } from '#lib/paraglide/messages.js';
+	import {
+		exactSizeWarnings,
+		singleSeatRoles,
+		type Role
+	} from '#lib/helpers/seatPlanning/hints.js';
 
 	interface Props {
 		roles: Role[];

@@ -1,12 +1,13 @@
-<!-- TEMPORARY: Migration notice page (remove after migration period) -->
 <script lang="ts">
-	import { page } from '$app/stores';
-	import movingSvg from '$assets/undraw/moving.svg';
-	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
+	import movingSvg from '#assets/undraw/moving.svg';
+	import { m } from '#lib/paraglide/messages.js';
 	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';
 
-	const next = $derived($page.url.searchParams.get('next') || '/');
+	const next = $derived(page.url.searchParams.get('next') || '/');
 </script>
+
+<!-- TEMPORARY: Migration notice page (remove after migration period) -->
 
 <div class="flex min-h-screen w-full flex-col items-center p-4 py-12">
 	<div class="flex w-full max-w-[700px] flex-col items-center gap-8">

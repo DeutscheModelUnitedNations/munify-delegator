@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import fetchWBStat from '$lib/helpers/fetchWBStat';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import fetchWBStat from '#lib/helpers/fetchWBStat.js';
 	import { onMount } from 'svelte';
 
 	interface Props {

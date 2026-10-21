@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { afterNavigate } from '$app/navigation';
-	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
+	import { setHeaderStatus } from '#lib/state/authenticatedHeaderStatus.svelte.js';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -23,7 +23,9 @@
 		}
 	});
 
-	afterNavigate(() => {
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
 		mobileOpen = false;
 	});
 </script>

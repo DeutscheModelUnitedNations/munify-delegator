@@ -59,7 +59,7 @@ for (const { route, search } of TABLES) {
 		}
 
 		// the pager has its range and, where there is more than one page, moves on
-		const next = page.getByRole('button', { name: 'Next page' });
+		const next = page.getByRole('button', { name: /nächste seite|next page/i });
 		if (await next.isEnabled()) {
 			await next.click();
 			await expect(page).toHaveURL(/page=2/);

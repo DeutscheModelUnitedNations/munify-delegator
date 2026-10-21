@@ -36,7 +36,7 @@ export async function updatableSchoolSuggestion(ctx: ApiContext, id: string) {
 
 /**
  * The applied registrations of the conference that name a school and that the caller may read, as
- * queries for `loadSchoolRows`.
+ * where clauses for `loadSchoolRows`.
  */
 export async function readableSchoolRegistrations(ctx: ApiContext, conferenceId: string) {
 	const [delegations, singleParticipants] = await Promise.all([
@@ -45,11 +45,11 @@ export async function readableSchoolRegistrations(ctx: ApiContext, conferenceId:
 	]);
 	return {
 		delegations: delegations.merge({
-			where: { conferenceId, applied: true, school: { isNotNull: true } }
-		}).query.many,
+			where: { conferenceId, applied: true, schoolId: { isNotNull: true } }
+		}).sql.where,
 		singleParticipants: singleParticipants.merge({
-			where: { participant: { conferenceId }, applied: true, school: { isNotNull: true } }
-		}).query.many
+			where: { participant: { conferenceId }, applied: true, schoolId: { isNotNull: true } }
+		}).sql.where
 	};
 }
 

@@ -1,3 +1,5 @@
+import type { BadgeSeat } from '#lib/helpers/badgeCsv.js';
+
 /** What the badge generator is told about a person; every field is left out when unknown. */
 export interface BadgeSessionBody {
 	name?: string;
@@ -69,4 +71,48 @@ export function seatBadgeValues(
 		countryAlpha2Code: nation?.alpha2Code,
 		committee: member?.assignedCommittee?.abbreviation
 	};
+}
+
+/**
+ * What a person's badge shows, from the registration they hold: a delegate's nation and committee
+ * (or their non-state actor), a single participant's role, a supervisor's image, the team label.
+ * Undefined while they hold nothing a badge could show.
+ */
+export function badgeSeatOf(
+	roles: {
+		delegationMember?:
+			| {
+					assignedCommittee?: { abbreviation: string } | null;
+					delegation: {
+						assignedRole?: {
+							name?: string | null;
+							nation?: { alpha2Code: string; alpha3Code: string } | null;
+						} | null;
+					};
+			  }
+			| undefined;
+		singleParticipant?: { assignedRole?: { name?: string | null } | null } | undefined;
+		conferenceSupervisor?: object | undefined;
+		teamMember?: object | undefined;
+	},
+	labels: { countryName: (alpha3Code: string) => string; supervisor: string; team: string }
+): BadgeSeat | undefined {
+	const role = roles.delegationMember?.delegation.assignedRole;
+	const committee = roles.delegationMember?.assignedCommittee?.abbreviation;
+	if (role?.nation) {
+		return {
+			kind: 'nation',
+			alpha2Code: role.nation.alpha2Code,
+			countryName: labels.countryName(role.nation.alpha3Code),
+			committee
+		};
+	}
+	if (role?.name) return { kind: 'label', label: role.name, committee };
+	const single = roles.singleParticipant?.assignedRole?.name;
+	if (single) return { kind: 'label', label: single };
+	if (roles.conferenceSupervisor) {
+		return { kind: 'image', label: labels.supervisor, image: 'supervisor' };
+	}
+	if (roles.teamMember) return { kind: 'label', label: labels.team };
+	return undefined;
 }

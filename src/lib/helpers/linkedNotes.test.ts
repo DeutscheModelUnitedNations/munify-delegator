@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/paraglide/messages', () => ({
+vi.mock('#lib/paraglide/messages.js', () => ({
 	m: { linkedAccountNote: ({ name }: { name: string }) => `Linked account (${name})` }
 }));
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import type { PlanningCommittee } from '$lib/helpers/seatPlanning/hints';
+	import { m } from '#lib/paraglide/messages.js';
+	import type { PlanningCommittee } from '#lib/helpers/seatPlanning/hints.js';
 
 	interface Props {
 		committees: PlanningCommittee[];

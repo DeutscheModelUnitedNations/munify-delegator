@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type * as schema from '../schema';
 import type { ConferenceSeed } from './context';
+import { seedSchoolId } from './schools';
 
 /**
  * Row builders for the ways a person takes part in a conference. Personas and crowd go through
@@ -9,8 +10,6 @@ import type { ConferenceSeed } from './context';
  */
 
 const APPLICATION_TEXTS = {
-	school: () =>
-		`${faker.helpers.arrayElement(['Gymnasium', 'Gesamtschule', 'Berufskolleg'])} ${faker.location.city()}`,
 	motivation: () => faker.lorem.sentences(2),
 	experience: () => faker.helpers.arrayElement(['Keine', 'Zwei Schul-MUNs', faker.lorem.sentence()])
 };
@@ -48,7 +47,7 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 		// Fixed codes go through `uniqueCode` too, so a random one drawn later cannot repeat them.
 		entryCode: cs.uniqueCode(fixedCode ? () => fixedCode : entryCode),
 		applied: plan.applied,
-		school: plan.withoutTexts ? null : APPLICATION_TEXTS.school(),
+		schoolId: plan.withoutTexts ? null : seedSchoolId(cs.batch),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
 		assignedRoleId: plan.nation ? cs.nationRoleId(plan.nation) : (plan.nonStateActorId ?? null)
@@ -114,7 +113,7 @@ export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
 		id: singleId,
 		conferenceParticipantId: participantId,
 		applied: plan.applied,
-		school: plan.withoutTexts ? null : APPLICATION_TEXTS.school(),
+		schoolId: plan.withoutTexts ? null : seedSchoolId(cs.batch),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
 		assignedRoleId: plan.roleId ?? null,
@@ -144,7 +143,8 @@ export function addSupervisor(cs: ConferenceSeed, plan: SupervisorPlan) {
 		conferenceParticipantId: cs.participant(plan.userId).id,
 		plansOwnAttendenceAtConference: plan.attends,
 		// Connection codes are unique across conferences, so a fixed one names one conference.
-		connectionCode: cs.world.uniqueCode(fixedCode ? () => fixedCode : entryCode)
+		connectionCode: cs.world.uniqueCode(fixedCode ? () => fixedCode : entryCode),
+		schoolId: faker.helpers.maybe(() => seedSchoolId(cs.batch), { probability: 0.8 }) ?? null
 	});
 	// Supervision links the people behind the registrations.
 	for (const rowId of [...(plan.memberIds ?? []), ...(plan.singleIds ?? [])]) {
@@ -218,6 +218,9 @@ export function addPayment(
 	}
 }
 
+/** Occasions the team took off the certificates: a scan there is recorded, never certified. */
+const HIDDEN_FROM_CERTIFICATES = new Set(['Scanner-Test']);
+
 export function addAttendance(
 	cs: ConferenceSeed,
 	statusId: string,
@@ -241,7 +244,8 @@ export function addAttendance(
 				occasion,
 				startedAt,
 				endedAt,
-				createdById: recordedById
+				createdById: recordedById,
+				showOnCertificate: !HIDDEN_FROM_CERTIFICATES.has(occasion)
 			});
 		}
 		cs.batch.attendanceEntry.push({

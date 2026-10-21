@@ -1,5 +1,5 @@
-import { client } from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Which file an upload is for, as `FILE_SOURCES` in `$api/handlers/storedFile/fileSources` lists them. */
 export type UploadTarget =

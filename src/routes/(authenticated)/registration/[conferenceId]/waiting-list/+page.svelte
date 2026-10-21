@@ -1,16 +1,16 @@
 <script lang="ts">
-	import Form from '$lib/components/form/Form.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import Form from '#lib/components/form/Form.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { waitingListFormSchema } from './form-schema';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
+	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
@@ -26,7 +26,7 @@
 	const [existingEntry] = await client.query.waitingListEntries({
 		__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
 		id: true,
-		school: true,
+		school: { id: true, name: true },
 		motivation: true,
 		experience: true,
 		requests: true
@@ -37,7 +37,8 @@
 	const form = superForm(
 		defaults(
 			{
-				school: existingEntry?.school ?? '',
+				schoolId: existingEntry?.school?.id ?? null,
+				schoolName: existingEntry?.school?.name ?? '',
 				motivation: existingEntry?.motivation ?? '',
 				experience: existingEntry?.experience ?? '',
 				requests: existingEntry?.requests ?? ''
@@ -88,11 +89,12 @@
 	<main class="mt-10">
 		<Form {form}>
 			<FormFieldset title={m.questionnaire()}>
-				<FormTextInput
+				<SchoolPicker
 					{form}
-					name="school"
-					placeholder={m.answerHere()}
+					name="schoolName"
+					idName="schoolId"
 					label={m.whichSchoolDoYouComeFrom()}
+					description={m.schoolPickerDescription()}
 					{disabled}
 				/>
 				<FormTextArea

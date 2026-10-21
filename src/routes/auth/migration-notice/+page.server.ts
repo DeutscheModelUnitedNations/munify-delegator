@@ -1,8 +1,8 @@
 // --- TEMPORARY: Migration notice route (remove after migration period) ---
 import type { Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { dev } from '$app/environment';
-import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
+import { dev } from '$app/env';
+import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '#lib/data/migrationNotice.js';
 
 function isSafeRedirectPath(path: string): boolean {
 	return path.startsWith('/') && !path.startsWith('//') && !path.includes('://');

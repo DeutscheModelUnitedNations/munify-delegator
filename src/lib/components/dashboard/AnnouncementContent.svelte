@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import Markdown from '$lib/components/markdown/Markdown.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import Markdown from '#lib/components/markdown/Markdown.svelte';
 
 	/** The conference's announcement: a banner with an accent edge, the text below its heading. */
 	interface Props {

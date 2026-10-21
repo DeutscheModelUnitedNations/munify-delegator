@@ -12,7 +12,7 @@ import {
 } from './delegationPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { delegationMemberPubsub, delegationPubsub } from '$api/pubsub';
+import { delegationMemberPubsub, delegationPubsub, schoolPubsub } from '$api/pubsub';
 
 registerDelegationAbilities();
 
@@ -24,7 +24,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: DelegationRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			school: t.arg.string(),
+			/** An existing school, or `schoolName` to find or create one; neither for no school. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			motivation: t.arg.string(),
 			experience: t.arg.string()
 		},
@@ -33,6 +35,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			delegationPubsub.created();
 			delegationMemberPubsub.created();
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegation
 				.findFirst(
@@ -52,7 +55,9 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean(),
 			resetEntryCode: t.arg.boolean(),
 			newHeadDelegateUserId: t.arg.id(),
-			school: t.arg.string(),
+			/** Both null removes the school; both left out keeps it. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			experience: t.arg.string(),
 			motivation: t.arg.string()
 		},
@@ -61,6 +66,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateDelegationDetails(delegation, args);
 
 			delegationPubsub.updated(args.id);
+			if (args.schoolName) schoolPubsub.created();
 			// A new head delegate flips the flag on two members.
 			if (args.newHeadDelegateUserId) {
 				delegationMemberPubsub.updated();

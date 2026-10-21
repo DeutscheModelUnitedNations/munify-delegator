@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
-import { getAgeAtConference } from '$lib/helpers/ageChecker';
-import type { WithLinkedAccounts } from '$lib/helpers/linkedNotes';
+import { getAgeAtConference } from '#lib/helpers/ageChecker.js';
+import type { WithLinkedAccounts } from '#lib/helpers/linkedNotes.js';
 /** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {
@@ -121,7 +121,8 @@ interface Supervisor {
 }
 
 interface ApplicationTexts {
-	school?: Nullable<string>;
+	/** The school the applicants named, if any. */
+	school?: Nullable<{ name: string }>;
 	motivation?: Nullable<string>;
 	experience?: Nullable<string>;
 }
@@ -145,7 +146,7 @@ export interface SightedSingleParticipant extends ApplicationTexts {
 }
 
 const texts = (application: ApplicationTexts) => ({
-	school: application.school ?? null,
+	school: application.school?.name ?? null,
 	motivation: application.motivation ?? null,
 	experience: application.experience ?? null
 });

@@ -12,7 +12,6 @@ const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
 /** A delegation that has filled in everything, in an open registration. */
 const ready = {
-	school: 'Gymnasium Kiel',
 	experience: 'Two conferences',
 	motivation: 'Debating',
 	appliedForRoles: [1, 2, 3],
@@ -51,12 +50,12 @@ describe('assertApplicationReady', () => {
 
 	test('refuses too few role applications and missing texts', () => {
 		expect(() => assertApplicationReady({ ...ready, appliedForRoles: [1] }, {}, 3)).toThrow();
-		expect(() => assertApplicationReady({ ...ready, school: null }, {}, 3)).toThrow();
+		expect(() => assertApplicationReady({ ...ready, motivation: null }, {}, 3)).toThrow();
 	});
 
 	test('judges the texts with the edits of the same update applied', () => {
 		expect(() =>
-			assertApplicationReady({ ...ready, school: null }, { school: 'Gymnasium Kiel' }, 3)
+			assertApplicationReady({ ...ready, experience: null }, { experience: 'Two conferences' }, 3)
 		).not.toThrow();
 		expect(() => assertApplicationReady(ready, { motivation: null }, 3)).toThrow();
 	});

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { buildNametagQrPdf } from '$lib/api/nametagQrPdf';
-	import { downloadPdf } from '$lib/api/nametagSheetsPdf';
-	import { m } from '$lib/paraglide/messages';
+	import { buildNametagQrPdf } from '#lib/api/nametagQrPdf.js';
+	import { downloadPdf } from '#lib/api/nametagSheetsPdf.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { loadSheetAssets } from '../check-in/nametagSheets';
 	import DownloadButton from './DownloadButton.svelte';
 

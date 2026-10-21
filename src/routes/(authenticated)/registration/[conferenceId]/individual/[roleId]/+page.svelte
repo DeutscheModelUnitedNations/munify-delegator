@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import Form from '$lib/components/form/Form.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import Form from '#lib/components/form/Form.svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import { toast } from 'svelte-sonner';
-	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
@@ -38,14 +38,15 @@
 			},
 			experience: true,
 			motivation: true,
-			school: true
+			school: { id: true, name: true }
 		})
 	]);
 
 	const form = superForm(
 		defaults(
 			{
-				school: existing?.school ?? '',
+				schoolId: existing?.school?.id ?? null,
+				schoolName: existing?.school?.name ?? '',
 				motivation: existing?.motivation ?? '',
 				experience: existing?.experience ?? ''
 			},
@@ -80,11 +81,12 @@
 			{m.pleaseAnswerTheFollowingQuestions()}
 		</p>
 		<FormFieldset title={m.questionnaire()}>
-			<FormTextInput
+			<SchoolPicker
 				{form}
-				name="school"
-				placeholder={m.answerHere()}
+				name="schoolName"
+				idName="schoolId"
 				label={m.whichSchoolAreYouFrom()}
+				description={m.schoolPickerDescription()}
 			/>
 			<FormTextArea
 				{form}
@@ -103,6 +105,6 @@
 	<a
 		class="btn btn-warning mt-8"
 		type="button"
-		href={resolve(`/registration/${conferenceId}/individual`)}>{m.back()}</a
+		href={resolve(`registration/${conferenceId}/individual`)}>{m.back()}</a
 	>
 </div>

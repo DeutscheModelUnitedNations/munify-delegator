@@ -1,4 +1,4 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * What each URL segment is called in the breadcrumbs, and its icon. Keyed by the segment as the
@@ -173,6 +173,14 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	'waiting-list': {
 		icon: 'user-clock',
 		translation: () => m.waitingList()
+	},
+	schools: {
+		icon: 'school',
+		translation: () => m.schools()
+	},
+	schoolId: {
+		icon: 'school-flag',
+		translation: () => m.school()
 	},
 	introduction: {
 		icon: 'circle-info',

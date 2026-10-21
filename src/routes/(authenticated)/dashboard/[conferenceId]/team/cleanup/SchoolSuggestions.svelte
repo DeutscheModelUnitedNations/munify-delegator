@@ -1,17 +1,18 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import Kbd from '$lib/components/Kbd.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import Kbd from '#lib/components/Kbd.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 
 	interface Props {
 		conferenceId: string;
 		merging: boolean;
-		onMerge: (schools: string[], newName: string) => void;
-		onSelect: (schools: string[]) => void;
+		/** Folds the other schools into `targetId`. */
+		onMerge: (targetId: string, sourceIds: string[]) => void;
+		onSelect: (schools: { id: string; name: string }[]) => void;
 	}
 
 	let { conferenceId, merging, onMerge, onSelect }: Props = $props();
@@ -21,7 +22,7 @@
 			__args: { where: { conferenceId: { eq: conferenceId }, dismissed: { eq: false } } },
 			id: true,
 			similarity: true,
-			variants: { school: true, sumParticipants: true }
+			variants: { sumParticipants: true, school: { id: true, name: true } }
 		})
 	);
 
@@ -35,7 +36,11 @@
 				similarity: row.similarity,
 				variants: row.variants
 					.slice()
-					.map((variant) => ({ school: variant.school, sumParticipants: variant.sumParticipants }))
+					.map((variant) => ({
+						id: variant.school.id,
+						name: variant.school.name,
+						sumParticipants: variant.sumParticipants
+					}))
 					.sort((a, b) => b.sumParticipants - a.sumParticipants)
 			}))
 			.sort((a, b) => b.similarity - a.similarity || b.variants.length - a.variants.length)
@@ -71,8 +76,10 @@
 	const position = $derived(Math.min(index, Math.max(open.length - 1, 0)));
 	const current = $derived(open[position]);
 	const key = $derived(current?.id ?? '');
-	const names = $derived(current?.variants.map((v) => v.school) ?? []);
-	const target = $derived(chosen[key] ?? current?.variants[0].school ?? '');
+	const picked = $derived(current?.variants.map(({ id, name }) => ({ id, name })) ?? []);
+	/** The school the others go into, by id; the most named one unless another was picked. */
+	const target = $derived(chosen[key] ?? current?.variants[0].id ?? '');
+	const targetName = $derived(picked.find((school) => school.id === target)?.name ?? '');
 
 	function cycle(step: number) {
 		if (open.length < 2) return;
@@ -80,7 +87,12 @@
 	}
 
 	function merge() {
-		if (current && !merging) onMerge(names, target);
+		if (current && !merging) {
+			onMerge(
+				target,
+				picked.map((school) => school.id)
+			);
+		}
 	}
 
 	onMount(() => {
@@ -128,7 +140,7 @@
 		</div>
 
 		<div class="flex flex-col gap-1 px-4 py-3">
-			{#each current.variants as variant (variant.school)}
+			{#each current.variants as variant (variant.id)}
 				<label
 					class="hover:bg-base-300 flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5"
 				>
@@ -136,10 +148,10 @@
 						type="radio"
 						class="radio radio-primary radio-sm"
 						name="suggestionTarget"
-						checked={variant.school === target}
-						onchange={() => (chosen[key] = variant.school)}
+						checked={variant.id === target}
+						onchange={() => (chosen[key] = variant.id)}
 					/>
-					<span class="flex-1">{variant.school}</span>
+					<span class="flex-1">{variant.name}</span>
 					<span class="text-sm opacity-60">
 						{m.cleanupSuggestionsParticipants({ count: variant.sumParticipants })}
 					</span>
@@ -152,7 +164,7 @@
 				<i class="fa-sharp-duotone fa-solid fa-eye-slash"></i>
 				{m.cleanupSuggestionsDismiss()}
 			</button>
-			<button type="button" class="btn btn-ghost btn-sm" onclick={() => onSelect(names)}>
+			<button type="button" class="btn btn-ghost btn-sm" onclick={() => onSelect(picked)}>
 				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 				{m.cleanupSuggestionsSelect()}
 			</button>
@@ -162,7 +174,7 @@
 				{:else}
 					<i class="fa-sharp-duotone fa-solid fa-code-merge"></i>
 				{/if}
-				{m.cleanupSuggestionsMerge({ name: target })}
+				{m.cleanupSuggestionsMerge({ name: targetName })}
 				<Kbd hotkey="alt+enter" size="xs" />
 			</button>
 		</div>

@@ -1,11 +1,13 @@
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import type * as schema from '$api/db/schema';
 import { apiError } from '$api/services/errors/apiError';
-import { acceptsApplications, applicationTextsComplete } from '$lib/helpers/applicationReadiness';
+import {
+	acceptsApplications,
+	applicationTextsComplete
+} from '#lib/helpers/applicationReadiness.js';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {
-	school?: string | null;
 	experience?: string | null;
 	motivation?: string | null;
 };
@@ -18,11 +20,10 @@ const edited = <T>(edit: T | undefined, stored: T) => (edit === undefined ? stor
  * few role applications, incomplete texts (judged with this update's edits applied), or a closed
  * registration window. Only sent applications count, so this is where the conference's stage is
  * enforced - registering, joining and editing are open in any stage. The rules themselves live in
- * `$lib/helpers/applicationReadiness`, which the registration stages show as todos.
+ * `#lib/helpers/applicationReadiness.js`, which the registration stages show as todos.
  */
 export function assertApplicationReady(
 	applicant: {
-		school: string | null;
 		experience: string | null;
 		motivation: string | null;
 		appliedForRoles: unknown[];
@@ -40,7 +41,6 @@ export function assertApplicationReady(
 	}
 	if (
 		!applicationTextsComplete({
-			school: edited(edits.school, applicant.school),
 			motivation: edited(edits.motivation, applicant.motivation),
 			experience: edited(edits.experience, applicant.experience)
 		})

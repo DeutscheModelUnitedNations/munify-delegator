@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { buildResolutionHeaderData } from '../../paperDisplay';
 	import PaperHeaderCard from '../../PaperHeaderCard.svelte';
 	import PaperContent from '../../PaperContent.svelte';
@@ -57,7 +57,7 @@
 	<!-- Back Button -->
 	<div>
 		<a
-			href={resolve(`/dashboard/${params.conferenceId}/paperhub?viewToggle=global`)}
+			href={resolve(`dashboard/${params.conferenceId}/paperhub?viewToggle=global`)}
 			class="btn btn-ghost btn-sm"
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
@@ -82,6 +82,7 @@
 	{#if loaded.initialized && paperData}
 		<div class="w-full flex flex-col gap-4">
 			<!-- Paper Content -->
+
 			<PaperContent paper={paperData} {loaded} editable={false} headerData={resolutionHeaderData} />
 		</div>
 	{:else if !paperData}

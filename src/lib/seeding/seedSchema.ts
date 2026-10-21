@@ -80,7 +80,9 @@ export const ConferenceSeedingSchema = z.object({
 		z.object({
 			name: z.string(),
 			description: z.string(),
-			fontAwesomeIcon: z.string()
+			fontAwesomeIcon: z.string(),
+			/** How many single participants the role seats. */
+			seatAmount: z.number().int().min(1).default(1)
 		})
 	)
 });

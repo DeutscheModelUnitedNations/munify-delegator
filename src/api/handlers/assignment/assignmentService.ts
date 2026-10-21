@@ -1,8 +1,8 @@
 import { type Transaction, db, schema } from '$api/db/db';
 import { apiError } from '$api/services/errors/apiError';
-import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
-import { experienceShare } from '$lib/assignment/experience';
-import type { reviewRow } from '$lib/assignment/review';
+import { DEFAULT_WEIGHTS, autoAssign } from '#lib/assignment/autoAssign.js';
+import { experienceShare } from '#lib/assignment/experience.js';
+import type { reviewRow } from '#lib/assignment/review.js';
 import {
 	NO_TARGET,
 	assignmentGroups,
@@ -10,8 +10,8 @@ import {
 	targetKey,
 	type AssignmentGroup,
 	type Target
-} from '$lib/assignment/state';
-import { m } from '$lib/paraglide/messages';
+} from '#lib/assignment/state.js';
+import { m } from '#lib/paraglide/messages.js';
 import { eq } from 'drizzle-orm';
 import { clearDraft, draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
 import { loadExperiencedIds } from './assignmentExperience';

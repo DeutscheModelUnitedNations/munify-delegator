@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import {
 		createUserCardParams,
 		registerUserCardParams,
 		getUserCardState,
 		closeUserCard
 	} from './userCardState.svelte';
-	import SlidePanel from '$lib/components/SlidePanel.svelte';
+	import SlidePanel from '#lib/components/SlidePanel.svelte';
 	import UserCardContent from './UserCardContent.svelte';
 
 	// Mounted once for the whole authenticated area. Whether it is open is read off the URL.

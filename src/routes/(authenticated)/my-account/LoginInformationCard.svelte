@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { PUBLIC_OIDC_ACCOUNT_URL, PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 	import { page } from '$app/state';
-	import type { CurrentUser } from '$lib/state/currentUser.svelte';
+	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
 	import AccountRow from './AccountRow.svelte';
 
 	/** What the identity provider knows about the signed-in person, with links to change it. */

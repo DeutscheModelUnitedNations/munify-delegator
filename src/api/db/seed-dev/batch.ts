@@ -11,6 +11,7 @@ export interface SeedBatch {
 	user: (typeof schema.user.$inferInsert)[];
 	reviewerSnippet: (typeof schema.reviewerSnippet.$inferInsert)[];
 	storedFile: (typeof schema.storedFile.$inferInsert)[];
+	school: (typeof schema.school.$inferInsert)[];
 	/** Not a table: the bucket objects of `storedFile`, written by `replaceSeedObjects`. */
 	storedObject: { key: string; bytes: Uint8Array; mimeType: string }[];
 	conference: (typeof schema.conference.$inferInsert)[];
@@ -18,6 +19,7 @@ export interface SeedBatch {
 	conferenceRole: (typeof schema.conferenceRole.$inferInsert)[];
 	committeeToRole: (typeof schema.committeeToRole.$inferInsert)[];
 	committeeAgendaItem: (typeof schema.committeeAgendaItem.$inferInsert)[];
+	resolution: (typeof schema.resolution.$inferInsert)[];
 	delegation: (typeof schema.delegation.$inferInsert)[];
 	delegationMember: (typeof schema.delegationMember.$inferInsert)[];
 	roleApplication: (typeof schema.roleApplication.$inferInsert)[];
@@ -50,6 +52,8 @@ export interface SeedBatch {
 	assignmentSingleRole: (typeof schema.assignmentSingleRole.$inferInsert)[];
 	assignmentWeights: (typeof schema.assignmentWeights.$inferInsert)[];
 	possibleDuplicate: (typeof schema.possibleDuplicate.$inferInsert)[];
+	conferenceEmailSetting: (typeof schema.conferenceEmailSetting.$inferInsert)[];
+	emailLog: (typeof schema.emailLog.$inferInsert)[];
 }
 
 export function emptyBatch(): SeedBatch {
@@ -58,12 +62,14 @@ export function emptyBatch(): SeedBatch {
 		user: [],
 		reviewerSnippet: [],
 		storedFile: [],
+		school: [],
 		storedObject: [],
 		conference: [],
 		committee: [],
 		conferenceRole: [],
 		committeeToRole: [],
 		committeeAgendaItem: [],
+		resolution: [],
 		delegation: [],
 		delegationMember: [],
 		roleApplication: [],
@@ -95,7 +101,9 @@ export function emptyBatch(): SeedBatch {
 		assignmentUnitMember: [],
 		assignmentSingleRole: [],
 		assignmentWeights: [],
-		possibleDuplicate: []
+		possibleDuplicate: [],
+		conferenceEmailSetting: [],
+		emailLog: []
 	};
 }
 
@@ -115,6 +123,7 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.user, (rows) => db.insert(s.user).values(rows));
 	await insertChunked(batch.reviewerSnippet, (rows) => db.insert(s.reviewerSnippet).values(rows));
 	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
+	await insertChunked(batch.school, (rows) => db.insert(s.school).values(rows));
 	await insertChunked(batch.conference, (rows) => db.insert(s.conference).values(rows));
 	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));
 	await insertChunked(batch.conferenceRole, (rows) => db.insert(s.conferenceRole).values(rows));
@@ -122,6 +131,7 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.committeeAgendaItem, (rows) =>
 		db.insert(s.committeeAgendaItem).values(rows)
 	);
+	await insertChunked(batch.resolution, (rows) => db.insert(s.resolution).values(rows));
 	await insertChunked(batch.conferenceParticipant, (rows) =>
 		db.insert(s.conferenceParticipant).values(rows)
 	);
@@ -180,4 +190,8 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	await insertChunked(batch.possibleDuplicate, (rows) =>
 		db.insert(s.possibleDuplicate).values(rows)
 	);
+	await insertChunked(batch.conferenceEmailSetting, (rows) =>
+		db.insert(s.conferenceEmailSetting).values(rows)
+	);
+	await insertChunked(batch.emailLog, (rows) => db.insert(s.emailLog).values(rows));
 }

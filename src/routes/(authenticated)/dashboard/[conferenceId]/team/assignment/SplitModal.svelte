@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import codenamize from '$lib/helpers/codenamize';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import codenamize from '#lib/helpers/codenamize.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';

@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { eq, inArray } from 'drizzle-orm';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];

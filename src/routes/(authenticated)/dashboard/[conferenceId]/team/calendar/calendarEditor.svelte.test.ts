@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { EditorDay } from './calendarEditor.svelte';
 
 const updateCalendarEntry = vi.fn();
-vi.mock('$lib/api/rumbleClient/client', () => ({
+vi.mock('#lib/api/rumbleClient/client.js', () => ({
 	client: { mutate: { updateCalendarEntry: (args: unknown) => updateCalendarEntry(args) } }
 }));
 const toastError = vi.fn();

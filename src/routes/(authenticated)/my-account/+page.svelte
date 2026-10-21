@@ -1,26 +1,25 @@
 <script lang="ts">
-	import Form from '$lib/components/form/Form.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import Form from '#lib/components/form/Form.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
-	import FormSelect from '$lib/components/form/FormSelect.svelte';
-	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
-	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
-	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
+	import FormSelect from '#lib/components/form/FormSelect.svelte';
+	import { translatedNationCodeAddressFormOptions } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
+	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
-	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import FormSection from '$lib/components/form/FormSection.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { buildUserFormValues, toUpdateUserArgs } from '$lib/api/userFormValues';
-	import AddressRegionField from '$lib/components/form/AddressRegionField.svelte';
-	import { addressRules } from '$lib/helpers/addressRules';
+	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import FormSection from '#lib/components/form/FormSection.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues.js';
+	import AddressRegionField from '#lib/components/form/AddressRegionField.svelte';
+	import { addressRules } from '#lib/helpers/addressRules.js';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 
 	const user = await getCurrentUser();
 
@@ -81,9 +80,9 @@
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
-				const target = redirectUrl;
-				// eslint-disable-next-line svelte/no-navigation-without-resolve -- runtime same-origin path from ?redirect=, checked in redirectUrl; resolve() only takes typed routes
-				if (target) await goto(target);
+				// A full navigation: the same-origin path from ?redirect= (checked in redirectUrl) is often
+				// `/login`, an endpoint rather than a page, which `goto` refuses since SvelteKit 3.
+				if (redirectUrl) location.assign(redirectUrl);
 			}
 		}
 	);

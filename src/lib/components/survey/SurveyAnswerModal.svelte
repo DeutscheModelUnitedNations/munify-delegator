@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import Modal from '$lib/components/Modal.svelte';
-	import DeadlineDisplay from '$lib/components/DeadlineDisplay.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import DeadlineDisplay from '#lib/components/DeadlineDisplay.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface SurveyOption {
 		id: string;

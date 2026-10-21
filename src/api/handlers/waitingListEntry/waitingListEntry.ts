@@ -1,7 +1,8 @@
 import { db, schema } from '$api/db/db';
 import { object, countQuery, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { nullToUndefined } from '$api/services/args';
 import {
@@ -9,7 +10,7 @@ import {
 	registerWaitingListEntryAbilities,
 	updatableWaitingListEntry
 } from './waitingListEntryPermissions';
-import { waitingListEntryPubsub } from '$api/pubsub';
+import { schoolPubsub, waitingListEntryPubsub } from '$api/pubsub';
 import { assertWaitingListOpenFor } from './waitingListEntryService';
 
 registerWaitingListEntryAbilities();
@@ -23,7 +24,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: WaitingListEntryRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			school: t.arg.string({ required: true }),
+			/** An existing school, or `schoolName` to find or create one; neither for no school. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			motivation: t.arg.string({ required: true }),
 			experience: t.arg.string({ required: true }),
 			requests: t.arg.string()
@@ -33,7 +36,8 @@ schemaBuilder.mutationFields((t) => ({
 
 			// Same zod schema the registration form uses, so the length limits stay in one place.
 			waitingListFormSchema.parse({
-				school: args.school,
+				schoolId: args.schoolId,
+				schoolName: args.schoolName,
 				motivation: args.motivation,
 				experience: args.experience,
 				requests: args.requests
@@ -46,7 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 				.values({
 					conferenceId: args.conferenceId,
 					userId: id,
-					school: args.school,
+					schoolId: (await resolveSchoolChoice(args)) ?? undefined,
 					motivation: args.motivation,
 					experience: args.experience,
 					requests: nullToUndefined(args.requests)
@@ -55,6 +59,7 @@ schemaBuilder.mutationFields((t) => ({
 				.then(assertFirstEntryExists);
 
 			waitingListEntryPubsub.created();
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
 				.findFirst(
@@ -72,25 +77,36 @@ schemaBuilder.mutationFields((t) => ({
 		type: WaitingListEntryRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			school: t.arg.string(),
+			/** Both null removes the school; both left out keeps it. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string(),
 			motivation: t.arg.string(),
 			experience: t.arg.string(),
 			requests: t.arg.string(),
 			hidden: t.arg.boolean(),
+			/** Setting it records when the entrant was given a seat; clearing it forgets the date. */
 			assigned: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const where = await updatableWaitingListEntry(ctx, args.id);
+			const assignedAt =
+				args.assigned === true
+					? sql`coalesce(${schema.waitingListEntry.assignedAt}, now())`
+					: args.assigned === false
+						? null
+						: undefined;
 			await db
 				.update(schema.waitingListEntry)
 				.set({
-					school: nullToUndefined(args.school),
+					schoolId: await resolveSchoolChoice(args),
 					motivation: nullToUndefined(args.motivation),
 					experience: nullToUndefined(args.experience),
 					requests: nullToUndefined(args.requests),
 					hidden: nullToUndefined(args.hidden),
-					assigned: nullToUndefined(args.assigned)
+					assigned: nullToUndefined(args.assigned),
+					assignedAt
 				})
-				.where(await updatableWaitingListEntry(ctx, args.id));
+				.where(where);
 
 			waitingListEntryPubsub.updated(args.id);
 

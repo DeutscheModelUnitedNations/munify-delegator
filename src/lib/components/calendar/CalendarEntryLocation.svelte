@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import CalendarPlaceMap from './CalendarPlaceMap.svelte';
 	import type { CalendarPlace } from './calendarTypes';
 

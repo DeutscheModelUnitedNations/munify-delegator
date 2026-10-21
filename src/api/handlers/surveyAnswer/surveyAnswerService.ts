@@ -1,7 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /** Organizers may overfill an option and answer past the deadline; participants may not. */

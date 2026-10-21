@@ -36,7 +36,7 @@ describe('application details', () => {
 	it('shapes a delegation with its wishes in rank order', () => {
 		const details = delegationApplication(
 			{
-				school: 'A',
+				school: { name: 'A' },
 				members: [
 					{ isHeadDelegate: true, user: person('1'), supervisors: [supervisor] },
 					{ isHeadDelegate: false, user: person('2'), supervisors: [supervisor] }
@@ -97,7 +97,7 @@ describe('application details', () => {
 	it('collects what a search looks through, and says where a term was found', () => {
 		const fields = searchFieldsOf(
 			singleApplication({
-				school: 'Gym',
+				school: { name: 'Gym' },
 				motivation: 'a long burning fire',
 				user: { ...person('s'), email: 'a@b.c' },
 				supervisors: [{ ...supervisor, user: { ...supervisor.user, email: 'max@x.y' } }],
@@ -173,7 +173,7 @@ describe('searchHitEntries', () => {
 		delegations: [
 			{
 				id: 'd1',
-				school: 'Goethe',
+				school: { name: 'Goethe' },
 				members: [{ isHeadDelegate: true, user: person, supervisors: [] }],
 				appliedForRoles: []
 			}

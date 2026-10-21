@@ -1,6 +1,6 @@
 <script lang="ts">
-	import formatNames from '$lib/helpers/formatNames';
-	import { m } from '$lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import type { BoardDelegation } from './board';
 

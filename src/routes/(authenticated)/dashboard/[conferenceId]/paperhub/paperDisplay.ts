@@ -1,14 +1,14 @@
 import { get } from 'svelte/store';
-import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
+import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 import {
 	validateResolution,
 	createEmptyResolution,
 	type ResolutionHeaderData
-} from '$lib/components/paper/editor/resolution';
-import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
-import { splitRole, type ConferenceRoleKind } from '$lib/helpers/conferenceRole';
-import { translatePaperType } from '$lib/utils/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+} from '#lib/components/paper/editor/resolution/index.js';
+import { editorContentStore, resolutionStore } from '#lib/components/paper/editor/editorStore.js';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import { translatePaperType } from '#lib/utils/enumTranslations.js';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 /** The role of a paper's delegation as the paper pages select it: a nation or a non-state actor. */
 export interface PaperDelegationRole {

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import { toast } from 'svelte-sonner';
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import { page } from '$app/stores';
+	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { page } from '$app/state';
 	import { runInvitationAction } from './invitationActions';
 
 	interface Invitation {
@@ -55,7 +55,7 @@
 				}),
 			async (result) => {
 				if (!result.newToken) return;
-				const inviteUrl = `${$page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
+				const inviteUrl = `${page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
 				await navigator.clipboard.writeText(inviteUrl);
 				toast.success(m.linkCopied());
 			},
@@ -147,9 +147,8 @@
 						{@const expired = isExpired(invitation.expiresAt)}
 						<tr class={expired ? 'opacity-50' : ''}>
 							<td>{invitation.email}</td>
-							<td>
-								<span class="badge badge-ghost">{translateTeamRole(invitation.role)}</span>
-							</td>
+							<td><span class="badge badge-ghost">{translateTeamRole(invitation.role)}</span></td>
+
 							<td>
 								{#if invitation.userExists}
 									<span class="badge badge-success">{m.accountExists()}</span>

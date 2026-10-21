@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { m } from '$lib/paraglide/messages';
-	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 
 	interface Props {
 		entryId: string;
@@ -56,7 +56,7 @@
 <div class="flex items-center gap-1">
 	<a
 		class="btn btn-primary btn-xs"
-		href={resolve(`/dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
+		href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
 		title={m.assignSeat()}
 		onclick={(e) => e.stopPropagation()}
 	>

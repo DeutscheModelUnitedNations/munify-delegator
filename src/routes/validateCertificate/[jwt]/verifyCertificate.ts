@@ -1,10 +1,11 @@
 import { importJWK, jwtVerify } from 'jose';
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
 import {
 	certificateAlg,
 	certificateRequiredClaims
 } from '$api/handlers/certificateConfig/certificateConfig';
 import type { CertificateJWTPayload } from '$api/handlers/certificate/certificate';
+import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout.js';
 
 /**
  * Checks a participation certificate against the public key the API publishes.
@@ -40,7 +41,8 @@ export async function verifyCertificate(jwt: string) {
 			fullName: verified.payload.n,
 			conferenceTitle: verified.payload.t,
 			conferenceStartDate: verified.payload.s ? new Date(verified.payload.s) : undefined,
-			conferenceEndDate: verified.payload.e ? new Date(verified.payload.e) : undefined
+			conferenceEndDate: verified.payload.e ? new Date(verified.payload.e) : undefined,
+			sessions: sessionsFromClaim(verified.payload.a)
 		};
 	} catch (error) {
 		console.error('JWT verification failed:', error);
@@ -48,7 +50,8 @@ export async function verifyCertificate(jwt: string) {
 			fullName: undefined,
 			conferenceTitle: undefined,
 			conferenceStartDate: undefined,
-			conferenceEndDate: undefined
+			conferenceEndDate: undefined,
+			sessions: []
 		};
 	}
 }

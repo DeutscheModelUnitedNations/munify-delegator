@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StatusWidget from './StatusWidget.svelte';
-	import type { MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
+	import type { MediaconsentstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	interface Props {
 		title: string;
@@ -26,23 +27,27 @@
 	status={[
 		{
 			value: 'NOT_SET',
+			title: m.mediaConsentStatusNotSet(),
 			faIcon: 'fa-clipboard-question',
 			color: 'btn-warning'
 		},
 		{
 			value: 'NOT_ALLOWED',
+			title: m.mediaConsentStatusNotAllowed(),
 			faIcon: 'fa-camera-slash',
 			color: 'btn-error',
 			hotkey: hotkeyMap?.NOT_ALLOWED
 		},
 		{
 			value: 'PARTIALLY_ALLOWED',
+			title: m.mediaConsentStatusPartiallyAllowed(),
 			faIcon: 'fa-magnifying-glass',
 			color: 'btn-warning',
 			hotkey: hotkeyMap?.PARTIALLY_ALLOWED
 		},
 		{
 			value: 'ALLOWED_ALL',
+			title: m.mediaConsentStatusAllowedAll(),
 			faIcon: 'fa-camera',
 			color: 'btn-success',
 			hotkey: hotkeyMap?.ALLOWED_ALL ?? doneHotkey

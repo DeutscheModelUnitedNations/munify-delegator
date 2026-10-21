@@ -1,7 +1,7 @@
 import { schemaBuilder } from '$api/rumble';
 import { assertCanReadNametagBins } from './nametagBinsPermissions';
 import { loadNametagBinGroups, loadNametagBins, loadOwnNametagTable } from './bins';
-import { normalizeConferenceLanguage } from '$lib/helpers/conferenceLanguage';
+import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
 import { db } from '$api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
 

@@ -1,21 +1,18 @@
 import { db, schema } from '$api/db/db';
+import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '$api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { NationRef } from '$api/handlers/nation/nation';
 import { enum_ } from '$api/rumble';
 import { eq, max } from 'drizzle-orm';
 import { UserRef } from '$api/handlers/user/user';
-import {
-	loadSchoolRows,
-	refreshSchoolSuggestions
-} from '$api/handlers/schoolSuggestion/schoolSuggestions';
+import { loadSchoolRows } from '$api/handlers/schoolSuggestion/schoolSuggestions';
 import { readableSchoolRegistrations } from '$api/handlers/schoolSuggestion/schoolSuggestionPermissions';
 import {
 	assertValidConferenceSettings,
 	countOfferedSeats,
 	countSeatedParticipants,
 	findPlausibilityIssues,
-	mergeSchoolNames,
 	seedConference,
 	updateConference,
 	type PlausibilityUser
@@ -26,21 +23,14 @@ import {
 	assertCanSeedConference,
 	assertCanUpdateConference,
 	conferenceUpdateRefused,
-	registerConferenceAbilities,
-	schoolMergeScope
+	registerConferenceAbilities
 } from './conferencePermissions';
-import {
-	committeePubsub,
-	conferencePubsub,
-	conferenceRolePubsub,
-	delegationPubsub,
-	schoolSuggestionPubsub,
-	schoolSuggestionVariantPubsub,
-	singleParticipantPubsub
-} from '$api/pubsub';
+import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '$api/pubsub';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
+		schoolId: t.id(),
+		/** The school's name */
 		school: t.string(),
 		delegationCount: t.int(),
 		delegationMembers: t.int(),
@@ -102,44 +92,6 @@ const ConferenceRef = object({
 
 query({ table: 'conference' });
 
-schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Merges several spellings of a school name into one, across both delegations and single
-	 * participants. Participants type their school by hand, so the same institution arrives in
-	 * a dozen variations; this is the cleanup tool for that.
-	 */
-	normalizeSchoolsInConference: t.drizzleField({
-		type: ConferenceRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			schoolsToMerge: t.arg.stringList({ required: true }),
-			newSchoolName: t.arg.string({ required: true })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await mergeSchoolNames(args, await schoolMergeScope(ctx, args.conferenceId));
-			await refreshSchoolSuggestions(
-				args.conferenceId,
-				await readableSchoolRegistrations(ctx, args.conferenceId)
-			);
-
-			delegationPubsub.updated();
-			singleParticipantPubsub.updated();
-			schoolSuggestionPubsub.updated();
-			schoolSuggestionVariantPubsub.updated();
-
-			return db.query.conference
-				.findFirst(
-					query(
-						(await ctx.abilities.conference.filter('read')).merge({
-							where: { id: args.conferenceId }
-						}).query.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	})
-}));
-
 const conferenceStateEnum = enum_({ tsName: 'conferenceState' });
 
 schemaBuilder.mutationFields((t) => ({
@@ -162,6 +114,8 @@ schemaBuilder.mutationFields((t) => ({
 			showCalendar: t.arg.boolean(),
 			timezone: t.arg.string(),
 			nametagBinCount: t.arg.int(),
+			/** How many seats one school may be given before the assignment warns; null for no limit. */
+			maxSeatsPerSchool: t.arg.int(),
 			state: t.arg({ type: conferenceStateEnum }),
 			startAssignment: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),
@@ -199,6 +153,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (!(await updateConference(args))) throw conferenceUpdateRefused();
 
 			conferencePubsub.updated(args.id);
+			// unlocking postals or payments, or the state, may owe mails
+			scheduleEmailSweep(args.id, ctx.requestUrl().origin);
 
 			return db.query.conference
 				.findFirst(

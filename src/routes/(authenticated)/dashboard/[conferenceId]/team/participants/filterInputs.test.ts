@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('$lib/utils/nationTranslationHelper.svelte', () => ({
+vi.mock('#lib/utils/nationTranslationHelper.svelte.js', () => ({
 	nationCodesMatching: (term: string) => (term === 'Deu' ? ['DEU'] : [])
 }));
 

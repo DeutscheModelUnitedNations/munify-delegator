@@ -1,22 +1,23 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import {
 		CONVERT_CONTAINER,
 		POOL_CONTAINER,
 		boardState,
 		roleContainer,
 		singleDropAction
-	} from '$lib/assignment/board';
-	import { seatedRoles } from '$lib/assignment/capacity';
-	import { liveSnapshot } from '$lib/api/liveSnapshot';
-	import { createPendingMoves } from '$lib/assignment/pendingMoves.svelte';
-	import { memoizeLast } from '$lib/helpers/memoizeLast';
-	import { m } from '$lib/paraglide/messages';
+	} from '#lib/assignment/board.js';
+	import { seatedRoles } from '#lib/assignment/capacity.js';
+	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
+	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
+	import { memoizeLast } from '#lib/helpers/memoizeLast.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
 	import {
 		fetchAssignmentDraft,
 		fetchAssignmentRoles,
+		fetchSchoolSeatLimit,
 		fetchSeatedApplications,
 		fetchSinglePoolPage,
 		type BoardSingleParticipant,
@@ -31,19 +32,23 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
+	import { exceededBy, schoolSeats } from '#lib/assignment/schoolSeats.js';
+	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
-	const [roles, draft, seated] = $derived(
+	const [roles, draft, seated, schoolLimit] = $derived(
 		await Promise.all([
 			fetchAssignmentRoles(params.conferenceId),
 			fetchAssignmentDraft(params.conferenceId),
-			fetchSeatedApplications(params.conferenceId)
+			fetchSeatedApplications(params.conferenceId),
+			fetchSchoolSeatLimit(params.conferenceId)
 		])
 	);
+	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
 	// Plain copies of the live results the board works over (see `liveSnapshot`).
 	const roleSnapshot = {
 		committees: liveSnapshot<(typeof roles.committees)[number]>(),
@@ -119,6 +124,35 @@
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
+	const delegationById = $derived(new Map(seatedSet.delegations.map((d) => [d.id, d])));
+	const schoolOfSingle = (id: string) => singleById.get(id)?.school;
+	const schoolCounts = $derived(
+		schoolSeats(view, (id) => delegationById.get(id)?.school, schoolOfSingle)
+	);
+
+	/** Warns (never blocks) when a single participant taking a role takes their school past the limit. */
+	const holdsRole = (singleParticipantId: string) =>
+		view.singles.some(
+			(single) => single.singleParticipantId === singleParticipantId && !!single.roleId
+		);
+
+	function warnAboutSchool(singleParticipantId: string) {
+		const exceeded = exceededBy(
+			schoolCounts,
+			schoolOfSingle(singleParticipantId) ?? undefined,
+			holdsRole(singleParticipantId) ? 0 : 1,
+			maxSeatsPerSchool
+		);
+		if (exceeded) {
+			toast.warning(
+				m.assignmentSchoolSeatsWarning({
+					school: exceeded.name,
+					seats: exceeded.seats,
+					limit: exceeded.limit
+				})
+			);
+		}
+	}
 	const pool = $derived(view.singles.filter((single) => !single.roleId));
 
 	const loadMore = () => {
@@ -157,6 +191,7 @@
 		const singleParticipantId = dropState.draggedItem.id;
 		const action = singleDropAction(dropState.sourceContainer, dropState.targetContainer);
 		if (!action) return;
+		if (action.type === 'role' && action.roleId) warnAboutSchool(singleParticipantId);
 		void moves.track(singleParticipantId, () =>
 			succeeded(
 				action.type === 'convert'
@@ -237,6 +272,7 @@
 				{onDrop}
 				onRevert={revert}
 			/>
+			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} />
 		</div>
 
 		<section

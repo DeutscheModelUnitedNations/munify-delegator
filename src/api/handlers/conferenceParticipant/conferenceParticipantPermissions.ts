@@ -11,7 +11,7 @@ import {
 	userId,
 	where
 } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 
 export function registerConferenceParticipantAbilities() {
 	// Ported from abilities/entities/conferenceParticipant.ts

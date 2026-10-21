@@ -1,9 +1,9 @@
 import { emailService } from './emailService';
-import { renderEmail, NewReviewEmail } from '$lib/emails';
-import { m } from '$lib/paraglide/messages';
-import type { Locale } from '$lib/paraglide/runtime';
-import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
-import type { PapertypeEnum, PaperstatusEnum } from '$lib/api/rumbleClient/client';
+import { renderEmail, NewReviewEmail } from '#lib/emails/index.js';
+import { m } from '#lib/paraglide/messages.js';
+import type { Locale } from '#lib/paraglide/runtime.js';
+import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
+import type { PapertypeEnum, PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
 import { runWithLocale } from '../requestLocale';
 import type { NewReviewEmailProps, SendEmailResult } from './types';
 

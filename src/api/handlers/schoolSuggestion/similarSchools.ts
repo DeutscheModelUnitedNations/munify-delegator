@@ -1,6 +1,8 @@
 import anyAscii from 'any-ascii';
 
 export interface SchoolVariant {
+	schoolId: string;
+	/** The school's name */
 	school: string;
 	sumParticipants: number;
 }
@@ -124,7 +126,7 @@ export function findSimilarSchools(schools: readonly SchoolVariant[]): SchoolSug
 		.sort((a, b) => b.similarity - a.similarity || b.variants.length - a.variants.length);
 }
 
-/** Identifies a group for dismissal: its sorted names as JSON, safe for a text column. */
-export function suggestionKey(names: readonly string[]): string {
-	return JSON.stringify(names.toSorted());
+/** Identifies a group for dismissal: its sorted school ids as JSON, safe for a text column. */
+export function suggestionKey(schoolIds: readonly string[]): string {
+	return JSON.stringify(schoolIds.toSorted());
 }

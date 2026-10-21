@@ -1,6 +1,6 @@
 <script lang="ts">
-	import questionSvg from '$assets/undraw/question.svg';
-	import { m } from '$lib/paraglide/messages';
+	import questionSvg from '#assets/undraw/question.svg';
+	import { m } from '#lib/paraglide/messages.js';
 	import { resolve } from '$app/paths';
 </script>
 

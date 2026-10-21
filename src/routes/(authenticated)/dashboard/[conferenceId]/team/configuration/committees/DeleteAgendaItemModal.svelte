@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
 	import type { AgendaItem } from './types';
 

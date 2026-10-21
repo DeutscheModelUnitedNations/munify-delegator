@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import codenmz from '$lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages.js';
+	import codenmz from '#lib/helpers/codenamize.js';
 	import GenericWidget from './delegationStats/GenericWidget.svelte';
 
 	interface Props {

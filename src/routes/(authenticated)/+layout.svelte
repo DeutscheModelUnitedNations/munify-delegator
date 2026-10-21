@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import AuthenticatedHeader from './AuthenticatedHeader.svelte';
-	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
+	import UserCardDrawer from '#lib/components/userCard/UserCardDrawer.svelte';
 
-	// import ExportButtons from '$lib/components/dataTable/ExportButtons.svelte';
+	// import ExportButtons from '#lib/components/dataTable/ExportButtons.svelte';
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
 	interface Props {

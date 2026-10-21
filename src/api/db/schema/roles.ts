@@ -33,7 +33,7 @@ export const conferenceRoleKind = pgEnum('conference_role_kind', [
  * `setCommitteeNationSeat` keeps a `NATION` row for every nation that has a seat. Such a row only
  * holds `nationAlpha3Code`: its name is the nation's translated one and its seats come from the
  * committees. Non-state actors and custom roles carry their own name, description and seats.
- * `$lib/helpers/conferenceRole` counts a role's seats and narrows a row to its kind.
+ * `#lib/helpers/conferenceRole` counts a role's seats and narrows a row to its kind.
  */
 export const conferenceRole = snakeCase.table(
 	'conference_role',

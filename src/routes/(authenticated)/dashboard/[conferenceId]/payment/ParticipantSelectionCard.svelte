@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { PaymentParticipantSelection } from './participantSelection.svelte';
 
 	/** Picking who a payment covers: select/deselect all, then the given fieldsets of people. */

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { resolve } from '$app/paths';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
-	import IdentityCode from '$lib/components/IdentityCode.svelte';
-	import Flag from '$lib/components/Flag.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { fetchMyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import IdentityCode from '#lib/components/IdentityCode.svelte';
+	import Flag from '#lib/components/Flag.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import { onMount, onDestroy } from 'svelte';
 	import { describeParticipant } from './participantInfo';
 	import type { PageProps } from './$types';
@@ -51,6 +51,25 @@
 		participantInfo.type !== 'unassigned' && participantInfo.type !== 'none'
 	);
 
+	// A tip for getting the most out of the page on a phone, until it is put away.
+	const TIP_KEY = 'registration-mode-tip-dismissed';
+	let tipDismissed = $state(false);
+	onMount(() => {
+		try {
+			tipDismissed = localStorage.getItem(TIP_KEY) === '1';
+		} catch {
+			// storage unavailable: the tip stays
+		}
+	});
+	function dismissTip() {
+		tipDismissed = true;
+		try {
+			localStorage.setItem(TIP_KEY, '1');
+		} catch {
+			// private mode: dismissed until the page is left
+		}
+	}
+
 	function formatTime(date: Date): string {
 		return date.toLocaleTimeString(getLocale(), {
 			hour: '2-digit',
@@ -68,7 +87,7 @@
 	<!-- Header: Back button + Conference + Timestamp -->
 	<div class="flex w-full items-start justify-between">
 		<div class="flex flex-col items-start gap-1">
-			<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
+			<a href={resolve(`dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
 				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 				{m.backToDashboard()}
 			</a>
@@ -80,6 +99,16 @@
 			{formatTime(currentTime)}
 		</div>
 	</div>
+
+	{#if isValidParticipant && !tipDismissed}
+		<div role="note" class="alert alert-info alert-soft mt-4 w-full max-w-xl text-sm">
+			<i class="fa-sharp-duotone fa-solid fa-lightbulb"></i>
+			<span>{m.registrationModeTip()}</span>
+			<button class="btn btn-ghost btn-xs btn-square" aria-label={m.close()} onclick={dismissTip}>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			</button>
+		</div>
+	{/if}
 
 	{#if isValidParticipant}
 		<!-- Main content area -->
@@ -103,15 +132,13 @@
 			</span>
 
 			<!-- Full Name -->
+
 			<h1 class="mt-2 text-center font-bold" style="font-size: clamp(1.75rem, 8vw, 4rem);">
 				{fullName}
 			</h1>
 
 			<!-- Signed identity code, renewed while the page is open -->
-			<div class="mt-2 w-full max-w-64">
-				<IdentityCode conferenceId={params.conferenceId} />
-			</div>
-
+			<div class="mt-2 w-full max-w-64"><IdentityCode conferenceId={params.conferenceId} /></div>
 			<!-- User ID -->
 			<div class="text-base-content/40 font-mono" style="font-size: clamp(0.7rem, 2.5vw, 0.9rem);">
 				{userId}

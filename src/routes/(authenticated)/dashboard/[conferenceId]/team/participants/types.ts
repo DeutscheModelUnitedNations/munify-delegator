@@ -1,5 +1,10 @@
 export type ParticipationRole =
-	'SUPERVISOR' | 'SINGLE_PARTICIPANT' | 'DELEGATION_MEMBER' | 'TEAM_MEMBER';
+	| 'SUPERVISOR'
+	| 'SINGLE_PARTICIPANT'
+	| 'DELEGATION_MEMBER'
+	| 'TEAM_MEMBER'
+	/** Waiting for a seat, without any registration in the conference */
+	| 'WAITING_LIST';
 
 export type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
 
@@ -39,6 +44,12 @@ export interface ParticipantRow {
 	accessCardId: string | null;
 
 	accepted: boolean;
+	/** On the conference's waiting list and not yet given a seat from it. */
+	onWaitingList: boolean;
+	/** When the person signed up for the waiting list, if they did. */
+	waitingListSince: Date | null;
+	/** When the person was given a seat from the waiting list. */
+	seatedFromWaitingListAt: Date | null;
 	/** Accepted and expected on site, but payment or a registration document is not DONE. */
 	hasOpenIssue: boolean;
 	ageAtConference: number | null;

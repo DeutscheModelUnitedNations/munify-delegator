@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import AgendaItemRow from './AgendaItemRow.svelte';
 	import type { AgendaItem, ManagedCommittee } from './types';
 

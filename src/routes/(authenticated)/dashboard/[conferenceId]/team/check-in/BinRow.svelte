@@ -1,6 +1,6 @@
 <script lang="ts">
 	import BinGroups from './BinGroups.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages.js';
 	import { binTone, letterRange } from './nametagSheets';
 
 	interface Props {

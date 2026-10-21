@@ -1,22 +1,21 @@
 import { db, schema } from '$api/db/db';
 import type { ApiContext } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
-import { m } from '$lib/paraglide/messages';
-import { and, eq, inArray, type SQL } from 'drizzle-orm';
+import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
+import { m } from '#lib/paraglide/messages.js';
+import { eq } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
 	PARTICIPANT_MAX_AGE,
 	PARTICIPANT_MIN_AGE,
 	SUPERVISOR_MIN_AGE,
 	yearsAgo
-} from '$lib/helpers/plausibilityRules';
+} from '#lib/helpers/plausibilityRules.js';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
-import { normalizeSchoolName } from '$api/handlers/schoolSuggestion/conferenceAggregates';
 import { totalSeats } from '$api/services/seatPlanning';
 import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
-import { isConferenceLanguage } from '$lib/helpers/conferenceLanguage';
+import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
 import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
 import { apiError } from '$api/services/errors/apiError';
 
@@ -61,8 +60,13 @@ export async function countOfferedSeats(conferenceId: string) {
 /** The settings with a closed set of values; an omitted or cleared one is left to the column. */
 export function assertValidConferenceSettings(args: {
 	nametagBinCount?: number | null;
+	maxSeatsPerSchool?: number | null;
 	language?: string | null;
 }) {
+	if (args.maxSeatsPerSchool != null && args.maxSeatsPerSchool < 1) {
+		throw apiError('INVALID_INPUT', m.conferenceMaxSeatsPerSchoolRange());
+	}
+
 	if (
 		args.nametagBinCount != null &&
 		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
@@ -72,39 +76,6 @@ export function assertValidConferenceSettings(args: {
 
 	if (args.language != null && !isConferenceLanguage(args.language)) {
 		throw apiError('INVALID_INPUT', m.conferenceLanguageUnsupported());
-	}
-}
-
-/**
- * Merges several spellings of a school name into one, across both delegations and single
- * participants. `scope` holds the rows the caller may rename (`schoolMergeScope`).
- */
-export async function mergeSchoolNames(
-	args: { conferenceId: string; schoolsToMerge: string[]; newSchoolName: string },
-	scope: { updatableDelegations: SQL | undefined; updatableSingleParticipants: SQL | undefined }
-) {
-	const newSchoolName = normalizeSchoolName(args.newSchoolName);
-	if (!newSchoolName) throw new Error('The new school name must not be empty');
-
-	if (args.schoolsToMerge.length > 0) {
-		await db.transaction(async (tx) => {
-			await tx
-				.update(schema.delegation)
-				.set({ school: newSchoolName })
-				.where(
-					and(scope.updatableDelegations, inArray(schema.delegation.school, args.schoolsToMerge))
-				);
-
-			await tx
-				.update(schema.singleParticipant)
-				.set({ school: newSchoolName })
-				.where(
-					and(
-						scope.updatableSingleParticipants,
-						inArray(schema.singleParticipant.school, args.schoolsToMerge)
-					)
-				);
-		});
 	}
 }
 
@@ -152,6 +123,8 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			showCalendar: nullToUndefined(args.showCalendar),
 			timezone: nullToUndefined(args.timezone),
 			nametagBinCount: nullToUndefined(args.nametagBinCount),
+			// null lifts the limit
+			maxSeatsPerSchool: args.maxSeatsPerSchool,
 			state: nullToUndefined(args.state),
 			startAssignment: nullToUndefined(args.startAssignment),
 			startConference: nullToUndefined(args.startConference),
@@ -228,7 +201,7 @@ export async function seedConference(input: unknown) {
 		for (const role of data.customConferenceRole) {
 			await tx
 				.insert(schema.conferenceRole)
-				.values({ conferenceId: conference.id, kind: 'CUSTOM', seatAmount: 1, ...role });
+				.values({ conferenceId: conference.id, kind: 'CUSTOM', ...role });
 		}
 
 		for (const committee of data.committees) {

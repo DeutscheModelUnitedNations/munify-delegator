@@ -12,6 +12,8 @@
 			faIcon: string;
 			color: 'btn-success' | 'btn-warning' | 'btn-error' | 'btn-info';
 			hotkey?: string;
+			/** What the status means, shown as a tooltip */
+			title?: string;
 		}[];
 		changeStatus: (status: Status) => Promise<void>;
 	}
@@ -52,10 +54,12 @@
 		{title}
 	</h3>
 	<div class="join w-full">
-		{#each status as { value, faIcon, color, hotkey } (value)}
+		{#each status as { value, faIcon, color, hotkey, title: statusTitle } (value)}
 			<button
 				class="btn {activeStatus === value && `${color}`} join-item flex-1"
-				aria-label={`${value}`}
+				class:tooltip={statusTitle}
+				data-tip={statusTitle}
+				aria-label={statusTitle ?? `${value}`}
 				onclick={() => btnClick(value)}
 			>
 				{#if loading}

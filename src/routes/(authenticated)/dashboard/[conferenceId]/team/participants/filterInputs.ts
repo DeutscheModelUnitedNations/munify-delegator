@@ -1,6 +1,6 @@
-import type { ParticipantFilterInput } from '$lib/api/rumbleClient/client';
-import type { ColumnFiltersState } from '$lib/components/tanStackTable';
-import { nationCodesMatching } from '$lib/utils/nationTranslationHelper.svelte';
+import type { ParticipantFilterInput } from '#lib/api/rumbleClient/client.js';
+import type { ColumnFiltersState } from '#lib/components/tanStackTable/index.js';
+import { nationCodesMatching } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 /** The kind of filter a column has, which decides how its value is read. */
 export type FilterKind = 'text' | 'enum' | 'boolean' | 'range';

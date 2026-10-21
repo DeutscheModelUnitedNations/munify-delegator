@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '$lib/api/rumbleClient/client';
-	import Flag from '$lib/components/Flag.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { isOutsideSizeLimits, type SizeLimits } from '$lib/helpers/seatPlanning/hints';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import Flag from '#lib/components/Flag.svelte';
+	import Modal from '#lib/components/Modal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints.js';
 	import { toast } from 'svelte-sonner';
 	import type { SeatPlanner } from './seatPlanner.svelte';
 

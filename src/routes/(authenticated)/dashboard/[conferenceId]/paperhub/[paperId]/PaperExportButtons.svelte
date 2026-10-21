@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { m } from '$lib/paraglide/messages';
-	import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
-	import type { ResolutionHeaderData } from '$lib/components/paper/editor/resolution';
+	import { m } from '#lib/paraglide/messages.js';
+	import { editorContentStore, resolutionStore } from '#lib/components/paper/editor/editorStore.js';
+	import type { ResolutionHeaderData } from '#lib/components/paper/editor/resolution/index.js';
 	import {
 		downloadResolutionPdf,
 		downloadResolutionTypst,
 		downloadPaperPdf,
 		downloadPaperTypst
-	} from '$lib/utils/resolutionExport';
+	} from '#lib/utils/resolutionExport.js';
 	import { paperExportJob } from './paperExport';
 	import type { PaperDetail } from './paperDetail';
 

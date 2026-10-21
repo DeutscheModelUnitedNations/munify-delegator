@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
+	import { m } from '#lib/paraglide/messages.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import TodoTable from '#lib/components/dashboard/TodoTable.svelte';
 
 	/**
 	 * The registration's to-do list and the button that completes it, enabled once at most the final

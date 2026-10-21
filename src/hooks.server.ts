@@ -1,7 +1,8 @@
+import { isRedirect, redirect } from '@sveltejs/kit';
 import * as Sentry from '@sentry/sveltekit';
-import { sentryDataCollection } from '$lib/sentryDataCollection';
-import { isRedirect, redirect, type Handle } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
+import { sentryDataCollection } from '#lib/sentryDataCollection.js';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
+
 import {
 	AUTHENTICATED_ROUTES,
 	OIDC,
@@ -9,9 +10,9 @@ import {
 	accessTokenCookieName,
 	refreshTokenCookieName
 } from '$api/services/OIDC';
-import { paraglideMiddleware } from '$lib/paraglide/server';
+import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { localeOfRequest, runWithLocale } from '$api/services/requestLocale';
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {
 	PUBLIC_FONTAWESOME_CSS_URL,
@@ -19,7 +20,7 @@ import {
 	PUBLIC_OIDC_MIGRATION_NOTICE
 } from '$app/env/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
-import { MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION } from '$lib/data/migrationNotice';
+import { MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION } from '#lib/data/migrationNotice.js';
 // --- END TEMPORARY ---
 
 // Initialize Sentry (only if DSN provided and not building)
@@ -35,7 +36,6 @@ if (!building && SENTRY_DSN) {
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
-		event.request = localizedRequest;
 		const render = () =>
 			resolve(event, {
 				transformPageChunk: ({ html }) => {

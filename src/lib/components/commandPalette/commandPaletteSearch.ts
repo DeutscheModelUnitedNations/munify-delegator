@@ -1,8 +1,9 @@
-import { client } from '$lib/api/rumbleClient/client';
+import { client } from '#lib/api/rumbleClient/client.js';
+import { containing } from '#lib/components/tanStackTable/serverQuery.js';
 import {
 	getFullTranslatedCountryNameFromISO3Code,
 	translatedNationCodeAddressFormOptions
-} from '$lib/utils/nationTranslationHelper.svelte';
+} from '#lib/utils/nationTranslationHelper.svelte.js';
 import Fuse from 'fuse.js';
 import {
 	userParticipationType,
@@ -87,7 +88,7 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 				limit: RESULT_LIMIT
 			},
 			id: true,
-			school: true,
+			school: { name: true },
 			assignedRole: { nationAlpha3Code: true, name: true },
 			members: { isHeadDelegate: true, user: { id: true } }
 		}),
@@ -106,7 +107,7 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 		...delegations.map((delegation) => ({
 			id: delegation.id,
 			title: delegationSeatTitle(delegation),
-			subtitle: delegation.school,
+			subtitle: delegation.school?.name ?? null,
 			holderUserId: delegation.members.find((member) => member.isHeadDelegate)?.user.id ?? null
 		})),
 		...singles.map((single) => ({
@@ -230,12 +231,16 @@ export async function searchConference(
 				familyName: true,
 				email: true
 			}),
-			// `entryCode` is the delegation's join secret, masked for team members who do not hand it
-			// out, and a masked column fails the whole query: it is neither selected nor searched.
+			// Delegations by the school they come from. `entryCode` is the delegation's join secret,
+			// masked for team members who do not hand it out, and a masked column fails the whole
+			// query: it is neither selected nor searched.
 			client.query.delegations({
-				__args: { search: searchTerm.trim(), where: inConference, limit: RESULT_LIMIT },
+				__args: {
+					where: { ...inConference, school: { name: containing(searchTerm.trim()) } },
+					limit: RESULT_LIMIT
+				},
 				id: true,
-				school: true,
+				school: { name: true },
 				members: { isHeadDelegate: true, user: { id: true } }
 			}),
 			client.query.paymentTransactions({
@@ -273,7 +278,7 @@ export async function searchConference(
 		})),
 		delegations: delegations.map((delegation) => ({
 			id: delegation.id,
-			school: delegation.school,
+			school: delegation.school?.name ?? null,
 			memberCount: delegation.members.length,
 			headDelegateUserId:
 				delegation.members.find((member) => member.isHeadDelegate)?.user.id ?? null

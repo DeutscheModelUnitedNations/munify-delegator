@@ -10,9 +10,9 @@ const mocks = vi.hoisted(() => ({
 	conferenceParticipants: vi.fn()
 }));
 
-vi.mock('$lib/api/rumbleClient/client', () => ({ client: { query: mocks } }));
+vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: { query: mocks } }));
 
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { searchConference } from './commandPaletteSearch';
 
 const conferenceId = 'conf-1';
@@ -179,7 +179,7 @@ describe('searchConference', () => {
 			answerDelegations('seats', [
 				{
 					id: 'd1',
-					school: 'Gym',
+					school: { name: 'Gym' },
 					assignedRole: { nationAlpha3Code: 'FRA', name: null },
 					members: [
 						{ isHeadDelegate: false, user: { id: 'u1' } },
@@ -272,7 +272,7 @@ describe('searchConference', () => {
 			answerDelegations('delegations', [
 				{
 					id: 'd1',
-					school: 'Gym',
+					school: { name: 'Gym' },
 					assignedRole: null,
 					members: [
 						{ isHeadDelegate: true, user: { id: 'u1' } },

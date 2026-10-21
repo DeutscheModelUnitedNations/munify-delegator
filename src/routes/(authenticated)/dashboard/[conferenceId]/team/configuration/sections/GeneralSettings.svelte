@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '$lib/helpers/conferenceLanguage';
+	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '#lib/helpers/conferenceLanguage.js';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { technicalRegistrationDeadline } from '$lib/helpers/applicationReadiness';
-	import FormSection from '$lib/components/form/FormSection.svelte';
-	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/form/FormSelect.svelte';
-	import FormImage from '$lib/components/form/FormImage.svelte';
-	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
+	import { technicalRegistrationDeadline } from '#lib/helpers/applicationReadiness.js';
+	import FormSection from '#lib/components/form/FormSection.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
+	import FormSelect from '#lib/components/form/FormSelect.svelte';
+	import FormImage from '#lib/components/form/FormImage.svelte';
+	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
 	interface Props {
@@ -114,6 +114,13 @@
 		</div>
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+		<FormTextInput
+			{form}
+			name="maxSeatsPerSchool"
+			type="number"
+			label={m.conferenceMaxSeatsPerSchool()}
+			description={m.conferenceMaxSeatsPerSchoolDescription()}
+		/>
 	</div>
 	<fieldset class="fieldset">
 		<legend class="label mb-2">{m.conferenceTimezone()}</legend>

@@ -367,6 +367,7 @@ export type Attendancesession = {
   mode: AttendancesessionmodeEnum,
   occasion: String,
   search_distance: Float | null,
+  showOnCertificate: Boolean,
   startedAt: DateTime,
   updatedAt: DateTime    
 };
@@ -379,6 +380,7 @@ export type AttendancesessionOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   mode?: SortingParameter | null | undefined,
   occasion?: SortingParameter | null | undefined,
+  showOnCertificate?: SortingParameter | null | undefined,
   startedAt?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
@@ -397,6 +399,7 @@ export type AttendancesessionWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   mode?: AttendancesessionmodeEnum | null | undefined,
   occasion?: StringWhereInputArgument | null | undefined,
+  showOnCertificate?: BooleanWhereInputArgument | null | undefined,
   startedAt?: DateTimeWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
@@ -613,7 +616,21 @@ export type CalendartrackWhereInputArgument = {
 		
 export type CertificateJWT = {
   fullName: String | null,
-  jwt: String | null    
+  jwt: String | null,
+  sessions: () => CertificateSession[]    
+};
+		
+export type CertificateOccasion = {
+  entries: Int,
+  firstStartedAt: DateTime,
+  name: String,
+  sessions: Int,
+  showOnCertificate: Boolean    
+};
+		
+export type CertificateSession = {
+  attended: Boolean,
+  name: String    
 };
 		
 export type CheckEmailInput = {
@@ -857,6 +874,7 @@ export type Conference = {
   }) => Storedfile | null,
   logoFileId: ID | null,
   longTitle: String | null,
+  maxSeatsPerSchool: Int | null,
   mediaConsentFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -984,6 +1002,7 @@ export type ConferenceOrderInputArgument = {
   location?: SortingParameter | null | undefined,
   logoFileId?: SortingParameter | null | undefined,
   longTitle?: SortingParameter | null | undefined,
+  maxSeatsPerSchool?: SortingParameter | null | undefined,
   mediaConsentFileId?: SortingParameter | null | undefined,
   nametagBinCount?: SortingParameter | null | undefined,
   postalApartment?: SortingParameter | null | undefined,
@@ -1007,12 +1026,31 @@ export type ConferenceOrderInputArgument = {
   website?: SortingParameter | null | undefined    
 };
 		
+export type ConferenceSchoolRow = {
+  applied: Int,
+  city: String | null,
+  delegations: Int,
+  name: String,
+  participants: Int,
+  schoolId: ID,
+  seated: Int,
+  supervisors: Int,
+  waitingList: Int    
+};
+		
 export type ConferenceSchools = {
   delegationCount: Int,
   delegationMembers: Int,
   school: String,
+  schoolId: ID,
   singleParticipants: Int,
   sumParticipants: Int    
+};
+		
+export type ConferenceSchoolsPage = {
+  hasMore: Boolean,
+  rows: () => ConferenceSchoolRow[],
+  total: Int    
 };
 		
 export type ConferenceWhereInputArgument = {
@@ -1058,6 +1096,7 @@ export type ConferenceWhereInputArgument = {
   logoFile?: StoredfileWhereInputArgument | null | undefined,
   logoFileId?: IDWhereInputArgument | null | undefined,
   longTitle?: StringWhereInputArgument | null | undefined,
+  maxSeatsPerSchool?: IntWhereInputArgument | null | undefined,
   mediaConsentFile?: StoredfileWhereInputArgument | null | undefined,
   mediaConsentFileId?: IDWhereInputArgument | null | undefined,
   nametagBinCount?: IntWhereInputArgument | null | undefined,
@@ -1090,6 +1129,42 @@ export type ConferenceWhereInputArgument = {
   unlockPostals?: BooleanWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   website?: StringWhereInputArgument | null | undefined    
+};
+		
+export type Conferenceemailsetting = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  enabled: Boolean,
+  id: ID,
+  kind: EmailkindEnum,
+  search_distance: Float | null,
+  updatedAt: DateTime    
+};
+		
+export type ConferenceemailsettingOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  enabled?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ConferenceemailsettingWhereInputArgument = {
+  AND?: ConferenceemailsettingWhereInputArgument[] | undefined,
+  NOT?: ConferenceemailsettingWhereInputArgument | null | undefined,
+  OR?: ConferenceemailsettingWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  enabled?: BooleanWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: EmailkindEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
 export type Conferenceparticipant = {
@@ -1299,6 +1374,11 @@ export type Conferencesupervisor = {
     where?: ConferenceparticipantWhereInputArgument | null | undefined
   }) => Conferenceparticipant,
   plansOwnAttendenceAtConference: Boolean,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School | null,
+  schoolId: ID | null,
   search_distance: Float | null,
   supervised: (p?: {
     limit?: Int | null | undefined,
@@ -1334,6 +1414,7 @@ export type ConferencesupervisorOrderInputArgument = {
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   plansOwnAttendenceAtConference?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -1348,6 +1429,8 @@ export type ConferencesupervisorWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   participant?: ConferenceparticipantWhereInputArgument | null | undefined,
   plansOwnAttendenceAtConference?: BooleanWhereInputArgument | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   supervised?: ConferenceparticipantWhereInputArgument | null | undefined,
   supervisedDelegationMembers?: DelegationmemberWhereInputArgument | null | undefined,
   supervisedSingleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
@@ -1467,7 +1550,11 @@ export type Delegation = {
     search?: String | null | undefined,
     where?: PaperWhereInputArgument | null | undefined
   }) => Paper[],
-  school: String | null,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School | null,
+  schoolId: ID | null,
   search_distance: Float | null,
   updatedAt: DateTime    
 };
@@ -1482,7 +1569,7 @@ export type DelegationOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   memberCount?: SortingParameter | null | undefined,
   motivation?: SortingParameter | null | undefined,
-  school?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -1518,7 +1605,8 @@ export type DelegationWhereInputArgument = {
   members?: DelegationmemberWhereInputArgument | null | undefined,
   motivation?: StringWhereInputArgument | null | undefined,
   papers?: PaperWhereInputArgument | null | undefined,
-  school?: StringWhereInputArgument | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
@@ -1591,12 +1679,87 @@ export type DelegationmemberWhereInputArgument = {
 		
 export type EmailAddress = string;
 		
+export type EmailKindStats = {
+  failed: Int,
+  kind: EmailkindEnum,
+  sent: Int,
+  skipped: Int    
+};
+		
+export type EmailPreview = {
+  html: String,
+  subject: String    
+};
+		
 export type EmailStatusResult = {
   email: String,
   pendingInvitationId: String | null,
   status: String,
   userId: String | null    
 };
+		
+export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "WAITING_LIST_SEATED";
+		
+export type Emaillog = {
+  attempts: Int,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  email: String | null,
+  error: String | null,
+  id: ID,
+  kind: EmailkindEnum,
+  search_distance: Float | null,
+  sentAt: DateTime | null,
+  status: EmailstatusEnum,
+  subjectKey: String,
+  updatedAt: DateTime,
+  user: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User,
+  userId: ID    
+};
+		
+export type EmaillogOrderInputArgument = {
+  attempts?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  email?: SortingParameter | null | undefined,
+  error?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  sentAt?: SortingParameter | null | undefined,
+  status?: SortingParameter | null | undefined,
+  subjectKey?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  userId?: SortingParameter | null | undefined    
+};
+		
+export type EmaillogWhereInputArgument = {
+  AND?: EmaillogWhereInputArgument[] | undefined,
+  NOT?: EmaillogWhereInputArgument | null | undefined,
+  OR?: EmaillogWhereInputArgument[] | undefined,
+  attempts?: IntWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  email?: StringWhereInputArgument | null | undefined,
+  error?: StringWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: EmailkindEnum | null | undefined,
+  sentAt?: DateTimeWhereInputArgument | null | undefined,
+  status?: EmailstatusEnum | null | undefined,
+  subjectKey?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  user?: UserWhereInputArgument | null | undefined,
+  userId?: IDWhereInputArgument | null | undefined    
+};
+		
+export type EmailstatusEnum = "FAILED" | "SENDING" | "SENT" | "SKIPPED";
 		
 export type FlagCollectionData = {
   flags: () => FlagProgress[],
@@ -1894,13 +2057,23 @@ export type Mutation = {
   createConferenceSupervisor: (p: {
     conferenceId: ID,
     plansOwnAttendenceAtConference?: Boolean | null | undefined,
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined,
     userId?: ID | null | undefined
   }) => Conferencesupervisor,
+  createCustomRole: (p: {
+    conferenceId: ID,
+    description?: String | null | undefined,
+    fontAwesomeIcon?: String | null | undefined,
+    name: String,
+    seatAmount: Int
+  }) => Conferencerole,
   createDelegation: (p: {
     conferenceId: ID,
     experience?: String | null | undefined,
     motivation?: String | null | undefined,
-    school?: String | null | undefined
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Delegation,
   createDelegationMember: (p: {
     conferenceId: ID,
@@ -1964,7 +2137,8 @@ export type Mutation = {
     experience?: String | null | undefined,
     motivation?: String | null | undefined,
     roleId: ID,
-    school?: String | null | undefined
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Singleparticipant,
   createSurveyOption: (p: {
     description: String,
@@ -1990,7 +2164,8 @@ export type Mutation = {
     experience: String,
     motivation: String,
     requests?: String | null | undefined,
-    school: String
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Waitinglistentry,
   decidePossibleDuplicate: (p: {
     id: ID,
@@ -2012,6 +2187,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteCommittee: (p: {
+    id: ID
+  }) => Boolean,
+  deleteCustomRole: (p: {
     id: ID
   }) => Boolean,
   deleteDelegation: (p: {
@@ -2070,11 +2248,11 @@ export type Mutation = {
     sortOrder: Int
   }) => Calendarday,
   issueIdentityCode: () => IdentityCode,
-  normalizeSchoolsInConference: (p: {
-    conferenceId: ID,
-    newSchoolName: String,
-    schoolsToMerge: String[]
-  }) => Conference,
+  mergeSchools: (p: {
+    name?: String | null | undefined,
+    sourceIds: ID[],
+    targetId: ID
+  }) => School,
   recordSearch: (p: {
     conferenceId: ID,
     label: String,
@@ -2137,6 +2315,11 @@ export type Mutation = {
     nullRating: Float,
     ratingFactor: Float
   }) => Assignmentweights,
+  setAttendanceOccasionOnCertificate: (p: {
+    conferenceId: ID,
+    occasion: String,
+    show: Boolean
+  }) => Boolean,
   setCommitteeNationSeat: (p: {
     committeeId: ID,
     enabled: Boolean,
@@ -2147,6 +2330,12 @@ export type Mutation = {
     committeeId: ID,
     targets?: Int[] | null | undefined
   }) => Committee,
+  setConferenceEmailEnabled: (p: {
+    conferenceId: ID,
+    enabled: Boolean,
+    kind: EmailkindEnum,
+    notifyExisting?: Boolean | null | undefined
+  }) => Boolean,
   splitDelegation: (p: {
     delegationId: ID,
     parts: AssignmentSplitPartInput[]
@@ -2238,6 +2427,7 @@ export type Mutation = {
     location?: String | null | undefined,
     logoFileId?: ID | null | undefined,
     longTitle?: String | null | undefined,
+    maxSeatsPerSchool?: Int | null | undefined,
     mediaConsentFileId?: ID | null | undefined,
     nametagBinCount?: Int | null | undefined,
     postalApartment?: String | null | undefined,
@@ -2276,8 +2466,17 @@ export type Mutation = {
   }) => Conferenceparticipant,
   updateConferenceSupervisor: (p: {
     id: ID,
-    plansOwnAttendenceAtConference?: Boolean | null | undefined
+    plansOwnAttendenceAtConference?: Boolean | null | undefined,
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Conferencesupervisor,
+  updateCustomRole: (p: {
+    description?: String | null | undefined,
+    fontAwesomeIcon?: String | null | undefined,
+    id: ID,
+    name?: String | null | undefined,
+    seatAmount?: Int | null | undefined
+  }) => Conferencerole,
   updateDelegation: (p: {
     applied?: Boolean | null | undefined,
     experience?: String | null | undefined,
@@ -2285,7 +2484,8 @@ export type Mutation = {
     motivation?: String | null | undefined,
     newHeadDelegateUserId?: ID | null | undefined,
     resetEntryCode?: Boolean | null | undefined,
-    school?: String | null | undefined
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Delegation,
   updateDelegationMemberCommittee: (p: {
     assignedCommitteeId: ID,
@@ -2335,13 +2535,29 @@ export type Mutation = {
     id: ID,
     name: String
   }) => Reviewersnippet,
+  updateSchool: (p: {
+    apartment?: String | null | undefined,
+    city?: String | null | undefined,
+    contactEmail?: String | null | undefined,
+    contactName?: String | null | undefined,
+    contactPhone?: String | null | undefined,
+    country?: String | null | undefined,
+    id: ID,
+    name?: String | null | undefined,
+    notes?: String | null | undefined,
+    region?: String | null | undefined,
+    street?: String | null | undefined,
+    website?: String | null | undefined,
+    zip?: String | null | undefined
+  }) => School,
   updateSingleParticipant: (p: {
     applied?: Boolean | null | undefined,
     applyForRolesIdList?: ID[] | null | undefined,
     experience?: String | null | undefined,
     id: ID,
     motivation?: String | null | undefined,
-    school?: String | null | undefined,
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined,
     unApplyForRolesIdList?: ID[] | null | undefined
   }) => Singleparticipant,
   updateSurveyAnswer: (p: {
@@ -2402,7 +2618,8 @@ export type Mutation = {
     id: ID,
     motivation?: String | null | undefined,
     requests?: String | null | undefined,
-    school?: String | null | undefined
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
   }) => Waitinglistentry,
   upsertSelf: () => UpsertSelfResult    
 };
@@ -2996,6 +3213,10 @@ export type Query = {
     search?: String | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
+  certificateOccasions: (p: {
+    conferenceId: ID,
+    revision?: Int | null | undefined
+  }) => CertificateOccasion[],
   checkTeamInvitationEmails: (p: {
     conferenceId: ID,
     emails: CheckEmailInput[]
@@ -3023,6 +3244,16 @@ export type Query = {
   conference: (p: {
     id: ID
   }) => Conference,
+  conferenceEmailSetting: (p: {
+    id: ID
+  }) => Conferenceemailsetting,
+  conferenceEmailSettings: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailsettingOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailsettingWhereInputArgument | null | undefined
+  }) => Conferenceemailsetting[],
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -3046,6 +3277,14 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole[],
+  conferenceSchools: (p: {
+    conferenceId: ID,
+    limit: Int,
+    offset: Int,
+    search?: String | null | undefined,
+    sortColumn?: String | null | undefined,
+    sortDesc?: Boolean | null | undefined
+  }) => ConferenceSchoolsPage,
   conferenceSupervisor: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -3089,6 +3328,24 @@ export type Query = {
   delegationsCount: (p?: {
     where?: DelegationWhereInputArgument | null | undefined
   }) => Int,
+  emailLog: (p: {
+    id: ID
+  }) => Emaillog,
+  emailLogs: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: EmaillogOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: EmaillogWhereInputArgument | null | undefined
+  }) => Emaillog[],
+  emailPreview: (p: {
+    conferenceId: ID,
+    kind: EmailkindEnum
+  }) => EmailPreview,
+  emailStats: (p: {
+    conferenceId: ID,
+    revision?: Int | null | undefined
+  }) => EmailKindStats[],
   findGlobalIntroductionPapers: (p: {
     conferenceId: ID
   }) => Paper[],
@@ -3153,6 +3410,10 @@ export type Query = {
     where?: NationWhereInputArgument | null | undefined
   }) => Nation[],
   offlineUserRefresh: () => OfflineUserRefresh,
+  openEmailCount: (p: {
+    conferenceId: ID,
+    kind: EmailkindEnum
+  }) => Int,
   ownNametagTable: (p: {
     conferenceId: ID
   }) => OwnNametagTable | null,
@@ -3275,6 +3536,12 @@ export type Query = {
     code: String,
     conferenceId: ID
   }) => ScanLookupResult,
+  school: (p: {
+    id: ID
+  }) => School,
+  schoolMetrics: (p: {
+    schoolId: ID
+  }) => SchoolConferenceMetrics[],
   schoolSuggestion: (p: {
     id: ID
   }) => Schoolsuggestion,
@@ -3285,6 +3552,16 @@ export type Query = {
     search?: String | null | undefined,
     where?: SchoolsuggestionWhereInputArgument | null | undefined
   }) => Schoolsuggestion[],
+  schools: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School[],
+  schoolsCount: (p?: {
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => Int,
   searchHistories: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3295,6 +3572,10 @@ export type Query = {
   searchHistory: (p: {
     id: ID
   }) => Searchhistory,
+  searchSchools: (p: {
+    limit?: Int | null | undefined,
+    search: String
+  }) => School[],
   seatPlanningAssignments: (p: {
     conferenceId: ID
   }) => SeatPlanningAssignments,
@@ -3599,6 +3880,110 @@ export type ScanLookupResult = {
   userId: String | null    
 };
 		
+export type School = {
+  apartment: String | null,
+  city: String | null,
+  conferenceSupervisors: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferencesupervisorOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferencesupervisorWhereInputArgument | null | undefined
+  }) => Conferencesupervisor[],
+  contactEmail: String | null,
+  contactName: String | null,
+  contactPhone: String | null,
+  country: String | null,
+  createdAt: DateTime,
+  delegations: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: DelegationOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: DelegationWhereInputArgument | null | undefined
+  }) => Delegation[],
+  id: ID,
+  name: String,
+  notes: String | null,
+  region: String | null,
+  search_distance: Float | null,
+  singleParticipants: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SingleparticipantOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SingleparticipantWhereInputArgument | null | undefined
+  }) => Singleparticipant[],
+  street: String | null,
+  updatedAt: DateTime,
+  waitingListEntries: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: WaitinglistentryOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: WaitinglistentryWhereInputArgument | null | undefined
+  }) => Waitinglistentry[],
+  website: String | null,
+  zip: String | null    
+};
+		
+export type SchoolConferenceMetrics = {
+  applied: Int,
+  attended: Int,
+  conferenceId: ID,
+  conferenceTitle: String,
+  delegations: Int,
+  fromWaitingList: Int,
+  participants: Int,
+  seated: Int,
+  startConference: DateTime,
+  supervisors: Int,
+  waitingList: Int    
+};
+		
+export type SchoolOrderInputArgument = {
+  apartment?: SortingParameter | null | undefined,
+  city?: SortingParameter | null | undefined,
+  contactEmail?: SortingParameter | null | undefined,
+  contactName?: SortingParameter | null | undefined,
+  contactPhone?: SortingParameter | null | undefined,
+  country?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  name?: SortingParameter | null | undefined,
+  notes?: SortingParameter | null | undefined,
+  region?: SortingParameter | null | undefined,
+  street?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined,
+  website?: SortingParameter | null | undefined,
+  zip?: SortingParameter | null | undefined    
+};
+		
+export type SchoolWhereInputArgument = {
+  AND?: SchoolWhereInputArgument[] | undefined,
+  NOT?: SchoolWhereInputArgument | null | undefined,
+  OR?: SchoolWhereInputArgument[] | undefined,
+  apartment?: StringWhereInputArgument | null | undefined,
+  city?: StringWhereInputArgument | null | undefined,
+  conferenceSupervisors?: ConferencesupervisorWhereInputArgument | null | undefined,
+  contactEmail?: StringWhereInputArgument | null | undefined,
+  contactName?: StringWhereInputArgument | null | undefined,
+  contactPhone?: StringWhereInputArgument | null | undefined,
+  country?: StringWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  delegations?: DelegationWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  name?: StringWhereInputArgument | null | undefined,
+  notes?: StringWhereInputArgument | null | undefined,
+  region?: StringWhereInputArgument | null | undefined,
+  singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
+  street?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined,
+  waitingListEntries?: WaitinglistentryWhereInputArgument | null | undefined,
+  website?: StringWhereInputArgument | null | undefined,
+  zip?: StringWhereInputArgument | null | undefined    
+};
+		
 export type Schoolsuggestion = {
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
@@ -3649,7 +4034,11 @@ export type SchoolsuggestionWhereInputArgument = {
 export type Schoolsuggestionvariant = {
   createdAt: DateTime,
   id: ID,
-  school: String,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School,
+  schoolId: ID,
   search_distance: Float | null,
   suggestion: (p?: {
     orderBy?: SchoolsuggestionOrderInputArgument | null | undefined,
@@ -3663,7 +4052,7 @@ export type Schoolsuggestionvariant = {
 export type SchoolsuggestionvariantOrderInputArgument = {
   createdAt?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
-  school?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   suggestionId?: SortingParameter | null | undefined,
   sumParticipants?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
@@ -3675,7 +4064,8 @@ export type SchoolsuggestionvariantWhereInputArgument = {
   OR?: SchoolsuggestionvariantWhereInputArgument[] | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
-  school?: StringWhereInputArgument | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   suggestion?: SchoolsuggestionWhereInputArgument | null | undefined,
   suggestionId?: IDWhereInputArgument | null | undefined,
   sumParticipants?: IntWhereInputArgument | null | undefined,
@@ -3805,7 +4195,11 @@ export type Singleparticipant = {
     orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
     where?: ConferenceparticipantWhereInputArgument | null | undefined
   }) => Conferenceparticipant,
-  school: String | null,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School | null,
+  schoolId: ID | null,
   search_distance: Float | null,
   supervisors: (p?: {
     limit?: Int | null | undefined,
@@ -3830,7 +4224,7 @@ export type SingleparticipantOrderInputArgument = {
   experience?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   motivation?: SortingParameter | null | undefined,
-  school?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -3851,7 +4245,8 @@ export type SingleparticipantWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   motivation?: StringWhereInputArgument | null | undefined,
   participant?: ConferenceparticipantWhereInputArgument | null | undefined,
-  school?: StringWhereInputArgument | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   supervisors?: ConferencesupervisorWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   user?: UserWhereInputArgument | null | undefined    
@@ -4339,6 +4734,16 @@ export type Subscription = {
   conference: (p: {
     id: ID
   }) => Conference,
+  conferenceEmailSetting: (p: {
+    id: ID
+  }) => Conferenceemailsetting,
+  conferenceEmailSettings: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailsettingOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailsettingWhereInputArgument | null | undefined
+  }) => Conferenceemailsetting[],
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -4402,6 +4807,16 @@ export type Subscription = {
   delegationsCount: (p?: {
     where?: DelegationWhereInputArgument | null | undefined
   }) => Int,
+  emailLog: (p: {
+    id: ID
+  }) => Emaillog,
+  emailLogs: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: EmaillogOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: EmaillogWhereInputArgument | null | undefined
+  }) => Emaillog[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -4505,6 +4920,9 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
+  school: (p: {
+    id: ID
+  }) => School,
   schoolSuggestion: (p: {
     id: ID
   }) => Schoolsuggestion,
@@ -4515,6 +4933,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: SchoolsuggestionWhereInputArgument | null | undefined
   }) => Schoolsuggestion[],
+  schools: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School[],
+  schoolsCount: (p?: {
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => Int,
   searchHistories: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5198,6 +5626,7 @@ export type UserreferenceinpaymenttransactionWhereInputArgument = {
 		
 export type Waitinglistentry = {
   assigned: Boolean,
+  assignedAt: DateTime | null,
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -5209,7 +5638,11 @@ export type Waitinglistentry = {
   id: ID,
   motivation: String,
   requests: String | null,
-  school: String,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School | null,
+  schoolId: ID | null,
   search_distance: Float | null,
   updatedAt: DateTime,
   user: (p?: {
@@ -5221,6 +5654,7 @@ export type Waitinglistentry = {
 		
 export type WaitinglistentryOrderInputArgument = {
   assigned?: SortingParameter | null | undefined,
+  assignedAt?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   experience?: SortingParameter | null | undefined,
@@ -5228,7 +5662,7 @@ export type WaitinglistentryOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   motivation?: SortingParameter | null | undefined,
   requests?: SortingParameter | null | undefined,
-  school?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   userId?: SortingParameter | null | undefined    
 };
@@ -5238,6 +5672,7 @@ export type WaitinglistentryWhereInputArgument = {
   NOT?: WaitinglistentryWhereInputArgument | null | undefined,
   OR?: WaitinglistentryWhereInputArgument[] | undefined,
   assigned?: BooleanWhereInputArgument | null | undefined,
+  assignedAt?: DateTimeWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
@@ -5246,7 +5681,8 @@ export type WaitinglistentryWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   motivation?: StringWhereInputArgument | null | undefined,
   requests?: StringWhereInputArgument | null | undefined,
-  school?: StringWhereInputArgument | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   user?: UserWhereInputArgument | null | undefined,
   userId?: IDWhereInputArgument | null | undefined    
@@ -5273,7 +5709,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "schoolSuggestion", "schoolSuggestions", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { createFuzzySearch } from '$lib/components/tanStackTable/search';
+	import { createFuzzySearch } from '#lib/components/tanStackTable/search.js';
 	import { resolve } from '$app/paths';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import PaperMatrix from './PaperMatrix.svelte';
 	import PaperGroupsState from './PaperGroupsState.svelte';
 	import { createPaperGroupsSnapshot } from './paperGroups.svelte';
-	import { splitRole } from '$lib/helpers/conferenceRole';
-	import RoleFlag from '$lib/components/RoleFlag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import RoleFlag from '#lib/components/RoleFlag.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 	interface Props {
 		conferenceId: string;
@@ -85,9 +85,8 @@
 			0
 		) + introductionPapers.length
 	);
-
 	const paperHref = (paperId: string) =>
-		resolve(`/dashboard/${conferenceId}/paperhub/view/${paperId}`);
+		resolve(`dashboard/${conferenceId}/paperhub/view/${paperId}`);
 
 	/** The committees that still have a paper after searching, as matrix columns. */
 	let visibleCommittees = $derived(
@@ -141,9 +140,8 @@
 					</div>
 					<span class="badge badge-ghost">{count} {m.papers()}</span>
 				</header>
-				<div class="px-2 pb-2">
-					<PaperMatrix {columns} {paperHref} />
-				</div>
+
+				<div class="px-2 pb-2"><PaperMatrix {columns} {paperHref} /></div>
 			</section>
 		{/each}
 

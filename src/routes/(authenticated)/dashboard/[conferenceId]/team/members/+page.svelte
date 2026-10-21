@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/state/dialogs.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { renderComponent } from '$lib/components/tanStackTable';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-	import BadgeCell from '$lib/components/tanStackTable/cells/BadgeCell.svelte';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import { renderComponent } from '#lib/components/tanStackTable/index.js';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
 	import TeamMemberActions from './TeamMemberActions.svelte';
 	import TeamManagementPage from '../TeamManagementPage.svelte';
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
+	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 	import { TEAM_ROLES, fetchAllTeamMembers, fetchTeamMembersPage } from './teamMembersQuery';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import { startImpersonation } from '$lib/api/startImpersonation';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { startImpersonation } from '#lib/api/startImpersonation.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();

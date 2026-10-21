@@ -12,14 +12,7 @@ import { E2E_PREP_CONFERENCE_ID, E2E_PREP_PARTICIPANT_USER_ID } from '../seed/se
 const DEV_SERVER_NOISE =
 	/failed to fetch dynamically imported module|importing a module script failed/i;
 
-const ROUTES = [
-	'',
-	'/info',
-	'/check-in',
-	'/paperhub',
-	'/payment',
-	'/postal-registration'
-];
+const ROUTES = ['', '/info', '/check-in', '/paperhub', '/payment', '/postal-registration'];
 
 test('the participant dashboard routes render for an assigned participant', async ({ page }) => {
 	test.setTimeout(180_000);

@@ -13,7 +13,7 @@ import {
 } from '$api/services/authHelper';
 import { assertCanClaimFile } from '$api/handlers/storedFile/storedFilePermissions';
 import type { FileField } from '$api/handlers/storedFile/fileSources';
-import { m } from '$lib/paraglide/messages';
+import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 import type { ConferenceUpdateArgs } from './conferenceService';
 
@@ -65,10 +65,14 @@ export function registerConferenceAbilities() {
 
 /**
  * The arguments of `updateConference` that participant care and the content lead may send: links,
- * postal address, templates, the conference status and the feature switches.
+ * postal address, templates, the participants' announcement, the conference status and the
+ * feature switches.
  */
 const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'id',
+	// the announcement page (`team/announcement`) is participant care's as much as management's
+	'info',
+	'showInfoExpanded',
 	'linkToPreparationGuide',
 	'linkToTeamWiki',
 	'linkToServicesPage',
@@ -94,7 +98,7 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
  * Refuses unless the caller may send these arguments to `updateConference`.
  *
  * Project management edits everything; participant care and the content lead may only touch the
- * links, the postal address, the templates, the status and the features. The update ability is
+ * links, the postal address, the templates, the announcement, the status and the features. The update ability is
  * project management's, so the link-only path checks the role itself and refuses any other
  * argument rather than ignoring it.
  */
@@ -139,21 +143,6 @@ export async function assertCanClaimConferenceFiles(ctx: ApiContext, args: Confe
 /** Refused when `updateConference` matched no row, as when the update ability matches none. */
 export function conferenceUpdateRefused() {
 	return apiError('FORBIDDEN', m.accessDeniedProjectManagement());
-}
-
-/**
- * The rows `normalizeSchoolsInConference` may rename: the conference's delegations and single
- * participants the caller may update, as where clauses for the service's bulk writes.
- */
-export async function schoolMergeScope(ctx: ApiContext, conferenceId: string) {
-	return {
-		updatableDelegations: (await ctx.abilities.delegation.filter('update')).merge({
-			where: { conferenceId }
-		}).sql.where,
-		updatableSingleParticipants: (await ctx.abilities.singleParticipant.filter('update')).merge({
-			where: { participant: { conferenceId } }
-		}).sql.where
-	};
 }
 
 /** Creating a conference from a seeding document is for system admins. */

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { translateRegionalGroup } from '$lib/utils/enumTranslations';
-	import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
+	import { m } from '#lib/paraglide/messages.js';
+	import { translateRegionalGroup } from '#lib/utils/enumTranslations.js';
+	import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers.js';
 	import { useSeatPlanningParams } from './filters.svelte';
 
 	interface Props {

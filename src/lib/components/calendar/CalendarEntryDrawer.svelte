@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SlidePanel, { type DrawerDirection } from '$lib/components/SlidePanel.svelte';
-	import { browser } from '$app/environment';
-	import { m } from '$lib/paraglide/messages';
+	import SlidePanel, { type DrawerDirection } from '#lib/components/SlidePanel.svelte';
+	import { browser } from '$app/env';
+	import { m } from '#lib/paraglide/messages.js';
 	import CalendarEntryDrawerHeader from './CalendarEntryDrawerHeader.svelte';
 	import CalendarEntryTimeInfo from './CalendarEntryTimeInfo.svelte';
 	import CalendarEntryLocation from './CalendarEntryLocation.svelte';

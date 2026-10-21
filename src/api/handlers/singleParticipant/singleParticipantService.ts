@@ -6,12 +6,14 @@ import {
 } from '$api/services/registration/participation';
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { nullToUndefined } from '$api/services/args';
-import { applicationFormSchema } from '$lib/schemata/applicationForm';
-import { MIN_ROLE_APPLICATIONS } from '$lib/helpers/applicationReadiness';
-import { m } from '$lib/paraglide/messages';
+import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness.js';
+import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray } from 'drizzle-orm';
 import { apiError } from '$api/services/errors/apiError';
+import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
+import { markSeatedFromWaitingList } from '$api/handlers/waitingListEntry/waitingListEntryService';
 
 /**
  * The caller's existing single registration in the conference, if any, after making sure they may
@@ -22,15 +24,15 @@ import { apiError } from '$api/services/errors/apiError';
  */
 export async function ownRegistrationToEdit(
 	userId: string,
-	args: {
+	args: SchoolChoice & {
 		conferenceId: string;
-		school?: string | null;
 		motivation?: string | null;
 		experience?: string | null;
 	}
 ) {
 	applicationFormSchema.parse({
-		school: args.school,
+		schoolId: args.schoolId,
+		schoolName: args.schoolName,
 		motivation: args.motivation,
 		experience: args.experience
 	});
@@ -77,10 +79,9 @@ async function unapplyForRoles(tx: Transaction, singleParticipantId: string, rol
  */
 export async function registerSingleParticipant(
 	userId: string,
-	args: {
+	args: SchoolChoice & {
 		conferenceId: string;
 		roleId: string;
-		school?: string | null;
 		motivation?: string | null;
 		experience?: string | null;
 	},
@@ -89,12 +90,13 @@ export async function registerSingleParticipant(
 	// The person's row, the registration and the role it applies for go in together, so a refused
 	// insert leaves none of them.
 	return db.transaction(async (tx) => {
+		const schoolId = await resolveSchoolChoice(args, tx);
 		let rowId: string;
 		if (existing) {
 			await tx
 				.update(schema.singleParticipant)
 				.set({
-					school: args.school,
+					schoolId,
 					motivation: args.motivation,
 					experience: args.experience
 				})
@@ -105,7 +107,7 @@ export async function registerSingleParticipant(
 				.insert(schema.singleParticipant)
 				.values({
 					conferenceParticipantId: await ensureConferenceParticipant(tx, args.conferenceId, userId),
-					school: nullToUndefined(args.school),
+					schoolId: nullToUndefined(schoolId),
 					motivation: nullToUndefined(args.motivation),
 					experience: nullToUndefined(args.experience)
 				})
@@ -124,15 +126,16 @@ export async function registerSingleParticipant(
  * Updates a single participant's application and the roles it applies for, in one transaction.
  * The caller checks first that it may (`assertCanUpdateSingleParticipant`).
  */
-export async function updateSingleParticipantApplication(args: {
-	id: string;
-	school?: string | null;
-	experience?: string | null;
-	motivation?: string | null;
-	applyForRolesIdList?: string[] | null;
-	unApplyForRolesIdList?: string[] | null;
-	applied?: boolean | null;
-}) {
+export async function updateSingleParticipantApplication(
+	args: SchoolChoice & {
+		id: string;
+		experience?: string | null;
+		motivation?: string | null;
+		applyForRolesIdList?: string[] | null;
+		unApplyForRolesIdList?: string[] | null;
+		applied?: boolean | null;
+	}
+) {
 	if (args.applied) {
 		const participant = await db.query.singleParticipant
 			.findFirst({
@@ -145,21 +148,22 @@ export async function updateSingleParticipantApplication(args: {
 	}
 
 	applicationFormSchema.parse({
-		school: args.school,
+		schoolId: args.schoolId,
+		schoolName: args.schoolName,
 		experience: args.experience,
 		motivation: args.motivation
 	});
 
-	// School, motivation and experience are nullable, so an explicit null clears them.
-	const values = {
-		school: args.school,
-		experience: args.experience,
-		motivation: args.motivation,
-		applied: args.applied ?? undefined
-	};
 	// A call that only changes role applications has nothing to set, and drizzle rejects an
 	// empty `set` ("No values to set").
 	await db.transaction(async (tx) => {
+		// School, motivation and experience are nullable, so an explicit null clears them.
+		const values = {
+			schoolId: await resolveSchoolChoice(args, tx),
+			experience: args.experience,
+			motivation: args.motivation,
+			applied: args.applied ?? undefined
+		};
 		if (Object.values(values).some((value) => value !== undefined)) {
 			await tx
 				.update(schema.singleParticipant)
@@ -186,16 +190,7 @@ export async function createAssignedSingleParticipant(args: {
 	}
 
 	const created = await db.transaction(async (tx) => {
-		// Best-effort: not every assigned user came from the waiting list.
-		await tx
-			.update(schema.waitingListEntry)
-			.set({ assigned: true })
-			.where(
-				and(
-					eq(schema.waitingListEntry.conferenceId, args.conferenceId),
-					eq(schema.waitingListEntry.userId, args.userId)
-				)
-			);
+		const waiting = await markSeatedFromWaitingList(tx, args.conferenceId, args.userId);
 
 		return tx
 			.insert(schema.singleParticipant)
@@ -206,7 +201,8 @@ export async function createAssignedSingleParticipant(args: {
 					args.userId
 				),
 				applied: true,
-				assignedRoleId: args.roleId
+				assignedRoleId: args.roleId,
+				schoolId: waiting?.schoolId ?? undefined
 			})
 			.returning()
 			.then(assertFirstEntryExists);

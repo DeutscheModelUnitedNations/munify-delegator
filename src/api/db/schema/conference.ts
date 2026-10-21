@@ -11,8 +11,9 @@ import {
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
 import { fileRef } from './storedFile';
+import { school } from './schools';
 
-/** A conference, its places and the school names it has seen. */
+/** A conference, its places and the duplicate schools found among its applications. */
 
 /**
  * A required reference to the conference a row belongs to. Every foreign key in the schema
@@ -91,7 +92,12 @@ export const conference = snakeCase.table('conference', {
 	assignmentReleased: boolean().default(false).notNull(),
 	assignmentReleasedAt: timestamp({ precision: 3 }),
 	/** Into how many bins (by the first letter of the nation) the nametag handout is split. */
-	nametagBinCount: integer().default(3).notNull()
+	nametagBinCount: integer().default(3).notNull(),
+	/**
+	 * How many seats one school may be given; the assignment warns beyond it. Empty means no
+	 * limit.
+	 */
+	maxSeatsPerSchool: integer().default(16)
 });
 
 export const place = snakeCase.table(
@@ -118,9 +124,10 @@ export const place = snakeCase.table(
 );
 
 /**
- * A group of school names that most likely name the same school, found by the analysis the
- * cleanup page runs. `key` is the group's sorted names as JSON, so a rerun finds the row again and
- * keeps the team's decision; a group that gains or loses a spelling is a new row.
+ * A group of schools that most likely are the same school, found by the analysis the cleanup page
+ * runs over the schools a conference's applications name. `key` is the group's sorted school ids
+ * as JSON, so a rerun finds the row again and keeps the team's decision; a group that gains or
+ * loses a school is a new row.
  */
 export const schoolSuggestion = snakeCase.table(
 	'school_suggestion',
@@ -141,22 +148,24 @@ export const schoolSuggestion = snakeCase.table(
 	]
 );
 
-/** One spelling of a suggestion, with how many participants wrote it. */
+/** One school of a suggestion, with how many participants of the conference named it. */
 export const schoolSuggestionVariant = snakeCase.table(
 	'school_suggestion_variant',
 	{
 		...defaultIdAndTimestamps,
-		school: text().notNull(),
+		schoolId: text()
+			.notNull()
+			.references(() => school.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		sumParticipants: integer().notNull(),
 		suggestionId: text()
 			.notNull()
 			.references(() => schoolSuggestion.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('school_suggestion_variant_suggestion_id_school_key').using(
+		uniqueIndex('school_suggestion_variant_suggestion_id_school_id_key').using(
 			'btree',
 			table.suggestionId.asc().nullsLast(),
-			table.school.asc().nullsLast()
+			table.schoolId.asc().nullsLast()
 		)
 	]
 );

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import Modal from '$lib/components/Modal.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { client, type UserPreview } from '#lib/api/rumbleClient/client.js';
+	import Modal from '#lib/components/Modal.svelte';
+	import { m } from '#lib/paraglide/messages.js';
 	import UserSuggestions from './UserSuggestions.svelte';
 	import AssignmentTarget from './AssignmentTarget.svelte';
 	import { untrack, type Snippet } from 'svelte';

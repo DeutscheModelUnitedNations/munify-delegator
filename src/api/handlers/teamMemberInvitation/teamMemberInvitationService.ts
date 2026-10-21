@@ -9,8 +9,8 @@ import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail
 } from '$api/services/email/sendTeamInvitationEmail';
-import { m } from '$lib/paraglide/messages';
-import { getLocale } from '$lib/paraglide/runtime';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import { localeOfUser } from '$api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';

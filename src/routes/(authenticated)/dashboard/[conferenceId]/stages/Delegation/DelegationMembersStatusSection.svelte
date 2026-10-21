@@ -1,12 +1,12 @@
 <script lang="ts">
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
-	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
-	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames.js';
+	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 
 	interface Props {
 		conferenceId: string;

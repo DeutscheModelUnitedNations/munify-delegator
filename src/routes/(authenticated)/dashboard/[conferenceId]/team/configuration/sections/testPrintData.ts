@@ -1,6 +1,6 @@
-import { getLocale } from '$lib/paraglide/runtime';
-import type { ParticipantData, RecipientData } from '$lib/utils/pdfGenerator';
-import formatNames from '$lib/helpers/formatNames';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import type { ParticipantData, RecipientData } from '#lib/utils/pdfGenerator.js';
+import formatNames from '#lib/helpers/formatNames.js';
 import type { ConferenceSettings } from '../form-schema';
 
 type PostalAddress = Pick<

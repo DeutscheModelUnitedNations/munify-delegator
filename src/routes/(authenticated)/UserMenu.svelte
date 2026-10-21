@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { PUBLIC_FEEDBACK_URL } from '$app/env/public';
-	import { client } from '$lib/api/rumbleClient/client';
-	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
-	import { getOptionalCurrentUser } from '$lib/state/currentUser.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
+	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
 
 	/** The header's account menu: who is signed in, the account, language, feedback and logout. */
 
@@ -26,8 +26,9 @@
 </script>
 
 {#if !user}
-	<a class="btn btn-primary btn-sm" href={resolve('/login?next=/dashboard')} rel="external">
+	<a class="btn btn-primary btn-sm" href={resolve('login?next=/dashboard')} rel="external">
 		<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
+
 		{m.signIn()}
 	</a>
 {:else}
@@ -45,7 +46,7 @@
 			class="dropdown-content rounded-box bg-base-100 border-base-300 mt-3 w-64 border shadow-xl"
 		>
 			<a
-				href={resolve('/my-account')}
+				href={resolve('my-account')}
 				class="hover:bg-base-200 rounded-t-box group flex items-center gap-3 px-4 pt-4 pb-3 transition-colors"
 			>
 				<div class="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -65,7 +66,7 @@
 			<div class="divider my-0"></div>
 			<ul class="menu w-full p-2">
 				<li>
-					<a href={resolve('/dashboard')}>
+					<a href={resolve('dashboard')}>
 						<i class="fa-sharp-duotone fa-solid fa-gauge w-4"></i>
 						{m.dashboard()}
 					</a>

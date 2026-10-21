@@ -1,5 +1,5 @@
 import { CERTIFICATE_SECRET } from '$app/env/private';
-import { encodeIdentityCode, identityCodeMessage } from '$lib/helpers/identityCode';
+import { encodeIdentityCode, identityCodeMessage } from '#lib/helpers/identityCode.js';
 
 /** DER prefix of a PKCS#8 Ed25519 private key, which ends in the 32-byte seed. */
 const PKCS8_ED25519_PREFIX = Uint8Array.from([

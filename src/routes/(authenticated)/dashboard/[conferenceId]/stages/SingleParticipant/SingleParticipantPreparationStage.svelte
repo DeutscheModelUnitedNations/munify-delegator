@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { CurrentUser } from '$lib/state/currentUser.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
-	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 

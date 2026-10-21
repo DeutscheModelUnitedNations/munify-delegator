@@ -1,18 +1,23 @@
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { client } from '$lib/api/rumbleClient/client';
-	import { renderComponent } from '$lib/components/tanStackTable';
-	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
-	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
-	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index.js';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter.js';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 	import type { PageProps } from './$types';
-	import { toWaitingListRow, type WaitingListRow } from './waitingListRows';
-	import { createTableState } from '$lib/components/tanStackTable/tableState.svelte';
-	import { fetchAllWaitingListEntries, fetchWaitingListPage } from './waitingListQuery';
+	import { toWaitingListRow, waitingListPositions, type WaitingListRow } from './waitingListRows';
+	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
+	import {
+		fetchAllWaitingListEntries,
+		fetchWaitingListPage,
+		fetchWaitingListPositions
+	} from './waitingListQuery';
+	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
 
 	let { params }: PageProps = $props();
 
@@ -36,25 +41,32 @@
 	);
 
 	let filterHidden = $state(true);
+	/** Entries that got a seat have become registrations; shown on request, with the date. */
+	let showSeated = $state(false);
+	const toggles = $derived({ hideHidden: filterHidden, showSeated });
 
 	const startConference = $derived(conference?.startConference);
 
-	/** Only entries still waiting - assigned ones have become real registrations. */
 	const page = $derived(
-		await fetchWaitingListPage(conferenceId, tableState, filterHidden, startConference)
+		await fetchWaitingListPage(conferenceId, tableState, toggles, startConference)
 	);
+	const waiting = $derived(await fetchWaitingListPositions(conferenceId));
+	// read the live list once into a plain copy, see `liveSnapshot`
+	const snapshotWaiting = liveSnapshot<{ id: string }>();
+	const waitingCopy = $derived(snapshotWaiting(waiting));
+	const positions = $derived(waitingListPositions(waitingCopy));
 	const rows: WaitingListRow[] = $derived(
-		page.rows.map((entry) => toWaitingListRow(entry, startConference))
+		page.rows.map((entry) => toWaitingListRow(entry, startConference, positions))
 	);
 
 	async function exportRows() {
 		const entries = await fetchAllWaitingListEntries(
 			conferenceId,
 			tableState,
-			filterHidden,
+			toggles,
 			startConference
 		);
-		return entries.map((entry) => toWaitingListRow(entry, startConference));
+		return entries.map((entry) => toWaitingListRow(entry, startConference, positions));
 	}
 
 	const dateFormatter = new Intl.DateTimeFormat(getLocale(), {
@@ -76,9 +88,27 @@
 			enableSorting: false
 		},
 		{
+			accessorKey: 'position',
+			header: m.waitingListPosition(),
+			cell: ({ getValue }) => {
+				const position = getValue<number | undefined>();
+				return position !== undefined ? String(position) : '—';
+			},
+			enableSorting: true
+		},
+		{
 			accessorKey: 'createdAt',
 			header: m.timestamp(),
 			cell: ({ getValue }) => dateFormatter.format(getValue<Date>()),
+			enableSorting: true
+		},
+		{
+			accessorKey: 'assignedAt',
+			header: m.waitingListSeatedAt(),
+			cell: ({ getValue }) => {
+				const seatedAt = getValue<Date | null>();
+				return seatedAt ? dateFormatter.format(seatedAt) : '—';
+			},
 			enableSorting: true
 		},
 		{
@@ -186,6 +216,11 @@
 			<i class="fa-sharp-duotone fa-solid fa-eye-slash"></i>
 			{m.filterHiddenEntries()}
 			<input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={filterHidden} />
+		</label>
+		<label class="no-print flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+			<i class="fa-sharp-duotone fa-solid fa-user-check"></i>
+			{m.waitingListShowSeated()}
+			<input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={showSeated} />
 		</label>
 	{/snippet}
 </ManagedTable>

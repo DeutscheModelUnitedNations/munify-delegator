@@ -40,6 +40,16 @@ const mailSyncSchema = z.object({
 	MAIL_SYNC_BATCH_SIZE: z.coerce.number().int().positive().default(100)
 });
 
+const sendEmailsSchema = z.object({
+	APP_URL: z.url(),
+	JOBS_SECRET: z.string().min(16, 'must be at least 16 characters')
+});
+
+/** Where the app runs, and the secret its `/api/jobs/send-emails` endpoint expects. */
+export function sendEmailsConfig() {
+	return parseEnv(sendEmailsSchema, 'sending the automatic emails');
+}
+
 export function databaseConfig() {
 	return parseEnv(databaseSchema, 'the database');
 }

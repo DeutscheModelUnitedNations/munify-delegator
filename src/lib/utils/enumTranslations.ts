@@ -2,10 +2,10 @@ import type {
 	CalendarentrycolorEnum,
 	PaperstatusEnum,
 	PapertypeEnum
-} from '$lib/api/rumbleClient/client';
-import { m } from '$lib/paraglide/messages';
-import type { RegionalGroup } from '$lib/helpers/seatPlanning/unMembers';
-import type { RegionalBaseline } from '$lib/helpers/seatPlanning/baselines';
+} from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages.js';
+import type { RegionalGroup } from '#lib/helpers/seatPlanning/unMembers.js';
+import type { RegionalBaseline } from '#lib/helpers/seatPlanning/baselines.js';
 
 export function translatePaperStatus(paperStatus: PaperstatusEnum) {
 	switch (paperStatus) {
@@ -92,6 +92,8 @@ export function translateParticipationRole(role: string) {
 			return m.supervisor();
 		case 'TEAM_MEMBER':
 			return m.teamMember();
+		case 'WAITING_LIST':
+			return m.waitingList();
 		default:
 			return role;
 	}

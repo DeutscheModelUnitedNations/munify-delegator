@@ -1,8 +1,8 @@
-import { m } from '$lib/paraglide/messages';
-import formatNames from '$lib/helpers/formatNames';
+import { m } from '#lib/paraglide/messages.js';
+import formatNames from '#lib/helpers/formatNames.js';
 import type * as schema from '$api/db/schema';
-import { isValidManualTargets } from '$lib/helpers/seatPlanning/baselines';
-import { regionalGroups } from '$lib/helpers/seatPlanning/unMembers';
+import { isValidManualTargets } from '#lib/helpers/seatPlanning/baselines.js';
+import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers.js';
 import { apiError } from '$api/services/errors/apiError';
 
 /**

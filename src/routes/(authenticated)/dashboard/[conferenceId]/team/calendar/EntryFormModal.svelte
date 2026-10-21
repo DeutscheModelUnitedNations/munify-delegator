@@ -1,12 +1,12 @@
 <!-- fallow-ignore-file complexity -->
 <script lang="ts">
-	import { getLocale } from '$lib/paraglide/runtime';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { toast } from 'svelte-sonner';
-	import ActionModal from '$lib/components/ActionModal.svelte';
-	import { client, type CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
-	import { saveWithToast } from '$lib/helpers/saveWithToast';
-	import { m } from '$lib/paraglide/messages';
-	import ColorPaletteSelector from '$lib/components/calendar/ColorPaletteSelector.svelte';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import { client, type CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
+	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
+	import { m } from '#lib/paraglide/messages.js';
+	import ColorPaletteSelector from '#lib/components/calendar/ColorPaletteSelector.svelte';
 	import { untrack } from 'svelte';
 	import { retargetTrackRange } from './copyDayEntries';
 	import { entryFields } from './calendarEditing';

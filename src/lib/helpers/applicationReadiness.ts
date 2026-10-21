@@ -1,4 +1,4 @@
-import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
+import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
 
 /**
  * What an application needs before it may be sent, shared by the API (which refuses it,
@@ -13,14 +13,13 @@ export const MIN_ROLE_APPLICATIONS = { delegation: 3, singleParticipant: 1 } as 
 export const MIN_DELEGATION_MEMBERS = 2;
 
 type ApplicationTexts = {
-	school?: string | null;
 	motivation?: string | null;
 	experience?: string | null;
 };
 
-/** Whether school, motivation and experience are all filled in. */
+/** Whether motivation and experience are filled in. The school is optional: not everybody has one. */
 export function applicationTextsComplete(texts: ApplicationTexts) {
-	return !!texts.school && !!texts.motivation && !!texts.experience;
+	return !!texts.motivation && !!texts.experience;
 }
 
 /**

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
-	import { startImpersonation as impersonate } from '$lib/api/startImpersonation';
+	import { m } from '#lib/paraglide/messages.js';
+	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
+	import { startImpersonation as impersonate } from '#lib/api/startImpersonation.js';
 
 	interface Props {
 		userId: string;
