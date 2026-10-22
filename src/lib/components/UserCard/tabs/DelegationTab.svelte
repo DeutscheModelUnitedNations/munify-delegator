@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { cache, graphql } from '$houdini';
+	import UserCardLoadState from '../UserCardLoadState.svelte';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
@@ -69,9 +70,19 @@
 		}
 	`);
 
-	$effect(() => {
-		delegationQuery.fetch({ variables: { delegationId } });
-	});
+	let loadFailed = $state(false);
+	const load = () => {
+		loadFailed = false;
+		delegationQuery
+			.fetch({ variables: { delegationId } })
+			.then((result) => (loadFailed = !result.data?.findUniqueDelegation))
+			.catch(() => (loadFailed = true));
+	};
+
+	$effect(load);
+
+	const failed = $derived(loadFailed || !!$delegationQuery.errors?.length);
+	const placeholder = $derived(failed || $delegationQuery.fetching);
 
 	const delegation = $derived($delegationQuery.data?.findUniqueDelegation);
 	const members = $derived(
@@ -157,11 +168,8 @@
 	}
 </script>
 
-{#if $delegationQuery.fetching}
-	<div class="flex flex-col gap-3">
-		<div class="skeleton h-24 w-full"></div>
-		<div class="skeleton h-48 w-full"></div>
-	</div>
+{#if placeholder}
+	<UserCardLoadState {failed} onretry={load} skeletons={['h-24', 'h-48']} />
 {:else if delegation}
 	<div class="flex flex-col gap-6">
 		<!-- Assignment Card -->

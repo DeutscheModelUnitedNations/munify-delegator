@@ -2,10 +2,11 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
-	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
+	import EmptySeatBtn from '../EmptySeatBtn.svelte';
+	import SeatedMembers from '../SeatedMembers.svelte';
+	import DelegationMembersMenu from '../DelegationMembersMenu.svelte';
 
 	interface Props {
 		nonStateActors: SeatsQuery$result['findManyNonStateActors'];
@@ -55,11 +56,15 @@
 			<td>
 				<i class="fa-duotone fa-sigma"></i>
 			</td>
+			<td>
+				<i class="fa-duotone fa-users"></i>
+			</td>
 		</tr>
 	</thead>
 	<tbody>
 		{#each nonStateActors as nsa}
 			{@const delegation = delegations.find((d) => d.assignedNonStateActor?.id === nsa.id)}
+			{@const seatLabel = `${nsa.abbreviation} (${m.nonStateActors()})`}
 			<tr>
 				<td>
 					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
@@ -73,21 +78,19 @@
 				<td>
 					<div class="flex gap-1">
 						{#snippet addParticipantBtn()}
-							<AddParticipantBtn
+							<EmptySeatBtn
+								seat={{ delegationId: delegation?.id, nonStateActorId: nsa.id, seatLabel }}
 								bind:user
-								targetRole={`${nsa.abbreviation} (${m.nonStateActors()})`}
 								addParticipant={async () => await addParticipant(nsa.id)}
 							/>
 						{/snippet}
 						{#if delegation}
-							{#each delegation.members as member}
-								<InitialsButton
-									given_name={member.user.given_name}
-									family_name={member.user.family_name}
-									userId={member.user.id}
-									{conferenceId}
-								/>
-							{/each}
+							<SeatedMembers
+								members={delegation.members}
+								delegationId={delegation.id}
+								{seatLabel}
+								{conferenceId}
+							/>
 							{#if delegation.members.length < nsa.seatAmount}
 								{@render addParticipantBtn()}
 							{/if}
@@ -101,6 +104,9 @@
 					{#if nsa.seatAmount !== (delegation?.members.length ?? 0)}
 						<span class="text-xs">/ {nsa.seatAmount} </span>
 					{/if}
+				</td>
+				<td>
+					<DelegationMembersMenu {delegation} {conferenceId} showCommittee={false} />
 				</td>
 			</tr>
 		{/each}

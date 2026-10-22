@@ -10,6 +10,8 @@
 	import formatNames from '$lib/services/formatNames';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import { toast } from 'svelte-sonner';
+	import SeatSwitchModal from './SeatSwitchModal.svelte';
+	import { seatSwitch } from './seatSwitchState.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceId = $derived(data.conferenceId);
@@ -72,8 +74,31 @@
 		</div>
 	{/if}
 
+	<div
+		class="bg-base-100 border-base-300 rounded-box sticky top-0 z-10 flex w-full flex-wrap items-center gap-4 border p-3"
+	>
+		<label class="label cursor-pointer gap-2">
+			<input type="checkbox" class="toggle toggle-primary" bind:checked={seatSwitch.enabled} />
+			<i class="fa-duotone fa-arrow-right-arrow-left"></i>
+			<span class="font-bold">{m.seatSwitch()}</span>
+		</label>
+		{#if seatSwitch.enabled}
+			<span class="text-sm opacity-70">
+				{#if seatSwitch.selected}
+					{seatSwitch.selected.name} ({seatSwitch.selected.seatLabel})
+					<i class="fa-duotone fa-arrow-right mx-1"></i>
+					{m.seatSwitchHint()}
+				{:else}
+					{m.seatSwitchHint()}
+				{/if}
+			</span>
+		{/if}
+	</div>
+
 	<Delegations {delegations} {committees} {nations} {conferenceId} />
 	<NSAs {nonStateActors} {delegations} {conferenceId} />
 	<SingleParticipants {singleParticipants} {roles} {conferenceId} />
 	<Supervisors {supervisors} {conferenceId} />
 </div>
+
+<SeatSwitchModal {delegations} {conferenceId} />

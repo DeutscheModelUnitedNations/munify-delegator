@@ -3120,6 +3120,11 @@ type Mutation {
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
+
+  """
+  Swaps the seats (delegation and committee) of two delegation members, or moves one member into a free seat
+  """
+  switchDelegationMemberSeats(conferenceId: ID!, headDelegateMemberIds: [ID!], memberId: ID!, otherMemberId: ID, targetCommitteeId: ID, targetNationAlpha3Code: String, targetNonStateActorId: ID): [DelegationMember!]!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
   updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!

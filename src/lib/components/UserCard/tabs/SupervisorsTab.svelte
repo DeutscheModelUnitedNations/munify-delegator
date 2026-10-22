@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { graphql, cache } from '$houdini';
+	import UserCardLoadState from '../UserCardLoadState.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/services/formatNames';
@@ -51,9 +52,18 @@
 		}
 	`);
 
-	$effect(() => {
-		supervisorsQuery.fetch({ variables: { conferenceId, userId } });
-	});
+	let loadFailed = $state(false);
+	const load = () => {
+		loadFailed = false;
+		supervisorsQuery
+			.fetch({ variables: { conferenceId, userId } })
+			.catch(() => (loadFailed = true));
+	};
+
+	$effect(load);
+
+	const failed = $derived(loadFailed || !!$supervisorsQuery.errors?.length);
+	const placeholder = $derived(failed || $supervisorsQuery.fetching);
 
 	let supervisors = $derived.by(() => {
 		const dmSupervisors = $supervisorsQuery.data?.findManyDelegationMembers?.[0]?.supervisors ?? [];
@@ -120,7 +130,7 @@
 		assignSupervisorModalOpen = false;
 		cache.markStale();
 		await invalidateAll();
-		supervisorsQuery.fetch({ variables: { conferenceId, userId } });
+		load();
 		onUpdate?.();
 	};
 
@@ -139,11 +149,8 @@
 		</button>
 	</div>
 
-	{#if $supervisorsQuery.fetching}
-		<div class="flex flex-col gap-3">
-			<div class="skeleton h-16 w-full"></div>
-			<div class="skeleton h-16 w-full"></div>
-		</div>
+	{#if placeholder}
+		<UserCardLoadState {failed} onretry={load} skeletons={['h-16', 'h-16']} />
 	{:else if supervisors.length === 0}
 		<div class="alert alert-info">
 			<i class="fa-duotone fa-chalkboard-user"></i>

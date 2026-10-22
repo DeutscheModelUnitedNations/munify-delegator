@@ -2,11 +2,12 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
-	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import AddParticipantBtn from '../AddParticipantBtn.svelte';
+	import EmptySeatBtn from '../EmptySeatBtn.svelte';
+	import SeatedMembers from '../SeatedMembers.svelte';
+	import DelegationMembersMenu from '../DelegationMembersMenu.svelte';
 
 	interface Props {
 		delegations: SeatsQuery$result['findManyDelegations'];
@@ -99,6 +100,7 @@
 				</th>
 			{/each}
 			<th><i class="fa-duotone fa-sigma"></i></th>
+			<th><i class="fa-duotone fa-users"></i></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -128,10 +130,16 @@
 				{#each committees as committee}
 					{@const seatsPerCommittee = committee.numOfSeatsPerDelegation}
 					{#if nation.committees.find((c) => c.id === committee.id)}
+						{@const seatLabel = `${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
 						{#snippet addParticipantBtn(warning: boolean = false)}
-							<AddParticipantBtn
+							<EmptySeatBtn
+								seat={{
+									delegationId: delegation?.id,
+									nationAlpha3Code: nation.alpha3Code,
+									committeeId: committee.id,
+									seatLabel
+								}}
 								bind:user
-								targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
 								addParticipant={async () => await addParticipant(nation.alpha3Code, committee.id)}
 								{warning}
 							/>
@@ -145,14 +153,12 @@
 
 								{#if assignedDelegationMember && assignedDelegationMember.length > 0}
 									<div class="flex justify-center gap-1">
-										{#each assignedDelegationMember as member}
-											<InitialsButton
-												given_name={member.user.given_name}
-												family_name={member.user.family_name}
-												userId={member.user.id}
-												{conferenceId}
-											/>
-										{/each}
+										<SeatedMembers
+											members={assignedDelegationMember}
+											delegationId={delegation.id}
+											{seatLabel}
+											{conferenceId}
+										/>
 
 										{#each Array.from( { length: seatsPerCommittee - assignedDelegationMember.length } ) as _, index (index)}
 											{@render addParticipantBtn()}
@@ -194,6 +200,9 @@
 					{#if sumSeats !== (delegation?.members.length ?? 0)}
 						<span class="text-xs">/ {sumSeats} </span>
 					{/if}
+				</td>
+				<td>
+					<DelegationMembersMenu {delegation} {conferenceId} />
 				</td>
 			</tr>
 		{/each}

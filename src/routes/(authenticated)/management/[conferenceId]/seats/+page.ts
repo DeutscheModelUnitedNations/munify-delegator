@@ -25,6 +25,8 @@ export const _houdini_load = graphql(`
 		}
 		findManyDelegations(where: { conferenceId: { equals: $conferenceId } }) {
 			id
+			school
+			entryCode
 			assignedNation {
 				alpha2Code
 				alpha3Code
@@ -33,6 +35,7 @@ export const _houdini_load = graphql(`
 				id
 				assignedCommittee {
 					id
+					abbreviation
 				}
 				user {
 					id
