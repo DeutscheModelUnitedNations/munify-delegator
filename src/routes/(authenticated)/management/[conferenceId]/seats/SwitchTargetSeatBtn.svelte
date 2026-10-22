@@ -12,7 +12,7 @@
 
 <div class="tooltip" data-tip={seatSwitch.selected ? m.seatSwitchMoveHere() : m.seatSwitchHint()}>
 	<button
-		aria-label={m.seatSwitchMoveHere()}
+		aria-label={`${m.seatSwitchMoveHere()}: ${seat.seatLabel}`}
 		class="btn btn-sm btn-outline btn-primary w-10 border-dashed"
 		disabled={!seatSwitch.selected}
 		onclick={() => seatSwitch.pick({ kind: 'empty', ...seat })}

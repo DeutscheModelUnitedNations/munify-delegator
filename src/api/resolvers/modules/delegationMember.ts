@@ -14,7 +14,7 @@ import {
 	updateManyDelegationMemberMutationObject
 } from '$db/generated/graphql/DelegationMember';
 import { db, type DB } from '$db/db';
-import type { DelegationMember } from '@prisma/client';
+import { Prisma, type DelegationMember } from '@prisma/client';
 import { m } from '$lib/paraglide/messages';
 import {
 	fetchUserParticipations,
@@ -666,6 +666,14 @@ async function moveToFreeSeat(
 	return new Map([[member.id, seat]]);
 }
 
+/** A switch that lost against a concurrent one is reported as such instead of as an internal error */
+function rethrowSerializationConflict(error: unknown): never {
+	if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+		throw new GraphQLError('The seats changed in the meantime, please try again.');
+	}
+	throw error;
+}
+
 /** Moves the members into their new seats and sets the head delegates of the affected delegations */
 async function writeSeatSwitch(
 	tx: DB,
@@ -722,32 +730,44 @@ builder.mutationFields((t) => ({
 				);
 			}
 
-			return db.$transaction(async (tx) => {
-				const member = await tx.delegationMember.findUniqueOrThrow({
-					where: { id: args.memberId, conferenceId }
-				});
-				const target = {
-					nationAlpha3Code: targetNationAlpha3Code,
-					nonStateActorId: targetNonStateActorId
-				};
-				const seats = otherMemberId
-					? await swapSeats(tx, member, otherMemberId, conferenceId)
-					: await moveToFreeSeat(tx, member, conferenceId, target, args.targetCommitteeId ?? null);
-				const change: SeatSwitch = otherMemberId
-					? { kind: 'swap', memberId: member.id, otherMemberId }
-					: {
-							kind: 'move',
-							memberId: member.id,
-							targetDelegationId: [...seats.values()][0].delegationId
+			return db
+				.$transaction(
+					async (tx) => {
+						const member = await tx.delegationMember.findUniqueOrThrow({
+							where: { id: args.memberId, conferenceId }
+						});
+						const target = {
+							nationAlpha3Code: targetNationAlpha3Code,
+							nonStateActorId: targetNonStateActorId
 						};
+						const seats = otherMemberId
+							? await swapSeats(tx, member, otherMemberId, conferenceId)
+							: await moveToFreeSeat(
+									tx,
+									member,
+									conferenceId,
+									target,
+									args.targetCommitteeId ?? null
+								);
+						const change: SeatSwitch = otherMemberId
+							? { kind: 'swap', memberId: member.id, otherMemberId }
+							: {
+									kind: 'move',
+									memberId: member.id,
+									targetDelegationId: [...seats.values()][0].delegationId
+								};
 
-				await writeSeatSwitch(tx, change, seats, args.headDelegateMemberIds?.map(String));
+						await writeSeatSwitch(tx, change, seats, args.headDelegateMemberIds?.map(String));
 
-				return tx.delegationMember.findMany({
-					...query,
-					where: { id: { in: [...seats.keys()] } }
-				});
-			});
+						return tx.delegationMember.findMany({
+							...query,
+							where: { id: { in: [...seats.keys()] } }
+						});
+					},
+					// the seat capacity and head delegate checks read rows that a concurrent switch may change
+					{ isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+				)
+				.catch(rethrowSerializationConflict);
 		}
 	})
 }));

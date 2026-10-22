@@ -17,15 +17,17 @@
 	let popover = $state<HTMLDivElement>();
 	let position = $state({ top: 0, left: 0 });
 
-	// the popover lives in the top layer, so it is positioned against the viewport and never clipped by the table
-	const toggle = () => {
-		if (!anchor || !popover) return;
+	const popoverId = $props.id();
+
+	// the popover lives in the top layer, so it is positioned against the viewport and never clipped by
+	// the table; the button opens and closes it through popovertarget, which also handles light dismiss
+	const place = (event: ToggleEvent) => {
+		if (event.newState !== 'open' || !anchor) return;
 		const rect = anchor.getBoundingClientRect();
 		position = {
 			top: Math.min(rect.bottom + 4, window.innerHeight - 360),
 			left: Math.max(8, rect.right - 288)
 		};
-		popover.togglePopover();
 	};
 
 	const members = $derived(
@@ -46,7 +48,7 @@
 			bind:this={anchor}
 			class="btn btn-ghost btn-sm btn-square"
 			aria-label={m.delegationMembers()}
-			onclick={toggle}
+			popovertarget={popoverId}
 		>
 			<i class="fa-duotone fa-users"></i>
 		</button>
@@ -54,7 +56,9 @@
 
 	<div
 		bind:this={popover}
+		id={popoverId}
 		popover="auto"
+		onbeforetoggle={place}
 		class="bg-base-100 text-base-content border-base-300 rounded-box m-0 w-72 border p-0 text-left shadow-lg"
 		style="top: {position.top}px; left: {position.left}px;"
 	>

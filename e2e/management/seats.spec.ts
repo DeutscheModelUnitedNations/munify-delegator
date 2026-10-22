@@ -122,6 +122,7 @@ test('two delegates of different delegations swap seats and each delegation keep
 	await modal(page)
 		.getByRole('button', { name: /Bestätigen/ })
 		.click();
+	await expect(page.getByText('Plätze getauscht')).toBeVisible({ timeout: 15_000 });
 
 	// the head role stays with the seat
 	await expect
@@ -152,8 +153,8 @@ test('a delegate moves into a free seat of a role without a delegation, a taken 
 	await openSeatsInSwitchMode(page);
 
 	await initials(page, 'DEU', bert).click();
-	// Italy's GV seat, the first free seat in its row
-	await nationRow(page, 'ITA').getByRole('button', { name: 'Hierher verschieben' }).first().click();
+	// committee columns have no fixed order, so the seat is picked by its label
+	await page.getByRole('button', { name: 'Hierher verschieben: Italien / STGV' }).click();
 
 	// nobody leads a delegation that is affected, so there is nothing to choose
 	await expect(modal(page).getByText(/Bert Beta/i)).toBeVisible();
@@ -161,6 +162,7 @@ test('a delegate moves into a free seat of a role without a delegation, a taken 
 	await modal(page)
 		.getByRole('button', { name: /Bestätigen/ })
 		.click();
+	await expect(page.getByText('Plätze getauscht')).toBeVisible({ timeout: 15_000 });
 
 	// Italy's delegation is created with Bert as its only member and head
 	await expect.poll(() => seats(page)).toMatchObject({ [bert.id]: 'ita STGV head' });
@@ -190,6 +192,13 @@ test('the member menu lists delegates without a committee and opens their user c
 	}).toPass({ timeout: 15_000 });
 
 	await expect(menu.getByText('E2E Schule Paris')).toBeVisible();
+
+	// the button that opened the menu closes it again
+	const menuButton = nationRow(page, 'FRA').getByRole('button', { name: 'Delegationsmitglieder' });
+	await menuButton.click();
+	await expect(menu).toHaveCount(0);
+	await menuButton.click();
+	await expect(menu).toBeVisible();
 	const doraEntry = menu.getByRole('button', { name: /Dora Delta/i });
 	await expect(doraEntry).toContainText('ohne Gremium');
 
