@@ -275,6 +275,15 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 - Test files: `src/tests/` directory
 - Coverage provider: v8
 - Run tests before pushing (enforced by lefthook pre-push hook)
+- **Playwright** end-to-end specs in `e2e/` (`bun run test:e2e`); see [e2e/README.md](./e2e/README.md) for fixtures and how to keep specs green
+
+**New features and behavior changes ship with tests, without being asked:**
+
+- **Unit tests** (Vitest, `src/tests/`) for the logic. Keep decisions in plain functions in `src/lib/services/` or `src/api/services/` so they can be tested without the UI or the database.
+- **End-to-end tests** (Playwright, `e2e/`) for the user-facing flows, including error and empty states. Give a spec that changes data its own fixture in `e2e/seed/` (see `e2e/seed/seats.ts`), registered in `e2e/seed/seed.ts`.
+- Bug fixes get a test that fails without the fix.
+
+Running the e2e suite next to the dev server: use another port (`E2E_PORT=5174`), and set `PUBLIC_OIDC_MIGRATION_NOTICE=false` if your `.env` turns the login migration notice on, since the login helper cannot get past it.
 
 ## Environment Variables
 
