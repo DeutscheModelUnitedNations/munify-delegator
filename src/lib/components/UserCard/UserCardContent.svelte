@@ -14,7 +14,7 @@
 	import SupervisorsTab from './tabs/SupervisorsTab.svelte';
 	import SupervisorTab from './tabs/SupervisorTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
-	import UserCardLoadError from './UserCardLoadError.svelte';
+	import UserCardUnavailable from './UserCardUnavailable.svelte';
 
 	interface Props {
 		userId: string;
@@ -204,6 +204,7 @@
 	const notFound = $derived(
 		!failed && !$mainQuery.fetching && !!$mainQuery.data && !$mainQuery.data.findUniqueUser
 	);
+	const unavailable = $derived(failed || notFound);
 
 	const user = $derived($mainQuery.data?.findUniqueUser);
 	const delegationMember = $derived($mainQuery.data?.findManyDelegationMembers?.[0]);
@@ -241,101 +242,87 @@
 	});
 </script>
 
-{#if failed || notFound}
-	<div class="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-		{#if failed}
-			<i class="fa-duotone fa-cloud-exclamation text-error text-5xl"></i>
-			<h2 class="text-xl font-bold">{m.httpGenericError()}</h2>
-			<div class="max-w-md">
-				<UserCardLoadError onretry={refetchData} />
+{#if unavailable}
+	<UserCardUnavailable {failed} {userId} onretry={refetchData} />
+{/if}
+<!-- kept mounted but hidden, so the card body is not nested in the unavailable branch -->
+<div class="flex h-full flex-col" class:hidden={unavailable}>
+	<UserCardHeader
+		{userId}
+		{conferenceId}
+		givenName={user?.given_name}
+		familyName={user?.family_name}
+		pronouns={user?.pronouns}
+		gender={user?.gender}
+		{delegationMember}
+		{singleParticipant}
+		{conferenceSupervisor}
+		{teamMember}
+		mediaConsentStatus={participantStatus?.mediaConsentStatus}
+		loading={$mainQuery.fetching}
+		{mode}
+		onDelete={() => {
+			closeUserCard();
+			refetchData();
+		}}
+	/>
+
+	<UserCardTabs
+		{activeTab}
+		onTabChange={(tab) => (activeTab = tab)}
+		showStatus={hasConferenceAccess}
+		showSurveys={hasConferenceAccess && !isTeamMember}
+		showRole={isSingleParticipant || isTeamMember}
+		showDelegation={isDelegationMember}
+		showPapers={isDelegationMember}
+		showSupervisors={isDelegationMember || isSingleParticipant}
+		showSupervisor={isConferenceSupervisor}
+	/>
+
+	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
+		{#if $mainQuery.fetching}
+			<div class="flex flex-col gap-3">
+				<div class="skeleton h-24 w-full"></div>
+				<div class="skeleton h-24 w-full"></div>
 			</div>
-		{:else}
-			<i class="fa-duotone fa-user-xmark text-5xl opacity-60"></i>
-			<h2 class="text-xl font-bold">{m.userNotFound()}</h2>
-			<p class="max-w-md opacity-70">
-				{m.userCardNotFound({ id: userId })}
-			</p>
+		{:else if activeTab === 'userData'}
+			<UserDataTab {user} {userId} {conferenceId} {conference} onUpdate={refetchData} />
+		{:else if activeTab === 'status'}
+			<ParticipantStatusTab
+				status={participantStatus}
+				{userId}
+				{conferenceId}
+				{user}
+				{conference}
+				birthday={user?.birthday}
+				{isConferenceSupervisor}
+				onUpdate={refetchData}
+			/>
+		{:else if activeTab === 'surveys'}
+			<SurveyAnswersTab
+				{surveyQuestions}
+				{surveyAnswers}
+				{conferenceId}
+				{userId}
+				onUpdate={refetchData}
+			/>
+		{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
+			<RoleTab {singleParticipant} {teamMember} conferenceState={conference?.state} />
+		{:else if activeTab === 'delegation' && delegationMember}
+			<DelegationTab
+				delegationId={delegationMember.delegation.id}
+				{conferenceId}
+				{userId}
+				conferenceState={conference?.state}
+			/>
+		{:else if activeTab === 'papers' && isDelegationMember}
+			<PapersTab {userId} {conferenceId} />
+		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
+			<SupervisorsTab {userId} {conferenceId} onUpdate={refetchData} />
+		{:else if activeTab === 'supervisor' && conferenceSupervisor}
+			<SupervisorTab {userId} {conferenceId} {conferenceSupervisor} onUpdate={refetchData} />
+		{:else if activeTab === 'history'}
+			<HistoryTab {userId} {conferenceId} />
 		{/if}
 	</div>
-{:else}
-	<div class="flex h-full flex-col">
-		<UserCardHeader
-			{userId}
-			{conferenceId}
-			givenName={user?.given_name}
-			familyName={user?.family_name}
-			pronouns={user?.pronouns}
-			gender={user?.gender}
-			{delegationMember}
-			{singleParticipant}
-			{conferenceSupervisor}
-			{teamMember}
-			mediaConsentStatus={participantStatus?.mediaConsentStatus}
-			loading={$mainQuery.fetching}
-			{mode}
-			onDelete={() => {
-				closeUserCard();
-				refetchData();
-			}}
-		/>
-
-		<UserCardTabs
-			{activeTab}
-			onTabChange={(tab) => (activeTab = tab)}
-			showStatus={hasConferenceAccess}
-			showSurveys={hasConferenceAccess && !isTeamMember}
-			showRole={isSingleParticipant || isTeamMember}
-			showDelegation={isDelegationMember}
-			showPapers={isDelegationMember}
-			showSupervisors={isDelegationMember || isSingleParticipant}
-			showSupervisor={isConferenceSupervisor}
-		/>
-
-		<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
-			{#if $mainQuery.fetching}
-				<div class="flex flex-col gap-3">
-					<div class="skeleton h-24 w-full"></div>
-					<div class="skeleton h-24 w-full"></div>
-				</div>
-			{:else if activeTab === 'userData'}
-				<UserDataTab {user} {userId} {conferenceId} {conference} onUpdate={refetchData} />
-			{:else if activeTab === 'status'}
-				<ParticipantStatusTab
-					status={participantStatus}
-					{userId}
-					{conferenceId}
-					{user}
-					{conference}
-					birthday={user?.birthday}
-					{isConferenceSupervisor}
-					onUpdate={refetchData}
-				/>
-			{:else if activeTab === 'surveys'}
-				<SurveyAnswersTab
-					{surveyQuestions}
-					{surveyAnswers}
-					{conferenceId}
-					{userId}
-					onUpdate={refetchData}
-				/>
-			{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
-				<RoleTab {singleParticipant} {teamMember} conferenceState={conference?.state} />
-			{:else if activeTab === 'delegation' && delegationMember}
-				<DelegationTab
-					delegationId={delegationMember.delegation.id}
-					{conferenceId}
-					{userId}
-					conferenceState={conference?.state}
-				/>
-			{:else if activeTab === 'papers' && isDelegationMember}
-				<PapersTab {userId} {conferenceId} />
-			{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
-				<SupervisorsTab {userId} {conferenceId} onUpdate={refetchData} />
-			{:else if activeTab === 'supervisor' && conferenceSupervisor}
-				<SupervisorTab {userId} {conferenceId} {conferenceSupervisor} onUpdate={refetchData} />
-			{:else if activeTab === 'history'}
-				<HistoryTab {userId} {conferenceId} />
-			{/if}
-		</div>
-	</div>
-{/if}
+</div>
