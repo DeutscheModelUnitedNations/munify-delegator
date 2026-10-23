@@ -15,6 +15,12 @@
 	import { configPublic } from '$config/public';
 	import SurveySection from '$lib/components/Dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
+	import SelectionPendingStage from './stages/Common/SelectionPendingStage.svelte';
+	import SupervisorSelectionPendingStage from './stages/Supervisor/SupervisorSelectionPendingStage.svelte';
+	import {
+		getTechnicalRegistrationDeadline,
+		isRegistrationDeadlinePassed
+	} from '$lib/services/registrationStatus';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -27,6 +33,30 @@
 	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
 	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
+	// Between the technical registration deadline and the switch to PREPARATION the selection
+	// process runs. Assignments may already exist in the database but must not be revealed yet.
+	// `now` is reactive so a dashboard left open across the deadline switches stages on its own.
+	let now = $state(new Date());
+	$effect(() => {
+		if (!conference || conference.state !== 'PARTICIPANT_REGISTRATION') return;
+		const deadline = getTechnicalRegistrationDeadline(
+			new Date(conference.startAssignment),
+			conference.registrationDeadlineGracePeriodMinutes
+		);
+		const delay = deadline.getTime() - now.getTime() + 1000;
+		if (delay <= 0) return;
+		// setTimeout cannot wait longer than ~24.8 days; a clamped timer re-arms itself via `now`
+		const timeout = setTimeout(() => (now = new Date()), Math.min(delay, 2_147_483_647));
+		return () => clearTimeout(timeout);
+	});
+	let selectionInProgress = $derived(
+		conference?.state === 'PARTICIPANT_REGISTRATION' &&
+			isRegistrationDeadlinePassed(
+				new Date(conference.startAssignment),
+				conference.registrationDeadlineGracePeriodMinutes,
+				now
+			)
+	);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -68,7 +98,13 @@
 		{/if}
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
-			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{#if selectionInProgress}
+				<SelectionPendingStage
+					participantType="singleParticipant"
+					applied={singleParticipant.applied}
+					supportId={singleParticipant.id}
+				/>
+			{:else if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<SingleParticipantRegistrationStage
 					{singleParticipant}
 					{conference}
@@ -108,7 +144,13 @@
 				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
 		{:else if delegationMember?.id}
-			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{#if selectionInProgress}
+				<SelectionPendingStage
+					participantType="delegation"
+					applied={delegationMember.delegation.applied}
+					supportId={delegationMember.delegation.id}
+				/>
+			{:else if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<DelegationRegistrationStage
 					{delegationMember}
 					{conference}
@@ -155,7 +197,9 @@
 					.flatMap((x) => x.delegation)
 					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
 					supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole).length > 0)}
-			{#if atLeastOneAccepted || conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{#if selectionInProgress}
+				<SupervisorSelectionPendingStage {supervisor} />
+			{:else if atLeastOneAccepted || conference!.state === 'PARTICIPANT_REGISTRATION'}
 				{#if conference!.state === 'POST'}
 					{@const acceptedDelegations = supervisor.supervisedDelegationMembers
 						.map((x) => x.delegation)
