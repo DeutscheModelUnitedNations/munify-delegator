@@ -262,10 +262,22 @@ paths:
             format: int32
         - in: query
           name: per_page
-          description: max number of records to return per page
+          description: max number of records to return per page, or "all"
           schema:
-            type: integer
-            format: int32
+            oneOf:
+              - type: integer
+                format: int32
+              - type: string
+                enum: [all]
+        - in: query
+          name: list_id
+          description: only subscribers on these lists (any subscription status)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
         - in: query
           name: query
           description: query subscribers with an SQL expression.
