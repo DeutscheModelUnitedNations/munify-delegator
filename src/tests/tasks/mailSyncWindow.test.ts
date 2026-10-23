@@ -36,7 +36,10 @@ function teamMember(conferenceId: string, endConference: string) {
 
 describe('retentionCutoff', () => {
 	test('lies ten months back', () => {
-		expect(CUTOFF.toISOString()).toBe('2025-12-23T12:00:00.000Z');
+		// Months are counted in local time, so a DST change in between shifts the UTC instant.
+		const expected = new Date(NOW);
+		expected.setMonth(expected.getMonth() - 10);
+		expect(CUTOFF.toISOString()).toBe(expected.toISOString());
 	});
 });
 
