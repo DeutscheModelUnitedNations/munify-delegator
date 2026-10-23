@@ -119,3 +119,12 @@ CVE-2026-56851  # golang.org/x/text: Nickname profile out-of-bounds panic (types
 # 12.0.1, two majors past what graphql-yoga and houdini support. Clears once they
 # move to a patched major.
 CVE-2026-104852  # @graphql-tools/utils: prototype pollution in mergeDeep (schema merging only)
+# @graphql-tools/utils@10.11.0 (graphql-yoga 5, and houdini's bundled graphql-yoga 4):
+# prototype pollution in mergeIncrementalResult. That helper merges @defer/@stream
+# incremental payloads on the *client* side of an executor; nothing in our tree calls
+# it - it is only defined and re-exported by @graphql-tools/utils (grep of
+# node_modules finds no other caller), and the app neither imports it nor sends
+# incremental results. The fix ships only in 12.0.2; graphql-yoga 6 moves to
+# utils 13, but houdini still pins graphql-yoga 4 -> utils 10.x, so the yoga bump
+# alone would not clear it. Clears once houdini moves to a patched major.
+CVE-2026-114604  # @graphql-tools/utils: prototype pollution in mergeIncrementalResult (no caller)
