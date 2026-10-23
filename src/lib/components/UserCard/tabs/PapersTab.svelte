@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { graphql } from '$houdini';
+	import UserCardLoadState from '../UserCardLoadState.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 
@@ -43,9 +44,16 @@
 		}
 	`);
 
-	$effect(() => {
-		papersQuery.fetch({ variables: { conferenceId, userId } });
-	});
+	let loadFailed = $state(false);
+	const load = () => {
+		loadFailed = false;
+		papersQuery.fetch({ variables: { conferenceId, userId } }).catch(() => (loadFailed = true));
+	};
+
+	$effect(load);
+
+	const failed = $derived(loadFailed || !!$papersQuery.errors?.length);
+	const placeholder = $derived(failed || $papersQuery.fetching);
 
 	const papers = $derived(
 		($papersQuery.data?.findManyPapers ?? []).filter((p) => p.status !== 'DRAFT')
@@ -70,11 +78,8 @@
 	};
 </script>
 
-{#if $papersQuery.fetching}
-	<div class="flex flex-col gap-3">
-		<div class="skeleton h-20 w-full"></div>
-		<div class="skeleton h-20 w-full"></div>
-	</div>
+{#if placeholder}
+	<UserCardLoadState {failed} onretry={load} skeletons={['h-20', 'h-20']} />
 {:else if papers.length === 0}
 	<div class="alert alert-info">
 		<i class="fa-duotone fa-file-lines"></i>

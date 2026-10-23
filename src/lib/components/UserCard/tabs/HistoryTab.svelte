@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { graphql } from '$houdini';
+	import UserCardLoadState from '../UserCardLoadState.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
@@ -78,9 +79,16 @@
 		}
 	`);
 
-	$effect(() => {
-		historyQuery.fetch({ variables: { userId } });
-	});
+	let loadFailed = $state(false);
+	const load = () => {
+		loadFailed = false;
+		historyQuery.fetch({ variables: { userId } }).catch(() => (loadFailed = true));
+	};
+
+	$effect(load);
+
+	const failed = $derived(loadFailed || !!$historyQuery.errors?.length);
+	const placeholder = $derived(failed || $historyQuery.fetching);
 
 	interface HistoryEntry {
 		conferenceId: string;
@@ -192,11 +200,8 @@
 	};
 </script>
 
-{#if $historyQuery.fetching}
-	<div class="flex flex-col gap-3">
-		<div class="skeleton h-24 w-full"></div>
-		<div class="skeleton h-24 w-full"></div>
-	</div>
+{#if placeholder}
+	<UserCardLoadState {failed} onretry={load} />
 {:else if historyEntries.length === 0}
 	<div class="alert alert-info">
 		<i class="fa-duotone fa-clock-rotate-left"></i>

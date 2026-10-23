@@ -14,6 +14,7 @@
 	import SupervisorsTab from './tabs/SupervisorsTab.svelte';
 	import SupervisorTab from './tabs/SupervisorTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
+	import UserCardUnavailable from './UserCardUnavailable.svelte';
 
 	interface Props {
 		userId: string;
@@ -190,9 +191,20 @@
 		}
 	`);
 
-	$effect(() => {
-		mainQuery.fetch({ variables: { userId, conferenceId } });
-	});
+	let loadFailed = $state(false);
+	const refetchData = () => {
+		loadFailed = false;
+		mainQuery.fetch({ variables: { userId, conferenceId } }).catch(() => (loadFailed = true));
+	};
+
+	$effect(refetchData);
+
+	// without these, a failed request or an unknown ID renders as a person with nothing set
+	const failed = $derived(loadFailed || !!$mainQuery.errors?.length);
+	const notFound = $derived(
+		!failed && !$mainQuery.fetching && !!$mainQuery.data && !$mainQuery.data.findUniqueUser
+	);
+	const unavailable = $derived(failed || notFound);
 
 	const user = $derived($mainQuery.data?.findUniqueUser);
 	const delegationMember = $derived($mainQuery.data?.findManyDelegationMembers?.[0]);
@@ -228,13 +240,13 @@
 		}
 		return false;
 	});
-
-	const refetchData = () => {
-		mainQuery.fetch({ variables: { userId, conferenceId } });
-	};
 </script>
 
-<div class="flex h-full flex-col">
+{#if unavailable}
+	<UserCardUnavailable {failed} {userId} onretry={refetchData} />
+{/if}
+<!-- kept mounted but hidden, so the card body is not nested in the unavailable branch -->
+<div class="flex h-full flex-col" class:hidden={unavailable}>
 	<UserCardHeader
 		{userId}
 		{conferenceId}
@@ -272,11 +284,6 @@
 			<div class="flex flex-col gap-3">
 				<div class="skeleton h-24 w-full"></div>
 				<div class="skeleton h-24 w-full"></div>
-			</div>
-		{:else if $mainQuery.errors}
-			<div class="alert alert-error">
-				<i class="fa-duotone fa-triangle-exclamation"></i>
-				<span>{m.httpGenericError()}</span>
 			</div>
 		{:else if activeTab === 'userData'}
 			<UserDataTab {user} {userId} {conferenceId} {conference} onUpdate={refetchData} />
