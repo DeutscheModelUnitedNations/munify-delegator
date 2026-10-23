@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const get = vi.fn();
 vi.mock('../../tasks/apis/listmonk/listmonkClient', () => ({ listmonkClient: { GET: get } }));
-vi.mock('../../tasks/logs', () => ({ taskWarning: vi.fn() }));
+// Complete, because Bun's test runner shares module mocks between test files.
+vi.mock('../../tasks/logs', () => ({
+	logLoading: vi.fn(),
+	logTaskStart: vi.fn(),
+	logTaskEnd: vi.fn(),
+	taskWarning: vi.fn(),
+	taskError: vi.fn(),
+	slackNotification: vi.fn()
+}));
 
 const { fetchSubscriberMap } = await import('../../tasks/mailSync/subscriberFetcher');
 
