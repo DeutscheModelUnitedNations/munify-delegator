@@ -1,45 +1,24 @@
 import { config } from '../config';
 import { tasksDb } from '../tasksDb';
 import { mailSyncUserArgs, type MailSyncUser } from './types';
-import dayjs from 'dayjs';
+import { mailSyncUserWhere } from './window';
 
 /**
  * Processes all eligible users in batches using cursor-based pagination.
  * Peak memory usage is limited to ~batchSize users instead of loading all at once.
  * After each batch callback completes, the batch array is eligible for GC.
+ *
+ * Eligible are users with a global opt-in or a participation in a conference that ended after
+ * `cutoff` (see `window.ts`).
  */
 export async function processUsersInBatches(
+	cutoff: Date,
 	callback: (users: MailSyncUser[]) => void | Promise<void>,
 	batchSize: number = config.MAIL_SYNC_BATCH_SIZE
 ): Promise<number> {
-	const lt = dayjs().add(10, 'month').toDate();
+	const whereClause = mailSyncUserWhere(cutoff);
 	let totalProcessed = 0;
 	let lastId: string | undefined;
-
-	const whereClause = {
-		OR: [
-			{
-				delegationMemberships: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				singleParticipant: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				conferenceSupervisor: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				teamMember: {
-					some: { conference: { endConference: { lt } } }
-				}
-			}
-		]
-	};
 
 	while (true) {
 		const batch = await tasksDb.user.findMany({

@@ -6,6 +6,7 @@ import { fetchSubscriberMap } from './subscriberFetcher';
 import { processUsersInBatches } from './userProcessor';
 import { planUserBatch, planReleases } from './subscriberDiff';
 import { executeActions, collectGarbage } from './subscriberActions';
+import { retentionCutoff } from './window';
 import type { ListmonkSubscriber, SyncPlan } from './types';
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
@@ -30,7 +31,9 @@ export async function runMailSync(): Promise<void> {
 		console.info('\nSTEP 2: Planning Changes');
 		console.info('========================');
 
-		let subscriberMap: Map<string, ListmonkSubscriber> | undefined = await fetchSubscriberMap();
+		let subscriberMap: Map<string, ListmonkSubscriber> | undefined = await fetchSubscriberMap([
+			...listNameToId.values()
+		]);
 		if (!subscriberMap) {
 			taskError(TASK_NAME, 'Could not fetch all subscribers from Listmonk. Aborting task.');
 			return;
@@ -39,8 +42,10 @@ export async function runMailSync(): Promise<void> {
 
 		const plan: SyncPlan = { userActions: [], releases: [], upToDate: 0, skippedNoLists: 0 };
 
-		const totalUsers = await processUsersInBatches((batch) => {
-			planUserBatch(batch, subscriberMap!, listNameToId, plan);
+		const cutoff = retentionCutoff();
+		console.info(`Counting conferences that ended after ${cutoff.toISOString()}`);
+		const totalUsers = await processUsersInBatches(cutoff, (batch) => {
+			planUserBatch(batch, subscriberMap!, listNameToId, plan, cutoff);
 		});
 		planReleases(subscriberMap, plan);
 

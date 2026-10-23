@@ -115,10 +115,11 @@ export function planUserBatch(
 	users: MailSyncUser[],
 	subscriberMap: Map<string, ListmonkSubscriber>,
 	listNameToId: Map<string, number>,
-	plan: SyncPlan
+	plan: SyncPlan,
+	cutoff: Date
 ): void {
 	for (const user of users) {
-		const state = computeSubscriberState(user);
+		const state = computeSubscriberState(user, cutoff);
 
 		// Users without lists stay in the map and are released below like any unclaimed subscriber.
 		if (state.listNames.length === 0) {
