@@ -14,7 +14,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
 # Trivy image scan flags and that package.json overrides cannot reach.
 RUN apt-get install -y nodejs && rm -rf /usr/lib/node_modules/npm /usr/bin/npm /usr/bin/npx
 
-FROM dual AS runner
+FROM dual AS builder
 WORKDIR /run
 
 COPY package.json bun.lock tsconfig.json ./
@@ -32,6 +32,23 @@ ENV NODE_OPTIONS="--max-old-space-size=8192"
 # `bun run check` is not repeated here: the CI `typecheck` job runs the same command and is in
 # the docker-build `needs` list, so the image is only built once it has already passed.
 RUN bun run build:app
+# Strip the Go-built dev tool binaries (esbuild, lefthook, the native TypeScript 7 tsc pulled in
+# by fallow). They are only needed for the build above, never at runtime, and Trivy's gobinary
+# scan flags the Go stdlib compiled into them whenever a new Go advisory lands.
+RUN find node_modules -type d \( -path '*/@esbuild/linux-*' -o -name 'lefthook-linux-*' \
+  -o -path '*/@typescript/typescript-linux-*' \) -prune -exec rm -rf {} +
+
+# Copying the built tree into a fresh stage leaves the removed binaries, bun's install cache
+# (/root/.bun) and the intermediate build layers behind.
+FROM dual AS runner
+WORKDIR /run
+COPY --from=builder /run /run
+
+ARG VERSION
+ENV PUBLIC_VERSION=$VERSION
+ARG SHA
+ENV PUBLIC_SHA=$SHA
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 USER bun
 ENV NODE_ENV=production
