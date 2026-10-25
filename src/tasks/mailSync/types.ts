@@ -25,7 +25,7 @@ export type ConferenceListType = (typeof CONFERENCE_LIST_TYPES)[number];
 // that cause ~5-13 MB per user in memory.
 
 const conferenceSelect = {
-	select: { id: true, title: true, state: true }
+	select: { id: true, title: true, state: true, endConference: true }
 } as const;
 
 export const mailSyncUserArgs = {

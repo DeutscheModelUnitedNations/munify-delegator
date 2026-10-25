@@ -2173,8 +2173,10 @@ export interface operations {
 			query?: {
 				/** @description number of records to skip */
 				page?: number;
-				/** @description max number of records to return per page */
-				per_page?: number;
+				/** @description max number of records to return per page, or "all" */
+				per_page?: number | 'all';
+				/** @description only subscribers on these lists (any subscription status) */
+				list_id?: number[];
 				/** @description query subscribers with an SQL expression. */
 				query?: string;
 			};
