@@ -61,42 +61,33 @@ export const BlockquoteWithFind = Blockquote.extend<BlockquoteWithFindOptions>({
 			findButton.innerHTML =
 				'<i class="fa-sharp-duotone fa-solid fa-magnifying-glass text-xs"></i>';
 
-			// Handle click
+			// Flashes "not found" on the button for two seconds
+			const flashNotFound = () => {
+				findButton.classList.remove('text-primary');
+				findButton.classList.add('text-error');
+				tooltipWrapper.setAttribute('data-tip', citeNotFoundLabel);
+				setTimeout(() => {
+					findButton.classList.remove('text-error');
+					findButton.classList.add('text-primary');
+					tooltipWrapper.setAttribute('data-tip', findInPaperLabel);
+				}, 2000);
+			};
+
+			// Whether the blockquote's text was found (and highlighted) in the paper
+			const findInPaper = () => {
+				const paperContainer = this.options.getPaperContainer();
+				if (!paperContainer) return false;
+				const result: FindCiteResult = findAndHighlightCite(
+					content.textContent || '',
+					paperContainer
+				);
+				return result.found;
+			};
+
 			findButton.addEventListener('click', (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-
-				// Get the text content of this blockquote
-				const text = content.textContent || '';
-
-				// Get the paper container
-				const paperContainer = this.options.getPaperContainer();
-
-				if (!paperContainer) {
-					findButton.classList.remove('text-primary');
-					findButton.classList.add('text-error');
-					tooltipWrapper.setAttribute('data-tip', citeNotFoundLabel);
-					setTimeout(() => {
-						findButton.classList.remove('text-error');
-						findButton.classList.add('text-primary');
-						tooltipWrapper.setAttribute('data-tip', findInPaperLabel);
-					}, 2000);
-					return;
-				}
-
-				// Search for the text
-				const result: FindCiteResult = findAndHighlightCite(text, paperContainer);
-
-				if (!result.found) {
-					findButton.classList.remove('text-primary');
-					findButton.classList.add('text-error');
-					tooltipWrapper.setAttribute('data-tip', citeNotFoundLabel);
-					setTimeout(() => {
-						findButton.classList.remove('text-error');
-						findButton.classList.add('text-primary');
-						tooltipWrapper.setAttribute('data-tip', findInPaperLabel);
-					}, 2000);
-				}
+				if (!findInPaper()) flashNotFound();
 			});
 
 			tooltipWrapper.appendChild(findButton);

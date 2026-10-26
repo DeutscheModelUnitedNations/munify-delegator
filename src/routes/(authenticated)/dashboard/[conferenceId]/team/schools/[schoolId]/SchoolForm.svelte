@@ -8,10 +8,8 @@
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
-	import FormSelect from '#lib/components/form/FormSelect.svelte';
-	import AddressRegionField from '#lib/components/form/AddressRegionField.svelte';
-	import { addressRules } from '#lib/helpers/addressRules.js';
-	import { translatedNationCodeAddressFormOptions } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import AddressFields from '#lib/components/form/AddressFields.svelte';
+	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { schoolFormSchema, toUpdateSchoolArgs, type SchoolFormValues } from './schoolForm';
@@ -84,27 +82,7 @@
 		<FormTextInput {form} name="website" type="url" label={m.website()} placeholder="https://" />
 	</FormSection>
 	<FormSection title={m.address()} icon="house">
-		<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
-			<FormTextInput {form} name="street" label={m.street()} placeholder={m.street()} />
-			<FormTextInput
-				{form}
-				name="apartment"
-				label={m.streetAddition()}
-				placeholder={m.streetAddition()}
-			/>
-		</div>
-		<FormSelect
-			{form}
-			name="country"
-			label={m.country()}
-			placeholder={m.pleaseSelectCountry()}
-			options={translatedNationCodeAddressFormOptions}
-		/>
-		<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-			<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
-			<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
-		</div>
-		<AddressRegionField {form} name="region" rules={address} />
+		<AddressFields {form} fields={ADDRESS_FIELDS} rules={address} />
 	</FormSection>
 	<FormSection title={m.schoolContact()} icon="address-book" description={m.schoolContactHint()}>
 		<FormTextInput {form} name="contactName" label={m.name()} />

@@ -1,6 +1,7 @@
 import { db, schema } from '#api/db/db.js';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { applicationArgs } from '#api/handlers/delegation/applicationArgs.js';
 import {
 	createAssignedSingleParticipant,
 	ownRegistrationToEdit,
@@ -37,11 +38,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			roleId: t.arg.id({ required: true }),
-			/** An existing school, or `schoolName` to find or create one; neither for no school. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
-			motivation: t.arg.string(),
-			experience: t.arg.string()
+			...applicationArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const id = ctx.mustBeLoggedIn().sub;

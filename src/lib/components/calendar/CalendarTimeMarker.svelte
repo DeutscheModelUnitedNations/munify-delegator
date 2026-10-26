@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { utcHourOf } from './calendarHours';
+	import { wallClockNow } from './calendarNow';
+
 	interface Props {
 		startHour: number;
 		endHour: number;
@@ -10,19 +13,8 @@
 
 	let now = $state(new Date());
 
-	function getCurrentHour(date: Date): number {
-		const fmt = new Intl.DateTimeFormat('en-US', {
-			timeZone: timezone,
-			hour: 'numeric',
-			minute: 'numeric',
-			hour12: false,
-			hourCycle: 'h23'
-		});
-		const parts = fmt.formatToParts(date);
-		const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
-		const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
-		return hour + minute / 60;
-	}
+	/** The hour of the day in the conference's timezone, as a fraction: 9:30 is 9.5. */
+	const getCurrentHour = (date: Date) => utcHourOf(new Date(wallClockNow(timezone, date)));
 
 	let visible = $derived.by(() => {
 		const currentHour = getCurrentHour(now);

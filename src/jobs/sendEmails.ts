@@ -6,6 +6,11 @@ const resultSchema = z.object({ sent: z.number(), failed: z.number(), remaining:
 /** Calls the app at most this often in one run, so a stuck sweep cannot keep the job alive. */
 const MAX_ROUNDS = 50;
 
+/** Whether asking again would be pointless: nothing is left, or the last round got nowhere. */
+function finished({ sent, failed, remaining }: z.infer<typeof resultSchema>) {
+	return remaining === 0 || sent + failed === 0;
+}
+
 /**
  * Asks the app to send the automatic mails that are due (`/api/jobs/send-emails`). The app renders
  * and sends them - the templates and translations live there - and answers how many are left; the
@@ -24,6 +29,6 @@ export async function runSendEmails() {
 		}
 		const { sent, failed, remaining } = resultSchema.parse(await response.json());
 		console.info(`send-emails round ${round}: ${sent} sent, ${failed} failed, ${remaining} left`);
-		if (remaining === 0 || sent + failed === 0) return;
+		if (finished({ sent, failed, remaining })) return;
 	}
 }

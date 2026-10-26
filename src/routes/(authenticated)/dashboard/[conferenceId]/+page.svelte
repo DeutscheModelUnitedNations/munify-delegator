@@ -3,21 +3,13 @@
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
 	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
-	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
-	import SingleParticipantPreparationStage from './stages/SingleParticipant/SingleParticipantPreparationStage.svelte';
-	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
-	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
-	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
-	import Supervisor from './stages/Supervisor/Supervisor.svelte';
-	import ParticipantStages from './stages/Common/ParticipantStages.svelte';
+	import ParticipationStages from './stages/ParticipationStages.svelte';
 	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
-	import RegistrationLanding from '../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
 	import { client } from '#lib/api/rumbleClient/client.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	let { params }: PageProps = $props();
 
@@ -42,16 +34,11 @@
 	let supervisor = $derived(participation?.supervisor);
 	let teamMember = $derived(participation?.teamMember);
 	let status = $derived(participation?.participantStatus ?? null);
-	// Ids as primitives: a section keyed by one only fetches again when it changes, not on every live
-	// update of the participation it was read from.
 	const conferenceId = $derived(params.conferenceId);
-	const singleParticipantId = $derived(singleParticipant?.id);
-	const delegationMemberId = $derived(delegationMember?.id);
-	const supervisorId = $derived(supervisor?.id);
 
-	const delegationRole = $derived(splitRole(delegationMember?.delegation.assignedRole));
-	const delegationAccepted = $derived(!!delegationMember?.delegation.assignedRole);
-	const hasAssignedRole = $derived(!!singleParticipant?.assignedRole || delegationAccepted);
+	const hasAssignedRole = $derived(
+		!!singleParticipant?.assignedRole || !!delegationMember?.delegation.assignedRole
+	);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -73,85 +60,19 @@
 					isTeamMember={!!teamMember}
 					{hasAssignedRole}
 				/>
-			{/if}
-			{#if !conference}
-				<NoConferenceIndicator />
-			{:else if singleParticipant && singleParticipantId}
-				{#key singleParticipantId}
-					<ParticipantStages
-						{conferenceId}
-						conferenceState={conference.state}
-						userId={currentUser.sub}
-						assignmentReleased={conference.assignmentReleased}
-						accepted={!!singleParticipant.assignedRole}
-						{status}
-						ofAge={isOfAgeAtConference}
-						certificateRole={{ customConferenceRole: singleParticipant.assignedRole }}
-					>
-						{#snippet registration()}
-							<SingleParticipantRegistrationStage {conferenceId} {singleParticipantId} />
-						{/snippet}
-						{#snippet preparation()}
-							<SingleParticipantPreparationStage
-								{conferenceId}
-								{singleParticipant}
-								user={currentUser}
-								{status}
-								ofAgeAtConference={isOfAgeAtConference}
-							/>
-						{/snippet}
-					</ParticipantStages>
-				{/key}
-			{:else if delegationMember && delegationMemberId}
-				{#key delegationMemberId}
-					<ParticipantStages
-						{conferenceId}
-						conferenceState={conference.state}
-						userId={currentUser.sub}
-						assignmentReleased={conference.assignmentReleased}
-						accepted={delegationAccepted}
-						{status}
-						ofAge={isOfAgeAtConference}
-						certificateRole={{
-							country: delegationRole.nation,
-							nonStateActor: delegationRole.nonStateActor,
-							assignedCommittee: delegationMember.assignedCommittee
-						}}
-					>
-						{#snippet registration()}
-							<DelegationRegistrationStage {conferenceId} {delegationMemberId} />
-						{/snippet}
-						{#snippet preparation()}
-							<DelegationPreparationStage
-								{conferenceId}
-								{delegationMember}
-								user={currentUser}
-								{status}
-								ofAgeAtConference={isOfAgeAtConference}
-							/>
-						{/snippet}
-					</ParticipantStages>
-				{/key}
-			{:else if supervisorId}
-				{#key supervisorId}
-					<Supervisor
-						{conferenceId}
-						conferenceState={conference.state}
-						assignmentReleased={conference.assignmentReleased}
-						{supervisorId}
-						user={currentUser}
-						{status}
-						ofAge={isOfAgeAtConference}
-					/>
-				{/key}
-			{:else if teamMember}
-				<TeamMemberDashboard {conferenceId} />
-			{:else if currentUser.isAdmin}
-				<!-- A system admin needs no part in the conference to manage it -->
-				<TeamMemberDashboard {conferenceId} />
+				<ParticipationStages
+					{conferenceId}
+					{conference}
+					{singleParticipant}
+					{delegationMember}
+					supervisorId={supervisor?.id}
+					isTeamMember={!!teamMember}
+					user={currentUser}
+					{status}
+					ofAge={isOfAgeAtConference}
+				/>
 			{:else}
-				<!-- No part in this conference yet: the only thing to do is to apply -->
-				<RegistrationLanding {conferenceId} />
+				<NoConferenceIndicator />
 			{/if}
 		</div>
 	{/if}

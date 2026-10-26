@@ -1,4 +1,4 @@
-import { isRedirect, redirect } from '@sveltejs/kit';
+import { isRedirect, redirect, type Cookies } from '@sveltejs/kit';
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection.js';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
@@ -55,6 +55,16 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 	});
 
 // --- TEMPORARY: Migration notice handle (remove after migration period) ---
+/** Whether a path leads to a page that needs a session. */
+const isBehindLogin = (pathname: string) =>
+	AUTHENTICATED_ROUTES.some((route) => pathname.startsWith(route)) && !isPublicRoute(pathname);
+
+/** Whether the visitor has a session, or has read this version of the notice already. */
+const knowsOfMigration = (cookies: Cookies) =>
+	!!cookies.get(accessTokenCookieName) ||
+	!!cookies.get(refreshTokenCookieName) ||
+	cookies.get(MIGRATION_NOTICE_COOKIE) === MIGRATION_NOTICE_VERSION;
+
 /**
  * Explains the identity provider change before the first login of the migration period.
  *
@@ -65,11 +75,8 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 const migrationNoticeHandle: Handle = ({ event, resolve }) => {
 	if (
 		PUBLIC_OIDC_MIGRATION_NOTICE &&
-		AUTHENTICATED_ROUTES.some((route) => event.url.pathname.startsWith(route)) &&
-		!isPublicRoute(event.url.pathname) &&
-		!event.cookies.get(accessTokenCookieName) &&
-		!event.cookies.get(refreshTokenCookieName) &&
-		event.cookies.get(MIGRATION_NOTICE_COOKIE) !== MIGRATION_NOTICE_VERSION
+		isBehindLogin(event.url.pathname) &&
+		!knowsOfMigration(event.cookies)
 	) {
 		const next = encodeURIComponent(event.url.pathname + event.url.search);
 		redirect(302, `/auth/migration-notice?next=${next}`);

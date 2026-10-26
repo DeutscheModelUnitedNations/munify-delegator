@@ -15,32 +15,22 @@ const defaultSettings: CsvSettings = {
 
 export const csvSettings = createPersistedState<CsvSettings>('csvExportSettings', defaultSettings);
 
-// Helper to get the delimiter label for display
-export function getDelimiterLabel(delimiter: CsvDelimiter): string {
-	switch (delimiter) {
-		case ';':
-			return 'Semicolon (;)';
-		case ',':
-			return 'Comma (,)';
-		case '\t':
-			return 'Tab';
-		case '|':
-			return 'Pipe (|)';
-		default:
-			return delimiter;
-	}
-}
+const delimiterLabels: Record<CsvDelimiter, string> = {
+	';': 'Semicolon (;)',
+	',': 'Comma (,)',
+	'\t': 'Tab',
+	'|': 'Pipe (|)'
+};
 
-// Helper to get the encoding label for display
-export function getEncodingLabel(encoding: CsvEncoding): string {
-	switch (encoding) {
-		case 'utf-8':
-			return 'UTF-8';
-		case 'utf-8-bom':
-			return 'UTF-8 with BOM';
-		case 'iso-8859-1':
-			return 'ISO-8859-1 (Latin-1)';
-		default:
-			return encoding;
-	}
-}
+const encodingLabels: Record<CsvEncoding, string> = {
+	'utf-8': 'UTF-8',
+	'utf-8-bom': 'UTF-8 with BOM',
+	'iso-8859-1': 'ISO-8859-1 (Latin-1)'
+};
+
+// Helpers to get the labels for display; a value stored by an older version shows as itself
+export const getDelimiterLabel = (delimiter: CsvDelimiter): string =>
+	delimiterLabels[delimiter] ?? delimiter;
+
+export const getEncodingLabel = (encoding: CsvEncoding): string =>
+	encodingLabels[encoding] ?? encoding;

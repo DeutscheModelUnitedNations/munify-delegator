@@ -9,31 +9,22 @@
 
 	let { size = 'md', alpha2Code, nsa = false, icon }: Props = $props();
 
-	const flagClassNames = () => {
-		switch (size) {
-			case 'xs':
-				return 'w-[2rem] h-[1.5rem] rounded-field';
-			case 'sm':
-				return 'w-[4rem] h-[3rem] rounded-box';
-			case 'md':
-				return 'w-[6rem] h-[4.5rem] rounded-box';
-			case 'lg':
-				return 'w-[8rem] h-[6rem] rounded-box';
-		}
-	};
+	const flagClasses = {
+		xs: 'w-[2rem] h-[1.5rem] rounded-field',
+		sm: 'w-[4rem] h-[3rem] rounded-box',
+		md: 'w-[6rem] h-[4.5rem] rounded-box',
+		lg: 'w-[8rem] h-[6rem] rounded-box'
+	} satisfies Record<NonNullable<Props['size']>, string>;
 
-	const iconClassNames = () => {
-		switch (size) {
-			case 'xs':
-				return 'text-base';
-			case 'sm':
-				return 'text-lg';
-			case 'md':
-				return 'text-2xl';
-			case 'lg':
-				return 'text-5xl';
-		}
-	};
+	const iconClasses = {
+		xs: 'text-base',
+		sm: 'text-lg',
+		md: 'text-2xl',
+		lg: 'text-5xl'
+	} satisfies Record<NonNullable<Props['size']>, string>;
+
+	const flagClassNames = () => flagClasses[size];
+	const iconClassNames = () => iconClasses[size];
 
 	onMount(() => {
 		if (!alpha2Code && !nsa) {

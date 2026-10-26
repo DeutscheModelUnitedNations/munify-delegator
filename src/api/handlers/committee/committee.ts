@@ -1,5 +1,5 @@
 import { db } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
@@ -28,6 +28,10 @@ registerCommitteeAbilities();
 export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });
 
+/** The committee with this id, as far as the caller may read it. */
+const readableCommittee = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.committee.filter('read')).merge({ where: { id } }).query.single;
+
 const regionalBaselineEnum = enum_({ tsName: 'regionalBaseline' });
 
 schemaBuilder.mutationFields((t) => ({
@@ -46,12 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.created();
 
 			return db.query.committee
-				.findFirst(
-					query(
-						(await ctx.abilities.committee.filter('read')).merge({ where: { id: createdId } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableCommittee(ctx, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,12 +72,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (applicationsTidied) roleApplicationPubsub.removed();
 
 			return db.query.committee
-				.findFirst(
-					query(
-						(await ctx.abilities.committee.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableCommittee(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -132,13 +126,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(
-					query(
-						(await ctx.abilities.committee.filter('read')).merge({
-							where: { id: args.committeeId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableCommittee(ctx, args.committeeId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -165,13 +153,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(
-					query(
-						(await ctx.abilities.committee.filter('read')).merge({
-							where: { id: args.committeeId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableCommittee(ctx, args.committeeId)))
 				.then(assertFindFirstExists);
 		}
 	})

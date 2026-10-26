@@ -1,30 +1,15 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { OIDC_ROLE_CLAIM } from '$app/env/private';
 import { oidcRoles } from './services/OIDC';
+import { roleNamesInClaim } from './roleClaim';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
 
 function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][] {
 	if (!OIDC_ROLE_CLAIM) return [];
-
-	const claim = OIDC_ROLE_CLAIM;
-	const rolesRaw =
-		(locals.oidc?.accessToken as Record<string, unknown> | undefined)?.[claim] ??
-		(locals.oidc?.idToken as Record<string, unknown> | undefined)?.[claim];
-	if (!rolesRaw) return [];
-
-	const collected: string[] = [];
-	if (Array.isArray(rolesRaw)) {
-		for (const role of rolesRaw) {
-			const name = typeof role === 'string' ? role : (role as { name?: string })?.name;
-			if (name) collected.push(name);
-		}
-	} else if (typeof rolesRaw === 'object') {
-		collected.push(...Object.keys(rolesRaw));
-	}
-
-	return collected.filter((role): role is (typeof oidcRoles)[number] =>
-		(oidcRoles as readonly string[]).includes(role)
+	const tokens = [locals.oidc?.accessToken, locals.oidc?.idToken];
+	return roleNamesInClaim(tokens, OIDC_ROLE_CLAIM).filter(
+		(role): role is (typeof oidcRoles)[number] => (oidcRoles as readonly string[]).includes(role)
 	);
 }
 

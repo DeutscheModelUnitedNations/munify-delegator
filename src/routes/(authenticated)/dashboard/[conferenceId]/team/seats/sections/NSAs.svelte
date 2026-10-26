@@ -65,6 +65,7 @@
 	<tbody>
 		{#each nonStateActors as nsa (nsa.id)}
 			{@const delegation = delegations.find((d) => d.assignedRoleId === nsa.id)}
+			{@const members = delegation?.members ?? []}
 			<tr>
 				<td>
 					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
@@ -77,32 +78,26 @@
 				</td>
 				<td>
 					<div class="flex gap-1">
-						{#snippet addParticipantBtn()}
+						{#each members as member (member.id)}
+							<InitialsButton
+								given_name={member.user.givenName}
+								family_name={member.user.familyName}
+								userId={member.user.id}
+							/>
+						{/each}
+						<!-- a role nobody holds yet can always take someone -->
+						{#if !delegation || members.length < (nsa.seatAmount ?? 0)}
 							<AddParticipantBtn
 								bind:user
 								targetRole={`${nsa.abbreviation ?? ''} (${m.nonStateActors()})`}
 								addParticipant={async () => await addParticipant(nsa.id)}
 							/>
-						{/snippet}
-						{#if delegation}
-							{#each delegation.members as member (member.id)}
-								<InitialsButton
-									given_name={member.user.givenName}
-									family_name={member.user.familyName}
-									userId={member.user.id}
-								/>
-							{/each}
-							{#if delegation.members.length < (nsa.seatAmount ?? 0)}
-								{@render addParticipantBtn()}
-							{/if}
-						{:else}
-							{@render addParticipantBtn()}
 						{/if}
 					</div>
 				</td>
 				<td>
-					{delegation?.members.length ?? 0}
-					{#if (nsa.seatAmount ?? 0) !== (delegation?.members.length ?? 0)}
+					{members.length}
+					{#if (nsa.seatAmount ?? 0) !== members.length}
 						<span class="text-xs">/ {nsa.seatAmount} </span>
 					{/if}
 				</td>

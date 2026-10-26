@@ -2,6 +2,7 @@ import { client } from '#lib/api/rumbleClient/client.js';
 import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
+import { registrationRedirect } from './registrationGuard';
 
 /**
  * Guards the registration flow: it only exists while registration is actually open - except for
@@ -21,19 +22,13 @@ export const load: LayoutLoad = async (event) => {
 		startAssignment: true
 	});
 
-	if (!conference) {
-		redirect(307, `/dashboard/${event.params.conferenceId}`);
-	}
-
-	switch (getRegistrationStatus(conference.state, new Date(conference.startAssignment))) {
-		case 'CLOSED':
-		case 'NOT_YET_OPEN':
-		case 'UNKNOWN':
-			redirect(307, `/dashboard/${event.params.conferenceId}`);
-			break;
-		case 'WAITING_LIST':
-			if (!event.url.pathname.endsWith('waiting-list')) {
-				redirect(307, `/registration/${event.params.conferenceId}/waiting-list`);
-			}
-	}
+	const { conferenceId } = event.params;
+	const target = conference
+		? registrationRedirect(
+				getRegistrationStatus(conference.state, new Date(conference.startAssignment)),
+				event.url.pathname,
+				conferenceId
+			)
+		: `/dashboard/${conferenceId}`;
+	if (target) redirect(307, target);
 };

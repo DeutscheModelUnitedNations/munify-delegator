@@ -150,6 +150,16 @@ async function settle(logId: string, error: string | undefined) {
 	return error === undefined;
 }
 
+/** Why the mail service did not send a mail; `undefined` when it did. */
+export function sendingError(result: { success: boolean; error?: string }) {
+	return result.success ? undefined : (result.error ?? 'unknown error');
+}
+
+/** What the log says about something thrown while rendering or sending. */
+export function errorText(error: unknown) {
+	return error instanceof Error ? error.message : String(error);
+}
+
 /** Sends one claimed mail; whatever goes wrong is written to its log row, never thrown. */
 async function send(
 	email: DueEmail,
@@ -171,9 +181,9 @@ async function send(
 			html,
 			text
 		});
-		return settle(logId, result.success ? undefined : (result.error ?? 'unknown error'));
+		return settle(logId, sendingError(result));
 	} catch (error) {
-		return settle(logId, error instanceof Error ? error.message : String(error));
+		return settle(logId, errorText(error));
 	}
 }
 
@@ -198,23 +208,26 @@ async function sendEach(
  * Sends up to `limit` of the mails the conference owes. Answers how many went out, failed, and are
  * left for the next round.
  */
-export async function sendDueEmails(args: {
+export async function sendDueEmails({
+	conferenceId,
+	origin,
+	limit = 200,
+	now = new Date()
+}: {
 	conferenceId: string;
 	origin: string;
 	limit?: number;
 	now?: Date;
 }) {
-	const now = args.now ?? new Date();
-	const kinds = await enabledKinds(args.conferenceId);
-	if (kinds.size === 0) return { sent: 0, failed: 0, remaining: 0 };
-	const snapshot = await loadEmailSnapshot(args.conferenceId);
+	const kinds = await enabledKinds(conferenceId);
+	const snapshot = kinds.size > 0 ? await loadEmailSnapshot(conferenceId) : undefined;
 	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
 
 	const open = await openEmails(snapshot, kinds, now);
-	const batch = open.slice(0, args.limit ?? 200);
-	const texts = await loadEmailTexts(args.conferenceId);
-	const counts = await sendEach(args.conferenceId, batch, (email, logId) =>
-		send(email, snapshot, args.origin, texts, logId)
+	const batch = open.slice(0, limit);
+	const texts = await loadEmailTexts(conferenceId);
+	const counts = await sendEach(conferenceId, batch, (email, logId) =>
+		send(email, snapshot, origin, texts, logId)
 	);
 	if (batch.length > 0) emailLogPubsub.updated();
 	return { ...counts, remaining: open.length - batch.length };

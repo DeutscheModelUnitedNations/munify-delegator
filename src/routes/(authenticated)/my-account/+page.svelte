@@ -6,7 +6,6 @@
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
-	import { translatedNationCodeAddressFormOptions } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
 	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
 	import LoginInformationCard from './LoginInformationCard.svelte';
@@ -16,8 +15,8 @@
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues.js';
-	import AddressRegionField from '#lib/components/form/AddressRegionField.svelte';
-	import { addressRules } from '#lib/helpers/addressRules.js';
+	import AddressFields from '#lib/components/form/AddressFields.svelte';
+	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
 	import { page } from '$app/state';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 
@@ -178,31 +177,7 @@
 						/>
 					</FormSection>
 					<FormSection title={m.address()} icon="house">
-						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
-							<FormTextInput {form} name="street" label={m.street()} placeholder={m.street()} />
-							<FormTextInput
-								{form}
-								name="apartment"
-								label={m.streetAddition()}
-								placeholder={m.streetAddition()}
-							/>
-						</div>
-						<FormSelect
-							{form}
-							name="country"
-							label={m.country()}
-							placeholder={m.pleaseSelectCountry()}
-							options={translatedNationCodeAddressFormOptions}
-						/>
-						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
-							{#if address.zip}
-								<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
-							{/if}
-							{#if address.city}
-								<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
-							{/if}
-						</div>
-						<AddressRegionField {form} name="region" rules={address} />
+						<AddressFields {form} fields={ADDRESS_FIELDS} rules={address} />
 					</FormSection>
 					<FormSection title={m.aboutYou()} icon="user">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">

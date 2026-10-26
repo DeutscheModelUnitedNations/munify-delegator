@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { toast } from 'svelte-sonner';
 	import { m } from '#lib/paraglide/messages.js';
 	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import Form from '#lib/components/form/Form.svelte';
+	import { mutationForm } from '#lib/components/form/mutationForm.js';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import { makeApplicationForm, type ApplicationAnswers } from '../../applicationForm';
@@ -36,21 +34,11 @@
 		experienceLabel
 	}: Props = $props();
 
-	const form = superForm(makeApplicationForm(untrack(() => initial)), {
-		SPA: true,
-		resetForm: false,
-		validationMethod: 'oninput',
-		validators: zod4Client(applicationFormSchema),
-		onError: (e) => {
-			toast.error(e.result.error.message);
-		},
-		async onUpdate({ form: validated }) {
-			if (!validated.valid) return;
-			const promise = save(validated.data);
-			toast.promise(promise, genericPromiseToastMessages);
-			await promise;
-		}
-	});
+	const form = mutationForm(
+		makeApplicationForm(untrack(() => initial)),
+		zod4Client(applicationFormSchema),
+		(answers) => save(answers)
+	);
 </script>
 
 <Form {form} {showSubmitButton}>

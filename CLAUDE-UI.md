@@ -425,6 +425,7 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 | `FormFile`           | File upload                     | `form`, `name`, `label`                                                                          |
 | `FormSubmitButton`   | Submit with loading state       | `form`, `disabled`, `loading`                                                                    |
 | `AddressRegionField` | State/province of an address    | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
+| `AddressFields`      | A whole postal address          | `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country    |
 | `SchoolPicker`       | School combobox                 | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
 
 **`SchoolPicker`** is how every form asks for a school (applications, waiting list, supervisors).
@@ -433,7 +434,12 @@ It binds the two fields every school mutation takes (`schoolChoiceSchema` in
 and clears `schoolId`, so a new name creates a school on save; picking a suggestion sets both;
 "Keine Schule angeben" clears both, because a school is always optional. A hint line says which of
 the three it is. To change the school of an existing row, open `SchoolChangeForm`
-(`current`, `save(choice)`, `onSaved`) in a `Modal`.
+(`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal`, or place it inline.
+
+**`mutationForm(initial, validators, save, { toastProgress })`** (`#lib/components/form/mutationForm.ts`)
+builds the superforms SPA form every mutation-backed form uses (see "Forms" in CLAUDE.md): validated
+on input, never reset, errors as a toast, `save(data)` once valid, with the generic progress toast
+unless `toastProgress: false`. Prefer it over spelling the options out.
 
 ### Complete Form Example
 
@@ -605,52 +611,9 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ---
 
-## TopDrawer Component
-
-Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `SlidePanel`. It closes on overlay click, Escape and the close button, and animates out the same way for each. Used in management tool pages (postalRegistration, payments) for showing scanned/searched item details.
-
-### Props
-
-| Prop            | Type                 | Description                                   |
-| --------------- | -------------------- | --------------------------------------------- |
-| `open`          | `boolean` (bindable) | Controls visibility                           |
-| `maxWidth`      | `string`             | Max width class (default: `'max-w-2xl'`)      |
-| `title`         | `string`             | Header title text                             |
-| `titleIcon`     | `string`             | FontAwesome icon class (e.g. `'fa-id-badge'`) |
-| `headerActions` | `Snippet`            | Buttons in header (profile link, close)       |
-| `children`      | `Snippet`            | Scrollable content area                       |
-| `footer`        | `Snippet`            | Sticky footer with action buttons             |
-
-### TopDrawer Example
-
-```svelte
-<script lang="ts">
-	import TopDrawer from '#lib/components/TopDrawer.svelte';
-
-	let drawerOpen = $state(false);
-</script>
-
-<TopDrawer bind:open={drawerOpen} title="Identity Check" titleIcon="fa-id-badge">
-	{#snippet headerActions()}
-		<button class="btn btn-ghost btn-sm btn-square" onclick={() => (drawerOpen = false)}>
-			<i class="fa-solid fa-xmark text-lg"></i>
-		</button>
-	{/snippet}
-
-	<p>Scrollable content goes here...</p>
-
-	{#snippet footer()}
-		<button class="btn btn-primary flex-1">Save & Next</button>
-		<button class="btn btn-error" onclick={() => (drawerOpen = false)}>Close</button>
-	{/snippet}
-</TopDrawer>
-```
-
-**Note:** `TopDrawer` is different from `Drawer` — TopDrawer slides down from the top on `SlidePanel`; Drawer is a right-side slide-out detail panel.
-
 ## SlidePanel Component
 
-`#lib/components/SlidePanel.svelte` is the shared base for animated edge panels (`TopDrawer`, the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
+`#lib/components/SlidePanel.svelte` is the shared base for animated edge panels (the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
 
 | Prop        | Type                           | Description                                |
 | ----------- | ------------------------------ | ------------------------------------------ |
@@ -899,11 +862,9 @@ occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 />
 ```
 
-Cells are Svelte components under `tanStackTable/cells/` (`BadgeCell`, `IconCell`, `IconListCell`,
-`AssignmentBadge`, …), never HTML strings. A cell text longer than 24ch is truncated. The first
-column has to be an accessor column. `tanStackTable/commonColumns.ts` holds the person-table
-columns `nameColumn()`, `appliedColumn()` and `userCardColumn()`; `RegistrationAdminTable` adds the
-row-opens-a-drawer behaviour on top.
+Cells are Svelte components under `tanStackTable/cells/` (`BadgeCell`, `AssignmentBadge`, …),
+never HTML strings. A cell text longer than 24ch is truncated. The first column has to be an
+accessor column.
 
 Extra controls go in the `toolbar` snippet (inside the search row; it gets the table).
 

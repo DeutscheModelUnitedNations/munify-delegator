@@ -16,6 +16,22 @@ export type AddressRules = {
 	regions: { value: string; label: string }[];
 };
 
+/** The fields of an address in a form, as `AddressFields` lays them out. */
+export type AddressFieldNames<N> = Record<
+	'street' | 'apartment' | 'country' | 'zip' | 'city' | 'region',
+	N
+>;
+
+/** The address fields of a form whose fields are named like the user and school columns. */
+export const ADDRESS_FIELDS = {
+	street: 'street',
+	apartment: 'apartment',
+	country: 'country',
+	zip: 'zip',
+	city: 'city',
+	region: 'region'
+} as const;
+
 /** Germany's rules stand in until a country is picked, which is what most accounts pick. */
 const FALLBACK_COUNTRY = 'DE';
 

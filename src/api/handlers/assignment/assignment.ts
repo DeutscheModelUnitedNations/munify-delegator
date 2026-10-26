@@ -1,6 +1,6 @@
 import { db } from '#api/db/db.js';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { enum_, object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { applyAssignmentDraft, draftDelegationTarget } from './assignmentDraft';
 import { reviewProblem, reviewRow } from '#lib/assignment/review.js';
 import type { Target } from '#lib/assignment/state.js';
@@ -78,6 +78,19 @@ function publishDraft() {
 		pubsub.updated();
 	}
 }
+
+/** A resolver for a draft change to one single participant the caller may assign. */
+const singleParticipantDraftChange =
+	(
+		change: (
+			participant: Awaited<ReturnType<typeof assertCanAssignSingleParticipant>>
+		) => Promise<unknown>
+	) =>
+	async (_root: unknown, args: { singleParticipantId: string }, ctx: ApiContext) => {
+		await change(await assertCanAssignSingleParticipant(ctx, args.singleParticipantId));
+		publishDraft();
+		return true;
+	};
 
 const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
 	fields: (t) => ({ memberIds: t.idList({ required: true }) })
@@ -224,23 +237,15 @@ schemaBuilder.mutationFields((t) => ({
 	convertSingleParticipant: t.field({
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const participant = await assertCanAssignSingleParticipant(ctx, args.singleParticipantId);
-			await convertSingleParticipant(participant);
-			publishDraft();
-			return true;
-		}
+		resolve: singleParticipantDraftChange(convertSingleParticipant)
 	}),
 
 	revertSingleParticipantConversion: t.field({
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const participant = await assertCanAssignSingleParticipant(ctx, args.singleParticipantId);
-			await revertSingleParticipantConversion(participant.id);
-			publishDraft();
-			return true;
-		}
+		resolve: singleParticipantDraftChange((participant) =>
+			revertSingleParticipantConversion(participant.id)
+		)
 	}),
 
 	/** Plans a custom role for a single participant, or (without one) none. */

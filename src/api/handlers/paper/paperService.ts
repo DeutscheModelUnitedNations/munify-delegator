@@ -43,8 +43,7 @@ function assertSavableStatus(requested: PaperStatus | null | undefined, current?
 	throw apiError('CONFLICT', m.paperStatusOnlyThroughReview());
 }
 
-/** Writes a new paper together with its first version. */
-export async function createPaper(args: {
+type NewPaper = {
 	conferenceId: string;
 	/** The author's part in the conference, which `assertCanCreatePaper` found. */
 	authorParticipantId: string;
@@ -53,7 +52,26 @@ export async function createPaper(args: {
 	type: (typeof schema.paper.$inferSelect)['type'];
 	content?: PaperContent;
 	status?: PaperStatus | null;
-}) {
+};
+
+/** The rows of a new paper: the paper (stamped as submitted if it goes straight out) and its first version. */
+export function newPaperRows(args: NewPaper, now: Date) {
+	return {
+		paper: {
+			authorParticipantId: args.authorParticipantId,
+			delegationId: args.delegationId,
+			agendaItemId: args.agendaItemId ?? undefined,
+			type: args.type,
+			status: args.status ?? undefined,
+			firstSubmittedAt: args.status === 'SUBMITTED' ? now : undefined
+		},
+		// The content lives on versions, never on the paper row itself.
+		version: { content: args.content, status: args.status ?? undefined, version: 1 }
+	};
+}
+
+/** Writes a new paper together with its first version. */
+export async function createPaper(args: NewPaper) {
 	assertSavableStatus(args.status);
 	// REVISED answers a review, and a new paper has had none.
 	if (args.status === 'REVISED') {
@@ -69,27 +87,14 @@ export async function createPaper(args: {
 			throw apiError('CONFLICT', m.paperSubmissionClosed());
 		}
 
+		const rows = newPaperRows(args, new Date());
 		const paper = await tx
 			.insert(schema.paper)
-			.values({
-				authorParticipantId: args.authorParticipantId,
-				delegationId: args.delegationId,
-				agendaItemId: args.agendaItemId ?? undefined,
-				type: args.type,
-				status: args.status ?? undefined,
-				// Stamped only when the paper goes straight out as a submission.
-				firstSubmittedAt: args.status === 'SUBMITTED' ? new Date() : undefined
-			})
+			.values(rows.paper)
 			.returning()
 			.then(assertFirstEntryExists);
 
-		// The content lives on versions, never on the paper row itself.
-		await tx.insert(schema.paperVersion).values({
-			paperId: paper.id,
-			content: args.content,
-			status: args.status ?? undefined,
-			version: 1
-		});
+		await tx.insert(schema.paperVersion).values({ ...rows.version, paperId: paper.id });
 
 		return paper;
 	});
@@ -230,37 +235,33 @@ export async function reviewerLeaderboard(conferenceId: string, callerId: string
 		.slice(0, 10);
 }
 
-/** The caller's own review counts within a conference. */
-export async function reviewStatsOf(conferenceId: string, callerId: string) {
-	const reviews = await fetchConferenceReviews(conferenceId);
-
+/**
+ * A reviewer's counts over a conference's reviews (in the order they were written): how many
+ * papers they reviewed first, and how many of their reviews followed someone else's.
+ */
+export function reviewStatsFrom(
+	reviews: readonly { reviewerId: string; paperVersion: { paperId: string } }[],
+	callerId: string
+) {
 	const paperFirstReviewer = new Map<string, string>();
-	const countedFirstReviewPapers = new Set<string>();
-	let firstReviews = 0;
-	let totalReviews = 0;
-
 	for (const review of reviews) {
 		const paperId = review.paperVersion.paperId;
-		const reviewerId = review.reviewerId;
-
-		if (!paperFirstReviewer.has(paperId)) {
-			paperFirstReviewer.set(paperId, reviewerId);
-		}
-
-		if (reviewerId !== callerId) continue;
-
-		totalReviews++;
-		if (paperFirstReviewer.get(paperId) === callerId && !countedFirstReviewPapers.has(paperId)) {
-			countedFirstReviewPapers.add(paperId);
-			firstReviews++;
-		}
+		if (!paperFirstReviewer.has(paperId)) paperFirstReviewer.set(paperId, review.reviewerId);
 	}
+
+	const totalReviews = reviews.filter((review) => review.reviewerId === callerId).length;
+	const firstReviews = [...paperFirstReviewer.values()].filter((id) => id === callerId).length;
 
 	return {
 		firstReviews,
 		followUpReviews: totalReviews - firstReviews,
 		totalReviews
 	};
+}
+
+/** The caller's own review counts within a conference. */
+export async function reviewStatsOf(conferenceId: string, callerId: string) {
+	return reviewStatsFrom(await fetchConferenceReviews(conferenceId), callerId);
 }
 
 /**

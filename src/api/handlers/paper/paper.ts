@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db.js';
-import { countQuery, enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { userId } from '#api/services/authHelper.js';
 import {
 	createPaper,
@@ -33,6 +33,33 @@ registerPaperAbilities();
 const PaperRef = object({ table: 'paper' });
 
 query({ table: 'paper' });
+
+/** The paper with this id, as far as the caller may read it. */
+const readablePaper = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.paper.filter('read')).merge({ where: { id } }).query.single;
+
+/** The submitted introduction papers (those without an agenda item) the caller may read. */
+const readableIntroductionPapers = async (ctx: ApiContext, conferenceId: string) =>
+	(await ctx.abilities.paper.filter('read')).merge({
+		where: {
+			delegation: { conferenceId },
+			status: { ne: 'DRAFT' },
+			agendaItemId: { isNull: true }
+		}
+	}).query.many;
+
+/** The submitted papers of a conference the caller may read, by committee and agenda item. */
+async function readablePapersGroupedByCommittee(ctx: ApiContext, conferenceId: string) {
+	return groupPapersByCommittee(
+		await db.query.paper.findMany({
+			...(await ctx.abilities.paper.filter('read')).merge({
+				where: { delegation: { conferenceId }, status: { ne: 'DRAFT' } }
+			}).query.many,
+			with: { agendaItem: { with: { committee: true } } }
+		})
+	);
+}
+
 countQuery({ table: 'paper' }); // generates `papersCount(where)`, which the team dashboard's card shows
 const paperTypeEnum = enum_({ tsName: 'paperType' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
@@ -57,12 +84,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(
-					query(
-						(await ctx.abilities.paper.filter('read')).merge({ where: { id: created.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readablePaper(ctx, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -83,12 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(
-					query(
-						(await ctx.abilities.paper.filter('read')).merge({ where: { id: args.paperId } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readablePaper(ctx, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -118,15 +135,7 @@ schemaBuilder.queryFields((t) => ({
 			await assertCanReviewPapers(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
-				query(
-					(await ctx.abilities.paper.filter('read')).merge({
-						where: {
-							delegation: { conferenceId: args.conferenceId },
-							status: { ne: 'DRAFT' },
-							agendaItemId: { isNull: true }
-						}
-					}).query.many
-				)
+				query(await readableIntroductionPapers(ctx, args.conferenceId))
 			);
 		}
 	}),
@@ -165,15 +174,7 @@ schemaBuilder.queryFields((t) => ({
 			await assertCanReadConferencePapers(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
-				query(
-					(await ctx.abilities.paper.filter('read')).merge({
-						where: {
-							delegation: { conferenceId: args.conferenceId },
-							status: { ne: 'DRAFT' },
-							agendaItemId: { isNull: true }
-						}
-					}).query.many
-				)
+				query(await readableIntroductionPapers(ctx, args.conferenceId))
 			);
 		}
 	}),
@@ -188,12 +189,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(
-					query(
-						(await ctx.abilities.paper.filter('read')).merge({ where: { id: args.paperId } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readablePaper(ctx, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -232,14 +228,7 @@ schemaBuilder.queryFields((t) => ({
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanReviewPapers(ctx, args.conferenceId);
-			return groupPapersByCommittee(
-				await db.query.paper.findMany({
-					...(await ctx.abilities.paper.filter('read')).merge({
-						where: { delegation: { conferenceId: args.conferenceId }, status: { ne: 'DRAFT' } }
-					}).query.many,
-					with: { agendaItem: { with: { committee: true } } }
-				})
-			);
+			return readablePapersGroupedByCommittee(ctx, args.conferenceId);
 		}
 	}),
 
@@ -249,14 +238,7 @@ schemaBuilder.queryFields((t) => ({
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadConferencePapers(ctx, args.conferenceId);
-			return groupPapersByCommittee(
-				await db.query.paper.findMany({
-					...(await ctx.abilities.paper.filter('read')).merge({
-						where: { delegation: { conferenceId: args.conferenceId }, status: { ne: 'DRAFT' } }
-					}).query.many,
-					with: { agendaItem: { with: { committee: true } } }
-				})
-			);
+			return readablePapersGroupedByCommittee(ctx, args.conferenceId);
 		}
 	})
 }));

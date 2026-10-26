@@ -38,12 +38,8 @@
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
-	import {
-		exceededBy,
-		schoolLookupsOf,
-		schoolSeats,
-		schoolsOfGroup
-	} from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats.js';
+	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
@@ -209,16 +205,7 @@
 	/** Warns (never blocks) when a group taking a role takes its school past the limit. */
 	function warnAboutSchool(group: AssignmentGroup) {
 		const added = hasRole(group) ? [] : schoolsOfGroup(group, schoolLookups);
-		const exceeded = exceededBy(schoolCounts, added, maxSeatsPerSchool);
-		if (exceeded) {
-			toast.warning(
-				m.assignmentSchoolSeatsWarning({
-					school: exceeded.name,
-					seats: exceeded.seats,
-					limit: exceeded.limit
-				})
-			);
-		}
+		warnAboutSchoolSeats(schoolCounts, added, maxSeatsPerSchool);
 	}
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */

@@ -1,30 +1,24 @@
 import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 
+const paperTypeIcons: Record<PapertypeEnum, string> = {
+	POSITION_PAPER: 'fa-file',
+	WORKING_PAPER: 'fa-scroll',
+	INTRODUCTION_PAPER: 'fa-megaphone'
+};
+
+const paperStatusIcons: Record<PaperstatusEnum, string> = {
+	SUBMITTED: 'fa-paper-plane',
+	REVISED: 'fa-rotate',
+	CHANGES_REQUESTED: 'fa-exclamation-triangle',
+	ACCEPTED: 'fa-check-circle',
+	DRAFT: 'fa-file-alt'
+};
+
+/** A value the client does not know yet (a newer API) falls back to a plain document. */
 export function getPaperTypeIcon(type: PapertypeEnum) {
-	switch (type) {
-		case 'POSITION_PAPER':
-			return 'fa-file';
-		case 'WORKING_PAPER':
-			return 'fa-scroll';
-		case 'INTRODUCTION_PAPER':
-			return 'fa-megaphone';
-		default:
-			return 'fa-file-alt';
-	}
+	return paperTypeIcons[type] ?? 'fa-file-alt';
 }
 
 export function getPaperStatusIcon(s: PaperstatusEnum) {
-	switch (s) {
-		case 'SUBMITTED':
-			return 'fa-paper-plane';
-		case 'REVISED':
-			return 'fa-rotate';
-		case 'CHANGES_REQUESTED':
-			return 'fa-exclamation-triangle';
-		case 'ACCEPTED':
-			return 'fa-check-circle';
-		case 'DRAFT':
-		default:
-			return 'fa-file-alt';
-	}
+	return paperStatusIcons[s] ?? 'fa-file-alt';
 }

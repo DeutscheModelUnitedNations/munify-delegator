@@ -7,7 +7,6 @@ export {
 	createTable,
 	FlexRender,
 	tableFeatures,
-	metaHelper,
 	rowSortingFeature,
 	columnFilteringFeature,
 	globalFilteringFeature,
@@ -25,7 +24,6 @@ export {
 	type PaginationState,
 	type ColumnFiltersState,
 	type ColumnVisibilityState,
-	type FilterFn,
 	type TableFeatures,
 	type RowData,
 	type Table

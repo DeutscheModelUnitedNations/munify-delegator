@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client.js';
-	import Flag from '#lib/components/Flag.svelte';
-	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { toast } from 'svelte-sonner';
 	import { optionalText, type CustomRole } from './customRoles';
+	import RoleAddButton from './RoleAddButton.svelte';
+	import RoleDeleteModal from './RoleDeleteModal.svelte';
+	import RoleIconInput from './RoleIconInput.svelte';
+	import RoleInput from './RoleInput.svelte';
+	import RoleSeatInput from './RoleSeatInput.svelte';
+	import { saveField, showError } from './roleEditing';
 
 	interface Props {
 		conferenceId: string;
@@ -23,24 +26,16 @@
 	const totalSeats = $derived(customRoles.reduce((sum, role) => sum + role.seatAmount, 0));
 	const totalHolders = $derived(customRoles.reduce((sum, role) => sum + role.holders, 0));
 
-	const showError = (error: unknown) =>
-		toast.error(error instanceof Error ? error.message : m.genericToastError());
-
 	/** saves one field; a refused change puts the saved value back into the input */
-	async function update(
+	const update = (
 		input: HTMLInputElement,
 		saved: string | number,
 		id: string,
 		data: { name?: string; description?: string; fontAwesomeIcon?: string; seatAmount?: number }
-	) {
-		try {
-			await client.mutate.updateCustomRole({ __args: { id, ...data }, seatAmount: true });
-			toast.success(m.saved());
-		} catch (error) {
-			showError(error);
-			input.value = String(saved);
-		}
-	}
+	) =>
+		saveField(input, saved, () =>
+			client.mutate.updateCustomRole({ __args: { id, ...data }, seatAmount: true })
+		);
 
 	async function create() {
 		if (!draftValid) return;
@@ -90,23 +85,19 @@
 				{#each customRoles as role (role.id)}
 					<tr>
 						<td>
-							<div class="flex items-center gap-2">
-								<Flag nsa icon={role.fontAwesomeIcon} size="xs" />
-								<input
-									class="input input-sm w-full min-w-24"
-									aria-label={m.seatPlanningIcon()}
-									value={role.fontAwesomeIcon ?? ''}
-									onchange={(e) =>
-										update(e.currentTarget, role.fontAwesomeIcon ?? '', role.id, {
-											fontAwesomeIcon: e.currentTarget.value
-										})}
-								/>
-							</div>
+							<RoleIconInput
+								class="min-w-24"
+								value={role.fontAwesomeIcon ?? ''}
+								onchange={(e) =>
+									update(e.currentTarget, role.fontAwesomeIcon ?? '', role.id, {
+										fontAwesomeIcon: e.currentTarget.value
+									})}
+							/>
 						</td>
 						<td>
-							<input
-								class="input input-sm w-full min-w-36"
-								aria-label={m.name()}
+							<RoleInput
+								class="min-w-36"
+								label={m.name()}
 								required
 								value={role.name}
 								onchange={(e) =>
@@ -114,9 +105,9 @@
 							/>
 						</td>
 						<td>
-							<input
-								class="input input-sm w-full min-w-48"
-								aria-label={m.description()}
+							<RoleInput
+								class="min-w-48"
+								label={m.description()}
 								value={role.description}
 								onchange={(e) =>
 									update(e.currentTarget, role.description, role.id, {
@@ -125,11 +116,8 @@
 							/>
 						</td>
 						<td>
-							<input
-								type="number"
+							<RoleSeatInput
 								min={Math.max(role.holders, 1)}
-								class="input input-sm w-16"
-								aria-label={m.seats()}
 								value={role.seatAmount}
 								onchange={(e) =>
 									update(e.currentTarget, role.seatAmount, role.id, {
@@ -169,40 +157,25 @@
 			<tfoot>
 				<tr>
 					<td>
-						<div class="flex items-center gap-2">
-							<Flag nsa icon={draft.fontAwesomeIcon || null} size="xs" />
-							<input
-								class="input input-sm w-full min-w-24"
-								aria-label={m.seatPlanningIcon()}
-								placeholder="fa-newspaper"
-								bind:value={draft.fontAwesomeIcon}
-							/>
-						</div>
-					</td>
-					<td>
-						<input
-							class="input input-sm w-full min-w-36"
-							aria-label={m.name()}
-							placeholder={m.name()}
-							bind:value={draft.name}
+						<RoleIconInput
+							placeholder="fa-newspaper"
+							class="min-w-24"
+							bind:value={draft.fontAwesomeIcon}
 						/>
 					</td>
 					<td>
-						<input
-							class="input input-sm w-full min-w-48"
-							aria-label={m.description()}
-							placeholder={m.description()}
+						<RoleInput class="min-w-36" draft label={m.name()} bind:value={draft.name} />
+					</td>
+					<td>
+						<RoleInput
+							class="min-w-48"
+							draft
+							label={m.description()}
 							bind:value={draft.description}
 						/>
 					</td>
 					<td>
-						<input
-							type="number"
-							min="1"
-							class="input input-sm w-16"
-							aria-label={m.seats()}
-							bind:value={draft.seatAmount}
-						/>
+						<RoleSeatInput bind:value={draft.seatAmount} />
 					</td>
 					<td>
 						<span class="text-base-content/70 text-xs">
@@ -210,14 +183,7 @@
 						</span>
 					</td>
 					<td>
-						<button
-							class="btn btn-primary btn-sm btn-square"
-							aria-label={m.add()}
-							disabled={!draftValid}
-							onclick={create}
-						>
-							<i class="fa-sharp-duotone fa-solid fa-plus"></i>
-						</button>
+						<RoleAddButton disabled={!draftValid} onclick={create} />
 					</td>
 				</tr>
 			</tfoot>
@@ -225,15 +191,8 @@
 	</div>
 </div>
 
-<Modal open={!!toDelete} title={m.delete()} onclose={() => (toDelete = undefined)}>
-	{#if toDelete}
-		<p>{m.seatPlanningDeleteCustomRoleConfirm({ name: toDelete.name })}</p>
-	{/if}
-	{#snippet action()}
-		<button class="btn" onclick={() => (toDelete = undefined)}>{m.cancel()}</button>
-		<button class="btn btn-error" onclick={() => toDelete && remove(toDelete.id)}>
-			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
-			{m.delete()}
-		</button>
-	{/snippet}
-</Modal>
+<RoleDeleteModal
+	bind:role={toDelete}
+	confirmation={(role) => m.seatPlanningDeleteCustomRoleConfirm({ name: role.name })}
+	onconfirm={remove}
+/>

@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { defaults, superForm } from 'sveltekit-superforms';
+	import { defaults } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice.js';
 	import type { z } from 'zod';
 	import Form from './Form.svelte';
 	import SchoolPicker from './SchoolPicker.svelte';
+	import { mutationForm } from './mutationForm';
 
 	/** Picks another school for a registration and saves it through `save`. */
 	interface Props {
@@ -16,33 +15,26 @@
 		label?: string;
 		save: (choice: z.infer<typeof schoolChoiceSchema>) => Promise<unknown>;
 		onSaved?: () => void;
+		/** Keeps the submit button disabled until the school was changed. */
+		requireTaintedToSubmit?: boolean;
 	}
 
-	let { current, label, save, onSaved }: Props = $props();
+	let { current, label, save, onSaved, requireTaintedToSubmit = false }: Props = $props();
 
 	const initial = untrack(() => current);
-	const form = superForm(
+	const form = mutationForm(
 		defaults(
 			{ schoolId: initial?.id ?? null, schoolName: initial?.name ?? '' },
 			zod4Client(schoolChoiceSchema)
 		),
-		{
-			SPA: true,
-			resetForm: false,
-			validationMethod: 'oninput',
-			validators: zod4Client(schoolChoiceSchema),
-			onError: (e) => toast.error(e.result.error.message),
-			async onUpdate({ form: validated }) {
-				if (!validated.valid) return;
-				const promise = save(validated.data);
-				toast.promise(promise, genericPromiseToastMessages);
-				await promise;
-				onSaved?.();
-			}
+		zod4Client(schoolChoiceSchema),
+		async (choice) => {
+			await save(choice);
+			onSaved?.();
 		}
 	);
 </script>
 
-<Form {form} requireTaintedToSubmit={false}>
+<Form {form} {requireTaintedToSubmit}>
 	<SchoolPicker {form} name="schoolName" idName="schoolId" {label} />
 </Form>

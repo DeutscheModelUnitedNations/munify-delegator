@@ -112,7 +112,7 @@ export async function fetchAssignmentDraft(conferenceId: string) {
 
 type AssignmentDraft = Awaited<ReturnType<typeof fetchAssignmentDraft>>;
 
-export interface ApplicationIds {
+interface ApplicationIds {
 	delegationIds: readonly string[];
 	singleParticipantIds: readonly string[];
 }
@@ -219,20 +219,6 @@ function fetchReviewsOf(conferenceId: string, ids: ApplicationIds) {
 			{ singleParticipantId: { in: [...ids.singleParticipantIds] } }
 		]
 	});
-}
-
-/** The reviews of many applications, read a page of ids at a time (for the exports). */
-export async function fetchReviewsOfMany(conferenceId: string, ids: ApplicationIds) {
-	const pages: ApplicationIds[] = [];
-	for (let start = 0; start < ids.delegationIds.length; start += POOL_PAGE) {
-		const delegationIds = ids.delegationIds.slice(start, start + POOL_PAGE);
-		pages.push({ delegationIds, singleParticipantIds: [] });
-	}
-	for (let start = 0; start < ids.singleParticipantIds.length; start += POOL_PAGE) {
-		const singleParticipantIds = ids.singleParticipantIds.slice(start, start + POOL_PAGE);
-		pages.push({ delegationIds: [], singleParticipantIds });
-	}
-	return (await Promise.all(pages.map((page) => fetchReviewsOf(conferenceId, page)))).flat();
 }
 
 /** Which pool of delegations the board shows. */
@@ -447,25 +433,11 @@ export function fetchSinglePoolPage(
 
 export type PoolPage<T> = { rows: T[]; reviews: BoardReviewRow[] };
 
-/** The review of one delegation or single participant, live. */
-export async function fetchReviewOf(
-	conferenceId: string,
-	application: { delegationId?: string; singleParticipantId?: string }
-) {
-	const reviews = await fetchReviews({
-		...inConference(conferenceId),
-		...(application.delegationId
-			? { delegationId: { eq: application.delegationId } }
-			: { singleParticipantId: { eq: application.singleParticipantId ?? '' } })
-	});
-	return reviews.at(0);
-}
-
 export type BoardDelegation = Awaited<ReturnType<typeof fetchBoardDelegations>>[number];
 export type BoardSingleParticipant = Awaited<
 	ReturnType<typeof fetchBoardSingleParticipants>
 >[number];
-export type BoardReview = Awaited<ReturnType<typeof fetchReviews>>[number];
+type BoardReview = Awaited<ReturnType<typeof fetchReviews>>[number];
 
 /** The nations, non-state actors and custom roles of a conference, with their seats. */
 export async function fetchAssignmentRoles(conferenceId: string) {

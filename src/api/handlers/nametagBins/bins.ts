@@ -306,8 +306,20 @@ function roleGroup(name: string, icon: string | null, participants: number): Nam
 	};
 }
 
+/** Each non-state actor is one group, named after its role. */
+export function nonStateActorGroups(
+	delegations: {
+		memberCount: number;
+		assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null;
+	}[]
+): NametagBinGroup[] {
+	return delegations.map(({ assignedRole, memberCount }) =>
+		roleGroup(assignedRole?.name ?? '', assignedRole?.fontAwesomeIcon ?? null, memberCount)
+	);
+}
+
 /** Every single participant holds a role of their own; the supervisors form one group. */
-function singleRoleGroups(
+export function singleRoleGroups(
 	singles: { assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null }[],
 	supervisors: number,
 	language: string
@@ -344,16 +356,10 @@ async function otherGroups(conferenceId: string, language: string): Promise<Name
 		seatedSupervisorUserIds(conferenceId).then((ids) => ids.length)
 	]);
 
-	const groups = nonStateActors.map((delegation) =>
-		roleGroup(
-			delegation.assignedRole?.name ?? '',
-			delegation.assignedRole?.fontAwesomeIcon ?? null,
-			delegation.memberCount
-		)
-	);
-
-	groups.push(...singleRoleGroups(singles, supervisors, language));
-	return groups;
+	return [
+		...nonStateActorGroups(nonStateActors),
+		...singleRoleGroups(singles, supervisors, language)
+	];
 }
 
 /** The nations, non-state actors and roles sent to bin `index` of the split `loadNametagBins` makes. */
@@ -378,6 +384,45 @@ export interface OwnNametagTable {
 	toLetter: string | null;
 	/** Whether the table is the one of press, individual roles and non-state actors. */
 	others: boolean;
+}
+
+/**
+ * Whether someone has a seat (a role for their delegation or themselves, or a supervisor's place),
+ * and the nation it is for; `null` without one.
+ */
+export function ownSeat(
+	member:
+		| {
+				delegation: {
+					assignedRoleId: string | null;
+					assignedRole: { nationAlpha3Code: string | null } | null;
+				};
+		  }
+		| undefined,
+	single: { assignedRoleId: string | null } | undefined,
+	supervisor: boolean
+): { nation: string | null } | null {
+	const seated = supervisor || !!member?.delegation.assignedRoleId || !!single?.assignedRoleId;
+	return seated ? { nation: member?.delegation.assignedRole?.nationAlpha3Code ?? null } : null;
+}
+
+/**
+ * The table of `bins` a seat is sent to: the one holding its nation's letter, or the one of
+ * everyone without a nation. `null` when no table serves it.
+ */
+export function ownNametagTable(
+	bins: NametagBin[],
+	seat: { nation: string | null },
+	language: string
+): OwnNametagTable | null {
+	const initial = seat.nation ? nationInitial(seat.nation, language) : null;
+	const index = bins.findIndex((bin) =>
+		initial ? bin.letters.includes(initial) : bin.otherParticipants > 0
+	);
+	if (index < 0) return null;
+
+	const { fromLetter, toLetter } = bins[index];
+	return { index, fromLetter, toLetter, others: !initial };
 }
 
 /**
@@ -409,17 +454,7 @@ export async function loadOwnNametagTable(
 		seatedSupervisorUserIds(conferenceId).then((ids) => ids.includes(userId))
 	]);
 
-	const nation = member?.delegation.assignedRole?.nationAlpha3Code ?? null;
-	const seated = !!supervisor || !!member?.delegation.assignedRoleId || !!single?.assignedRoleId;
-	if (!seated) return null;
-
-	const bins = await loadNametagBins(conferenceId, binCount, language);
-	const initial = nation ? nationInitial(nation, language) : null;
-	const index = bins.findIndex((bin) =>
-		initial ? bin.letters.includes(initial) : bin.otherParticipants > 0
-	);
-	if (index < 0) return null;
-
-	const { fromLetter, toLetter } = bins[index];
-	return { index, fromLetter, toLetter, others: !initial };
+	const seat = ownSeat(member, single, supervisor);
+	if (!seat) return null;
+	return ownNametagTable(await loadNametagBins(conferenceId, binCount, language), seat, language);
 }

@@ -1,5 +1,5 @@
 import { db } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { nonStateActorUpdateData } from '#api/services/seatPlanning.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
@@ -30,6 +30,10 @@ registerConferenceRoleAbilities();
 const ConferenceRoleRef = object({ table: 'conferenceRole' });
 query({ table: 'conferenceRole' });
 
+/** The role with this id, as far as the caller may read it. */
+const readableConferenceRole = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query.single;
+
 schemaBuilder.mutationFields((t) => ({
 	createNonStateActor: t.drizzleField({
 		type: ConferenceRoleRef,
@@ -48,13 +52,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRolePubsub.created();
 
 			return db.query.conferenceRole
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceRole.filter('read')).merge({
-							where: { id: createdId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableConferenceRole(ctx, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -78,13 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (applicationsTidied) roleApplicationPubsub.removed();
 
 			return db.query.conferenceRole
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceRole.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableConferenceRole(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -120,13 +112,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRolePubsub.created();
 
 			return db.query.conferenceRole
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceRole.filter('read')).merge({
-							where: { id: createdId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableConferenceRole(ctx, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),

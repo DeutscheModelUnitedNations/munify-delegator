@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertCanCreateCalendarDay,
 	deletableCalendarDayWhere,
@@ -21,14 +21,31 @@ registerCalendarDayAbilities();
 
 const CalendarDayRef = object({ table: 'calendarDay' });
 query({ table: 'calendarDay' });
+
+/** The calendar day with this id, as far as the caller may read it. */
+type InputFieldBuilder = PothosSchemaTypes.InputFieldBuilder<
+	(typeof schemaBuilder)['$inferSchemaTypes'],
+	'Arg'
+>;
+
+/** What a new day needs, whether it starts empty or is imported. */
+const newDayArgs = (
+	arg: Pick<InputFieldBuilder, 'id' | 'string' | 'int'> & InputFieldBuilder['field']
+) => ({
+	conferenceId: arg.id({ required: true }),
+	name: arg.string({ required: true }),
+	date: arg({ type: 'DateTime', required: true }),
+	sortOrder: arg.int({ required: true })
+});
+
+const readableCalendarDay = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id } }).query.single;
+
 schemaBuilder.mutationFields((t) => ({
 	createCalendarDay: t.drizzleField({
 		type: CalendarDayRef,
 		args: {
-			conferenceId: t.arg.id({ required: true }),
-			name: t.arg.string({ required: true }),
-			date: t.arg({ type: 'DateTime', required: true }),
-			sortOrder: t.arg.int({ required: true })
+			...newDayArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCalendarDay(ctx, args.conferenceId);
@@ -47,12 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayPubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableCalendarDay(ctx, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -78,12 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayPubsub.updated(args.id);
 
 			return db.query.calendarDay
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableCalendarDay(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -118,10 +125,7 @@ schemaBuilder.mutationFields((t) => ({
 	importCalendarDay: t.drizzleField({
 		type: CalendarDayRef,
 		args: {
-			conferenceId: t.arg.id({ required: true }),
-			name: t.arg.string({ required: true }),
-			date: t.arg({ type: 'DateTime', required: true }),
-			sortOrder: t.arg.int({ required: true }),
+			...newDayArgs(t.arg),
 			importData: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
@@ -137,12 +141,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableCalendarDay(ctx, created.id)))
 				.then(assertFindFirstExists);
 		}
 	})

@@ -31,6 +31,20 @@ function rememberRedirect(now: number) {
 	}
 }
 
+/** Whether an answer means the visitor has to sign in (again); not while they are signing in. */
+export function needsSignIn(error: unknown, pathname: string) {
+	return hasErrorCode(error, 'UNAUTHENTICATED') && !pathname.startsWith('/login');
+}
+
+type BrowserLocation = Parameters<typeof loginUrl>[0] & { assign(url: string): void };
+
+/** Sends the browser to the sign-in and back, unless it was sent there a moment ago. */
+export function redirectToLogin(location: BrowserLocation, now = Date.now()) {
+	if (redirectedRecently(now)) return;
+	rememberRedirect(now);
+	location.assign(loginUrl(location));
+}
+
 /**
  * Sends the visitor to sign in when the API answers that nobody is: a session that ran out while
  * the page was open, rather than a toast saying so. Browser only; on the server the request's own
@@ -41,12 +55,9 @@ export const loginRedirectExchange: Exchange = ({ forward }) => {
 		pipe(
 			forward(operations),
 			tap((result) => {
-				if (!browser || !result.error || !hasErrorCode(result.error, 'UNAUTHENTICATED')) return;
-				if (window.location.pathname.startsWith('/login')) return;
-				const now = Date.now();
-				if (redirectedRecently(now)) return;
-				rememberRedirect(now);
-				window.location.assign(loginUrl(window.location));
+				if (browser && needsSignIn(result.error, window.location.pathname)) {
+					redirectToLogin(window.location);
+				}
 			})
 		);
 };

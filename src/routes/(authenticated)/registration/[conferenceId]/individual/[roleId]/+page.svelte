@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
 	import Form from '#lib/components/form/Form.svelte';
-	import { defaults, superForm } from 'sveltekit-superforms';
+	import { mutationForm } from '#lib/components/form/mutationForm.js';
+	import { defaults } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
-	import { toast } from 'svelte-sonner';
 	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
@@ -12,7 +12,6 @@
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
@@ -42,7 +41,7 @@
 		})
 	]);
 
-	const form = superForm(
+	const form = mutationForm(
 		defaults(
 			{
 				schoolId: existing?.school?.id ?? null,
@@ -52,24 +51,13 @@
 			},
 			zod4Client(applicationFormSchema)
 		),
-		{
-			SPA: true,
-			resetForm: false,
-			validationMethod: 'oninput',
-			validators: zod4Client(applicationFormSchema),
-			onError(e) {
-				toast.error(e.result.error.message);
-			},
-			async onUpdate({ form: validated }) {
-				if (!validated.valid) return;
-				const promise = client.mutate.createSingleParticipant({
-					__args: { ...validated.data, conferenceId, roleId },
-					id: true
-				});
-				toast.promise(promise, genericPromiseToastMessages);
-				await promise;
-				await goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
-			}
+		zod4Client(applicationFormSchema),
+		async (answers) => {
+			await client.mutate.createSingleParticipant({
+				__args: { ...answers, conferenceId, roleId },
+				id: true
+			});
+			await goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 		}
 	);
 </script>

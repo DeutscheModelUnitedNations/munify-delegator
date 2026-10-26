@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import {
 		client,
@@ -20,15 +19,16 @@
 	import GuardianConsentNotNeeded from '#lib/components/GuardianConsentNotNeeded.svelte';
 	import {
 		downloadPostalRegistrationDocuments,
-		fetchPostalRegistrationSources,
-		formatPostalParticipantName
+		fetchPostalRegistrationSources
 	} from '#lib/api/postalRegistrationSources.js';
+	import { postalRecipient } from '#lib/api/postalRegistrationData.js';
+	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator.js';
 	import {
-		downloadCompleteCertificate,
-		type ParticipantData,
-		type RecipientData
-	} from '#lib/utils/pdfGenerator.js';
-	import formatNames from '#lib/helpers/formatNames.js';
+		careTeamPostalParticipant,
+		certificateContentsOf,
+		documentFileName,
+		hasPostalAddress
+	} from './statusDownloads';
 
 	interface Props {
 		userId: string;
@@ -87,53 +87,21 @@
 	const downloadPostalDocs = async () => {
 		try {
 			const { user, conference } = await fetchPostalRegistrationSources(userId, conferenceId);
-
-			if (
-				!conference.postalName ||
-				!conference.postalStreet ||
-				!conference.postalZip ||
-				!conference.postalCity ||
-				!conference.postalCountry
-			) {
+			if (!hasPostalAddress(conference)) {
 				toast.error(m.httpGenericError());
 				return;
 			}
-
-			if (!user.birthday) {
+			const postal = careTeamPostalParticipant(user);
+			if (!postal) {
 				toast.error(m.httpMissingRequiredData());
 				return;
 			}
-
-			const recipientData: RecipientData = {
-				name: `${conference.postalName}`,
-				address: `${conference.postalStreet} ${conference.postalApartment ?? ''}`,
-				zip: conference.postalZip.toString(),
-				city: conference.postalCity,
-				country: conference.postalCountry
-			};
-
-			const participantData: ParticipantData = {
-				id: user.id,
-				name: formatPostalParticipantName(user.givenName, user.familyName),
-				address: [
-					[user.street, user.apartment].filter(Boolean).join(' '),
-					[user.zip, user.city].filter(Boolean).join(' '),
-					user.country
-				]
-					.filter(Boolean)
-					.join(', '),
-				birthday: user.birthday.toLocaleDateString(getLocale())
-			};
-
 			await downloadPostalRegistrationDocuments({
 				conference,
-				birthday: user.birthday,
-				participant: participantData,
-				recipient: recipientData,
-				fileName: `${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-					givenNameFirst: false,
-					delimiter: '_'
-				})}_postal_registration.pdf`
+				birthday: postal.birthday,
+				participant: postal.participant,
+				recipient: postalRecipient(conference),
+				fileName: documentFileName(user, 'postal_registration')
 			});
 		} catch (error) {
 			console.error('Error generating PDF:', error);
@@ -157,26 +125,15 @@
 				}),
 				client.query.user({ __args: { id: userId }, id: true, givenName: true, familyName: true })
 			]);
-
-			if (!jwtData?.fullName || !jwtData?.jwt) {
+			const certificate = certificateContentsOf(jwtData);
+			if (!certificate) {
 				toast.error(m.certificateDownloadError());
 				return;
 			}
-
 			await downloadCompleteCertificate(
-				{
-					fullName: jwtData.fullName,
-					jwt: jwtData.jwt,
-					sessions: jwtData.sessions.map((session) => ({
-						name: session.name,
-						attended: session.attended
-					}))
-				},
+				certificate,
 				conferenceData.certificateFile?.url,
-				`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-					givenNameFirst: false,
-					delimiter: '_'
-				})}_certificate.pdf`
+				documentFileName(user, 'certificate')
 			);
 		} catch (error) {
 			console.error('Error generating PDF:', error);

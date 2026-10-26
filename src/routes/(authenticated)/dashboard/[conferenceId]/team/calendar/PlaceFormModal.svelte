@@ -4,7 +4,7 @@
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { uploadFile } from '#lib/api/uploadFile.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { decodePlusCodeFull, recoverPlusCode } from './plusCode';
+	import { placeFields, resolvePlusCode, savePlaceFields, type PlusCodeError } from './placeForm';
 	import { untrack } from 'svelte';
 
 	interface Props {
@@ -59,71 +59,25 @@
 	let plusCodeError = $state('');
 	let plusCodeLoading = $state(false);
 
+	const plusCodeErrors: Record<PlusCodeError, () => string> = {
+		invalid: m.calendarPlacePlusCodeInvalid,
+		short: m.calendarPlacePlusCodeShort,
+		cityNotFound: m.calendarPlacePlusCodeCityNotFound
+	};
+
 	async function decodePlusCode() {
 		const input = placePlusCode.trim();
-		if (!input) {
-			plusCodeError = '';
-			return;
-		}
-
-		// Extract the code part (before any whitespace) and optional city name
-		const codeMatch = input.match(
-			/^([23456789CFGHJMPQRVWXcfghjmpqrvwx0]+\+[23456789CFGHJMPQRVWXcfghjmpqrvwx0]*)/
-		);
-		if (!codeMatch) {
-			plusCodeError = m.calendarPlacePlusCodeInvalid();
-			return;
-		}
-		const code = codeMatch[1].toUpperCase();
-		const cityPart = input.substring(codeMatch[0].length).trim();
-		const sepIdx = code.indexOf('+');
-
-		if (sepIdx === 8) {
-			// Full code — decode directly
-			const result = decodePlusCodeFull(code);
-			if (!result) {
-				plusCodeError = m.calendarPlacePlusCodeInvalid();
-				return;
-			}
-			placeLatitude = String(result.latitude);
-			placeLongitude = String(result.longitude);
-			plusCodeError = '';
-			return;
-		}
-
-		// Short code — needs a reference city
-		if (!cityPart) {
-			plusCodeError = m.calendarPlacePlusCodeShort();
-			return;
-		}
-
+		plusCodeError = '';
+		if (!input) return;
 		plusCodeLoading = true;
 		try {
-			const response = await fetch(
-				`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityPart)}&format=json&limit=1`,
-				{ headers: { 'User-Agent': 'MUNify-Delegator' } }
-			);
-			if (!response.ok) {
-				plusCodeError = m.calendarPlacePlusCodeCityNotFound();
-				return;
-			}
-			const data: { lat: string; lon: string }[] = await response.json();
-			if (!data.length) {
-				plusCodeError = m.calendarPlacePlusCodeCityNotFound();
-				return;
-			}
-
-			const refLat = parseFloat(data[0].lat);
-			const refLng = parseFloat(data[0].lon);
-			const fullCode = recoverPlusCode(code, refLat, refLng);
-			const result = decodePlusCodeFull(fullCode);
-			if (!result) {
-				plusCodeError = m.calendarPlacePlusCodeInvalid();
+			const result = await resolvePlusCode(input);
+			if ('error' in result) {
+				plusCodeError = plusCodeErrors[result.error]();
 				return;
 			}
 			placeLatitude = String(result.latitude);
 			placeLongitude = String(result.longitude);
-			plusCodeError = '';
 		} catch {
 			plusCodeError = m.calendarPlacePlusCodeCityNotFound();
 		} finally {
@@ -131,13 +85,12 @@
 		}
 	}
 
-	function handleSitePlanUpload(event: Event) {
-		if (!(event.target instanceof HTMLInputElement)) return;
-		const file = event.target.files?.[0];
+	function handleSitePlanUpload(event: Event & { currentTarget: HTMLInputElement }) {
+		const file = event.currentTarget.files?.[0];
 		if (!file) return;
 		if (file.size > 10_000_000) {
 			toast.error(m.fileTooLarge({ max: '10 MB' }));
-			event.target.value = '';
+			event.currentTarget.value = '';
 			return;
 		}
 		uploadedSitePlan = file;
@@ -148,28 +101,24 @@
 		if (!placeName) return;
 		isLoading = true;
 		try {
-			const fields = {
+			const sitePlanFileId = await uploadFile(uploadedSitePlan, {
+				kind: 'place',
+				field: 'sitePlan',
+				conferenceId
+			});
+			const values = {
 				name: placeName,
-				address: placeAddress || null,
-				latitude: placeLatitude ? parseFloat(placeLatitude) : null,
-				longitude: placeLongitude ? parseFloat(placeLongitude) : null,
-				directions: placeDirections || null,
-				info: placeInfo || null,
-				websiteUrl: placeWebsiteUrl || null,
-				sitePlanFileId: await uploadFile(uploadedSitePlan, {
-					kind: 'place',
-					field: 'sitePlan',
-					conferenceId
-				})
+				address: placeAddress,
+				latitude: placeLatitude,
+				longitude: placeLongitude,
+				directions: placeDirections,
+				info: placeInfo,
+				websiteUrl: placeWebsiteUrl
 			};
-			if (editedPlaceId) {
-				await client.mutate.updatePlace({ __args: { id: editedPlaceId, ...fields }, id: true });
-			} else {
-				await client.mutate.createPlace({ __args: { conferenceId, ...fields }, id: true });
-			}
+			await savePlaceFields(conferenceId, editedPlaceId, placeFields(values, sitePlanFileId));
 			onClose();
 		} catch (error) {
-			console.error(editedPlaceId ? 'Failed to update place:' : 'Failed to create place:', error);
+			console.error('Failed to save place:', error);
 			toast.error(error instanceof Error ? error.message : String(error));
 		} finally {
 			isLoading = false;

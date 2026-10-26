@@ -180,6 +180,21 @@ export async function updateProfile(args: ProfileUpdate, updatable: SQL | undefi
 		.where(updatable);
 }
 
+/** Name and birthday corrections by management; an absent field is left as it is. */
+export async function updateIdentity(
+	id: string,
+	args: { givenName?: string | null; familyName?: string | null; birthday?: Date | null }
+) {
+	await db
+		.update(schema.user)
+		.set({
+			givenName: args.givenName ?? undefined,
+			familyName: args.familyName ?? undefined,
+			birthday: args.birthday ?? undefined
+		})
+		.where(eq(schema.user.id, id));
+}
+
 /**
  * Newsletter opt-ins, addressed by email rather than id. Returns the ids of the rows that changed.
  */

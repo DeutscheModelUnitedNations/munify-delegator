@@ -12,7 +12,7 @@ vi.mock('#api/services/requestLocale.js', () => ({
 	runWithLocale: (_locale: string, fn: () => unknown) => fn()
 }));
 
-const { isOpen } = await import('./emailSweep');
+const { errorText, isOpen, sendingError } = await import('./emailSweep');
 
 const now = new Date('2026-11-01T12:00:00Z');
 const minutesAgo = (minutes: number) => new Date(now.getTime() - minutes * 60_000);
@@ -35,5 +35,24 @@ describe('isOpen', () => {
 	test('takes over a claim only once it is stale', () => {
 		expect(isOpen({ status: 'SENDING', attempts: 1, updatedAt: minutesAgo(5) }, now)).toBe(false);
 		expect(isOpen({ status: 'SENDING', attempts: 1, updatedAt: minutesAgo(20) }, now)).toBe(true);
+	});
+});
+
+describe('sendingError', () => {
+	test('is nothing for a sent mail', () => {
+		expect(sendingError({ success: true })).toBeUndefined();
+	});
+
+	test("is the mail service's reason, or a placeholder without one", () => {
+		expect(sendingError({ success: false, error: 'mailbox full' })).toBe('mailbox full');
+		expect(sendingError({ success: false })).toBe('unknown error');
+	});
+});
+
+describe('errorText', () => {
+	test('reads the message of an error and stringifies anything else', () => {
+		expect(errorText(new Error('template broke'))).toBe('template broke');
+		expect(errorText('timeout')).toBe('timeout');
+		expect(errorText(undefined)).toBe('undefined');
 	});
 });

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { EChartsOption } from 'echarts';
 	import EChartsBase from './EChartsBase.svelte';
+	import { gaugeColor } from './gaugeColor';
 
 	interface Props {
 		value: number;
@@ -28,16 +29,7 @@
 		color
 	}: Props = $props();
 
-	// Determine color based on value percentage
-	const getGaugeColor = (val: number): string => {
-		if (color) return color;
-		// Guard against division by zero
-		const range = max - min;
-		const percentage = range === 0 ? 100 : ((val - min) / range) * 100;
-		if (percentage < 33) return '#ef4444'; // red
-		if (percentage < 66) return '#f59e0b'; // amber
-		return '#10b981'; // green
-	};
+	const getGaugeColor = (val: number): string => color ?? gaugeColor(val, min, max);
 
 	const options = $derived.by<EChartsOption>(() => ({
 		title: title

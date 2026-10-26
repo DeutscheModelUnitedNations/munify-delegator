@@ -4,7 +4,8 @@
 	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import Form from '#lib/components/form/Form.svelte';
-	import { defaults, superForm } from 'sveltekit-superforms';
+	import { defaults } from 'sveltekit-superforms';
+	import { mutationForm } from '#lib/components/form/mutationForm.js';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import { toast } from 'svelte-sonner';
@@ -23,30 +24,22 @@
 	let step = $state(0);
 	let entryCode = $state<string>();
 
-	const form = superForm(
+	const form = mutationForm(
 		defaults(
 			{ schoolId: null, schoolName: '', motivation: '', experience: '' },
 			zod4Client(applicationFormSchema)
 		),
-		{
-			SPA: true,
-			resetForm: false,
-			validationMethod: 'oninput',
-			validators: zod4Client(applicationFormSchema),
-			onError(e) {
-				toast.error(e.result.error.message);
-			},
-			async onUpdate({ form: validated }) {
-				if (!validated.valid) return;
-				const delegation = await client.mutate.createDelegation({
-					__args: { ...validated.data, conferenceId },
-					id: true,
-					entryCode: true
-				});
-				entryCode = delegation.entryCode;
-				step++;
-			}
-		}
+		zod4Client(applicationFormSchema),
+		async (answers) => {
+			const delegation = await client.mutate.createDelegation({
+				__args: { ...answers, conferenceId },
+				id: true,
+				entryCode: true
+			});
+			entryCode = delegation.entryCode;
+			step++;
+		},
+		{ toastProgress: false }
 	);
 
 	let referralLink = $derived(

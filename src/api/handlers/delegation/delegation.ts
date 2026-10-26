@@ -1,5 +1,6 @@
 import { db, schema } from '#api/db/db.js';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { applicationArgs } from './applicationArgs';
 import {
 	createDelegationWithHead,
 	previewDelegationByEntryCode,
@@ -29,11 +30,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: DelegationRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			/** An existing school, or `schoolName` to find or create one; neither for no school. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
-			motivation: t.arg.string(),
-			experience: t.arg.string()
+			...applicationArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const createdId = await createDelegationWithHead(ctx.mustBeLoggedIn().sub, args);

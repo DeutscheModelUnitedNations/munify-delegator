@@ -32,12 +32,8 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import {
-		exceededBy,
-		schoolLookupsOf,
-		schoolSeats,
-		schoolsOfGroup
-	} from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats.js';
+	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';
 
@@ -141,16 +137,7 @@
 	function warnAboutSchool(singleParticipantId: string) {
 		const single = { delegationId: null, singleParticipantId, memberIds: [] };
 		const added = holdsRole(singleParticipantId) ? [] : schoolsOfGroup(single, schoolLookups);
-		const exceeded = exceededBy(schoolCounts, added, maxSeatsPerSchool);
-		if (exceeded) {
-			toast.warning(
-				m.assignmentSchoolSeatsWarning({
-					school: exceeded.name,
-					seats: exceeded.seats,
-					limit: exceeded.limit
-				})
-			);
-		}
+		warnAboutSchoolSeats(schoolCounts, added, maxSeatsPerSchool);
 	}
 	const pool = $derived(view.singles.filter((single) => !single.roleId));
 

@@ -26,7 +26,14 @@ function authorized(header: string | null) {
 export const POST: RequestHandler = async ({ request, url }) => {
 	if (!JOBS_SECRET) error(503, 'JOBS_SECRET is not configured');
 	if (!authorized(request.headers.get('x-jobs-secret'))) error(401, 'Unauthorized');
+	return Response.json(await sendEverywhere(url.origin));
+};
 
+/**
+ * Sends up to `BATCH` mails over all conferences, in turn. A conference the batch did not reach
+ * counts as one remaining mail, so the job calls again.
+ */
+async function sendEverywhere(origin: string) {
 	let budget = BATCH;
 	const totals = { sent: 0, failed: 0, remaining: 0 };
 	for (const conferenceId of await conferencesSendingEmails()) {
@@ -34,11 +41,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
 			totals.remaining++;
 			continue;
 		}
-		const result = await sendDueEmails({ conferenceId, origin: url.origin, limit: budget });
+		const result = await sendDueEmails({ conferenceId, origin, limit: budget });
 		budget -= result.sent + result.failed;
 		totals.sent += result.sent;
 		totals.failed += result.failed;
 		totals.remaining += result.remaining;
 	}
-	return Response.json(totals);
-};
+	return totals;
+}

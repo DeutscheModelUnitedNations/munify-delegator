@@ -1,14 +1,16 @@
 import { db, schema } from '#api/db/db.js';
 import { eq } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '#api/rumble.js';
+import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields.js';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates.js';
 import {
 	countConferenceParticipations,
 	previewUser,
 	removeParticipation,
 	updateNewsletterPreferences,
+	updateIdentity,
 	updateProfile,
 	upsertCallerRow
 } from './userService';
@@ -50,6 +52,20 @@ export const UserRef = object({
 	})
 });
 query({ table: 'user' });
+
+/**
+ * Announces a changed profile. A completed or changed profile may now look like an account from
+ * before, so it is compared with those again.
+ */
+function profileChanged(id: string) {
+	userPubsub.updated(id);
+	scanUserForDuplicatesInBackground(id);
+}
+
+/** The user with this id, as far as the caller may read it. */
+const readableUser = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.user.filter('read')).merge({ where: { id } }).query.single;
+
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Removes every trace of a user's participation in one conference - delegation membership,
@@ -76,12 +92,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.removed();
 
 			return db.query.user
-				.findFirst(
-					query(
-						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.userId } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableUser(ctx, args.userId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -113,16 +124,10 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await updateProfile(args, await updatableUser(ctx, args.id));
 
-			userPubsub.updated(args.id);
-			// a completed or changed profile may now look like an account from before
-			scanUserForDuplicatesInBackground(args.id);
+			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(
-					query(
-						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
-					)
-				)
+				.findFirst(query(await readableUser(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -168,11 +173,7 @@ schemaBuilder.mutationFields((t) => ({
 			userPubsub.updated(args.id);
 
 			return db.query.user
-				.findFirst(
-					query(
-						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
-					)
-				)
+				.findFirst(query(await readableUser(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -189,24 +190,12 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanManageUser(ctx, args.id);
 
-			await db
-				.update(schema.user)
-				.set({
-					givenName: args.givenName ?? undefined,
-					familyName: args.familyName ?? undefined,
-					birthday: args.birthday ?? undefined
-				})
-				.where(eq(schema.user.id, args.id));
+			await updateIdentity(args.id, args);
 
-			userPubsub.updated(args.id);
-			scanUserForDuplicatesInBackground(args.id);
+			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(
-					query(
-						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
-					)
-				)
+				.findFirst(query(await readableUser(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -265,13 +254,7 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 const ImpersonationUser = schemaBuilder.simpleObject('ImpersonationUser', {
-	fields: (t) => ({
-		sub: t.string(),
-		email: t.string(),
-		preferred_username: t.string({ nullable: true }),
-		family_name: t.string({ nullable: true }),
-		given_name: t.string({ nullable: true })
-	})
+	fields: oidcIdentityFields
 });
 
 const ImpersonationStatus = schemaBuilder.simpleObject('ImpersonationStatus', {

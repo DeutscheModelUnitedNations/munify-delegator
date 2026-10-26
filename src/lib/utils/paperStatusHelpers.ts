@@ -1,19 +1,15 @@
 import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
 
+const statusBadgeClasses: Record<PaperstatusEnum, string> = {
+	SUBMITTED: 'badge-warning',
+	REVISED: 'badge-info',
+	CHANGES_REQUESTED: 'badge-error',
+	ACCEPTED: 'badge-success',
+	DRAFT: 'badge-ghost'
+};
+
 /**
  * Returns the appropriate DaisyUI badge class for a paper status
  */
-export const getStatusBadgeClass = (status: PaperstatusEnum): string => {
-	switch (status) {
-		case 'SUBMITTED':
-			return 'badge-warning';
-		case 'REVISED':
-			return 'badge-info';
-		case 'CHANGES_REQUESTED':
-			return 'badge-error';
-		case 'ACCEPTED':
-			return 'badge-success';
-		default:
-			return 'badge-ghost';
-	}
-};
+export const getStatusBadgeClass = (status: PaperstatusEnum): string =>
+	statusBadgeClasses[status] ?? 'badge-ghost';

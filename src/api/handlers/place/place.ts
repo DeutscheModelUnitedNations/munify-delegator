@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { eq } from 'drizzle-orm';
 import {
 	assertCanCreatePlace,
@@ -18,20 +18,34 @@ registerPlaceAbilities();
 const PlaceRef = object({ table: 'place' });
 query({ table: 'place' });
 
+type ArgBuilder = Pick<
+	PothosSchemaTypes.InputFieldBuilder<(typeof schemaBuilder)['$inferSchemaTypes'], 'Arg'>,
+	'id' | 'string' | 'float'
+>;
+
+/** Everything about a place but its name, each optional. */
+const placeDetailArgs = (arg: ArgBuilder) => ({
+	address: arg.string(),
+	latitude: arg.float(),
+	longitude: arg.float(),
+	directions: arg.string(),
+	info: arg.string(),
+	websiteUrl: arg.string(),
+	/** A file uploaded through `requestFileUpload`. */
+	sitePlanFileId: arg.id()
+});
+
+/** The place with this id, as far as the caller may read it. */
+const readablePlace = async (ctx: ApiContext, id: string) =>
+	(await ctx.abilities.place.filter('read')).merge({ where: { id } }).query.single;
+
 schemaBuilder.mutationFields((t) => ({
 	createPlace: t.drizzleField({
 		type: PlaceRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			name: t.arg.string({ required: true }),
-			address: t.arg.string(),
-			latitude: t.arg.float(),
-			longitude: t.arg.float(),
-			directions: t.arg.string(),
-			info: t.arg.string(),
-			websiteUrl: t.arg.string(),
-			/** A file uploaded through `requestFileUpload`. */
-			sitePlanFileId: t.arg.id()
+			...placeDetailArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreatePlace(ctx, args.conferenceId, args.sitePlanFileId);
@@ -55,12 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.place
-				.findFirst(
-					query(
-						(await ctx.abilities.place.filter('read')).merge({ where: { id: created.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readablePlace(ctx, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -70,14 +79,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			id: t.arg.id({ required: true }),
 			name: t.arg.string(),
-			address: t.arg.string(),
-			latitude: t.arg.float(),
-			longitude: t.arg.float(),
-			directions: t.arg.string(),
-			info: t.arg.string(),
-			websiteUrl: t.arg.string(),
-			/** A file uploaded through `requestFileUpload`. */
-			sitePlanFileId: t.arg.id()
+			...placeDetailArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdatePlace(ctx, args.id, args.sitePlanFileId);
@@ -102,12 +104,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.updated(args.id);
 
 			return db.query.place
-				.findFirst(
-					query(
-						(await ctx.abilities.place.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readablePlace(ctx, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),

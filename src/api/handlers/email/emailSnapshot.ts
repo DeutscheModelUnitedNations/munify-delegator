@@ -110,7 +110,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 
 type Role = SnapshotRole | null | undefined;
 
-function delegationPart(
+/** A participant's delegation membership, as the mails read it; `null` outside a delegation. */
+export function delegationPart(
 	member:
 		| {
 				delegation: { applied: boolean; assignedRole?: Role } | null;

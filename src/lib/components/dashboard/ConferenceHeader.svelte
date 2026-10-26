@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
 	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { formatDateRange, getStateColor, translateState } from './conferenceHeader';
 
 	interface Props {
 		title: string;
@@ -14,67 +13,6 @@
 	}
 
 	let { title, longTitle, state, startDate, endDate, emblemUrl, logoUrl }: Props = $props();
-
-	const formatDate = (date: Date | null | undefined) => {
-		if (!date) return '';
-		return new Date(date).toLocaleDateString(getLocale(), {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
-	};
-
-	const formatDateRange = (start: Date | null | undefined, end: Date | null | undefined) => {
-		if (!start || !end) return '';
-		const startD = new Date(start);
-		const endD = new Date(end);
-
-		// Same month and year
-		if (startD.getMonth() === endD.getMonth() && startD.getFullYear() === endD.getFullYear()) {
-			return `${startD.getDate()}. – ${endD.toLocaleDateString(getLocale(), {
-				day: 'numeric',
-				month: 'long',
-				year: 'numeric'
-			})}`;
-		}
-
-		// Different months
-		return `${formatDate(start)} – ${formatDate(end)}`;
-	};
-
-	const translateState = (s: ConferencestateEnum) => {
-		switch (s) {
-			case 'PRE':
-				return m.conferenceStatusPre();
-			case 'PARTICIPANT_REGISTRATION':
-				return m.conferenceStatusParticipantRegistration();
-			case 'PREPARATION':
-				return m.conferenceStatusPreparation();
-			case 'ACTIVE':
-				return m.conferenceStatusActive();
-			case 'POST':
-				return m.conferenceStatusPost();
-			default:
-				return s;
-		}
-	};
-
-	const getStateColor = (s: ConferencestateEnum) => {
-		switch (s) {
-			case 'PRE':
-				return 'badge-neutral';
-			case 'PARTICIPANT_REGISTRATION':
-				return 'badge-info';
-			case 'PREPARATION':
-				return 'badge-warning';
-			case 'ACTIVE':
-				return 'badge-success';
-			case 'POST':
-				return 'badge-neutral';
-			default:
-				return 'badge-ghost';
-		}
-	};
 </script>
 
 <header class="card bg-base-100 border-base-200 border shadow-sm">

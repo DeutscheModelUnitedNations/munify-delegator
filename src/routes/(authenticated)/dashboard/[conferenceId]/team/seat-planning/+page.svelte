@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { customRoleRow } from './customRoles';
+	import { nonStateActorRow } from './nonStateActors';
 	import Tab from '#lib/components/tabs/Tab.svelte';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
 	import { client } from '#lib/api/rumbleClient/client.js';
@@ -72,17 +73,7 @@
 		])
 	);
 
-	// A non-state actor's role always fills these columns; the shared role type cannot say so.
-	const nonStateActors = $derived(
-		nonStateActorRoles.map((role) => ({
-			id: role.id,
-			name: role.name ?? '',
-			abbreviation: role.abbreviation ?? '',
-			description: role.description ?? '',
-			fontAwesomeIcon: role.fontAwesomeIcon ?? null,
-			seatAmount: role.seatAmount ?? 0
-		}))
-	);
+	const nonStateActors = $derived(nonStateActorRoles.map(nonStateActorRow));
 
 	const customRoles = $derived(customRoleRows.map(customRoleRow));
 

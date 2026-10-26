@@ -239,6 +239,19 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		preferences: cs.customRoleIds.slice(1, 3)
 	});
 
+	addPersonaSupervisors(cs, {
+		delegationMemberIds: [...german.memberIds.values()],
+		rejectedMemberIds: [...rejected.memberIds.values()],
+		singleId: single
+	});
+	addPersonaStatuses(cs, nsaPartner);
+}
+
+/** The supervisors of the assigned personas: present, mixed, absent and of the rejected ones. */
+function addPersonaSupervisors(
+	cs: ConferenceSeed,
+	supervised: { delegationMemberIds: string[]; rejectedMemberIds: string[]; singleId: string }
+) {
 	// Connection codes are unique across conferences: the fixed ones belong to "Seed 5", and
 	// "Seed 2" holds `joinCodes.supervisor`.
 	const fixedCodes = cs.plan.key === 'preparation';
@@ -246,14 +259,14 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		id: 'supervisor',
 		userId: 'dev-supervisor',
 		attends: true,
-		memberIds: [...german.memberIds.values(), ...rejected.memberIds.values()]
+		memberIds: [...supervised.delegationMemberIds, ...supervised.rejectedMemberIds]
 	});
 	if (['preparation', 'active', 'post'].includes(cs.plan.key)) {
 		addSupervisor(cs, {
 			id: 'supervisor-mixed',
 			userId: 'dev-mixed-supervisor',
 			attends: true,
-			memberIds: [...german.memberIds.values()]
+			memberIds: supervised.delegationMemberIds
 		});
 	}
 	addSupervisor(cs, {
@@ -261,18 +274,22 @@ export function addAssignedPersonas(cs: ConferenceSeed) {
 		userId: 'dev-supervisor-absent',
 		code: fixedCodes ? joinCodes.supervisorAbsent : undefined,
 		attends: false,
-		singleIds: [single]
+		singleIds: [supervised.singleId]
 	});
 	addSupervisor(cs, {
 		id: 'supervisor-rejected',
 		userId: 'dev-supervisor-rejected',
 		code: fixedCodes ? joinCodes.supervisorRejected : undefined,
 		attends: true,
-		memberIds: [...rejected.memberIds.values()]
+		memberIds: supervised.rejectedMemberIds
 	});
+}
 
+/** The statuses, attendance and payments of the assigned personas and the actor's partner. */
+function addPersonaStatuses(cs: ConferenceSeed, nsaPartner: string) {
 	if (!cs.plan.with.participantStatus) return;
 
+	const preparing = cs.plan.conference.state === 'PREPARATION';
 	const statuses = preparing ? preparationStatuses : conferenceStatuses;
 	for (const userId of STATUS_HOLDERS) {
 		const status = statuses[userId];

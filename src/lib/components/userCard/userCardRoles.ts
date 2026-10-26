@@ -82,6 +82,22 @@ export type UserCardRoles = {
 	teamMember: Roles['teamMembers'][number] | undefined;
 };
 
+/** A registration as far as access is concerned: whether it holds a role. */
+interface MaybeAssigned {
+	assignedRole?: object | null;
+}
+
+/** What `hasConferenceAccess` reads of the registrations in `UserCardRoles`. */
+interface AccessRoles {
+	delegationMember?: { delegation: MaybeAssigned } | null;
+	singleParticipant?: MaybeAssigned | null;
+	conferenceSupervisor?: {
+		supervisedDelegationMembers: readonly { delegation: MaybeAssigned }[];
+		supervisedSingleParticipants: readonly MaybeAssigned[];
+	} | null;
+	teamMember?: object | null;
+}
+
 /**
  * Whether the person has a confirmed place at the conference: a team member, an assigned
  * delegation member or single participant, or a supervisor of at least one of those.
@@ -91,18 +107,16 @@ export function hasConferenceAccess({
 	singleParticipant,
 	conferenceSupervisor,
 	teamMember
-}: UserCardRoles) {
+}: AccessRoles) {
 	if (teamMember) return true;
 	if (delegationMember?.delegation.assignedRole) return true;
 	if (singleParticipant?.assignedRole) return true;
-	if (conferenceSupervisor) {
-		const anyDelegationAssigned = conferenceSupervisor.supervisedDelegationMembers.some(
-			(dm) => dm.delegation.assignedRole
-		);
-		const anySingleAssigned = conferenceSupervisor.supervisedSingleParticipants.some(
-			(sp) => sp.assignedRole
-		);
-		if (anyDelegationAssigned || anySingleAssigned) return true;
-	}
-	return false;
+	return !!conferenceSupervisor && supervisesAnyAssigned(conferenceSupervisor);
+}
+
+function supervisesAnyAssigned(supervisor: NonNullable<AccessRoles['conferenceSupervisor']>) {
+	return (
+		supervisor.supervisedDelegationMembers.some((dm) => dm.delegation.assignedRole) ||
+		supervisor.supervisedSingleParticipants.some((sp) => sp.assignedRole)
+	);
 }

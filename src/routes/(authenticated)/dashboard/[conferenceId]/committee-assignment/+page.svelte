@@ -5,6 +5,7 @@
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { fetchCommitteeAssignment } from './committeeAssignment';
+	import { chosenAssignments } from './chosenAssignments';
 	import formatNames from '#lib/helpers/formatNames.js';
 	import type { PageProps } from './$types';
 
@@ -57,26 +58,15 @@
 		);
 
 	const sendCommitteeAssignment = async () => {
-		// Only validate unassigned members - already assigned ones are locked
-		if (unassignedMembers.some((x) => !x.committeeId)) {
+		// Only unassigned members are sent - already assigned ones are locked
+		const assignments = chosenAssignments(unassignedMembers);
+		if (!assignments) {
 			toast.error(m.pleaseAssignAllMembers());
 			return;
 		}
 
-		if (unassignedMembers.some((x) => !x.delegationMemberId || !x.committeeId)) {
-			toast.error(m.failedToAssignCommittees());
-			throw new Error('Failed to assign committees');
-		}
-
-		// Only send unassigned members to the mutation
 		const assigned = await client.mutate.assignCommitteesToDelegationMembers({
-			__args: {
-				conferenceId: params.conferenceId ?? '',
-				assignments: unassignedMembers.map((member) => ({
-					delegationMemberId: member.delegationMemberId,
-					committeeId: member.committeeId ?? ''
-				}))
-			},
+			__args: { conferenceId: params.conferenceId, assignments },
 			id: true,
 			assignedCommittee: { id: true }
 		});

@@ -18,6 +18,7 @@ import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
+import { delegationColumnChanges } from './delegationColumnChanges';
 import { apiError } from '#api/services/errors/apiError.js';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 
@@ -103,22 +104,57 @@ export async function createDelegationWithHead(
 	return created.id;
 }
 
+type DelegationDetailArgs = SchoolChoice & {
+	id: string;
+	applied?: boolean | null;
+	resetEntryCode?: boolean | null;
+	newHeadDelegateUserId?: string | null;
+	experience?: string | null;
+	motivation?: string | null;
+};
+
+/** Applies or withdraws the delegation's application; applying needs a complete one. */
+async function setApplied(
+	tx: Transaction,
+	delegation: UpdatableDelegation,
+	args: DelegationDetailArgs,
+	applied: boolean
+) {
+	// Drop applications the delegation has outgrown before judging whether it may apply.
+	await tidyRoleApplications(delegation.id, tx);
+
+	if (applied) {
+		if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
+			throw apiError('CONFLICT', m.notEnoughMembers());
+		}
+		assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
+	}
+
+	await tx
+		.update(schema.delegation)
+		.set({ applied })
+		.where(eq(schema.delegation.id, delegation.id));
+}
+
+/** Sets the school the update names, if it names one, and moves the members along. */
+async function setSchool(tx: Transaction, delegation: UpdatableDelegation, args: SchoolChoice) {
+	const schoolId = await resolveSchoolChoice(args, tx);
+	if (schoolId === undefined) return;
+	await tx
+		.update(schema.delegation)
+		.set({ schoolId })
+		.where(eq(schema.delegation.id, delegation.id));
+	await setDelegationMembersSchool(tx, delegation.id, schoolId, delegation.schoolId);
+}
+
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
  * leaves the delegation as it was. The caller publishes afterwards.
  */
-// fallow-ignore-next-line complexity
 export async function updateDelegationDetails(
 	delegation: UpdatableDelegation,
-	args: SchoolChoice & {
-		id: string;
-		applied?: boolean | null;
-		resetEntryCode?: boolean | null;
-		newHeadDelegateUserId?: string | null;
-		experience?: string | null;
-		motivation?: string | null;
-	}
+	args: DelegationDetailArgs
 ) {
 	applicationFormSchema.parse({
 		schoolId: args.schoolId,
@@ -127,41 +163,17 @@ export async function updateDelegationDetails(
 		motivation: args.motivation
 	});
 
-	const byId = eq(schema.delegation.id, delegation.id);
-
 	await db.transaction(async (tx) => {
-		if (args.applied !== undefined && args.applied !== null) {
-			// Drop applications the delegation has outgrown before judging whether it may apply.
-			await tidyRoleApplications(delegation.id, tx);
+		if (typeof args.applied === 'boolean') await setApplied(tx, delegation, args, args.applied);
 
-			if (args.applied) {
-				if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
-					throw apiError('CONFLICT', m.notEnoughMembers());
-				}
-				assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
-			}
+		await setSchool(tx, delegation, args);
 
-			await tx.update(schema.delegation).set({ applied: args.applied }).where(byId);
-		}
-
-		const schoolId = await resolveSchoolChoice(args, tx);
-		if (schoolId !== undefined) {
-			await tx.update(schema.delegation).set({ schoolId }).where(byId);
-			await setDelegationMembersSchool(tx, delegation.id, schoolId, delegation.schoolId);
-		}
-
-		if (args.experience || args.motivation) {
+		const changes = delegationColumnChanges(args, makeEntryCode);
+		if (Object.keys(changes).length > 0) {
 			await tx
 				.update(schema.delegation)
-				.set({
-					experience: args.experience,
-					motivation: args.motivation
-				})
-				.where(byId);
-		}
-
-		if (args.resetEntryCode) {
-			await tx.update(schema.delegation).set({ entryCode: makeEntryCode() }).where(byId);
+				.set(changes)
+				.where(eq(schema.delegation.id, delegation.id));
 		}
 
 		if (args.newHeadDelegateUserId) {

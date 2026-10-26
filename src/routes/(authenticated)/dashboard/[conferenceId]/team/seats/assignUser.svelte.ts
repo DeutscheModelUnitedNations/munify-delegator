@@ -33,7 +33,7 @@ function createAssignUser() {
 	};
 }
 
-export type AssignUser = ReturnType<typeof createAssignUser>;
+type AssignUser = ReturnType<typeof createAssignUser>;
 
 const [getAssignUser, setAssignUser] = createContext<AssignUser>();
 

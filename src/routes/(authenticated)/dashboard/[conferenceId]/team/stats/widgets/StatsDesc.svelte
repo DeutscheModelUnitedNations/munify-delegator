@@ -6,35 +6,15 @@
 
 	let { currentValue, historicValue }: Props = $props();
 
-	const getFontClass = () => {
-		if (historicValue === undefined || currentValue === undefined) {
-			return '';
-		}
+	type Trend = 'up' | 'down' | 'same';
 
-		if (currentValue > historicValue) {
-			return 'text-[#00aa00]';
-		}
+	const trendOf = (current: number, historic: number): Trend =>
+		current > historic ? 'up' : current < historic ? 'down' : 'same';
 
-		if (currentValue < historicValue) {
-			return 'text-[#ff0000]';
-		}
-
-		return '';
-	};
-
-	const getFontAwesomeIcon = () => {
-		if (historicValue === undefined || currentValue === undefined) {
-			return '';
-		}
-		if (currentValue > historicValue) {
-			return 'fa-arrow-up-right';
-		}
-
-		if (currentValue < historicValue) {
-			return 'fa-arrow-down-right';
-		}
-
-		return 'fa-equals';
+	const trendStyles: Record<Trend, { fontClass: string; icon: string }> = {
+		up: { fontClass: 'text-[#00aa00]', icon: 'fa-arrow-up-right' },
+		down: { fontClass: 'text-[#ff0000]', icon: 'fa-arrow-down-right' },
+		same: { fontClass: '', icon: 'fa-equals' }
 	};
 </script>
 
@@ -42,8 +22,9 @@
 	{#if historicValue === undefined || currentValue === undefined}
 		<span>–</span>
 	{:else}
-		<span class={getFontClass()}>
-			<i class="fa-sharp-duotone fa-solid {getFontAwesomeIcon()}"></i>
+		{@const trend = trendStyles[trendOf(currentValue, historicValue)]}
+		<span class={trend.fontClass}>
+			<i class="fa-sharp-duotone fa-solid {trend.icon}"></i>
 			{historicValue}
 			{#if currentValue > historicValue}
 				(+ {currentValue - historicValue})

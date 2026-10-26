@@ -9,37 +9,23 @@
 
 	let { color, blink = true, size, tooltip }: Props = $props();
 
-	const getColorClass = () => {
-		switch (color) {
-			case 'info':
-				return 'status-info';
-			case 'success':
-				return 'status-success';
-			case 'warning':
-				return 'status-warning';
-			case 'error':
-				return 'status-error';
-			default:
-				return 'status-info';
-		}
-	};
+	const colorClasses = {
+		info: 'status-info',
+		success: 'status-success',
+		warning: 'status-warning',
+		error: 'status-error'
+	} satisfies Record<NonNullable<Props['color']>, string>;
 
-	const getSizeClass = () => {
-		switch (size) {
-			case 'xs':
-				return 'status-xs';
-			case 'sm':
-				return 'status-sm';
-			case 'md':
-				return 'status-md';
-			case 'lg':
-				return 'status-lg';
-			case 'xl':
-				return 'status-xl';
-			default:
-				return 'status-md';
-		}
-	};
+	const sizeClasses = {
+		xs: 'status-xs',
+		sm: 'status-sm',
+		md: 'status-md',
+		lg: 'status-lg',
+		xl: 'status-xl'
+	} satisfies Record<NonNullable<Props['size']>, string>;
+
+	const getColorClass = () => colorClasses[color ?? 'info'];
+	const getSizeClass = () => sizeClasses[size ?? 'md'];
 </script>
 
 <div class="tooltip tooltip-top inline-grid *:[grid-area:1/1]" data-tip={tooltip}>
