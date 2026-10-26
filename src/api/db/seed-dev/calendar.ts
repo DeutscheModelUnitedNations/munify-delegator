@@ -5,7 +5,7 @@ import {
 	makeSeedCalendarTrack,
 	makeSeedPlace
 } from '../seed-data/calendarDay';
-import { wallClockNow } from '#lib/components/calendar/calendarNow.js';
+import { wallClockNow } from '../../../lib/components/calendar/calendarNow';
 import type { ConferenceSeed } from './context';
 import { sitePlanPdf } from '../seed-data/pdfDocuments';
 import { addSeedFile } from './files';

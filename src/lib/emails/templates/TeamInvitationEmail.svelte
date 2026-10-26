@@ -2,29 +2,32 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import EmailLayout from '../EmailLayout.svelte';
 	import EmailButton from '../EmailButton.svelte';
-	import { ruleStyle, smallStyle, textStyle } from '../brand';
+	import EmailParagraphs from '../EmailParagraphs.svelte';
+	import { ruleStyle, smallStyle } from '../brand';
 
+	/**
+	 * An invitation into a conference's team. Heading and paragraphs are the conference's text
+	 * (`TEAM_INVITATION` in `#lib/helpers/emailTemplates.js`); the greeting, the button, the link
+	 * spelled out and the footer stay fixed.
+	 */
 	interface Props {
 		recipientEmail: string;
 		conferenceTitle: string;
-		roleName: string;
-		inviterName: string;
+		heading: string;
+		paragraphs: string[];
 		inviteUrl: string;
-		expiresAt: string;
+		/** The conference's footer, paragraph by paragraph. */
+		conferenceFooter?: string[];
 	}
 
-	let { recipientEmail, conferenceTitle, roleName, inviterName, inviteUrl, expiresAt }: Props =
+	let { recipientEmail, conferenceTitle, heading, paragraphs, inviteUrl, conferenceFooter }: Props =
 		$props();
 </script>
 
-<EmailLayout heading={m.emailTeamInvitationTitle()} {conferenceTitle}>
-	<p style={textStyle}>{m.emailGreetingAnonymous()}</p>
-	<p style={textStyle}>{m.emailTeamInvitationBody({ inviterName, conferenceTitle, roleName })}</p>
-	<p style={textStyle}>{m.emailTeamInvitationInstruction()}</p>
+<EmailLayout {heading} {conferenceTitle} preview={paragraphs[0]} {conferenceFooter}>
+	<EmailParagraphs greeting={m.emailGreetingAnonymous()} {paragraphs} />
 
 	<EmailButton href={inviteUrl} label={m.emailTeamInvitationButton()} />
-
-	<p style={smallStyle}>{m.emailTeamInvitationExpiry({ expiresAt, inviterName })}</p>
 
 	<hr style={ruleStyle} />
 

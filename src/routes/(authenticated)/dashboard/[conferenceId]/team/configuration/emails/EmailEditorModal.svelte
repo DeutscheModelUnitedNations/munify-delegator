@@ -1,28 +1,26 @@
 <script lang="ts">
-	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
+	import type { Snippet } from 'svelte';
 	import { conferenceLanguageName } from '#lib/helpers/conferenceLanguage.js';
 	import { getLocale, locales, type Locale } from '#lib/paraglide/runtime.js';
 	import Modal from '#lib/components/Modal.svelte';
-	import { emailKindTexts } from './emailKindTexts';
-	import EmailTextForm from './EmailTextForm.svelte';
 
 	/**
-	 * Writes the conference's own text for one kind of mail. Each language has its own, since a
-	 * mail goes out in the recipient's; one left alone sends the default.
+	 * Edits something the conference writes once per language - a mail's text, the footer - since a
+	 * mail goes out in the recipient's. The form is remounted for each language, so it seeds once.
 	 */
 	interface Props {
-		conferenceId: string;
-		kind: EmailkindEnum;
+		title: string;
 		onclose: () => void;
+		form: Snippet<[Locale]>;
 	}
 
-	let { conferenceId, kind, onclose }: Props = $props();
+	let { title, onclose, form }: Props = $props();
 
 	let open = $state(true);
 	let locale = $state<Locale>(getLocale());
 </script>
 
-<Modal bind:open title={emailKindTexts(kind).title} fullWidth {onclose}>
+<Modal bind:open {title} fullWidth {onclose}>
 	<div class="flex w-7xl max-w-full flex-col gap-4">
 		<div role="tablist" class="tabs tabs-border">
 			{#each locales as option (option)}
@@ -36,7 +34,7 @@
 			{/each}
 		</div>
 		{#key locale}
-			<EmailTextForm {conferenceId} {kind} {locale} />
+			{@render form(locale)}
 		{/key}
 	</div>
 </Modal>

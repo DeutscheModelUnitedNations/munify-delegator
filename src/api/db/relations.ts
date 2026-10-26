@@ -880,6 +880,13 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	conferenceEmailFooter: {
+		conference: r.one.conference({
+			from: r.conferenceEmailFooter.conferenceId,
+			to: r.conference.id,
+			optional: false
+		})
+	},
 	emailLog: {
 		conference: r.one.conference({
 			from: r.emailLog.conferenceId,

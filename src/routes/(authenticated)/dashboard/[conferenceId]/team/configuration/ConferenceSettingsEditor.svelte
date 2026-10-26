@@ -1,7 +1,8 @@
 <!--
 	@component
 	The conference settings: one form spread over tabs, saved in one go after a preview of what
-	changes. The committees tab sits outside that form and edits its rows directly.
+	changes. The committees tab sits outside that form and edits its rows directly; the e-mails tab
+	holds its switches until the same save, and saves them through their own mutations.
 
 	Seeds its form once from `conferenceId`, so the parent must remount it (`{#key}`) when the
 	conference changes.
@@ -18,7 +19,11 @@
 	import Form from '#lib/components/form/Form.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile.js';
-	import { canEditConference, canEditConferenceContent } from '#lib/helpers/teamAccess.js';
+	import {
+		canEditConference,
+		canEditConferenceContent,
+		canManageEmails as mayManageEmails
+	} from '#lib/helpers/teamAccess.js';
 	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
@@ -32,6 +37,8 @@
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
 	import ResolutionManager from './ResolutionManager.svelte';
+	import EmailSettings from './emails/EmailSettings.svelte';
+	import { createEmailChanges, emailConfigChanges } from './emails/emailChanges.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -78,6 +85,11 @@
 	const canEdit = $derived(canEditConference(access));
 	/** The content fields are also kept by participant care and the content lead. */
 	const canEditContent = $derived(canEditConferenceContent(access));
+	/** The automatic mails are participant care's. */
+	const canManageEmails = $derived(mayManageEmails(access));
+
+	/** The e-mail switches, held until the settings' save button like the form's fields. */
+	const emailChanges = createEmailChanges();
 
 	/**
 	 * What the file backed fields hold on the server: previews for the images, "already uploaded"
@@ -89,11 +101,11 @@
 			imageFile: { url: true },
 			emblemFile: { url: true },
 			logoFile: { url: true },
-			contractFile: { id: true },
-			guardianConsentFile: { id: true },
-			mediaConsentFile: { id: true },
-			termsAndConditionsFile: { id: true },
-			certificateFile: { id: true }
+			contractFile: { url: true },
+			guardianConsentFile: { url: true },
+			mediaConsentFile: { url: true },
+			termsAndConditionsFile: { url: true },
+			certificateFile: { url: true }
 		})
 	);
 
@@ -198,11 +210,11 @@
 						certificateFileId: await upload('certificate', certificateBasePDF)
 					},
 					id: true,
-					certificateFile: { id: true },
-					termsAndConditionsFile: { id: true },
-					mediaConsentFile: { id: true },
-					guardianConsentFile: { id: true },
-					contractFile: { id: true }
+					certificateFile: { url: true },
+					termsAndConditionsFile: { url: true },
+					mediaConsentFile: { url: true },
+					guardianConsentFile: { url: true },
+					contractFile: { url: true }
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
@@ -230,11 +242,11 @@
 				imageFile: { url: true },
 				emblemFile: { url: true },
 				logoFile: { url: true },
-				certificateFile: { id: true },
-				termsAndConditionsFile: { id: true },
-				mediaConsentFile: { id: true },
-				guardianConsentFile: { id: true },
-				contractFile: { id: true }
+				certificateFile: { url: true },
+				termsAndConditionsFile: { url: true },
+				mediaConsentFile: { url: true },
+				guardianConsentFile: { url: true },
+				contractFile: { url: true }
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
@@ -248,8 +260,8 @@
 
 	let confirmSaveModalOpen = $state(false);
 
-	let pendingChanges = $derived(
-		collectConfigChanges({
+	let pendingChanges = $derived([
+		...collectConfigChanges({
 			saved: savedSettings,
 			current: $formData,
 			tainted: $tainted,
@@ -263,8 +275,9 @@
 				termsAndConditionsBasePDF: !!storedFiles.termsAndConditionsFile,
 				certificateBasePDF: !!storedFiles.certificateFile
 			}
-		})
-	);
+		}),
+		...emailConfigChanges(emailChanges.list)
+	]);
 
 	let changeCountPerTab = $derived.by(() => {
 		const counts: Partial<Record<TabType, number>> = {};
@@ -274,10 +287,21 @@
 		return counts;
 	});
 
-	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
+	const validTabs = [
+		'general',
+		'committees',
+		'status',
+		'links',
+		'payments',
+		'documents',
+		'emails'
+	] as const;
 	type TabType = (typeof validTabs)[number];
 	const params = queryParameters({ tab: true });
-	let currentTab = $derived<TabType>(validTabs.find((tab) => tab === params.tab) ?? 'general');
+	let currentTab = $derived<TabType>(
+		validTabs.find((tab) => tab === params.tab && (tab !== 'emails' || canManageEmails)) ??
+			'general'
+	);
 
 	function setTab(tab: TabType) {
 		params.tab = tab;
@@ -289,7 +313,10 @@
 		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
 		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
 		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
-		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' },
+		...(canManageEmails
+			? [{ value: 'emails' as const, label: m.emailSettingsTab(), icon: 'fa-envelope' }]
+			: [])
 	]);
 
 	const tabIntros: Record<TabType, () => string> = {
@@ -298,7 +325,8 @@
 		status: m.tabExplanationStatus,
 		links: m.tabExplanationLinks,
 		payments: m.tabExplanationPayments,
-		documents: m.tabExplanationDocuments
+		documents: m.tabExplanationDocuments,
+		emails: m.emailSettingsIntro
 	};
 	let tabIntro = $derived(tabIntros[currentTab]());
 
@@ -308,10 +336,35 @@
 			: m.saveSettings()
 	);
 
+	/** One mutation per switch; the sweep each one schedules sends what switching on owes. */
+	async function saveEmailChanges() {
+		const promise = Promise.all(
+			emailChanges.list.map((change) =>
+				client.mutate.setConferenceEmailEnabled({
+					__args: {
+						conferenceId,
+						kind: change.kind,
+						enabled: change.enabled,
+						notifyExisting: change.notifyExisting
+					}
+				})
+			)
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+		emailChanges.saved();
+	}
+
+	const emailsChanged = $derived(canManageEmails && emailChanges.list.length > 0);
+	// e-mail switches alone are no reason to submit the form
+	const formChanged = $derived(
+		canEditContent && pendingChanges.some((change) => change.group !== 'emails')
+	);
+
 	function handleConfirmSave() {
 		confirmSaveModalOpen = false;
-		if (!canEditContent) return;
-		formElement?.requestSubmit();
+		if (emailsChanged) void saveEmailChanges();
+		if (formChanged) formElement?.requestSubmit();
 	}
 </script>
 
@@ -411,6 +464,17 @@
 			</div>
 		</fieldset>
 	</Form>
+
+	<!-- The e-mail switches wait for the save button; their texts and footer save in their editors. -->
+	{#if canManageEmails}
+		<div class="flex flex-col gap-4" class:hidden={currentTab !== 'emails'}>
+			<p class="text-base-content/70 text-sm">
+				<i class="fa-sharp-duotone fa-solid fa-clock mr-1"></i>
+				{m.emailSettingsJobHint()}
+			</p>
+			<EmailSettings {conferenceId} changes={emailChanges} />
+		</div>
+	{/if}
 
 	<!-- Resolutions save through their own mutations, so they live outside the settings form. -->
 	<fieldset class="contents" disabled={!canEditContent}>

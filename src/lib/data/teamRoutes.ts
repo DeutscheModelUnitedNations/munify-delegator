@@ -75,10 +75,18 @@ export const teamRoutes: readonly TeamRoute[] = [
 			'konfiguration',
 			'configuration',
 			'konferenz',
-			'conference'
+			'conference',
+			'e-mails',
+			'emails',
+			'mails',
+			'automatisch',
+			'automatic',
+			'benachrichtigung',
+			'notification'
 		],
 		// Everyone who can change something in there: the settings (project management), the
-		// content (+ participant care, content lead) and the committees (+ content lead).
+		// content (+ participant care, content lead), the committees (+ content lead) and the
+		// automatic mails (participant care).
 		roles: CONFERENCE_CONTENT_ROLES
 	},
 	{
@@ -231,25 +239,6 @@ export const teamRoutes: readonly TeamRoute[] = [
 		group: 'info',
 		category: 'communication',
 		keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen'],
-		roles: PARTICIPANT_CARE_ROLES
-	},
-	{
-		id: 'emails',
-		path: teamPath('emails'),
-		title: () => m.emailSettingsTab(),
-		icon: 'fa-envelope',
-		group: 'info',
-		category: 'communication',
-		keywords: [
-			'e-mails',
-			'emails',
-			'mails',
-			'automatisch',
-			'automatic',
-			'benachrichtigung',
-			'notification',
-			'text'
-		],
 		roles: PARTICIPANT_CARE_ROLES
 	},
 	{

@@ -8,6 +8,15 @@ import {
 	layoutCertificateSessions,
 	type CertificateSessionMark
 } from '#lib/utils/certificateSessionLayout.js';
+import {
+	boxInPoints,
+	defaultLayout,
+	resolveDocumentLayout,
+	squareInPoints,
+	textInPoints,
+	type DocumentLayout,
+	type TextPlacement
+} from '#lib/helpers/documentLayout.js';
 
 export interface ParticipantData {
 	id: string;
@@ -32,21 +41,22 @@ export interface ParticipantCertificateData {
 }
 
 /**
- * Draws the check-in sessions the holder was at below the name: a heading, then each session with a
- * checkmark drawn as two lines (no font glyph needed). Sessions they missed are not on the list.
+ * Draws the check-in sessions the holder was at in the box the layout gives them: a heading, then
+ * each session with a checkmark drawn as two lines (no font glyph needed). Sessions they missed are
+ * not on the list.
  */
 function drawCertificateSessions(
 	page: PDFPage,
 	font: PDFFont,
 	sessions: readonly CertificateSessionMark[],
-	top: number,
-	bottom: number
+	area: { left: number; width: number; top: number; bottom: number }
 ) {
 	const heading = m.certificateSessionsHeading();
 	const layout = layoutCertificateSessions(sessions, heading, {
-		pageWidth: page.getSize().width,
-		top,
-		bottom,
+		pageWidth: area.width,
+		left: area.left,
+		top: area.top - 9,
+		bottom: area.bottom,
 		measure: (text, size) => font.widthOfTextAtSize(text, size)
 	});
 	if (!layout) return;
@@ -237,12 +247,15 @@ interface PDFPageGenerator {
 function createPDFPageGenerator(
 	pdfDoc: PDFDocument,
 	styles: PageStyles,
-	generateContent: (fonts: PDFFonts) => Promise<void>
+	generateContent: (fonts: PDFFonts) => Promise<void>,
+	/** Letters get fold marks; a certificate is not folded. */
+	{ foldMarks = true }: { foldMarks?: boolean } = {}
 ): PDFPageGenerator {
 	return {
 		async generate(): Promise<PDFDocument> {
 			const fonts = await embedFonts(pdfDoc);
 			await generateContent(fonts);
+			if (!foldMarks) return pdfDoc;
 			for (const page of pdfDoc.getPages()) {
 				const utils = createPDFUtils(page, fonts.helvetica, fonts.helveticaBold, styles);
 				utils.drawFoldMarks();
@@ -260,27 +273,22 @@ function createParticipantFormGenerator(
 	generateContent: (form: ParticipantForm, fonts: PDFFonts) => Promise<void>
 ): PDFPageGenerator {
 	const page = pdfDoc.getPage(0);
+	const { width, height } = page.getSize();
 	return createPDFPageGenerator(pdfDoc, styles, async (fonts) => {
-		/** Writes one form field value in the custom font at the left margin. */
-		function drawField(text: string, y: number, size = styles.fontSize.heading) {
-			page.drawText(text, {
-				x: styles.margin.left,
-				y,
-				size,
-				font: fonts.custfont,
-				color: rgb(0, 0, 0)
-			});
-		}
-
 		await generateContent(
 			{
 				page,
 				participantData,
-				drawField,
-				/** Writes the participant's name and birthday, the second one `gap` points below the first. */
-				drawNameAndBirthday(nameY: number, gap: number) {
-					drawField(participantData.name, nameY);
-					drawField(participantData.birthday, nameY - gap);
+				/** Writes one form field value in the custom font where the layout places it. */
+				drawField(text: string, placement: TextPlacement) {
+					const at = textInPoints(placement, width, height);
+					page.drawText(text, {
+						x: at.x,
+						y: at.baseline,
+						size: at.size,
+						font: fonts.custfont,
+						color: rgb(0, 0, 0)
+					});
 				}
 			},
 			fonts
@@ -291,78 +299,58 @@ function createParticipantFormGenerator(
 interface ParticipantForm {
 	page: PDFPage;
 	participantData: ParticipantData;
-	drawField(text: string, y: number, size?: number): void;
-	drawNameAndBirthday(nameY: number, gap: number): void;
+	drawField(text: string, placement: TextPlacement): void;
+}
+
+/** A data-matrix code of `text`, drawn as a square where the layout places it. */
+async function drawDataMatrix(
+	pdfDoc: PDFDocument,
+	page: PDFPage,
+	text: string,
+	placement: DocumentLayout<'contract'>['code']
+) {
+	const canvas = document.createElement('canvas');
+	bwipjs.toCanvas(canvas, { bcid: 'datamatrix', text, scale: 4, rotate: 'L' });
+	const image = await pdfDoc.embedPng(canvas.toDataURL('image/png'));
+	const { width, height } = page.getSize();
+	const { left, bottom, side } = squareInPoints(placement, width, height);
+	page.drawImage(image, { x: left, y: bottom, width: side, height: side });
 }
 
 function createContractGenerator(
 	pdfDoc: PDFDocument,
 	styles: PageStyles,
 	recipientData: RecipientData,
-	participantData: ParticipantData
+	participantData: ParticipantData,
+	layout: DocumentLayout<'contract'>
 ): PDFPageGenerator {
 	return createParticipantFormGenerator(
 		pdfDoc,
 		styles,
 		participantData,
-		async ({ page, drawNameAndBirthday }, fonts) => {
+		async ({ page, drawField }, fonts) => {
 			const { width, height } = page.getSize();
-			let yPosition: number;
-
-			// Address Field
-			const recipientFields = [
-				{ label: recipientData.name },
-				{ label: recipientData.address },
-				{ label: `${recipientData.zip} ${recipientData.city}` },
-				{ label: recipientData.country }
-			];
-
-			// Only for orientation (marks the boundaries of the letter recipient address field)
-			// page.drawRectangle({
-			// 	x: millimeterToPixel(20),
-			// 	y: height - millimeterToPixel(50) - millimeterToPixel(40),
-			// 	width: millimeterToPixel(85),
-			// 	height: millimeterToPixel(40),
-			// 	borderWidth: 1,
-			// 	opacity: 0.2
-			// });
-
-			yPosition = height - millimeterToPixel(60);
-			recipientFields.forEach((field) => {
-				yPosition -= 15;
-				page.drawText(field.label, {
-					x: millimeterToPixel(25),
-					y: yPosition,
-					size: styles.fontSize.normal,
+			// The address the letter goes to, a line at a time, where the envelope's window is.
+			const recipient = textInPoints(layout.recipient, width, height);
+			const lineHeight = recipient.size * 1.36;
+			[
+				recipientData.name,
+				recipientData.address,
+				`${recipientData.zip} ${recipientData.city}`,
+				recipientData.country
+			].forEach((line, index) => {
+				page.drawText(line, {
+					x: recipient.x,
+					y: recipient.baseline - index * lineHeight,
+					size: recipient.size,
 					font: fonts.helvetica,
 					color: rgb(0, 0, 0)
 				});
 			});
 
-			// PDF417 Barcode
-			const barcodeData = participantData.id;
-
-			const barcodeCanvas = document.createElement('canvas');
-
-			bwipjs.toCanvas(barcodeCanvas, {
-				bcid: 'datamatrix',
-				text: barcodeData,
-				scale: 2,
-				rotate: 'L'
-			});
-
-			const barcodeImg = barcodeCanvas.toDataURL('image/png');
-			const pngImage = await pdfDoc.embedPng(barcodeImg);
-			const pngDims = pngImage.scale(1);
-			page.drawImage(pngImage, {
-				x: width - pngDims.width - styles.margin.right,
-				y: height - 100 - pngDims.height,
-				width: pngDims.width,
-				height: pngDims.height
-			});
-
-			// Participant Fields
-			drawNameAndBirthday(height - 320, 60);
+			await drawDataMatrix(pdfDoc, page, participantData.id, layout.code);
+			drawField(participantData.name, layout.name);
+			drawField(participantData.birthday, layout.birthday);
 		}
 	);
 }
@@ -370,34 +358,26 @@ function createContractGenerator(
 function createGuardianGenerator(
 	pdfDoc: PDFDocument,
 	styles: PageStyles,
-	participantData: ParticipantData
+	participantData: ParticipantData,
+	layout: DocumentLayout<'guardianConsent'>
 ): PDFPageGenerator {
-	return createParticipantFormGenerator(
-		pdfDoc,
-		styles,
-		participantData,
-		async ({ page, drawNameAndBirthday }) => {
-			const { height } = page.getSize();
-			drawNameAndBirthday(height - 180, 60);
-		}
-	);
+	return createParticipantFormGenerator(pdfDoc, styles, participantData, async ({ drawField }) => {
+		drawField(participantData.name, layout.name);
+		drawField(participantData.birthday, layout.birthday);
+	});
 }
 
 function createMediaGenerator(
 	pdfDoc: PDFDocument,
 	styles: PageStyles,
-	participantData: ParticipantData
+	participantData: ParticipantData,
+	layout: DocumentLayout<'mediaConsent'>
 ): PDFPageGenerator {
-	return createParticipantFormGenerator(
-		pdfDoc,
-		styles,
-		participantData,
-		async ({ page, drawNameAndBirthday, drawField }) => {
-			const { height } = page.getSize();
-			drawNameAndBirthday(height - 225, 42);
-			drawField(participantData.address, height - 225 - 84, 10);
-		}
-	);
+	return createParticipantFormGenerator(pdfDoc, styles, participantData, async ({ drawField }) => {
+		drawField(participantData.name, layout.name);
+		drawField(participantData.birthday, layout.birthday);
+		drawField(participantData.address, layout.address);
+	});
 }
 
 function toRomanNumeral(num: number): string {
@@ -514,89 +494,79 @@ async function numerateDocument(
 function createCertificateGenerator(
 	pdfDoc: PDFDocument,
 	styles: PageStyles,
-	data: ParticipantCertificateData
+	data: ParticipantCertificateData,
+	layout: DocumentLayout<'certificate'>
 ): PDFPageGenerator {
 	const page = pdfDoc.getPage(0);
-	return createPDFPageGenerator(pdfDoc, styles, async ({ custfont }) => {
-		if (!data.fullName) {
-			throw new Error('Full name is required for the certificate');
-		}
-		if (!data.jwt) {
-			throw new Error('JWT is required for the certificate');
-		}
+	return createPDFPageGenerator(
+		pdfDoc,
+		styles,
+		async ({ custfont }) => {
+			if (!data.fullName) {
+				throw new Error('Full name is required for the certificate');
+			}
+			if (!data.jwt) {
+				throw new Error('JWT is required for the certificate');
+			}
 
-		const { width, height } = page.getSize();
-		const yPosition = height - 215;
-		const text = data.fullName;
-		let textWidth = custfont.widthOfTextAtSize(text, styles.fontSize.title);
-		const xPosition = (width - textWidth) / 2;
+			const { width, height } = page.getSize();
+			const black = rgb(0, 0, 0);
 
-		page.drawText(text, {
-			x: xPosition,
-			y: yPosition,
-			size: styles.fontSize.title,
-			font: custfont,
-			color: rgb(0, 0, 0)
-		});
+			const name = data.fullName;
+			const at = textInPoints(layout.name, width, height);
+			page.drawText(name, {
+				x: at.x - custfont.widthOfTextAtSize(name, at.size) / 2,
+				y: at.baseline,
+				size: at.size,
+				font: custfont,
+				color: black
+			});
 
-		const origin = new URL(window.location.href).origin;
+			const verifyUrl = `${new URL(window.location.href).origin}/vc/${data.jwt}`;
+			const barcodeCanvas = document.createElement('canvas');
+			bwipjs.toCanvas(barcodeCanvas, { bcid: 'qrcode', text: verifyUrl, scale: 4 });
+			const qr = await pdfDoc.embedPng(barcodeCanvas.toDataURL('image/png'));
+			const { left, bottom, side } = squareInPoints(layout.qr, width, height);
+			page.drawImage(qr, { x: left, y: bottom, width: side, height: side });
 
-		const barcodeData = `${origin}/vc/${data.jwt}`;
-
-		const barcodeCanvas = document.createElement('canvas');
-
-		bwipjs.toCanvas(barcodeCanvas, {
-			bcid: 'qrcode',
-			text: barcodeData,
-			scale: 1
-		});
-
-		const barcodeImg = barcodeCanvas.toDataURL('image/png');
-		const pngImage = await pdfDoc.embedPng(barcodeImg);
-		const pngDims = pngImage.scale(0.5);
-		page.drawImage(pngImage, {
-			x: width - pngDims.width - 10,
-			y: 10,
-			width: pngDims.width,
-			height: pngDims.height
-		});
-
-		const verifyText = m.certificateVerify();
-		textWidth = custfont.widthOfTextAtSize(verifyText, 8);
-		const textX = width - pngDims.width - 10 + (pngDims.width - textWidth) / 2;
-		page.drawText(verifyText, {
-			x: textX,
-			y: pngDims.height + 13,
-			size: 8,
-			font: custfont,
-			color: rgb(0, 0, 0)
-		});
-
-		const link = pdfDoc.context.register(
-			pdfDoc.context.obj({
-				Type: 'Annot',
-				Subtype: 'Link',
-				Rect: [textX, pngDims.height + 13, textX + textWidth, pngDims.height + 13 + 8],
-				Border: [0, 0, 0],
-				A: pdfDoc.context.obj({
-					Type: 'Action',
-					S: 'URI',
-					URI: PDFString.of(barcodeData)
+			// The caption above the code links where the code does, for those reading on screen.
+			const verifyText = m.certificateVerify();
+			const captionSize = 8;
+			const captionWidth = custfont.widthOfTextAtSize(verifyText, captionSize);
+			const captionX = left + (side - captionWidth) / 2;
+			const captionY = bottom + side + 4;
+			page.drawText(verifyText, {
+				x: captionX,
+				y: captionY,
+				size: captionSize,
+				font: custfont,
+				color: black
+			});
+			const link = pdfDoc.context.register(
+				pdfDoc.context.obj({
+					Type: 'Annot',
+					Subtype: 'Link',
+					Rect: [
+						Math.min(left, captionX),
+						bottom,
+						Math.max(left + side, captionX + captionWidth),
+						captionY + captionSize
+					],
+					Border: [0, 0, 0],
+					A: pdfDoc.context.obj({ Type: 'Action', S: 'URI', URI: PDFString.of(verifyUrl) })
 				})
-			})
-		);
+			);
+			page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([link]));
 
-		page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([link]));
-
-		// Below the name, kept clear of the QR code and its caption in the bottom right corner.
-		drawCertificateSessions(
-			page,
-			custfont,
-			data.sessions ?? [],
-			yPosition - 40,
-			pngDims.height + 40
-		);
-	});
+			drawCertificateSessions(
+				page,
+				custfont,
+				data.sessions ?? [],
+				boxInPoints(layout.sessions, width, height)
+			);
+		},
+		{ foldMarks: false }
+	);
 }
 
 /**
@@ -626,26 +596,44 @@ async function generateCompletePostalRegistrationPDF(
 	contract: string,
 	guardianAgreement: string,
 	medialAgreement: string,
-	termsAndConditions: string
+	termsAndConditions: string,
+	/** `conference.documentLayouts`: where the team placed the fields; the defaults otherwise. */
+	layouts: unknown
 ): Promise<Uint8Array> {
 	// Determine which pages to include based on age
 	const pageGenerators: PDFPageGenerator[] = [];
 
 	// First PDF is always included
 	pageGenerators.push(
-		createContractGenerator(await loadTemplate(contract), defaultStyles, recipient, participant)
+		createContractGenerator(
+			await loadTemplate(contract),
+			defaultStyles,
+			recipient,
+			participant,
+			resolveDocumentLayout('contract', layouts)
+		)
 	);
 
 	if (!isOfAge) {
 		// Second PDF depends on age
 		pageGenerators.push(
-			createGuardianGenerator(await loadTemplate(guardianAgreement), defaultStyles, participant)
+			createGuardianGenerator(
+				await loadTemplate(guardianAgreement),
+				defaultStyles,
+				participant,
+				resolveDocumentLayout('guardianConsent', layouts)
+			)
 		);
 	}
 
 	// // Third page depends on age
 	pageGenerators.push(
-		createMediaGenerator(await loadTemplate(medialAgreement), defaultStyles, participant)
+		createMediaGenerator(
+			await loadTemplate(medialAgreement),
+			defaultStyles,
+			participant,
+			resolveDocumentLayout('mediaConsent', layouts)
+		)
 	);
 
 	const singlePDFs: PDFDocument[] = [];
@@ -683,6 +671,8 @@ interface PostalTemplateFiles {
 	guardianConsentFile?: TemplateFile;
 	mediaConsentFile?: TemplateFile;
 	termsAndConditionsFile?: TemplateFile;
+	/** Where the team placed the fields on them (`conference.documentLayouts`). */
+	documentLayouts?: unknown;
 }
 
 /** The template's URL, or a toast naming what is missing and an error when there is none. */
@@ -715,7 +705,8 @@ export async function downloadCompletePostalRegistrationPDF(
 			contractContent,
 			guardianContent,
 			mediaContent,
-			termsContent
+			termsContent,
+			templates.documentLayouts
 		);
 
 		downloadPDF(pdfBytes, fileName);
@@ -725,11 +716,16 @@ export async function downloadCompletePostalRegistrationPDF(
 	}
 }
 
-async function generateCertificatePDF(data: ParticipantCertificateData, certificate: string) {
+async function generateCertificatePDF(
+	data: ParticipantCertificateData,
+	certificate: string,
+	layout: DocumentLayout<'certificate'>
+) {
 	const pageGenerator = createCertificateGenerator(
 		await loadTemplate(certificate),
 		defaultStyles,
-		data
+		data,
+		layout
 	);
 
 	const pdf = await pageGenerator.generate();
@@ -742,14 +738,16 @@ async function generateCertificatePDF(data: ParticipantCertificateData, certific
 export async function downloadCompleteCertificate(
 	data: ParticipantCertificateData,
 	certificate: string | undefined,
-	fileName: string
+	fileName: string,
+	/** Where the conference placed the name, sessions and QR code; the default otherwise. */
+	layout: DocumentLayout<'certificate'> = defaultLayout('certificate')
 ): Promise<void> {
 	try {
 		if (!certificate) {
 			toast.error(m.pdfMissingCertificate());
 			throw new Error('Missing required PDF content');
 		}
-		const pdfBytes = await generateCertificatePDF(data, certificate);
+		const pdfBytes = await generateCertificatePDF(data, certificate, layout);
 
 		downloadPDF(pdfBytes, fileName);
 	} catch (error) {

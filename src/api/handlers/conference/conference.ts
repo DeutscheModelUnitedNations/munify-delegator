@@ -14,6 +14,7 @@ import {
 	countSeatedParticipants,
 	findPlausibilityIssues,
 	seedConference,
+	setDocumentLayout,
 	updateConference,
 	type PlausibilityUser
 } from './conferenceService';
@@ -21,11 +22,16 @@ import {
 	assertCanClaimConferenceFiles,
 	assertCanReadPlausibility,
 	assertCanSeedConference,
+	assertCanSetDocumentLayout,
 	assertCanUpdateConference,
 	conferenceUpdateRefused,
 	registerConferenceAbilities
 } from './conferencePermissions';
 import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub.js';
+import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout.js';
+
+/** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
+const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -161,6 +167,36 @@ schemaBuilder.mutationFields((t) => ({
 					query(
 						(await ctx.abilities.conference.filter('read')).merge({ where: { id: args.id } }).query
 							.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	/**
+	 * Places a document's generated parts on the conference's template (the layout editor in the
+	 * document settings); `null` returns that document to the default positions.
+	 */
+	setDocumentLayout: t.drizzleField({
+		// The conference, so the client's cache holds the new layouts at once.
+		type: ConferenceRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			document: t.arg({ type: LayoutDocumentEnum, required: true }),
+			layout: t.arg({ type: 'JSON' })
+		},
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanSetDocumentLayout(ctx, args.conferenceId);
+			if (!(await setDocumentLayout(args.conferenceId, args.document, args.layout))) {
+				throw conferenceUpdateRefused();
+			}
+			conferencePubsub.updated(args.conferenceId);
+			return db.query.conference
+				.findFirst(
+					query(
+						(await ctx.abilities.conference.filter('read')).merge({
+							where: { id: args.conferenceId }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);

@@ -1,7 +1,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
 import { m } from '#lib/paraglide/messages.js';
-import type { ConfigChange } from '../configuration/changePreview';
+import type { ConfigChange } from '../changePreview';
 import { emailKindTexts } from './emailKindTexts';
 
 /** An automatic mail switched on or off on the page, not saved yet. */

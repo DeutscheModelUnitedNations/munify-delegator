@@ -844,6 +844,7 @@ export type Conference = {
     search?: String | null | undefined,
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
+  documentLayouts: JSON | null,
   emblemFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -988,6 +989,7 @@ export type ConferenceOrderInputArgument = {
   contractFileId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   currency?: SortingParameter | null | undefined,
+  documentLayouts?: SortingParameter | null | undefined,
   emblemFileId?: SortingParameter | null | undefined,
   endConference?: SortingParameter | null | undefined,
   feeAmount?: SortingParameter | null | undefined,
@@ -1078,6 +1080,7 @@ export type ConferenceWhereInputArgument = {
   currency?: StringWhereInputArgument | null | undefined,
   delegationMembers?: DelegationmemberWhereInputArgument | null | undefined,
   delegations?: DelegationWhereInputArgument | null | undefined,
+  documentLayouts?: JSONWhereInputArgument | null | undefined,
   emblemFile?: StoredfileWhereInputArgument | null | undefined,
   emblemFileId?: IDWhereInputArgument | null | undefined,
   endConference?: DateTimeWhereInputArgument | null | undefined,
@@ -1132,6 +1135,42 @@ export type ConferenceWhereInputArgument = {
   unlockPostals?: BooleanWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   website?: StringWhereInputArgument | null | undefined    
+};
+		
+export type Conferenceemailfooter = {
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  id: ID,
+  locale: String,
+  search_distance: Float | null,
+  text: String,
+  updatedAt: DateTime    
+};
+		
+export type ConferenceemailfooterOrderInputArgument = {
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  locale?: SortingParameter | null | undefined,
+  text?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ConferenceemailfooterWhereInputArgument = {
+  AND?: ConferenceemailfooterWhereInputArgument[] | undefined,
+  NOT?: ConferenceemailfooterWhereInputArgument | null | undefined,
+  OR?: ConferenceemailfooterWhereInputArgument[] | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  locale?: StringWhereInputArgument | null | undefined,
+  text?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
 export type Conferenceemailsetting = {
@@ -1754,7 +1793,7 @@ export type EmailStatusResult = {
   userId: String | null    
 };
 		
-export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -2014,6 +2053,8 @@ export type JWK = {
   x: String | null,
   y: String | null    
 };
+		
+export type LayoutDocument = "certificate" | "contract" | "guardianConsent" | "mediaConsent";
 		
 export type Locale = string;
 		
@@ -2393,6 +2434,11 @@ export type Mutation = {
     kind: EmailkindEnum,
     notifyExisting?: Boolean | null | undefined
   }) => Boolean,
+  setConferenceEmailFooter: (p: {
+    conferenceId: ID,
+    locale: String,
+    text: String
+  }) => Boolean,
   setConferenceEmailText: (p: {
     body?: String | null | undefined,
     conferenceId: ID,
@@ -2401,6 +2447,11 @@ export type Mutation = {
     locale: String,
     subject?: String | null | undefined
   }) => Boolean,
+  setDocumentLayout: (p: {
+    conferenceId: ID,
+    document: LayoutDocument,
+    layout?: JSON | null | undefined
+  }) => Conference,
   setParticipantSchool: (p: {
     id: ID,
     schoolId?: ID | null | undefined,
@@ -3314,6 +3365,16 @@ export type Query = {
   conference: (p: {
     id: ID
   }) => Conference,
+  conferenceEmailFooter: (p: {
+    id: ID
+  }) => Conferenceemailfooter,
+  conferenceEmailFooters: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailfooterOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailfooterWhereInputArgument | null | undefined
+  }) => Conferenceemailfooter[],
   conferenceEmailSetting: (p: {
     id: ID
   }) => Conferenceemailsetting,
@@ -3422,6 +3483,7 @@ export type Query = {
     body?: String | null | undefined,
     conferenceId: ID,
     draft?: Boolean | null | undefined,
+    footer?: String | null | undefined,
     heading?: String | null | undefined,
     kind: EmailkindEnum,
     locale?: String | null | undefined,
@@ -4827,6 +4889,16 @@ export type Subscription = {
   conference: (p: {
     id: ID
   }) => Conference,
+  conferenceEmailFooter: (p: {
+    id: ID
+  }) => Conferenceemailfooter,
+  conferenceEmailFooters: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailfooterOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailfooterWhereInputArgument | null | undefined
+  }) => Conferenceemailfooter[],
   conferenceEmailSetting: (p: {
     id: ID
   }) => Conferenceemailsetting,
@@ -5812,7 +5884,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

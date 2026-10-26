@@ -7,6 +7,7 @@ import {
 	doublePrecision,
 	boolean,
 	uniqueIndex,
+	jsonb,
 	type UpdateDeleteAction
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
@@ -79,6 +80,11 @@ export const conference = snakeCase.table('conference', {
 	linkToPaperInbox: text(),
 	contractFileId: fileRef(),
 	certificateFileId: fileRef(),
+	/**
+	 * Where the generated parts go on each template - the certificate, the contract, the consents -
+	 * by document (`#lib/helpers/documentLayout.ts`); a document or element without one uses its default.
+	 */
+	documentLayouts: jsonb(),
 	registrationDeadlineGracePeriodMinutes: integer().default(30).notNull(),
 	isOpenPaperSubmission: boolean().default(false).notNull(),
 	emblemFileId: fileRef(),

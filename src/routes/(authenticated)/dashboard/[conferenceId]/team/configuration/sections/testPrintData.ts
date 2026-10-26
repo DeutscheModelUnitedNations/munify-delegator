@@ -1,5 +1,9 @@
 import { getLocale } from '#lib/paraglide/runtime.js';
-import type { ParticipantData, RecipientData } from '#lib/utils/pdfGenerator.js';
+import type {
+	ParticipantCertificateData,
+	ParticipantData,
+	RecipientData
+} from '#lib/utils/pdfGenerator.js';
 import formatNames from '#lib/helpers/formatNames.js';
 import type { ConferenceSettings } from '../form-schema';
 
@@ -38,4 +42,20 @@ export function testPrintParticipant(): ParticipantData {
 /** A template the API returns as null is passed on to the PDF generator as "use the default". */
 export function templateOrDefault(template: string | null | undefined): string | undefined {
 	return template ?? undefined;
+}
+
+const randomString = (length: number) => {
+	const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+	return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(
+		''
+	);
+};
+
+/** The made-up holder of a test certificate, with a token as long as a real one and a few sessions. */
+export function testPrintCertificate(sessions: string[]): ParticipantCertificateData {
+	return {
+		fullName: 'Antonio Guterres',
+		jwt: `${randomString(20)}.${randomString(200)}.${randomString(350)}`,
+		sessions: sessions.map((name) => ({ name, attended: true }))
+	};
 }

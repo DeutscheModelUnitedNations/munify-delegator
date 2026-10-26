@@ -29,7 +29,10 @@ export const emailKind = pgEnum('email_kind', [
 	'OPEN_ISSUES_REMINDER',
 	'PHONE_READY_REMINDER',
 	'CERTIFICATE_AVAILABLE',
-	'SUPERVISOR_STUDENT_LINKED'
+	'SUPERVISOR_STUDENT_LINKED',
+	'PAPER_REVIEWED',
+	'TEAM_INVITATION',
+	'TEAM_WELCOME'
 ]);
 
 /**
@@ -79,6 +82,29 @@ export const conferenceEmailText = snakeCase.table(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.kind.asc().nullsLast(),
+			table.locale.asc().nullsLast()
+		)
+	]
+);
+
+/**
+ * A conference's footer for every mail it sends, in one language: a signature, contact details,
+ * whatever the team wants under each mail. A language without a row has none.
+ */
+export const conferenceEmailFooter = snakeCase.table(
+	'conference_email_footer',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		/** A Paraglide locale (`de`, `en`): mails are written in the recipient's. */
+		locale: text().notNull(),
+		/** Paragraphs separated by a blank line; `{conference}` is the conference's name. */
+		text: text().notNull()
+	},
+	(table) => [
+		uniqueIndex('conference_email_footer_conference_id_locale_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
 			table.locale.asc().nullsLast()
 		)
 	]

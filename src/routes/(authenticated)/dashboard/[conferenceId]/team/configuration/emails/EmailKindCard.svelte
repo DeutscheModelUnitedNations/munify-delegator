@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { isAlwaysSent } from '#lib/helpers/emailKinds.js';
 	import { emailKindTexts } from './emailKindTexts';
 
-	/** One automatic mail on the e-mail page: its switch, what it does, and how often it went out. */
+	/**
+	 * One mail on the e-mail page: its switch (none for the mails that always go out), what it does,
+	 * and how often it went out.
+	 */
 	interface Props {
 		kind: EmailkindEnum;
 		enabled: boolean;
@@ -34,20 +38,25 @@
 		: 'border-base-300'}"
 >
 	<div class="flex flex-wrap items-center gap-3">
-		<input
-			type="checkbox"
-			class="toggle toggle-success"
-			checked={enabled}
-			disabled={busy}
-			aria-label={texts.title}
-			onchange={(event) => {
-				// The switch shows what the tab holds: a question left unanswered leaves it as it was.
-				const on = event.currentTarget.checked;
-				event.currentTarget.checked = enabled;
-				ontoggle(on);
-			}}
-		/>
+		{#if !isAlwaysSent(kind)}
+			<input
+				type="checkbox"
+				class="toggle toggle-success"
+				checked={enabled}
+				disabled={busy}
+				aria-label={texts.title}
+				onchange={(event) => {
+					// The switch shows what the tab holds: a question left unanswered leaves it as it was.
+					const on = event.currentTarget.checked;
+					event.currentTarget.checked = enabled;
+					ontoggle(on);
+				}}
+			/>
+		{/if}
 		<span class="font-semibold">{texts.title}</span>
+		{#if isAlwaysSent(kind)}
+			<span class="badge badge-neutral badge-soft badge-sm">{m.emailKindAlwaysSentBadge()}</span>
+		{/if}
 		{#if customized}
 			<span class="badge badge-primary badge-soft badge-sm">{m.emailTextCustomized()}</span>
 		{/if}

@@ -3,6 +3,13 @@
 	import type { Snippet } from 'svelte';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { brand } from './brand';
+	import {
+		outlookColumnEnd,
+		outlookColumnStart,
+		outlookHead,
+		outlookNamespaces,
+		webFontLink
+	} from './outlook';
 
 	/**
 	 * The frame every mail is drawn in, in DMUN's corporate design: the navy header with the
@@ -17,17 +24,29 @@
 		/** The line inboxes show next to the subject. */
 		preview?: string;
 		children: Snippet;
+		/** The conference's own footer (`conference_email_footer`), above the small print. */
+		conferenceFooter?: string[];
 		/** Small print under the body. */
 		footer?: Snippet;
 	}
 
-	let { heading, conferenceTitle, preview, children, footer }: Props = $props();
+	let {
+		heading,
+		conferenceTitle,
+		preview,
+		children,
+		conferenceFooter = [],
+		footer
+	}: Props = $props();
 </script>
 
-<Html lang={getLocale()}>
+<Html lang={getLocale()} {...outlookNamespaces}>
 	<Head>
 		<title>{heading}</title>
-		<link rel="stylesheet" href={brand.fontUrl} />
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: Outlook's conditional comments from ./outlook -->
+		{@html webFontLink(brand.fontUrl)}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: Outlook's conditional comments from ./outlook -->
+		{@html outlookHead}
 	</Head>
 	<Body
 		style="margin: 0; padding: 0; background-color: {brand.page}; font-family: {brand.font}; color: {brand.text};"
@@ -46,6 +65,8 @@
 			<tbody>
 				<tr>
 					<td align="center" style="padding: 32px 12px;">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: Outlook's conditional comments from ./outlook -->
+						{@html outlookColumnStart(600)}
 						<table
 							role="presentation"
 							width="100%"
@@ -90,6 +111,13 @@
 								</tr>
 								<tr>
 									<td style="padding: 20px 32px; font-family: {brand.font};">
+										{#each conferenceFooter as paragraph, index (index)}
+											<p
+												style="margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: {brand.text}; white-space: pre-line;"
+											>
+												{paragraph}
+											</p>
+										{/each}
 										{@render footer?.()}
 										<p
 											style="margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: {brand.muted};"
@@ -100,6 +128,8 @@
 								</tr>
 							</tbody>
 						</table>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: Outlook's conditional comments from ./outlook -->
+						{@html outlookColumnEnd}
 					</td>
 				</tr>
 			</tbody>

@@ -56,6 +56,7 @@ export {
 	emailStatus,
 	conferenceEmailSetting,
 	conferenceEmailText,
+	conferenceEmailFooter,
 	emailLog
 } from './emails';
 export {

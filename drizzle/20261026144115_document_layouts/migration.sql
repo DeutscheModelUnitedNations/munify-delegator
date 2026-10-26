@@ -1,0 +1,1 @@
+ALTER TABLE "conference" ADD COLUMN "document_layouts" jsonb;

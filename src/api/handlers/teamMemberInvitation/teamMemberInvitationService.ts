@@ -44,6 +44,7 @@ async function resendInvitationEmail(
 	if (!conference) return;
 
 	sendTeamInvitationEmail({
+		conferenceId: invitation.conferenceId,
 		recipientEmail: invitation.email,
 		conferenceTitle: conference.title,
 		role: invitation.role,
@@ -157,6 +158,7 @@ export async function createInvitations(
 				});
 
 				sendTeamWelcomeEmail({
+					conferenceId,
 					recipientName: `${existingUser.givenName} ${existingUser.familyName}`,
 					recipientEmail: email,
 					conferenceTitle: conference.title,
@@ -192,6 +194,7 @@ export async function createInvitations(
 				});
 
 				sendTeamInvitationEmail({
+					conferenceId,
 					recipientEmail: email,
 					conferenceTitle: conference.title,
 					role: invitation.role,

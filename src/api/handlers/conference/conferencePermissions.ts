@@ -33,7 +33,8 @@ const MEMBERS_ONLY = {
 	guardianConsentFileId: false,
 	mediaConsentFileId: false,
 	termsAndConditionsFileId: false,
-	certificateFileId: false
+	certificateFileId: false,
+	documentLayouts: false
 };
 /** The team's internal tools. */
 const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
@@ -138,6 +139,11 @@ export async function assertCanClaimConferenceFiles(ctx: ApiContext, args: Confe
 	await claim('mediaConsent', args.mediaConsentFileId);
 	await claim('termsAndConditions', args.termsAndConditionsFileId);
 	await claim('certificate', args.certificateFileId);
+}
+
+/** Placing the generated parts on the templates goes with the templates themselves. */
+export async function assertCanSetDocumentLayout(ctx: ApiContext, conferenceId: string) {
+	await assertTeamRole(ctx, conferenceId, CONFERENCE_CONTENT_ROLES);
 }
 
 /** Refused when `updateConference` matched no row, as when the update ability matches none. */

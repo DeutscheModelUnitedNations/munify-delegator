@@ -1,12 +1,15 @@
 import { m } from '#lib/paraglide/messages.js';
 import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
 import formatNames from '#lib/helpers/formatNames.js';
+import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type {
 	DueEmail,
+	EmailKind,
 	EmailSnapshot,
 	PaperworkField,
 	SnapshotPerson,
+	SnapshotReview,
 	SnapshotRole
 } from './dueEmails';
 import { seatOf } from './dueEmails';
@@ -29,6 +32,8 @@ export interface EmailContent {
 	items?: string[];
 	closing?: string[];
 	button?: { label: string; url: string };
+	/** Where an answer goes, when not to the conference's own address. */
+	replyTo?: string;
 }
 
 type Conference = EmailSnapshot['conference'];
@@ -78,6 +83,7 @@ interface KindContent {
 	values?: EmailPlaceholderValues;
 	items?: string[];
 	button?: { label: string; url: string };
+	replyTo?: string;
 }
 
 type ContentBuilder = (ctx: ContentContext) => KindContent;
@@ -95,6 +101,15 @@ const supervisorSummaryItem = (student: SnapshotPerson) =>
 				seat: seatDescription(student)
 			})
 		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student) });
+
+/** What the author reads about a review: the paper, who reviewed it, the paper's new status. */
+const reviewValues = (review: SnapshotReview) => ({
+	paper: review.agendaItem ?? translatePaperType(review.paperType),
+	reviewer: review.reviewer
+		? `${review.reviewer.name} (${review.reviewer.email})`
+		: m.emailAutoPaperReviewedTeam(),
+	status: review.statusAfter ? translatePaperStatus(review.statusAfter) : ''
+});
 
 const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	ASSIGNMENT_ACCEPTED: seated,
@@ -144,12 +159,23 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
 		values: { student: email.student ? fullName(email.student) : '' },
 		button: dashboard
-	})
+	}),
+	PAPER_REVIEWED: ({ email, conference, origin, dashboard }) =>
+		email.review
+			? {
+					values: reviewValues(email.review),
+					button: {
+						label: m.emailAutoPaperReviewedButton(),
+						url: `${origin}/dashboard/${conference.id}/paperhub/${email.review.paperId}`
+					},
+					replyTo: email.review.reviewer?.email
+				}
+			: { button: dashboard }
 };
 
 /** A conference's own text for one kind and language (`conference_email_text`). */
 export interface ConferenceEmailText extends EmailTextOverride {
-	kind: DueEmail['kind'];
+	kind: EmailKind;
 	locale: string;
 }
 
@@ -172,7 +198,11 @@ export function emailContent(
 		{ name: fullName(email.person), conference: conference.title, ...kind.values },
 		kind.items
 	);
-	return { ...filled, ...(kind.button ? { button: kind.button } : {}) };
+	return {
+		...filled,
+		...(kind.button ? { button: kind.button } : {}),
+		...(kind.replyTo ? { replyTo: kind.replyTo } : {})
+	};
 }
 
 export { fullName as recipientName };

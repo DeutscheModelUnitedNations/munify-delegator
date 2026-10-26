@@ -17,18 +17,3 @@ export interface SendEmailResult {
 	messageId?: string;
 	error?: string;
 }
-
-/**
- * Props for the NewReviewEmail template
- */
-export interface NewReviewEmailProps {
-	recipientName: string;
-	paperTitle: string;
-	paperType: string;
-	reviewerName: string;
-	/** Absent when the reviewer's identity provider does not expose an address. */
-	reviewerEmail?: string;
-	newStatus: string;
-	conferenceTitle: string;
-	paperUrl: string;
-}

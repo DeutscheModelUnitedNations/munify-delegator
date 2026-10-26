@@ -224,7 +224,7 @@
 				}
 			}),
 			client.query.conferenceRoles({
-				__args: { where: { conferenceId: { eq: conferenceId }, kind: { eq: 'NON_STATE_ACTOR' } } },
+				__args: { where: { conferenceId: { eq: conferenceId }, kind: 'NON_STATE_ACTOR' } },
 				name: true
 			})
 		]);

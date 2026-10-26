@@ -41,6 +41,9 @@ export const canEditCommittees = (access: TeamAccess) => hasAnyRole(access, SEAT
 /** Planning which nations sit where */
 export const canPlanSeats = (access: TeamAccess) => hasAnyRole(access, SEAT_PLANNING_ROLES);
 
+/** Switching the automatic mails and writing their texts */
+export const canManageEmails = (access: TeamAccess) => hasAnyRole(access, PARTICIPANT_CARE_ROLES);
+
 /** Storing an access card on a person's status, which the scanner's badge option does */
 export const canWriteAccessCards = (access: TeamAccess) =>
 	hasAnyRole(access, PARTICIPANT_CARE_ROLES);

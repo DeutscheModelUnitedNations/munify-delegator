@@ -9,6 +9,7 @@
 	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
 	import type { ComponentProps } from 'svelte';
 	import { planCertificateDownload, type CertificateData } from './certificateDownload';
+	import { resolveDocumentLayout } from '#lib/helpers/documentLayout.js';
 
 	type Role = ComponentProps<typeof RoleWidget>;
 
@@ -48,41 +49,39 @@
 
 	const hasRole = $derived(!!country || !!nonStateActor || !!customConferenceRole);
 
-	let certificate = $state<CertificateData>();
-
-	$effect(() => {
-		if (!conferenceId || !userId) return;
-		const requestedFor = { conferenceId, userId };
-		let cancelled = false;
-
-		void Promise.all([
-			client.query.conference({
-				__args: { id: requestedFor.conferenceId },
+	/**
+	 * The template is read live: the dashboard has the conference cached already, so the first answer
+	 * lacks the template until the network's arrives, and a one-shot read would keep that first one.
+	 */
+	async function fetchCertificate(conferenceId: string, userId: string) {
+		return Promise.all([
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
 				certificateFile: { url: true },
+				documentLayouts: true,
 				title: true
 			}),
 			client.query.getCertificateJWT({
-				__args: requestedFor,
+				__args: { conferenceId, userId },
 				jwt: true,
 				fullName: true,
 				sessions: { name: true, attended: true }
 			})
-		]).then(([conference, jwt]) => {
-			if (cancelled) return;
-			certificate = {
-				templateUrl: conference.certificateFile?.url ?? null,
-				title: conference.title,
-				jwt: jwt.jwt,
-				fullName: jwt.fullName,
-				sessions: jwt.sessions.map((session) => ({
-					name: session.name,
-					attended: session.attended
-				}))
-			};
-		});
+		]);
+	}
 
-		return () => {
-			cancelled = true;
+	const sources = $derived(
+		conferenceId && userId ? await fetchCertificate(conferenceId, userId) : undefined
+	);
+	const certificate = $derived.by((): CertificateData | undefined => {
+		if (!sources) return undefined;
+		const [conference, jwt] = sources;
+		return {
+			templateUrl: conference.certificateFile?.url ?? null,
+			title: conference.title,
+			jwt: jwt.jwt,
+			fullName: jwt.fullName,
+			sessions: jwt.sessions.map((session) => ({ name: session.name, attended: session.attended }))
 		};
 	});
 
@@ -93,7 +92,12 @@
 		}
 		if (download.kind !== 'ready') return;
 
-		await downloadCompleteCertificate(download.holder, download.content, download.filename);
+		await downloadCompleteCertificate(
+			download.holder,
+			download.content,
+			download.filename,
+			resolveDocumentLayout('certificate', sources?.[0].documentLayouts)
+		);
 	};
 </script>
 

@@ -2,6 +2,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import EmailLayout from '../EmailLayout.svelte';
 	import EmailButton from '../EmailButton.svelte';
+	import EmailParagraphs from '../EmailParagraphs.svelte';
 	import { smallStyle, textStyle } from '../brand';
 
 	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent.js`). */
@@ -14,6 +15,8 @@
 		closing?: string[];
 		button?: { label: string; url: string };
 		conferenceTitle: string;
+		/** The conference's footer, paragraph by paragraph. */
+		conferenceFooter?: string[];
 	}
 
 	let {
@@ -23,16 +26,13 @@
 		items = [],
 		closing = [],
 		button,
-		conferenceTitle
+		conferenceTitle,
+		conferenceFooter
 	}: Props = $props();
 </script>
 
-<EmailLayout {heading} {conferenceTitle} preview={paragraphs[0]}>
-	<p style={textStyle}>{m.emailGreeting({ name: recipientName })}</p>
-
-	{#each paragraphs as paragraph, index (index)}
-		<p style={textStyle}>{paragraph}</p>
-	{/each}
+<EmailLayout {heading} {conferenceTitle} preview={paragraphs[0]} {conferenceFooter}>
+	<EmailParagraphs greeting={m.emailGreeting({ name: recipientName })} {paragraphs} />
 
 	{#if items.length > 0}
 		<ul style="{textStyle} padding-left: 20px;">

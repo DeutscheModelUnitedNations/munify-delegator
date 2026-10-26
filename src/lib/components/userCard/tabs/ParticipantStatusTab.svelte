@@ -23,6 +23,7 @@
 	} from '#lib/api/postalRegistrationSources.js';
 	import { postalRecipient } from '#lib/api/postalRegistrationData.js';
 	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator.js';
+	import { resolveDocumentLayout } from '#lib/helpers/documentLayout.js';
 	import {
 		careTeamPostalParticipant,
 		certificateContentsOf,
@@ -115,6 +116,7 @@
 				client.query.conference({
 					__args: { id: conferenceId },
 					certificateFile: { url: true },
+					documentLayouts: true,
 					title: true
 				}),
 				client.query.getCertificateJWT({
@@ -133,7 +135,8 @@
 			await downloadCompleteCertificate(
 				certificate,
 				conferenceData.certificateFile?.url,
-				documentFileName(user, 'certificate')
+				documentFileName(user, 'certificate'),
+				resolveDocumentLayout('certificate', conferenceData.documentLayouts)
 			);
 		} catch (error) {
 			console.error('Error generating PDF:', error);
@@ -209,6 +212,7 @@
 				<span>{m.noParticipantStatusYet()}</span>
 			</div>
 		{/if}
+		<ParticipantSchoolSection {userId} {conferenceId} />
 	</div>
 
 	<div class="divider"></div>
@@ -220,7 +224,6 @@
 			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
 		/>
 		<AttendanceSection {userId} {conferenceId} />
-		<ParticipantSchoolSection {userId} {conferenceId} />
 	</div>
 
 	<div class="divider"></div>

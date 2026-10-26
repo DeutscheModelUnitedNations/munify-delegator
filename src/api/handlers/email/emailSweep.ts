@@ -1,6 +1,7 @@
 import { db, schema } from '#api/db/db.js';
 import { emailService } from '#api/services/email/emailService.js';
 import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
+import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
 import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
 import { emailLogPubsub } from '#api/pubsub.js';
 import { sql } from 'drizzle-orm';
@@ -14,7 +15,15 @@ import {
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
 import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
+import { emailFooterParagraphs } from '#lib/helpers/emailTemplates.js';
 import type { EmailTextOverride } from '#lib/helpers/emailTemplates.js';
+import { isAlwaysSent, type AlwaysSentKind } from '#lib/helpers/emailKinds.js';
+import {
+	renderTeamInvitationEmail,
+	renderTeamWelcomeEmail,
+	type TeamInvitationEmailValues
+} from '#api/services/email/sendTeamInvitationEmail.js';
+import { getInvitationExpiryDate } from '#api/services/account/invitationToken.js';
 
 /**
  * Sends what `dueEmails` says a conference owes and nobody sent yet. Each mail is claimed by
@@ -107,23 +116,42 @@ async function claim(conferenceId: string, email: DueEmail) {
 	return claimed?.id;
 }
 
-/** The texts the conference wrote itself, every kind and language. */
-function loadEmailTexts(conferenceId: string): Promise<ConferenceEmailText[]> {
-	return db.query.conferenceEmailText.findMany({
-		where: { conferenceId },
-		columns: { kind: true, locale: true, subject: true, heading: true, body: true }
-	});
+/** What the conference wrote itself: its texts, every kind and language, and its footers. */
+interface ConferenceWording {
+	texts: readonly ConferenceEmailText[];
+	footers: readonly { locale: string; text: string }[];
 }
+
+async function loadWording(conferenceId: string): Promise<ConferenceWording> {
+	const [texts, footers] = await Promise.all([
+		db.query.conferenceEmailText.findMany({
+			where: { conferenceId },
+			columns: { kind: true, locale: true, subject: true, heading: true, body: true }
+		}),
+		db.query.conferenceEmailFooter.findMany({
+			where: { conferenceId },
+			columns: { locale: true, text: true }
+		})
+	]);
+	return { texts, footers };
+}
+
+/** The conference's footer in the locale being rendered, paragraph by paragraph. */
+const footerParagraphs = (wording: ConferenceWording, conferenceTitle: string) =>
+	emailFooterParagraphs(
+		wording.footers.find((footer) => toLocale(footer.locale) === getLocale())?.text,
+		conferenceTitle
+	);
 
 /** Renders one mail in the recipient's language, in the conference's own words where it has them. */
 function renderAutomaticEmail(
 	email: DueEmail,
 	conference: EmailSnapshot['conference'],
 	origin: string,
-	texts: readonly ConferenceEmailText[]
+	wording: ConferenceWording
 ) {
 	return runWithLocale(localeOfUser(email.person.user.locale), async () => {
-		const content = emailContent(email, conference, origin, texts);
+		const content = emailContent(email, conference, origin, wording.texts);
 		const { html, text } = await renderEmail(NotificationEmail, {
 			heading: content.heading,
 			recipientName: recipientName(email.person),
@@ -131,9 +159,10 @@ function renderAutomaticEmail(
 			items: content.items,
 			closing: content.closing,
 			button: content.button,
-			conferenceTitle: conference.title
+			conferenceTitle: conference.title,
+			conferenceFooter: footerParagraphs(wording, conference.title)
 		});
-		return { subject: content.subject, html, text };
+		return { subject: content.subject, html, text, replyTo: content.replyTo };
 	});
 }
 
@@ -165,21 +194,22 @@ async function send(
 	email: DueEmail,
 	snapshot: EmailSnapshot,
 	origin: string,
-	texts: readonly ConferenceEmailText[],
+	wording: ConferenceWording,
 	logId: string
 ) {
 	try {
-		const { subject, html, text } = await renderAutomaticEmail(
+		const { subject, html, text, replyTo } = await renderAutomaticEmail(
 			email,
 			snapshot.conference,
 			origin,
-			texts
+			wording
 		);
 		const result = await emailService.sendEmail({
 			to: email.person.user.email,
 			subject,
 			html,
-			text
+			text,
+			replyTo
 		});
 		return settle(logId, sendingError(result));
 	} catch (error) {
@@ -225,9 +255,9 @@ export async function sendDueEmails({
 
 	const open = await openEmails(snapshot, kinds, now);
 	const batch = open.slice(0, limit);
-	const texts = await loadEmailTexts(conferenceId);
+	const wording = await loadWording(conferenceId);
 	const counts = await sendEach(conferenceId, batch, (email, logId) =>
-		send(email, snapshot, origin, texts, logId)
+		send(email, snapshot, origin, wording, logId)
 	);
 	if (batch.length > 0) emailLogPubsub.updated();
 	return { ...counts, remaining: open.length - batch.length };
@@ -310,10 +340,19 @@ export async function previewEmail(
 	user: SnapshotPerson['user'],
 	origin: string,
 	/** Text being edited, shown instead of what is stored (in `user.locale`). */
-	draft?: EmailTextOverride
+	draft?: EmailTextOverride,
+	/** Footer being edited, shown instead of the stored one (in `user.locale`). */
+	footerDraft?: string
 ) {
 	const snapshot = await loadEmailSnapshot(conferenceId);
 	if (!snapshot) return undefined;
+	const locale = localeOfUser(user.locale);
+	const stored = await loadWording(conferenceId);
+	const wording: ConferenceWording = {
+		texts: draft ? [{ kind, locale, ...draft }] : stored.texts,
+		footers: footerDraft === undefined ? stored.footers : [{ locale, text: footerDraft }]
+	};
+	if (isAlwaysSent(kind)) return previewTeamEmail(kind, snapshot.conference, user, origin, wording);
 	const sample = (
 		person: Partial<SnapshotPerson> & { user: SnapshotPerson['user'] }
 	): SnapshotPerson => ({
@@ -346,10 +385,56 @@ export async function previewEmail(
 		person: sample({ user }),
 		students: [student, rejectedStudent],
 		student,
-		field: 'termsAndConditions'
+		field: 'termsAndConditions',
+		review: {
+			id: 'preview',
+			authorParticipantId: user.id,
+			paperId: 'preview',
+			paperType: 'POSITION_PAPER',
+			agendaItem: 'GV: Klimaschutz',
+			reviewer: { name: 'Robin Beispiel', email: 'reviewer@example.org' },
+			statusAfter: 'CHANGES_REQUESTED'
+		}
 	};
-	const texts = draft
-		? [{ kind, locale: localeOfUser(user.locale), ...draft }]
-		: await loadEmailTexts(conferenceId);
-	return renderAutomaticEmail(email, snapshot.conference, origin, texts);
+	return renderAutomaticEmail(email, snapshot.conference, origin, wording);
+}
+
+/** A team mail as the conference would send it, to `user` from themselves, with a made-up link. */
+function previewTeamEmail(
+	kind: AlwaysSentKind,
+	conference: EmailSnapshot['conference'],
+	user: SnapshotPerson['user'],
+	origin: string,
+	wording: ConferenceWording
+) {
+	const locale = localeOfUser(user.locale);
+	const own = wording.texts.find((text) => text.kind === kind && text.locale === locale);
+	const footer = wording.footers.find((candidate) => candidate.locale === locale)?.text;
+	const common: Omit<TeamInvitationEmailValues, 'inviteUrl' | 'expiresAt'> = {
+		recipientEmail: user.email,
+		conferenceTitle: conference.title,
+		role: 'PARTICIPANT_CARE',
+		inviterName: `${user.givenName} ${user.familyName}`
+	};
+	return kind === 'TEAM_INVITATION'
+		? renderTeamInvitationEmail(
+				{
+					...common,
+					inviteUrl: `${origin}/auth/accept-invitation?token=preview`,
+					expiresAt: getInvitationExpiryDate()
+				},
+				locale,
+				own,
+				footer
+			)
+		: renderTeamWelcomeEmail(
+				{
+					...common,
+					recipientName: `${user.givenName} ${user.familyName}`,
+					dashboardUrl: `${origin}/dashboard/${conference.id}`
+				},
+				locale,
+				own,
+				footer
+			);
 }

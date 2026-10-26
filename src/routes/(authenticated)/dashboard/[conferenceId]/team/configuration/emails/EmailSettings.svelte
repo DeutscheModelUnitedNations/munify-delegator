@@ -5,10 +5,13 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
 	import { EMAIL_GROUPS } from '#lib/helpers/emailKinds.js';
-	import { emailGroupTitle } from './emailKindTexts';
+	import { emailGroupTitle, emailKindTexts } from './emailKindTexts';
 	import EmailKindCard from './EmailKindCard.svelte';
 	import EmailLog from './EmailLog.svelte';
-	import EmailTextEditor from './EmailTextEditor.svelte';
+	import EmailEditorModal from './EmailEditorModal.svelte';
+	import EmailFooterCard from './EmailFooterCard.svelte';
+	import EmailFooterForm from './EmailFooterForm.svelte';
+	import EmailTextForm from './EmailTextForm.svelte';
 	import type { EmailChanges } from './emailChanges.svelte';
 
 	interface Props {
@@ -96,9 +99,12 @@
 
 	/** The kind whose text is being edited. */
 	let editing = $state<EmailkindEnum>();
+	let editingFooter = $state(false);
 </script>
 
 <div class="flex flex-col gap-6">
+	<EmailFooterCard {conferenceId} onedit={() => (editingFooter = true)} />
+
 	{#each EMAIL_GROUPS as group (group.id)}
 		<section class="flex flex-col gap-3">
 			<h3 class="text-lg font-bold">{emailGroupTitle[group.id]()}</h3>
@@ -135,5 +141,18 @@
 </Modal>
 
 {#if editing}
-	<EmailTextEditor {conferenceId} kind={editing} onclose={() => (editing = undefined)} />
+	{@const kind = editing}
+	<EmailEditorModal title={emailKindTexts(kind).title} onclose={() => (editing = undefined)}>
+		{#snippet form(locale)}
+			<EmailTextForm {conferenceId} {kind} {locale} />
+		{/snippet}
+	</EmailEditorModal>
+{/if}
+
+{#if editingFooter}
+	<EmailEditorModal title={m.emailFooterTitle()} onclose={() => (editingFooter = false)}>
+		{#snippet form(locale)}
+			<EmailFooterForm {conferenceId} {locale} />
+		{/snippet}
+	</EmailEditorModal>
 {/if}

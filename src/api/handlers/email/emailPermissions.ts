@@ -9,7 +9,7 @@ import {
 
 /**
  * The automatic mails are participant care's: they switch them on and off, write their texts and
- * read the log, which names who was written to. The rest of the team sees which mails the
+ * the footer under every mail, and read the log, which names who was written to. The rest of the team sees which mails the
  * conference sends, and in which words.
  */
 export function registerEmailAbilities() {
@@ -20,6 +20,11 @@ export function registerEmailAbilities() {
 
 	abilityBuilder.conferenceEmailText.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.conferenceEmailText
+		.allow('read')
+		.when((ctx) => where(isTeamMemberOfConference(ctx)));
+
+	abilityBuilder.conferenceEmailFooter.allow(['read', 'update', 'delete']).when(systemAdmin);
+	abilityBuilder.conferenceEmailFooter
 		.allow('read')
 		.when((ctx) => where(isTeamMemberOfConference(ctx)));
 

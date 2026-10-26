@@ -4,7 +4,12 @@ import * as schema from '#api/db/schema/index.js';
 import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
 import { overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import { emailContent, recipientName } from './emailContent';
-import type { DueEmail, EmailSnapshot, SnapshotPerson } from './dueEmails';
+import type { AutomaticEmailKind, DueEmail, EmailSnapshot, SnapshotPerson } from './dueEmails';
+import { isAlwaysSent } from '#lib/helpers/emailKinds.js';
+
+const automaticKinds = schema.emailKind.enumValues.filter(
+	(kind): kind is AutomaticEmailKind => !isAlwaysSent(kind)
+);
 
 const conference: EmailSnapshot['conference'] = {
 	id: 'c1',
@@ -44,7 +49,7 @@ const person: SnapshotPerson = {
 };
 
 describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
-	test.each(schema.emailKind.enumValues)('%s has text and renders', async (kind) => {
+	test.each(automaticKinds)('%s has text and renders', async (kind) => {
 		overwriteGetLocale(() => locale);
 		const email: DueEmail = {
 			kind,
@@ -52,7 +57,16 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 			person,
 			students: [person],
 			student: person,
-			field: 'mediaConsent'
+			field: 'mediaConsent',
+			review: {
+				id: 'review-1',
+				authorParticipantId: 'p1',
+				paperId: 'paper-1',
+				paperType: 'POSITION_PAPER',
+				agendaItem: 'GV: Klimaschutz',
+				reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+				statusAfter: 'ACCEPTED'
+			}
 		};
 		const content = emailContent(email, conference, 'https://delegator.example.org');
 		expect(content.subject).not.toBe('');
@@ -70,6 +84,18 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 		expect(text).toContain('Ada Lovelace');
 		if (kind === 'ASSIGNMENT_ACCEPTED') {
 			expect(text).toContain(locale === 'de' ? 'Frankreich' : 'France');
+		}
+		if (kind === 'PAPER_REVIEWED') {
+			expect(content.subject).toContain('GV: Klimaschutz');
+			const body = content.paragraphs.join('\n');
+			expect(body).toContain('Robin Reviewer (robin@example.org)');
+			expect(body).toContain(locale === 'de' ? 'Akzeptiert' : 'Accepted');
+			expect(content.button?.url).toBe(
+				'https://delegator.example.org/dashboard/c1/paperhub/paper-1'
+			);
+			expect(content.replyTo).toBe('robin@example.org');
+		} else {
+			expect(content.replyTo).toBeUndefined();
 		}
 	});
 });

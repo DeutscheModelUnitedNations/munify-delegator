@@ -4,7 +4,8 @@ import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
-	PHONE_READY_REMINDER_DAYS
+	PHONE_READY_REMINDER_DAYS,
+	type AlwaysSentKind
 } from '#lib/helpers/emailKinds.js';
 
 /**
@@ -15,6 +16,8 @@ import {
  */
 
 export type EmailKind = (typeof schema.emailKind.enumValues)[number];
+/** The kinds that follow from state; the team's own mails are sent where they happen. */
+export type AutomaticEmailKind = Exclude<EmailKind, AlwaysSentKind>;
 type Status = (typeof schema.administrativeStatus.enumValues)[number];
 
 export interface SnapshotRole {
@@ -47,6 +50,19 @@ export interface SnapshotPerson {
 	seatedFromWaitingList: { entryId: string } | null;
 }
 
+/** A review of a paper, owed to its author. */
+export interface SnapshotReview {
+	id: string;
+	/** The participant who wrote the paper. */
+	authorParticipantId: string;
+	paperId: string;
+	paperType: (typeof schema.paperType.enumValues)[number];
+	/** Committee and agenda item (`GV: Climate`), for a paper that belongs to one. */
+	agendaItem: string | null;
+	reviewer: { name: string; email: string } | null;
+	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
+}
+
 export interface EmailSnapshot {
 	conference: {
 		id: string;
@@ -61,13 +77,14 @@ export interface EmailSnapshot {
 		certificateAvailable: boolean;
 	};
 	people: SnapshotPerson[];
+	reviews: SnapshotReview[];
 }
 
 export type PaperworkField =
 	'paymentStatus' | 'termsAndConditions' | 'guardianConsent' | 'mediaConsent';
 
 export interface DueEmail {
-	kind: EmailKind;
+	kind: AutomaticEmailKind;
 	/** What the mail is about; with kind and person it identifies the mail in the log. */
 	subjectKey: string;
 	person: SnapshotPerson;
@@ -77,6 +94,8 @@ export interface DueEmail {
 	student?: SnapshotPerson;
 	/** For a problem with the paperwork: which part. */
 	field?: PaperworkField;
+	/** For a review: the review. */
+	review?: SnapshotReview;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -106,6 +125,7 @@ interface RuleContext {
 	conference: EmailSnapshot['conference'];
 	now: Date;
 	studentsOf: (person: SnapshotPerson) => SnapshotPerson[];
+	reviewsOf: (person: SnapshotPerson) => SnapshotReview[];
 	/** Holds a seat, or supervises someone who does and comes along. */
 	accepted: (person: SnapshotPerson) => boolean;
 	ofAge: (person: SnapshotPerson) => boolean;
@@ -115,7 +135,7 @@ interface RuleContext {
 type Rule = (ctx: RuleContext, person: SnapshotPerson) => DueEmail[];
 
 const email = (
-	kind: EmailKind,
+	kind: AutomaticEmailKind,
 	person: SnapshotPerson,
 	subjectKey: string,
 	extra: Partial<DueEmail> = {}
@@ -124,8 +144,9 @@ const email = (
 const paid = (person: SnapshotPerson) => person.paymentStatus === 'DONE';
 
 function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
-	const { conference, people } = snapshot;
+	const { conference, people, reviews } = snapshot;
 	const byParticipant = new Map(people.map((person) => [person.participantId, person]));
+	const reviewsByAuthor = Map.groupBy(reviews, (review) => review.authorParticipantId);
 	const studentsOf = (person: SnapshotPerson) =>
 		(person.supervisor?.studentIds ?? []).flatMap((id) => byParticipant.get(id) ?? []);
 	const ofAge = (person: SnapshotPerson) =>
@@ -134,6 +155,7 @@ function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
 		conference,
 		now,
 		studentsOf,
+		reviewsOf: (person) => reviewsByAuthor.get(person.participantId) ?? [],
 		ofAge,
 		accepted: (person) =>
 			!!seatOf(person) ||
@@ -241,6 +263,10 @@ const studentsLinked: Rule = ({ studentsOf }, person) =>
 		email('SUPERVISOR_STUDENT_LINKED', person, student.participantId, { student })
 	);
 
+/** Every review of a paper the person wrote, whenever it is written. */
+const paperReviewed: Rule = ({ reviewsOf }, person) =>
+	reviewsOf(person).map((review) => email('PAPER_REVIEWED', person, review.id, { review }));
+
 /** In the order a person's mails are listed. */
 const RULES: Rule[] = [
 	assignmentResult,
@@ -248,7 +274,8 @@ const RULES: Rule[] = [
 	acceptedEmails,
 	applicationReminder,
 	certificate,
-	studentsLinked
+	studentsLinked,
+	paperReviewed
 ];
 
 /** Every mail the conference owes right now, whether or not it was sent already. */

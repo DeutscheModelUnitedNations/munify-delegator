@@ -12,6 +12,20 @@ export const OPEN_ISSUES_REMINDER_DAYS = 14;
 /** Days before the conference the reminder to get MUNify ready on the phone goes out. */
 export const PHONE_READY_REMINDER_DAYS = 7;
 
+/**
+ * Mails the team's own actions send - inviting someone, adding them to the team. They always go
+ * out: only their text is the conference's to change, so the e-mail page lists them without a
+ * switch, and `dueEmails` never owes them.
+ */
+const ALWAYS_SENT_KINDS = [
+	'TEAM_INVITATION',
+	'TEAM_WELCOME'
+] as const satisfies readonly EmailkindEnum[];
+export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
+
+export const isAlwaysSent = (kind: EmailkindEnum): kind is AlwaysSentKind =>
+	ALWAYS_SENT_KINDS.some((always) => always === kind);
+
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [
 	{
@@ -25,8 +39,10 @@ export const EMAIL_GROUPS = [
 		id: 'reminders',
 		kinds: ['APPLICATION_DEADLINE_REMINDER', 'OPEN_ISSUES_REMINDER', 'PHONE_READY_REMINDER']
 	},
+	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
-	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] }
+	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] },
+	{ id: 'team', kinds: ALWAYS_SENT_KINDS }
 ] as const satisfies readonly { id: string; kinds: readonly EmailkindEnum[] }[];
 
 export type EmailGroupId = (typeof EMAIL_GROUPS)[number]['id'];

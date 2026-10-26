@@ -15,6 +15,7 @@ export const committeeAgendaItemPubsub = pubsub({ table: 'committeeAgendaItem' }
 export const conferencePubsub = pubsub({ table: 'conference' });
 export const conferenceEmailSettingPubsub = pubsub({ table: 'conferenceEmailSetting' });
 export const conferenceEmailTextPubsub = pubsub({ table: 'conferenceEmailText' });
+export const conferenceEmailFooterPubsub = pubsub({ table: 'conferenceEmailFooter' });
 export const conferenceRolePubsub = pubsub({ table: 'conferenceRole' });
 export const conferenceParticipantPubsub = pubsub({ table: 'conferenceParticipant' });
 export const conferenceSupervisorPubsub = pubsub({ table: 'conferenceSupervisor' });

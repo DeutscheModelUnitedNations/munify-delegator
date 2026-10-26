@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { dueEmails, type EmailSnapshot, type SnapshotPerson } from './dueEmails';
+import {
+	dueEmails,
+	type EmailSnapshot,
+	type SnapshotPerson,
+	type SnapshotReview
+} from './dueEmails';
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = new Date('2026-11-01T12:00:00Z');
@@ -33,7 +38,8 @@ function person(overrides: Partial<SnapshotPerson> = {}): SnapshotPerson {
 
 function snapshot(
 	people: SnapshotPerson[],
-	conference: Partial<EmailSnapshot['conference']> = {}
+	conference: Partial<EmailSnapshot['conference']> = {},
+	reviews: SnapshotReview[] = []
 ): EmailSnapshot {
 	return {
 		conference: {
@@ -48,7 +54,8 @@ function snapshot(
 			certificateAvailable: false,
 			...conference
 		},
-		people
+		people,
+		reviews
 	};
 }
 
@@ -197,5 +204,41 @@ describe('certificates', () => {
 				k.startsWith('CERTIFICATE')
 			)
 		).toBe(false);
+	});
+});
+
+describe('paper reviews', () => {
+	const review = (id: string, author: SnapshotPerson): SnapshotReview => ({
+		id,
+		authorParticipantId: author.participantId,
+		paperId: 'paper-1',
+		paperType: 'POSITION_PAPER',
+		agendaItem: null,
+		reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
+		statusAfter: 'CHANGES_REQUESTED'
+	});
+
+	test('tell the author of each review, whatever stage the conference is in', () => {
+		const author = seated();
+		const other = seated();
+		const reviews = [review('r1', author), review('r2', author)];
+		for (const conference of [{ assignmentReleased: false }, { state: 'POST' as const }]) {
+			const kinds = kindsOf(snapshot([author, other], conference, reviews)).filter((k) =>
+				k.startsWith('PAPER_REVIEWED')
+			);
+			expect(kinds).toEqual([
+				`PAPER_REVIEWED:${author.user.id}:r1`,
+				`PAPER_REVIEWED:${author.user.id}:r2`
+			]);
+		}
+	});
+
+	test('carry the review along', () => {
+		const author = seated();
+		const [due] = dueEmails(
+			snapshot([author], { assignmentReleased: false }, [review('r1', author)]),
+			now
+		);
+		expect(due?.review?.id).toBe('r1');
 	});
 });

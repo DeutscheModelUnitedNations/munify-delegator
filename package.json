@@ -130,6 +130,7 @@
 		"openapi-fetch": "^0.17.0",
 		"openapi-typescript": "^7.13.0",
 		"pdf-lib": "^1.17.1",
+		"pdfjs-dist": "^6.4.299",
 		"postcss": "^8.5.31",
 		"prettier": "^3.9.10",
 		"prettier-plugin-sort-json": "^4.2.0",

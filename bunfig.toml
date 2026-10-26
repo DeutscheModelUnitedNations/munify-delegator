@@ -1,3 +1,7 @@
+# Code Bun runs directly imports `#lib/…`/`#api/…` with the `.js` extension the build emits;
+# this maps them onto the `.ts` sources, as Vite does for the app.
+preload = ["./scripts/bunSubpathImports.ts"]
+
 [test]
 # `bun test` uses Bun's own runner, not the `test` script, and scans the whole repo by default -
 # which picks up the Playwright specs in e2e/ and fails, since they need the Playwright runner.

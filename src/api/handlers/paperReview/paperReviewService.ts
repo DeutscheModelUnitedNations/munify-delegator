@@ -1,12 +1,9 @@
 import type { Context } from '#api/context.js';
 import { type Transaction, db, schema } from '#api/db/db.js';
-import { sendNewReviewNotification } from '#api/services/email/sendNewReviewNotification.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, count, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
-import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
-import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
-import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
+import { translatePaperStatus } from '#lib/utils/enumTranslations.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { splitRole } from '#lib/helpers/conferenceRole.js';
 
@@ -211,41 +208,12 @@ async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
 	return null;
 }
 
-type Reviewer = Pick<
-	ReturnType<Context['mustBeLoggedIn']>,
-	'sub' | 'given_name' | 'family_name' | 'email'
->;
-
-function notifyAuthor(
-	paper: PaperForReview,
-	reviewer: Reviewer,
-	newStatus: PaperstatusEnum,
-	origin: string
-) {
-	if (!paper.author) return;
-	const locale = localeOfUser(paper.author.locale);
-	sendNewReviewNotification({
-		recipientEmail: paper.author.email,
-		recipientName: `${paper.author.givenName} ${paper.author.familyName}`,
-		locale,
-		paperTitle:
-			agendaItemLabel(paper) ?? runWithLocale(locale, () => translatePaperType(paper.type)),
-		paperType: paper.type,
-		reviewerName: `${reviewer.given_name} ${reviewer.family_name}`,
-		reviewerEmail: reviewer.email,
-		newStatus,
-		conferenceTitle: paper.conference?.title ?? '',
-		paperUrl: `${origin}/dashboard/${paper.delegation.conferenceId}/paperhub/${paper.id}`
-	}).catch((error) => {
-		console.error('Failed to send review notification email:', error);
-	});
-}
+type Reviewer = Pick<ReturnType<Context['mustBeLoggedIn']>, 'sub'>;
 
 /**
  * Records a reviewer's verdict on a paper's latest version.
  *
- * Besides writing the review it advances the paper and version status, emails the author, and
- * works out whether this was the first review for a "piece" of the flag collection - the
+ * Besides writing the review it advances the paper and version status and works out whether this was the first review for a "piece" of the flag collection - the
  * gamified progress display. That last part has three shapes: a nation delegation counts one
  * piece per agenda item, a non-state actor's introduction paper is its own piece, and its
  * other papers count up to two more.
@@ -256,8 +224,7 @@ export async function createPaperReview(
 		comments?: (typeof schema.paperReview.$inferInsert)['comments'];
 		newStatus: (typeof schema.paper.$inferSelect)['status'];
 	},
-	reviewer: Reviewer,
-	origin: string
+	reviewer: Reviewer
 ) {
 	const { paper, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview(tx, args.paperId);
@@ -297,8 +264,5 @@ export async function createPaperReview(
 		};
 	});
 
-	// Only once the review is committed: a rollback must not leave the author a mail about it.
-	notifyAuthor(paper, reviewer, args.newStatus, origin);
-
-	return result;
+	return { result, conferenceId: paper.delegation.conferenceId };
 }

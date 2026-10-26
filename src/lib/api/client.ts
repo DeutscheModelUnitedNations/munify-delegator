@@ -119,7 +119,13 @@ export const urqlClient = new Client({
 	exchanges: [
 		nativeDateExchange,
 		loginRedirectExchange,
-		cacheExchange({ schema, keys: graphcacheKeys(schema), updates: liveQueryUpdates(schema) }),
+		// Not schema-aware on purpose: with the schema, graphcache answers a query that asks for a
+		// nullable field it has not seen on a cached entity at once, with that field as null (a
+		// "partial" result). A one-shot `client.query` resolves with that answer and drops the refetch
+		// - a certificate's template or a person's address came back as "none" to anyone whose
+		// dashboard had cached the row. Without it, an unseen field is a miss and is asked for. The
+		// schema has no unions or interfaces and the client sends no fragments, so nothing else needs it.
+		cacheExchange({ keys: graphcacheKeys(schema), updates: liveQueryUpdates(schema) }),
 		ssrExchange,
 		sseSubscriptionExchange,
 		fetchExchange

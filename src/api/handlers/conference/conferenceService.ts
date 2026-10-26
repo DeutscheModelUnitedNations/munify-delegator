@@ -3,7 +3,7 @@ import type { ApiContext } from '#api/rumble.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
 import { m } from '#lib/paraglide/messages.js';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
 	PARTICIPANT_MAX_AGE,
@@ -18,6 +18,7 @@ import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins.js';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
 import { apiError } from '#api/services/errors/apiError.js';
+import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout.js';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
@@ -319,4 +320,30 @@ export async function findPlausibilityIssues(conferenceId: string, readableUsers
 		shouldNotBeSupervisor,
 		dataMissing: candidates.filter((user) => !userFormSchema.safeParse(toFormShape(user)).success)
 	};
+}
+
+/**
+ * Stores where a document's generated parts go on its template; null goes back to the defaults.
+ * The other documents' layouts stay as they are. Answers whether the conference exists.
+ */
+export async function setDocumentLayout(
+	conferenceId: string,
+	document: LayoutDocument,
+	layout: unknown
+) {
+	const column = schema.conference.documentLayouts;
+	let value;
+	if (layout === null || layout === undefined) {
+		value = sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`;
+	} else {
+		const parsed = documentLayoutSchema(document).safeParse(layout);
+		if (!parsed.success) throw apiError('INVALID_INPUT', m.documentLayoutInvalid());
+		value = sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(parsed.data)}::jsonb)`;
+	}
+	const updated = await db
+		.update(schema.conference)
+		.set({ documentLayouts: value })
+		.where(eq(schema.conference.id, conferenceId))
+		.returning({ id: schema.conference.id });
+	return updated.length > 0;
 }

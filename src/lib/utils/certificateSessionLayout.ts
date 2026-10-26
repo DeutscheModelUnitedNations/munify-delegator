@@ -7,7 +7,10 @@ export interface CertificateSessionMark {
 }
 
 export interface CertificateSessionLayoutOptions {
+	/** Width of the area the list is centred in: the page, or the box the team placed it in. */
 	pageWidth: number;
+	/** Left edge of that area (0 for the page). */
+	left?: number;
 	/** Baseline of the heading; the rows go below it. */
 	top: number;
 	/** Nothing is drawn below this (the verification QR code sits there). */
@@ -68,7 +71,8 @@ export function layoutCertificateSessions(
 
 	const headingSize = size * 1.1;
 	const firstRow = options.top - lineHeight * 1.5;
-	let x = (options.pageWidth - total) / 2;
+	const left = options.left ?? 0;
+	let x = left + (options.pageWidth - total) / 2;
 	const rows: CertificateSessionLayout['rows'] = [];
 	groups.forEach((group, column) => {
 		group.forEach((session, index) => {
@@ -80,7 +84,7 @@ export function layoutCertificateSessions(
 
 	return {
 		heading: {
-			x: (options.pageWidth - options.measure(heading, headingSize)) / 2,
+			x: left + (options.pageWidth - options.measure(heading, headingSize)) / 2,
 			y: options.top,
 			size: headingSize
 		},

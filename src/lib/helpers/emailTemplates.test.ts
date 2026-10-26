@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import {
 	defaultEmailText,
+	emailFooterParagraphs,
 	fillEmailText,
 	placeholdersOf,
 	resolveEmailText
 } from './emailTemplates';
+import { EMAIL_GROUPS } from './emailKinds';
 
 describe('fillEmailText', () => {
 	test('fills the placeholders and keeps unknown ones as written', () => {
@@ -47,13 +49,7 @@ describe('fillEmailText', () => {
 
 describe('the default texts', () => {
 	test.each(['de', 'en'] as const)('use only the placeholders their kind offers (%s)', (locale) => {
-		const kinds = [
-			'ASSIGNMENT_ACCEPTED',
-			'SUPERVISOR_ASSIGNMENT_SUMMARY',
-			'APPLICATION_DEADLINE_REMINDER',
-			'SUPERVISOR_STUDENT_LINKED'
-		] as const;
-		for (const kind of kinds) {
+		for (const kind of EMAIL_GROUPS.flatMap((group) => group.kinds)) {
 			const text = defaultEmailText(kind, locale);
 			const used = [...`${text.subject} ${text.heading} ${text.body}`.matchAll(/\{(\w+)\}/g)].map(
 				(match) => match[1]
@@ -64,11 +60,32 @@ describe('the default texts', () => {
 		}
 	});
 
+	test('offer no name to an invitation, which goes to someone without an account', () => {
+		expect(placeholdersOf('TEAM_INVITATION')).not.toContain('name');
+		expect(placeholdersOf('TEAM_INVITATION')).toEqual(
+			expect.arrayContaining(['conference', 'role', 'inviter', 'date'])
+		);
+		expect(placeholdersOf('TEAM_WELCOME')).toContain('name');
+	});
+
 	test('a conference text replaces only the fields it has', () => {
 		const standard = defaultEmailText('POSTAL_RECEIVED', 'de');
 		expect(resolveEmailText('POSTAL_RECEIVED', 'de', { subject: 'Eigen', body: '  ' })).toEqual({
 			...standard,
 			subject: 'Eigen'
 		});
+	});
+});
+
+describe('emailFooterParagraphs', () => {
+	test('splits at blank lines, keeps line breaks and names the conference', () => {
+		expect(
+			emailFooterParagraphs('Ihr Team von {conference}\nKiel\n\n\n  info@example.org  ', 'MUN-SH')
+		).toEqual(['Ihr Team von MUN-SH\nKiel', 'info@example.org']);
+	});
+
+	test('is nothing without a footer', () => {
+		expect(emailFooterParagraphs(undefined, 'MUN-SH')).toEqual([]);
+		expect(emailFooterParagraphs('  \n\n ', 'MUN-SH')).toEqual([]);
 	});
 });

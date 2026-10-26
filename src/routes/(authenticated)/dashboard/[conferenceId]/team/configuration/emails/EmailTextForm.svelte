@@ -8,9 +8,10 @@
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { Locale } from '#lib/paraglide/runtime.js';
-	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
+	import EmailEditorLayout from './EmailEditorLayout.svelte';
+	import { debounced, fetchEmailPreview } from './emailPreview.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import {
 		defaultEmailText,
@@ -37,7 +38,7 @@
 		__args: {
 			where: untrack(() => ({
 				conferenceId: { eq: conferenceId },
-				kind: { eq: kind },
+				kind,
 				locale: { eq: locale }
 			}))
 		},
@@ -94,21 +95,12 @@
 		form.form.set({ ...fallback }, { taint: true });
 	}
 
-	// The preview follows the text once typing pauses, not on every key.
-	let draft = $state<EmailText>({ ...initial });
-	$effect(() => {
-		const next = { subject: $formData.subject, heading: $formData.heading, body: $formData.body };
-		const timer = setTimeout(() => (draft = next), 400);
-		return () => clearTimeout(timer);
-	});
+	const draft = debounced<EmailText>(
+		() => ({ subject: $formData.subject, heading: $formData.heading, body: $formData.body }),
+		{ ...initial }
+	);
 	const preview = $derived(
-		await Promise.resolve(
-			client.query.emailPreview({
-				__args: { conferenceId, kind, locale, draft: true, ...draft },
-				subject: true,
-				html: true
-			})
-		).catch(() => undefined)
+		await fetchEmailPreview({ conferenceId, kind, locale, draft: true, ...draft.current })
 	);
 
 	const placeholderHint: Record<EmailPlaceholder, () => string> = {
@@ -119,56 +111,42 @@
 		student: m.emailPlaceholderStudent,
 		item: m.emailPlaceholderItem,
 		list: m.emailPlaceholderList,
-		delegationHint: m.emailPlaceholderDelegationHint
+		delegationHint: m.emailPlaceholderDelegationHint,
+		paper: m.emailPlaceholderPaper,
+		reviewer: m.emailPlaceholderReviewer,
+		status: m.emailPlaceholderStatus,
+		role: m.emailPlaceholderRole,
+		inviter: m.emailPlaceholderInviter
 	};
 </script>
 
-<div class="grid gap-6 lg:grid-cols-2">
-	<Form {form} showSubmitButton={false}>
-		<FormTextInput {form} name="subject" label={m.emailTextSubject()} />
-		<FormTextInput {form} name="heading" label={m.emailTextHeading()} />
-		<FormTextArea
-			{form}
-			name="body"
-			rows={12}
-			label={m.emailTextBody()}
-			description={m.emailTextBodyHint()}
-		/>
+<EmailEditorLayout {form} {preview}>
+	<FormTextInput {form} name="subject" label={m.emailTextSubject()} />
+	<FormTextInput {form} name="heading" label={m.emailTextHeading()} />
+	<FormTextArea
+		{form}
+		name="body"
+		rows={12}
+		label={m.emailTextBody()}
+		description={m.emailTextBodyHint()}
+	/>
 
-		<div class="flex flex-col gap-1 text-sm">
-			<span class="text-base-content/60 font-semibold">{m.emailTextPlaceholders()}</span>
-			<ul class="flex flex-col gap-1">
-				{#each placeholdersOf(kind) as placeholder (placeholder)}
-					<li>
-						<code class="bg-base-200 px-1">{`{${placeholder}}`}</code>
-						<span class="text-base-content/70">{placeholderHint[placeholder]()}</span>
-					</li>
-				{/each}
-			</ul>
-		</div>
-
-		<div class="mt-4 flex flex-wrap justify-end gap-2">
-			<button type="button" class="btn btn-ghost" onclick={restoreDefault}>
-				<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
-				{m.emailTextRestoreDefault()}
-			</button>
-			<button type="submit" class="btn btn-primary">
-				<i class="fas fa-save"></i>
-				{m.save()}
-			</button>
-		</div>
-	</Form>
-
-	<div class="flex min-w-0 flex-col gap-2">
-		<p class="text-base-content/60 text-sm">{m.emailSettingsPreviewHint()}</p>
-		{#if preview}
-			<p class="font-semibold">{preview.subject}</p>
-			<iframe
-				title={preview.subject}
-				srcdoc={preview.html}
-				sandbox=""
-				class="border-base-300 rounded-box h-160 max-h-screen w-full border bg-white"
-			></iframe>
-		{/if}
+	<div class="flex flex-col gap-1 text-sm">
+		<span class="text-base-content/60 font-semibold">{m.emailTextPlaceholders()}</span>
+		<ul class="flex flex-col gap-1">
+			{#each placeholdersOf(kind) as placeholder (placeholder)}
+				<li>
+					<code class="bg-base-200 px-1">{`{${placeholder}}`}</code>
+					<span class="text-base-content/70">{placeholderHint[placeholder]()}</span>
+				</li>
+			{/each}
+		</ul>
 	</div>
-</div>
+
+	{#snippet actions()}
+		<button type="button" class="btn btn-ghost" onclick={restoreDefault}>
+			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			{m.emailTextRestoreDefault()}
+		</button>
+	{/snippet}
+</EmailEditorLayout>

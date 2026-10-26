@@ -5,12 +5,19 @@
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import PdfTemplateHelp from '#lib/components/form/PdfTemplateHelp.svelte';
-	import FormFile from '#lib/components/form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
 		downloadCompletePostalRegistrationPDF
 	} from '#lib/utils/pdfGenerator.js';
-	import { templateOrDefault, testPrintParticipant, testPrintRecipient } from './testPrintData';
+	import {
+		templateOrDefault,
+		testPrintCertificate,
+		testPrintParticipant,
+		testPrintRecipient
+	} from './testPrintData';
+	import { resolveDocumentLayout, type LayoutDocument } from '#lib/helpers/documentLayout.js';
+	import DocumentLayoutEditor from './DocumentLayoutEditor.svelte';
+	import TemplateCard from './TemplateCard.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
 	interface Props {
@@ -18,11 +25,11 @@
 		form: SuperForm<ConferenceSettings>;
 		/** Which templates the server already holds; a test print needs them stored. */
 		storedDocuments: {
-			contractFile: { id: string } | null;
-			guardianConsentFile: { id: string } | null;
-			mediaConsentFile: { id: string } | null;
-			termsAndConditionsFile: { id: string } | null;
-			certificateFile: { id: string } | null;
+			contractFile: { url: string } | null;
+			guardianConsentFile: { url: string } | null;
+			mediaConsentFile: { url: string } | null;
+			termsAndConditionsFile: { url: string } | null;
+			certificateFile: { url: string } | null;
 		};
 	}
 
@@ -31,26 +38,66 @@
 
 	let loading = $state(false);
 
-	async function handleGeneratePostalPDF() {
+	/** A layout being edited, printed instead of the stored one for its document. */
+	type Draft = { document: LayoutDocument; layout: unknown };
+
+	/** The stored layouts with the draft in its document's place. */
+	function withDraft(stored: unknown, draft: Draft | undefined): unknown {
+		if (!draft) return stored;
+		const others = typeof stored === 'object' && stored !== null ? stored : {};
+		return { ...others, [draft.document]: draft.layout };
+	}
+
+	async function printPostal(draft?: Draft) {
+		// Fetched on demand: only the test print needs the templates.
+		const templates = await client.query.conference({
+			__args: { id: conferenceId },
+			contractFile: { url: true },
+			guardianConsentFile: { url: true },
+			mediaConsentFile: { url: true },
+			termsAndConditionsFile: { url: true },
+			documentLayouts: true
+		});
+		// a minor's, so the guardian consent is part of it
+		await downloadCompletePostalRegistrationPDF(
+			false,
+			testPrintParticipant(),
+			testPrintRecipient($formData),
+			{
+				contractFile: templates.contractFile,
+				guardianConsentFile: templates.guardianConsentFile,
+				mediaConsentFile: templates.mediaConsentFile,
+				termsAndConditionsFile: templates.termsAndConditionsFile,
+				documentLayouts: withDraft(templates.documentLayouts, draft)
+			},
+			'test_postal_registration.pdf'
+		);
+	}
+
+	async function printCertificate(draft?: Draft) {
+		const templates = await client.query.conference({
+			__args: { id: conferenceId },
+			certificateFile: { url: true },
+			documentLayouts: true
+		});
+		await downloadCompleteCertificate(
+			// sample check-in sessions, so the layout shows in the test print
+			testPrintCertificate([
+				m.certificateSampleSessionOpening(),
+				m.certificateSampleSessionCommittees(),
+				m.certificateSampleSessionClosing()
+			]),
+			templateOrDefault(templates.certificateFile?.url),
+			'test_certificate.pdf',
+			resolveDocumentLayout('certificate', withDraft(templates.documentLayouts, draft))
+		);
+	}
+
+	/** Runs a test print with the busy state shown on the buttons. */
+	async function busy(print: () => Promise<void>) {
 		loading = true;
-
 		try {
-			// Fetched on demand: only the test print needs the templates.
-			const templates = await client.query.conference({
-				__args: { id: conferenceId },
-				contractFile: { url: true },
-				guardianConsentFile: { url: true },
-				mediaConsentFile: { url: true },
-				termsAndConditionsFile: { url: true }
-			});
-
-			await downloadCompletePostalRegistrationPDF(
-				false,
-				testPrintParticipant(),
-				testPrintRecipient($formData),
-				templates,
-				'test_postal_registration.pdf'
-			);
+			await print();
 		} catch (error) {
 			console.error('Error generating PDF:', error);
 		} finally {
@@ -58,43 +105,29 @@
 		}
 	}
 
-	async function handleGenerateCertificatePDF() {
-		const randomString = (n: number) => {
-			const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-			let result = '';
-			for (let i = 0; i < n; i++) {
-				result += chars.charAt(Math.floor(Math.random() * chars.length));
-			}
-			return result;
-		};
+	const handleGeneratePostalPDF = () => busy(() => printPostal());
+	const handleGenerateCertificatePDF = () => busy(() => printCertificate());
 
-		loading = true;
+	/** A postal test print needs every one of its templates stored. */
+	const postalTemplatesStored = $derived(
+		!!storedDocuments.contractFile &&
+			!!storedDocuments.guardianConsentFile &&
+			!!storedDocuments.mediaConsentFile &&
+			!!storedDocuments.termsAndConditionsFile
+	);
 
-		try {
-			const templates = await client.query.conference({
-				__args: { id: conferenceId },
-				certificateFile: { url: true }
-			});
+	/** Why the postal test print cannot run yet: it is built from all four templates. */
+	const postalTestBlocked = $derived(postalTemplatesStored ? undefined : m.templateTestNeedsAll());
 
-			await downloadCompleteCertificate(
-				{
-					fullName: 'Antonio Guterres',
-					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350),
-					// sample check-in sessions, so the layout shows in the test print
-					sessions: [
-						{ name: m.certificateSampleSessionOpening(), attended: true },
-						{ name: m.certificateSampleSessionCommittees(), attended: true },
-						{ name: m.certificateSampleSessionEvening(), attended: false },
-						{ name: m.certificateSampleSessionClosing(), attended: true }
-					]
-				},
-				templateOrDefault(templates.certificateFile?.url),
-				`test_certificate.pdf`
-			);
-		} finally {
-			loading = false;
-		}
-	}
+	/** The document whose layout is being edited. */
+	let arranging = $state<LayoutDocument>();
+
+	const documentName: Record<LayoutDocument, () => string> = {
+		certificate: () => m.certificate(),
+		contract: () => m.userAgreement(),
+		guardianConsent: () => m.guardianAgreement(),
+		mediaConsent: () => m.mediaAgreement()
+	};
 </script>
 
 <FormSection title={m.postalRegistration()} icon="envelope">
@@ -119,52 +152,50 @@
 	{#snippet titleAction()}
 		<PdfTemplateHelp />
 	{/snippet}
-	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-		<FormFile
+	<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+		<TemplateCard
 			{form}
 			name="contractBasePDF"
-			label={m.postalTemplateContract()}
-			accept="*.pdf"
-			inputClass={storedDocuments.contractFile ? 'file-input-success' : undefined}
+			title={m.userAgreement()}
+			icon="file-signature"
+			stored={storedDocuments.contractFile}
+			onplace={() => (arranging = 'contract')}
+			ontest={handleGeneratePostalPDF}
+			printing={loading}
+			testBlocked={postalTestBlocked}
 		/>
-		<FormFile
+		<TemplateCard
 			{form}
 			name="guardianConsentBasePDF"
-			label={m.postalTemplateGuardianConsent()}
-			accept="*.pdf"
-			inputClass={storedDocuments.guardianConsentFile ? 'file-input-success' : undefined}
+			title={m.guardianAgreement()}
+			icon="shield-halved"
+			stored={storedDocuments.guardianConsentFile}
+			onplace={() => (arranging = 'guardianConsent')}
+			ontest={handleGeneratePostalPDF}
+			printing={loading}
+			testBlocked={postalTestBlocked}
 		/>
-		<FormFile
+		<TemplateCard
 			{form}
 			name="mediaConsentBasePDF"
-			label={m.postalTemplateMediaConsent()}
-			accept="*.pdf"
-			inputClass={storedDocuments.mediaConsentFile ? 'file-input-success' : undefined}
+			title={m.mediaAgreement()}
+			icon="camera"
+			stored={storedDocuments.mediaConsentFile}
+			onplace={() => (arranging = 'mediaConsent')}
+			ontest={handleGeneratePostalPDF}
+			printing={loading}
+			testBlocked={postalTestBlocked}
 		/>
-		<FormFile
+		<TemplateCard
 			{form}
 			name="termsAndConditionsBasePDF"
-			label={m.postalTemplateTermsAndConditions()}
-			accept="*.pdf"
-			inputClass={storedDocuments.termsAndConditionsFile ? 'file-input-success' : undefined}
+			title={m.termsAndConditions()}
+			icon="file-lines"
+			stored={storedDocuments.termsAndConditionsFile}
+			ontest={handleGeneratePostalPDF}
+			printing={loading}
+			testBlocked={postalTestBlocked}
 		/>
-	</div>
-	<div>
-		<button
-			class="btn btn-sm dark:btn-outline {loading ||
-			!storedDocuments.contractFile ||
-			!storedDocuments.guardianConsentFile ||
-			!storedDocuments.mediaConsentFile ||
-			!storedDocuments.termsAndConditionsFile
-				? 'btn-disabled'
-				: ''}"
-			onclick={async (e) => {
-				e.preventDefault();
-				handleGeneratePostalPDF();
-			}}
-		>
-			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-		</button>
 	</div>
 </FormSection>
 
@@ -172,24 +203,30 @@
 	{#snippet titleAction()}
 		<PdfTemplateHelp />
 	{/snippet}
-	<FormFile
+	<TemplateCard
 		{form}
 		name="certificateBasePDF"
-		label={m.certificateTemplate()}
-		accept="*.pdf"
-		inputClass={storedDocuments.certificateFile ? 'file-input-success' : undefined}
+		title={m.certificate()}
+		icon="award"
+		stored={storedDocuments.certificateFile}
+		onplace={() => (arranging = 'certificate')}
+		ontest={handleGenerateCertificatePDF}
+		printing={loading}
 	/>
-	<div>
-		<button
-			class="btn btn-sm dark:btn-outline {loading || !storedDocuments.certificateFile
-				? 'btn-disabled'
-				: ''}"
-			onclick={async (e) => {
-				e.preventDefault();
-				handleGenerateCertificatePDF();
-			}}
-		>
-			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-		</button>
-	</div>
 </FormSection>
+
+{#key arranging}
+	{#if arranging}
+		{@const document = arranging}
+		<DocumentLayoutEditor
+			{conferenceId}
+			{document}
+			title={m.documentLayoutTitle({ document: documentName[document]() })}
+			testPrint={(layout) =>
+				document === 'certificate'
+					? printCertificate({ document, layout })
+					: printPostal({ document, layout })}
+			onclose={() => (arranging = undefined)}
+		/>
+	{/if}
+{/key}

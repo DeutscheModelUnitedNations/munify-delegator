@@ -1,5 +1,5 @@
 import { db } from '#api/db/db.js';
-import type { EmailSnapshot, SnapshotPerson, SnapshotRole } from './dueEmails';
+import type { EmailSnapshot, SnapshotPerson, SnapshotReview, SnapshotRole } from './dueEmails';
 
 const ROLE = { columns: { id: true, kind: true, name: true, nationAlpha3Code: true } } as const;
 
@@ -21,7 +21,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 	});
 	if (!conference) return undefined;
 
-	const [participants, seatedEntries] = await Promise.all([
+	const [participants, seatedEntries, reviews] = await Promise.all([
 		db.query.conferenceParticipant.findMany({
 			where: { conferenceId },
 			columns: {
@@ -66,6 +66,27 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 		db.query.waitingListEntry.findMany({
 			where: { conferenceId, assigned: true },
 			columns: { id: true, userId: true }
+		}),
+		db.query.paperReview.findMany({
+			where: { paperVersion: { paper: { delegation: { conferenceId } } } },
+			columns: { id: true, statusAfter: true },
+			with: {
+				reviewer: { columns: { givenName: true, familyName: true, email: true } },
+				paperVersion: {
+					columns: { id: true },
+					with: {
+						paper: {
+							columns: { id: true, type: true, authorParticipantId: true },
+							with: {
+								agendaItem: {
+									columns: { title: true },
+									with: { committee: { columns: { abbreviation: true } } }
+								}
+							}
+						}
+					}
+				}
+			}
 		})
 	]);
 
@@ -104,8 +125,47 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			startConference: conference.startConference,
 			certificateAvailable: !!conference.certificateFileId
 		},
-		people
+		people,
+		reviews: reviews.flatMap(reviewPart)
 	};
+}
+
+/** A review as the mails read it; none for a paper without an author to tell. */
+export function reviewPart(review: {
+	id: string;
+	statusAfter: SnapshotReview['statusAfter'];
+	reviewer: { givenName: string; familyName: string; email: string } | null;
+	paperVersion: {
+		paper: {
+			id: string;
+			type: SnapshotReview['paperType'];
+			authorParticipantId: string | null;
+			agendaItem: { title: string; committee: { abbreviation: string } | null } | null;
+		} | null;
+	} | null;
+}): SnapshotReview[] {
+	const paper = review.paperVersion?.paper;
+	if (!paper?.authorParticipantId) return [];
+	const committee = paper.agendaItem?.committee;
+	return [
+		{
+			id: review.id,
+			authorParticipantId: paper.authorParticipantId,
+			paperId: paper.id,
+			paperType: paper.type,
+			agendaItem:
+				committee && paper.agendaItem
+					? `${committee.abbreviation}: ${paper.agendaItem.title}`
+					: null,
+			reviewer: review.reviewer
+				? {
+						name: `${review.reviewer.givenName} ${review.reviewer.familyName}`,
+						email: review.reviewer.email
+					}
+				: null,
+			statusAfter: review.statusAfter
+		}
+	];
 }
 
 type Role = SnapshotRole | null | undefined;

@@ -35,9 +35,9 @@
 					})}
 				</p>
 				{#if sessions.length > 0}
-					<div class="w-full text-left">
+					<div class="w-full">
 						<h3 class="mb-2 text-center font-bold">{m.certificateSessionsHeading()}</h3>
-						<ul class="flex flex-col gap-1">
+						<ul class="flex flex-col items-center gap-1">
 							{#each sessions as session, index (index)}
 								<li class="flex items-center gap-2">
 									<i class="fa-sharp-duotone fa-solid fa-check text-success" aria-hidden="true"></i>

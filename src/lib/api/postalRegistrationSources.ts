@@ -39,7 +39,8 @@ export async function fetchPostalRegistrationSources(userId: string, conferenceI
 			contractFile: { url: true },
 			guardianConsentFile: { url: true },
 			mediaConsentFile: { url: true },
-			termsAndConditionsFile: { url: true }
+			termsAndConditionsFile: { url: true },
+			documentLayouts: true
 		})
 	]);
 	return { user, conference };

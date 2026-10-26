@@ -99,6 +99,24 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		trigger: m.emailKindStudentLinkedTrigger(),
 		recipients: m.emailKindStudentLinkedRecipients(),
 		content: m.emailKindStudentLinkedContent()
+	}),
+	PAPER_REVIEWED: () => ({
+		title: m.emailKindPaperReviewedTitle(),
+		trigger: m.emailKindPaperReviewedTrigger(),
+		recipients: m.emailKindPaperReviewedRecipients(),
+		content: m.emailKindPaperReviewedContent()
+	}),
+	TEAM_INVITATION: () => ({
+		title: m.emailKindTeamInvitationTitle(),
+		trigger: m.emailKindTeamInvitationTrigger(),
+		recipients: m.emailKindTeamInvitationRecipients(),
+		content: m.emailKindTeamInvitationContent()
+	}),
+	TEAM_WELCOME: () => ({
+		title: m.emailKindTeamWelcomeTitle(),
+		trigger: m.emailKindTeamWelcomeTrigger(),
+		recipients: m.emailKindTeamWelcomeRecipients(),
+		content: m.emailKindTeamWelcomeContent()
 	})
 };
 
@@ -110,8 +128,10 @@ export const emailGroupTitle: Record<EmailGroupId, () => string> = {
 	unlocked: () => m.emailGroupUnlocked(),
 	received: () => m.emailGroupReceived(),
 	reminders: () => m.emailGroupReminders(),
+	papers: () => m.emailGroupPapers(),
 	certificate: () => m.emailGroupCertificate(),
-	supervisors: () => m.emailGroupSupervisors()
+	supervisors: () => m.emailGroupSupervisors(),
+	team: () => m.emailGroupTeam()
 };
 
 export const emailStatusLabel: Record<EmailstatusEnum, () => string> = {

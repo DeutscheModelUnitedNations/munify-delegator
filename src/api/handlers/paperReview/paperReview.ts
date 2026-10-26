@@ -2,6 +2,7 @@ import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { createPaperReview } from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
 import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
 
 registerPaperReviewAbilities();
 
@@ -41,9 +42,9 @@ schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Records a reviewer's verdict on a paper's latest version.
 	 *
-	 * Besides writing the review it advances the paper and version status, emails the author, and
-	 * works out whether this was the first review for a "piece" of the flag collection - the
-	 * gamified progress display. That last part has three shapes: a nation delegation counts one
+	 * Besides writing the review it advances the paper and version status, has the author told
+	 * (the `PAPER_REVIEWED` mail, where the conference sends it) and works out whether this was
+	 * the first review for a "piece" of the flag collection - the gamified progress display. That last part has three shapes: a nation delegation counts one
 	 * piece per agenda item, a non-state actor's introduction paper is its own piece, and its
 	 * other papers count up to two more.
 	 */
@@ -57,12 +58,14 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
 			await assertCanReviewPaper(ctx, args.paperId);
-			const result = await createPaperReview(args, reviewer, ctx.requestUrl().origin);
+			const { result, conferenceId } = await createPaperReview(args, reviewer);
 
-			// After the commit, so subscribers refetch the review rather than the state before it.
+			// After the commit, so subscribers refetch the review rather than the state before it,
+			// and a rollback never leaves the author a mail about it.
 			paperReviewPubsub.created();
 			paperPubsub.updated(args.paperId);
 			paperVersionPubsub.updated();
+			scheduleEmailSweep(conferenceId, ctx.requestUrl().origin);
 
 			return result;
 		}

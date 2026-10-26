@@ -614,6 +614,17 @@ bun run preview
   `createAppliedSingleParticipant`) sets the entry's `assigned` and `assignedAt` and hands its
   school to the new registration. The participants table shows waiting people as `WAITING_LIST`
   rows and everybody's `waitingListSince` / `seatedFromWaitingListAt`.
+- **The team places the generated parts on its own templates.** `#lib/helpers/documentLayout.ts`
+  declares, per document (`certificate`, `contract`, `guardianConsent`, `mediaConsent`), the
+  elements the generator draws - texts (a point and a font size), boxes and square codes - with
+  defaults where they always were. Positions are fractions of the page from the top left, stored
+  per document in `conference.documentLayouts` (members-only like the templates; written through
+  `setDocumentLayout`, conference content roles), and each element falls back to its default on its
+  own. `pdfGenerator.ts` draws from the resolved layout; the document settings open
+  `DocumentLayoutEditor.svelte` for any of them: pdf.js (`pdfjs-dist`, loaded on demand) draws the
+  template's first page, the elements are dragged and resized on it, and the test print uses the
+  unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
+  `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
 - **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
   conference's scanner occasions the holder was scanned at (`certificateSessions`, merged by name)
   and signs them into the optional `a` claim, so the PDF and `/validateCertificate` show the same
@@ -764,16 +775,18 @@ bun run preview
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
   conference owes - acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
-  application deadline and the conference, certificates, students linked to a supervisor. The
-  rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
+  application deadline and the conference, certificates, students linked to a supervisor, and
+  each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
+  reviewer). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
   there; the e-mail page explains them in the same words.
 - **`emailLog` makes each mail happen once.** The sweep (`emailSweep.ts`) claims a mail by writing
   its row, unique per conference, kind, person and `subjectKey`, before sending, so concurrent
   sweeps and instances never double-send; failures are retried three times, a claim left by a dead
   process frees up after 15 minutes. Every row (sent, failed, skipped) is shown in the log.
-- **Per conference and kind, off by default** (`conferenceEmailSetting`), on their own team page
-  `team/emails/` (participant care). The switches wait for the page's save button
-  (`emailChanges.svelte.ts`) and show up in its change preview. Switching a kind on asks whether
+- **Per conference and kind, off by default** (`conferenceEmailSetting`), on the "E-Mails" tab of
+  the conference settings (`team/configuration/emails/`, participant care: `canManageEmails`). The
+  switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
+  preview next to the form's fields; confirming saves them through their own mutations. Switching a kind on asks whether
   the people it already applies to get it on saving (`notifyExisting`) or are marked `SKIPPED`.
 - **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
   and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
@@ -783,8 +796,17 @@ bun run preview
   default, and a field saved unchanged is stored as none so it follows when the default improves.
   The greeting and the button stay fixed; `{list}` alone in a paragraph places a kind's list.
   `emailPreview` renders a draft (`draft: true`) in any locale, which is the editor's preview.
+- **One footer under every mail** (`conferenceEmailFooter`, per conference and locale,
+  `setConferenceEmailFooter`): paragraphs with `{conference}` (`emailFooterParagraphs`), drawn by
+  `EmailLayout` above the fixed small print in the automatic and the team mails alike. A language
+  without one gets none; `emailPreview` takes a draft `footer`, which is the footer editor's preview.
+- **The team's own mails share the texts, not the switches.** The invitation into the team and the
+  welcome for an existing account (`TEAM_INVITATION`, `TEAM_WELCOME`, `ALWAYS_SENT_KINDS` in
+  `#lib/helpers/emailKinds.ts`) are sent where they happen (`sendTeamInvitationEmail.ts`) and always
+  go out; the page lists them without a switch so their text can be changed like any other, and
+  `setConferenceEmailEnabled` refuses them. `dueEmails` never owes them, nor are they logged.
 - **Two triggers, one path:** the mutations that change what is due (release, applying the draft,
-  conference settings, participant statuses, seating someone, a supervisor link) call
+  conference settings, participant statuses, seating someone, a supervisor link, a paper review) call
   `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
   calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
   and anything missed. The app renders the mails (one template, `NotificationEmail.svelte` on

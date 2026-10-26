@@ -5,6 +5,8 @@
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
+	const conferenceId = $derived(params.conferenceId);
+	const userId = $derived(params.userId);
 </script>
 
 <svelte:head>
@@ -13,16 +15,13 @@
 
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
-		<a
-			href={resolve(`dashboard/${params.conferenceId}/team/participants`)}
-			class="btn btn-ghost btn-sm"
-		>
+		<a href={resolve(`dashboard/${conferenceId}/team/participants`)} class="btn btn-ghost btn-sm">
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			{m.back()}
 		</a>
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>
 	</div>
 	<div class="bg-base-100 min-h-0 flex-1">
-		<UserCardContent userId={params.userId} conferenceId={params.conferenceId} mode="page" />
+		<UserCardContent {userId} {conferenceId} mode="page" />
 	</div>
 </div>

@@ -2,31 +2,38 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import EmailLayout from '../EmailLayout.svelte';
 	import EmailButton from '../EmailButton.svelte';
-	import { smallStyle, textStyle } from '../brand';
+	import EmailParagraphs from '../EmailParagraphs.svelte';
+	import { smallStyle } from '../brand';
 
+	/**
+	 * The note to someone with an account who was added to a conference's team. Heading and
+	 * paragraphs are the conference's text (`TEAM_WELCOME` in `#lib/helpers/emailTemplates.js`); the
+	 * greeting, the button and the footer stay fixed.
+	 */
 	interface Props {
 		recipientName: string;
 		recipientEmail: string;
 		conferenceTitle: string;
-		roleName: string;
-		inviterName: string;
+		heading: string;
+		paragraphs: string[];
 		dashboardUrl: string;
+		/** The conference's footer, paragraph by paragraph. */
+		conferenceFooter?: string[];
 	}
 
 	let {
 		recipientName,
 		recipientEmail,
 		conferenceTitle,
-		roleName,
-		inviterName,
-		dashboardUrl
+		heading,
+		paragraphs,
+		dashboardUrl,
+		conferenceFooter
 	}: Props = $props();
 </script>
 
-<EmailLayout heading={m.emailTeamWelcomeTitle()} {conferenceTitle}>
-	<p style={textStyle}>{m.emailGreeting({ name: recipientName })}</p>
-	<p style={textStyle}>{m.emailTeamWelcomeBody({ inviterName, conferenceTitle, roleName })}</p>
-	<p style={textStyle}>{m.emailTeamWelcomeInstruction()}</p>
+<EmailLayout {heading} {conferenceTitle} preview={paragraphs[0]} {conferenceFooter}>
+	<EmailParagraphs greeting={m.emailGreeting({ name: recipientName })} {paragraphs} />
 
 	<EmailButton href={dashboardUrl} label={m.emailTeamWelcomeButton()} />
 

@@ -30,7 +30,12 @@ const EMAIL_PLACEHOLDERS = [
 	'student',
 	'item',
 	'list',
-	'delegationHint'
+	'delegationHint',
+	'paper',
+	'reviewer',
+	'status',
+	'role',
+	'inviter'
 ] as const;
 export type EmailPlaceholder = (typeof EMAIL_PLACEHOLDERS)[number];
 
@@ -40,6 +45,8 @@ export type EmailPlaceholderValues = Partial<Record<Exclude<EmailPlaceholder, 'l
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */
 	placeholders: readonly EmailPlaceholder[];
+	/** Goes to someone without an account yet, so there is no `name` to use. */
+	anonymous?: true;
 	text: (locale: Locale) => EmailText;
 }
 
@@ -49,7 +56,12 @@ const P = {
 	seat: '{seat}',
 	date: '{date}',
 	student: '{student}',
-	item: '{item}'
+	item: '{item}',
+	paper: '{paper}',
+	reviewer: '{reviewer}',
+	status: '{status}',
+	role: '{role}',
+	inviter: '{inviter}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
@@ -195,6 +207,50 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 				{ locale }
 			)
 		})
+	},
+	PAPER_REVIEWED: {
+		placeholders: ['paper', 'reviewer', 'status'],
+		text: (locale) => ({
+			subject: m.emailAutoPaperReviewedSubject({ paper: P.paper }, { locale }),
+			heading: m.emailAutoPaperReviewedHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoPaperReviewedBody(
+					{ paper: P.paper, conference: P.conference, reviewer: P.reviewer },
+					{ locale }
+				),
+				m.emailAutoPaperReviewedStatus({ status: P.status }, { locale })
+			)
+		})
+	},
+	TEAM_INVITATION: {
+		placeholders: ['role', 'inviter', 'date'],
+		anonymous: true,
+		text: (locale) => ({
+			subject: m.emailTeamInvitationSubject({ conferenceTitle: P.conference }, { locale }),
+			heading: m.emailTeamInvitationTitle({}, { locale }),
+			body: paragraphs(
+				m.emailTeamInvitationBody(
+					{ inviterName: P.inviter, conferenceTitle: P.conference, roleName: P.role },
+					{ locale }
+				),
+				m.emailTeamInvitationInstruction({}, { locale }),
+				m.emailTeamInvitationExpiry({ expiresAt: P.date, inviterName: P.inviter }, { locale })
+			)
+		})
+	},
+	TEAM_WELCOME: {
+		placeholders: ['role', 'inviter'],
+		text: (locale) => ({
+			subject: m.emailTeamWelcomeSubject({ conferenceTitle: P.conference }, { locale }),
+			heading: m.emailTeamWelcomeTitle({}, { locale }),
+			body: paragraphs(
+				m.emailTeamWelcomeBody(
+					{ inviterName: P.inviter, conferenceTitle: P.conference, roleName: P.role },
+					{ locale }
+				),
+				m.emailTeamWelcomeInstruction({}, { locale })
+			)
+		})
 	}
 };
 
@@ -205,7 +261,8 @@ export function defaultEmailText(kind: EmailkindEnum, locale: Locale): EmailText
 
 /** The placeholders a kind's text can use, in the order the editor lists them. */
 export function placeholdersOf(kind: EmailkindEnum): EmailPlaceholder[] {
-	return ['name', 'conference', ...TEMPLATES[kind].placeholders];
+	const template = TEMPLATES[kind];
+	return [...(template.anonymous ? [] : ['name' as const]), 'conference', ...template.placeholders];
 }
 
 /** The text to send: the conference's own fields where it has them, the default elsewhere. */
@@ -261,4 +318,18 @@ export function fillEmailText(
 		items: [...items],
 		closing: listAt === -1 ? [] : filled(blocks.slice(listAt + 1))
 	};
+}
+
+/**
+ * A conference's footer for its mails (`conference_email_footer`), as the paragraphs under every
+ * mail: blank lines separate them, `{conference}` is the conference's name. None for an empty one.
+ */
+export function emailFooterParagraphs(
+	footer: string | null | undefined,
+	conferenceTitle: string
+): string[] {
+	return (footer ?? '')
+		.split(/\n\s*\n/)
+		.map((block) => block.replaceAll('{conference}', conferenceTitle).trim())
+		.filter(Boolean);
 }

@@ -1,12 +1,17 @@
 import { db, schema } from '#api/db/db.js';
 import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { conferenceEmailSettingPubsub, conferenceEmailTextPubsub } from '#api/pubsub.js';
+import {
+	conferenceEmailFooterPubsub,
+	conferenceEmailSettingPubsub,
+	conferenceEmailTextPubsub
+} from '#api/pubsub.js';
 import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
 import { countOpenEmails, previewEmail, scheduleEmailSweep, skipOpenEmails } from './emailSweep';
 import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
 import { toLocale } from '#lib/paraglide/runtime.js';
+import { isAlwaysSent } from '#lib/helpers/emailKinds.js';
 import { and, eq } from 'drizzle-orm';
 
 registerEmailAbilities();
@@ -18,6 +23,8 @@ object({ table: 'conferenceEmailSetting' });
 query({ table: 'conferenceEmailSetting' });
 object({ table: 'conferenceEmailText' });
 query({ table: 'conferenceEmailText' });
+object({ table: 'conferenceEmailFooter' });
+query({ table: 'conferenceEmailFooter' });
 object({ table: 'emailLog' });
 query({ table: 'emailLog' });
 
@@ -80,7 +87,8 @@ schemaBuilder.queryFields((t) => ({
 
 	/**
 	 * A mail of `kind` as it would look, addressed to the caller with made-up details: in `locale`
-	 * (else the caller's), with the text being edited when `draft` is set (else what is stored).
+	 * (else the caller's), with the text being edited when `draft` is set (else what is stored), and
+	 * with `footer` as the footer when given (else the stored one; empty for none).
 	 */
 	emailPreview: t.field({
 		type: EmailPreview,
@@ -91,7 +99,8 @@ schemaBuilder.queryFields((t) => ({
 			draft: t.arg.boolean(),
 			subject: t.arg.string(),
 			heading: t.arg.string(),
-			body: t.arg.string()
+			body: t.arg.string(),
+			footer: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
@@ -115,7 +124,8 @@ schemaBuilder.queryFields((t) => ({
 				args.kind,
 				{ ...user, locale },
 				ctx.requestUrl().origin,
-				args.draft ? { subject: args.subject, heading: args.heading, body: args.body } : undefined
+				args.draft ? { subject: args.subject, heading: args.heading, body: args.body } : undefined,
+				args.footer ?? undefined
 			);
 			if (!preview) throw apiError('NOT_FOUND', m.conferenceNotFound());
 			return { subject: preview.subject, html: preview.html };
@@ -182,6 +192,40 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	/**
+	 * Writes the footer under every mail the conference sends, for one language. An empty one
+	 * removes it: mails in that language go out without.
+	 */
+	setConferenceEmailFooter: t.field({
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			locale: t.arg.string({ required: true }),
+			text: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails(ctx, args.conferenceId);
+			const locale = assertLocale(args.locale);
+			const text = ownText(args.text);
+			const table = schema.conferenceEmailFooter;
+			if (!text) {
+				await db
+					.delete(table)
+					.where(and(eq(table.conferenceId, args.conferenceId), eq(table.locale, locale)));
+			} else {
+				await db
+					.insert(table)
+					.values({ conferenceId: args.conferenceId, locale, text })
+					.onConflictDoUpdate({
+						target: [table.conferenceId, table.locale],
+						set: { text, updatedAt: new Date() }
+					});
+			}
+			conferenceEmailFooterPubsub.updated();
+			return true;
+		}
+	}),
+
+	/**
 	 * Switches one kind of automatic mail on or off for a conference. Switching it on with
 	 * `notifyExisting: false` marks everybody it would reach right now as skipped, so only what
 	 * happens from now on is sent.
@@ -196,6 +240,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails(ctx, args.conferenceId);
+			if (isAlwaysSent(args.kind)) throw apiError('INVALID_INPUT', m.emailKindAlwaysSent());
 			if (args.enabled && args.notifyExisting === false) {
 				await skipOpenEmails(args.conferenceId, args.kind);
 			}
