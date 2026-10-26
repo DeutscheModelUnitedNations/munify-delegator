@@ -14,7 +14,7 @@
 	const choices = $derived([
 		{
 			icon: 'arrow-right',
-			title: 'Zur Anmeldung',
+			title: 'Zur Bewerbung',
 			class: 'btn-primary',
 			href: resolve(`registration/${conferenceId}/supervisor`)
 		}

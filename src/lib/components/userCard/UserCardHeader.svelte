@@ -8,13 +8,14 @@
 	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
 	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
-	import LinkedAccountNotes from './LinkedAccountNotes.svelte';
+	import CareNotes from './CareNotes.svelte';
+	import ContactButtons from './ContactButtons.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
-	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
 	import Modal from '../Modal.svelte';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { closeUserCard } from './userCardState.svelte';
-	import type { UserCardRoles } from './userCardRoles';
+	import type { ParticipationStage, UserCardRoles } from './userCardRoles';
+	import type { UserCardTab } from './userCardTabs';
 	import {
 		badgeSeatOf,
 		badgeSessionBody,
@@ -32,8 +33,10 @@
 		pronouns?: string | null;
 		gender?: string | null;
 		mode: 'drawer' | 'page';
-		/** Whether the person has a place in the conference, which the status strip needs */
-		showStatus: boolean;
+		/** How far the person has come in the conference, if they apply for a seat */
+		stage: ParticipationStage | undefined;
+		/** Opens a tab of the card, where a status pill is changed */
+		onOpenTab: (tab: UserCardTab) => void;
 	}
 
 	let {
@@ -44,7 +47,8 @@
 		pronouns,
 		gender,
 		mode,
-		showStatus,
+		stage,
+		onOpenTab,
 		delegationMember,
 		singleParticipant,
 		conferenceSupervisor,
@@ -87,6 +91,35 @@
 			.join('')
 			.toUpperCase()
 	);
+
+	const STAGES: Record<ParticipationStage, { label: () => string; badge: string; icon: string }> = {
+		waitingList: {
+			label: () => m.userCardStageWaitingList(),
+			badge: 'badge-info',
+			icon: 'fa-hourglass-clock'
+		},
+		registered: {
+			label: () => m.userCardStageRegistered(),
+			badge: 'badge-warning',
+			icon: 'fa-pen-line'
+		},
+		applied: { label: () => m.userCardStageApplied(), badge: 'badge-info', icon: 'fa-paper-plane' },
+		notSeated: {
+			label: () => m.userCardStageNotSeated(),
+			badge: 'badge-error',
+			icon: 'fa-circle-xmark'
+		},
+		seated: {
+			label: () => m.userCardStageSeated(),
+			badge: 'badge-success',
+			icon: 'fa-chair-office'
+		},
+		attended: {
+			label: () => m.userCardStageAttended(),
+			badge: 'badge-success',
+			icon: 'fa-calendar-check'
+		}
+	};
 
 	const isParticipant = $derived(
 		!!delegationMember || !!singleParticipant || !!conferenceSupervisor
@@ -150,6 +183,23 @@
 		return [personBadge({ name: badgeName, pronouns, id: userId, mediaConsentStatus }, badgeSeat)];
 	};
 
+	let careNoteOpen = $state(false);
+	let badgeModalOpen = $state(false);
+	let actionsOpen = $state(false);
+	let actionsMenu = $state<HTMLDetailsElement>();
+
+	/** Runs a menu entry and closes the menu, which a `<details>` does not do on its own. */
+	const menuAction = (action: () => void) => () => {
+		actionsOpen = false;
+		action();
+	};
+
+	const closeActionsOutside = (event: MouseEvent) => {
+		if (actionsOpen && event.target instanceof Node && !actionsMenu?.contains(event.target)) {
+			actionsOpen = false;
+		}
+	};
+
 	// --- Delete participant ---
 	let deleteModalOpen = $state(false);
 	let deleteConfirmInput = $state('');
@@ -190,87 +240,83 @@
 				</div>
 			</div>
 
-			<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+			<div class="flex min-w-0 flex-1 flex-col gap-1">
 				<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
 					<h2 class="text-3xl font-bold">{displayName}</h2>
 					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
 					{#if pronouns}
 						<span class="text-base-content/60 text-sm">({pronouns})</span>
 					{/if}
+					{#if stage}
+						{@const shown = STAGES[stage]}
+						<span class="badge badge-soft gap-1.5 {shown.badge}">
+							<i class="fa-sharp-duotone fa-solid {shown.icon} text-xs"></i>
+							{shown.label()}
+						</span>
+					{/if}
 					<PossibleDuplicateBadge {userId} {conferenceId} />
 				</div>
-
-				<button
-					class="group text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
-					onclick={copyUserId}
-					title={m.copy()}
-				>
-					<span class="group-hover:hidden">{userId}</span>
-					<span class="hidden items-center gap-1 group-hover:flex">
-						<i class="fa-sharp-duotone fa-solid fa-copy"></i>
-						{m.copyUserId()}
-					</span>
-				</button>
+				<ContactButtons {userId} />
 			</div>
 
 			<!-- Action buttons -->
 			<div class="flex items-center gap-1">
+				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
 				{#if badgeSeat}
-					<div class="dropdown dropdown-end">
-						<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
-							<div
-								tabindex="0"
-								role="button"
-								class="btn btn-ghost btn-sm btn-square"
-								aria-label={m.generateBadge()}
-							>
-								<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
-							</div>
-						</div>
-						<div
-							tabindex="-1"
-							class="dropdown-content bg-base-100 rounded-box border-base-300 z-20 mt-2 flex w-80 flex-col gap-3 border p-4 shadow-lg"
-						>
-							<p class="font-semibold">{m.badgeForPerson()}</p>
-							{#if PUBLIC_BADGE_GENERATOR_URL}
-								<button class="btn btn-sm btn-outline" onclick={openBadgeGenerator}>
-									<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
-									{m.badgeGeneratorPrefilled()}
-								</button>
-							{/if}
-							<BadgeGeneratorLinks
-								badges={badgeRows}
-								filename="badge_{formatNames(givenName ?? undefined, familyName ?? undefined, {
-									givenNameFirst: false,
-									delimiter: '_'
-								})}"
-								label={m.badgeCsvDownload()}
-								showHint
-							/>
-						</div>
-					</div>
-				{/if}
-
-				{#if IMPERSONATION_ENABLED}
-					<div class="tooltip tooltip-bottom" data-tip={m.impersonation()}>
-						<ImpersonationButton {userId} iconOnly />
-					</div>
-				{/if}
-
-				{#if isParticipant}
-					<div class="tooltip tooltip-bottom" data-tip={m.deleteParticipant()}>
+					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
 						<button
-							class="btn btn-ghost btn-sm btn-square text-error"
-							aria-label={m.deleteParticipant()}
-							onclick={() => {
-								deleteConfirmInput = '';
-								deleteModalOpen = true;
-							}}
+							class="btn btn-ghost btn-sm btn-square"
+							aria-label={m.generateBadge()}
+							onclick={() => (badgeModalOpen = true)}
 						>
-							<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
+							<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
 						</button>
 					</div>
 				{/if}
+
+				<ImpersonationButton {userId} iconOnly />
+
+				<!-- The rarer actions, the destructive one last -->
+				<!-- A <details> opens on click only, never because focus moved into it -->
+				<details class="dropdown dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
+					<summary
+						class="btn btn-ghost btn-sm btn-square list-none"
+						aria-label={m.userCardMoreActions()}
+						title={m.userCardMoreActions()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-ellipsis-vertical"></i>
+					</summary>
+					<ul
+						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
+					>
+						<li>
+							<button onclick={menuAction(() => (careNoteOpen = true))}>
+								<i class="fa-sharp-duotone fa-solid fa-note-sticky"></i>
+								{m.editGlobalNotes()}
+							</button>
+						</li>
+						<li>
+							<button onclick={menuAction(copyUserId)}>
+								<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+								{m.copyUserId()}
+							</button>
+						</li>
+						{#if isParticipant}
+							<li>
+								<button
+									class="text-error"
+									onclick={menuAction(() => {
+										deleteConfirmInput = '';
+										deleteModalOpen = true;
+									})}
+								>
+									<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
+									{m.deleteParticipant()}
+								</button>
+							</li>
+						{/if}
+					</ul>
+				</details>
 
 				{#if mode === 'drawer'}
 					<div class="divider divider-horizontal mx-0"></div>
@@ -295,13 +341,38 @@
 			{teamMember}
 		/>
 
-		{#if showStatus}
-			<UserCardStatusStrip {userId} {conferenceId} />
-		{/if}
+		<UserCardStatusStrip
+			{userId}
+			{conferenceId}
+			isConferenceSupervisor={!!conferenceSupervisor}
+			{onOpenTab}
+		/>
 
-		<LinkedAccountNotes {userId} />
+		<CareNotes {userId} bind:editing={careNoteOpen} />
 	</div>
 </div>
+
+<svelte:window onclick={closeActionsOutside} />
+
+<Modal bind:open={badgeModalOpen} title={m.badgeForPerson()}>
+	<div class="flex flex-col gap-2">
+		{#if PUBLIC_BADGE_GENERATOR_URL}
+			<button class="btn btn-sm btn-primary w-full" onclick={openBadgeGenerator}>
+				<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
+				{m.badgeGeneratorPrefilled()}
+			</button>
+		{/if}
+		<BadgeGeneratorLinks
+			badges={badgeRows}
+			filename="badge_{formatNames(givenName ?? undefined, familyName ?? undefined, {
+				givenNameFirst: false,
+				delimiter: '_'
+			})}"
+			label={m.badgeCsvDownload()}
+			showHint
+		/>
+	</div>
+</Modal>
 
 <!-- Delete confirmation modal -->
 <Modal bind:open={deleteModalOpen} title={m.deleteParticipant()}>

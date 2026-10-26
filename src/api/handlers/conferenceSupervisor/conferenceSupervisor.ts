@@ -3,6 +3,7 @@ import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import {
 	connectParticipantToSupervisor,
+	disconnectParticipantFromSupervisor,
 	findSupervisorByConnectionCode,
 	previewSupervisorByCode,
 	registerSupervisor,
@@ -12,6 +13,7 @@ import {
 	assertCanBeSupervised,
 	assertCanConnectToConferenceSupervisor,
 	assertCanCreateConferenceSupervisor,
+	assertCanDisconnectFromConferenceSupervisor,
 	assertCanPreviewConferenceSupervisor,
 	assertCanRotateSupervisorConnectionCode,
 	registerConferenceSupervisorAbilities,
@@ -148,6 +150,39 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
+		}
+	}),
+
+	/** Ends a supervision: the supervisor no longer looks after the person. */
+	disconnectFromConferenceSupervisor: t.field({
+		type: 'Boolean',
+		args: {
+			supervisorId: t.arg.id({ required: true }),
+			userId: t.arg.id({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const conferenceId = await assertCanDisconnectFromConferenceSupervisor(
+				ctx,
+				args.supervisorId,
+				args.userId
+			);
+			const unlinked = await disconnectParticipantFromSupervisor(
+				args.supervisorId,
+				conferenceId,
+				args.userId
+			);
+
+			conferenceSupervisorPubsub.updated(args.supervisorId);
+			if (unlinked) {
+				conferenceParticipantPubsub.updated(unlinked.participantId);
+				if (unlinked.delegationMemberId) {
+					delegationMemberPubsub.updated(unlinked.delegationMemberId);
+				}
+				if (unlinked.singleParticipantId) {
+					singleParticipantPubsub.updated(unlinked.singleParticipantId);
+				}
+			}
+			return true;
 		}
 	}),
 

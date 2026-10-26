@@ -83,3 +83,15 @@ export async function saveSurveyAnswer(
 
 	return { answerId, existed: Boolean(answer.updatableAnswerId) };
 }
+
+/**
+ * The options of a question, by id. A changed answer moves a count from one of them to another,
+ * and an option in a live result only hears an update named with its own id.
+ */
+export async function optionIdsOfQuestion(questionId: string) {
+	const options = await db.query.surveyOption.findMany({
+		where: { questionId },
+		columns: { id: true }
+	});
+	return options.map((option) => option.id);
+}

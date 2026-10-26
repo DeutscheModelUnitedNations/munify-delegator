@@ -9,7 +9,7 @@ import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js'
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
 const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
@@ -105,6 +105,37 @@ export async function connectParticipantToSupervisor(
 		supervisorId,
 		delegationMemberId: participation.foundDelegationMember?.id,
 		singleParticipantId: participation.foundSingleParticipant?.id
+	};
+}
+
+/**
+ * Ends a supervision: the supervisor no longer looks after the person. Returns the registrations
+ * the person holds in the conference, so the caller can announce them; nothing when there was no
+ * such person.
+ */
+export async function disconnectParticipantFromSupervisor(
+	supervisorId: string,
+	conferenceId: string,
+	subjectId: string
+) {
+	const participant = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId: subjectId },
+		columns: { id: true },
+		with: {
+			delegationMember: { columns: { id: true } },
+			singleParticipant: { columns: { id: true } }
+		}
+	});
+	if (!participant) return undefined;
+
+	await db
+		.delete(schema.supervision)
+		.where(and(eq(schema.supervision.a, supervisorId), eq(schema.supervision.b, participant.id)));
+
+	return {
+		participantId: participant.id,
+		delegationMemberId: participant.delegationMember?.id,
+		singleParticipantId: participant.singleParticipant?.id
 	};
 }
 

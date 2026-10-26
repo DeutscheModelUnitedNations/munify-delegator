@@ -2331,6 +2331,10 @@ export type Mutation = {
   discardAssignmentDraft: (p: {
     conferenceId: ID
   }) => Boolean,
+  disconnectFromConferenceSupervisor: (p: {
+    supervisorId: ID,
+    userId: ID
+  }) => Boolean,
   dismissSchoolSuggestion: (p: {
     id: ID
   }) => Boolean,
@@ -2468,7 +2472,6 @@ export type Mutation = {
     occasion: String
   }) => Attendancesession,
   startImpersonation: (p: {
-    scope?: String | null | undefined,
     targetUserId: ID
   }) => Boolean,
   stopImpersonation: Boolean,
@@ -3334,6 +3337,9 @@ export type Query = {
     search?: String | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
+  canImpersonateUser: (p: {
+    targetUserId: ID
+  }) => Boolean,
   certificateOccasions: (p: {
     conferenceId: ID,
     revision?: Int | null | undefined

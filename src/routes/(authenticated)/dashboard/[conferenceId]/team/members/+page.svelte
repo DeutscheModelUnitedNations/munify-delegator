@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import { renderComponent } from '#lib/components/tanStackTable/index.js';
@@ -152,10 +151,7 @@
 			cell: ({ row }) =>
 				renderComponent(TeamMemberActions, {
 					onOpenUserCard: () => openUserCard(row.original.user.id),
-					onImpersonate:
-						isAdmin && IMPERSONATION_ENABLED
-							? () => startImpersonation(row.original.user.id)
-							: undefined,
+					onImpersonate: isAdmin ? () => startImpersonation(row.original.user.id) : undefined,
 					onDelete: () => handleDelete(row.original.id)
 				}),
 			enableSorting: false

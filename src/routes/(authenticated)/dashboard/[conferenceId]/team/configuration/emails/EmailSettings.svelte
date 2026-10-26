@@ -5,7 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
 	import { EMAIL_GROUPS } from '#lib/helpers/emailKinds.js';
-	import { emailGroupTitle, emailKindTexts } from './emailKindTexts';
+	import { emailGroupTitle, emailKindTexts } from '#lib/helpers/emailKindTexts.js';
 	import EmailKindCard from './EmailKindCard.svelte';
 	import EmailLog from './EmailLog.svelte';
 	import EmailEditorModal from './EmailEditorModal.svelte';

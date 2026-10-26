@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
 
-const { hasConferenceAccess } = await import('./userCardRoles');
+const { hasConferenceAccess, participationStage } = await import('./userCardRoles');
 
 const role = { id: 'role' };
 const supervisor = (delegationRoles: (object | null)[], singleRoles: (object | null)[]) => ({
@@ -38,5 +38,50 @@ describe('hasConferenceAccess', () => {
 		expect(hasConferenceAccess({ conferenceSupervisor: supervisor([null, role], []) })).toBe(true);
 		expect(hasConferenceAccess({ conferenceSupervisor: supervisor([], [role]) })).toBe(true);
 		expect(hasConferenceAccess({ conferenceSupervisor: supervisor([null], [null]) })).toBe(false);
+	});
+});
+
+describe('participationStage', () => {
+	const state = 'PARTICIPANT_REGISTRATION';
+
+	test('follows an application from registering to attending', () => {
+		expect(participationStage({ application: { applied: false }, conferenceState: state })).toBe(
+			'registered'
+		);
+		expect(participationStage({ application: { applied: true }, conferenceState: state })).toBe(
+			'applied'
+		);
+		expect(
+			participationStage({
+				application: { applied: true, assignedRole: role },
+				conferenceState: state
+			})
+		).toBe('seated');
+		expect(
+			participationStage({
+				application: { applied: true, assignedRole: role },
+				didAttend: true,
+				conferenceState: 'ACTIVE'
+			})
+		).toBe('attended');
+	});
+
+	test('calls an application without a role unseated once the assignment is done', () => {
+		expect(
+			participationStage({ application: { applied: true }, conferenceState: 'PREPARATION' })
+		).toBe('notSeated');
+	});
+
+	test('shows somebody still waiting, but not once seated from the list', () => {
+		expect(
+			participationStage({ waitingListEntry: { assigned: false }, conferenceState: state })
+		).toBe('waitingList');
+		expect(
+			participationStage({ waitingListEntry: { assigned: true }, conferenceState: state })
+		).toBeUndefined();
+	});
+
+	test('has nothing to say about somebody without an application', () => {
+		expect(participationStage({ conferenceState: state })).toBeUndefined();
 	});
 });

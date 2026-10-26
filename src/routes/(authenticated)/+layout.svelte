@@ -15,7 +15,7 @@
 
 <div class="flex h-full w-full flex-col">
 	<AuthenticatedHeader />
-	<div class="mx-auto flex h-full w-full max-w-[1800px] px-4 md:px-8">
+	<div class="mx-auto flex h-full w-full max-w-[1800px] px-4 pt-4 md:px-8">
 		{@render children()}
 	</div>
 </div>

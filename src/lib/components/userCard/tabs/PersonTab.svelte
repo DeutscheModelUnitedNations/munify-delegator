@@ -16,7 +16,9 @@
 	import AddressRegionField from '#lib/components/form/AddressRegionField.svelte';
 	import { addressRules } from '#lib/helpers/addressRules.js';
 	import { toast } from 'svelte-sonner';
-	import GlobalNotes from '../GlobalNotes.svelte';
+	import AccountSection from '../AccountSection.svelte';
+	import CopyField from '../CopyField.svelte';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { untrack } from 'svelte';
 
 	interface Props {
@@ -45,12 +47,10 @@
 		gender: true,
 		birthday: true,
 		foodPreference: true,
-		emergencyContacts: true,
-		globalNotes: true
+		emergencyContacts: true
 	});
 
 	let editing = $state(false);
-	let globalNotesOpen = $state(false);
 
 	const initialData = defaults(buildUserFormValues(user), zod4Client(adminUserFormSchema));
 
@@ -95,6 +95,15 @@
 		}
 	}
 
+	// What the copy buttons copy: the stored values as the fields show them, labels for the selects
+	const labelOf = (options: { value: string; label: string }[], value: string | null) =>
+		options.find((option) => option.value === value)?.label;
+	// A calendar day arrives as UTC midnight, so it is formatted in UTC
+	const birthdayText = $derived(
+		user.birthday?.toLocaleDateString(getLocale(), { dateStyle: 'medium', timeZone: 'UTC' })
+	);
+	const showCopy = $derived(!editing);
+
 	const copyToClipboard = async (text: string) => {
 		await navigator.clipboard.writeText(text);
 		toast.success(m.codeCopied());
@@ -136,20 +145,24 @@
 					<div class="mb-2 flex items-center gap-2 text-base-content/60">
 						<i class="fa-sharp-duotone fa-solid fa-id-card"></i>
 					</div>
-					<FormTextInput
-						{form}
-						name="given_name"
-						label={m.firstName()}
-						placeholder={m.firstName()}
-						disabled={!editing}
-					/>
-					<FormTextInput
-						{form}
-						name="family_name"
-						label={m.lastName()}
-						placeholder={m.lastName()}
-						disabled={!editing}
-					/>
+					<CopyField value={user.givenName} show={showCopy}>
+						<FormTextInput
+							{form}
+							name="given_name"
+							label={m.firstName()}
+							placeholder={m.firstName()}
+							disabled={!editing}
+						/>
+					</CopyField>
+					<CopyField value={user.familyName} show={showCopy}>
+						<FormTextInput
+							{form}
+							name="family_name"
+							label={m.lastName()}
+							placeholder={m.lastName()}
+							disabled={!editing}
+						/>
+					</CopyField>
 				</FormFieldset>
 
 				<FormFieldset title={m.personalInformation()}>
@@ -158,39 +171,50 @@
 							<i class="fa-sharp-duotone fa-solid fa-birthday-cake"></i>
 							<span class="text-sm">{m.birthDate()}</span>
 						</div>
-						<FormDateTimeInput
-							{form}
-							name="birthday"
-							defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
-							enableFutureDates={false}
-							disabled={!editing}
-						/>
+						<CopyField value={birthdayText} show={showCopy}>
+							<FormDateTimeInput
+								{form}
+								name="birthday"
+								defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
+								enableFutureDates={false}
+								disabled={!editing}
+							/>
+						</CopyField>
 					</div>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
 							<i class="fa-sharp-duotone fa-solid fa-{genderIcon}"></i>
 							<span class="text-sm">{m.gender()}</span>
 						</div>
-						<FormSelect {form} name="gender" options={genderOptions()} disabled={!editing} />
+						<CopyField value={labelOf(genderOptions(), user.gender)} show={showCopy}>
+							<FormSelect {form} name="gender" options={genderOptions()} disabled={!editing} />
+						</CopyField>
 					</div>
-					<FormTextInput
-						{form}
-						name="pronouns"
-						placeholder={m.pronounsExample()}
-						label={m.pronouns()}
-						disabled={!editing}
-					/>
+					<CopyField value={user.pronouns} show={showCopy}>
+						<FormTextInput
+							{form}
+							name="pronouns"
+							placeholder={m.pronounsExample()}
+							label={m.pronouns()}
+							disabled={!editing}
+						/>
+					</CopyField>
 					<div class="flex flex-col gap-2">
 						<div class="flex items-center gap-2 text-base-content/60">
 							<i class="fa-sharp-duotone fa-solid fa-{foodIcon}"></i>
 							<span class="text-sm">{m.diet()}</span>
 						</div>
-						<FormSelect
-							{form}
-							name="foodPreference"
-							options={foodPreferenceOptions()}
-							disabled={!editing}
-						/>
+						<CopyField
+							value={labelOf(foodPreferenceOptions(), user.foodPreference)}
+							show={showCopy}
+						>
+							<FormSelect
+								{form}
+								name="foodPreference"
+								options={foodPreferenceOptions()}
+								disabled={!editing}
+							/>
+						</CopyField>
 					</div>
 				</FormFieldset>
 			</div>
@@ -278,38 +302,55 @@
 						<i class="fa-sharp-duotone fa-solid fa-house"></i>
 						<span class="text-sm">{m.address()}</span>
 					</div>
-					<FormTextInput {form} name="street" placeholder={m.street()} disabled={!editing} />
-					<FormTextInput
-						{form}
-						name="apartment"
-						placeholder={m.streetAddition()}
-						disabled={!editing}
-					/>
-					<FormSelect
-						{form}
-						name="country"
-						placeholder={m.pleaseSelectCountry()}
-						options={translatedNationCodeAddressFormOptions}
-						disabled={!editing}
-					/>
+					<CopyField value={user.street} show={showCopy}>
+						<FormTextInput {form} name="street" placeholder={m.street()} disabled={!editing} />
+					</CopyField>
+					<CopyField value={user.apartment} show={showCopy}>
+						<FormTextInput
+							{form}
+							name="apartment"
+							placeholder={m.streetAddition()}
+							disabled={!editing}
+						/>
+					</CopyField>
+					<CopyField
+						value={labelOf(translatedNationCodeAddressFormOptions, user.country)}
+						show={showCopy}
+					>
+						<FormSelect
+							{form}
+							name="country"
+							placeholder={m.pleaseSelectCountry()}
+							options={translatedNationCodeAddressFormOptions}
+							disabled={!editing}
+						/>
+					</CopyField>
 					{#if address.zip}
-						<FormTextInput {form} name="zip" placeholder={m.zipCode()} disabled={!editing} />
+						<CopyField value={user.zip} show={showCopy}>
+							<FormTextInput {form} name="zip" placeholder={m.zipCode()} disabled={!editing} />
+						</CopyField>
 					{/if}
 					{#if address.city}
-						<FormTextInput {form} name="city" placeholder={m.city()} disabled={!editing} />
+						<CopyField value={user.city} show={showCopy}>
+							<FormTextInput {form} name="city" placeholder={m.city()} disabled={!editing} />
+						</CopyField>
 					{/if}
-					<AddressRegionField {form} name="region" rules={address} disabled={!editing} />
+					<CopyField value={user.region} show={showCopy}>
+						<AddressRegionField {form} name="region" rules={address} disabled={!editing} />
+					</CopyField>
 
 					<div class="flex items-center gap-2 text-base-content/60 mt-2">
 						<i class="fa-sharp-duotone fa-solid fa-light-emergency-on"></i>
 						<span class="text-sm">{m.emergencyContacts()}</span>
 					</div>
-					<FormTextArea
-						{form}
-						name="emergencyContacts"
-						placeholder={m.emergencyContactsPlaceholder()}
-						disabled={!editing}
-					/>
+					<CopyField value={user.emergencyContacts} show={showCopy}>
+						<FormTextArea
+							{form}
+							name="emergencyContacts"
+							placeholder={m.emergencyContactsPlaceholder()}
+							disabled={!editing}
+						/>
+					</CopyField>
 				</FormFieldset>
 			</div>
 		</div>
@@ -327,24 +368,9 @@
 		</button>
 	</div>
 
-	<!-- Global Notes -->
-	<div class="mt-4 flex flex-col gap-2">
-		<h3 class="text-lg font-bold">
-			<i class="fa-sharp-duotone fa-solid fa-note-sticky mr-1"></i>
-			{m.globalNotes()}
-		</h3>
-		<p class="text-base-content/60 text-sm">
-			{m.globalNotesDescription()}
-			{m.globalNotesHint()}
-		</p>
-		<div class="bg-base-200 min-h-12 rounded-box p-3 whitespace-pre-wrap">
-			{user.globalNotes ?? '–'}
-		</div>
-		<button class="btn btn-sm btn-outline self-start" onclick={() => (globalNotesOpen = true)}>
-			<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
-			{m.editGlobalNotes()}
-		</button>
-	</div>
+	<!-- The opt-ins are masked for some readers, and a masked flag fails its whole query -->
+	<svelte:boundary>
+		<AccountSection {userId} />
+		{#snippet failed()}{/snippet}
+	</svelte:boundary>
 </div>
-
-<GlobalNotes globalNotes={user.globalNotes ?? ''} bind:open={globalNotesOpen} id={user.id} />

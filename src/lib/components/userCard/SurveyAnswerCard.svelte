@@ -44,63 +44,72 @@
 
 {#snippet optionRow(option: Option)}
 	<label
-		class="hover:bg-base-200 w-full cursor-pointer flex-row items-center gap-2 rounded-box p-2 text-sm transition-all duration-300"
+		class="hover:bg-base-300 rounded-field flex cursor-pointer items-center gap-3 px-2 py-1.5 transition-colors"
 	>
 		<input
 			type="radio"
-			id={'surveyOption-' + option.id}
-			name="surveyOption"
-			class="radio"
+			name={'surveyOption-' + survey.id}
+			class="radio radio-sm"
 			disabled={loading}
 			checked={surveyAnswer?.option.id === option.id}
 			onchange={() => changeAnswer(option.id)}
 		/>
-		<div class="w-full flex-1">{option.title}</div>
-		<div class="badge {fillClass(option)}">
+		<span class="grow">{option.title}</span>
+		<span class="badge badge-sm font-mono {fillClass(option)}">
 			<span class="font-bold">{option.countSurveyAnswers}</span>
 			{#if option.upperLimit > 0}
-				&nbsp;/&nbsp;
-				<span class="text-xs">{option.upperLimit}</span>
+				<span class="opacity-70">/ {option.upperLimit}</span>
 			{/if}
-		</div>
+		</span>
 	</label>
 {/snippet}
 
-<div class="card flex flex-col gap-2 p-4 shadow-md">
-	<h3 class="w-full flex-1 font-bold">
-		<i class="fa-sharp-duotone fa-solid fa-poll mr-2"></i>
-		{survey.title}
-	</h3>
+<div class="flex flex-col gap-2 px-4 py-3">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+		<i class="fa-sharp-duotone fa-solid fa-poll text-base-content/60 w-6 text-center text-lg"></i>
+		<div class="flex min-w-48 grow flex-col">
+			<span class="font-semibold">{survey.title}</span>
+			{#if surveyAnswer}
+				<span class="text-sm">
+					<i class="fa-sharp-duotone fa-solid fa-circle-check text-success mr-1"></i>
+					{surveyAnswer.option.title}
+				</span>
+			{:else}
+				<span class="text-error text-sm">
+					<i class="fa-sharp-duotone fa-solid fa-circle-xmark mr-1"></i>
+					{m.noAnswer()}
+				</span>
+			{/if}
+		</div>
+		<div class="join">
+			<button
+				class="btn btn-sm join-item {optionsOpen ? 'btn-success' : ''}"
+				onclick={() => (optionsOpen = !optionsOpen)}
+			>
+				{#if optionsOpen}
+					<i class="fa-sharp-duotone fa-solid fa-check"></i>{m.done()}
+				{:else}
+					<i class="fa-sharp-duotone fa-solid fa-pencil"></i>{m.edit()}
+				{/if}
+			</button>
+			<a
+				class="btn btn-sm btn-square join-item"
+				href={resolve('/(authenticated)/dashboard/[conferenceId]/team/survey/[surveyId]', {
+					conferenceId,
+					surveyId: survey.id
+				})}
+				aria-label={m.a11yEditSurvey()}
+				title={m.a11yEditSurvey()}
+			>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+			</a>
+		</div>
+	</div>
 	{#if optionsOpen}
-		<div class="flex flex-col">
+		<div class="flex flex-col pl-8">
 			{#each survey.options as option (option.id)}
 				{@render optionRow(option)}
 			{/each}
 		</div>
-	{:else if surveyAnswer}
-		<p>{surveyAnswer.option.title}</p>
-	{:else}
-		<p class="badge badge-error">{m.noAnswer()}</p>
 	{/if}
-	<div class="flex w-full gap-2">
-		{#if !optionsOpen}
-			<button class="btn btn-sm" onclick={() => (optionsOpen = true)}>
-				<i class="fa-sharp-duotone fa-solid fa-pencil"></i>{m.edit()}
-			</button>
-		{:else}
-			<button class="btn btn-success btn-sm" onclick={() => (optionsOpen = false)}>
-				<i class="fa-sharp-duotone fa-solid fa-check"></i>{m.done()}
-			</button>
-		{/if}
-		<a
-			class="btn btn-sm"
-			href={resolve('/(authenticated)/dashboard/[conferenceId]/team/survey/[surveyId]', {
-				conferenceId,
-				surveyId: survey.id
-			})}
-			aria-label={m.a11yEditSurvey()}
-		>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
-		</a>
-	</div>
 </div>

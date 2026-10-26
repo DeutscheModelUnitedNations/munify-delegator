@@ -1,94 +1,41 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-
-	export type UserCardTab =
-		| 'userData'
-		| 'status'
-		| 'surveys'
-		| 'role'
-		| 'delegation'
-		| 'papers'
-		| 'supervisors'
-		| 'supervisor'
-		| 'history';
+	import type { UserCardTab } from './userCardTabs';
 
 	interface Props {
+		tabs: readonly UserCardTab[];
 		activeTab: UserCardTab;
 		onTabChange: (tab: UserCardTab) => void;
-		showRole?: boolean;
-		showDelegation?: boolean;
-		showPapers?: boolean;
-		showSupervisors?: boolean;
-		showSupervisor?: boolean;
-		showStatus?: boolean;
-		showSurveys?: boolean;
 	}
 
-	let {
-		activeTab,
-		onTabChange,
-		showRole = false,
-		showDelegation = false,
-		showPapers = false,
-		showSupervisors = false,
-		showSupervisor = false,
-		showStatus = false,
-		showSurveys = false
-	}: Props = $props();
+	let { tabs, activeTab, onTabChange }: Props = $props();
 
-	const tabs: { id: UserCardTab; icon: string; label: string; condition: boolean }[] = $derived([
-		{ id: 'userData', icon: 'fa-user', label: m.adminUserCardDetails(), condition: true },
-		{
-			id: 'status',
-			icon: 'fa-clipboard-check',
-			label: m.adminUserCardStatus(),
-			condition: showStatus
-		},
-		{ id: 'surveys', icon: 'fa-chart-pie', label: m.survey(), condition: showSurveys },
-		{ id: 'role', icon: 'fa-id-badge', label: m.adminUserCardRole(), condition: showRole },
-		{
-			id: 'delegation',
-			icon: 'fa-users-viewfinder',
-			label: m.delegation(),
-			condition: showDelegation
-		},
-		{
-			id: 'papers',
-			icon: 'fa-file-lines',
-			label: m.userCardTabPapers(),
-			condition: showPapers
-		},
-		{
-			id: 'supervisors',
-			icon: 'fa-chalkboard-user',
-			label: m.supervisors(),
-			condition: showSupervisors
-		},
-		{
-			id: 'supervisor',
-			icon: 'fa-chalkboard-user',
-			label: m.supervisor(),
-			condition: showSupervisor
-		},
-		{
-			id: 'history',
-			icon: 'fa-clock-rotate-left',
-			label: m.userCardTabHistory(),
-			condition: true
-		}
-	]);
+	const TAB_META: Record<UserCardTab, { icon: string; label: () => string }> = {
+		person: { icon: 'fa-user', label: () => m.userCardTabPerson() },
+		registration: { icon: 'fa-file-pen', label: () => m.userCardTabRegistration() },
+		seat: { icon: 'fa-chair-office', label: () => m.userCardTabSeat() },
+		formalities: { icon: 'fa-clipboard-check', label: () => m.userCardTabFormalities() },
+		conference: { icon: 'fa-calendar-check', label: () => m.userCardTabConference() },
+		surveys: { icon: 'fa-chart-pie', label: () => m.survey() },
+		papers: { icon: 'fa-file-lines', label: () => m.userCardTabPapers() },
+		history: { icon: 'fa-clock-rotate-left', label: () => m.userCardTabHistory() }
+	};
 </script>
 
 <div class="overflow-x-auto px-5 md:px-10 lg:px-16" data-vaul-no-drag>
 	<div role="tablist" class="tabs tabs-border flex-nowrap">
-		{#each tabs.filter((t) => t.condition) as tab (tab.id)}
+		{#each tabs as tab (tab)}
+			{@const meta = TAB_META[tab]}
 			<button
 				role="tab"
-				class="tab whitespace-nowrap gap-1.5 {activeTab === tab.id ? 'tab-active' : ''}"
-				onclick={() => onTabChange(tab.id)}
+				aria-selected={activeTab === tab}
+				aria-label={meta.label()}
+				class="tab gap-1.5 whitespace-nowrap {activeTab === tab ? 'tab-active' : ''}"
+				onclick={() => onTabChange(tab)}
 			>
-				<i class="fa-sharp-duotone fa-solid {tab.icon} text-xs"></i>
-				<span class="hidden sm:inline">{tab.label}</span>
+				<i class="fa-sharp-duotone fa-solid {meta.icon} text-xs"></i>
+				<!-- On a phone only the open tab says its name; the others are told apart by icon -->
+				<span class={activeTab === tab ? '' : 'hidden sm:inline'}>{meta.label()}</span>
 			</button>
 		{/each}
 	</div>

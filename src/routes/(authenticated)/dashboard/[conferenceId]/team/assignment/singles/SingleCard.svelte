@@ -6,7 +6,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
-	import { sightingHref } from '../sightingLink';
+	import { sightingHref } from '#lib/helpers/sightingLink.js';
 
 	/** A single participant on the board, dragged by their id out of `container`. */
 	interface Props {

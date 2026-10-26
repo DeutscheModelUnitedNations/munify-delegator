@@ -4,7 +4,8 @@
 	import PersonName from '../PersonName.svelte';
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import AssignSupervisorModal from '../AssignSupervisorModal.svelte';
-	import { uniqueSupervisorsByFamilyName } from './supervisorList';
+	import { uniqueSupervisorsByFamilyName } from '../tabs/supervisorList';
+	import { removeSupervision } from './removeSupervision';
 
 	interface Props {
 		userId: string;
@@ -25,7 +26,13 @@
 		const forUser = {
 			where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 		};
-		const [delegationMembers, singleParticipants] = await Promise.all([
+		const [student, delegationMembers, singleParticipants] = await Promise.all([
+			client.liveQuery.user({
+				__args: { id: userId },
+				id: true,
+				givenName: true,
+				familyName: true
+			}),
 			client.liveQuery.delegationMembers({
 				__args: forUser,
 				id: true,
@@ -37,7 +44,7 @@
 				supervisors: supervisorSelection
 			})
 		]);
-		return { delegationMembers, singleParticipants };
+		return { student, delegationMembers, singleParticipants };
 	}
 
 	const registrations = $derived(await fetchSupervisors(userId, conferenceId));
@@ -53,7 +60,8 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<div class="flex items-center justify-between">
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<h3 class="text-lg font-bold">{m.supervisors()}</h3>
 		<button class="btn btn-sm" onclick={() => (assignSupervisorModalOpen = true)}>
 			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user"></i>
 			{m.assignSupervisor()}
@@ -93,7 +101,17 @@
 								{/if}
 							</td>
 							<td>
-								<OpenUserCardButton user={sup.user} />
+								<div class="flex justify-end gap-1">
+									<OpenUserCardButton user={sup.user} />
+									<button
+										class="btn btn-ghost btn-xs btn-square text-error"
+										onclick={() => removeSupervision(sup, registrations.student)}
+										aria-label={m.removeSupervision()}
+										title={m.removeSupervision()}
+									>
+										<i class="fa-sharp-duotone fa-solid fa-link-slash"></i>
+									</button>
+								</div>
 							</td>
 						</tr>
 					{/each}

@@ -24,6 +24,7 @@
 
 {#snippet delegationMemberSummary(member: DelegationMember)}
 	{@const role = splitRole(member.delegation.assignedRole)}
+	<!-- Without a role the stage next to the name says how far the application is -->
 	{#if role.nation || role.nonStateActor}
 		<span class="bg-base-100 rounded-box flex items-center gap-2 py-1 pr-3 pl-1 font-semibold">
 			<Flag
@@ -35,7 +36,10 @@
 			{assignmentName(member.delegation.assignedRole)}
 		</span>
 	{:else}
-		<span class="badge badge-error badge-soft">{m.noAssignment()}</span>
+		<span class="badge badge-primary">
+			<i class="fa-sharp-duotone fa-solid fa-users mr-1"></i>
+			{m.delegationMember()}
+		</span>
 	{/if}
 	{#if member.assignedCommittee}
 		<span class="badge badge-soft">
@@ -51,9 +55,6 @@
 {/snippet}
 
 {#snippet singleParticipantSummary(participant: SingleParticipant)}
-	{#if !participant.applied}
-		<span class="badge badge-warning">{m.notApplied()}</span>
-	{/if}
 	{#if participant.assignedRole}
 		<span class="badge badge-soft gap-1">
 			{#if participant.assignedRole.fontAwesomeIcon}

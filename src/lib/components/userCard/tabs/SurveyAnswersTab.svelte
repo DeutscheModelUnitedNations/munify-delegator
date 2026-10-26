@@ -43,7 +43,7 @@
 		<span>{m.userCardNoSurveys()}</span>
 	</div>
 {:else}
-	<div class="flex flex-col gap-3">
+	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
 		{#each surveys.questions as survey (survey.id)}
 			<SurveyAnswerCard
 				{survey}

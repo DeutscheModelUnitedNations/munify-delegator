@@ -103,7 +103,7 @@ export const conferencePlans: ConferencePlan[] = [
 			title: 'Seed 1 · Pre',
 			longTitle: 'Seed-Konferenz in Planung',
 			state: 'PRE',
-			info: 'Die Anmeldung öffnet bald. Diese Ankündigung ist eingeklappt.'
+			info: 'Die Bewerbung öffnet bald. Diese Ankündigung ist eingeklappt.'
 		},
 		days: { startAssignment: 60, startConference: 120, endConference: 123 },
 		assigned: false,
@@ -115,7 +115,7 @@ export const conferencePlans: ConferencePlan[] = [
 		summary: 'PARTICIPANT_REGISTRATION: open, deadline in three weeks',
 		conference: {
 			title: 'Seed 2 · Registration open',
-			longTitle: 'Seed-Konferenz mit offener Anmeldung',
+			longTitle: 'Seed-Konferenz mit offener Bewerbung',
 			state: 'PARTICIPANT_REGISTRATION'
 		},
 		days: { startAssignment: 21, startConference: 60, endConference: 63 },

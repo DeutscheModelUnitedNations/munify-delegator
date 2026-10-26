@@ -16,7 +16,7 @@
 	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
 	import GroupBadges from './GroupBadges.svelte';
-	import { sightingHref } from './sightingLink';
+	import { sightingHref } from '#lib/helpers/sightingLink.js';
 
 	/**
 	 * One group on the board: a delegation, a part of a split one, or a single participant turned

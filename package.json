@@ -1,7 +1,7 @@
 {
 	"dependencies": {
 		"@graphql-yoga/redis-event-target": "^3.0.4",
-		"@m1212e/sveltekit-oidc": "^0.0.46",
+		"@m1212e/sveltekit-oidc": "^0.2.0",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-orm": "1.0.0-rc.5-5935859",
@@ -231,7 +231,6 @@
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
-		"@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch",
 		"svelte-virtual-list@3.0.1": "patches/svelte-virtual-list@3.0.1.patch"
 	},
 	"imports": {

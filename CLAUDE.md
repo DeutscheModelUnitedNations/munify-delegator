@@ -535,9 +535,18 @@ bun run preview
 - **Login-time user upsert** lives in `src/api/services/account/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.
-- **Impersonation is stalled** for this migration: the old implementation swapped session cookies
-  the library now owns. `#lib/data/impersonation.js` holds the flag the UI is gated on, and the two
-  mutations reject with an explanatory error.
+- **Impersonation** is a delegated session the OIDC library keeps next to the caller's own
+  (`OIDC.startImpersonation`). `startImpersonation` gets a subject token for the target from
+  Logto's Management API (M2M credentials `OIDC_M2M_*`; oidc-mock serves the same endpoint, any
+  values work locally) and exchanges it (RFC 8693) with the caller's access token as actor, so the
+  issued token names them in `act`; `#api/services/account/impersonation.ts` does both. The library
+  accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
+  on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
+  themselves, participant care and project management the participants of their conferences, never
+  anybody on a team. `impersonationHandle` (`hooks.server.ts`) checks it again on every request and
+  loads the target's identity from their row, since the exchanged token may carry only `sub`. While
+  impersonating, `ctx.oidc.user` is the target, `ctx.oidc.impersonator` the caller, and the system
+  roles are only those both hold. `e2e/authorization/impersonation.spec.ts` pins it down.
 - User context injected into the GraphQL context via `src/api/context.ts`, which reads
   `event.locals.oidc`
 - **rumble abilities** define fine-grained permissions per entity:

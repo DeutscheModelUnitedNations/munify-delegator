@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import PersonName from '../PersonName.svelte';
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
+	import { removeSupervision } from './removeSupervision';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import codenmz from '#lib/helpers/codenamize.js';
@@ -19,13 +19,13 @@
 
 	const studentSelection = { id: true, givenName: true, familyName: true } as const;
 
+	// The connection code and the school are the registration's; this is whom they look after.
 	const conferenceSupervisor = $derived(
 		await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
 			id: true,
 			plansOwnAttendenceAtConference: true,
-			connectionCode: true,
-			school: { name: true },
+			user: studentSelection,
 			supervisedDelegationMembers: {
 				id: true,
 				isHeadDelegate: true,
@@ -56,11 +56,6 @@
 	);
 	const delegationMembers = $derived(conferenceSupervisor.supervisedDelegationMembers);
 	const singleParticipants = $derived(conferenceSupervisor.supervisedSingleParticipants);
-
-	const copyConnectionCode = async () => {
-		await navigator.clipboard.writeText(conferenceSupervisor.connectionCode);
-		toast.success(m.codeCopied());
-	};
 
 	// Group delegation members by their delegation
 	const groupedDelegations = $derived.by(() => {
@@ -102,17 +97,6 @@
 		await promise;
 	};
 
-	const rotateCode = async () => {
-		if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
-		const promise = client.mutate.rotateSupervisorConnectionCode({
-			__args: { id: conferenceSupervisor.id },
-			id: true,
-			connectionCode: true
-		});
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-	};
-
 	const sortedSingleParticipants = $derived(
 		singleParticipants.toSorted((a, b) =>
 			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
@@ -127,20 +111,6 @@
 		<i class="fa-sharp-duotone fa-solid fa-circle-check text-success"></i>
 	{:else}
 		<i class="fa-sharp-duotone fa-solid fa-hourglass-half text-error"></i>
-	{/if}
-{/snippet}
-
-{#snippet attendancePlanBadge()}
-	{#if conferenceSupervisor.plansOwnAttendenceAtConference}
-		<span class="badge badge-sm badge-success">
-			<i class="fa-sharp-duotone fa-solid fa-location-check"></i>
-			{m.supervisorPlansOwnAttendance()}</span
-		>
-	{:else}
-		<span class="badge badge-sm badge-info">
-			<i class="fa-sharp-duotone fa-solid fa-cloud"></i>
-			{m.supervisorDoesNotPlanOwnAttendance()}</span
-		>
 	{/if}
 {/snippet}
 
@@ -206,11 +176,23 @@
 			<td>
 				{member.assignedCommittee?.abbreviation ?? ''}
 			</td>
-			<td>
-				<OpenUserCardButton user={member.user} />
-			</td>
+			<td>{@render studentActions(member.user)}</td>
 		</tr>
 	{/each}
+{/snippet}
+
+{#snippet studentActions(student: { id: string; givenName: string; familyName: string })}
+	<div class="flex justify-end gap-1">
+		<OpenUserCardButton user={student} />
+		<button
+			class="btn btn-ghost btn-xs btn-square text-error"
+			onclick={() => removeSupervision(conferenceSupervisor, student)}
+			aria-label={m.removeSupervision()}
+			title={m.removeSupervision()}
+		>
+			<i class="fa-sharp-duotone fa-solid fa-link-slash"></i>
+		</button>
+	</div>
 {/snippet}
 
 {#snippet singleParticipantsTable()}
@@ -236,9 +218,7 @@
 					</td>
 					<td>{participant.school?.name ?? 'N/A'}</td>
 					<td>{participant.assignedRole?.name ?? 'N/A'}</td>
-					<td>
-						<OpenUserCardButton user={participant.user} />
-					</td>
+					<td>{@render studentActions(participant.user)}</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -246,48 +226,28 @@
 {/snippet}
 
 <div class="flex flex-col gap-6">
-	<!-- Supervisor Info Card -->
-	<div class="bg-base-200 rounded-box p-4">
-		<div class="flex flex-col gap-1 text-sm">
-			<div class="flex items-center gap-1">
-				<span class="text-base-content/60">{m.connectionCode()}:</span>
-				<button
-					class="group cursor-pointer font-mono transition-colors"
-					onclick={copyConnectionCode}
-					title={m.copy()}
-				>
-					<code class="bg-base-300 rounded-field px-1 group-hover:bg-base-content/20"
-						>{conferenceSupervisor.connectionCode}</code
-					>
-				</button>
-			</div>
-			<div class="flex items-center gap-1">
-				<span class="text-base-content/60">{m.attendancePlan()}:</span>
-				{@render attendancePlanBadge()}
-			</div>
-			<div class="flex items-center gap-1">
-				<span class="text-base-content/60">{m.schoolOrInstitution()}:</span>
-				<span>{conferenceSupervisor.school?.name ?? m.noSchoolGiven()}</span>
-			</div>
+	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
+	<label class="bg-base-200 rounded-box flex cursor-pointer items-center gap-4 p-4">
+		{#if conferenceSupervisor.plansOwnAttendenceAtConference}
+			<i class="fa-sharp-duotone fa-solid fa-location-check text-success text-xl"></i>
+		{:else}
+			<i class="fa-sharp-duotone fa-solid fa-cloud text-base-content/50 text-xl"></i>
+		{/if}
+		<div class="flex grow flex-col">
+			<span class="font-semibold">{m.attendancePlan()}</span>
+			<span class="text-base-content/60 text-sm">
+				{conferenceSupervisor.plansOwnAttendenceAtConference
+					? m.supervisorPlansOwnAttendance()
+					: m.supervisorDoesNotPlanOwnAttendance()}
+			</span>
 		</div>
-	</div>
-
-	<!-- Action Buttons -->
-	<div class="flex flex-wrap items-center gap-4">
-		<button class="btn btn-sm" onclick={rotateCode}>
-			<i class="fa-sharp-duotone fa-solid fa-arrow-rotate-left"></i>
-			{m.rotateCode()}
-		</button>
-		<label class="flex items-center gap-2 cursor-pointer">
-			<input
-				type="checkbox"
-				class="toggle toggle-success"
-				checked={conferenceSupervisor.plansOwnAttendenceAtConference}
-				onchange={() => changeAttendance(!conferenceSupervisor.plansOwnAttendenceAtConference)}
-			/>
-			<span class="text-sm">{m.attendancePlan()}</span>
-		</label>
-	</div>
+		<input
+			type="checkbox"
+			class="toggle toggle-success"
+			checked={conferenceSupervisor.plansOwnAttendenceAtConference}
+			onchange={() => changeAttendance(!conferenceSupervisor.plansOwnAttendenceAtConference)}
+		/>
+	</label>
 
 	<!-- Students list -->
 	{#if delegationMembers.length === 0 && singleParticipants.length === 0}

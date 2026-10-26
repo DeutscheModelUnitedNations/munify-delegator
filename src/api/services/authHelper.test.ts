@@ -27,7 +27,8 @@ function contextFor(sub: string | undefined, roles: string[] = []): Context {
 						hasRole: () => false
 					}
 				: undefined,
-			claims: {}
+			claims: {},
+			impersonator: undefined
 		}
 	};
 	// TYPE-SAFETY-EXCEPTION: the filter builders never touch the rest of the context (the request

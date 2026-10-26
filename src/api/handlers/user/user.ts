@@ -17,6 +17,8 @@ import {
 import {
 	assertCanImpersonate,
 	assertCanManageUser,
+	canImpersonate,
+	assertNotImpersonating,
 	assertCanPreviewUsers,
 	assertCanUpdateNewsletterPreferences,
 	deletableParticipation,
@@ -30,6 +32,13 @@ import {
 	singleParticipantPubsub,
 	userPubsub
 } from '#api/pubsub.js';
+import { OIDC } from '#api/services/OIDC.js';
+import {
+	impersonationConfigured,
+	impersonationTokens
+} from '#api/services/account/impersonation.js';
+import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages.js';
 
 registerUserAbilities();
 
@@ -200,30 +209,65 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/*
-	 * Impersonation is stalled while the login flow moves to `@m1212e/sveltekit-oidc`.
+	/**
+	 * Acts as `targetUserId` from the next request on, until `stopImpersonation`, the session ends
+	 * or the impersonation token expires.
 	 *
-	 * The old implementation swapped the session by writing a second token set into its own cookie
-	 * and re-reading it when building the request context. The library owns the session cookies now
-	 * and has no notion of acting as somebody else, so this wants designing again rather than
-	 * porting - as a token exchange the library performs, or as an app-level "acting as" that never
-	 * touches the session at all.
-	 *
-	 * The fields stay in the schema so the frontend keeps compiling, and say plainly that they are
-	 * unavailable.
+	 * The provider issues the target's tokens through a token exchange that names the caller as
+	 * their actor (`act`), and the OIDC library keeps them next to the caller's own session and
+	 * checks them against it on every request. Whether the caller may still impersonate the target
+	 * is checked on every request too (`impersonationHandle` in `hooks.server.ts`).
 	 */
 	startImpersonation: t.field({
 		type: 'Boolean',
-		args: {
-			targetUserId: t.arg.id({ required: true }),
-			scope: t.arg.string()
-		},
-		resolve: () => assertCanImpersonate()
+		args: { targetUserId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertCanImpersonate(ctx, args.targetUserId);
+			const actor = ctx.mustBeLoggedIn();
+			if (!impersonationConfigured()) {
+				throw apiError('FORBIDDEN', m.impersonationNotConfigured());
+			}
+			const actorAccessToken = ctx.event.locals.oidc?.tokens.accessToken;
+			if (!actorAccessToken) throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
+
+			try {
+				const tokens = await impersonationTokens(actorAccessToken, args.targetUserId);
+				await OIDC.startImpersonation(ctx.event, tokens);
+			} catch (error) {
+				console.warn({
+					event: 'impersonation_start',
+					outcome: 'failure',
+					actor: actor.sub,
+					subject: args.targetUserId,
+					reason: error instanceof Error ? error.message : String(error)
+				});
+				throw apiError('CONFLICT', m.impersonationFailed());
+			}
+			console.info({
+				event: 'impersonation_start',
+				outcome: 'success',
+				actor: actor.sub,
+				subject: args.targetUserId
+			});
+			return true;
+		}
 	}),
 
+	/** Puts the caller back in their own session. */
 	stopImpersonation: t.field({
 		type: 'Boolean',
-		resolve: () => assertCanImpersonate()
+		resolve: (_root, _args, ctx) => {
+			const impersonator = ctx.oidc.impersonator;
+			OIDC.stopImpersonation(ctx.event);
+			if (impersonator) {
+				console.info({
+					event: 'impersonation_stop',
+					actor: impersonator.sub,
+					subject: ctx.oidc.user?.sub
+				});
+			}
+			return true;
+		}
 	})
 }));
 
@@ -245,6 +289,7 @@ schemaBuilder.mutationFields((t) => ({
 	upsertSelf: t.field({
 		type: UpsertSelfResult,
 		resolve: async (_root, _args, ctx) => {
+			assertNotImpersonating(ctx);
 			const result = await upsertCallerRow(ctx.mustBeLoggedIn());
 			// An upsert on sign-in, so one notification on whichever row now holds the account.
 			userPubsub.updated(result.userId);
@@ -266,10 +311,34 @@ const ImpersonationStatus = schemaBuilder.simpleObject('ImpersonationStatus', {
 });
 
 schemaBuilder.queryFields((t) => ({
+	/** Whether `startImpersonation` would let the caller act as this user, for showing the button. */
+	canImpersonateUser: t.field({
+		type: 'Boolean',
+		args: { targetUserId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) =>
+			impersonationConfigured() && (await canImpersonate(ctx, args.targetUserId))
+	}),
+
 	impersonationStatus: t.field({
 		type: ImpersonationStatus,
-		// Always "not impersonating" while the feature is stalled; see the mutations above.
-		resolve: () => ({ isImpersonating: false, originalUser: null, impersonatedUser: null })
+		resolve: (_root, _args, ctx) => {
+			const { user, impersonator } = ctx.oidc;
+			if (!user || !impersonator) {
+				return { isImpersonating: false, originalUser: null, impersonatedUser: null };
+			}
+			const identity = (person: typeof user | typeof impersonator) => ({
+				sub: person.sub,
+				email: person.email ?? '',
+				preferred_username: person.preferred_username ?? null,
+				given_name: person.given_name ?? null,
+				family_name: person.family_name ?? null
+			});
+			return {
+				isImpersonating: true,
+				originalUser: identity(impersonator),
+				impersonatedUser: identity(user)
+			};
+		}
 	})
 }));
 

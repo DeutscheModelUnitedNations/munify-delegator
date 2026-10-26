@@ -35,7 +35,7 @@ schemaBuilder.queryFields((t) => ({
 	}),
 
 	logoutUrl: t.string({
-		resolve: async (_root, _args, ctx) => (await OIDC.getLogoutUrl(ctx.requestUrl())).toString()
+		resolve: async (_root, _args, ctx) => (await OIDC.getLogoutUrl(ctx.event)).toString()
 	}),
 
 	/**

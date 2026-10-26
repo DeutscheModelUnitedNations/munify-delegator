@@ -1,5 +1,5 @@
 import { building, dev } from '$app/env';
-import { makeOIDC } from '@m1212e/sveltekit-oidc';
+import { makeCookieNames, makeOIDC } from '@m1212e/sveltekit-oidc';
 import { OIDC_CLIENT_SECRET, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
 import { upsertSelfFromClaims } from './account/upsertSelf';
@@ -35,14 +35,11 @@ export function isPublicRoute(pathname: string): boolean {
 }
 
 /**
- * The library's default cookie prefix. We do not pass `cookiePrefix`, so this is what it uses;
- * it is repeated here because the library keeps the derived names internal and a handle that runs
- * before `OIDC.handle` has to be able to tell a returning session from a fresh visitor.
+ * The session cookies' names, with the library's default prefix (we pass no `cookiePrefix`). Built
+ * here rather than read off `OIDC.cookieNames` because `OIDC` does not exist during the build, and
+ * a handle that runs before `OIDC.handle` has to tell a returning session from a fresh visitor.
  */
-const OIDC_COOKIE_PREFIX = 'auth_oidc_';
-
-export const accessTokenCookieName = `${OIDC_COOKIE_PREFIX}access_token`;
-export const refreshTokenCookieName = `${OIDC_COOKIE_PREFIX}refresh_token`;
+export const oidcCookieNames = makeCookieNames();
 
 function asString(value: unknown): string | undefined {
 	return typeof value === 'string' ? value : undefined;
@@ -99,16 +96,14 @@ function normalizeOIDCClaims(claims: Record<string, unknown>) {
 export const OIDC = !building
 	? await makeOIDC({
 			development: dev,
-			oidcAuthority: PUBLIC_OIDC_AUTHORITY,
-			oidcClientId: PUBLIC_OIDC_CLIENT_ID,
-			oidcClientSecret: OIDC_CLIENT_SECRET,
-			oidcScope: OIDC_SCOPES,
+			issuer: PUBLIC_OIDC_AUTHORITY,
+			clientId: PUBLIC_OIDC_CLIENT_ID,
+			clientSecret: OIDC_CLIENT_SECRET,
+			scope: OIDC_SCOPES,
 			loginCallbackRoute: '/auth/login-callback',
 			logoutCallbackRoute: '/auth/logout-callback',
 			authenticatedRoutes: AUTHENTICATED_ROUTES,
-			// The library appends this to the origin, so '' is the landing page and '/' would
-			// produce a double slash.
-			logoutPath: '',
+			logoutPath: '/',
 			allowBearerToken: true,
 			logLevel: dev ? 'info' : 'warn',
 			userLoggedInSuccessfully: async ({ user }) => {

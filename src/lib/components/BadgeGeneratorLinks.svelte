@@ -71,28 +71,27 @@
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
 {:else}
-	<div class="flex flex-col gap-1">
-		<div class="join">
-			<button class="join-item btn btn-sm" disabled={busy} onclick={download}>
-				{#if busy}
-					<span class="loading loading-spinner loading-xs"></span>
-				{:else}
-					<i class="fa-sharp-duotone fa-solid fa-file-csv"></i>
-				{/if}
-				{label}
-			</button>
-			<!-- eslint-disable svelte/no-navigation-without-resolve -- an external site -->
-			<a
-				href={PUBLIC_BADGE_GENERATOR_URL}
-				class="join-item btn btn-sm btn-primary"
-				target="_blank"
-				rel="noopener noreferrer"
-			>
-				{m.badgeGeneratorOpen()}
-				<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-		</div>
+	<!-- Stacked, full width: side by side, the two labels overflow a dropdown in German -->
+	<div class="flex flex-col gap-2">
+		<button class="btn btn-sm btn-outline w-full" disabled={busy} onclick={download}>
+			{#if busy}
+				<span class="loading loading-spinner loading-xs"></span>
+			{:else}
+				<i class="fa-sharp-duotone fa-solid fa-file-csv"></i>
+			{/if}
+			{label}
+		</button>
+		<!-- eslint-disable svelte/no-navigation-without-resolve -- an external site -->
+		<a
+			href={PUBLIC_BADGE_GENERATOR_URL}
+			class="btn btn-sm btn-ghost w-full"
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			{m.badgeGeneratorOpen()}
+			<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{#if showHint}
 			<p class="text-base-content/60 text-xs">{m.badgeGeneratorHint()}</p>
 		{/if}

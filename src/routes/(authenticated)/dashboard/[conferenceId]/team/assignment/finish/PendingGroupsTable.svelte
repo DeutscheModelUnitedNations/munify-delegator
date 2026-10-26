@@ -5,7 +5,7 @@
 	import codenamize from '#lib/helpers/codenamize.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import type { BoardDelegation } from '../board';
-	import { sightingHref } from '../sightingLink';
+	import { sightingHref } from '#lib/helpers/sightingLink.js';
 
 	/** The groups applying the draft gives a different role, before and after. */
 	interface Props {

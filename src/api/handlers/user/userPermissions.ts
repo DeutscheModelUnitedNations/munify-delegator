@@ -7,6 +7,7 @@ import {
 	isManagedUser,
 	isSystemAdmin,
 	isTeamMemberOf,
+	participatesIn,
 	systemAdmin,
 	userId,
 	where
@@ -267,7 +268,65 @@ export async function assertCanPreviewUsers(ctx: Context) {
 	}
 }
 
-/** Impersonation is stalled (see `startImpersonation`), so nobody may impersonate. */
-export function assertCanImpersonate(): never {
-	throw apiError('FORBIDDEN', m.impersonationUnavailable());
+/**
+ * Whom `actor` may impersonate. A system admin: anybody but themselves. Participant care and project
+ * management: the participants (delegates, single participants, supervisors) of their conferences,
+ * except anybody on a team - impersonating them would lend the actor a team role, possibly of
+ * another conference, they were never given. The roles of the OIDC claim cannot be lent: while
+ * impersonating, the context keeps only the roles both hold (`#api/context.js`).
+ */
+function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
+	const notSelf = { id: { ne: actor.sub } };
+	if (actor.isAdmin) return notSelf;
+	const caredFor = {
+		teamMembers: { user: { id: actor.sub }, role: { in: [...PARTICIPANT_CARE_ROLES] } }
+	};
+	return { ...notSelf, ...participatesIn(caredFor), NOT: { teamMember: true } };
+}
+
+/**
+ * The user `targetId` with what the app shows of their identity, if `actor` may impersonate them
+ * as `impersonatableBy` defines it.
+ */
+export function impersonatableUser(actor: { sub: string; isAdmin: boolean }, targetId: string) {
+	return db.query.user.findFirst({
+		where: { AND: [{ id: targetId }, impersonatableBy(actor)] },
+		columns: {
+			id: true,
+			email: true,
+			givenName: true,
+			familyName: true,
+			preferredUsername: true,
+			locale: true,
+			phone: true
+		}
+	});
+}
+
+/**
+ * Whether the caller may start impersonating `targetId`: signed in as themselves (not impersonating
+ * somebody already) and allowed to by `impersonatableBy`.
+ */
+export async function canImpersonate(ctx: Context, targetId: string) {
+	const caller = ctx.oidc.user;
+	if (!caller || ctx.oidc.impersonator) return false;
+	return !!(await impersonatableUser({ sub: caller.sub, isAdmin: isSystemAdmin(ctx) }, targetId));
+}
+
+/** Refuses unless `canImpersonate`. */
+export async function assertCanImpersonate(ctx: Context, targetId: string) {
+	ctx.mustBeLoggedIn();
+	if (ctx.oidc.impersonator) {
+		throw apiError('FORBIDDEN', m.impersonationAlreadyActive());
+	}
+	if (!(await canImpersonate(ctx, targetId))) {
+		throw apiError('FORBIDDEN', m.impersonationForbidden());
+	}
+}
+
+/** Signing in again through `upsertSelf` while impersonating would write the impersonated row. */
+export function assertNotImpersonating(ctx: Context) {
+	if (ctx.oidc.impersonator) {
+		throw apiError('FORBIDDEN', m.impersonationAlreadyActive());
+	}
 }

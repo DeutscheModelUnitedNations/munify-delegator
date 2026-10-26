@@ -1,24 +1,24 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { fetchUserCardRoles, hasConferenceAccess } from './userCardRoles';
+	import { fetchUserCardRoles, hasConferenceAccess, participationStage } from './userCardRoles';
 	import UserCardHeader from './UserCardHeader.svelte';
 	import UserCardTabs from './UserCardTabs.svelte';
-	import type { UserCardTab } from './UserCardTabs.svelte';
-	import UserDataTab from './tabs/UserDataTab.svelte';
-	import ParticipantStatusTab from './tabs/ParticipantStatusTab.svelte';
+	import { shownUserCardTab, visibleUserCardTabs, type UserCardTab } from './userCardTabs';
+	import PersonTab from './tabs/PersonTab.svelte';
+	import RegistrationTab from './tabs/RegistrationTab.svelte';
+	import SeatTab from './tabs/SeatTab.svelte';
+	import FormalitiesTab from './tabs/FormalitiesTab.svelte';
+	import ConferenceTab from './tabs/ConferenceTab.svelte';
 	import SurveyAnswersTab from './tabs/SurveyAnswersTab.svelte';
-	import RoleTab from './tabs/RoleTab.svelte';
-	import DelegationTab from './tabs/DelegationTab.svelte';
 	import PapersTab from './tabs/PapersTab.svelte';
-	import SupervisorsTab from './tabs/SupervisorsTab.svelte';
-	import SupervisorTab from './tabs/SupervisorTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
 
 	interface Props {
 		userId: string;
 		conferenceId: string;
 		mode: 'drawer' | 'page';
-		activeTab: UserCardTab;
+		/** The tab picked last, which may not exist for this person */
+		activeTab: UserCardTab | null;
 	}
 
 	let { userId, conferenceId, mode, activeTab = $bindable() }: Props = $props();
@@ -30,37 +30,67 @@
 	const singleParticipant = $derived(roles.singleParticipants.at(0));
 	const conferenceSupervisor = $derived(roles.conferenceSupervisors.at(0));
 	const teamMember = $derived(roles.teamMembers.at(0));
+	const participant = $derived(roles.participants.at(0));
+	const waitingListEntry = $derived(roles.waitingListEntries.at(0));
+	const conferenceState = $derived(roles.conference.state);
 
-	const showStatus = $derived(
+	const access = $derived(
 		hasConferenceAccess({ delegationMember, singleParticipant, conferenceSupervisor, teamMember })
 	);
+	const registered = $derived(!!delegationMember || !!singleParticipant || !!conferenceSupervisor);
 	// Opened from a search or a link for somebody who has no part in this conference at all
-	const inConference = $derived(
-		!!delegationMember || !!singleParticipant || !!conferenceSupervisor || !!teamMember
+	const inConference = $derived(registered || !!teamMember || !!waitingListEntry);
+
+	const stage = $derived(
+		participationStage({
+			application: delegationMember?.delegation ?? singleParticipant,
+			waitingListEntry,
+			didAttend: participant?.didAttend,
+			conferenceState
+		})
 	);
-	const showRole = $derived(!!singleParticipant || !!teamMember);
-	const showSupervisors = $derived(!!delegationMember || !!singleParticipant);
+
+	const tabs = $derived(
+		visibleUserCardTabs({
+			registered,
+			waiting: !!waitingListEntry,
+			holdsPart: registered || !!teamMember,
+			participant: !!participant,
+			access,
+			team: !!teamMember,
+			delegate: !!delegationMember
+		})
+	);
+	const shownTab = $derived(shownUserCardTab(activeTab, tabs, conferenceState));
+
 	const delegationId = $derived(delegationMember?.delegation.id);
+	const singleParticipantId = $derived(singleParticipant?.id);
 	const supervisorId = $derived(conferenceSupervisor?.id);
+	const teamRole = $derived(teamMember?.role);
 </script>
 
 {#snippet tabContent(tab: UserCardTab)}
-	{#if tab === 'userData'}
-		<UserDataTab {userId} />
-	{:else if tab === 'status'}
-		<ParticipantStatusTab {userId} {conferenceId} isConferenceSupervisor={!!conferenceSupervisor} />
+	{#if tab === 'person'}
+		<PersonTab {userId} />
+	{:else if tab === 'registration'}
+		<RegistrationTab {userId} {conferenceId} {delegationId} {singleParticipantId} {supervisorId} />
+	{:else if tab === 'seat'}
+		<SeatTab
+			{userId}
+			{conferenceId}
+			{delegationId}
+			{singleParticipantId}
+			{supervisorId}
+			{teamRole}
+		/>
+	{:else if tab === 'formalities'}
+		<FormalitiesTab {userId} {conferenceId} isConferenceSupervisor={!!conferenceSupervisor} />
+	{:else if tab === 'conference'}
+		<ConferenceTab {userId} {conferenceId} />
 	{:else if tab === 'surveys'}
 		<SurveyAnswersTab {conferenceId} {userId} />
-	{:else if tab === 'role' && showRole}
-		<RoleTab {userId} {conferenceId} />
-	{:else if tab === 'delegation' && delegationId}
-		<DelegationTab {delegationId} {conferenceId} {userId} />
-	{:else if tab === 'papers' && delegationId}
+	{:else if tab === 'papers'}
 		<PapersTab {userId} {conferenceId} />
-	{:else if tab === 'supervisors' && showSupervisors}
-		<SupervisorsTab {userId} {conferenceId} />
-	{:else if tab === 'supervisor' && supervisorId}
-		<SupervisorTab {supervisorId} />
 	{:else if tab === 'history'}
 		<HistoryTab {userId} {conferenceId} />
 	{/if}
@@ -79,7 +109,10 @@
 		{conferenceSupervisor}
 		{teamMember}
 		{mode}
-		{showStatus}
+		{stage}
+		onOpenTab={(tab) => {
+			if (tabs.includes(tab)) activeTab = tab;
+		}}
 	/>
 
 	{#if !inConference}
@@ -89,23 +122,13 @@
 		</div>
 	{/if}
 
-	<UserCardTabs
-		{activeTab}
-		onTabChange={(tab) => (activeTab = tab)}
-		{showStatus}
-		showSurveys={showStatus && !teamMember}
-		{showRole}
-		showDelegation={!!delegationMember}
-		showPapers={!!delegationMember}
-		{showSupervisors}
-		showSupervisor={!!conferenceSupervisor}
-	/>
+	<UserCardTabs {tabs} activeTab={shownTab} onTabChange={(tab) => (activeTab = tab)} />
 
 	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
 		<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
-		{#key activeTab}
+		{#key shownTab}
 			<svelte:boundary onerror={(error) => console.error('Failed to load user card tab:', error)}>
-				{@render tabContent(activeTab)}
+				{@render tabContent(shownTab)}
 
 				{#snippet pending()}
 					<div class="flex flex-col gap-3">

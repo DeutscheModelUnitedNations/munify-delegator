@@ -108,6 +108,30 @@ export async function assertCanConnectToConferenceSupervisor(
 }
 
 /**
+ * Ending a supervision: the supervised person themselves, the supervisor themselves, or participant
+ * care of the supervisor's conference. Returns the conference, which the service needs to find the
+ * person's participant row.
+ */
+export async function assertCanDisconnectFromConferenceSupervisor(
+	ctx: ApiContext,
+	supervisorId: string,
+	subjectId: string
+) {
+	const supervisor = await db.query.conferenceSupervisor.findFirst({
+		where: { id: supervisorId },
+		columns: { id: true },
+		with: { participant: { columns: { conferenceId: true, userId: true } } }
+	});
+	if (!supervisor) throw apiError('NOT_FOUND', m.supervisorNotFound());
+	const { conferenceId, userId: supervisorUserId } = supervisor.participant;
+	const caller = ctx.mustBeLoggedIn().sub;
+	if (caller !== subjectId && caller !== supervisorUserId) {
+		await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	}
+	return conferenceId;
+}
+
+/**
  * Refuses a subject who cannot be supervised in the conference: supervisors and team members
  * cannot, and somebody who does not take part as delegate or single participant has nothing to be
  * supervised in. Returns the subject's participations, which get the supervision link.

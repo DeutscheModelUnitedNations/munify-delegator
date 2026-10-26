@@ -2,7 +2,6 @@
 	import { dev } from '$app/env';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
 	import {
 		openCommandPalette,
 		isCommandPaletteAvailable
@@ -36,12 +35,9 @@
 	let stripClass = $derived(isImpersonating ? 'bg-yellow-500' : dev ? 'bg-red-500' : '');
 
 	$effect(() => {
-		// Stalled: the API always reports "not impersonating", so asking is a wasted round trip.
-		if (IMPERSONATION_ENABLED) {
-			void fetchImpersonationStatus().then((status) => {
-				impersonationStatus = status;
-			});
-		}
+		void fetchImpersonationStatus().then((status) => {
+			impersonationStatus = status;
+		});
 	});
 
 	let titleScroller = $state<HTMLDivElement>();

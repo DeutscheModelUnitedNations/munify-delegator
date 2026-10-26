@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
 	import UserCardBody from './UserCardBody.svelte';
-	import type { UserCardTab } from './UserCardTabs.svelte';
+	import type { UserCardTab } from './userCardTabs';
 
 	interface Props {
 		userId: string;
@@ -11,8 +11,9 @@
 
 	let { userId, conferenceId, mode }: Props = $props();
 
-	// Kept out here so the card stays on the same tab when it is pointed at someone else.
-	let activeTab = $state<UserCardTab>('userData');
+	// Kept out here so the card stays on the same tab when it is pointed at someone else. Null until
+	// one is picked, so the first card opens where the conference's state suggests.
+	let activeTab = $state<UserCardTab | null>(null);
 </script>
 
 <!-- Keyed so pointing the card at someone else shows the skeleton instead of the previous person. -->

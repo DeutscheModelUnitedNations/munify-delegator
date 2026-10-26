@@ -54,11 +54,11 @@ export const variables = defineEnvVars({
 	OIDC_SCOPES: { schema: requiredAtRuntime(z.string(), '') },
 	OIDC_CLIENT_SECRET: { schema: z.string().optional() },
 	OIDC_ROLE_CLAIM: { schema: z.string().optional() },
-	// Audience for resource-scoped access tokens. Unread since the OIDC flow moved to
-	// @m1212e/sveltekit-oidc, which does not send a resource indicator.
+	// The resource indicator the impersonation's token exchange asks for (Logto requires one). Sign
+	// in sends none.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },
-	// Machine-to-machine credentials for the Logto Management API. Unread while impersonation is
-	// stalled (see $lib/data/impersonation), kept so deployments do not have to drop them.
+	// Machine-to-machine credentials for the Logto Management API, which issues the subject tokens
+	// impersonation exchanges (#api/services/account/impersonation). Without them it is unavailable.
 	OIDC_M2M_CLIENT_ID: { schema: z.string().optional() },
 	OIDC_M2M_CLIENT_SECRET: { schema: z.string().optional() },
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import { IMPERSONATION_ENABLED } from '#lib/data/impersonation.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
 	import { startImpersonation as impersonate } from '#lib/api/startImpersonation.js';
 
 	interface Props {
@@ -9,6 +9,11 @@
 	}
 
 	let { userId, iconOnly = false }: Props = $props();
+
+	// Shown only where it would work: the API decides who may act as whom.
+	const allowed = $derived(
+		await client.query.canImpersonateUser({ __args: { targetUserId: userId } })
+	);
 
 	let isLoading = $state(false);
 	const startImpersonation = async () => {
@@ -22,7 +27,7 @@
 	};
 </script>
 
-{#if IMPERSONATION_ENABLED}
+{#snippet button()}
 	<button
 		class={iconOnly ? 'btn btn-ghost btn-sm btn-square' : 'btn'}
 		onclick={startImpersonation}
@@ -38,4 +43,14 @@
 			<span class="ml-2">{m.impersonation()}</span>
 		{/if}
 	</button>
+{/snippet}
+
+{#if allowed}
+	{#if iconOnly}
+		<div class="tooltip tooltip-bottom" data-tip={m.impersonation()}>
+			{@render button()}
+		</div>
+	{:else}
+		{@render button()}
+	{/if}
 {/if}

@@ -2,7 +2,7 @@
 	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { isAlwaysSent } from '#lib/helpers/emailKinds.js';
-	import { emailKindTexts } from './emailKindTexts';
+	import { emailKindTexts } from '#lib/helpers/emailKindTexts.js';
 
 	/**
 	 * One mail on the e-mail page: its switch (none for the mails that always go out), what it does,

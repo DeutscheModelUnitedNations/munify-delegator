@@ -1,15 +1,12 @@
-import { isRedirect, redirect, type Cookies } from '@sveltejs/kit';
+import { isRedirect, redirect, type Cookies, type RequestEvent } from '@sveltejs/kit';
+import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection.js';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
-import {
-	AUTHENTICATED_ROUTES,
-	OIDC,
-	isPublicRoute,
-	accessTokenCookieName,
-	refreshTokenCookieName
-} from '#api/services/OIDC.js';
+import { AUTHENTICATED_ROUTES, OIDC, isPublicRoute, oidcCookieNames } from '#api/services/OIDC.js';
+import { rolesOfSession } from '#api/context.js';
+import { impersonatableUser } from '#api/handlers/user/userPermissions.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale.js';
 import { building } from '$app/env';
@@ -61,8 +58,8 @@ const isBehindLogin = (pathname: string) =>
 
 /** Whether the visitor has a session, or has read this version of the notice already. */
 const knowsOfMigration = (cookies: Cookies) =>
-	!!cookies.get(accessTokenCookieName) ||
-	!!cookies.get(refreshTokenCookieName) ||
+	!!cookies.get(oidcCookieNames.accessToken) ||
+	!!cookies.get(oidcCookieNames.refreshToken) ||
 	cookies.get(MIGRATION_NOTICE_COOKIE) === MIGRATION_NOTICE_VERSION;
 
 /**
@@ -105,6 +102,43 @@ const oidcHandle: Handle = async (input) => {
 	}
 };
 
+/**
+ * Ends an impersonation the impersonator may no longer hold - they left the target's conference
+ * team, the target joined a team, lost the conference or their row - and otherwise loads who the
+ * impersonated user is, which the exchanged token may not say (`locals.impersonatedIdentity`).
+ * The OIDC library has already checked that the impersonation belongs to this session.
+ */
+async function checkImpersonation(
+	event: RequestEvent,
+	session: OIDCSession,
+	impersonator: OIDCSession
+) {
+	const actor = {
+		sub: impersonator.user.sub,
+		isAdmin: rolesOfSession(impersonator).includes('admin')
+	};
+	const target = await impersonatableUser(actor, session.user.sub);
+	if (!target) {
+		OIDC.stopImpersonation(event);
+		console.info({ event: 'impersonation_revoked', actor: actor.sub, subject: session.user.sub });
+		return;
+	}
+	event.locals.impersonatedIdentity = {
+		email: target.email,
+		given_name: target.givenName,
+		family_name: target.familyName,
+		preferred_username: target.preferredUsername,
+		locale: target.locale,
+		phone: target.phone ?? undefined
+	};
+}
+
+const impersonationHandle: Handle = async ({ event, resolve }) => {
+	const session = event.locals.oidc;
+	if (session?.impersonator) await checkImpersonation(event, session, session.impersonator);
+	return resolve(event);
+};
+
 export const handleError = Sentry.handleErrorWithSentry();
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
@@ -112,5 +146,6 @@ export const handle: Handle = sequence(
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
 	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.
 	oidcHandle,
+	impersonationHandle,
 	paraglideHandle
 );
