@@ -9,9 +9,9 @@ import {
 	isPublicRoute,
 	accessTokenCookieName,
 	refreshTokenCookieName
-} from '$api/services/OIDC';
+} from '#api/services/OIDC.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
-import { localeOfRequest, runWithLocale } from '$api/services/requestLocale';
+import { localeOfRequest, runWithLocale } from '#api/services/requestLocale.js';
 import { building } from '$app/env';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {

@@ -1,9 +1,9 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
-import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { resolutionPubsub } from '$api/pubsub';
+import { resolutionPubsub } from '#api/pubsub.js';
 import {
 	assertCanCreateResolution,
 	assertCanDeleteResolution,

@@ -2,10 +2,10 @@ import { redirect } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
 import { eq } from 'drizzle-orm';
 import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
+import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation.js';
 import { reportEmailConflict } from './emailConflict';
 import { hashToken, isOpenInvitation, pendingInvitationCookieName } from './invitationToken';
 

@@ -1,17 +1,10 @@
 <script lang="ts">
-	import {
-		Html,
-		Head,
-		Body,
-		Container,
-		Section,
-		Text,
-		Link
-	} from '@better-svelte-email/components';
-	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import EmailLayout from '../EmailLayout.svelte';
+	import EmailButton from '../EmailButton.svelte';
+	import { smallStyle, textStyle } from '../brand';
 
-	/** One automatic mail to a participant or supervisor (`$api/handlers/email/emailContent.ts`). */
+	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent.js`). */
 	interface Props {
 		heading: string;
 		recipientName: string;
@@ -32,58 +25,32 @@
 		button,
 		conferenceTitle
 	}: Props = $props();
-
-	const text = 'font-size: 16px; color: #374151; line-height: 1.6;';
 </script>
 
-<Html lang={getLocale()}>
-	<Head>
-		<title>{heading}</title>
-	</Head>
-	<Body
-		style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
-	>
-		<Container
-			style="background-color: #ffffff; margin: 40px auto; padding: 20px; border-radius: 8px; max-width: 600px;"
-		>
-			<Section>
-				<Text style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;">
-					{heading}
-				</Text>
+<EmailLayout {heading} {conferenceTitle} preview={paragraphs[0]}>
+	<p style={textStyle}>{m.emailGreeting({ name: recipientName })}</p>
 
-				<Text style={text}>{m.emailGreeting({ name: recipientName })}</Text>
+	{#each paragraphs as paragraph, index (index)}
+		<p style={textStyle}>{paragraph}</p>
+	{/each}
 
-				{#each paragraphs as paragraph, index (index)}
-					<Text style={text}>{paragraph}</Text>
-				{/each}
+	{#if items.length > 0}
+		<ul style="{textStyle} padding-left: 20px;">
+			{#each items as item, index (index)}
+				<li style="margin-bottom: 6px;">{item}</li>
+			{/each}
+		</ul>
+	{/if}
 
-				{#if items.length > 0}
-					<ul style="{text} padding-left: 20px;">
-						{#each items as item, index (index)}
-							<li style="margin-bottom: 6px;">{item}</li>
-						{/each}
-					</ul>
-				{/if}
+	{#each closing as paragraph, index (index)}
+		<p style={textStyle}>{paragraph}</p>
+	{/each}
 
-				{#each closing as paragraph, index (index)}
-					<Text style={text}>{paragraph}</Text>
-				{/each}
+	{#if button}
+		<EmailButton href={button.url} label={button.label} />
+	{/if}
 
-				{#if button}
-					<Section style="text-align: center; margin: 32px 0;">
-						<Link
-							href={button.url}
-							style="background-color: #3d7dd2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
-						>
-							{button.label}
-						</Link>
-					</Section>
-				{/if}
-
-				<Text style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-top: 32px;">
-					{m.emailAutoFooter({ conferenceTitle })}
-				</Text>
-			</Section>
-		</Container>
-	</Body>
-</Html>
+	{#snippet footer()}
+		<p style={smallStyle}>{m.emailAutoFooter({ conferenceTitle })}</p>
+	{/snippet}
+</EmailLayout>

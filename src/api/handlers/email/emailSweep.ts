@@ -1,8 +1,8 @@
-import { db, schema } from '$api/db/db';
-import { emailService } from '$api/services/email/emailService';
-import { localeOfUser, runWithLocale } from '$api/services/requestLocale';
+import { db, schema } from '#api/db/db.js';
+import { emailService } from '#api/services/email/emailService.js';
+import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
 import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
-import { emailLogPubsub } from '$api/pubsub';
+import { emailLogPubsub } from '#api/pubsub.js';
 import { sql } from 'drizzle-orm';
 import {
 	dueEmails,
@@ -13,7 +13,8 @@ import {
 	type SnapshotPerson
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
-import { emailContent, recipientName } from './emailContent';
+import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
+import type { EmailTextOverride } from '#lib/helpers/emailTemplates.js';
 
 /**
  * Sends what `dueEmails` says a conference owes and nobody sent yet. Each mail is claimed by
@@ -106,14 +107,23 @@ async function claim(conferenceId: string, email: DueEmail) {
 	return claimed?.id;
 }
 
-/** Renders one mail in the recipient's language. */
+/** The texts the conference wrote itself, every kind and language. */
+function loadEmailTexts(conferenceId: string): Promise<ConferenceEmailText[]> {
+	return db.query.conferenceEmailText.findMany({
+		where: { conferenceId },
+		columns: { kind: true, locale: true, subject: true, heading: true, body: true }
+	});
+}
+
+/** Renders one mail in the recipient's language, in the conference's own words where it has them. */
 function renderAutomaticEmail(
 	email: DueEmail,
 	conference: EmailSnapshot['conference'],
-	origin: string
+	origin: string,
+	texts: readonly ConferenceEmailText[]
 ) {
 	return runWithLocale(localeOfUser(email.person.user.locale), async () => {
-		const content = emailContent(email, conference, origin);
+		const content = emailContent(email, conference, origin, texts);
 		const { html, text } = await renderEmail(NotificationEmail, {
 			heading: content.heading,
 			recipientName: recipientName(email.person),
@@ -141,9 +151,20 @@ async function settle(logId: string, error: string | undefined) {
 }
 
 /** Sends one claimed mail; whatever goes wrong is written to its log row, never thrown. */
-async function send(email: DueEmail, snapshot: EmailSnapshot, origin: string, logId: string) {
+async function send(
+	email: DueEmail,
+	snapshot: EmailSnapshot,
+	origin: string,
+	texts: readonly ConferenceEmailText[],
+	logId: string
+) {
 	try {
-		const { subject, html, text } = await renderAutomaticEmail(email, snapshot.conference, origin);
+		const { subject, html, text } = await renderAutomaticEmail(
+			email,
+			snapshot.conference,
+			origin,
+			texts
+		);
 		const result = await emailService.sendEmail({
 			to: email.person.user.email,
 			subject,
@@ -191,8 +212,9 @@ export async function sendDueEmails(args: {
 
 	const open = await openEmails(snapshot, kinds, now);
 	const batch = open.slice(0, args.limit ?? 200);
+	const texts = await loadEmailTexts(args.conferenceId);
 	const counts = await sendEach(args.conferenceId, batch, (email, logId) =>
-		send(email, snapshot, args.origin, logId)
+		send(email, snapshot, args.origin, texts, logId)
 	);
 	if (batch.length > 0) emailLogPubsub.updated();
 	return { ...counts, remaining: open.length - batch.length };
@@ -273,7 +295,9 @@ export async function previewEmail(
 	conferenceId: string,
 	kind: EmailKind,
 	user: SnapshotPerson['user'],
-	origin: string
+	origin: string,
+	/** Text being edited, shown instead of what is stored (in `user.locale`). */
+	draft?: EmailTextOverride
 ) {
 	const snapshot = await loadEmailSnapshot(conferenceId);
 	if (!snapshot) return undefined;
@@ -311,5 +335,8 @@ export async function previewEmail(
 		student,
 		field: 'termsAndConditions'
 	};
-	return renderAutomaticEmail(email, snapshot.conference, origin);
+	const texts = draft
+		? [{ kind, locale: localeOfUser(user.locale), ...draft }]
+		: await loadEmailTexts(conferenceId);
+	return renderAutomaticEmail(email, snapshot.conference, origin, texts);
 }

@@ -1,11 +1,11 @@
-import { db } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
 	paymentTransactionPubsub,
 	userReferenceInPaymentTransactionPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 import {
 	assertCanCreatePaymentTransaction,
 	assertCanUpdatePaymentTransaction,

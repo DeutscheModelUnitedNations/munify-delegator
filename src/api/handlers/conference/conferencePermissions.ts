@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertTeamRole,
 	CONFERENCE_CONTENT_ROLES,
@@ -10,11 +10,11 @@ import {
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { assertCanClaimFile } from '$api/handlers/storedFile/storedFilePermissions';
-import type { FileField } from '$api/handlers/storedFile/fileSources';
+} from '#api/services/authHelper.js';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
+import type { FileField } from '#api/handlers/storedFile/fileSources.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import type { ConferenceUpdateArgs } from './conferenceService';
 
 /** Where the fee goes, where postal documents go, and the documents themselves. */

@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assertCanCreateSurveyQuestion,
 	deletableSurveyQuestionWhere,
@@ -7,10 +7,10 @@ import {
 	updatableSurveyQuestionWhere
 } from './surveyQuestionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { nullToUndefined } from '$api/services/args';
-import { surveyQuestionPubsub } from '$api/pubsub';
+import { nullToUndefined } from '#api/services/args.js';
+import { surveyQuestionPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerSurveyQuestionAbilities();
 

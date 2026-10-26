@@ -1,5 +1,5 @@
 import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
 import formatNames from '#lib/helpers/formatNames.js';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type {
@@ -10,10 +10,17 @@ import type {
 	SnapshotRole
 } from './dueEmails';
 import { seatOf } from './dueEmails';
+import {
+	fillEmailText,
+	resolveEmailText,
+	type EmailPlaceholderValues,
+	type EmailTextOverride
+} from '#lib/helpers/emailTemplates.js';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the
- * same template (`NotificationEmail.svelte`) with its own text.
+ * same template (`NotificationEmail.svelte`) with its own text: the conference's own where it wrote
+ * one (`conference_email_text`), else the default (`#lib/helpers/emailTemplates.js`), filled in here.
  */
 export interface EmailContent {
 	subject: string;
@@ -62,46 +69,24 @@ const paperworkLabel: Record<PaperworkField, () => string> = {
 interface ContentContext {
 	email: DueEmail;
 	conference: Conference;
-	title: string;
 	dashboard: { label: string; url: string };
 	origin: string;
 }
 
-type ContentBuilder = (ctx: ContentContext) => EmailContent;
+/** What a kind adds to its text: the values beyond name and conference, its list, its button. */
+interface KindContent {
+	values?: EmailPlaceholderValues;
+	items?: string[];
+	button?: { label: string; url: string };
+}
 
-/** For a mail that hands out a seat: where it is, and what to do next. */
-const seated =
-	(texts: {
-		subject: (args: { conference: string }) => string;
-		heading: () => string;
-		body: (args: { conference: string; seat: string }) => string;
-	}): ContentBuilder =>
-	({ email, title, dashboard }) => ({
-		subject: texts.subject({ conference: title }),
-		heading: texts.heading(),
-		paragraphs: [
-			texts.body({ conference: title, seat: seatDescription(email.person) }),
-			m.emailAutoNextSteps()
-		],
-		button: dashboard
-	});
+type ContentBuilder = (ctx: ContentContext) => KindContent;
 
-/** For a mail that only confirms something, with no step to take. */
-const notice =
-	(
-		texts: {
-			subject: (args: { conference: string }) => string;
-			heading: () => string;
-			body: (args: { conference: string }) => string;
-		},
-		withButton: boolean
-	): ContentBuilder =>
-	({ title, dashboard }) => ({
-		subject: texts.subject({ conference: title }),
-		heading: texts.heading(),
-		paragraphs: [texts.body({ conference: title })],
-		...(withButton ? { button: dashboard } : {})
-	});
+const withDashboard: ContentBuilder = ({ dashboard }) => ({ button: dashboard });
+const seated: ContentBuilder = ({ email, dashboard }) => ({
+	values: { seat: seatDescription(email.person) },
+	button: dashboard
+});
 
 const supervisorSummaryItem = (student: SnapshotPerson) =>
 	seatOf(student)
@@ -112,144 +97,82 @@ const supervisorSummaryItem = (student: SnapshotPerson) =>
 		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student) });
 
 const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
-	ASSIGNMENT_ACCEPTED: seated({
-		subject: m.emailAutoAcceptedSubject,
-		heading: m.emailAutoAcceptedHeading,
-		body: m.emailAutoAcceptedBody
-	}),
-	WAITING_LIST_SEATED: seated({
-		subject: m.emailAutoWaitingListSubject,
-		heading: m.emailAutoWaitingListHeading,
-		body: m.emailAutoWaitingListBody
-	}),
-	ASSIGNMENT_REJECTED: ({ conference, title, origin }) => ({
-		subject: m.emailAutoRejectedSubject({ conference: title }),
-		heading: m.emailAutoRejectedHeading(),
-		paragraphs: [m.emailAutoRejectedBody({ conference: title }), m.emailAutoRejectedWaitingList()],
+	ASSIGNMENT_ACCEPTED: seated,
+	WAITING_LIST_SEATED: seated,
+	ASSIGNMENT_REJECTED: ({ conference, origin }) => ({
 		button: {
 			label: m.emailAutoToWaitingList(),
 			url: `${origin}/registration/${conference.id}/waiting-list`
 		}
 	}),
-	SUPERVISOR_ASSIGNMENT_SUMMARY: ({ email, title, dashboard }) => ({
-		subject: m.emailAutoSupervisorSummarySubject({ conference: title }),
-		heading: m.emailAutoSupervisorSummaryHeading(),
-		paragraphs: [m.emailAutoSupervisorSummaryBody({ conference: title })],
+	SUPERVISOR_ASSIGNMENT_SUMMARY: ({ email, dashboard }) => ({
 		items: (email.students ?? []).map(supervisorSummaryItem),
-		closing: [m.emailAutoSupervisorSummaryClosing()],
 		button: dashboard
 	}),
-	POSTAL_UNLOCKED: notice(
-		{
-			subject: m.emailAutoPostalUnlockedSubject,
-			heading: m.emailAutoPostalUnlockedHeading,
-			body: m.emailAutoPostalUnlockedBody
-		},
-		true
-	),
-	PAYMENT_UNLOCKED: notice(
-		{
-			subject: m.emailAutoPaymentUnlockedSubject,
-			heading: m.emailAutoPaymentUnlockedHeading,
-			body: m.emailAutoPaymentUnlockedBody
-		},
-		true
-	),
-	POSTAL_RECEIVED: notice(
-		{
-			subject: m.emailAutoPostalReceivedSubject,
-			heading: m.emailAutoPostalReceivedHeading,
-			body: m.emailAutoPostalReceivedBody
-		},
-		false
-	),
-	PAYMENT_RECEIVED: notice(
-		{
-			subject: m.emailAutoPaymentReceivedSubject,
-			heading: m.emailAutoPaymentReceivedHeading,
-			body: m.emailAutoPaymentReceivedBody
-		},
-		false
-	),
-	CERTIFICATE_AVAILABLE: notice(
-		{
-			subject: m.emailAutoCertificateSubject,
-			heading: m.emailAutoCertificateHeading,
-			body: m.emailAutoCertificateBody
-		},
-		true
-	),
-	PAPERWORK_PROBLEM: ({ email, title, dashboard }) => ({
-		subject: m.emailAutoProblemSubject({ conference: title }),
-		heading: m.emailAutoProblemHeading(),
-		paragraphs: [
-			m.emailAutoProblemBody({
-				conference: title,
-				item: email.field ? paperworkLabel[email.field]() : ''
-			})
-		],
+	POSTAL_UNLOCKED: withDashboard,
+	PAYMENT_UNLOCKED: withDashboard,
+	POSTAL_RECEIVED: () => ({}),
+	PAYMENT_RECEIVED: () => ({}),
+	CERTIFICATE_AVAILABLE: withDashboard,
+	PAPERWORK_PROBLEM: ({ email, dashboard }) => ({
+		values: { item: email.field ? paperworkLabel[email.field]() : '' },
 		button: dashboard
 	}),
-	APPLICATION_DEADLINE_REMINDER: ({ email, conference, title, dashboard }) => ({
-		subject: m.emailAutoApplicationReminderSubject({ conference: title }),
-		heading: m.emailAutoApplicationReminderHeading(),
-		paragraphs: [
-			m.emailAutoApplicationReminderBody({
-				conference: title,
-				date: day(conference.startAssignment)
-			}),
-			...(email.person.delegation ? [m.emailAutoApplicationReminderDelegation()] : [])
-		],
+	APPLICATION_DEADLINE_REMINDER: ({ email, conference, dashboard }) => ({
+		values: {
+			date: day(conference.startAssignment),
+			delegationHint: email.person.delegation ? m.emailAutoApplicationReminderDelegation() : ''
+		},
 		button: dashboard
 	}),
-	OPEN_ISSUES_REMINDER: ({ conference, title, dashboard }) => ({
-		subject: m.emailAutoOpenIssuesSubject({ conference: title }),
-		heading: m.emailAutoOpenIssuesHeading(),
-		paragraphs: [
-			m.emailAutoOpenIssuesBody({ conference: title, date: day(conference.startConference) })
-		],
+	OPEN_ISSUES_REMINDER: ({ conference, dashboard }) => ({
+		values: { date: day(conference.startConference) },
 		items: [
 			...(conference.unlockPostals ? [m.emailAutoOpenIssuesPostal()] : []),
 			...(conference.unlockPayments ? [m.emailAutoOpenIssuesPayment()] : [])
 		],
-		closing: [m.emailAutoOpenIssuesClosing()],
 		button: dashboard
 	}),
-	PHONE_READY_REMINDER: ({ conference, title, origin }) => ({
-		subject: m.emailAutoPhoneSubject({ conference: title }),
-		heading: m.emailAutoPhoneHeading(),
-		paragraphs: [
-			m.emailAutoPhoneBody({ conference: title, date: day(conference.startConference) })
-		],
+	PHONE_READY_REMINDER: ({ conference, origin }) => ({
+		values: { date: day(conference.startConference) },
 		items: [m.emailAutoPhoneLogin(), m.emailAutoPhoneHomeScreen(), m.emailAutoPhoneBattery()],
 		button: {
 			label: m.emailAutoPhoneButton(),
 			url: `${origin}/dashboard/${conference.id}/registration-mode`
 		}
 	}),
-	SUPERVISOR_STUDENT_LINKED: ({ email, title, dashboard }) => {
-		const student = email.student ? fullName(email.student) : '';
-		return {
-			subject: m.emailAutoStudentLinkedSubject({ student, conference: title }),
-			heading: m.emailAutoStudentLinkedHeading(),
-			paragraphs: [m.emailAutoStudentLinkedBody({ student, conference: title })],
-			button: dashboard
-		};
-	}
+	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
+		values: { student: email.student ? fullName(email.student) : '' },
+		button: dashboard
+	})
 };
+
+/** A conference's own text for one kind and language (`conference_email_text`). */
+export interface ConferenceEmailText extends EmailTextOverride {
+	kind: DueEmail['kind'];
+	locale: string;
+}
 
 export function emailContent(
 	email: DueEmail,
 	conference: Conference,
-	origin: string
+	origin: string,
+	texts: readonly ConferenceEmailText[] = []
 ): EmailContent {
-	return CONTENT[email.kind]({
+	const locale = getLocale();
+	const own = texts.find((text) => text.kind === email.kind && toLocale(text.locale) === locale);
+	const kind = CONTENT[email.kind]({
 		email,
 		conference,
-		title: conference.title,
 		origin,
 		dashboard: { label: m.emailAutoToDashboard(), url: `${origin}/dashboard/${conference.id}` }
 	});
+	const filled = fillEmailText(
+		resolveEmailText(email.kind, locale, own),
+		{ name: fullName(email.person), conference: conference.title, ...kind.values },
+		kind.items
+	);
+	return { ...filled, ...(kind.button ? { button: kind.button } : {}) };
 }
 
 export { fullName as recipientName };

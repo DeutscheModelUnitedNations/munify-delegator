@@ -1,4 +1,4 @@
-import { schema, type Transaction } from '$api/db/db';
+import { schema, type Transaction } from '#api/db/db.js';
 import { eq } from 'drizzle-orm';
 
 /**

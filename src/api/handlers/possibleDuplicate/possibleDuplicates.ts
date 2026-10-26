@@ -1,8 +1,8 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { participatesIn } from '../../services/authHelper';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
-import { possibleDuplicatePubsub } from '$api/pubsub';
+import { possibleDuplicatePubsub } from '#api/pubsub.js';
 
 /*
  * Looks for accounts that may belong to the same person, so a care note survives a fresh signup.

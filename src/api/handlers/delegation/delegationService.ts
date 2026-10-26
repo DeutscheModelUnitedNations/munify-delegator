@@ -1,13 +1,13 @@
-import { type Transaction, db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '#api/db/db.js';
 import {
 	ensureConferenceParticipant,
 	setDelegationMembersSchool,
 	setParticipantSchool
-} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
-import { fetchUserParticipations } from '$api/services/registration/participation';
-import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
-import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
-import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
+import { fetchUserParticipations } from '#api/services/registration/participation.js';
+import { assertApplicationReady } from '#api/services/registration/applicationReadiness.js';
+import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import formatNames from '#lib/helpers/formatNames.js';
 import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
 import {
@@ -18,8 +18,8 @@ import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
-import { apiError } from '$api/services/errors/apiError';
-import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
+import { apiError } from '#api/services/errors/apiError.js';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(

@@ -1,4 +1,4 @@
-import type * as schema from '$api/db/schema';
+import type * as schema from '#api/db/schema/index.js';
 import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
 import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 import {

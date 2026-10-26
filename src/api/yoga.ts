@@ -1,9 +1,9 @@
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
-import { createYoga } from '$api/rumble';
+import { createYoga } from '#api/rumble.js';
 import { dev } from '$app/env';
 import { GRAPHQL_STREAM_ENDPOINT } from '#lib/api/streamEndpoint.js';
 
-import '$api/handlers/register';
+import '#api/handlers/register.js';
 
 /**
  * The one yoga instance, shared by `/api/graphql`, `/api/graphql/stream` and the SSR remote function.

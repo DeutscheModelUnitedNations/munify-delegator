@@ -1,11 +1,11 @@
-import { type Transaction, db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '#api/db/db.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import {
 	type CalendarDayExportData,
 	calendarDayExportSchema
 } from '#lib/schemata/calendarDayExport.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /** The import document arrives either as a JSON string or already parsed. */
 export function parseImportData(importData: unknown) {

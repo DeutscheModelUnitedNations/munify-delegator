@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertParticipantOfConference,
@@ -12,10 +12,10 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 const paperTeam = (id: string) => ({
 	teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } }

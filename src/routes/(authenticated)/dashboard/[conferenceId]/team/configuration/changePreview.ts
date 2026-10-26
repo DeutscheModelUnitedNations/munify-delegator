@@ -8,9 +8,16 @@ type SettingsFieldKey = keyof ConferenceSettings;
  * The tabs of the configuration page. The change preview reuses them so a change
  * is always presented in the same place the user edited it.
  */
-export type ChangeGroupKey = 'general' | 'status' | 'links' | 'payments' | 'documents';
+export type ChangeGroupKey = 'general' | 'status' | 'links' | 'payments' | 'documents' | 'emails';
 
-const changeGroupOrder: ChangeGroupKey[] = ['general', 'status', 'links', 'payments', 'documents'];
+const changeGroupOrder: ChangeGroupKey[] = [
+	'general',
+	'status',
+	'links',
+	'payments',
+	'documents',
+	'emails'
+];
 
 function changeGroupLabel(group: ChangeGroupKey): string {
 	switch (group) {
@@ -24,11 +31,14 @@ function changeGroupLabel(group: ChangeGroupKey): string {
 			return m.bankingInformation();
 		case 'documents':
 			return m.documentsAndTemplates();
+		case 'emails':
+			return m.emailSettingsTab();
 	}
 }
 
 export interface ConfigChange {
-	key: SettingsFieldKey;
+	/** The settings field, or `email:<kind>` for an automatic mail switched on or off. */
+	key: string;
 	group: ChangeGroupKey;
 	label: string;
 	/** Formatted value as it is currently stored. */

@@ -234,6 +234,25 @@ export const teamRoutes: readonly TeamRoute[] = [
 		roles: PARTICIPANT_CARE_ROLES
 	},
 	{
+		id: 'emails',
+		path: teamPath('emails'),
+		title: () => m.emailSettingsTab(),
+		icon: 'fa-envelope',
+		group: 'info',
+		category: 'communication',
+		keywords: [
+			'e-mails',
+			'emails',
+			'mails',
+			'automatisch',
+			'automatic',
+			'benachrichtigung',
+			'notification',
+			'text'
+		],
+		roles: PARTICIPANT_CARE_ROLES
+	},
+	{
 		id: 'calendar',
 		path: teamPath('calendar'),
 		title: () => m.calendar(),

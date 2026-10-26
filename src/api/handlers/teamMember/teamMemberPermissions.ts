@@ -1,12 +1,12 @@
-import { schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'delete']).when(systemAdmin);

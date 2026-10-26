@@ -1,6 +1,6 @@
-import { db, schema } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { object, countQuery, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import {
 	createAssignedSingleParticipant,
 	ownRegistrationToEdit,
@@ -20,7 +20,7 @@ import {
 	conferenceParticipantPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 
 registerSingleParticipantAbilities();
 

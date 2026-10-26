@@ -1,5 +1,5 @@
-import { abilityBuilder } from '$api/rumble';
-import { PAPER_ROLES, isInOwnDelegation, systemAdmin, userId } from '$api/services/authHelper';
+import { abilityBuilder } from '#api/rumble.js';
+import { PAPER_ROLES, isInOwnDelegation, systemAdmin, userId } from '#api/services/authHelper.js';
 
 export function registerPaperVersionAbilities() {
 	// Ported from abilities/entities/paper/paperVersion.ts

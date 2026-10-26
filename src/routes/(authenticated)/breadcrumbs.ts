@@ -234,6 +234,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'bullhorn',
 		translation: () => m.announcementSectionTitle()
 	},
+	emails: {
+		icon: 'envelope',
+		translation: () => m.emailSettingsTab()
+	},
 	attendance: {
 		icon: 'barcode-read',
 		translation: () => m.attendanceScanner()

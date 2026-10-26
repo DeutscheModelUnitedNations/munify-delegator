@@ -1,9 +1,9 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { eq } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { enum_ } from '$api/rumble';
-import { scanUserForDuplicatesInBackground } from '$api/handlers/possibleDuplicate/possibleDuplicates';
+import { enum_ } from '#api/rumble.js';
+import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates.js';
 import {
 	countConferenceParticipations,
 	previewUser,
@@ -27,7 +27,7 @@ import {
 	delegationMemberPubsub,
 	singleParticipantPubsub,
 	userPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 
 registerUserAbilities();
 

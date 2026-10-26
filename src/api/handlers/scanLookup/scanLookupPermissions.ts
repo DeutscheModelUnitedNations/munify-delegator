@@ -1,5 +1,5 @@
-import { assertTeamRole } from '$api/services/authHelper';
-import type { Context } from '$api/context';
+import { assertTeamRole } from '#api/services/authHelper.js';
+import type { Context } from '#api/context.js';
 
 /**
  * Any team member may look a scanned code up, which the entrance scanner is for: the lookup

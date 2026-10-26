@@ -873,6 +873,13 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	conferenceEmailText: {
+		conference: r.one.conference({
+			from: r.conferenceEmailText.conferenceId,
+			to: r.conference.id,
+			optional: false
+		})
+	},
 	emailLog: {
 		conference: r.one.conference({
 			from: r.emailLog.conferenceId,

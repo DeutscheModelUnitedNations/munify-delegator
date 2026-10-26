@@ -1,14 +1,14 @@
-import { db, schema } from '$api/db/db';
-import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
+import { db, schema } from '#api/db/db.js';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
-} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
-import { isUserAlreadyRegistered } from '$api/services/registration/participation';
-import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
+import { isUserAlreadyRegistered } from '#api/services/registration/participation.js';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import { eq } from 'drizzle-orm';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */

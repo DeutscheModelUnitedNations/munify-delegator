@@ -1,13 +1,13 @@
-import type { Context } from '$api/context';
-import { type Transaction, db, schema } from '$api/db/db';
-import { sendNewReviewNotification } from '$api/services/email/sendNewReviewNotification';
+import type { Context } from '#api/context.js';
+import { type Transaction, db, schema } from '#api/db/db.js';
+import { sendNewReviewNotification } from '#api/services/email/sendNewReviewNotification.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, count, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
 import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
 import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
-import { localeOfUser, runWithLocale } from '$api/services/requestLocale';
-import { apiError } from '$api/services/errors/apiError';
+import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */

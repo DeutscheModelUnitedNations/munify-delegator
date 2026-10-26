@@ -3,8 +3,8 @@ import { client } from '#lib/api/rumbleClient/client.js';
 import {
 	certificateAlg,
 	certificateRequiredClaims
-} from '$api/handlers/certificateConfig/certificateConfig';
-import type { CertificateJWTPayload } from '$api/handlers/certificate/certificate';
+} from '#api/handlers/certificateConfig/certificateConfig.js';
+import type { CertificateJWTPayload } from '#api/handlers/certificate/certificate.js';
 import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout.js';
 
 /**

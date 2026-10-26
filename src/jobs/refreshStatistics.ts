@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { STATISTICS_VIEWS } from '$api/db/statisticsViews';
+import { STATISTICS_VIEWS } from '#api/db/statisticsViews.js';
 import { db } from './db';
 
 const LOCK_NAME = 'refresh_statistics';

@@ -1,13 +1,13 @@
-import { db, schema } from '$api/db/db';
-import type { Context } from '$api/context';
-import { emailConflictError, reportEmailConflict } from '$api/services/account/emailConflict';
-import { isUniqueViolationOn } from '$api/services/errors/uniqueViolation';
+import { db, schema } from '#api/db/db.js';
+import type { Context } from '#api/context.js';
+import { emailConflictError, reportEmailConflict } from '#api/services/account/emailConflict.js';
+import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation.js';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
 
 /**

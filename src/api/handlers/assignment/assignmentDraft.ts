@@ -1,5 +1,5 @@
-import { type Transaction, db, schema } from '$api/db/db';
-import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
+import { type Transaction, db, schema } from '#api/db/db.js';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import {
 	planApply,
 	type ApplyError,
@@ -11,7 +11,7 @@ import { sameTarget, type Target } from '#lib/assignment/state.js';
 import { m } from '#lib/paraglide/messages.js';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 type Reader = Transaction | typeof db;
 

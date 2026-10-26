@@ -10,7 +10,7 @@ import {
 } from './emailConflict';
 
 const findFirst = vi.hoisted(() => vi.fn());
-vi.mock('$api/db/db', () => ({ db: { query: { user: { findFirst } } } }));
+vi.mock('#api/db/db.js', () => ({ db: { query: { user: { findFirst } } } }));
 vi.mock('@sentry/sveltekit', () => ({ captureException: vi.fn() }));
 
 describe('maskEmail', () => {

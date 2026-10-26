@@ -1,10 +1,10 @@
-import type { Context } from '$api/context';
-import { db } from '$api/db/db';
-import { abilityBuilder } from '$api/rumble';
-import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import type { Context } from '#api/context.js';
+import { db } from '#api/db/db.js';
+import { abilityBuilder } from '#api/rumble.js';
+import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerPaperReviewAbilities() {
 	// Ported from abilities/entities/paper/paperReview.ts

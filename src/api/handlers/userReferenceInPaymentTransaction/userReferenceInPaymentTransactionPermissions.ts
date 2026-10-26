@@ -1,10 +1,10 @@
-import { abilityBuilder } from '$api/rumble';
+import { abilityBuilder } from '#api/rumble.js';
 import {
 	isTeamMemberOf,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
 	userId
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerUserReferenceInPaymentTransactionAbilities() {
 	/**

@@ -1,14 +1,14 @@
-import { db } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isManagedUser,
 	systemAdmin
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
+} from '#api/services/authHelper.js';
+import type { Context } from '#api/context.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerPossibleDuplicateAbilities() {
 	// Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the

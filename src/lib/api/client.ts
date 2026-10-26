@@ -11,7 +11,7 @@ import { cacheExchange } from '@urql/exchange-graphcache';
 import { createClient as createSSEClient } from 'graphql-sse';
 import { filter, fromPromise, merge, mergeMap, pipe } from 'wonka';
 import { browser } from '$app/env';
-import { graphqlOperation } from '$api/graphql.remote';
+import { graphqlOperation } from '#api/graphql.remote.js';
 import { schema } from './rumbleClient/schema';
 import { getLocale } from '#lib/paraglide/runtime.js';
 import { GRAPHQL_STREAM_ENDPOINT } from './streamEndpoint';

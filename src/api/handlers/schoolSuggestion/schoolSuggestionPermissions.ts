@@ -1,11 +1,11 @@
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerSchoolSuggestionAbilities() {
 	abilityBuilder.schoolSuggestion.allow(['read', 'update']).when(systemAdmin);

@@ -1,8 +1,8 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /** Organizers may overfill an option and answer past the deadline; participants may not. */
 function assertOptionOpen(option: {

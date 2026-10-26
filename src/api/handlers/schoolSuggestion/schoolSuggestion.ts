@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { refreshSchoolSuggestions } from './schoolSuggestions';
 import {
 	assertCanAnalyzeSchoolSuggestions,
@@ -7,7 +7,7 @@ import {
 	registerSchoolSuggestionAbilities,
 	updatableSchoolSuggestion
 } from './schoolSuggestionPermissions';
-import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '$api/pubsub';
+import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub.js';
 
 registerSchoolSuggestionAbilities();
 

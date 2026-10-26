@@ -1,5 +1,5 @@
-import { schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	isOwnUser,
@@ -7,7 +7,7 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerWaitingListEntryAbilities() {
 	// Ported from abilities/entities/waitingListEntry.ts

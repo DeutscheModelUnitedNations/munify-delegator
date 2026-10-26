@@ -1,5 +1,5 @@
-import { abilityBuilder } from '$api/rumble';
-import { systemAdmin } from '$api/services/authHelper';
+import { abilityBuilder } from '#api/rumble.js';
+import { systemAdmin } from '#api/services/authHelper.js';
 
 export function registerNationAbilities() {
 	// Everyone can see the nations in the system; they are reference data, never edited in the app.

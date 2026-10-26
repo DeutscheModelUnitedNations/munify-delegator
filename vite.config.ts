@@ -80,8 +80,7 @@ export default defineConfig({
 			// before the app loads, and SvelteKit emits spans for handle, loads and remote functions
 			// into it. Both are inert unless OTEL_ENDPOINT_URL is set.
 			tracing: { server: true },
-			adapter: adapter(),
-			alias: { $api: 'src/api' }
+			adapter: adapter()
 		}),
 		paraglideVitePlugin({
 			project: './project.inlang',

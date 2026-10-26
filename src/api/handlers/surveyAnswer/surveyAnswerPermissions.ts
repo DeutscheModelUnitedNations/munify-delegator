@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	hasTeamRole,
@@ -7,9 +7,9 @@ import {
 	participantIdsOf,
 	systemAdmin,
 	userId
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerSurveyAnswerAbilities() {
 	// Ported from abilities/entities/surveyAnswer.ts

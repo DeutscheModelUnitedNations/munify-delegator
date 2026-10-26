@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertTeamRole,
@@ -7,7 +7,7 @@ import {
 	PAPER_ROLES,
 	SEAT_PLANNING_ROLES,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 

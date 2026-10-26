@@ -1,15 +1,15 @@
-import { db } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
-import { userId } from '$api/services/authHelper';
+import { db } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { userId } from '#api/services/authHelper.js';
 import {
 	checkInvitationEmails,
 	createInvitations,
 	regenerateInvitation,
 	revokeInvitation
 } from './teamMemberInvitationService';
-import { teamMemberInvitationPubsub, teamMemberPubsub } from '$api/pubsub';
+import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import {
 	assertCanGrantInvitationRole,
 	assertCanManageInvitations,

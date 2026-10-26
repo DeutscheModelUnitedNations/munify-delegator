@@ -1,6 +1,6 @@
-import { db } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assignCommittees,
 	joinDelegationByEntryCode,
@@ -25,7 +25,7 @@ import {
 	delegationPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 
 registerDelegationMemberAbilities();
 

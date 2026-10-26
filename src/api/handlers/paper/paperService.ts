@@ -1,9 +1,9 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import codenmz from '#lib/helpers/codenamize.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { type InferSelectModel, eq } from 'drizzle-orm';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];

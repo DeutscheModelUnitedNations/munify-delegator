@@ -1,4 +1,4 @@
-import { object, query } from '$api/rumble';
+import { object, query } from '#api/rumble.js';
 import { hashEditorContent } from '#lib/components/paper/editor/contentHash.js';
 import { registerPaperVersionAbilities } from './paperVersionPermissions';
 

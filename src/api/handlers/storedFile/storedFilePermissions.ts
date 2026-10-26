@@ -1,8 +1,8 @@
-import { apiError } from '$api/services/errors/apiError';
-import { db } from '$api/db/db';
-import type { Context } from '$api/context';
-import { abilityBuilder } from '$api/rumble';
-import { assertTeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import { apiError } from '#api/services/errors/apiError.js';
+import { db } from '#api/db/db.js';
+import type { Context } from '#api/context.js';
+import { abilityBuilder } from '#api/rumble.js';
+import { assertTeamRole, systemAdmin, userId } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 

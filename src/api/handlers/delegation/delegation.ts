@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, countQuery, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import {
 	createDelegationWithHead,
 	previewDelegationByEntryCode,
@@ -17,7 +17,7 @@ import {
 	delegationMemberPubsub,
 	delegationPubsub,
 	schoolPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 
 registerDelegationAbilities();
 

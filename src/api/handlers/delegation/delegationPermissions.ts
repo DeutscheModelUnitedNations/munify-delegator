@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	DELEGATION_ASSIGNMENT,
@@ -10,8 +10,8 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
+} from '#api/services/authHelper.js';
+import type { Context } from '#api/context.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 /** The delegation the caller is a member of. */

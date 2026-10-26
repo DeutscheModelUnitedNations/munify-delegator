@@ -1,7 +1,7 @@
-import { db, schema } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { nullToUndefined } from '$api/services/args';
+import { nullToUndefined } from '#api/services/args.js';
 import { createCalendarEntry, updateCalendarEntry } from './calendarEntryService';
 import {
 	assertCanCreateCalendarEntry,
@@ -9,9 +9,9 @@ import {
 	deletableCalendarEntryWhere,
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
-import { calendarEntryPubsub } from '$api/pubsub';
+import { calendarEntryPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerCalendarEntryAbilities();
 

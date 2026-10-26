@@ -1,9 +1,9 @@
-import { db, schema } from '$api/db/db';
-import { object, countQuery, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import { eq } from 'drizzle-orm';
-import { teamMemberPubsub } from '$api/pubsub';
+import { teamMemberPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import { assertCanDeleteTeamMember, registerTeamMemberAbilities } from './teamMemberPermissions';
 
 registerTeamMemberAbilities();

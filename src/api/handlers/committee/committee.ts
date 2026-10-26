@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
@@ -7,7 +7,7 @@ import {
 	conferenceRolePubsub,
 	resolutionPubsub,
 	roleApplicationPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 import {
 	assertCanCreateCommittee,
 	assertCanDeleteCommittee,

@@ -2,7 +2,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { OIDC_ROLE_CLAIM } from '$app/env/private';
 import { oidcRoles } from './services/OIDC';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 function parseRoles(locals: RequestEvent['locals']): (typeof oidcRoles)[number][] {
 	if (!OIDC_ROLE_CLAIM) return [];

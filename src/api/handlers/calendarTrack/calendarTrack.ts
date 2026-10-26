@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assertCanCreateCalendarTrack,
 	deletableCalendarTrackWhere,
@@ -8,9 +8,9 @@ import {
 } from './calendarTrackPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { inArray } from 'drizzle-orm';
-import { calendarEntryPubsub, calendarTrackPubsub } from '$api/pubsub';
+import { calendarEntryPubsub, calendarTrackPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerCalendarTrackAbilities();
 

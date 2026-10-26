@@ -1,14 +1,14 @@
-import { db } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isTeamMemberOf,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import type { Context } from '$api/context';
-import { apiError } from '$api/services/errors/apiError';
+} from '#api/services/authHelper.js';
+import type { Context } from '#api/context.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
 
 /**

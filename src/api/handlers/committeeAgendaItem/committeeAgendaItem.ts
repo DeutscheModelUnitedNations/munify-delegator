@@ -1,8 +1,8 @@
-import { db, schema } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { committeeAgendaItemPubsub } from '$api/pubsub';
+import { committeeAgendaItemPubsub } from '#api/pubsub.js';
 import {
 	assertCanCreateAgendaItem,
 	assertCanDeleteAgendaItem,

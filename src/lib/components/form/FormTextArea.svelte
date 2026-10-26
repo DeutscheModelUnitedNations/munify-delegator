@@ -9,9 +9,10 @@
 		placeholder?: string;
 		form: SuperForm<A, B>;
 		disabled?: boolean;
+		rows?: number;
 	}
 
-	let { form, label, name, placeholder, description, disabled = false }: Props = $props();
+	let { form, label, name, placeholder, description, disabled = false, rows }: Props = $props();
 	let { form: formData } = $derived(form);
 </script>
 
@@ -27,6 +28,7 @@
 		<textarea
 			{...props}
 			{placeholder}
+			{rows}
 			class="textarea validator w-full"
 			bind:value={$formData[name]}
 			{disabled}

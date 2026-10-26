@@ -1,6 +1,6 @@
 import { m } from '#lib/paraglide/messages.js';
-import type * as schema from '$api/db/schema';
-import { apiError } from '$api/services/errors/apiError';
+import type * as schema from '#api/db/schema/index.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import {
 	acceptsApplications,
 	applicationTextsComplete

@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { eq } from 'drizzle-orm';
 import {
 	assertCanCreatePlace,
@@ -7,11 +7,11 @@ import {
 	deletablePlaceWhere,
 	registerPlaceAbilities
 } from './placePermissions';
-import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { placePubsub } from '$api/pubsub';
+import { placePubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerPlaceAbilities();
 

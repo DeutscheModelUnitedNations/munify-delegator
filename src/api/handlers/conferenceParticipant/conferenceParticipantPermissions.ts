@@ -1,5 +1,5 @@
-import { schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertTeamRole,
@@ -10,7 +10,7 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 
 export function registerConferenceParticipantAbilities() {

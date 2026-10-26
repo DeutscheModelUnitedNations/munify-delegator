@@ -1,5 +1,5 @@
-import { type Transaction, db, schema } from '$api/db/db';
-import { apiError } from '$api/services/errors/apiError';
+import { type Transaction, db, schema } from '#api/db/db.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import { DEFAULT_WEIGHTS, autoAssign } from '#lib/assignment/autoAssign.js';
 import { experienceShare } from '#lib/assignment/experience.js';
 import type { reviewRow } from '#lib/assignment/review.js';

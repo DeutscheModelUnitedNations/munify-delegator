@@ -1,4 +1,4 @@
-import { pubsub } from '$api/rumble';
+import { pubsub } from '#api/rumble.js';
 
 export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
 export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
@@ -14,6 +14,7 @@ export const committeePubsub = pubsub({ table: 'committee' });
 export const committeeAgendaItemPubsub = pubsub({ table: 'committeeAgendaItem' });
 export const conferencePubsub = pubsub({ table: 'conference' });
 export const conferenceEmailSettingPubsub = pubsub({ table: 'conferenceEmailSetting' });
+export const conferenceEmailTextPubsub = pubsub({ table: 'conferenceEmailText' });
 export const conferenceRolePubsub = pubsub({ table: 'conferenceRole' });
 export const conferenceParticipantPubsub = pubsub({ table: 'conferenceParticipant' });
 export const conferenceSupervisorPubsub = pubsub({ table: 'conferenceSupervisor' });

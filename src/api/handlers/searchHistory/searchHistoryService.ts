@@ -1,7 +1,7 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /** How many searches a person keeps. The search only offers the newest five. */
 const KEPT_ENTRIES = 20;

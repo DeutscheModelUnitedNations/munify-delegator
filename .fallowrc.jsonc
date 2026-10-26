@@ -12,7 +12,7 @@
 	},
 	// Runtime roots no SvelteKit convention declares: the jobs CLI is bundled separately
 	// by tsdown.jobs.config.ts and runs as its own process, and the scripts are run by hand
-	// (`bun run …`) or from CI. The worker threads are started by path (`$api/handlers/assignment/matching`)
+	// (`bun run …`) or from CI. The worker threads are started by path (`#api/handlers/assignment/matching`)
 	// and bundled by tsdown.compute.config.ts.
 	"entry": ["src/jobs/cli.ts", "src/lib/assignment/*.worker.ts", "scripts/**/*.ts"],
 	// Reached in ways the static graph does not follow: the certificate and the dashboard calendar

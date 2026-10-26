@@ -1,13 +1,13 @@
-import { db } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { assertCanClaimFile } from '$api/handlers/storedFile/storedFilePermissions';
+} from '#api/services/authHelper.js';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerPlaceAbilities() {

@@ -92,7 +92,7 @@ function normalizeOIDCClaims(claims: Record<string, unknown>) {
  * The OIDC flow, owned by the library rather than by route loads.
  *
  * Its `handle` hook protects `authenticatedRoutes`, serves both callback routes and puts the
- * validated session on `event.locals.oidc`, which is where `$api/context` reads it. The callback
+ * validated session on `event.locals.oidc`, which is where `#api/context.js` reads it. The callback
  * routes keep the paths they had, so an identity provider's client configuration does not have to
  * change.
  */

@@ -37,7 +37,7 @@
 </script>
 
 <main class="flex h-screen w-full flex-col items-center justify-center gap-10 p-4">
-	<img src={getPicture(page.status)} alt="404" class="w-1/2" />
+	<img src={getPicture(page.status)} alt="" class="w-full max-w-xs" />
 	<h1 class="text-center text-3xl">{getErrorText(page.status)}</h1>
 	<p>{page.error?.message}</p>
 	<a href="/" class="btn btn-primary">{m.backToHome()}</a>

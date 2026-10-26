@@ -174,6 +174,7 @@
   "patchedDependencies": {
     "sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
     "@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
+    "svelte-virtual-list@3.0.1": "patches/svelte-virtual-list@3.0.1.patch",
     "@m1212e/sveltekit-oidc@0.0.46": "patches/@m1212e%2Fsveltekit-oidc@0.0.46.patch",
   },
   "overrides": {

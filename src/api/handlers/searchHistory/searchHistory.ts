@@ -1,5 +1,5 @@
-import { object, query, schemaBuilder } from '$api/rumble';
-import { searchHistoryPubsub } from '$api/pubsub';
+import { object, query, schemaBuilder } from '#api/rumble.js';
+import { searchHistoryPubsub } from '#api/pubsub.js';
 import { assertCanRecordSearch, registerSearchHistoryAbilities } from './searchHistoryPermissions';
 import { recordSearch } from './searchHistoryService';
 

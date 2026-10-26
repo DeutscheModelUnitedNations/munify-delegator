@@ -1,6 +1,6 @@
-import { db } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { enum_, object, countQuery, query, schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import { applyAssignmentDraft, draftDelegationTarget } from './assignmentDraft';
 import { reviewProblem, reviewRow } from '#lib/assignment/review.js';
 import type { Target } from '#lib/assignment/state.js';
@@ -15,9 +15,9 @@ import {
 	delegationMemberPubsub,
 	delegationPubsub,
 	singleParticipantPubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import {
 	assertCanAssignDelegation,
 	assertCanAssignSingleParticipant,

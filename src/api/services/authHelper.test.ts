@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
-import type { Context } from '$api/context';
+import type { Context } from '#api/context.js';
 
-vi.mock('$api/db/db', () => ({ db: {} }));
+vi.mock('#api/db/db.js', () => ({ db: {} }));
 
 const {
 	isManagedUser,

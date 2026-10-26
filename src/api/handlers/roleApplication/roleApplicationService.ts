@@ -1,7 +1,7 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count, eq } from 'drizzle-orm';
-import { normalizeRoleApplicationRanks } from '$api/services/registration/normalizeRoleApplicationRanks';
+import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks.js';
 
 /** Adds an application at the end of the delegation's ranking. Returns the new row. */
 export async function appendRoleApplication(args: { delegationId: string; roleId: string }) {

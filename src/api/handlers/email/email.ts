@@ -1,11 +1,13 @@
-import { db, schema } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { conferenceEmailSettingPubsub } from '$api/pubsub';
+import { conferenceEmailSettingPubsub, conferenceEmailTextPubsub } from '#api/pubsub.js';
 import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
 import { countOpenEmails, previewEmail, scheduleEmailSweep, skipOpenEmails } from './emailSweep';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
+import { toLocale } from '#lib/paraglide/runtime.js';
+import { and, eq } from 'drizzle-orm';
 
 registerEmailAbilities();
 
@@ -14,6 +16,8 @@ enum_({ tsName: 'emailStatus' });
 
 object({ table: 'conferenceEmailSetting' });
 query({ table: 'conferenceEmailSetting' });
+object({ table: 'conferenceEmailText' });
+query({ table: 'conferenceEmailText' });
 object({ table: 'emailLog' });
 query({ table: 'emailLog' });
 
@@ -74,12 +78,20 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** A mail of `kind` as it would look, addressed to the caller with made-up details. */
+	/**
+	 * A mail of `kind` as it would look, addressed to the caller with made-up details: in `locale`
+	 * (else the caller's), with the text being edited when `draft` is set (else what is stored).
+	 */
 	emailPreview: t.field({
 		type: EmailPreview,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			kind: t.arg({ type: emailKindEnum, required: true })
+			kind: t.arg({ type: emailKindEnum, required: true }),
+			locale: t.arg.string(),
+			draft: t.arg.boolean(),
+			subject: t.arg.string(),
+			heading: t.arg.string(),
+			body: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
@@ -97,11 +109,13 @@ schemaBuilder.queryFields((t) => ({
 					}
 				})
 				.then(assertFindFirstExists);
+			const locale = args.locale ? assertLocale(args.locale) : user.locale;
 			const preview = await previewEmail(
 				args.conferenceId,
 				args.kind,
-				user,
-				ctx.requestUrl().origin
+				{ ...user, locale },
+				ctx.requestUrl().origin,
+				args.draft ? { subject: args.subject, heading: args.heading, body: args.body } : undefined
 			);
 			if (!preview) throw apiError('NOT_FOUND', m.conferenceNotFound());
 			return { subject: preview.subject, html: preview.html };
@@ -109,7 +123,64 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
+/** A language the app speaks, or the request fails. */
+function assertLocale(value: string) {
+	const locale = toLocale(value);
+	if (!locale) throw apiError('INVALID_INPUT', m.emailTextUnknownLanguage());
+	return locale;
+}
+
+/** Empty or blank: the default text. */
+const ownText = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
+
 schemaBuilder.mutationFields((t) => ({
+	/**
+	 * Writes a conference's own text for one kind and language. A field left empty keeps the
+	 * default; all three empty removes the row, back to the default text.
+	 */
+	setConferenceEmailText: t.field({
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			kind: t.arg({ type: emailKindEnum, required: true }),
+			locale: t.arg.string({ required: true }),
+			subject: t.arg.string(),
+			heading: t.arg.string(),
+			body: t.arg.string()
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails(ctx, args.conferenceId);
+			const locale = assertLocale(args.locale);
+			const text = {
+				subject: ownText(args.subject),
+				heading: ownText(args.heading),
+				body: ownText(args.body)
+			};
+			const table = schema.conferenceEmailText;
+			if (!text.subject && !text.heading && !text.body) {
+				await db
+					.delete(table)
+					.where(
+						and(
+							eq(table.conferenceId, args.conferenceId),
+							eq(table.kind, args.kind),
+							eq(table.locale, locale)
+						)
+					);
+			} else {
+				await db
+					.insert(table)
+					.values({ conferenceId: args.conferenceId, kind: args.kind, locale, ...text })
+					.onConflictDoUpdate({
+						target: [table.conferenceId, table.kind, table.locale],
+						set: { ...text, updatedAt: new Date() }
+					});
+			}
+			conferenceEmailTextPubsub.updated();
+			return true;
+		}
+	}),
+
 	/**
 	 * Switches one kind of automatic mail on or off for a conference. Switching it on with
 	 * `notifyExisting: false` marks everybody it would reach right now as skipped, so only what

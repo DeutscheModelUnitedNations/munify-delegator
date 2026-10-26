@@ -1,13 +1,13 @@
-import { db, schema } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { NationRef } from '$api/handlers/nation/nation';
-import { enum_ } from '$api/rumble';
+import { NationRef } from '#api/handlers/nation/nation.js';
+import { enum_ } from '#api/rumble.js';
 import { eq, max } from 'drizzle-orm';
-import { UserRef } from '$api/handlers/user/user';
-import { loadSchoolRows } from '$api/handlers/schoolSuggestion/schoolSuggestions';
-import { readableSchoolRegistrations } from '$api/handlers/schoolSuggestion/schoolSuggestionPermissions';
+import { UserRef } from '#api/handlers/user/user.js';
+import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions.js';
+import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions.js';
 import {
 	assertValidConferenceSettings,
 	countOfferedSeats,
@@ -25,7 +25,7 @@ import {
 	conferenceUpdateRefused,
 	registerConferenceAbilities
 } from './conferencePermissions';
-import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '$api/pubsub';
+import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub.js';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({

@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PROJECT_MANAGEMENT_ROLES,
 	TEAM_ADMIN_ROLES,
@@ -8,7 +8,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	type TeamRole
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerTeamMemberInvitationAbilities() {

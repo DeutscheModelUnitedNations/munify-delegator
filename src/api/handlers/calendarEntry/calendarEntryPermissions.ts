@@ -1,14 +1,14 @@
-import { db } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerCalendarEntryAbilities() {
 	// Ported from abilities/entities/calendarEntry.ts

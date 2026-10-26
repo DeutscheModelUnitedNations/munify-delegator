@@ -95,10 +95,11 @@ const POST_LOG: LogPlan[] = [
 ];
 
 /**
- * The automatic mails' settings tab and log (`conferenceEmailSetting`, `emailLog`) for the
- * personas. Every kind stays switched **off**: switched on, the first mutation's sweep would mail
- * everybody it applies to, the crowd and bulk included. Switching one on in the tab asks whether
- * those get it now, which is the path worth trying out.
+ * The automatic mails' page and log (`conferenceEmailSetting`, `emailLog`) for the personas, and
+ * one text of the conference's own (`conferenceEmailText`: the acceptance's German subject and
+ * body), so the editor opens on an edited text. Every kind stays switched **off**: switched on,
+ * the first mutation's sweep would mail everybody it applies to, the crowd and bulk included.
+ * Switching one on asks whether those get it now, which is the path worth trying out.
  */
 export function addEmails(cs: ConferenceSeed) {
 	if (!cs.plan.with.emails) return;
@@ -119,6 +120,19 @@ export function addEmails(cs: ConferenceSeed) {
 		const email = emails.get(entry.userId);
 		if (email) cs.batch.emailLog.push(logRow(cs, entry, email));
 	}
+
+	cs.batch.conferenceEmailText.push({
+		id: cs.rowId('email-text-accepted-de'),
+		conferenceId: cs.id,
+		kind: 'ASSIGNMENT_ACCEPTED',
+		locale: 'de',
+		subject: 'Willkommen bei {conference}!',
+		heading: null,
+		body: [
+			'wir freuen uns sehr, dass Sie bei {conference} dabei sind. Sie vertreten: {seat}.',
+			'Alles Weitere zur Vorbereitung finden Sie auf Ihrem Dashboard. Bei Fragen ist die Teilnehmendenbetreuung für Sie da.'
+		].join('\n\n')
+	});
 }
 
 /** How a log row of that status looks: tries, error and when it went out. */

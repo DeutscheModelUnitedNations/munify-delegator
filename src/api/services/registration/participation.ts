@@ -1,7 +1,7 @@
-import { db } from '$api/db/db';
+import { db } from '#api/db/db.js';
 import { m } from '#lib/paraglide/messages.js';
 import { getLocale } from '#lib/paraglide/runtime.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * Finds how a user already takes part in a conference - as supervisor, single participant,

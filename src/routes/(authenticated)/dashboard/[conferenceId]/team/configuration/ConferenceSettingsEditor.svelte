@@ -18,11 +18,7 @@
 	import Form from '#lib/components/form/Form.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile.js';
-	import {
-		canEditConference,
-		canEditConferenceContent,
-		canManageEmails
-	} from '#lib/helpers/teamAccess.js';
+	import { canEditConference, canEditConferenceContent } from '#lib/helpers/teamAccess.js';
 	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
@@ -36,7 +32,6 @@
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
 	import ResolutionManager from './ResolutionManager.svelte';
-	import EmailSettings from './emails/EmailSettings.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -279,15 +274,7 @@
 		return counts;
 	});
 
-	const validTabs = [
-		'general',
-		'committees',
-		'status',
-		'links',
-		'payments',
-		'documents',
-		'emails'
-	] as const;
+	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
 	type TabType = (typeof validTabs)[number];
 	const params = queryParameters({ tab: true });
 	let currentTab = $derived<TabType>(validTabs.find((tab) => tab === params.tab) ?? 'general');
@@ -302,8 +289,7 @@
 		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
 		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
 		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
-		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' },
-		{ value: 'emails', label: m.emailSettingsTab(), icon: 'fa-envelope' }
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
 	]);
 
 	const tabIntros: Record<TabType, () => string> = {
@@ -312,8 +298,7 @@
 		status: m.tabExplanationStatus,
 		links: m.tabExplanationLinks,
 		payments: m.tabExplanationPayments,
-		documents: m.tabExplanationDocuments,
-		emails: m.tabExplanationEmails
+		documents: m.tabExplanationDocuments
 	};
 	let tabIntro = $derived(tabIntros[currentTab]());
 
@@ -391,11 +376,6 @@
 			<i class="fas fa-save"></i>
 		</button>
 	</div>
-
-	<!-- Automatic emails (outside main form; each switch saves on its own) -->
-	{#if currentTab === 'emails'}
-		<EmailSettings {conferenceId} canManage={canManageEmails(access)} />
-	{/if}
 
 	<!-- Committees Tab (outside main form) -->
 	<div class:hidden={currentTab !== 'committees'}>

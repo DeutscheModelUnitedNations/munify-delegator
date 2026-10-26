@@ -1,5 +1,4 @@
 import { defineConfig } from 'tsdown';
-import { join } from 'node:path';
 
 /**
  * The one-shot jobs CLI (`src/jobs/cli.ts`), bundled into a single file that runs as its own
@@ -16,9 +15,6 @@ export default defineConfig({
 	outExtensions: () => ({ js: '.js' }),
 	sourcemap: true,
 	dts: false,
-	alias: {
-		$api: join(import.meta.dirname, 'src', 'api')
-	},
 	deps: {
 		neverBundle: ['pg'],
 		alwaysBundle: [/^(?!pg($|\/))/],

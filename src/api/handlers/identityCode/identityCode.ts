@@ -1,4 +1,4 @@
-import { schemaBuilder } from '$api/rumble';
+import { schemaBuilder } from '#api/rumble.js';
 import { identityPublicKey, issueIdentityCode } from './identityKeyPair';
 
 const IdentityCode = schemaBuilder.simpleObject('IdentityCode', {

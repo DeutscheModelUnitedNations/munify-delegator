@@ -1,13 +1,13 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('$api/db/db', () => ({ db: {}, schema: {} }));
-vi.mock('$api/services/email/emailService', () => ({ emailService: {} }));
-vi.mock('$api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
+vi.mock('#api/db/db.js', () => ({ db: {}, schema: {} }));
+vi.mock('#api/services/email/emailService.js', () => ({ emailService: {} }));
+vi.mock('#api/pubsub.js', () => ({ emailLogPubsub: { updated: () => undefined } }));
 vi.mock('#lib/emails/index.js', () => ({
 	renderEmail: () => undefined,
 	NotificationEmail: undefined
 }));
-vi.mock('$api/services/requestLocale', () => ({
+vi.mock('#api/services/requestLocale.js', () => ({
 	localeOfUser: () => 'de',
 	runWithLocale: (_locale: string, fn: () => unknown) => fn()
 }));

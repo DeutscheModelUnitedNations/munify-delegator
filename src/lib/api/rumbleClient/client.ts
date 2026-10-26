@@ -1170,6 +1170,51 @@ export type ConferenceemailsettingWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
+export type Conferenceemailtext = {
+  body: String | null,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  createdAt: DateTime,
+  heading: String | null,
+  id: ID,
+  kind: EmailkindEnum,
+  locale: String,
+  search_distance: Float | null,
+  subject: String | null,
+  updatedAt: DateTime    
+};
+		
+export type ConferenceemailtextOrderInputArgument = {
+  body?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  heading?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  kind?: SortingParameter | null | undefined,
+  locale?: SortingParameter | null | undefined,
+  subject?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ConferenceemailtextWhereInputArgument = {
+  AND?: ConferenceemailtextWhereInputArgument[] | undefined,
+  NOT?: ConferenceemailtextWhereInputArgument | null | undefined,
+  OR?: ConferenceemailtextWhereInputArgument[] | undefined,
+  body?: StringWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  heading?: StringWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  kind?: EmailkindEnum | null | undefined,
+  locale?: StringWhereInputArgument | null | undefined,
+  subject?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
 export type Conferenceparticipant = {
   accessCardId: ID | null,
   assignedDocumentNumber: Int | null,
@@ -2348,6 +2393,14 @@ export type Mutation = {
     kind: EmailkindEnum,
     notifyExisting?: Boolean | null | undefined
   }) => Boolean,
+  setConferenceEmailText: (p: {
+    body?: String | null | undefined,
+    conferenceId: ID,
+    heading?: String | null | undefined,
+    kind: EmailkindEnum,
+    locale: String,
+    subject?: String | null | undefined
+  }) => Boolean,
   setParticipantSchool: (p: {
     id: ID,
     schoolId?: ID | null | undefined,
@@ -3271,6 +3324,16 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferenceemailsettingWhereInputArgument | null | undefined
   }) => Conferenceemailsetting[],
+  conferenceEmailText: (p: {
+    id: ID
+  }) => Conferenceemailtext,
+  conferenceEmailTexts: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailtextOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailtextWhereInputArgument | null | undefined
+  }) => Conferenceemailtext[],
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -3356,8 +3419,13 @@ export type Query = {
     where?: EmaillogWhereInputArgument | null | undefined
   }) => Emaillog[],
   emailPreview: (p: {
+    body?: String | null | undefined,
     conferenceId: ID,
-    kind: EmailkindEnum
+    draft?: Boolean | null | undefined,
+    heading?: String | null | undefined,
+    kind: EmailkindEnum,
+    locale?: String | null | undefined,
+    subject?: String | null | undefined
   }) => EmailPreview,
   emailStats: (p: {
     conferenceId: ID,
@@ -4769,6 +4837,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: ConferenceemailsettingWhereInputArgument | null | undefined
   }) => Conferenceemailsetting[],
+  conferenceEmailText: (p: {
+    id: ID
+  }) => Conferenceemailtext,
+  conferenceEmailTexts: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceemailtextOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceemailtextWhereInputArgument | null | undefined
+  }) => Conferenceemailtext[],
   conferenceParticipant: (p: {
     id: ID
   }) => Conferenceparticipant,
@@ -5734,7 +5812,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

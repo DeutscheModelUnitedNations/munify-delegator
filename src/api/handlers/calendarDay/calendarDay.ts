@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assertCanCreateCalendarDay,
 	deletableCalendarDayWhere,
@@ -13,9 +13,9 @@ import {
 	calendarEntryPubsub,
 	calendarTrackPubsub,
 	placePubsub
-} from '$api/pubsub';
+} from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerCalendarDayAbilities();
 

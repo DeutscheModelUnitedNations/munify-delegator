@@ -1,7 +1,7 @@
 import { execute } from 'graphql';
 import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
-import { yoga } from '$api/yoga';
+import { yoga } from '#api/yoga.js';
 
 const graphqlRequestSchema = z.object({
 	query: z.any(),

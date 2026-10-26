@@ -1,8 +1,8 @@
-import { db } from '$api/db/db';
+import { db } from '#api/db/db.js';
 import { sql, type SQL } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
-import type { Context } from '$api/context';
-import type { teamRole } from '$api/db/schema';
+import type { Context } from '#api/context.js';
+import type { teamRole } from '#api/db/schema/index.js';
 import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
 
 /** The TeamRole enum values, taken from the schema so role lists stay type-checked. */
@@ -65,7 +65,7 @@ import {
 } from '#lib/helpers/teamRoles.js';
 import { m } from '#lib/paraglide/messages.js';
 import { translateTeamRole } from '#lib/utils/enumTranslations.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {

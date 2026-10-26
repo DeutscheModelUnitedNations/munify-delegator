@@ -1,9 +1,9 @@
-import { type Transaction, db, schema } from '$api/db/db';
-import { nullToUndefined } from '$api/services/args';
+import { type Transaction, db, schema } from '#api/db/db.js';
+import { nullToUndefined } from '#api/services/args.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, isNull, max } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * The person's row in the conference, created the first time they register there (as delegate,

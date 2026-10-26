@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { schemaBuilder } from '#api/rumble.js';
 import {
 	applicationIdsSql,
 	deckSchema,
@@ -12,7 +12,7 @@ import {
 import { assertCanReadSightingDeck } from './sightingDeckPermissions';
 import codenmz from '#lib/helpers/codenamize.js';
 import { z } from 'zod';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 	description: 'One application under review: what the deck orders, filters and colours it by.',

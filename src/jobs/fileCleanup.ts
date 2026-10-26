@@ -1,5 +1,5 @@
 import { and, eq, inArray, lt, notExists, sql, type SQL } from 'drizzle-orm';
-import { createStorage, type Storage } from '$api/handlers/storedFile/storageClient';
+import { createStorage, type Storage } from '#api/handlers/storedFile/storageClient.js';
 import { storageConfig } from './config';
 import { db, schema } from './db';
 import { DEFAULT_GRACE_HOURS, fileReferenceColumns, orphanedObjectKeys } from './fileReferences';

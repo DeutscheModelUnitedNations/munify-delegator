@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
@@ -8,10 +8,10 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '$api/services/authHelper';
-import { fetchUserParticipations } from '$api/services/registration/participation';
+} from '#api/services/authHelper.js';
+import { fetchUserParticipations } from '#api/services/registration/participation.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is

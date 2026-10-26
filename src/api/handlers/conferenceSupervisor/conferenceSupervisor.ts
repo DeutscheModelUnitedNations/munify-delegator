@@ -1,6 +1,6 @@
-import { db, schema } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { object, countQuery, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import {
 	connectParticipantToSupervisor,
 	findSupervisorByConnectionCode,
@@ -24,9 +24,9 @@ import {
 	delegationMemberPubsub,
 	schoolPubsub,
 	singleParticipantPubsub
-} from '$api/pubsub';
-import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
-import { setRegistrationSchool } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+} from '#api/pubsub.js';
+import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
+import { setRegistrationSchool } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 
 registerConferenceSupervisorAbilities();
 

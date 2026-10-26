@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 type Kind = 'text' | 'enum' | 'bool' | 'number';
 

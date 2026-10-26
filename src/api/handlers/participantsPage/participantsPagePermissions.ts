@@ -1,5 +1,5 @@
-import type { Context } from '$api/context';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
+import type { Context } from '#api/context.js';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '#api/services/authHelper.js';
 
 /**
  * The participants table is the care team's: filtering and ordering by contact data and care

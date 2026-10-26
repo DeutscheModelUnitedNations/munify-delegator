@@ -7,7 +7,7 @@ import {
 	type EmailGroupId
 } from '#lib/helpers/emailKinds.js';
 
-/** What the settings tab says about each automatic mail: when it goes, to whom, with what. */
+/** What the e-mail page says about each automatic mail: when it goes, to whom, with what. */
 export interface EmailKindTexts {
 	title: string;
 	trigger: string;

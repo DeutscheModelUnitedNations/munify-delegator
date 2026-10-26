@@ -239,12 +239,12 @@ bun run preview
   `assertAllowedRow` (a row through its own update/delete ability, else NOT_FOUND),
   `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
   `assertUserInConference`, `assertParticipantOfConference`. Permission functions take
-  `ApiContext` (`$api/rumble`), which carries `abilities`.
+  `ApiContext` (`#api/rumble.js`), which carries `abilities`.
 
 - **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
 
   ```ts
-  import { committeePubsub } from '$api/pubsub';
+  import { committeePubsub } from '#api/pubsub.js';
   // …
   committeePubsub.updated(args.id); // or created() / removed()
   ```
@@ -468,7 +468,7 @@ bun run preview
   `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
   `stored_file` (`conference.logoFileId`, `place.sitePlanFileId`, `resolution.fileId`, …), which
   knows the object's key, type, size and name. All of it lives in the table's handler,
-  `$api/handlers/storedFile/`: `FILE_SOURCES` (`fileSources.ts`) lists every file - its column,
+  `#api/handlers/storedFile/`: `FILE_SOURCES` (`fileSources.ts`) lists every file - its column,
   who may upload it, the allowed types and the size limit; `storedFilePermissions.ts` holds the
   checks, `storedFileService.ts` the uploads and download URLs, and `storageClient.ts` the s3mini
   wrapper the jobs and the seed build their own bucket from.
@@ -565,7 +565,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
-- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`$api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`$api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
+- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`#api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`#api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -574,7 +574,7 @@ bun run preview
   and `defineRelations` in `src/api/db/relations.ts`. Columns are camelCase in TypeScript and
   snake_case in the database; `snakeCase.table` does the mapping.
 - Row and insert shapes come from Drizzle itself (`typeof schema.conference.$inferSelect`,
-  `typeof schema.conference.$inferInsert`, with `import type * as schema from '$api/db/schema'`)
+  `typeof schema.conference.$inferInsert`, with `import type * as schema from '#api/db/schema/index.js'`)
   rather than from a generated client
 - Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
 - **A person's part in a conference is one `conferenceParticipant` row** (per user and conference),
@@ -695,7 +695,7 @@ bun run preview
 - **Why:** someone with a care note (`user.globalNotes`) who signs up again with a new account
   would shed it. The plausibility page lists accounts that may belong to the same person as an
   account from before, for participant care to decide (`OPEN` / `CONFIRMED` / `DISMISSED`).
-- **Matching** is pure, in `$api/handlers/possibleDuplicate/duplicateMatching.ts`: names are transliterated to Latin
+- **Matching** is pure, in `#api/handlers/possibleDuplicate/duplicateMatching.ts`: names are transliterated to Latin
   letters (`any-ascii`, any script) and compared per part with Jaro-Winkler; birthday, email local
   part, phone, emergency numbers and address add weights, none of them enough alone. Only accounts
   sharing a blocking key are compared. `possibleDuplicates.ts` loads the accounts and stores the
@@ -732,7 +732,7 @@ bun run preview
   optional `schoolId` (`schoolRef()`, `set null` on delete); no row names a school as text any
   more. Every mutation that sets one takes the pair `schoolId` / `schoolName`
   (`SchoolChoice`): an existing school, or a name that `resolveSchoolChoice`
-  (`$api/handlers/school/schoolService.ts`) finds (ignoring case and spacing) or creates. Both
+  (`#api/handlers/school/schoolService.ts`) finds (ignoring case and spacing) or creates. Both
   left out keeps the school, both `null` removes it - **a school is always optional**, so
   `applicationTextsComplete` no longer asks for one.
 - **Visibility:** everybody reads a school's name and place (applicants pick from
@@ -760,26 +760,36 @@ bun run preview
 
 #### 9. Automatic emails
 
-- **Every mail follows from state, not from an event.** `dueEmails` (`$api/handlers/email/`) is
+- **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
   conference owes - acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
   application deadline and the conference, certificates, students linked to a supervisor. The
   rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
-  there; the settings tab explains them in the same words.
+  there; the e-mail page explains them in the same words.
 - **`emailLog` makes each mail happen once.** The sweep (`emailSweep.ts`) claims a mail by writing
   its row, unique per conference, kind, person and `subjectKey`, before sending, so concurrent
   sweeps and instances never double-send; failures are retried three times, a claim left by a dead
   process frees up after 15 minutes. Every row (sent, failed, skipped) is shown in the log.
-- **Per conference and kind, off by default** (`conferenceEmailSetting`, settings tab "E-Mails",
-  participant care). Switching a kind on asks whether the people it already applies to get it now
-  (`notifyExisting`) or are marked `SKIPPED`.
+- **Per conference and kind, off by default** (`conferenceEmailSetting`), on their own team page
+  `team/emails/` (participant care). The switches wait for the page's save button
+  (`emailChanges.svelte.ts`) and show up in its change preview. Switching a kind on asks whether
+  the people it already applies to get it on saving (`notifyExisting`) or are marked `SKIPPED`.
+- **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
+  and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
+  and a body with `{placeholders}`; `#lib/helpers/emailTemplates.ts` holds the defaults (built
+  from the `emailAuto…` messages), which placeholders each kind offers, and `fillEmailText`, which
+  the API and the editor share. Only changed fields are stored: an empty one falls back to the
+  default, and a field saved unchanged is stored as none so it follows when the default improves.
+  The greeting and the button stay fixed; `{list}` alone in a paragraph places a kind's list.
+  `emailPreview` renders a draft (`draft: true`) in any locale, which is the editor's preview.
 - **Two triggers, one path:** the mutations that change what is due (release, applying the draft,
   conference settings, participant statuses, seating someone, a supervisor link) call
   `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
   calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
-  and anything missed. The app renders the mails (one template, `NotificationEmail.svelte`, text per
-  kind in `emailContent.ts`) in the recipient's locale; links use the origin of the request that
+  and anything missed. The app renders the mails (one template, `NotificationEmail.svelte` on
+  `#lib/emails/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`; values per kind in
+  `emailContent.ts`) in the recipient's locale; links use the origin of the request that
   triggered the sweep.
 
 #### 10. Background Tasks and Jobs
@@ -801,14 +811,14 @@ bun run preview
 ### Path Aliases
 
 SvelteKit 3 has no `svelte.config.js`: its options are the `sveltekit()` plugin's, in
-`vite.config.ts`. `#lib` and `#assets` are subpath imports (`imports` in `package.json`); a
-`#lib` import is written with the file extension (`#lib/helpers/formatNames.js`). `$api` is still
-the plugin's `alias`, which SvelteKit 3 deprecates (it warns on every start) but still honours:
+`vite.config.ts`. There are no aliases (SvelteKit 3 deprecates the plugin's `alias`): `#lib`,
+`#api` and `#assets` are subpath imports (`imports` in `package.json`), written with the file
+extension (`#lib/helpers/formatNames.js`, `#api/db/db.js`; a directory as `…/index.js`):
 
 ```
 #lib → src/lib
+#api → src/api
 #assets → src/assets
-$api → src/api
 ```
 
 ### Important Integrations
@@ -818,7 +828,7 @@ $api → src/api
 - **Rich Text Editor**: TipTap for committee agenda items
 - **Maps**: Leaflet via `sveaflet` for delegation locations
 - **External APIs**: Listmonk email service integration in `src/jobs/apis/`
-- **File storage**: an S3 bucket through `s3mini` (`$api/handlers/storedFile/storageClient.ts`)
+- **File storage**: an S3 bucket through `s3mini` (`#api/handlers/storedFile/storageClient.ts`)
 
 ### UI Component Patterns
 

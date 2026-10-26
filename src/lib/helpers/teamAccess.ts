@@ -44,6 +44,3 @@ export const canPlanSeats = (access: TeamAccess) => hasAnyRole(access, SEAT_PLAN
 /** Storing an access card on a person's status, which the scanner's badge option does */
 export const canWriteAccessCards = (access: TeamAccess) =>
 	hasAnyRole(access, PARTICIPANT_CARE_ROLES);
-
-/** Switching the automatic mails on and off and reading who was written to */
-export const canManageEmails = (access: TeamAccess) => hasAnyRole(access, PARTICIPANT_CARE_ROLES);

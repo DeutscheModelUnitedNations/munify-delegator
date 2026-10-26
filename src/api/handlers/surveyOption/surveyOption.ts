@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assertCanCreateSurveyOption,
 	deletableSurveyOptionWhere,
@@ -7,9 +7,9 @@ import {
 	updatableSurveyOptionWhere
 } from './surveyOptionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { surveyOptionPubsub } from '$api/pubsub';
+import { surveyOptionPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 registerSurveyOptionAbilities();
 

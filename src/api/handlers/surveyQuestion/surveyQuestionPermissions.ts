@@ -1,4 +1,4 @@
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
@@ -6,7 +6,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerSurveyQuestionAbilities() {
 	// Ported from abilities/entities/surveyQuestion.ts

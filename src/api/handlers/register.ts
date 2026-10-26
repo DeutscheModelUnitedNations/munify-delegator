@@ -47,7 +47,7 @@ import './userReferenceInPaymentTransaction/userReferenceInPaymentTransaction';
 import './waitingListEntry/waitingListEntry';
 
 import { building, dev } from '$app/env';
-import { clientCreator } from '$api/rumble';
+import { clientCreator } from '#api/rumble.js';
 
 if (dev || building) {
 	await clientCreator({

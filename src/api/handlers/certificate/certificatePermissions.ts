@@ -1,7 +1,7 @@
-import type { Context } from '$api/context';
-import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '$api/services/authHelper';
+import type { Context } from '#api/context.js';
+import { PARTICIPANT_CARE_ROLES, hasTeamRole } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * A certificate is the participant's own, issued by participant care: reading somebody's status

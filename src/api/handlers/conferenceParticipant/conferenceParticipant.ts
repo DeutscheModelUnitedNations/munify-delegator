@@ -1,6 +1,6 @@
-import { db } from '$api/db/db';
-import { scheduleEmailSweep } from '$api/handlers/email/emailSweep';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	createStatus,
@@ -9,14 +9,14 @@ import {
 	setParticipantSchool,
 	updateStatus
 } from './conferenceParticipantService';
-import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
+import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
 import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
-import { conferenceParticipantPubsub, schoolPubsub } from '$api/pubsub';
+import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub.js';
 
 registerConferenceParticipantAbilities();
 

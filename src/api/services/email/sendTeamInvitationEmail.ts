@@ -1,6 +1,6 @@
 import { emailService } from './emailService';
 import { renderEmail, TeamInvitationEmail, TeamWelcomeEmail } from '#lib/emails/index.js';
-import type { TeamRole } from '$api/services/authHelper';
+import type { TeamRole } from '#api/services/authHelper.js';
 import { translateTeamRole } from '#lib/utils/enumTranslations.js';
 import { m } from '#lib/paraglide/messages.js';
 import type { Locale } from '#lib/paraglide/runtime.js';

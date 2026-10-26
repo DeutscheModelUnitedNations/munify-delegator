@@ -1,8 +1,8 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one

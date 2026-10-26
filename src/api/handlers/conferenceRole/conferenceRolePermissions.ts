@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertTeamRole,
@@ -7,7 +7,7 @@ import {
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerConferenceRoleAbilities() {

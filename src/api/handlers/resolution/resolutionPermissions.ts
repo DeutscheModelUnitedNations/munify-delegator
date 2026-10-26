@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import { abilityBuilder, type ApiContext } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertTeamRole,
@@ -9,11 +9,11 @@ import {
 	offeredIn,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { assertCanClaimFile } from '$api/handlers/storedFile/storedFilePermissions';
+} from '#api/services/authHelper.js';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerResolutionAbilities() {
 	abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);

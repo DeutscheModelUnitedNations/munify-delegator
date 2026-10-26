@@ -1,5 +1,5 @@
-import { db } from '$api/db/db';
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { db } from '#api/db/db.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertCustomRolesOf,
@@ -9,8 +9,8 @@ import {
 	assertOfferedIn,
 	systemAdmin,
 	where
-} from '$api/services/authHelper';
-import { apiError } from '$api/services/errors/apiError';
+} from '#api/services/authHelper.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import type { reviewRow } from '#lib/assignment/review.js';
 import type { Target } from '#lib/assignment/state.js';
 import { m } from '#lib/paraglide/messages.js';

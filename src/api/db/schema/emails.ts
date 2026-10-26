@@ -57,6 +57,34 @@ export const conferenceEmailSetting = snakeCase.table(
 );
 
 /**
+ * A conference's own text for one kind of automatic mail in one language. Only what the team
+ * changed is stored: a field left null keeps the default text (`#lib/helpers/emailTemplates.ts`),
+ * and so follows when that improves.
+ */
+export const conferenceEmailText = snakeCase.table(
+	'conference_email_text',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		kind: emailKind().notNull(),
+		/** A Paraglide locale (`de`, `en`): mails are written in the recipient's. */
+		locale: text().notNull(),
+		subject: text(),
+		heading: text(),
+		/** Paragraphs separated by a blank line, with `{placeholders}`. */
+		body: text()
+	},
+	(table) => [
+		uniqueIndex('conference_email_text_conference_id_kind_locale_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.kind.asc().nullsLast(),
+			table.locale.asc().nullsLast()
+		)
+	]
+);
+
+/**
  * One automatic mail to one person. The row is written before the mail goes out and is unique per
  * conference, kind, person and `subjectKey` (what the mail is about: a role, a status, a student),
  * so a mail is sent once however often the sweep runs, on however many instances.

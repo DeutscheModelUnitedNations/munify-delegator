@@ -1,6 +1,6 @@
-import { db, schema } from '$api/db/db';
-import { countQuery, enum_, object, query, schemaBuilder } from '$api/rumble';
-import { userId } from '$api/services/authHelper';
+import { db, schema } from '#api/db/db.js';
+import { countQuery, enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { userId } from '#api/services/authHelper.js';
 import {
 	createPaper,
 	findNextPaperToReview,
@@ -26,7 +26,7 @@ import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { paperPubsub, paperVersionPubsub } from '$api/pubsub';
+import { paperPubsub, paperVersionPubsub } from '#api/pubsub.js';
 
 registerPaperAbilities();
 

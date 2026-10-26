@@ -1,15 +1,8 @@
 <script lang="ts">
-	import {
-		Html,
-		Head,
-		Body,
-		Container,
-		Section,
-		Text,
-		Link
-	} from '@better-svelte-email/components';
-	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import EmailLayout from '../EmailLayout.svelte';
+	import EmailButton from '../EmailButton.svelte';
+	import { textStyle } from '../brand';
 
 	interface Props {
 		recipientName: string;
@@ -36,42 +29,12 @@
 	const reviewer = $derived(reviewerEmail ? `${reviewerName} (${reviewerEmail})` : reviewerName);
 </script>
 
-<Html lang={getLocale()}>
-	<Head>
-		<title>{m.emailNewReviewTitle()}</title>
-	</Head>
-	<Body
-		style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
-	>
-		<Container
-			style="background-color: #ffffff; margin: 40px auto; padding: 20px; border-radius: 8px; max-width: 600px;"
-		>
-			<Section>
-				<Text style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;">
-					{m.emailNewReviewHeading()}
-				</Text>
+<EmailLayout heading={m.emailNewReviewHeading()} {conferenceTitle}>
+	<p style={textStyle}>{m.emailGreeting({ name: recipientName })}</p>
+	<p style={textStyle}>
+		{m.emailNewReviewBody({ paperType, paperTitle, conferenceTitle, reviewer })}
+	</p>
+	<p style={textStyle}>{m.emailNewReviewNewStatus()} <strong>{newStatus}</strong></p>
 
-				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{m.emailGreeting({ name: recipientName })}
-				</Text>
-
-				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{m.emailNewReviewBody({ paperType, paperTitle, conferenceTitle, reviewer })}
-				</Text>
-
-				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{m.emailNewReviewNewStatus()} <strong>{newStatus}</strong>
-				</Text>
-
-				<Section style="text-align: center; margin: 32px 0;">
-					<Link
-						href={paperUrl}
-						style="background-color: #3d7dd2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
-					>
-						{m.emailNewReviewButton()}
-					</Link>
-				</Section>
-			</Section>
-		</Container>
-	</Body>
-</Html>
+	<EmailButton href={paperUrl} label={m.emailNewReviewButton()} />
+</EmailLayout>

@@ -1,10 +1,10 @@
-import { type ApiContext, abilityBuilder } from '$api/rumble';
+import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '$api/services/authHelper';
+} from '#api/services/authHelper.js';
 
 export function registerCalendarTrackAbilities() {
 	// Ported from abilities/entities/calendarTrack.ts

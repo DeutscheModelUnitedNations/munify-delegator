@@ -1,8 +1,8 @@
-import { schemaBuilder } from '$api/rumble';
+import { schemaBuilder } from '#api/rumble.js';
 import { assertCanReadNametagBins } from './nametagBinsPermissions';
 import { loadNametagBinGroups, loadNametagBins, loadOwnNametagTable } from './bins';
 import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
-import { db } from '$api/db/db';
+import { db } from '#api/db/db.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 const NametagBin = schemaBuilder.simpleObject('NametagBin', {

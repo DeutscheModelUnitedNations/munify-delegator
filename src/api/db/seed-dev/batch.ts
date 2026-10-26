@@ -53,6 +53,7 @@ export interface SeedBatch {
 	assignmentWeights: (typeof schema.assignmentWeights.$inferInsert)[];
 	possibleDuplicate: (typeof schema.possibleDuplicate.$inferInsert)[];
 	conferenceEmailSetting: (typeof schema.conferenceEmailSetting.$inferInsert)[];
+	conferenceEmailText: (typeof schema.conferenceEmailText.$inferInsert)[];
 	emailLog: (typeof schema.emailLog.$inferInsert)[];
 }
 
@@ -103,6 +104,7 @@ export function emptyBatch(): SeedBatch {
 		assignmentWeights: [],
 		possibleDuplicate: [],
 		conferenceEmailSetting: [],
+		conferenceEmailText: [],
 		emailLog: []
 	};
 }
@@ -192,6 +194,9 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	);
 	await insertChunked(batch.conferenceEmailSetting, (rows) =>
 		db.insert(s.conferenceEmailSetting).values(rows)
+	);
+	await insertChunked(batch.conferenceEmailText, (rows) =>
+		db.insert(s.conferenceEmailText).values(rows)
 	);
 	await insertChunked(batch.emailLog, (rows) => db.insert(s.emailLog).values(rows));
 }

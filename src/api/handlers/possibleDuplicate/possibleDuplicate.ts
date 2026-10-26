@@ -1,6 +1,6 @@
-import { db } from '$api/db/db';
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
-import { userId } from '$api/services/authHelper';
+import { db } from '#api/db/db.js';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { userId } from '#api/services/authHelper.js';
 import { decidePossibleDuplicate, scanConferenceForDuplicates } from './possibleDuplicates';
 import {
 	assertCanDecidePossibleDuplicate,
@@ -8,7 +8,7 @@ import {
 	registerPossibleDuplicateAbilities
 } from './possibleDuplicatePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { possibleDuplicatePubsub, userPubsub } from '$api/pubsub';
+import { possibleDuplicatePubsub, userPubsub } from '#api/pubsub.js';
 
 registerPossibleDuplicateAbilities();
 

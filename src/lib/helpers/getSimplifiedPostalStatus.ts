@@ -1,5 +1,5 @@
 import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
-import type * as schema from '$api/db/schema';
+import type * as schema from '#api/db/schema/index.js';
 
 /**
  * Determines a simplified administrative status based on various consent statuses

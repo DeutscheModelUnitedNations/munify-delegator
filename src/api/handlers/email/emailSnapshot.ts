@@ -1,4 +1,4 @@
-import { db } from '$api/db/db';
+import { db } from '#api/db/db.js';
 import type { EmailSnapshot, SnapshotPerson, SnapshotRole } from './dueEmails';
 
 const ROLE = { columns: { id: true, kind: true, name: true, nationAlpha3Code: true } } as const;

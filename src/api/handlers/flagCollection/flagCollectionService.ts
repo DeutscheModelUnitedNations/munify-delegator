@@ -1,4 +1,4 @@
-import { db } from '$api/db/db';
+import { db } from '#api/db/db.js';
 
 export type PieceState = 'LOCKED' | 'UNLOCKED' | 'FOUND';
 

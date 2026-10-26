@@ -1,5 +1,5 @@
-import { db, schema } from '$api/db/db';
-import type { ApiContext } from '$api/rumble';
+import { db, schema } from '#api/db/db.js';
+import type { ApiContext } from '#api/rumble.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
 import { m } from '#lib/paraglide/messages.js';
@@ -12,12 +12,12 @@ import {
 	yearsAgo
 } from '#lib/helpers/plausibilityRules.js';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { nullToUndefined } from '$api/services/args';
-import { totalSeats } from '$api/services/seatPlanning';
-import { MAX_NAMETAG_BINS } from '$api/handlers/nametagBins/bins';
+import { nullToUndefined } from '#api/services/args.js';
+import { totalSeats } from '#api/services/seatPlanning.js';
+import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins.js';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
-import { ensureUploadComplete } from '$api/handlers/storedFile/storedFileService';
-import { apiError } from '$api/services/errors/apiError';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {

@@ -1,8 +1,12 @@
-import { db } from '$api/db/db';
-import { object, query, schemaBuilder } from '$api/rumble';
-import { nonStateActorUpdateData } from '$api/services/seatPlanning';
+import { db } from '#api/db/db.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
+import { nonStateActorUpdateData } from '#api/services/seatPlanning.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { conferenceRolePubsub, roleApplicationPubsub, singleParticipantPubsub } from '$api/pubsub';
+import {
+	conferenceRolePubsub,
+	roleApplicationPubsub,
+	singleParticipantPubsub
+} from '#api/pubsub.js';
 import {
 	assertCanCreateCustomRole,
 	assertCanDeleteCustomRole,

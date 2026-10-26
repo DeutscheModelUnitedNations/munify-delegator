@@ -2,7 +2,7 @@ import { defineConfig } from 'tsdown';
 
 /**
  * The worker threads the server starts for CPU-bound work, so the matching does not block the
- * event loop (`$api/handlers/assignment/matching`). SvelteKit's build does not bundle worker entry points, so
+ * event loop (`#api/handlers/assignment/matching.js`). SvelteKit's build does not bundle worker entry points, so
  * they are built on their own into the adapter's output directory. Run it after `vite build`: the
  * adapter empties `build/` first, and `clean` is off so this does not do the same to the app.
  *

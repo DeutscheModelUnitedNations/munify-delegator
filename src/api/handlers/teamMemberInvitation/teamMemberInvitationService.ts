@@ -1,17 +1,17 @@
-import { db, schema } from '$api/db/db';
-import type { TeamRole } from '$api/services/authHelper';
+import { db, schema } from '#api/db/db.js';
+import type { TeamRole } from '#api/services/authHelper.js';
 import {
 	getInvitationExpiryDate,
 	hashToken,
 	makeInvitationToken
-} from '$api/services/account/invitationToken';
+} from '#api/services/account/invitationToken.js';
 import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail
-} from '$api/services/email/sendTeamInvitationEmail';
+} from '#api/services/email/sendTeamInvitationEmail.js';
 import { m } from '#lib/paraglide/messages.js';
 import { getLocale } from '#lib/paraglide/runtime.js';
-import { localeOfUser } from '$api/services/requestLocale';
+import { localeOfUser } from '#api/services/requestLocale.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 

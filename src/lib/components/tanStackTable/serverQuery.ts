@@ -106,7 +106,7 @@ export function rangeFilter(filter: unknown): { gte?: number; lte?: number } | u
 	return Object.keys(range).length > 0 ? range : undefined;
 }
 
-/** The most rows the backend returns for one request (`defaultLimit` in `$api/rumble`). */
+/** The most rows the backend returns for one request (`defaultLimit` in `#api/rumble.js`). */
 export const BACKEND_PAGE_LIMIT = 1000;
 
 /** Every row a paged query has, fetched one backend page after the other (for exports). */

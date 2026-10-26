@@ -1,7 +1,7 @@
-import { enum_, object, query, schemaBuilder } from '$api/rumble';
+import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { createPaperReview } from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
-import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '$api/pubsub';
+import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub.js';
 
 registerPaperReviewAbilities();
 

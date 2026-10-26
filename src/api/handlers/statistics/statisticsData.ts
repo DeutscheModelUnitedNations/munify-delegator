@@ -1,4 +1,4 @@
-import { db, schema } from '$api/db/db';
+import { db, schema } from '#api/db/db.js';
 import { eq } from 'drizzle-orm';
 
 /** Runs `load` on the first call and hands every later call the same promise. */

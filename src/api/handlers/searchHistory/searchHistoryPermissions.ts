@@ -1,8 +1,8 @@
-import { abilityBuilder } from '$api/rumble';
-import { assertTeamRole, systemAdmin, userId, where } from '$api/services/authHelper';
-import type { Context } from '$api/context';
+import { abilityBuilder } from '#api/rumble.js';
+import { assertTeamRole, systemAdmin, userId, where } from '#api/services/authHelper.js';
+import type { Context } from '#api/context.js';
 import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerSearchHistoryAbilities() {
 	// A history is only ever read by the person who made it, from any of their devices.

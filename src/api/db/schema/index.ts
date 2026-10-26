@@ -51,7 +51,13 @@ export {
 	assignmentWeights
 } from './assignment';
 export { attendanceSessionMode, attendanceSession, attendanceEntry } from './attendance';
-export { emailKind, emailStatus, conferenceEmailSetting, emailLog } from './emails';
+export {
+	emailKind,
+	emailStatus,
+	conferenceEmailSetting,
+	conferenceEmailText,
+	emailLog
+} from './emails';
 export {
 	paperStatus,
 	paperType,

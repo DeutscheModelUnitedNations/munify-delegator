@@ -34,7 +34,7 @@
 						{m.configChangeFileReplaced()}
 					</span>
 				{/if}
-				{#if change.highImpact && change.note}
+				{#if change.note}
 					<span class="text-base-content/70 text-xs break-words">{change.note}</span>
 				{/if}
 			</div>

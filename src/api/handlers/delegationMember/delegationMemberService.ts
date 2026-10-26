@@ -1,21 +1,21 @@
-import { type Transaction, db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '#api/db/db.js';
 import {
 	ensureConferenceParticipant,
 	fillParticipantSchool,
 	setParticipantSchool
-} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
-} from '$api/services/registration/participation';
-import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
-import { nullToUndefined } from '$api/services/args';
-import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
+} from '#api/services/registration/participation.js';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
+import { nullToUndefined } from '#api/services/args.js';
+import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
-import { apiError } from '$api/services/errors/apiError';
-import { markSeatedFromWaitingList } from '$api/handlers/waitingListEntry/waitingListEntryService';
+import { apiError } from '#api/services/errors/apiError.js';
+import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
 import type { CommitteeMove } from './delegationMemberPermissions';
 
 /** Joining a delegation by entry code. Returns the id of the new member. */

@@ -1,9 +1,9 @@
 import { m } from '#lib/paraglide/messages.js';
 import formatNames from '#lib/helpers/formatNames.js';
-import type * as schema from '$api/db/schema';
+import type * as schema from '#api/db/schema/index.js';
 import { isValidManualTargets } from '#lib/helpers/seatPlanning/baselines.js';
 import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers.js';
-import { apiError } from '$api/services/errors/apiError';
+import { apiError } from '#api/services/errors/apiError.js';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
