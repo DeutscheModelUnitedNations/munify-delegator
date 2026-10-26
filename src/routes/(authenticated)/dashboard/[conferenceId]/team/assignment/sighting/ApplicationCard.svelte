@@ -35,9 +35,11 @@
 	const border = $derived(
 		review?.disqualified
 			? 'border-error border-2'
-			: review?.flagged
-				? 'border-warning border-2'
-				: ''
+			: review?.required
+				? 'border-success border-2'
+				: review?.flagged
+					? 'border-warning border-2'
+					: ''
 	);
 </script>
 

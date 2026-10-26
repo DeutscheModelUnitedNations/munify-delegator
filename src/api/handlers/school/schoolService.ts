@@ -115,7 +115,8 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 			schema.delegation,
 			schema.singleParticipant,
 			schema.conferenceSupervisor,
-			schema.waitingListEntry
+			schema.waitingListEntry,
+			schema.conferenceParticipant
 		]) {
 			await tx.update(table).set({ schoolId: targetId }).where(inArray(table.schoolId, sources));
 		}
@@ -183,20 +184,22 @@ const schoolMetricsRowSchema = z.object({
 /** Per conference, how many people from the school registered, applied, got a seat and came. */
 export async function schoolMetrics(schoolId: string) {
 	const result = await db.execute<{ result: unknown }>(sql`
+		-- each person by their own school, whatever delegation the assignment put them in
 		with people as (
-			select d.conference_id, d.id as delegation_id, dm.conference_participant_id as participant_id,
+			select p.conference_id, dm.delegation_id, p.id as participant_id,
 				d.applied, d.assigned_role_id is not null as seated, false as supervisor
-			from delegation d join delegation_member dm on dm.delegation_id = d.id
-			where d.school_id = ${schoolId}
+			from conference_participant p
+			join delegation_member dm on dm.conference_participant_id = p.id
+			join delegation d on d.id = dm.delegation_id
+			where p.school_id = ${schoolId}
 			union all
-			select cp.conference_id, null, sp.conference_participant_id, sp.applied,
-				sp.assigned_role_id is not null, false
-			from single_participant sp join conference_participant cp on cp.id = sp.conference_participant_id
-			where sp.school_id = ${schoolId}
+			select p.conference_id, null, p.id, sp.applied, sp.assigned_role_id is not null, false
+			from conference_participant p join single_participant sp on sp.conference_participant_id = p.id
+			where p.school_id = ${schoolId}
 			union all
-			select cp.conference_id, null, cs.conference_participant_id, true, false, true
-			from conference_supervisor cs join conference_participant cp on cp.id = cs.conference_participant_id
-			where cs.school_id = ${schoolId}
+			select p.conference_id, null, p.id, true, false, true
+			from conference_participant p join conference_supervisor cs on cs.conference_participant_id = p.id
+			where p.school_id = ${schoolId}
 		),
 		waiting as (
 			select conference_id, count(*)::int as entries, count(*) filter (where assigned)::int as assigned
@@ -273,19 +276,22 @@ export async function conferenceSchoolsPage(args: {
 	);
 
 	const result = await db.execute<{ result: unknown; total: unknown }>(sql`
+		-- each person by their own school, whatever delegation the assignment put them in
 		with people as (
-			select d.school_id, d.id as delegation_id, d.applied, d.assigned_role_id is not null as seated,
+			select cp.school_id, d.id as delegation_id, d.applied, d.assigned_role_id is not null as seated,
 				'MEMBER' as kind
-			from delegation d join delegation_member dm on dm.delegation_id = d.id
-			where d.conference_id = ${args.conferenceId} and d.school_id is not null
+			from conference_participant cp
+			join delegation_member dm on dm.conference_participant_id = cp.id
+			join delegation d on d.id = dm.delegation_id
+			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
 			union all
-			select sp.school_id, null, sp.applied, sp.assigned_role_id is not null, 'SINGLE'
+			select cp.school_id, null, sp.applied, sp.assigned_role_id is not null, 'SINGLE'
 			from single_participant sp join conference_participant cp on cp.id = sp.conference_participant_id
-			where cp.conference_id = ${args.conferenceId} and sp.school_id is not null
+			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
 			union all
-			select cs.school_id, null, true, false, 'SUPERVISOR'
+			select cp.school_id, null, true, false, 'SUPERVISOR'
 			from conference_supervisor cs join conference_participant cp on cp.id = cs.conference_participant_id
-			where cp.conference_id = ${args.conferenceId} and cs.school_id is not null
+			where cp.conference_id = ${args.conferenceId} and cp.school_id is not null
 			union all
 			select w.school_id, null, false, false, 'WAITING'
 			from waiting_list_entry w

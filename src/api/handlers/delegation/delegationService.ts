@@ -1,5 +1,9 @@
 import { type Transaction, db, schema } from '$api/db/db';
-import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+import {
+	ensureConferenceParticipant,
+	setDelegationMembersSchool,
+	setParticipantSchool
+} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import { fetchUserParticipations } from '$api/services/registration/participation';
 import { assertApplicationReady } from '$api/services/registration/applicationReadiness';
 import { tidyRoleApplications } from '$api/services/registration/tidyRoleApplications';
@@ -84,16 +88,14 @@ export async function createDelegationWithHead(
 			.returning()
 			.then(assertFirstEntryExists);
 
-		// The creator becomes the head delegate.
+		// The creator becomes the head delegate, from the delegation's school.
+		const participantId = await ensureConferenceParticipant(tx, delegation.conferenceId, userId);
 		await tx.insert(schema.delegationMember).values({
 			delegationId: delegation.id,
-			conferenceParticipantId: await ensureConferenceParticipant(
-				tx,
-				delegation.conferenceId,
-				userId
-			),
+			conferenceParticipantId: participantId,
 			isHeadDelegate: true
 		});
+		await setParticipantSchool(tx, [participantId], delegation.schoolId);
 
 		return delegation;
 	});
@@ -145,6 +147,7 @@ export async function updateDelegationDetails(
 		const schoolId = await resolveSchoolChoice(args, tx);
 		if (schoolId !== undefined) {
 			await tx.update(schema.delegation).set({ schoolId }).where(byId);
+			await setDelegationMembersSchool(tx, delegation.id, schoolId, delegation.schoolId);
 		}
 
 		if (args.experience || args.motivation) {

@@ -19,12 +19,14 @@ import {
 } from './conferenceSupervisorPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
+	conferenceParticipantPubsub,
 	conferenceSupervisorPubsub,
 	delegationMemberPubsub,
 	schoolPubsub,
 	singleParticipantPubsub
 } from '$api/pubsub';
 import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
+import { setRegistrationSchool } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 
 registerConferenceSupervisorAbilities();
 
@@ -56,6 +58,7 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			conferenceSupervisorPubsub.created();
+			conferenceParticipantPubsub.updated();
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
@@ -81,13 +84,16 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const where = await updatableConferenceSupervisor(ctx, args.id);
+			const schoolId = await resolveSchoolChoice(args);
 			await db
 				.update(schema.conferenceSupervisor)
 				.set({
 					plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined,
-					schoolId: await resolveSchoolChoice(args)
+					schoolId
 				})
 				.where(where);
+			await setRegistrationSchool(db, { conferenceSupervisorId: args.id }, schoolId);
+			conferenceParticipantPubsub.updated();
 
 			conferenceSupervisorPubsub.updated(args.id);
 			if (args.schoolName) schoolPubsub.created();

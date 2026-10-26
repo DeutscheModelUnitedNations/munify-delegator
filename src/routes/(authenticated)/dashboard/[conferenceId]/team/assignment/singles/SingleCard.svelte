@@ -81,6 +81,12 @@
 		{/if}
 		<div class="flex items-center gap-1">
 			<StarRating rating={review?.evaluation ?? 0} size="xs" />
+			{#if review?.required}
+				<i
+					class="fa-sharp-duotone fa-solid fa-thumbtack text-success"
+					title={m.assignmentRequired()}
+				></i>
+			{/if}
 			{#if review?.flagged}
 				<i class="fa-sharp-duotone fa-solid fa-flag text-warning"></i>
 			{/if}

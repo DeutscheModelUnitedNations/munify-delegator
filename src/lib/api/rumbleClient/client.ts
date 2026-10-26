@@ -59,6 +59,7 @@ export type Assignmentreview = {
   flagged: Boolean,
   id: ID,
   note: String | null,
+  required: Boolean,
   search_distance: Float | null,
   singleParticipant: (p?: {
     orderBy?: SingleparticipantOrderInputArgument | null | undefined,
@@ -77,6 +78,7 @@ export type AssignmentreviewOrderInputArgument = {
   flagged?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   note?: SortingParameter | null | undefined,
+  required?: SortingParameter | null | undefined,
   singleParticipantId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
@@ -95,6 +97,7 @@ export type AssignmentreviewWhereInputArgument = {
   flagged?: BooleanWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   note?: StringWhereInputArgument | null | undefined,
+  required?: BooleanWhereInputArgument | null | undefined,
   singleParticipant?: SingleparticipantWhereInputArgument | null | undefined,
   singleParticipantId?: IDWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
@@ -1197,6 +1200,11 @@ export type Conferenceparticipant = {
   mediaConsent: AdministrativestatusEnum,
   mediaConsentStatus: MediaconsentstatusEnum,
   paymentStatus: AdministrativestatusEnum,
+  school: (p?: {
+    orderBy?: SchoolOrderInputArgument | null | undefined,
+    where?: SchoolWhereInputArgument | null | undefined
+  }) => School | null,
+  schoolId: ID | null,
   search_distance: Float | null,
   singleParticipant: (p?: {
     orderBy?: SingleparticipantOrderInputArgument | null | undefined,
@@ -1229,6 +1237,7 @@ export type ConferenceparticipantOrderInputArgument = {
   mediaConsent?: SortingParameter | null | undefined,
   mediaConsentStatus?: SortingParameter | null | undefined,
   paymentStatus?: SortingParameter | null | undefined,
+  schoolId?: SortingParameter | null | undefined,
   termsAndConditions?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   userId?: SortingParameter | null | undefined    
@@ -1252,6 +1261,8 @@ export type ConferenceparticipantWhereInputArgument = {
   mediaConsent?: AdministrativestatusEnum | null | undefined,
   mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
   paymentStatus?: AdministrativestatusEnum | null | undefined,
+  school?: SchoolWhereInputArgument | null | undefined,
+  schoolId?: IDWhereInputArgument | null | undefined,
   singleParticipant?: SingleparticipantWhereInputArgument | null | undefined,
   supervisors?: ConferencesupervisorWhereInputArgument | null | undefined,
   termsAndConditions?: AdministrativestatusEnum | null | undefined,
@@ -2304,6 +2315,7 @@ export type Mutation = {
     evaluation?: Float | null | undefined,
     flagged: Boolean,
     note?: String | null | undefined,
+    required?: Boolean | null | undefined,
     singleParticipantId?: ID | null | undefined
   }) => Assignmentreview,
   setAssignmentWeights: (p: {
@@ -2336,6 +2348,11 @@ export type Mutation = {
     kind: EmailkindEnum,
     notifyExisting?: Boolean | null | undefined
   }) => Boolean,
+  setParticipantSchool: (p: {
+    id: ID,
+    schoolId?: ID | null | undefined,
+    schoolName?: String | null | undefined
+  }) => Conferenceparticipant,
   splitDelegation: (p: {
     delegationId: ID,
     parts: AssignmentSplitPartInput[]
@@ -3905,6 +3922,13 @@ export type School = {
   id: ID,
   name: String,
   notes: String | null,
+  participants: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceparticipantOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceparticipantWhereInputArgument | null | undefined
+  }) => Conferenceparticipant[],
   region: String | null,
   search_distance: Float | null,
   singleParticipants: (p?: {
@@ -3975,6 +3999,7 @@ export type SchoolWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
   notes?: StringWhereInputArgument | null | undefined,
+  participants?: ConferenceparticipantWhereInputArgument | null | undefined,
   region?: StringWhereInputArgument | null | undefined,
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   street?: StringWhereInputArgument | null | undefined,

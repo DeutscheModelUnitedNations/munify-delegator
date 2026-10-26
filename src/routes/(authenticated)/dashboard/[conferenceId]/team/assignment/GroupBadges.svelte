@@ -32,6 +32,9 @@
 	{#if group.singleParticipantId}
 		{@render marked(m.assignmentConvertedSingle(), 'fa-user-plus', true)}
 	{/if}
+	{#if review?.required}
+		{@render marked(m.assignmentRequired(), 'fa-thumbtack text-success', false)}
+	{/if}
 	{#if review?.flagged}
 		{@render marked(m.assignmentFlag(), 'fa-flag text-warning', false)}
 	{/if}

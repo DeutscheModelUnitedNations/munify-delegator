@@ -12,7 +12,12 @@ import {
 } from './delegationPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { delegationMemberPubsub, delegationPubsub, schoolPubsub } from '$api/pubsub';
+import {
+	conferenceParticipantPubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	schoolPubsub
+} from '$api/pubsub';
 
 registerDelegationAbilities();
 
@@ -35,6 +40,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			delegationPubsub.created();
 			delegationMemberPubsub.created();
+			conferenceParticipantPubsub.updated();
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegation
@@ -66,6 +72,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateDelegationDetails(delegation, args);
 
 			delegationPubsub.updated(args.id);
+			conferenceParticipantPubsub.updated();
 			if (args.schoolName) schoolPubsub.created();
 			// A new head delegate flips the flag on two members.
 			if (args.newHeadDelegateUserId) {

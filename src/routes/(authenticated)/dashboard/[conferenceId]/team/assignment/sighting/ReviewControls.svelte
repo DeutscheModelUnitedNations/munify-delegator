@@ -4,7 +4,7 @@
 	import StarRating from '#lib/components/StarRating.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 
-	/** The team's rating, flag and exclusion of one application. */
+	/** The team's rating, flag, requirement and exclusion of one application. */
 	interface Props {
 		review: SightingReview | undefined;
 		/** Changes the review; shown at once, saved behind the scenes */
@@ -45,12 +45,22 @@
 	>
 		<i class="fa-sharp-duotone fa-solid fa-flag"></i>
 	</button>
+	<!-- Required and excluded rule each other out: setting one clears the other. -->
+	<button
+		class="btn btn-square {review?.required ? 'btn-success' : 'btn-ghost'}"
+		aria-label={m.assignmentRequire()}
+		aria-pressed={!!review?.required}
+		title={m.assignmentRequireHint()}
+		onclick={() => onReview({ required: !review?.required, disqualified: false })}
+	>
+		<i class="fa-sharp-duotone fa-solid fa-thumbtack"></i>
+	</button>
 	<button
 		class="btn btn-square {review?.disqualified ? 'btn-error' : 'btn-ghost'}"
 		aria-label={m.assignmentDisqualify()}
 		aria-pressed={!!review?.disqualified}
 		title={m.assignmentDisqualify()}
-		onclick={() => onReview({ disqualified: !review?.disqualified })}
+		onclick={() => onReview({ disqualified: !review?.disqualified, required: false })}
 	>
 		<i class="fa-sharp-duotone fa-solid fa-user-slash"></i>
 	</button>

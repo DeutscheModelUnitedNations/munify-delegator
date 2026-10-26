@@ -4,8 +4,8 @@ import { nationSeats } from './conference';
 
 /**
  * An assignment the team is halfway through: two in three applications rated, a few flagged, one
- * disqualified, the largest delegation split in two, a couple of delegations and single
- * participants with a planned role. Nothing of it is applied yet.
+ * disqualified, two that must get a seat, the largest delegation split in two, a couple of
+ * delegations and single participants with a planned role. Nothing of it is applied yet.
  */
 export function addAssignmentDraft(cs: ConferenceSeed) {
 	const [largest, ...rest] = appliedDelegationIds(cs).toSorted(
@@ -30,7 +30,10 @@ function membersOf(cs: ConferenceSeed, delegationId: string) {
 	);
 }
 
-/** Two in three applications rated; some flagged, some with a note, one disqualified. */
+/**
+ * Two in three applications rated; some flagged, some with a note, one disqualified, and two that
+ * must get a seat (the summary warns while the draft leaves them without one).
+ */
 function addReviews(cs: ConferenceSeed, delegationIds: string[]) {
 	delegationIds.forEach((delegationId, index) => {
 		if (index % 3 === 2) return;
@@ -40,6 +43,7 @@ function addReviews(cs: ConferenceSeed, delegationIds: string[]) {
 			evaluation: faker.helpers.arrayElement([1, 2, 2.5, 3, 3.5, 4, 4.5, 5]),
 			flagged: index % 5 === 0,
 			disqualified: index === 4,
+			required: index === 7 || index === 10,
 			note: index % 4 === 1 ? faker.lorem.sentence() : null
 		});
 	});

@@ -1,5 +1,9 @@
 import { type Transaction, db, schema } from '$api/db/db';
-import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+import {
+	ensureConferenceParticipant,
+	setParticipantSchool,
+	setRegistrationSchool
+} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -115,6 +119,7 @@ export async function registerSingleParticipant(
 				.then(assertFirstEntryExists);
 			rowId = created.id;
 		}
+		await setRegistrationSchool(tx, { singleParticipantId: rowId }, schoolId);
 
 		await applyForRoles(tx, rowId, [args.roleId]);
 
@@ -170,6 +175,7 @@ export async function updateSingleParticipantApplication(
 				.set(values)
 				.where(eq(schema.singleParticipant.id, args.id));
 		}
+		await setRegistrationSchool(tx, { singleParticipantId: args.id }, values.schoolId);
 
 		await applyForRoles(tx, args.id, args.applyForRolesIdList ?? []);
 		await unapplyForRoles(tx, args.id, args.unApplyForRolesIdList ?? []);
@@ -191,15 +197,13 @@ export async function createAssignedSingleParticipant(args: {
 
 	const created = await db.transaction(async (tx) => {
 		const waiting = await markSeatedFromWaitingList(tx, args.conferenceId, args.userId);
+		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.userId);
+		await setParticipantSchool(tx, [participantId], waiting?.schoolId ?? undefined);
 
 		return tx
 			.insert(schema.singleParticipant)
 			.values({
-				conferenceParticipantId: await ensureConferenceParticipant(
-					tx,
-					args.conferenceId,
-					args.userId
-				),
+				conferenceParticipantId: participantId,
 				applied: true,
 				assignedRoleId: args.roleId,
 				schoolId: waiting?.schoolId ?? undefined

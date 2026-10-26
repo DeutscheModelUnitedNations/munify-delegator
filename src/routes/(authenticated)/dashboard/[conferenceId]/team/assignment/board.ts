@@ -33,7 +33,9 @@ const delegationCard = {
 	members: {
 		id: true,
 		isHeadDelegate: true,
-		user: { givenName: true, familyName: true }
+		user: { givenName: true, familyName: true },
+		// the person's own school, which the seats per school count
+		participant: { school: { id: true, name: true } }
 	},
 	appliedForRoles: {
 		rank: true,
@@ -58,6 +60,7 @@ const reviewFields = {
 	evaluation: true,
 	flagged: true,
 	disqualified: true,
+	required: true,
 	note: true
 } as const;
 

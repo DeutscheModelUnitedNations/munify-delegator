@@ -19,6 +19,7 @@ import {
 	type ConferenceSchoolSortColumn
 } from './schoolService';
 import {
+	conferenceParticipantPubsub,
 	conferenceSupervisorPubsub,
 	delegationPubsub,
 	schoolPubsub,
@@ -201,6 +202,7 @@ schemaBuilder.mutationFields((t) => ({
 			singleParticipantPubsub.updated();
 			conferenceSupervisorPubsub.updated();
 			waitingListEntryPubsub.updated();
+			conferenceParticipantPubsub.updated();
 			schoolSuggestionPubsub.updated();
 			schoolSuggestionVariantPubsub.updated();
 

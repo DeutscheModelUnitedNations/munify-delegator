@@ -87,7 +87,8 @@ const targetFrom = (args: { roleId?: string | null }): Target => ({ roleId: args
 
 const REVIEW_PROBLEMS = {
 	application: () => m.assignmentReviewNameOneApplication(),
-	evaluation: () => m.assignmentReviewRatingRange()
+	evaluation: () => m.assignmentReviewRatingRange(),
+	requiredAndExcluded: () => m.assignmentReviewRequiredAndExcluded()
 };
 
 schemaBuilder.mutationFields((t) => ({
@@ -100,6 +101,8 @@ schemaBuilder.mutationFields((t) => ({
 			evaluation: t.arg.float({ required: false }),
 			flagged: t.arg.boolean({ required: true }),
 			disqualified: t.arg.boolean({ required: true }),
+			/** Left out keeps nothing: the review is replaced whole, so it counts as not required. */
+			required: t.arg.boolean({ required: false }),
 			note: t.arg.string({ required: false })
 		},
 		resolve: async (query, _root, args, ctx) => {

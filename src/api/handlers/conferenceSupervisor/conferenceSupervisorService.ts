@@ -1,6 +1,9 @@
 import { db, schema } from '$api/db/db';
 import { resolveSchoolChoice, type SchoolChoice } from '$api/handlers/school/schoolService';
-import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+import {
+	ensureConferenceParticipant,
+	setParticipantSchool
+} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import { isUserAlreadyRegistered } from '$api/services/registration/participation';
 import { makeEntryCode } from '$api/services/registration/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -41,22 +44,21 @@ export async function registerSupervisor(
 
 	const connectionCode = await unusedConnectionCode();
 	// The person's row and the supervisor entry go in together, so a refused insert leaves neither.
-	const created = await db.transaction(async (tx) =>
-		tx
+	const created = await db.transaction(async (tx) => {
+		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.subjectId);
+		const schoolId = await resolveSchoolChoice(args, tx);
+		await setParticipantSchool(tx, [participantId], schoolId);
+		return tx
 			.insert(schema.conferenceSupervisor)
 			.values({
-				conferenceParticipantId: await ensureConferenceParticipant(
-					tx,
-					args.conferenceId,
-					args.subjectId
-				),
+				conferenceParticipantId: participantId,
 				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
 				connectionCode,
-				schoolId: (await resolveSchoolChoice(args, tx)) ?? undefined
+				schoolId: schoolId ?? undefined
 			})
 			.returning()
-			.then(assertFirstEntryExists)
-	);
+			.then(assertFirstEntryExists);
+	});
 
 	return created.id;
 }

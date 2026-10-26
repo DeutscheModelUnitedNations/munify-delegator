@@ -1,7 +1,7 @@
 import { type Transaction, db, schema } from '$api/db/db';
 import { nullToUndefined } from '$api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq, max } from 'drizzle-orm';
+import { and, eq, inArray, isNull, max } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '$api/services/errors/apiError';
 
@@ -25,6 +25,90 @@ export async function ensureConferenceParticipant(
 		.returning({ id: schema.conferenceParticipant.id })
 		.then(assertFirstEntryExists);
 	return row.id;
+}
+
+/**
+ * Sets the school of the given people (`conferenceParticipant.schoolId`): what they applied with, or
+ * a correction. `undefined` leaves it as it is, `null` removes it.
+ */
+export async function setParticipantSchool(
+	tx: Transaction | typeof db,
+	participantIds: readonly string[],
+	schoolId: string | null | undefined
+) {
+	if (schoolId === undefined || participantIds.length === 0) return;
+	await tx
+		.update(schema.conferenceParticipant)
+		.set({ schoolId })
+		.where(inArray(schema.conferenceParticipant.id, [...participantIds]));
+}
+
+/** The person behind a single participant or supervisor registration gets its school. */
+export async function setRegistrationSchool(
+	tx: Transaction | typeof db,
+	registration: { singleParticipantId: string } | { conferenceSupervisorId: string },
+	schoolId: string | null | undefined
+) {
+	if (schoolId === undefined) return;
+	const person =
+		'singleParticipantId' in registration
+			? tx
+					.select({ id: schema.singleParticipant.conferenceParticipantId })
+					.from(schema.singleParticipant)
+					.where(eq(schema.singleParticipant.id, registration.singleParticipantId))
+			: tx
+					.select({ id: schema.conferenceSupervisor.conferenceParticipantId })
+					.from(schema.conferenceSupervisor)
+					.where(eq(schema.conferenceSupervisor.id, registration.conferenceSupervisorId));
+	await tx
+		.update(schema.conferenceParticipant)
+		.set({ schoolId })
+		.where(inArray(schema.conferenceParticipant.id, person));
+}
+
+/** Gives a person a school only if they have none yet. */
+export async function fillParticipantSchool(
+	tx: Transaction | typeof db,
+	participantId: string,
+	schoolId: string | null | undefined
+) {
+	if (!schoolId) return;
+	await tx
+		.update(schema.conferenceParticipant)
+		.set({ schoolId })
+		.where(
+			and(
+				eq(schema.conferenceParticipant.id, participantId),
+				isNull(schema.conferenceParticipant.schoolId)
+			)
+		);
+}
+
+/**
+ * Moves the members of a delegation along when its school is changed: those who had its previous
+ * school, or none. Members from another school - brought together by the assignment - keep theirs.
+ */
+export async function setDelegationMembersSchool(
+	tx: Transaction | typeof db,
+	delegationId: string,
+	schoolId: string | null | undefined,
+	previousSchoolId: string | null
+) {
+	if (schoolId === undefined) return;
+	const members = await tx.query.delegationMember.findMany({
+		where: { delegationId },
+		columns: { conferenceParticipantId: true },
+		with: { participant: { columns: { schoolId: true } } }
+	});
+	await setParticipantSchool(
+		tx,
+		members
+			.filter(
+				(member) => !member.participant.schoolId || member.participant.schoolId === previousSchoolId
+			)
+			.map((member) => member.conferenceParticipantId),
+		schoolId
+	);
 }
 
 /** The user a status is addressed to, when it is addressed by user id or email. */

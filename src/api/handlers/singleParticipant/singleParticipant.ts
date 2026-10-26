@@ -16,7 +16,11 @@ import {
 } from './singleParticipantPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { singleParticipantPubsub, waitingListEntryPubsub } from '$api/pubsub';
+import {
+	conferenceParticipantPubsub,
+	singleParticipantPubsub,
+	waitingListEntryPubsub
+} from '$api/pubsub';
 
 registerSingleParticipantAbilities();
 
@@ -47,6 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 			const rowId = await registerSingleParticipant(id, args, existing);
 
 			singleParticipantPubsub.created();
+			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
 				.findFirst(
@@ -77,6 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateSingleParticipantApplication(args);
 
 			singleParticipantPubsub.updated(args.id);
+			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
 				.findFirst(
@@ -118,6 +124,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			singleParticipantPubsub.created();
 			waitingListEntryPubsub.updated();
+			conferenceParticipantPubsub.updated();
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.singleParticipant

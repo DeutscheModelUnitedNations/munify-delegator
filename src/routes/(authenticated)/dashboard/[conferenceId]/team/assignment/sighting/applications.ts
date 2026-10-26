@@ -171,6 +171,7 @@ export async function fetchReview(kind: 'delegation' | 'single', id: string) {
 		evaluation: true,
 		flagged: true,
 		disqualified: true,
+		required: true,
 		note: true
 	});
 	return reviews.at(0);

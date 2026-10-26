@@ -56,7 +56,13 @@ export const conferenceParticipant = snakeCase.table(
 		mediaConsentStatus: mediaConsentStatus().default('NOT_SET').notNull(),
 		// The database column keeps the original typo; the code and the API do not.
 		assignedDocumentNumber: integer('assigend_document_number'),
-		accessCardId: text()
+		accessCardId: text(),
+		/**
+		 * The person's own school. Set from the application they come with (a delegation's members
+		 * take its school), and kept when the assignment merges delegations of several schools, so
+		 * seats and metrics per school count people, not delegations.
+		 */
+		schoolId: schoolRef()
 	},
 	(table) => [
 		// Shortened by hand: the name derived from the column list was 67 chars and

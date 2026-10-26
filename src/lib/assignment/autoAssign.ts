@@ -40,6 +40,8 @@ export interface GroupReview {
 	evaluation: number | null;
 	flagged: boolean;
 	disqualified: boolean;
+	/** Has to end up with a seat: seated before anyone else whenever a fitting role is free. */
+	required?: boolean;
 }
 
 /**
@@ -97,6 +99,22 @@ export function assignmentCost(
 	);
 }
 
+/**
+ * Makes every required row cheaper by more than the whole rest of the matrix can differ, so the
+ * matching leaves a required candidate out only when it cannot seat it at all. The bonus is the
+ * same across the row, so which role a required candidate gets still follows its costs. Cells at
+ * or above `ceiling` (forbidden ones) keep their cost.
+ */
+function boostRequired(matrix: number[][], required: readonly boolean[], ceiling = Infinity) {
+	if (!required.some(Boolean)) return matrix;
+	const allowed = matrix.flat().filter((cost) => cost < ceiling);
+	const bonus =
+		(Math.max(...allowed) - Math.min(...allowed) + 1) * Math.min(matrix.length, matrix[0].length);
+	return matrix.map((row, index) =>
+		required[index] ? row.map((cost) => (cost < ceiling ? cost - bonus : cost)) : row
+	);
+}
+
 /** A stable pseudo-random number in [0, 1) for a string (FNV-1a), to break ties without bias. */
 function hash01(text: string) {
 	let h = 0x811c9dc5;
@@ -132,8 +150,9 @@ export interface AutoAssignInput {
  * A role a group did not wish for is allowed, but costs more than any combination of wished roles
  * could save, so wishes always win: the matching seats as many groups as possible on a wish, then
  * minimises the cost among those, and only what is left over goes to groups without a seatable
- * wish (best-rated first when there are more groups than roles). Equal costs are broken by a
- * seeded hash, not by input order.
+ * wish (best-rated first when there are more groups than roles). A required group is seated
+ * whenever a role fits it, before every group that is not (`boostRequired`). Equal costs are
+ * broken by a seeded hash, not by input order.
  */
 export function autoAssign(input: AutoAssignInput) {
 	const taken = occupancy(input.groups);
@@ -166,8 +185,9 @@ export function autoAssign(input: AutoAssignInput) {
 	const all = costs.flat().map(({ cost }) => cost);
 	const span = Math.max(...all) - Math.min(...all);
 	const unwishedPenalty = (span + 1) * Math.min(candidates.length, roles.length);
-	const matrix = costs.map((row) =>
-		row.map(({ wished, cost }) => (wished ? cost : cost + unwishedPenalty))
+	const matrix = boostRequired(
+		costs.map((row) => row.map(({ wished, cost }) => (wished ? cost : cost + unwishedPenalty))),
+		candidates.map((group) => !!input.reviewOf(group)?.required)
 	);
 
 	const { assignments } = minWeightAssign(matrix);
@@ -210,13 +230,17 @@ export function autoAssignSingles(input: AutoAssignSinglesInput) {
 	if (candidates.length === 0 || slots.length === 0) return [];
 	const seed = input.seed ?? '';
 
-	const matrix = candidates.map((candidate) =>
-		slots.map((slot) =>
-			candidate.wishedRoleIds.has(slot.roleId)
-				? reviewCost(input.weights, candidate.review, candidate.experience) +
-					hash01(`${seed}|${candidate.id}|${slot.roleId}|${slot.index}`) * TIE_BREAK
-				: FORBIDDEN
-		)
+	const matrix = boostRequired(
+		candidates.map((candidate) =>
+			slots.map((slot) =>
+				candidate.wishedRoleIds.has(slot.roleId)
+					? reviewCost(input.weights, candidate.review, candidate.experience) +
+						hash01(`${seed}|${candidate.id}|${slot.roleId}|${slot.index}`) * TIE_BREAK
+					: FORBIDDEN
+			)
+		),
+		candidates.map((candidate) => !!candidate.review?.required),
+		FORBIDDEN
 	);
 	const { assignments } = minWeightAssign(matrix);
 	return assignments.flatMap((column, row) =>

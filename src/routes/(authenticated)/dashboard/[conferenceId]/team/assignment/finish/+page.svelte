@@ -15,10 +15,16 @@
 		fetchSeatedApplications,
 		seatedSnapshot
 	} from '../board';
-	import { schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats.js';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { toastError } from '../toastError';
+	import {
+		requiredApplicationOf,
+		requiredWithoutSeat,
+		seatOccupancy
+	} from '#lib/assignment/seatChecks.js';
 	import ApplyProblems from './ApplyProblems.svelte';
+	import SeatWarnings from './SeatWarnings.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
 	import PendingSinglesTable from './PendingSinglesTable.svelte';
 	import PlanStats from './PlanStats.svelte';
@@ -27,7 +33,7 @@
 
 	let { params }: PageProps = $props();
 
-	const [draft, roles, conference, seated] = $derived(
+	const [draft, roles, conference, seated, requiredReviews] = $derived(
 		await Promise.all([
 			fetchAssignmentDraft(params.conferenceId),
 			fetchAssignmentRoles(params.conferenceId),
@@ -36,7 +42,15 @@
 				assignmentReleased: true,
 				maxSeatsPerSchool: true
 			}),
-			fetchSeatedApplications(params.conferenceId)
+			fetchSeatedApplications(params.conferenceId),
+			// every required application, also those the board does not hold: they have no seat
+			client.liveQuery.assignmentReviews({
+				__args: {
+					where: { conferenceId: { eq: params.conferenceId }, required: { eq: true } }
+				},
+				delegationId: true,
+				singleParticipantId: true
+			})
 		])
 	);
 	// What applying does depends only on what holds a role or what the draft touches; the
@@ -51,13 +65,14 @@
 			seatedRoles(roles.committees, roles.nonStateActors)
 		)
 	);
-	const preview = $derived(
-		planApply({
-			...view.live,
-			seats: seatsByKey(view.seated),
-			roleSeats: new Map(roles.customRoles.map((role) => [role.id, role.seatAmount ?? 0]))
-		})
+	const roleSeats = $derived(
+		new Map(roles.customRoles.map((role) => [role.id, role.seatAmount ?? 0]))
 	);
+	const preview = $derived(planApply({ ...view.live, seats: seatsByKey(view.seated), roleSeats }));
+	const missingRequired = $derived(
+		requiredWithoutSeat(requiredReviews.flatMap(requiredApplicationOf), view)
+	);
+	const occupancy = $derived(seatOccupancy(view, seatsByKey(view.seated), roleSeats));
 	const empty = $derived(planIsEmpty(preview.plan));
 
 	/** A role as the tables show it, with its flag; undefined for no role. */
@@ -72,14 +87,9 @@
 		roles.customRoles.find((role) => role.id === roleId)?.fontAwesomeIcon ?? undefined;
 
 	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
-	const singleById = $derived(new Map(rows.singleParticipants.map((s) => [s.id, s])));
 	const maxSeatsPerSchool = $derived(conference.maxSeatsPerSchool ?? null);
 	const schoolCounts = $derived(
-		schoolSeats(
-			view,
-			(id) => delegationById.get(id)?.school,
-			(id) => singleById.get(id)?.school
-		)
+		schoolSeats(view, schoolLookupsOf(rows.delegations, rows.singleParticipants))
 	);
 	const schoolsOver = $derived(schoolsOverLimit(schoolCounts, maxSeatsPerSchool));
 	const pendingGroups = $derived(
@@ -117,6 +127,7 @@
 
 <div class="flex flex-col gap-6">
 	<ApplyProblems errors={preview.errors} warnings={preview.warnings} {roleName} {customRoleName} />
+	<SeatWarnings {missingRequired} {occupancy} />
 	{#if schoolsOver.length > 0}
 		<div class="alert alert-warning alert-soft">
 			<i class="fa-sharp-duotone fa-solid fa-school text-xl"></i>
@@ -210,6 +221,10 @@
 		onClose={() => (confirmingApply = false)}
 	>
 		<p>{m.assignmentApplyConfirmText()}</p>
+		<SeatWarnings {missingRequired} {occupancy} />
+		<p class="text-sm opacity-70">
+			{m.assignmentSeatsFreeAfter({ free: occupancy.free, total: occupancy.total })}
+		</p>
 		{#if !conference.assignmentReleased}
 			<p class="text-sm opacity-70">{m.assignmentApplyStaysHidden()}</p>
 		{/if}

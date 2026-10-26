@@ -25,6 +25,8 @@ export interface BoardReviewRow {
 	evaluation?: Nullable<number>;
 	flagged: boolean;
 	disqualified: boolean;
+	/** Has to end up with a seat (`assignmentReview.required`). */
+	required?: boolean;
 	note?: Nullable<string>;
 }
 

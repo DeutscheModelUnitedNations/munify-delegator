@@ -20,6 +20,13 @@ describe('reviewProblem', () => {
 		expect(reviewProblem({ ...base, singleParticipantId: 's', evaluation: 5 })).toBeUndefined();
 		expect(reviewProblem({ ...base, singleParticipantId: 's', evaluation: null })).toBeUndefined();
 	});
+
+	it('refuses an application both required and excluded', () => {
+		expect(reviewProblem({ ...base, delegationId: 'd', disqualified: true, required: true })).toBe(
+			'requiredAndExcluded'
+		);
+		expect(reviewProblem({ ...base, delegationId: 'd', required: true })).toBeUndefined();
+	});
 });
 
 describe('reviewRow', () => {
@@ -27,7 +34,7 @@ describe('reviewRow', () => {
 		expect(reviewRow({ ...base, delegationId: 'd', evaluation: 3, note: '' })).toEqual({
 			application: { kind: 'delegation', id: 'd' },
 			keys: { delegationId: 'd', singleParticipantId: null },
-			values: { evaluation: 3, flagged: false, disqualified: false, note: null }
+			values: { evaluation: 3, flagged: false, disqualified: false, required: false, note: null }
 		});
 		expect(reviewRow({ ...base, singleParticipantId: 's', note: 'late' })).toMatchObject({
 			application: { kind: 'single', id: 's' },

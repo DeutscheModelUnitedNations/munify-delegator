@@ -20,6 +20,7 @@ import {
 } from './delegationMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
+	conferenceParticipantPubsub,
 	delegationMemberPubsub,
 	delegationPubsub,
 	singleParticipantPubsub,
@@ -46,6 +47,7 @@ schemaBuilder.mutationFields((t) => ({
 			);
 
 			delegationMemberPubsub.created();
+			conferenceParticipantPubsub.updated();
 
 			return db.query.delegationMember
 				.findFirst(
@@ -110,6 +112,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			delegationMemberPubsub.created();
 			delegationPubsub.created();
+			conferenceParticipantPubsub.updated();
 			waitingListEntryPubsub.updated();
 			// An existing single registration for the same person is cleared out of the way.
 			singleParticipantPubsub.removed();

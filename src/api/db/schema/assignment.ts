@@ -43,6 +43,11 @@ export const assignmentReview = snakeCase.table(
 		evaluation: doublePrecision(),
 		flagged: boolean().default(false).notNull(),
 		disqualified: boolean().default(false).notNull(),
+		/**
+		 * Has to end up with a seat: the automatic distribution seats it before anyone else, and the
+		 * summary warns when the draft leaves it without one. Never together with `disqualified`.
+		 */
+		required: boolean().default(false).notNull(),
 		note: text()
 	},
 	(table) => [

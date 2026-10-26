@@ -7,6 +7,8 @@ export interface SightingReview {
 	evaluation?: number | null;
 	flagged: boolean;
 	disqualified: boolean;
+	/** Has to end up with a seat; never together with `disqualified`. */
+	required?: boolean;
 	note?: string | null;
 }
 
@@ -267,6 +269,7 @@ export function reviewArgs(
 		evaluation: next.evaluation ?? undefined,
 		flagged: next.flagged,
 		disqualified: next.disqualified,
+		required: next.required ?? false,
 		note: next.note ?? undefined
 	};
 }

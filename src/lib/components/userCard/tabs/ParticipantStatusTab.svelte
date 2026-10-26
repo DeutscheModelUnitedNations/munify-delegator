@@ -13,6 +13,7 @@
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import AccessCardSection from '../AccessCardSection.svelte';
 	import AttendanceSection from '../AttendanceSection.svelte';
+	import ParticipantSchoolSection from '../ParticipantSchoolSection.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
 	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
@@ -262,6 +263,7 @@
 			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
 		/>
 		<AttendanceSection {userId} {conferenceId} />
+		<ParticipantSchoolSection {userId} {conferenceId} />
 	</div>
 
 	<div class="divider"></div>

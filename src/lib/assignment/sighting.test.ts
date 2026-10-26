@@ -130,13 +130,14 @@ describe('reviewArgs', () => {
 			evaluation: undefined,
 			flagged: true,
 			disqualified: false,
+			required: false,
 			note: undefined
 		});
 		expect(
 			reviewArgs(
 				'single',
 				's',
-				{ evaluation: 3, flagged: true, disqualified: false, note: 'x' },
+				{ evaluation: 3, flagged: true, disqualified: false, required: true, note: 'x' },
 				{ evaluation: null }
 			)
 		).toEqual({
@@ -145,6 +146,7 @@ describe('reviewArgs', () => {
 			evaluation: undefined,
 			flagged: true,
 			disqualified: false,
+			required: true,
 			note: 'x'
 		});
 	});

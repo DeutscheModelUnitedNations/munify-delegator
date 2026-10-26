@@ -208,6 +208,48 @@ describe('autoAssign', () => {
 		]);
 	});
 
+	it('seats a required group before better-rated ones, even on a role it did not wish for', () => {
+		const { groups } = assignmentGroups(
+			[delegation('star', 2), delegation('good', 2), delegation('must', 2)],
+			[],
+			[]
+		);
+		const result = autoAssign({
+			size: 2,
+			groups,
+			roles: [role('nation-fra', 2)],
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: (group) =>
+				group.key === 'must'
+					? { evaluation: 1, flagged: false, disqualified: false, required: true }
+					: { evaluation: 5, flagged: true, disqualified: false },
+			wishRankOf: (group) => (group.key === 'must' ? undefined : 1)
+		});
+		expect(result.map(({ group, target }) => [group.key, target.roleId])).toEqual([
+			['must', 'nation-fra']
+		]);
+	});
+
+	it('still gives a required group the role it wished for most', () => {
+		const { groups } = assignmentGroups([delegation('must', 2), delegation('other', 2)], [], []);
+		const result = autoAssign({
+			size: 2,
+			groups,
+			roles: [role('nation-fra', 2), role('nation-gbr', 2)],
+			weights: DEFAULT_WEIGHTS,
+			reviewOf: (group) =>
+				group.key === 'must'
+					? { evaluation: null, flagged: false, disqualified: false, required: true }
+					: undefined,
+			wishRankOf: (group, target) =>
+				group.key === 'must' ? (target.roleId === 'nation-gbr' ? 1 : 2) : undefined
+		});
+		expect(result.map(({ group, target }) => [group.key, target.roleId]).sort()).toEqual([
+			['must', 'nation-gbr'],
+			['other', 'nation-fra']
+		]);
+	});
+
 	it('gives leftover roles to groups without a wish, in the same pass, after the wishes are served', () => {
 		const { groups } = assignmentGroups([delegation('a', 2)], [], []);
 		const base = {
@@ -615,6 +657,20 @@ describe('autoAssignSingles', () => {
 			input([single('a', ['press']), single('b', ['press'])], [{ id: 'press', freeSeats: 2 }])
 		);
 		expect(matches.map((match) => match.singleParticipantId).sort()).toEqual(['a', 'b']);
+	});
+
+	test('seats a required applicant before better-rated ones, but only on a wished role', () => {
+		const required = (id: string, wished: string[]) => {
+			const candidate = single(id, wished, 1);
+			return { ...candidate, review: { ...candidate.review, required: true } };
+		};
+		const matches = autoAssignSingles(
+			input(
+				[single('high', ['press'], 5), required('must', ['press']), required('elsewhere', ['it'])],
+				[{ id: 'press', freeSeats: 1 }]
+			)
+		);
+		expect(matches).toEqual([{ singleParticipantId: 'must', roleId: 'press' }]);
 	});
 
 	test('seats the better rated applicant when a role is oversubscribed', () => {

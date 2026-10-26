@@ -663,6 +663,14 @@ bun run preview
   The size tabs come from per-size `delegationsCount`s that ignore the draft
   (`poolCountsBesidesDraft` takes the touched delegations out). Pages are copied out of the query
   results once and never re-read.
+- **Required applications.** The sighting marks an application as one that must get a seat
+  (`assignmentReview.required`, never together with `disqualified`). The automatic distribution
+  (`autoAssign` / `autoAssignSingles`) seats it before everyone else whenever a role fits
+  (`boostRequired`: a row bonus larger than the rest of the matrix can differ, so its choice of
+  role still follows its wishes). The summary checks every required application of the conference,
+  not only those on the board (`requiredWithoutSeat`, `#lib/assignment/seatChecks.ts`), and warns
+  on the page and in the apply dialog; it also warns when applying would leave no seat free
+  (`seatOccupancy`), since a few free seats are what the waiting list fills later. Both only warn.
 - **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
   holds them as state and mirrors them into the URL with a shallow `goto` on the next task: a
   navigation or a `page` write landing while the board's async loads are pending trips Svelte's
@@ -734,9 +742,18 @@ bun run preview
   (`mergeSchools`, which repoints everything across all conferences and deletes the sources).
   `conferenceSchools` (the team's schools page) and `schoolMetrics` (per conference: registered,
   applied, seated, attended, from the waiting list) are participant care's.
+- **Every person has their own school** (`conferenceParticipant.schoolId`), next to the one their
+  application names. It is set from the application when they apply (`setParticipantSchool`,
+  `setRegistrationSchool` in `conferenceParticipantService.ts`; a delegation's members take its
+  school, and follow a change of it unless they come from another one), from the waiting list
+  when they are seated from it, and by participant care in the user card (`setParticipantSchool`
+  mutation, `ParticipantSchoolSection`). The assignment never changes it: a delegation merged from
+  several schools keeps each person's. `mergeSchools` repoints it like the rest.
 - **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
-  assignment board counts the seats its plan gives each school and warns past the limit; it never
-  blocks.
+  assignment board counts the seats its plan gives each school - per person, by their own school
+  (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; a member without one counts for the
+  delegation's) - and warns past the limit; it never blocks. `schoolMetrics` and the schools page
+  count people by their own school too.
 - The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools a conference's
   applications name; a suggestion's variants point at schools, and merging goes through
   `mergeSchools`. The `statistics_delegations` view reads the school's name.

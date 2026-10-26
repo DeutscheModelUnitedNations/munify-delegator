@@ -1,5 +1,9 @@
 import { type Transaction, db, schema } from '$api/db/db';
-import { ensureConferenceParticipant } from '$api/handlers/conferenceParticipant/conferenceParticipantService';
+import {
+	ensureConferenceParticipant,
+	fillParticipantSchool,
+	setParticipantSchool
+} from '$api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -36,19 +40,18 @@ export async function joinDelegationByEntryCode(
 
 	// The person's row and the membership go in together, so a refused insert leaves neither.
 	const created = await db.transaction(async (tx) => {
+		const participantId = await ensureConferenceParticipant(tx, delegation.conferenceId, userId);
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({
 				delegationId: delegation.id,
-				conferenceParticipantId: await ensureConferenceParticipant(
-					tx,
-					delegation.conferenceId,
-					userId
-				),
+				conferenceParticipantId: participantId,
 				isHeadDelegate: false
 			})
 			.returning()
 			.then(assertFirstEntryExists);
+		// Who joins a delegation applies with its school.
+		await setParticipantSchool(tx, [participantId], delegation.schoolId);
 
 		// The delegation just grew, so applications it can no longer seat are dropped.
 		await tidyRoleApplications(delegation.id, tx);
@@ -140,7 +143,11 @@ async function clearParticipation(tx: Transaction, conferenceId: string, userId:
 	}
 }
 
-type AssignedDelegation = { id: string; members: { isHeadDelegate: boolean }[] };
+type AssignedDelegation = {
+	id: string;
+	schoolId: string | null;
+	members: { isHeadDelegate: boolean }[];
+};
 
 /**
  * The delegation that carries the role: the existing one, or a new one created for it. An
@@ -206,14 +213,14 @@ export async function placeUserInAssignedDelegation(args: {
 			waiting?.schoolId
 		);
 
+		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.userId);
+		// Their own school: the one they waited with, else one they had, else the delegation's.
+		await setParticipantSchool(tx, [participantId], waiting?.schoolId ?? undefined);
+		await fillParticipantSchool(tx, participantId, delegation.schoolId);
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({
-				conferenceParticipantId: await ensureConferenceParticipant(
-					tx,
-					args.conferenceId,
-					args.userId
-				),
+				conferenceParticipantId: participantId,
 				delegationId: delegation.id,
 				assignedCommitteeId: nullToUndefined(args.assignedCommitteeId),
 				isHeadDelegate: !delegation.members.some((m) => m.isHeadDelegate)

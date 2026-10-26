@@ -323,6 +323,10 @@ export const relations = defineRelations(schema, (r) => ({
 		conferenceSupervisor: r.one.conferenceSupervisor({
 			from: r.conferenceParticipant.id,
 			to: r.conferenceSupervisor.conferenceParticipantId
+		}),
+		school: r.one.school({
+			from: r.conferenceParticipant.schoolId,
+			to: r.school.id
 		})
 	},
 	conferenceSupervisor: {
@@ -722,6 +726,10 @@ export const relations = defineRelations(schema, (r) => ({
 		waitingListEntries: r.many.waitingListEntry({
 			from: r.school.id,
 			to: r.waitingListEntry.schoolId
+		}),
+		participants: r.many.conferenceParticipant({
+			from: r.school.id,
+			to: r.conferenceParticipant.schoolId
 		})
 	},
 	possibleDuplicate: {

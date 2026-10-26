@@ -38,7 +38,12 @@
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
-	import { exceededBy, schoolOfGroup, schoolSeats } from '#lib/assignment/schoolSeats.js';
+	import {
+		exceededBy,
+		schoolLookupsOf,
+		schoolSeats,
+		schoolsOfGroup
+	} from '#lib/assignment/schoolSeats.js';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';
 	import BoardToolbar from '../BoardToolbar.svelte';
@@ -197,19 +202,14 @@
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
 	const singleById = $derived(new Map(seatedSingles.map((s) => [s.id, s])));
-	const schoolOfDelegation = (id: string) => delegationById.get(id)?.school;
-	const schoolOfSingle = (id: string) => singleById.get(id)?.school;
+	const schoolLookups = $derived(schoolLookupsOf(delegations, seatedSingles));
 	// Every group holding a role is seated or touched by the draft, so the seated rows know them all.
-	const schoolCounts = $derived(schoolSeats(view, schoolOfDelegation, schoolOfSingle));
+	const schoolCounts = $derived(schoolSeats(view, schoolLookups));
 
 	/** Warns (never blocks) when a group taking a role takes its school past the limit. */
 	function warnAboutSchool(group: AssignmentGroup) {
-		const exceeded = exceededBy(
-			schoolCounts,
-			schoolOfGroup(group, schoolOfDelegation, schoolOfSingle),
-			hasRole(group) ? 0 : group.size,
-			maxSeatsPerSchool
-		);
+		const added = hasRole(group) ? [] : schoolsOfGroup(group, schoolLookups);
+		const exceeded = exceededBy(schoolCounts, added, maxSeatsPerSchool);
 		if (exceeded) {
 			toast.warning(
 				m.assignmentSchoolSeatsWarning({

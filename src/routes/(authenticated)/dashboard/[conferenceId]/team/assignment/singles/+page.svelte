@@ -32,7 +32,12 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import { exceededBy, schoolSeats } from '#lib/assignment/schoolSeats.js';
+	import {
+		exceededBy,
+		schoolLookupsOf,
+		schoolSeats,
+		schoolsOfGroup
+	} from '#lib/assignment/schoolSeats.js';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';
 
@@ -124,11 +129,8 @@
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
-	const delegationById = $derived(new Map(seatedSet.delegations.map((d) => [d.id, d])));
-	const schoolOfSingle = (id: string) => singleById.get(id)?.school;
-	const schoolCounts = $derived(
-		schoolSeats(view, (id) => delegationById.get(id)?.school, schoolOfSingle)
-	);
+	const schoolLookups = $derived(schoolLookupsOf(seatedSet.delegations, singleParticipants));
+	const schoolCounts = $derived(schoolSeats(view, schoolLookups));
 
 	/** Warns (never blocks) when a single participant taking a role takes their school past the limit. */
 	const holdsRole = (singleParticipantId: string) =>
@@ -137,12 +139,9 @@
 		);
 
 	function warnAboutSchool(singleParticipantId: string) {
-		const exceeded = exceededBy(
-			schoolCounts,
-			schoolOfSingle(singleParticipantId) ?? undefined,
-			holdsRole(singleParticipantId) ? 0 : 1,
-			maxSeatsPerSchool
-		);
+		const single = { delegationId: null, singleParticipantId, memberIds: [] };
+		const added = holdsRole(singleParticipantId) ? [] : schoolsOfGroup(single, schoolLookups);
+		const exceeded = exceededBy(schoolCounts, added, maxSeatsPerSchool);
 		if (exceeded) {
 			toast.warning(
 				m.assignmentSchoolSeatsWarning({

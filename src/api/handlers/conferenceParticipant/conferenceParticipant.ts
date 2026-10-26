@@ -6,15 +6,17 @@ import {
 	createStatus,
 	planParticipantStatusUpsert,
 	setAttendanceForAll,
+	setParticipantSchool,
 	updateStatus
 } from './conferenceParticipantService';
+import { resolveSchoolChoice } from '$api/handlers/school/schoolService';
 import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
-import { conferenceParticipantPubsub } from '$api/pubsub';
+import { conferenceParticipantPubsub, schoolPubsub } from '$api/pubsub';
 
 registerConferenceParticipantAbilities();
 
@@ -77,6 +79,37 @@ schemaBuilder.mutationFields((t) => ({
 					query(
 						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
 							where: { id: statusId }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	/**
+	 * Corrects the school of one person, for participant care: the person's own, which the seats
+	 * and numbers per school count, and which the assignment never changes. Their application's
+	 * school stays as it was given. Both null removes it.
+	 */
+	setParticipantSchool: t.drizzleField({
+		type: ConferenceParticipantRef,
+		args: {
+			id: t.arg.id({ required: true }),
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanUpdateParticipantStatus(ctx, args.id);
+			await setParticipantSchool(db, [args.id], await resolveSchoolChoice(args));
+
+			conferenceParticipantPubsub.updated(args.id);
+			if (args.schoolName) schoolPubsub.created();
+
+			return db.query.conferenceParticipant
+				.findFirst(
+					query(
+						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
+							where: { id: args.id }
 						}).query.single
 					)
 				)

@@ -8,12 +8,18 @@ export interface ReviewInput {
 	evaluation?: Nullable<number>;
 	flagged: boolean;
 	disqualified: boolean;
+	/** Has to end up with a seat; left out, it counts as not required. */
+	required?: Nullable<boolean>;
 	note?: Nullable<string>;
 }
 
-/** Why a review cannot be recorded: it names no or two applications, or a rating off the scale. */
+/**
+ * Why a review cannot be recorded: it names no or two applications, a rating off the scale, or an
+ * application both excluded and required.
+ */
 export function reviewProblem(input: ReviewInput) {
 	if (!input.delegationId === !input.singleParticipantId) return 'application' as const;
+	if (input.disqualified && input.required) return 'requiredAndExcluded' as const;
 	const evaluation = input.evaluation ?? 2.5;
 	if (evaluation < 0.5 || evaluation > 5) return 'evaluation' as const;
 	return undefined;
@@ -34,6 +40,7 @@ export function reviewRow(input: ReviewInput) {
 			evaluation: input.evaluation ?? null,
 			flagged: input.flagged,
 			disqualified: input.disqualified,
+			required: !!input.required,
 			note: input.note || null
 		}
 	};

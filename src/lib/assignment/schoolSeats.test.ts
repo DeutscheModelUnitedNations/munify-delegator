@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { exceededBy, schoolSeats, schoolsOverLimit } from './schoolSeats';
+import { exceededBy, schoolSeats, schoolsOfGroup, schoolsOverLimit } from './schoolSeats';
 import type { AssignmentGroup } from './state';
 
 const kiel = { id: 'kiel', name: 'Gymnasium Kiel' };
@@ -32,20 +32,46 @@ const singleSchools = new Map([
 	['s2', luebeck],
 	['s3', luebeck]
 ]);
-const ofDelegation = (id: string) => delegationSchools.get(id);
-const ofSingle = (id: string) => singleSchools.get(id);
+/** People with a school of their own; the rest count for their delegation's. */
+const memberSchools = new Map([
+	['m-luebeck', luebeck],
+	['m-none', null]
+]);
+const lookups = {
+	member: (id: string) => memberSchools.get(id),
+	delegation: (id: string) => delegationSchools.get(id),
+	single: (id: string) => singleSchools.get(id)
+};
+const members = (prefix: string, count: number) =>
+	Array.from({ length: count }, (_, i) => `${prefix}-${i}`);
 
 describe('schoolSeats', () => {
-	test('counts groups with a role by size and single participants with a role once', () => {
+	test('counts every person holding a role, single participants with a role once', () => {
 		const counts = schoolSeats(
 			{
 				groups: [
-					group({ key: 'd1', delegationId: 'd1', size: 3, target: { roleId: 'r1' } }),
-					group({ key: 'd2', delegationId: 'd2', size: 2, target: { roleId: 'r2' } }),
+					group({
+						key: 'd1',
+						delegationId: 'd1',
+						memberIds: members('d1', 3),
+						size: 3,
+						target: { roleId: 'r1' }
+					}),
+					group({
+						key: 'd2',
+						delegationId: 'd2',
+						memberIds: members('d2', 2),
+						target: { roleId: 'r2' }
+					}),
 					// in the pool: no seat
-					group({ key: 'd3', delegationId: 'd3', size: 4 }),
+					group({ key: 'd3', delegationId: 'd3', memberIds: members('d3', 4), size: 4 }),
 					// no school
-					group({ key: 'd4', delegationId: 'd4', size: 2, target: { roleId: 'r3' } }),
+					group({
+						key: 'd4',
+						delegationId: 'd4',
+						memberIds: members('d4', 2),
+						target: { roleId: 'r3' }
+					}),
 					// a single participant the draft turns into a delegation
 					group({ key: 'u1', singleParticipantId: 's3', size: 1, target: { roleId: 'r4' } })
 				],
@@ -54,11 +80,28 @@ describe('schoolSeats', () => {
 					{ singleParticipantId: 's2', roleId: null }
 				]
 			},
-			ofDelegation,
-			ofSingle
+			lookups
 		);
 		expect(counts).toEqual([
 			{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 6 },
+			{ schoolId: 'luebeck', name: 'Schule Lübeck', seats: 1 }
+		]);
+	});
+
+	test('counts a merged delegation towards each of its people’s schools', () => {
+		const merged = group({
+			key: 'd1',
+			delegationId: 'd1',
+			memberIds: ['m-luebeck', 'm-none', 'd1-0'],
+			size: 3,
+			target: { roleId: 'r1' }
+		});
+		expect(schoolsOfGroup(merged, lookups)).toEqual([
+			{ school: luebeck, seats: 1 },
+			{ school: kiel, seats: 2 }
+		]);
+		expect(schoolSeats({ groups: [merged], singles: [] }, lookups)).toEqual([
+			{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 2 },
 			{ schoolId: 'luebeck', name: 'Schule Lübeck', seats: 1 }
 		]);
 	});
@@ -83,25 +126,35 @@ describe('exceededBy', () => {
 	const counts = [{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 15 }];
 
 	test('tells when the added seats go past the limit', () => {
-		expect(exceededBy(counts, kiel, 2, 16)).toEqual({
+		expect(exceededBy(counts, [{ school: kiel, seats: 2 }], 16)).toEqual({
 			name: 'Gymnasium Kiel',
 			seats: 17,
 			limit: 16
 		});
-		expect(exceededBy(counts, kiel, 1, 16)).toBeUndefined();
+		expect(exceededBy(counts, [{ school: kiel, seats: 1 }], 16)).toBeUndefined();
 	});
 
-	test('counts a school without seats yet from zero', () => {
-		expect(exceededBy(counts, luebeck, 3, 2)).toEqual({
+	test('counts a school without seats yet from zero, and checks every school added', () => {
+		expect(
+			exceededBy(
+				counts,
+				[
+					{ school: kiel, seats: 1 },
+					{ school: luebeck, seats: 3 }
+				],
+				2
+			)
+		).toEqual({ name: 'Gymnasium Kiel', seats: 16, limit: 2 });
+		expect(exceededBy([], [{ school: luebeck, seats: 3 }], 2)).toEqual({
 			name: 'Schule Lübeck',
 			seats: 3,
 			limit: 2
 		});
 	});
 
-	test('says nothing without a school, a limit or added seats', () => {
-		expect(exceededBy(counts, undefined, 5, 1)).toBeUndefined();
-		expect(exceededBy(counts, kiel, 5, null)).toBeUndefined();
-		expect(exceededBy(counts, kiel, 0, 1)).toBeUndefined();
+	test('says nothing without a limit or added seats', () => {
+		expect(exceededBy(counts, [], 1)).toBeUndefined();
+		expect(exceededBy(counts, [{ school: kiel, seats: 5 }], null)).toBeUndefined();
+		expect(exceededBy(counts, [{ school: kiel, seats: 0 }], 1)).toBeUndefined();
 	});
 });
