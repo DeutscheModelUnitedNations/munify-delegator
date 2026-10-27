@@ -19,7 +19,7 @@ const QUESTIONS: QuestionPlan[] = [
 	{
 		key: 'workshop',
 		title: 'Workshop-Wahl',
-		description: 'Welchen Workshop möchtest du besuchen? "Verhandlungstraining" ist ausgebucht.',
+		description: 'Welchen Workshop möchten Sie besuchen? "Verhandlungstraining" ist ausgebucht.',
 		deadlineInDays: 7,
 		showSelectionOnDashboard: true,
 		options: [
@@ -31,7 +31,7 @@ const QUESTIONS: QuestionPlan[] = [
 	{
 		key: 'dinner',
 		title: 'Essen beim Delegiertenabend',
-		description: 'Was möchtest du essen?',
+		description: 'Was möchten Sie essen?',
 		deadlineInDays: 10,
 		options: [
 			['Pizza', 0],
