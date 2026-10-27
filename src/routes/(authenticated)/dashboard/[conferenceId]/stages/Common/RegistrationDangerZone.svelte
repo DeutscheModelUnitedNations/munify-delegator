@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	/**
 	 * Leaving or deleting a registration, possible only until it has been completed, and the id to
@@ -20,12 +21,11 @@
 	let { applied, appliedText, supportIdHtml, id, children }: Props = $props();
 </script>
 
-<section>
-	<h2 class="mb-3 text-lg font-semibold">{m.dangerZone()}</h2>
+<DashboardSection icon="triangle-exclamation" title={m.dangerZone()}>
 	{#if applied}
-		<div class="alert alert-info">
-			<i class="fas fa-exclamation-triangle text-3xl"></i>
-			<p>{appliedText}</p>
+		<div class="bg-base-200 rounded-box flex items-start gap-3 p-4">
+			<i class="fa-sharp-duotone fa-solid fa-lock text-base-content/60 mt-0.5 text-lg"></i>
+			<p class="text-sm">{appliedText}</p>
 		</div>
 	{:else}
 		<div class="flex flex-wrap gap-2">
@@ -38,4 +38,4 @@
 		{@html supportIdHtml}
 		<span class="bg-base-200 rounded-selector p-1 font-mono">{id}</span>
 	</p>
-</section>
+</DashboardSection>

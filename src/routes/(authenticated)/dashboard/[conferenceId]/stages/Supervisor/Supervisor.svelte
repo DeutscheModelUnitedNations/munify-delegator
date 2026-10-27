@@ -12,7 +12,6 @@
 	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';
 	import formatNames from '#lib/helpers/formatNames.js';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
-	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import SupervisorPresence from './SupervisorPresence.svelte';
 	import SupervisorSchool from './SupervisorSchool.svelte';
@@ -184,14 +183,6 @@
 			</div>
 		</div>
 	{/if}
-
-	<DashboardQuickLinks
-		{conferenceId}
-		userType="supervisor"
-		{user}
-		{status}
-		ofAgeAtConference={ofAge}
-	/>
 {/snippet}
 
 {#snippet students()}
@@ -259,6 +250,50 @@
 	</DashboardSection>
 {/snippet}
 
+<!-- The dashboard before the conference is over -->
+{#snippet beforePost()}
+	{#if isStateParticipantRegistration}
+		<section class="alert alert-info alert-soft">
+			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
+			{m.registeredAsSupervisor()}
+		</section>
+	{/if}
+
+	<!-- Without any students, connecting them is the one thing to do here -->
+	{#if totalStudentsCount === 0}
+		<SupervisorConnectionCode {conferenceId} {supervisorId} />
+	{:else}
+		<DashboardSection icon="chart-pie" title={m.overview()} description={m.overviewDescription()}>
+			<GenericWidget content={stats} />
+		</DashboardSection>
+	{/if}
+
+	<DashboardSection
+		icon="id-card"
+		title={m.supervisorDetails()}
+		description={m.supervisorDetailsDescription()}
+	>
+		<div class="bg-base-200 rounded-box divide-base-300 divide-y">
+			<SupervisorPresence {supervisorId} editable={isStateParticipantRegistration} />
+			<SupervisorSchool {supervisorId} />
+		</div>
+	</DashboardSection>
+
+	{#if !isStateParticipantRegistration}
+		{@render afterRegistration()}
+	{/if}
+
+	{#if totalStudentsCount > 0}
+		{@render students()}
+
+		<SupervisorConnectionCode {conferenceId} {supervisorId} />
+	{/if}
+
+	{#if !isStateParticipantRegistration && totalStudentsCount > 0}
+		{@render outcome()}
+	{/if}
+{/snippet}
+
 {#if outcomeView === 'pending'}
 	<AssignmentPending />
 {:else if outcomeView === 'rejected'}
@@ -277,30 +312,5 @@
 		<ChunkLoadError {error} />
 	{/await}
 {:else}
-	{#if isStateParticipantRegistration}
-		<section class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
-			{m.registeredAsSupervisor()}
-		</section>
-	{/if}
-
-	<DashboardSection icon="chart-pie" title={m.overview()} description={m.overviewDescription()}>
-		<GenericWidget content={stats} />
-	</DashboardSection>
-
-	<SupervisorPresence {supervisorId} editable={isStateParticipantRegistration} />
-
-	<SupervisorSchool {supervisorId} />
-
-	{#if !isStateParticipantRegistration}
-		{@render afterRegistration()}
-	{/if}
-
-	{@render students()}
-
-	<SupervisorConnectionCode {conferenceId} {supervisorId} />
-
-	{#if !isStateParticipantRegistration && totalStudentsCount > 0}
-		{@render outcome()}
-	{/if}
+	{@render beforePost()}
 {/if}

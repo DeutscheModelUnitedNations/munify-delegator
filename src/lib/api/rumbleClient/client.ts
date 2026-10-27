@@ -522,6 +522,11 @@ export type Calendarentry = {
   room: String | null,
   search_distance: Float | null,
   startTime: DateTime,
+  surveyOption: (p?: {
+    orderBy?: SurveyoptionOrderInputArgument | null | undefined,
+    where?: SurveyoptionWhereInputArgument | null | undefined
+  }) => Surveyoption | null,
+  surveyOptionId: ID | null,
   tracks: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -544,6 +549,7 @@ export type CalendarentryOrderInputArgument = {
   placeId?: SortingParameter | null | undefined,
   room?: SortingParameter | null | undefined,
   startTime?: SortingParameter | null | undefined,
+  surveyOptionId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -564,6 +570,8 @@ export type CalendarentryWhereInputArgument = {
   placeId?: IDWhereInputArgument | null | undefined,
   room?: StringWhereInputArgument | null | undefined,
   startTime?: DateTimeWhereInputArgument | null | undefined,
+  surveyOption?: SurveyoptionWhereInputArgument | null | undefined,
+  surveyOptionId?: IDWhereInputArgument | null | undefined,
   tracks?: CalendartrackWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
@@ -1793,7 +1801,7 @@ export type EmailStatusResult = {
   userId: String | null    
 };
 		
-export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -2137,7 +2145,8 @@ export type Mutation = {
     name: String,
     placeId?: ID | null | undefined,
     room?: String | null | undefined,
-    startTime: DateTime
+    startTime: DateTime,
+    surveyOptionId?: ID | null | undefined
   }) => Calendarentry,
   createCalendarTrack: (p: {
     calendarDayId: ID,
@@ -2338,6 +2347,9 @@ export type Mutation = {
   dismissSchoolSuggestion: (p: {
     id: ID
   }) => Boolean,
+  distributeUnansweredSurvey: (p: {
+    questionId: ID
+  }) => Int,
   endAttendanceSession: (p: {
     id: ID
   }) => Boolean,
@@ -2512,7 +2524,8 @@ export type Mutation = {
     name?: String | null | undefined,
     placeId?: ID | null | undefined,
     room?: String | null | undefined,
-    startTime?: DateTime | null | undefined
+    startTime?: DateTime | null | undefined,
+    surveyOptionId?: ID | null | undefined
   }) => Calendarentry,
   updateCalendarTrack: (p: {
     description?: String | null | undefined,
@@ -3229,8 +3242,11 @@ export type PossibleduplicateWhereInputArgument = {
 export type PossibleduplicatestatusEnum = "CONFIRMED" | "DISMISSED" | "OPEN";
 		
 export type PreviewConferenceSupervisor = {
+  different_school: Boolean,
   family_name: String | null,
-  given_name: String | null    
+  given_name: String | null,
+  school_city: String | null,
+  school_name: String | null    
 };
 		
 export type Query = {
@@ -4309,6 +4325,7 @@ export type SightingDeckCounts = {
 export type SightingDeckEntry = {
   id: ID,
   kind: String,
+  required: Boolean,
   school: String | null,
   size: Int,
   status: String    
@@ -5287,6 +5304,13 @@ export type SurveyanswerWhereInputArgument = {
 };
 		
 export type Surveyoption = {
+  calendarEntries: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CalendarentryOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CalendarentryWhereInputArgument | null | undefined
+  }) => Calendarentry[],
   countSurveyAnswers: Int,
   createdAt: DateTime,
   description: String,
@@ -5323,6 +5347,7 @@ export type SurveyoptionWhereInputArgument = {
   AND?: SurveyoptionWhereInputArgument[] | undefined,
   NOT?: SurveyoptionWhereInputArgument | null | undefined,
   OR?: SurveyoptionWhereInputArgument[] | undefined,
+  calendarEntries?: CalendarentryWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,

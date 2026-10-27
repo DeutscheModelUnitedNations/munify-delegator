@@ -57,7 +57,7 @@
 	<!-- Back Button -->
 	<div>
 		<a
-			href={resolve(`dashboard/${params.conferenceId}/paperhub?viewToggle=global`)}
+			href={resolve(`dashboard/${params.conferenceId}/paperhub?view=global`)}
 			class="btn btn-ghost btn-sm"
 		>
 			<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>

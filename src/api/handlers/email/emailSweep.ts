@@ -2,6 +2,7 @@ import { db, schema } from '#api/db/db.js';
 import { emailService } from '#api/services/email/emailService.js';
 import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
 import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages.js';
 import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
 import { emailLogPubsub } from '#api/pubsub.js';
 import { sql } from 'drizzle-orm';
@@ -394,6 +395,12 @@ export async function previewEmail(
 			agendaItem: 'GV: Klimaschutz',
 			reviewer: { name: 'Robin Beispiel', email: 'reviewer@example.org' },
 			statusAfter: 'CHANGES_REQUESTED'
+		},
+		survey: {
+			id: 'preview',
+			title: m.emailPreviewSurveyTitle({}, { locale }),
+			deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+			answeredBy: []
 		}
 	};
 	return renderAutomaticEmail(email, snapshot.conference, origin, wording);

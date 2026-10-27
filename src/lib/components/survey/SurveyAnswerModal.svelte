@@ -3,6 +3,7 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import DeadlineDisplay from '#lib/components/DeadlineDisplay.svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
 
 	interface SurveyOption {
 		id: string;
@@ -38,21 +39,24 @@
 	let loading = $state(false);
 
 	let questionLocked = $derived(new Date(question.deadline) < new Date());
+	const canSave = $derived(!!newAnswer && !questionLocked && !loading);
 
 	const updateChoice = async () => {
-		if (!newAnswer || questionLocked || loading) return;
-		loading = true;
-		try {
-			await client.mutate.updateSurveyAnswer({
-				__args: { userId, questionId: question.id, optionId: newAnswer },
-				id: true,
-				question: { id: true },
-				option: { id: true, countSurveyAnswers: true }
-			});
-			open = false;
-		} finally {
-			loading = false;
-		}
+		const optionId = newAnswer;
+		if (!canSave || !optionId) return;
+		// The option may have filled up since the modal opened: the API refuses, and says so.
+		const saved = await saveWithToast(
+			(isLoading) => (loading = isLoading),
+			async () => {
+				await client.mutate.updateSurveyAnswer({
+					__args: { userId, questionId: question.id, optionId },
+					id: true,
+					question: { id: true },
+					option: { id: true, countSurveyAnswers: true }
+				});
+			}
+		);
+		open = !saved;
 	};
 
 	/** Seats still free; an option without an upper limit never runs out. */
@@ -60,8 +64,8 @@
 		option.upperLimit ? option.upperLimit - option.countSurveyAnswers : 99999999;
 
 	const capacityClass = (capacity: number) => {
-		if (capacity > 5) return 'bg-base-100';
-		return capacity > 0 ? 'bg-warning' : 'bg-error';
+		if (capacity > 5) return 'text-base-content/60';
+		return capacity > 0 ? 'text-warning' : 'text-error';
 	};
 </script>
 
@@ -85,38 +89,46 @@
 
 {#snippet optionCard(option: SurveyOption)}
 	{@const capacity = remainingCapacity(option)}
+	{@const selected = newAnswer === option.id}
+	{@const disabled = capacity <= 0 || questionLocked}
 	<label
-		class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-field p-4 transition-all duration-300"
+		class="bg-base-200 relative flex flex-col items-start gap-2 rounded-field border-2 p-4 transition-[border-color,background-color,box-shadow] duration-300 has-focus-visible:outline-2 has-focus-visible:outline-primary {selected
+			? 'border-success shadow-lg shadow-success/20'
+			: 'border-transparent'} {disabled
+			? 'cursor-not-allowed opacity-60'
+			: 'hover:bg-base-300 cursor-pointer'}"
 	>
 		<input
 			type="radio"
 			name="surveyOption"
-			class="radio-primary radio h-full"
+			class="sr-only"
 			value={option.id}
 			checked={currentAnswerOptionId === option.id}
 			onchange={(e) => (newAnswer = e.currentTarget.value)}
-			disabled={capacity <= 0 || questionLocked}
+			{disabled}
 		/>
-		<div class="flex w-full flex-col items-start justify-between gap-2">
-			<h3 class="font-bold">{option.title}</h3>
-			{#if option.description}
-				<p class="whitespace-pre-line text-sm">{option.description}</p>
-			{/if}
-			<div class="{capacityClass(capacity)} flex w-auto items-center rounded-field p-2 text-sm">
-				<i class="fa-sharp-duotone fa-solid fa-users mr-2"></i>
-				{@render seats(option, capacity)}
-			</div>
-		</div>
+		<span
+			class="absolute right-0 bottom-0 grid size-6 translate-x-1/2 translate-y-1/2 place-items-center rounded-full bg-success text-xs text-success-content transition-[scale,opacity] duration-300 {selected
+				? 'scale-100 opacity-100 ease-[cubic-bezier(0.34,1.56,0.64,1)]'
+				: 'scale-0 opacity-0 ease-in'}"
+			aria-hidden="true"
+		>
+			<i class="fa-sharp-duotone fa-solid fa-check"></i>
+		</span>
+		<h3 class="font-bold">{option.title}</h3>
+		{#if option.description}
+			<p class="whitespace-pre-line text-sm">{option.description}</p>
+		{/if}
+		<p class="flex items-center text-sm {capacityClass(capacity)}">
+			<i class="fa-sharp-duotone fa-solid fa-users mr-2"></i>
+			{@render seats(option, capacity)}
+		</p>
 	</label>
 {/snippet}
 
 {#snippet action()}
 	<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
-	<button
-		class="btn btn-primary"
-		onclick={updateChoice}
-		disabled={!newAnswer || questionLocked || loading}
-	>
+	<button class="btn btn-primary" onclick={updateChoice} disabled={!canSave}>
 		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}
 		<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		{m.save()}

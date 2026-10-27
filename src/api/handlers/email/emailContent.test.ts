@@ -20,6 +20,7 @@ const conference: EmailSnapshot['conference'] = {
 	unlockPayments: true,
 	startAssignment: new Date('2026-12-01T12:00:00Z'),
 	startConference: new Date('2027-03-01T08:00:00Z'),
+	timezone: 'Europe/Berlin',
 	certificateAvailable: true
 };
 
@@ -66,6 +67,12 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 				agendaItem: 'GV: Klimaschutz',
 				reviewer: { name: 'Robin Reviewer', email: 'robin@example.org' },
 				statusAfter: 'ACCEPTED'
+			},
+			survey: {
+				id: 'survey-1',
+				title: 'Workshop-Wahl',
+				deadline: new Date('2027-02-01T17:00:00Z'),
+				answeredBy: []
 			}
 		};
 		const content = emailContent(email, conference, 'https://delegator.example.org');
@@ -84,6 +91,11 @@ describe.each(['de', 'en'] as const)('the automatic mails in %s', (locale) => {
 		expect(text).toContain('Ada Lovelace');
 		if (kind === 'ASSIGNMENT_ACCEPTED') {
 			expect(text).toContain(locale === 'de' ? 'Frankreich' : 'France');
+		}
+		if (kind === 'SURVEY_REMINDER') {
+			expect(content.subject).toContain('Workshop-Wahl');
+			// 17:00 UTC is 18:00 in Berlin, the conference's time zone
+			expect(content.paragraphs.join('\n')).toMatch(/18:00|6:00\s?PM/);
 		}
 		if (kind === 'PAPER_REVIEWED') {
 			expect(content.subject).toContain('GV: Klimaschutz');

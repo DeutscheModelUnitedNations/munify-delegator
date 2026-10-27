@@ -10,7 +10,6 @@ export const schoolFormSchema = z.object({
 	region: z.string().nullish(),
 	/** ISO 3166-1 alpha-3 */
 	country: z.string().nullish(),
-	website: z.union([z.literal(''), z.url()]).optional(),
 	contactName: z.string().optional(),
 	contactEmail: z.union([z.literal(''), z.email()]).optional(),
 	contactPhone: z.string().optional(),
@@ -33,7 +32,6 @@ export function toUpdateSchoolArgs(id: string, values: SchoolFormValues) {
 		city: orNull(values.city),
 		region: orNull(values.region),
 		country: orNull(values.country),
-		website: orNull(values.website),
 		contactName: orNull(values.contactName),
 		contactEmail: orNull(values.contactEmail),
 		contactPhone: orNull(values.contactPhone),

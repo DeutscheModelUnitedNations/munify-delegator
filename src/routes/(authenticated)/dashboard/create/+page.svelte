@@ -54,11 +54,32 @@
 	};
 </script>
 
-<div class="flex w-full flex-col items-center gap-4 p-10">
-	<a href={resolve('/(authenticated)/dashboard/conference-request')} class="btn btn-ghost self-end">
-		<i class="fa-sharp-duotone fa-solid fa-file-pen"></i>
-		{m.conferenceRequest()}
-	</a>
+<div class="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 p-4 md:p-10">
+	<header class="flex w-full flex-col gap-2">
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<h1 class="text-3xl font-bold">{m.createConference()}</h1>
+			<a href={resolve('/(authenticated)/dashboard/conference-request')} class="btn btn-ghost">
+				<i class="fa-sharp-duotone fa-solid fa-file-pen"></i>
+				{m.conferenceRequest()}
+			</a>
+		</div>
+		<p class="text-base-content/70">{m.createConferenceDescription()}</p>
+	</header>
+
+	<section class="bg-base-200 w-full rounded-box p-4">
+		<h2 class="mb-2 font-bold">{m.createConferenceWorkflow()}</h2>
+		<ol class="list-decimal space-y-1 pl-5">
+			<li>{m.createConferenceStepRequest()}</li>
+			<li>{m.createConferenceStepUpload()}</li>
+			<li>{m.createConferenceStepCreate()}</li>
+		</ol>
+	</section>
+
+	<div class="alert alert-info w-full">
+		<i class="fa-sharp-duotone fa-solid fa-circle-info"></i>
+		<span>{m.createConferenceEditHint()}</span>
+	</div>
+
 	<input
 		type="file"
 		class="file-input w-full"

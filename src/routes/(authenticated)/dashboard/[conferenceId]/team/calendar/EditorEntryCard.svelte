@@ -17,6 +17,8 @@
 		start: number;
 		end: number;
 		location: string;
+		/** Set when only those who picked this survey option see the entry */
+		surveyOptionTitle: string | null;
 		overlapping: boolean;
 		dragging: boolean;
 		/** The row/column geometry as inline style (position, size) */
@@ -31,6 +33,7 @@
 		start,
 		end,
 		location,
+		surveyOptionTitle,
 		overlapping,
 		dragging,
 		style
@@ -64,6 +67,12 @@
 		{#if fontAwesomeIcon}
 			<i
 				class="fa-sharp-duotone fa-solid fa-{fontAwesomeIcon} {config.text} mt-0.5 shrink-0 text-xs"
+			></i>
+		{/if}
+		{#if surveyOptionTitle}
+			<i
+				class="fa-sharp-duotone fa-solid fa-filter text-base-content/60 mt-0.5 shrink-0 text-xs"
+				title={m.calendarEntryOnlyFor({ option: surveyOptionTitle })}
 			></i>
 		{/if}
 		<span class="truncate text-xs font-semibold">{name}</span>

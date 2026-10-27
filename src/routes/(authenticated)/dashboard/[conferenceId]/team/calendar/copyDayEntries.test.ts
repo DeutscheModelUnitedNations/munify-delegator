@@ -35,6 +35,7 @@ describe('copiedEntryArgs', () => {
 					color: 'SESSION',
 					placeId: 'p1',
 					room: 'Aula',
+					surveyOptionId: 'o1',
 					tracks: [{ id: 's1' }]
 				},
 				targetDay,
@@ -50,7 +51,8 @@ describe('copiedEntryArgs', () => {
 			fontAwesomeIcon: 'flag',
 			color: 'SESSION',
 			placeId: 'p1',
-			room: 'Aula'
+			room: 'Aula',
+			surveyOptionId: 'o1'
 		});
 	});
 
@@ -72,7 +74,8 @@ describe('copiedEntryArgs', () => {
 			description: null,
 			fontAwesomeIcon: null,
 			placeId: null,
-			room: null
+			room: null,
+			surveyOptionId: null
 		});
 	});
 });

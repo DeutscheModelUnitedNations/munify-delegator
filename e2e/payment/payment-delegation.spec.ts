@@ -1,6 +1,10 @@
 import { test, expect, acceptDialogs } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import {
+	chooseApplyPath,
+	fillApplicationSteps,
+	openFirstConferenceForRegistration
+} from '../support/registration';
 
 // Covers the head delegate's "delegation payment" variant - a reference covering the whole
 // delegation, distinct participant-selection logic from the "single" variant already covered in
@@ -20,8 +24,7 @@ test('a head delegate can generate a delegation payment reference covering all m
 	await loginAs(headPage, headDelegate);
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
-	await headPage.locator('a[href$="/create-delegation"]').click();
-	await headPage.waitForURL(/\/create-delegation$/);
+	await chooseApplyPath(headPage, /Delegation erstellen/);
 
 	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
@@ -29,10 +32,11 @@ test('a head delegate can generate a delegation payment reference covering all m
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 15_000 });
 
-	await schoolInput.fill('E2E Test School');
-	await headPage.locator('textarea[name="motivation"]').fill('We want to join.');
-	await headPage.locator('textarea[name="experience"]').fill('Some experience.');
-	await headPage.locator('form button.btn-primary').first().click();
+	await fillApplicationSteps(headPage, {
+		school: 'E2E Test School',
+		motivation: 'We want to join.',
+		experience: 'Some experience.'
+	});
 
 	const entryCodeLocator = headPage.locator('p.font-mono');
 	await expect(entryCodeLocator).toBeVisible({ timeout: 15_000 });
@@ -60,8 +64,9 @@ test('a head delegate can generate a delegation payment reference covering all m
 	const feeAmount = (await feeRes.json())?.data?.conference?.feeAmount as number;
 	expect(feeAmount).toBeGreaterThan(0);
 
-	await headPage.goto(`/dashboard/${conferenceId}/payment/delegation`);
+	await headPage.goto(`/dashboard/${conferenceId}/payment`);
 	await waitForHydration(headPage);
+	await headPage.getByLabel(/für andere mitbezahlen|pay for others too/i).check();
 
 	const generateButton = headPage.locator('button:has(.fa-sparkles)');
 	await expect(generateButton).toBeEnabled({ timeout: 15_000 });

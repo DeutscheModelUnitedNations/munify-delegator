@@ -7,6 +7,7 @@
 	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
+	import ParticipantQuickLinks from './sections/ParticipantQuickLinks.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
 	import { client } from '#lib/api/rumbleClient/client.js';
@@ -47,8 +48,11 @@
 	{:else if !currentUser}
 		<!-- A visitor who is not signed in sees the conference and what taking part would take -->
 		<div class="flex w-full flex-col gap-10">
-			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false} />
-			<PublicQuickLinks {conferenceId} />
+			<DashboardConferenceOverview {conferenceId} isTeamMember={false} hasAssignedRole={false}>
+				{#snippet afterHeader()}
+					<PublicQuickLinks {conferenceId} />
+				{/snippet}
+			</DashboardConferenceOverview>
 			<SignInHint title={m.signInHintTitle()} text={m.signInToSeeYourParticipation()} />
 		</div>
 	{:else}
@@ -59,7 +63,20 @@
 					userId={currentUser.sub}
 					isTeamMember={!!teamMember}
 					{hasAssignedRole}
-				/>
+				>
+					{#snippet afterHeader()}
+						<ParticipantQuickLinks
+							{conferenceId}
+							{conference}
+							{singleParticipant}
+							{delegationMember}
+							supervisorId={supervisor?.id}
+							user={currentUser}
+							{status}
+							ofAge={isOfAgeAtConference}
+						/>
+					{/snippet}
+				</DashboardConferenceOverview>
 				<ParticipationStages
 					{conferenceId}
 					{conference}

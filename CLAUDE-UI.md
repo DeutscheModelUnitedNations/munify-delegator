@@ -413,20 +413,21 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 
 ### Available Form Components
 
-| Component            | Purpose                         | Key Props                                                                                        |
-| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `Form`               | Form wrapper with submit button | `form`, `showSubmitButton`, `action`                                                             |
-| `FormFieldset`       | Visual grouping with legend     | `title`, `icon` (snippet before the title)                                                       |
-| `FormTextInput`      | Text/email/password input       | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder`                    |
-| `FormTextArea`       | Multi-line text                 | `form`, `name`, `label`                                                                          |
-| `FormSelect`         | Dropdown select                 | `form`, `name`, `label`, `options`                                                               |
-| `FormCheckbox`       | Checkbox toggle                 | `form`, `name`, `label`                                                                          |
-| `FormDateTimeInput`  | Date/time picker                | `form`, `name`, `label`                                                                          |
-| `FormFile`           | File upload                     | `form`, `name`, `label`                                                                          |
-| `FormSubmitButton`   | Submit with loading state       | `form`, `disabled`, `loading`                                                                    |
-| `AddressRegionField` | State/province of an address    | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
-| `AddressFields`      | A whole postal address          | `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country    |
-| `SchoolPicker`       | School combobox                 | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
+| Component            | Purpose                            | Key Props                                                                                        |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Form`               | Form wrapper with submit button    | `form`, `showSubmitButton`, `action`                                                             |
+| `FormFieldset`       | Visual grouping with legend        | `title`, `icon` (snippet before the title)                                                       |
+| `FormTextInput`      | Text/email/password input          | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder`                    |
+| `FormTextArea`       | Multi-line text                    | `form`, `name`, `label`                                                                          |
+| `FormSelect`         | Dropdown select                    | `form`, `name`, `label`, `options`                                                               |
+| `FormCheckbox`       | Checkbox toggle                    | `form`, `name`, `label`                                                                          |
+| `FormDateTimeInput`  | Date/time picker                   | `form`, `name`, `label`                                                                          |
+| `FormFile`           | File upload                        | `form`, `name`, `label`                                                                          |
+| `FormSubmitButton`   | Submit with loading state          | `form`, `disabled`, `loading`                                                                    |
+| `AddressRegionField` | State/province of an address       | `form`, `name`, `rules` (`addressRules(country)`), `disabled`; hidden where the country has none |
+| `AddressFields`      | A whole postal address             | `form`, `fields` (`ADDRESS_FIELDS`), `rules`, `disabled`; postal code/city/region per country    |
+| `AddressSection`     | `AddressFields` in its own section | `form`, `fields`, `rules`; the "Address" `FormSection` around `AddressFields`                    |
+| `SchoolPicker`       | School combobox                    | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
 
 **`SchoolPicker`** is how every form asks for a school (applications, waiting list, supervisors).
 It binds the two fields every school mutation takes (`schoolChoiceSchema` in
@@ -743,23 +744,35 @@ Conference title header with emblem and status:
 />
 ```
 
-### TodoTable
+### StatusChecklist
 
-Checklist table with status icons:
+A checklist with a progress bar: open steps first-class, done ones struck through. Each step is
+`DONE`, `PENDING`, `PROBLEM` or `NOT_YET_POSSIBLE`; an open step's `href` links to where it is done
+(an anchor on the page: `DashboardSection` takes an `id`). `legend={false}` drops the notes
+explaining the open statuses.
 
 ```svelte
 <script lang="ts">
-	import TodoTable from '#lib/components/dashboard/TodoTable.svelte';
+	import StatusChecklist from '#lib/components/dashboard/StatusChecklist.svelte';
 </script>
 
-<TodoTable
-	todos={[
-		{ title: 'Complete registration', completed: true },
-		{ title: 'Upload photo', completed: false, help: 'Required for badge' },
-		{ title: 'Pay fees', completed: undefined } // Shows loading spinner
+<StatusChecklist
+	steps={[
+		{ task: 'Invite people', status: 'DONE' },
+		{
+			task: 'Answer the questionnaire',
+			status: 'PENDING',
+			hint: 'Motivation and experience',
+			href: '#application-texts'
+		}
 	]}
+	legend={false}
 />
 ```
+
+The registration flow (`routes/(authenticated)/registration/[conferenceId]/`) frames every page in
+`RegistrationStepPage`: a way back, a stepper for the page's path (`registrationSteps.ts`; choosing
+the path on the dashboard is step 0) and the content in a `DashboardSection`.
 
 ---
 

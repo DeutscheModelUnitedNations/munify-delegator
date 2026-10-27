@@ -7,14 +7,20 @@ import { targetKey, type AssignmentGroup } from './state';
  */
 
 /** An application of the conference the team marked as required (`assignmentReview.required`). */
-export type RequiredApplication = { delegationId: string } | { singleParticipantId: string };
+export type RequiredApplication =
+	/** `size`: the delegation's members, the group size the board shows it under */
+	{ delegationId: string; size?: number } | { singleParticipantId: string };
 
 /** The application a review row is about; none for a row that names neither. */
 export function requiredApplicationOf(review: {
 	delegationId?: string | null;
 	singleParticipantId?: string | null;
+	delegation?: { memberCount: number } | null;
 }): RequiredApplication[] {
-	if (review.delegationId) return [{ delegationId: review.delegationId }];
+	if (review.delegationId) {
+		const size = review.delegation?.memberCount;
+		return [{ delegationId: review.delegationId, ...(size === undefined ? {} : { size }) }];
+	}
 	if (review.singleParticipantId) return [{ singleParticipantId: review.singleParticipantId }];
 	return [];
 }

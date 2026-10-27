@@ -145,6 +145,10 @@ export const relations = defineRelations(schema, (r) => ({
 		place: r.one.place({
 			from: r.calendarEntry.placeId,
 			to: r.place.id
+		}),
+		surveyOption: r.one.surveyOption({
+			from: r.calendarEntry.surveyOptionId,
+			to: r.surveyOption.id
 		})
 	},
 	calendarTrack: {
@@ -658,6 +662,10 @@ export const relations = defineRelations(schema, (r) => ({
 		surveyAnswers: r.many.surveyAnswer({
 			from: r.surveyOption.id,
 			to: r.surveyAnswer.optionId
+		}),
+		calendarEntries: r.many.calendarEntry({
+			from: r.surveyOption.id,
+			to: r.calendarEntry.surveyOptionId
 		})
 	},
 	surveyQuestion: {

@@ -6,7 +6,6 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import codenmz from '#lib/helpers/codenamize.js';
 	import {
 		applicationTextsComplete,
 		MIN_DELEGATION_MEMBERS,
@@ -15,11 +14,10 @@
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
-	import CompleteSignupCard from '../Common/CompleteSignupCard.svelte';
+	import ApplicationProgress from '../Common/ApplicationProgress.svelte';
 	import RegistrationDangerZone from '../Common/RegistrationDangerZone.svelte';
-	import RegistrationStatusAlert from '../Common/RegistrationStatusAlert.svelte';
-	import RoleApplicationTable from './RoleApplicationTable.svelte';
-	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
+	import SupervisorTable from '../Common/SupervisorTable.svelte';
+	import DelegationPreferencesSection from './DelegationPreferencesSection.svelte';
 	import DelegationRegistrationMembers from './DelegationRegistrationMembers.svelte';
 
 	interface Props {
@@ -52,43 +50,26 @@
 	const delegationId = $derived(delegationMember.delegation.id);
 	const applied = $derived(delegationMember.delegation.applied);
 
-	let delegationPreferencesModalOpen = $state(false);
-
-	let invitePeopleCompleted = $derived(
-		delegationMember.delegation?.members?.length
-			? delegationMember.delegation?.members?.length >= MIN_DELEGATION_MEMBERS
-			: undefined
-	);
-
-	let answerQuestionaireCompleted = $derived(applicationTextsComplete(delegationMember.delegation));
-
-	let enterDelegationPreferencesCompleted = $derived(
-		(delegationMember.delegation.appliedForRoles?.length ?? 0) >= MIN_ROLE_APPLICATIONS.delegation
-	);
-
-	let todos = $derived([
-		{ title: m.todoCreateDelegation(), completed: true },
+	// Creating the delegation is done by being here; the button completing the application is the
+	// last step, so neither is listed.
+	let steps = $derived([
 		{
-			title: m.todoInvitePeople(),
-			completed: invitePeopleCompleted,
-			help: m.todoInvitePeopleHelp()
+			task: m.todoInvitePeople(),
+			done: delegationMember.delegation.members.length >= MIN_DELEGATION_MEMBERS,
+			hint: m.todoInvitePeopleHelp(),
+			href: '#application-members'
 		},
 		{
-			title: m.todoAnswerQuestionaire(),
-			completed: answerQuestionaireCompleted,
-			help: m.todoAnswerQuestionaireHelp()
+			task: m.todoEnterDelegationPreferences(),
+			done: delegationMember.delegation.appliedForRoles.length >= MIN_ROLE_APPLICATIONS.delegation,
+			hint: m.todoEnterDelegationPreferencesHelp(),
+			href: '#application-preferences'
 		},
 		{
-			title: m.todoEnterDelegationPreferences(),
-			completed: enterDelegationPreferencesCompleted,
-			help: m.todoEnterDelegationPreferencesHelp()
-		},
-		{
-			title: m.todoCompleteSignup(),
-			completed: delegationMember.delegation?.applied,
-			help: m.todoCompleteSignupHelp(),
-			arrowDown:
-				invitePeopleCompleted && answerQuestionaireCompleted && enterDelegationPreferencesCompleted
+			task: m.todoAnswerQuestionaire(),
+			done: applicationTextsComplete(delegationMember.delegation),
+			hint: m.todoAnswerQuestionaireHelp(),
+			href: '#application-texts'
 		}
 	]);
 
@@ -147,121 +128,66 @@
 	};
 </script>
 
-{#snippet preferences()}
-	<DashboardSection
-		icon="flag"
-		title={m.delegationPreferences()}
-		description={userIsHeadDelegate
-			? m.delegationPreferencesDescriptionHeadDelegate()
-			: m.delegationPreferencesDescriptionMember()}
-	>
-		{#if delegationMember.delegation.appliedForRoles.length === 0}
-			<div class="alert alert-warning alert-soft text-sm">
-				<i class="fas fa-exclamation-triangle"></i>
-				{m.noRoleApplications()}
-			</div>
-		{:else}
-			<RoleApplicationTable {delegationId} {conferenceId} />
-		{/if}
-		{#if !applied}
-			{#if userIsHeadDelegate}
-				<button
-					class="btn btn-primary mt-4"
-					onclick={() => {
-						delegationPreferencesModalOpen = true;
-					}}
-				>
-					{m.setDelegationPreferences()}</button
-				>
-			{:else}
-				<a class="btn btn-primary mt-4" href={resolve(`dashboard/${conferenceId}/seats`)}>
-					<i class="fas fa-arrow-right"></i>
-					{m.conferenceSeats()}
-				</a>
-			{/if}
-		{/if}
-	</DashboardSection>
-{/snippet}
+<ApplicationProgress
+	{conferenceId}
+	{applied}
+	pendingText={m.completeSignupWarningText()}
+	{steps}
+	onComplete={userIsHeadDelegate ? completeRegistration : undefined}
+/>
 
-<div class="flex flex-col gap-6">
-	<RegistrationStatusAlert {applied} pendingText={m.completeSignupWarningText()} />
+<DelegationRegistrationMembers
+	{conferenceId}
+	{delegationId}
+	{userIsHeadDelegate}
+	id="application-members"
+/>
 
-	<div class="bg-base-100 border-base-200 rounded-box border px-4 py-3 sm:px-6 sm:py-4 shadow-sm">
-		<p class="text-base-content/60 text-sm">
-			{m.delegationName()} · {m.delegationNameExplaination()}
-		</p>
-		<p class="text-xl font-semibold">{codenmz(delegationId)}</p>
-	</div>
+<DelegationPreferencesSection
+	{conferenceId}
+	{delegationId}
+	{userIsHeadDelegate}
+	{applied}
+	empty={delegationMember.delegation.appliedForRoles.length === 0}
+/>
 
-	<div class="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-		<div class="flex flex-col gap-6">
-			<DelegationRegistrationMembers
-				{conferenceId}
-				{delegationId}
-				delegationMemberId={delegationMember.id}
-				{userIsHeadDelegate}
-			/>
-			<DashboardSection
-				icon="file-lines"
-				title={m.informationAndMotivation()}
-				description={userIsHeadDelegate
-					? m.informationAndMotivationDescriptionHeadDelegate()
-					: m.informationAndMotivationDescriptionMember()}
-			>
-				<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
-				registration, so a different one gets a fresh form. -->
-				<ApplicationQuestionnaire
-					initial={delegationMember.delegation}
-					save={saveApplication}
-					disabled={applied || !userIsHeadDelegate}
-					showSubmitButton={!applied && userIsHeadDelegate}
-					schoolLabel={m.whichSchoolDoesYourDelegationComeFrom()}
-					motivationLabel={m.whyDoYouWantToJoinTheConference()}
-					experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
-				/>
-			</DashboardSection>
-		</div>
-
-		<div class="flex flex-col gap-6">
-			{@render preferences()}
-			{#if !applied}
-				<CompleteSignupCard
-					description={userIsHeadDelegate
-						? m.completeSignupDescriptionHeadDelegate()
-						: m.completeSignupDescription()}
-					{todos}
-					forbidden={!userIsHeadDelegate}
-					onComplete={completeRegistration}
-				/>
-			{/if}
-		</div>
-	</div>
-
-	<RegistrationDangerZone
-		{applied}
-		appliedText={m.noDangerZoneOptions()}
-		supportIdHtml={m.delegationIdForSupport()}
-		id={delegationId}
-	>
-		{#if delegationMember.delegation.members.length > 1}
-			<button class="btn btn-outline btn-error" onclick={leaveDelegation}
-				>{m.leaveDelegation()}</button
-			>
-		{/if}
-		{#if userIsHeadDelegate}
-			<button class="btn btn-outline btn-error" onclick={deleteDelegation}>
-				{m.deleteDelegation()}
-			</button>
-		{/if}
-	</RegistrationDangerZone>
-</div>
-
-{#if delegationPreferencesModalOpen}
-	<SelectDelegationPreferencesModal
-		onClose={() => {
-			delegationPreferencesModalOpen = false;
-		}}
-		{conferenceId}
-		{delegationId}
+<DashboardSection
+	id="application-texts"
+	icon="file-lines"
+	title={m.informationAndMotivation()}
+	description={userIsHeadDelegate
+		? m.informationAndMotivationDescriptionHeadDelegate()
+		: m.informationAndMotivationDescriptionMember()}
+>
+	<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
+	registration, so a different one gets a fresh form. -->
+	<ApplicationQuestionnaire
+		initial={delegationMember.delegation}
+		save={saveApplication}
+		disabled={applied || !userIsHeadDelegate}
+		showSubmitButton={!applied && userIsHeadDelegate}
+		schoolLabel={m.whichSchoolDoesYourDelegationComeFrom()}
+		motivationLabel={m.whyDoYouWantToJoinTheConference()}
+		experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 	/>
-{/if}
+</DashboardSection>
+
+<SupervisorTable delegationMemberId={delegationMember.id} {conferenceId} />
+
+<RegistrationDangerZone
+	{applied}
+	appliedText={m.noDangerZoneOptions()}
+	supportIdHtml={m.delegationIdForSupport()}
+	id={delegationId}
+>
+	{#if delegationMember.delegation.members.length > 1}
+		<button class="btn btn-outline btn-error" onclick={leaveDelegation}>
+			{m.leaveDelegation()}
+		</button>
+	{/if}
+	{#if userIsHeadDelegate}
+		<button class="btn btn-outline btn-error" onclick={deleteDelegation}>
+			{m.deleteDelegation()}
+		</button>
+	{/if}
+</RegistrationDangerZone>

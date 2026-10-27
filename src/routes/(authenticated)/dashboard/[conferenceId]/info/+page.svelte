@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import Markdown from '#lib/components/markdown/Markdown.svelte';
@@ -25,15 +25,8 @@
 -->
 
 <div class="flex w-full flex-col gap-4">
-	<div class="flex items-center gap-2">
-		<a
-			class="btn btn-square btn-ghost"
-			aria-label={m.back()}
-			href={resolve(`dashboard/${params.conferenceId}`)}><i class="fas fa-arrow-left"></i></a
-		>
-
-		<h1 class="text-2xl font-bold">{m.conferenceInfo()}</h1>
-	</div>
+	<BackToDashboard conferenceId={params.conferenceId} />
+	<h1 class="text-2xl font-bold">{m.conferenceInfo()}</h1>
 	<div class="prose bg-base-200 w-full rounded-box p-4">
 		<Markdown source={conference?.info ?? ''} />
 	</div>

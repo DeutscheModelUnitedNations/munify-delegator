@@ -211,7 +211,11 @@ schemaBuilder.mutationFields((t) => ({
 const PreviewConferenceSupervisor = schemaBuilder.simpleObject('PreviewConferenceSupervisor', {
 	fields: (t) => ({
 		given_name: t.string({ nullable: true }),
-		family_name: t.string({ nullable: true })
+		family_name: t.string({ nullable: true }),
+		school_name: t.string({ nullable: true }),
+		school_city: t.string({ nullable: true }),
+		/** Whether the supervisor's school is another than the caller's own. */
+		different_school: t.boolean()
 	})
 });
 
@@ -231,8 +235,9 @@ schemaBuilder.queryFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanPreviewConferenceSupervisor(ctx, args.conferenceId);
+			const caller = ctx.mustBeLoggedIn();
 
-			return previewSupervisorByCode(args.conferenceId, args.connectionCode);
+			return previewSupervisorByCode(args.conferenceId, args.connectionCode, caller.sub);
 		}
 	})
 }));

@@ -13,6 +13,7 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
+	import RegistrationStepPage from '../RegistrationStepPage.svelte';
 
 	let { params }: PageProps = $props();
 
@@ -69,57 +70,52 @@
 	let disabled = $derived(alreadyOnWaitingList);
 </script>
 
-<div class="flex w-full flex-col items-center p-4">
-	<hero class="mt-20 text-center">
-		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.vacanciesSlashWaitingList()}</h1>
-		<p class="max-ch-md">
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
-			{@html m.vacanciesSlashWaitingListDescription()}
-		</p>
-	</hero>
+<RegistrationStepPage {conferenceId} icon="hourglass-half" title={m.vacanciesSlashWaitingList()}>
+	<div class="prose prose-sm mb-4 max-w-none">
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
+		{@html m.vacanciesSlashWaitingListDescription()}
+	</div>
 
 	{#if alreadyOnWaitingList}
-		<div class="alert alert-success alert-vertical sm:alert-horizontal mt-10">
-			<i class="fas fa-circle-check"></i>
+		<div role="status" class="alert bg-success/10 border-success/30 mb-4">
+			<i class="fa-sharp-duotone fa-solid fa-circle-check text-success text-xl"></i>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
-			{@html m.alreadyOnWaitingList()}
+			<span>{@html m.alreadyOnWaitingList()}</span>
 		</div>
 	{/if}
 
-	<main class="mt-10">
-		<Form {form}>
-			<FormFieldset title={m.questionnaire()}>
-				<SchoolPicker
-					{form}
-					name="schoolName"
-					idName="schoolId"
-					label={m.whichSchoolDoYouComeFrom()}
-					description={m.schoolPickerDescription()}
-					{disabled}
-				/>
-				<FormTextArea
-					{form}
-					name="motivation"
-					placeholder={m.answerHere()}
-					label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
-					{disabled}
-				/>
-				<FormTextArea
-					{form}
-					name="experience"
-					placeholder={m.answerHere()}
-					label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
-					{disabled}
-				/>
-				<FormTextArea
-					{form}
-					name="requests"
-					label={m.anySpecificRequests()}
-					description={m.anySpecificRequestsDescription()}
-					placeholder={m.answerHereOrLeaveEmpty()}
-					{disabled}
-				/>
-			</FormFieldset>
-		</Form>
-	</main>
-</div>
+	<Form {form}>
+		<FormFieldset title={m.questionnaire()}>
+			<SchoolPicker
+				{form}
+				name="schoolName"
+				idName="schoolId"
+				label={m.whichSchoolDoYouComeFrom()}
+				description={m.schoolPickerDescription()}
+				{disabled}
+			/>
+			<FormTextArea
+				{form}
+				name="motivation"
+				placeholder={m.answerHere()}
+				label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
+				{disabled}
+			/>
+			<FormTextArea
+				{form}
+				name="experience"
+				placeholder={m.answerHere()}
+				label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
+				{disabled}
+			/>
+			<FormTextArea
+				{form}
+				name="requests"
+				label={m.anySpecificRequests()}
+				description={m.anySpecificRequestsDescription()}
+				placeholder={m.answerHereOrLeaveEmpty()}
+				{disabled}
+			/>
+		</FormFieldset>
+	</Form>
+</RegistrationStepPage>

@@ -21,7 +21,9 @@ const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 		id: t.id(),
 		school: t.string({ nullable: true }),
 		size: t.int(),
-		status: t.string()
+		status: t.string(),
+		/** Marked as one that has to get a seat */
+		required: t.boolean()
 	})
 });
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { dev } from '$app/env';
 	import { m } from '#lib/paraglide/messages.js';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
@@ -29,6 +30,7 @@
 </svelte:head>
 
 <div class="flex w-full flex-col gap-6 p-4">
+	<BackToDashboard {conferenceId} />
 	<header class="flex flex-col gap-2">
 		<AccentStripe />
 		<h1 class="text-3xl font-bold tracking-tight">{m.conferenceSeats()}</h1>

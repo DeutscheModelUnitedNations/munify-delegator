@@ -57,6 +57,7 @@
 						color: true,
 						placeId: true,
 						room: true,
+						surveyOptionId: true,
 						tracks: { id: true }
 					}
 				}),

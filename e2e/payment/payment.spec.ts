@@ -21,7 +21,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 	});
 	expect((await registered.json()).errors).toBeUndefined();
 
-	await participantPage.goto(`/dashboard/${E2E_CONFERENCE_ID}/payment/single`);
+	await participantPage.goto(`/dashboard/${E2E_CONFERENCE_ID}/payment`);
 	await waitForHydration(participantPage);
 
 	const generateButton = participantPage.locator('button:has(.fa-sparkles)');
@@ -32,8 +32,6 @@ test('a participant can generate a payment reference and an admin can mark it re
 	await expect(reasonInput).toHaveValue(/.+/, { timeout: 15_000 });
 	const reference = await reasonInput.inputValue();
 	expect(reference).toBeTruthy();
-
-	await participantContext.close();
 
 	const adminContext = await browser.newContext();
 	const adminPage = await adminContext.newPage();
@@ -69,5 +67,21 @@ test('a participant can generate a payment reference and an admin can mark it re
 		)
 		.not.toBeNull();
 
+	// Paid now: the API refuses the participant a further reference, and the payment page says so
+	// instead of offering one
+	const again = await participantPage.request.post('/api/graphql', {
+		data: {
+			query: `mutation ($c: ID!, $u: ID!) { createPaymentTransaction(conferenceId: $c, userId: $u, paymentFor: [$u]) { id } }`,
+			variables: { c: E2E_CONFERENCE_ID, u: participant.preferred_username }
+		}
+	});
+	expect((await again.json()).errors?.[0]?.extensions?.code).toBe('CONFLICT');
+
+	await participantPage.reload();
+	await waitForHydration(participantPage);
+	await expect(participantPage.locator('button:has(.fa-sparkles)')).toHaveCount(0);
+	await expect(participantPage.locator('.alert-success')).toBeVisible({ timeout: 15_000 });
+
+	await participantContext.close();
 	await adminContext.close();
 });

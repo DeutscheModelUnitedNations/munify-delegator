@@ -1,29 +1,22 @@
 <script lang="ts">
-	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
-	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
+	import Flag from '#lib/components/Flag.svelte';
+	import codenamize from '#lib/helpers/codenamize.js';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import CountryStats from '#lib/components/countryStats/CountryStats.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
-	import DelegationNameDisplay from '#lib/components/DelegationNameDisplay.svelte';
-	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 	import DelegationMembersStatusSection from './DelegationMembersStatusSection.svelte';
 	import { splitRole } from '#lib/helpers/conferenceRole.js';
 
 	interface Props {
 		conferenceId: string;
 		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
-		user: {
-			sub: string;
-			email: string;
-		};
-		status: MyConferenceParticipation['participantStatus'];
-		ofAgeAtConference: boolean;
 	}
 
-	let { conferenceId, delegationMember, user, status, ofAgeAtConference }: Props = $props();
+	let { conferenceId, delegationMember }: Props = $props();
 
 	const assignedRole = $derived(splitRole(delegationMember.delegation.assignedRole));
 	const assignedNation = $derived(assignedRole.nation);
@@ -50,44 +43,79 @@
 		])
 	);
 
-	const delegationStats = $derived([
-		{
-			icon: 'users',
-			title: m.members(),
-			value: delegation.members.length,
-			desc: m.inTheDelegation()
-		}
-	]);
+	const nonStateActor = $derived(assignedRole.nonStateActor);
+	const roleName = $derived(
+		nonStateActor?.name ??
+			(assignedNation
+				? getFullTranslatedCountryNameFromISO3Code(assignedNation.alpha3Code)
+				: undefined)
+	);
+	const committees = $derived(
+		assignedNation
+			? conference.committees.filter((c) => c.roles.some((role) => role.id === assignedRoleId))
+			: []
+	);
 </script>
-
-<DashboardQuickLinks
-	{conferenceId}
-	userType="delegation"
-	{user}
-	{status}
-	{ofAgeAtConference}
-	extraContext={{
-		isHeadDelegate: delegationMember.isHeadDelegate,
-		hasNationAssigned: !!assignedNation,
-		membersLackCommittees: delegation.members.some((member) => !member.assignedCommittee)
-	}}
-/>
 
 <DashboardSection
 	icon="chart-line"
 	title={m.delegationStatus()}
 	description={m.delegationStatusDescription()}
 >
-	<div class="stats bg-base-200 shadow">
-		<RoleWidget
-			country={assignedNation}
-			committees={assignedNation &&
-				conference.committees.filter((c) => c.roles.some((role) => role.id === assignedRoleId))}
-			nonStateActor={assignedRole.nonStateActor}
-		/>
+	<div class="card bg-base-200 shadow">
+		<div class="card-body gap-6 lg:flex-row lg:items-center">
+			<div class="flex flex-1 items-center gap-6">
+				{#if assignedNation || nonStateActor}
+					<Flag
+						alpha2Code={assignedNation?.alpha2Code}
+						nsa={!!nonStateActor}
+						icon={nonStateActor?.fontAwesomeIcon ?? 'globe'}
+						size="lg"
+					/>
+				{/if}
+				<div class="flex min-w-0 flex-col gap-2">
+					<span class="text-base-content/60 text-sm">{m.youWillRepresent()}</span>
+					<h3 class="text-3xl font-bold break-words sm:text-4xl">{roleName ?? '–'}</h3>
+					<div class="flex flex-wrap gap-2">
+						{#each committees as committee (committee.id)}
+							<span class="badge badge-primary badge-soft">
+								{committee.name}{committee.numOfSeatsPerDelegation !== 1
+									? ` × ${committee.numOfSeatsPerDelegation}`
+									: ''}
+							</span>
+						{/each}
+						{#if nonStateActor}
+							<span class="badge badge-primary badge-soft">
+								{nonStateActor.seatAmount}
+								{m.seats()}
+							</span>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<dl
+				class="border-base-300 grid grid-cols-2 gap-4 border-t pt-4 lg:w-80 lg:grid-cols-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
+			>
+				<div class="flex items-center gap-3">
+					<i class="fa-sharp-duotone fa-solid fa-users text-base-content/50 text-xl"></i>
+					<div class="flex flex-col">
+						<dt class="text-base-content/60 text-xs">{m.members()}</dt>
+						<dd class="font-semibold">{delegation.members.length}</dd>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					<i class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 text-xl"></i>
+					<div class="flex min-w-0 flex-col">
+						<dt class="text-base-content/60 text-xs">{m.delegationName()}</dt>
+						<dd class="font-semibold break-words" title={m.delegationNameExplaination()}>
+							{codenamize(delegationId)}
+						</dd>
+					</div>
+				</div>
+			</dl>
+		</div>
 	</div>
-	<GenericWidget content={delegationStats} />
-	<DelegationNameDisplay {delegationId} />
 </DashboardSection>
 
 <DelegationMembersStatusSection {conferenceId} {delegationId} />

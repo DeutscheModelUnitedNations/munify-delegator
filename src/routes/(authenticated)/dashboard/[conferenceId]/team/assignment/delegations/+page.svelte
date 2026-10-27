@@ -45,7 +45,7 @@
 	import BoardToolbar from '../BoardToolbar.svelte';
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import GroupCard from '../GroupCard.svelte';
-	import { createPoolPages, poolHasMore } from '../poolPages.svelte';
+	import { createPool, createPoolSearch, onPages } from '../poolPages.svelte';
 	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
@@ -134,28 +134,27 @@
 	// The pool: filtered to this size and ordered (best rated first) by the backend, a page at a
 	// time as it scrolls. Pages are plain data, read once; what the draft or applying changes about
 	// their delegations comes in live through `seated`, which is listed last so it wins.
-	const poolFilter = $derived({ size, showDisqualified: !!params.disqualified });
-	const poolKey = $derived(
-		`${routeParams.conferenceId}|${poolFilter.size}|${poolFilter.showDisqualified}`
-	);
-	const poolLoader = createPoolPages<BoardDelegation>();
-	$effect(() => {
-		const { conferenceId } = routeParams;
-		const filter = poolFilter;
-		poolLoader
-			.load(poolKey, (page) => fetchDelegationPoolPage(conferenceId, filter, page))
-			.catch(toastError);
+	const search = createPoolSearch();
+	const poolFilter = $derived({
+		size,
+		showDisqualified: !!params.disqualified,
+		search: search.term
 	});
-	const poolPages = $derived(poolLoader.pages(poolKey));
-	const poolLoading = $derived(poolLoader.pending(poolKey));
-	const morePages = $derived(poolHasMore(poolPages.at(-1)));
-	const loadMore = () => {
+	const poolKey = $derived(
+		`${routeParams.conferenceId}|${poolFilter.size}|${poolFilter.showDisqualified}|${poolFilter.search}`
+	);
+	const poolLoader = createPool<BoardDelegation>(() => {
 		const { conferenceId } = routeParams;
 		const filter = poolFilter;
-		poolLoader
-			.loadMore(poolKey, (page) => fetchDelegationPoolPage(conferenceId, filter, page))
-			.catch(toastError);
-	};
+		return {
+			key: poolKey,
+			fetchPage: (page) => fetchDelegationPoolPage(conferenceId, filter, page)
+		};
+	});
+	const poolPages = $derived(poolLoader.pages);
+	const poolLoading = $derived(poolLoader.loading);
+	const morePages = $derived(poolLoader.more);
+	const loadMore = () => poolLoader.loadMore();
 
 	// The board as far as it is loaded: the seated applications and the pool's pages.
 	const delegations = $derived([
@@ -166,14 +165,39 @@
 	const reviews = $derived([...poolPages.flatMap((page) => page.reviews), ...seatedReviewRows]);
 	const view = $derived(fullBoard({ ...seatedRows, delegations, reviews }, seatedRoleList));
 	// Pages stay in the order they were loaded, so the list does not reshuffle while it scrolls.
+	const openGroups = $derived(poolGroups(view, size, !!params.disqualified));
 	const pool = $derived(
 		inPageOrder(
-			poolGroups(view, size, !!params.disqualified),
+			// a search's matches are what its pages hold; the groups the draft put back are not searched
+			search.term ? onPages(openGroups, poolPages) : openGroups,
 			poolPages.map((page) => page.rows)
 		)
 	);
 	/** The backend's count plus the groups the draft put back without a role. */
-	const poolCount = $derived(options.find((option) => option.size === size)?.openGroups ?? 0);
+	const openGroupCount = $derived(options.find((option) => option.size === size)?.openGroups ?? 0);
+	const poolCount = $derived(search.term ? pool.length : openGroupCount);
+
+	// Where else a search finds delegations, so a match of another size is not missed. Loaded
+	// imperatively like the pool, for the same reason.
+	let matchSizes = $state.raw<{ term: string; sizes: number[] }>({ term: '', sizes: [] });
+	$effect(() => {
+		const { conferenceId } = routeParams;
+		const term = search.term;
+		const showDisqualified = !!params.disqualified;
+		if (!term) return;
+		fetchDelegationPoolSizes(conferenceId, showDisqualified, term)
+			.then((counts) => {
+				if (search.term !== term) return;
+				const sizes = [...counts].flatMap(([matchSize, count]) => (count > 0 ? [matchSize] : []));
+				matchSizes = { term, sizes };
+			})
+			.catch(toastError);
+	});
+	const otherMatchSizes = $derived(
+		search.term && matchSizes.term === search.term
+			? matchSizes.sizes.filter((matchSize) => matchSize !== size).toSorted((a, b) => b - a)
+			: []
+	);
 	const shownRoles = $derived(
 		rolesWithSeats(seatedView, seats)
 			.map((role) => ({
@@ -301,7 +325,7 @@
 		showDisqualified={!!params.disqualified}
 		{busy}
 		{running}
-		canAutoAssign={poolCount > 0}
+		canAutoAssign={openGroupCount > 0}
 		onSize={(next) => (params.size = next)}
 		onShowDisqualified={(show) => (params.disqualified = show)}
 		onAutoAssign={autoAssign}
@@ -313,7 +337,7 @@
 			<BusyOverlay size="lg" />
 		{/if}
 		<div
-			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
+			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[max(28rem,calc(100dvh-24rem))] xl:w-96 xl:shrink-0 xl:self-start"
 		>
 			<PoolSection
 				container={POOL_CONTAINER}
@@ -322,6 +346,15 @@
 				highlight={hasRole(dragging)}
 				class="min-h-0 xl:flex-1"
 				virtual
+				more={!!search.term && morePages}
+				search={{
+					value: search.typed,
+					searching: search.settling || (!!search.term && poolLoading),
+					onInput: (value) => (search.typed = value)
+				}}
+				searchHint={otherMatchSizes.length
+					? m.assignmentPoolMatchesElsewhere({ sizes: otherMatchSizes.join(', ') })
+					: undefined}
 				{onDrop}
 			>
 				<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
@@ -330,7 +363,7 @@
 					{/snippet}
 				</PoolList>
 			</PoolSection>
-			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} />
+			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} nearLimitOnly />
 		</div>
 
 		<section

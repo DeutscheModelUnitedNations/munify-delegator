@@ -8,7 +8,7 @@
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
-	import AddressFields from '#lib/components/form/AddressFields.svelte';
+	import AddressSection from '#lib/components/form/AddressSection.svelte';
 	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -31,7 +31,6 @@
 		city: true,
 		region: true,
 		country: true,
-		website: true,
 		contactName: true,
 		contactEmail: true,
 		contactPhone: true,
@@ -47,7 +46,6 @@
 		city: stored.city ?? undefined,
 		region: stored.region ?? undefined,
 		country: stored.country ?? undefined,
-		website: stored.website ?? undefined,
 		contactName: stored.contactName ?? undefined,
 		contactEmail: stored.contactEmail ?? undefined,
 		contactPhone: stored.contactPhone ?? undefined,
@@ -79,11 +77,8 @@
 <Form {form}>
 	<FormSection title={m.school()} icon="school">
 		<FormTextInput {form} name="name" label={m.name()} />
-		<FormTextInput {form} name="website" type="url" label={m.website()} placeholder="https://" />
 	</FormSection>
-	<FormSection title={m.address()} icon="house">
-		<AddressFields {form} fields={ADDRESS_FIELDS} rules={address} />
-	</FormSection>
+	<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
 	<FormSection title={m.schoolContact()} icon="address-book" description={m.schoolContactHint()}>
 		<FormTextInput {form} name="contactName" label={m.name()} />
 		<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">

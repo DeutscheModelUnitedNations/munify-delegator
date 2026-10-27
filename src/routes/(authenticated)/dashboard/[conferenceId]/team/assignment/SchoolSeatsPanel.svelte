@@ -12,17 +12,27 @@
 		limit: number | null;
 		/** How many schools show before "show all". */
 		shown?: number;
+		/** Lists only the schools close to the limit or past it, for the board beside the pool. */
+		nearLimitOnly?: boolean;
 		class?: string;
 	}
 
-	let { counts, limit, shown = 8, class: className = '' }: Props = $props();
+	let { counts, limit, shown = 8, nearLimitOnly = false, class: className = '' }: Props = $props();
+
+	/** From this share of the limit on, a school is close to it. */
+	const NEAR_LIMIT = 0.8;
 
 	let expanded = $state(false);
 	const exceeds = (count: SchoolSeatCount) => limit !== null && count.seats > limit;
 	const over = $derived(counts.filter(exceeds));
+	const listed = $derived(
+		nearLimitOnly
+			? counts.filter((count) => limit !== null && count.seats >= limit * NEAR_LIMIT)
+			: counts
+	);
 	/** The schools shown, each with whether it is past the limit and its seats as shown. */
 	const rows = $derived(
-		(expanded ? counts : counts.slice(0, shown)).map((count) => ({
+		(expanded ? listed : listed.slice(0, shown)).map((count) => ({
 			...count,
 			exceeded: exceeds(count),
 			seatsLabel: limit === null ? String(count.seats) : `${count.seats} / ${limit}`
@@ -44,8 +54,12 @@
 			</div>
 		{/if}
 
-		{#if counts.length === 0}
-			<p class="text-base-content/60 text-sm">{m.assignmentSchoolSeatsEmpty()}</p>
+		{#if listed.length === 0}
+			<p class="text-base-content/60 text-sm">
+				{nearLimitOnly && counts.length > 0
+					? m.assignmentSchoolSeatsNoneNearLimit()
+					: m.assignmentSchoolSeatsEmpty()}
+			</p>
 		{:else}
 			{@render list()}
 		{/if}
@@ -85,11 +99,11 @@
 			</li>
 		{/each}
 	</ul>
-	{#if counts.length > shown}
+	{#if listed.length > shown}
 		<button class="btn btn-ghost btn-xs self-start" onclick={() => (expanded = !expanded)}>
 			{expanded
 				? m.assignmentSchoolSeatsShowLess()
-				: m.assignmentSchoolSeatsShowAll({ count: counts.length })}
+				: m.assignmentSchoolSeatsShowAll({ count: listed.length })}
 		</button>
 	{/if}
 {/snippet}

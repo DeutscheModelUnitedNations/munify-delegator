@@ -17,7 +17,7 @@ import { getLocale } from '#lib/paraglide/runtime.js';
 import { GRAPHQL_STREAM_ENDPOINT } from './streamEndpoint';
 import { LOCALE_HEADER } from './localeHeader';
 import { graphcacheKeys } from './cacheKeys';
-import { liveQueryUpdates } from './cacheUpdates';
+import { liveQueryUpdates, staleQueryInvalidations } from './cacheUpdates';
 import { loginRedirectExchange } from './loginRedirect';
 
 /** `AnyVariables` includes `void` for operations that take none; the remote call wants a record. */
@@ -125,7 +125,10 @@ export const urqlClient = new Client({
 		// - a certificate's template or a person's address came back as "none" to anyone whose
 		// dashboard had cached the row. Without it, an unseen field is a miss and is asked for. The
 		// schema has no unions or interfaces and the client sends no fragments, so nothing else needs it.
-		cacheExchange({ keys: graphcacheKeys(schema), updates: liveQueryUpdates(schema) }),
+		cacheExchange({
+			keys: graphcacheKeys(schema),
+			updates: { ...liveQueryUpdates(schema), Mutation: staleQueryInvalidations }
+		}),
 		ssrExchange,
 		sseSubscriptionExchange,
 		fetchExchange

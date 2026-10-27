@@ -1,36 +1,64 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { fly } from 'svelte/transition';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { ResolvedPathname } from '$app/types';
 	import { resolve } from '$app/paths';
+	import { m } from '#lib/paraglide/messages.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	/**
-	 * The frame of a single-step registration page: title and description above the step's own
-	 * content, and a way back to the conference's registration overview below it.
+	 * The frame of a registration page outside the dashboard's application form: a way back, and the
+	 * page's own content in a section like the dashboard's.
 	 */
 	interface Props {
 		conferenceId: string;
+		icon: string;
 		title: string;
-		description: string;
+		description?: string;
+		/** Where "back" leads; the conference's dashboard by default. */
+		backHref?: ResolvedPathname;
+		/** A heading instead of a card, for content that brings its own cards. */
+		bare?: boolean;
 		children: Snippet;
 	}
 
-	let { conferenceId, title, description, children }: Props = $props();
+	let {
+		conferenceId,
+		icon,
+		title,
+		description,
+		backHref,
+		bare = false,
+		children
+	}: Props = $props();
 </script>
 
-<div class="flex min-h-screen w-full flex-col items-center p-4">
-	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
-		<h1 class="mb-3 text-3xl tracking-wider uppercase">{title}</h1>
-		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
-			<div class="flex flex-col items-center">
-				<p class="max-ch-sm mb-10">
-					{description}
-				</p>
+<main class="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-16">
+	<a
+		class="btn btn-ghost btn-sm self-start"
+		href={backHref ?? resolve(`dashboard/${conferenceId}`)}
+	>
+		<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+		{m.back()}
+	</a>
 
-				{@render children()}
-
-				<a class="btn btn-warning mt-16" href={resolve(`dashboard/${conferenceId}`)}>{m.back()}</a>
+	{#if bare}
+		<header class="flex items-start gap-4">
+			<span
+				class="bg-primary/10 text-primary rounded-box flex size-12 shrink-0 items-center justify-center text-xl"
+			>
+				<i class="fa-sharp-duotone fa-solid fa-{icon}"></i>
+			</span>
+			<div>
+				<h1 class="text-xl font-bold">{title}</h1>
+				{#if description}
+					<p class="text-base-content/60 mt-1 text-sm">{description}</p>
+				{/if}
 			</div>
-		</div>
-	</main>
-</div>
+		</header>
+		{@render children()}
+	{:else}
+		<DashboardSection {icon} {title} {description}>
+			{@render children()}
+		</DashboardSection>
+	{/if}
+</main>

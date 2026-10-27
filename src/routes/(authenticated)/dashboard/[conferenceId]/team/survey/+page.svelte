@@ -3,6 +3,9 @@
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { toast } from 'svelte-sonner';
+	import { flip } from 'svelte/animate';
+	import { crossfade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { m } from '#lib/paraglide/messages.js';
 	import { surveyFields } from './surveyForm';
 	import SurveyCard from './SurveyCard.svelte';
@@ -32,6 +35,15 @@
 	const conferenceTimezone = $derived(conference?.timezone ?? 'UTC');
 	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
 	let hiddenSurveys = $derived(surveys.filter((s) => s.hidden));
+
+	// Archiving or restoring a survey moves its card between the two lists: the card travels to its
+	// new place (or, with the archive collapsed, slides down towards it) while the others close up.
+	const [send, receive] = crossfade({
+		duration: 400,
+		easing: cubicOut,
+		fallback: (node) => fly(node, { y: 40, duration: 300 })
+	});
+	const flipParams = { duration: 400, easing: cubicOut };
 
 	// Modal state
 	let showCreateModal = $state(false);
@@ -87,6 +99,24 @@
 	};
 </script>
 
+<!-- the cards fly between the visible and the archived list when a survey is archived -->
+{#snippet surveyCards(list: { id: string }[])}
+	{#each list as survey (survey.id)}
+		<div
+			animate:flip={flipParams}
+			in:receive|global={{ key: survey.id }}
+			out:send|global={{ key: survey.id }}
+		>
+			<SurveyCard
+				surveyId={survey.id}
+				conferenceId={params.conferenceId}
+				{conferenceTimezone}
+				onDelete={confirmDelete}
+			/>
+		</div>
+	{/each}
+{/snippet}
+
 <div class="flex flex-col gap-6 p-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
 		<button class="btn btn-primary" onclick={() => (showCreateModal = true)}>
@@ -105,14 +135,7 @@
 			</button>
 		</div>
 	{:else}
-		{#each visibleSurveys as survey (survey.id)}
-			<SurveyCard
-				surveyId={survey.id}
-				conferenceId={params.conferenceId}
-				{conferenceTimezone}
-				onDelete={confirmDelete}
-			/>
-		{/each}
+		{@render surveyCards(visibleSurveys)}
 
 		{#if hiddenSurveys.length > 0}
 			<div class="collapse collapse-arrow bg-base-200">
@@ -122,14 +145,7 @@
 					{m.archivedSurveys()} ({hiddenSurveys.length})
 				</div>
 				<div class="collapse-content flex flex-col gap-4">
-					{#each hiddenSurveys as survey (survey.id)}
-						<SurveyCard
-							surveyId={survey.id}
-							conferenceId={params.conferenceId}
-							{conferenceTimezone}
-							onDelete={confirmDelete}
-						/>
-					{/each}
+					{@render surveyCards(hiddenSurveys)}
 				</div>
 			</div>
 		{/if}

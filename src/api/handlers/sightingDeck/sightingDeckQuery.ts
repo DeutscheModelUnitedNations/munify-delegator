@@ -36,7 +36,7 @@ function applications(conferenceId: string): SQL {
 	return sql`
 		select d.id, 'delegation'::text as kind, 0 as kind_rank, (select sc.name from school sc where sc.id = d.school_id) as school, d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
-			coalesce(r.disqualified, false) as disqualified, r.note,
+			coalesce(r.disqualified, false) as disqualified, coalesce(r.required, false) as required, r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
 				when r.evaluation is not null then 'rated'
 				when coalesce(r.flagged, false) then 'flagged'
@@ -46,7 +46,8 @@ function applications(conferenceId: string): SQL {
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
 		select s.id, 'single'::text, 1, (select sc.name from school sc where sc.id = s.school_id), 1,
-			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false), r.note,
+			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false),
+			coalesce(r.required, false), r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
 				when r.evaluation is not null then 'rated'
 				when coalesce(r.flagged, false) then 'flagged'
@@ -71,7 +72,8 @@ const entrySchema = z.object({
 	id: z.string(),
 	school: z.string().nullable(),
 	size: z.number(),
-	status: z.enum(['disqualified', 'flagged', 'rated', 'unrated'])
+	status: z.enum(['disqualified', 'flagged', 'rated', 'unrated']),
+	required: z.boolean()
 });
 
 export const deckSchema = z.object({
@@ -111,14 +113,14 @@ export function deckSql(options: {
 	const { conferenceId, status, school, currentId, index, size } = options;
 	const entry = (alias: string) =>
 		sql.raw(
-			`json_build_object('kind', ${alias}.kind, 'id', ${alias}.id, 'school', ${alias}.school, 'size', ${alias}.size, 'status', ${alias}.status)`
+			`json_build_object('kind', ${alias}.kind, 'id', ${alias}.id, 'school', ${alias}.school, 'size', ${alias}.size, 'status', ${alias}.status, 'required', ${alias}.required)`
 		);
 	// Only what the deck is sorted and shown by goes through the sort: the reviews' notes would
 	// make every row it moves wider for nothing.
 	return sql`
 		with apps as (select * from (${applications(conferenceId)}) a),
 		deck as (
-			select a.id, a.kind, a.kind_rank, a.school, a.size, a.status,
+			select a.id, a.kind, a.kind_rank, a.school, a.size, a.status, a.required,
 				row_number() over (order by ${deckOrder}) - 1 as idx
 			from apps a where ${passes(status, school)}
 		),
@@ -171,7 +173,7 @@ export function entriesSql(
 ): SQL {
 	return sql`
 		select json_build_object('kind', a.kind, 'id', a.id, 'school', a.school, 'size', a.size,
-			'status', a.status) as result
+			'status', a.status, 'required', a.required) as result
 		from (${applications(conferenceId)}) a
 		where a.id in (${sql.join(
 			ids.map((id) => sql`${id}`),

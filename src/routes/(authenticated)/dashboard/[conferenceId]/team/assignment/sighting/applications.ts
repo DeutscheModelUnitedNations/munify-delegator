@@ -75,7 +75,8 @@ function plainEntry(entry: WindowEntry): WindowEntry {
 		id: entry.id,
 		school: entry.school,
 		size: entry.size,
-		status: entry.status
+		status: entry.status,
+		required: entry.required
 	};
 }
 
@@ -89,7 +90,14 @@ export async function fetchSightingDeck(
 	filter: DeckFilter,
 	position: { currentId: string | null; index?: number }
 ): Promise<DeckWindowData> {
-	const entry = { kind: true, id: true, school: true, size: true, status: true } as const;
+	const entry = {
+		kind: true,
+		id: true,
+		school: true,
+		size: true,
+		status: true,
+		required: true
+	} as const;
 	const deck = await client.query.sightingDeck({
 		__args: {
 			conferenceId,
@@ -287,7 +295,8 @@ export async function searchApplications(conferenceId: string, search: string, f
 		id: true,
 		school: true,
 		size: true,
-		status: true
+		status: true,
+		required: true
 	});
 	return { delegations, singleParticipants, entries };
 }

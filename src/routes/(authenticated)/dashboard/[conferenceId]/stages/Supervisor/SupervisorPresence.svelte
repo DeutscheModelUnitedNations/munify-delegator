@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
-	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import InfoRow from '#lib/components/userCard/sections/InfoRow.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 
@@ -31,26 +31,12 @@
 	};
 </script>
 
-<DashboardSection
-	icon="user-check"
+<InfoRow
 	title={m.ownPresence()}
-	description={m.ownPresenceDescription()}
+	faIcon="user-check"
+	hint={editable ? m.ownPresenceDescription() : m.presenceLockedHint()}
 >
-	<div class="card bg-base-100 dark:bg-base-200 max-w-80 p-6 shadow-md">
-		<fieldset class="fieldset">
-			<label class="label cursor-pointer">
-				<span>{m.presentAtConference()}</span>
-				<input
-					type="checkbox"
-					class="toggle toggle-success"
-					checked={supervisor.plansOwnAttendenceAtConference}
-					onchange={handlePresenceChange}
-					disabled={!editable}
-				/>
-			</label>
-		</fieldset>
-	</div>
-	<p class="text-xs text-gray-500">
+	<span class="text-sm">
 		{#if supervisor.plansOwnAttendenceAtConference}
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 			{@html m.willBePresentAtConference()}
@@ -58,5 +44,21 @@
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 			{@html m.willNotBePresentAtConference()}
 		{/if}
-	</p>
-</DashboardSection>
+	</span>
+	{#snippet actions()}
+		{#if !editable}
+			<i
+				class="fa-sharp-duotone fa-solid fa-lock text-base-content/40"
+				title={m.presenceLockedHint()}
+			></i>
+		{/if}
+		<input
+			type="checkbox"
+			class="toggle toggle-success"
+			aria-label={m.presentAtConference()}
+			checked={supervisor.plansOwnAttendenceAtConference}
+			onchange={handlePresenceChange}
+			disabled={!editable}
+		/>
+	{/snippet}
+</InfoRow>

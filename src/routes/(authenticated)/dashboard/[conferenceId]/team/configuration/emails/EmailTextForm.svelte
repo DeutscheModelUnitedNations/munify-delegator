@@ -116,7 +116,8 @@
 		reviewer: m.emailPlaceholderReviewer,
 		status: m.emailPlaceholderStatus,
 		role: m.emailPlaceholderRole,
-		inviter: m.emailPlaceholderInviter
+		inviter: m.emailPlaceholderInviter,
+		survey: m.emailPlaceholderSurvey
 	};
 </script>
 

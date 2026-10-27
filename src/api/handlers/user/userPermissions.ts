@@ -24,6 +24,7 @@ import { apiError } from '#api/services/errors/apiError.js';
  * - their supervisors: everything but those notes;
  * - teammates: who someone is, plus their phone number - team coordinators: everything but the
  *   care notes;
+ * - the reviewers of a paper, to its author: their name only;
  * - everybody else who may see the row at all (co-delegates, co-supervisors, reviewers reading an
  *   author): who someone is - name, email, pronouns, birthday for the age checks.
  */
@@ -182,6 +183,21 @@ export function registerUserAbilities() {
 						}
 					},
 					columns: IDENTITY
+				}
+			: undefined;
+	});
+
+	// Authors see who reviewed their papers, by name only. A review's `reviewer` is non-nullable,
+	// so without this the paper's history fails for an author whose reviewer they cannot otherwise
+	// read.
+	abilityBuilder.user.allow('read').when((ctx) => {
+		const id = userId(ctx);
+		return id
+			? {
+					where: {
+						paperReviews: { paperVersion: { paper: { authorParticipant: { userId: id } } } }
+					},
+					columns: { id: true, givenName: true, familyName: true }
 				}
 			: undefined;
 	});

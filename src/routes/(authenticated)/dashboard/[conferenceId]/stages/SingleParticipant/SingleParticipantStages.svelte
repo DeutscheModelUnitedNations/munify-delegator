@@ -34,12 +34,6 @@
 		<SingleParticipantRegistrationStage {conferenceId} {singleParticipantId} />
 	{/snippet}
 	{#snippet preparation()}
-		<SingleParticipantPreparationStage
-			{conferenceId}
-			{singleParticipant}
-			{user}
-			{status}
-			ofAgeAtConference={ofAge}
-		/>
+		<SingleParticipantPreparationStage {conferenceId} {singleParticipant} />
 	{/snippet}
 </ParticipantStages>

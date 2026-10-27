@@ -5,6 +5,7 @@ import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
+	SURVEY_REMINDER_DAYS,
 	type AlwaysSentKind
 } from '#lib/helpers/emailKinds.js';
 
@@ -63,6 +64,15 @@ export interface SnapshotReview {
 	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
 }
 
+/** A published survey, owed an answer by everybody holding a seat. */
+export interface SnapshotSurvey {
+	id: string;
+	title: string;
+	deadline: Date;
+	/** The participants who answered it. */
+	answeredBy: string[];
+}
+
 export interface EmailSnapshot {
 	conference: {
 		id: string;
@@ -73,11 +83,14 @@ export interface EmailSnapshot {
 		unlockPayments: boolean;
 		startAssignment: Date;
 		startConference: Date;
+		/** The conference's IANA time zone, which times in its mails are given in. */
+		timezone: string;
 		/** A certificate template is uploaded, so certificates can be downloaded. */
 		certificateAvailable: boolean;
 	};
 	people: SnapshotPerson[];
 	reviews: SnapshotReview[];
+	surveys: SnapshotSurvey[];
 }
 
 export type PaperworkField =
@@ -96,6 +109,8 @@ export interface DueEmail {
 	field?: PaperworkField;
 	/** For a review: the review. */
 	review?: SnapshotReview;
+	/** For a survey reminder: the survey. */
+	survey?: SnapshotSurvey;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -126,6 +141,7 @@ interface RuleContext {
 	now: Date;
 	studentsOf: (person: SnapshotPerson) => SnapshotPerson[];
 	reviewsOf: (person: SnapshotPerson) => SnapshotReview[];
+	surveys: { survey: SnapshotSurvey; answeredBy: ReadonlySet<string> }[];
 	/** Holds a seat, or supervises someone who does and comes along. */
 	accepted: (person: SnapshotPerson) => boolean;
 	ofAge: (person: SnapshotPerson) => boolean;
@@ -144,7 +160,7 @@ const email = (
 const paid = (person: SnapshotPerson) => person.paymentStatus === 'DONE';
 
 function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
-	const { conference, people, reviews } = snapshot;
+	const { conference, people, reviews, surveys } = snapshot;
 	const byParticipant = new Map(people.map((person) => [person.participantId, person]));
 	const reviewsByAuthor = Map.groupBy(reviews, (review) => review.authorParticipantId);
 	const studentsOf = (person: SnapshotPerson) =>
@@ -156,6 +172,7 @@ function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
 		now,
 		studentsOf,
 		reviewsOf: (person) => reviewsByAuthor.get(person.participantId) ?? [],
+		surveys: surveys.map((survey) => ({ survey, answeredBy: new Set(survey.answeredBy) })),
 		ofAge,
 		accepted: (person) =>
 			!!seatOf(person) ||
@@ -233,6 +250,29 @@ const conferenceReminders: Rule = ({ conference, now, postalDone }, person) => {
 	];
 };
 
+/**
+ * Every survey the person has not answered, in the last days before its deadline. Only those
+ * holding a seat owe an answer - the same people the results page lists as not having answered.
+ */
+const surveyReminders: Rule = ({ conference, now, surveys }, person) =>
+	conference.assignmentReleased && seatOf(person)
+		? surveys
+				.filter(
+					({ survey, answeredBy }) =>
+						!answeredBy.has(person.participantId) &&
+						inWindowBefore(now, survey.deadline, SURVEY_REMINDER_DAYS)
+				)
+				// keyed by the deadline: a deadline moved later gets its own reminder
+				.map(({ survey }) =>
+					email(
+						'SURVEY_REMINDER',
+						person,
+						`${survey.id}:${survey.deadline.toISOString().slice(0, 10)}`,
+						{ survey }
+					)
+				)
+		: [];
+
 /** Everything an accepted person gets once the assignment is released. */
 const acceptedEmails: Rule = (ctx, person) =>
 	ctx.conference.assignmentReleased && ctx.accepted(person)
@@ -273,6 +313,7 @@ const RULES: Rule[] = [
 	supervisorSummary,
 	acceptedEmails,
 	applicationReminder,
+	surveyReminders,
 	certificate,
 	studentsLinked,
 	paperReviewed

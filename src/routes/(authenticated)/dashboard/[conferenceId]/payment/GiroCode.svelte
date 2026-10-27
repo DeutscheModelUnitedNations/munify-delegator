@@ -23,12 +23,10 @@
 	);
 </script>
 
-<div class="flex flex-col gap-4">
-	<h1 class="text-2xl font-bold">{m.giroCode()}</h1>
-	<p>{m.giroCodeDescription()}</p>
-	<div
-		class="flex aspect-square w-full items-center justify-center rounded-box bg-white p-10 sm:max-w-sm"
-	>
+<div class="flex w-full max-w-xs flex-col gap-2">
+	<h3 class="font-bold">{m.giroCode()}</h3>
+	<p class="text-base-content/70 text-sm">{m.giroCodeDescription()}</p>
+	<div class="flex aspect-square w-full items-center justify-center rounded-box bg-white p-6">
 		{#if qrCode && qrCode !== ''}
 			<img src={qrCode} alt={m.a11yQrCode()} class="w-full" />
 		{:else if qrCode === ''}

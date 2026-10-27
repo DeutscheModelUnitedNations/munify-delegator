@@ -1,45 +1,94 @@
 <script lang="ts">
-	import type { ComponentProps } from 'svelte';
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
-	import DashboardLinksGrid from '#lib/components/dashboard/DashboardLinksGrid.svelte';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import StatusCard from '#lib/components/statusCubes/StatusCard.svelte';
+	import StatusChecklist, {
+		type ChecklistStatus
+	} from '#lib/components/dashboard/StatusChecklist.svelte';
 	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 
 	interface Props {
 		conferenceId: string;
 		status?: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
+		/** The participant whose survey answers count as steps; supervisors answer no surveys. */
+		surveyUserId?: string;
 	}
 
-	let { conferenceId, status, ofAgeAtConference }: Props = $props();
+	let { conferenceId, status, ofAgeAtConference, surveyUserId }: Props = $props();
 
-	const conference = $derived(
-		await client.liveQuery.conference({
-			__args: { id: conferenceId },
-			unlockPayments: true,
-			unlockPostals: true
-		})
+	const [conference, surveys, answers] = $derived(
+		await Promise.all([
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				unlockPayments: true,
+				unlockPostals: true,
+				timezone: true
+			}),
+			surveyUserId
+				? client.liveQuery.surveyQuestions({
+						__args: {
+							where: {
+								conferenceId: { eq: conferenceId },
+								draft: { eq: false },
+								hidden: { eq: false }
+							},
+							orderBy: { deadline: 'asc' }
+						},
+						id: true,
+						title: true,
+						deadline: true
+					})
+				: [],
+			surveyUserId
+				? client.liveQuery.surveyAnswers({
+						__args: {
+							where: {
+								question: { conferenceId: { eq: conferenceId }, hidden: { eq: false } },
+								user: { id: { eq: surveyUserId } }
+							}
+						},
+						question: { id: true }
+					})
+				: []
+		])
 	);
 	const unlockPayment = $derived(conference.unlockPayments);
 	const unlockPostals = $derived(conference.unlockPostals);
 
-	type StepStatus = ComponentProps<typeof StatusCard>['status'];
-
 	/** A step that cannot be taken before the conference unlocks it, and is pending until it is. */
-	const stepStatus = (unlocked: boolean, value: StepStatus | undefined): StepStatus =>
+	const stepStatus = (unlocked: boolean, value: ChecklistStatus | undefined): ChecklistStatus =>
 		unlocked ? (value ?? 'PENDING') : 'NOT_YET_POSSIBLE';
 
+	const answeredIds = $derived(new Set(answers.map((answer) => answer.question.id)));
+	const now = new Date();
+	// A survey that closed unanswered drops out: there is nothing left to do about it, the team
+	// assigns an option
+	let surveySteps = $derived(
+		surveys
+			.filter((survey) => answeredIds.has(survey.id) || new Date(survey.deadline) > now)
+			.map((survey) => ({
+				task: m.surveyStep({ title: survey.title }),
+				status: answeredIds.has(survey.id) ? ('DONE' as const) : ('PENDING' as const),
+				hint: m.untilDate({
+					date: new Date(survey.deadline).toLocaleDateString(getLocale(), {
+						timeZone: conference.timezone,
+						day: 'numeric',
+						month: 'short'
+					})
+				})
+			}))
+	);
+
 	let steps = $derived([
+		{ task: m.registration(), status: 'DONE' as const },
 		{
 			task: m.payment(),
-			faIcon: 'hand-holding-circle-dollar',
 			status: stepStatus(unlockPayment, status?.paymentStatus)
 		},
 		{
 			task: m.userAgreement(),
-			faIcon: 'file-contract',
 			status: stepStatus(unlockPostals, status?.termsAndConditions)
 		},
 		// Only minors need their guardian's consent
@@ -48,20 +97,15 @@
 			: [
 					{
 						task: m.guardianAgreement(),
-						faIcon: 'family',
 						status: stepStatus(unlockPostals, status?.guardianConsent)
 					}
 				]),
 		{
 			task: m.mediaAgreement(),
-			faIcon: 'photo-film',
 			status: stepStatus(unlockPostals, status?.mediaConsent)
-		}
+		},
+		...surveySteps
 	]);
-
-	// NOT_YET_POSSIBLE steps don't count as done - only actually DONE ones do. The guardian's
-	// consent is only a step for minors, so adults are done without it.
-	let allDone = $derived(steps.every((step) => step.status === 'DONE'));
 </script>
 
 <DashboardSection
@@ -69,26 +113,5 @@
 	title={m.personalStatus()}
 	description={m.personalStatusDescription()}
 >
-	{#if allDone}
-		<div class="card bg-success/10 border border-success/20">
-			<div class="card-body py-4">
-				<div class="flex items-center gap-3">
-					<i class="fa-sharp-duotone fa-solid fa-circle-check text-2xl text-success"></i>
-					<span class="font-medium text-success">{m.allComplete()}</span>
-				</div>
-			</div>
-		</div>
-	{:else}
-		<DashboardLinksGrid>
-			<StatusCard
-				status="DONE"
-				task={m.registration()}
-				faIcon="user-plus"
-				customDescription={m.statusRegistrationConfirmed()}
-			/>
-			{#each steps as step (step.task)}
-				<StatusCard status={step.status} task={step.task} faIcon={step.faIcon} />
-			{/each}
-		</DashboardLinksGrid>
-	{/if}
+	<StatusChecklist {steps} />
 </DashboardSection>

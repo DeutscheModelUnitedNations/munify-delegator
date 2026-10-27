@@ -114,13 +114,6 @@
 		</div>
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
-		<FormTextInput
-			{form}
-			name="maxSeatsPerSchool"
-			type="number"
-			label={m.conferenceMaxSeatsPerSchool()}
-			description={m.conferenceMaxSeatsPerSchoolDescription()}
-		/>
 	</div>
 	<fieldset class="fieldset">
 		<legend class="label mb-2">{m.conferenceTimezone()}</legend>

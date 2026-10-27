@@ -7,7 +7,8 @@
 	/**
 	 * At the conference, participants show their digital nametag and check-in code on their phone.
 	 * Before it, this asks them to get the phone ready - signed in, on the home screen; during it,
-	 * a one-line reminder. Dismissed per conference in this browser.
+	 * a one-line reminder. Each is dismissed on its own, per conference, in this browser, so putting
+	 * away the preparation hint does not also hide the reminder at the conference.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -16,7 +17,12 @@
 
 	let { conferenceId, conferenceState }: Props = $props();
 
-	const storageKey = $derived(`phone-ready-hint-dismissed-${conferenceId}`);
+	// The preparation hint keeps its original key, so earlier dismissals still count.
+	const storageKey = $derived(
+		conferenceState === 'ACTIVE'
+			? `phone-ready-reminder-dismissed-${conferenceId}`
+			: `phone-ready-hint-dismissed-${conferenceId}`
+	);
 
 	function readDismissed(key: string) {
 		try {
@@ -26,11 +32,11 @@
 		}
 	}
 
-	let dismissedNow = $state(false);
-	const dismissed = $derived(dismissedNow || readDismissed(storageKey));
+	let dismissedKeys = $state<string[]>([]);
+	const dismissed = $derived(dismissedKeys.includes(storageKey) || readDismissed(storageKey));
 
 	function dismiss() {
-		dismissedNow = true;
+		dismissedKeys.push(storageKey);
 		try {
 			localStorage.setItem(storageKey, '1');
 		} catch {
@@ -77,11 +83,21 @@
 			<button class="btn btn-ghost btn-sm" onclick={dismiss}>{m.phoneReadyDismiss()}</button>
 		</div>
 	</DashboardSection>
-{:else if conferenceState === 'ACTIVE'}
+{:else if conferenceState === 'ACTIVE' && !dismissed}
 	<div class="alert alert-info">
 		<i class="fa-sharp-duotone fa-solid fa-mobile-screen text-xl"></i>
 		<span>{m.phoneReadyActiveReminder()}</span>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
-		<a class="btn btn-sm" href={nametagHref}>{m.phoneReadyOpenNametag()}</a>
+		<div class="flex items-center gap-1">
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
+			<a class="btn btn-sm" href={nametagHref}>{m.phoneReadyOpenNametag()}</a>
+			<button
+				class="btn btn-ghost btn-sm btn-square"
+				onclick={dismiss}
+				aria-label={m.phoneReadyDismiss()}
+				title={m.phoneReadyDismiss()}
+			>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			</button>
+		</div>
 	</div>
 {/if}

@@ -4,7 +4,8 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	userId
 } from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
@@ -12,8 +13,26 @@ import { apiError } from '#api/services/errors/apiError.js';
 
 export function registerCalendarEntryAbilities() {
 	// Ported from abilities/entities/calendarEntry.ts
-	abilityBuilder.calendarEntry.allow('read');
-	abilityBuilder.calendarEntry.allow(['update', 'delete']).when(systemAdmin);
+	abilityBuilder.calendarEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
+
+	// An entry without a survey option is for everybody.
+	abilityBuilder.calendarEntry.allow('read').when(() => ({
+		where: { surveyOptionId: { isNull: true } }
+	}));
+
+	// One with an option only for those who picked it...
+	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
+		const id = userId(ctx);
+		return id
+			? { where: { surveyOption: { surveyAnswers: { participant: { userId: id } } } } }
+			: undefined;
+	});
+
+	// ...and for the conference's team, which plans it.
+	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
+		const calendarDay = isTeamMemberOfConference(ctx);
+		return calendarDay ? { where: { calendarDay } } : undefined;
+	});
 
 	abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
 		const calendarDay = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
@@ -22,39 +41,60 @@ export function registerCalendarEntryAbilities() {
 }
 
 /**
- * An entry's day, track and place are ids from the client, so each has to belong where the entry
- * does: the track to the entry's day, the place and the day to the entry's conference. Otherwise a
- * conference's calendar could pull in another conference's venues, or move entries over to it.
+ * An entry's day, track, place and survey option are ids from the client, so each has to belong
+ * where the entry does: the track to the entry's day, the rest to the entry's conference.
+ * Otherwise a conference's calendar could pull in another conference's venues, or move entries
+ * over to it.
  */
 async function assertReferences(
 	conferenceId: string,
-	refs: { calendarDayId: string; calendarTrackIds?: readonly string[]; placeId?: string | null }
+	refs: {
+		calendarDayId: string;
+		calendarTrackIds?: readonly string[];
+		placeId?: string | null;
+		surveyOptionId?: string | null;
+	}
 ) {
 	const trackIds = [...new Set(refs.calendarTrackIds ?? [])];
 	if (refs.calendarTrackIds && trackIds.length === 0) {
 		throw apiError('INVALID_INPUT', m.calendarEntryNeedsTrack());
 	}
-	const [day, tracks, place] = await Promise.all([
-		db.query.calendarDay.findFirst({
-			where: { id: refs.calendarDayId, conferenceId },
-			columns: { id: true }
-		}),
-		trackIds.length > 0
-			? db.query.calendarTrack.findMany({
-					where: { id: { in: trackIds }, calendarDayId: refs.calendarDayId },
-					columns: { id: true }
-				})
-			: [],
-		refs.placeId
-			? db.query.place.findFirst({
-					where: { id: refs.placeId, conferenceId },
-					columns: { id: true }
-				})
-			: true
+	const found = await Promise.all([
+		db.query.calendarDay
+			.findFirst({ where: { id: refs.calendarDayId, conferenceId }, columns: { id: true } })
+			.then(Boolean),
+		tracksOfDay(refs.calendarDayId, trackIds),
+		optionalReferenceFound(refs.placeId, (id) =>
+			db.query.place.findFirst({ where: { id, conferenceId }, columns: { id: true } })
+		),
+		optionalReferenceFound(refs.surveyOptionId, (id) =>
+			db.query.surveyOption.findFirst({
+				where: { id, question: { conferenceId } },
+				columns: { id: true }
+			})
+		)
 	]);
-	if (!day || tracks.length !== trackIds.length || !place) {
+	if (found.includes(false)) {
 		throw apiError('INVALID_INPUT', m.calendarEntryOtherConference());
 	}
+}
+
+/** Whether `find` finds the row `id` names; naming none is fine. */
+async function optionalReferenceFound(
+	id: string | null | undefined,
+	find: (id: string) => Promise<unknown>
+) {
+	return !id || !!(await find(id));
+}
+
+/** Whether every one of `trackIds` is a track of the day. */
+async function tracksOfDay(calendarDayId: string, trackIds: string[]) {
+	if (trackIds.length === 0) return true;
+	const tracks = await db.query.calendarTrack.findMany({
+		where: { id: { in: trackIds }, calendarDayId },
+		columns: { id: true }
+	});
+	return tracks.length === trackIds.length;
 }
 
 /** Refuses unless the caller may add the entry to the day, with the tracks and place it names. */
@@ -64,13 +104,15 @@ export async function assertCanCreateCalendarEntry(
 		calendarDayId: string;
 		calendarTrackIds?: readonly string[] | null;
 		placeId?: string | null;
+		surveyOptionId?: string | null;
 	}
 ) {
 	const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
 	await assertReferences(day.conferenceId, {
 		calendarDayId: args.calendarDayId,
 		calendarTrackIds: args.calendarTrackIds ?? [],
-		placeId: args.placeId
+		placeId: args.placeId,
+		surveyOptionId: args.surveyOptionId
 	});
 }
 
@@ -85,6 +127,7 @@ export async function assertCanUpdateCalendarEntry(
 		calendarDayId?: string | null;
 		calendarTrackIds?: readonly string[] | null;
 		placeId?: string | null;
+		surveyOptionId?: string | null;
 	}
 ) {
 	const entry = await db.query.calendarEntry
@@ -103,7 +146,8 @@ export async function assertCanUpdateCalendarEntry(
 		calendarDayId,
 		// Moving to another day takes the tracks along only if they are that day's too.
 		calendarTrackIds: args.calendarTrackIds ?? entry.tracks.map((track) => track.id),
-		placeId: args.placeId
+		placeId: args.placeId,
+		surveyOptionId: args.surveyOptionId
 	});
 }
 

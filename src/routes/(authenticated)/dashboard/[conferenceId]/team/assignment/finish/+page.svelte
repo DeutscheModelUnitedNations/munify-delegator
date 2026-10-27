@@ -49,7 +49,8 @@
 					where: { conferenceId: { eq: params.conferenceId }, required: { eq: true } }
 				},
 				delegationId: true,
-				singleParticipantId: true
+				singleParticipantId: true,
+				delegation: { memberCount: true }
 			})
 		])
 	);

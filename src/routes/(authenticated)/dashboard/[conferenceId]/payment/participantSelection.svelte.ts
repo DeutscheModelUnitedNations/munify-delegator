@@ -10,16 +10,16 @@ export interface PayableUser {
 export type PaymentParticipantSelection = ReturnType<typeof createPaymentParticipantSelection>;
 
 /**
- * Who a payment covers. Starts out as everyone the caller may pay for (`defaults`) once those have
- * loaded (`ready`), and is locked once a transfer reference has been generated for it. Must be
- * called during component initialisation.
+ * Who a payment covers: everyone in `payable` until the payer picks, then the ones they picked
+ * that are still payable. Locked once a transfer reference has been generated for it.
  */
-export function createPaymentParticipantSelection(
-	defaults: () => PayableUser[] | undefined,
-	ready: () => boolean
-) {
-	let selected = $state<PayableUser[]>([]);
+export function createPaymentParticipantSelection(payable: () => PayableUser[]) {
+	let pickedIds = $state<string[]>();
 	let isReferenceCreated = $state(false);
+
+	const selected = $derived(
+		pickedIds ? payable().filter((user) => pickedIds?.includes(user.id)) : payable()
+	);
 
 	/** Refuses, with a toast, to change a selection a reference was already generated for. */
 	function locked() {
@@ -35,38 +35,23 @@ export function createPaymentParticipantSelection(
 
 	function setSelected(user: PayableUser, isSelectedNow: boolean) {
 		if (locked()) return;
-		if (!isSelectedNow) {
-			selected = selected.filter((x) => x.id !== user.id);
-		} else if (!isSelected(user.id)) {
-			selected = [...selected, user];
-		}
+		const ids = selected.map((x) => x.id).filter((id) => id !== user.id);
+		pickedIds = isSelectedNow ? [...ids, user.id] : ids;
 	}
 
 	function selectAll() {
 		if (locked()) return;
-		const current = defaults();
-		if (current) selected = current;
+		pickedIds = undefined;
 	}
 
 	function clear() {
 		if (locked()) return;
-		selected = [];
+		pickedIds = [];
 	}
-
-	let isInitialized = false;
-	$effect(() => {
-		if (ready() && !isInitialized) {
-			selectAll();
-			isInitialized = true;
-		}
-	});
 
 	return {
 		get selected() {
 			return selected;
-		},
-		set selected(value: PayableUser[]) {
-			selected = value;
 		},
 		get isReferenceCreated() {
 			return isReferenceCreated;

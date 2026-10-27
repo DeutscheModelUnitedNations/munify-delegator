@@ -8,6 +8,9 @@ test('requiredApplicationOf reads which application a review row is about', () =
 	expect(requiredApplicationOf({ singleParticipantId: 's' })).toEqual([
 		{ singleParticipantId: 's' }
 	]);
+	expect(requiredApplicationOf({ delegationId: 'd', delegation: { memberCount: 4 } })).toEqual([
+		{ delegationId: 'd', size: 4 }
+	]);
 	expect(requiredApplicationOf({})).toEqual([]);
 });
 

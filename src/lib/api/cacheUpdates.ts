@@ -55,3 +55,27 @@ export function liveQueryUpdates(schema: IntrospectionQuery): UpdatesConfig {
 	}
 	return { Subscription: updaters };
 }
+
+/**
+ * Query fields that no live query keeps fresh, and the mutations that change what they answer.
+ * rumble's `client.query` resolves with the first result urql hands it, which under
+ * `cache-and-network` is the cached one: the sighting asking for its deck again after a review
+ * got the deck from before it, and every card it had recoloured turned grey again.
+ */
+const staleAfter: Record<string, string[]> = {
+	setAssignmentReview: ['sightingDeck', 'sightingEntries']
+};
+
+/** Graphcache's `updates.Mutation`: drops the cached answers a mutation made stale (`staleAfter`). */
+export const staleQueryInvalidations: NonNullable<UpdatesConfig['Mutation']> = Object.fromEntries(
+	Object.entries(staleAfter).map(([mutation, queryFields]) => [
+		mutation,
+		(_result, _args, cache) => {
+			for (const field of cache.inspectFields('Query')) {
+				if (queryFields.includes(field.fieldName)) {
+					cache.invalidate('Query', field.fieldName, field.arguments ?? undefined);
+				}
+			}
+		}
+	])
+);

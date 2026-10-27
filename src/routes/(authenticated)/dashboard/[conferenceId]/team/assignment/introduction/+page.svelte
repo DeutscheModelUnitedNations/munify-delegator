@@ -37,7 +37,7 @@
 	] as const);
 </script>
 
-<div class="flex max-w-4xl flex-col gap-8">
+<div class="flex flex-col gap-8">
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.assignmentIntroTitle()}</h3>
 		<p class="text-base-content/80">{m.assignmentIntroLead()}</p>
@@ -63,7 +63,9 @@
 		<ol class="flex flex-col gap-5">
 			{#each steps as step, index (step.id)}
 				<li class="flex gap-4">
-					<span class="text-base-content/40 w-6 text-right text-2xl font-bold tabular-nums">
+					<span
+						class="text-base-content/40 w-6 shrink-0 text-right text-2xl font-bold tabular-nums"
+					>
 						{index + 1}
 					</span>
 					<div class="flex flex-col gap-1">

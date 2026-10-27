@@ -12,6 +12,14 @@
 
 @import './lib/components/paper/editor/extensions/style.css';
 
+/* Tailwind 4 gives buttons the default cursor; anything clickable shows the pointer again. */
+@layer base {
+	button:not(:disabled),
+	[role='button'] {
+		cursor: pointer;
+	}
+}
+
 @utility max-ch-sm {
 	max-width: 50ch;
 }

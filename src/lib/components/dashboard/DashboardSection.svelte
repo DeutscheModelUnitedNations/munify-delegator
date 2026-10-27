@@ -3,6 +3,8 @@
 
 	interface Props {
 		icon: string;
+		/** An anchor other parts of the page can link to. */
+		id?: string;
 		title: string;
 		description?: string;
 		children: Snippet;
@@ -16,6 +18,7 @@
 
 	let {
 		icon,
+		id,
 		title,
 		description,
 		children,
@@ -40,7 +43,7 @@
 	);
 </script>
 
-<section class="{cardClasses} {class_}">
+<section {id} class="{cardClasses} scroll-mt-24 {class_}">
 	<div class="card-body max-sm:p-4">
 		{#snippet header()}
 			<div class={iconClasses}>

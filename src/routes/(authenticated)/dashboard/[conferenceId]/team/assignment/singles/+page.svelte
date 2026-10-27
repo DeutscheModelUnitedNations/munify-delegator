@@ -24,7 +24,7 @@
 		seatedSnapshot
 	} from '../board';
 	import BusyOverlay from '../BusyOverlay.svelte';
-	import { createPoolPages, poolHasMore } from '../poolPages.svelte';
+	import { createPool, createPoolSearch, onPages } from '../poolPages.svelte';
 	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
@@ -70,16 +70,16 @@
 	// The single participants without a role, a page at a time as the pool scrolls. Pages are
 	// plain data, read once; what the draft or applying changes about them comes in live through
 	// `seated`, which is listed last so it wins.
-	const poolLoader = createPoolPages<BoardSingleParticipant>();
-	$effect(() => {
+	const search = createPoolSearch();
+	const poolKey = $derived(`${params.conferenceId}|${search.term}`);
+	const poolLoader = createPool<BoardSingleParticipant>(() => {
 		const { conferenceId } = params;
-		poolLoader
-			.load(conferenceId, (page) => fetchSinglePoolPage(conferenceId, page))
-			.catch(toastError);
+		const term = search.term;
+		return { key: poolKey, fetchPage: (page) => fetchSinglePoolPage(conferenceId, term, page) };
 	});
-	const poolPages = $derived(poolLoader.pages(params.conferenceId));
-	const poolLoading = $derived(poolLoader.pending(params.conferenceId));
-	const morePages = $derived(poolHasMore(poolPages.at(-1)));
+	const poolPages = $derived(poolLoader.pages);
+	const poolLoading = $derived(poolLoader.loading);
+	const morePages = $derived(poolLoader.more);
 
 	const singleParticipants = $derived([
 		...new Map(
@@ -139,14 +139,11 @@
 		const added = holdsRole(singleParticipantId) ? [] : schoolsOfGroup(single, schoolLookups);
 		warnAboutSchoolSeats(schoolCounts, added, maxSeatsPerSchool);
 	}
-	const pool = $derived(view.singles.filter((single) => !single.roleId));
+	const openSingles = $derived(view.singles.filter((single) => !single.roleId));
+	// a search's matches are what its pages hold
+	const pool = $derived(search.term ? onPages(openSingles, poolPages) : openSingles);
 
-	const loadMore = () => {
-		const { conferenceId } = params;
-		poolLoader
-			.loadMore(conferenceId, (page) => fetchSinglePoolPage(conferenceId, page))
-			.catch(toastError);
-	};
+	const loadMore = () => poolLoader.loadMore();
 	const converted = $derived(
 		view.groups.flatMap((group) =>
 			group.singleParticipantId
@@ -218,7 +215,7 @@
 		<p>{m.assignmentSinglesHint()}</p>
 		<button
 			class="btn btn-primary btn-sm"
-			disabled={busy || (pool.length === 0 && !morePages)}
+			disabled={busy || (openSingles.length === 0 && !morePages)}
 			onclick={autoAssign}
 		>
 			{#if busy}
@@ -235,7 +232,7 @@
 			<BusyOverlay size="lg" />
 		{/if}
 		<div
-			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[calc(100dvh-6rem)] xl:w-96 xl:shrink-0 xl:self-start"
+			class="flex flex-col gap-4 xl:sticky xl:top-20 xl:h-[max(28rem,calc(100dvh-24rem))] xl:w-96 xl:shrink-0 xl:self-start"
 		>
 			<PoolSection
 				container={POOL_CONTAINER}
@@ -243,6 +240,11 @@
 				more={morePages}
 				class="min-h-0 xl:flex-1"
 				virtual
+				search={{
+					value: search.typed,
+					searching: search.settling || (!!search.term && poolLoading),
+					onInput: (value) => (search.typed = value)
+				}}
 				{onDrop}
 			>
 				<PoolList items={pool} more={morePages} loading={poolLoading} onLoadMore={loadMore}>
@@ -258,7 +260,7 @@
 				{onDrop}
 				onRevert={revert}
 			/>
-			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} />
+			<SchoolSeatsPanel counts={schoolCounts} limit={maxSeatsPerSchool} shown={5} nearLimitOnly />
 		</div>
 
 		<section

@@ -4,6 +4,7 @@ import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
+	SURVEY_REMINDER_DAYS,
 	type EmailGroupId
 } from '#lib/helpers/emailKinds.js';
 
@@ -87,6 +88,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		trigger: m.emailKindPhoneTrigger({ days: PHONE_READY_REMINDER_DAYS }),
 		recipients: m.emailKindPhoneRecipients(),
 		content: m.emailKindPhoneContent()
+	}),
+	SURVEY_REMINDER: () => ({
+		title: m.emailKindSurveyReminderTitle(),
+		trigger: m.emailKindSurveyReminderTrigger({ days: SURVEY_REMINDER_DAYS }),
+		recipients: m.emailKindSurveyReminderRecipients(),
+		content: m.emailKindSurveyReminderContent()
 	}),
 	CERTIFICATE_AVAILABLE: () => ({
 		title: m.emailKindCertificateTitle(),

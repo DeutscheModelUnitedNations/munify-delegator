@@ -4,6 +4,7 @@
 	import ConferenceHeader from '#lib/components/dashboard/ConferenceHeader.svelte';
 	import AnnouncementContent from '#lib/components/dashboard/AnnouncementContent.svelte';
 	import SurveySection from '#lib/components/dashboard/SurveySection.svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -13,9 +14,11 @@
 		isTeamMember: boolean;
 		/** Surveys are only for people who hold a role at the conference. */
 		hasAssignedRole: boolean;
+		/** Shown right under the header, before everything else: the caller's quick links. */
+		afterHeader?: Snippet;
 	}
 
-	let { conferenceId, userId, isTeamMember, hasAssignedRole }: Props = $props();
+	let { conferenceId, userId, isTeamMember, hasAssignedRole, afterHeader }: Props = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
@@ -44,6 +47,7 @@
 	emblemUrl={conference.emblemFile?.url}
 	logoUrl={conference.logoFile?.url}
 />
+{@render afterHeader?.()}
 {#if conference.info && !isTeamMember}
 	<AnnouncementContent
 		info={conference.info}

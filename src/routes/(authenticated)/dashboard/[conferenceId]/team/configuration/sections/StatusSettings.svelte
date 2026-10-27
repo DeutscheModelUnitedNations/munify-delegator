@@ -2,6 +2,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import FormSection from '#lib/components/form/FormSection.svelte';
+	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 	import { conferenceStateIcon } from '../../../../conferenceGroups';
 
@@ -80,6 +81,13 @@
 			<span>{m.showCalendar()}</span>
 		</label>
 	</div>
+	<FormTextInput
+		{form}
+		name="maxSeatsPerSchool"
+		type="number"
+		label={m.conferenceMaxSeatsPerSchool()}
+		description={m.conferenceMaxSeatsPerSchoolDescription()}
+	/>
 </FormSection>
 
 <FormSection title={m.conferenceStatus()} icon="signal">

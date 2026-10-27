@@ -17,6 +17,7 @@ export interface CopySourceEntry<Color> {
 	color: Color;
 	placeId?: Maybe<string>;
 	room?: Maybe<string>;
+	surveyOptionId?: Maybe<string>;
 	tracks: { id: string }[];
 }
 
@@ -75,6 +76,7 @@ export function copiedEntryArgs<Color>(
 		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
 		color: entry.color,
 		placeId: entry.placeId ?? null,
-		room: entry.room ?? null
+		room: entry.room ?? null,
+		surveyOptionId: entry.surveyOptionId ?? null
 	};
 }

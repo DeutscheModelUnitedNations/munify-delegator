@@ -34,3 +34,40 @@ export async function openFirstConferenceForRegistration(
 
 	return conferenceId;
 }
+
+/**
+ * Picks how to apply in the dashboard's application form, by the option's title, and waits for
+ * the next step to open below it.
+ */
+export async function chooseApplyPath(page: Page, title: RegExp): Promise<void> {
+	const option = page.locator('ol button.card', { hasText: title });
+	// Retried: a click just after navigation can land before hydration attaches the handler.
+	await expect(async () => {
+		await option.click({ timeout: 2_000 });
+		await expect(page.locator('ol > li')).toHaveCount(2, { timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
+}
+
+/**
+ * Answers the application's questions, one step each, and submits the last. Starts with the school
+ * step open.
+ */
+export async function fillApplicationSteps(
+	page: Page,
+	answers: { school: string; motivation: string; experience: string }
+): Promise<void> {
+	await page.locator('input[name="schoolName"]').fill(answers.school);
+	await page
+		.locator('ol > li')
+		.last()
+		.getByRole('button', { name: /weiter|next/i })
+		.click();
+	await page.locator('textarea[name="motivation"]').fill(answers.motivation);
+	await page
+		.locator('ol > li')
+		.last()
+		.getByRole('button', { name: /weiter|next/i })
+		.click();
+	await page.locator('textarea[name="experience"]').fill(answers.experience);
+	await page.locator('form button.btn-primary').first().click();
+}

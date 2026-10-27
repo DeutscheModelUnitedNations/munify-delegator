@@ -11,6 +11,8 @@ export interface WindowEntry {
 	school: string | null;
 	size: number;
 	status: string;
+	/** Marked as one that has to get a seat */
+	required?: boolean;
 }
 
 export interface DeckWindowData<E extends WindowEntry = WindowEntry> {
@@ -99,7 +101,8 @@ export function withReview<E extends WindowEntry>(
 	if (!entry) return deck;
 	const before = entryStatus(entry.status);
 	const after = reviewStatus(review);
-	if (before === after) return deck;
+	const required = review.required ?? false;
+	if (before === after && (entry.required ?? false) === required) return deck;
 	const counts = { ...deck.counts };
 	counts[before] = Math.max(0, counts[before] - 1);
 	counts[after] += 1;
@@ -109,7 +112,7 @@ export function withReview<E extends WindowEntry>(
 		counts,
 		overallRated: deck.overallRated + rated,
 		entries: deck.entries.map((candidate) =>
-			candidate.id === id ? { ...candidate, status: after } : candidate
+			candidate.id === id ? { ...candidate, status: after, required } : candidate
 		)
 	};
 }

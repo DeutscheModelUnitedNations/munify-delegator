@@ -15,7 +15,7 @@
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues.js';
-	import AddressFields from '#lib/components/form/AddressFields.svelte';
+	import AddressSection from '#lib/components/form/AddressSection.svelte';
 	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
 	import { page } from '$app/state';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
@@ -176,9 +176,7 @@
 							placeholder={m.emergencyContactsPlaceholder()}
 						/>
 					</FormSection>
-					<FormSection title={m.address()} icon="house">
-						<AddressFields {form} fields={ADDRESS_FIELDS} rules={address} />
-					</FormSection>
+					<AddressSection {form} fields={ADDRESS_FIELDS} rules={address} />
 					<FormSection title={m.aboutYou()} icon="user">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
 							<FormDateTimeInput

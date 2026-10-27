@@ -1,6 +1,10 @@
 import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import {
+	chooseApplyPath,
+	fillApplicationSteps,
+	openFirstConferenceForRegistration
+} from '../support/registration';
 
 test('a head delegate can create a delegation and a second user can join it with the entry code', async ({
 	browser
@@ -13,8 +17,7 @@ test('a head delegate can create a delegation and a second user can join it with
 
 	const conferenceId = await openFirstConferenceForRegistration(headDelegatePage);
 
-	await headDelegatePage.locator('a[href$="/create-delegation"]').click();
-	await headDelegatePage.waitForURL(/\/create-delegation$/);
+	await chooseApplyPath(headDelegatePage, /Delegation erstellen/);
 
 	// step 0: informational step. Retry the click: a click just after client-side navigation
 	// can land before hydration attaches the handler.
@@ -25,10 +28,11 @@ test('a head delegate can create a delegation and a second user can join it with
 	}).toPass({ timeout: 15_000 });
 
 	// step 1: questionnaire
-	await schoolInput.fill('E2E Test School');
-	await headDelegatePage.locator('textarea[name="motivation"]').fill('We want to join.');
-	await headDelegatePage.locator('textarea[name="experience"]').fill('Some experience.');
-	await headDelegatePage.locator('form button.btn-primary').first().click();
+	await fillApplicationSteps(headDelegatePage, {
+		school: 'E2E Test School',
+		motivation: 'We want to join.',
+		experience: 'Some experience.'
+	});
 
 	// step 2: entry code is shown
 	const entryCodeLocator = headDelegatePage.locator('p.font-mono');

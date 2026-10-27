@@ -114,18 +114,6 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		translation: () => m.postalRegistration(),
 		icon: 'envelopes-bulk'
 	},
-	group: {
-		translation: () => m.groupPayment(),
-		icon: 'people-group'
-	},
-	delegation: {
-		translation: () => m.delegationPayment(),
-		icon: 'users-viewfinder'
-	},
-	single: {
-		translation: () => m.singlePayment(),
-		icon: 'user'
-	},
 	payments: {
 		translation: () => m.payment(),
 		icon: 'money-bill-transfer'
@@ -157,10 +145,6 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 	import: {
 		icon: 'file-import',
 		translation: () => m.import()
-	},
-	'connect-supervisor': {
-		icon: 'eye',
-		translation: () => m.connectSupervisorTitle()
 	},
 	create: {
 		icon: 'seedling',

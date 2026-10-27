@@ -10,6 +10,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { and, eq } from 'drizzle-orm';
+import { supervisorPreview } from './supervisorPreview';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
 const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
@@ -143,21 +144,29 @@ export async function disconnectParticipantFromSupervisor(
  * Shows whose supervision a participant is about to accept, before they connect. The caller
  * checks first that they may look (`assertCanPreviewConferenceSupervisor`).
  */
-export async function previewSupervisorByCode(conferenceId: string, connectionCode: string) {
+export async function previewSupervisorByCode(
+	conferenceId: string,
+	connectionCode: string,
+	callerId: string
+) {
 	const supervisor = await db.query.conferenceSupervisor
 		.findFirst({
 			where: {
 				connectionCode: normalizeConnectionCode(connectionCode),
 				participant: { conferenceId }
 			},
-			with: { user: { columns: { givenName: true, familyName: true } } }
+			with: {
+				user: { columns: { givenName: true, familyName: true } },
+				school: { columns: { id: true, name: true, city: true } },
+				participant: { with: { school: { columns: { id: true, name: true, city: true } } } }
+			}
 		})
 		.then(assertFindFirstExists);
-
-	return {
-		given_name: supervisor.user?.givenName ?? null,
-		family_name: supervisor.user?.familyName ?? null
-	};
+	const caller = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId: callerId },
+		columns: { schoolId: true }
+	});
+	return supervisorPreview(supervisor, caller?.schoolId);
 }
 
 /** Hands the supervisor a new connection code; the old one stops working. */

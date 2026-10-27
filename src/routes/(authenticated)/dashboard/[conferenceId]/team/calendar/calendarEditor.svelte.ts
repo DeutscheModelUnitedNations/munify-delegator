@@ -43,6 +43,8 @@ interface EditorDayEntry {
 	room: string | null;
 	tracks: { id: string }[];
 	place: { name: string } | null;
+	/** The survey option whose choosers alone see the entry */
+	surveyOption: { title: string } | null;
 }
 
 /** An entry as the editor draws it: its stored data, placed in the grid. */
@@ -52,6 +54,7 @@ interface EditorEntry extends Placed {
 	color: CalendarentrycolorEnum;
 	room: string | null;
 	placeName: string | null;
+	surveyOptionTitle: string | null;
 }
 
 interface Placement extends Span {
@@ -126,6 +129,7 @@ export function toEditorDay(day: {
 		room?: string | null;
 		tracks: { id: string }[];
 		place?: { name: string } | null;
+		surveyOption?: { title: string } | null;
 	}[];
 }): EditorDay {
 	return {
@@ -147,7 +151,8 @@ export function toEditorDay(day: {
 			color: entry.color,
 			room: orNull(entry.room),
 			tracks: entry.tracks.map((track) => ({ id: track.id })),
-			place: entry.place ? { name: entry.place.name } : null
+			place: entry.place ? { name: entry.place.name } : null,
+			surveyOption: entry.surveyOption ? { title: entry.surveyOption.title } : null
 		}))
 	};
 }
@@ -167,7 +172,8 @@ function toEditorEntry(day: EditorDay, entry: EditorDayEntry): EditorEntry {
 		fontAwesomeIcon: entry.fontAwesomeIcon,
 		color: entry.color,
 		room: entry.room,
-		placeName: entry.place?.name ?? null
+		placeName: entry.place?.name ?? null,
+		surveyOptionTitle: entry.surveyOption?.title ?? null
 	};
 }
 

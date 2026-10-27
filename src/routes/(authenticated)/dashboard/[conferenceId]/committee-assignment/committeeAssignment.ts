@@ -15,6 +15,7 @@ export async function fetchCommitteeAssignment(conferenceId: string, userId: str
 				assignedRole: { id: true },
 				members: {
 					id: true,
+					isHeadDelegate: true,
 					user: { id: true, familyName: true, givenName: true },
 					assignedCommittee: { id: true }
 				}

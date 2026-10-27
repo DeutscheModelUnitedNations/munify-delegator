@@ -57,7 +57,7 @@
 	<!-- A place can only still be handed out while the conference is running. -->
 	<ApplicationRejected conferenceIdForWaitingListLink={isPreparing ? conferenceId : undefined} />
 {:else if isPreparing}
-	<ConferenceStatusWidget {conferenceId} {status} ofAgeAtConference={ofAge} />
+	<ConferenceStatusWidget {conferenceId} {status} ofAgeAtConference={ofAge} surveyUserId={userId} />
 	{@render preparation()}
 {:else if conferenceState === 'POST'}
 	{#await import('./Certificate.svelte') then { default: LazyCertificate }}

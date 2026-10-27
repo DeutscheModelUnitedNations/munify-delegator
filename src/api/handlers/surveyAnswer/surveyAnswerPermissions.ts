@@ -2,6 +2,7 @@ import { db } from '#api/db/db.js';
 import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
+	assertTeamRoleForSurveyQuestion,
 	hasTeamRole,
 	isTeamMemberOfConference,
 	participantIdsOf,
@@ -108,4 +109,9 @@ export async function assertCanAnswerSurvey(
 	});
 
 	return { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id };
+}
+
+/** Refuses unless the caller may answer the question for everybody who has not yet. */
+export async function assertCanDistributeSurvey(ctx: ApiContext, questionId: string) {
+	await assertTeamRoleForSurveyQuestion(ctx, questionId);
 }

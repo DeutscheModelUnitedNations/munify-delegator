@@ -76,6 +76,8 @@ interface EntryFormValues<Color> {
 	color: Color;
 	placeId: string | null;
 	room: string;
+	/** The survey option whose choosers alone see the entry; none shows it to everybody */
+	surveyOptionId: string | null;
 	/** The tracks the entry runs on; none means all of them */
 	trackIds: string[];
 }
@@ -96,6 +98,7 @@ export function entryFields<Color>(form: EntryFormValues<Color>, dayDate: Date |
 		color: form.color,
 		placeId: form.placeId || null,
 		room: form.room || null,
+		surveyOptionId: form.surveyOptionId || null,
 		calendarTrackIds: form.trackIds
 	};
 }

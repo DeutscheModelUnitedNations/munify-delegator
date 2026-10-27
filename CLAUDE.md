@@ -614,6 +614,12 @@ bun run preview
   cannot change (`conference_id_is_immutable`); rewriting the same value passes. Neither is
   drizzle-managed: a new table with two such parents gets its trigger in its migration, and
   `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
+- **Calendar entries can be for one survey choice only**: `calendarEntry.surveyOptionId` limits
+  an entry to those who picked that option (and the conference's team); without one it is for
+  everybody. The `read` rules in `calendarEntryPermissions.ts` do it, so every calendar query
+  follows. **Survey options fill under a row lock** (`surveyAnswerService.ts`): a participant is
+  refused a full option, and `distributeUnansweredSurvey` hands everyone seated who has not answered
+  the least full option with room (`surveyDistribution.ts`).
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -678,7 +684,8 @@ bun run preview
   the page's update pending after every move, and a second move in that window left a card
   stranded in the pool. The delegation pool is asked for exactly as shown: filtered by
   `delegation.memberCount` (kept by a trigger on `delegation_member`), the role and the exclusion,
-  rated delegations first by rating (read through `assignmentReviews`), then the rest by id, a page
+  and a search, in tiers (`tieredPage`): pinned (required) ones first, then the rated ones, each by
+  rating (read through `assignmentReviews`), then the rest by id, a page
   at a time (`PoolPages`, loaded imperatively; `PoolList` asks for the next page as it scrolls).
   The size tabs come from per-size `delegationsCount`s that ignore the draft
   (`poolCountsBesidesDraft` takes the touched delegations out). Pages are copied out of the query
@@ -784,7 +791,9 @@ bun run preview
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
   conference owes - acceptances and rejections once the assignment is released, seats from the
   waiting list, postal/payment unlocked, received or with a problem, the reminders before the
-  application deadline and the conference, certificates, students linked to a supervisor, and
+  application deadline and the conference, a reminder to everyone seated who has not answered a
+  published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
+  moved deadline reminds again), certificates, students linked to a supervisor, and
   each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
   reviewer). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
   there; the e-mail page explains them in the same words.

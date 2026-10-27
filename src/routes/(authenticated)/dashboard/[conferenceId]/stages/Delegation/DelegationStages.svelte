@@ -40,12 +40,6 @@
 		<DelegationRegistrationStage {conferenceId} {delegationMemberId} />
 	{/snippet}
 	{#snippet preparation()}
-		<DelegationPreparationStage
-			{conferenceId}
-			{delegationMember}
-			{user}
-			{status}
-			ofAgeAtConference={ofAge}
-		/>
+		<DelegationPreparationStage {conferenceId} {delegationMember} />
 	{/snippet}
 </ParticipantStages>

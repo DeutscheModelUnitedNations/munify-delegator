@@ -106,6 +106,7 @@ describe('entryFields', () => {
 		color: 'SESSION',
 		placeId: null,
 		room: '',
+		surveyOptionId: null,
 		trackIds: [] as string[]
 	};
 
@@ -118,6 +119,7 @@ describe('entryFields', () => {
 			fontAwesomeIcon: null,
 			placeId: null,
 			room: null,
+			surveyOptionId: null,
 			calendarTrackIds: []
 		});
 	});
@@ -130,6 +132,7 @@ describe('entryFields', () => {
 				icon: 'gavel',
 				room: 'A1',
 				placeId: 'p',
+				surveyOptionId: 'o',
 				trackIds: ['t', 'u']
 			},
 			'2026-03-12T00:00:00Z'
@@ -139,6 +142,7 @@ describe('entryFields', () => {
 			fontAwesomeIcon: 'gavel',
 			room: 'A1',
 			placeId: 'p',
+			surveyOptionId: 'o',
 			calendarTrackIds: ['t', 'u']
 		});
 	});

@@ -6,16 +6,17 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import { applicationTextsComplete } from '#lib/helpers/applicationReadiness.js';
-	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
-	import DashboardContentCard from '#lib/components/dashboard/DashboardContentCard.svelte';
-	import SquareButtonWithLoadingState from '#lib/components/SquareButtonWithLoadingState.svelte';
+	import {
+		applicationTextsComplete,
+		MIN_ROLE_APPLICATIONS
+	} from '#lib/helpers/applicationReadiness.js';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationAnswers } from '../../applicationForm';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
-	import CompleteSignupCard from '../Common/CompleteSignupCard.svelte';
+	import ApplicationProgress from '../Common/ApplicationProgress.svelte';
 	import RegistrationDangerZone from '../Common/RegistrationDangerZone.svelte';
-	import RegistrationStatusAlert from '../Common/RegistrationStatusAlert.svelte';
+	import SingleParticipantRoleApplications from './SingleParticipantRoleApplications.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -37,8 +38,6 @@
 	);
 
 	const applied = $derived(singleParticipant.applied);
-	/** The last application cannot be withdrawn on its own; that is what deleting them all is for. */
-	const isOnlyApplication = $derived(singleParticipant.appliedForRoles.length === 1);
 
 	const saveApplication = (answers: ApplicationAnswers) =>
 		client.mutate.updateSingleParticipant({
@@ -79,161 +78,71 @@
 		goto(resolve('dashboard'));
 	};
 
-	const deleteApplication = async (id: string) => {
-		if (!singleParticipant) {
-			console.error('Error: singleParticipant not found');
-			return;
-		}
-		if (!(await confirmDialog({ text: m.deleteApplicationConfirmation(), danger: true }))) return;
-		const promise = client.mutate.updateSingleParticipant({
-			__args: { id: singleParticipant.id, unApplyForRolesIdList: [id] },
-			id: true,
-			appliedForRoles: { id: true }
-		});
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-	};
-
-	const answerQuestionaireCompleted = $derived(applicationTextsComplete(singleParticipant));
-
-	let todos = $derived([
+	// The button completing the application is the last step, so it is not listed.
+	const steps = $derived([
 		{
-			title: m.todoApplyForRole(),
-			completed: true,
-			help: m.todoApplyForRoleHelp()
+			task: m.todoApplyForRole(),
+			done: singleParticipant.appliedForRoles.length >= MIN_ROLE_APPLICATIONS.singleParticipant,
+			hint: m.todoApplyForRoleHelp(),
+			href: '#application-roles'
 		},
 		{
-			title: m.todoAnswerQuestionaire(),
-			completed: answerQuestionaireCompleted,
-			help: m.todoAnswerQuestionaireHelp()
-		},
-		{
-			title: m.todoCompleteSignup(),
-			completed: singleParticipant.applied,
-			help: m.todoCompleteSignupHelp(),
-			arrowDown: answerQuestionaireCompleted
-		}
-	]);
-
-	const stats = $derived([
-		{
-			icon: 'check-to-slot',
-			title: m.roleApplications(),
-			value: singleParticipant.appliedForRoles?.length,
-			desc: m.atThisConference()
-		},
-		{
-			icon: 'list-check',
-			title: m.tasks(),
-			value: todos
-				? `${Math.floor((todos.filter((x) => x.completed).length / todos.length) * 100)} %`
-				: undefined,
-			desc: m.doneToRegister()
+			task: m.todoAnswerQuestionaire(),
+			done: applicationTextsComplete(singleParticipant),
+			hint: m.todoAnswerQuestionaireHelp(),
+			href: '#application-texts'
 		}
 	]);
 </script>
 
-<RegistrationStatusAlert {applied} pendingText={m.completeSignupWarningTextSingleParticipant()} />
+<ApplicationProgress
+	{conferenceId}
+	{applied}
+	pendingText={m.completeSignupWarningTextSingleParticipant()}
+	{steps}
+	onComplete={completeRegistration}
+/>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.status()}</h2>
-	<GenericWidget content={stats} />
+<SingleParticipantRoleApplications
+	{conferenceId}
+	{singleParticipantId}
+	{applied}
+	answers={{
+		schoolId: singleParticipant.school?.id ?? null,
+		motivation: singleParticipant.motivation,
+		experience: singleParticipant.experience
+	}}
+	roles={singleParticipant.appliedForRoles}
+/>
 
-	<SupervisorTable singleParticipantId={singleParticipant.id} {conferenceId} />
-</section>
+<DashboardSection
+	id="application-texts"
+	icon="file-lines"
+	title={m.informationAndMotivation()}
+	description={m.informationAndMotivationDescriptionHeadDelegate()}
+>
+	<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
+	registration, so a different one gets a fresh form. -->
+	<ApplicationQuestionnaire
+		initial={singleParticipant}
+		save={saveApplication}
+		disabled={applied}
+		showSubmitButton={!applied}
+		schoolLabel={m.whichSchoolAreYouFrom()}
+		motivationLabel={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
+		experienceLabel={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
+	/>
+</DashboardSection>
 
-<section>
-	<h2 class="mb-2 text-2xl font-bold">{m.roleApplications()}</h2>
-	<DashboardContentCard>
-		<div class="overflow-x-auto">
-			<table class="table">
-				<thead>
-					<tr>
-						<th>{m.role()}</th>
-						<th>{m.description()}</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each singleParticipant.appliedForRoles as role (role.id)}
-						<tr>
-							<td>
-								<div class="flex items-center gap-4">
-									{#if role.fontAwesomeIcon}
-										<i
-											class="fa-sharp-duotone fa-solid fa-{role.fontAwesomeIcon.replace(
-												'fa-',
-												''
-											)} text-xl"
-										></i>
-									{/if}
-									{role.name}
-								</div>
-							</td>
-							<td>{role.description}</td>
-							{#if !applied}
-								<td>
-									<SquareButtonWithLoadingState
-										cssClass={isOnlyApplication ? 'opacity-10' : ''}
-										disabled={isOnlyApplication}
-										icon="trash"
-										onClick={async () => deleteApplication(role.id)}
-									/>
-								</td>
-							{/if}
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-		{#if !applied}
-			<a
-				class="btn btn-primary btn-wide mt-4"
-				href={resolve(`registration/${conferenceId}/individual`)}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-plus"></i>
-				{m.addAnotherApplication()}
-			</a>
-		{/if}
-	</DashboardContentCard>
-</section>
+<SupervisorTable singleParticipantId={singleParticipant.id} {conferenceId} />
 
-<section>
-	<h2 class="mb-2 text-2xl font-bold">{m.application()}</h2>
-	<div class="mb-4 flex flex-col gap-4 md:flex-row">
-		<DashboardContentCard
-			title={m.informationAndMotivation()}
-			description={m.informationAndMotivationDescriptionHeadDelegate()}
-			class="flex-1"
-		>
-			<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
-			registration, so a different one gets a fresh form. -->
-			<ApplicationQuestionnaire
-				initial={singleParticipant}
-				save={saveApplication}
-				disabled={applied}
-				showSubmitButton={!applied}
-				schoolLabel={m.whichSchoolAreYouFrom()}
-				motivationLabel={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
-				experienceLabel={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
-			/>
-		</DashboardContentCard>
-	</div>
-	{#if !applied}
-		<CompleteSignupCard
-			description={m.completeSignupDescriptionHeadDelegate()}
-			{todos}
-			onComplete={completeRegistration}
-		/>
-	{/if}
-</section>
 <RegistrationDangerZone
 	{applied}
 	appliedText={m.noDangerZoneOptionsSingleParticipants()}
 	supportIdHtml={m.singleParticipantsIdForSupport()}
 	id={singleParticipant.id}
 >
-	<button class="btn btn-outline btn-error" onclick={deleteAllApplications}
-		>{m.deleteAllApplications()}</button
-	>
+	<button class="btn btn-outline btn-error" onclick={deleteAllApplications}>
+		{m.deleteAllApplications()}
+	</button>
 </RegistrationDangerZone>

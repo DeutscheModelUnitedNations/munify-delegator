@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { dev } from '$app/env';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { m } from '#lib/paraglide/messages.js';
@@ -35,6 +36,7 @@
 </svelte:head>
 
 <div class="flex w-full flex-col p-4">
+	<BackToDashboard {conferenceId} />
 	{#snippet heading()}
 		<header class="flex flex-col gap-2">
 			<AccentStripe />

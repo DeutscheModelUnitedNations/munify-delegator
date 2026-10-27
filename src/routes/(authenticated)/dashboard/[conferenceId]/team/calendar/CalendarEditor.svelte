@@ -51,7 +51,8 @@
 				color: true,
 				room: true,
 				tracks: { id: true },
-				place: { name: true }
+				place: { name: true },
+				surveyOption: { title: true }
 			}
 		})
 	);
@@ -249,11 +250,13 @@
 		</div>
 	</div>
 
-	<div class="overflow-x-auto">
+	<!-- Its own scroll area, so with many days or tracks the horizontal scrollbar stays in view
+	     and the headers and the times stay put while scrolling -->
+	<div class="max-h-[calc(100dvh-12rem)] overflow-auto">
 		<div style="min-width: calc(3.5rem + {grid.totalUnits} * 9rem);">
 			<!-- Day and track headers -->
-			<div class="flex">
-				<div class="w-14 shrink-0"></div>
+			<div class="bg-base-100 sticky top-0 z-40 flex">
+				<div class="bg-base-100 sticky left-0 z-10 w-14 shrink-0"></div>
 				<div class="relative h-16 grow">
 					{#each grid.days as block (block.dayId)}
 						{@const day = editorDays.find((d) => d.id === block.dayId)}
@@ -289,7 +292,7 @@
 
 			<div class="flex">
 				<!-- Time gutter -->
-				<div class="relative w-14 shrink-0" style="height: {gridHeight}px;">
+				<div class="bg-base-100 sticky left-0 z-40 w-14 shrink-0" style="height: {gridHeight}px;">
 					{#each hours as hour (hour)}
 						<div
 							class="text-base-content/40 absolute right-2 text-xs leading-none"
@@ -361,6 +364,7 @@
 							start={entry.start}
 							end={entry.end}
 							location={[entry.placeName, entry.room].filter(Boolean).join(' · ')}
+							surveyOptionTitle={entry.surveyOptionTitle}
 							overlapping={editor.overlapping.has(entry.id)}
 							dragging={editor.drag?.kind === 'entry' &&
 								editor.drag.active &&

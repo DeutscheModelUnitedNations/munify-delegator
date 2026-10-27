@@ -11,6 +11,8 @@ export const APPLICATION_REMINDER_DAYS = 3;
 export const OPEN_ISSUES_REMINDER_DAYS = 14;
 /** Days before the conference the reminder to get MUNify ready on the phone goes out. */
 export const PHONE_READY_REMINDER_DAYS = 7;
+/** Days before a survey's deadline the reminder to answer it goes out. */
+export const SURVEY_REMINDER_DAYS = 3;
 
 /**
  * Mails the team's own actions send - inviting someone, adding them to the team. They always go
@@ -37,7 +39,12 @@ export const EMAIL_GROUPS = [
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
 	{
 		id: 'reminders',
-		kinds: ['APPLICATION_DEADLINE_REMINDER', 'OPEN_ISSUES_REMINDER', 'PHONE_READY_REMINDER']
+		kinds: [
+			'APPLICATION_DEADLINE_REMINDER',
+			'OPEN_ISSUES_REMINDER',
+			'PHONE_READY_REMINDER',
+			'SURVEY_REMINDER'
+		]
 	},
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },

@@ -33,7 +33,9 @@ schemaBuilder.mutationFields((t) => ({
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
 			calendarTrackIds: t.arg.idList(),
-			placeId: t.arg.id()
+			placeId: t.arg.id(),
+			/** Shows the entry only to those who picked this survey option */
+			surveyOptionId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCalendarEntry(ctx, args);
@@ -48,7 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 					fontAwesomeIcon: nullToUndefined(args.fontAwesomeIcon),
 					color: nullToUndefined(args.color),
 					room: nullToUndefined(args.room),
-					placeId: nullToUndefined(args.placeId)
+					placeId: nullToUndefined(args.placeId),
+					surveyOptionId: nullToUndefined(args.surveyOptionId)
 				},
 				args.calendarTrackIds
 			);
@@ -79,7 +82,9 @@ schemaBuilder.mutationFields((t) => ({
 			room: t.arg.string(),
 			calendarDayId: t.arg.id(),
 			calendarTrackIds: t.arg.idList(),
-			placeId: t.arg.id()
+			placeId: t.arg.id(),
+			/** Shows the entry only to those who picked this survey option */
+			surveyOptionId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateCalendarEntry(ctx, args);
@@ -97,7 +102,8 @@ schemaBuilder.mutationFields((t) => ({
 					description: args.description,
 					fontAwesomeIcon: args.fontAwesomeIcon,
 					room: args.room,
-					placeId: args.placeId
+					placeId: args.placeId,
+					surveyOptionId: args.surveyOptionId
 				},
 				args.calendarTrackIds
 			);

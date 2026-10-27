@@ -19,6 +19,13 @@
 		codenamize(
 			'delegationId' in application ? application.delegationId : application.singleParticipantId
 		);
+	/** Where the board shows it: its group size, or among the single participants. */
+	const bracketOf = (application: RequiredApplication) =>
+		'delegationId' in application
+			? application.size === undefined
+				? undefined
+				: String(application.size)
+			: m.assignmentTabSingles();
 	const allTaken = $derived(occupancy.total > 0 && occupancy.free === 0);
 </script>
 
@@ -29,7 +36,12 @@
 			<h3 class="font-bold">{m.assignmentRequiredWithoutSeatTitle()}</h3>
 			<ul class="list-inside list-disc text-sm">
 				{#each missingRequired as application (nameOf(application))}
-					<li>{m.assignmentRequiredWithoutSeat({ name: nameOf(application) })}</li>
+					{@const bracket = bracketOf(application)}
+					<li>
+						{m.assignmentRequiredWithoutSeat({
+							name: bracket ? `${nameOf(application)} (${bracket})` : nameOf(application)
+						})}
+					</li>
 				{/each}
 			</ul>
 		</div>

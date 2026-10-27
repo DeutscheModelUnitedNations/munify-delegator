@@ -1,5 +1,5 @@
-import { db, schema } from '#api/db/db.js';
-import { eq, inArray } from 'drizzle-orm';
+import { type Transaction, db, schema } from '#api/db/db.js';
+import { and, eq, inArray } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
 
@@ -23,9 +23,30 @@ function generateSEPASafeId() {
 }
 
 /**
+ * Refuses a reference that involves somebody whose fee is already paid: once paid, a person
+ * makes no new references and is covered by nobody else's. Locks their status rows, so a payment
+ * marked received at the same moment cannot slip past.
+ */
+async function assertNobodyPaid(tx: Transaction, participantIds: readonly string[]) {
+	const paid = await tx
+		.select({ id: schema.conferenceParticipant.id })
+		.from(schema.conferenceParticipant)
+		.where(
+			and(
+				inArray(schema.conferenceParticipant.id, [...new Set(participantIds)]),
+				eq(schema.conferenceParticipant.paymentStatus, 'DONE')
+			)
+		)
+		.for('update');
+	if (paid.length > 0) {
+		throw apiError('CONFLICT', m.paymentAlreadyPaid());
+	}
+}
+
+/**
  * Records a payment reference paid by the participant `payerParticipantId` for the participants
  * `paymentFor` (participant row ids), at the conference's fee per participant. Returns the new
- * reference's id.
+ * reference's id. Nobody involved may have paid already (`assertNobodyPaid`).
  */
 export async function createPaymentTransaction(
 	conference: { feeAmount: number | null },
@@ -51,6 +72,7 @@ export async function createPaymentTransaction(
 	}
 
 	await db.transaction(async (tx) => {
+		await assertNobodyPaid(tx, [payerParticipantId, ...paymentFor]);
 		await tx.insert(schema.paymentTransaction).values({
 			id,
 			amount: paymentFor.length * feeAmount,

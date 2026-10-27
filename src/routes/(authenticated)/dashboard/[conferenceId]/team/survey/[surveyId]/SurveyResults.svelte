@@ -10,6 +10,11 @@
 	import { fetchSurveyResults } from './surveyAnswers';
 	import { compareByDisplayName } from './surveyExport';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { toast } from 'svelte-sonner';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -21,6 +26,32 @@
 	const results = $derived(await fetchSurveyResults(conferenceId, surveyId));
 	const survey = $derived(results.survey);
 	const notAnsweredParticipants = $derived(results.usersNotAnswered);
+
+	/** Seats still free across the options; an option without a limit never runs out. */
+	const freeSeats = $derived(
+		survey.options.reduce(
+			(sum, o) =>
+				sum + (o.upperLimit ? Math.max(0, o.upperLimit - o.countSurveyAnswers) : Infinity),
+			0
+		)
+	);
+	const leftOver = $derived(Math.max(0, notAnsweredParticipants.length - freeSeats));
+
+	let distributeOpen = $state(false);
+	let distributing = $state(false);
+
+	async function distribute() {
+		const done = await saveWithToast(
+			(loading) => (distributing = loading),
+			async () => {
+				const assigned = await client.mutate.distributeUnansweredSurvey({
+					__args: { questionId: surveyId }
+				});
+				toast.success(m.surveyDistributeDone({ count: assigned }));
+			}
+		);
+		if (done) distributeOpen = false;
+	}
 
 	// Chart data
 	let pieChartData = $derived(
@@ -66,6 +97,9 @@
 		return { xAxisData: sortedDates, series };
 	});
 
+	const hasAnswers = $derived(chartValues.some((v) => v > 0));
+	const canDistribute = $derived(notAnsweredParticipants.length > 0 && survey.options.length > 0);
+
 	const getParticipantsForOption = (optionId: string) => {
 		return survey.surveyAnswers
 			.filter((answer) => answer.option.id === optionId)
@@ -73,6 +107,40 @@
 			.sort(compareByDisplayName);
 	};
 </script>
+
+<!-- A chart in a card of its own, with a placeholder until there is something to draw -->
+{#snippet chartCard(title: string, hasData: boolean, chart: Snippet)}
+	<div class="card bg-base-100 border-base-200 border shadow-sm">
+		<div class="card-body">
+			<h3 class="card-title text-base">{title}</h3>
+			{#if hasData}
+				{@render chart()}
+			{:else}
+				<div class="flex h-48 items-center justify-center text-sm opacity-50">
+					{m.noDataYet()}
+				</div>
+			{/if}
+		</div>
+	</div>
+{/snippet}
+
+{#snippet pieChart()}
+	<PieChart data={pieChartData} donut={true} showLegend={true} height="200px" />
+{/snippet}
+
+{#snippet barChart()}
+	<BarChart labels={chartLabels} values={chartValues} showValues={true} height="200px" />
+{/snippet}
+
+{#snippet lineChart()}
+	<LineChart
+		xAxisData={timelineData.xAxisData}
+		series={timelineData.series}
+		showLegend={true}
+		smooth={true}
+		height="250px"
+	/>
+{/snippet}
 
 <!-- Charts Section -->
 <div class="grid gap-4 lg:grid-cols-3">
@@ -87,58 +155,28 @@
 		</div>
 	</div>
 
-	<!-- Distribution Donut -->
-	<div class="card bg-base-100 border-base-200 border shadow-sm">
-		<div class="card-body">
-			<h3 class="card-title text-base">{m.distribution()}</h3>
-			{#if pieChartData.length > 0 && pieChartData.some((d) => d.value > 0)}
-				<PieChart data={pieChartData} donut={true} showLegend={true} height="200px" />
-			{:else}
-				<div class="flex h-48 items-center justify-center text-sm opacity-50">
-					{m.noDataYet()}
-				</div>
-			{/if}
-		</div>
-	</div>
-
-	<!-- Bar Comparison -->
-	<div class="card bg-base-100 border-base-200 border shadow-sm">
-		<div class="card-body">
-			<h3 class="card-title text-base">{m.optionComparison()}</h3>
-			{#if chartValues.length > 0 && chartValues.some((v) => v > 0)}
-				<BarChart labels={chartLabels} values={chartValues} showValues={true} height="200px" />
-			{:else}
-				<div class="flex h-48 items-center justify-center text-sm opacity-50">
-					{m.noDataYet()}
-				</div>
-			{/if}
-		</div>
-	</div>
+	{@render chartCard(m.distribution(), hasAnswers, pieChart)}
+	{@render chartCard(m.optionComparison(), hasAnswers, barChart)}
 </div>
 
-<!-- Timeline Chart -->
-<div class="card bg-base-100 border-base-200 border shadow-sm">
-	<div class="card-body">
-		<h3 class="card-title text-base">{m.answersOverTime()}</h3>
-		{#if timelineData.xAxisData.length > 0}
-			<LineChart
-				xAxisData={timelineData.xAxisData}
-				series={timelineData.series}
-				showLegend={true}
-				smooth={true}
-				height="250px"
-			/>
-		{:else}
-			<div class="flex h-48 items-center justify-center text-sm opacity-50">
-				{m.noDataYet()}
-			</div>
-		{/if}
-	</div>
-</div>
+{@render chartCard(m.answersOverTime(), timelineData.xAxisData.length > 0, lineChart)}
 
 <!-- Participant Lists -->
 <div class="flex flex-col gap-3">
-	<h3 class="text-lg font-bold">{m.answers()}</h3>
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<h3 class="text-lg font-bold">{m.answers()}</h3>
+		{#if canDistribute}
+			<button
+				class="btn btn-sm"
+				disabled={freeSeats === 0}
+				title={freeSeats === 0 ? m.surveyDistributeNoRoom() : undefined}
+				onclick={() => (distributeOpen = true)}
+			>
+				<i class="fa-sharp-duotone fa-solid fa-shuffle"></i>
+				{m.surveyDistribute()}
+			</button>
+		{/if}
+	</div>
 	{#each survey.options as option (option.id)}
 		{@const participants = getParticipantsForOption(option.id)}
 		<CollapsibleParticipantList
@@ -172,3 +210,21 @@
 		<SurveyExportButtons {surveyId} {conferenceId} />
 	</div>
 </section>
+
+{#if distributeOpen}
+	<ActionModal
+		title={m.surveyDistribute()}
+		confirmLabel={m.surveyDistributeConfirm()}
+		loading={distributing}
+		onConfirm={distribute}
+		onClose={() => (distributeOpen = false)}
+	>
+		<p>{m.surveyDistributeDescription({ count: notAnsweredParticipants.length })}</p>
+		{#if leftOver > 0}
+			<div class="alert alert-warning">
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+				{m.surveyDistributeLeftOver({ count: leftOver })}
+			</div>
+		{/if}
+	</ActionModal>
+{/if}

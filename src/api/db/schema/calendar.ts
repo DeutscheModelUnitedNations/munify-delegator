@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
 import { conferenceRef, place } from './conference';
+import { surveyOption } from './surveys';
 
 /** A conference's calendar: days, tracks and entries. */
 
@@ -73,7 +74,15 @@ export const calendarEntry = snakeCase.table('calendar_entry', {
 	calendarDayId: text()
 		.notNull()
 		.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' })
+	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+	/**
+	 * Shown only to the people who picked this option of a survey question (and to the team);
+	 * without one, to everybody. An option an entry names cannot be deleted.
+	 */
+	surveyOptionId: text().references(() => surveyOption.id, {
+		onDelete: 'restrict',
+		onUpdate: 'cascade'
+	})
 });
 
 /** The tracks an entry runs on. Every entry runs on at least one track. */

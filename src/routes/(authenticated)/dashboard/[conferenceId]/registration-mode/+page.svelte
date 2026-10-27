@@ -1,6 +1,6 @@
 <script lang="ts">
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchMyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
 	import IdentityCode from '#lib/components/IdentityCode.svelte';
@@ -87,10 +87,7 @@
 	<!-- Header: Back button + Conference + Timestamp -->
 	<div class="flex w-full items-start justify-between">
 		<div class="flex flex-col items-start gap-1">
-			<a href={resolve(`dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
-				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
-				{m.backToDashboard()}
-			</a>
+			<BackToDashboard conferenceId={params.conferenceId} />
 			<div class="text-base-content/60 px-3 text-sm">
 				{conference?.title ?? ''}
 			</div>

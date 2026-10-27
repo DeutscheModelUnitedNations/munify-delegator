@@ -35,7 +35,8 @@ const EMAIL_PLACEHOLDERS = [
 	'reviewer',
 	'status',
 	'role',
-	'inviter'
+	'inviter',
+	'survey'
 ] as const;
 export type EmailPlaceholder = (typeof EMAIL_PLACEHOLDERS)[number];
 
@@ -61,7 +62,8 @@ const P = {
 	reviewer: '{reviewer}',
 	status: '{status}',
 	role: '{role}',
-	inviter: '{inviter}'
+	inviter: '{inviter}',
+	survey: '{survey}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
@@ -191,6 +193,20 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 			body: paragraphs(
 				m.emailAutoPhoneBody({ conference: P.conference, date: P.date }, { locale }),
 				'{list}'
+			)
+		})
+	},
+	SURVEY_REMINDER: {
+		placeholders: ['survey', 'date'],
+		text: (locale) => ({
+			subject: m.emailAutoSurveyReminderSubject({ survey: P.survey }, { locale }),
+			heading: m.emailAutoSurveyReminderHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoSurveyReminderBody(
+					{ survey: P.survey, conference: P.conference, date: P.date },
+					{ locale }
+				),
+				m.emailAutoSurveyReminderClosing({}, { locale })
 			)
 		})
 	},

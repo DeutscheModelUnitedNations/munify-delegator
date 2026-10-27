@@ -18,6 +18,10 @@
 		virtual?: boolean;
 		/** Only some pages of the pool are loaded: `count` is what they hold, and more may follow. */
 		more?: boolean;
+		/** A search narrowing the pool down, as typed; `searching` while its results are on their way. */
+		search?: { value: string; searching: boolean; onInput: (value: string) => void };
+		/** Said under the search, such as where else it found something. */
+		searchHint?: string;
 		onDrop: (state: DragDropState<{ id: string }>) => void;
 		children: Snippet;
 	}
@@ -30,6 +34,8 @@
 		class: className = '',
 		virtual = false,
 		more = false,
+		search,
+		searchHint,
 		onDrop,
 		children
 	}: Props = $props();
@@ -49,8 +55,29 @@
 	{#if hint}
 		<p class="text-base-content/60 text-xs">{hint}</p>
 	{/if}
+	{#if search}
+		<label class="input input-sm w-full">
+			<i class="fa-sharp-duotone fa-solid fa-magnifying-glass opacity-60"></i>
+			<input
+				type="search"
+				class="grow"
+				placeholder={m.assignmentPoolSearch()}
+				aria-label={m.search()}
+				value={search.value}
+				oninput={(e) => search.onInput(e.currentTarget.value)}
+			/>
+			{#if search.searching}
+				<span class="loading loading-xs loading-spinner" aria-label={m.search()}></span>
+			{/if}
+		</label>
+		{#if searchHint}
+			<p class="text-base-content/60 text-xs">{searchHint}</p>
+		{/if}
+	{/if}
 	{#if count === 0 && !more}
-		<p class="text-base-content/60 py-6 text-center text-sm">{m.assignmentPoolEmpty()}</p>
+		<p class="text-base-content/60 py-6 text-center text-sm">
+			{search?.value.trim() ? m.assignmentPoolNoMatch() : m.assignmentPoolEmpty()}
+		</p>
 	{:else if virtual}
 		<!-- Fills the rest of the section; the virtual list scrolls inside it. -->
 		<div role="list" class="flex min-h-0 flex-1 flex-col">

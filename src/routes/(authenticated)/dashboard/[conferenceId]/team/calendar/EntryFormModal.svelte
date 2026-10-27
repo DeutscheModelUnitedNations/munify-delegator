@@ -57,6 +57,25 @@
 	];
 	const DURATIONS = [30, 45, 60, 90, 120];
 
+	/**
+	 * What the form reads of an entry. The saves ask for the same fields back: the modal seeds
+	 * from the cache first, and a field only the form reads (`surveyOptionId`, `placeId`) is
+	 * refreshed by nothing else, so it would reopen with the value from before the save.
+	 */
+	const ENTRY_FORM_FIELDS = {
+		calendarDayId: true,
+		name: true,
+		description: true,
+		startTime: true,
+		endTime: true,
+		fontAwesomeIcon: true,
+		color: true,
+		placeId: true,
+		room: true,
+		surveyOptionId: true,
+		tracks: { id: true, sortOrder: true }
+	} as const;
+
 	// The modal is mounted once per entry it edits, and its fields are seeded once: re-reading
 	// the row while someone types would discard their edits.
 	const sourceEntryId = untrack(() => entryId);
@@ -65,17 +84,7 @@
 	const source = sourceEntryId
 		? await client.query.calendarEntry({
 				__args: { id: sourceEntryId },
-				id: true,
-				calendarDayId: true,
-				name: true,
-				description: true,
-				startTime: true,
-				endTime: true,
-				fontAwesomeIcon: true,
-				color: true,
-				placeId: true,
-				room: true,
-				tracks: { id: true, sortOrder: true }
+				...ENTRY_FORM_FIELDS
 			})
 		: undefined;
 
@@ -114,6 +123,19 @@
 		})
 	);
 
+	/** The survey questions whose options an entry can be limited to */
+	const surveyQuestions = $derived(
+		await client.liveQuery.surveyQuestions({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { createdAt: 'asc' }
+			},
+			id: true,
+			title: true,
+			options: { id: true, title: true }
+		})
+	);
+
 	let isLoading = $state(false);
 
 	let entryName = $state(source?.name ?? '');
@@ -128,6 +150,7 @@
 	let entryColor = $state<CalendarentrycolorEnum>(source?.color ?? 'SESSION');
 	let entryPlaceId = $state<string | null>(source?.placeId ?? null);
 	let entryRoom = $state(source?.room ?? '');
+	let entrySurveyOptionId = $state<string | null>(source?.surveyOptionId ?? null);
 
 	/** The entry's first and last track (it runs on those and every one between) */
 	const seedTracks = source?.tracks.map((track) => track.id) ?? seed?.trackIds ?? [];
@@ -213,6 +236,7 @@
 				color: entryColor,
 				placeId: entryPlaceId,
 				room: entryRoom,
+				surveyOptionId: entrySurveyOptionId,
 				trackIds: entryTrackIds
 			},
 			day.date
@@ -220,12 +244,12 @@
 		if (isEdit && sourceEntryId) {
 			await client.mutate.updateCalendarEntry({
 				__args: { id: sourceEntryId, calendarDayId: selectedDayId, ...fields },
-				id: true
+				...ENTRY_FORM_FIELDS
 			});
 		} else {
 			await client.mutate.createCalendarEntry({
 				__args: { calendarDayId: selectedDayId, ...fields },
-				id: true
+				...ENTRY_FORM_FIELDS
 			});
 		}
 	}
@@ -393,4 +417,20 @@
 			<input type="text" bind:value={entryRoom} class="input w-full" />
 		</fieldset>
 	</div>
+	{#if surveyQuestions.length > 0}
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.calendarEntryAudience()}</legend>
+			<select class="select w-full" bind:value={entrySurveyOptionId}>
+				<option value={null}>{m.calendarEntryAudienceEveryone()}</option>
+				{#each surveyQuestions as question (question.id)}
+					<optgroup label={question.title}>
+						{#each question.options as option (option.id)}
+							<option value={option.id}>{option.title}</option>
+						{/each}
+					</optgroup>
+				{/each}
+			</select>
+			<p class="label whitespace-normal">{m.calendarEntryAudienceHint()}</p>
+		</fieldset>
+	{/if}
 </ActionModal>

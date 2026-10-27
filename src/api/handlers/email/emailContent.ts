@@ -45,6 +45,13 @@ const fullName = (person: SnapshotPerson) =>
 	});
 
 const day = (date: Date) => date.toLocaleDateString(getLocale(), { dateStyle: 'long' });
+/** A deadline down to the minute, in the conference's time zone: a survey closes at its time. */
+const dateTime = (date: Date, timeZone: string) =>
+	date.toLocaleString(getLocale(), {
+		dateStyle: 'long',
+		timeStyle: 'short',
+		timeZone
+	});
 
 /** A role as the recipient reads it: the nation's name in their language, or the role's own. */
 function roleName(role: SnapshotRole) {
@@ -155,6 +162,15 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 			label: m.emailAutoPhoneButton(),
 			url: `${origin}/dashboard/${conference.id}/registration-mode`
 		}
+	}),
+	SURVEY_REMINDER: ({ email, conference, dashboard }) => ({
+		values: email.survey
+			? {
+					survey: email.survey.title,
+					date: dateTime(email.survey.deadline, conference.timezone)
+				}
+			: {},
+		button: dashboard
 	}),
 	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
 		values: { student: email.student ? fullName(email.student) : '' },

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import type { LayoutProps } from './$types';
 	import TeamShell from '../team/TeamShell.svelte';
 
@@ -9,5 +10,8 @@
 </script>
 
 <TeamShell {conferenceId}>
+	<div class="pt-4">
+		<BackToDashboard {conferenceId} />
+	</div>
 	{@render children()}
 </TeamShell>

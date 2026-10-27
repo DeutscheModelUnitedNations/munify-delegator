@@ -19,18 +19,19 @@ async function graphql(page: import('@playwright/test').Page, query: string) {
 test('a participant can connect themselves to a supervisor via connection code', async ({
 	page
 }) => {
+	// The link a supervisor shares; it lands on the dashboard with the code filled in.
 	await loginAs(page, fixedTestUser(E2E_CONNECT_PARTICIPANT_ID), {
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/connect-supervisor?code=${E2E_SUPERVISOR_CONNECTION_CODE}`
 	});
+	await expect(page.getByLabel('Betreuer*in verbinden')).toHaveValue(
+		E2E_SUPERVISOR_CONNECTION_CODE,
+		{ timeout: 15_000 }
+	);
 
 	const connectButton = page.getByRole('button', { name: 'Verbinden' });
-	await expect(connectButton).toBeVisible({ timeout: 15_000 });
+	await expect(connectButton).toBeEnabled({ timeout: 15_000 });
 	await connectButton.click();
-
-	await page.waitForURL(new RegExp(`/dashboard/${E2E_CONFERENCE_ID}$`), {
-		timeout: 15_000,
-		waitUntil: 'commit'
-	});
+	await expect(page.getByLabel('Betreuer*in verbinden')).toHaveValue('', { timeout: 15_000 });
 
 	// The participant can read their own SingleParticipant record (including `supervisors`), but
 	// not the supervisor's full supervised-participant list, so verify from their own side.

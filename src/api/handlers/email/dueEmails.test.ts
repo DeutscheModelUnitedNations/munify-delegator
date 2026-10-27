@@ -3,7 +3,8 @@ import {
 	dueEmails,
 	type EmailSnapshot,
 	type SnapshotPerson,
-	type SnapshotReview
+	type SnapshotReview,
+	type SnapshotSurvey
 } from './dueEmails';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -39,7 +40,8 @@ function person(overrides: Partial<SnapshotPerson> = {}): SnapshotPerson {
 function snapshot(
 	people: SnapshotPerson[],
 	conference: Partial<EmailSnapshot['conference']> = {},
-	reviews: SnapshotReview[] = []
+	reviews: SnapshotReview[] = [],
+	surveys: SnapshotSurvey[] = []
 ): EmailSnapshot {
 	return {
 		conference: {
@@ -51,11 +53,13 @@ function snapshot(
 			unlockPayments: false,
 			startAssignment: new Date(now.getTime() - 30 * DAY),
 			startConference: new Date(now.getTime() + 60 * DAY),
+			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
 			...conference
 		},
 		people,
-		reviews
+		reviews,
+		surveys
 	};
 }
 
@@ -187,6 +191,48 @@ describe('reminders', () => {
 		expect(
 			kindsOf(snap, new Date(now.getTime() + 11 * DAY)).some((k) => k.includes('REMINDER'))
 		).toBe(false);
+	});
+});
+
+describe('survey reminders', () => {
+	const survey = (deadline: Date, answeredBy: SnapshotPerson[] = []): SnapshotSurvey => ({
+		id: 's1',
+		title: 'Workshops',
+		deadline,
+		answeredBy: answeredBy.map((p) => p.participantId)
+	});
+	const surveyKinds = (snap: EmailSnapshot, at = now) =>
+		kindsOf(snap, at).filter((k) => k.startsWith('SURVEY_REMINDER'));
+
+	test('remind everybody seated who has not answered, in the last days before the deadline', () => {
+		const answered = seated();
+		const open = seated();
+		const unseated = person({ delegation: { applied: true, role: null, committee: null } });
+		const deadline = new Date(now.getTime() + 2 * DAY);
+		const snap = snapshot([answered, open, unseated], {}, [], [survey(deadline, [answered])]);
+		expect(surveyKinds(snap)).toEqual([
+			`SURVEY_REMINDER:${open.user.id}:s1:${deadline.toISOString().slice(0, 10)}`
+		]);
+		// not yet, and not once it has closed
+		expect(surveyKinds(snap, new Date(now.getTime() - 5 * DAY))).toEqual([]);
+		expect(surveyKinds(snap, new Date(now.getTime() + 3 * DAY))).toEqual([]);
+	});
+
+	test('wait for the assignment to be released', () => {
+		const open = seated();
+		const deadline = new Date(now.getTime() + 2 * DAY);
+		expect(
+			surveyKinds(snapshot([open], { assignmentReleased: false }, [], [survey(deadline)]))
+		).toEqual([]);
+	});
+
+	test('carry the survey along', () => {
+		const open = seated();
+		const due = dueEmails(
+			snapshot([open], {}, [], [survey(new Date(now.getTime() + DAY))]),
+			now
+		).find((email) => email.kind === 'SURVEY_REMINDER');
+		expect(due?.survey?.title).toBe('Workshops');
 	});
 });
 

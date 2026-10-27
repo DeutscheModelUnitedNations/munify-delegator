@@ -1,6 +1,6 @@
 import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import { chooseApplyPath, openFirstConferenceForRegistration } from '../support/registration';
 
 // Covers the supervisor self-service flow: signup, toggling own attendance, and rotating the
 // connection code students use to link to this supervisor. None of this is exercised by the
@@ -12,21 +12,20 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	await loginAs(page, supervisor);
 	await openFirstConferenceForRegistration(page);
 
-	await page.locator('a[href$="/supervisor"]').click();
-	await page.waitForURL(/\/supervisor$/);
+	await chooseApplyPath(page, /Betreuer\*in/);
 
-	// Retry the click: it's the first interaction right after a client-side navigation, which can
-	// land before hydration attaches the handler. The success handler itself does a client-side
-	// `goto()`, not a full navigation, so there's no 'load' event to wait for - just poll the URL.
-	await expect(async () => {
-		await page.getByRole('button', { name: 'Als Betreuer*in registrieren' }).click();
-		await page.waitForURL(/\/dashboard(\/.+)?$/, { timeout: 3_000, waitUntil: 'commit' });
-	}).toPass({ timeout: 20_000 });
-	await waitForHydration(page);
+	// The school step (left empty), then attending in person, then signing up. The signup stays
+	// on the dashboard, which turns into the supervisor's once it lands.
+	await page
+		.locator('ol > li')
+		.last()
+		.getByRole('button', { name: /weiter|next/i })
+		.click();
+	await page.getByRole('radio', { name: /Ich komme mit/ }).click();
+	await page.getByRole('button', { name: 'Als Betreuer*in registrieren' }).click();
 
-	// `waitUntil: 'commit'` resolves as soon as the URL changes, while the signup form - which has an
-	// attendance toggle of its own - is still on screen. Wait for the dashboard's connection code,
-	// which only the supervisor stage renders, so the toggle below is the dashboard's.
+	// Wait for the dashboard's connection code, which only the supervisor stage renders, so the
+	// toggle below is the dashboard's.
 	const connectionCode = page.locator('p.font-mono');
 	await expect(connectionCode).toBeVisible({ timeout: 15_000 });
 

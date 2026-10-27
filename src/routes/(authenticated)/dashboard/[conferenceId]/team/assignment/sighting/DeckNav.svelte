@@ -43,6 +43,8 @@
 		disqualified: m.assignmentStatusDisqualified(),
 		unrated: m.assignmentStatusUnrated()
 	};
+	/** A card marked as one that has to get a seat stands out whatever its rating. */
+	const requiredColor = 'bg-green-800';
 	function statusOf(status: string): DeckStatus {
 		return status === 'rated' || status === 'flagged' || status === 'disqualified'
 			? status
@@ -93,16 +95,19 @@
 				{@const status = statusOf(entry.status)}
 				{@const codename = codenamize(entry.id)}
 				{@const current = deck.start + offset === position.index}
+				{@const label = entry.required
+					? `${codename}: ${statusLabels[status]}, ${m.assignmentRequired()}`
+					: `${codename}: ${statusLabels[status]}`}
 				<li class="w-5 min-w-1 shrink">
 					<button
-						class="block h-3 w-full cursor-pointer rounded-selector transition-all {segmentColors[
-							status
-						]} {current
+						class="block h-3 w-full cursor-pointer rounded-selector transition-all {entry.required
+							? requiredColor
+							: segmentColors[status]} {current
 							? 'ring-primary ring-offset-base-100 h-4 ring-2 ring-offset-1'
 							: 'opacity-70 hover:opacity-100'}"
-						aria-label="{codename}: {statusLabels[status]}"
+						aria-label={label}
 						aria-current={current}
-						title="{codename}: {statusLabels[status]}"
+						title={label}
 						onclick={() => onSelect(entry.id)}
 					></button>
 				</li>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
@@ -232,6 +233,7 @@
 {/snippet}
 
 <div class="mx-auto flex w-full max-w-md flex-col p-4 sm:py-8">
+	<BackToDashboard {conferenceId} />
 	{#if scannedAt}
 		<!-- used: the stub is torn off along the perforation and lies beside what is left -->
 		<div class="flex flex-col gap-3">

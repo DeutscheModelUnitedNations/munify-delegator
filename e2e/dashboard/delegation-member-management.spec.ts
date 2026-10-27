@@ -1,6 +1,10 @@
 import { test, expect, acceptDialogs } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import {
+	chooseApplyPath,
+	fillApplicationSteps,
+	openFirstConferenceForRegistration
+} from '../support/registration';
 
 // Covers the delegation dashboard's member-management tools (rotating the entry code,
 // transferring head delegate, removing a member) - all self-service, all only available before
@@ -21,8 +25,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await loginAs(headPage, headDelegate);
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
-	await headPage.locator('a[href$="/create-delegation"]').click();
-	await headPage.waitForURL(/\/create-delegation$/);
+	await chooseApplyPath(headPage, /Delegation erstellen/);
 
 	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
@@ -30,17 +33,15 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 15_000 });
 
-	await schoolInput.fill('E2E Test School');
-	await headPage.locator('textarea[name="motivation"]').fill('We want to join.');
-	await headPage.locator('textarea[name="experience"]').fill('Some experience.');
-	await headPage.locator('form button.btn-primary').first().click();
+	await fillApplicationSteps(headPage, {
+		school: 'E2E Test School',
+		motivation: 'We want to join.',
+		experience: 'Some experience.'
+	});
 
 	const entryCodeLocator = headPage.locator('p.font-mono');
 	await expect(entryCodeLocator).toBeVisible({ timeout: 15_000 });
 	const originalEntryCode = (await entryCodeLocator.textContent())?.trim();
-
-	await headPage.getByRole('link', { name: /zum dashboard|to dashboard/i }).click();
-	await headPage.waitForURL(/\/dashboard(\/.+)?$/, { timeout: 15_000 });
 
 	async function graphql(query: string) {
 		const res = await headPage.request.post('/api/graphql', { data: { query } });

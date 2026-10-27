@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Selection from '#lib/components/selection/index.js';
 	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages.js';
 	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
 
 	/** One person a payment can cover, as a checkbox. Labelled with their name unless `label` is given. */
@@ -8,14 +9,20 @@
 		selection: PaymentParticipantSelection;
 		user: PayableUser;
 		label?: string;
+		/** Has paid already, so no reference may cover them: shown, but not selectable. */
+		paid?: boolean;
 	}
 
-	let { selection, user, label }: Props = $props();
+	let { selection, user, label, paid = false }: Props = $props();
+
+	let name = $derived(
+		label ?? formatNames(user.givenName ?? undefined, user.familyName ?? undefined)
+	);
 </script>
 
 <Selection.Item
-	label={label ?? formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
+	label={paid ? m.paymentPaidName({ name }) : name}
 	selected={selection.isSelected(user.id)}
 	changeSelection={(selected) => selection.setSelected(user, selected)}
-	disabled={selection.isReferenceCreated}
+	disabled={paid || selection.isReferenceCreated}
 />

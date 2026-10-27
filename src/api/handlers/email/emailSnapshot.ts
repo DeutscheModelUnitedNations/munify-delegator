@@ -1,5 +1,11 @@
 import { db } from '#api/db/db.js';
-import type { EmailSnapshot, SnapshotPerson, SnapshotReview, SnapshotRole } from './dueEmails';
+import type {
+	EmailSnapshot,
+	SnapshotPerson,
+	SnapshotReview,
+	SnapshotRole,
+	SnapshotSurvey
+} from './dueEmails';
 
 const ROLE = { columns: { id: true, kind: true, name: true, nationAlpha3Code: true } } as const;
 
@@ -16,12 +22,13 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			unlockPayments: true,
 			startAssignment: true,
 			startConference: true,
+			timezone: true,
 			certificateFileId: true
 		}
 	});
 	if (!conference) return undefined;
 
-	const [participants, seatedEntries, reviews] = await Promise.all([
+	const [participants, seatedEntries, reviews, surveys] = await Promise.all([
 		db.query.conferenceParticipant.findMany({
 			where: { conferenceId },
 			columns: {
@@ -87,6 +94,12 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 					}
 				}
 			}
+		}),
+		// What participants see: neither drafts nor the questions the team hid
+		db.query.surveyQuestion.findMany({
+			where: { conferenceId, draft: false, hidden: false },
+			columns: { id: true, title: true, deadline: true },
+			with: { surveyAnswers: { columns: { conferenceParticipantId: true } } }
 		})
 	]);
 
@@ -123,10 +136,17 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			unlockPayments: conference.unlockPayments,
 			startAssignment: conference.startAssignment,
 			startConference: conference.startConference,
+			timezone: conference.timezone,
 			certificateAvailable: !!conference.certificateFileId
 		},
 		people,
-		reviews: reviews.flatMap(reviewPart)
+		reviews: reviews.flatMap(reviewPart),
+		surveys: surveys.map((survey): SnapshotSurvey => ({
+			id: survey.id,
+			title: survey.title,
+			deadline: survey.deadline,
+			answeredBy: survey.surveyAnswers.map((answer) => answer.conferenceParticipantId)
+		}))
 	};
 }
 

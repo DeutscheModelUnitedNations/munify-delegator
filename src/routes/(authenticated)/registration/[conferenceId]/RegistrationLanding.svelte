@@ -1,21 +1,20 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import CardInfoSectionWithIcons from '#lib/components/CardInfoSectionWithIcons.svelte';
+	import { page } from '$app/state';
+	import { slide } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchExistingRegistrations } from './existingRegistrations';
-	import UndrawCard from '#lib/components/UndrawCard.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
-	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
-
-	import UndrawNew from '#assets/undraw/new.svg';
-	import UndrawTeam from '#assets/undraw/team.svg';
-	import UndrawLetter from '#assets/undraw/letter.svg';
-	import UndrawEducator from '#assets/undraw/educator.svg';
+	import NotParticipatingHint from '#lib/components/dashboard/NotParticipatingHint.svelte';
 
 	import MermaidWrapper from '#lib/components/MermaidWrapper.svelte';
+	import ApplyFlow from './apply/ApplyFlow.svelte';
+	import { applyHref, applyPathOf } from './apply/applyPaths';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -38,187 +37,138 @@
 	const status = $derived(
 		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
 	);
-	let showAssistant = $state(false);
-
-	// Any existing registration in this conference, in any role, closes the flow.
-	let alreadyRegistered = $derived(
-		existing.singleParticipants.length > 0 ||
-			existing.delegationMembers.length > 0 ||
-			existing.supervisors.length > 0
-	);
 
 	// Delegates and supervisors cannot also register as individuals.
 	let individualBlocked = $derived(
 		existing.delegationMembers.length > 0 || existing.supervisors.length > 0
 	);
+
+	// The old registration links and the assistant land here with the path (and an entry code or a
+	// role) in the query; the form starts over whenever they name another.
+	const applyPath = $derived(applyPathOf(page.url.searchParams.get('apply')));
+	const applyCode = $derived(page.url.searchParams.get('code') ?? undefined);
+	const applyRole = $derived(page.url.searchParams.get('role') ?? undefined);
+	const applyLink = $derived(`${applyPath}/${applyCode}/${applyRole}`);
+
+	// Open under the link it was opened at: following one of its answers closes it.
+	let assistantOpenAt = $state<string>();
+	let showDiagram = $state(false);
 </script>
 
-{#if status === 'WAITING_LIST'}
-	<div class="flex w-full flex-col items-center gap-6 p-4 pt-20">
-		<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
-
-		<a class="btn btn-primary" href={resolve(`registration/${conferenceId}/waiting-list`)}
-			>{m.signupNow()}</a
-		>
-	</div>
-{:else if status !== 'OPEN'}
-	<NoConferenceIndicator />
+{#if status !== 'OPEN'}
+	<NotParticipatingHint {conferenceId} {status} />
 {:else}
-	<div class="flex min-h-screen w-full flex-col items-center p-4">
-		<hero class="my-20 text-center">
-			<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
-			<p class="max-ch-md">
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
-				{@html m.conferenceSignupIntroduction()}
-			</p>
-			<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
-				<i class="fa-sharp-duotone fa-solid fa-message-question mx-1 text-xl"></i>
-				<div class="flex flex-col">
-					<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>
-					<div class="max-ch-sm">
-						{m.signUpAssistantDescription()}
-					</div>
+	<DashboardSection icon="file-signature" title={m.signup()}>
+		{#snippet headerAction()}
+			<a class="btn btn-ghost btn-sm" href={resolve(`dashboard/${conferenceId}/seats`)}>
+				<i class="fa-sharp-duotone fa-solid fa-person-seat"></i>
+				<span class="max-sm:hidden">{m.conferenceSeats()}</span>
+			</a>
+		{/snippet}
+
+		<p class="text-base-content/80 max-w-3xl">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
+			{@html m.conferenceSignupIntroduction()}
+		</p>
+
+		<div class="bg-base-200 rounded-box mt-6 p-4">
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+				<i class="fa-sharp-duotone fa-solid fa-message-question text-info text-2xl"></i>
+				<div class="flex-1">
+					<p class="font-semibold">{m.signUpAssistant()}</p>
+					<p class="text-base-content/70 text-sm">{m.signUpAssistantDescription()}</p>
 				</div>
-				<div>
-					<button class="btn btn-primary btn-sm" onclick={() => (showAssistant = true)}
-						>{m.openAssistant()}</button
+				<div class="flex flex-wrap gap-2">
+					<button
+						class="btn btn-ghost btn-sm"
+						type="button"
+						aria-expanded={showDiagram}
+						onclick={() => (showDiagram = !showDiagram)}
 					>
+						<i class="fa-sharp-duotone fa-solid fa-diagram-project"></i>
+						{m.howDoIApply()}
+						<i
+							class="fa-sharp-duotone fa-solid fa-chevron-down text-xs transition-transform duration-300 {showDiagram
+								? 'rotate-180'
+								: ''}"
+						></i>
+					</button>
+					<button
+						class="btn btn-primary btn-sm"
+						type="button"
+						onclick={() => (assistantOpenAt = applyLink)}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-sparkles"></i>
+						{m.openAssistant()}
+					</button>
 				</div>
 			</div>
-			<a class="btn btn-outline btn-primary mt-4" href={resolve(`dashboard/${conferenceId}/seats`)}>
-				<i class="fa-sharp-duotone fa-solid fa-person-seat"></i>
-				{m.conferenceSeats()}
-			</a>
-		</hero>
-
-		<main>
-			<section
-				class="flex w-full flex-col flex-wrap items-center justify-center gap-8 md:flex-row md:items-stretch"
-			>
-				<UndrawCard
-					title={m.createDelegation()}
-					img={UndrawNew}
-					btnText={m.createDelegation()}
-					btnLink={resolve(`registration/${conferenceId}/create-delegation`)}
-					disabled={alreadyRegistered}
-				>
-					<CardInfoSectionWithIcons
-						items={[
-							{
-								fontAwesomeIcon: 'fa-arrow-right',
-								text: m.createDelegationDescription()
-							}
-						]}
-					/>
-				</UndrawCard>
-
-				<UndrawCard
-					title={m.joinDelegation()}
-					img={UndrawTeam}
-					btnText={m.enterCode()}
-					btnLink={resolve(`registration/${conferenceId}/join-delegation`)}
-					disabled={alreadyRegistered}
-				>
-					<CardInfoSectionWithIcons
-						items={[
-							{
-								fontAwesomeIcon: 'fa-arrow-right',
-								text: m.joinDelegationDescription()
-							}
-						]}
-					/>
-				</UndrawCard>
-
-				<UndrawCard
-					title={m.individualApplication()}
-					img={UndrawLetter}
-					btnText={m.individualApplication()}
-					btnLink={resolve(`registration/${conferenceId}/individual`)}
-					disabled={individualBlocked}
-				>
-					<CardInfoSectionWithIcons
-						items={[
-							{
-								fontAwesomeIcon: 'fa-arrow-right',
-								text: m.individualApplicationDescription()
-							}
-						]}
-					/>
-				</UndrawCard>
-
-				<UndrawCard
-					title={m.supervisor()}
-					img={UndrawEducator}
-					btnText={m.applyAsSupervisor()}
-					btnLink={resolve(`registration/${conferenceId}/supervisor`)}
-					disabled={alreadyRegistered}
-				>
-					<CardInfoSectionWithIcons
-						items={[
-							{
-								fontAwesomeIcon: 'fa-arrow-right',
-								text: m.applyAsSupervisorDescription()
-							}
-						]}
-					/>
-				</UndrawCard>
-			</section>
-			<section class="mt-20 text-center">
-				<h2 class="mb-2 text-2xl font-bold">{m.howDoIApply()}</h2>
-				<p class="mb-4">{m.thisDiagramShowHowToApply()}</p>
-				<div
-					class="card mx-auto flex w-full max-w-[1000px] items-center justify-center bg-base-200 p-4 shadow-lg"
-				>
-					<MermaidWrapper
-						diagram={`\
-						%%{
-							init: {
-								'themeVariables': {
-									'edgeLabelBackground':'#F0EFF5','lineColor':'#1B1837'
+			{#if showDiagram}
+				<div transition:slide={{ duration: 400, easing: cubicOut }}>
+					<p class="text-base-content/70 mt-4 text-sm">{m.thisDiagramShowHowToApply()}</p>
+					<!-- The diagram is drawn in light colours, so it keeps a light background in dark mode too. -->
+					<div class="rounded-box mt-2 flex justify-center overflow-x-auto bg-white p-4">
+						<MermaidWrapper
+							diagram={`\
+							%%{
+								init: {
+									'themeVariables': {
+										'edgeLabelBackground':'#F0EFF5','lineColor':'#1B1837'
+									}
 								}
-							}
-						}%%
-					flowchart TD
-						A[${m.whichRoleDoIWantToTakeInTheConference()}]:::question
-						
-						A --> Delegate[fa:fa-flag\n${m.delegateOfACountry()}]:::role
-						A --> NSA[fa:fa-megaphone\n${m.nonStateActorDiagram()}]:::role
-						NSA --> B[${m.doIhavePeopleToApplyWith()}]:::question
-						Delegate --> B
+							}%%
+						flowchart TD
+							A[${m.whichRoleDoIWantToTakeInTheConference()}]:::question
+				
+							A --> Delegate[fa:fa-flag\n${m.delegateOfACountry()}]:::role
+							A --> NSA[fa:fa-megaphone\n${m.nonStateActorDiagram()}]:::role
+							NSA --> B[${m.doIhavePeopleToApplyWith()}]:::question
+							Delegate --> B
 
-						B -->|${m.yes()}| C[${m.didSomeoneOfTheseAlreadyCreateADelegation()}]:::question
-						B --->|${m.no()}| Individual{fa:fa-envelope\n${m.individualApplicationDiagram()}}:::outcome
+							B -->|${m.yes()}| C[${m.didSomeoneOfTheseAlreadyCreateADelegation()}]:::question
+							B --->|${m.no()}| Individual{fa:fa-envelope\n${m.individualApplicationDiagram()}}:::outcome
 
-						C --> |${m.no()}| E{fa:fa-plus\n${m.createDelegationDiagram()}}:::outcome
-						C --> |${m.yes()}| D{fa:fa-right-to-bracket\n${m.joinDelegationDiagram()}}:::outcome
+							C --> |${m.no()}| E{fa:fa-plus\n${m.createDelegationDiagram()}}:::outcome
+							C --> |${m.yes()}| D{fa:fa-right-to-bracket\n${m.joinDelegationDiagram()}}:::outcome
 
-						A --> Journalist[fa:fa-newspaper\n${m.journalist()}]:::role ----> Individual
-						A --> Special[fa:fa-gavel\n${m.specialRole()}]:::role ----> Individual
+							A --> Journalist[fa:fa-newspaper\n${m.journalist()}]:::role ----> Individual
+							A --> Special[fa:fa-gavel\n${m.specialRole()}]:::role ----> Individual
 
-						A --> Supervisor[fa:fa-chalkboard-user\n${m.supervisor()}]:::role
-						Supervisor --> F[${m.didMyStudentsAlreadyCreateADelegation()}]:::question
-						F -.-> |${m.no()}| Wait[fa:fa-hourglass-clock\n${m.waitForSignupOfMyStudents()}]:::wait
-						F ---> |${m.yes()}| G{fa:fa-right-to-bracket\n${m.signupAsSupervisor()}}:::outcome
-						
-						classDef question fill:#01548F,stroke-width:1px,stroke:#01548F,color:#FFFFFF,font-family:Outfit;
-						classDef role fill:#FFFFFF,stroke:#1B1837,stroke-width:1px,color:#1B1837,font-family:Outfit;
-						classDef outcome fill:#b5e4c1,stroke:#1B1837,stroke-width:2px,color:#0e2614,font-family:Outfit;
-						classDef wait fill:#fdd2d9,stroke:#F51D42,stroke-width:1px,color:#1B1837,font-family:Outfit;
+							A --> Supervisor[fa:fa-chalkboard-user\n${m.supervisor()}]:::role
+							Supervisor --> F[${m.didMyStudentsAlreadyCreateADelegation()}]:::question
+							F -.-> |${m.no()}| Wait[fa:fa-hourglass-clock\n${m.waitForSignupOfMyStudents()}]:::wait
+							F ---> |${m.yes()}| G{fa:fa-right-to-bracket\n${m.signupAsSupervisor()}}:::outcome
+				
+							classDef question fill:#01548F,stroke-width:1px,stroke:#01548F,color:#FFFFFF,font-family:Outfit;
+							classDef role fill:#FFFFFF,stroke:#1B1837,stroke-width:1px,color:#1B1837,font-family:Outfit;
+							classDef outcome fill:#b5e4c1,stroke:#1B1837,stroke-width:2px,color:#0e2614,font-family:Outfit;
+							classDef wait fill:#fdd2d9,stroke:#F51D42,stroke-width:1px,color:#1B1837,font-family:Outfit;
 
-						linkStyle default stroke-width:2px;
+							linkStyle default stroke-width:2px;
 
-						click E "/registration/${conferenceId}/create-delegation"
-						click D "/registration/${conferenceId}/join-delegation"
-						click Individual "/registration/${conferenceId}/individual"
-						click G "/registration/${conferenceId}/supervisor"
-				`}
-					/>
+							click E "${applyHref(conferenceId, 'createDelegation')}"
+							click D "${applyHref(conferenceId, 'joinDelegation')}"
+							click Individual "${applyHref(conferenceId, 'individual')}"
+							click G "${applyHref(conferenceId, 'supervisor')}"
+					`}
+						/>
+					</div>
 				</div>
-			</section>
-		</main>
-	</div>
+			{/if}
+		</div>
+	</DashboardSection>
 
-	{#if showAssistant}
-		<AssistantModal onClose={() => (showAssistant = false)} {conferenceId} />
+	{#key applyLink}
+		<ApplyFlow
+			{conferenceId}
+			initialPath={applyPath}
+			initialCode={applyCode}
+			initialRoleId={applyRole}
+			{individualBlocked}
+		/>
+	{/key}
+
+	{#if assistantOpenAt === applyLink}
+		<AssistantModal onClose={() => (assistantOpenAt = undefined)} {conferenceId} />
 	{/if}
 {/if}

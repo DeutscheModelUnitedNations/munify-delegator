@@ -63,7 +63,10 @@ const dashboardLinks: DashboardLink[] = [
 		showFor: ['delegation'],
 		isVisible: (ctx) =>
 			!!ctx.isHeadDelegate && !!ctx.hasNationAssigned && !!ctx.membersLackCommittees,
-		isDisabled: () => false
+		isDisabled: () => false,
+		// Only shown while members still lack a committee, so it always has something left to do.
+		getBadge: () => ({ value: '!', type: 'warning' }),
+		isImportant: () => true
 	},
 	{
 		id: 'registrationMode',
@@ -127,19 +130,6 @@ const dashboardLinks: DashboardLink[] = [
 		getDescription: () => m.paperHubDescription(),
 		getHref: (ctx) =>
 			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub', {
-				conferenceId: ctx.conferenceId
-			}),
-		showFor: ['delegation', 'supervisor'],
-		isVisible: (ctx) => !!ctx.isOpenPaperSubmission,
-		isDisabled: () => false
-	},
-	{
-		id: 'paperHubGlobal',
-		icon: 'folder-open',
-		getTitle: () => m.paperHubGlobal(),
-		getDescription: () => m.paperHubGlobalDescription(),
-		getHref: (ctx) =>
-			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub?view=global', {
 				conferenceId: ctx.conferenceId
 			}),
 		showFor: ['delegation', 'supervisor', 'singleParticipant'],
