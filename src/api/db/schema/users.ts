@@ -26,11 +26,11 @@ export const gender = pgEnum('gender', ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEME
 export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
 
 /*
- * TODO(privacy): there is no deletion or retention path for accounts
- * (docs/review/backend-findings.md, F-18). Nothing deletes or anonymises a user, so the address,
- * birthday, phone, emergency contacts, gender, food preference and care notes (`globalNotes`) of
- * everybody who ever signed in - minors among them - stay for good. A system holding minors' data
- * is expected to have both a retention rule and a way to honour a deletion request (GDPR Art. 17).
+ * TODO(privacy): there is no deletion or retention path for accounts. Nothing deletes or
+ * anonymises a user, so the address, birthday, phone, emergency contacts, gender, food preference
+ * and care notes (`globalNotes`) of everybody who ever signed in - minors among them - stay for
+ * good. A system holding minors' data is expected to have both a retention rule and a way to
+ * honour a deletion request (GDPR Art. 17).
  *
  * What stands in the way today: the foreign keys refuse deleting a user while anything points at
  * them with `restrict`:

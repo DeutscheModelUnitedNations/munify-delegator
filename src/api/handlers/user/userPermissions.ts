@@ -269,11 +269,11 @@ export async function deletableParticipation(
  * in outgoing mail; opting in is consent, so only the account itself may give it.
  *
  * TODO(security): anybody can switch anybody's newsletters off, since the address is the only
- * thing the link carries (docs/review/backend-findings.md, F-16). The fix is a signed token in the
- * link: an HMAC of the user id under a secret the app and the jobs share, written by the mail sync
- * into the Listmonk subscriber's attribs (next to `userId`, also nulled on release), put into the
- * link by the Listmonk newsletter template, and checked here instead of allowing anonymous
- * opt-outs. Needs the template changed in Listmonk, so it waits until that can be done together.
+ * thing the link carries. The fix is a signed token in the link: an HMAC of the user id under a
+ * secret the app and the jobs share, written by the mail sync into the Listmonk subscriber's
+ * attribs (next to `userId`, also nulled on release), put into the link by the Listmonk newsletter
+ * template, and checked here instead of allowing anonymous opt-outs. Needs the template changed in
+ * Listmonk, so it waits until that can be done together.
  */
 export function assertCanUpdateNewsletterPreferences(
 	ctx: Context,

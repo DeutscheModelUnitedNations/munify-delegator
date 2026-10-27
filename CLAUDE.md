@@ -492,7 +492,8 @@ bun run preview
     pins it for a template), and the `storedFile` read rules, which follow the row holding the file
     through reverse relations (`imageOf`, `contractOf`, `sitePlanOf`, `resolutionOf`, …): pictures
     wherever the conference is readable, templates and resolutions for the people with a part in
-    the conference, site plans for anybody, an unclaimed file for its uploader only. There is no
+    the conference, site plans for whoever reads the conference's schedule (the team, participants
+    once `showCalendar` is on), an unclaimed file for its uploader only. There is no
     query listing files, and `uploadedById` is masked for all but the uploader. A URL is reused for
     six hours and valid for twelve, so browsers cache the (immutable) object and live queries do
     not see a new URL on every refetch. Browsers talk to the bucket directly: it needs CORS (GET
