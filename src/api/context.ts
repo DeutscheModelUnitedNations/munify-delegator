@@ -34,7 +34,7 @@ export function effectiveRoles(session: OIDCSession | undefined): OidcRole[] {
  * `sub`; the identity the app shows comes from the impersonated user's row, which the
  * impersonation handle loaded into `locals.impersonatedIdentity`.
  */
-function sessionUser(locals: RequestEvent['locals'], OIDCRoleNames: OidcRole[]) {
+export function sessionUser(locals: RequestEvent['locals'], OIDCRoleNames: OidcRole[]) {
 	const session = locals.oidc;
 	if (!session) return undefined;
 	const identity = session.impersonator ? locals.impersonatedIdentity : undefined;
@@ -49,7 +49,7 @@ function sessionUser(locals: RequestEvent['locals'], OIDCRoleNames: OidcRole[]) 
 }
 
 /** The tokens' claims, which carry provider-specific ones the library's parsed user does not model. */
-function sessionClaims(session: OIDCSession | undefined): Record<string, unknown> {
+export function sessionClaims(session: OIDCSession | undefined): Record<string, unknown> {
 	return {
 		...((session?.idTokenClaims as Record<string, unknown> | undefined) ?? {}),
 		...((session?.accessTokenClaims as Record<string, unknown> | undefined) ?? {})

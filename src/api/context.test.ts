@@ -4,7 +4,7 @@ import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles' }));
 vi.mock('./services/OIDC', () => ({ oidcRoles: ['admin', 'member', 'service_user'] }));
 
-const { effectiveRoles, rolesOfSession } = await import('./context');
+const { effectiveRoles, rolesOfSession, sessionClaims, sessionUser } = await import('./context');
 
 function session(sub: string, roles: unknown, impersonator?: OIDCSession): OIDCSession {
 	return {
@@ -39,5 +39,54 @@ describe('effectiveRoles', () => {
 	test('never keeps the impersonator’s roles for the impersonated user', () => {
 		const admin = session('admin', ['admin']);
 		expect(effectiveRoles(session('participant', [], admin))).toEqual([]);
+	});
+});
+
+describe('sessionUser', () => {
+	test('is nobody without a session', () => {
+		expect(sessionUser({}, [])).toBeUndefined();
+	});
+
+	test("is the session's user with its roles", () => {
+		const user = sessionUser({ oidc: session('a', ['admin']) }, ['admin']);
+		expect(user).toMatchObject({ sub: 'a', email: undefined, OIDCRoleNames: ['admin'] });
+		expect(user?.hasRole('admin')).toBe(true);
+		expect(user?.hasRole('member')).toBe(false);
+	});
+
+	test("takes the impersonated user's identity from their row, keeping the token's sub", () => {
+		const user = sessionUser(
+			{
+				oidc: session('target', [], session('care', ['member'])),
+				impersonatedIdentity: { email: 'target@example.org', given_name: 'T', family_name: 'U' }
+			},
+			[]
+		);
+		expect(user).toMatchObject({ sub: 'target', email: 'target@example.org', given_name: 'T' });
+	});
+
+	test('ignores a loaded identity while nobody is impersonated', () => {
+		const user = sessionUser(
+			{
+				oidc: session('a', []),
+				impersonatedIdentity: { email: 'other@example.org', given_name: 'O', family_name: 'P' }
+			},
+			[]
+		);
+		expect(user?.email).toBeUndefined();
+		expect(user).not.toHaveProperty('given_name');
+	});
+});
+
+describe('sessionClaims', () => {
+	test('merges both tokens, the access token winning', () => {
+		const own = session('a', ['admin']);
+		expect(
+			sessionClaims({ ...own, idTokenClaims: { sub: 'a', roles: 'id', name: 'Ada' } })
+		).toEqual({ sub: 'a', roles: ['admin'], name: 'Ada' });
+	});
+
+	test('is empty without a session', () => {
+		expect(sessionClaims(undefined)).toEqual({});
 	});
 });
