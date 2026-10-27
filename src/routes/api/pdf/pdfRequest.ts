@@ -100,7 +100,7 @@ const DEAD_PROXY = 'http://127.0.0.1:9';
  * so a source importing a `@preview` package the server has not cached fails instead of
  * downloading it (Typst 0.10 has no flag to switch package downloads off).
  */
-export function compileEnv(path: string | undefined): NodeJS.ProcessEnv {
+export function compileEnv(path: string | undefined): Record<string, string> {
 	return {
 		...(path ? { PATH: path } : {}),
 		HTTPS_PROXY: DEAD_PROXY,
