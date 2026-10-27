@@ -20,6 +20,7 @@ import {
 } from './conferenceService';
 import {
 	assertCanClaimConferenceFiles,
+	assertCanReadNextDocumentNumber,
 	assertCanReadPlausibility,
 	assertCanSeedConference,
 	assertCanSetDocumentLayout,
@@ -74,7 +75,8 @@ const ConferenceRef = object({
 		/** The document number to hand to the next participant who needs one. */
 		nextDocumentNumber: t.field({
 			type: 'Int',
-			resolve: async (conference) => {
+			resolve: async (conference, _args, ctx) => {
+				await assertCanReadNextDocumentNumber(ctx, conference.id);
 				const [highest] = await db
 					.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
 					.from(schema.conferenceParticipant)

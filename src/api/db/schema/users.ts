@@ -25,6 +25,44 @@ export const gender = pgEnum('gender', ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEME
 
 export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
 
+/*
+ * TODO(privacy): there is no deletion or retention path for accounts
+ * (docs/review/backend-findings.md, F-18). Nothing deletes or anonymises a user, so the address,
+ * birthday, phone, emergency contacts, gender, food preference and care notes (`globalNotes`) of
+ * everybody who ever signed in - minors among them - stay for good. A system holding minors' data
+ * is expected to have both a retention rule and a way to honour a deletion request (GDPR Art. 17).
+ *
+ * What stands in the way today: the foreign keys refuse deleting a user while anything points at
+ * them with `restrict`:
+ *   - `conferenceParticipant.userId` (participants.ts), and through the participant row
+ *     `paper.authorParticipantId`, `paymentTransaction.payerParticipantId`, the payments a
+ *     transaction covers and survey answers
+ *   - `waitingListEntry.userId` (registration.ts)
+ *   - `teamMember.userId`, `teamMemberInvitation.invitedById` (team.ts)
+ *   - `paperReview.reviewerId` (papers.ts)
+ *   - `attendanceSession.createdById`, `attendanceEntry.recordedById` (attendance.ts)
+ * `possibleDuplicate`, `searchHistory`, `emailLog` and the like cascade; `storedFile.uploadedById`,
+ * `teamMemberInvitation.acceptedById` and `possibleDuplicate.decidedById` are set null. Copies
+ * outside these keys survive a deletion: `emailLog.email` keeps the address a mail went to,
+ * `searchHistory.label` the name somebody was found by, Listmonk the subscriber (the mail sync
+ * releases it once the user is gone), and the OIDC provider the account itself.
+ *
+ * Decide the policy first, then shape the schema after it:
+ *   1. Retention: e.g. anonymise participants N years after the end of their last conference,
+ *      delete accounts that never applied (no participant row, no waiting list entry, no team
+ *      role) after M months of inactivity, and drop care notes sooner than the rest. A job in
+ *      `src/jobs/` (like `invitation-cleanup`) runs it, with `--dry-run`.
+ *   2. Anonymise rather than delete where history must stay (certificates, payments, papers,
+ *      statistics): overwrite the personal columns of this table with placeholders and null the
+ *      optional ones, keep the id so every `restrict` reference stays valid, clear the copies
+ *      listed above, and mark the row (e.g. an `anonymisedAt` column) so login, mail sync and the
+ *      duplicate scan skip it. Certificates already issued stay verifiable through their JWT.
+ *   3. Deletion on request: a mutation for the account itself and for system admins that runs the
+ *      same anonymisation at once (or deletes outright when nothing references the row), plus the
+ *      OIDC provider's account through its management API.
+ *   4. Revisit the `restrict` references above: team-side actors (reviewer, scanner, inviter) could
+ *      become `set null` like `uploadedById`, so a team member can leave without blocking anything.
+ */
 export const user = snakeCase.table(
 	'user',
 	{

@@ -42,9 +42,11 @@ every matching rule guarantees).
 `singleParticipant.assignedRoleId` / `assignmentDetails`. Relations behind them resolve to nothing.
 The team always sees them.
 
-**Registration stage.** Registering, joining and editing a registration are not bound to the
-conference state; only sending an application is (`assertApplicationReady`), and the waiting list
-only opens in PREPARATION. → F-09
+**Registration stage.** Registering yourself (head delegate, single participant, supervisor),
+joining a delegation and sending an application are bound to PARTICIPANT_REGISTRATION plus its
+grace period (`assertRegistrationOpen`, `assertApplicationReady`). Editing a registration and the
+team registering somebody else are open in every stage; the waiting list only opens in
+PREPARATION. → F-09
 
 ---
 
@@ -60,7 +62,7 @@ Read
 
 - [ ] self: everything but `globalNotes`.
 - [ ] PC of a conference the person takes part in (delegate, single, supervisor) or waits for
-      (`isManagedUser`): everything, `globalNotes` included. Not for the team. → F-04
+      (`isCaredForUser`): everything, `globalNotes` included. Not for the team. → F-04
 - [ ] admin: everything, everybody.
 - [ ] supervisor of the person (in the conference they supervise them in): everything but
       `globalNotes` — address, phone, emergency contacts, gender, food preference, birthday

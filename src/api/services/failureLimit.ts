@@ -1,6 +1,7 @@
 /**
- * Counting failed attempts per caller and refusing once there are too many - for lookups by a
- * short code, where every miss is a guess.
+ * Counting attempts per caller and refusing once there are too many: failed ones for lookups by a
+ * short code, where every miss is a guess (`createFailureLimiter`), every one for work that is
+ * expensive whether it succeeds or not (`createAttemptLimiter`).
  *
  * Only failures count, so somebody who types their code right never notices the limit. The
  * counters are short-lived and never touch the database: in Redis each key is created with its
@@ -101,6 +102,25 @@ export function createFailureLimiter(options: {
 				if (options.isFailure(error)) await options.store.add(key, options.windowMs);
 				throw error;
 			}
+		}
+	};
+}
+
+/**
+ * Refuses a caller who made `limit` attempts in the last window, counting every attempt rather
+ * than only failures. Counting and refusing are two steps, so a few requests arriving at the same
+ * moment may pass together; a cap on concurrent work belongs next to it.
+ */
+export function createAttemptLimiter(options: {
+	store: FailureStore;
+	limit: number;
+	windowMs: number;
+	refused: () => Error;
+}) {
+	return {
+		async take(key: string) {
+			if ((await options.store.count(key)) >= options.limit) throw options.refused();
+			await options.store.add(key, options.windowMs);
 		}
 	};
 }

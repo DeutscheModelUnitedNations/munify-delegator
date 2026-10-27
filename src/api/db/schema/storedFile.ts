@@ -1,16 +1,22 @@
-import { snakeCase, text, integer, index } from 'drizzle-orm/pg-core';
+import { snakeCase, text, integer, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
 import { user } from './users';
+// `conference` holds `fileRef` columns and this table points back at it; both references are
+// lazy (`() => …`), so the cycle is safe at initialization.
+// fallow-ignore-next-line circular-dependency
+import { conference } from './conference';
 
 /** Uploaded files: the bucket objects the app knows about. */
 
 /**
- * A row's uploaded file. `restrict`, so a file is never deleted while anything points at it: the
+ * A row's uploaded file. `no action`, so a file is never deleted while anything points at it: the
  * file cleanup job deletes only the unreferenced ones, and a reference landing at the same moment
- * makes its delete fail instead of leaving a dangling key.
+ * makes its delete fail instead of leaving a dangling key. Not `restrict`: that is checked at once,
+ * so deleting a conference would fail whenever its cascade reached a file before the row holding
+ * it; `no action` is checked once the whole delete is done.
  */
 export function fileRef() {
-	return text().references(() => storedFile.id, { onDelete: 'restrict', onUpdate: 'cascade' });
+	return text().references(() => storedFile.id, { onDelete: 'no action', onUpdate: 'cascade' });
 }
 
 /**
@@ -34,10 +40,14 @@ export const storedFile = snakeCase.table(
 		/** The name it was uploaded with, which downloads keep. */
 		fileName: text(),
 		/**
-		 * The conference the file was uploaded for. Not a foreign key: the file outlives a deleted
-		 * conference until the cleanup job removes its object.
+		 * The conference the file was uploaded for. Deleting the conference deletes the rows; their
+		 * objects stay in the bucket until the cleanup job removes them as objects without a row.
 		 */
-		conferenceId: text().notNull(),
+		// Typed as `AnyPgColumn`: `conference` refers back to this table (`fileRef`), and inferring
+		// across that cycle would leave both tables untyped.
+		conferenceId: text()
+			.notNull()
+			.references((): AnyPgColumn => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		uploadedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' })
 	},
 	(table) => [index('stored_file_created_at_idx').on(table.createdAt)]

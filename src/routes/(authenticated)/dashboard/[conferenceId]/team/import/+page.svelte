@@ -12,95 +12,76 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
 	import { getLocale } from '#lib/paraglide/runtime.js';
+	import {
+		parsePresenceExport,
+		representationLabel,
+		scoreDelegates,
+		scoreNsas,
+		type ScoredDelegate,
+		type ScoredNsa
+	} from './presenceImport';
+	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence.js';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
-
-	// TODO we could improve this by defining and applying a ZOD schema
-	// for this import
-
-	interface CHASECommitteeMember {
-		id: string;
-		user: { userEmail: string } | null | undefined;
-		committeeId: string;
-		representation: {
-			id: string;
-			alpha3Code?: string;
-			alpha2Code?: string;
-			faIcon?: string;
-			type: 'DELEGATION' | 'NSA' | 'UN';
-			name?: string;
-		};
-		presenceChangedTimestamps: {
-			id: string;
-			presentSetTo: boolean;
-			timestamp: string;
-		}[];
-	}
+	const conferenceId = $derived(params.conferenceId);
 
 	const committees = $derived(
 		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: params.conferenceId } } },
+			__args: { where: { conferenceId: { eq: conferenceId } } },
 			id: true,
 			name: true
 		})
 	);
 	let loading = $state(false);
 	let fileInput = $state<string>();
-	let threshold = $state(20);
-	let parsedUsers = $derived(
-		fileInput ? (JSON.parse(fileInput) as CHASECommitteeMember[]) : undefined
-	);
-	let users = $derived.by(() => {
-		if (!parsedUsers) return undefined;
-		let processedUsers = parsedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
-		processedUsers = processedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
-		processedUsers = processedUsers.filter((x) => x.user?.userEmail);
-		let mappedUsers = processedUsers.map((x) => ({
-			email: x.user!.userEmail,
-			representation: x.representation,
-			committeeId: x.committeeId,
-			attendancePercentage:
-				(100 * x.presenceChangedTimestamps.filter((t) => t.presentSetTo).length) /
-				x.presenceChangedTimestamps.length
-		}));
+	let delegateThreshold = $state(20);
+	let nsaMinCheckIns = $state(3);
 
-		return mappedUsers;
-	});
-	let presentUsers = $derived(users?.filter((x) => x.attendancePercentage >= threshold));
-	let absentUsers = $derived(users?.filter((x) => x.attendancePercentage < threshold));
-	let selectedUser = $state<NonNullable<typeof presentUsers>[number] | undefined>(undefined);
+	let parsed = $derived(fileInput === undefined ? undefined : parsePresenceExport(fileInput));
+	let participants = $derived(parsed?.ok ? parsed.data.participants : undefined);
 
-	let selectedUserTimestamps = $derived(
-		[
-			...(parsedUsers?.find((u) => u.user?.userEmail === selectedUser?.email)
-				?.presenceChangedTimestamps ?? [])
-		].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+	let delegates = $derived(participants && scoreDelegates(participants, delegateThreshold));
+	let presentDelegates = $derived(delegates?.filter((d) => d.attended));
+	let absentDelegates = $derived(delegates?.filter((d) => !d.attended));
+
+	let nsas = $derived(participants && scoreNsas(participants, nsaMinCheckIns));
+	let presentNsas = $derived(nsas?.filter((n) => n.attended));
+	let absentNsas = $derived(nsas?.filter((n) => !n.attended));
+
+	let selectedEmail = $state<string | undefined>(undefined);
+	let selectedEvents = $derived(
+		[...(participants?.find((p) => p.email === selectedEmail)?.events ?? [])].sort(
+			(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+		)
 	);
+
+	const committeeName = (id: string | null) => committees.find((c) => c.id === id)?.name ?? 'N/A';
 
 	const setFileInput = (e: Event) =>
 		readSelectedTextFile(e, (text) => {
 			fileInput = text;
 		});
 
-	// TODO fetch user name from backend
-	const columns: ManagedColumn<NonNullable<typeof presentUsers>[number]>[] = [
-		{
-			id: 'email',
-			header: m.email(),
-			accessorFn: (row) => row.email ?? 'N/A'
-		},
-		{
+	const roleColumn = <T extends { representation: ChasePresenceRepresentation | null }>() =>
+		({
 			id: 'role',
 			header: m.role(),
-			accessorFn: (row) => row.representation.alpha3Code ?? row.representation.name ?? 'N/A',
+			accessorFn: (row) => representationLabel(row.representation),
 			cell: ({ row }) =>
-				renderComponent(RepresentationBadge, { representation: row.original.representation })
-		},
+				row.original.representation
+					? renderComponent(RepresentationBadge, { representation: row.original.representation })
+					: 'N/A'
+		}) satisfies ManagedColumn<T>;
+
+	// TODO fetch user name from backend
+	const delegateColumns: ManagedColumn<ScoredDelegate>[] = [
+		{ id: 'email', header: m.email(), accessorFn: (row) => row.email },
+		roleColumn<ScoredDelegate>(),
 		{
 			id: 'committee',
 			header: m.committee(),
-			accessorFn: (row) => committees.find((c) => c.id === row.committeeId)?.name ?? 'N/A'
+			accessorFn: (row) => committeeName(row.committeeId)
 		},
 		{
 			id: 'attendancePercentage',
@@ -110,59 +91,35 @@
 		}
 	];
 
+	const nsaColumns: ManagedColumn<ScoredNsa>[] = [
+		{ id: 'email', header: m.email(), accessorFn: (row) => row.email },
+		roleColumn<ScoredNsa>(),
+		{ id: 'checkIns', header: m.checkIns(), accessorFn: (row) => row.checkIns }
+	];
+
 	const columnClasses = { role: 'text-center' };
 
-	async function applyPresent() {
+	async function apply(rows: { email: string }[] | undefined, didAttend: boolean) {
+		if (!rows) return;
 		if (!(await confirmDialog({ text: m.cannotBeUndone(), danger: true }))) return;
 		loading = true;
-
-		if (!presentUsers) return;
-
-		await Promise.all(
-			presentUsers.map(async (user) => {
-				await client.mutate.updateConferenceParticipant({
-					__args: {
-						conferenceId: params.conferenceId,
-						didAttend: true,
-						userEmail: user.email
-					},
-					id: true,
-					didAttend: true
-				});
-			})
-		);
-
-		toast.success(m.changesSuccessful());
-		loading = false;
+		try {
+			await Promise.all(
+				rows.map((row) =>
+					client.mutate.updateConferenceParticipant({
+						__args: { conferenceId, didAttend, userEmail: row.email },
+						id: true,
+						didAttend: true
+					})
+				)
+			);
+			toast.success(m.changesSuccessful());
+		} finally {
+			loading = false;
+		}
 	}
 
-	async function applyAbsent() {
-		if (!(await confirmDialog({ text: m.cannotBeUndone(), danger: true }))) return;
-		loading = true;
-
-		if (!absentUsers) return;
-
-		await Promise.all(
-			absentUsers.map(async (user) => {
-				await client.mutate.updateConferenceParticipant({
-					__args: {
-						conferenceId: params.conferenceId,
-						didAttend: false,
-						userEmail: user.email
-					},
-					id: true,
-					didAttend: true
-				});
-			})
-		);
-
-		toast.success(m.changesSuccessful());
-		loading = false;
-	}
-
-	function selectUser(user: NonNullable<typeof presentUsers>[number]) {
-		selectedUser = user;
-	}
+	const selectRow = (row: { email: string }) => (selectedEmail = row.email);
 </script>
 
 <div class="flex w-full flex-col flex-wrap gap-8 p-10">
@@ -177,99 +134,130 @@
 			accept=".json"
 			onchange={(e) => setFileInput(e)}
 		/>
+		{#if parsed && !parsed.ok}
+			<div class="alert alert-error mt-4">
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+				<span>{m.importPresenceInvalidFile()}</span>
+			</div>
+		{/if}
+	</Section>
 
-		{#if presentUsers && absentUsers}
-			<span class="my-6 flex">
-				{m.threshold()}
-				:<input
+	{#if presentDelegates && absentDelegates}
+		<Section
+			title={m.importPresenceDelegates()}
+			description={m.importPresenceDelegatesDescription()}
+		>
+			<label class="my-4 flex items-center">
+				{m.threshold()}:
+				<input
 					class="range mx-2 w-44"
 					type="range"
 					min="0"
 					max="100"
-					bind:value={threshold}
+					bind:value={delegateThreshold}
 					step="1"
 				/>
-				{threshold}%
-			</span>
+				{delegateThreshold}%
+			</label>
+			{@render resultTables('delegate', presentDelegates, absentDelegates, delegateColumns)}
+		</Section>
+	{/if}
 
-			<h2 class="mt-4 text-2xl font-bold">
-				{m.present()}: {presentUsers.length}
-			</h2>
-			<ManagedTable
-				{columns}
-				rows={presentUsers}
-				{columnClasses}
-				onRowClick={selectUser}
-				queryParamKey="presentFilter"
-			/>
-			<button class="btn btn-primary" onclick={applyPresent}>
-				{#if loading}
-					<i class="fas fa-spinner fa-spin"></i>
-				{:else}
-					<i class="fas fa-save"></i>
-				{/if}
-				{m.save()}
-			</button>
-
-			<h2 class="mt-2 text-2xl font-bold">
-				{m.absent()}: {absentUsers.length}
-			</h2>
-			<ManagedTable
-				{columns}
-				rows={absentUsers}
-				{columnClasses}
-				onRowClick={selectUser}
-				queryParamKey="absentFilter"
-			/>
-			<button class="btn btn-primary" onclick={applyAbsent}>
-				{#if loading}
-					<i class="fas fa-spinner fa-spin"></i>
-				{:else}
-					<i class="fas fa-save"></i>
-				{/if}
-				{m.save()}
-			</button>
-		{/if}
-	</Section>
+	{#if presentNsas && absentNsas}
+		<Section title={m.nonStateActors()} description={m.importPresenceNsasDescription()}>
+			<label class="my-4 flex items-center gap-2">
+				{m.importPresenceMinCheckIns()}:
+				<input
+					class="input input-sm w-24"
+					type="number"
+					min="0"
+					step="1"
+					bind:value={nsaMinCheckIns}
+				/>
+			</label>
+			{@render resultTables('nsa', presentNsas, absentNsas, nsaColumns)}
+		</Section>
+	{/if}
 </div>
+
+{#snippet resultTables<T extends { email: string }>(
+	key: string,
+	present: T[],
+	absent: T[],
+	columns: ManagedColumn<T>[]
+)}
+	<h2 class="mt-4 text-2xl font-bold">{m.present()}: {present.length}</h2>
+	<ManagedTable
+		{columns}
+		rows={present}
+		{columnClasses}
+		onRowClick={selectRow}
+		queryParamKey="{key}PresentFilter"
+	/>
+	<button class="btn btn-primary" disabled={loading} onclick={() => apply(present, true)}>
+		{@render saveIcon()}
+		{m.save()}
+	</button>
+
+	<h2 class="mt-2 text-2xl font-bold">{m.absent()}: {absent.length}</h2>
+	<ManagedTable
+		{columns}
+		rows={absent}
+		{columnClasses}
+		onRowClick={selectRow}
+		queryParamKey="{key}AbsentFilter"
+	/>
+	<button class="btn btn-primary" disabled={loading} onclick={() => apply(absent, false)}>
+		{@render saveIcon()}
+		{m.save()}
+	</button>
+{/snippet}
+
+{#snippet saveIcon()}
+	{#if loading}
+		<i class="fas fa-spinner fa-spin"></i>
+	{:else}
+		<i class="fas fa-save"></i>
+	{/if}
+{/snippet}
 
 {#snippet gotoUser()}
 	<a
-		href={resolve(
-			`dashboard/${params.conferenceId}/team/participants?selected=${selectedUser?.email}`
-		)}
+		href={resolve(`dashboard/${conferenceId}/team/participants?selected=${selectedEmail}`)}
 		target="_blank"
 	>
 		<button class="btn btn-primary">
 			<i class="fas fa-arrow-up-right-from-square"></i>
-			{selectedUser?.email}
+			{selectedEmail}
 		</button>
 	</a>
 {/snippet}
 
 <Modal
-	open={selectedUser !== undefined}
+	open={selectedEmail !== undefined}
 	action={gotoUser}
 	onclose={() => {
-		selectedUser = undefined;
+		selectedEmail = undefined;
 	}}
 >
 	<table class="table">
 		<thead>
 			<tr>
 				<th>{m.timestamp()}</th>
+				<th>{m.committee()}</th>
 				<th>{m.attendanceStatus()}</th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each selectedUserTimestamps as timestamp (timestamp.id)}
+			{#each selectedEvents as event (event.id)}
 				<tr>
 					<td
-						>{new Date(timestamp.timestamp).toLocaleDateString(getLocale()) +
+						>{new Date(event.timestamp).toLocaleDateString(getLocale()) +
 							' ' +
-							new Date(timestamp.timestamp).toLocaleTimeString(getLocale())}</td
+							new Date(event.timestamp).toLocaleTimeString(getLocale())}</td
 					>
-					<td>{timestamp.presentSetTo ? m.present() + ' ✅' : m.absent() + ' ❌'}</td>
+					<td>{committeeName(event.committeeId)}</td>
+					<td>{event.present ? m.present() + ' ✅' : m.absent() + ' ❌'}</td>
 				</tr>
 			{/each}
 		</tbody>

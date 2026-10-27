@@ -11,7 +11,7 @@
 	import AppliedBadge from './AppliedBadge.svelte';
 	import WishList from './WishList.svelte';
 	import InfoRow from './InfoRow.svelte';
-	import { delegationWishes } from './wishes';
+	import { delegationWishes, type Wish } from './wishes';
 
 	/**
 	 * What a delegation applied with: its entry code, texts and the roles it wished for, and its
@@ -81,6 +81,46 @@
 		await promise;
 	}
 
+	let changingWishes = $state(false);
+
+	/** Runs one change of the wishes with its toast; the buttons wait meanwhile. */
+	async function changeWishes(change: () => Promise<unknown>) {
+		changingWishes = true;
+		try {
+			const promise = change();
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
+		} finally {
+			changingWishes = false;
+		}
+	}
+
+	const removeWish = (wish: Wish) =>
+		changeWishes(() =>
+			Promise.resolve(client.mutate.deleteRoleApplication({ __args: { id: wish.id } }))
+		);
+
+	const moveWishUp = (wish: Wish, above: Wish) =>
+		changeWishes(() =>
+			Promise.resolve(
+				client.mutate.swapRoleApplicationRanks({
+					__args: { firstRoleApplicationId: wish.id, secondRoleApplicationId: above.id },
+					id: true,
+					rank: true
+				})
+			)
+		);
+
+	/** Takes the delegation out of the conference, its members' registrations with it. */
+	async function deleteDelegation() {
+		if (!(await confirmDialog({ text: m.confirmDeleteDelegation(), danger: true }))) return;
+		const promise = Promise.resolve(
+			client.mutate.deleteDelegation({ __args: { id: delegationId } })
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+	}
+
 	const copyEntryCode = async () => {
 		await navigator.clipboard.writeText(delegation.entryCode);
 		toast.success(m.codeCopied());
@@ -101,6 +141,15 @@
 				{m.revokeApplication()}
 			</button>
 		{/if}
+		<button
+			class="btn btn-ghost btn-sm text-error {conferenceState === 'PARTICIPANT_REGISTRATION'
+				? ''
+				: 'ml-auto'}"
+			onclick={deleteDelegation}
+		>
+			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+			{m.deleteDelegation()}
+		</button>
 	</div>
 
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
@@ -126,7 +175,7 @@
 				</div>
 			{/snippet}
 		</InfoRow>
-		<WishList {wishes} />
+		<WishList {wishes} onRemove={removeWish} onMoveUp={moveWishUp} busy={changingWishes} />
 	</div>
 
 	{#if delegation.motivation || delegation.experience}

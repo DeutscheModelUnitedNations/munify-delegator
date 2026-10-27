@@ -10,9 +10,15 @@
 	 */
 	interface Props {
 		wishes: readonly Wish[];
+		/** Given where the caller may change the wishes: takes one out. */
+		onRemove?: (wish: Wish) => void;
+		/** Given where the caller may change the wishes: swaps a wish with the one ranked above it. */
+		onMoveUp?: (wish: Wish, above: Wish) => void;
+		/** While a change is under way the buttons wait. */
+		busy?: boolean;
 	}
 
-	let { wishes }: Props = $props();
+	let { wishes, onRemove, onMoveUp, busy = false }: Props = $props();
 </script>
 
 <InfoRow title={m.appliedForRoles()} faIcon="list-ol">
@@ -30,6 +36,28 @@
 						size="xs"
 					/>
 					<span>{wish.label}</span>
+					{#if onMoveUp && index > 0}
+						<button
+							class="btn btn-ghost btn-xs btn-square"
+							title={m.moveUp()}
+							aria-label={m.moveUp()}
+							disabled={busy}
+							onclick={() => onMoveUp(wish, wishes[index - 1])}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+						</button>
+					{/if}
+					{#if onRemove}
+						<button
+							class="btn btn-ghost btn-xs btn-square text-error"
+							title={m.delete()}
+							aria-label={m.delete()}
+							disabled={busy}
+							onclick={() => onRemove(wish)}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+						</button>
+					{/if}
 				</li>
 			{/each}
 		</ol>

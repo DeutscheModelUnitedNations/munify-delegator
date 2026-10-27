@@ -4,10 +4,13 @@ import {
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import {
-	fetchUserParticipations,
-	isUserAlreadyRegistered
+	fetchParticipationsAndTeamMembership,
+	isParticipantOrTeamMember
 } from '#api/services/registration/participation.js';
-import { assertApplicationReady } from '#api/services/registration/applicationReadiness.js';
+import {
+	assertApplicationReady,
+	assertRegistrationOpen
+} from '#api/services/registration/applicationReadiness.js';
 import { nullToUndefined } from '#api/services/args.js';
 import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
 import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness.js';
@@ -41,7 +44,7 @@ export async function ownRegistrationToEdit(
 	});
 
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
-		await fetchUserParticipations({ conferenceId: args.conferenceId, userId });
+		await fetchParticipationsAndTeamMembership({ conferenceId: args.conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
 		throw apiError(
 			'CONFLICT',
@@ -90,6 +93,8 @@ export async function registerSingleParticipant(
 	},
 	existing: { id: string } | undefined
 ) {
+	// Editing an existing registration is open in any stage; a new one only while applications are taken.
+	if (!existing) await assertRegistrationOpen(args.conferenceId);
 	// The person's row, the registration and the role it applies for go in together, so a refused
 	// insert leaves none of them.
 	return db.transaction(async (tx) => {
@@ -177,7 +182,7 @@ export async function createAssignedSingleParticipant(args: {
 	conferenceId: string;
 	roleId: string;
 }) {
-	if (await isUserAlreadyRegistered({ userId: args.userId, conferenceId: args.conferenceId })) {
+	if (await isParticipantOrTeamMember({ userId: args.userId, conferenceId: args.conferenceId })) {
 		throw apiError('CONFLICT', m.singleParticipantUserHasOtherRole());
 	}
 

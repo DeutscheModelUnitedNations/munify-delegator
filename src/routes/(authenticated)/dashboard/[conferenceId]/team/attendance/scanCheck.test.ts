@@ -50,4 +50,15 @@ describe('scanIssues', () => {
 			'alreadyScanned'
 		]);
 	});
+
+	test('a team member is only shown, with nothing else to check', () => {
+		const pending = { ...done, paymentStatus: 'PENDING' } as const;
+		expect(
+			scanIssues({ ...base, inConference: false, isTeamMember: true, status: pending })
+		).toEqual(['teamMember']);
+	});
+
+	test('a team member who also takes part is checked like any participant', () => {
+		expect(scanIssues({ ...base, isTeamMember: true })).toEqual([]);
+	});
 });

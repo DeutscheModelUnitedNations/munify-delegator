@@ -97,9 +97,23 @@ export async function assertCanCreateAppliedDelegationMember(
 }
 
 /**
+ * Refuses a committee that does not seat the delegation's assigned role: a delegate can only sit
+ * where their delegation has a seat, and a delegation without a role has none.
+ */
+function assertCommitteeSeats(
+	committee: { roles: { id: string }[] },
+	assignedRoleId: string | null | undefined
+) {
+	if (!assignedRoleId || !committee.roles.some((role) => role.id === assignedRoleId)) {
+		throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
+	}
+}
+
+/**
  * Refuses unless the caller may update the delegate (the row's update ability) and the committee
- * is one of the delegate's own conference, not any committee id at all. Returns both, the member
- * with its delegation's members, which the move needs to find a seat.
+ * is one of the delegate's own conference that seats their delegation, not any committee id at
+ * all. Returns both, the member with its delegation's members, which the move needs to find a
+ * seat.
  */
 export async function assertCanMoveDelegationMemberToCommittee(
 	ctx: ApiContext,
@@ -115,8 +129,12 @@ export async function assertCanMoveDelegationMemberToCommittee(
 		.then(assertFindFirstExists);
 
 	const committee = await db.query.committee
-		.findFirst({ where: { id: assignedCommitteeId, conferenceId: member.delegation.conferenceId } })
+		.findFirst({
+			where: { id: assignedCommitteeId, conferenceId: member.delegation.conferenceId },
+			with: { roles: { columns: { id: true } } }
+		})
 		.then(assertFindFirstExists);
+	assertCommitteeSeats(committee, member.delegation.assignedRoleId);
 
 	return { member, committee };
 }
@@ -124,24 +142,36 @@ export async function assertCanMoveDelegationMemberToCommittee(
 export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMemberToCommittee>>;
 
 /**
- * Refuses a committee that is not one of the conference's (null clears the assignment, and needs
- * no check). Returns the where-clause matching the conference's delegates the caller may update,
- * which scopes the bulk write.
+ * Refuses a committee that is not one of the conference's, or that does not seat the delegation
+ * of every named delegate the caller may move (null clears the assignment, and needs no check).
+ * Returns the where-clause matching the conference's delegates the caller may update, which
+ * scopes the bulk write.
  */
 export async function authorizeDelegationMemberCommitteeMoves(
 	ctx: ApiContext,
 	conferenceId: string,
+	ids: string[],
 	assignedCommitteeId: string | null | undefined
 ) {
+	const updatable = await ctx.abilities.delegationMember.filter('update');
+
 	if (assignedCommitteeId) {
-		await db.query.committee
-			.findFirst({ where: { id: assignedCommitteeId, conferenceId } })
+		const committee = await db.query.committee
+			.findFirst({
+				where: { id: assignedCommitteeId, conferenceId },
+				with: { roles: { columns: { id: true } } }
+			})
 			.then(assertFindFirstExists);
+		const members = await db.query.delegationMember.findMany({
+			...updatable.merge({ where: { id: { in: ids }, participant: { conferenceId } } }).query.many,
+			with: { delegation: { columns: { assignedRoleId: true } } }
+		});
+		for (const member of members) {
+			assertCommitteeSeats(committee, member.delegation.assignedRoleId);
+		}
 	}
 
-	return (await ctx.abilities.delegationMember.filter('update')).merge({
-		where: { participant: { conferenceId } }
-	}).sql.where;
+	return updatable.merge({ where: { participant: { conferenceId } } }).sql.where;
 }
 
 /**
@@ -175,9 +205,6 @@ export async function assertCanAssignCommittees(
 			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 		}
 
-		const roleId = member.delegation?.assignedRoleId;
-		if (!committee.roles.some((role) => role.id === roleId)) {
-			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
-		}
+		assertCommitteeSeats(committee, member.delegation?.assignedRoleId);
 	}
 }

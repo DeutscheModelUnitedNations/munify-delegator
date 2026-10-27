@@ -3,7 +3,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
-	isManagedUser,
+	isCaredForUser,
 	systemAdmin
 } from '#api/services/authHelper.js';
 import type { Context } from '#api/context.js';
@@ -15,7 +15,7 @@ export function registerPossibleDuplicateAbilities() {
 	// *other* account, and how much of it, is a rule on the user table (`userPermissions.ts`).
 	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when(systemAdmin);
 	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when((ctx) => {
-		const managed = isManagedUser(ctx);
+		const managed = isCaredForUser(ctx);
 		return managed ? { where: { OR: [{ user: managed }, { candidate: managed }] } } : undefined;
 	});
 }

@@ -66,6 +66,14 @@ export function registerConferenceAbilities() {
 }
 
 /**
+ * Refuses unless the caller hands out document numbers in the conference (the postal page), which
+ * is participant care's: the next number tells how many were handed out so far.
+ */
+export async function assertCanReadNextDocumentNumber(ctx: ApiContext, conferenceId: string) {
+	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+}
+
+/**
  * The arguments of `updateConference` that participant care and the content lead may send: links,
  * postal address, templates, the participants' announcement, the conference status and the
  * feature switches.

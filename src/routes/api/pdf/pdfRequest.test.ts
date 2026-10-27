@@ -3,6 +3,7 @@ import { isHttpError } from '@sveltejs/kit';
 import { describe, expect, test } from 'vitest';
 import {
 	compileErrorDetail,
+	createCompileSlots,
 	decodeEmblemDataUrl,
 	emblemSvgFor,
 	readBody,
@@ -134,5 +135,25 @@ describe('compileErrorDetail', () => {
 		expect(compileErrorDetail(new Error('spawn failed'))).toBe('spawn failed');
 		expect(compileErrorDetail(42)).toBe('42');
 		expect(compileErrorDetail({ stderr: 1 })).toBe('[object Object]');
+	});
+});
+
+describe('createCompileSlots', () => {
+	test('hands out up to the maximum and turns the next one away', () => {
+		const slots = createCompileSlots(2);
+		expect(slots.take()).toBeTypeOf('function');
+		expect(slots.take()).toBeTypeOf('function');
+		expect(slots.take()).toBeUndefined();
+	});
+
+	test('a released slot can be taken again, and releasing twice frees only one', () => {
+		const slots = createCompileSlots(2);
+		const first = slots.take();
+		slots.take();
+		first?.();
+		first?.();
+		expect(slots.taken).toBe(1);
+		expect(slots.take()).toBeTypeOf('function');
+		expect(slots.take()).toBeUndefined();
 	});
 });

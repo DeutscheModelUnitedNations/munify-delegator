@@ -140,7 +140,14 @@ safe by default.
 
 ### F-09 · medium · Registering is open in every conference state, which widens who is a "participant"
 
-- [ ] `conferenceSupervisorService.ts:35` (`registerSupervisor`), `delegationService.ts:60`,
+**Fixed (2026-10-27):** registering yourself as head delegate, single participant or supervisor,
+and joining a delegation, now go through `assertRegistrationOpen`
+(`src/api/services/registration/applicationReadiness.ts`), the same window as applying
+(PARTICIPANT_REGISTRATION plus the grace period). Editing an existing registration and participant
+care registering somebody else (`createConferenceSupervisor` with `userId`) stay open in every
+stage. `e2e/authorization/api-abilities.spec.ts` pins it on the preparation conference.
+
+- [x] `conferenceSupervisorService.ts:35` (`registerSupervisor`), `delegationService.ts:60`,
       `singleParticipantService.ts:83`; documented in `authHelper.ts:44-45`.
 
 What: any account can register as supervisor, head delegate or single participant in a conference
@@ -153,7 +160,16 @@ period) like applying is, or at least refuse POST and PRE.
 
 ### F-10 · low · Committee moves by the head delegate are not tied to the delegation's seats
 
-- [ ] `delegationMemberPermissions.ts:66-77` (head delegate `update` without `applied: false`),
+**Fixed (2026-10-27):** `updateDelegationMemberCommittee` and `updateManyDelegationMemberCommittee`
+now refuse a committee that does not seat the delegation's assigned role (`assertCommitteeSeats`,
+shared with the assistant's `assertCanAssignCommittees`), for every caller; the team's modal only
+offered those committees anyway. The bulk move also checks the per-delegation seat limit now
+(`assertSeatLimits`, in a transaction). `e2e/authorization/api-abilities.spec.ts` pins it with a
+committee that does not seat the head delegate's nation (`E2E_UNSEATED_COMMITTEE_ID`). The head
+delegate's update ability on unassigned members stays: the single move still swaps within their own
+delegation, which is the seat distribution it is meant for.
+
+- [x] `delegationMemberPermissions.ts:66-77` (head delegate `update` without `applied: false`),
       `delegationMemberPermissions.ts:131-145` (`authorizeDelegationMemberCommitteeMoves`),
       `delegationMemberService.ts:239` (`moveMemberToCommittee`).
 
@@ -203,7 +219,15 @@ REVIEWER do not need them.
 
 ### F-15 · low · `POST /api/pdf` compiles untrusted Typst for any signed-in account
 
-- [ ] `src/routes/api/pdf/+server.ts`, `pdfRequest.ts`.
+**Partly fixed (2026-10-27):** each account may start 20 compiles in ten minutes
+(`createAttemptLimiter` in `failureLimit.ts`, Redis or in-memory, answering 429), and a process runs
+at most two at once (`createCompileSlots`, answering 503 instead of queueing). File access was
+checked and is no concern: Typst 0.10 resolves every path inside the temp dir it compiles in,
+absolute ones included, and refuses `..` out of it. Still open: `@preview` imports download
+packages from the network into the server's cache, a compile's memory is not capped, and Typst
+0.10 is old (newer releases add `--ignore-system-fonts` and package path flags).
+
+- [x] `src/routes/api/pdf/+server.ts`, `pdfRequest.ts`.
 
 What: any session qualifies, with no conference, up to 5 MB of source and a 30 s compile per
 request, and no rate limit. Typst can read files relative to its working directory (`#read`,
@@ -212,14 +236,27 @@ request, and no rate limit. Typst can read files relative to its working directo
 
 ### F-16 · low · Unauthenticated newsletter opt-out for any address
 
-- [ ] `user.ts:151`, `userPermissions.ts:261-272`.
+**Deferred (2026-10-27):** the unsubscribe links are built by the Listmonk templates, so a signed
+token needs the mail sync to write it into the subscriber's attribs and the template to use it.
+Left as a `TODO(security)` on `assertCanUpdateNewsletterPreferences` until the template can change
+with it.
+
+- [x] `user.ts:151`, `userPermissions.ts:261-272`.
 
 What: standard for unsubscribe links and correctly answers `true` regardless. Just note that
 anybody can switch anybody's newsletters off; a signed token in the link would avoid it.
 
 ### F-17 · low · Scanning creates participant rows for team members, and any team role records attendance
 
-- [ ] `attendanceEntry.ts:129` (`ensureConferenceParticipant` after
+**Fixed (2026-10-27):** team members are not scanned in. `createAttendanceEntry` records only
+delegates, single participants and supervisors (`assertParticipantToScan`, refusing the team with
+`teamMembersAreNotScanned`), so the scanner creates no participant row for the team. `scanLookup`
+still finds and names team members but no longer counts them as `inConference`; the scanner shows
+them with a "team member, not scanned in" note, records nothing and hands out no card. Rows that
+earlier scans created for team members are not cleaned up. Any team role still records attendance
+(intended: the scanner is on every team member's dashboard).
+
+- [x] `attendanceEntry.ts:129` (`ensureConferenceParticipant` after
       `assertUserInConference`, which includes team members).
 
 What: the participant row is documented as "a person's part in a conference as delegate, single
@@ -229,7 +266,12 @@ scanner's participant-row creation or document that team members have rows.
 
 ### F-18 · medium · There is no deletion or retention path for accounts
 
-- [ ] `schema/participants.ts` (`userId: userRef('restrict')`), `schema/team.ts`,
+**Deferred (2026-10-27):** the policy is still to be decided. A `TODO(privacy)` above the `user`
+table (`src/api/db/schema/users.ts`) lists every reference that blocks a deletion, the copies that
+would survive one, and the plan: retention job, anonymisation that keeps the row, deletion on
+request, and loosening the team-side `restrict` keys.
+
+- [x] `schema/participants.ts` (`userId: userRef('restrict')`), `schema/team.ts`,
       `schema/papers.ts` (`reviewerId`, `invitedById`, `createdById`, `recordedById` all
       `restrict`), `src/jobs/` (only invitations and files are cleaned).
 
@@ -242,7 +284,16 @@ expected. Decide the policy before the schema makes it harder.
 
 ### F-19 · low · Reference data of every conference is public, in every state
 
-- [ ] `committeePermissions.ts:16`, `committeeAgendaItemPermissions.ts:16`,
+**Fixed (2026-10-27):** what the seat overview shows (committees, agenda items, conference roles)
+follows the conference's own read rule (`readableConference`: public in PARTICIPANT_REGISTRATION
+and PREPARATION, otherwise for the people with a part in it), so the conference and its seats stay
+public while it takes registrations. The schedule (calendar days, tracks, entries, places and their
+site plans) is for the team, and for participants once `showCalendar` is on (`calendarConference`),
+as the dashboard shows it. `nextDocumentNumber` is participant care's
+(`assertCanReadNextDocumentNumber`). `waitingListLength` and `totalParticipants` stay public: the
+landing page shows them for public conferences.
+
+- [x] `committeePermissions.ts:16`, `committeeAgendaItemPermissions.ts:16`,
       `conferenceRolePermissions.ts:15`, `placePermissions.ts:15`, `calendarDay/Track/Entry`,
       `conference.ts:46-85` (`nextDocumentNumber`, `waitingListLength`, `totalParticipants`).
 
@@ -254,15 +305,30 @@ rule.
 
 ### F-20 · low · Asymmetries worth a deliberate decision
 
-- [ ] PC may update but not delete a delegation (`delegationPermissions.ts:53-55`); only the
-      pre-apply head delegate and admin may.
-- [ ] a waiting-list entrant can neither change nor withdraw their entry
-      (`waitingListEntryPermissions.ts`); only PC can.
-- [ ] a participant cannot delete a survey answer, only change it (`surveyAnswerPermissions.ts:20`).
-- [ ] team roles cannot be changed, only removed and re-invited (`teamMemberPermissions.ts`).
-- [ ] PC reads but cannot edit a delegation's wishes after applying (`roleApplicationPermissions.ts`).
-- [ ] PC can `updateDelegation` any time, including `applied` back to false and `resetEntryCode`,
-      with no stage check.
+**Fixed (2026-10-27)**, each with the page that uses it:
+
+- [x] PC may update but not delete a delegation (`delegationPermissions.ts:53-55`); only the
+      pre-apply head delegate and admin may. → PC and PM delete their conference's delegations;
+      "delete delegation" in the user card's delegation section.
+- [x] a waiting-list entrant can neither change nor withdraw their entry
+      (`waitingListEntryPermissions.ts`); only PC can. → the entrant updates and deletes their own
+      entry until it is assigned; `hidden` and `assigned` stay PC's (`assertCanSetWaitingListFlags`).
+      The waiting list page stays editable and offers "leave the waiting list".
+- [x] a participant cannot delete a survey answer, only change it (`surveyAnswerPermissions.ts:20`).
+      → `deleteSurveyAnswer(questionId, userId?)`: own answers until the question's deadline, PC
+      any time; "withdraw answer" in the answer modal and the user card.
+- [x] team roles cannot be changed, only removed and re-invited (`teamMemberPermissions.ts`).
+      → `updateTeamMemberRole`, for whoever may remove the member and hand out the new role
+      (`assertCanChangeTeamRole`, as for invitations); the role column of the team page is a select.
+- [x] PC reads but cannot edit a delegation's wishes after applying (`roleApplicationPermissions.ts`).
+      → PC and PM update and delete role applications of their conference; the user card's wish
+      list removes and reorders them. Adding a wish there has no UI yet (`createRoleApplication`
+      already allows it through the delegation's update ability).
+- [x] PC can `updateDelegation` any time, including `applied` back to false and `resetEntryCode`,
+      with no stage check. → taking an application back is refused outside
+      PARTICIPANT_REGISTRATION, as the user card only offers it then. Rotating the entry code stays
+      open: joining is bound to the registration stage now (F-09), so a new code changes nothing
+      later on.
 
 ---
 
@@ -279,11 +345,19 @@ columns every matching rule guarantees (`node_modules/@m1212e/rumble/out/index.m
 
 Points to tidy:
 
-- [ ] **"In the conference" has three definitions.** `participatesIn` (delegate, single,
-      supervisor), `assertUserInConference` (plus team member), `fetchUserParticipations` (plus
-      team member, used for conflicts), and `isManagedUser` (plus waiting list, plus team). Each is
-      right for its caller, but the names do not say which, and F-04/F-17 come from mixing them.
-      Name them by what they include.
+- [x] **"Being in the conference" means four different sets of people.** Each helper below is right
+      for its caller, but the old names did not say which set it meant, and F-04 and F-17 came
+      from mixing them up. Renamed (2026-10-27, no logic changed); "participant" now always means
+      delegate, single participant or supervisor:
+
+      | Helper | Who it matches |
+      | --- | --- |
+      | `participatesIn` | participants |
+      | `assertParticipantOrTeamMemberIn` (was `assertUserInConference`) | participants and the team |
+      | `fetchParticipationsAndTeamMembership` (was `fetchUserParticipations`) | participants and the team, for the "already registered" conflict |
+      | `isParticipantOrTeamMember` (was `isUserAlreadyRegistered`) | the same, as a yes/no |
+      | `isCaredForUser` (was `isManagedUser`) | participants and waiting list of the conferences where the caller is participant care (no longer the team, since F-04) |
+
 - [x] **`IDENTITY` is one constant for four audiences** (F-06). Split.
 - [ ] **`conferenceParticipant` has no masks at all** (F-07) although it is the row that carries
       a minor's consents and card id.

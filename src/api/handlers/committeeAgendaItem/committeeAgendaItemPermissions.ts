@@ -5,6 +5,7 @@ import {
 	assertTeamRole,
 	isTeamMemberOfConference,
 	PAPER_ROLES,
+	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin
 } from '#api/services/authHelper.js';
@@ -12,8 +13,10 @@ import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAgendaItemAbilities() {
-	// Ported from abilities/entities/committeeAgendaItem.ts
-	abilityBuilder.committeeAgendaItem.allow('read');
+	// The topics are part of the seat overview: readable wherever their committee's conference is.
+	abilityBuilder.committeeAgendaItem
+		.allow('read')
+		.when((ctx) => ({ where: { committee: { conference: readableConference(ctx) } } }));
 	abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when(systemAdmin);
 
 	// Scoped through the committee, since an agenda item has no direct conference relation.

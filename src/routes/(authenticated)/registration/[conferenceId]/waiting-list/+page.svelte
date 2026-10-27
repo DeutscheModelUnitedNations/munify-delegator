@@ -10,6 +10,7 @@
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
@@ -33,7 +34,9 @@
 		requests: true
 	});
 
-	let alreadyOnWaitingList = $state(!!existingEntry);
+	// The entrant's own entry, once there is one: they change it with the same form, or withdraw it.
+	let entryId = $state<string | undefined>(existingEntry?.id);
+	let alreadyOnWaitingList = $derived(!!entryId);
 
 	const form = superForm(
 		defaults(
@@ -56,18 +59,31 @@
 			},
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
-				const promise = client.mutate.createWaitingListEntry({
-					__args: { ...validated.data, conferenceId },
-					id: true
-				});
+				const promise = entryId
+					? client.mutate.updateWaitingListEntry({
+							__args: { ...validated.data, id: entryId },
+							id: true
+						})
+					: client.mutate.createWaitingListEntry({
+							__args: { ...validated.data, conferenceId },
+							id: true
+						});
 				toast.promise(promise, genericPromiseToastMessages);
-				await promise;
-				alreadyOnWaitingList = true;
+				entryId = (await promise).id;
 			}
 		}
 	);
 
-	let disabled = $derived(alreadyOnWaitingList);
+	async function withdraw() {
+		if (!entryId) return;
+		if (!(await confirmDialog({ text: m.confirmWithdrawWaitingListEntry(), danger: true }))) return;
+		const promise = Promise.resolve(
+			client.mutate.deleteWaitingListEntry({ __args: { id: entryId } })
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+		entryId = undefined;
+	}
 </script>
 
 <RegistrationStepPage {conferenceId} icon="hourglass-half" title={m.vacanciesSlashWaitingList()}>
@@ -81,6 +97,10 @@
 			<i class="fa-sharp-duotone fa-solid fa-circle-check text-success text-xl"></i>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			<span>{@html m.alreadyOnWaitingList()}</span>
+			<button class="btn btn-ghost btn-sm text-error" onclick={withdraw}>
+				<i class="fa-sharp-duotone fa-solid fa-person-to-door"></i>
+				{m.withdrawWaitingListEntry()}
+			</button>
 		</div>
 	{/if}
 
@@ -92,21 +112,18 @@
 				idName="schoolId"
 				label={m.whichSchoolDoYouComeFrom()}
 				description={m.schoolPickerDescription()}
-				{disabled}
 			/>
 			<FormTextArea
 				{form}
 				name="motivation"
 				placeholder={m.answerHere()}
 				label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
-				{disabled}
 			/>
 			<FormTextArea
 				{form}
 				name="experience"
 				placeholder={m.answerHere()}
 				label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
-				{disabled}
 			/>
 			<FormTextArea
 				{form}
@@ -114,7 +131,6 @@
 				label={m.anySpecificRequests()}
 				description={m.anySpecificRequestsDescription()}
 				placeholder={m.answerHereOrLeaveEmpty()}
-				{disabled}
 			/>
 		</FormFieldset>
 	</Form>

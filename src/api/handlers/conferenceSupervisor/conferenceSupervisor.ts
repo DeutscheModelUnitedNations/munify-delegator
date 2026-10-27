@@ -53,6 +53,7 @@ schemaBuilder.mutationFields((t) => ({
 			const createdId = await registerSupervisor({
 				conferenceId: args.conferenceId,
 				subjectId,
+				selfService: subjectId === ctx.mustBeLoggedIn().sub,
 				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
 				schoolId: args.schoolId,
 				schoolName: args.schoolName

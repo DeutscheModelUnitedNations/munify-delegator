@@ -5,12 +5,13 @@ import {
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 import {
-	fetchUserParticipations,
-	isUserAlreadyRegistered
+	fetchParticipationsAndTeamMembership,
+	isParticipantOrTeamMember
 } from '#api/services/registration/participation.js';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import { nullToUndefined } from '#api/services/args.js';
 import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
+import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
@@ -29,6 +30,7 @@ export async function joinDelegationByEntryCode(
 	entryCode: string,
 	school: SchoolChoice
 ) {
+	await assertRegistrationOpen(conferenceId);
 	const delegation = await db.query.delegation.findFirst({ where: { conferenceId, entryCode } });
 	if (!delegation) throw codeNotFound();
 
@@ -36,7 +38,7 @@ export async function joinDelegationByEntryCode(
 		throw apiError('CONFLICT', m.delegationHasAlreadyApplied());
 	}
 
-	await fetchUserParticipations({
+	await fetchParticipationsAndTeamMembership({
 		conferenceId: delegation.conferenceId,
 		userId,
 		throwIfAnyIsFound: true
@@ -120,7 +122,7 @@ const ASSIGNED_DELEGATION_INFOS = {
 
 /** Removes the user's delegation membership or single registration in the conference, if any. */
 async function clearParticipation(tx: Transaction, conferenceId: string, userId: string) {
-	if (!(await isUserAlreadyRegistered({ userId, conferenceId }))) return;
+	if (!(await isParticipantOrTeamMember({ userId, conferenceId }))) return;
 
 	const participant = await tx.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId },
@@ -262,21 +264,27 @@ export async function moveMemberToCommittee({ member, committee }: CommitteeMove
 
 /**
  * Bulk committee (un)assignment; a null committee clears the assignment. Only the delegates
- * matching `updatableWhere` (`authorizeDelegationMemberCommitteeMoves`) are written. Returns the
- * count.
+ * matching `updatableWhere` (`authorizeDelegationMemberCommitteeMoves`) are written, and a write
+ * that would put more of a delegation into a committee than it has seats there is rolled back.
+ * Returns the count.
  */
 export async function moveManyMembersToCommittee(
 	ids: string[],
 	assignedCommitteeId: string | null | undefined,
 	updatableWhere: SQL | undefined
 ) {
-	const updated = await db
-		.update(schema.delegationMember)
-		.set({ assignedCommitteeId: assignedCommitteeId ?? null })
-		.where(and(updatableWhere, inArray(schema.delegationMember.id, ids)))
-		.returning({ id: schema.delegationMember.id });
-
-	return updated.length;
+	return db.transaction(async (tx) => {
+		const updated = await tx
+			.update(schema.delegationMember)
+			.set({ assignedCommitteeId: assignedCommitteeId ?? null })
+			.where(and(updatableWhere, inArray(schema.delegationMember.id, ids)))
+			.returning({ id: schema.delegationMember.id });
+		await assertSeatLimits(
+			tx,
+			updated.map((member) => member.id)
+		);
+		return updated.length;
+	});
 }
 
 /** Refuses when a delegation of the given members now fills a committee beyond its seats. */

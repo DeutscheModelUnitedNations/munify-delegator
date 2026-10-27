@@ -3,8 +3,11 @@ import {
 	ensureConferenceParticipant,
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
-import { fetchUserParticipations } from '#api/services/registration/participation.js';
-import { assertApplicationReady } from '#api/services/registration/applicationReadiness.js';
+import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation.js';
+import {
+	assertApplicationReady,
+	assertRegistrationOpen
+} from '#api/services/registration/applicationReadiness.js';
 import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import formatNames from '#lib/helpers/formatNames.js';
@@ -73,8 +76,9 @@ export async function createDelegationWithHead(
 		experience: args.experience
 	});
 
+	await assertRegistrationOpen(args.conferenceId);
 	// Refuses if the user already takes part in this conference in any role.
-	await fetchUserParticipations({
+	await fetchParticipationsAndTeamMembership({
 		conferenceId: args.conferenceId,
 		userId,
 		throwIfAnyIsFound: true
@@ -125,6 +129,12 @@ async function setApplied(
 ) {
 	// Drop applications the delegation has outgrown before judging whether it may apply.
 	await tidyRoleApplications(delegation.id, tx);
+
+	// Taking an application back reopens it for changes, which only makes sense while the
+	// conference takes registrations; afterwards the assignment works with what was sent.
+	if (!applied && delegation.conference.state !== 'PARTICIPANT_REGISTRATION') {
+		throw apiError('CONFLICT', m.applicationTimeframeClosed());
+	}
 
 	if (applied) {
 		if (delegation.members.length < MIN_DELEGATION_MEMBERS) {

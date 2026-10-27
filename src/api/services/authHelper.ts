@@ -42,8 +42,10 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * | anybody with a part in it   | the conference's payment and postal details, documents and adopted   |
  * |                             | resolutions                                                          |
  *
- * Registering, joining and editing a registration are open in every stage; only sending an
- * application is bound to the registration stage (`assertApplicationReady`).
+ * Registering yourself, joining a delegation and sending an application are bound to the
+ * registration stage and its grace period (`assertRegistrationOpen`, `assertApplicationReady`),
+ * since a registration makes the caller somebody with a part in the conference. Editing a
+ * registration is open in every stage, and so is the team registering somebody else.
  *
  * An empty object `{}` means "no restriction"; that is how a system admin passes a filter, since
  * rumble has no global wildcard.
@@ -154,7 +156,40 @@ export function conferencesOfCaller(ctx: Context) {
 	return [...(participant ? [participant] : []), ...(team ? [team] : [])];
 }
 
-/** A User row taking part in the conference as delegate, single participant or supervisor. */
+/** A filter matching any of `filters`, or undefined when there are none. */
+export function anyOf<F extends object>(filters: F[]) {
+	return filters.length > 0 ? { OR: filters } : undefined;
+}
+
+/**
+ * The conferences the caller may read: the public ones and those they have a part in. What only
+ * makes sense next to a conference - its committees, agenda items and roles, which the seat
+ * overview shows - follows it, so a conference in PRE or POST hides its set-up from strangers too.
+ */
+export function readableConference(ctx: Context) {
+	return { OR: [publicConference, ...conferencesOfCaller(ctx)] };
+}
+
+/**
+ * The conferences whose schedule (calendar days, tracks, entries, places) the caller may read:
+ * the team's always, a participant's once the team has switched the calendar on (`showCalendar`),
+ * which is when the dashboard shows it. Undefined for an anonymous caller.
+ */
+export function calendarConference(ctx: Context) {
+	const participant = isParticipantOfConference(ctx)?.conference;
+	const team = isTeamMemberOf(ctx);
+	return anyOf([
+		...(participant ? [{ ...participant, showCalendar: true }] : []),
+		...(team ? [team] : [])
+	]);
+}
+
+/**
+ * A User row taking part in the conference as delegate, single participant or supervisor. This is
+ * what "participant" means throughout: the team and the waiting list are not participants, and the
+ * helpers that include them say so in their names (`assertParticipantOrTeamMemberIn`,
+ * `isParticipantOrTeamMember`, `isCaredForUser`).
+ */
 export function participatesIn(conference: { id: string } | object) {
 	return {
 		OR: [
@@ -166,13 +201,13 @@ export function participatesIn(conference: { id: string } | object) {
 }
 
 /**
- * The User rows the caller looks after: the participants and waiting-list entrants of a conference
- * where the caller is participant care or project management. A system admin looks after
+ * The User rows in the caller's care: the participants (`participatesIn`) and waiting-list
+ * entrants of a conference where the caller is participant care or project management. A system admin looks after
  * everybody. The team is not among them: care notes are about participants, and a teammate's
  * (perhaps from when they took part themselves) is not their colleagues' to read. What the team
  * admins need of their team for planning is its own rule on the user table.
  */
-export function isManagedUser(ctx: Context) {
+export function isCaredForUser(ctx: Context) {
 	if (isSystemAdmin(ctx)) return {};
 	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
 	if (!conference) return undefined;
@@ -324,10 +359,11 @@ export async function participantIdsOf(
 }
 
 /**
- * Refuses unless the user takes part in the conference or is on its team. Guards writes about one
- * person, such as attendance or a participant status, that name them by id.
+ * Refuses unless the user is a participant of the conference (`participatesIn`) or on its team.
+ * Guards writes about one person that name them by id, such as a participant status. Attendance
+ * is narrower: it records participants only (`attendanceEntryPermissions.ts`).
  */
-export async function assertUserInConference(conferenceId: string, userId: string) {
+export async function assertParticipantOrTeamMemberIn(conferenceId: string, userId: string) {
 	const user = await db.query.user.findFirst({
 		where: {
 			id: userId,

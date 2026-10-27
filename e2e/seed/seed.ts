@@ -114,6 +114,10 @@ export const E2E_CONNECT_SINGLE_PARTICIPANT_ID = 'e2e00000singlepart00000002';
 // committee - the head delegate assigns it via the UI.
 export const E2E_COMMITTEE_ASSIGN_DELEGATION_ID = 'e2e00000delegation00000004';
 export const E2E_COMMITTEE_ASSIGN_HEAD_USER_ID = 'e2e-committee-assign-head';
+export const E2E_COMMITTEE_ASSIGN_MEMBER_ID = 'e2e00000delegationmember0004';
+// A committee of the same conference that does not seat the committee-assign nation, so a head
+// delegate trying to place a member there has to be refused.
+export const E2E_UNSEATED_COMMITTEE_ID = 'e2e00000committee000000005';
 
 // Payment (group variant): the same supervisor above, but pre-linked (via seed, not the
 // connect-supervisor test's own action) to a second participant, so the group-payment default
@@ -703,12 +707,24 @@ export default async function seed() {
 			isHeadDelegate: true,
 			assignedCommitteeId: null
 		}),
-		id: 'e2e00000delegationmember0004'
+		id: E2E_COMMITTEE_ASSIGN_MEMBER_ID
 	};
 	await db
 		.insert(schema.delegationMember)
 		.values(committeeAssignMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeAssignMember });
+	const unseatedCommittee = {
+		...makeSeedCommittee({ conferenceId: conference.id }),
+		id: E2E_UNSEATED_COMMITTEE_ID,
+		name: 'E2E Committee Without Italy',
+		abbreviation: 'NOIT',
+		numOfSeatsPerDelegation: 1
+	};
+	await db
+		.insert(schema.committee)
+		.values(unseatedCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: unseatedCommittee });
+	await seatNations(db, unseatedCommittee, [E2E_NATION_ALPHA3]);
 
 	// --- unreleased fixture: assigned in the database, not yet visible to the participant ---
 	const unreleasedConference = {

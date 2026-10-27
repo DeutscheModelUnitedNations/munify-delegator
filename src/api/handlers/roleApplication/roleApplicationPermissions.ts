@@ -17,12 +17,6 @@ export function registerRoleApplicationAbilities() {
 	// Ported from abilities/entities/roleApplication.ts
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Participant care and project management see their conference's applications.
-	abilityBuilder.roleApplication.allow('read').when((ctx) => {
-		const delegation = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-		return delegation ? { where: { delegation } } : undefined;
-	});
-
 	// Delegation members see their own delegation's applications.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
 
@@ -37,6 +31,14 @@ export function registerRoleApplicationAbilities() {
 					}
 				}
 			: undefined;
+	});
+
+	// Participant care and project management see their conference's applications, and change them
+	// even after the delegation applied, like the delegation itself (`createRoleApplication` checks
+	// the delegation's update ability).
+	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when((ctx) => {
+		const delegation = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		return delegation ? { where: { delegation } } : undefined;
 	});
 
 	// Supervisors see the applications of the delegations they supervise.

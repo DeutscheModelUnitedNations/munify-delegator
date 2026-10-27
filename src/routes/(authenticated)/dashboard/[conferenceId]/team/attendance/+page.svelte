@@ -341,11 +341,18 @@
 		// Looking somebody up again is no problem
 		const alreadyScanned = wasScanned(person.user.id);
 		const issues = checkIssues(person, alreadyScanned);
+		// The team is shown but never recorded, and gets no card
+		const awaiting = issues.includes('teamMember') ? 'ack' : recordScan(person, issues);
+		shown = personShown(person, issues, alreadyScanned, awaiting);
+		if (awaiting === null) release();
+	}
+
+	/** Logs the scan of someone who is recorded, and returns what the mode waits for next. */
+	function recordScan(person: FoundPerson, issues: ReturnType<typeof checkIssues>) {
 		const awaiting = scanStep(badgeOn, issues.length === 0);
 		// With cards the scan is logged once the card is stored
 		if (awaiting !== 'badge') logScan(person.user.id, issues.length === 0, personLabel(person));
-		shown = personShown(person, issues, alreadyScanned, awaiting);
-		if (awaiting === null) release();
+		return awaiting;
 	}
 
 	const logScan = (userId: string, passed: boolean, label: string) =>
@@ -356,6 +363,7 @@
 	const checkIssues = (person: FoundPerson, alreadyScanned: boolean) =>
 		scanIssues({
 			inConference: person.inConference,
+			isTeamMember: person.roles.isTeamMember,
 			status: person.status,
 			birthday: person.user.birthday,
 			alreadyScanned

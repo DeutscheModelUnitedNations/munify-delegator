@@ -4,7 +4,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
 	assertTeamRole,
-	assertUserInConference,
+	assertParticipantOrTeamMemberIn,
 	isOwnUser,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
@@ -86,7 +86,7 @@ export async function assertCanCreateParticipantStatus(
 	userId: string
 ) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
-	await assertUserInConference(conferenceId, userId);
+	await assertParticipantOrTeamMemberIn(conferenceId, userId);
 }
 
 /** The bulk attendance toggle is for the conference's participant care. */

@@ -130,11 +130,11 @@ function describePerson(person: ScannedPerson, status: ScannedStatus) {
 	const isSupervisor = person.conferenceSupervisor.length > 0;
 	const isTeamMember = person.teamMember.length > 0;
 	const isWaitingList = person.waitingListEntry.length > 0;
+	// The team is found and named, but takes no part as a participant: it is never scanned in.
 	const inConference =
 		person.delegationMemberships.length > 0 ||
 		person.singleParticipant.length > 0 ||
 		isSupervisor ||
-		isTeamMember ||
 		isWaitingList;
 	return {
 		found: true,

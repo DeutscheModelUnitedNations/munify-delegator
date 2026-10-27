@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	createAttemptLimiter,
 	createFailureLimiter,
 	createMemoryFailureStore,
 	createRedisFailureStore,
@@ -78,5 +79,33 @@ describe('createRedisFailureStore', () => {
 		await store.add('a', 600_000);
 		expect(calls).toEqual([['set', 'p:a', '0', 'PX', 600_000, 'NX'], ['incr', 'p:a'], ['exec']]);
 		expect(await store.count('a')).toBe(2);
+	});
+});
+
+describe('createAttemptLimiter', () => {
+	function attemptLimiterAt(clock: { now: number }) {
+		return createAttemptLimiter({
+			store: createMemoryFailureStore(() => clock.now),
+			limit: 2,
+			windowMs: 1000,
+			refused: () => new Refused()
+		});
+	}
+
+	it('counts every attempt and refuses past the limit, per caller', async () => {
+		const limiter = attemptLimiterAt({ now: 0 });
+		await limiter.take('a');
+		await limiter.take('a');
+		await expect(limiter.take('a')).rejects.toThrow(Refused);
+		await expect(limiter.take('b')).resolves.toBeUndefined();
+	});
+
+	it('lets the caller in again once the window has passed', async () => {
+		const clock = { now: 0 };
+		const limiter = attemptLimiterAt(clock);
+		await limiter.take('a');
+		await limiter.take('a');
+		clock.now = 1000;
+		await expect(limiter.take('a')).resolves.toBeUndefined();
 	});
 });

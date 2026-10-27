@@ -3,6 +3,7 @@ import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRoleForCalendarDay,
+	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId
@@ -15,16 +16,26 @@ export function registerCalendarEntryAbilities() {
 	// Ported from abilities/entities/calendarEntry.ts
 	abilityBuilder.calendarEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// An entry without survey options is for everybody.
-	abilityBuilder.calendarEntry.allow('read').when(() => ({
-		where: { NOT: { surveyOptions: true } }
-	}));
+	// An entry without survey options is for everybody who reads the conference's schedule
+	// (`calendarConference`)...
+	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
+		const conference = calendarConference(ctx);
+		return conference
+			? { where: { NOT: { surveyOptions: true }, calendarDay: { conference } } }
+			: undefined;
+	});
 
-	// One with options only for those who picked one of them...
+	// ...one with options only for those of them who picked one of them...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
 		const id = userId(ctx);
-		return id
-			? { where: { surveyOptions: { surveyAnswers: { participant: { userId: id } } } } }
+		const conference = calendarConference(ctx);
+		return id && conference
+			? {
+					where: {
+						surveyOptions: { surveyAnswers: { participant: { userId: id } } },
+						calendarDay: { conference }
+					}
+				}
 			: undefined;
 	});
 

@@ -4,7 +4,8 @@ import {
 	ensureConferenceParticipant,
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
-import { isUserAlreadyRegistered } from '#api/services/registration/participation.js';
+import { isParticipantOrTeamMember } from '#api/services/registration/participation.js';
+import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness.js';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
 import { normalizeEntryCode } from '#lib/helpers/entryCode.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -38,9 +39,14 @@ export async function registerSupervisor(
 		conferenceId: string;
 		subjectId: string;
 		plansOwnAttendenceAtConference?: boolean | null;
+		/** Whether the caller registers themselves; the team registering somebody else may do so in any stage. */
+		selfService: boolean;
 	}
 ) {
-	if (await isUserAlreadyRegistered({ userId: args.subjectId, conferenceId: args.conferenceId })) {
+	if (args.selfService) await assertRegistrationOpen(args.conferenceId);
+	if (
+		await isParticipantOrTeamMember({ userId: args.subjectId, conferenceId: args.conferenceId })
+	) {
 		throw apiError('CONFLICT', m.supervisorUserHasOtherRole());
 	}
 

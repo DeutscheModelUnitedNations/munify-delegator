@@ -7,6 +7,7 @@
 	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
 	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
 	import TeamMemberActions from './TeamMemberActions.svelte';
+	import TeamRoleCell from './TeamRoleCell.svelte';
 	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
@@ -92,15 +93,6 @@
 		await promise;
 	};
 
-	const roleColors: Record<string, string> = {
-		PROJECT_MANAGEMENT: 'badge-primary',
-		PARTICIPANT_CARE: 'badge-secondary',
-		REVIEWER: 'badge-accent',
-		MEMBER: 'badge-ghost',
-		TEAM_COORDINATOR: 'badge-info',
-		CONTENT_LEAD: 'badge-warning'
-	};
-
 	const columns: ManagedColumn<(typeof teamMembers)[number]>[] = [
 		{
 			id: 'family_name',
@@ -126,9 +118,15 @@
 			accessorFn: (row) => translateTeamRole(row.role),
 			filter: { type: 'enum', label: translateTeamRole, options: TEAM_ROLES },
 			cell: ({ row }) =>
-				renderComponent(BadgeCell, {
-					label: translateTeamRole(row.original.role),
-					variant: roleColors[row.original.role] ?? 'badge-ghost'
+				renderComponent(TeamRoleCell, {
+					role: row.original.role,
+					onChange: (role) =>
+						Promise.resolve(
+							client.mutate.updateTeamMemberRole({
+								__args: { id: row.original.id, role },
+								role: true
+							})
+						)
 				})
 		},
 		{

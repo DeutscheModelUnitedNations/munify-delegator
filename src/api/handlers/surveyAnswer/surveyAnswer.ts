@@ -1,4 +1,5 @@
-import { db } from '#api/db/db.js';
+import { db, schema } from '#api/db/db.js';
+import { eq } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	distributeUnansweredSurvey,
@@ -8,6 +9,7 @@ import {
 } from './surveyAnswerService';
 import {
 	assertCanAnswerSurvey,
+	assertCanDeleteSurveyAnswer,
 	assertCanDistributeSurvey,
 	registerSurveyAnswerAbilities
 } from './surveyAnswerPermissions';
@@ -54,6 +56,25 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
+		}
+	}),
+
+	/**
+	 * Takes back the answer `userId` (by default the caller) gave to the question, leaving it
+	 * unanswered for them.
+	 */
+	deleteSurveyAnswer: t.field({
+		type: 'Boolean',
+		args: { questionId: t.arg.id({ required: true }), userId: t.arg.id() },
+		resolve: async (_root, args, ctx) => {
+			const answer = await assertCanDeleteSurveyAnswer(ctx, args);
+			await db.delete(schema.surveyAnswer).where(eq(schema.surveyAnswer.id, answer.id));
+
+			surveyAnswerPubsub.removed();
+			for (const optionId of await optionIdsOfQuestion(answer.questionId)) {
+				surveyOptionPubsub.updated(optionId);
+			}
+			return true;
 		}
 	}),
 

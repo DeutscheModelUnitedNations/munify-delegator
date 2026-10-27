@@ -63,6 +63,7 @@
 	const seat = $derived(participation ? describeParticipant(participation) : null);
 
 	const issueMessages: Record<ScanIssue, () => string> = {
+		teamMember: m.scanTeamMemberNotRecorded,
 		notInConference: m.notInConference,
 		paymentOpen: m.scanIssuePaymentOpen,
 		termsOpen: m.scanIssueTermsOpen,

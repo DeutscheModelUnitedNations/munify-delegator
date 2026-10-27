@@ -5,7 +5,7 @@ import {
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	TEAM_ADMIN_ROLES,
-	isManagedUser,
+	isCaredForUser,
 	isSystemAdmin,
 	isTeamMemberOf,
 	participatesIn,
@@ -58,7 +58,7 @@ const WITHOUT_CARE_NOTES = { globalNotes: false };
 // pair is shown - but no contact details. A dismissed pair keeps the name only, so the page can
 // still list it and the dismissal can be undone; the notes are withheld again.
 function duplicateOfManaged(ctx: Context, status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[]) {
-	const managed = isManagedUser(ctx);
+	const managed = isCaredForUser(ctx);
 	if (!managed) return undefined;
 	const standing = { status: { in: status } };
 	return {
@@ -91,7 +91,7 @@ export function registerUserAbilities() {
 
 	// Project management and participant care see everybody they look after - the participants and
 	// waiting-list entrants of the conferences they manage - in full.
-	abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
+	abilityBuilder.user.allow('read').when((ctx) => where(isCaredForUser(ctx)));
 
 	// The other account of a possible duplicate (see `duplicateOfManaged`).
 	abilityBuilder.user.allow('read').when((ctx) => {
@@ -217,7 +217,7 @@ export function registerUserAbilities() {
 /** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
 export async function assertCanManageUser(ctx: Context, id: string) {
 	ctx.mustBeLoggedIn();
-	const managed = isManagedUser(ctx);
+	const managed = isCaredForUser(ctx);
 	const found = managed
 		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
 		: undefined;
@@ -267,6 +267,13 @@ export async function deletableParticipation(
 /**
  * Opting out of the newsletters works without a session, because this backs the unsubscribe link
  * in outgoing mail; opting in is consent, so only the account itself may give it.
+ *
+ * TODO(security): anybody can switch anybody's newsletters off, since the address is the only
+ * thing the link carries (docs/review/backend-findings.md, F-16). The fix is a signed token in the
+ * link: an HMAC of the user id under a secret the app and the jobs share, written by the mail sync
+ * into the Listmonk subscriber's attribs (next to `userId`, also nulled on release), put into the
+ * link by the Listmonk newsletter template, and checked here instead of allowing anonymous
+ * opt-outs. Needs the template changed in Listmonk, so it waits until that can be done together.
  */
 export function assertCanUpdateNewsletterPreferences(
 	ctx: Context,

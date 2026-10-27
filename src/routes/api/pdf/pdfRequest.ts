@@ -13,11 +13,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Refuses callers without a session. Compiling is expensive (a compiler run of up to 30 s per
- * call), and the route is outside the OIDC handle's protected prefixes, so it checks itself.
+ * Refuses callers without a session and answers who the caller is. Compiling is expensive (a
+ * compiler run of up to 30 s per call), and the route is outside the OIDC handle's protected
+ * prefixes, so it checks itself.
  */
-export function assertSignedIn(locals: { oidc?: unknown }) {
+export function assertSignedIn(locals: { oidc?: { user: { sub: string } } }): string {
 	if (!locals.oidc) throw error(401, 'Unauthorized');
+	return locals.oidc.user.sub;
+}
+
+/**
+ * At most `max` compiles at the same time. `take` answers the function that gives the slot back
+ * (calling it twice gives back one slot), or undefined when every slot is taken.
+ */
+export function createCompileSlots(max: number) {
+	let taken = 0;
+	return {
+		take(): (() => void) | undefined {
+			if (taken >= max) return undefined;
+			taken++;
+			let released = false;
+			return () => {
+				if (released) return;
+				released = true;
+				taken--;
+			};
+		},
+		get taken() {
+			return taken;
+		}
+	};
 }
 
 const HEADER_STRING_KEYS = [

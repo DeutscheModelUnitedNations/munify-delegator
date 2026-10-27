@@ -16,10 +16,22 @@ export function registerSurveyAnswerAbilities() {
 	// Ported from abilities/entities/surveyAnswer.ts
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users read and update their own answers (no delete, matching the CASL rule).
+	// Users read and update their own answers, and take one back until the question's deadline,
+	// after which answering is closed for them too.
 	abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => {
 		const id = userId(ctx);
 		return id ? { where: { participant: { userId: id } } } : undefined;
+	});
+	abilityBuilder.surveyAnswer.allow('delete').when((ctx) => {
+		const id = userId(ctx);
+		return id
+			? {
+					where: {
+						participant: { userId: id },
+						question: { deadline: { gt: new Date() } }
+					}
+				}
+			: undefined;
 	});
 
 	// Participant care and project management manage their conference's answers.
@@ -109,6 +121,25 @@ export async function assertCanAnswerSurvey(
 	});
 
 	return { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id };
+}
+
+/**
+ * Refuses unless the caller may take back the answer `userId` (by default the caller) gave to the
+ * question (the row's delete ability). Returns it.
+ */
+export async function assertCanDeleteSurveyAnswer(
+	ctx: ApiContext,
+	args: { questionId: string; userId?: string | null }
+) {
+	const subject = args.userId ?? ctx.mustBeLoggedIn().sub;
+	const answer = await db.query.surveyAnswer.findFirst({
+		...(await ctx.abilities.surveyAnswer.filter('delete')).merge({
+			where: { questionId: args.questionId, participant: { userId: subject } }
+		}).query.single,
+		columns: { id: true, questionId: true }
+	});
+	if (!answer) throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+	return answer;
 }
 
 /** Refuses unless the caller may answer the question for everybody who has not yet. */

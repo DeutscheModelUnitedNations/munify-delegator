@@ -32,6 +32,16 @@
 		}
 	};
 
+	/** Takes the person's answer back, so the question counts as unanswered for them again. */
+	const clearAnswer = async () => {
+		loading = true;
+		try {
+			await client.mutate.deleteSurveyAnswer({ __args: { questionId: survey.id, userId } });
+		} finally {
+			loading = false;
+		}
+	};
+
 	type Option = Props['survey']['options'][number];
 
 	/** Red once an option is full, amber within five seats of it; unlimited options stay plain. */
@@ -110,6 +120,16 @@
 			{#each survey.options as option (option.id)}
 				{@render optionRow(option)}
 			{/each}
+			{#if surveyAnswer}
+				<button
+					class="btn btn-ghost btn-xs text-error mt-1 self-start"
+					disabled={loading}
+					onclick={clearAnswer}
+				>
+					<i class="fa-sharp-duotone fa-solid fa-eraser"></i>
+					{m.withdrawSurveyAnswer()}
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -49,9 +49,10 @@ export function registerDelegationAbilities() {
 			: undefined;
 	});
 
-	// Project management and participant care manage their conference's delegations.
+	// Project management and participant care manage their conference's delegations, deleting
+	// included: whoever may change a delegation after it applied may also take it out.
 	abilityBuilder.delegation
-		.allow(['read', 'update'])
+		.allow(['read', 'update', 'delete'])
 		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Any team member of the conference may see them - without the join code, which the members,

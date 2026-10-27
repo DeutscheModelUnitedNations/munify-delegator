@@ -5,6 +5,7 @@ import {
 	assertTeamRole,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
+	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	where
@@ -12,8 +13,10 @@ import {
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
-	// Ported from abilities/entities/committee.ts
-	abilityBuilder.committee.allow('read');
+	// The committees are part of the seat overview: readable wherever their conference is.
+	abilityBuilder.committee
+		.allow('read')
+		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
 	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
 	// Project management sets up its committees. Which nations sit in them is the seat planning's

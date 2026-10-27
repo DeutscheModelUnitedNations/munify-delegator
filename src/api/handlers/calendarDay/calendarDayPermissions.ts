@@ -2,14 +2,18 @@ import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
+	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
 } from '#api/services/authHelper.js';
 
 export function registerCalendarDayAbilities() {
-	// Ported from abilities/entities/calendarDay.ts
-	abilityBuilder.calendarDay.allow('read');
+	// The schedule is for the people with a part in the conference (`calendarConference`).
+	abilityBuilder.calendarDay.allow('read').when((ctx) => {
+		const conference = calendarConference(ctx);
+		return conference ? { where: { conference } } : undefined;
+	});
 	abilityBuilder.calendarDay.allow(['update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.calendarDay

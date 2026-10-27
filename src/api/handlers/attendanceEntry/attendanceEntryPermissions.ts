@@ -3,7 +3,6 @@ import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
-	assertUserInConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId
@@ -72,12 +71,40 @@ export async function assertSessionOfConference(sessionId: string, conferenceId:
 }
 
 /**
+ * Refuses a scan of somebody who does not take part in the conference as delegate, single
+ * participant or supervisor. Recording attendance creates the person's participant row, which the
+ * team has none of: a team member is shown by the scanner but never recorded.
+ */
+async function assertParticipantToScan(conferenceId: string, subjectId: string) {
+	const subject = await db.query.user.findFirst({
+		where: { id: subjectId },
+		columns: { id: true },
+		with: {
+			delegationMemberships: { where: { participant: { conferenceId } }, columns: { id: true } },
+			singleParticipant: { where: { participant: { conferenceId } }, columns: { id: true } },
+			conferenceSupervisor: { where: { participant: { conferenceId } }, columns: { id: true } },
+			teamMember: { where: { conferenceId }, columns: { id: true } }
+		}
+	});
+	const participates =
+		!!subject &&
+		(subject.delegationMemberships.length > 0 ||
+			subject.singleParticipant.length > 0 ||
+			subject.conferenceSupervisor.length > 0);
+	if (participates) return;
+	if (subject && subject.teamMember.length > 0) {
+		throw apiError('INVALID_INPUT', m.teamMembersAreNotScanned());
+	}
+	throw apiError('INVALID_INPUT', m.userNotInConference());
+}
+
+/**
  * Any team member of the conference may record attendance, not just management - the scanner is
- * on every team member's dashboard - and only for somebody who is part of the conference.
+ * on every team member's dashboard - and only for somebody who takes part in the conference.
  */
 async function assertMayRecordAttendance(ctx: ApiContext, conferenceId: string, subjectId: string) {
 	await assertTeamRole(ctx, conferenceId);
-	await assertUserInConference(conferenceId, subjectId);
+	await assertParticipantToScan(conferenceId, subjectId);
 }
 
 /** Who records the scan; refuses an anonymous caller and a foreign session. */

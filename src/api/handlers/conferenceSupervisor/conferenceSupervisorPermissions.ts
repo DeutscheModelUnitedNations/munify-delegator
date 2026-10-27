@@ -9,7 +9,7 @@ import {
 	userId,
 	where
 } from '#api/services/authHelper.js';
-import { fetchUserParticipations } from '#api/services/registration/participation.js';
+import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation.js';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
 
@@ -137,7 +137,10 @@ export async function assertCanDisconnectFromConferenceSupervisor(
  * supervised in. Returns the subject's participations, which get the supervision link.
  */
 export async function assertCanBeSupervised(conferenceId: string, subjectId: string) {
-	const participation = await fetchUserParticipations({ conferenceId, userId: subjectId });
+	const participation = await fetchParticipationsAndTeamMembership({
+		conferenceId,
+		userId: subjectId
+	});
 
 	if (participation.foundSupervisor || participation.foundTeamMember) {
 		throw apiError('CONFLICT', m.supervisorAlreadySupervisorOrTeam());
@@ -169,7 +172,7 @@ export async function assertCanRotateSupervisorConnectionCode(ctx: ApiContext, i
  * conference in some role, so an arbitrary logged-in user cannot probe codes.
  */
 export async function assertCanPreviewConferenceSupervisor(ctx: ApiContext, conferenceId: string) {
-	const participation = await fetchUserParticipations({
+	const participation = await fetchParticipationsAndTeamMembership({
 		conferenceId,
 		userId: ctx.mustBeLoggedIn().sub
 	});

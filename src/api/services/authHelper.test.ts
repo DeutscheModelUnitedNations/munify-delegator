@@ -4,7 +4,7 @@ import type { Context } from '#api/context.js';
 vi.mock('#api/db/db.js', () => ({ db: {} }));
 
 const {
-	isManagedUser,
+	isCaredForUser,
 	isOwnUser,
 	isParticipantOfConference,
 	isTeamMemberOf,
@@ -46,7 +46,7 @@ describe('filters grant nothing to anonymous requests', () => {
 		['isTeamMemberOfConference', () => isTeamMemberOfConference(anonymous)],
 		['isOwnUser', () => isOwnUser(anonymous)],
 		['isParticipantOfConference', () => isParticipantOfConference(anonymous)],
-		['isManagedUser', () => isManagedUser(anonymous)]
+		['isCaredForUser', () => isCaredForUser(anonymous)]
 	])('%s', (_name, filter) => {
 		expect(filter()).toBeUndefined();
 	});
@@ -72,7 +72,7 @@ describe('team filters', () => {
 	test('let a system admin through every team, on or off it', () => {
 		expect(isTeamMemberOf(admin, ['PROJECT_MANAGEMENT'])).toEqual({});
 		expect(isTeamMemberOfConference(admin)).toEqual({ conference: {} });
-		expect(isManagedUser(admin)).toEqual({});
+		expect(isCaredForUser(admin)).toEqual({});
 	});
 });
 
@@ -83,7 +83,7 @@ describe('isOwnUser', () => {
 	});
 });
 
-describe('isManagedUser', () => {
+describe('isCaredForUser', () => {
 	test('covers participants and waiting list of the conferences the caller cares for, not the team', () => {
 		const conference = {
 			teamMembers: {
@@ -91,7 +91,7 @@ describe('isManagedUser', () => {
 				role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
 			}
 		};
-		expect(isManagedUser(user)).toEqual({
+		expect(isCaredForUser(user)).toEqual({
 			OR: [...participatesIn(conference).OR, { waitingListEntry: { conference } }]
 		});
 	});

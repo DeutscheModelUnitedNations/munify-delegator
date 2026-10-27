@@ -3,6 +3,7 @@ import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
+	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
@@ -11,8 +12,11 @@ import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissio
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerPlaceAbilities() {
-	// Ported from abilities/entities/place.ts
-	abilityBuilder.place.allow('read');
+	// Places belong to the schedule: readable by whoever reads the conference's calendar.
+	abilityBuilder.place.allow('read').when((ctx) => {
+		const conference = calendarConference(ctx);
+		return conference ? { where: { conference } } : undefined;
+	});
 	abilityBuilder.place.allow(['update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.place

@@ -2,6 +2,8 @@ import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs, makeTestUser } from '../support/auth';
 import {
 	E2E_AGENDA_ITEM_ID,
+	E2E_COMMITTEE_ASSIGN_HEAD_USER_ID,
+	E2E_COMMITTEE_ASSIGN_MEMBER_ID,
 	E2E_ASSIGNMENT_ADMIN_ID,
 	E2E_CONFERENCE_ID,
 	E2E_CONNECT_PARTICIPANT_ID,
@@ -18,7 +20,8 @@ import {
 	E2E_SURVEY_QUESTION_ID,
 	E2E_MGMT_ADMIN_ID,
 	E2E_TEAM_COORDINATOR_ID,
-	E2E_TEAMMATE_USER_ID
+	E2E_TEAMMATE_USER_ID,
+	E2E_UNSEATED_COMMITTEE_ID
 } from '../seed/seed';
 
 // The route guards keep the UI honest; these keep the API honest. Each one sends the request a
@@ -552,4 +555,68 @@ test('participant care does not look after the team; the team admins read it wit
 		expect(user?.street, adminId).toBeTruthy();
 		expect(user?.globalNotes, adminId).toBeNull();
 	}
+});
+
+test('nobody registers into a conference that is not taking applications', async ({ page }) => {
+	// Registering makes the caller a participant, which opens the conference's members-only
+	// details to them; the preparation conference has closed its registration.
+	await loginAs(page, makeTestUser('authz-late-registrant'));
+	const closed = /registration period is closed/;
+
+	expectRefused(
+		await gql(page, `mutation ($c: ID!) { createDelegation(conferenceId: $c) { id } }`, {
+			c: E2E_PREP_CONFERENCE_ID
+		}),
+		closed
+	);
+	expectRefused(
+		await gql(page, `mutation ($c: ID!) { createConferenceSupervisor(conferenceId: $c) { id } }`, {
+			c: E2E_PREP_CONFERENCE_ID
+		}),
+		closed
+	);
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($c: ID!, $code: String!) {
+				createDelegationMember(conferenceId: $c, entryCode: $code) { id }
+			}`,
+			{ c: E2E_PREP_CONFERENCE_ID, code: 'ABCDEFGH' }
+		),
+		closed
+	);
+});
+
+test('a head delegate seats members only in committees that seat their delegation', async ({
+	page
+}) => {
+	// The member has no committee yet, so the head delegate may move them; the committee is one of
+	// the conference's, but it does not seat the delegation's nation.
+	await loginAs(page, fixedTestUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID));
+	const unseated = /committee does not belong/i;
+
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($id: ID!, $c: ID!) {
+				updateDelegationMemberCommittee(id: $id, assignedCommitteeId: $c) { id }
+			}`,
+			{ id: E2E_COMMITTEE_ASSIGN_MEMBER_ID, c: E2E_UNSEATED_COMMITTEE_ID }
+		),
+		unseated
+	);
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($conf: ID!, $ids: [ID!]!, $c: ID) {
+				updateManyDelegationMemberCommittee(conferenceId: $conf, ids: $ids, assignedCommitteeId: $c)
+			}`,
+			{
+				conf: E2E_CONFERENCE_ID,
+				ids: [E2E_COMMITTEE_ASSIGN_MEMBER_ID],
+				c: E2E_UNSEATED_COMMITTEE_ID
+			}
+		),
+		unseated
+	);
 });

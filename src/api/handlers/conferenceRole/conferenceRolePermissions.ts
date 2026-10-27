@@ -4,6 +4,7 @@ import {
 	assertAllowedRow,
 	assertTeamRole,
 	isTeamMemberOfConference,
+	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	where
@@ -11,8 +12,11 @@ import {
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerConferenceRoleAbilities() {
-	// The roles a conference offers are public, like the nations they may stand for.
-	abilityBuilder.conferenceRole.allow('read');
+	// The roles a conference offers are part of its seat overview: readable wherever the conference
+	// is. The nations they stand for are global reference data and public.
+	abilityBuilder.conferenceRole
+		.allow('read')
+		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when(systemAdmin);
 
 	// The non-state actors and the custom roles (the press, …) are part of the seat planning, which

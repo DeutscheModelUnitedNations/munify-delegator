@@ -9,9 +9,17 @@ import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { Redis } from 'ioredis';
+import { REDIS_URL } from '$app/env/private';
+import {
+	createAttemptLimiter,
+	createMemoryFailureStore,
+	createRedisFailureStore
+} from '#api/services/failureLimit.js';
 import {
 	assertSignedIn,
 	compileErrorDetail,
+	createCompileSlots,
 	emblemSvgFor,
 	readBody,
 	readHeader,
@@ -22,6 +30,25 @@ import type { RequestHandler } from './$types';
 const execFileAsync = promisify(execFile);
 
 const TYPST_BIN = join(process.cwd(), 'node_modules/.bin/typst');
+
+/**
+ * Compiles one account may start in ten minutes. People export a paper or resolution now and then;
+ * twenty leaves room for retries and stops anybody keeping the compiler busy.
+ */
+const COMPILES_PER_WINDOW = 20;
+const WINDOW_MS = 10 * 60_000;
+/** Compiles running at once in this process; beyond that a request is turned away, not queued. */
+const PARALLEL_COMPILES = 2;
+
+const compileLimiter = createAttemptLimiter({
+	store: REDIS_URL
+		? createRedisFailureStore(new Redis(REDIS_URL, { lazyConnect: true }), 'pdf-compile:')
+		: createMemoryFailureStore(),
+	limit: COMPILES_PER_WINDOW,
+	windowMs: WINDOW_MS,
+	refused: () => error(429, 'Too many PDF requests, please try again later')
+});
+const compileSlots = createCompileSlots(PARALLEL_COMPILES);
 
 /**
  * Generates the Typst source of a structured resolution in `dir`, writing the emblem it
@@ -62,7 +89,7 @@ async function ensureTypstAvailable() {
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	assertSignedIn(locals);
+	const caller = assertSignedIn(locals);
 	const body = await readBody(request);
 
 	// Two input shapes:
@@ -75,10 +102,25 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const header = readHeader(body.header);
 
 	await ensureTypstAvailable();
+	await compileLimiter.take(caller);
+	const release = compileSlots.take();
+	if (!release) throw error(503, 'PDF generation is busy, please try again in a moment');
+	try {
+		return await renderPdf(rawTypst, body.resolution, header);
+	} finally {
+		release();
+	}
+};
 
+/** Renders the raw Typst source, or else the structured resolution, in a temporary directory. */
+async function renderPdf(
+	rawTypst: string | undefined,
+	resolution: unknown,
+	header: ResolutionHeaderData
+): Promise<Response> {
 	const dir = await mkdtemp(join(tmpdir(), 'mun-'));
 	try {
-		const source = rawTypst ?? (await resolutionSource(body.resolution, header, dir));
+		const source = rawTypst ?? (await resolutionSource(resolution, header, dir));
 		const pdf = await compileTypst(dir, source);
 		return new Response(new Uint8Array(pdf), {
 			headers: {
@@ -97,4 +139,4 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	} finally {
 		await rm(dir, { recursive: true, force: true });
 	}
-};
+}

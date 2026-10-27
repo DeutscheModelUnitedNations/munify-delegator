@@ -59,6 +59,18 @@
 		open = !saved;
 	};
 
+	/** Takes the answer back, so the question is open again for the person. */
+	const withdrawAnswer = async () => {
+		if (!currentAnswerOptionId || questionLocked || loading) return;
+		const withdrawn = await saveWithToast(
+			(isLoading) => (loading = isLoading),
+			async () => {
+				await client.mutate.deleteSurveyAnswer({ __args: { userId, questionId: question.id } });
+			}
+		);
+		open = !withdrawn;
+	};
+
 	/** Seats still free; an option without an upper limit never runs out. */
 	const remainingCapacity = (option: SurveyOption) =>
 		option.upperLimit ? option.upperLimit - option.countSurveyAnswers : 99999999;
@@ -127,6 +139,12 @@
 {/snippet}
 
 {#snippet action()}
+	{#if currentAnswerOptionId && !questionLocked}
+		<button class="btn btn-ghost text-error mr-auto" onclick={withdrawAnswer} disabled={loading}>
+			<i class="fa-sharp-duotone fa-solid fa-eraser"></i>
+			{m.withdrawSurveyAnswer()}
+		</button>
+	{/if}
 	<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 	<button class="btn btn-primary" onclick={updateChoice} disabled={!canSave}>
 		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}

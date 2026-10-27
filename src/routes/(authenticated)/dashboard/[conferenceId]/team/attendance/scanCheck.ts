@@ -1,12 +1,19 @@
 /** An open point the check shows for a scanned person. */
 export type ScanIssue =
-	'notInConference' | 'paymentOpen' | 'termsOpen' | 'guardianConsentOpen' | 'alreadyScanned';
+	| 'teamMember'
+	| 'notInConference'
+	| 'paymentOpen'
+	| 'termsOpen'
+	| 'guardianConsentOpen'
+	| 'alreadyScanned';
 
 type AdministrativeStatus = 'DONE' | 'PROBLEM' | 'PENDING';
 
 export interface ScanCheckInput {
-	/** Whether the person has any part in the conference. */
+	/** Whether the person has any part in the conference as a participant. */
 	inConference: boolean;
+	/** Whether the person is on the conference's team, which is shown but never scanned in. */
+	isTeamMember?: boolean;
 	/** The person's status row; without one everything counts as pending. */
 	status: {
 		paymentStatus: AdministrativeStatus;
@@ -36,6 +43,8 @@ const NO_STATUS = {
 
 /** What is open for the scanned person, most important first. */
 export function scanIssues(input: ScanCheckInput): ScanIssue[] {
+	// A team member has no participant status to check, and is not recorded at all
+	if (input.isTeamMember && !input.inConference) return ['teamMember'];
 	const status = input.status ?? NO_STATUS;
 	// Only people under 18 need a guardian's consent
 	const needsConsent = isMinor(input.birthday, input.now ?? new Date());

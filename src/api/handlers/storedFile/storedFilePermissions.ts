@@ -3,9 +3,11 @@ import { db } from '#api/db/db.js';
 import type { Context } from '#api/context.js';
 import { abilityBuilder } from '#api/rumble.js';
 import {
+	anyOf,
 	assertTeamRole,
+	calendarConference,
 	conferencesOfCaller,
-	publicConference,
+	readableConference,
 	systemAdmin,
 	userId
 } from '#api/services/authHelper.js';
@@ -14,11 +16,6 @@ import { findFileSource, type FileField, type FileKind } from './fileSources';
 
 /** Who uploaded a file is the uploader's (and an admin's) to know. */
 const WITHOUT_UPLOADER = { uploadedById: false };
-
-/** A filter matching any of `filters`, or undefined when there are none. */
-function anyOf<F extends object>(filters: F[]) {
-	return filters.length > 0 ? { OR: filters } : undefined;
-}
 
 /**
  * Who may read a stored file - and so get its presigned URL, the only way to its bytes - follows
@@ -31,7 +28,7 @@ function anyOf<F extends object>(filters: F[]) {
  *   takes registrations, otherwise to the people with a part in it);
  * - its templates (contract, consents, terms, certificate): to the people with a part in it, like
  *   the members-only columns that hold them;
- * - a place's site plan: to anybody, like the place;
+ * - a place's site plan: to whoever reads the conference's calendar, like the place;
  * - a resolution's PDF: to the people with a part in its conference, like the resolution.
  */
 export function registerStoredFileAbilities() {
@@ -43,7 +40,7 @@ export function registerStoredFileAbilities() {
 	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = { OR: [publicConference, ...conferencesOfCaller(ctx)] };
+		const conference = readableConference(ctx);
 		return {
 			where: {
 				OR: [{ imageOf: conference }, { emblemOf: conference }, { logoOf: conference }]
@@ -70,9 +67,12 @@ export function registerStoredFileAbilities() {
 			: undefined;
 	});
 
-	abilityBuilder.storedFile
-		.allow('read')
-		.when(() => ({ where: { sitePlanOf: true }, columns: WITHOUT_UPLOADER }));
+	abilityBuilder.storedFile.allow('read').when((ctx) => {
+		const conference = calendarConference(ctx);
+		return conference
+			? { where: { sitePlanOf: { conference } }, columns: WITHOUT_UPLOADER }
+			: undefined;
+	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const conference = anyOf(conferencesOfCaller(ctx));

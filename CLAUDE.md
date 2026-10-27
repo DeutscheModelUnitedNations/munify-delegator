@@ -238,7 +238,7 @@ bun run preview
   check. A check several entities need goes into `authHelper.ts`, not into two permission files:
   `assertAllowedRow` (a row through its own update/delete ability, else NOT_FOUND),
   `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
-  `assertUserInConference`, `assertParticipantOfConference`. Permission functions take
+  `assertParticipantOrTeamMemberIn`, `assertParticipantOfConference`. Permission functions take
   `ApiContext` (`#api/rumble.js`), which carries `abilities`.
 
 - **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
@@ -264,7 +264,7 @@ bun run preview
   role matrix (who may do what). Rules of thumb, all of them enforced by `e2e/authorization/`:
 
   - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
-    `isParticipantOfConference`, `isManagedUser`, …), wrapped with `where(...)`. A helper returns
+    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `where(...)`. A helper returns
     `undefined` for "grants nothing" and never throws. Every table also gets
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
   - **Updates and deletes go through the row's own ability** (`filter('update').merge({ where:

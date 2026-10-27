@@ -14,12 +14,15 @@ test('a head delegate can assign a delegation member to a committee', async ({ p
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/committee-assignment`
 	});
 
-	const committeeSelect = page.locator('select.select');
+	// Each member picks a committee from the ones seating the delegation's nation.
+	const committeeChoice = page.getByRole('radio', { name: 'E2E', exact: true });
 	// This page fires two parallel liveQuery calls (delegationMembers, committees) on top of the
 	// layout's own queries (conferences, breadcrumb conference lookup, impersonation status), which
 	// measurably pushes first render past 15s under load - give it more room than a single-query page.
-	await expect(committeeSelect).toBeVisible({ timeout: 30_000 });
-	await committeeSelect.selectOption({ label: 'E2E' });
+	await expect(committeeChoice).toBeVisible({ timeout: 30_000 });
+	// The committee that does not seat the nation is not offered at all.
+	await expect(page.getByRole('radio', { name: 'NOIT' })).toHaveCount(0);
+	await committeeChoice.click();
 
 	await page.getByRole('button', { name: 'Speichern' }).click();
 

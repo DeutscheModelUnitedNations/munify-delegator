@@ -181,6 +181,7 @@ schemaBuilder.mutationFields((t) => ({
 			const updatableWhere = await authorizeDelegationMemberCommitteeMoves(
 				ctx,
 				args.conferenceId,
+				args.ids,
 				args.assignedCommitteeId
 			);
 			const count = await moveManyMembersToCommittee(

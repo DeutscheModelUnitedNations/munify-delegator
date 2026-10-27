@@ -7,6 +7,7 @@ import { waitingListFormSchema } from '../../../routes/(authenticated)/registrat
 import { nullToUndefined } from '#api/services/args.js';
 import {
 	assertCanDeleteWaitingListEntry,
+	assertCanSetWaitingListFlags,
 	registerWaitingListEntryAbilities,
 	updatableWaitingListEntry
 } from './waitingListEntryPermissions';
@@ -88,6 +89,7 @@ schemaBuilder.mutationFields((t) => ({
 			assigned: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			await assertCanSetWaitingListFlags(ctx, args.id, args);
 			const where = await updatableWaitingListEntry(ctx, args.id);
 			const assignedAt =
 				args.assigned === true

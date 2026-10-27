@@ -1,4 +1,5 @@
 import { m } from '#lib/paraglide/messages.js';
+import { db } from '#api/db/db.js';
 import type * as schema from '#api/db/schema/index.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import {
@@ -16,10 +17,27 @@ export type ApplicationTextEdits = {
 const edited = <T>(edit: T | undefined, stored: T) => (edit === undefined ? stored : edit);
 
 /**
+ * Refuses registering yourself (as head delegate, single participant or supervisor) or joining a
+ * delegation outside the window applications are taken in. A registration makes the caller a
+ * participant, which opens the conference's members-only details, surveys and papers to them, so
+ * a conference that is not taking applications must not hand that out. The team registering
+ * somebody else is not bound to it.
+ */
+export async function assertRegistrationOpen(conferenceId: string) {
+	const conference = await db.query.conference.findFirst({
+		where: { id: conferenceId },
+		columns: { state: true, startAssignment: true, registrationDeadlineGracePeriodMinutes: true }
+	});
+	if (!conference || !acceptsApplications(conference)) {
+		throw apiError('CONFLICT', m.applicationTimeframeClosed());
+	}
+}
+
+/**
  * Refuses an application from a delegation or single participant that is not ready for it: too
  * few role applications, incomplete texts (judged with this update's edits applied), or a closed
- * registration window. Only sent applications count, so this is where the conference's stage is
- * enforced - registering, joining and editing are open in any stage. The rules themselves live in
+ * registration window. Registering and joining are bound to the same window
+ * (`assertRegistrationOpen`); editing a registration is open in any stage. The rules themselves live in
  * `#lib/helpers/applicationReadiness.js`, which the registration stages show as todos.
  */
 export function assertApplicationReady(

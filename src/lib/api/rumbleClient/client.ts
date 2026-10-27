@@ -2322,6 +2322,10 @@ export type Mutation = {
   deleteSingleParticipant: (p: {
     id: ID
   }) => Boolean,
+  deleteSurveyAnswer: (p: {
+    questionId: ID,
+    userId?: ID | null | undefined
+  }) => Boolean,
   deleteSurveyOption: (p: {
     id: ID
   }) => Boolean,
@@ -2714,6 +2718,10 @@ export type Mutation = {
     showSelectionOnDashboard?: Boolean | null | undefined,
     title?: String | null | undefined
   }) => Surveyquestion,
+  updateTeamMemberRole: (p: {
+    id: ID,
+    role: TeamroleEnum
+  }) => Teammember,
   updateUser: (p: {
     address: AddressInput,
     apartment?: String | null | undefined,
