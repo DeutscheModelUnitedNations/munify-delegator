@@ -18,6 +18,7 @@ import {
 } from '#api/services/failureLimit.js';
 import {
 	assertSignedIn,
+	compileEnv,
 	compileErrorDetail,
 	createCompileSlots,
 	emblemSvgFor,
@@ -74,6 +75,7 @@ async function compileTypst(dir: string, source: string): Promise<Buffer> {
 
 	await execFileAsync(TYPST_BIN, ['compile', 'resolution.typ', 'resolution.pdf'], {
 		cwd: dir,
+		env: compileEnv(process.env.PATH),
 		timeout: 30_000
 	});
 

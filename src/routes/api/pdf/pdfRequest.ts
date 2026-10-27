@@ -91,6 +91,25 @@ export function decodeEmblemDataUrl(dataUrl: string): string | null {
 	}
 }
 
+/** A proxy nothing listens on: every connection through it is refused. */
+const DEAD_PROXY = 'http://127.0.0.1:9';
+
+/**
+ * The environment a compile runs in. Only `PATH` comes from the server, which the `typst` wrapper
+ * needs to find `node`: the compiler never sees the app's secrets. All traffic goes to a dead proxy,
+ * so a source importing a `@preview` package the server has not cached fails instead of
+ * downloading it (Typst 0.10 has no flag to switch package downloads off).
+ */
+export function compileEnv(path: string | undefined): NodeJS.ProcessEnv {
+	return {
+		...(path ? { PATH: path } : {}),
+		HTTPS_PROXY: DEAD_PROXY,
+		HTTP_PROXY: DEAD_PROXY,
+		https_proxy: DEAD_PROXY,
+		http_proxy: DEAD_PROXY
+	};
+}
+
 /** Reads the request body as a JSON object, rejecting oversized or malformed input. */
 export async function readBody(request: Request): Promise<Record<string, unknown>> {
 	const contentLength = Number(request.headers.get('content-length'));

@@ -223,8 +223,10 @@ REVIEWER do not need them.
 (`createAttemptLimiter` in `failureLimit.ts`, Redis or in-memory, answering 429), and a process runs
 at most two at once (`createCompileSlots`, answering 503 instead of queueing). File access was
 checked and is no concern: Typst 0.10 resolves every path inside the temp dir it compiles in,
-absolute ones included, and refuses `..` out of it. Still open: `@preview` imports download
-packages from the network into the server's cache, a compile's memory is not capped, and Typst
+absolute ones included, and refuses `..` out of it. The compiler runs with only `PATH` and a dead
+HTTP(S) proxy (`compileEnv`), so it sees none of the app's secrets and cannot download `@preview`
+packages (a package already in the server's cache still imports). Still open: the network is cut
+only through the proxy variables, not by the OS; a compile's memory is not capped; and Typst
 0.10 is old (newer releases add `--ignore-system-fonts` and package path flags).
 
 - [x] `src/routes/api/pdf/+server.ts`, `pdfRequest.ts`.
