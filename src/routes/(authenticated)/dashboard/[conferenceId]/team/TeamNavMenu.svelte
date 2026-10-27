@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { m } from '#lib/paraglide/messages.js';
 	import NavMenu from '#lib/components/navMenu/NavMenu.svelte';
 	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
@@ -57,6 +58,13 @@
 {/snippet}
 
 <NavMenu>
+	<NavMenuButton
+		href={resolve(`dashboard/${conferenceId}`)}
+		icon="fa-arrow-left"
+		title={m.backToDashboard()}
+		active={false}
+	/>
+	<li class="menu-title p-0"><div class="divider my-1"></div></li>
 	{#each sections as section (section.group)}
 		{#if section.group === 'main'}
 			{#each section.routes as route (route.id)}

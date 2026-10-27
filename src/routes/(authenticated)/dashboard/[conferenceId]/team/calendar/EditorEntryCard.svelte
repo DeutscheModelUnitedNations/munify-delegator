@@ -3,6 +3,7 @@
 	import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
 	import { getColorConfig } from '#lib/components/calendar/calendarColors.js';
 	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime.js';
 
 	/**
 	 * An entry in the calendar editor. The editor owns the pointer handling (it needs the pointer
@@ -17,8 +18,8 @@
 		start: number;
 		end: number;
 		location: string;
-		/** Set when only those who picked this survey option see the entry */
-		surveyOptionTitle: string | null;
+		/** Set when only those who picked one of these survey options see the entry */
+		surveyOptionTitles: string[];
 		overlapping: boolean;
 		dragging: boolean;
 		/** The row/column geometry as inline style (position, size) */
@@ -33,7 +34,7 @@
 		start,
 		end,
 		location,
-		surveyOptionTitle,
+		surveyOptionTitles,
 		overlapping,
 		dragging,
 		style
@@ -42,6 +43,10 @@
 	const config = $derived(getColorConfig(color));
 	const compact = $derived(end - start <= 30);
 	const timeLabel = $derived(`${formatClockMinutes(start)} – ${formatClockMinutes(end)}`);
+	// "A, B or C": whoever picked any one of them sees the entry
+	const audience = $derived(
+		new Intl.ListFormat(getLocale(), { type: 'disjunction' }).format(surveyOptionTitles)
+	);
 </script>
 
 <div
@@ -69,10 +74,10 @@
 				class="fa-sharp-duotone fa-solid fa-{fontAwesomeIcon} {config.text} mt-0.5 shrink-0 text-xs"
 			></i>
 		{/if}
-		{#if surveyOptionTitle}
+		{#if surveyOptionTitles.length > 0}
 			<i
 				class="fa-sharp-duotone fa-solid fa-filter text-base-content/60 mt-0.5 shrink-0 text-xs"
-				title={m.calendarEntryOnlyFor({ option: surveyOptionTitle })}
+				title={m.calendarEntryOnlyFor({ option: audience })}
 			></i>
 		{/if}
 		<span class="truncate text-xs font-semibold">{name}</span>

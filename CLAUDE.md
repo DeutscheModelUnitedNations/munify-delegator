@@ -614,9 +614,10 @@ bun run preview
   cannot change (`conference_id_is_immutable`); rewriting the same value passes. Neither is
   drizzle-managed: a new table with two such parents gets its trigger in its migration, and
   `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
-- **Calendar entries can be for one survey choice only**: `calendarEntry.surveyOptionId` limits
-  an entry to those who picked that option (and the conference's team); without one it is for
-  everybody. The `read` rules in `calendarEntryPermissions.ts` do it, so every calendar query
+- **Calendar entries can be for some survey choices only**: `calendarEntry.surveyOptions`
+  (`calendar_entry_to_survey_option`) limits an entry to those who picked any one of them (and the
+  conference's team); without any it is for everybody. An option an entry names cannot be deleted
+  (`restrict`), since that would widen the entry's audience. The `read` rules in `calendarEntryPermissions.ts` do it, so every calendar query
   follows. **Survey options fill under a row lock** (`surveyAnswerService.ts`): a participant is
   refused a full option, and `distributeUnansweredSurvey` hands everyone seated who has not answered
   the least full option with room (`surveyDistribution.ts`).

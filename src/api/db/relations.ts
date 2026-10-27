@@ -146,9 +146,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.calendarEntry.placeId,
 			to: r.place.id
 		}),
-		surveyOption: r.one.surveyOption({
-			from: r.calendarEntry.surveyOptionId,
-			to: r.surveyOption.id
+		/** Only those who picked one of these see the entry; none means everybody */
+		surveyOptions: r.many.surveyOption({
+			from: r.calendarEntry.id.through(r.calendarEntryToSurveyOption.a),
+			to: r.surveyOption.id.through(r.calendarEntryToSurveyOption.b)
 		})
 	},
 	calendarTrack: {
@@ -664,8 +665,8 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.surveyAnswer.optionId
 		}),
 		calendarEntries: r.many.calendarEntry({
-			from: r.surveyOption.id,
-			to: r.calendarEntry.surveyOptionId
+			from: r.surveyOption.id.through(r.calendarEntryToSurveyOption.b),
+			to: r.calendarEntry.id.through(r.calendarEntryToSurveyOption.a)
 		})
 	},
 	surveyQuestion: {

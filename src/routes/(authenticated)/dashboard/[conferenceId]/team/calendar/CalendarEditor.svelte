@@ -52,7 +52,7 @@
 				room: true,
 				tracks: { id: true },
 				place: { name: true },
-				surveyOption: { title: true }
+				surveyOptions: { title: true }
 			}
 		})
 	);
@@ -364,7 +364,7 @@
 							start={entry.start}
 							end={entry.end}
 							location={[entry.placeName, entry.room].filter(Boolean).join(' · ')}
-							surveyOptionTitle={entry.surveyOptionTitle}
+							surveyOptionTitles={entry.surveyOptionTitles}
 							overlapping={editor.overlapping.has(entry.id)}
 							dragging={editor.drag?.kind === 'entry' &&
 								editor.drag.active &&

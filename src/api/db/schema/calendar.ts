@@ -74,15 +74,7 @@ export const calendarEntry = snakeCase.table('calendar_entry', {
 	calendarDayId: text()
 		.notNull()
 		.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-	/**
-	 * Shown only to the people who picked this option of a survey question (and to the team);
-	 * without one, to everybody. An option an entry names cannot be deleted.
-	 */
-	surveyOptionId: text().references(() => surveyOption.id, {
-		onDelete: 'restrict',
-		onUpdate: 'cascade'
-	})
+	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' })
 });
 
 /** The tracks an entry runs on. Every entry runs on at least one track. */
@@ -90,4 +82,16 @@ export const calendarEntryToCalendarTrack = implicitManyToMany(
 	'calendar_entry_to_calendar_track',
 	() => calendarEntry.id,
 	() => calendarTrack.id
+);
+
+/**
+ * The survey options an entry is limited to (`a` the entry, `b` the option): only those who picked
+ * one of them, and the conference's team, see it; an entry without any is for everybody. An option
+ * an entry names cannot be deleted, which would silently widen the entry's audience.
+ */
+export const calendarEntryToSurveyOption = implicitManyToMany(
+	'calendar_entry_to_survey_option',
+	() => calendarEntry.id,
+	() => surveyOption.id,
+	{ bOnDelete: 'restrict' }
 );

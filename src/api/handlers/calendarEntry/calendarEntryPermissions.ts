@@ -15,16 +15,16 @@ export function registerCalendarEntryAbilities() {
 	// Ported from abilities/entities/calendarEntry.ts
 	abilityBuilder.calendarEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// An entry without a survey option is for everybody.
+	// An entry without survey options is for everybody.
 	abilityBuilder.calendarEntry.allow('read').when(() => ({
-		where: { surveyOptionId: { isNull: true } }
+		where: { NOT: { surveyOptions: true } }
 	}));
 
-	// One with an option only for those who picked it...
+	// One with options only for those who picked one of them...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
 		const id = userId(ctx);
 		return id
-			? { where: { surveyOption: { surveyAnswers: { participant: { userId: id } } } } }
+			? { where: { surveyOptions: { surveyAnswers: { participant: { userId: id } } } } }
 			: undefined;
 	});
 
@@ -41,7 +41,7 @@ export function registerCalendarEntryAbilities() {
 }
 
 /**
- * An entry's day, track, place and survey option are ids from the client, so each has to belong
+ * An entry's day, tracks, place and survey options are ids from the client, so each has to belong
  * where the entry does: the track to the entry's day, the rest to the entry's conference.
  * Otherwise a conference's calendar could pull in another conference's venues, or move entries
  * over to it.
@@ -52,7 +52,7 @@ async function assertReferences(
 		calendarDayId: string;
 		calendarTrackIds?: readonly string[];
 		placeId?: string | null;
-		surveyOptionId?: string | null;
+		surveyOptionIds?: readonly string[] | null;
 	}
 ) {
 	const trackIds = [...new Set(refs.calendarTrackIds ?? [])];
@@ -67,12 +67,7 @@ async function assertReferences(
 		optionalReferenceFound(refs.placeId, (id) =>
 			db.query.place.findFirst({ where: { id, conferenceId }, columns: { id: true } })
 		),
-		optionalReferenceFound(refs.surveyOptionId, (id) =>
-			db.query.surveyOption.findFirst({
-				where: { id, question: { conferenceId } },
-				columns: { id: true }
-			})
-		)
+		surveyOptionsOfConference(conferenceId, refs.surveyOptionIds ?? [])
 	]);
 	if (found.includes(false)) {
 		throw apiError('INVALID_INPUT', m.calendarEntryOtherConference());
@@ -87,6 +82,17 @@ async function optionalReferenceFound(
 	return !id || !!(await find(id));
 }
 
+/** Whether every one of `optionIds` is an option of a survey question of the conference. */
+async function surveyOptionsOfConference(conferenceId: string, optionIds: readonly string[]) {
+	const ids = [...new Set(optionIds)];
+	if (ids.length === 0) return true;
+	const options = await db.query.surveyOption.findMany({
+		where: { id: { in: ids }, question: { conferenceId } },
+		columns: { id: true }
+	});
+	return options.length === ids.length;
+}
+
 /** Whether every one of `trackIds` is a track of the day. */
 async function tracksOfDay(calendarDayId: string, trackIds: string[]) {
 	if (trackIds.length === 0) return true;
@@ -97,14 +103,17 @@ async function tracksOfDay(calendarDayId: string, trackIds: string[]) {
 	return tracks.length === trackIds.length;
 }
 
-/** Refuses unless the caller may add the entry to the day, with the tracks and place it names. */
+/**
+ * Refuses unless the caller may add the entry to the day, with the tracks, place and survey
+ * options it names.
+ */
 export async function assertCanCreateCalendarEntry(
 	ctx: ApiContext,
 	args: {
 		calendarDayId: string;
 		calendarTrackIds?: readonly string[] | null;
 		placeId?: string | null;
-		surveyOptionId?: string | null;
+		surveyOptionIds?: readonly string[] | null;
 	}
 ) {
 	const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
@@ -112,13 +121,13 @@ export async function assertCanCreateCalendarEntry(
 		calendarDayId: args.calendarDayId,
 		calendarTrackIds: args.calendarTrackIds ?? [],
 		placeId: args.placeId,
-		surveyOptionId: args.surveyOptionId
+		surveyOptionIds: args.surveyOptionIds
 	});
 }
 
 /**
- * Refuses unless the caller may update the entry, and the day, tracks and place it is given belong
- * to its conference.
+ * Refuses unless the caller may update the entry, and the day, tracks, place and survey options it
+ * is given belong to its conference.
  */
 export async function assertCanUpdateCalendarEntry(
 	ctx: ApiContext,
@@ -127,7 +136,7 @@ export async function assertCanUpdateCalendarEntry(
 		calendarDayId?: string | null;
 		calendarTrackIds?: readonly string[] | null;
 		placeId?: string | null;
-		surveyOptionId?: string | null;
+		surveyOptionIds?: readonly string[] | null;
 	}
 ) {
 	const entry = await db.query.calendarEntry
@@ -147,7 +156,7 @@ export async function assertCanUpdateCalendarEntry(
 		// Moving to another day takes the tracks along only if they are that day's too.
 		calendarTrackIds: args.calendarTrackIds ?? entry.tracks.map((track) => track.id),
 		placeId: args.placeId,
-		surveyOptionId: args.surveyOptionId
+		surveyOptionIds: args.surveyOptionIds
 	});
 }
 

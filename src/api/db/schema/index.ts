@@ -20,7 +20,8 @@ export {
 	calendarDay,
 	calendarTrack,
 	calendarEntry,
-	calendarEntryToCalendarTrack
+	calendarEntryToCalendarTrack,
+	calendarEntryToSurveyOption
 } from './calendar';
 export { surveyQuestion, surveyOption, surveyAnswer } from './surveys';
 export { teamRole, teamMember, teamMemberInvitation, searchHistory } from './team';

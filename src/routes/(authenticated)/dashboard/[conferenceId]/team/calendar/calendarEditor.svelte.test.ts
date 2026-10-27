@@ -29,7 +29,7 @@ function days(entryTrackIds: string[] = ['a'], start = '09:00', end = '10:00'): 
 		room: null,
 		tracks: trackIds.map((trackId) => ({ id: trackId })),
 		place: null,
-		surveyOption: null
+		surveyOptions: []
 	});
 	return [
 		{

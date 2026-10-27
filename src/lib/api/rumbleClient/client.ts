@@ -522,11 +522,13 @@ export type Calendarentry = {
   room: String | null,
   search_distance: Float | null,
   startTime: DateTime,
-  surveyOption: (p?: {
+  surveyOptions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
     orderBy?: SurveyoptionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
     where?: SurveyoptionWhereInputArgument | null | undefined
-  }) => Surveyoption | null,
-  surveyOptionId: ID | null,
+  }) => Surveyoption[],
   tracks: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -549,7 +551,6 @@ export type CalendarentryOrderInputArgument = {
   placeId?: SortingParameter | null | undefined,
   room?: SortingParameter | null | undefined,
   startTime?: SortingParameter | null | undefined,
-  surveyOptionId?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -570,8 +571,7 @@ export type CalendarentryWhereInputArgument = {
   placeId?: IDWhereInputArgument | null | undefined,
   room?: StringWhereInputArgument | null | undefined,
   startTime?: DateTimeWhereInputArgument | null | undefined,
-  surveyOption?: SurveyoptionWhereInputArgument | null | undefined,
-  surveyOptionId?: IDWhereInputArgument | null | undefined,
+  surveyOptions?: SurveyoptionWhereInputArgument | null | undefined,
   tracks?: CalendartrackWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
@@ -2146,7 +2146,7 @@ export type Mutation = {
     placeId?: ID | null | undefined,
     room?: String | null | undefined,
     startTime: DateTime,
-    surveyOptionId?: ID | null | undefined
+    surveyOptionIds?: ID[] | null | undefined
   }) => Calendarentry,
   createCalendarTrack: (p: {
     calendarDayId: ID,
@@ -2525,7 +2525,7 @@ export type Mutation = {
     placeId?: ID | null | undefined,
     room?: String | null | undefined,
     startTime?: DateTime | null | undefined,
-    surveyOptionId?: ID | null | undefined
+    surveyOptionIds?: ID[] | null | undefined
   }) => Calendarentry,
   updateCalendarTrack: (p: {
     description?: String | null | undefined,

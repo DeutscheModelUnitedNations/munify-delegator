@@ -17,7 +17,7 @@ export interface CopySourceEntry<Color> {
 	color: Color;
 	placeId?: Maybe<string>;
 	room?: Maybe<string>;
-	surveyOptionId?: Maybe<string>;
+	surveyOptions?: Maybe<{ id: string }[]>;
 	tracks: { id: string }[];
 }
 
@@ -77,6 +77,6 @@ export function copiedEntryArgs<Color>(
 		color: entry.color,
 		placeId: entry.placeId ?? null,
 		room: entry.room ?? null,
-		surveyOptionId: entry.surveyOptionId ?? null
+		surveyOptionIds: entry.surveyOptions?.map((option) => option.id) ?? []
 	};
 }

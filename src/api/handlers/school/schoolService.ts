@@ -139,8 +139,14 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 			})
 			.where(eq(schema.school.id, targetId));
 
-		// Suggestions naming a source go with it (the variants cascade).
+		// The sources' variants cascade with them; a suggestion left with the target alone has
+		// nothing to suggest any more.
 		await tx.delete(schema.school).where(inArray(schema.school.id, sources));
+		await tx.execute(sql`
+			delete from school_suggestion s
+			where s.id in (select suggestion_id from school_suggestion_variant where school_id = ${targetId})
+				and (select count(*) from school_suggestion_variant v where v.suggestion_id = s.id) < 2
+		`);
 	});
 }
 

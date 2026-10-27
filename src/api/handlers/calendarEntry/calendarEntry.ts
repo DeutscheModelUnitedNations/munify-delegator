@@ -34,8 +34,8 @@ schemaBuilder.mutationFields((t) => ({
 			room: t.arg.string(),
 			calendarTrackIds: t.arg.idList(),
 			placeId: t.arg.id(),
-			/** Shows the entry only to those who picked this survey option */
-			surveyOptionId: t.arg.id()
+			/** Shows the entry only to those who picked one of these survey options */
+			surveyOptionIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCalendarEntry(ctx, args);
@@ -50,10 +50,10 @@ schemaBuilder.mutationFields((t) => ({
 					fontAwesomeIcon: nullToUndefined(args.fontAwesomeIcon),
 					color: nullToUndefined(args.color),
 					room: nullToUndefined(args.room),
-					placeId: nullToUndefined(args.placeId),
-					surveyOptionId: nullToUndefined(args.surveyOptionId)
+					placeId: nullToUndefined(args.placeId)
 				},
-				args.calendarTrackIds
+				args.calendarTrackIds,
+				args.surveyOptionIds
 			);
 
 			calendarEntryPubsub.created();
@@ -83,8 +83,8 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayId: t.arg.id(),
 			calendarTrackIds: t.arg.idList(),
 			placeId: t.arg.id(),
-			/** Shows the entry only to those who picked this survey option */
-			surveyOptionId: t.arg.id()
+			/** Shows the entry only to those who picked one of these survey options */
+			surveyOptionIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateCalendarEntry(ctx, args);
@@ -102,10 +102,11 @@ schemaBuilder.mutationFields((t) => ({
 					description: args.description,
 					fontAwesomeIcon: args.fontAwesomeIcon,
 					room: args.room,
-					placeId: args.placeId,
-					surveyOptionId: args.surveyOptionId
+					placeId: args.placeId
 				},
-				args.calendarTrackIds
+				args.calendarTrackIds,
+				// Omitted keeps the options; an empty list shows the entry to everybody
+				args.surveyOptionIds
 			);
 
 			calendarEntryPubsub.updated(args.id);

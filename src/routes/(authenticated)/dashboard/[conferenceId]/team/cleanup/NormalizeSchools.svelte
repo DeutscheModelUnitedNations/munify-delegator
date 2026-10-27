@@ -116,7 +116,7 @@
 
 	/**
 	 * Folds `sourceIds` into `targetId`, everywhere the schools are named, and names the result
-	 * `name` if given. One school alone is just renamed.
+	 * `name` if given. One school alone is just renamed. Resolves to whether it worked.
 	 */
 	async function mergeSchools(targetId: string, sourceIds: string[], name?: string) {
 		normalizing = true;
@@ -136,9 +136,11 @@
 			selectedSchools = selectedSchools.filter((school) => !merged.has(school.id));
 			newSchoolName = '';
 			await loadSchools();
+			return true;
 		} catch (error) {
 			toast.error(m.cleanupNormalizeSchoolsFailed());
 			console.error(error);
+			return false;
 		} finally {
 			normalizing = false;
 		}

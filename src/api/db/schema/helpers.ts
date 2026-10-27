@@ -47,13 +47,14 @@ export const defaultIdAndCreatedAt = {
 
 /**
  * Prisma's implicit many-to-many join table: columns `a` and `b` referencing the two sides
- * (cascading both ways), unique on the pair and indexed on `b`. The index names derive from the
- * table name, as Prisma generated them.
+ * (cascading both ways unless `bOnDelete` says otherwise), unique on the pair and indexed on `b`.
+ * The index names derive from the table name, as Prisma generated them.
  */
 export function implicitManyToMany<TName extends string>(
 	name: TName,
 	a: () => AnyPgColumn,
-	b: () => AnyPgColumn
+	b: () => AnyPgColumn,
+	{ bOnDelete = 'cascade' }: { bOnDelete?: 'cascade' | 'restrict' } = {}
 ) {
 	return snakeCase.table(
 		name,
@@ -62,7 +63,7 @@ export function implicitManyToMany<TName extends string>(
 				.$defaultFn(() => nanoid())
 				.primaryKey(),
 			a: text().notNull().references(a, { onDelete: 'cascade', onUpdate: 'cascade' }),
-			b: text().notNull().references(b, { onDelete: 'cascade', onUpdate: 'cascade' })
+			b: text().notNull().references(b, { onDelete: bOnDelete, onUpdate: 'cascade' })
 		},
 		(table) => [
 			uniqueIndex(`${name}_ab_key`).using(

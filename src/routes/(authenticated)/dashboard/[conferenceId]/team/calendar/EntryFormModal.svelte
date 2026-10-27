@@ -59,7 +59,7 @@
 
 	/**
 	 * What the form reads of an entry. The saves ask for the same fields back: the modal seeds
-	 * from the cache first, and a field only the form reads (`surveyOptionId`, `placeId`) is
+	 * from the cache first, and a field only the form reads (`surveyOptions`, `placeId`) is
 	 * refreshed by nothing else, so it would reopen with the value from before the save.
 	 */
 	const ENTRY_FORM_FIELDS = {
@@ -72,7 +72,7 @@
 		color: true,
 		placeId: true,
 		room: true,
-		surveyOptionId: true,
+		surveyOptions: { id: true },
 		tracks: { id: true, sortOrder: true }
 	} as const;
 
@@ -150,7 +150,15 @@
 	let entryColor = $state<CalendarentrycolorEnum>(source?.color ?? 'SESSION');
 	let entryPlaceId = $state<string | null>(source?.placeId ?? null);
 	let entryRoom = $state(source?.room ?? '');
-	let entrySurveyOptionId = $state<string | null>(source?.surveyOptionId ?? null);
+	let entrySurveyOptionIds = $state<string[]>(
+		source?.surveyOptions.map((option) => option.id) ?? []
+	);
+
+	function toggleSurveyOption(id: string, picked: boolean) {
+		entrySurveyOptionIds = picked
+			? [...entrySurveyOptionIds, id]
+			: entrySurveyOptionIds.filter((optionId) => optionId !== id);
+	}
 
 	/** The entry's first and last track (it runs on those and every one between) */
 	const seedTracks = source?.tracks.map((track) => track.id) ?? seed?.trackIds ?? [];
@@ -236,7 +244,7 @@
 				color: entryColor,
 				placeId: entryPlaceId,
 				room: entryRoom,
-				surveyOptionId: entrySurveyOptionId,
+				surveyOptionIds: entrySurveyOptionIds,
 				trackIds: entryTrackIds
 			},
 			day.date
@@ -420,16 +428,36 @@
 	{#if surveyQuestions.length > 0}
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">{m.calendarEntryAudience()}</legend>
-			<select class="select w-full" bind:value={entrySurveyOptionId}>
-				<option value={null}>{m.calendarEntryAudienceEveryone()}</option>
+			<div class="flex flex-col gap-3">
+				<label class="label cursor-pointer gap-2">
+					<input
+						type="checkbox"
+						class="checkbox checkbox-sm"
+						checked={entrySurveyOptionIds.length === 0}
+						disabled={entrySurveyOptionIds.length === 0}
+						onchange={() => (entrySurveyOptionIds = [])}
+					/>
+					<span class="text-base-content">{m.calendarEntryAudienceEveryone()}</span>
+				</label>
 				{#each surveyQuestions as question (question.id)}
-					<optgroup label={question.title}>
-						{#each question.options as option (option.id)}
-							<option value={option.id}>{option.title}</option>
-						{/each}
-					</optgroup>
+					<div>
+						<div class="text-base-content/60 mb-1 text-xs font-semibold">{question.title}</div>
+						<div class="flex flex-wrap gap-x-4 gap-y-1">
+							{#each question.options as option (option.id)}
+								<label class="label cursor-pointer gap-2">
+									<input
+										type="checkbox"
+										class="checkbox checkbox-sm checkbox-primary"
+										checked={entrySurveyOptionIds.includes(option.id)}
+										onchange={(event) => toggleSurveyOption(option.id, event.currentTarget.checked)}
+									/>
+									<span class="text-base-content">{option.title}</span>
+								</label>
+							{/each}
+						</div>
+					</div>
 				{/each}
-			</select>
+			</div>
 			<p class="label whitespace-normal">{m.calendarEntryAudienceHint()}</p>
 		</fieldset>
 	{/if}

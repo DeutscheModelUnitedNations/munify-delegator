@@ -35,7 +35,7 @@ describe('copiedEntryArgs', () => {
 					color: 'SESSION',
 					placeId: 'p1',
 					room: 'Aula',
-					surveyOptionId: 'o1',
+					surveyOptions: [{ id: 'o1' }, { id: 'o2' }],
 					tracks: [{ id: 's1' }]
 				},
 				targetDay,
@@ -52,11 +52,11 @@ describe('copiedEntryArgs', () => {
 			color: 'SESSION',
 			placeId: 'p1',
 			room: 'Aula',
-			surveyOptionId: 'o1'
+			surveyOptionIds: ['o1', 'o2']
 		});
 	});
 
-	test('passes missing optional fields as null', () => {
+	test('passes missing optional fields as null, and no survey options as everybody', () => {
 		expect(
 			copiedEntryArgs(
 				{
@@ -75,7 +75,7 @@ describe('copiedEntryArgs', () => {
 			fontAwesomeIcon: null,
 			placeId: null,
 			room: null,
-			surveyOptionId: null
+			surveyOptionIds: []
 		});
 	});
 });

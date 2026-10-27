@@ -6,12 +6,13 @@
 	import Kbd from '#lib/components/Kbd.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
 		conferenceId: string;
 		merging: boolean;
-		/** Folds the other schools into `targetId`. */
-		onMerge: (targetId: string, sourceIds: string[]) => void;
+		/** Folds the other schools into `targetId`; resolves to whether it worked. */
+		onMerge: (targetId: string, sourceIds: string[]) => Promise<boolean>;
 		onSelect: (schools: { id: string; name: string }[]) => void;
 	}
 
@@ -72,7 +73,18 @@
 		toast.promise(promise, genericPromiseToastMessages);
 	}
 
-	const open = $derived(suggestions);
+	/**
+	 * Schools merged away on this page. Their suggestions are hidden at once, before the live
+	 * update and the next analysis catch up, and a group needs two schools to suggest anything.
+	 */
+	const mergedAway = new SvelteSet<string>();
+	const open = $derived(
+		suggestions.filter(
+			(suggestion) =>
+				suggestion.variants.length > 1 &&
+				!suggestion.variants.some((variant) => mergedAway.has(variant.id))
+		)
+	);
 	const position = $derived(Math.min(index, Math.max(open.length - 1, 0)));
 	const current = $derived(open[position]);
 	const key = $derived(current?.id ?? '');
@@ -86,13 +98,13 @@
 		index = (position + step + open.length) % open.length;
 	}
 
-	function merge() {
-		if (current && !merging) {
-			onMerge(
-				target,
-				picked.map((school) => school.id)
-			);
-		}
+	async function merge() {
+		if (!current || merging) return;
+		const sources = picked.map((school) => school.id).filter((id) => id !== target);
+		if (!(await onMerge(target, sources))) return;
+		sources.forEach((id) => mergedAway.add(id));
+		// The target's counts changed, and it may now group differently
+		await analyze();
 	}
 
 	onMount(() => {
@@ -100,7 +112,7 @@
 		hotkeys('right', () => cycle(1));
 		hotkeys('alt+enter', (event) => {
 			event.preventDefault();
-			merge();
+			void merge();
 		});
 	});
 
@@ -168,7 +180,12 @@
 				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
 				{m.cleanupSuggestionsSelect()}
 			</button>
-			<button type="button" class="btn btn-primary btn-sm" disabled={merging} onclick={merge}>
+			<button
+				type="button"
+				class="btn btn-primary btn-sm"
+				disabled={merging}
+				onclick={() => void merge()}
+			>
 				{#if merging}
 					<span class="loading loading-spinner loading-xs"></span>
 				{:else}

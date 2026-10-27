@@ -15,10 +15,27 @@ async function setTracks(tx: Transaction, entryId: string, trackIds: readonly st
 	}
 }
 
-/** Creates an entry together with its tracks, so it never exists without them. */
+/** Makes `optionIds` the survey options an entry is limited to; none shows it to everybody. */
+async function setSurveyOptions(tx: Transaction, entryId: string, optionIds: readonly string[]) {
+	const ids = [...new Set(optionIds)];
+	await tx
+		.delete(schema.calendarEntryToSurveyOption)
+		.where(eq(schema.calendarEntryToSurveyOption.a, entryId));
+	if (ids.length > 0) {
+		await tx
+			.insert(schema.calendarEntryToSurveyOption)
+			.values(ids.map((optionId) => ({ a: entryId, b: optionId })));
+	}
+}
+
+/**
+ * Creates an entry together with its tracks and survey options, so it never exists without them
+ * (and is never shown to everybody in between).
+ */
 export async function createCalendarEntry(
 	values: typeof schema.calendarEntry.$inferInsert,
-	trackIds: readonly string[] | null | undefined
+	trackIds: readonly string[] | null | undefined,
+	surveyOptionIds: readonly string[] | null | undefined
 ) {
 	return db.transaction(async (tx) => {
 		const created = await tx
@@ -27,18 +44,24 @@ export async function createCalendarEntry(
 			.returning()
 			.then(assertFirstEntryExists);
 		if (trackIds?.length) await setTracks(tx, created.id, trackIds);
+		if (surveyOptionIds?.length) await setSurveyOptions(tx, created.id, surveyOptionIds);
 		return created;
 	});
 }
 
-/** Changes an entry and, when `trackIds` is given, replaces its tracks in the same step. */
+/**
+ * Changes an entry and, when `trackIds` or `surveyOptionIds` is given, replaces its tracks or
+ * survey options in the same step.
+ */
 export async function updateCalendarEntry(
 	id: string,
 	values: Partial<typeof schema.calendarEntry.$inferInsert>,
-	trackIds: readonly string[] | null | undefined
+	trackIds: readonly string[] | null | undefined,
+	surveyOptionIds: readonly string[] | null | undefined
 ) {
 	await db.transaction(async (tx) => {
 		await tx.update(schema.calendarEntry).set(values).where(eq(schema.calendarEntry.id, id));
 		if (trackIds) await setTracks(tx, id, trackIds);
+		if (surveyOptionIds) await setSurveyOptions(tx, id, surveyOptionIds);
 	});
 }
