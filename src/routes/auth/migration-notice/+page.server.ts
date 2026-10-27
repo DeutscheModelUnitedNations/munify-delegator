@@ -3,16 +3,12 @@ import type { Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
 import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '#lib/data/migrationNotice.js';
-
-function isSafeRedirectPath(path: string): boolean {
-	return path.startsWith('/') && !path.startsWith('//') && !path.includes('://');
-}
+import { sameSitePath } from '#lib/helpers/sameSitePath.js';
 
 export const actions: Actions = {
 	default: async (event) => {
 		const formData = await event.request.formData();
-		const next = formData.get('next')?.toString() || '/';
-		const safePath = isSafeRedirectPath(next) ? next : '/';
+		const safePath = sameSitePath(formData.get('next')?.toString(), event.url.origin);
 		const dismiss = formData.get('dismiss') === 'true';
 
 		// The acknowledgement is always recorded, because the handle that shows this page keys off

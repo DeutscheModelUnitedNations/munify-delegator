@@ -12,6 +12,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
 
+/**
+ * Refuses callers without a session. Compiling is expensive (a compiler run of up to 30 s per
+ * call), and the route is outside the OIDC handle's protected prefixes, so it checks itself.
+ */
+export function assertSignedIn(locals: { oidc?: unknown }) {
+	if (!locals.oidc) throw error(401, 'Unauthorized');
+}
+
 const HEADER_STRING_KEYS = [
 	'conferenceName',
 	'conferenceTitle',

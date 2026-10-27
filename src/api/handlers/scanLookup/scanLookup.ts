@@ -39,7 +39,8 @@ schemaBuilder.queryFields((t) => ({
 	 * Looks a scanned code up for the entrance scanner: the code is an access card number of the
 	 * conference or a user id. Any team member may use it, which the scanner is for, so it answers
 	 * with this fixed set of fields instead of letting the caller read the participant's user and
-	 * status rows, which only participant care may.
+	 * status rows, which only participant care may - and only for people with a part in the
+	 * conference; anybody else is "not found".
 	 */
 	scanLookup: t.field({
 		type: ScanLookupResult,

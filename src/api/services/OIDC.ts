@@ -3,21 +3,37 @@ import { makeCookieNames, makeOIDC } from '@m1212e/sveltekit-oidc';
 import { OIDC_CLIENT_SECRET, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
 import { upsertSelfFromClaims } from './account/upsertSelf';
+import { deLocalizeUrl } from '#lib/paraglide/runtime.js';
 
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /**
  * Everything behind the `(authenticated)` route group, except the conference selector at
- * `/dashboard` itself: the library matches by prefix, so the trailing slash leaves it public.
- * `/login` exists to start the sign-in from there and send the visitor back.
+ * `/dashboard` itself: matched by prefix, so the trailing slash leaves it public. `/login` exists
+ * to start the sign-in from there and send the visitor back.
  */
-export const AUTHENTICATED_ROUTES = [
+const AUTHENTICATED_ROUTES = [
 	'/dashboard/',
 	'/registration',
 	'/my-account',
 	'/team-tender',
 	'/login'
 ];
+
+/**
+ * The path SvelteKit routes a URL to: without the locale prefix Paraglide's `url` strategy puts on
+ * non-default locales (`/en/dashboard/…`, rerouted by `src/hooks.ts`). `event.url` keeps the
+ * prefix, so everything that decides by path has to look at this instead - otherwise an English
+ * URL would never match a route guard written for the German one.
+ */
+export function routePath(url: URL): string {
+	return deLocalizeUrl(url).pathname;
+}
+
+/** Whether a route path (see `routePath`) needs a session, before `isPublicRoute` is applied. */
+export function isAuthenticatedPath(pathname: string): boolean {
+	return AUTHENTICATED_ROUTES.some((route) => pathname.startsWith(route));
+}
 
 /** Pages under `/dashboard/` that need a login although they look like a conference id. */
 const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
@@ -26,8 +42,8 @@ const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
  * A conference's own dashboard page and its seat overview are public: they show what is public
  * about the conference to visitors who are not signed in (and what they would have to do to take
  * part). Everything below it - and the pages that merely sit next to the conference ids - needs a
- * session. The library only matches routes
- * by prefix, so the hooks use this to let the visitor through where the library would redirect.
+ * session. The library only matches routes by prefix, so the hooks use this to let the visitor
+ * through where the library would redirect. Takes a route path (see `routePath`).
  */
 export function isPublicRoute(pathname: string): boolean {
 	const match = /^\/dashboard\/([^/]+)(?:\/seats)?\/?$/.exec(pathname);
@@ -102,7 +118,9 @@ export const OIDC = !building
 			scope: OIDC_SCOPES,
 			loginCallbackRoute: '/auth/login-callback',
 			logoutCallbackRoute: '/auth/logout-callback',
-			authenticatedRoutes: AUTHENTICATED_ROUTES,
+			// A function rather than the list: the library would match the list against the
+			// localized `url.pathname`, which the guard has to see without its locale prefix.
+			authenticatedRoutes: (url) => isAuthenticatedPath(routePath(url)),
 			logoutPath: '/',
 			allowBearerToken: true,
 			logLevel: dev ? 'info' : 'warn',

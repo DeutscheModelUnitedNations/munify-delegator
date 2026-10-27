@@ -4,7 +4,13 @@ import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection.js';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
-import { AUTHENTICATED_ROUTES, OIDC, isPublicRoute, oidcCookieNames } from '#api/services/OIDC.js';
+import {
+	OIDC,
+	isAuthenticatedPath,
+	isPublicRoute,
+	oidcCookieNames,
+	routePath
+} from '#api/services/OIDC.js';
 import { rolesOfSession } from '#api/context.js';
 import { impersonatableUser } from '#api/handlers/user/userPermissions.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
@@ -52,9 +58,11 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 	});
 
 // --- TEMPORARY: Migration notice handle (remove after migration period) ---
-/** Whether a path leads to a page that needs a session. */
-const isBehindLogin = (pathname: string) =>
-	AUTHENTICATED_ROUTES.some((route) => pathname.startsWith(route)) && !isPublicRoute(pathname);
+/** Whether a URL leads to a page that needs a session. */
+const isBehindLogin = (url: URL) => {
+	const pathname = routePath(url);
+	return isAuthenticatedPath(pathname) && !isPublicRoute(pathname);
+};
 
 /** Whether the visitor has a session, or has read this version of the notice already. */
 const knowsOfMigration = (cookies: Cookies) =>
@@ -72,7 +80,7 @@ const knowsOfMigration = (cookies: Cookies) =>
 const migrationNoticeHandle: Handle = ({ event, resolve }) => {
 	if (
 		PUBLIC_OIDC_MIGRATION_NOTICE &&
-		isBehindLogin(event.url.pathname) &&
+		isBehindLogin(event.url) &&
 		!knowsOfMigration(event.cookies)
 	) {
 		const next = encodeURIComponent(event.url.pathname + event.url.search);
@@ -89,7 +97,7 @@ const migrationNoticeHandle: Handle = ({ event, resolve }) => {
  * `event.locals.oidc`.
  */
 const oidcHandle: Handle = async (input) => {
-	if (!isPublicRoute(input.event.url.pathname)) {
+	if (!isPublicRoute(routePath(input.event.url))) {
 		return OIDC.handle(input);
 	}
 	try {

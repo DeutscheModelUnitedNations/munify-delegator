@@ -34,7 +34,19 @@ async function findScannedPerson(conferenceId: string, code: string) {
 		columns: { userId: true }
 	});
 	return db.query.user.findFirst({
-		where: { id: byCard?.userId ?? code },
+		where: {
+			id: byCard?.userId ?? code,
+			// Only somebody with a part in this conference: a user id from anywhere else (an
+			// identity code, a co-delegate, an author) must not hand any team member a stranger's
+			// name and birthday, which the user read rules withhold from them.
+			OR: [
+				{ delegationMemberships: throughParticipant },
+				{ singleParticipant: throughParticipant },
+				{ conferenceSupervisor: throughParticipant },
+				{ teamMember: inConference },
+				{ waitingListEntry: inConference }
+			]
+		},
 		columns: { id: true, givenName: true, familyName: true, birthday: true },
 		with: {
 			delegationMemberships: {

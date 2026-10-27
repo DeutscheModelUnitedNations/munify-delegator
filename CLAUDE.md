@@ -462,7 +462,11 @@ bun run preview
   server-side fetching works without the app being able to fetch its own relative URL. It has to
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
   stubbed out there. Needs `experimental.remoteFunctions` in the `sveltekit()` options in
-  `vite.config.ts`.
+  `vite.config.ts`. It refuses HTTP calls (`event.isRemoteRequest`): SvelteKit serves every
+  `query` remote function as a `GET` endpoint, which would otherwise execute any document a
+  browser sends with the visitor's cookies, past yoga, armor and the error masking. `/api/graphql`
+  sends no CORS headers (`cors: false`): the API is same-origin only, and yoga's default reflects
+  any origin with credentials.
 - **Files live in an S3 bucket** (any S3-compatible service, through
   [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
   `dev.docker-compose.yml`, console on http://localhost:9101). A row holds the id of a
@@ -511,7 +515,13 @@ bun run preview
   library chase uses. `src/api/services/OIDC.ts` builds the instance; its `handle` hook (wired up in
   `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
   `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
-  session on `event.locals.oidc`. There is no auth code in route loads.
+  session on `event.locals.oidc`. There is no auth code in route loads. Every guard that decides
+  by path (`authenticatedRoutes`, `isPublicRoute`, the migration notice) looks at
+  `routePath(event.url)`: Paraglide prefixes non-default locales (`/en/…`) and `event.url` keeps
+  the prefix, so matching `event.url.pathname` would miss every English URL. A redirect target
+  that comes from the request (`/login?next=`) goes through `sameSitePath`
+  (`#lib/helpers/sameSitePath.ts`), which resolves it like a browser would; `startsWith('/')`
+  alone lets `/\evil.example` through.
 - **Locally, the provider is [oidc-mock](https://github.com/strehk/oidc-mock)**, started by the
   `oidcMock()` plugin in `vite.config.ts` whenever `vite dev` runs - no container. Its users live
   in `oidc-mock.yaml` (edits apply on the next login), its login page is served on the app's own

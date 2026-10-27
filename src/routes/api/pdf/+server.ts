@@ -9,7 +9,14 @@ import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { compileErrorDetail, emblemSvgFor, readBody, readHeader, readRawTypst } from './pdfRequest';
+import {
+	assertSignedIn,
+	compileErrorDetail,
+	emblemSvgFor,
+	readBody,
+	readHeader,
+	readRawTypst
+} from './pdfRequest';
 import type { RequestHandler } from './$types';
 
 const execFileAsync = promisify(execFile);
@@ -54,7 +61,8 @@ async function ensureTypstAvailable() {
 	}
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	assertSignedIn(locals);
 	const body = await readBody(request);
 
 	// Two input shapes:

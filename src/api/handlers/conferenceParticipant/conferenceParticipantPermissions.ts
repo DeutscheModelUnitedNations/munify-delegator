@@ -52,6 +52,31 @@ export async function assertCanUpdateParticipantStatus(ctx: ApiContext, id: stri
 }
 
 /**
+ * Refuses unless the caller may write a status in the place the arguments name, before anything
+ * is looked up: addressed by `id`, the row has to be in `conferenceId` and within the caller's
+ * `update` ability; addressed by user or email, the caller has to be the conference's participant
+ * care. Running first keeps the lookups (does this address have an account, is this card in use)
+ * from answering anyone who may not write there.
+ */
+export async function assertCanUpsertParticipantStatus(
+	ctx: ApiContext,
+	args: { id?: string | null; conferenceId: string }
+) {
+	ctx.mustBeLoggedIn();
+	if (args.id) {
+		await assertAllowedRow(
+			schema.conferenceParticipant,
+			(await ctx.abilities.conferenceParticipant.filter('update')).merge({
+				where: { id: args.id, conferenceId: args.conferenceId }
+			}).sql.where,
+			m.updateNotFoundOrForbidden
+		);
+		return;
+	}
+	await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+}
+
+/**
  * Refuses to create a status row unless the caller is the conference's participant care, and the
  * user actually belongs to the conference. There is no row for the update ability to judge yet.
  */

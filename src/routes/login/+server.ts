@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { sameSitePath } from '#lib/helpers/sameSitePath.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -7,6 +8,5 @@ import type { RequestHandler } from './$types';
  * they are sent on to `next` - a path on this site, never another origin.
  */
 export const GET: RequestHandler = ({ url }) => {
-	const next = url.searchParams.get('next') ?? '';
-	redirect(302, next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard');
+	redirect(302, sameSitePath(url.searchParams.get('next'), url.origin, '/dashboard'));
 };

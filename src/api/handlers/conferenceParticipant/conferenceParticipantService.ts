@@ -131,7 +131,9 @@ async function assertAccessCardFree(
 /**
  * Works out what upserting a participant's status writes: the values, and either the existing row
  * to update or the user to create one for. The row is addressed either by id, or by conference
- * plus user id, or by conference plus user email.
+ * plus user id, or by conference plus user email. Whether the caller may write there is checked
+ * before this runs (`assertCanUpsertParticipantStatus`): the lookups answer who has an account and
+ * which card is in use, which only the conference's participant care may learn.
  */
 export async function planParticipantStatusUpsert(
 	args: StatusUpdateArgs

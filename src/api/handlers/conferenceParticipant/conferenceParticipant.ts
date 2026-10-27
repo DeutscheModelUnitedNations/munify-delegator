@@ -15,6 +15,7 @@ import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
+	assertCanUpsertParticipantStatus,
 	assertOwnParticipant,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
@@ -62,6 +63,7 @@ schemaBuilder.mutationFields((t) => ({
 			accessCardId: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			await assertCanUpsertParticipantStatus(ctx, args);
 			const upsert = await planParticipantStatusUpsert(args);
 			let statusId: string;
 			if (upsert.existingId !== undefined) {
