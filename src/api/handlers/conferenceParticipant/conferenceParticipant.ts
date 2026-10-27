@@ -4,6 +4,7 @@ import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	createStatus,
+	isOfAgeAtConference,
 	planParticipantStatusUpsert,
 	setAttendanceForAll,
 	setParticipantSchool,
@@ -23,7 +24,16 @@ import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub.js';
 
 registerConferenceParticipantAbilities();
 
-const ConferenceParticipantRef = object({ table: 'conferenceParticipant' });
+const ConferenceParticipantRef = object({
+	table: 'conferenceParticipant',
+	adjust: (t) => ({
+		/** 18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`. */
+		ofAgeAtConference: t.field({
+			type: 'Boolean',
+			resolve: (participant) => isOfAgeAtConference(participant.id)
+		})
+	})
+});
 
 const BulkStatusUpdateResult = schemaBuilder.simpleObject(
 	'UpdateAllConferenceParticipantsResponse',

@@ -18,6 +18,7 @@ import {
 	authorizeDelegationMemberCommitteeMoves,
 	registerDelegationMemberAbilities
 } from './delegationMemberPermissions';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
@@ -44,11 +45,12 @@ schemaBuilder.mutationFields((t) => ({
 			schoolName: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const createdId = await joinDelegationByEntryCode(
-				ctx.mustBeLoggedIn().sub,
-				args.conferenceId,
-				args.entryCode,
-				{ schoolId: args.schoolId, schoolName: args.schoolName }
+			const caller = ctx.mustBeLoggedIn().sub;
+			const createdId = await codeGuessLimiter.attempt(caller, () =>
+				joinDelegationByEntryCode(caller, args.conferenceId, args.entryCode, {
+					schoolId: args.schoolId,
+					schoolName: args.schoolName
+				})
 			);
 
 			delegationMemberPubsub.created();

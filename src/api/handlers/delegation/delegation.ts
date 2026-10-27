@@ -11,6 +11,7 @@ import {
 	assertCanUpdateDelegation,
 	registerDelegationAbilities
 } from './delegationPermissions';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import {
@@ -101,13 +102,11 @@ const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
 		id: t.string(),
 		conferenceId: t.string(),
 		entryCode: t.string(),
-		motivation: t.string({ nullable: true }),
 		/** The head delegate's own school, which the join form offers the newcomer. */
 		headDelegateSchoolId: t.string({ nullable: true }),
 		headDelegateSchoolName: t.string({ nullable: true }),
 		/** The members' own schools, most common first. */
 		schools: t.stringList(),
-		experience: t.string({ nullable: true }),
 		memberCount: t.int(),
 		headDelegateFullName: t.string(),
 		applied: t.boolean(),
@@ -129,9 +128,11 @@ schemaBuilder.queryFields((t) => ({
 			entryCode: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			ctx.mustBeLoggedIn();
+			const caller = ctx.mustBeLoggedIn().sub;
 
-			return previewDelegationByEntryCode(args.conferenceId, args.entryCode);
+			return codeGuessLimiter.attempt(caller, () =>
+				previewDelegationByEntryCode(args.conferenceId, args.entryCode)
+			);
 		}
 	})
 }));

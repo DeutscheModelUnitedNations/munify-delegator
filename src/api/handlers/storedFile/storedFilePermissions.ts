@@ -2,29 +2,85 @@ import { apiError } from '#api/services/errors/apiError.js';
 import { db } from '#api/db/db.js';
 import type { Context } from '#api/context.js';
 import { abilityBuilder } from '#api/rumble.js';
-import { assertTeamRole, systemAdmin, userId } from '#api/services/authHelper.js';
+import {
+	assertTeamRole,
+	conferencesOfCaller,
+	publicConference,
+	systemAdmin,
+	userId
+} from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 
-// A stored file is reached through the relation of the row holding it (`conference.logoFile`,
-// `resolution.file`, …) or as the answer to `requestFileUpload`; there is no query listing files.
-// Who may see a file is therefore the holding row's business: a relation behind a masked id
-// (`contractFileId` for a reader outside the conference) resolves to nothing. The file itself is
-// readable by anyone who reaches it; only who uploaded it stays with the uploader.
-//
-// TODO(security): review these rules with extra care before release. Everything rests on two
-// assumptions that nothing here enforces: that no `query({ table: 'storedFile' })`, search or other
-// path lists files, and that every private file's id column is masked on its holding row (today
-// the conference templates' `*FileId`). A new relation to `storedFile`, a new file field or an
-// unmasked id hands out the file - and a URL, which works for hours - to anyone who reads the row.
-// Consider scoping the base rule (by conference, or to rows the reader can see) instead of
-// allowing every read.
-abilityBuilder.storedFile.allow('read').when(() => ({ columns: { uploadedById: false } }));
-abilityBuilder.storedFile.allow('read').when(systemAdmin);
-abilityBuilder.storedFile.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { uploadedById: id } } : undefined;
-});
+/** Who uploaded a file is the uploader's (and an admin's) to know. */
+const WITHOUT_UPLOADER = { uploadedById: false };
+
+/** A filter matching any of `filters`, or undefined when there are none. */
+function anyOf<F extends object>(filters: F[]) {
+	return filters.length > 0 ? { OR: filters } : undefined;
+}
+
+/**
+ * Who may read a stored file - and so get its presigned URL, the only way to its bytes - follows
+ * the row that holds it, through the relations from the file to its holders (`relations.ts`):
+ * whoever may read that row's file reads the file. A file nothing holds is its uploader's alone.
+ * These mirror the holding rows' rules; a new file field needs its relation and a rule here, or
+ * nobody but its uploader can read the file.
+ *
+ * - a conference's image, emblem and logo: wherever the conference may be read (public while it
+ *   takes registrations, otherwise to the people with a part in it);
+ * - its templates (contract, consents, terms, certificate): to the people with a part in it, like
+ *   the members-only columns that hold them;
+ * - a place's site plan: to anybody, like the place;
+ * - a resolution's PDF: to the people with a part in its conference, like the resolution.
+ */
+export function registerStoredFileAbilities() {
+	abilityBuilder.storedFile.allow('read').when(systemAdmin);
+
+	abilityBuilder.storedFile.allow('read').when((ctx) => {
+		const id = userId(ctx);
+		return id ? { where: { uploadedById: id } } : undefined;
+	});
+
+	abilityBuilder.storedFile.allow('read').when((ctx) => {
+		const conference = { OR: [publicConference, ...conferencesOfCaller(ctx)] };
+		return {
+			where: {
+				OR: [{ imageOf: conference }, { emblemOf: conference }, { logoOf: conference }]
+			},
+			columns: WITHOUT_UPLOADER
+		};
+	});
+
+	abilityBuilder.storedFile.allow('read').when((ctx) => {
+		const conference = anyOf(conferencesOfCaller(ctx));
+		return conference
+			? {
+					where: {
+						OR: [
+							{ contractOf: conference },
+							{ guardianConsentOf: conference },
+							{ mediaConsentOf: conference },
+							{ termsAndConditionsOf: conference },
+							{ certificateOf: conference }
+						]
+					},
+					columns: WITHOUT_UPLOADER
+				}
+			: undefined;
+	});
+
+	abilityBuilder.storedFile
+		.allow('read')
+		.when(() => ({ where: { sitePlanOf: true }, columns: WITHOUT_UPLOADER }));
+
+	abilityBuilder.storedFile.allow('read').when((ctx) => {
+		const conference = anyOf(conferencesOfCaller(ctx));
+		return conference
+			? { where: { resolutionOf: { conference } }, columns: WITHOUT_UPLOADER }
+			: undefined;
+	});
+}
 
 // Who may upload a file is part of its entry in `FILE_SOURCES`, and who may use an uploaded one
 // is checked here.

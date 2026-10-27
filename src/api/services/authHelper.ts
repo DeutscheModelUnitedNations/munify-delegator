@@ -30,6 +30,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * |                             | publishing the adopted resolutions                                   |
  * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
  * | TEAM_COORDINATOR            | the team and its members' details, short of granting PROJECT_MANAGEMENT |
+ * | team admins (PM + TC)       | their teammates' details for planning, never their care notes         |
  * | CONTENT_LEAD                | the seat planning: which nations sit in which committee, the         |
  * |                             | non-state actors and the committees' regional baselines              |
  * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
@@ -133,6 +134,26 @@ export function isParticipantOfConference(ctx: Context) {
 	};
 }
 
+/**
+ * The states in which a conference is public: open for registration or, from the assignment on,
+ * for the waiting list. Anybody reads such a conference, short of its members-only columns.
+ */
+const PUBLIC_CONFERENCE_STATES = ['PARTICIPANT_REGISTRATION', 'PREPARATION'] as const;
+
+/** Matches a public Conference row (see `PUBLIC_CONFERENCE_STATES`). */
+export const publicConference = { state: { in: [...PUBLIC_CONFERENCE_STATES] } };
+
+/**
+ * Conference filters for the conferences the caller has a part in - as participant (delegate,
+ * single participant, supervisor) or on the team - one per way, to `OR` together. Empty for an
+ * anonymous caller; a system admin's team filter matches every conference.
+ */
+export function conferencesOfCaller(ctx: Context) {
+	const participant = isParticipantOfConference(ctx)?.conference;
+	const team = isTeamMemberOf(ctx);
+	return [...(participant ? [participant] : []), ...(team ? [team] : [])];
+}
+
 /** A User row taking part in the conference as delegate, single participant or supervisor. */
 export function participatesIn(conference: { id: string } | object) {
 	return {
@@ -145,21 +166,17 @@ export function participatesIn(conference: { id: string } | object) {
 }
 
 /**
- * The User rows the caller looks after: the participants, waiting-list entrants and team of a
- * conference where the caller is participant care or project management. A system admin looks
- * after everybody.
+ * The User rows the caller looks after: the participants and waiting-list entrants of a conference
+ * where the caller is participant care or project management. A system admin looks after
+ * everybody. The team is not among them: care notes are about participants, and a teammate's
+ * (perhaps from when they took part themselves) is not their colleagues' to read. What the team
+ * admins need of their team for planning is its own rule on the user table.
  */
 export function isManagedUser(ctx: Context) {
 	if (isSystemAdmin(ctx)) return {};
 	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
 	if (!conference) return undefined;
-	return {
-		OR: [
-			...participatesIn(conference).OR,
-			{ waitingListEntry: { conference } },
-			{ teamMember: { conference } }
-		]
-	};
+	return { OR: [...participatesIn(conference).OR, { waitingListEntry: { conference } }] };
 }
 
 /** Answers of `hasTeamRole`, per request: field resolvers ask it once per row. */

@@ -8,7 +8,8 @@
 	import formatNames from '#lib/helpers/formatNames.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
-	import { entryCodeLength } from '#api/services/registration/entryCodeGenerator.js';
+	import { ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode.js';
+	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
 
 	/** The supervisors of one registration: a delegation membership or a single participant. */
 	type Props = { conferenceId: string } & (
@@ -41,10 +42,9 @@
 	const supervisors = $derived(registration?.supervisors ?? []);
 
 	// A supervisor's shared link lands here with `?supervisorCode=`; it only seeds the field.
-	let code = $state(page.url.searchParams.get('supervisorCode') ?? '');
-	// Codes are uppercase only; normalize what people type or paste.
-	const normalizedCode = $derived(code.trim().toUpperCase());
-	const codeComplete = $derived(normalizedCode.length === entryCodeLength);
+	const code = createEntryCodeInput(page.url.searchParams.get('supervisorCode') ?? '');
+	// The code to look up, as a primitive the awaited derived below is keyed by.
+	const readyCode = $derived(code.ready);
 
 	function fetchPreview(connectionCode: string) {
 		return client.query
@@ -62,22 +62,22 @@
 	type SupervisorPreview = NonNullable<Awaited<ReturnType<typeof fetchPreview>>>;
 
 	// Who the code belongs to, shown before connecting: connecting can only be undone by the care team.
-	const preview = $derived(codeComplete ? await fetchPreview(normalizedCode) : undefined);
+	const preview = $derived(readyCode ? await fetchPreview(readyCode) : undefined);
 
 	let connecting = $state(false);
 
 	const connect = async (event: SubmitEvent) => {
 		event.preventDefault();
-		if (!codeComplete || !preview || connecting) return;
+		if (!readyCode || !preview || connecting) return;
 		connecting = true;
 		try {
 			const promise = client.mutate.connectToConferenceSupervisor({
-				__args: { conferenceId, connectionCode: normalizedCode },
+				__args: { conferenceId, connectionCode: readyCode },
 				id: true
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			code = '';
+			code.value = '';
 		} finally {
 			connecting = false;
 		}
@@ -144,9 +144,9 @@
 				id="supervisor-code"
 				type="text"
 				class="input join-item w-full font-mono tracking-[0.4rem] uppercase"
-				maxlength={entryCodeLength}
+				maxlength={ENTRY_CODE_LENGTH}
 				autocomplete="off"
-				bind:value={code}
+				bind:value={code.value}
 			/>
 			<button class="btn btn-primary join-item" type="submit" disabled={!preview || connecting}>
 				{#if connecting}
@@ -157,7 +157,7 @@
 				{m.connectSupervisorBtn()}
 			</button>
 		</div>
-		{#if codeComplete}
+		{#if readyCode}
 			{#if preview}
 				{@render previewCard(preview)}
 			{:else}

@@ -6,7 +6,7 @@
       "name": "munify-delegator",
       "dependencies": {
         "@graphql-yoga/redis-event-target": "^3.0.4",
-        "@m1212e/sveltekit-oidc": "^0.2.0",
+        "@m1212e/sveltekit-oidc": "^0.2.1",
         "@urql/core": "^6.0.3",
         "diff-match-patch": "^1.0.5",
         "drizzle-orm": "1.0.0-rc.5-5935859",
@@ -31,7 +31,7 @@
         "@inlang/cli": "^3.4.4",
         "@inlang/paraglide-js": "^2.29.1",
         "@lingual/i18n-check": "^0.9.5",
-        "@m1212e/rumble": "^0.26.2",
+        "@m1212e/rumble": "^0.26.4",
         "@magidoc/plugin-svelte-marked": "^7.0.0",
         "@opentelemetry/api": "^1.10.0",
         "@opentelemetry/context-async-hooks": "^3.0.0",
@@ -560,9 +560,9 @@
 
     "@m1212e/oidc": ["@m1212e/oidc@0.2.0", "", { "dependencies": { "jose": "^6.2.13", "oauth4webapi": "^3.8.8", "openid-client": "^6.8.8", "typebox": "^1.4.3" } }, "sha512-hnE3ioRHB6txBD6Ijyb19Eplrz5+7gzkWZN3tT7I9kW/RRhSQgIjG9ABOBYzwULuPmhNixS1YX9C6ADQMR5uqA=="],
 
-    "@m1212e/rumble": ["@m1212e/rumble@0.26.2", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.25.1", "@opentelemetry/api": "^1.9.1", "@opentelemetry/semantic-conventions": "^1.43.0", "@pothos/core": "^4.15.1", "@pothos/plugin-drizzle": "^0.20.0", "@pothos/plugin-smart-subscriptions": "^4.1.7", "@pothos/plugin-tracing": "^1.1.4", "@pothos/plugin-validation": "^4.3.4", "@pothos/tracing-opentelemetry": "^1.2.1", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.2", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^6.0.2", "es-toolkit": "^1.52.0", "graphql-scalars": "^2.0.0", "graphql-yoga": "^5.24.1", "lib-address": "^0.7.0", "libphonenumber-js": "^1.13.14", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.6.5" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18", "drizzle-orm": "^1", "graphql": "^16 || ^17", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6 || ^7" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-yaMnULO8XV/YghBvz2OmYwdDRBN9u/ALcKpg14R95WOJLi2KBt6TFllGZRdhJUxNkNbuQe2pMT2vyK+k+fbMyw=="],
+    "@m1212e/rumble": ["@m1212e/rumble@0.26.4", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.25.1", "@opentelemetry/api": "^1.9.1", "@opentelemetry/semantic-conventions": "^1.43.0", "@pothos/core": "^4.15.1", "@pothos/plugin-drizzle": "^0.20.0", "@pothos/plugin-smart-subscriptions": "^4.1.7", "@pothos/plugin-tracing": "^1.1.4", "@pothos/plugin-validation": "^4.3.4", "@pothos/tracing-opentelemetry": "^1.2.1", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.2", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^6.0.2", "es-toolkit": "^1.52.0", "graphql-scalars": "^2.0.0", "graphql-yoga": "^5.24.1", "lib-address": "^0.7.0", "libphonenumber-js": "^1.13.14", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.6.7" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18", "drizzle-orm": "^1", "graphql": "^16 || ^17", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6 || ^7" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-ceiHaZlRD2kklHbpa+iXN8w3dqktwddqOKRUbhZKIGgN8jzvePqpQaQ2+O1LjRLs2RWb5JfCA2XOJhEH9MzhhQ=="],
 
-    "@m1212e/sveltekit-oidc": ["@m1212e/sveltekit-oidc@0.2.0", "", { "dependencies": { "@m1212e/oidc": "^0.2.0" }, "peerDependencies": { "@sveltejs/kit": "^3.0.0" } }, "sha512-kaC3NaEcfC4RK0tL9r5pZ4zYIv/fTQyAH0VMh7d5RdTJazCEaMCMDnUn7aLVNSZhKHjWSk2Cwkron+ric2+7iw=="],
+    "@m1212e/sveltekit-oidc": ["@m1212e/sveltekit-oidc@0.2.1", "", { "dependencies": { "@m1212e/oidc": "^0.2.0" }, "peerDependencies": { "@sveltejs/kit": "^3.0.0" } }, "sha512-mTVi+DLdIGCzTD66u83WgraGxzcGi2QHWe5PJkAI9gHR5kypijolTT13fBw0DORo6JP1fyojZwnZaC/7cteWow=="],
 
     "@magidoc/plugin-svelte-marked": ["@magidoc/plugin-svelte-marked@7.0.0", "", { "dependencies": { "github-slugger": "2.0.0", "marked": "18.0.3", "svelte": "5.55.5" } }, "sha512-dDVy0tJS35Qe7tiM8x50ouBwFxlR5OCs5hvBnfslQU2YfXgESFPUeay44LbtaF96Yh4we32GeNlYwJssoNLFKA=="],
 

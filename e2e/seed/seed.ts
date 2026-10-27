@@ -151,6 +151,10 @@ export const E2E_DRAFT_PAPER_VERSION_ID = 'e2e00000paperversion0001';
 export const E2E_PAPER_REVIEWER_ID = 'e2e-paper-reviewer';
 /** A team coordinator: manages the team, but may not hand out project management. */
 export const E2E_TEAM_COORDINATOR_ID = 'e2e-team-coordinator';
+// A teammate who only works on the team, with a care note from when they took part elsewhere:
+// participant care must not read it, the team admins only the planning details.
+export const E2E_TEAMMATE_USER_ID = 'e2e-teammate';
+export const E2E_TEAMMATE_NOTE = 'E2E teammate care note';
 export const E2E_PAPER_DELEGATE_USER_ID = 'e2e-paper-delegate';
 export const E2E_PAPER_DELEGATION_ID = 'e2e00000delegation00000002';
 
@@ -291,6 +295,13 @@ export default async function seed() {
 	await upsertTeamMember(E2E_ASSIGNMENT_ADMIN_ID, 'PROJECT_MANAGEMENT');
 	await upsertTeamMember(E2E_PAPER_REVIEWER_ID, 'REVIEWER');
 	await upsertTeamMember(E2E_TEAM_COORDINATOR_ID, 'TEAM_COORDINATOR');
+
+	await upsertActorUser(E2E_TEAMMATE_USER_ID);
+	await db
+		.update(schema.user)
+		.set({ globalNotes: E2E_TEAMMATE_NOTE })
+		.where(eq(schema.user.id, E2E_TEAMMATE_USER_ID));
+	await upsertTeamMember(E2E_TEAMMATE_USER_ID, 'REVIEWER');
 
 	// --- management fixture: a participant who never logs in, just gets acted on ---
 	const mgmtTargetParticipant = {

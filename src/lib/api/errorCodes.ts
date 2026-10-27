@@ -22,7 +22,9 @@ const ERROR_CODES = [
 	/** The person was already scanned in this attendance session. */
 	'ALREADY_SCANNED',
 	/** The identity provider's email belongs to another account. */
-	'EMAIL_CONFLICT'
+	'EMAIL_CONFLICT',
+	/** Too many wrong codes in a short time; the caller has to wait before trying again. */
+	'TOO_MANY_ATTEMPTS'
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

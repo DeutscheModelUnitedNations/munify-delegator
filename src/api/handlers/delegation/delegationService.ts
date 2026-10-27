@@ -14,11 +14,12 @@ import {
 	MIN_ROLE_APPLICATIONS
 } from '#lib/helpers/applicationReadiness.js';
 import { m } from '#lib/paraglide/messages.js';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
 import { delegationColumnChanges } from './delegationColumnChanges';
 import { apiError } from '#api/services/errors/apiError.js';
+import { codeNotFound } from '#api/services/errors/codeNotFound.js';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 import { distinctSchoolNames } from '#lib/helpers/delegationSchools.js';
 
@@ -168,39 +169,45 @@ export async function updateDelegationDetails(
 
 /** What somebody sees after entering a delegation's join code, before committing to join. */
 export async function previewDelegationByEntryCode(conferenceId: string, entryCode: string) {
-	const delegation = await db.query.delegation
-		.findFirst({
-			where: { conferenceId, entryCode },
-			with: {
-				conference: { columns: { title: true } },
-				members: {
-					with: {
-						user: { columns: { givenName: true, familyName: true } },
-						participant: { with: { school: { columns: { id: true, name: true } } } }
-					}
+	const delegation = await db.query.delegation.findFirst({
+		where: { conferenceId, entryCode },
+		with: {
+			conference: { columns: { title: true } },
+			members: {
+				with: {
+					user: { columns: { givenName: true, familyName: true } },
+					participant: { with: { school: { columns: { id: true, name: true } } } }
 				}
 			}
-		})
-		.then(assertFindFirstExists);
-
-	const headDelegate = delegation.members.find((member) => member.isHeadDelegate);
+		}
+	});
+	if (!delegation) throw codeNotFound();
 
 	return {
 		id: delegation.id,
 		conferenceId: delegation.conferenceId,
 		entryCode: delegation.entryCode,
-		motivation: delegation.motivation,
-		// What the join form offers the newcomer as their own school.
-		headDelegateSchoolId: headDelegate?.participant.school?.id ?? null,
-		headDelegateSchoolName: headDelegate?.participant.school?.name ?? null,
+		...headDelegatePreview(delegation.members.find((member) => member.isHeadDelegate)),
 		schools: distinctSchoolNames(delegation.members.map((member) => member.participant.school)),
-		experience: delegation.experience,
 		memberCount: delegation.members.length,
-		headDelegateFullName: formatNames(
-			headDelegate?.user?.givenName,
-			headDelegate?.user?.familyName
-		),
 		applied: delegation.applied,
 		conferenceTitle: delegation.conference?.title ?? ''
+	};
+}
+
+/** The head delegate's name, and their school, which the join form offers the newcomer as their own. */
+function headDelegatePreview(
+	headDelegate:
+		| {
+				user: { givenName: string; familyName: string } | null;
+				participant: { school: { id: string; name: string } | null };
+		  }
+		| undefined
+) {
+	const school = headDelegate?.participant.school;
+	return {
+		headDelegateSchoolId: school?.id ?? null,
+		headDelegateSchoolName: school?.name ?? null,
+		headDelegateFullName: formatNames(headDelegate?.user?.givenName, headDelegate?.user?.familyName)
 	};
 }

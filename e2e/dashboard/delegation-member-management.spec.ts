@@ -48,17 +48,6 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 		return (await res.json())?.data;
 	}
 
-	// upsertSelf (src/api/resolvers/modules/user.ts) stores the OIDC *email* claim into the
-	// User.preferred_username column - not the token's actual preferred_username claim - so look
-	// users up by the email `makeTestUser` generated, not by `.preferred_username`. Also: the
-	// `User` ability only lets a head delegate see users who currently share their delegation
-	// (src/api/abilities/entities/user.ts), so a removed member becomes invisible to this lookup
-	// afterwards - resolve ids while everyone is still a member, not after removing anyone.
-	async function userIdFor(email: string) {
-		const data = await graphql(`query { users(where: { email: { eq: "${email}" } }) { id } }`);
-		return data?.users?.[0]?.id as string;
-	}
-
 	// --- two members join ---
 	async function joinAs(prefix: string, code: string) {
 		const context = await browser.newContext();
@@ -80,10 +69,10 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await headPage.reload();
 	await waitForHydration(headPage);
 
-	const memberBUserId = await userIdFor(memberB.email);
-	const memberCUserId = await userIdFor(memberC.email);
-	expect(memberBUserId).toBeTruthy();
-	expect(memberCUserId).toBeTruthy();
+	// The OIDC subject is the user id, and the mock provider issues `preferred_username` as the
+	// subject. Co-delegates cannot look each other up by email: it is not theirs to read.
+	const memberBUserId = memberB.preferred_username;
+	const memberCUserId = memberC.preferred_username;
 
 	// --- rotate the entry code ---
 	const dashboardEntryCode = headPage.locator('p.font-mono');

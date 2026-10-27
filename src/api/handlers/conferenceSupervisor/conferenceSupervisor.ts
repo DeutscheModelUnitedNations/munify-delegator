@@ -19,6 +19,7 @@ import {
 	registerConferenceSupervisorAbilities,
 	updatableConferenceSupervisor
 } from './conferenceSupervisorPermissions';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
@@ -114,9 +115,8 @@ schemaBuilder.mutationFields((t) => ({
 			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
 			await assertCanConnectToConferenceSupervisor(ctx, args.conferenceId, subjectId);
 
-			const supervisor = await findSupervisorByConnectionCode(
-				args.conferenceId,
-				args.connectionCode
+			const supervisor = await codeGuessLimiter.attempt(ctx.mustBeLoggedIn().sub, () =>
+				findSupervisorByConnectionCode(args.conferenceId, args.connectionCode)
 			);
 			const participation = await assertCanBeSupervised(args.conferenceId, subjectId);
 			const linked = await connectParticipantToSupervisor(supervisor.id, participation);
@@ -227,7 +227,9 @@ schemaBuilder.queryFields((t) => ({
 			await assertCanPreviewConferenceSupervisor(ctx, args.conferenceId);
 			const caller = ctx.mustBeLoggedIn();
 
-			return previewSupervisorByCode(args.conferenceId, args.connectionCode, caller.sub);
+			return codeGuessLimiter.attempt(caller.sub, () =>
+				previewSupervisorByCode(args.conferenceId, args.connectionCode, caller.sub)
+			);
 		}
 	})
 }));

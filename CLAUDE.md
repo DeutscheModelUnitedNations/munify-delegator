@@ -278,8 +278,10 @@ bun run preview
     another.
   - **A rule's `columns` apply to the rows that rule matched** (rumble ≥ 0.25 masks per row), so
     visibility that depends on how the reader relates to a row is a rule like any other: the user
-    table (co-delegates read identity only; supervisors and the care team contact details;
-    teammates the phone number; nobody but the care team the care notes), the conference (payment
+    table (co-delegates and paper reviewers read names only; students their supervisors' name and
+    email; supervisors and the care team contact details; teammates the phone number, team admins
+    everything but the care notes; nobody but the care team the care notes of participants, and
+    nobody those of the team), the conference (payment
     and postal details for people with a part in it, team links for the team), a delegation's
     `entryCode`, a supervisor's `connectionCode`, an invitation's `token`. **A masked non-null
     column cannot be selected:** the GraphQL type stays non-null, so a reader who is masked and
@@ -485,10 +487,13 @@ bun run preview
   - **Download:** rows never resolve a file themselves; readers select the relation
     (`conference.logoFile { url }`, `contractFile`, `place.sitePlanFile`, `resolution.file`, …)
     and read `id` / `url` from the `StoredFile`, whose `url` is a presigned GET URL of the bucket.
-    There is no app route in between: the file id column's mask is the access check, since a
-    relation behind a masked id resolves to nothing (`e2e/authorization/api-abilities.spec.ts`
-    pins it for a template). `stored_file` itself is readable by anyone who reaches it - there is
-    no query listing files - with `uploadedById` masked for all but the uploader. A URL is reused for
+    There is no app route in between, and two checks guard the URL: the holding row's file id
+    column mask (a relation behind a masked id resolves to nothing; `e2e/authorization/api-abilities.spec.ts`
+    pins it for a template), and the `storedFile` read rules, which follow the row holding the file
+    through reverse relations (`imageOf`, `contractOf`, `sitePlanOf`, `resolutionOf`, …): pictures
+    wherever the conference is readable, templates and resolutions for the people with a part in
+    the conference, site plans for anybody, an unclaimed file for its uploader only. There is no
+    query listing files, and `uploadedById` is masked for all but the uploader. A URL is reused for
     six hours and valid for twelve, so browsers cache the (immutable) object and live queries do
     not see a new URL on every refetch. Browsers talk to the bucket directly: it needs CORS (GET
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
@@ -497,7 +502,8 @@ bun run preview
   - **Cleanup:** replaced and never-claimed files are not deleted by the mutations; the
     `file-cleanup` job removes every `stored_file` nothing points at (found through the foreign
     keys, which `restrict`) and objects without a row.
-  - A new file is a `fileRef()` column, a relation to `storedFile` in `relations.ts`, an entry in
+  - A new file is a `fileRef()` column, a relation to `storedFile` in `relations.ts` and its
+    reverse on `storedFile`, a read rule in `storedFilePermissions.ts`, an entry in
     `FILE_SOURCES`, `assertCanClaimFile` + `ensureUploadComplete` in the mutations that set it,
     and a target in `uploadFile`. A field that has to stay private needs its id column masked.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
@@ -1024,6 +1030,14 @@ The pre-commit fallow step is a gate: it fails the commit when the commit introd
 - Environment secrets must never be committed
 - Drizzle parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
+- **Lookups by code are rate-limited per account.** A delegation's entry code and a supervisor's
+  connection code are the only check on `previewDelegation`, `createDelegationMember`,
+  `previewConferenceSupervisor` and `connectToConferenceSupervisor`, so each wraps its lookup in
+  `codeGuessLimiter.attempt` (`#api/services/codeGuessLimit.ts`): a lookup throws `codeNotFound()`
+  for a wrong code, and ten of those in ten minutes answer `TOO_MANY_ATTEMPTS`. The counters live
+  in Redis keys that expire (or a pruned in-memory map), never in the database. New codes are 8
+  letters (`#lib/helpers/entryCode.ts`); older 6-letter codes still work, and code fields use
+  `createEntryCodeInput` so a 6-letter prefix of a new code is not looked up mid-typing.
 
 ## Type Safety (CRITICAL)
 

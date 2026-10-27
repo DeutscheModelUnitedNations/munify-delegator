@@ -3,10 +3,13 @@ import { object, schemaBuilder } from '#api/rumble.js';
 import { storedFilePubsub } from '#api/pubsub.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { downloadUrl, pendingUploadUrl, requestUpload } from './storedFileService';
-import { assertCanUploadFile } from './storedFilePermissions';
+import { assertCanUploadFile, registerStoredFileAbilities } from './storedFilePermissions';
 
-// Rows reach their files through relations (`conference.logoFile`, `resolution.file`, …); see
-// `storedFilePermissions.ts` for who sees what, and `fileSources.ts` for every file there is.
+registerStoredFileAbilities();
+
+// Rows reach their files through relations (`conference.logoFile`, `resolution.file`, …), and a
+// file's `url` is a presigned URL of the bucket: the read rules in `storedFilePermissions.ts` decide
+// who gets one. `fileSources.ts` lists every file there is.
 
 const StoredFileRef = object({
 	table: 'storedFile',

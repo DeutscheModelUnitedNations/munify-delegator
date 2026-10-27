@@ -4,6 +4,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
+	TEAM_ADMIN_ROLES,
 	isManagedUser,
 	isSystemAdmin,
 	isTeamMemberOf,
@@ -20,24 +21,34 @@ import { apiError } from '#api/services/errors/apiError.js';
  * masks columns per row: each rule's `columns` apply to the rows that rule matched.
  *
  * - the person themselves: everything but the care team's notes about them;
- * - who looks after them (participant care, project management, admins): everything;
+ * - who looks after them (participant care, project management, admins): everything - for the
+ *   participants and the waiting list of their conference, not for the team;
  * - their supervisors: everything but those notes;
- * - teammates: who someone is, plus their phone number - team coordinators: everything but the
- *   care notes;
- * - the reviewers of a paper, to its author: their name only;
- * - everybody else who may see the row at all (co-delegates, co-supervisors, reviewers reading an
- *   author): who someone is - name, email, pronouns, birthday for the age checks.
+ * - teammates: `IDENTITY` plus their phone number - team admins (project management, team
+ *   coordinators): everything but the care notes;
+ * - the people a supervisor looks after, and the supervisor's co-supervisors: the supervisor's
+ *   `NAME_AND_EMAIL`, to get in touch;
+ * - co-delegates, and the reviewers of a paper reading its author: `NAME` only. Neither needs to
+ *   reach the person outside the app, and co-delegates are mostly minors: no email, no birthday
+ *   (whether a co-delegate is of age is `conferenceParticipant.ofAgeAtConference`);
+ * - an author reading who reviewed their papers: the reviewer's name.
  */
-const IDENTITY = {
+/** Who someone is, as the app shows them to people who share something with them. */
+const NAME = {
 	id: true,
 	createdAt: true,
 	updatedAt: true,
-	email: true,
 	givenName: true,
 	familyName: true,
+	pronouns: true
+};
+/** `NAME`, and how to write to them. */
+const NAME_AND_EMAIL = { ...NAME, email: true };
+/** Enough to tell people apart: for the team, and the care team comparing possible duplicates. */
+const IDENTITY = {
+	...NAME_AND_EMAIL,
 	preferredUsername: true,
 	locale: true,
-	pronouns: true,
 	birthday: true
 };
 const WITHOUT_CARE_NOTES = { globalNotes: false };
@@ -78,8 +89,8 @@ export function registerUserAbilities() {
 		return id ? { where: { id } } : undefined;
 	});
 
-	// Project management and participant care see everybody they look after - the participants,
-	// waiting-list entrants and team of the conferences they manage - in full.
+	// Project management and participant care see everybody they look after - the participants and
+	// waiting-list entrants of the conferences they manage - in full.
 	abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
 
 	// The other account of a possible duplicate (see `duplicateOfManaged`).
@@ -103,10 +114,10 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Team coordinators see their team in full but for the care notes: the team members page lists
+	// Team admins see their team in full but for the care notes: the team members page lists
 	// everybody's address, gender and food preference for planning.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf(ctx, ['TEAM_COORDINATOR']);
+		const conference = isTeamMemberOf(ctx, TEAM_ADMIN_ROLES);
 		return conference
 			? { where: { teamMember: { conference } }, columns: WITHOUT_CARE_NOTES }
 			: undefined;
@@ -123,13 +134,13 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Delegates see each other.
+	// Delegates see each other's names.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = userId(ctx);
 		return id
 			? {
 					where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
-					columns: IDENTITY
+					columns: NAME
 				}
 			: undefined;
 	});
@@ -147,7 +158,7 @@ export function registerUserAbilities() {
 							]
 						}
 					},
-					columns: IDENTITY
+					columns: NAME_AND_EMAIL
 				}
 			: undefined;
 	});
@@ -165,7 +176,7 @@ export function registerUserAbilities() {
 							]
 						}
 					},
-					columns: IDENTITY
+					columns: NAME_AND_EMAIL
 				}
 			: undefined;
 	});
@@ -182,7 +193,7 @@ export function registerUserAbilities() {
 							conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } }
 						}
 					},
-					columns: IDENTITY
+					columns: NAME
 				}
 			: undefined;
 	});

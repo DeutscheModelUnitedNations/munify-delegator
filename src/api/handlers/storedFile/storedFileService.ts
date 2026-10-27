@@ -28,7 +28,7 @@ function storage(): Storage {
 
 /**
  * A presigned URL serving the file straight from the bucket, named as it was uploaded. Who may have
- * it is decided before: by the mask of the row's file id, which hides the relation to the file.
+ * it is decided before: the `storedFile` read rules, which follow the row holding the file.
  */
 export function downloadUrl(file: { key: string; fileName: string | null }) {
 	return storage().presignDownload(file.key, file.fileName ?? undefined);

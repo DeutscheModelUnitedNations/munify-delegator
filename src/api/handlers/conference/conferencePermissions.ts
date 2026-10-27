@@ -8,6 +8,7 @@ import {
 	isTeamMemberOf,
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
+	publicConference,
 	systemAdmin,
 	where
 } from '#api/services/authHelper.js';
@@ -44,7 +45,7 @@ export function registerConferenceAbilities() {
 	// for the waiting list) and their details - short of the members-only and team-only columns. Any
 	// other conference is only visible to the people who have a part in it (the rules below).
 	abilityBuilder.conference.allow('read').when(() => ({
-		where: { state: { in: ['PARTICIPANT_REGISTRATION', 'PREPARATION'] } },
+		where: publicConference,
 		columns: { ...MEMBERS_ONLY, ...TEAM_ONLY }
 	}));
 	abilityBuilder.conference.allow('read').when(systemAdmin);

@@ -4,7 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import DelegationPreview from '#lib/components/DelegationPreview.svelte';
-	import { entryCodeLength } from '../../../../../api/services/registration/entryCodeGenerator';
+	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
 	import FlowStep from './FlowStep.svelte';
 	import CreateDelegationSteps from './CreateDelegationSteps.svelte';
 	import IndividualSteps from './IndividualSteps.svelte';
@@ -32,7 +32,7 @@
 
 	// Seeded once: a link naming another path remounts the form (the dashboard keys it by the link).
 	let path = $state<ApplyPath | undefined>(untrack(() => initialPath));
-	let code = $state(untrack(() => initialCode ?? ''));
+	const code = createEntryCodeInput(untrack(() => initialCode ?? ''));
 
 	// Set by the first click or key press inside the form, after which opened steps scroll to view.
 	let started = $state(false);
@@ -135,16 +135,13 @@
 			<input
 				type="text"
 				placeholder="Code"
-				bind:value={code}
+				bind:value={code.value}
 				aria-label={m.enterCode()}
 				class="input input-lg mb-4 w-full max-w-xs font-mono tracking-[0.8rem] uppercase"
-				oninput={(e) => {
-					code = e.currentTarget.value.toUpperCase().slice(0, entryCodeLength);
-				}}
 			/>
-			{#if code.length === entryCodeLength}
+			{#if code.ready}
 				<div in:fly={{ y: 16, duration: 300 }}>
-					<DelegationPreview {conferenceId} entryCode={code} />
+					<DelegationPreview {conferenceId} entryCode={code.ready} />
 				</div>
 			{/if}
 		</FlowStep>

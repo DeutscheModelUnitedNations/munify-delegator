@@ -545,6 +545,50 @@ export const relations = defineRelations(schema, (r) => ({
 			optional: false
 		})
 	},
+	// The rows holding a file, one relation per column: what the `storedFile` read rules
+	// (`storedFilePermissions.ts`) decide by - whoever may read the holding row's file reads the file.
+	storedFile: {
+		imageOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.imageFileId
+		}),
+		emblemOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.emblemFileId
+		}),
+		logoOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.logoFileId
+		}),
+		contractOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.contractFileId
+		}),
+		guardianConsentOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.guardianConsentFileId
+		}),
+		mediaConsentOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.mediaConsentFileId
+		}),
+		termsAndConditionsOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.termsAndConditionsFileId
+		}),
+		certificateOf: r.many.conference({
+			from: r.storedFile.id,
+			to: r.conference.certificateFileId
+		}),
+		sitePlanOf: r.many.place({
+			from: r.storedFile.id,
+			to: r.place.sitePlanFileId
+		}),
+		resolutionOf: r.many.resolution({
+			from: r.storedFile.id,
+			to: r.resolution.fileId
+		})
+	},
 	place: {
 		sitePlanFile: r.one.storedFile({
 			from: r.place.sitePlanFileId,

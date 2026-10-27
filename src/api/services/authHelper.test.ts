@@ -84,7 +84,7 @@ describe('isOwnUser', () => {
 });
 
 describe('isManagedUser', () => {
-	test('covers participants, waiting list and team of the conferences the caller cares for', () => {
+	test('covers participants and waiting list of the conferences the caller cares for, not the team', () => {
 		const conference = {
 			teamMembers: {
 				user: { id: 'u1' },
@@ -92,11 +92,7 @@ describe('isManagedUser', () => {
 			}
 		};
 		expect(isManagedUser(user)).toEqual({
-			OR: [
-				...participatesIn(conference).OR,
-				{ waitingListEntry: { conference } },
-				{ teamMember: { conference } }
-			]
+			OR: [...participatesIn(conference).OR, { waitingListEntry: { conference } }]
 		});
 	});
 });

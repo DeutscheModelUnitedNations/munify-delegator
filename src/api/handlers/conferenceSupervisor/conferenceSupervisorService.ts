@@ -6,18 +6,19 @@ import {
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import { isUserAlreadyRegistered } from '#api/services/registration/participation.js';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { normalizeEntryCode } from '#lib/helpers/entryCode.js';
+import { assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
+import { codeNotFound } from '#api/services/errors/codeNotFound.js';
 import { and, eq } from 'drizzle-orm';
 import { supervisorPreview } from './supervisorPreview';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
-const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
 
 /**
  * A connection code no supervisor holds yet, in any conference: the codes are unique across
- * conferences (a unique index), so a code alone names its supervisor. 20^6 codes make a clash
+ * conferences (a unique index), so a code alone names its supervisor. 20^8 codes make a clash
  * rare; drawing again on one keeps it from turning into an error.
  */
 async function unusedConnectionCode() {
@@ -68,14 +69,14 @@ export async function registerSupervisor(
  * is still checked, so a code from another conference is not found.
  */
 export async function findSupervisorByConnectionCode(conferenceId: string, connectionCode: string) {
-	return db.query.conferenceSupervisor
-		.findFirst({
-			where: {
-				connectionCode: normalizeConnectionCode(connectionCode),
-				participant: { conferenceId }
-			}
-		})
-		.then(assertFindFirstExists);
+	const supervisor = await db.query.conferenceSupervisor.findFirst({
+		where: {
+			connectionCode: normalizeEntryCode(connectionCode),
+			participant: { conferenceId }
+		}
+	});
+	if (!supervisor) throw codeNotFound();
+	return supervisor;
 }
 
 /**
@@ -148,18 +149,17 @@ export async function previewSupervisorByCode(
 	connectionCode: string,
 	callerId: string
 ) {
-	const supervisor = await db.query.conferenceSupervisor
-		.findFirst({
-			where: {
-				connectionCode: normalizeConnectionCode(connectionCode),
-				participant: { conferenceId }
-			},
-			with: {
-				user: { columns: { givenName: true, familyName: true } },
-				participant: { with: { school: { columns: { id: true, name: true, city: true } } } }
-			}
-		})
-		.then(assertFindFirstExists);
+	const supervisor = await db.query.conferenceSupervisor.findFirst({
+		where: {
+			connectionCode: normalizeEntryCode(connectionCode),
+			participant: { conferenceId }
+		},
+		with: {
+			user: { columns: { givenName: true, familyName: true } },
+			participant: { with: { school: { columns: { id: true, name: true, city: true } } } }
+		}
+	});
+	if (!supervisor) throw codeNotFound();
 	const caller = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: callerId },
 		columns: { schoolId: true }

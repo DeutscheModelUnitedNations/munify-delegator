@@ -1,6 +1,5 @@
 import { customAlphabet } from 'nanoid';
+import { ENTRY_CODE_ALPHABET, ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode.js';
 
-export const entryCodeLength = 6;
-// https://github.com/CyberAP/nanoid-dictionary
-const entryCodeAlphabet = '6789BCDFGHJKLMNPQRTW';
-export const makeEntryCode = customAlphabet(entryCodeAlphabet, entryCodeLength);
+/** A new delegation entry code or supervisor connection code; see `#lib/helpers/entryCode`. */
+export const makeEntryCode = customAlphabet(ENTRY_CODE_ALPHABET, ENTRY_CODE_LENGTH);

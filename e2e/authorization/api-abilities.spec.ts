@@ -16,7 +16,9 @@ import {
 	E2E_SUPERVISOR_FOR_CONNECT_USER_ID,
 	E2E_SURVEY_OPTION_A_ID,
 	E2E_SURVEY_QUESTION_ID,
-	E2E_TEAM_COORDINATOR_ID
+	E2E_MGMT_ADMIN_ID,
+	E2E_TEAM_COORDINATOR_ID,
+	E2E_TEAMMATE_USER_ID
 } from '../seed/seed';
 
 // The route guards keep the UI honest; these keep the API honest. Each one sends the request a
@@ -174,7 +176,7 @@ test('co-delegates see each other’s names, not each other’s contact details'
 	const read = await gql(
 		member,
 		`query ($id: ID!) {
-			delegation(id: $id) { members { user { id givenName phone emergencyContacts globalNotes } } }
+			delegation(id: $id) { members { user { id givenName phone emergencyContacts globalNotes birthday } } }
 		}`,
 		{ id: delegation.id }
 	);
@@ -185,6 +187,7 @@ test('co-delegates see each other’s names, not each other’s contact details'
 			phone: string | null;
 			emergencyContacts: string | null;
 			globalNotes: string | null;
+			birthday: string | null;
 		};
 	};
 	const members = (read.data?.delegation as { members: Member[] }).members;
@@ -196,6 +199,15 @@ test('co-delegates see each other’s names, not each other’s contact details'
 	expect(other?.user.givenName).toBeTruthy();
 	expect(other?.user.phone).toBeNull();
 	expect(other?.user.emergencyContacts).toBeNull();
+	expect(other?.user.birthday).toBeNull();
+
+	// Email is not a co-delegate's to read: asking for it refuses the whole query.
+	const withEmail = await gql(
+		member,
+		`query ($id: ID!) { delegation(id: $id) { members { user { id email } } } }`,
+		{ id: delegation.id }
+	);
+	expect(withEmail.errors, JSON.stringify(withEmail)).toBeTruthy();
 });
 
 test('a team coordinator cannot hand out project management', async ({ page }) => {
@@ -495,4 +507,49 @@ test('anybody finds schools by name, but only their participants’ care team re
 		),
 		/not found/i
 	);
+});
+
+test('participant care does not look after the team; the team admins read it without care notes', async ({
+	browser
+}) => {
+	type Teammate = {
+		givenName: string;
+		phone: string | null;
+		street: string | null;
+		globalNotes: string | null;
+	} | null;
+	const readTeammate = async (actorId: string) => {
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, fixedTestUser(actorId));
+		const result = await gql(
+			page,
+			`query ($id: ID!) { user(id: $id) { givenName phone street globalNotes } }`,
+			{ id: E2E_TEAMMATE_USER_ID }
+		);
+		expect(result.errors, JSON.stringify(result)).toBeUndefined();
+		return { page, user: result.data?.user as Teammate };
+	};
+
+	// Participant care reads a teammate like any teammate does: who they are and their phone.
+	const care = await readTeammate(E2E_MGMT_ADMIN_ID);
+	expect(care.user?.givenName).toBeTruthy();
+	expect(care.user?.phone).toBeTruthy();
+	expect(care.user?.street).toBeNull();
+	expect(care.user?.globalNotes).toBeNull();
+	// ... and may neither write care notes about them nor correct who they are.
+	expectRefused(
+		await gql(
+			care.page,
+			`mutation ($id: ID!) { updateUsersGlobalNotes(id: $id, globalNotes: "x") { id } }`,
+			{ id: E2E_TEAMMATE_USER_ID }
+		),
+		/do not look after them/
+	);
+
+	// The team admins read the planning details, never the care notes.
+	for (const adminId of [E2E_ASSIGNMENT_ADMIN_ID, E2E_TEAM_COORDINATOR_ID]) {
+		const { user } = await readTeammate(adminId);
+		expect(user?.street, adminId).toBeTruthy();
+		expect(user?.globalNotes, adminId).toBeNull();
+	}
 });

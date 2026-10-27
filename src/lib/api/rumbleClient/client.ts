@@ -1291,6 +1291,7 @@ export type Conferenceparticipant = {
   id: ID,
   mediaConsent: AdministrativestatusEnum,
   mediaConsentStatus: MediaconsentstatusEnum,
+  ofAgeAtConference: Boolean,
   paymentStatus: AdministrativestatusEnum,
   school: (p?: {
     orderBy?: SchoolOrderInputArgument | null | undefined,
@@ -1672,13 +1673,11 @@ export type DelegationPreview = {
   conferenceId: String,
   conferenceTitle: String,
   entryCode: String,
-  experience: String | null,
   headDelegateFullName: String,
   headDelegateSchoolId: String | null,
   headDelegateSchoolName: String | null,
   id: String,
   memberCount: Int,
-  motivation: String | null,
   schools: String[]    
 };
 		
@@ -4670,15 +4669,85 @@ export type StatisticsResultWaitingList = {
 export type StatsFilter = "ALL" | "APPLIED" | "APPLIED_WITHOUT_ROLE" | "APPLIED_WITH_ROLE" | "NOT_APPLIED";
 		
 export type Storedfile = {
+  certificateOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   conferenceId: ID,
+  contractOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   createdAt: DateTime,
+  emblemOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   fileName: String | null,
+  guardianConsentOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   id: ID,
+  imageOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   key: String,
+  logoOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
+  mediaConsentOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   mimeType: String,
   purpose: String,
+  resolutionOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ResolutionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ResolutionWhereInputArgument | null | undefined
+  }) => Resolution[],
   search_distance: Float | null,
+  sitePlanOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: PlaceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: PlaceWhereInputArgument | null | undefined
+  }) => Place[],
   size: Int,
+  termsAndConditionsOf: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference[],
   updatedAt: DateTime,
   uploadUrl: String | null,
   uploadedById: ID | null,
@@ -4702,14 +4771,24 @@ export type StoredfileWhereInputArgument = {
   AND?: StoredfileWhereInputArgument[] | undefined,
   NOT?: StoredfileWhereInputArgument | null | undefined,
   OR?: StoredfileWhereInputArgument[] | undefined,
+  certificateOf?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
+  contractOf?: ConferenceWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
+  emblemOf?: ConferenceWhereInputArgument | null | undefined,
   fileName?: StringWhereInputArgument | null | undefined,
+  guardianConsentOf?: ConferenceWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
+  imageOf?: ConferenceWhereInputArgument | null | undefined,
   key?: StringWhereInputArgument | null | undefined,
+  logoOf?: ConferenceWhereInputArgument | null | undefined,
+  mediaConsentOf?: ConferenceWhereInputArgument | null | undefined,
   mimeType?: StringWhereInputArgument | null | undefined,
   purpose?: StringWhereInputArgument | null | undefined,
+  resolutionOf?: ResolutionWhereInputArgument | null | undefined,
+  sitePlanOf?: PlaceWhereInputArgument | null | undefined,
   size?: IntWhereInputArgument | null | undefined,
+  termsAndConditionsOf?: ConferenceWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   uploadedById?: IDWhereInputArgument | null | undefined    
 };

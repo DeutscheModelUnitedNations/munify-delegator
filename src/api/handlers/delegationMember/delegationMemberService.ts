@@ -12,9 +12,10 @@ import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js'
 import { nullToUndefined } from '#api/services/args.js';
 import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
 import { m } from '#lib/paraglide/messages.js';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
 import { apiError } from '#api/services/errors/apiError.js';
+import { codeNotFound } from '#api/services/errors/codeNotFound.js';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
 import type { CommitteeMove } from './delegationMemberPermissions';
 
@@ -28,9 +29,8 @@ export async function joinDelegationByEntryCode(
 	entryCode: string,
 	school: SchoolChoice
 ) {
-	const delegation = await db.query.delegation
-		.findFirst({ where: { conferenceId, entryCode } })
-		.then(assertFindFirstExists);
+	const delegation = await db.query.delegation.findFirst({ where: { conferenceId, entryCode } });
+	if (!delegation) throw codeNotFound();
 
 	if (delegation.applied) {
 		throw apiError('CONFLICT', m.delegationHasAlreadyApplied());

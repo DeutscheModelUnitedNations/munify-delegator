@@ -1,7 +1,7 @@
 {
 	"dependencies": {
 		"@graphql-yoga/redis-event-target": "^3.0.4",
-		"@m1212e/sveltekit-oidc": "^0.2.0",
+		"@m1212e/sveltekit-oidc": "^0.2.1",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-orm": "1.0.0-rc.5-5935859",
@@ -26,7 +26,7 @@
 		"@inlang/cli": "^3.4.4",
 		"@inlang/paraglide-js": "^2.29.1",
 		"@lingual/i18n-check": "^0.9.5",
-		"@m1212e/rumble": "^0.26.2",
+		"@m1212e/rumble": "^0.26.4",
 		"@magidoc/plugin-svelte-marked": "^7.0.0",
 		"@opentelemetry/api": "^1.10.0",
 		"@opentelemetry/context-async-hooks": "^3.0.0",

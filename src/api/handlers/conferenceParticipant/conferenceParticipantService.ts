@@ -1,3 +1,4 @@
+import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
 import { type Transaction, db, schema } from '#api/db/db.js';
 import { nullToUndefined } from '#api/services/args.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -210,4 +211,21 @@ export async function setAttendanceForAll(args: {
 	});
 
 	return changed.length;
+}
+
+/**
+ * Whether the person is 18 by the start of the conference: what decides if a guardian has to
+ * consent. Answered as a flag, so the people who see someone's paperwork (their co-delegates, for
+ * one) learn whether a guardian is involved, not the birthday.
+ */
+export async function isOfAgeAtConference(participantId: string) {
+	const participant = await db.query.conferenceParticipant.findFirst({
+		where: { id: participantId },
+		columns: {},
+		with: {
+			user: { columns: { birthday: true } },
+			conference: { columns: { startConference: true } }
+		}
+	});
+	return ofAgeAtConference(participant?.conference.startConference, participant?.user.birthday);
 }
