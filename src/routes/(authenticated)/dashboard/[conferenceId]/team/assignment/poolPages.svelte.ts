@@ -52,8 +52,6 @@ export function createPoolPages<T>() {
 	};
 }
 
-type PoolPages<T> = ReturnType<typeof createPoolPages<T>>;
-
 /** The pool `source` currently names: its key, and how to fetch one of its pages. */
 interface PoolSource<T> {
 	key: string;
@@ -133,6 +131,7 @@ export function createPoolSearch() {
 export function onPages<
 	G extends { delegationId?: string | null; singleParticipantId: string | null }
 >(groups: readonly G[], pages: readonly PoolPage<{ id: string }>[]) {
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a lookup built per call, never mutated
 	const ids = new Set(pages.flatMap((page) => page.rows.map((row) => row.id)));
 	return groups.filter((group) => ids.has(group.delegationId ?? group.singleParticipantId ?? ''));
 }

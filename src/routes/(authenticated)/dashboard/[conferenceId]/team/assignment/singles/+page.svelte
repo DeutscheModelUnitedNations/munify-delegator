@@ -28,7 +28,7 @@
 	import PoolList from '../PoolList.svelte';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
-	import { succeeded, toastError } from '../toastError';
+	import { succeeded } from '../toastError';
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
