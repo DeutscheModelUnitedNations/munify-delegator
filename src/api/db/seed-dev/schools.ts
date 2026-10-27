@@ -46,38 +46,23 @@ export function seedSchoolId(batch: SeedBatch) {
 }
 
 /**
- * Gives every person the school of the registration they are in - their own as a single
- * participant, else their delegation's, else the one they named as a supervisor - as the app does
- * when they apply. Then one person per conference comes from a merger (`addMergedMember`).
- */
-export function addParticipantSchools(batch: SeedBatch) {
-	const delegationSchool = new Map(batch.delegation.map((d) => [d.id, d.schoolId]));
-	// Later sets win: supervisor, then delegation, then single participant
-	const schoolOf = new Map<string, string | null | undefined>([
-		...batch.conferenceSupervisor.map((s) => [s.conferenceParticipantId, s.schoolId] as const),
-		...batch.delegationMember.map(
-			(m) => [m.conferenceParticipantId, delegationSchool.get(m.delegationId)] as const
-		),
-		...batch.singleParticipant.map((s) => [s.conferenceParticipantId, s.schoolId] as const)
-	]);
-	for (const participant of batch.conferenceParticipant) {
-		participant.schoolId = schoolOf.get(participant.id ?? '') ?? null;
-	}
-	addMergedMembers(batch);
-}
-
-/**
  * As if the assignment had merged two delegations: in every conference, the second member of the
- * first seated delegation with a school comes from another school, so the seats per school count
- * people rather than delegations.
+ * first seated delegation whose people have a school comes from another school, so the seats per
+ * school count people rather than delegations. Everyone else got their school as they registered.
  */
-function addMergedMembers(batch: SeedBatch) {
+export function addMergedMembers(batch: SeedBatch) {
 	const participants = new Map(batch.conferenceParticipant.map((p) => [p.id, p]));
-	const seated = batch.delegation.filter((d) => d.assignedRoleId && d.schoolId);
+	const schoolOfMember = (member: SeedBatch['delegationMember'][number] | undefined) =>
+		member ? participants.get(member.conferenceParticipantId)?.schoolId : undefined;
+	const membersOf = Map.groupBy(batch.delegationMember, (m) => m.delegationId);
+	const seated = batch.delegation.filter(
+		(d) => d.assignedRoleId && schoolOfMember(membersOf.get(d.id ?? '')?.[0])
+	);
 	const firstPerConference = new Map(seated.toReversed().map((d) => [d.conferenceId, d]));
 	for (const delegation of firstPerConference.values()) {
-		const second = batch.delegationMember.filter((m) => m.delegationId === delegation.id)[1];
+		const [first, second] = membersOf.get(delegation.id ?? '') ?? [];
 		const moved = second && participants.get(second.conferenceParticipantId);
-		if (moved) moved.schoolId = poolOf(batch).find((id) => id !== delegation.schoolId) ?? null;
+		const school = schoolOfMember(first);
+		if (moved) moved.schoolId = poolOf(batch).find((id) => id !== school) ?? null;
 	}
 }

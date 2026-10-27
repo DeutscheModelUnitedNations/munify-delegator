@@ -2,9 +2,8 @@
 	import { client } from '#lib/api/rumbleClient/client.js';
 	import { fly } from 'svelte/transition';
 	import Spinner from './Spinner.svelte';
+	import DelegationJoinForm from './DelegationJoinForm.svelte';
 	import { m } from '#lib/paraglide/messages.js';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 
 	interface Props {
 		conferenceId: string;
@@ -20,7 +19,9 @@
 			applied: true,
 			headDelegateFullName: true,
 			conferenceTitle: true,
-			school: true
+			schools: true,
+			headDelegateSchoolId: true,
+			headDelegateSchoolName: true
 		});
 	}
 
@@ -74,7 +75,7 @@
 						</tr>
 						<tr>
 							<td>{m.schoolOrInstitution()}</td>
-							<td>{delegation?.school}</td>
+							<td>{delegation?.schools.join(', ')}</td>
 						</tr>
 						<tr>
 							<td>{m.headDelegate()}</td>
@@ -88,15 +89,12 @@
 				</table>
 			</div>
 		</div>
-		<button
-			class="btn btn-primary mt-10"
-			onclick={async () => {
-				await client.mutate.createDelegationMember({
-					__args: { entryCode, conferenceId },
-					id: true
-				});
-				goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
-			}}>{m.confirm()}</button
-		>
+		<DelegationJoinForm
+			{conferenceId}
+			{entryCode}
+			headDelegateSchool={delegation.headDelegateSchoolId && delegation.headDelegateSchoolName
+				? { id: delegation.headDelegateSchoolId, name: delegation.headDelegateSchoolName }
+				: null}
+		/>
 	</div>
 {/if}

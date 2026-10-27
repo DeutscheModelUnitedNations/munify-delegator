@@ -23,6 +23,7 @@ import {
 	conferenceParticipantPubsub,
 	delegationMemberPubsub,
 	delegationPubsub,
+	schoolPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub.js';
@@ -32,22 +33,27 @@ registerDelegationMemberAbilities();
 const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
 schemaBuilder.mutationFields((t) => ({
-	/** Joining a delegation by entry code. */
+	/** Joining a delegation by entry code, with the newcomer's own school. */
 	createDelegationMember: t.drizzleField({
 		type: DelegationMemberRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			entryCode: t.arg.string({ required: true })
+			entryCode: t.arg.string({ required: true }),
+			/** An existing school, or `schoolName` to find or create one; neither keeps theirs. */
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const createdId = await joinDelegationByEntryCode(
 				ctx.mustBeLoggedIn().sub,
 				args.conferenceId,
-				args.entryCode
+				args.entryCode,
+				{ schoolId: args.schoolId, schoolName: args.schoolName }
 			);
 
 			delegationMemberPubsub.created();
 			conferenceParticipantPubsub.updated();
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegationMember
 				.findFirst(

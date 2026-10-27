@@ -1,7 +1,6 @@
 import { type Transaction, db, schema } from '#api/db/db.js';
 import {
 	ensureConferenceParticipant,
-	setDelegationMembersSchool,
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import { fetchUserParticipations } from '#api/services/registration/participation.js';
@@ -21,6 +20,7 @@ import { eq } from 'drizzle-orm';
 import { delegationColumnChanges } from './delegationColumnChanges';
 import { apiError } from '#api/services/errors/apiError.js';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
+import { distinctSchoolNames } from '#lib/helpers/delegationSchools.js';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(
@@ -53,7 +53,10 @@ async function transferHeadDelegate(
 		.where(eq(schema.delegationMember.id, next.id));
 }
 
-/** Creates a delegation with the caller as its head delegate. Returns the delegation's id. */
+/**
+ * Creates a delegation with the caller as its head delegate, who applies with the school they
+ * name (their own; the delegation keeps none). Returns the delegation's id.
+ */
 export async function createDelegationWithHead(
 	userId: string,
 	args: SchoolChoice & {
@@ -81,7 +84,6 @@ export async function createDelegationWithHead(
 			.insert(schema.delegation)
 			.values({
 				conferenceId: args.conferenceId,
-				schoolId: (await resolveSchoolChoice(args, tx)) ?? undefined,
 				motivation: args.motivation ?? undefined,
 				experience: args.experience ?? undefined,
 				entryCode: makeEntryCode()
@@ -89,14 +91,14 @@ export async function createDelegationWithHead(
 			.returning()
 			.then(assertFirstEntryExists);
 
-		// The creator becomes the head delegate, from the delegation's school.
+		// The creator becomes the head delegate.
 		const participantId = await ensureConferenceParticipant(tx, delegation.conferenceId, userId);
 		await tx.insert(schema.delegationMember).values({
 			delegationId: delegation.id,
 			conferenceParticipantId: participantId,
 			isHeadDelegate: true
 		});
-		await setParticipantSchool(tx, [participantId], delegation.schoolId);
+		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
 
 		return delegation;
 	});
@@ -104,7 +106,7 @@ export async function createDelegationWithHead(
 	return created.id;
 }
 
-type DelegationDetailArgs = SchoolChoice & {
+type DelegationDetailArgs = {
 	id: string;
 	applied?: boolean | null;
 	resetEntryCode?: boolean | null;
@@ -136,17 +138,6 @@ async function setApplied(
 		.where(eq(schema.delegation.id, delegation.id));
 }
 
-/** Sets the school the update names, if it names one, and moves the members along. */
-async function setSchool(tx: Transaction, delegation: UpdatableDelegation, args: SchoolChoice) {
-	const schoolId = await resolveSchoolChoice(args, tx);
-	if (schoolId === undefined) return;
-	await tx
-		.update(schema.delegation)
-		.set({ schoolId })
-		.where(eq(schema.delegation.id, delegation.id));
-	await setDelegationMembersSchool(tx, delegation.id, schoolId, delegation.schoolId);
-}
-
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
@@ -156,17 +147,10 @@ export async function updateDelegationDetails(
 	delegation: UpdatableDelegation,
 	args: DelegationDetailArgs
 ) {
-	applicationFormSchema.parse({
-		schoolId: args.schoolId,
-		schoolName: args.schoolName,
-		experience: args.experience,
-		motivation: args.motivation
-	});
+	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
 
 	await db.transaction(async (tx) => {
 		if (typeof args.applied === 'boolean') await setApplied(tx, delegation, args, args.applied);
-
-		await setSchool(tx, delegation, args);
 
 		const changes = delegationColumnChanges(args, makeEntryCode);
 		if (Object.keys(changes).length > 0) {
@@ -189,8 +173,12 @@ export async function previewDelegationByEntryCode(conferenceId: string, entryCo
 			where: { conferenceId, entryCode },
 			with: {
 				conference: { columns: { title: true } },
-				school: { columns: { name: true } },
-				members: { with: { user: { columns: { givenName: true, familyName: true } } } }
+				members: {
+					with: {
+						user: { columns: { givenName: true, familyName: true } },
+						participant: { with: { school: { columns: { id: true, name: true } } } }
+					}
+				}
 			}
 		})
 		.then(assertFindFirstExists);
@@ -202,7 +190,10 @@ export async function previewDelegationByEntryCode(conferenceId: string, entryCo
 		conferenceId: delegation.conferenceId,
 		entryCode: delegation.entryCode,
 		motivation: delegation.motivation,
-		school: delegation.school?.name ?? null,
+		// What the join form offers the newcomer as their own school.
+		headDelegateSchoolId: headDelegate?.participant.school?.id ?? null,
+		headDelegateSchoolName: headDelegate?.participant.school?.name ?? null,
+		schools: distinctSchoolNames(delegation.members.map((member) => member.participant.school)),
 		experience: delegation.experience,
 		memberCount: delegation.members.length,
 		headDelegateFullName: formatNames(

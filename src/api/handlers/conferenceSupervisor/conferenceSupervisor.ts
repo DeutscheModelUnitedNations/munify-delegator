@@ -27,8 +27,6 @@ import {
 	schoolPubsub,
 	singleParticipantPubsub
 } from '#api/pubsub.js';
-import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
-import { setRegistrationSchool } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 
 registerConferenceSupervisorAbilities();
 
@@ -79,26 +77,18 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceSupervisorRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			plansOwnAttendenceAtConference: t.arg.boolean(),
-			/** Both null removes the school; both left out keeps it. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string()
+			plansOwnAttendenceAtConference: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const where = await updatableConferenceSupervisor(ctx, args.id);
-			const schoolId = await resolveSchoolChoice(args);
-			await db
-				.update(schema.conferenceSupervisor)
-				.set({
-					plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined,
-					schoolId
-				})
-				.where(where);
-			await setRegistrationSchool(db, { conferenceSupervisorId: args.id }, schoolId);
-			conferenceParticipantPubsub.updated();
+			if (typeof args.plansOwnAttendenceAtConference === 'boolean') {
+				await db
+					.update(schema.conferenceSupervisor)
+					.set({ plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference })
+					.where(where);
+			}
 
 			conferenceSupervisorPubsub.updated(args.id);
-			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
 				.findFirst(

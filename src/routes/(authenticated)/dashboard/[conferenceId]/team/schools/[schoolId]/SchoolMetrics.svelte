@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client.js';
+	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles.js';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { schoolSummary } from './schoolMetrics';
@@ -31,6 +34,18 @@
 	);
 	// one plain copy, read once
 	const rows = $derived(metrics.slice());
+
+	// The school's page in another conference is participant care's there, so only those link
+	const user = await getCurrentUser();
+	const careRows = await client.query.teamMembers({
+		__args: {
+			// `role` is a plain enum in the filter, so each alternative repeats the scope
+			where: { OR: PARTICIPANT_CARE_ROLES.map((role) => ({ role, userId: { eq: user.sub } })) }
+		},
+		conferenceId: true
+	});
+	const caredFor = new Set(careRows.map((member) => member.conferenceId));
+	const canOpen = (id: string) => user.isAdmin || caredFor.has(id);
 	const summary = $derived(schoolSummary(rows));
 
 	const percent = new Intl.NumberFormat(getLocale(), {
@@ -107,7 +122,16 @@
 					{#each rows as row (row.conferenceId)}
 						<tr class={row.conferenceId === conferenceId ? 'bg-primary/10 font-semibold' : ''}>
 							<td>
-								<div>{row.conferenceTitle}</div>
+								{#if row.conferenceId !== conferenceId && canOpen(row.conferenceId)}
+									<a
+										class="link link-hover"
+										href={resolve(`dashboard/${row.conferenceId}/team/schools/${schoolId}`)}
+									>
+										{row.conferenceTitle}
+									</a>
+								{:else}
+									<div>{row.conferenceTitle}</div>
+								{/if}
 								<div class="text-base-content/60 text-xs">
 									{date.format(new Date(row.startConference))}
 								</div>

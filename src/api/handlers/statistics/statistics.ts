@@ -102,8 +102,8 @@ const nationalityStats = schemaBuilder.simpleObject('StatisticsResultNationality
 const schoolStats = schemaBuilder.simpleObject('StatisticsResultSchool', {
 	fields: (t) => ({
 		school: t.string(),
-		delegationCount: t.int(),
-		memberCount: t.int()
+		/** Delegation members and single participants whose own school it is. */
+		people: t.int()
 	})
 });
 
@@ -457,7 +457,7 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 		}),
 		schoolStats: t.field({
 			type: [schoolStats],
-			resolve: async ({ rows, filter }) => schoolStatsOf(await rows.delegations(), filter)
+			resolve: async ({ rows, filter }) => schoolStatsOf(await rows.schools(), filter)
 		}),
 		waitingList: t.field({
 			type: waitingListStats,

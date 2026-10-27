@@ -429,13 +429,16 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 | `AddressSection`     | `AddressFields` in its own section | `form`, `fields`, `rules`; the "Address" `FormSection` around `AddressFields`                    |
 | `SchoolPicker`       | School combobox                    | `form`, `name` (`schoolName`), `idName` (`schoolId`), `label`, `description`, `disabled`         |
 
-**`SchoolPicker`** is how every form asks for a school (applications, waiting list, supervisors).
+**`SchoolPicker`** is how every form asks for a school (applications, joining a delegation, the
+waiting list, supervisors) - always the person's own.
 It binds the two fields every school mutation takes (`schoolChoiceSchema` in
 `#lib/schemata/schoolChoice.ts`): typing searches `searchSchools` (from two characters, debounced)
 and clears `schoolId`, so a new name creates a school on save; picking a suggestion sets both;
 "Keine Schule angeben" clears both, because a school is always optional. A hint line says which of
-the three it is. To change the school of an existing row, open `SchoolChangeForm`
-(`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal`, or place it inline.
+the three it is. To change a school later, open `SchoolChangeForm`
+(`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal`, or place it inline;
+`SchoolLine` (`#lib/components/userCard/sections/`) is the list row with that button, and
+`stages/Common/MySchool.svelte` the caller's own school on the dashboard (`setMySchool`).
 
 **`mutationForm(initial, validators, save, { toastProgress })`** (`#lib/components/form/mutationForm.ts`)
 builds the superforms SPA form every mutation-backed form uses (see "Forms" in CLAUDE.md): validated

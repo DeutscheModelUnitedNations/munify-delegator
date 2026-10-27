@@ -25,14 +25,15 @@ const supervisors = {
 /** What a card shows of a delegation. */
 const delegationCard = {
 	id: true,
-	school: { name: true },
 	motivation: true,
 	experience: true,
 	members: {
 		id: true,
 		isHeadDelegate: true,
 		user: person,
-		supervisors
+		supervisors,
+		// each person's own school: the delegation keeps none
+		school: { name: true }
 	},
 	appliedForRoles: {
 		id: true,
@@ -244,7 +245,7 @@ async function warmNext() {
 }
 
 /**
- * The applications whose school, texts, members or supervisors contain `search`, or whose
+ * The applications whose people's schools, texts, members or supervisors contain `search`, or whose
  * codename or id does, with what the card shows so the page can say what matched, and where they
  * stand in the sighting. Every filter of the sighting applies to them too.
  */
@@ -254,7 +255,7 @@ export async function searchApplications(conferenceId: string, search: string, f
 	const userIds = (await matchingUserIds(term)) ?? [];
 	const applied = { applied: { eq: true } };
 	const like = containing(term);
-	const texts = [{ school: { name: like } }, { motivation: like }, { experience: like }];
+	const texts = [{ motivation: like }, { experience: like }];
 	const people = { user: { id: { in: userIds } } };
 
 	const [delegations, singleParticipants, nameMatches] = await Promise.all([
@@ -263,7 +264,12 @@ export async function searchApplications(conferenceId: string, search: string, f
 				where: {
 					conferenceId: { eq: conferenceId },
 					...applied,
-					OR: [...texts, { members: people }, { members: { supervisors: people } }]
+					OR: [
+						...texts,
+						{ members: { school: { name: like } } },
+						{ members: people },
+						{ members: { supervisors: people } }
+					]
 				},
 				limit: SEARCH_LIMIT
 			},
@@ -274,7 +280,7 @@ export async function searchApplications(conferenceId: string, search: string, f
 				where: {
 					conference: { id: { eq: conferenceId } },
 					...applied,
-					OR: [...texts, people, { supervisors: people }]
+					OR: [...texts, { school: { name: like } }, people, { supervisors: people }]
 				},
 				limit: SEARCH_LIMIT
 			},

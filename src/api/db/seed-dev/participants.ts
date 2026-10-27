@@ -47,11 +47,12 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 		// Fixed codes go through `uniqueCode` too, so a random one drawn later cannot repeat them.
 		entryCode: cs.uniqueCode(fixedCode ? () => fixedCode : entryCode),
 		applied: plan.applied,
-		schoolId: plan.withoutTexts ? null : seedSchoolId(cs.batch),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
 		assignedRoleId: plan.nation ? cs.nationRoleId(plan.nation) : (plan.nonStateActorId ?? null)
 	});
+	// Most delegations come from one school: every member names it as their own.
+	const schoolId = plan.withoutTexts ? null : seedSchoolId(cs.batch);
 
 	const memberIds = new Map<string, string>();
 	plan.members.forEach((member, index) => {
@@ -59,7 +60,9 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 			? cs.rowId(`${plan.id}-member-${index}`)
 			: faker.database.mongodbObjectId();
 		memberIds.set(member.userId, memberId);
-		const participantId = cs.participant(member.userId).id;
+		const participant = cs.participant(member.userId);
+		const participantId = participant.id;
+		participant.schoolId = schoolId;
 		cs.participantOfRow.set(memberId, participantId);
 		cs.batch.delegationMember.push({
 			id: memberId,
@@ -107,13 +110,14 @@ export interface SinglePlan {
 
 export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
 	const singleId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
-	const participantId = cs.participant(plan.userId).id;
+	const participant = cs.participant(plan.userId);
+	const participantId = participant.id;
+	participant.schoolId = plan.withoutTexts ? null : seedSchoolId(cs.batch);
 	cs.participantOfRow.set(singleId, participantId);
 	cs.batch.singleParticipant.push({
 		id: singleId,
 		conferenceParticipantId: participantId,
 		applied: plan.applied,
-		schoolId: plan.withoutTexts ? null : seedSchoolId(cs.batch),
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
 		assignedRoleId: plan.roleId ?? null,
@@ -138,13 +142,15 @@ export interface SupervisorPlan {
 export function addSupervisor(cs: ConferenceSeed, plan: SupervisorPlan) {
 	const supervisorId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
 	const fixedCode = plan.code;
+	const participant = cs.participant(plan.userId);
+	participant.schoolId =
+		faker.helpers.maybe(() => seedSchoolId(cs.batch), { probability: 0.8 }) ?? null;
 	cs.batch.conferenceSupervisor.push({
 		id: supervisorId,
-		conferenceParticipantId: cs.participant(plan.userId).id,
+		conferenceParticipantId: participant.id,
 		plansOwnAttendenceAtConference: plan.attends,
 		// Connection codes are unique across conferences, so a fixed one names one conference.
-		connectionCode: cs.world.uniqueCode(fixedCode ? () => fixedCode : entryCode),
-		schoolId: faker.helpers.maybe(() => seedSchoolId(cs.batch), { probability: 0.8 }) ?? null
+		connectionCode: cs.world.uniqueCode(fixedCode ? () => fixedCode : entryCode)
 	});
 	// Supervision links the people behind the registrations.
 	for (const rowId of [...(plan.memberIds ?? []), ...(plan.singleIds ?? [])]) {

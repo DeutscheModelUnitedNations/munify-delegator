@@ -9,9 +9,12 @@
 	const conferenceId = $derived(params.conferenceId);
 </script>
 
+<!-- Participants get no menu, so the page brings its own way back -->
 <TeamShell {conferenceId}>
-	<div class="pt-4">
-		<BackToDashboard {conferenceId} />
-	</div>
+	{#snippet withoutMenu()}
+		<div class="pt-4">
+			<BackToDashboard {conferenceId} />
+		</div>
+	{/snippet}
 	{@render children()}
 </TeamShell>

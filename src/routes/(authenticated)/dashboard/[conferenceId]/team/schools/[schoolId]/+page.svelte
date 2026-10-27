@@ -4,6 +4,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import SchoolForm from './SchoolForm.svelte';
 	import SchoolMetrics from './SchoolMetrics.svelte';
+	import SchoolPeople from './SchoolPeople.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -40,4 +41,6 @@
 			{/key}
 		</div>
 	</section>
+
+	<SchoolPeople {schoolId} {conferenceId} />
 </div>

@@ -3,7 +3,6 @@ type PreviewSchool = { id: string; name: string; city: string | null };
 /** What `previewSupervisorByCode` loads about the supervisor a code names. */
 export interface PreviewedSupervisor {
 	user: { givenName: string; familyName: string } | null;
-	school: PreviewSchool | null;
 	participant: { school: PreviewSchool | null } | null;
 }
 
@@ -25,8 +24,8 @@ export function supervisorPreview(
 	supervisor: PreviewedSupervisor,
 	callerSchoolId: string | null | undefined
 ) {
-	// The school their registration names, else the one participant care set on the person.
-	const school = supervisor.school ?? supervisor.participant?.school ?? null;
+	// The supervisor's own school.
+	const school = supervisor.participant?.school ?? null;
 	return {
 		...nameOf(supervisor.user),
 		...placeOf(school),

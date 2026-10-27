@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BusyOverlay from './BusyOverlay.svelte';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 	import {
 		canSplit,
 		cardBorder,
@@ -79,8 +80,10 @@
 	const unwished = $derived(wish !== undefined && wish.rank === undefined);
 	const wishTone = (matches: boolean) =>
 		matches ? 'text-success font-semibold' : unwished ? 'text-warning' : 'text-base-content/60';
-	/** Under the names: the school. */
-	const subtitle = $derived(single ? single.school?.name : delegation?.school?.name);
+	/** Under the names: the school, or for a delegation its members' schools. */
+	const subtitle = $derived(
+		single ? single.school?.name : delegation && delegationSchoolsLabel(delegation.members)
+	);
 	const applicationId = $derived(group.singleParticipantId ?? group.delegationId);
 	const sightingLink = $derived(
 		applicationId ? sightingHref(conferenceId, applicationId) : undefined

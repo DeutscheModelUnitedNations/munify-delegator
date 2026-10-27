@@ -45,10 +45,10 @@ export async function readableSchoolRegistrations(ctx: ApiContext, conferenceId:
 	]);
 	return {
 		delegations: delegations.merge({
-			where: { conferenceId, applied: true, schoolId: { isNotNull: true } }
+			where: { conferenceId, applied: true }
 		}).sql.where,
 		singleParticipants: singleParticipants.merge({
-			where: { participant: { conferenceId }, applied: true, schoolId: { isNotNull: true } }
+			where: { participant: { conferenceId }, applied: true }
 		}).sql.where
 	};
 }

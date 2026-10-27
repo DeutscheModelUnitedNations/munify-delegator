@@ -15,7 +15,16 @@
 	 * is nothing but `#lib/data/teamRoutes.js` filtered by what the caller may open: a page is in the
 	 * menu exactly when the route guard lets them in.
 	 */
-	let { children, conferenceId }: { children: Snippet; conferenceId: string } = $props();
+	let {
+		children,
+		conferenceId,
+		withoutMenu
+	}: {
+		children: Snippet;
+		conferenceId: string;
+		/** Shown above the page when there is no menu, which would hold the way back otherwise */
+		withoutMenu?: Snippet;
+	} = $props();
 
 	const access = $derived(await fetchTeamAccess(conferenceId));
 	// A snapshot of a boolean: the menu does not need to follow a role change live
@@ -36,6 +45,9 @@
 	{/if}
 
 	<div class="flex h-full min-w-0 grow flex-col px-3">
+		{#if !showMenu}
+			{@render withoutMenu?.()}
+		{/if}
 		{@render children()}
 	</div>
 </div>

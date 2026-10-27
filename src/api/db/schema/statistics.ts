@@ -32,9 +32,20 @@ export const statisticsDelegations = snakeCase
 		conferenceId: text().notNull(),
 		applied: boolean().notNull(),
 		hasRole: boolean().notNull(),
-		school: text(),
 		delegations: integer().notNull(),
 		members: integer().notNull()
+	})
+	.existing();
+
+/** Delegation members and single participants per school, each counted by their own school. */
+export const statisticsSchools = snakeCase
+	.materializedView('statistics_schools', {
+		conferenceId: text().notNull(),
+		applied: boolean().notNull(),
+		hasRole: boolean().notNull(),
+		schoolId: text(),
+		school: text(),
+		people: integer().notNull()
 	})
 	.existing();
 

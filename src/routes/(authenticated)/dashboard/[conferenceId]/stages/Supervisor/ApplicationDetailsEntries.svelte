@@ -2,7 +2,7 @@
 	import InfoGrid from '#lib/components/infoGrid/index.js';
 	import { m } from '#lib/paraglide/messages.js';
 
-	/** What an application said about the applicants: their school, experience and motivation. */
+	/** An application in short: the applicants' own schools, their experience and motivation. */
 	interface Props {
 		school: string | null;
 		experience: string | null;

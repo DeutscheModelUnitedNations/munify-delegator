@@ -35,7 +35,7 @@ const columns: Record<string, { expr: SQL; kind: Kind }> = {
 	role: { expr: sql`reg.role`, kind: 'enum' },
 	nation: { expr: sql`coalesce(reg.nsa_name, reg.nation_code)`, kind: 'text' },
 	committee: { expr: sql`reg.committee`, kind: 'text' },
-	delegationSchool: { expr: sql`reg.school`, kind: 'text' },
+	school: { expr: sql`reg.school`, kind: 'text' },
 	isHeadDelegate: { expr: sql`reg.is_head_delegate`, kind: 'bool' },
 	assignedRoleName: { expr: sql`reg.assigned_role_name`, kind: 'text' },
 	teamRole: { expr: sql`reg.team_role`, kind: 'enum' },
@@ -203,7 +203,8 @@ function orderOf(sort: ParticipantsPageQuery['sort']) {
 }
 
 /**
- * Every registration of the conference as one row: the person, how they take part, whether seated.
+ * Every registration of the conference as one row: the person, how they take part, their own school,
+ * whether seated.
  * Delegates, singles and supervisors name their conference and person through their
  * `conference_participant` (`p`); a supervisor is seated once someone they supervise is. People
  * still waiting on the waiting list without any registration are rows too (`WAITING_LIST`).
@@ -213,7 +214,7 @@ function registrations(conferenceId: string) {
 	// a nation role has no name of its own, so `dr.name` is the non-state actor's
 	return sql`
 		select p.user_id, 'DELEGATION_MEMBER' as role, dr.nation_alpha3_code as nation_code,
-			dr.name as nsa_name, com.name as committee, (select sc.name from school sc where sc.id = d.school_id) as school,
+			dr.name as nsa_name, com.name as committee, (select sc.name from school sc where sc.id = p.school_id) as school,
 			dm.is_head_delegate as is_head_delegate, null::text as assigned_role_name,
 			null::text as team_role, null::boolean as plans_own_attendance, ${seated} as accepted
 		from delegation_member dm
@@ -224,7 +225,7 @@ function registrations(conferenceId: string) {
 		where p.conference_id = ${conferenceId}
 		union all
 		select p.user_id, 'SUPERVISOR', null, null, null,
-			(select sc.name from school sc where sc.id = cs.school_id), null, null, null,
+			(select sc.name from school sc where sc.id = p.school_id), null, null, null,
 			cs.plans_own_attendence_at_conference,
 			(exists (
 				select 1 from supervision j
@@ -240,7 +241,7 @@ function registrations(conferenceId: string) {
 		join conference_participant p on p.id = cs.conference_participant_id
 		where p.conference_id = ${conferenceId}
 		union all
-		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, (select sc.name from school sc where sc.id = sp.school_id), null,
+		select p.user_id, 'SINGLE_PARTICIPANT', null, null, null, (select sc.name from school sc where sc.id = p.school_id), null,
 			role.name, null, null, sp.assigned_role_id is not null
 		from single_participant sp
 		join conference_participant p on p.id = sp.conference_participant_id

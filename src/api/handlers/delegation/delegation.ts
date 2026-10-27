@@ -58,9 +58,6 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean(),
 			resetEntryCode: t.arg.boolean(),
 			newHeadDelegateUserId: t.arg.id(),
-			/** Both null removes the school; both left out keeps it. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
 			experience: t.arg.string(),
 			motivation: t.arg.string()
 		},
@@ -69,8 +66,6 @@ schemaBuilder.mutationFields((t) => ({
 			await updateDelegationDetails(delegation, args);
 
 			delegationPubsub.updated(args.id);
-			conferenceParticipantPubsub.updated();
-			if (args.schoolName) schoolPubsub.created();
 			// A new head delegate flips the flag on two members.
 			if (args.newHeadDelegateUserId) {
 				delegationMemberPubsub.updated();
@@ -107,7 +102,11 @@ const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
 		conferenceId: t.string(),
 		entryCode: t.string(),
 		motivation: t.string({ nullable: true }),
-		school: t.string({ nullable: true }),
+		/** The head delegate's own school, which the join form offers the newcomer. */
+		headDelegateSchoolId: t.string({ nullable: true }),
+		headDelegateSchoolName: t.string({ nullable: true }),
+		/** The members' own schools, most common first. */
+		schools: t.stringList(),
 		experience: t.string({ nullable: true }),
 		memberCount: t.int(),
 		headDelegateFullName: t.string(),

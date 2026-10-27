@@ -11,9 +11,10 @@
 		MIN_ROLE_APPLICATIONS
 	} from '#lib/helpers/applicationReadiness.js';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import type { ApplicationAnswers } from '../../applicationForm';
+	import type { ApplicationTexts } from '../../applicationForm';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
+	import MySchool from '../Common/MySchool.svelte';
 	import ApplicationProgress from '../Common/ApplicationProgress.svelte';
 	import RegistrationDangerZone from '../Common/RegistrationDangerZone.svelte';
 	import SingleParticipantRoleApplications from './SingleParticipantRoleApplications.svelte';
@@ -29,7 +30,6 @@
 		await client.liveQuery.singleParticipant({
 			__args: { id: singleParticipantId },
 			id: true,
-			school: { id: true, name: true },
 			motivation: true,
 			experience: true,
 			applied: true,
@@ -39,7 +39,7 @@
 
 	const applied = $derived(singleParticipant.applied);
 
-	const saveApplication = (answers: ApplicationAnswers) =>
+	const saveApplication = (answers: ApplicationTexts) =>
 		client.mutate.updateSingleParticipant({
 			__args: { id: singleParticipantId, ...answers },
 			id: true
@@ -108,7 +108,6 @@
 	{singleParticipantId}
 	{applied}
 	answers={{
-		schoolId: singleParticipant.school?.id ?? null,
 		motivation: singleParticipant.motivation,
 		experience: singleParticipant.experience
 	}}
@@ -123,12 +122,14 @@
 >
 	<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
 	registration, so a different one gets a fresh form. -->
+	<div class="bg-base-200 rounded-box mb-4">
+		<MySchool {conferenceId} hint={m.ownSchoolDescription()} />
+	</div>
 	<ApplicationQuestionnaire
 		initial={singleParticipant}
 		save={saveApplication}
 		disabled={applied}
 		showSubmitButton={!applied}
-		schoolLabel={m.whichSchoolAreYouFrom()}
 		motivationLabel={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
 	/>

@@ -15,8 +15,7 @@ import { m } from '#lib/paraglide/messages.js';
  * Schools are shared by every conference. Anybody may read what names one - its name and where it
  * is - so applicants can pick it. The rest (address, contact, the team's notes) belongs to the
  * people who look after the participants: participant care and project management read and edit
- * every school an application, a participant, supervisor or waiting list entry of their conference
- * names.
+ * every school a person taking part in their conference (or waiting for it) names as their own.
  */
 const PUBLIC_COLUMNS = {
 	id: true,
@@ -33,13 +32,7 @@ function managedSchool(ctx: Context) {
 	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
 	if (!conference) return undefined;
 	return {
-		OR: [
-			{ delegations: { conference } },
-			{ singleParticipants: { conference } },
-			{ conferenceSupervisors: { conference } },
-			{ waitingListEntries: { conference } },
-			{ participants: { conference } }
-		]
+		OR: [{ waitingListEntries: { conference } }, { participants: { conference } }]
 	};
 }
 

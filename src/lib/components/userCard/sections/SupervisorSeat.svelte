@@ -6,6 +6,7 @@
 	import { removeSupervision } from './removeSupervision';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 	import codenmz from '#lib/helpers/codenamize.js';
 	import Flag from '#lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
@@ -19,7 +20,8 @@
 
 	const studentSelection = { id: true, givenName: true, familyName: true } as const;
 
-	// The connection code and the school are the registration's; this is whom they look after.
+	// The connection code is the registration's and the school the person's; this is whom they look
+	// after.
 	const conferenceSupervisor = $derived(
 		await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
@@ -30,9 +32,9 @@
 				id: true,
 				isHeadDelegate: true,
 				user: studentSelection,
+				school: { name: true },
 				delegation: {
 					id: true,
-					school: { name: true },
 					entryCode: true,
 					applied: true,
 					members: { id: true },
@@ -114,7 +116,8 @@
 	{/if}
 {/snippet}
 
-{#snippet delegationAssignment(delegation: Group['delegation'])}
+{#snippet delegationAssignment(delegation: Group['delegation'], members: Group['members'])}
+	{@const schools = delegationSchoolsLabel(members)}
 	{@const { nation, nonStateActor } = splitRole(delegation.assignedRole)}
 	{#if nation}
 		<Flag alpha2Code={nation.alpha2Code} size="xs" />
@@ -132,8 +135,8 @@
 				<span class="text-base-content/60 text-xs">({nonStateActor.name})</span>
 			{/if}
 		</div>
-		{#if delegation.school}
-			<span class="text-base-content/60 text-xs">{delegation.school.name}</span>
+		{#if schools}
+			<span class="text-base-content/60 text-xs">{schools}</span>
 		{/if}
 	</div>
 {/snippet}
@@ -144,7 +147,7 @@
 		<td>{@render appliedIcon(group.delegation.applied)}</td>
 		<td>
 			<div class="flex items-center gap-2">
-				{@render delegationAssignment(group.delegation)}
+				{@render delegationAssignment(group.delegation, group.members)}
 			</div>
 		</td>
 		<td>

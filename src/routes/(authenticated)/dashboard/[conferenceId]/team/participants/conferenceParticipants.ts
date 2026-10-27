@@ -47,8 +47,8 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 			__args: throughParticipant,
 			isHeadDelegate: true,
 			assignedCommittee: { name: true },
+			school: { name: true },
 			delegation: {
-				school: { name: true },
 				assignedRole: {
 					kind: true,
 					name: true,

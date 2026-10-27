@@ -22,11 +22,23 @@
 	};
 </script>
 
+<!-- One quiet line under the name: what the person is, parts separated by a dot -->
+{#snippet separator()}
+	<span class="text-base-content/30" aria-hidden="true">·</span>
+{/snippet}
+
+{#snippet labelled(icon: string, label: string)}
+	<span class="flex items-center gap-1.5">
+		<i class="fa-sharp-duotone fa-solid {icon} text-base-content/50 text-xs"></i>
+		{label}
+	</span>
+{/snippet}
+
 {#snippet delegationMemberSummary(member: DelegationMember)}
 	{@const role = splitRole(member.delegation.assignedRole)}
 	<!-- Without a role the stage next to the name says how far the application is -->
 	{#if role.nation || role.nonStateActor}
-		<span class="bg-base-100 rounded-box flex items-center gap-2 py-1 pr-3 pl-1 font-semibold">
+		<span class="flex items-center gap-2 font-semibold">
 			<Flag
 				size="xs"
 				alpha2Code={role.nation?.alpha2Code}
@@ -36,27 +48,21 @@
 			{assignmentName(member.delegation.assignedRole)}
 		</span>
 	{:else}
-		<span class="badge badge-primary">
-			<i class="fa-sharp-duotone fa-solid fa-users mr-1"></i>
-			{m.delegationMember()}
-		</span>
+		{@render labelled('fa-users', m.delegationMember())}
 	{/if}
 	{#if member.assignedCommittee}
-		<span class="badge badge-soft">
-			{member.assignedCommittee.abbreviation}
-		</span>
+		{@render separator()}
+		<span>{member.assignedCommittee.abbreviation}</span>
 	{/if}
 	{#if member.isHeadDelegate}
-		<span class="badge badge-accent gap-1">
-			<i class="fa-sharp-duotone fa-solid fa-medal"></i>
-			{m.headDelegate()}
-		</span>
+		{@render separator()}
+		{@render labelled('fa-medal', m.headDelegate())}
 	{/if}
 {/snippet}
 
 {#snippet singleParticipantSummary(participant: SingleParticipant)}
 	{#if participant.assignedRole}
-		<span class="badge badge-soft gap-1">
+		<span class="flex items-center gap-1.5 font-semibold">
 			{#if participant.assignedRole.fontAwesomeIcon}
 				<i
 					class="fa-sharp-duotone fa-solid fa-{participant.assignedRole.fontAwesomeIcon.replace(
@@ -68,42 +74,28 @@
 			{participant.assignedRole.name}
 		</span>
 	{:else}
-		<span class="badge badge-primary">
-			<i class="fa-sharp-duotone fa-solid fa-user mr-1"></i>
-			{m.singleParticipant()}
-		</span>
+		{@render labelled('fa-user', m.singleParticipant())}
 	{/if}
 {/snippet}
 
 {#snippet teamMemberSummary(member: TeamMember)}
-	<span class="badge badge-primary">
-		<i class="fa-sharp-duotone fa-solid fa-people-group mr-1"></i>
-		{m.teamMember()}
-	</span>
+	{@render labelled('fa-people-group', m.teamMember())}
 	{#if member.role}
-		<span class="badge badge-soft">
-			{translateTeamRole(member.role)}
-		</span>
+		{@render separator()}
+		<span>{translateTeamRole(member.role)}</span>
 	{/if}
 {/snippet}
 
-{#if delegationMember}
-	<div class="flex flex-wrap items-center gap-2 text-sm">
-		{@render delegationMemberSummary(delegationMember)}
-	</div>
-{:else if singleParticipant}
-	<div class="flex flex-wrap items-center gap-2 text-sm">
-		{@render singleParticipantSummary(singleParticipant)}
-	</div>
-{:else if conferenceSupervisor}
-	<div class="flex flex-wrap items-center gap-2 text-sm">
-		<span class="badge badge-primary">
-			<i class="fa-sharp-duotone fa-solid fa-chalkboard-user mr-1"></i>
-			{m.supervisor()}
-		</span>
-	</div>
-{:else if teamMember}
-	<div class="flex flex-wrap items-center gap-2 text-sm">
-		{@render teamMemberSummary(teamMember)}
+{#if delegationMember || singleParticipant || conferenceSupervisor || teamMember}
+	<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+		{#if delegationMember}
+			{@render delegationMemberSummary(delegationMember)}
+		{:else if singleParticipant}
+			{@render singleParticipantSummary(singleParticipant)}
+		{:else if conferenceSupervisor}
+			{@render labelled('fa-chalkboard-user', m.supervisor())}
+		{:else if teamMember}
+			{@render teamMemberSummary(teamMember)}
+		{/if}
 	</div>
 {/if}

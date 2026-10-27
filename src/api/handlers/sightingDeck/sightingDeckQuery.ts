@@ -27,14 +27,33 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
 };
 
 /**
+ * The schools of an application's people (`p` their `conference_participant`), each once, with ''
+ * for anyone without one: a delegation keeps no school of its own.
+ */
+const schoolsOfPeople = (from: SQL, where: SQL) => sql`
+	coalesce((select array_agg(distinct coalesce(sc.name, '')) ${from}
+		left join school sc on sc.id = p.school_id where ${where}), '{}')`;
+
+/**
  * Every application under review - applied delegations, then single participants (whose conference
- * is their `conference_participant`'s) - with its size, its review and how far the sighting has
- * come with it (`status`). The one place that says what
- * the sighting's deck is; everything else filters and orders this.
+ * is their `conference_participant`'s) - with its size, its people's schools (`schools`, and as
+ * one line `school`), its review and how far the sighting has come with it (`status`). The one
+ * place that says what the sighting's deck is; everything else filters and orders this.
  */
 function applications(conferenceId: string): SQL {
 	return sql`
-		select d.id, 'delegation'::text as kind, 0 as kind_rank, (select sc.name from school sc where sc.id = d.school_id) as school, d.member_count as size,
+		select *, nullif(array_to_string(array_remove(schools, ''), ', '), '') as school
+		from (${applicationRows(conferenceId)}) rows`;
+}
+
+function applicationRows(conferenceId: string): SQL {
+	return sql`
+		select d.id, 'delegation'::text as kind, 0 as kind_rank,
+			${schoolsOfPeople(
+				sql`from delegation_member dm join conference_participant p on p.id = dm.conference_participant_id`,
+				sql`dm.delegation_id = d.id`
+			)} as schools,
+			d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
 			coalesce(r.disqualified, false) as disqualified, coalesce(r.required, false) as required, r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
@@ -45,7 +64,9 @@ function applications(conferenceId: string): SQL {
 		left join assignment_review r on r.delegation_id = d.id
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
-		select s.id, 'single'::text, 1, (select sc.name from school sc where sc.id = s.school_id), 1,
+		select s.id, 'single'::text, 1,
+			${schoolsOfPeople(sql`from conference_participant p`, sql`p.id = s.conference_participant_id`)},
+			1,
 			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false),
 			coalesce(r.required, false), r.note,
 			case when coalesce(r.disqualified, false) then 'disqualified'
@@ -64,7 +85,7 @@ const deckOrder = sql`a.kind_rank, a.size desc, a.id`;
 function passes(status: SightingStatusFilter, school: string | null | undefined): SQL {
 	return school === null || school === undefined
 		? statusPredicates[status]
-		: sql`${statusPredicates[status]} and coalesce(a.school, '') = ${school}`;
+		: sql`${statusPredicates[status]} and ${school} = any(a.schools)`;
 }
 
 const entrySchema = z.object({
@@ -188,13 +209,30 @@ export const schoolRowSchema = z.object({
 	people: z.number()
 });
 
-/** The schools of the conference's applications matching `search`, with their applications and people. */
+/**
+ * The schools of the people in the conference's applications matching `search` ('' for those
+ * without one), with how many applications they are in and how many people they send.
+ */
 export function schoolsSql(conferenceId: string, like: string, limit: number): SQL {
 	return sql`
-		select coalesce(a.school, '') as school, count(*)::int as applications, sum(a.size)::int as people
-		from (${applications(conferenceId)}) a
-		where coalesce(a.school, '') ilike ${like}
-		group by coalesce(a.school, '')
+		with people as (
+			select dm.delegation_id as application_id, coalesce(sc.name, '') as school
+			from delegation_member dm
+			join delegation d on d.id = dm.delegation_id
+			join conference_participant p on p.id = dm.conference_participant_id
+			left join school sc on sc.id = p.school_id
+			where d.conference_id = ${conferenceId} and d.applied
+			union all
+			select s.id, coalesce(sc.name, '')
+			from single_participant s
+			join conference_participant p on p.id = s.conference_participant_id
+			left join school sc on sc.id = p.school_id
+			where p.conference_id = ${conferenceId} and s.applied
+		)
+		select school, count(distinct application_id)::int as applications, count(*)::int as people
+		from people
+		where school ilike ${like}
+		group by school
 		order by 1
 		limit ${limit}`;
 }

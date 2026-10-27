@@ -175,15 +175,14 @@ describe('searchConference', () => {
 			});
 		});
 
-		test('a delegation seat shows its nation, school and head delegate', async () => {
+		test("a delegation seat shows its nation, its members' schools and head delegate", async () => {
 			answerDelegations('seats', [
 				{
 					id: 'd1',
-					school: { name: 'Gym' },
 					assignedRole: { nationAlpha3Code: 'FRA', name: null },
 					members: [
-						{ isHeadDelegate: false, user: { id: 'u1' } },
-						{ isHeadDelegate: true, user: { id: 'u2' } }
+						{ isHeadDelegate: false, user: { id: 'u1' }, school: { name: 'Gym' } },
+						{ isHeadDelegate: true, user: { id: 'u2' }, school: null }
 					]
 				}
 			]);
@@ -201,7 +200,7 @@ describe('searchConference', () => {
 		});
 
 		test('a delegation seat without a nation is named after its non-state actor, or its id', async () => {
-			const base = { school: null, members: [] };
+			const base = { members: [] };
 			answerDelegations('seats', [
 				{ ...base, id: 'd1', assignedRole: { nationAlpha3Code: null, name: 'Red Cross' } },
 				{ ...base, id: 'd2', assignedRole: null }
@@ -272,11 +271,10 @@ describe('searchConference', () => {
 			answerDelegations('delegations', [
 				{
 					id: 'd1',
-					school: { name: 'Gym' },
 					assignedRole: null,
 					members: [
-						{ isHeadDelegate: true, user: { id: 'u1' } },
-						{ isHeadDelegate: false, user: { id: 'u2' } }
+						{ isHeadDelegate: true, user: { id: 'u1' }, school: { name: 'Gym' } },
+						{ isHeadDelegate: false, user: { id: 'u2' }, school: { name: 'Lyzeum' } }
 					]
 				}
 			]);
@@ -284,7 +282,7 @@ describe('searchConference', () => {
 			const { delegations } = await searchConference(conferenceId, 'gym');
 
 			expect(delegations).toEqual([
-				{ id: 'd1', school: 'Gym', memberCount: 2, headDelegateUserId: 'u1' }
+				{ id: 'd1', school: 'Gym, Lyzeum', memberCount: 2, headDelegateUserId: 'u1' }
 			]);
 		});
 	});

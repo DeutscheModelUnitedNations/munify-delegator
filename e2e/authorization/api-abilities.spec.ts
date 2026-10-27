@@ -482,4 +482,17 @@ test('anybody finds schools by name, but only their participants’ care team re
 		await gql(page, `mutation { updateSchool(id: "missing", notes: "x") { id } }`),
 		/not found/i
 	);
+
+	// A school of one's own only exists in a conference one takes part in: the waiting list
+	// gives no participant row to set it on.
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($c: ID!) { setMySchool(conferenceId: $c, schoolName: "x") { id } }`,
+			{
+				c: E2E_PREP_CONFERENCE_ID
+			}
+		),
+		/not found/i
+	);
 });

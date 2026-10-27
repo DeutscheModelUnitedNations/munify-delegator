@@ -10,10 +10,12 @@ import {
 	updateStatus
 } from './conferenceParticipantService';
 import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
+import { schoolChoiceSchema } from '#lib/schemata/schoolChoice.js';
 import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
+	assertOwnParticipant,
 	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
 import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub.js';
@@ -87,9 +89,9 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	/**
-	 * Corrects the school of one person, for participant care: the person's own, which the seats
-	 * and numbers per school count, and which the assignment never changes. Their application's
-	 * school stays as it was given. Both null removes it.
+	 * Corrects the school of one person, for participant care: the only school a person taking part
+	 * has, which the seats and numbers per school count, and which the assignment never changes.
+	 * Both null removes it.
 	 */
 	setParticipantSchool: t.drizzleField({
 		type: ConferenceParticipantRef,
@@ -111,6 +113,36 @@ schemaBuilder.mutationFields((t) => ({
 						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
 							where: { id: args.id }
 						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	/**
+	 * The caller changing their own school in a conference they take part in - as a delegate,
+	 * single participant or supervisor. Both null removes it.
+	 */
+	setMySchool: t.drizzleField({
+		type: ConferenceParticipantRef,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			schoolId: t.arg.id(),
+			schoolName: t.arg.string()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			schoolChoiceSchema.parse(args);
+			const id = await assertOwnParticipant(ctx, args.conferenceId);
+			await setParticipantSchool(db, [id], await resolveSchoolChoice(args));
+
+			conferenceParticipantPubsub.updated(id);
+			if (args.schoolName) schoolPubsub.created();
+
+			return db.query.conferenceParticipant
+				.findFirst(
+					query(
+						(await ctx.abilities.conferenceParticipant.filter('read')).merge({ where: { id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);

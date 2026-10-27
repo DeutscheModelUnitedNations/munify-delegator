@@ -10,7 +10,7 @@
 	interface Props {
 		conferenceId: string;
 		/** The application's answers, sent again unchanged with the role that is added. */
-		answers: { schoolId: string | null; motivation: string | null; experience: string | null };
+		answers: { motivation: string | null; experience: string | null };
 		appliedRoleIds: string[];
 	}
 

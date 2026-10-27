@@ -77,7 +77,7 @@ type RoleFields = Pick<
 	| 'nsaName'
 	| 'nsaIcon'
 	| 'committee'
-	| 'delegationSchool'
+	| 'school'
 	| 'isHeadDelegate'
 	| 'assignedRoleName'
 	| 'assignedRoleIcon'
@@ -92,7 +92,7 @@ const noRoleFields = {
 	nsaName: null,
 	nsaIcon: null,
 	committee: null,
-	delegationSchool: null,
+	school: null,
 	isHeadDelegate: null,
 	assignedRoleName: null,
 	assignedRoleIcon: null,
@@ -199,7 +199,7 @@ export function transformParticipants(
 				nsaName: nonStateActor?.name ?? null,
 				nsaIcon: nonStateActor?.fontAwesomeIcon ?? null,
 				committee: entry.assignedCommittee?.name ?? null,
-				delegationSchool: entry.delegation.school?.name ?? null,
+				school: entry.school?.name ?? null,
 				isHeadDelegate: entry.isHeadDelegate,
 				accepted: !!entry.delegation.assignedRole
 			});
@@ -208,7 +208,7 @@ export function transformParticipants(
 			row(entry.user, {
 				...noRoleFields,
 				role: 'SUPERVISOR',
-				delegationSchool: entry.school?.name ?? null,
+				school: entry.school?.name ?? null,
 				plansOwnAttendance: entry.plansOwnAttendenceAtConference,
 				accepted:
 					entry.supervisedDelegationMembers.some((dm) => !!dm.delegation.assignedRoleId) ||
@@ -219,7 +219,7 @@ export function transformParticipants(
 			row(entry.user, {
 				...noRoleFields,
 				role: 'SINGLE_PARTICIPANT',
-				delegationSchool: entry.school?.name ?? null,
+				school: entry.school?.name ?? null,
 				assignedRoleName: entry.assignedRole?.name ?? null,
 				assignedRoleIcon: entry.assignedRole?.fontAwesomeIcon ?? null,
 				accepted: !!entry.assignedRole
@@ -243,7 +243,7 @@ export function transformParticipants(
 			row(entry.user, {
 				...noRoleFields,
 				role: 'WAITING_LIST',
-				delegationSchool: entry.school?.name ?? null,
+				school: entry.school?.name ?? null,
 				accepted: false
 			})
 		);

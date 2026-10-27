@@ -216,7 +216,7 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			filter: { type: 'text' }
 		},
 		{
-			accessorKey: 'delegationSchool',
+			accessorKey: 'school',
 			header: m.schoolOrInstitution(),
 			group: m.participation(),
 			defaultVisible: false,

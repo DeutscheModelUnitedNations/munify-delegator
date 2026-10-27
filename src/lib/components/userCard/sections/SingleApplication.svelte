@@ -6,10 +6,9 @@
 	import { toast } from 'svelte-sonner';
 	import QuotedText from '../QuotedText.svelte';
 	import AppliedBadge from './AppliedBadge.svelte';
-	import SchoolLine from './SchoolLine.svelte';
 	import WishList from './WishList.svelte';
 
-	/** What a single participant applied with: their school, texts and the roles they wished for. */
+	/** What a single participant applied with: their texts and the roles they wished for. */
 	interface Props {
 		singleParticipantId: string;
 		conferenceId: string;
@@ -23,7 +22,6 @@
 				__args: { id: singleParticipantId },
 				id: true,
 				applied: true,
-				school: { id: true, name: true },
 				motivation: true,
 				experience: true,
 				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true }
@@ -36,18 +34,6 @@
 	const data = $derived(await fetchApplication(singleParticipantId, conferenceId));
 	const participant = $derived(data.participant);
 	const conferenceState = $derived(data.conference.state);
-
-	const saveSchool = (choice: { schoolId?: string | null; schoolName?: string | null }) =>
-		Promise.resolve(
-			client.mutate.updateSingleParticipant({
-				__args: {
-					id: singleParticipantId,
-					schoolId: choice.schoolId ?? null,
-					schoolName: choice.schoolName ?? null
-				},
-				id: true
-			})
-		);
 
 	const revokeApplication = async () => {
 		if (!(await confirmDialog({ text: m.confirmRevokeApplication(), danger: true }))) return;
@@ -78,7 +64,6 @@
 	</div>
 
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<SchoolLine school={participant.school} save={saveSchool} />
 		<WishList
 			wishes={participant.appliedForRoles.map((role) => ({
 				id: role.id,

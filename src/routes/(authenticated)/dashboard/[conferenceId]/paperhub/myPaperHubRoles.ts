@@ -37,8 +37,9 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 	// Getters rather than values computed once here: they read through the live lists on every
 	// access, which is what carries a later update to the page.
 	return {
+		/** An admin reviews like the team: the team navigation offers them the hub, too. */
 		get isReviewer() {
-			return teamMembers.length > 0;
+			return user.isAdmin || teamMembers.length > 0;
 		},
 		/** Project management (or an admin) may delete any paper, not just a draft of their own. */
 		get mayDeleteAnyPaper() {

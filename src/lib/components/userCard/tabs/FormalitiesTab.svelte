@@ -6,6 +6,7 @@
 	} from '#lib/api/rumbleClient/client.js';
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import EmailLogSection from '../sections/EmailLogSection.svelte';
+	import CertificateSection from '../sections/CertificateSection.svelte';
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import DocumentNumberRow from '../sections/DocumentNumberRow.svelte';
 	import { toast } from 'svelte-sonner';
@@ -24,7 +25,7 @@
 
 	/**
 	 * What has to be settled before the conference: payment, the signed agreements and the postal
-	 * documents, and the automatic mails that told the person about them.
+	 * documents, the certificate afterwards, and the automatic mails that told the person about them.
 	 */
 	interface Props {
 		userId: string;
@@ -182,6 +183,8 @@
 			</div>
 		{/if}
 	</section>
+
+	<CertificateSection {userId} {conferenceId} />
 
 	<EmailLogSection {userId} {conferenceId} />
 </div>

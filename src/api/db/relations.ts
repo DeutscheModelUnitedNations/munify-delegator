@@ -340,9 +340,10 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.conference.id.through(r.conferenceParticipant.conferenceId),
 			optional: false
 		}),
+		// The person's own school; a supervisor registration keeps none of its own.
 		school: r.one.school({
-			from: r.conferenceSupervisor.schoolId,
-			to: r.school.id
+			from: r.conferenceSupervisor.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.school.id.through(r.conferenceParticipant.schoolId)
 		}),
 		// Supervision links people (`conferenceParticipant`); these two read it as the registrations
 		// the supervised people hold, which is what most of the app wants to show.
@@ -405,10 +406,6 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.delegation.id,
 			to: r.roleApplication.delegationId
 		}),
-		school: r.one.school({
-			from: r.delegation.schoolId,
-			to: r.school.id
-		}),
 		assignedRole: r.one.conferenceRole({
 			from: r.delegation.assignedRoleId,
 			to: r.conferenceRole.id
@@ -451,6 +448,11 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.delegationMember.conferenceParticipantId,
 			to: r.conferenceParticipant.id,
 			optional: false
+		}),
+		// The person's own school, readable with the membership; the delegation keeps none.
+		school: r.one.school({
+			from: r.delegationMember.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.school.id.through(r.conferenceParticipant.schoolId)
 		}),
 		// the person's supervisors, through their `conferenceParticipant`
 		supervisors: r.many.conferenceSupervisor({
@@ -598,9 +600,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.singleParticipant.id.through(r.singleParticipantRoleWish.b),
 			to: r.conferenceRole.id.through(r.singleParticipantRoleWish.a)
 		}),
+		// The person's own school; the registration keeps none of its own.
 		school: r.one.school({
-			from: r.singleParticipant.schoolId,
-			to: r.school.id
+			from: r.singleParticipant.conferenceParticipantId.through(r.conferenceParticipant.id),
+			to: r.school.id.through(r.conferenceParticipant.schoolId)
 		}),
 		// The team's review of the application, so the board can read it along with the participant.
 		assignmentReview: r.one.assignmentReview({
@@ -720,18 +723,6 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	school: {
-		delegations: r.many.delegation({
-			from: r.school.id,
-			to: r.delegation.schoolId
-		}),
-		singleParticipants: r.many.singleParticipant({
-			from: r.school.id,
-			to: r.singleParticipant.schoolId
-		}),
-		conferenceSupervisors: r.many.conferenceSupervisor({
-			from: r.school.id,
-			to: r.conferenceSupervisor.schoolId
-		}),
 		waitingListEntries: r.many.waitingListEntry({
 			from: r.school.id,
 			to: r.waitingListEntry.schoolId

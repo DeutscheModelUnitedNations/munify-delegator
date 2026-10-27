@@ -8,24 +8,19 @@ vi.mock('$app/env/public', () => ({
 const { makeApplicationForm } = await import('./applicationForm');
 
 describe('makeApplicationForm', () => {
-	test('seeds the answers of an application', () => {
+	test('seeds the texts of an application', () => {
 		const form = makeApplicationForm({
-			school: { id: 'school-1', name: 'Gymnasium Kiel' },
 			experience: 'Two conferences',
 			motivation: 'Debate'
 		});
 		expect(form.data).toEqual({
-			schoolId: 'school-1',
-			schoolName: 'Gymnasium Kiel',
 			experience: 'Two conferences',
 			motivation: 'Debate'
 		});
 	});
 
 	test('starts empty where nothing was answered yet', () => {
-		expect(makeApplicationForm({ school: null, experience: null }).data).toEqual({
-			schoolId: null,
-			schoolName: '',
+		expect(makeApplicationForm({ experience: null }).data).toEqual({
 			experience: '',
 			motivation: ''
 		});

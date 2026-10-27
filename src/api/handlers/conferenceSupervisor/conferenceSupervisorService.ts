@@ -47,15 +47,14 @@ export async function registerSupervisor(
 	// The person's row and the supervisor entry go in together, so a refused insert leaves neither.
 	const created = await db.transaction(async (tx) => {
 		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.subjectId);
-		const schoolId = await resolveSchoolChoice(args, tx);
-		await setParticipantSchool(tx, [participantId], schoolId);
+		// The school they name is their own; the registration keeps none.
+		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
 		return tx
 			.insert(schema.conferenceSupervisor)
 			.values({
 				conferenceParticipantId: participantId,
 				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
-				connectionCode,
-				schoolId: schoolId ?? undefined
+				connectionCode
 			})
 			.returning()
 			.then(assertFirstEntryExists);
@@ -157,7 +156,6 @@ export async function previewSupervisorByCode(
 			},
 			with: {
 				user: { columns: { givenName: true, familyName: true } },
-				school: { columns: { id: true, name: true, city: true } },
 				participant: { with: { school: { columns: { id: true, name: true, city: true } } } }
 			}
 		})

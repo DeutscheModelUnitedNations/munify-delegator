@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { client } from '#lib/api/rumbleClient/client.js';
@@ -7,7 +8,8 @@
 
 	/**
 	 * The person's waiting list entry: since when they wait, whether they got a seat from it, and
-	 * what they wrote. Nothing when they never were on the list.
+	 * what they wrote, with the way to a seat while they still wait. Nothing when they never were
+	 * on the list. Only participant care reads the entry, the same roles the seats page wants.
 	 */
 	interface Props {
 		userId: string;
@@ -44,6 +46,15 @@
 			{/if}
 			{#if entry.hidden}
 				<span class="badge badge-ghost badge-sm">{m.userCardWaitingListHidden()}</span>
+			{/if}
+			{#if !entry.assigned}
+				<a
+					class="btn btn-primary btn-sm ml-auto"
+					href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}
+				>
+					<i class="fa-sharp-duotone fa-solid fa-user-plus"></i>
+					{m.assignSeat()}
+				</a>
 			{/if}
 		</div>
 		<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">

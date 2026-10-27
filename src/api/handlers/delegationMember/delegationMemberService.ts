@@ -1,9 +1,9 @@
 import { type Transaction, db, schema } from '#api/db/db.js';
 import {
 	ensureConferenceParticipant,
-	fillParticipantSchool,
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -18,11 +18,15 @@ import { apiError } from '#api/services/errors/apiError.js';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
 import type { CommitteeMove } from './delegationMemberPermissions';
 
-/** Joining a delegation by entry code. Returns the id of the new member. */
+/**
+ * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it
+ * out keeps one they already have). Returns the id of the new member.
+ */
 export async function joinDelegationByEntryCode(
 	userId: string,
 	conferenceId: string,
-	entryCode: string
+	entryCode: string,
+	school: SchoolChoice
 ) {
 	const delegation = await db.query.delegation
 		.findFirst({ where: { conferenceId, entryCode } })
@@ -50,8 +54,7 @@ export async function joinDelegationByEntryCode(
 			})
 			.returning()
 			.then(assertFirstEntryExists);
-		// Who joins a delegation applies with its school.
-		await setParticipantSchool(tx, [participantId], delegation.schoolId);
+		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(school, tx));
 
 		// The delegation just grew, so applications it can no longer seat are dropped.
 		await tidyRoleApplications(delegation.id, tx);
@@ -145,7 +148,6 @@ async function clearParticipation(tx: Transaction, conferenceId: string, userId:
 
 type AssignedDelegation = {
 	id: string;
-	schoolId: string | null;
 	members: { isHeadDelegate: boolean }[];
 };
 
@@ -157,8 +159,7 @@ async function prepareAssignedDelegation(
 	tx: Transaction,
 	conferenceId: string,
 	assignedRoleId: string,
-	existing: AssignedDelegation | undefined,
-	schoolId: string | null | undefined
+	existing: AssignedDelegation | undefined
 ): Promise<AssignedDelegation> {
 	if (!existing) {
 		const created = await tx
@@ -167,7 +168,6 @@ async function prepareAssignedDelegation(
 				conferenceId,
 				assignedRoleId,
 				entryCode: makeEntryCode(),
-				schoolId: schoolId ?? undefined,
 				...ASSIGNED_DELEGATION_INFOS
 			})
 			.returning()
@@ -178,7 +178,7 @@ async function prepareAssignedDelegation(
 	if (existing.members.length === 0) {
 		await tx
 			.update(schema.delegation)
-			.set({ ...ASSIGNED_DELEGATION_INFOS, schoolId: schoolId ?? null })
+			.set(ASSIGNED_DELEGATION_INFOS)
 			.where(eq(schema.delegation.id, existing.id));
 	}
 	return existing;
@@ -209,14 +209,12 @@ export async function placeUserInAssignedDelegation(args: {
 			tx,
 			args.conferenceId,
 			args.assignedRoleId,
-			existing,
-			waiting?.schoolId
+			existing
 		);
 
 		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.userId);
-		// Their own school: the one they waited with, else one they had, else the delegation's.
+		// Their own school: the one they waited with, else the one they had.
 		await setParticipantSchool(tx, [participantId], waiting?.schoolId ?? undefined);
-		await fillParticipantSchool(tx, participantId, delegation.schoolId);
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({

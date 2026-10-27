@@ -58,8 +58,9 @@ export const conferenceParticipant = snakeCase.table(
 		assignedDocumentNumber: integer('assigend_document_number'),
 		accessCardId: text(),
 		/**
-		 * The person's own school. Set from the application they come with (a delegation's members
-		 * take its school), and kept when the assignment merges delegations of several schools, so
+		 * The person's own school, the only place a school of someone taking part is kept. Given when
+		 * they apply (or carried over from their waiting list entry), changed by themselves or by
+		 * participant care, and kept when the assignment merges delegations of several schools, so
 		 * seats and metrics per school count people, not delegations.
 		 */
 		schoolId: schoolRef()
@@ -99,9 +100,7 @@ export const conferenceSupervisor = snakeCase.table(
 		/** The supervisor's own part in the conference; it says which conference and who. */
 		conferenceParticipantId: participantRef(),
 		plansOwnAttendenceAtConference: boolean().notNull(),
-		connectionCode: text().notNull(),
-		/** The school the supervisor comes from, if any. */
-		schoolId: schoolRef()
+		connectionCode: text().notNull()
 	},
 	(table) => [
 		// Unique across conferences, so a code alone names its supervisor.

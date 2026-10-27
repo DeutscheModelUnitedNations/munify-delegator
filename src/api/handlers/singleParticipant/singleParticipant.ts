@@ -65,9 +65,6 @@ schemaBuilder.mutationFields((t) => ({
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			/** Both null removes the school; both left out keeps it. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
 			experience: t.arg.string(),
 			motivation: t.arg.string(),
 			applyForRolesIdList: t.arg.idList(),
@@ -79,7 +76,6 @@ schemaBuilder.mutationFields((t) => ({
 			await updateSingleParticipantApplication(args);
 
 			singleParticipantPubsub.updated(args.id);
-			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
 				.findFirst(

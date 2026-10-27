@@ -16,6 +16,7 @@ import { type StatsFilterType, matchesStatsFilter } from './statisticsFilters';
 
 type PeopleRow = (typeof schema.statisticsPeople)['$inferSelect'];
 type DelegationsRow = (typeof schema.statisticsDelegations)['$inferSelect'];
+type SchoolsRow = (typeof schema.statisticsSchools)['$inferSelect'];
 type RegistrationDayRow = (typeof schema.statisticsRegistrationDays)['$inferSelect'];
 type RoleApplicationsRow = (typeof schema.statisticsRoleApplications)['$inferSelect'];
 type AgesRow = (typeof schema.statisticsAges)['$inferSelect'];
@@ -490,20 +491,17 @@ export function registrationTimelineOf(days: RegistrationDayRow[], filter: Stats
 	return timeline;
 }
 
-export function schoolStatsOf(delegations: DelegationsRow[], filter: StatsFilterType) {
-	const schools = new Map<string, { delegationCount: number; memberCount: number }>();
-	for (const row of delegations) {
+/** Delegation members and single participants per school, each by their own school. */
+export function schoolStatsOf(schools: SchoolsRow[], filter: StatsFilterType) {
+	const people = new Map<string, number>();
+	for (const row of schools) {
 		if (!matchesStatsFilter(filter, row)) continue;
-		const school = accumulate(schools, row.school || 'Unknown', () => ({
-			delegationCount: 0,
-			memberCount: 0
-		}));
-		school.delegationCount += row.delegations;
-		school.memberCount += row.members;
+		const key = row.school || 'Unknown';
+		people.set(key, (people.get(key) ?? 0) + row.people);
 	}
-	return [...schools]
-		.map(([school, data]) => ({ school, ...data }))
-		.toSorted((a, b) => b.memberCount - a.memberCount);
+	return [...people]
+		.map(([school, count]) => ({ school, people: count }))
+		.toSorted((a, b) => b.people - a.people);
 }
 
 // ── Waiting list (unfiltered) ───────────────────────────────────────────────

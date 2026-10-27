@@ -16,6 +16,7 @@ export function statisticsRowsOf(conferenceId: string) {
 		V extends
 			| typeof schema.statisticsPeople
 			| typeof schema.statisticsDelegations
+			| typeof schema.statisticsSchools
 			| typeof schema.statisticsRegistrationDays
 			| typeof schema.statisticsRoleApplications
 			| typeof schema.statisticsAges
@@ -31,6 +32,7 @@ export function statisticsRowsOf(conferenceId: string) {
 	return {
 		people: rowsOf(schema.statisticsPeople),
 		delegations: rowsOf(schema.statisticsDelegations),
+		schools: rowsOf(schema.statisticsSchools),
 		registrationDays: rowsOf(schema.statisticsRegistrationDays),
 		roleApplications: rowsOf(schema.statisticsRoleApplications),
 		ages: rowsOf(schema.statisticsAges),

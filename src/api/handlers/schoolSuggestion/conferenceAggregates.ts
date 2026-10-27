@@ -1,4 +1,4 @@
-/** Applied registrations of one school, as the organizers' school overview lists them. */
+/** The applied people of one school, as the organizers' school overview lists them. */
 export type SchoolRow = {
 	schoolId: string;
 	school: string;
@@ -11,12 +11,12 @@ export type SchoolRow = {
 type NamedSchool = { id: string; name: string } | null;
 
 /**
- * Groups registrations by the school they named, in the order schools first appear (delegations
- * first). Registrations without a school are left out.
+ * Groups people by their own school, in the order schools first appear (delegation members first).
+ * A delegation counts for every school one of its members comes from. People without a school are
+ * left out.
  */
 export function schoolRows(
-	delegations: { id: string; school: NamedSchool }[],
-	members: { delegationId: string }[],
+	members: { delegationId: string; school: NamedSchool }[],
 	singleParticipants: { school: NamedSchool }[]
 ): SchoolRow[] {
 	const bySchool = new Map<string, SchoolRow>();
@@ -33,14 +33,16 @@ export function schoolRows(
 		return existing;
 	};
 
-	const membersOf = Map.groupBy(members, (member) => member.delegationId);
-	for (const delegation of delegations) {
-		if (!delegation.school) continue;
-		const memberCount = membersOf.get(delegation.id)?.length ?? 0;
-		const entry = entryFor(delegation.school);
-		entry.delegationCount++;
-		entry.delegationMembers += memberCount;
-		entry.sumParticipants += memberCount;
+	const delegationsOf = new Map<string, Set<string>>();
+	for (const member of members) {
+		if (!member.school) continue;
+		const entry = entryFor(member.school);
+		entry.delegationMembers++;
+		entry.sumParticipants++;
+		const delegations = delegationsOf.get(member.school.id) ?? new Set();
+		delegations.add(member.delegationId);
+		delegationsOf.set(member.school.id, delegations);
+		entry.delegationCount = delegations.size;
 	}
 
 	for (const participant of singleParticipants) {

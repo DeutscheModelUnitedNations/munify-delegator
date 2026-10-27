@@ -5,15 +5,18 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import codenmz from '#lib/helpers/codenamize.js';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 	import { toast } from 'svelte-sonner';
 	import QuotedText from '../QuotedText.svelte';
 	import AppliedBadge from './AppliedBadge.svelte';
-	import SchoolLine from './SchoolLine.svelte';
 	import WishList from './WishList.svelte';
 	import InfoRow from './InfoRow.svelte';
 	import { delegationWishes } from './wishes';
 
-	/** What a delegation applied with: its school, entry code, texts and the roles it wished for. */
+	/**
+	 * What a delegation applied with: its entry code, texts and the roles it wished for, and its
+	 * members' own schools (it keeps none of its own).
+	 */
 	interface Props {
 		delegationId: string;
 		conferenceId: string;
@@ -26,8 +29,8 @@
 			client.liveQuery.delegation({
 				__args: { id: delegationId },
 				id: true,
-				school: { id: true, name: true },
 				entryCode: true,
+				members: { school: { name: true } },
 				applied: true,
 				motivation: true,
 				experience: true,
@@ -55,17 +58,6 @@
 	);
 
 	/** Saves another school for the delegation: a known one, a new name, or none. */
-	const saveSchool = (choice: { schoolId?: string | null; schoolName?: string | null }) =>
-		Promise.resolve(
-			client.mutate.updateDelegation({
-				__args: {
-					id: delegationId,
-					schoolId: choice.schoolId ?? null,
-					schoolName: choice.schoolName ?? null
-				},
-				id: true
-			})
-		);
 
 	async function rotateEntryCode() {
 		if (!(await confirmDialog({ text: m.confirmRotateCode() }))) return;
@@ -112,7 +104,9 @@
 	</div>
 
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<SchoolLine school={delegation.school} save={saveSchool} />
+		<InfoRow title={m.schoolsOfMembers()} faIcon="school">
+			<span class="text-sm">{delegationSchoolsLabel(delegation.members) ?? m.noSchoolGiven()}</span>
+		</InfoRow>
 		<InfoRow title={m.entryCode()} faIcon="key">
 			<span class="font-mono text-sm tracking-wider">{delegation.entryCode}</span>
 			{#snippet actions()}

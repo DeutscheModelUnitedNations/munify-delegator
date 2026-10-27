@@ -11,3 +11,9 @@ export const applicationFormSchema = z.object({
 	motivation: z.string().max(PUBLIC_MAX_APPLICATION_TEXT_LENGTH).nullish(),
 	experience: z.string().max(PUBLIC_MAX_APPLICATION_TEXT_LENGTH).nullish()
 });
+
+/** The texts alone, which the dashboard edits apart from the applicant's own school. */
+export const applicationTextsSchema = applicationFormSchema.pick({
+	motivation: true,
+	experience: true
+});

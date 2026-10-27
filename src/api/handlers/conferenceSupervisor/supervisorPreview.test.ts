@@ -6,13 +6,12 @@ const otherSchool = { id: 's2', name: 'Schiller-Schule', city: null };
 
 const supervisor = (overrides: Partial<PreviewedSupervisor> = {}): PreviewedSupervisor => ({
 	user: { givenName: 'Ada', familyName: 'Lovelace' },
-	school: ownSchool,
-	participant: { school: otherSchool },
+	participant: { school: ownSchool },
 	...overrides
 });
 
 describe('supervisorPreview', () => {
-	it('shows the name and the school the registration names', () => {
+	it("shows the name and the supervisor's own school", () => {
 		expect(supervisorPreview(supervisor(), 's1')).toEqual({
 			given_name: 'Ada',
 			family_name: 'Lovelace',
@@ -22,17 +21,15 @@ describe('supervisorPreview', () => {
 		});
 	});
 
-	it("falls back to the person's own school", () => {
-		const preview = supervisorPreview(supervisor({ school: null }), 's1');
+	it("warns when the school is another than the caller's", () => {
+		const preview = supervisorPreview(supervisor({ participant: { school: otherSchool } }), 's1');
 		expect(preview.school_name).toBe('Schiller-Schule');
 		expect(preview.school_city).toBeNull();
 		expect(preview.different_school).toBe(true);
 	});
 
 	it('shows nothing it does not know', () => {
-		expect(
-			supervisorPreview(supervisor({ user: null, school: null, participant: null }), 's1')
-		).toEqual({
+		expect(supervisorPreview(supervisor({ user: null, participant: null }), 's1')).toEqual({
 			given_name: null,
 			family_name: null,
 			school_name: null,

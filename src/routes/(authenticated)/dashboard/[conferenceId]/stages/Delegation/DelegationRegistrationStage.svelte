@@ -12,8 +12,9 @@
 		MIN_ROLE_APPLICATIONS
 	} from '#lib/helpers/applicationReadiness.js';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import type { ApplicationAnswers } from '../../applicationForm';
+	import type { ApplicationTexts } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';
+	import MySchool from '../Common/MySchool.svelte';
 	import ApplicationProgress from '../Common/ApplicationProgress.svelte';
 	import RegistrationDangerZone from '../Common/RegistrationDangerZone.svelte';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
@@ -34,7 +35,6 @@
 			isHeadDelegate: true,
 			delegation: {
 				id: true,
-				school: { id: true, name: true },
 				experience: true,
 				motivation: true,
 				applied: true,
@@ -107,7 +107,7 @@
 		goto(resolve('dashboard'));
 	};
 
-	const saveApplication = (answers: ApplicationAnswers) =>
+	const saveApplication = (answers: ApplicationTexts) =>
 		client.mutate.updateDelegation({ __args: { id: delegationId, ...answers }, id: true });
 
 	const completeRegistration = async () => {
@@ -161,12 +161,14 @@
 >
 	<!-- Seeded once from the row as it was on mount. The dashboard keys this component by
 	registration, so a different one gets a fresh form. -->
+	<div class="bg-base-200 rounded-box mb-4">
+		<MySchool {conferenceId} hint={m.ownSchoolDescription()} />
+	</div>
 	<ApplicationQuestionnaire
 		initial={delegationMember.delegation}
 		save={saveApplication}
 		disabled={applied || !userIsHeadDelegate}
 		showSubmitButton={!applied && userIsHeadDelegate}
-		schoolLabel={m.whichSchoolDoesYourDelegationComeFrom()}
 		motivationLabel={m.whyDoYouWantToJoinTheConference()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 	/>

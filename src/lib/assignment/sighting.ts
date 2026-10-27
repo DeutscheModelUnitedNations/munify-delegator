@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js';
 import { getAgeAtConference } from '#lib/helpers/ageChecker.js';
 import type { WithLinkedAccounts } from '#lib/helpers/linkedNotes.js';
+import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 /** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {
@@ -123,14 +124,20 @@ interface Supervisor {
 }
 
 interface ApplicationTexts {
-	/** The school the applicants named, if any. */
-	school?: Nullable<{ name: string }>;
 	motivation?: Nullable<string>;
 	experience?: Nullable<string>;
 }
 
+/** A person's own school, if they named one. */
+type OwnSchool = Nullable<{ name: string }>;
+
 export interface SightedDelegation extends ApplicationTexts {
-	members: readonly { isHeadDelegate: boolean; user: Person; supervisors: readonly Supervisor[] }[];
+	members: readonly {
+		isHeadDelegate: boolean;
+		user: Person;
+		supervisors: readonly Supervisor[];
+		school?: OwnSchool;
+	}[];
 	appliedForRoles: readonly {
 		rank: number;
 		role: {
@@ -142,13 +149,13 @@ export interface SightedDelegation extends ApplicationTexts {
 }
 
 export interface SightedSingleParticipant extends ApplicationTexts {
+	school?: OwnSchool;
 	user: Person;
 	supervisors: readonly Supervisor[];
 	appliedForRoles: readonly { name?: Nullable<string> }[];
 }
 
 const texts = (application: ApplicationTexts) => ({
-	school: application.school?.name ?? null,
 	motivation: application.motivation ?? null,
 	experience: application.experience ?? null
 });
@@ -174,6 +181,8 @@ export function delegationApplication(
 	nationName: (code: string) => string
 ) {
 	return {
+		// the members' own schools: a delegation keeps none
+		school: delegationSchoolsLabel(delegation.members),
 		...texts(delegation),
 		people: delegation.members.map((member) => ({
 			...member.user,
@@ -189,6 +198,7 @@ export function delegationApplication(
 /** A single participant's application, in the same shape as a delegation's. */
 export function singleApplication(single: SightedSingleParticipant) {
 	return {
+		school: single.school?.name ?? null,
 		...texts(single),
 		people: [{ ...single.user, isHeadDelegate: false }],
 		supervisors: [...single.supervisors],

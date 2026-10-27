@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+	schoolStatsOf,
 	addressesOf,
 	ageStatisticsOf,
 	dietOf,
@@ -36,7 +37,6 @@ const delegations = (overrides: Partial<DelegationsRow>): DelegationsRow => ({
 	conferenceId: 'c',
 	applied: false,
 	hasRole: false,
-	school: null,
 	delegations: 1,
 	members: 1,
 	...overrides
@@ -392,5 +392,32 @@ describe('nationalityDistributionOf', () => {
 				'APPLIED'
 			)
 		).toEqual([{ country: 'DEU', countryCode: 'DEU', count: 2 }]);
+	});
+});
+
+describe('schoolStatsOf', () => {
+	const row = (school: string | null, people: number, applied = true) => ({
+		conferenceId: 'c',
+		applied,
+		hasRole: false,
+		schoolId: school,
+		school,
+		people
+	});
+
+	test('counts people by their own school, most first, without one as "Unknown"', () => {
+		expect(
+			schoolStatsOf([row('Kiel', 2), row('Lübeck', 5), row('Kiel', 4, false), row(null, 1)], 'ALL')
+		).toEqual([
+			{ school: 'Kiel', people: 6 },
+			{ school: 'Lübeck', people: 5 },
+			{ school: 'Unknown', people: 1 }
+		]);
+	});
+
+	test('follows the filter', () => {
+		expect(schoolStatsOf([row('Kiel', 2), row('Kiel', 4, false)], 'NOT_APPLIED')).toEqual([
+			{ school: 'Kiel', people: 4 }
+		]);
 	});
 });

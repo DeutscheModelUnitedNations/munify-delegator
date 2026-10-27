@@ -22,13 +22,14 @@
 </script>
 
 {#snippet entry(icon: string, value: string, href: string, label: string)}
-	<span class="flex items-center gap-1">
+	<!-- The copy button shows on hover or focus, so the line reads as plain contact details -->
+	<span class="group flex items-center gap-0.5">
 		<a {href} class="link link-hover flex items-center gap-1.5" aria-label="{label}: {value}">
 			<i class="fa-sharp-duotone fa-solid {icon} text-xs"></i>
 			{value}
 		</a>
 		<button
-			class="btn btn-ghost btn-xs btn-square"
+			class="btn btn-ghost btn-xs btn-square opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
 			onclick={() => copy(value)}
 			aria-label="{m.copy()}: {label}"
 			title={m.copy()}
@@ -38,7 +39,7 @@
 	</span>
 {/snippet}
 
-<div class="text-base-content/70 flex flex-wrap items-center gap-x-4 text-sm">
+<div class="text-base-content/60 flex flex-wrap items-center gap-x-3 text-sm">
 	{@render entry('fa-envelope', contact.email, `mailto:${contact.email}`, m.email())}
 	{#if contact.phone}
 		{@render entry('fa-phone', contact.phone, `tel:${contact.phone}`, m.phoneNumber())}

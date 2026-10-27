@@ -30,14 +30,13 @@ const singlesInConference = (conferenceId: string) => ({
 const delegationCard = {
 	id: true,
 	applied: true,
-	school: { id: true, name: true },
 	assignedRoleId: true,
 	members: {
 		id: true,
 		isHeadDelegate: true,
 		user: { givenName: true, familyName: true },
-		// the person's own school, which the seats per school count
-		participant: { school: { id: true, name: true } }
+		// the person's own school, which the seats per school count; the delegation keeps none
+		school: { id: true, name: true }
 	},
 	appliedForRoles: {
 		rank: true,
@@ -224,7 +223,7 @@ function fetchReviewsOf(conferenceId: string, ids: ApplicationIds) {
 }
 
 /**
- * What a search of a pool looks for, as the sighting's search does: the term in the school, the
+ * What a search of a pool looks for, as the sighting's search does: the term in a person's school, the
  * texts and the team's note, the people it names (members and supervisors) and the applications
  * whose codename or id contains it.
  */
@@ -261,7 +260,6 @@ function resolveSearch(conferenceId: string, search: string): Promise<PoolSearch
 const searchedTexts = (search: PoolSearch) => {
 	const like = containing(search.term);
 	return [
-		{ school: { name: like } },
 		{ motivation: like },
 		{ experience: like },
 		{ assignmentReview: { note: like } },
@@ -272,13 +270,25 @@ const searchedTexts = (search: PoolSearch) => {
 const searchedDelegations = (search: PoolSearch): DelegationWhereInputArgument => {
 	const people = { user: { id: { in: search.userIds } } };
 	return {
-		OR: [...searchedTexts(search), { members: people }, { members: { supervisors: people } }]
+		OR: [
+			...searchedTexts(search),
+			{ members: { school: { name: containing(search.term) } } },
+			{ members: people },
+			{ members: { supervisors: people } }
+		]
 	};
 };
 
 const searchedSingles = (search: PoolSearch): SingleparticipantWhereInputArgument => {
 	const people = { user: { id: { in: search.userIds } } };
-	return { OR: [...searchedTexts(search), people, { supervisors: people }] };
+	return {
+		OR: [
+			...searchedTexts(search),
+			{ school: { name: containing(search.term) } },
+			people,
+			{ supervisors: people }
+		]
+	};
 };
 
 /** Which pool of delegations the board shows. */

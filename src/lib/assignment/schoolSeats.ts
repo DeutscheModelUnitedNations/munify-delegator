@@ -20,12 +20,11 @@ export interface SchoolSeatCount {
 export type SchoolLookup = (id: string) => SeatSchool | null | undefined;
 
 /**
- * Where the board finds schools: a delegation member's own (`conferenceParticipant.school`), the
- * delegation's for a member without one, and a single participant's.
+ * Where the board finds schools: each person's own (`conferenceParticipant.school`), as a
+ * delegation member or a single participant. A delegation keeps none of its own.
  */
 export interface SchoolLookups {
 	member: SchoolLookup;
-	delegation: SchoolLookup;
 	single: SchoolLookup;
 }
 
@@ -34,20 +33,16 @@ type Nullable<T> = T | null | undefined;
 /** The lookups from the board's rows: delegations with their members' own schools, and singles. */
 export function schoolLookupsOf(
 	delegations: readonly {
-		id: string;
-		school?: Nullable<SeatSchool>;
-		members: readonly { id: string; participant?: Nullable<{ school?: Nullable<SeatSchool> }> }[];
+		members: readonly { id: string; school?: Nullable<SeatSchool> }[];
 	}[],
 	singles: readonly { id: string; school?: Nullable<SeatSchool> }[]
 ): SchoolLookups {
-	const delegationSchools = new Map(delegations.map((d) => [d.id, d.school]));
 	const memberSchools = new Map(
-		delegations.flatMap((d) => d.members.map((member) => [member.id, member.participant?.school]))
+		delegations.flatMap((d) => d.members.map((member) => [member.id, member.school]))
 	);
 	const singleSchools = new Map(singles.map((single) => [single.id, single.school]));
 	return {
 		member: (id) => memberSchools.get(id),
-		delegation: (id) => delegationSchools.get(id),
 		single: (id) => singleSchools.get(id)
 	};
 }
@@ -59,23 +54,21 @@ export interface SchoolSeats {
 }
 
 /**
- * The seats a group of the board takes, by school. Each person counts for their own school, not
- * their delegation's: a delegation the assignment merged from several schools counts towards each
- * of them. A member without a school counts for the delegation's; a converted single participant
- * for theirs.
+ * The seats a group of the board takes, by school. Each person counts for their own school: a
+ * delegation the assignment merged from several schools counts towards each of them. A converted
+ * single participant counts for theirs; people without a school count for none.
  */
 export function schoolsOfGroup(
-	group: Pick<AssignmentGroup, 'delegationId' | 'singleParticipantId' | 'memberIds'>,
+	group: Pick<AssignmentGroup, 'singleParticipantId' | 'memberIds'>,
 	lookups: SchoolLookups
 ): SchoolSeats[] {
 	if (group.singleParticipantId) {
 		const school = lookups.single(group.singleParticipantId);
 		return school ? [{ school, seats: 1 }] : [];
 	}
-	const fallback = group.delegationId ? lookups.delegation(group.delegationId) : undefined;
 	const bySchool = new Map<string, SchoolSeats>();
 	for (const memberId of group.memberIds) {
-		const school = lookups.member(memberId) ?? fallback;
+		const school = lookups.member(memberId);
 		if (!school) continue;
 		const entry = bySchool.get(school.id) ?? { school, seats: 0 };
 		entry.seats += 1;

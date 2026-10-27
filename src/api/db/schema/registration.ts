@@ -19,12 +19,11 @@ import { schoolRef } from './schools';
 
 /**
  * What a delegation or a single participant applied with, and whether they sent it. `applied`
- * is the step from registering to applying; the texts are the application's.
+ * is the step from registering to applying; the texts are the application's. The school is not
+ * among them: it is each person's own (`conferenceParticipant.schoolId`).
  */
 const applicationColumns = () => ({
 	applied: boolean().default(false).notNull(),
-	/** Empty when the applicants named no school. */
-	schoolId: schoolRef(),
 	motivation: text(),
 	experience: text()
 });
@@ -67,7 +66,6 @@ export const delegation = snakeCase.table(
 		),
 		// rumble's `search` argument; see `trigramIndex`.
 		trigramIndex('delegation_id_trgm', table.id),
-		index('delegation_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
 		// The management tables search these with `ilike '%word%'`, which the same indexes serve.
 		trigramIndex('delegation_entry_code_trgm', table.entryCode),
 		trigramIndex('delegation_motivation_trgm', table.motivation),
@@ -131,7 +129,6 @@ export const singleParticipant = snakeCase.table(
 			table.conferenceParticipantId.asc().nullsLast()
 		),
 		trigramIndex('single_participant_id_trgm', table.id),
-		index('single_participant_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
 		trigramIndex('single_participant_motivation_trgm', table.motivation),
 		trigramIndex('single_participant_experience_trgm', table.experience)
 	]

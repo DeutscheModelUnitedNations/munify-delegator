@@ -59,10 +59,21 @@ test('a head delegate can create a delegation and a second user can join it with
 	await expect(memberPage.getByRole('button', { name: /bestätigen|confirm/i })).toBeVisible({
 		timeout: 15_000
 	});
+	// the newcomer's own school starts as the head delegate's
+	await expect(memberPage.locator('input[name="schoolName"]')).toHaveValue('E2E Test School');
 	await memberPage.getByRole('button', { name: /bestätigen|confirm/i }).click();
 
 	await memberPage.waitForURL(new RegExp(`/dashboard/${conferenceId}$`));
 	await expect(memberPage).toHaveURL(new RegExp(`/dashboard/${conferenceId}$`));
+
+	// ...and is kept as their own: the delegation has none
+	const res = await memberPage.request.post('/api/graphql', {
+		data: {
+			query: `query { conferenceParticipants(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${member.preferred_username}" } }) { school { name } } }`
+		}
+	});
+	const participant = (await res.json())?.data?.conferenceParticipants?.[0];
+	expect(participant?.school?.name).toBe('E2E Test School');
 
 	await memberContext.close();
 });

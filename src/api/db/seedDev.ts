@@ -31,7 +31,7 @@ import { addReviewerSnippets, addTeam } from './seed-dev/team';
 import { addPapers } from './seed-dev/papers';
 import { addSurveys } from './seed-dev/surveys';
 import { addEmails } from './seed-dev/emails';
-import { addParticipantSchools } from './seed-dev/schools';
+import { addMergedMembers } from './seed-dev/schools';
 import { addBulk } from './seed-dev/bulk';
 import { addCalendar } from './seed-dev/calendar';
 import { addResolutions } from './seed-dev/resolutions';
@@ -112,8 +112,8 @@ for (const plan of conferencePlans) {
 	addDuplicateScenarioParticipants(cs);
 }
 
-// Last: every person takes their registration's school, and one per conference comes from a merger.
-addParticipantSchools(batch);
+// Last: one person per conference comes from another school than their delegation, as after a merger.
+addMergedMembers(batch);
 
 console.info('Resetting database...');
 await reset(db, schema);

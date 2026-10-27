@@ -7,6 +7,7 @@
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';
@@ -30,7 +31,6 @@
 				id: true,
 				applied: true,
 				entryCode: true,
-				school: { name: true },
 				experience: true,
 				motivation: true,
 				appliedForRoles: {
@@ -59,6 +59,7 @@
 				id: true,
 				isHeadDelegate: true,
 				assignedCommittee: { abbreviation: true },
+				school: { name: true },
 				user: supervisedUserSelection
 			}),
 			fetchPostalConference(conferenceId)
@@ -123,7 +124,7 @@
 			/>
 			{#if isStateParticipantRegistration}
 				<ApplicationDetailsEntries
-					school={delegation.school?.name ?? null}
+					school={delegationSchoolsLabel(members)}
 					experience={delegation.experience}
 					motivation={delegation.motivation}
 				/>

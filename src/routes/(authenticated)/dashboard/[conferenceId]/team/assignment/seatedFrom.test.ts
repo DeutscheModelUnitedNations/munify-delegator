@@ -14,7 +14,6 @@ const review = (id: string) => ({
 const delegation = (id: string, applied = true, rated = false) => ({
 	id,
 	applied,
-	school: null,
 	assignedRoleId: null,
 	members: [],
 	appliedForRoles: [],

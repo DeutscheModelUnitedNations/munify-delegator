@@ -5,34 +5,38 @@ import { findSimilarSchools, suggestionKey } from './similarSchools';
 import { eq, inArray } from 'drizzle-orm';
 
 /**
- * Applied registrations the caller may read (`readableSchoolRegistrations`), grouped by the school
- * they named.
+ * The people of applied registrations the caller may read (`readableSchoolRegistrations`), grouped
+ * by their own school.
  */
-export async function loadSchoolRows(conferenceId: string, readable: ReadableSchoolRegistrations) {
+export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
 	const school = { id: schema.school.id, name: schema.school.name };
-	const [delegations, participants] = await Promise.all([
+	const [members, singleParticipants] = await Promise.all([
 		db
-			.select({ id: schema.delegation.id, school })
-			.from(schema.delegation)
-			.innerJoin(schema.school, eq(schema.school.id, schema.delegation.schoolId))
+			.select({ delegationId: schema.delegationMember.delegationId, school })
+			.from(schema.delegationMember)
+			.innerJoin(schema.delegation, eq(schema.delegation.id, schema.delegationMember.delegationId))
+			.innerJoin(
+				schema.conferenceParticipant,
+				eq(schema.conferenceParticipant.id, schema.delegationMember.conferenceParticipantId)
+			)
+			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
 			.where(readable.delegations),
 		db
 			.select({ school })
 			.from(schema.singleParticipant)
-			.innerJoin(schema.school, eq(schema.school.id, schema.singleParticipant.schoolId))
+			.innerJoin(
+				schema.conferenceParticipant,
+				eq(schema.conferenceParticipant.id, schema.singleParticipant.conferenceParticipantId)
+			)
+			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
 			.where(readable.singleParticipants)
 	]);
 
-	const memberCounts = await db.query.delegationMember.findMany({
-		where: { delegation: { conferenceId, applied: true } },
-		columns: { delegationId: true }
-	});
-
-	return schoolRows(delegations, memberCounts, participants);
+	return schoolRows(members, singleParticipants);
 }
 
 /**
- * Finds the groups of similar schools among those a conference's applications name and brings the suggestion tables in
+ * Finds the groups of similar schools among those the applicants of a conference name and brings the suggestion tables in
  * line with them. A group found again keeps its row, and so the team's decision; groups that no
  * longer exist (merged, renamed, withdrawn) are removed.
  */
@@ -40,12 +44,10 @@ export async function refreshSchoolSuggestions(
 	conferenceId: string,
 	readable: ReadableSchoolRegistrations
 ) {
-	const found = findSimilarSchools(await loadSchoolRows(conferenceId, readable)).map(
-		(suggestion) => ({
-			...suggestion,
-			key: suggestionKey(suggestion.variants.map((variant) => variant.schoolId))
-		})
-	);
+	const found = findSimilarSchools(await loadSchoolRows(readable)).map((suggestion) => ({
+		...suggestion,
+		key: suggestionKey(suggestion.variants.map((variant) => variant.schoolId))
+	}));
 
 	await db.transaction(async (tx) => {
 		const existing = await tx

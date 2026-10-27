@@ -73,6 +73,7 @@ export { paymentTransaction, userReferenceInPaymentTransaction } from './payment
 export {
 	statisticsPeople,
 	statisticsDelegations,
+	statisticsSchools,
 	statisticsRegistrationDays,
 	statisticsRoleApplications,
 	statisticsAges,

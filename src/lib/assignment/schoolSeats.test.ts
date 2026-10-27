@@ -21,7 +21,8 @@ const group = (
 	...overrides
 });
 
-const delegationSchools = new Map([
+/** Where the members of each delegation (`d1-0`, `d1-1`, …) come from. */
+const schoolOfMembers = new Map([
 	['d1', kiel],
 	['d2', kiel],
 	['d3', luebeck],
@@ -32,14 +33,14 @@ const singleSchools = new Map([
 	['s2', luebeck],
 	['s3', luebeck]
 ]);
-/** People with a school of their own; the rest count for their delegation's. */
+/** People merged in from elsewhere. */
 const memberSchools = new Map([
 	['m-luebeck', luebeck],
 	['m-none', null]
 ]);
 const lookups = {
-	member: (id: string) => memberSchools.get(id),
-	delegation: (id: string) => delegationSchools.get(id),
+	member: (id: string) =>
+		memberSchools.has(id) ? memberSchools.get(id) : schoolOfMembers.get(id.split('-')[0]),
 	single: (id: string) => singleSchools.get(id)
 };
 const members = (prefix: string, count: number) =>
@@ -92,10 +93,11 @@ describe('schoolSeats', () => {
 		const merged = group({
 			key: 'd1',
 			delegationId: 'd1',
-			memberIds: ['m-luebeck', 'm-none', 'd1-0'],
-			size: 3,
+			memberIds: ['m-luebeck', 'm-none', 'd1-0', 'd1-1'],
+			size: 4,
 			target: { roleId: 'r1' }
 		});
+		// someone without a school counts for none, not for the delegation's majority
 		expect(schoolsOfGroup(merged, lookups)).toEqual([
 			{ school: luebeck, seats: 1 },
 			{ school: kiel, seats: 2 }

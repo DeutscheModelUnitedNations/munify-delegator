@@ -17,15 +17,17 @@
 	import { addressRules } from '#lib/helpers/addressRules.js';
 	import { toast } from 'svelte-sonner';
 	import AccountSection from '../AccountSection.svelte';
+	import ParticipantSchoolSection from '../ParticipantSchoolSection.svelte';
 	import CopyField from '../CopyField.svelte';
 	import { getLocale } from '#lib/paraglide/runtime.js';
 	import { untrack } from 'svelte';
 
 	interface Props {
 		userId: string;
+		conferenceId: string;
 	}
 
-	let { userId }: Props = $props();
+	let { userId, conferenceId }: Props = $props();
 
 	// Awaited once and not in a `$derived`: it seeds the form, and re-running it while someone edits
 	// would discard their changes. The result is still live, so the read-only parts below and the
@@ -367,6 +369,8 @@
 			{/if}
 		</button>
 	</div>
+
+	<ParticipantSchoolSection {userId} {conferenceId} />
 
 	<!-- The opt-ins are masked for some readers, and a masked flag fails its whole query -->
 	<svelte:boundary>

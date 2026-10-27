@@ -27,7 +27,7 @@ export interface ParticipantRow {
 	nsaName: string | null;
 	nsaIcon: string | null;
 	committee: string | null;
-	delegationSchool: string | null;
+	school: string | null;
 	isHeadDelegate: boolean | null;
 	assignedRoleName: string | null;
 	assignedRoleIcon: string | null;

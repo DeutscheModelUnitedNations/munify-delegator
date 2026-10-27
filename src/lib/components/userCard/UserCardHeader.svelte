@@ -240,8 +240,8 @@
 				</div>
 			</div>
 
-			<div class="flex min-w-0 flex-1 flex-col gap-1">
-				<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+			<div class="flex min-w-0 flex-1 flex-col gap-1.5">
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
 					<h2 class="text-3xl font-bold">{displayName}</h2>
 					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
 					{#if pronouns}
@@ -256,6 +256,12 @@
 					{/if}
 					<PossibleDuplicateBadge {userId} {conferenceId} />
 				</div>
+				<UserCardRoleSummary
+					{delegationMember}
+					{singleParticipant}
+					{conferenceSupervisor}
+					{teamMember}
+				/>
 				<ContactButtons {userId} />
 			</div>
 
@@ -332,14 +338,6 @@
 				{/if}
 			</div>
 		</div>
-
-		<!-- Role summary -->
-		<UserCardRoleSummary
-			{delegationMember}
-			{singleParticipant}
-			{conferenceSupervisor}
-			{teamMember}
-		/>
 
 		<UserCardStatusStrip
 			{userId}

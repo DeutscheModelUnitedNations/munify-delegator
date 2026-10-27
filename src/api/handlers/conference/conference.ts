@@ -85,13 +85,13 @@ const ConferenceRef = object({
 		}),
 
 		/**
-		 * Applied registrations grouped by the school they named, which is how the organizers see
-		 * which schools are sending how many people.
+		 * The people of applied registrations grouped by their own school, which is how the
+		 * organizers see which schools are sending how many people.
 		 */
 		schools: t.field({
 			type: [ConferenceSchools],
 			resolve: async (conference, _args, ctx) =>
-				loadSchoolRows(conference.id, await readableSchoolRegistrations(ctx, conference.id))
+				loadSchoolRows(await readableSchoolRegistrations(ctx, conference.id))
 		})
 	})
 });

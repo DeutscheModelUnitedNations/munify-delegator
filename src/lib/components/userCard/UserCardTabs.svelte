@@ -15,7 +15,7 @@
 		registration: { icon: 'fa-file-pen', label: () => m.userCardTabRegistration() },
 		seat: { icon: 'fa-chair-office', label: () => m.userCardTabSeat() },
 		formalities: { icon: 'fa-clipboard-check', label: () => m.userCardTabFormalities() },
-		conference: { icon: 'fa-calendar-check', label: () => m.userCardTabConference() },
+		conference: { icon: 'fa-calendar-check', label: () => m.accessAndAttendance() },
 		surveys: { icon: 'fa-chart-pie', label: () => m.survey() },
 		papers: { icon: 'fa-file-lines', label: () => m.userCardTabPapers() },
 		history: { icon: 'fa-clock-rotate-left', label: () => m.userCardTabHistory() }

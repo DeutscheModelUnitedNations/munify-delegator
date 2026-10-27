@@ -57,8 +57,8 @@ describe('transformParticipants', () => {
 					{
 						isHeadDelegate: true,
 						assignedCommittee: { name: 'GA' },
+						school: { name: 'Gymnasium' },
 						delegation: {
-							school: { name: 'Gymnasium' },
 							assignedRole: {
 								kind: 'NATION',
 								name: null,
@@ -81,7 +81,7 @@ describe('transformParticipants', () => {
 			nsaName: null,
 			nsaIcon: null,
 			committee: 'GA',
-			delegationSchool: 'Gymnasium',
+			school: 'Gymnasium',
 			isHeadDelegate: true,
 			accepted: true,
 			phone: '123',
@@ -103,8 +103,8 @@ describe('transformParticipants', () => {
 					{
 						isHeadDelegate: false,
 						assignedCommittee: null,
+						school: null,
 						delegation: {
-							school: null,
 							assignedRole: {
 								kind: 'NON_STATE_ACTOR',
 								name: 'Greenpeace',
@@ -124,7 +124,7 @@ describe('transformParticipants', () => {
 			nsaName: 'Greenpeace',
 			nsaIcon: 'leaf',
 			committee: null,
-			delegationSchool: null,
+			school: null,
 			accepted: true,
 			participationCount: 0
 		});
@@ -138,7 +138,8 @@ describe('transformParticipants', () => {
 					{
 						isHeadDelegate: false,
 						assignedCommittee: null,
-						delegation: { school: null, assignedRole: null },
+						school: null,
+						delegation: { assignedRole: null },
 						user: user('c')
 					}
 				]
@@ -201,13 +202,13 @@ describe('transformParticipants', () => {
 		);
 		expect(rows[0]).toMatchObject({
 			role: 'SINGLE_PARTICIPANT',
-			delegationSchool: 'School',
+			school: 'School',
 			assignedRoleName: 'Press',
 			assignedRoleIcon: 'newspaper',
 			accepted: true
 		});
 		expect(rows[1]).toMatchObject({
-			delegationSchool: null,
+			school: null,
 			assignedRoleName: null,
 			assignedRoleIcon: null,
 			accepted: false
@@ -222,7 +223,8 @@ describe('transformParticipants', () => {
 					{
 						isHeadDelegate: false,
 						assignedCommittee: null,
-						delegation: { school: null, assignedRole: null },
+						school: null,
+						delegation: { assignedRole: null },
 						user: user('rejected')
 					}
 				],
@@ -262,7 +264,7 @@ describe('transformParticipants', () => {
 			waitingListSince: new Date('2026-02-02T10:00:00Z')
 		});
 		expect(rows[1]).toMatchObject({
-			delegationSchool: 'Gymnasium',
+			school: 'Gymnasium',
 			accepted: false,
 			hasOpenIssue: false,
 			onWaitingList: true,

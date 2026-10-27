@@ -14,7 +14,7 @@
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import SupervisorPresence from './SupervisorPresence.svelte';
-	import SupervisorSchool from './SupervisorSchool.svelte';
+	import MySchool from '../Common/MySchool.svelte';
 	import SupervisorConnectionCode from './SupervisorConnectionCode.svelte';
 	import SupervisedDelegationCard from './SupervisedDelegationCard.svelte';
 	import SupervisedSingleParticipantCard from './SupervisedSingleParticipantCard.svelte';
@@ -275,7 +275,7 @@
 	>
 		<div class="bg-base-200 rounded-box divide-base-300 divide-y">
 			<SupervisorPresence {supervisorId} editable={isStateParticipantRegistration} />
-			<SupervisorSchool {supervisorId} />
+			<MySchool {conferenceId} hint={m.supervisorSchoolDescription()} />
 		</div>
 	</DashboardSection>
 

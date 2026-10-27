@@ -9,10 +9,12 @@
 		school: { id: string; name: string; city?: string | null } | null | undefined;
 		label?: string;
 		hint?: string;
+		/** Where the school's name leads, when the reader may open the school's page */
+		href?: string;
 		save: (choice: { schoolId?: string | null; schoolName?: string | null }) => Promise<unknown>;
 	}
 
-	let { school, label = m.schoolOrInstitution(), hint, save }: Props = $props();
+	let { school, label = m.schoolOrInstitution(), hint, href, save }: Props = $props();
 
 	let changing = $state(false);
 </script>
@@ -20,7 +22,11 @@
 <InfoRow title={label} faIcon="school" {hint}>
 	{#if school}
 		<span class="text-sm">
-			{school.name}
+			{#if href}
+				<a class="link link-hover" {href}>{school.name}</a>
+			{:else}
+				{school.name}
+			{/if}
 			{#if school.city}
 				<span class="text-base-content/60">· {school.city}</span>
 			{/if}

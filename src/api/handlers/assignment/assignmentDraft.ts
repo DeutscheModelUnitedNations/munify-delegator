@@ -177,11 +177,11 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
 			'delegationId' in copyFrom
 				? await tx.query.delegation.findFirst({
 						where: { id: copyFrom.delegationId },
-						columns: { schoolId: true, motivation: true, experience: true }
+						columns: { motivation: true, experience: true }
 					})
 				: await tx.query.singleParticipant.findFirst({
 						where: { id: copyFrom.singleParticipantId },
-						columns: { schoolId: true, motivation: true, experience: true }
+						columns: { motivation: true, experience: true }
 					});
 		const [row] = await tx
 			.insert(schema.delegation)
@@ -189,7 +189,6 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
 				conferenceId,
 				entryCode: makeEntryCode(),
 				applied: true,
-				schoolId: source?.schoolId,
 				motivation: source?.motivation,
 				experience: source?.experience
 			})

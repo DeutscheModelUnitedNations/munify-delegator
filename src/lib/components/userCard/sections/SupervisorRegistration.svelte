@@ -4,10 +4,9 @@
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { toast } from 'svelte-sonner';
-	import SchoolLine from './SchoolLine.svelte';
 	import InfoRow from './InfoRow.svelte';
 
-	/** How a supervisor registered: their school, and the code their students connect with. */
+	/** How a supervisor registered: the code their students connect with. */
 	interface Props {
 		supervisorId: string;
 	}
@@ -18,22 +17,9 @@
 		await client.liveQuery.conferenceSupervisor({
 			__args: { id: supervisorId },
 			id: true,
-			connectionCode: true,
-			school: { id: true, name: true }
+			connectionCode: true
 		})
 	);
-
-	const saveSchool = (choice: { schoolId?: string | null; schoolName?: string | null }) =>
-		Promise.resolve(
-			client.mutate.updateConferenceSupervisor({
-				__args: {
-					id: supervisorId,
-					schoolId: choice.schoolId ?? null,
-					schoolName: choice.schoolName ?? null
-				},
-				id: true
-			})
-		);
 
 	const copyConnectionCode = async () => {
 		await navigator.clipboard.writeText(supervisor.connectionCode);
@@ -55,7 +41,6 @@
 <section class="flex flex-col gap-3">
 	<h3 class="text-lg font-bold">{m.supervisor()}</h3>
 	<div class="bg-base-200 rounded-box divide-base-300 flex flex-col divide-y">
-		<SchoolLine school={supervisor.school} save={saveSchool} />
 		<InfoRow title={m.connectionCode()} faIcon="link">
 			<span class="font-mono text-sm tracking-wider">{supervisor.connectionCode}</span>
 			{#snippet actions()}

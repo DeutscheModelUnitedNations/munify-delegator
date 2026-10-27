@@ -9,21 +9,20 @@
 	const stats = $derived(
 		await client.query.getConferenceStatistics({
 			__args: { conferenceId, filter: statsQueryFilter() },
-			schoolStats: { school: true, delegationCount: true, memberCount: true }
+			schoolStats: { school: true, people: true }
 		})
 	);
+	// Delegation members and single participants, each counted by their own school
 	const schoolStats = $derived(stats.schoolStats);
 
-	// Sort by member count descending
-	const sortedData = $derived([...schoolStats].sort((a, b) => b.memberCount - a.memberCount));
+	const sortedData = $derived([...schoolStats].sort((a, b) => b.people - a.people));
 
 	// For chart, limit to top 15
 	const chartLabels = $derived(sortedData.slice(0, 15).map((s) => s.school));
-	const chartValues = $derived(sortedData.slice(0, 15).map((s) => s.memberCount));
+	const chartValues = $derived(sortedData.slice(0, 15).map((s) => s.people));
 
 	const totalSchools = $derived(schoolStats.length);
-	const totalDelegations = $derived(schoolStats.reduce((acc, s) => acc + s.delegationCount, 0));
-	const totalMembers = $derived(schoolStats.reduce((acc, s) => acc + s.memberCount, 0));
+	const totalPeople = $derived(schoolStats.reduce((acc, s) => acc + s.people, 0));
 
 	let showTable = $state(false);
 </script>
@@ -35,16 +34,14 @@
 			<thead class="sticky top-0 bg-base-100">
 				<tr>
 					<th>{m.statsSchool()}</th>
-					<th class="text-right">{m.statsDelegations()}</th>
-					<th class="text-right">{m.statsMembers()}</th>
+					<th class="text-right">{m.statsParticipants()}</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each sortedData as school (school.school)}
 					<tr>
 						<td class="max-w-48 truncate">{school.school}</td>
-						<td class="text-right">{school.delegationCount}</td>
-						<td class="text-right">{school.memberCount}</td>
+						<td class="text-right">{school.people}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -88,12 +85,8 @@
 					<div class="stat-value text-xl">{totalSchools}</div>
 				</div>
 				<div class="stat py-2 px-3">
-					<div class="stat-title text-xs">{m.statsDelegations()}</div>
-					<div class="stat-value text-xl">{totalDelegations}</div>
-				</div>
-				<div class="stat py-2 px-3">
-					<div class="stat-title text-xs">{m.statsMembers()}</div>
-					<div class="stat-value text-xl">{totalMembers}</div>
+					<div class="stat-title text-xs">{m.statsParticipants()}</div>
+					<div class="stat-value text-xl">{totalPeople}</div>
 				</div>
 			</div>
 
@@ -107,7 +100,7 @@
 						values={chartValues}
 						horizontal
 						height="350px"
-						xAxisName={m.statsMembers()}
+						xAxisName={m.statsParticipants()}
 					/>
 				{/if}
 			</div>

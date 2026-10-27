@@ -36,10 +36,19 @@ describe('application details', () => {
 	it('shapes a delegation with its wishes in rank order', () => {
 		const details = delegationApplication(
 			{
-				school: { name: 'A' },
 				members: [
-					{ isHeadDelegate: true, user: person('1'), supervisors: [supervisor] },
-					{ isHeadDelegate: false, user: person('2'), supervisors: [supervisor] }
+					{
+						isHeadDelegate: true,
+						user: person('1'),
+						supervisors: [supervisor],
+						school: { name: 'B' }
+					},
+					{
+						isHeadDelegate: false,
+						user: person('2'),
+						supervisors: [supervisor],
+						school: { name: 'A' }
+					}
 				],
 				appliedForRoles: [
 					{ rank: 2, role: { name: 'Amnesty', nation: null } },
@@ -54,6 +63,8 @@ describe('application details', () => {
 			{ name: 'Amnesty', icon: undefined },
 			{ name: '', icon: undefined }
 		]);
+		// the members' own schools, one line
+		expect(details.school).toBe('A, B');
 		expect(details.people.map((p) => [p.id, p.isHeadDelegate])).toEqual([
 			['1', true],
 			['2', false]
@@ -175,8 +186,9 @@ describe('searchHitEntries', () => {
 		delegations: [
 			{
 				id: 'd1',
-				school: { name: 'Goethe' },
-				members: [{ isHeadDelegate: true, user: person, supervisors: [] }],
+				members: [
+					{ isHeadDelegate: true, user: person, supervisors: [], school: { name: 'Goethe' } }
+				],
 				appliedForRoles: []
 			}
 		],

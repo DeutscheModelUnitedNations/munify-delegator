@@ -59,7 +59,7 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 		return '';
 	},
 	committee: (row) => text(row.committee),
-	delegationSchool: (row) => text(row.delegationSchool),
+	school: (row) => text(row.school),
 	isHeadDelegate: (row) => booleanText(row.isHeadDelegate),
 	assignedRoleName: (row) => text(row.assignedRoleName),
 	teamRole: (row) => (row.teamRole ? translateTeamRole(row.teamRole) : ''),

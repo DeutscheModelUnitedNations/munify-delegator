@@ -14,7 +14,7 @@
 		singleParticipantId: string;
 		applied: boolean;
 		/** The application's answers, sent again unchanged with a role that is added. */
-		answers: { schoolId: string | null; motivation: string | null; experience: string | null };
+		answers: { motivation: string | null; experience: string | null };
 		roles: {
 			id: string;
 			name: string | null;

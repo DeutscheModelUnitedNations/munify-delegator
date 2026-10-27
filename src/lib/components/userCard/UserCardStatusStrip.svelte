@@ -28,43 +28,55 @@
 			!ofAgeAtConference(strip.conference.startConference, strip.user.birthday)
 	);
 
-	const tone: Record<AdministrativeStatus, { badge: string; icon: string }> = {
-		DONE: { badge: 'badge-success', icon: 'fa-check' },
-		PENDING: { badge: 'badge-warning', icon: 'fa-hourglass-half' },
-		PROBLEM: { badge: 'badge-error', icon: 'fa-triangle-exclamation' }
+	type Tone = AdministrativeStatus | 'NONE';
+
+	// Done is the normal case and stays quiet; only what still needs doing takes color.
+	const tone: Record<Tone, { text: string; icon: string }> = {
+		DONE: { text: 'text-base-content/70 [&>i]:text-success', icon: 'fa-check' },
+		PENDING: { text: 'text-warning', icon: 'fa-hourglass-half' },
+		PROBLEM: { text: 'text-error', icon: 'fa-triangle-exclamation' },
+		NONE: { text: 'text-base-content/40', icon: '' }
 	};
 </script>
 
-{#snippet pill(title: string, badge: string, icon: string, tab: UserCardTab)}
-	<button class="badge badge-soft cursor-pointer gap-1.5 {badge}" onclick={() => onOpenTab(tab)}>
-		<i class="fa-sharp-duotone fa-solid {icon} text-xs"></i>
+{#snippet pill(title: string, value: Tone, icon: string, tab: UserCardTab, mono = false)}
+	<button
+		class="btn btn-ghost btn-xs gap-1.5 font-normal {tone[value].text}"
+		class:font-mono={mono}
+		onclick={() => onOpenTab(tab)}
+	>
+		<i class="fa-sharp-duotone fa-solid {icon}"></i>
 		{title}
 	</button>
 {/snippet}
 
 {#snippet administrative(title: string, value: AdministrativeStatus)}
-	{@render pill(title, tone[value].badge, tone[value].icon, 'formalities')}
+	{@render pill(title, value, tone[value].icon, 'formalities')}
 {/snippet}
 
 {#if status}
-	<div class="flex flex-wrap items-center gap-2 text-sm">
-		{@render administrative(m.payment(), status.paymentStatus)}
-		{@render administrative(m.userAgreement(), status.termsAndConditions)}
-		{#if needsGuardian}
-			{@render administrative(m.guardianAgreement(), status.guardianConsent)}
-		{/if}
-		{@render administrative(m.mediaAgreement(), status.mediaConsent)}
-		{@render pill(
-			status.accessCardId ?? m.noAccessCard(),
-			status.accessCardId ? 'badge-success font-mono' : 'badge-neutral',
-			'fa-id-card',
-			'conference'
-		)}
-		{@render pill(
-			m.attendance(),
-			status.didAttend ? 'badge-success' : 'badge-neutral',
-			status.didAttend ? 'fa-calendar-check' : 'fa-calendar',
-			'conference'
-		)}
+	<div class="border-base-content/10 border-t pt-2">
+		<!-- Pulled out by the buttons' padding, so their text lines up with the name above -->
+		<div class="-mx-2 flex flex-wrap items-center gap-x-1 text-sm">
+			{@render administrative(m.payment(), status.paymentStatus)}
+			{@render administrative(m.userAgreement(), status.termsAndConditions)}
+			{#if needsGuardian}
+				{@render administrative(m.guardianAgreement(), status.guardianConsent)}
+			{/if}
+			{@render administrative(m.mediaAgreement(), status.mediaConsent)}
+			{@render pill(
+				status.accessCardId ?? m.noAccessCard(),
+				status.accessCardId ? 'DONE' : 'NONE',
+				'fa-id-card',
+				'conference',
+				!!status.accessCardId
+			)}
+			{@render pill(
+				m.attendance(),
+				status.didAttend ? 'DONE' : 'NONE',
+				status.didAttend ? 'fa-calendar-check' : 'fa-calendar',
+				'conference'
+			)}
+		</div>
 	</div>
 {/if}

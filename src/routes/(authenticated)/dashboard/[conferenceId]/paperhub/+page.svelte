@@ -86,7 +86,7 @@
 		<SupervisorPaperHubView conferenceId={routeParams.conferenceId} />
 	{:else if currentView === 'global' && isParticipant}
 		<GlobalPapersView conferenceId={routeParams.conferenceId} />
-	{:else}
+	{:else if isPaperAuthor}
 		<ParticipantPaperView conferenceId={routeParams.conferenceId} {isNSA} />
 	{/if}
 </div>

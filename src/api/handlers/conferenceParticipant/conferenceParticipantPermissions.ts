@@ -1,4 +1,5 @@
-import { schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db.js';
+import { apiError } from '#api/services/errors/apiError.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	assertAllowedRow,
@@ -66,4 +67,17 @@ export async function assertCanCreateParticipantStatus(
 /** The bulk attendance toggle is for the conference's participant care. */
 export async function assertCanSetAttendanceForAll(ctx: ApiContext, conferenceId: string) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+}
+
+/**
+ * The caller's own participant row in the conference, whose school they may change themselves.
+ * Refuses when they take no part in it (the team and the waiting list have no row).
+ */
+export async function assertOwnParticipant(ctx: ApiContext, conferenceId: string) {
+	const own = await db.query.conferenceParticipant.findFirst({
+		where: { conferenceId, userId: ctx.mustBeLoggedIn().sub },
+		columns: { id: true }
+	});
+	if (!own) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+	return own.id;
 }

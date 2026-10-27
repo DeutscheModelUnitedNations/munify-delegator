@@ -755,36 +755,46 @@ bun run preview
 
 #### 8. Schools
 
-- **A school is one row of `school`, shared by every conference** (`schema/schools.ts`).
-  Delegations, single participants, supervisors and waiting list entries point at it with an
-  optional `schoolId` (`schoolRef()`, `set null` on delete); no row names a school as text any
-  more. Every mutation that sets one takes the pair `schoolId` / `schoolName`
-  (`SchoolChoice`): an existing school, or a name that `resolveSchoolChoice`
-  (`#api/handlers/school/schoolService.ts`) finds (ignoring case and spacing) or creates. Both
-  left out keeps the school, both `null` removes it - **a school is always optional**, so
-  `applicationTextsComplete` no longer asks for one.
+- **A school is one row of `school`, shared by every conference** (`schema/schools.ts`), and
+  **only people have one**: a person's own school in a conference is
+  `conferenceParticipant.schoolId`; someone on the waiting list, who has no participant row yet,
+  has `waitingListEntry.schoolId` (both `schoolRef()`, `set null` on delete). Delegations, single
+  participants and supervisors keep no school. Every mutation that sets one takes the pair
+  `schoolId` / `schoolName` (`SchoolChoice`): an existing school, or a name that
+  `resolveSchoolChoice` (`#api/handlers/school/schoolService.ts`) finds (ignoring case and
+  spacing) or creates. Both left out keeps the school, both `null` removes it - **a school is
+  always optional**, so `applicationTextsComplete` does not ask for one.
+- **Where it is set:** applying stores the school the applicant names on their participant row
+  (`createDelegation`, `createSingleParticipant`, `createConferenceSupervisor`); joining a
+  delegation (`createDelegationMember`) takes the newcomer's own, which the join form fills in
+  with the head delegate's (`previewDelegation.headDelegateSchoolId`). Seating someone from the
+  waiting list carries the entry's school over. Afterwards people change their own with
+  `setMySchool` (`MySchool.svelte` on the dashboard stages, apart from the application texts:
+  every member of a delegation names theirs), and participant care corrects anyone's with
+  `setParticipantSchool` (`ParticipantSchoolSection` in the user card). The assignment never
+  changes it: a delegation merged from several schools keeps each person's.
+- **Reading it:** `conferenceParticipant.school`, and for whoever can read a registration
+  `delegationMember.school`, `singleParticipant.school` and `conferenceSupervisor.school`, read
+  relations through the participant row (only participant care reads participant rows
+  themselves). A delegation's schools are its members': `delegationSchoolsLabel` /
+  `distinctSchoolNames` (`#lib/helpers/delegationSchools.ts`), most common first.
 - **Visibility:** everybody reads a school's name and place (applicants pick from
   `searchSchools`); address, contact and the team's `notes` are masked except for participant
-  care and project management of a conference the school appears in (an application,
-  supervisor or waiting list entry), who also edit it (`updateSchool`) and merge duplicates
-  (`mergeSchools`, which repoints everything across all conferences and deletes the sources).
+  care and project management of a conference where someone has it as their own (or waits with
+  it), who also edit it (`updateSchool`) and merge duplicates (`mergeSchools`, which repoints the
+  participant rows and waiting list entries of all conferences and deletes the sources).
   `conferenceSchools` (the team's schools page) and `schoolMetrics` (per conference: registered,
   applied, seated, attended, from the waiting list) are participant care's.
-- **Every person has their own school** (`conferenceParticipant.schoolId`), next to the one their
-  application names. It is set from the application when they apply (`setParticipantSchool`,
-  `setRegistrationSchool` in `conferenceParticipantService.ts`; a delegation's members take its
-  school, and follow a change of it unless they come from another one), from the waiting list
-  when they are seated from it, and by participant care in the user card (`setParticipantSchool`
-  mutation, `ParticipantSchoolSection`). The assignment never changes it: a delegation merged from
-  several schools keeps each person's. `mergeSchools` repoints it like the rest.
 - **Seat limit per school:** `conference.maxSeatsPerSchool` (default 16, null for none). The
   assignment board counts the seats its plan gives each school - per person, by their own school
-  (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; a member without one counts for the
-  delegation's) - and warns past the limit; it never blocks. `schoolMetrics` and the schools page
-  count people by their own school too.
-- The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools a conference's
-  applications name; a suggestion's variants point at schools, and merging goes through
-  `mergeSchools`. The `statistics_delegations` view reads the school's name.
+  (`schoolSeats` / `schoolsOfGroup` with `schoolLookupsOf`; someone without a school counts for
+  none) - and warns past the limit; it never blocks. `schoolMetrics`, the schools page and the
+  statistics (`statistics_schools`, delegation members and single participants per school) count
+  people too.
+- The cleanup page's duplicate analysis (`schoolSuggestion`) groups the schools of the people in a
+  conference's applications; a suggestion's variants point at schools, and merging goes through
+  `mergeSchools`. The sighting's school filter matches an application when any of its people has
+  that school.
 
 #### 9. Automatic emails
 

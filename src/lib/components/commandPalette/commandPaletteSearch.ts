@@ -5,6 +5,7 @@ import {
 	translatedNationCodeAddressFormOptions
 } from '#lib/utils/nationTranslationHelper.svelte.js';
 import Fuse from 'fuse.js';
+import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
 import {
 	userParticipationType,
 	type SearchDelegation,
@@ -88,9 +89,8 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 				limit: RESULT_LIMIT
 			},
 			id: true,
-			school: { name: true },
 			assignedRole: { nationAlpha3Code: true, name: true },
-			members: { isHeadDelegate: true, user: { id: true } }
+			members: { isHeadDelegate: true, user: { id: true }, school: { name: true } }
 		}),
 		client.query.singleParticipants({
 			__args: {
@@ -107,7 +107,7 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 		...delegations.map((delegation) => ({
 			id: delegation.id,
 			title: delegationSeatTitle(delegation),
-			subtitle: delegation.school?.name ?? null,
+			subtitle: delegationSchoolsLabel(delegation.members),
 			holderUserId: delegation.members.find((member) => member.isHeadDelegate)?.user.id ?? null
 		})),
 		...singles.map((single) => ({
@@ -231,17 +231,19 @@ export async function searchConference(
 				familyName: true,
 				email: true
 			}),
-			// Delegations by the school they come from. `entryCode` is the delegation's join secret,
-			// masked for team members who do not hand it out, and a masked column fails the whole
-			// query: it is neither selected nor searched.
+			// Delegations by the schools their members come from. `entryCode` is the delegation's join
+			// secret, masked for team members who do not hand it out, and a masked column fails the
+			// whole query: it is neither selected nor searched.
 			client.query.delegations({
 				__args: {
-					where: { ...inConference, school: { name: containing(searchTerm.trim()) } },
+					where: {
+						...inConference,
+						members: { school: { name: containing(searchTerm.trim()) } }
+					},
 					limit: RESULT_LIMIT
 				},
 				id: true,
-				school: { name: true },
-				members: { isHeadDelegate: true, user: { id: true } }
+				members: { isHeadDelegate: true, user: { id: true }, school: { name: true } }
 			}),
 			client.query.paymentTransactions({
 				__args: {
@@ -278,7 +280,7 @@ export async function searchConference(
 		})),
 		delegations: delegations.map((delegation) => ({
 			id: delegation.id,
-			school: delegation.school?.name ?? null,
+			school: delegationSchoolsLabel(delegation.members),
 			memberCount: delegation.members.length,
 			headDelegateUserId:
 				delegation.members.find((member) => member.isHeadDelegate)?.user.id ?? null

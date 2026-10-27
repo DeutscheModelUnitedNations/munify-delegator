@@ -115,7 +115,7 @@
 {#if understood}
 	<ApplicationTextsSteps
 		firstNumber={3}
-		schoolLabel={m.whichSchoolDoesYourDelegationComeFrom()}
+		schoolLabel={m.whichSchoolAreYouFrom()}
 		motivationLabel={m.whyDoYouWantToJoinTheConference()}
 		experienceLabel={m.howMuchExperienceDoesYourDelegationHave()}
 		submitLabel={m.createDelegation()}

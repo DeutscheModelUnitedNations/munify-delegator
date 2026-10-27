@@ -4,11 +4,10 @@
 	import SupervisorRegistration from '../sections/SupervisorRegistration.svelte';
 	import ApplicationReview from '../sections/ApplicationReview.svelte';
 	import WaitingListSection from '../sections/WaitingListSection.svelte';
-	import ParticipantSchoolSection from '../ParticipantSchoolSection.svelte';
 
 	/**
 	 * How the person came in, whatever kind of registration it was: the application and what the
-	 * team made of it, their waiting list entry, and their own school.
+	 * team made of it, and their waiting list entry.
 	 */
 	interface Props {
 		userId: string;
@@ -38,6 +37,4 @@
 	{/if}
 
 	<WaitingListSection {userId} {conferenceId} />
-
-	<ParticipantSchoolSection {userId} {conferenceId} />
 </div>

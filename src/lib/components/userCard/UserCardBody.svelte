@@ -71,7 +71,7 @@
 
 {#snippet tabContent(tab: UserCardTab)}
 	{#if tab === 'person'}
-		<PersonTab {userId} />
+		<PersonTab {userId} {conferenceId} />
 	{:else if tab === 'registration'}
 		<RegistrationTab {userId} {conferenceId} {delegationId} {singleParticipantId} {supervisorId} />
 	{:else if tab === 'seat'}

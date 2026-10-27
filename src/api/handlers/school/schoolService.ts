@@ -6,7 +6,8 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 /**
- * What an application, a supervisor or a waiting list entry says about its school: an existing
+ * The school a person names for themselves (when applying, as a supervisor, on the waiting list or
+ * changing it later): an existing
  * school (`schoolId`), the name of one to find or create (`schoolName`), or neither. Leaving both
  * out of an update keeps the school; passing both as null removes it.
  */
@@ -111,13 +112,7 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 			.filter((note): note is string => !!note?.trim())
 			.join('\n\n');
 
-		for (const table of [
-			schema.delegation,
-			schema.singleParticipant,
-			schema.conferenceSupervisor,
-			schema.waitingListEntry,
-			schema.conferenceParticipant
-		]) {
+		for (const table of [schema.waitingListEntry, schema.conferenceParticipant]) {
 			await tx.update(table).set({ schoolId: targetId }).where(inArray(table.schoolId, sources));
 		}
 
@@ -166,8 +161,7 @@ export async function searchSchoolIds(search: string, limit: number) {
 			(s.name ilike ${`${escaped}%`}) desc,
 			(s.name ilike ${`% ${escaped}%`}) desc,
 			similarity(s.name, ${term}) desc,
-			(select count(*) from delegation d where d.school_id = s.id)
-				+ (select count(*) from single_participant sp where sp.school_id = s.id) desc,
+			(select count(*) from conference_participant p where p.school_id = s.id) desc,
 			s.name
 		limit ${limit}`);
 	return result.rows.map((row) => row.id);
@@ -263,7 +257,7 @@ const conferenceSchoolRowSchema = z.object({
 });
 
 /**
- * The schools named in one conference - by delegations, single participants, supervisors or the
+ * The schools of the people in one conference - participants, supervisors and those on the
  * waiting list - with how many people each sends, one page at a time.
  */
 export async function conferenceSchoolsPage(args: {

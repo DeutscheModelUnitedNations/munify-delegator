@@ -1,8 +1,7 @@
 import { type Transaction, db, schema } from '#api/db/db.js';
 import {
 	ensureConferenceParticipant,
-	setParticipantSchool,
-	setRegistrationSchool
+	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
 import {
 	fetchUserParticipations,
@@ -94,24 +93,21 @@ export async function registerSingleParticipant(
 	// The person's row, the registration and the role it applies for go in together, so a refused
 	// insert leaves none of them.
 	return db.transaction(async (tx) => {
-		const schoolId = await resolveSchoolChoice(args, tx);
+		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, userId);
+		// The school they name is their own; the registration keeps none.
+		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
 		let rowId: string;
 		if (existing) {
 			await tx
 				.update(schema.singleParticipant)
-				.set({
-					schoolId,
-					motivation: args.motivation,
-					experience: args.experience
-				})
+				.set({ motivation: args.motivation, experience: args.experience })
 				.where(eq(schema.singleParticipant.id, existing.id));
 			rowId = existing.id;
 		} else {
 			const created = await tx
 				.insert(schema.singleParticipant)
 				.values({
-					conferenceParticipantId: await ensureConferenceParticipant(tx, args.conferenceId, userId),
-					schoolId: nullToUndefined(schoolId),
+					conferenceParticipantId: participantId,
 					motivation: nullToUndefined(args.motivation),
 					experience: nullToUndefined(args.experience)
 				})
@@ -119,7 +115,6 @@ export async function registerSingleParticipant(
 				.then(assertFirstEntryExists);
 			rowId = created.id;
 		}
-		await setRegistrationSchool(tx, { singleParticipantId: rowId }, schoolId);
 
 		await applyForRoles(tx, rowId, [args.roleId]);
 
@@ -131,16 +126,14 @@ export async function registerSingleParticipant(
  * Updates a single participant's application and the roles it applies for, in one transaction.
  * The caller checks first that it may (`assertCanUpdateSingleParticipant`).
  */
-export async function updateSingleParticipantApplication(
-	args: SchoolChoice & {
-		id: string;
-		experience?: string | null;
-		motivation?: string | null;
-		applyForRolesIdList?: string[] | null;
-		unApplyForRolesIdList?: string[] | null;
-		applied?: boolean | null;
-	}
-) {
+export async function updateSingleParticipantApplication(args: {
+	id: string;
+	experience?: string | null;
+	motivation?: string | null;
+	applyForRolesIdList?: string[] | null;
+	unApplyForRolesIdList?: string[] | null;
+	applied?: boolean | null;
+}) {
 	if (args.applied) {
 		const participant = await db.query.singleParticipant
 			.findFirst({
@@ -152,19 +145,13 @@ export async function updateSingleParticipantApplication(
 		assertApplicationReady(participant, args, MIN_ROLE_APPLICATIONS.singleParticipant);
 	}
 
-	applicationFormSchema.parse({
-		schoolId: args.schoolId,
-		schoolName: args.schoolName,
-		experience: args.experience,
-		motivation: args.motivation
-	});
+	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
 
 	// A call that only changes role applications has nothing to set, and drizzle rejects an
 	// empty `set` ("No values to set").
 	await db.transaction(async (tx) => {
-		// School, motivation and experience are nullable, so an explicit null clears them.
+		// Motivation and experience are nullable, so an explicit null clears them.
 		const values = {
-			schoolId: await resolveSchoolChoice(args, tx),
 			experience: args.experience,
 			motivation: args.motivation,
 			applied: args.applied ?? undefined
@@ -175,7 +162,6 @@ export async function updateSingleParticipantApplication(
 				.set(values)
 				.where(eq(schema.singleParticipant.id, args.id));
 		}
-		await setRegistrationSchool(tx, { singleParticipantId: args.id }, values.schoolId);
 
 		await applyForRoles(tx, args.id, args.applyForRolesIdList ?? []);
 		await unapplyForRoles(tx, args.id, args.unApplyForRolesIdList ?? []);
@@ -205,8 +191,7 @@ export async function createAssignedSingleParticipant(args: {
 			.values({
 				conferenceParticipantId: participantId,
 				applied: true,
-				assignedRoleId: args.roleId,
-				schoolId: waiting?.schoolId ?? undefined
+				assignedRoleId: args.roleId
 			})
 			.returning()
 			.then(assertFirstEntryExists);
