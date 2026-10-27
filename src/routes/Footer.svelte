@@ -47,7 +47,7 @@
 				/>
 			</a>
 			<p>
-				Copyright © {new Date().getFullYear() !== 2024 ? '2024-' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}
+				Copyright © {new Date().getFullYear() !== 2024 ? '2024-' : ''}{new Date().getFullYear()} - {m.allRightsReservedBy()}
 				Deutsche Model United Nations e.V.
 			</p>
 			<div class="flex flex-col gap-4 sm:flex-row sm:gap-8">

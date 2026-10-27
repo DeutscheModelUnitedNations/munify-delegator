@@ -86,7 +86,7 @@ function checkAddress(user: Parameters<typeof addressIssues>[0], ctx: z.Refineme
 }
 
 function addressIssueMessage({ path }: AddressIssue) {
-	if (path === 'zip') return m.pleaseEnterAZipCpode();
+	if (path === 'zip') return m.pleaseEnterAZipCode();
 	if (path === 'city') return m.pleaseEnterACity();
 	return m.pleaseSelectRegion();
 }

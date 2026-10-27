@@ -122,7 +122,7 @@
 				
 							A --> Delegate[fa:fa-flag\n${m.delegateOfACountry()}]:::role
 							A --> NSA[fa:fa-megaphone\n${m.nonStateActorDiagram()}]:::role
-							NSA --> B[${m.doIhavePeopleToApplyWith()}]:::question
+							NSA --> B[${m.doIHavePeopleToApplyWith()}]:::question
 							Delegate --> B
 
 							B -->|${m.yes()}| C[${m.didSomeoneOfTheseAlreadyCreateADelegation()}]:::question

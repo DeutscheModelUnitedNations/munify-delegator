@@ -87,9 +87,9 @@
 			href: '#application-roles'
 		},
 		{
-			task: m.todoAnswerQuestionaire(),
+			task: m.todoAnswerQuestionnaire(),
 			done: applicationTextsComplete(singleParticipant),
-			hint: m.todoAnswerQuestionaireHelp(),
+			hint: m.todoAnswerQuestionnaireHelp(),
 			href: '#application-texts'
 		}
 	]);

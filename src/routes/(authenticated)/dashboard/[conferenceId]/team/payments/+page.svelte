@@ -308,7 +308,7 @@
 							disabled={hotkeyDebounce}
 						>
 							<i class="fa-sharp-duotone fa-solid fa-check"></i>
-							{m.markAsRecieved()}
+							{m.markAsReceived()}
 							<Kbd hotkey="alt+a" />
 						</button>
 					{:else}
@@ -374,7 +374,7 @@
 	{#if transaction.recievedAt}
 		<div class="alert alert-success mb-4">
 			<i class="fa-sharp-duotone fa-solid fa-check text-2xl"></i>
-			{m.paymentRecieved({ date: formatLongDate(transaction.recievedAt) })}
+			{m.paymentReceived({ date: formatLongDate(transaction.recievedAt) })}
 		</div>
 	{/if}
 

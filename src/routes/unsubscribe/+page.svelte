@@ -44,7 +44,7 @@
 				<button class="btn btn-error {email ? '' : 'btn-disabled'} mt-5" onclick={unsubscribe}
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>
-				<h3 class="mt-6 text-lg">{m.usubscribeSomeOnly()}</h3>
+				<h3 class="mt-6 text-lg">{m.unsubscribeSomeOnly()}</h3>
 
 				<a class="btn btn-primary" href={resolve('my-account')}>{m.goToProfile()}</a>
 			</div>

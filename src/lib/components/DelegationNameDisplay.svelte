@@ -14,7 +14,7 @@
 			icon: 'text',
 			title: m.delegationName(),
 			value: codenmz(delegationId),
-			desc: m.delegationNameExplaination()
+			desc: m.delegationNameExplanation()
 		}
 	]);
 </script>

@@ -66,9 +66,9 @@
 			href: '#application-preferences'
 		},
 		{
-			task: m.todoAnswerQuestionaire(),
+			task: m.todoAnswerQuestionnaire(),
 			done: applicationTextsComplete(delegationMember.delegation),
-			hint: m.todoAnswerQuestionaireHelp(),
+			hint: m.todoAnswerQuestionnaireHelp(),
 			href: '#application-texts'
 		}
 	]);

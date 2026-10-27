@@ -130,6 +130,6 @@
 			{/if}
 		</div>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
-		<p class="mt-4 text-center text-sm">{@html m.deleteAccountGPDR()}</p>
+		<p class="mt-4 text-center text-sm">{@html m.deleteAccountGDPR()}</p>
 	</div>
 </div>

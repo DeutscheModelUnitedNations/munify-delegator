@@ -37,7 +37,7 @@ export function assertApplicationReady(
 	minRoleApplications: number
 ) {
 	if (applicant.appliedForRoles.length < minRoleApplications) {
-		throw apiError('CONFLICT', m.notEnoughtRoleApplications());
+		throw apiError('CONFLICT', m.notEnoughRoleApplications());
 	}
 	if (
 		!applicationTextsComplete({

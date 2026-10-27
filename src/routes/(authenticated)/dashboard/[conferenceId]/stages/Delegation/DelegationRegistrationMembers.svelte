@@ -88,7 +88,7 @@
 		<i class="fa-sharp-duotone fa-solid fa-signature text-base-content/50 text-xl"></i>
 		<div class="flex min-w-0 flex-col">
 			<span class="text-base-content/60 text-xs">
-				{m.delegationName()} · {m.delegationNameExplaination()}
+				{m.delegationName()} · {m.delegationNameExplanation()}
 			</span>
 			<span class="font-semibold break-words">{codenamize(delegationId)}</span>
 		</div>

@@ -124,7 +124,7 @@
 				<div>
 					<h2 class="text-xl font-bold">{m.completeData()}</h2>
 					<p>
-						{m.completeDataExplaination()}
+						{m.completeDataExplanation()}
 					</p>
 				</div>
 			</div>

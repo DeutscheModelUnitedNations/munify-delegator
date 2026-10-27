@@ -210,7 +210,7 @@
 	{#if allAssigned}
 		<div class="alert alert-success alert-soft">
 			<i class="fa-sharp-duotone fa-solid fa-circle-check text-2xl"></i>
-			<span class="font-bold">{m.committeesSucessfullyAssigned()}</span>
+			<span class="font-bold">{m.committeesSuccessfullyAssigned()}</span>
 		</div>
 	{:else if !isHeadDelegate}
 		<div class="alert alert-warning alert-soft">
