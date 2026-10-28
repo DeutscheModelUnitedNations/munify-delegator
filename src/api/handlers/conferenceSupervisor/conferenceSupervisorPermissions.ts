@@ -84,16 +84,6 @@ export async function assertCanCreateConferenceSupervisor(
 }
 
 /**
- * The supervisor row if the caller may update it (the row's update ability), as a where-clause:
- * an update the caller may not make changes nothing, and the mutation answers with the row as it
- * is.
- */
-export async function updatableConferenceSupervisor(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.conferenceSupervisor.filter('update')).merge({ where: { id } }).sql
-		.where;
-}
-
-/**
  * Connecting somebody else to a supervisor is participant care's job (the user card's supervisor
  * modal); the code alone only lets a participant attach themselves.
  */

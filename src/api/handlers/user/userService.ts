@@ -1,10 +1,5 @@
 import { db, schema } from '#api/db/db.js';
-import type { Context } from '#api/context.js';
-import { emailConflictError, reportEmailConflict } from '#api/services/account/emailConflict.js';
-import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation.js';
-import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes.js';
-import { assertFindFirstExists } from '@m1212e/rumble';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { apiError } from '#api/services/errors/apiError.js';
@@ -214,77 +209,4 @@ export async function updateNewsletterPreferences(args: {
 		.returning({ id: schema.user.id });
 
 	return updated.map(({ id }) => id);
-}
-
-/** Answers an email conflict on the mutation with an error the frontend can tell apart. */
-async function throwEmailConflict(
-	userSubject: string,
-	email: string,
-	error: unknown
-): Promise<never> {
-	const conflict = await reportEmailConflict(userSubject, email, error);
-	throw emailConflictError(conflict);
-}
-
-/** The signed-in caller, as the request context knows them. */
-type Caller = ReturnType<Context['mustBeLoggedIn']>;
-
-/** The claims the caller's own row is written from; an account without an email cannot have one. */
-function selfClaims(caller: Caller) {
-	if (!caller.email) {
-		throw apiError('INVALID_INPUT', m.userEmailMissingFromProvider());
-	}
-	return { email: caller.email, locale: caller.locale ?? PUBLIC_DEFAULT_LOCALE };
-}
-
-/**
- * Creates or refreshes the caller's own row from their OIDC claims. Called right after login,
- * which is the only moment the app learns about a new account.
- */
-export async function upsertCallerRow(caller: Caller) {
-	const { email, locale } = selfClaims(caller);
-
-	try {
-		const [user] = await db
-			.insert(schema.user)
-			.values({
-				id: caller.sub,
-				email,
-				familyName: '',
-				givenName: '',
-				preferredUsername: email,
-				locale
-			})
-			.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
-			.returning();
-
-		return {
-			userNeedsAdditionalInfo: !userFormSchema.safeParse({
-				...user,
-				given_name: user.givenName,
-				family_name: user.familyName
-			}).success,
-			userId: user.id
-		};
-	} catch (error) {
-		if (!isUniqueViolationOn(error, 'email')) throw error;
-		return throwEmailConflict(caller.sub, email, error);
-	}
-}
-
-/**
- * Looks a user up by id or email so management can add them to something. Not ability-filtered
- * on the target, so the check is on the caller instead (`assertCanPreviewUsers`).
- */
-export async function previewUser(emailOrId: string) {
-	const found = await db.query.user
-		.findFirst({ where: { OR: [{ id: emailOrId }, { email: emailOrId }] } })
-		.then(assertFindFirstExists);
-
-	return {
-		id: found.id,
-		email: found.email,
-		given_name: found.givenName ?? null,
-		family_name: found.familyName ?? null
-	};
 }

@@ -34,7 +34,7 @@
 	let currency = $derived(conferencePaymentData?.currency);
 
 	let transferDetails = $derived([
-		{ label: m.accountHolder(), value: conferencePaymentData?.accountHolder ?? '' },
+		{ label: m.accountHolder(), value: conferencePaymentData?.bankAccountHolder ?? '' },
 		{ label: m.iban(), value: conferencePaymentData?.iban ?? '' },
 		{ label: m.bic(), value: conferencePaymentData?.bic ?? '' },
 		{ label: m.bankName(), value: conferencePaymentData?.bankName ?? '' },
@@ -118,7 +118,7 @@
 			<DisabledInput value={reference} />
 		</div>
 		<GiroCode
-			name={conferencePaymentData?.accountHolder ?? ''}
+			name={conferencePaymentData?.bankAccountHolder ?? ''}
 			iban={conferencePaymentData?.iban ?? ''}
 			amount={(totalAmount ?? '').toString()}
 			currency={currency ?? ''}

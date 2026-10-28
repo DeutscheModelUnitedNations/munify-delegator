@@ -703,7 +703,7 @@ export type Committee = {
 };
 		
 export type CommitteeAssignmentInput = {
-  committeeId: ID,
+  committeeId?: ID | null | undefined,
   delegationMemberId: ID    
 };
 		
@@ -801,9 +801,10 @@ export type Conference = {
     search?: String | null | undefined,
     where?: WaitinglistentryWhereInputArgument | null | undefined
   }) => Waitinglistentry[],
-  accountHolder: String | null,
+  applicationDeadline: DateTime,
   assignmentReleased: Boolean,
   assignmentReleasedAt: DateTime | null,
+  bankAccountHolder: String | null,
   bankName: String | null,
   bic: String | null,
   calendarDays: (p?: {
@@ -955,7 +956,6 @@ export type Conference = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
-  startAssignment: DateTime,
   startConference: DateTime,
   state: ConferencestateEnum,
   surveyQuestions: (p?: {
@@ -996,9 +996,10 @@ export type Conference = {
 };
 		
 export type ConferenceOrderInputArgument = {
-  accountHolder?: SortingParameter | null | undefined,
+  applicationDeadline?: SortingParameter | null | undefined,
   assignmentReleased?: SortingParameter | null | undefined,
   assignmentReleasedAt?: SortingParameter | null | undefined,
+  bankAccountHolder?: SortingParameter | null | undefined,
   bankName?: SortingParameter | null | undefined,
   bic?: SortingParameter | null | undefined,
   certificateFileId?: SortingParameter | null | undefined,
@@ -1035,7 +1036,6 @@ export type ConferenceOrderInputArgument = {
   registrationDeadlineGracePeriodMinutes?: SortingParameter | null | undefined,
   showCalendar?: SortingParameter | null | undefined,
   showInfoExpanded?: SortingParameter | null | undefined,
-  startAssignment?: SortingParameter | null | undefined,
   startConference?: SortingParameter | null | undefined,
   state?: SortingParameter | null | undefined,
   termsAndConditionsFileId?: SortingParameter | null | undefined,
@@ -1079,9 +1079,10 @@ export type ConferenceWhereInputArgument = {
   NOT?: ConferenceWhereInputArgument | null | undefined,
   OR?: ConferenceWhereInputArgument[] | undefined,
   WaitingListEntry?: WaitinglistentryWhereInputArgument | null | undefined,
-  accountHolder?: StringWhereInputArgument | null | undefined,
+  applicationDeadline?: DateTimeWhereInputArgument | null | undefined,
   assignmentReleased?: BooleanWhereInputArgument | null | undefined,
   assignmentReleasedAt?: DateTimeWhereInputArgument | null | undefined,
+  bankAccountHolder?: StringWhereInputArgument | null | undefined,
   bankName?: StringWhereInputArgument | null | undefined,
   bic?: StringWhereInputArgument | null | undefined,
   calendarDays?: CalendardayWhereInputArgument | null | undefined,
@@ -1137,7 +1138,6 @@ export type ConferenceWhereInputArgument = {
   showCalendar?: BooleanWhereInputArgument | null | undefined,
   showInfoExpanded?: BooleanWhereInputArgument | null | undefined,
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
-  startAssignment?: DateTimeWhereInputArgument | null | undefined,
   startConference?: DateTimeWhereInputArgument | null | undefined,
   state?: ConferencestateEnum | null | undefined,
   surveyQuestions?: SurveyquestionWhereInputArgument | null | undefined,
@@ -2232,7 +2232,6 @@ export type Mutation = {
     committeeId?: ID | null | undefined,
     conferenceId: ID,
     fileId: ID,
-    fileName: String,
     title?: String | null | undefined
   }) => Resolution,
   createReviewerSnippet: (p: {
@@ -2427,7 +2426,8 @@ export type Mutation = {
   }) => Committeeagendaitem,
   setAssignmentReleased: (p: {
     conferenceId: ID,
-    released: Boolean
+    released: Boolean,
+    sendEmails?: Boolean | null | undefined
   }) => Boolean,
   setAssignmentReview: (p: {
     delegationId?: ID | null | undefined,
@@ -2486,13 +2486,9 @@ export type Mutation = {
     document: LayoutDocument,
     layout?: JSON | null | undefined
   }) => Conference,
-  setMySchool: (p: {
-    conferenceId: ID,
-    schoolId?: ID | null | undefined,
-    schoolName?: String | null | undefined
-  }) => Conferenceparticipant,
   setParticipantSchool: (p: {
-    id: ID,
+    conferenceId: ID,
+    id?: ID | null | undefined,
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
   }) => Conferenceparticipant,
@@ -2565,7 +2561,8 @@ export type Mutation = {
     resolutionHeadline?: String | null | undefined
   }) => Committee,
   updateConference: (p: {
-    accountHolder?: String | null | undefined,
+    applicationDeadline?: DateTime | null | undefined,
+    bankAccountHolder?: String | null | undefined,
     bankName?: String | null | undefined,
     bic?: String | null | undefined,
     certificateFileId?: ID | null | undefined,
@@ -2600,7 +2597,6 @@ export type Mutation = {
     registrationDeadlineGracePeriodMinutes?: Int | null | undefined,
     showCalendar?: Boolean | null | undefined,
     showInfoExpanded?: Boolean | null | undefined,
-    startAssignment?: DateTime | null | undefined,
     startConference?: DateTime | null | undefined,
     state?: ConferencestateEnum | null | undefined,
     termsAndConditionsFileId?: ID | null | undefined,
@@ -2648,11 +2644,6 @@ export type Mutation = {
     assignedCommitteeId: ID,
     id: ID
   }) => Delegationmember,
-  updateManyDelegationMemberCommittee: (p: {
-    assignedCommitteeId?: ID | null | undefined,
-    conferenceId: ID,
-    ids: ID[]
-  }) => Int,
   updateNonStateActor: (p: {
     abbreviation?: String | null | undefined,
     description?: String | null | undefined,
@@ -2779,8 +2770,7 @@ export type Mutation = {
     requests?: String | null | undefined,
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
-  }) => Waitinglistentry,
-  upsertSelf: () => UpsertSelfResult    
+  }) => Waitinglistentry    
 };
 		
 export type MyReviewStats = {
@@ -3298,16 +3288,6 @@ export type Query = {
   assignmentUnit: (p: {
     id: ID
   }) => Assignmentunit,
-  assignmentUnitMember: (p: {
-    id: ID
-  }) => Assignmentunitmember,
-  assignmentUnitMembers: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: AssignmentunitmemberOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: AssignmentunitmemberWhereInputArgument | null | undefined
-  }) => Assignmentunitmember[],
   assignmentUnits: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3480,9 +3460,6 @@ export type Query = {
     search?: String | null | undefined,
     where?: ConferencesupervisorWhereInputArgument | null | undefined
   }) => Conferencesupervisor[],
-  conferenceSupervisorsCount: (p?: {
-    where?: ConferencesupervisorWhereInputArgument | null | undefined
-  }) => Int,
   conferences: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3537,12 +3514,6 @@ export type Query = {
     conferenceId: ID,
     revision?: Int | null | undefined
   }) => EmailKindStats[],
-  findGlobalIntroductionPapers: (p: {
-    conferenceId: ID
-  }) => Paper[],
-  findGlobalPapersGroupedByCommittee: (p: {
-    conferenceId: ID
-  }) => CommitteePaperGroup[],
   findIntroductionPapers: (p: {
     conferenceId: ID
   }) => Paper[],
@@ -3611,26 +3582,6 @@ export type Query = {
   paper: (p: {
     id: ID
   }) => Paper,
-  paperReview: (p: {
-    id: ID
-  }) => Paperreview,
-  paperReviews: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: PaperreviewOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: PaperreviewWhereInputArgument | null | undefined
-  }) => Paperreview[],
-  paperVersion: (p: {
-    id: ID
-  }) => Paperversion,
-  paperVersions: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: PaperversionOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: PaperversionWhereInputArgument | null | undefined
-  }) => Paperversion[],
   papers: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3687,9 +3638,6 @@ export type Query = {
     conferenceId: ID,
     entryCode: String
   }) => DelegationPreview,
-  previewUserByIdOrEmail: (p: {
-    emailOrId: String
-  }) => UserPreview,
   resolution: (p: {
     id: ID
   }) => Resolution,
@@ -3751,9 +3699,6 @@ export type Query = {
     search?: String | null | undefined,
     where?: SchoolWhereInputArgument | null | undefined
   }) => School[],
-  schoolsCount: (p?: {
-    where?: SchoolWhereInputArgument | null | undefined
-  }) => Int,
   searchHistories: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3805,9 +3750,6 @@ export type Query = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
-  singleParticipantsCount: (p?: {
-    where?: SingleparticipantWhereInputArgument | null | undefined
-  }) => Int,
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,
@@ -3864,16 +3806,6 @@ export type Query = {
   user: (p: {
     id: ID
   }) => User,
-  userReferenceInPaymentTransaction: (p: {
-    id: ID
-  }) => Userreferenceinpaymenttransaction,
-  userReferenceInPaymentTransactions: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: UserreferenceinpaymenttransactionOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: UserreferenceinpaymenttransactionWhereInputArgument | null | undefined
-  }) => Userreferenceinpaymenttransaction[],
   users: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -3922,7 +3854,6 @@ export type Resolution = {
     where?: StoredfileWhereInputArgument | null | undefined
   }) => Storedfile,
   fileId: ID,
-  fileName: String,
   id: ID,
   search_distance: Float | null,
   title: String,
@@ -3934,7 +3865,6 @@ export type ResolutionOrderInputArgument = {
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   fileId?: SortingParameter | null | undefined,
-  fileName?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   title?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
@@ -3951,7 +3881,6 @@ export type ResolutionWhereInputArgument = {
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   file?: StoredfileWhereInputArgument | null | undefined,
   fileId?: IDWhereInputArgument | null | undefined,
-  fileName?: StringWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   title?: StringWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
@@ -4355,7 +4284,6 @@ export type Singleparticipant = {
     where?: ConferenceroleWhereInputArgument | null | undefined
   }) => Conferencerole | null,
   assignedRoleId: ID | null,
-  assignmentDetails: String | null,
   assignmentReview: (p?: {
     orderBy?: AssignmentreviewOrderInputArgument | null | undefined,
     where?: AssignmentreviewWhereInputArgument | null | undefined
@@ -4395,7 +4323,6 @@ export type Singleparticipant = {
 export type SingleparticipantOrderInputArgument = {
   applied?: SortingParameter | null | undefined,
   assignedRoleId?: SortingParameter | null | undefined,
-  assignmentDetails?: SortingParameter | null | undefined,
   conferenceParticipantId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   experience?: SortingParameter | null | undefined,
@@ -4412,7 +4339,6 @@ export type SingleparticipantWhereInputArgument = {
   appliedForRoles?: ConferenceroleWhereInputArgument | null | undefined,
   assignedRole?: ConferenceroleWhereInputArgument | null | undefined,
   assignedRoleId?: IDWhereInputArgument | null | undefined,
-  assignmentDetails?: StringWhereInputArgument | null | undefined,
   assignmentReview?: AssignmentreviewWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceParticipantId?: IDWhereInputArgument | null | undefined,
@@ -4704,7 +4630,6 @@ export type Storedfile = {
     search?: String | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
   }) => Conference[],
-  conferenceId: ID,
   contractOf: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -4783,7 +4708,6 @@ export type Storedfile = {
 };
 		
 export type StoredfileOrderInputArgument = {
-  conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   fileName?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
@@ -4800,7 +4724,6 @@ export type StoredfileWhereInputArgument = {
   NOT?: StoredfileWhereInputArgument | null | undefined,
   OR?: StoredfileWhereInputArgument[] | undefined,
   certificateOf?: ConferenceWhereInputArgument | null | undefined,
-  conferenceId?: IDWhereInputArgument | null | undefined,
   contractOf?: ConferenceWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   emblemOf?: ConferenceWhereInputArgument | null | undefined,
@@ -4888,16 +4811,6 @@ export type Subscription = {
   assignmentUnit: (p: {
     id: ID
   }) => Assignmentunit,
-  assignmentUnitMember: (p: {
-    id: ID
-  }) => Assignmentunitmember,
-  assignmentUnitMembers: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: AssignmentunitmemberOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: AssignmentunitmemberWhereInputArgument | null | undefined
-  }) => Assignmentunitmember[],
   assignmentUnits: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5048,9 +4961,6 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: ConferencesupervisorWhereInputArgument | null | undefined
   }) => Conferencesupervisor[],
-  conferenceSupervisorsCount: (p?: {
-    where?: ConferencesupervisorWhereInputArgument | null | undefined
-  }) => Int,
   conferences: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5104,26 +5014,6 @@ export type Subscription = {
   paper: (p: {
     id: ID
   }) => Paper,
-  paperReview: (p: {
-    id: ID
-  }) => Paperreview,
-  paperReviews: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: PaperreviewOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: PaperreviewWhereInputArgument | null | undefined
-  }) => Paperreview[],
-  paperVersion: (p: {
-    id: ID
-  }) => Paperversion,
-  paperVersions: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: PaperversionOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: PaperversionWhereInputArgument | null | undefined
-  }) => Paperversion[],
   papers: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5214,9 +5104,6 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: SchoolWhereInputArgument | null | undefined
   }) => School[],
-  schoolsCount: (p?: {
-    where?: SchoolWhereInputArgument | null | undefined
-  }) => Int,
   searchHistories: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5237,9 +5124,6 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
-  singleParticipantsCount: (p?: {
-    where?: SingleparticipantWhereInputArgument | null | undefined
-  }) => Int,
   surveyAnswer: (p: {
     id: ID
   }) => Surveyanswer,
@@ -5296,16 +5180,6 @@ export type Subscription = {
   user: (p: {
     id: ID
   }) => User,
-  userReferenceInPaymentTransaction: (p: {
-    id: ID
-  }) => Userreferenceinpaymenttransaction,
-  userReferenceInPaymentTransactions: (p?: {
-    limit?: Int | null | undefined,
-    offset?: Int | null | undefined,
-    orderBy?: UserreferenceinpaymenttransactionOrderInputArgument | null | undefined,
-    search?: String | null | undefined,
-    where?: UserreferenceinpaymenttransactionWhereInputArgument | null | undefined
-  }) => Userreferenceinpaymenttransaction[],
   users: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5632,11 +5506,6 @@ export type UpdateAllConferenceParticipantsResponse = {
   changed: Int    
 };
 		
-export type UpsertSelfResult = {
-  userId: String,
-  userNeedsAdditionalInfo: Boolean    
-};
-		
 export type User = {
   apartment: String | null,
   birthday: Date | null,
@@ -5817,13 +5686,6 @@ export type UserOrderInputArgument = {
   zip?: SortingParameter | null | undefined    
 };
 		
-export type UserPreview = {
-  email: String,
-  family_name: String | null,
-  given_name: String | null,
-  id: ID    
-};
-		
 export type UserWhereInputArgument = {
   AND?: UserWhereInputArgument[] | undefined,
   NOT?: UserWhereInputArgument | null | undefined,
@@ -5915,7 +5777,6 @@ export type UserreferenceinpaymenttransactionWhereInputArgument = {
 };
 		
 export type Waitinglistentry = {
-  assigned: Boolean,
   assignedAt: DateTime | null,
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
@@ -5943,7 +5804,6 @@ export type Waitinglistentry = {
 };
 		
 export type WaitinglistentryOrderInputArgument = {
-  assigned?: SortingParameter | null | undefined,
   assignedAt?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
@@ -5961,7 +5821,6 @@ export type WaitinglistentryWhereInputArgument = {
   AND?: WaitinglistentryWhereInputArgument[] | undefined,
   NOT?: WaitinglistentryWhereInputArgument | null | undefined,
   OR?: WaitinglistentryWhereInputArgument[] | undefined,
-  assigned?: BooleanWhereInputArgument | null | undefined,
   assignedAt?: DateTimeWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
@@ -5999,7 +5858,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnitMember", "assignmentUnitMembers", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferenceSupervisorsCount", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "schoolsCount", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "singleParticipantsCount", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

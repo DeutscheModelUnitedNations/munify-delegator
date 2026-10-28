@@ -14,6 +14,7 @@ import { getLocale } from '#lib/paraglide/runtime.js';
 import { localeOfUser } from '#api/services/requestLocale.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
+import { isParticipantOrTeamMember } from '#api/services/registration/participation.js';
 
 /** An invitation as the service needs it, already authorized by the resolver. */
 type Invitation = {
@@ -68,6 +69,129 @@ function findPendingInvitation(conferenceId: string, email: string) {
 	});
 }
 
+type CreatedInvitation = {
+	id: string;
+	email: string;
+	role: string;
+	token: string | null;
+	expiresAt: Date;
+	addedDirectly: boolean;
+};
+
+/** What one invitation is sent in: the conference, who invites, and where the links point. */
+type InvitationContext = {
+	callerId: string;
+	origin: string;
+	conferenceId: string;
+	conferenceTitle: string;
+	inviterName: string | undefined;
+};
+
+/** Why an address cannot be invited, or undefined when it can. */
+async function invitationRefusal(conferenceId: string, email: string) {
+	const existingTeamMember = await db.query.teamMember.findFirst({
+		where: { conferenceId, user: { email } }
+	});
+	if (existingTeamMember) return { refusal: m.invitationAlreadyTeamMember() };
+
+	const pending = await findPendingInvitation(conferenceId, email);
+	if (pending) return { refusal: m.invitationAlreadyPending() };
+
+	const existingUser = await db.query.user.findFirst({ where: { email } });
+	if (
+		existingUser &&
+		(await isParticipantOrTeamMember({ conferenceId, userId: existingUser.id }))
+	) {
+		// Not a team member (checked above), so a participant: one part per conference.
+		return { refusal: m.invitationAlreadyParticipant() };
+	}
+	return { existingUser };
+}
+
+/**
+ * Known user: add straight to the team and record an already-used invitation so the audit trail
+ * still shows who invited them. Both or neither: a membership without its record would hide who
+ * granted it.
+ */
+async function addKnownUser(
+	context: InvitationContext,
+	user: { id: string; givenName: string; familyName: string; locale: string },
+	email: string,
+	role: TeamRole
+): Promise<CreatedInvitation> {
+	const { conferenceId, callerId } = context;
+	const now = new Date();
+	const teamMember = await db.transaction(async (tx) => {
+		const member = await tx
+			.insert(schema.teamMember)
+			.values({ conferenceId, userId: user.id, role })
+			.returning()
+			.then(assertFirstEntryExists);
+
+		await tx.insert(schema.teamMemberInvitation).values({
+			email,
+			role,
+			token: hashToken(makeInvitationToken()),
+			expiresAt: now,
+			usedAt: now,
+			conferenceId,
+			invitedById: callerId,
+			acceptedById: user.id
+		});
+
+		return member;
+	});
+
+	sendTeamWelcomeEmail({
+		conferenceId,
+		recipientName: `${user.givenName} ${user.familyName}`,
+		recipientEmail: email,
+		conferenceTitle: context.conferenceTitle,
+		role,
+		inviterName: context.inviterName,
+		dashboardUrl: `${context.origin}/dashboard/${conferenceId}`,
+		locale: localeOfUser(user.locale)
+	}).catch((err) => console.error('Failed to send welcome email:', err));
+
+	return { id: teamMember.id, email, role, token: null, expiresAt: now, addedDirectly: true };
+}
+
+/** Unknown user: store only the hash, hand the plaintext token back to the caller. */
+async function inviteUnknownUser(
+	context: InvitationContext,
+	email: string,
+	role: TeamRole
+): Promise<CreatedInvitation> {
+	const { conferenceId } = context;
+	const token = makeInvitationToken();
+	const expiresAt = getInvitationExpiryDate();
+	const record = await db
+		.insert(schema.teamMemberInvitation)
+		.values({
+			email,
+			role,
+			token: hashToken(token),
+			expiresAt,
+			conferenceId,
+			invitedById: context.callerId
+		})
+		.returning()
+		.then(assertFirstEntryExists);
+
+	sendTeamInvitationEmail({
+		conferenceId,
+		recipientEmail: email,
+		conferenceTitle: context.conferenceTitle,
+		role,
+		inviterName: context.inviterName,
+		inviteUrl: `${context.origin}/auth/accept-invitation?token=${token}`,
+		expiresAt,
+		locale: getLocale()
+	}).catch((err) => console.error('Failed to send invitation email:', err));
+
+	return { id: record.id, email, role, token, expiresAt, addedDirectly: false };
+}
+
 /**
  * Invites several people at once. Each address is handled independently: one failure is
  * reported in `errors` and the rest still go through.
@@ -85,125 +209,31 @@ export async function createInvitations(
 	const conference = await db.query.conference
 		.findFirst({ where: { id: conferenceId } })
 		.then(assertFindFirstExists);
-	const inviterName = await inviterDisplayName(callerId);
+	const context: InvitationContext = {
+		callerId,
+		origin,
+		conferenceId,
+		conferenceTitle: conference.title,
+		inviterName: await inviterDisplayName(callerId)
+	};
 
-	const created: {
-		id: string;
-		email: string;
-		role: string;
-		token: string | null;
-		expiresAt: Date;
-		addedDirectly: boolean;
-	}[] = [];
+	const created: CreatedInvitation[] = [];
 	const errors: { email: string; error: string }[] = [];
 
 	for (const invitation of invitations) {
 		const email = invitation.email.toLowerCase().trim();
 		try {
 			await assertMayGrant(invitation.role);
-
-			const existingTeamMember = await db.query.teamMember.findFirst({
-				where: { conferenceId, user: { email } }
-			});
-			if (existingTeamMember) {
-				errors.push({ email, error: m.invitationAlreadyTeamMember() });
+			const { refusal, existingUser } = await invitationRefusal(conferenceId, email);
+			if (refusal) {
+				errors.push({ email, error: refusal });
 				continue;
 			}
-
-			const pending = await findPendingInvitation(conferenceId, email);
-			if (pending) {
-				errors.push({ email, error: m.invitationAlreadyPending() });
-				continue;
-			}
-
-			const existingUser = await db.query.user.findFirst({ where: { email } });
-
-			if (existingUser) {
-				// Known user: add straight to the team and record an already-used invitation so
-				// the audit trail still shows who invited them. Both or neither: a membership
-				// without its record would hide who granted it.
-				const now = new Date();
-				const teamMember = await db.transaction(async (tx) => {
-					const member = await tx
-						.insert(schema.teamMember)
-						.values({
-							conferenceId,
-							userId: existingUser.id,
-							role: invitation.role
-						})
-						.returning()
-						.then(assertFirstEntryExists);
-
-					await tx.insert(schema.teamMemberInvitation).values({
-						email,
-						role: invitation.role,
-						token: hashToken(makeInvitationToken()),
-						expiresAt: now,
-						usedAt: now,
-						conferenceId,
-						invitedById: callerId,
-						acceptedById: existingUser.id
-					});
-
-					return member;
-				});
-
-				created.push({
-					id: teamMember.id,
-					email,
-					role: invitation.role,
-					token: null,
-					expiresAt: now,
-					addedDirectly: true
-				});
-
-				sendTeamWelcomeEmail({
-					conferenceId,
-					recipientName: `${existingUser.givenName} ${existingUser.familyName}`,
-					recipientEmail: email,
-					conferenceTitle: conference.title,
-					role: invitation.role,
-					inviterName,
-					dashboardUrl: `${origin}/dashboard/${conferenceId}`,
-					locale: localeOfUser(existingUser.locale)
-				}).catch((err) => console.error('Failed to send welcome email:', err));
-			} else {
-				// Unknown user: store only the hash, hand the plaintext token back to the caller.
-				const token = makeInvitationToken();
-				const expiresAt = getInvitationExpiryDate();
-				const record = await db
-					.insert(schema.teamMemberInvitation)
-					.values({
-						email,
-						role: invitation.role,
-						token: hashToken(token),
-						expiresAt,
-						conferenceId,
-						invitedById: callerId
-					})
-					.returning()
-					.then(assertFirstEntryExists);
-
-				created.push({
-					id: record.id,
-					email,
-					role: invitation.role,
-					token,
-					expiresAt,
-					addedDirectly: false
-				});
-
-				sendTeamInvitationEmail({
-					conferenceId,
-					recipientEmail: email,
-					conferenceTitle: conference.title,
-					role: invitation.role,
-					inviterName,
-					inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
-					expiresAt,
-					locale: getLocale()
-				}).catch((err) => console.error('Failed to send invitation email:', err));
-			}
+			created.push(
+				existingUser
+					? await addKnownUser(context, existingUser, email, invitation.role)
+					: await inviteUnknownUser(context, email, invitation.role)
+			);
 		} catch (error) {
 			errors.push({
 				email,

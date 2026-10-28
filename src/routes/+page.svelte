@@ -44,7 +44,7 @@
 	const conferencesToDisplay = await client.liveQuery.conferences({
 		id: true,
 		state: true,
-		startAssignment: true,
+		applicationDeadline: true,
 		location: true,
 		title: true,
 		totalSeats: true,

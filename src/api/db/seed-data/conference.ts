@@ -20,42 +20,45 @@ const inDays = (fromDays: number, toDays: number) => () =>
 const past = () => faker.date.past();
 const future = () => faker.date.future();
 
-type ConferenceDates = Record<'startAssignment' | 'startConference' | 'endConference', () => Date>;
+type ConferenceDates = Record<
+	'applicationDeadline' | 'startConference' | 'endConference',
+	() => Date
+>;
 
 /** Plausible dates for a conference in each state, relative to now. */
 const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates> = {
 	// Assignment in at least a week, the conference in at least two.
 	PRE: {
-		startAssignment: inDays(7, 14),
+		applicationDeadline: inDays(7, 14),
 		startConference: inDays(15, 21),
 		endConference: inDays(30, 35)
 	},
 	PARTICIPANT_REGISTRATION: {
-		startAssignment: past,
+		applicationDeadline: past,
 		startConference: inDays(7, 14),
 		endConference: inDays(30, 35)
 	},
 	PREPARATION: {
-		startAssignment: past,
+		applicationDeadline: past,
 		startConference: inDays(7, 14),
 		endConference: inDays(30, 35)
 	},
-	ACTIVE: { startAssignment: past, startConference: past, endConference: future },
-	POST: { startAssignment: past, startConference: past, endConference: past }
+	ACTIVE: { applicationDeadline: past, startConference: past, endConference: future },
+	POST: { applicationDeadline: past, startConference: past, endConference: past }
 };
 
 export function makeSeedConference(
 	options?: Partial<
 		Pick<
 			typeof schema.conference.$inferInsert,
-			'state' | 'startAssignment' | 'startConference' | 'endConference'
+			'state' | 'applicationDeadline' | 'startConference' | 'endConference'
 		>
 	>
 ): typeof schema.conference.$inferInsert {
 	const state = options?.state ?? faker.helpers.arrayElement(CONFERENCE_STATES);
 	const dates = DATES_BY_STATE[state];
 	// Generated in this order, and only where not given, so a seeded faker stays reproducible.
-	const startAssignment = options?.startAssignment || dates.startAssignment();
+	const applicationDeadline = options?.applicationDeadline || dates.applicationDeadline();
 	const startConference = options?.startConference || dates.startConference();
 	const endConference = options?.endConference || dates.endConference();
 
@@ -68,12 +71,12 @@ export function makeSeedConference(
 		website: faker.internet.url(),
 		info: faker.company.catchPhrase(),
 		state,
-		startAssignment,
+		applicationDeadline,
 		startConference,
 		endConference,
 		// The form requires a positive fee, so never seed a zero.
 		feeAmount: faker.number.int({ min: 1, max: 200 }),
-		accountHolder: faker.person.fullName(),
+		bankAccountHolder: faker.person.fullName(),
 		// `conferenceSettingsFormSchema` accepts only the 22-character IBAN layout and an
 		// 11-character BIC, so an arbitrary country's IBAN or a bare 8-character BIC would make the
 		// conference settings form refuse to save on a freshly seeded database.

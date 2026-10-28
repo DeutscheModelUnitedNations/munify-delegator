@@ -26,7 +26,11 @@ const edited = <T>(edit: T | undefined, stored: T) => (edit === undefined ? stor
 export async function assertRegistrationOpen(conferenceId: string) {
 	const conference = await db.query.conference.findFirst({
 		where: { id: conferenceId },
-		columns: { state: true, startAssignment: true, registrationDeadlineGracePeriodMinutes: true }
+		columns: {
+			state: true,
+			applicationDeadline: true,
+			registrationDeadlineGracePeriodMinutes: true
+		}
 	});
 	if (!conference || !acceptsApplications(conference)) {
 		throw apiError('CONFLICT', m.applicationTimeframeClosed());
@@ -47,7 +51,7 @@ export function assertApplicationReady(
 		appliedForRoles: unknown[];
 		conference: {
 			state: (typeof schema.conference.$inferSelect)['state'];
-			startAssignment: Date;
+			applicationDeadline: Date;
 			registrationDeadlineGracePeriodMinutes: number;
 		} | null;
 	},

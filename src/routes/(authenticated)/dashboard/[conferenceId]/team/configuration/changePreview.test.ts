@@ -83,9 +83,9 @@ describe('collectConfigChanges', () => {
 
 	test('renders a datetime field with its wall clock time', () => {
 		const changes = collectConfigChanges({
-			saved: { startAssignment: new Date('2026-03-12T09:00:00.000Z') },
-			current: { startAssignment: new Date('2026-03-12T11:30:00.000Z') },
-			tainted: { startAssignment: true },
+			saved: { applicationDeadline: new Date('2026-03-12T09:00:00.000Z') },
+			current: { applicationDeadline: new Date('2026-03-12T11:30:00.000Z') },
+			tainted: { applicationDeadline: true },
 			existingFiles: {}
 		});
 		expect(changes).toHaveLength(1);

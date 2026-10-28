@@ -5,10 +5,10 @@ import {
 	technicalRegistrationDeadline
 } from './applicationReadiness';
 
-const startAssignment = new Date('2026-03-01T12:00:00Z');
+const applicationDeadline = new Date('2026-03-01T12:00:00Z');
 const open = {
 	state: 'PARTICIPANT_REGISTRATION' as const,
-	startAssignment,
+	applicationDeadline,
 	registrationDeadlineGracePeriodMinutes: 30
 };
 

@@ -12,9 +12,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
 import { fileRef } from './storedFile';
-import { school } from './schools';
 
-/** A conference, its places and the duplicate schools found among its applications. */
+/** A conference. */
 
 /**
  * A required reference to the conference a row belongs to. Every foreign key in the schema
@@ -35,12 +34,6 @@ export const conferenceState = pgEnum('conference_state', [
 	'POST'
 ]);
 
-export const reviewHelpStatus = pgEnum('review_help_status', [
-	'UNSPECIFIED',
-	'HELP_NEEDED',
-	'NO_HELP_WANTED'
-]);
-
 export const conference = snakeCase.table('conference', {
 	...defaultIdAndTimestamps,
 	title: text().notNull(),
@@ -54,13 +47,13 @@ export const conference = snakeCase.table('conference', {
 	language: text(),
 	website: text(),
 	endConference: timestamp({ precision: 3 }).notNull(),
-	startAssignment: timestamp({ precision: 3 }).notNull(),
+	applicationDeadline: timestamp({ precision: 3 }).notNull(),
 	startConference: timestamp({ precision: 3 }).notNull(),
 	state: conferenceState().default('PRE').notNull(),
 	imageFileId: fileRef(),
 	info: text(),
 	linkToPreparationGuide: text(),
-	accountHolder: text(),
+	bankAccountHolder: text(),
 	bankName: text(),
 	bic: text(),
 	currency: text().default('EUR'),
@@ -105,73 +98,3 @@ export const conference = snakeCase.table('conference', {
 	 */
 	maxSeatsPerSchool: integer().default(16)
 });
-
-export const place = snakeCase.table(
-	'place',
-	{
-		...defaultIdAndTimestamps,
-		name: text().notNull(),
-		address: text(),
-		latitude: doublePrecision(),
-		longitude: doublePrecision(),
-		directions: text(),
-		info: text(),
-		websiteUrl: text(),
-		sitePlanFileId: fileRef(),
-		conferenceId: conferenceRef('cascade')
-	},
-	(table) => [
-		uniqueIndex('place_conference_id_name_key').using(
-			'btree',
-			table.conferenceId.asc().nullsLast(),
-			table.name.asc().nullsLast()
-		)
-	]
-);
-
-/**
- * A group of schools that most likely are the same school, found by the analysis the cleanup page
- * runs over the schools a conference's applications name. `key` is the group's sorted school ids
- * as JSON, so a rerun finds the row again and keeps the team's decision; a group that gains or
- * loses a school is a new row.
- */
-export const schoolSuggestion = snakeCase.table(
-	'school_suggestion',
-	{
-		...defaultIdAndTimestamps,
-		key: text().notNull(),
-		similarity: doublePrecision().notNull(),
-		/** The team decided these are different schools. */
-		dismissed: boolean().default(false).notNull(),
-		conferenceId: conferenceRef('cascade')
-	},
-	(table) => [
-		uniqueIndex('school_suggestion_conference_id_key_key').using(
-			'btree',
-			table.conferenceId.asc().nullsLast(),
-			table.key.asc().nullsLast()
-		)
-	]
-);
-
-/** One school of a suggestion, with how many participants of the conference named it. */
-export const schoolSuggestionVariant = snakeCase.table(
-	'school_suggestion_variant',
-	{
-		...defaultIdAndTimestamps,
-		schoolId: text()
-			.notNull()
-			.references(() => school.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		sumParticipants: integer().notNull(),
-		suggestionId: text()
-			.notNull()
-			.references(() => schoolSuggestion.id, { onDelete: 'cascade', onUpdate: 'cascade' })
-	},
-	(table) => [
-		uniqueIndex('school_suggestion_variant_suggestion_id_school_id_key').using(
-			'btree',
-			table.suggestionId.asc().nullsLast(),
-			table.schoolId.asc().nullsLast()
-		)
-	]
-);

@@ -85,14 +85,17 @@ export async function assertCanDeleteRoleApplication(ctx: ApiContext, id: string
 	return deletable;
 }
 
-/** Refuses unless the caller may update both applications. Returns them. */
+/**
+ * Refuses unless the caller may update both applications and they rank within one delegation.
+ * Returns them.
+ */
 export async function assertCanSwapRoleApplicationRanks(
 	ctx: ApiContext,
 	firstId: string,
 	secondId: string
 ) {
 	const updatable = await ctx.abilities.roleApplication.filter('update');
-	return Promise.all([
+	const [first, second] = await Promise.all([
 		db.query.roleApplication
 			.findFirst(updatable.merge({ where: { id: firstId } }).query.single)
 			.then(assertFindFirstExists),
@@ -100,4 +103,8 @@ export async function assertCanSwapRoleApplicationRanks(
 			.findFirst(updatable.merge({ where: { id: secondId } }).query.single)
 			.then(assertFindFirstExists)
 	]);
+	if (first.delegationId !== second.delegationId) {
+		throw apiError('INVALID_INPUT', m.roleApplicationsOfDifferentDelegations());
+	}
+	return [first, second];
 }

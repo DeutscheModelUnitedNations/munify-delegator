@@ -17,10 +17,11 @@ import {
 	assertCanSetAttendanceForAll,
 	assertCanUpdateParticipantStatus,
 	assertCanUpsertParticipantStatus,
-	assertOwnParticipant,
-	registerConferenceParticipantAbilities
+	registerConferenceParticipantAbilities,
+	assertCanSetParticipantSchool
 } from './conferenceParticipantPermissions';
 import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub.js';
+import { readableById } from '#api/services/authHelper.js';
 
 registerConferenceParticipantAbilities();
 
@@ -89,74 +90,35 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.conferenceParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
-							where: { id: statusId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.conferenceParticipant, statusId)))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	/**
-	 * Corrects the school of one person, for participant care: the only school a person taking part
-	 * has, which the seats and numbers per school count, and which the assignment never changes.
-	 * Both null removes it.
+	 * Sets a person's school in a conference: the only school a person taking part has, which the
+	 * seats and numbers per school count, and which the assignment never changes. Without `id` it is
+	 * the caller's own (as a delegate, single participant or supervisor); with it, participant care
+	 * correcting somebody's. Both school arguments null removes it.
 	 */
 	setParticipantSchool: t.drizzleField({
 		type: ConferenceParticipantRef,
 		args: {
-			id: t.arg.id({ required: true }),
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string()
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateParticipantStatus(ctx, args.id);
-			await setParticipantSchool(db, [args.id], await resolveSchoolChoice(args));
-
-			conferenceParticipantPubsub.updated(args.id);
-			if (args.schoolName) schoolPubsub.created();
-
-			return db.query.conferenceParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	/**
-	 * The caller changing their own school in a conference they take part in - as a delegate,
-	 * single participant or supervisor. Both null removes it.
-	 */
-	setMySchool: t.drizzleField({
-		type: ConferenceParticipantRef,
-		args: {
 			conferenceId: t.arg.id({ required: true }),
+			id: t.arg.id(),
 			schoolId: t.arg.id(),
 			schoolName: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			schoolChoiceSchema.parse(args);
-			const id = await assertOwnParticipant(ctx, args.conferenceId);
+			const id = await assertCanSetParticipantSchool(ctx, args);
 			await setParticipantSchool(db, [id], await resolveSchoolChoice(args));
 
 			conferenceParticipantPubsub.updated(id);
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceParticipant.filter('read')).merge({ where: { id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.conferenceParticipant, id)))
 				.then(assertFindFirstExists);
 		}
 	}),

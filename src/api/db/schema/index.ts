@@ -5,18 +5,12 @@
  * are for the schema files only.
  */
 export { storedFile } from './storedFile';
-export { school } from './schools';
+export { school, schoolSuggestion, schoolSuggestionVariant } from './schools';
 export { gender, foodPreference, user, possibleDuplicateStatus, possibleDuplicate } from './users';
-export {
-	conferenceState,
-	reviewHelpStatus,
-	conference,
-	place,
-	schoolSuggestion,
-	schoolSuggestionVariant
-} from './conference';
+export { conferenceState, conference } from './conference';
 export {
 	calendarEntryColor,
+	place,
 	calendarDay,
 	calendarTrack,
 	calendarEntry,
@@ -25,7 +19,7 @@ export {
 } from './calendar';
 export { surveyQuestion, surveyOption, surveyAnswer } from './surveys';
 export { teamRole, teamMember, teamMemberInvitation, searchHistory } from './team';
-export { regionalBaseline, committee, committeeAgendaItem } from './committees';
+export { regionalBaseline, reviewHelpStatus, committee, committeeAgendaItem } from './committees';
 export { nation, conferenceRoleKind, conferenceRole, committeeToRole } from './roles';
 export {
 	administrativeStatus,
@@ -41,7 +35,7 @@ export {
 	singleParticipantRoleWish,
 	roleApplication,
 	waitingListEntry
-} from './registration';
+} from './application';
 export {
 	assignmentMarkEffect,
 	assignmentExperienceEffect,

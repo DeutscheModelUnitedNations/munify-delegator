@@ -142,7 +142,7 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	}),
 	APPLICATION_DEADLINE_REMINDER: ({ email, conference, dashboard }) => ({
 		values: {
-			date: day(conference.startAssignment),
+			date: day(conference.applicationDeadline),
 			delegationHint: email.person.delegation ? m.emailAutoApplicationReminderDelegation() : ''
 		},
 		button: dashboard

@@ -39,7 +39,7 @@
 	} as const;
 
 	function fetchGrouped() {
-		return client.query.findGlobalPapersGroupedByCommittee({
+		return client.query.findPapersGroupedByCommittee({
 			__args: { conferenceId },
 			committee: { id: true, name: true, abbreviation: true },
 			agendaItems: {
@@ -50,7 +50,7 @@
 	}
 
 	function fetchIntroductionPapers() {
-		return client.query.findGlobalIntroductionPapers({
+		return client.query.findIntroductionPapers({
 			__args: { conferenceId },
 			...paperSelection
 		});

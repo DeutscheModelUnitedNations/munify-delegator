@@ -2,15 +2,17 @@ import { db, schema } from '#api/db/db.js';
 import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assertCanCreateSurveyQuestion,
-	deletableSurveyQuestionWhere,
-	registerSurveyQuestionAbilities,
-	updatableSurveyQuestionWhere
+	registerSurveyQuestionAbilities
 } from './surveyQuestionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args.js';
 import { surveyQuestionPubsub } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import {
+	deleteAllowedRow,
+	assertUpdated,
+	allowedRowWhere,
+	readableById
+} from '#api/services/authHelper.js';
 
 registerSurveyQuestionAbilities();
 
@@ -49,12 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 			surveyQuestionPubsub.created();
 
 			return db.query.surveyQuestion
-				.findFirst(
-					query(
-						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.surveyQuestion, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -71,27 +68,25 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await db
-				.update(schema.surveyQuestion)
-				.set({
-					title: nullToUndefined(args.title),
-					description: nullToUndefined(args.description),
-					deadline: nullToUndefined(args.deadline),
-					draft: nullToUndefined(args.draft),
-					hidden: nullToUndefined(args.hidden),
-					showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
-				})
-				.where(await updatableSurveyQuestionWhere(ctx, args.id));
+			assertUpdated(
+				await db
+					.update(schema.surveyQuestion)
+					.set({
+						title: nullToUndefined(args.title),
+						description: nullToUndefined(args.description),
+						deadline: nullToUndefined(args.deadline),
+						draft: nullToUndefined(args.draft),
+						hidden: nullToUndefined(args.hidden),
+						showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
+					})
+					.where(await allowedRowWhere(ctx, 'surveyQuestion', 'update', args.id))
+					.returning({ id: schema.surveyQuestion.id })
+			);
 
 			surveyQuestionPubsub.updated(args.id);
 
 			return db.query.surveyQuestion
-				.findFirst(
-					query(
-						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.surveyQuestion, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -100,13 +95,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.surveyQuestion)
-				.where(await deletableSurveyQuestionWhere(ctx, args.id))
-				.returning({ id: schema.surveyQuestion.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'surveyQuestion', args.id);
 			surveyQuestionPubsub.removed();
 
 			return true;

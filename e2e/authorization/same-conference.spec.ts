@@ -1,6 +1,7 @@
 import { test, expect } from '../support/test';
 import pg from 'pg';
 import {
+	E2E_AGENDA_ITEM_ID,
 	E2E_COMMITTEE_ID,
 	E2E_CONFERENCE_ID,
 	E2E_PAPER_DELEGATE_USER_ID,
@@ -11,7 +12,8 @@ import {
 	E2E_PREP_PARTICIPANT_USER_ID,
 	E2E_SUPERVISOR_ID,
 	E2E_SURVEY_OPTION_A_ID,
-	E2E_SURVEY_QUESTION_ID
+	E2E_SURVEY_QUESTION_ID,
+	E2E_UNSEATED_COMMITTEE_ID
 } from '../seed/seed';
 
 // No foreign key can say "both parents are in the same conference", so the database checks it with
@@ -126,6 +128,33 @@ test('the same writes within one conference pass', async () => {
 	for (const write of fitting) {
 		expect(await attempt(write), write.name).toBeNull();
 	}
+});
+
+// A parent that reaches its conference through a link of its own would take the rows naming it
+// along, past their checks: the link may change within the conference, never out of it.
+test('a parent cannot carry the rows naming it into another conference', async () => {
+	const carrying: Case[] = [
+		{
+			name: 'an agenda item, with its papers, moved to a committee of another conference',
+			sql: 'UPDATE committee_agenda_item SET committee_id = $1 WHERE id = $2',
+			params: [E2E_PREP_COMMITTEE_ID, E2E_AGENDA_ITEM_ID]
+		},
+		{
+			name: 'a supervisor, with their supervisions, moved to a person of another conference',
+			sql: 'UPDATE conference_supervisor SET conference_participant_id = $1 WHERE id = $2',
+			params: [there, E2E_SUPERVISOR_ID]
+		}
+	];
+	for (const write of carrying) {
+		expect(await attempt(write), write.name).toMatch(/_conference_immutable$/);
+	}
+	expect(
+		await attempt({
+			name: 'an agenda item moved to another committee of its conference',
+			sql: 'UPDATE committee_agenda_item SET committee_id = $1 WHERE id = $2',
+			params: [E2E_UNSEATED_COMMITTEE_ID, E2E_AGENDA_ITEM_ID]
+		})
+	).toBeNull();
 });
 
 test('a row cannot move to another conference, rewriting its conference changes nothing', async () => {

@@ -119,8 +119,7 @@ export const singleParticipant = snakeCase.table(
 		assignedRoleId: text().references(() => conferenceRole.id, {
 			onDelete: 'set null',
 			onUpdate: 'cascade'
-		}),
-		assignmentDetails: text()
+		})
 	},
 	(table) => [
 		// One single registration per person and conference.
@@ -179,7 +178,6 @@ export const waitingListEntry = snakeCase.table(
 		experience: text().notNull(),
 		motivation: text().notNull(),
 		requests: text(),
-		assigned: boolean().default(false).notNull(),
 		/** When the entrant was given a seat; empty while they wait. */
 		assignedAt: timestamp({ precision: 3 }),
 		hidden: boolean().default(false).notNull()
@@ -194,10 +192,10 @@ export const waitingListEntry = snakeCase.table(
 		trigramIndex('waiting_list_entry_experience_trgm', table.experience),
 		trigramIndex('waiting_list_entry_motivation_trgm', table.motivation),
 		trigramIndex('waiting_list_entry_requests_trgm', table.requests),
-		index('waiting_list_entry_conference_id_assigned_created_at_idx').using(
+		index('waiting_list_entry_conference_id_assigned_at_created_at_idx').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
-			table.assigned.asc().nullsLast(),
+			table.assignedAt.asc().nullsLast(),
 			table.createdAt.asc().nullsLast()
 		)
 	]

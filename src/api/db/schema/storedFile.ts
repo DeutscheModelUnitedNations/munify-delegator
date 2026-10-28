@@ -1,30 +1,25 @@
-import { snakeCase, text, integer, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import { snakeCase, text, integer, index } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
 import { user } from './users';
-// `conference` holds `fileRef` columns and this table points back at it; both references are
-// lazy (`() => …`), so the cycle is safe at initialization.
-// fallow-ignore-next-line circular-dependency
-import { conference } from './conference';
-
-/** Uploaded files: the bucket objects the app knows about. */
 
 /**
- * A row's uploaded file. `no action`, so a file is never deleted while anything points at it: the
- * file cleanup job deletes only the unreferenced ones, and a reference landing at the same moment
- * makes its delete fail instead of leaving a dangling key. Not `restrict`: that is checked at once,
- * so deleting a conference would fail whenever its cascade reached a file before the row holding
- * it; `no action` is checked once the whole delete is done.
+ * A row's uploaded file. Nothing here deletes a file: once no row points at it any more, the
+ * `file-cleanup` job collects it, and `no action` keeps a file in use from being deleted.
+ *
+ * Every column holding a file id must be built with this. The job finds what points at a file
+ * through the schema's foreign keys (`fileReferenceColumns`, `src/jobs/fileReferences.ts`), so a
+ * file id kept anywhere without one - a plain `text()` column, json - looks unused to it, and the
+ * job deletes a file that is still in use.
  */
 export function fileRef() {
 	return text().references(() => storedFile.id, { onDelete: 'no action', onUpdate: 'cascade' });
 }
 
 /**
- * An uploaded file. The bytes live in the S3 bucket under `key`; this row is what the app knows
- * about them. A row is created when an upload is requested (`requestFileUpload`), and becomes a
- * file of some row when a mutation stores its id there (`conference.logoFileId`, …). Rows nothing
- * points at - uploads never used, replaced files, files of deleted rows - are removed together
- * with their objects by the `file-cleanup` job.
+ * Uploaded files: the bucket objects the app knows about. A file belongs to whatever rows point at
+ * it through a `fileRef()` column; one nothing points at (an upload never claimed, a replaced file,
+ * the file of a deleted row) is garbage, which the `file-cleanup` job removes from the bucket and
+ * then from here. A new table holding files needs nothing more than `fileRef()` for that.
  */
 export const storedFile = snakeCase.table(
 	'stored_file',
@@ -39,15 +34,6 @@ export const storedFile = snakeCase.table(
 		size: integer().notNull(),
 		/** The name it was uploaded with, which downloads keep. */
 		fileName: text(),
-		/**
-		 * The conference the file was uploaded for. Deleting the conference deletes the rows; their
-		 * objects stay in the bucket until the cleanup job removes them as objects without a row.
-		 */
-		// Typed as `AnyPgColumn`: `conference` refers back to this table (`fileRef`), and inferring
-		// across that cycle would leave both tables untyped.
-		conferenceId: text()
-			.notNull()
-			.references((): AnyPgColumn => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		uploadedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' })
 	},
 	(table) => [index('stored_file_created_at_idx').on(table.createdAt)]

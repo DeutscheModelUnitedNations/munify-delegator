@@ -1,5 +1,6 @@
-import { db } from '#api/db/db.js';
-import { sql, type SQL } from 'drizzle-orm';
+import { db, schema } from '#api/db/db.js';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
+import type { ApiContext } from '#api/rumble.js';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context } from '#api/context.js';
 import type { teamRole } from '#api/db/schema/index.js';
@@ -63,7 +64,6 @@ export {
 import {
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
-	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
 } from '#lib/helpers/teamRoles.js';
 import { m } from '#lib/paraglide/messages.js';
@@ -333,6 +333,98 @@ export async function assertAllowedRow(
 	}
 }
 
+/** The ability actions a row can be checked against. */
+type RowAction = 'read' | 'update' | 'delete';
+
+/** The tables whose rows are addressed by an `id` column, by the names their abilities go by. */
+type TableWithId = {
+	[K in keyof ApiContext['abilities']]: (typeof schema)[K] extends { id: unknown } ? K : never;
+}[keyof ApiContext['abilities']];
+
+/**
+ * The row `id` of `table`, as far as the caller's `action` ability reaches: a `where` for an
+ * update or delete that touches nothing when the caller may not. `extra` narrows it further (a
+ * role of one `kind`, a row of one conference).
+ */
+export async function allowedRowWhere<K extends TableWithId>(
+	ctx: ApiContext,
+	table: K,
+	action: RowAction,
+	id: string,
+	extra?: SQL
+) {
+	const allowed = (await ctx.abilities[table].filter(action)).sql.where;
+	return and(eq(schema[table].id, id), allowed, extra);
+}
+
+/**
+ * `assertAllowedRow` for the row `id` of `table` through the caller's `action` ability: refuses
+ * with NOT_FOUND unless the caller may do it.
+ */
+export async function assertAllowedById<K extends TableWithId>(
+	ctx: ApiContext,
+	table: K,
+	action: RowAction,
+	id: string,
+	options: { extra?: SQL; message?: () => string } = {}
+) {
+	await assertAllowedRow(
+		schema[table],
+		await allowedRowWhere(ctx, table, action, id, options.extra),
+		options.message ?? (action === 'update' ? m.updateNotFoundOrForbidden : undefined)
+	);
+}
+
+/**
+ * Deletes the row `id` of `table` through the caller's delete ability, in one statement, and
+ * refuses with NOT_FOUND when that deleted nothing: a missing row and a forbidden one look the
+ * same.
+ */
+export async function deleteAllowedRow<K extends TableWithId>(
+	ctx: ApiContext,
+	table: K,
+	id: string,
+	message: () => string = m.deleteNotFoundOrForbidden
+) {
+	const deleted = await db
+		.delete(schema[table])
+		.where(await allowedRowWhere(ctx, table, 'delete', id))
+		.returning({ id: schema[table].id });
+	if (deleted.length === 0) {
+		throw apiError('NOT_FOUND', message());
+	}
+}
+
+/**
+ * Refuses with NOT_FOUND when an update through the caller's ability changed no row: pass what the
+ * update's `.returning({ id })` gave back.
+ */
+export function assertUpdated(
+	rows: readonly unknown[],
+	message: () => string = m.updateNotFoundOrForbidden
+) {
+	if (rows.length === 0) {
+		throw apiError('NOT_FOUND', message());
+	}
+}
+
+/**
+ * The relational query config for the row `id`, as far as the caller's `action` ability reaches:
+ * `db.query.x.findFirst(query(await readableById(ctx.abilities.x, id)))`. Takes the table's ability
+ * rather than its name because the relational `merge` cannot be typed over a generic table.
+ */
+export async function readableById<S>(
+	ability: {
+		filter(
+			action: RowAction
+		): Promise<{ merge(filter: { where: { id: string } }): { query: { single: S } } }>;
+	},
+	id: string,
+	action: RowAction = 'read'
+) {
+	return (await ability.filter(action)).merge({ where: { id } }).query.single;
+}
+
 /**
  * The `conferenceParticipant` ids of `userIds` in the conference, by user id. Refuses unless every
  * one of them takes part in it (delegate, single participant or supervisor), so writes that name
@@ -458,11 +550,8 @@ export const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
 /** The column that carries the committee a delegate was seated in. */
 export const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;
 
-/** The columns that carry a single participant's assignment. */
-export const SINGLE_PARTICIPANT_ASSIGNMENT = {
-	assignedRoleId: false,
-	assignmentDetails: false
-} as const;
+/** The column that carries a single participant's assignment. */
+export const SINGLE_PARTICIPANT_ASSIGNMENT = { assignedRoleId: false } as const;
 
 /** A participant-side rule that reads the row but not its assignment. */
 export function maskedUntilRelease<W extends object, C extends object>(

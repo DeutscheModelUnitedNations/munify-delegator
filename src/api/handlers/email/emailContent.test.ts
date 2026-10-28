@@ -18,7 +18,7 @@ const conference: EmailSnapshot['conference'] = {
 	assignmentReleased: true,
 	unlockPostals: true,
 	unlockPayments: true,
-	startAssignment: new Date('2026-12-01T12:00:00Z'),
+	applicationDeadline: new Date('2026-12-01T12:00:00Z'),
 	startConference: new Date('2027-03-01T08:00:00Z'),
 	timezone: 'Europe/Berlin',
 	certificateAvailable: true

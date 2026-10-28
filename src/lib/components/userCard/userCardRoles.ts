@@ -76,7 +76,7 @@ export async function fetchUserCardRoles(userId: string, conferenceId: string) {
 		}),
 		client.liveQuery.teamMembers({ __args: forUser, id: true, role: true }),
 		client.liveQuery.conferenceParticipants({ __args: forUser, id: true, didAttend: true }),
-		client.liveQuery.waitingListEntries({ __args: forUser, id: true, assigned: true }),
+		client.liveQuery.waitingListEntries({ __args: forUser, id: true, assignedAt: true }),
 		client.liveQuery.conference({ __args: { id: conferenceId }, id: true, state: true })
 	]);
 
@@ -155,14 +155,14 @@ export function participationStage({
 }: {
 	/** The delegation's or the single participant's application */
 	application?: { applied: boolean; assignedRole?: object | null } | null;
-	waitingListEntry?: { assigned: boolean } | null;
+	waitingListEntry?: { assignedAt: Date | null } | null;
 	didAttend?: boolean;
 	conferenceState: string;
 }): ParticipationStage | undefined {
 	if (application?.assignedRole) return didAttend ? 'attended' : 'seated';
 	if (application?.applied) return AFTER_ASSIGNMENT.has(conferenceState) ? 'notSeated' : 'applied';
 	if (application) return 'registered';
-	if (waitingListEntry && !waitingListEntry.assigned) return 'waitingList';
+	if (waitingListEntry && !waitingListEntry.assignedAt) return 'waitingList';
 	return undefined;
 }
 

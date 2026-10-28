@@ -127,7 +127,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			// null lifts the limit
 			maxSeatsPerSchool: args.maxSeatsPerSchool,
 			state: nullToUndefined(args.state),
-			startAssignment: nullToUndefined(args.startAssignment),
+			applicationDeadline: nullToUndefined(args.applicationDeadline),
 			startConference: nullToUndefined(args.startConference),
 			endConference: nullToUndefined(args.endConference),
 			registrationDeadlineGracePeriodMinutes: nullToUndefined(
@@ -136,7 +136,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			unlockPayments: nullToUndefined(args.unlockPayments),
 			unlockPostals: nullToUndefined(args.unlockPostals),
 			feeAmount: args.feeAmount,
-			accountHolder: args.accountHolder,
+			bankAccountHolder: args.bankAccountHolder,
 			iban: args.iban,
 			bic: args.bic,
 			bankName: args.bankName,

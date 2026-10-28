@@ -1,4 +1,4 @@
-import { object, query } from '#api/rumble.js';
+import { object } from '#api/rumble.js';
 import { registerUserReferenceInPaymentTransactionAbilities } from './userReferenceInPaymentTransactionPermissions';
 
 registerUserReferenceInPaymentTransactionAbilities();
@@ -6,4 +6,3 @@ registerUserReferenceInPaymentTransactionAbilities();
 object({
 	table: 'userReferenceInPaymentTransaction'
 });
-query({ table: 'userReferenceInPaymentTransaction' });

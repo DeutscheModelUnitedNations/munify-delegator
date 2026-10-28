@@ -5,7 +5,7 @@ vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
 
 const { waitingListWhere } = await import('./waitingListQuery');
 
-const base = { conferenceId: { eq: 'c1' }, assigned: { eq: false } };
+const base = { conferenceId: { eq: 'c1' }, assignedAt: { isNull: true } };
 
 interface Options {
 	search?: string;

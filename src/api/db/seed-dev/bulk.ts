@@ -131,7 +131,7 @@ function addBulkSupervisors(
  */
 function addBulkWaitingList(cs: ConferenceSeed, count: number) {
 	if (count === 0) return;
-	const from = new Date(cs.conference.startAssignment);
+	const from = new Date(cs.conference.applicationDeadline);
 	const to = new Date(Math.min(Date.now(), cs.startConference.getTime()));
 	const signedUpAt = faker.date.betweens({ from, to, count });
 

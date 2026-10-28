@@ -40,7 +40,7 @@ export type RoleDraft = {
 	seatAmount: number;
 };
 
-export type DateField = 'startAssignment' | 'startConference' | 'endConference';
+export type DateField = 'applicationDeadline' | 'startConference' | 'endConference';
 
 export type RequestFormState = {
 	title: string;
@@ -49,7 +49,7 @@ export type RequestFormState = {
 	website: string;
 	language: string;
 	/** `datetime-local` values (`YYYY-MM-DDTHH:mm`), interpreted in Europe/Berlin */
-	startAssignment: string;
+	applicationDeadline: string;
 	startConference: string;
 	endConference: string;
 	committees: CommitteeDraft[];
@@ -68,7 +68,7 @@ export const emptyRequestForm = (): RequestFormState => ({
 	location: '',
 	website: '',
 	language: '',
-	startAssignment: '',
+	applicationDeadline: '',
 	startConference: '',
 	endConference: '',
 	committees: [],
@@ -187,7 +187,10 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 		location: state.location.trim(),
 		website: state.website.trim(),
 		language: state.language.trim(),
-		startAssignment: localToIso(state.startAssignment, state.offsetHints.startAssignment),
+		applicationDeadline: localToIso(
+			state.applicationDeadline,
+			state.offsetHints.applicationDeadline
+		),
 		startConference: localToIso(state.startConference, state.offsetHints.startConference),
 		endConference: localToIso(state.endConference, state.offsetHints.endConference)
 	},
@@ -225,7 +228,7 @@ const importSchema = z.object({
 		location: text,
 		website: text,
 		language: text,
-		startAssignment: text,
+		applicationDeadline: text,
 		startConference: text,
 		endConference: text
 	}),
@@ -267,19 +270,20 @@ export const fromSeedJsonText = (raw: string): RequestFormState | null => {
 	if (!parsed.success) return null;
 
 	const { conference, nsa, committees, customConferenceRole } = parsed.data;
+	const field = (key: keyof typeof conference) => conference[key] ?? '';
 	return {
-		title: conference.title ?? '',
-		longTitle: conference.longTitle ?? '',
-		location: conference.location ?? '',
-		website: conference.website ?? '',
-		language: conference.language ?? '',
-		startAssignment: isoToLocal(conference.startAssignment ?? ''),
-		startConference: isoToLocal(conference.startConference ?? ''),
-		endConference: isoToLocal(conference.endConference ?? ''),
+		title: field('title'),
+		longTitle: field('longTitle'),
+		location: field('location'),
+		website: field('website'),
+		language: field('language'),
+		applicationDeadline: isoToLocal(field('applicationDeadline')),
+		startConference: isoToLocal(field('startConference')),
+		endConference: isoToLocal(field('endConference')),
 		offsetHints: {
-			startAssignment: isoOffset(conference.startAssignment ?? ''),
-			startConference: isoOffset(conference.startConference ?? ''),
-			endConference: isoOffset(conference.endConference ?? '')
+			applicationDeadline: isoOffset(field('applicationDeadline')),
+			startConference: isoOffset(field('startConference')),
+			endConference: isoOffset(field('endConference'))
 		},
 		nsa: nsa.map((item) => ({ ...item, key: crypto.randomUUID() })),
 		committees: committees.map((item) => ({ ...item, key: crypto.randomUUID() })),

@@ -170,8 +170,3 @@ export async function assertCanUpdateCalendarEntry(
 		surveyOptionIds: args.surveyOptionIds
 	});
 }
-
-/** The entry `id`, if the caller may delete it: a where clause matching nothing otherwise. */
-export async function deletableCalendarEntryWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.calendarEntry.filter('delete')).merge({ where: { id } }).sql.where;
-}

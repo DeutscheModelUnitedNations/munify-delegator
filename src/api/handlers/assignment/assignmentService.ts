@@ -11,8 +11,14 @@ import {
 	type AssignmentGroup,
 	type Target
 } from '#lib/assignment/state.js';
+import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds.js';
 import { m } from '#lib/paraglide/messages.js';
 import { eq } from 'drizzle-orm';
+import {
+	enabledKinds,
+	setEmailKindsEnabled,
+	skipOpenEmails
+} from '#api/handlers/email/emailSweep.js';
 import { clearDraft, draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
 import { loadExperiencedIds } from './assignmentExperience';
 import { matchSingles } from './matching';
@@ -304,8 +310,29 @@ export async function discardAssignmentDraft(conferenceId: string) {
 	await db.transaction((tx) => clearDraft(tx, conferenceId));
 }
 
-/** Shows participants their assigned roles, or hides them again. */
-export async function setAssignmentReleased(conferenceId: string, released: boolean) {
+/**
+ * Shows participants their assigned roles, or hides them again. On release, `sendEmails` decides
+ * about the result mails (acceptance, rejection, supervisor summary): `true` switches them on so
+ * the next sweep sends them, `false` marks those switched on as skipped for everyone the release
+ * reaches now, and leaving it out keeps the e-mail settings as they are.
+ */
+export async function setAssignmentReleased(
+	conferenceId: string,
+	released: boolean,
+	sendEmails?: boolean
+) {
+	if (released && sendEmails === true) {
+		await setEmailKindsEnabled(conferenceId, ASSIGNMENT_RESULT_KINDS, true);
+	}
+	if (released && sendEmails === false) {
+		const enabled = await enabledKinds(conferenceId);
+		// skipped as if released already, before the flag is written: no sweep can send them first
+		await skipOpenEmails(
+			conferenceId,
+			ASSIGNMENT_RESULT_KINDS.filter((kind) => enabled.has(kind)),
+			{ assignmentReleased: true }
+		);
+	}
 	await db
 		.update(schema.conference)
 		.set({

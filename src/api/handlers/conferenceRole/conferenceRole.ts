@@ -8,12 +8,9 @@ import {
 	singleParticipantPubsub
 } from '#api/pubsub.js';
 import {
-	assertCanCreateCustomRole,
-	assertCanDeleteCustomRole,
-	assertCanUpdateCustomRole,
-	assertCanCreateNonStateActor,
-	assertCanDeleteNonStateActor,
-	assertCanUpdateNonStateActor,
+	assertCanCreateConferenceRole,
+	assertCanDeleteConferenceRole,
+	assertCanUpdateConferenceRole,
 	registerConferenceRoleAbilities
 } from './conferenceRolePermissions';
 import {
@@ -24,136 +21,132 @@ import {
 	updateCustomRole,
 	updateNonStateActor
 } from './conferenceRoleService';
+import { readableById } from '#api/services/authHelper.js';
 
 registerConferenceRoleAbilities();
 
 const ConferenceRoleRef = object({ table: 'conferenceRole' });
 query({ table: 'conferenceRole' });
 
-/** The role with this id, as far as the caller may read it. */
-const readableConferenceRole = async (ctx: ApiContext, id: string) =>
-	(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query.single;
+/**
+ * Creates a role of the seat planning (a non-state actor, a custom role), announces it, and
+ * answers how to read it back.
+ */
+async function createRole<A extends { conferenceId: string }>(
+	ctx: ApiContext,
+	args: A,
+	create: (args: A) => Promise<string>
+) {
+	await assertCanCreateConferenceRole(ctx, args.conferenceId);
+	const createdId = await create(args);
+	conferenceRolePubsub.created();
+	return readableById(ctx.abilities.conferenceRole, createdId);
+}
 
-schemaBuilder.mutationFields((t) => ({
-	createNonStateActor: t.drizzleField({
-		type: ConferenceRoleRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			name: t.arg.string({ required: true }),
-			abbreviation: t.arg.string({ required: true }),
-			description: t.arg.string({ required: true }),
-			fontAwesomeIcon: t.arg.string(),
-			seatAmount: t.arg.int({ required: true })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateNonStateActor(ctx, args.conferenceId);
-			const createdId = await createNonStateActor(args);
+schemaBuilder.mutationFields((t) => {
+	/** What every role the seat planning creates names: its conference, name, icon and seats. */
+	const plannedRoleArgs = () => ({
+		conferenceId: t.arg.id({ required: true }),
+		name: t.arg.string({ required: true }),
+		fontAwesomeIcon: t.arg.string(),
+		seatAmount: t.arg.int({ required: true })
+	});
 
-			conferenceRolePubsub.created();
+	return {
+		createNonStateActor: t.drizzleField({
+			type: ConferenceRoleRef,
+			args: {
+				...plannedRoleArgs(),
+				abbreviation: t.arg.string({ required: true }),
+				description: t.arg.string({ required: true })
+			},
+			resolve: async (query, _root, args, ctx) =>
+				db.query.conferenceRole
+					.findFirst(query(await createRole(ctx, args, createNonStateActor)))
+					.then(assertFindFirstExists)
+		}),
 
-			return db.query.conferenceRole
-				.findFirst(query(await readableConferenceRole(ctx, createdId)))
-				.then(assertFindFirstExists);
-		}
-	}),
+		updateNonStateActor: t.drizzleField({
+			type: ConferenceRoleRef,
+			args: {
+				id: t.arg.id({ required: true }),
+				name: t.arg.string(),
+				abbreviation: t.arg.string(),
+				description: t.arg.string(),
+				fontAwesomeIcon: t.arg.string(),
+				seatAmount: t.arg.int()
+			},
+			resolve: async (query, _root, args, ctx) => {
+				const data = nonStateActorUpdateData(args);
+				const before = await assertCanUpdateConferenceRole(ctx, args.id, 'NON_STATE_ACTOR');
+				const { applicationsTidied } = await updateNonStateActor(before, data);
 
-	updateNonStateActor: t.drizzleField({
-		type: ConferenceRoleRef,
-		args: {
-			id: t.arg.id({ required: true }),
-			name: t.arg.string(),
-			abbreviation: t.arg.string(),
-			description: t.arg.string(),
-			fontAwesomeIcon: t.arg.string(),
-			seatAmount: t.arg.int()
-		},
-		resolve: async (query, _root, args, ctx) => {
-			const data = nonStateActorUpdateData(args);
-			const before = await assertCanUpdateNonStateActor(ctx, args.id);
-			const { applicationsTidied } = await updateNonStateActor(before, data);
+				conferenceRolePubsub.updated(args.id);
+				if (applicationsTidied) roleApplicationPubsub.removed();
 
-			conferenceRolePubsub.updated(args.id);
-			if (applicationsTidied) roleApplicationPubsub.removed();
+				return db.query.conferenceRole
+					.findFirst(query(await readableById(ctx.abilities.conferenceRole, args.id)))
+					.then(assertFindFirstExists);
+			}
+		}),
 
-			return db.query.conferenceRole
-				.findFirst(query(await readableConferenceRole(ctx, args.id)))
-				.then(assertFindFirstExists);
-		}
-	}),
+		deleteNonStateActor: t.field({
+			type: 'Boolean',
+			args: { id: t.arg.id({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				await assertCanDeleteConferenceRole(ctx, args.id, 'NON_STATE_ACTOR');
+				await deleteNonStateActor(args.id);
 
-	deleteNonStateActor: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteNonStateActor(ctx, args.id);
-			await deleteNonStateActor(args.id);
+				conferenceRolePubsub.removed();
+				roleApplicationPubsub.removed();
 
-			conferenceRolePubsub.removed();
-			roleApplicationPubsub.removed();
+				return true;
+			}
+		}),
 
-			return true;
-		}
-	}),
+		/** A custom role for single participants, such as the press, with how many it seats. */
+		createCustomRole: t.drizzleField({
+			type: ConferenceRoleRef,
+			args: { ...plannedRoleArgs(), description: t.arg.string() },
+			resolve: async (query, _root, args, ctx) =>
+				db.query.conferenceRole
+					.findFirst(query(await createRole(ctx, args, createCustomRole)))
+					.then(assertFindFirstExists)
+		}),
 
-	/** A custom role for single participants, such as the press, with how many it seats. */
-	createCustomRole: t.drizzleField({
-		type: ConferenceRoleRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			name: t.arg.string({ required: true }),
-			description: t.arg.string(),
-			fontAwesomeIcon: t.arg.string(),
-			seatAmount: t.arg.int({ required: true })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCustomRole(ctx, args.conferenceId);
-			const createdId = await createCustomRole(args);
+		updateCustomRole: t.drizzleField({
+			type: ConferenceRoleRef,
+			args: {
+				id: t.arg.id({ required: true }),
+				name: t.arg.string(),
+				description: t.arg.string(),
+				fontAwesomeIcon: t.arg.string(),
+				seatAmount: t.arg.int()
+			},
+			resolve: async (query, _root, { id, ...data }, ctx) => {
+				await assertCanUpdateConferenceRole(ctx, id, 'CUSTOM');
+				await updateCustomRole(id, data);
 
-			conferenceRolePubsub.created();
+				conferenceRolePubsub.updated(id);
 
-			return db.query.conferenceRole
-				.findFirst(query(await readableConferenceRole(ctx, createdId)))
-				.then(assertFindFirstExists);
-		}
-	}),
+				return db.query.conferenceRole
+					.findFirst(query(await readableById(ctx.abilities.conferenceRole, id)))
+					.then(assertFindFirstExists);
+			}
+		}),
 
-	updateCustomRole: t.drizzleField({
-		type: ConferenceRoleRef,
-		args: {
-			id: t.arg.id({ required: true }),
-			name: t.arg.string(),
-			description: t.arg.string(),
-			fontAwesomeIcon: t.arg.string(),
-			seatAmount: t.arg.int()
-		},
-		resolve: async (query, _root, { id, ...data }, ctx) => {
-			await assertCanUpdateCustomRole(ctx, id);
-			await updateCustomRole(id, data);
+		deleteCustomRole: t.field({
+			type: 'Boolean',
+			args: { id: t.arg.id({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				await assertCanDeleteConferenceRole(ctx, args.id, 'CUSTOM');
+				await deleteCustomRole(args.id);
 
-			conferenceRolePubsub.updated(id);
+				conferenceRolePubsub.removed();
+				singleParticipantPubsub.updated();
 
-			return db.query.conferenceRole
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query
-							.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	deleteCustomRole: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteCustomRole(ctx, args.id);
-			await deleteCustomRole(args.id);
-
-			conferenceRolePubsub.removed();
-			singleParticipantPubsub.updated();
-
-			return true;
-		}
-	})
-}));
+				return true;
+			}
+		})
+	};
+});

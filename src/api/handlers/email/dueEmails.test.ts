@@ -51,7 +51,7 @@ function snapshot(
 			assignmentReleased: true,
 			unlockPostals: false,
 			unlockPayments: false,
-			startAssignment: new Date(now.getTime() - 30 * DAY),
+			applicationDeadline: new Date(now.getTime() - 30 * DAY),
 			startConference: new Date(now.getTime() + 60 * DAY),
 			timezone: 'Europe/Berlin',
 			certificateAvailable: false,
@@ -167,7 +167,7 @@ describe('reminders', () => {
 		const snap = snapshot([a, sent], {
 			state: 'PARTICIPANT_REGISTRATION',
 			assignmentReleased: false,
-			startAssignment: deadline
+			applicationDeadline: deadline
 		});
 		expect(kindsOf(snap)).toEqual([
 			`APPLICATION_DEADLINE_REMINDER:${a.user.id}:${deadline.toISOString().slice(0, 10)}`

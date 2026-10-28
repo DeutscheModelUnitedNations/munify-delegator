@@ -6,8 +6,6 @@ import { NationRef } from '#api/handlers/nation/nation.js';
 import { enum_ } from '#api/rumble.js';
 import { eq, max } from 'drizzle-orm';
 import { UserRef } from '#api/handlers/user/user.js';
-import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions.js';
-import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions.js';
 import {
 	assertValidConferenceSettings,
 	countOfferedSeats,
@@ -30,6 +28,9 @@ import {
 } from './conferencePermissions';
 import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub.js';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout.js';
+import { readableById } from '#api/services/authHelper.js';
+import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions.js';
+import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions.js';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
@@ -125,14 +126,14 @@ schemaBuilder.mutationFields((t) => ({
 			/** How many seats one school may be given before the assignment warns; null for no limit. */
 			maxSeatsPerSchool: t.arg.int(),
 			state: t.arg({ type: conferenceStateEnum }),
-			startAssignment: t.arg({ type: 'DateTime' }),
+			applicationDeadline: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),
 			endConference: t.arg({ type: 'DateTime' }),
 			registrationDeadlineGracePeriodMinutes: t.arg.int(),
 			unlockPayments: t.arg.boolean(),
 			unlockPostals: t.arg.boolean(),
 			feeAmount: t.arg.float(),
-			accountHolder: t.arg.string(),
+			bankAccountHolder: t.arg.string(),
 			iban: t.arg.string(),
 			bic: t.arg.string(),
 			bankName: t.arg.string(),
@@ -165,12 +166,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.id, ctx.requestUrl().origin);
 
 			return db.query.conference
-				.findFirst(
-					query(
-						(await ctx.abilities.conference.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.conference, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -194,13 +190,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 			conferencePubsub.updated(args.conferenceId);
 			return db.query.conference
-				.findFirst(
-					query(
-						(await ctx.abilities.conference.filter('read')).merge({
-							where: { id: args.conferenceId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.conference, args.conferenceId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -221,12 +211,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRolePubsub.created();
 
 			return db.query.conference
-				.findFirst(
-					query(
-						(await ctx.abilities.conference.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.conference, created.id)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -240,9 +225,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await db.query.conference
 				.findFirst({
-					...(await ctx.abilities.conference.filter('read')).merge({
-						where: { id: args.conferenceId }
-					}).query.single,
+					...(await readableById(ctx.abilities.conference, args.conferenceId)),
 					columns: { id: true }
 				})
 				.then(assertFindFirstExists);

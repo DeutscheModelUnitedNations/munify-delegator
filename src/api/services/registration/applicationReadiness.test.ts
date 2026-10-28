@@ -17,7 +17,7 @@ const ready = {
 	appliedForRoles: [1, 2, 3],
 	conference: {
 		state: 'PARTICIPANT_REGISTRATION' as const,
-		startAssignment: tomorrow,
+		applicationDeadline: tomorrow,
 		registrationDeadlineGracePeriodMinutes: 0
 	}
 };
@@ -37,7 +37,7 @@ describe('assertApplicationReady', () => {
 	);
 
 	test('refuses after the deadline, unless still within the grace period', () => {
-		const late = { ...ready.conference, startAssignment: yesterday };
+		const late = { ...ready.conference, applicationDeadline: yesterday };
 		expect(() => assertApplicationReady({ ...ready, conference: late }, {}, 3)).toThrow();
 		expect(() =>
 			assertApplicationReady(

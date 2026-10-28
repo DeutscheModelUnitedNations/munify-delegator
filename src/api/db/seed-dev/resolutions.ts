@@ -39,7 +39,6 @@ export async function addResolutions(cs: ConferenceSeed) {
 			conferenceId: cs.id,
 			committeeId: committee?.id ?? null,
 			title: topic,
-			fileName,
 			fileId
 		});
 	}

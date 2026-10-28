@@ -160,7 +160,7 @@ bun run preview
   - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
     dev-time generator for the typed frontend client.
   - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
-  - `db/` - `schema/` (tables, one file per part of the app: `registration.ts`, `roles.ts`,
+  - `db/` - `schema/` (tables, one file per part of the app: `application.ts`, `roles.ts`,
     `papers.ts`, …; `index.ts` exports them all, `columns.ts` holds the shared column helpers),
     `relations.ts` (the relational API's graph), `db.ts` (client),
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
@@ -236,7 +236,10 @@ bun run preview
   checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
   check. A check several entities need goes into `authHelper.ts`, not into two permission files:
-  `assertAllowedRow` (a row through its own update/delete ability, else NOT_FOUND),
+  `assertAllowedById` / `assertAllowedRow` (a row through its own update/delete ability, else
+  NOT_FOUND), `allowedRowWhere` (that row as a `where` to write through), `deleteAllowedRow` (delete
+  it in one statement, NOT_FOUND when nothing went), `assertUpdated` (an update's `.returning()`
+  came back empty), `readableById` (re-read a row through its read ability after a write),
   `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
   `assertParticipantOrTeamMemberIn`, `assertParticipantOfConference`. Permission functions take
   `ApiContext` (`#api/rumble.js`), which carries `abilities`.
@@ -278,7 +281,7 @@ bun run preview
     another.
   - **A rule's `columns` apply to the rows that rule matched** (rumble ≥ 0.25 masks per row), so
     visibility that depends on how the reader relates to a row is a rule like any other: the user
-    table (co-delegates and paper reviewers read names only; students their supervisors' name and
+    table (paper reviewers read names only; co-delegates names and email; students their supervisors' name and
     email; supervisors and the care team contact details; teammates the phone number, team admins
     everything but the care notes; nobody but the care team the care notes of participants, and
     nobody those of the team), the conference (payment
@@ -500,9 +503,12 @@ bun run preview
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
     `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
     (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
-  - **Cleanup:** replaced and never-claimed files are not deleted by the mutations; the
-    `file-cleanup` job removes every `stored_file` nothing points at (found through the foreign
-    keys, which `restrict`) and objects without a row.
+  - **Cleanup is garbage collection:** no mutation or cascade deletes a file, and a file names no
+    conference. The `file-cleanup` job collects every `stored_file` nothing points at, found
+    through the schema's foreign keys to it (`fileReferenceColumns`), so **a file id kept in
+    anything but a `fileRef()` column looks unused and gets deleted**. It works a page at a time:
+    locks the rows, deletes their objects from the bucket, then the rows. Objects without a row
+    go too.
   - A new file is a `fileRef()` column, a relation to `storedFile` in `relations.ts` and its
     reverse on `storedFile`, a read rule in `storedFilePermissions.ts`, an entry in
     `FILE_SOURCES`, `assertCanClaimFile` + `ensureUploadComplete` in the mutations that set it,
@@ -628,9 +634,20 @@ bun run preview
   question and person; …) must reach the same one: deferred constraint triggers check it at
   commit (`assert_same_conference`, 18 tables, in the `conference_anchor` migration), so an
   application step may write in any order within its transaction. A `conference_id` a row keeps
-  cannot change (`conference_id_is_immutable`); rewriting the same value passes. Neither is
-  drizzle-managed: a new table with two such parents gets its trigger in its migration, and
-  `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
+  cannot change (`conference_id_is_immutable`); rewriting the same value passes. A row that
+  reaches its conference through a link of its own and is named by other rows (a track's day, a
+  survey option's question, an agenda item's committee, a single participant's, supervisor's or
+  payment's participant row) may change that link within the conference, never out of it
+  (`reached_conference_is_immutable`, in the `conference_reach_unchanged` migration), or it would
+  carry the rows naming it along past their checks. None of this is
+  drizzle-managed: a new table with two such parents gets its trigger in its migration, as does a
+  new link of that kind, and `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
+- **A person takes part in a conference in one way only**: delegation member, single participant,
+  supervisor or team. The flows refuse a second part up front (`fetchParticipationsAndTeamMembership`,
+  `#api/services/registration/participation.ts`, the team invitations included), and deferred
+  constraint triggers (`assert_one_part`, in the `one_part_per_conference` migration) refuse it at
+  commit, under an advisory lock so two concurrent registrations cannot both pass. A step swapping
+  one part for another does both writes in one transaction. `e2e/authorization/one-part.spec.ts`.
 - **Calendar entries can be for some survey choices only**: `calendarEntry.surveyOptions`
   (`calendar_entry_to_survey_option`) limits an entry to those who picked any one of them (and the
   conference's team); without any it is for everybody. An option an entry names cannot be deleted
@@ -725,10 +742,13 @@ bun run preview
   holds them as state and mirrors them into the URL with a shallow `goto` on the next task: a
   navigation or a `page` write landing while the board's async loads are pending trips Svelte's
   "Batch has scheduled effects" invariant (5.57.1).
-- **Release is only visibility.** `conference.assignmentReleased` (`setAssignmentReleased`,
-  project management and participant care, switchable both ways) decides whether participants and
-  supervisors see roles. Until then their read rules mask the delegation's and the single
-  participant's `assignedRoleId`, `assignedCommitteeId` and `assignmentDetails`
+- **Release is only visibility.** `conference.assignmentReleased` decides whether participants
+  and supervisors see roles. `setAssignmentReleased` sets it, from the release card on the
+  assignment's finish tab (`ReleaseDialog.svelte`). Releasing with `sendEmails: true` switches the
+  result mails (`ASSIGNMENT_RESULT_KINDS`) on and sweeps; `false` marks those due right now as
+  skipped (computed as if released, before the flag is written, so no sweep sends them first);
+  either needs `assertCanManageEmails` too. Until then their read rules mask the delegation's and the single
+  participant's `assignedRoleId` and the member's `assignedCommitteeId`
   (`src/api/services/authHelper.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
   follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
@@ -790,10 +810,10 @@ bun run preview
   (`createDelegation`, `createSingleParticipant`, `createConferenceSupervisor`); joining a
   delegation (`createDelegationMember`) takes the newcomer's own, which the join form fills in
   with the head delegate's (`previewDelegation.headDelegateSchoolId`). Seating someone from the
-  waiting list carries the entry's school over. Afterwards people change their own with
-  `setMySchool` (`MySchool.svelte` on the dashboard stages, apart from the application texts:
-  every member of a delegation names theirs), and participant care corrects anyone's with
-  `setParticipantSchool` (`ParticipantSchoolSection` in the user card). The assignment never
+  waiting list carries the entry's school over. Afterwards `setParticipantSchool` changes it:
+  without an `id` the caller's own (`MySchool.svelte` on the dashboard stages, apart from the
+  application texts: every member of a delegation names theirs), with one participant care
+  correcting anyone's (`ParticipantSchoolSection` in the user card). The assignment never
   changes it: a delegation merged from several schools keeps each person's.
 - **Reading it:** `conferenceParticipant.school`, and for whoever can read a registration
   `delegationMember.school`, `singleParticipant.school` and `conferenceSupervisor.school`, read
@@ -950,6 +970,10 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 - Test files: `src/tests/` directory
 - Coverage provider: v8
 - Run tests before pushing (enforced by lefthook pre-push hook)
+- **Never run the e2e suite (`bun run test:e2e`, `playwright test`, `test:e2e:coverage`) unless
+  explicitly asked to.** It takes a long time; verify changes with `bun run check` and `bun test`.
+  When asked, it runs against a production build at the lowest CPU priority by default; see
+  `e2e/README.md` for `E2E_SERVER`, `E2E_WORKERS` and `E2E_NICE`.
 
 ## Environment Variables
 
@@ -1161,6 +1185,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
   result's Svelte subscriber also skips the replay it is handed when it subscribes (the data the
   reader already shows), which, announced as an update while a page's first async work was
   pending, tripped Svelte's "Batch has scheduled effects" invariant. Keep rumble at ≥ 0.26.2.
+
+- **@sveltejs/kit is patched** to log in `'gray'` instead of `'grey'`: Node 25 dropped the `grey`
+  alias from `util.styleText`, which made every `vite build` fail at the adapter step. Drop the
+  patch once SvelteKit ships the fix.
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.

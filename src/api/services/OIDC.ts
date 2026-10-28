@@ -102,6 +102,15 @@ function normalizeOIDCClaims(claims: Record<string, unknown>) {
 }
 
 /**
+ * A provider on this machine (oidc-mock under `vite dev` or `vite preview`). Only it is trusted
+ * over plain HTTP, which is what lets the e2e suite run against a production build.
+ */
+function isLoopbackIssuer(authority: string): boolean {
+	const { protocol, hostname } = new URL(authority);
+	return protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(hostname);
+}
+
+/**
  * The OIDC flow, owned by the library rather than by route loads.
  *
  * Its `handle` hook protects `authenticatedRoutes`, serves both callback routes and puts the
@@ -111,7 +120,7 @@ function normalizeOIDCClaims(claims: Record<string, unknown>) {
  */
 export const OIDC = !building
 	? await makeOIDC({
-			development: dev,
+			development: dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY),
 			issuer: PUBLIC_OIDC_AUTHORITY,
 			clientId: PUBLIC_OIDC_CLIENT_ID,
 			clientSecret: OIDC_CLIENT_SECRET,

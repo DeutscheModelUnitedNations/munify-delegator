@@ -1,15 +1,15 @@
 # End-to-end tests
 
 Playwright specs driving the real app against a real database and the local OIDC provider,
-[oidc-mock](https://github.com/strehk/oidc-mock), which the Vite dev server starts itself (see
-`oidc-mock.yaml` and the `oidcMock()` plugin in `vite.config.ts`).
+[oidc-mock](https://github.com/strehk/oidc-mock), which `vite dev` and `vite preview` start
+themselves (see `oidc-mock.yaml` and the `oidcMock()` plugin in `vite.config.ts`).
 
 ## Running
 
-The suite needs Postgres and the S3 bucket (RustFS, created by the `s3-init` service); the dev
-server Playwright launches brings the OIDC provider along. The default ports (5432 / 9100 / 5173,
-and 8090 for the provider's back channel) are often taken by other projects, so they are
-overridable:
+The suite needs Postgres and the S3 bucket (RustFS, created by the `s3-init` service); the server
+Playwright launches brings the OIDC provider along. `playwright.config.ts` reads `.env` itself.
+The default ports (5432 / 9100 / 4173, and 8090 for the provider's back channel) are often taken
+by other projects, so they are overridable:
 
 ```bash
 # Default stack
@@ -18,20 +18,35 @@ bun run test:e2e
 ```
 
 ```bash
-# Alongside another project that already holds 5432 / 5173
+# Alongside another project that already holds 5432 / 4173
 # Own project name (-p): without it compose replaces the dev Postgres container
 docker compose -p delegator-e2e -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres s3 s3-init
 
 export DATABASE_URL="postgres://postgres:postgres@localhost:15432/postgres"
 export S3_ENDPOINT="http://localhost:19100/delegator"
-export E2E_PORT=5174
+export E2E_PORT=4174
 
 bun run db:migrate   # first time only
-bunx playwright test
+bun run test:e2e
 ```
 
-- `E2E_PORT` moves the dev server (`playwright.config.ts`); it also lets CI shard without
-  port collisions.
+What the suite runs against, and how hard it works the machine, is set by environment variables:
+
+| Variable      | Default                 | Meaning                                                                                                                                                                                                         |
+| ------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E2E_SERVER`  | `build`                 | `build`: a production build, served by `vite preview`. Pages load fast, and saving a file mid-run changes nothing. `preview`: the build already in `build/`, to run again without rebuilding. `dev`: `vite dev` |
+| `E2E_WORKERS` | `2`                     | Spec files run side by side, each worker with its own browser. `1` runs them one after another                                                                                                                  |
+| `E2E_NICE`    | `19` (`0` in CI)        | CPU priority of everything the run starts, so a local run yields to the rest of the machine                                                                                                                     |
+| `E2E_PORT`    | `4173` (`5173` for dev) | Where the app is served; also lets CI shard without port collisions                                                                                                                                             |
+
+A server already listening on the port is reused outside CI, so `E2E_SERVER=dev` runs against a
+`bun run dev` you have open. The dev server reloads its whole program on every save and compiles
+each page on its first visit, which is why it is not the default: a run against it takes about
+three times as long and fails while the sources change under it. `bun run test:e2e:coverage` uses
+it anyway, since only it serves the source maps the coverage is mapped through.
+
+- Signing in goes through the provider once per user and worker: `loginAs` keeps the session
+  cookies of every sign in and hands them to the next test signing in with the same claims.
 - A second dev server in the same project shares the running provider (oidc-mock attaches to a
   back channel with the same issuer), so nothing needs remapping for it. To move the provider,
   change `port` in `oidc-mock.yaml` and `PUBLIC_OIDC_AUTHORITY` together.

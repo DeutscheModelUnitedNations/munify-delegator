@@ -1,7 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertCustomRolesOf,
 	assertTeamRole,
 	isOwnUser,
@@ -74,14 +73,6 @@ export async function assertCanUpdateSingleParticipant(
 		})
 		.then(assertFindFirstExists);
 	await assertCustomRolesOf(target.participant.conferenceId, applyForRolesIdList);
-}
-
-/** Refuses unless the caller may delete the single participant (the row's delete ability). */
-export async function assertCanDeleteSingleParticipant(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.singleParticipant,
-		(await ctx.abilities.singleParticipant.filter('delete')).merge({ where: { id } }).sql.where
-	);
 }
 
 /** The roles a single participant applies for have to be the conference's. */

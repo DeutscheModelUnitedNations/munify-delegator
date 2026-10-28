@@ -62,7 +62,7 @@ type WaitingListEntry = QueryData['waitingListEntries'][number];
 /** The waiting list columns of a person's row, from their entry if they have one. */
 function waitingListFields(entry: WaitingListEntry | undefined) {
 	return {
-		onWaitingList: !!entry && !entry.assigned,
+		onWaitingList: !!entry && !entry.assignedAt,
 		waitingListSince: entry ? new Date(entry.createdAt) : null,
 		seatedFromWaitingListAt: entry?.assignedAt ? new Date(entry.assignedAt) : null
 	} satisfies Partial<ParticipantRow>;
@@ -238,7 +238,7 @@ export function transformParticipants(
 	// People still waiting who hold no registration here are rows of their own.
 	const registeredUsers = new Set(registered.map((entry) => entry.userId));
 	const waiting = queryData.waitingListEntries
-		.filter((entry) => !entry.assigned && !registeredUsers.has(entry.user.id))
+		.filter((entry) => !entry.assignedAt && !registeredUsers.has(entry.user.id))
 		.map((entry) =>
 			row(entry.user, {
 				...noRoleFields,

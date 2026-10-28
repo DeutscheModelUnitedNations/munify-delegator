@@ -1,15 +1,16 @@
 import { db, schema } from '#api/db/db.js';
 import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	where
+	where,
+	assertAllowedById
 } from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
 
 export function registerConferenceRoleAbilities() {
 	// The roles a conference offers are part of its seat overview: readable wherever the conference
@@ -31,14 +32,21 @@ export function registerConferenceRoleAbilities() {
 	});
 }
 
-export async function assertCanCreateCustomRole(ctx: ApiContext, conferenceId: string) {
+/** The kinds of role the seat planning creates, edits and deletes directly. */
+type PlannedRoleKind = 'NON_STATE_ACTOR' | 'CUSTOM';
+
+export async function assertCanCreateConferenceRole(ctx: ApiContext, conferenceId: string) {
 	await assertTeamRole(ctx, conferenceId, SEAT_PLANNING_ROLES);
 }
 
-/** Loads the custom role through the caller's update ability, with its current seats. */
-export async function assertCanUpdateCustomRole(ctx: ApiContext, id: string) {
+/** Loads the role of this `kind` through the caller's update ability, with its current seats. */
+export async function assertCanUpdateConferenceRole(
+	ctx: ApiContext,
+	id: string,
+	kind: PlannedRoleKind
+) {
 	const updateFilter = (await ctx.abilities.conferenceRole.filter('update')).merge({
-		where: { id, kind: 'CUSTOM' }
+		where: { id, kind }
 	});
 	return db.query.conferenceRole
 		.findFirst({
@@ -48,39 +56,13 @@ export async function assertCanUpdateCustomRole(ctx: ApiContext, id: string) {
 		.then(assertFindFirstExists);
 }
 
-/** Refuses unless the caller's delete ability matches the custom role. */
-export async function assertCanDeleteCustomRole(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.conferenceRole,
-		(await ctx.abilities.conferenceRole.filter('delete')).merge({
-			where: { id, kind: 'CUSTOM' }
-		}).sql.where
-	);
-}
-
-export async function assertCanCreateNonStateActor(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, SEAT_PLANNING_ROLES);
-}
-
-/** Loads the non-state actor through the caller's update ability, with its current seats. */
-export async function assertCanUpdateNonStateActor(ctx: ApiContext, id: string) {
-	const updateFilter = (await ctx.abilities.conferenceRole.filter('update')).merge({
-		where: { id, kind: 'NON_STATE_ACTOR' }
+/** Refuses unless the caller's delete ability matches the role of this `kind`. */
+export async function assertCanDeleteConferenceRole(
+	ctx: ApiContext,
+	id: string,
+	kind: PlannedRoleKind
+) {
+	await assertAllowedById(ctx, 'conferenceRole', 'delete', id, {
+		extra: eq(schema.conferenceRole.kind, kind)
 	});
-	return db.query.conferenceRole
-		.findFirst({
-			where: updateFilter.query.single.where,
-			columns: { id: true, conferenceId: true, seatAmount: true }
-		})
-		.then(assertFindFirstExists);
-}
-
-/** Refuses unless the caller's delete ability matches the non-state actor. */
-export async function assertCanDeleteNonStateActor(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.conferenceRole,
-		(await ctx.abilities.conferenceRole.filter('delete')).merge({
-			where: { id, kind: 'NON_STATE_ACTOR' }
-		}).sql.where
-	);
 }

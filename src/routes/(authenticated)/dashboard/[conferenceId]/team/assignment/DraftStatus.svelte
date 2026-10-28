@@ -33,16 +33,9 @@
 		<i class="fa-sharp-duotone fa-solid fa-pen-ruler"></i>
 		{m.assignmentPendingChanges({ count: pending })}
 	</a>
-	<!-- Where the release is switched: the conference's status settings. -->
-	<a
-		class="badge {conference.assignmentReleased ? 'badge-success' : 'badge-neutral'}"
-		href={resolve('/(authenticated)/dashboard/[conferenceId]/team/configuration?tab=status', {
-			conferenceId
-		})}
-		title={m.assignmentOpenReleaseSettings()}
-	>
+	<span class="badge {conference.assignmentReleased ? 'badge-success' : 'badge-neutral'}">
 		<i class="fa-sharp-duotone fa-solid {conference.assignmentReleased ? 'fa-eye' : 'fa-eye-slash'}"
 		></i>
 		{conference.assignmentReleased ? m.assignmentReleasedBadge() : m.assignmentHiddenBadge()}
-	</a>
+	</span>
 </div>

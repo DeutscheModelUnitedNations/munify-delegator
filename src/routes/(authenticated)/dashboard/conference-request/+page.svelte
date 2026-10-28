@@ -164,8 +164,12 @@
 					</label>
 					<label class="flex flex-col">
 						<span class="label mb-2 whitespace-break-spaces">{m.applicationDeadline()}</span>
-						<input type="datetime-local" class="input w-full" bind:value={form.startAssignment} />
-						{@render timeError(form.startAssignment)}
+						<input
+							type="datetime-local"
+							class="input w-full"
+							bind:value={form.applicationDeadline}
+						/>
+						{@render timeError(form.applicationDeadline)}
 					</label>
 					<label class="flex flex-col">
 						<span class="label mb-2 whitespace-break-spaces">{m.startConference()}</span>

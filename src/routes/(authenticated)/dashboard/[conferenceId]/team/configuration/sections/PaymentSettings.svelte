@@ -17,7 +17,7 @@
 <FormSection title={m.conferenceBankAccount()} icon="building-columns">
 	<FormTextInput
 		{form}
-		name="accountHolder"
+		name="bankAccountHolder"
 		placeholder="Max Mustermann"
 		label={m.accountHolder()}
 	/>

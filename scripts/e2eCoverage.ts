@@ -63,8 +63,15 @@ try {
 
 	console.log('[e2e-coverage] running Playwright e2e suite...');
 	const playwright = Bun.spawn(['bunx', 'playwright', 'test', ...process.argv.slice(2)], {
-		// Read by e2e/support/test.ts, which records the browser's coverage into it
-		env: { ...process.env, E2E_BROWSER_COVERAGE_DIR: BROWSER_DIR },
+		// E2E_BROWSER_COVERAGE_DIR is read by e2e/support/test.ts, which records the browser's
+		// coverage into it. The dev server above is the one to test against: only it serves modules
+		// with the source maps the coverage is mapped through.
+		env: {
+			...process.env,
+			E2E_BROWSER_COVERAGE_DIR: BROWSER_DIR,
+			E2E_SERVER: 'dev',
+			E2E_PORT: String(PORT)
+		},
 		stdout: 'inherit',
 		stderr: 'inherit'
 	});

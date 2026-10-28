@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { releaseNotice } from '#lib/assignment/board.js';
-	import { resolve } from '$app/paths';
 	import { m } from '#lib/paraglide/messages.js';
+	import ReleaseDialog from './ReleaseDialog.svelte';
 
 	/**
 	 * Whether participants see the assignment - and, right after applying while it is still hidden,
-	 * the reminder to release it. The switch itself lives in the conference settings.
+	 * the reminder to release it - with the switch to release or hide it.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -14,6 +14,8 @@
 	}
 
 	let { conferenceId, released, justApplied }: Props = $props();
+
+	let confirming = $state(false);
 
 	const notices = {
 		released: {
@@ -43,14 +45,16 @@
 	<div class="flex flex-col gap-3">
 		<h3 class="font-bold">{notice.title}</h3>
 		<p class="text-sm">{notice.hint}</p>
-		<a
-			class="btn btn-sm w-fit"
-			href={resolve('/(authenticated)/dashboard/[conferenceId]/team/configuration?tab=status', {
-				conferenceId
-			})}
+		<button
+			class="btn btn-sm w-fit {released ? '' : 'btn-primary'}"
+			onclick={() => (confirming = true)}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-toggle-on"></i>
-			{m.assignmentOpenReleaseSettings()}
-		</a>
+			<i class="fa-sharp-duotone fa-solid {released ? 'fa-eye-slash' : 'fa-eye'}"></i>
+			{released ? m.assignmentHide() : m.assignmentRelease()}
+		</button>
 	</div>
 </section>
+
+{#if confirming}
+	<ReleaseDialog {conferenceId} {released} onClose={() => (confirming = false)} />
+{/if}

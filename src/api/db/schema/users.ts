@@ -37,7 +37,7 @@ export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN
  *   - `conferenceParticipant.userId` (participants.ts), and through the participant row
  *     `paper.authorParticipantId`, `paymentTransaction.payerParticipantId`, the payments a
  *     transaction covers and survey answers
- *   - `waitingListEntry.userId` (registration.ts)
+ *   - `waitingListEntry.userId` (application.ts)
  *   - `teamMember.userId`, `teamMemberInvitation.invitedById` (team.ts)
  *   - `paperReview.reviewerId` (papers.ts)
  *   - `attendanceSession.createdById`, `attendanceEntry.recordedById` (attendance.ts)
@@ -63,6 +63,22 @@ export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN
  *   4. Revisit the `restrict` references above: team-side actors (reviewer, scanner, inviter) could
  *      become `set null` like `uploadedById`, so a team member can leave without blocking anything.
  */
+
+/*
+ * TODO(seats): the team's seat search cannot find an account it has no relation to yet. Placing
+ * somebody directly (`createAppliedDelegationMember`, `createAppliedSingleParticipant`,
+ * `createConferenceSupervisor(userId)`) takes any account, but the search that picks one
+ * (`team/seats/UserSearchModal.svelte`) runs `users(search:)`, which only returns rows the
+ * caller's read rules reach. For project management and participant care that is the
+ * participants, the waiting list and the team of their own conferences, so a brand-new account,
+ * or a person who only took part elsewhere, is not found; only system admins find everybody.
+ *
+ * The lookup that covered it (`previewUserByIdOrEmail`: an exact id or email, any account,
+ * answering id, email and name) was removed as unused. Decide whether direct placement of
+ * strangers is wanted at all; if so, give the search an exact-match path for these roles that
+ * exposes no more than those four fields, and pin it in `e2e/authorization/`.
+ */
+
 export const user = snakeCase.table(
 	'user',
 	{
@@ -89,6 +105,7 @@ export const user = snakeCase.table(
 		wantsJoinTeamInformation: boolean().default(false).notNull(),
 		gender: gender(),
 		emergencyContacts: text(),
+		// care notes for the team, not the public, survive conferences
 		globalNotes: text()
 	},
 	(table) => [

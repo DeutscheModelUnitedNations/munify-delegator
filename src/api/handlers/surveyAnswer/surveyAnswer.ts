@@ -15,6 +15,7 @@ import {
 } from './surveyAnswerPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub.js';
+import { readableById } from '#api/services/authHelper.js';
 
 registerSurveyAnswerAbilities();
 
@@ -49,12 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.surveyAnswer
-				.findFirst(
-					query(
-						(await ctx.abilities.surveyAnswer.filter('read')).merge({ where: { id: answerId } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.surveyAnswer, answerId)))
 				.then(assertFindFirstExists);
 		}
 	}),

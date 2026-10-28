@@ -1,6 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
-import { userId } from '#api/services/authHelper.js';
+import { userId, deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 import {
 	createPaper,
 	findNextPaperToReview,
@@ -14,7 +14,6 @@ import {
 } from './paperService';
 import {
 	assertCanCreatePaper,
-	assertCanDeletePaper,
 	assertCanReadConferencePapers,
 	assertCanReviewAgendaItemPapers,
 	assertCanReviewPapers,
@@ -25,7 +24,6 @@ import {
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
 import { paperPubsub, paperVersionPubsub } from '#api/pubsub.js';
 
 registerPaperAbilities();
@@ -33,10 +31,6 @@ registerPaperAbilities();
 const PaperRef = object({ table: 'paper' });
 
 query({ table: 'paper' });
-
-/** The paper with this id, as far as the caller may read it. */
-const readablePaper = async (ctx: ApiContext, id: string) =>
-	(await ctx.abilities.paper.filter('read')).merge({ where: { id } }).query.single;
 
 /** The submitted introduction papers (those without an agenda item) the caller may read. */
 const readableIntroductionPapers = async (ctx: ApiContext, conferenceId: string) =>
@@ -84,7 +78,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await readablePaper(ctx, created.id)))
+				.findFirst(query(await readableById(ctx.abilities.paper, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -105,7 +99,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await readablePaper(ctx, args.paperId)))
+				.findFirst(query(await readableById(ctx.abilities.paper, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -114,8 +108,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeletePaper(ctx, args.id);
-			await db.delete(schema.paper).where(eq(schema.paper.id, args.id));
+			await deleteAllowedRow(ctx, 'paper', args.id);
 			paperPubsub.removed();
 
 			return true;
@@ -126,13 +119,14 @@ schemaBuilder.mutationFields((t) => ({
 schemaBuilder.queryFields((t) => ({
 	/**
 	 * Introduction papers are the ones with no agenda item - a non-state actor writes one per
-	 * conference rather than one per topic.
+	 * conference rather than one per topic. For the reviewer hub and the participants' paper view
+	 * alike; the read ability decides which papers each of them gets.
 	 */
 	findIntroductionPapers: t.drizzleField({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanReviewPapers(ctx, args.conferenceId);
+			await assertCanReadConferencePapers(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
 				query(await readableIntroductionPapers(ctx, args.conferenceId))
@@ -166,19 +160,6 @@ schemaBuilder.queryFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/** Introduction papers as any participant may see them, not just reviewers. */
-	findGlobalIntroductionPapers: t.drizzleField({
-		type: [PaperRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanReadConferencePapers(ctx, args.conferenceId);
-
-			return db.query.paper.findMany(
-				query(await readableIntroductionPapers(ctx, args.conferenceId))
-			);
-		}
-	}),
-
 	/**
 	 * A single paper for the public paper view: exactly what the read ability allows - authors and
 	 * reviewers in any state, participants of the conference once it is no longer a draft.
@@ -189,7 +170,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(query(await readablePaper(ctx, args.paperId)))
+				.findFirst(query(await readableById(ctx.abilities.paper, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -222,18 +203,8 @@ const CommitteePaperGroup = schemaBuilder
 	});
 
 schemaBuilder.queryFields((t) => ({
-	/** The reviewer-facing paper hub. */
+	/** The conference's papers by committee and agenda item, for reviewers and participants alike. */
 	findPapersGroupedByCommittee: t.field({
-		type: [CommitteePaperGroup],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanReviewPapers(ctx, args.conferenceId);
-			return readablePapersGroupedByCommittee(ctx, args.conferenceId);
-		}
-	}),
-
-	/** The same grouping for ordinary participants. */
-	findGlobalPapersGroupedByCommittee: t.field({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

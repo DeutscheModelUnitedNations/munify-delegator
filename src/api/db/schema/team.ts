@@ -68,7 +68,8 @@ export const teamMemberInvitation = snakeCase.table(
  * The results a team member picked in the global search (or scanned), on any of their devices.
  * The newest few are offered again when the search opens empty, and a fresh one is offered to the
  * person's other devices for a moment. `originId` names the browser tab that made it, so that tab
- * does not offer it to itself. What was typed is not kept.
+ * does not offer it to itself. What was typed is not kept. Useful if a person is scanned on a phone
+ * but the user wants to continue on their laptop.
  */
 export const searchHistory = snakeCase.table(
 	'search_history',

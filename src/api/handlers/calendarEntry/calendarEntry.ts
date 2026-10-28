@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args.js';
@@ -6,12 +6,10 @@ import { createCalendarEntry, updateCalendarEntry } from './calendarEntryService
 import {
 	assertCanCreateCalendarEntry,
 	assertCanUpdateCalendarEntry,
-	deletableCalendarEntryWhere,
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerCalendarEntryAbilities();
 
@@ -59,12 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarEntryPubsub.created();
 
 			return db.query.calendarEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.calendarEntry, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -112,12 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarEntryPubsub.updated(args.id);
 
 			return db.query.calendarEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.calendarEntry, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -126,14 +114,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.calendarEntry)
-				.where(await deletableCalendarEntryWhere(ctx, args.id))
-				.returning({ id: schema.calendarEntry.id });
-
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'calendarEntry', args.id);
 			calendarEntryPubsub.removed();
 
 			return true;

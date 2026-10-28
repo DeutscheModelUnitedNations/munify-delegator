@@ -71,11 +71,9 @@ jobs:
       S3_ENDPOINT: http://localhost:9100/delegator
       S3_ACCESS_KEY_ID: delegator
       S3_SECRET_ACCESS_KEY: delegator-secret
-      # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
-      # oauth4webapi under that value, and the mock OIDC provider (oidc-mock) is plain HTTP. Any
-      # other value fails discovery with "only requests to HTTPS are allowed" and every login
-      # times out.
-      NODE_ENV: development
+      # No NODE_ENV: the suite builds and serves the app with NODE_ENV=production itself
+      # (playwright.config.ts). Signing in against the plain-HTTP oidc-mock still works, since
+      # src/api/services/OIDC.ts trusts a provider on the loopback address over HTTP.
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun

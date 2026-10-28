@@ -64,10 +64,7 @@ export async function markSeatedFromWaitingList(
 ): Promise<{ schoolId: string | null } | undefined> {
 	const [entry] = await tx
 		.update(schema.waitingListEntry)
-		.set({
-			assigned: true,
-			assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())`
-		})
+		.set({ assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())` })
 		.where(
 			and(
 				eq(schema.waitingListEntry.conferenceId, conferenceId),

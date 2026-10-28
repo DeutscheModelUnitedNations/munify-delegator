@@ -31,7 +31,7 @@ export interface ConferencePlan {
 	conference: Pick<typeof schema.conference.$inferInsert, 'title' | 'longTitle' | 'state'> &
 		Partial<typeof schema.conference.$inferInsert>;
 	/** Days from now; negative is in the past. */
-	days: { startAssignment: number; startConference: number; endConference: number };
+	days: { applicationDeadline: number; startConference: number; endConference: number };
 	/** Whether seats are handed out: delegations hold nations, singles hold roles. */
 	assigned: boolean;
 	/** Which optional parts of the conference are filled in. */
@@ -105,7 +105,7 @@ export const conferencePlans: ConferencePlan[] = [
 			state: 'PRE',
 			info: 'Die Bewerbung öffnet bald. Diese Ankündigung ist eingeklappt.'
 		},
-		days: { startAssignment: 60, startConference: 120, endConference: 123 },
+		days: { applicationDeadline: 60, startConference: 120, endConference: 123 },
 		assigned: false,
 		with: noExtras,
 		crowd: { ...fullCrowd, delegations: 0, singles: 0, supervisors: 0 }
@@ -118,7 +118,7 @@ export const conferencePlans: ConferencePlan[] = [
 			longTitle: 'Seed-Konferenz mit offener Bewerbung',
 			state: 'PARTICIPANT_REGISTRATION'
 		},
-		days: { startAssignment: 21, startConference: 60, endConference: 63 },
+		days: { applicationDeadline: 21, startConference: 60, endConference: 63 },
 		assigned: false,
 		with: noExtras,
 		crowd: { ...fullCrowd, bulk: { delegations: 14000, singles: 2000, supervisors: 3500 } }
@@ -133,7 +133,7 @@ export const conferencePlans: ConferencePlan[] = [
 			state: 'PARTICIPANT_REGISTRATION',
 			registrationDeadlineGracePeriodMinutes: 24 * 60
 		},
-		days: { startAssignment: -5 / (24 * 60), startConference: 45, endConference: 48 },
+		days: { applicationDeadline: -5 / (24 * 60), startConference: 45, endConference: 48 },
 		assigned: false,
 		with: noExtras,
 		crowd: {
@@ -154,7 +154,7 @@ export const conferencePlans: ConferencePlan[] = [
 			// Low, so the assignment board's per-school warning shows with the seeded schools
 			maxSeatsPerSchool: 4
 		},
-		days: { startAssignment: -3, startConference: 40, endConference: 43 },
+		days: { applicationDeadline: -3, startConference: 40, endConference: 43 },
 		assigned: false,
 		with: { ...noExtras, assignmentDraft: true },
 		crowd: { ...fullCrowd, bulk: { delegations: 20000, singles: 3000, supervisors: 5000 } }
@@ -177,7 +177,7 @@ export const conferencePlans: ConferencePlan[] = [
 			linkToTeamWiki: 'https://example.org/team-wiki',
 			linkToServicesPage: 'https://example.org/services'
 		},
-		days: { startAssignment: -30, startConference: 14, endConference: 17 },
+		days: { applicationDeadline: -30, startConference: 14, endConference: 17 },
 		assigned: true,
 		with: {
 			templates: true,
@@ -207,7 +207,7 @@ export const conferencePlans: ConferencePlan[] = [
 			linkToPreparationGuide: null,
 			info: null
 		},
-		days: { startAssignment: -20, startConference: 28, endConference: 31 },
+		days: { applicationDeadline: -20, startConference: 28, endConference: 31 },
 		assigned: true,
 		with: { ...noExtras, waitingList: 'LONG_LIST' },
 		crowd: {
@@ -235,7 +235,7 @@ export const conferencePlans: ConferencePlan[] = [
 			showCalendar: true,
 			info: 'Die Konferenz läuft! Raumänderungen stehen im Kalender.'
 		},
-		days: { startAssignment: -60, startConference: -1, endConference: 2 },
+		days: { applicationDeadline: -60, startConference: -1, endConference: 2 },
 		assigned: true,
 		with: {
 			templates: true,
@@ -264,7 +264,7 @@ export const conferencePlans: ConferencePlan[] = [
 			isOpenPaperSubmission: false,
 			showCalendar: true
 		},
-		days: { startAssignment: -120, startConference: -30, endConference: -27 },
+		days: { applicationDeadline: -120, startConference: -30, endConference: -27 },
 		assigned: true,
 		with: {
 			templates: true,
@@ -293,7 +293,7 @@ export const conferencePlans: ConferencePlan[] = [
 			unlockPostals: true,
 			maxSeatsPerSchool: null
 		},
-		days: { startAssignment: -25, startConference: 21, endConference: 24 },
+		days: { applicationDeadline: -25, startConference: 21, endConference: 24 },
 		assigned: true,
 		with: { ...noExtras, templates: true },
 		crowd: {
@@ -320,7 +320,7 @@ export const conferencePlans: ConferencePlan[] = [
 			unlockPostals: true,
 			isOpenPaperSubmission: false
 		},
-		days: { startAssignment: -420, startConference: -380, endConference: -377 },
+		days: { applicationDeadline: -420, startConference: -380, endConference: -377 },
 		assigned: true,
 		with: { ...noExtras, templates: true },
 		crowd: {

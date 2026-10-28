@@ -4,7 +4,7 @@
 	import Flag from '#lib/components/Flag.svelte';
 	import NoAssignmentNotice from '../NoAssignmentNotice.svelte';
 
-	/** The custom role a single participant holds, and what the team noted about the assignment. */
+	/** The custom role a single participant holds. */
 	interface Props {
 		singleParticipantId: string;
 	}
@@ -16,7 +16,6 @@
 			__args: { id: singleParticipantId },
 			id: true,
 			applied: true,
-			assignmentDetails: true,
 			assignedRole: { id: true, name: true, fontAwesomeIcon: true }
 		})
 	);
@@ -33,11 +32,5 @@
 				<NoAssignmentNotice applied={participant.applied} />
 			{/if}
 		</div>
-		{#if participant.assignmentDetails}
-			<p class="mt-3 text-sm whitespace-pre-line">
-				<span class="text-base-content/60">{m.userCardAssignmentDetails()}:</span>
-				{participant.assignmentDetails}
-			</p>
-		{/if}
 	</div>
 </section>

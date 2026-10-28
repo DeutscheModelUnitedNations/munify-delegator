@@ -23,8 +23,8 @@ export function fileReferenceColumns(tables: Record<string, unknown>, storedFile
 
 /**
  * Objects in the bucket no `stored_file` knows, older than `cutoff`. Every upload's row is written
- * before its URL is handed out, so these are left over: rows deleted before their objects were,
- * or a database reset.
+ * before its URL is handed out, and the cleanup deletes objects before their rows, so these are
+ * left over from elsewhere: a database reset, or a row deleted by hand.
  */
 export function orphanedObjectKeys(
 	objects: { key: string; lastModified: Date }[],

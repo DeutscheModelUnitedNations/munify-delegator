@@ -13,7 +13,7 @@ import { fileRef } from './storedFile';
 import { userRef } from './users';
 import { conferenceRef } from './conference';
 import { committee, committeeAgendaItem } from './committees';
-import { delegation } from './registration';
+import { delegation } from './application';
 import { participantRef } from './participants';
 
 /** Papers, their versions and reviews, and resolutions. */
@@ -109,11 +109,9 @@ export const reviewerSnippet = snakeCase.table(
 /** An adopted resolution, downloadable on the after-conference screen. */
 export const resolution = snakeCase.table('resolution', {
 	...defaultIdAndTimestamps,
-	/** Shown to participants; the uploaded file name unless given. */
+	/** Shown to participants; the uploaded file's name unless given. */
 	title: text().notNull(),
-	/** The uploaded file's name, which the download keeps. */
-	fileName: text().notNull(),
-	/** The PDF. */
+	/** The PDF; downloads keep the name it was uploaded with (`storedFile.fileName`). */
 	fileId: fileRef().notNull(),
 	conferenceId: conferenceRef('cascade'),
 	/** Optional; kept as an untagged resolution when its committee is deleted. */

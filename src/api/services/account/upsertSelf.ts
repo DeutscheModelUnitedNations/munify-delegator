@@ -6,6 +6,7 @@ import { db, schema } from '#api/db/db.js';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation.js';
+import { isParticipantOrTeamMember } from '#api/services/registration/participation.js';
 import { reportEmailConflict } from './emailConflict';
 import { hashToken, isOpenInvitation, pendingInvitationCookieName } from './invitationToken';
 
@@ -144,6 +145,13 @@ export async function claimPendingInvitation(userId: string) {
 		if (existingMember) {
 			// Already a member, so the invitation just gets closed out.
 			await db.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
+			return;
+		}
+
+		// Someone taking part in the conference cannot join its team as well; the invitation stays
+		// open for the team to see that it was not taken up.
+		if (await isParticipantOrTeamMember({ conferenceId: invitation.conferenceId, userId })) {
+			console.warn(`Invitation ${invitation.id} not redeemed: ${userId} already takes part`);
 			return;
 		}
 

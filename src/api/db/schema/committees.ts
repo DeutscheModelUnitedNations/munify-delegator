@@ -1,6 +1,6 @@
 import { snakeCase, pgEnum, text, integer } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps } from './helpers';
-import { conferenceRef, reviewHelpStatus } from './conference';
+import { conferenceRef } from './conference';
 
 /** Committees and their agenda items. */
 
@@ -11,6 +11,13 @@ export const regionalBaseline = pgEnum('regional_baseline', [
 	'ECOSOC',
 	'SECURITY_COUNCIL',
 	'MANUAL'
+]);
+
+/** Whether an agenda item's papers need more reviewers, as the paper reviewers mark it. */
+export const reviewHelpStatus = pgEnum('review_help_status', [
+	'UNSPECIFIED',
+	'HELP_NEEDED',
+	'NO_HELP_WANTED'
 ]);
 
 export const committee = snakeCase.table('committee', {

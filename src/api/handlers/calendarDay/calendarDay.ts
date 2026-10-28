@@ -1,11 +1,6 @@
 import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
-import {
-	assertCanCreateCalendarDay,
-	deletableCalendarDayWhere,
-	registerCalendarDayAbilities,
-	updatableCalendarDayWhere
-} from './calendarDayPermissions';
+import { object, query, schemaBuilder } from '#api/rumble.js';
+import { assertCanCreateCalendarDay, registerCalendarDayAbilities } from './calendarDayPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { createImportedDay, parseImportData } from './calendarDayService';
 import {
@@ -14,8 +9,12 @@ import {
 	calendarTrackPubsub,
 	placePubsub
 } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import {
+	deleteAllowedRow,
+	assertUpdated,
+	allowedRowWhere,
+	readableById
+} from '#api/services/authHelper.js';
 
 registerCalendarDayAbilities();
 
@@ -37,9 +36,6 @@ const newDayArgs = (
 	date: arg({ type: 'DateTime', required: true }),
 	sortOrder: arg.int({ required: true })
 });
-
-const readableCalendarDay = async (ctx: ApiContext, id: string) =>
-	(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id } }).query.single;
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarDay: t.drizzleField({
@@ -64,7 +60,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayPubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await readableCalendarDay(ctx, created.id)))
+				.findFirst(query(await readableById(ctx.abilities.calendarDay, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -78,19 +74,22 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await db
-				.update(schema.calendarDay)
-				.set({
-					name: args.name ?? undefined,
-					date: args.date ?? undefined,
-					sortOrder: args.sortOrder ?? undefined
-				})
-				.where(await updatableCalendarDayWhere(ctx, args.id));
+			assertUpdated(
+				await db
+					.update(schema.calendarDay)
+					.set({
+						name: args.name ?? undefined,
+						date: args.date ?? undefined,
+						sortOrder: args.sortOrder ?? undefined
+					})
+					.where(await allowedRowWhere(ctx, 'calendarDay', 'update', args.id))
+					.returning({ id: schema.calendarDay.id })
+			);
 
 			calendarDayPubsub.updated(args.id);
 
 			return db.query.calendarDay
-				.findFirst(query(await readableCalendarDay(ctx, args.id)))
+				.findFirst(query(await readableById(ctx.abilities.calendarDay, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -99,14 +98,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.calendarDay)
-				.where(await deletableCalendarDayWhere(ctx, args.id))
-				.returning({ id: schema.calendarDay.id });
-
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'calendarDay', args.id);
 			calendarDayPubsub.removed();
 
 			return true;
@@ -141,7 +133,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await readableCalendarDay(ctx, created.id)))
+				.findFirst(query(await readableById(ctx.abilities.calendarDay, created.id)))
 				.then(assertFindFirstExists);
 		}
 	})

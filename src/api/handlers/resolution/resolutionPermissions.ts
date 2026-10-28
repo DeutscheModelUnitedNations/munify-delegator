@@ -1,7 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertTeamRole,
 	CONFERENCE_CONTENT_ROLES,
 	isParticipantOfConference,
@@ -41,7 +40,7 @@ async function assertCommitteeInConference(
 
 /**
  * Refuses unless the caller curates the conference's resolutions, the committee tag is the
- * conference's, and the caller uploaded the PDF for a resolution of that conference.
+ * conference's, and the caller uploaded the PDF for a resolution.
  */
 export async function assertCanCreateResolution(
 	ctx: ApiContext,
@@ -73,12 +72,4 @@ export async function assertCanUpdateResolution(
 		.then(assertFindFirstExists);
 
 	await assertCommitteeInConference(committeeId, resolution.conferenceId);
-}
-
-/** Refuses unless the resolution exists and the caller may delete it. */
-export async function assertCanDeleteResolution(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.resolution,
-		(await ctx.abilities.resolution.filter('delete')).merge({ where: { id } }).sql.where
-	);
 }

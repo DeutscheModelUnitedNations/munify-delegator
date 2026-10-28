@@ -25,13 +25,3 @@ export function registerCalendarDayAbilities() {
 export async function assertCanCreateCalendarDay(ctx: ApiContext, conferenceId: string) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
 }
-
-/** The day `id`, if the caller may update it: a where clause matching nothing otherwise. */
-export async function updatableCalendarDayWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.calendarDay.filter('update')).merge({ where: { id } }).sql.where;
-}
-
-/** The day `id`, if the caller may delete it: a where clause matching nothing otherwise. */
-export async function deletableCalendarDayWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.calendarDay.filter('delete')).merge({ where: { id } }).sql.where;
-}

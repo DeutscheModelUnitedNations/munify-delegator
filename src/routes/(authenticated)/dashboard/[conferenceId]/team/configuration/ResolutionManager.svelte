@@ -60,7 +60,6 @@
 				__args: {
 					conferenceId,
 					committeeId: uploadCommitteeId || undefined,
-					fileName: file.name,
 					fileId
 				},
 				id: true

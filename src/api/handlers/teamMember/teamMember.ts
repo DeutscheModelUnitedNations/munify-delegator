@@ -3,13 +3,8 @@ import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble.js'
 import { eq } from 'drizzle-orm';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { teamMemberPubsub } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import {
-	assertCanChangeTeamRole,
-	assertCanDeleteTeamMember,
-	registerTeamMemberAbilities
-} from './teamMemberPermissions';
+import { assertCanChangeTeamRole, registerTeamMemberAbilities } from './teamMemberPermissions';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerTeamMemberAbilities();
 
@@ -35,12 +30,7 @@ schemaBuilder.mutationFields((t) => ({
 			teamMemberPubsub.updated(args.id);
 
 			return db.query.teamMember
-				.findFirst(
-					query(
-						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.teamMember, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -49,15 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteTeamMember(ctx, args.id);
-
-			const deleted = await db
-				.delete(schema.teamMember)
-				.where(eq(schema.teamMember.id, args.id))
-				.returning({ id: schema.teamMember.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'teamMember', args.id);
 			teamMemberPubsub.removed();
 
 			return true;

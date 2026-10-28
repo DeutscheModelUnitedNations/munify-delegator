@@ -8,8 +8,8 @@ import { downloadFromURL } from '#lib/utils/downloadHelpers.js';
 export async function downloadResolution(id: string) {
 	const resolution = await client.query.resolution({
 		__args: { id },
-		fileName: true,
-		file: { url: true }
+		title: true,
+		file: { url: true, fileName: true }
 	});
-	await downloadFromURL(resolution.file.url, resolution.fileName);
+	await downloadFromURL(resolution.file.url, resolution.file.fileName ?? `${resolution.title}.pdf`);
 }

@@ -1,29 +1,24 @@
 import { db, schema } from '#api/db/db.js';
 import { eq } from 'drizzle-orm';
-import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '#api/rumble.js';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields.js';
 import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates.js';
 import {
 	countConferenceParticipations,
-	previewUser,
 	removeParticipation,
 	updateNewsletterPreferences,
 	updateIdentity,
-	updateProfile,
-	upsertCallerRow
+	updateProfile
 } from './userService';
 import {
 	assertCanImpersonate,
 	assertCanManageUser,
 	canImpersonate,
-	assertNotImpersonating,
-	assertCanPreviewUsers,
 	assertCanUpdateNewsletterPreferences,
 	deletableParticipation,
-	registerUserAbilities,
-	updatableUser
+	registerUserAbilities
 } from './userPermissions';
 import {
 	conferenceParticipantPubsub,
@@ -39,6 +34,7 @@ import {
 } from '#api/services/account/impersonation.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
+import { allowedRowWhere, readableById } from '#api/services/authHelper.js';
 
 registerUserAbilities();
 
@@ -71,10 +67,6 @@ function profileChanged(id: string) {
 	scanUserForDuplicatesInBackground(id);
 }
 
-/** The user with this id, as far as the caller may read it. */
-const readableUser = async (ctx: ApiContext, id: string) =>
-	(await ctx.abilities.user.filter('read')).merge({ where: { id } }).query.single;
-
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Removes every trace of a user's participation in one conference - delegation membership,
@@ -101,7 +93,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.removed();
 
 			return db.query.user
-				.findFirst(query(await readableUser(ctx, args.userId)))
+				.findFirst(query(await readableById(ctx.abilities.user, args.userId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -131,12 +123,12 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateProfile(args, await updatableUser(ctx, args.id));
+			await updateProfile(args, await allowedRowWhere(ctx, 'user', 'update', args.id));
 
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableUser(ctx, args.id)))
+				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -182,7 +174,7 @@ schemaBuilder.mutationFields((t) => ({
 			userPubsub.updated(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableUser(ctx, args.id)))
+				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -204,7 +196,7 @@ schemaBuilder.mutationFields((t) => ({
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableUser(ctx, args.id)))
+				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -271,33 +263,6 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-const UpsertSelfResult = schemaBuilder.simpleObject('UpsertSelfResult', {
-	fields: (t) => ({
-		userNeedsAdditionalInfo: t.boolean(),
-		userId: t.string()
-	})
-});
-
-schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Creates or refreshes the caller's own row from their OIDC claims. Called right after login,
-	 * which is the only moment the app learns about a new account.
-	 *
-	 * The claims come from the context rather than the userinfo endpoint: when access tokens are
-	 * JWTs scoped to an API resource, fetching userinfo fails.
-	 */
-	upsertSelf: t.field({
-		type: UpsertSelfResult,
-		resolve: async (_root, _args, ctx) => {
-			assertNotImpersonating(ctx);
-			const result = await upsertCallerRow(ctx.mustBeLoggedIn());
-			// An upsert on sign-in, so one notification on whichever row now holds the account.
-			userPubsub.updated(result.userId);
-			return result;
-		}
-	})
-}));
-
 const ImpersonationUser = schemaBuilder.simpleObject('ImpersonationUser', {
 	fields: oidcIdentityFields
 });
@@ -338,33 +303,6 @@ schemaBuilder.queryFields((t) => ({
 				originalUser: identity(impersonator),
 				impersonatedUser: identity(user)
 			};
-		}
-	})
-}));
-
-const UserPreview = schemaBuilder.simpleObject('UserPreview', {
-	fields: (t) => ({
-		id: t.id(),
-		email: t.string(),
-		given_name: t.string({ nullable: true }),
-		family_name: t.string({ nullable: true })
-	})
-});
-
-schemaBuilder.queryFields((t) => ({
-	/**
-	 * Looks a user up by id or email so management can add them to something.
-	 *
-	 * Not ability-filtered on the target - the whole point is to find somebody the caller has no
-	 * relationship with yet - so the check is on the caller instead: participant care, project
-	 * management, or admin. Only the four fields below are exposed.
-	 */
-	previewUserByIdOrEmail: t.field({
-		type: UserPreview,
-		args: { emailOrId: t.arg.string({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanPreviewUsers(ctx);
-			return previewUser(args.emailOrId);
 		}
 	})
 }));

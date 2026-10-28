@@ -47,8 +47,7 @@ export function addSeedFile(
 		purpose,
 		mimeType: file.mimeType,
 		size: file.bytes.length,
-		fileName: file.fileName,
-		conferenceId: file.conferenceId
+		fileName: file.fileName
 	});
 	batch.storedObject.push({ key, bytes: file.bytes, mimeType: file.mimeType });
 	return id;

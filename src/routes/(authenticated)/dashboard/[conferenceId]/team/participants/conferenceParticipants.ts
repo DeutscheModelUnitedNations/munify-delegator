@@ -96,7 +96,6 @@ export async function fetchConferenceParticipants(conferenceId: string, userIds:
 		client.liveQuery.waitingListEntries({
 			__args: inConference,
 			createdAt: true,
-			assigned: true,
 			assignedAt: true,
 			school: { name: true },
 			user: participantUser

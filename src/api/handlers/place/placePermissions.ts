@@ -31,11 +31,7 @@ export async function assertCanCreatePlace(
 	sitePlanFileId: string | null | undefined
 ) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
-	await assertCanClaimFile(ctx, sitePlanFileId, {
-		kind: 'place',
-		field: 'sitePlan',
-		conferenceId
-	});
+	await assertCanClaimFile(ctx, sitePlanFileId, { kind: 'place', field: 'sitePlan', conferenceId });
 }
 
 /** Refuses unless the caller may update the place and store the site plan given in it. */
@@ -55,9 +51,4 @@ export async function assertCanUpdatePlace(
 		field: 'sitePlan',
 		conferenceId: place.conferenceId
 	});
-}
-
-/** The place `id`, if the caller may delete it: a where clause matching nothing otherwise. */
-export async function deletablePlaceWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.place.filter('delete')).merge({ where: { id } }).sql.where;
 }

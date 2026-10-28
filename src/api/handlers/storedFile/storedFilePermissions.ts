@@ -13,6 +13,7 @@ import {
 } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
+import { objectKey } from './storageClient';
 
 /** Who uploaded a file is the uploader's (and an admin's) to know. */
 const WITHOUT_UPLOADER = { uploadedById: false };
@@ -102,8 +103,9 @@ export async function assertCanUploadFile(
 
 /**
  * Refuses unless the caller may store `fileId` in `field` of a `kind` row of `conferenceId`: they
- * uploaded it, for exactly that. Passes `null` (clear the field) and `undefined` (leave it alone)
- * through, so it wraps a mutation argument as it is.
+ * uploaded it, for that field of that conference. A file names no conference, but the key
+ * `requestFileUpload` gave it does (`objectKey`). Passes `null` (clear the field) and `undefined`
+ * (leave it alone) through, so it wraps a mutation argument as it is.
  *
  * The caller's right to write the row itself is the mutation's business, as for any other column;
  * that the file arrived in full is `ensureUploadComplete`'s.
@@ -119,14 +121,14 @@ export async function assertCanClaimFile<K extends FileKind>(
 
 	const file = await db.query.storedFile.findFirst({
 		where: { id: fileId },
-		columns: { purpose: true, conferenceId: true, uploadedById: true }
+		columns: { key: true, purpose: true, uploadedById: true }
 	});
 	if (
 		!source ||
 		!file ||
 		file.purpose !== source.purpose ||
-		file.conferenceId !== target.conferenceId ||
-		file.uploadedById !== user.sub
+		file.uploadedById !== user.sub ||
+		!file.key.startsWith(objectKey(target.conferenceId, source.purpose, ''))
 	) {
 		throw apiError('INVALID_INPUT', m.fileUploadNotUsable());
 	}

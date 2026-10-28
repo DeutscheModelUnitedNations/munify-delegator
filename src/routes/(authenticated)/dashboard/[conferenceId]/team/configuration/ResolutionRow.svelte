@@ -27,8 +27,8 @@
 		await client.liveQuery.resolution({
 			__args: { id: resolutionId },
 			title: true,
-			fileName: true,
-			committeeId: true
+			committeeId: true,
+			file: { fileName: true }
 		})
 	);
 
@@ -69,7 +69,7 @@
 		/>
 		<div class="mt-1 text-xs opacity-60">
 			<i class="fa-sharp-duotone fa-solid fa-file-pdf"></i>
-			{resolution.fileName}
+			{resolution.file.fileName}
 		</div>
 	</td>
 	<td>

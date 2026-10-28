@@ -2,7 +2,6 @@ import { db, schema } from '#api/db/db.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertTeamRole,
 	assertParticipantOrTeamMemberIn,
 	isOwnUser,
@@ -10,9 +9,11 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
 	userId,
-	where
+	where,
+	assertAllowedById
 } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
+import { eq } from 'drizzle-orm';
 
 export function registerConferenceParticipantAbilities() {
 	// Ported from abilities/entities/conferenceParticipant.ts
@@ -44,11 +45,7 @@ export function registerConferenceParticipantAbilities() {
 
 /** Refuses unless the caller's `update` ability reaches the status row `id`. */
 export async function assertCanUpdateParticipantStatus(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.conferenceParticipant,
-		(await ctx.abilities.conferenceParticipant.filter('update')).merge({ where: { id } }).sql.where,
-		m.updateNotFoundOrForbidden
-	);
+	await assertAllowedById(ctx, 'conferenceParticipant', 'update', id);
 }
 
 /**
@@ -64,13 +61,9 @@ export async function assertCanUpsertParticipantStatus(
 ) {
 	ctx.mustBeLoggedIn();
 	if (args.id) {
-		await assertAllowedRow(
-			schema.conferenceParticipant,
-			(await ctx.abilities.conferenceParticipant.filter('update')).merge({
-				where: { id: args.id, conferenceId: args.conferenceId }
-			}).sql.where,
-			m.updateNotFoundOrForbidden
-		);
+		await assertAllowedById(ctx, 'conferenceParticipant', 'update', args.id, {
+			extra: eq(schema.conferenceParticipant.conferenceId, args.conferenceId)
+		});
 		return;
 	}
 	await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
@@ -95,12 +88,22 @@ export async function assertCanSetAttendanceForAll(ctx: ApiContext, conferenceId
 }
 
 /**
- * The caller's own participant row in the conference, whose school they may change themselves.
- * Refuses when they take no part in it (the team and the waiting list have no row).
+ * The participant row whose school the caller may set, by id through the row's update ability
+ * (participant care), or without one the caller's own row in the conference. Refuses when they take
+ * no part in it (the team and the waiting list have no row).
  */
-export async function assertOwnParticipant(ctx: ApiContext, conferenceId: string) {
+export async function assertCanSetParticipantSchool(
+	ctx: ApiContext,
+	args: { conferenceId: string; id?: string | null }
+) {
+	if (args.id) {
+		await assertAllowedById(ctx, 'conferenceParticipant', 'update', args.id, {
+			extra: eq(schema.conferenceParticipant.conferenceId, args.conferenceId)
+		});
+		return args.id;
+	}
 	const own = await db.query.conferenceParticipant.findFirst({
-		where: { conferenceId, userId: ctx.mustBeLoggedIn().sub },
+		where: { conferenceId: args.conferenceId, userId: ctx.mustBeLoggedIn().sub },
 		columns: { id: true }
 	});
 	if (!own) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());

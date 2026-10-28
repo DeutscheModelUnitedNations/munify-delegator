@@ -45,7 +45,7 @@ export const conferenceSettingsFormSchema = z.object({
 		.instanceof(File)
 		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
 		.optional(),
-	startAssignment: z.date({
+	applicationDeadline: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),
 	registrationDeadlineGracePeriodMinutes: z.coerce.number(),
@@ -75,7 +75,7 @@ export const conferenceSettingsFormSchema = z.object({
 			message: m.pleaseEnterAValidAmount()
 		})
 		.optional(),
-	accountHolder: z.string().optional(),
+	bankAccountHolder: z.string().optional(),
 	iban: z
 		.string()
 		.regex(

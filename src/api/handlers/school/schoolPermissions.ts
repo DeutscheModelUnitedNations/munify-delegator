@@ -3,6 +3,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
+	isSystemAdmin,
 	isTeamMemberOf,
 	systemAdmin,
 	where
@@ -53,6 +54,21 @@ export async function assertCanUpdateSchools(ctx: ApiContext, ids: readonly stri
 	if (allowed.length !== unique.length) {
 		throw apiError('NOT_FOUND', m.schoolNotFound());
 	}
+}
+
+/**
+ * Refuses unless the caller may edit the school. Returns the conferences whose numbers of it they
+ * may see: those they look after the participants of, or every one (`undefined`) for an admin.
+ * Managing a school is no reason to learn about the conferences of other organizers.
+ */
+export async function assertCanReadSchoolMetrics(ctx: ApiContext, schoolId: string) {
+	await assertCanUpdateSchools(ctx, [schoolId]);
+	if (isSystemAdmin(ctx)) return undefined;
+	const caredFor = await db.query.conference.findMany({
+		where: isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES),
+		columns: { id: true }
+	});
+	return caredFor.map((conference) => conference.id);
 }
 
 /** The schools of a conference, with their numbers, are participant care's. */

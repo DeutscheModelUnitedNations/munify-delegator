@@ -9,7 +9,6 @@ export function makeSeedSingleParticipant(
 		...options,
 		id: faker.database.mongodbObjectId(),
 		applied: options?.applied ?? faker.datatype.boolean(),
-		assignmentDetails: faker.lorem.sentence(),
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentence(),
 		assignedRoleId: options?.assignedRoleId ?? null,

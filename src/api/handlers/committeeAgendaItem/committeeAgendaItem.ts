@@ -5,11 +5,11 @@ import { eq } from 'drizzle-orm';
 import { committeeAgendaItemPubsub } from '#api/pubsub.js';
 import {
 	assertCanCreateAgendaItem,
-	assertCanDeleteAgendaItem,
 	assertCanSetAgendaItemReviewHelpStatus,
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -42,13 +42,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeAgendaItemPubsub.created();
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -70,13 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeAgendaItemPubsub.updated(args.id);
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -85,8 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteAgendaItem(ctx, args.id);
-			await db.delete(schema.committeeAgendaItem).where(eq(schema.committeeAgendaItem.id, args.id));
+			await deleteAllowedRow(ctx, 'committeeAgendaItem', args.id);
 			committeeAgendaItemPubsub.removed();
 
 			return true;
@@ -110,13 +97,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeAgendaItemPubsub.updated(args.agendaItemId);
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: args.agendaItemId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, args.agendaItemId)))
 				.then(assertFindFirstExists);
 		}
 	})

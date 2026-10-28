@@ -14,7 +14,7 @@ import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplica
 import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray, type SQL } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { apiError } from '#api/services/errors/apiError.js';
 import { codeNotFound } from '#api/services/errors/codeNotFound.js';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
@@ -262,31 +262,6 @@ export async function moveMemberToCommittee({ member, committee }: CommitteeMove
 	});
 }
 
-/**
- * Bulk committee (un)assignment; a null committee clears the assignment. Only the delegates
- * matching `updatableWhere` (`authorizeDelegationMemberCommitteeMoves`) are written, and a write
- * that would put more of a delegation into a committee than it has seats there is rolled back.
- * Returns the count.
- */
-export async function moveManyMembersToCommittee(
-	ids: string[],
-	assignedCommitteeId: string | null | undefined,
-	updatableWhere: SQL | undefined
-) {
-	return db.transaction(async (tx) => {
-		const updated = await tx
-			.update(schema.delegationMember)
-			.set({ assignedCommitteeId: assignedCommitteeId ?? null })
-			.where(and(updatableWhere, inArray(schema.delegationMember.id, ids)))
-			.returning({ id: schema.delegationMember.id });
-		await assertSeatLimits(
-			tx,
-			updated.map((member) => member.id)
-		);
-		return updated.length;
-	});
-}
-
 /** Refuses when a delegation of the given members now fills a committee beyond its seats. */
 async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
 	if (memberIds.length === 0) return;
@@ -326,13 +301,13 @@ async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
  * back, which is why this runs in a transaction rather than writing as it goes.
  */
 export async function assignCommittees(
-	assignments: { delegationMemberId: string; committeeId: string }[]
+	assignments: { delegationMemberId: string; committeeId?: string | null }[]
 ) {
 	await db.transaction(async (tx) => {
 		for (const assignment of assignments) {
 			await tx
 				.update(schema.delegationMember)
-				.set({ assignedCommitteeId: assignment.committeeId })
+				.set({ assignedCommitteeId: assignment.committeeId ?? null })
 				.where(eq(schema.delegationMember.id, assignment.delegationMemberId));
 		}
 

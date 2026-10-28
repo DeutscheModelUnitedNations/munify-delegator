@@ -231,7 +231,8 @@
 	"patchedDependencies": {
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
-		"svelte-virtual-list@3.0.1": "patches/svelte-virtual-list@3.0.1.patch"
+		"svelte-virtual-list@3.0.1": "patches/svelte-virtual-list@3.0.1.patch",
+		"@sveltejs/kit@3.1.0": "patches/@sveltejs%2Fkit@3.1.0.patch"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",

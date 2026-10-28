@@ -85,7 +85,7 @@ export function buildConferenceStructure(
 	const conference = {
 		...makeSeedConference({
 			state: plan.conference.state,
-			startAssignment: at(plan.days.startAssignment),
+			applicationDeadline: at(plan.days.applicationDeadline),
 			startConference,
 			endConference
 		}),
@@ -106,7 +106,7 @@ export function buildConferenceStructure(
 		unlockPayments: false,
 		unlockPostals: false,
 		assignmentReleased: plan.assigned,
-		assignmentReleasedAt: plan.assigned ? at(plan.days.startAssignment) : null,
+		assignmentReleasedAt: plan.assigned ? at(plan.days.applicationDeadline) : null,
 		...plan.conference
 	};
 	world.batch.conference.push(conference);
@@ -409,7 +409,6 @@ export function addWaitingListEntry(
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentences(2),
 		requests: faker.helpers.maybe(() => 'Gerne zusammen mit meiner Freundin') ?? null,
-		assigned: plan.assigned ?? false,
 		assignedAt: plan.assigned ? faker.date.recent({ days: 20 }) : null,
 		hidden: plan.hidden ?? false,
 		...(plan.createdAt ? { createdAt: plan.createdAt, updatedAt: plan.createdAt } : {})

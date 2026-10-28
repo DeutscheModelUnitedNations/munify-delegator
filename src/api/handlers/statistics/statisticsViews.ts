@@ -49,7 +49,7 @@ function accumulate<K, V>(map: Map<K, V>, key: K, create: () => V) {
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export function countdownsOf(
-	conference: { startConference: Date; startAssignment: Date },
+	conference: { startConference: Date; applicationDeadline: Date },
 	now = new Date()
 ) {
 	return {
@@ -57,7 +57,7 @@ export function countdownsOf(
 			(conference.startConference.getTime() - now.getTime()) / MS_PER_DAY
 		),
 		daysUntilEndRegistration: Math.floor(
-			(conference.startAssignment.getTime() - now.getTime()) / MS_PER_DAY
+			(conference.applicationDeadline.getTime() - now.getTime()) / MS_PER_DAY
 		)
 	};
 }

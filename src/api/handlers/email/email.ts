@@ -7,7 +7,13 @@ import {
 	conferenceEmailTextPubsub
 } from '#api/pubsub.js';
 import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
-import { countOpenEmails, previewEmail, scheduleEmailSweep, skipOpenEmails } from './emailSweep';
+import {
+	countOpenEmails,
+	previewEmail,
+	scheduleEmailSweep,
+	setEmailKindsEnabled,
+	skipOpenEmails
+} from './emailSweep';
 import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
 import { toLocale } from '#lib/paraglide/runtime.js';
@@ -242,15 +248,9 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanManageEmails(ctx, args.conferenceId);
 			if (isAlwaysSent(args.kind)) throw apiError('INVALID_INPUT', m.emailKindAlwaysSent());
 			if (args.enabled && args.notifyExisting === false) {
-				await skipOpenEmails(args.conferenceId, args.kind);
+				await skipOpenEmails(args.conferenceId, [args.kind]);
 			}
-			await db
-				.insert(schema.conferenceEmailSetting)
-				.values({ conferenceId: args.conferenceId, kind: args.kind, enabled: args.enabled })
-				.onConflictDoUpdate({
-					target: [schema.conferenceEmailSetting.conferenceId, schema.conferenceEmailSetting.kind],
-					set: { enabled: args.enabled, updatedAt: new Date() }
-				});
+			await setEmailKindsEnabled(args.conferenceId, [args.kind], args.enabled);
 			conferenceEmailSettingPubsub.updated();
 			if (args.enabled) scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 			return true;

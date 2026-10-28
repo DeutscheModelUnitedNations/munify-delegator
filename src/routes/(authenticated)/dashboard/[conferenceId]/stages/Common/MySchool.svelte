@@ -27,5 +27,6 @@
 <SchoolLine
 	school={participants.at(0)?.school}
 	{hint}
-	save={(choice) => client.mutate.setMySchool({ __args: { conferenceId, ...choice }, id: true })}
+	save={(choice) =>
+		client.mutate.setParticipantSchool({ __args: { conferenceId, ...choice }, id: true })}
 />

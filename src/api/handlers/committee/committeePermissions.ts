@@ -1,14 +1,14 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { type ApiContext, abilityBuilder } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	where
+	where,
+	assertAllowedById
 } from '#api/services/authHelper.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -57,10 +57,7 @@ export async function assertCanUpdateCommittee(ctx: ApiContext, id: string) {
 
 /** Refuses unless the caller's delete ability matches the committee. */
 export async function assertCanDeleteCommittee(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.committee,
-		(await ctx.abilities.committee.filter('delete')).merge({ where: { id } }).sql.where
-	);
+	await assertAllowedById(ctx, 'committee', 'delete', id);
 }
 
 /**

@@ -43,19 +43,33 @@ export async function assertCanCreatePaymentTransaction(
 	const caller = ctx.mustBeLoggedIn().sub;
 
 	// A reference is made by its payer, for people that payer can see in the conference -
-	// themselves, their delegation, the participants they supervise. Participant care may
-	// make one on anybody's behalf.
+	// themselves, their delegation, the participants they supervise and the supervisors they
+	// share a student with. Participant care may make one on anybody's behalf.
 	if (!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))) {
 		if (args.userId !== caller) {
 			throw apiError('FORBIDDEN', m.paymentOnlyOwnName());
 		}
-		const visible = await db.query.user.findMany({
-			...(await ctx.abilities.user.filter('read')).merge({
-				where: { id: { in: [...new Set(args.paymentFor)] } }
-			}).query.many,
+		// in this conference: whom the caller knows from another one is no reason to pay for them here
+		const paymentFor = [...new Set(args.paymentFor)];
+		const own = await db.query.conferenceParticipant.findMany({
+			where: {
+				conferenceId: args.conferenceId,
+				userId: { in: paymentFor },
+				OR: [
+					{ userId: caller },
+					{ delegationMember: { delegation: { members: { participant: { userId: caller } } } } },
+					{ supervisors: { participant: { userId: caller } } },
+					// a supervisor sharing a student with the caller
+					{
+						conferenceSupervisor: {
+							supervised: { supervisors: { participant: { userId: caller } } }
+						}
+					}
+				]
+			},
 			columns: { id: true }
 		});
-		if (visible.length !== new Set(args.paymentFor).size) {
+		if (own.length !== paymentFor.length) {
 			throw apiError('FORBIDDEN', m.paymentOnlyForOwn());
 		}
 	}

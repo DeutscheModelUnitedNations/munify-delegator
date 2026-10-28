@@ -130,9 +130,9 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	image: { group: 'general', label: () => m.conferenceImage() },
 	emblem: { group: 'general', label: () => m.conferenceEmblem() },
 	logo: { group: 'general', label: () => m.conferenceLogo() },
-	startAssignment: {
+	applicationDeadline: {
 		group: 'general',
-		label: () => m.conferenceStartAssignment(),
+		label: () => m.conferenceApplicationDeadline(),
 		format: formatDateTime
 	},
 	registrationDeadlineGracePeriodMinutes: {
@@ -186,7 +186,7 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	bankName: { group: 'payments', label: () => m.bankName(), highImpact: true, note: bankingNote },
 	iban: { group: 'payments', label: () => m.iban(), highImpact: true, note: bankingNote },
 	bic: { group: 'payments', label: () => m.bic(), highImpact: true, note: bankingNote },
-	accountHolder: {
+	bankAccountHolder: {
 		group: 'payments',
 		label: () => m.accountHolder(),
 		highImpact: true,

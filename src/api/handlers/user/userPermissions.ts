@@ -26,11 +26,11 @@ import { apiError } from '#api/services/errors/apiError.js';
  * - their supervisors: everything but those notes;
  * - teammates: `IDENTITY` plus their phone number - team admins (project management, team
  *   coordinators): everything but the care notes;
- * - the people a supervisor looks after, and the supervisor's co-supervisors: the supervisor's
- *   `NAME_AND_EMAIL`, to get in touch;
- * - co-delegates, and the reviewers of a paper reading its author: `NAME` only. Neither needs to
- *   reach the person outside the app, and co-delegates are mostly minors: no email, no birthday
- *   (whether a co-delegate is of age is `conferenceParticipant.ofAgeAtConference`);
+ * - the people a supervisor looks after, the supervisor's co-supervisors, and co-delegates:
+ *   `NAME_AND_EMAIL`, to get in touch. Co-delegates are mostly minors, so no more than that: no
+ *   phone, no birthday (whether a co-delegate is of age is `conferenceParticipant.ofAgeAtConference`);
+ * - the reviewers of a paper reading its author: `NAME` only; they need not reach the person
+ *   outside the app;
  * - an author reading who reviewed their papers: the reviewer's name.
  */
 /** Who someone is, as the app shows them to people who share something with them. */
@@ -134,13 +134,13 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Delegates see each other's names.
+	// Delegates see each other's names and email addresses, to get in touch.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = userId(ctx);
 		return id
 			? {
 					where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
-					columns: NAME
+					columns: NAME_AND_EMAIL
 				}
 			: undefined;
 	});
@@ -227,15 +227,6 @@ export async function assertCanManageUser(ctx: Context, id: string) {
 }
 
 /**
- * The profile update's row, as far as the caller may update it: their own, or any for an admin.
- * Writing through it changes nothing for anybody else, which is how the mutation has always
- * answered a profile it may not touch.
- */
-export async function updatableUser(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.user.filter('update')).merge({ where: { id } }).sql.where;
-}
-
-/**
  * What of a user's participation in one conference the caller may remove, one where-clause per
  * table. Each carries its own ability filter, merged with the conference/user scope, so a caller
  * who may remove one kind of participation but not another removes only what they are allowed to.
@@ -289,25 +280,14 @@ export function assertCanUpdateNewsletterPreferences(
 	}
 }
 
-/** Participant care, project management (of any conference) and admins may look users up. */
-export async function assertCanPreviewUsers(ctx: Context) {
-	const caller = ctx.mustBeLoggedIn();
-	if (isSystemAdmin(ctx)) return;
-
-	const privileged = await db.query.teamMember.findFirst({
-		where: { userId: caller.sub, role: { in: [...PARTICIPANT_CARE_ROLES] } }
-	});
-	if (!privileged) {
-		throw apiError('FORBIDDEN', m.userPreviewForbidden());
-	}
-}
-
 /**
  * Whom `actor` may impersonate. A system admin: anybody but themselves. Participant care and project
  * management: the participants (delegates, single participants, supervisors) of their conferences,
  * except anybody on a team - impersonating them would lend the actor a team role, possibly of
- * another conference, they were never given. The roles of the OIDC claim cannot be lent: while
- * impersonating, the context keeps only the roles both hold (`#api/context.js`).
+ * another conference, they were never given - and anybody with a part in (or a place on the
+ * waiting list of) a conference the actor does not look after: the impersonation acts as them
+ * everywhere, so it would reach into that conference too. The roles of the OIDC claim cannot be
+ * lent: while impersonating, the context keeps only the roles both hold (`#api/context.js`).
  */
 function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
 	const notSelf = { id: { ne: actor.sub } };
@@ -315,7 +295,16 @@ function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
 	const caredFor = {
 		teamMembers: { user: { id: actor.sub }, role: { in: [...PARTICIPANT_CARE_ROLES] } }
 	};
-	return { ...notSelf, ...participatesIn(caredFor), NOT: { teamMember: true } };
+	const elsewhere = { conference: { NOT: caredFor } };
+	return {
+		...notSelf,
+		...participatesIn(caredFor),
+		AND: [
+			{ NOT: { teamMember: true } },
+			{ NOT: { conferenceParticipants: elsewhere } },
+			{ NOT: { waitingListEntry: elsewhere } }
+		]
+	};
 }
 
 /**
@@ -355,12 +344,5 @@ export async function assertCanImpersonate(ctx: Context, targetId: string) {
 	}
 	if (!(await canImpersonate(ctx, targetId))) {
 		throw apiError('FORBIDDEN', m.impersonationForbidden());
-	}
-}
-
-/** Signing in again through `upsertSelf` while impersonating would write the impersonated row. */
-export function assertNotImpersonating(ctx: Context) {
-	if (ctx.oidc.impersonator) {
-		throw apiError('FORBIDDEN', m.impersonationAlreadyActive());
 	}
 }

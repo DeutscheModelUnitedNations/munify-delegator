@@ -120,8 +120,7 @@ export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
 		applied: plan.applied,
 		motivation: plan.withoutTexts ? null : APPLICATION_TEXTS.motivation(),
 		experience: plan.withoutTexts ? null : APPLICATION_TEXTS.experience(),
-		assignedRoleId: plan.roleId ?? null,
-		assignmentDetails: plan.roleId ? 'Ausschuss nach Absprache mit der Konferenzleitung' : null
+		assignedRoleId: plan.roleId ?? null
 	});
 	for (const roleId of plan.preferences ?? []) {
 		cs.batch.singleParticipantRoleWish.push({ a: roleId, b: singleId });

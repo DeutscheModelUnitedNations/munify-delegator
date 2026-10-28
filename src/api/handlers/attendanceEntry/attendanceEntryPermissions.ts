@@ -140,8 +140,3 @@ export async function assertCanCreateAttendanceEntry(
 	await assertSessionOfConference(args.sessionId, args.conferenceId);
 	return callerId;
 }
-
-/** The entry `id`, if the caller may delete it: a where clause matching nothing otherwise. */
-export async function deletableAttendanceEntryWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.attendanceEntry.filter('delete')).merge({ where: { id } }).sql.where;
-}

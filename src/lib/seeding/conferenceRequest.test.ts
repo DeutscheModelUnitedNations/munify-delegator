@@ -39,7 +39,7 @@ describe('conferenceRequest', () => {
 			location: 'Kiel',
 			website: 'https://example.org',
 			language: 'Deutsch',
-			startAssignment: '2026-12-01T00:00',
+			applicationDeadline: '2026-12-01T00:00',
 			startConference: '2027-03-10T09:00',
 			endConference: '2027-03-13T17:00',
 			committees: [

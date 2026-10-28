@@ -20,7 +20,7 @@ import type { ConferenceUpdateArgs } from './conferenceService';
 
 /** Where the fee goes, where postal documents go, and the documents themselves. */
 const MEMBERS_ONLY = {
-	accountHolder: false,
+	bankAccountHolder: false,
 	iban: false,
 	bic: false,
 	bankName: false,
@@ -136,7 +136,7 @@ export async function assertCanUpdateConference(ctx: ApiContext, args: Conferenc
 	}
 }
 
-/** Refuses unless the caller uploaded every file `updateConference` is asked to store, for it. */
+/** Refuses unless the caller uploaded every file `updateConference` is asked to store, for its field. */
 export async function assertCanClaimConferenceFiles(ctx: ApiContext, args: ConferenceUpdateArgs) {
 	const claim = (field: FileField<'conference'>, fileId: string | null | undefined) =>
 		assertCanClaimFile(ctx, fileId, { kind: 'conference', field, conferenceId: args.id });

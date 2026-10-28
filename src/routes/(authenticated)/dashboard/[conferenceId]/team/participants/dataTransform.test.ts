@@ -231,21 +231,18 @@ describe('transformParticipants', () => {
 				waitingListEntries: [
 					{
 						createdAt: new Date('2026-02-01T10:00:00Z'),
-						assigned: false,
 						assignedAt: null,
 						school: { name: 'Gymnasium' },
 						user: user('waiting')
 					},
 					{
 						createdAt: new Date('2026-02-02T10:00:00Z'),
-						assigned: false,
 						assignedAt: null,
 						school: null,
 						user: user('rejected')
 					},
 					{
 						createdAt: new Date('2026-02-03T10:00:00Z'),
-						assigned: true,
 						assignedAt: new Date('2026-02-10T10:00:00Z'),
 						school: null,
 						user: user('seated')
@@ -280,7 +277,6 @@ describe('transformParticipants', () => {
 				waitingListEntries: [
 					{
 						createdAt: new Date('2026-02-03T10:00:00Z'),
-						assigned: true,
 						assignedAt: new Date('2026-02-10T10:00:00Z'),
 						school: null,
 						user: user('p')

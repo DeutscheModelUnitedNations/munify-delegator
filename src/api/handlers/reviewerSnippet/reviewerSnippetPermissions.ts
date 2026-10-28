@@ -1,6 +1,5 @@
-import { schema } from '#api/db/db.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
-import { assertAllowedRow, systemAdmin, userId } from '#api/services/authHelper.js';
+import { systemAdmin, userId, assertAllowedById } from '#api/services/authHelper.js';
 import { m } from '#lib/paraglide/messages.js';
 
 export function registerReviewerSnippetAbilities() {
@@ -15,18 +14,5 @@ export function registerReviewerSnippetAbilities() {
 
 /** Refuses unless the snippet exists and the caller may update it: it is their own. */
 export async function assertCanUpdateReviewerSnippet(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.reviewerSnippet,
-		(await ctx.abilities.reviewerSnippet.filter('update')).merge({ where: { id } }).sql.where,
-		m.snippetNotFound
-	);
-}
-
-/** Refuses unless the snippet exists and the caller may delete it: it is their own. */
-export async function assertCanDeleteReviewerSnippet(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.reviewerSnippet,
-		(await ctx.abilities.reviewerSnippet.filter('delete')).merge({ where: { id } }).sql.where,
-		m.snippetNotFound
-	);
+	await assertAllowedById(ctx, 'reviewerSnippet', 'update', id, { message: m.snippetNotFound });
 }

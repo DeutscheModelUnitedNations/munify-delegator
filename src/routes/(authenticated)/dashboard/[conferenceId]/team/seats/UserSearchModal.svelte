@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { client, type UserPreview } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client.js';
+	import type { UserPreview } from './userPreview';
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages.js';
 	import UserSuggestions from './UserSuggestions.svelte';

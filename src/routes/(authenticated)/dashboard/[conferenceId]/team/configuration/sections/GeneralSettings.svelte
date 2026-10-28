@@ -31,7 +31,7 @@
 
 	const technicalDeadline = $derived(
 		technicalRegistrationDeadline({
-			startAssignment: $formData.startAssignment,
+			applicationDeadline: $formData.applicationDeadline,
 			registrationDeadlineGracePeriodMinutes: $formData.registrationDeadlineGracePeriodMinutes
 		})
 	);
@@ -98,8 +98,8 @@
 	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
 		<FormDateTimeInput
 			{form}
-			name="startAssignment"
-			label={m.conferenceStartAssignment()}
+			name="applicationDeadline"
+			label={m.conferenceApplicationDeadline()}
 			enableTime
 		/>
 		<div class="flex flex-col">

@@ -41,7 +41,10 @@
 				href={school ? resolve(`dashboard/${conferenceId}/team/schools/${school.id}`) : undefined}
 				save={(choice) =>
 					Promise.resolve(
-						client.mutate.setParticipantSchool({ __args: { id, ...choice }, id: true })
+						client.mutate.setParticipantSchool({
+							__args: { conferenceId, id, ...choice },
+							id: true
+						})
 					)}
 			/>
 		</div>

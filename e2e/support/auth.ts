@@ -1,4 +1,7 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Cookie, type Page } from '@playwright/test';
+
+/** The prefix of the cookies the OIDC library keeps the session in (`makeCookieNames`). */
+const SESSION_COOKIE = 'auth_oidc_';
 
 /**
  * Claims the oidc-mock login page (oidc-mock.yaml, served by `vite dev`) signs into the tokens,
@@ -86,9 +89,18 @@ function isOidcUrl(url: string | URL): boolean {
 }
 
 /**
+ * The session cookies of every sign in this worker made, by the claims it signed in with. Signing
+ * in through the provider takes several page loads; the fixed users sign in dozens of times a run.
+ */
+const sessions = new Map<string, Cookie[]>();
+
+/**
  * Signs in on the oidc-mock login page as `claims`, then - for a brand new user - completes the
  * mandatory "additional info" profile form the app requires before granting access to the rest
  * of the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ *
+ * A user this worker signed in before with the same claims gets that session back instead, and
+ * goes through the provider again only if the app no longer accepts it.
  */
 export async function loginAs(
 	page: Page,
@@ -96,9 +108,19 @@ export async function loginAs(
 	opts: { startUrl?: string } = {}
 ): Promise<void> {
 	// Through `/login`: a conference's dashboard and seat overview are public and never send a
-	// visitor to the provider on their own.
+	// visitor to the provider on their own. With a valid session it redirects straight to `next`.
 	const startUrl = opts.startUrl ?? '/dashboard';
+	const sessionKey = JSON.stringify(claims);
+	const session = sessions.get(sessionKey);
+	if (session) {
+		await page.context().clearCookies();
+		await page.context().addCookies(session);
+	}
 	await page.goto(`/login?next=${encodeURIComponent(startUrl)}`);
+	if (session && !isOidcUrl(page.url())) {
+		await waitForHydration(page);
+		return;
+	}
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });
 	// The page's "custom claims" form: any `sub`, any claims. Its per-user buttons are for the
@@ -114,6 +136,10 @@ export async function loginAs(
 	if (new URL(page.url()).pathname.startsWith('/my-account')) {
 		await completeMandatoryProfile(page, claims);
 	}
+	sessions.set(
+		sessionKey,
+		(await page.context().cookies()).filter((cookie) => cookie.name.startsWith(SESSION_COOKIE))
+	);
 
 	// A returning fixed-actor user (see `fixedTestUser`) skips the /my-account detour entirely,
 	// landing straight on `startUrl` - which otherwise conveniently gives the page's JS bundle a

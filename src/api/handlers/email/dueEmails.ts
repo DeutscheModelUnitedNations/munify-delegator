@@ -81,7 +81,7 @@ export interface EmailSnapshot {
 		assignmentReleased: boolean;
 		unlockPostals: boolean;
 		unlockPayments: boolean;
-		startAssignment: Date;
+		applicationDeadline: Date;
 		startConference: Date;
 		/** The conference's IANA time zone, which times in its mails are given in. */
 		timezone: string;
@@ -282,13 +282,13 @@ const acceptedEmails: Rule = (ctx, person) =>
 const applicationReminder: Rule = ({ conference, now }, person) =>
 	conference.state === 'PARTICIPANT_REGISTRATION' &&
 	hasUnsentApplication(person) &&
-	inWindowBefore(now, conference.startAssignment, APPLICATION_REMINDER_DAYS)
+	inWindowBefore(now, conference.applicationDeadline, APPLICATION_REMINDER_DAYS)
 		? // keyed by the deadline: a deadline moved later gets its own reminder
 			[
 				email(
 					'APPLICATION_DEADLINE_REMINDER',
 					person,
-					conference.startAssignment.toISOString().slice(0, 10)
+					conference.applicationDeadline.toISOString().slice(0, 10)
 				)
 			]
 		: [];

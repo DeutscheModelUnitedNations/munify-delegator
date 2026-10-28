@@ -30,13 +30,3 @@ export function registerSurveyOptionAbilities() {
 export async function assertCanCreateSurveyOption(ctx: ApiContext, questionId: string) {
 	await assertTeamRoleForSurveyQuestion(ctx, questionId);
 }
-
-/** The option `id`, if the caller may update it: a where clause matching nothing otherwise. */
-export async function updatableSurveyOptionWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.surveyOption.filter('update')).merge({ where: { id } }).sql.where;
-}
-
-/** The option `id`, if the caller may delete it: a where clause matching nothing otherwise. */
-export async function deletableSurveyOptionWhere(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.surveyOption.filter('delete')).merge({ where: { id } }).sql.where;
-}

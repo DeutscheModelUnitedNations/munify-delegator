@@ -52,7 +52,7 @@ export function isOpen(log: LogState | undefined, now: Date) {
 	return false;
 }
 
-async function enabledKinds(conferenceId: string) {
+export async function enabledKinds(conferenceId: string) {
 	const settings = await db.query.conferenceEmailSetting.findMany({
 		where: { conferenceId, enabled: true },
 		columns: { kind: true }
@@ -272,13 +272,19 @@ export async function countOpenEmails(conferenceId: string, kind: EmailKind) {
 }
 
 /**
- * Marks what the conference owes of `kind` right now as skipped, so switching a kind on only
- * reaches what happens from then on.
+ * Marks what the conference owes of `kinds` right now as skipped, so switching a kind on only
+ * reaches what happens from then on. `asIf` overrides conference fields, to skip what a change
+ * about to be written will make due before any sweep can see it.
  */
-export async function skipOpenEmails(conferenceId: string, kind: EmailKind) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	if (!snapshot) return;
-	const open = await openEmails(snapshot, new Set([kind]), new Date());
+export async function skipOpenEmails(
+	conferenceId: string,
+	kinds: readonly EmailKind[],
+	asIf: Partial<EmailSnapshot['conference']> = {}
+) {
+	const loaded = await loadEmailSnapshot(conferenceId);
+	if (!loaded || kinds.length === 0) return;
+	const snapshot = { ...loaded, conference: { ...loaded.conference, ...asIf } };
+	const open = await openEmails(snapshot, new Set(kinds), new Date());
 	for (let start = 0; start < open.length; start += 500) {
 		await db
 			.insert(schema.emailLog)
@@ -295,6 +301,22 @@ export async function skipOpenEmails(conferenceId: string, kind: EmailKind) {
 			.onConflictDoNothing();
 	}
 	emailLogPubsub.updated();
+}
+
+/** Switches kinds of automatic mail on or off for a conference. */
+export async function setEmailKindsEnabled(
+	conferenceId: string,
+	kinds: readonly EmailKind[],
+	enabled: boolean
+) {
+	if (kinds.length === 0) return;
+	await db
+		.insert(schema.conferenceEmailSetting)
+		.values(kinds.map((kind) => ({ conferenceId, kind, enabled })))
+		.onConflictDoUpdate({
+			target: [schema.conferenceEmailSetting.conferenceId, schema.conferenceEmailSetting.kind],
+			set: { enabled, updatedAt: new Date() }
+		});
 }
 
 /** Every conference that sends any automatic mail. */

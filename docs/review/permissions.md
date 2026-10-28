@@ -3,113 +3,111 @@
 Reviewed state: commit `162770ed` (branch `rumbbbbbbble`), working tree clean, 2026-10-27, after
 the backend review's fixes. Source of truth: `src/api/handlers/*/*Permissions.ts`, the resolvers in
 `src/api/handlers/*/*.ts`, `src/api/services/authHelper.ts`, and the schema in
-`src/api/db/schema/`. Lines marked _(open)_ are review questions that were neither changed nor
+`src/api/db/schema/`. Rows marked _(open)_ are review questions that were neither changed nor
 settled; the deferred ones carry a `TODO(security)` / `TODO(privacy)` in the code.
 
-Every line is one thing somebody can do, with the condition under which they can. Tick the box
-once you have decided the line is what you want. Lines are grouped by entity, as the code is.
+Every row is one thing somebody can do, with the condition under which they can. Tick the box in
+the last column once you have decided the row is what you want. Tables are grouped by entity, as
+the code is.
 
 ## How to read this
 
-**Actors.** `anybody` is an unauthenticated request (the GraphQL endpoint is not behind the login
-redirect; abilities decide). `user` is any signed-in account. The rest relate the caller to the row:
+### Who
 
-| Actor        | Meaning                                                                                        |
-| ------------ | ---------------------------------------------------------------------------------------------- |
-| self         | the row is about the caller                                                                    |
-| co-delegate  | the caller is a member of the same delegation (applied or not)                                 |
-| supervisor   | the caller supervises the person (a `supervision` row to the person's `conferenceParticipant`) |
-| supervised   | the caller is supervised by the row's supervisor                                               |
-| participant  | the caller is delegate, single participant or supervisor in the row's conference               |
-| team         | the caller holds any role on the row's conference's team                                       |
-| PC           | `PARTICIPANT_CARE_ROLES` = PROJECT_MANAGEMENT or PARTICIPANT_CARE of that conference           |
-| PM           | PROJECT_MANAGEMENT of that conference                                                          |
-| TC           | TEAM_COORDINATOR of that conference                                                            |
-| CL           | CONTENT_LEAD; `SEAT_PLANNING_ROLES` = PM + CL; `CONFERENCE_CONTENT_ROLES` = PM + PC + CL       |
-| paper roles  | `PAPER_ROLES` = every team role but MEMBER (REVIEWER, PM, PARTICIPANT_CARE, TC, CL)            |
-| admin        | the OIDC `admin` role; passes every rule, on every table, whether on a team or not             |
-| service user | the OIDC `service_user` role (the chase integration)                                           |
+Every row names each role and each column it applies to; nothing stands for a group. Team roles
+always mean the role **in the row's conference**. The team roles are member, reviewer, project
+management, participant care, team coordinator and content lead.
 
-**Masks.** "sees X" lists columns; "everything but Y" means the rule exposes the whole row except
-Y. rumble masks per row: a reader matched by several rules sees the union of their columns. A
-masked non-null column fails the whole query when selected, so a reader only ever sees what some
-rule grants. The generated list queries (`users`, `delegations`, …) and every relation follow the
-same rules, including `where`, `orderBy` and the `search` argument (search only looks at columns
-every matching rule guarantees).
+| Who                    | Meaning                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| Anybody                | An unauthenticated request. The GraphQL endpoint is not behind the login redirect; abilities decide. |
+| Signed-in user         | Any signed-in account, without any further relation to the row.                                      |
+| Self                   | The row is about the caller.                                                                         |
+| Co-delegate            | The caller is a member of the same delegation (applied or not).                                      |
+| Head delegate          | The caller is the head delegate of the row's delegation.                                             |
+| Supervisor             | The caller supervises the person (a `supervision` row to the person's `conferenceParticipant`).      |
+| Supervised person      | The caller is supervised by the row's supervisor.                                                    |
+| Co-supervisor          | The caller supervises somebody the row's supervisor supervises too.                                  |
+| Delegate               | The caller is a member of a delegation in the row's conference.                                      |
+| Single participant     | The caller is a single participant in the row's conference.                                          |
+| Team member (any role) | The caller holds any team role in the row's conference.                                              |
+| Member                 | The team role MEMBER.                                                                                |
+| Reviewer               | The team role REVIEWER.                                                                              |
+| Project management     | The team role PROJECT_MANAGEMENT.                                                                    |
+| Participant care       | The team role PARTICIPANT_CARE.                                                                      |
+| Team coordinator       | The team role TEAM_COORDINATOR.                                                                      |
+| Content lead           | The team role CONTENT_LEAD.                                                                          |
+| System admin           | The OIDC `admin` role. Passes every rule, on every table, whether on a team or not.                  |
+| Service user           | The OIDC `service_user` role (the chase integration).                                                |
 
-**Release.** Until `conference.assignmentReleased`, participant-side rules hide
-`delegation.assignedRoleId`, `delegationMember.assignedCommitteeId` and
-`singleParticipant.assignedRoleId` / `assignmentDetails`. Relations behind them resolve to nothing.
-The team always sees them.
+### Masks
 
-**Registration stage.** Registering yourself (head delegate, single participant, supervisor),
-joining a delegation and sending an application are bound to PARTICIPANT_REGISTRATION plus its
-grace period (`assertRegistrationOpen`, `assertApplicationReady`). Editing a registration and the
-team registering somebody else are open in every stage; the waiting list only opens in
-PREPARATION. Taking an application back (`applied` to false) is refused outside
-PARTICIPANT_REGISTRATION, for the team too.
+"Sees X" lists columns; "everything but Y" means the rule exposes the whole row except Y. rumble
+masks per row: a reader matched by several rules sees the union of their columns. A masked
+non-null column fails the whole query when selected, so a reader only ever sees what some rule
+grants. The generated list queries (`users`, `delegations`, …) and every relation follow the same
+rules, including `where`, `orderBy` and the `search` argument (search only looks at columns every
+matching rule guarantees).
+
+### Release
+
+Until `conference.assignmentReleased`, the rules for delegates, single participants and
+supervisors hide `delegation.assignedRoleId`, `delegationMember.assignedCommitteeId` and
+`singleParticipant.assignedRoleId`. Relations behind them resolve to nothing.
+Team members (any role) always see them.
+
+### Registration stage
+
+Registering yourself (head delegate, single participant, supervisor), joining a delegation and
+sending an application are bound to PARTICIPANT_REGISTRATION plus its grace period
+(`assertRegistrationOpen`, `assertApplicationReady`). Editing a registration and team members
+registering somebody else are open in every stage; the waiting list only opens in PREPARATION.
+Taking an application back (`applied` to false) is refused outside PARTICIPANT_REGISTRATION, for
+team members too.
 
 ---
 
 ## User (`user`)
 
-Columns: identity (`email`, `givenName`, `familyName`, `preferredUsername`, `locale`, `pronouns`,
-`birthday`), contact (`phone`, `street`, `apartment`, `zip`, `city`, `region`, `country`),
+Columns: `id`, timestamps, `email`, `givenName`, `familyName`, `preferredUsername`, `locale`,
+`pronouns`, `birthday`, `phone`, `street`, `apartment`, `zip`, `city`, `region`, `country`,
 `gender`, `foodPreference`, `emergencyContacts`, newsletter flags, `globalNotes` (care notes).
-`NAME` below = id, timestamps, given/family name, pronouns. `IDENTITY` = `NAME` + email,
-preferred username, locale, birthday.
 
-Read
+### Read
 
-- [ ] self: everything but `globalNotes`.
-- [ ] PC of a conference the person takes part in (delegate, single, supervisor) or waits for
-      (`isCaredForUser`): everything, `globalNotes` included. Not for the team.
-- [ ] admin: everything, everybody.
-- [ ] supervisor of the person (in the conference they supervise them in): everything but
-      `globalNotes` — address, phone, emergency contacts, gender, food preference, birthday
-      included. _(open)_
-- [ ] PM, TC (`TEAM_ADMIN_ROLES`): everybody on their team, everything but `globalNotes`.
-- [ ] teammate (any role, same conference): IDENTITY + `phone`.
-- [ ] co-delegate: NAME (id, given/family name, pronouns); whether they are of age comes from
-      `conferenceParticipant.ofAgeAtConference`, not the birthday.
-- [ ] supervised person reads their supervisors: NAME + email.
-- [ ] co-supervisor (shares a supervised person): NAME + email.
-- [ ] paper roles of a conference read the authors of its papers: NAME.
-- [ ] an author reads who reviewed their papers: id, given name, family name only.
-- [ ] PC reads the _other_ account of a possible duplicate of someone they manage: IDENTITY +
-      `globalNotes` while OPEN or CONFIRMED; IDENTITY only once DISMISSED.
-- [ ] anybody / user without a relation: nothing (no rule matches).
+| Who                                                                                                                              | Sees                                                                                                                                                                                                            | Notes                                                                                           | ✓   |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --- |
+| Self                                                                                                                             | Everything but `globalNotes`                                                                                                                                                                                    |                                                                                                 | [ ] |
+| Project management, participant care of a conference the person is a delegate, single participant or supervisor in, or waits for | Everything, `globalNotes` included                                                                                                                                                                              | `isCaredForUser`. Not for the other team roles.                                                 | [ ] |
+| System admin                                                                                                                     | Everything, of everybody                                                                                                                                                                                        |                                                                                                 | [ ] |
+| Supervisor of the person, in the conference they supervise them in                                                               | Everything but `globalNotes`: `street`, `apartment`, `zip`, `city`, `region`, `country`, `phone`, `emergencyContacts`, `gender`, `foodPreference` and `birthday` included                                       | _(open)_                                                                                        | [ ] |
+| Project management, team coordinator (`TEAM_ADMIN_ROLES`)                                                                        | Everybody on their team: everything but `globalNotes`                                                                                                                                                           |                                                                                                 | [ ] |
+| Team member (any role), reading a teammate in the same conference                                                                | `id`, timestamps, `givenName`, `familyName`, `pronouns`, `email`, `preferredUsername`, `locale`, `birthday`, `phone`                                                                                            |                                                                                                 | [ ] |
+| Co-delegate                                                                                                                      | `id`, timestamps, `givenName`, `familyName`, `pronouns`, `email`                                                                                                                                                | Whether they are of age comes from `conferenceParticipant.ofAgeAtConference`, not the birthday. | [ ] |
+| Supervised person, reading their supervisors                                                                                     | `id`, timestamps, `givenName`, `familyName`, `pronouns`, `email`                                                                                                                                                |                                                                                                 | [ ] |
+| Co-supervisor                                                                                                                    | `id`, timestamps, `givenName`, `familyName`, `pronouns`, `email`                                                                                                                                                |                                                                                                 | [ ] |
+| Reviewer, project management, participant care, team coordinator, content lead, reading the authors of the conference's papers   | `id`, timestamps, `givenName`, `familyName`, `pronouns`                                                                                                                                                         |                                                                                                 | [ ] |
+| Paper author, reading who reviewed their papers                                                                                  | `id`, `givenName`, `familyName`                                                                                                                                                                                 |                                                                                                 | [ ] |
+| Project management, participant care, reading the _other_ account of a possible duplicate of somebody they manage                | While the pair is OPEN or CONFIRMED: `id`, timestamps, `givenName`, `familyName`, `pronouns`, `email`, `preferredUsername`, `locale`, `birthday`, `globalNotes`. Once DISMISSED: the same without `globalNotes` |                                                                                                 | [ ] |
+| Anybody, signed-in user without a relation                                                                                       | Nothing                                                                                                                                                                                                         | No rule matches.                                                                                | [ ] |
 
-Write
+### Write
 
-- [ ] self: `updateUser` — name, birthday, phone, address, apartment, gender, pronouns, food
-      preference, emergency contacts, newsletter flags. Not email, locale, username (OIDC), not
-      `globalNotes`.
-- [ ] admin: `updateUser` on anybody (the update ability).
-- [ ] PC of a conference the person takes part in or waits for, never for a teammate (or admin):
-      `updateUsersIdentityInfo` (name, birthday) and `updateUsersGlobalNotes` (care notes). A
-      teammate's name, birthday and notes only an admin edits.
-- [ ] anybody, no session: `updateUsersNewsletterPreferences` opting _out_ any email address;
-      always answers true. Opting _in_ only for the caller's own address. Deferred: a signed
-      token in the unsubscribe link (`TODO(security)` on `assertCanUpdateNewsletterPreferences`).
-- [ ] self: `upsertSelf` (re-sync row from OIDC claims; refused while impersonating).
-- [ ] whoever may delete the respective rows: `unregisterParticipant(userId, conferenceId)` removes
-      membership, single registration, supervisor row and participant row, each only as far as the
-      caller's delete ability on that table reaches. No account deletion or retention exists;
-      the policy is deferred (`TODO(privacy)` above the `user` table).
+| Who                                                                                                                                            | Can                                                                                                                                                                                                    | Notes                                                                                                                                                                              | ✓   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Self                                                                                                                                           | `updateUser`: `givenName`, `familyName`, `birthday`, `phone`, `street`, `apartment`, `zip`, `city`, `region`, `country`, `gender`, `pronouns`, `foodPreference`, `emergencyContacts`, newsletter flags | Not `email`, `locale`, `preferredUsername` (they come from OIDC), not `globalNotes`.                                                                                               | [ ] |
+| System admin                                                                                                                                   | `updateUser` on anybody                                                                                                                                                                                | Through the update ability.                                                                                                                                                        | [ ] |
+| Project management, participant care of a conference the person is a delegate, single participant or supervisor in, or waits for; system admin | `updateUsersIdentityInfo` (`givenName`, `familyName`, `birthday`), `updateUsersGlobalNotes` (`globalNotes`)                                                                                            | Never for a teammate: a teammate's name, birthday and notes only a system admin edits.                                                                                             | [ ] |
+| Anybody, no session                                                                                                                            | `updateUsersNewsletterPreferences`: opt _out_ any email address                                                                                                                                        | Always answers true. Opting _in_ only for the caller's own address. Deferred: a signed token in the unsubscribe link (`TODO(security)` on `assertCanUpdateNewsletterPreferences`). | [ ] |
+| Whoever holds the delete ability on the respective table (see the delegation member, single participant and supervisor tables)                 | `unregisterParticipant(userId, conferenceId)`: removes membership, single registration, supervisor row and participant row                                                                             | Each only as far as the caller's delete ability on that table reaches. No account deletion or retention exists; the policy is deferred (`TODO(privacy)` above the `user` table).   | [ ] |
 
-Lookups and impersonation
+### Lookups and impersonation
 
-- [ ] PC/PM of _any_ conference, or admin: `previewUserByIdOrEmail` — id, email, given/family name
-      of any account in the system. Accepted: direct placement of any account is how the
-      assignment works for now.
-- [ ] admin: impersonate anybody but themselves. PC of a conference: impersonate its delegates,
-      single participants and supervisors, never anybody holding a team role anywhere. Checked on
-      every request; system roles are the intersection of both. `canImpersonateUser` tells.
-      Minors are not excluded _(open)_.
-- [ ] user: `issueIdentityCode` (signed code of their own id for the scanner),
-      `identityCodePublicKey`, `myOIDCRoles`, `offlineUserRefresh`, `logoutUrl`,
-      `impersonationStatus`.
+| Who                                  | Can                                                                                                                                                                 | Notes                                                                                       | ✓   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --- |
+| System admin                         | Impersonate anybody but themselves                                                                                                                                  | Checked on every request; the system roles are those both hold. `canImpersonateUser` tells. | [ ] |
+| Project management, participant care | Impersonate the conference's delegates, single participants and supervisors                                                                                         | Never anybody holding a team role anywhere. Minors are not excluded _(open)_.               | [ ] |
+| Signed-in user                       | `issueIdentityCode` (signed code of their own id for the scanner), `identityCodePublicKey`, `myOIDCRoles`, `offlineUserRefresh`, `logoutUrl`, `impersonationStatus` |                                                                                             | [ ] |
 
 ## Conference participant (`conferenceParticipant`)
 
@@ -117,340 +115,305 @@ Per person and conference: `paymentStatus`, `didAttend`, `guardianConsent`, `med
 `mediaConsentStatus`, `termsAndConditions`, `assignedDocumentNumber`, `accessCardId`, `schoolId`,
 and the computed `ofAgeAtConference`. No column masks on this table.
 
-Read
+### Read
 
-- [ ] self: own row.
-- [ ] supervisor: the rows of the people they supervise (the supervision points at this row).
-- [ ] co-delegate: the rows of co-delegates — payment and consent statuses, attendance,
-      document number, access card id, school. _(open)_
-- [ ] PC, admin: every row of the conference.
+| Who                                                | Sees                                                                                                                                                                                        | Notes                               | ✓   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | --- |
+| Self                                               | Own row                                                                                                                                                                                     |                                     | [ ] |
+| Supervisor                                         | The rows of the people they supervise                                                                                                                                                       | The supervision points at this row. | [ ] |
+| Co-delegate                                        | The rows of co-delegates: `paymentStatus`, `guardianConsent`, `mediaConsent`, `mediaConsentStatus`, `termsAndConditions`, `didAttend`, `assignedDocumentNumber`, `accessCardId`, `schoolId` | _(open)_                            | [ ] |
+| Project management, participant care, system admin | Every row of the conference                                                                                                                                                                 |                                     | [ ] |
 
-Write
+### Write
 
-- [ ] PC (or admin): `updateConferenceParticipant` by id, by user id, or by user **email** — all
-      statuses, document number (or next free one), access card id; creates the row when the person
-      is in the conference and has none.
-- [ ] PC: `setParticipantSchool`, `updateAllConferenceParticipants(didAttend)` for the whole
-      conference.
-- [ ] self (delegate, single or supervisor): `setMySchool`.
-- [ ] Rows are also created implicitly by every registration (`ensureConferenceParticipant`). The
-      scanner no longer creates any for team members; rows earlier scans created stay.
+| Who                                                                                                                                                         | Can                                                                                                                                                                                                                                                 | Notes                                                                                | ✓   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --- |
+| Project management, participant care, system admin                                                                                                          | `updateConferenceParticipant` by id, by user id, or by user **email**: `paymentStatus`, `didAttend`, `guardianConsent`, `mediaConsent`, `mediaConsentStatus`, `termsAndConditions`, `assignedDocumentNumber` (or the next free one), `accessCardId` | Creates the row when the person is in the conference and has none.                   | [ ] |
+| Project management, participant care                                                                                                                        | `setParticipantSchool(id)` on anybody of the conference; `updateAllConferenceParticipants(didAttend)` for the whole conference                                                                                                                      |                                                                                      | [ ] |
+| Self (delegate, single participant or supervisor)                                                                                                           | `setParticipantSchool` without `id`: their own school                                                                                                                                                                                               |                                                                                      | [ ] |
+| Anybody registering (`createDelegation`, `createDelegationMember`, `createSingleParticipant`, `createConferenceSupervisor`, the `createApplied…` mutations) | Creates the row implicitly (`ensureConferenceParticipant`)                                                                                                                                                                                          | The scanner no longer creates any for team members; rows earlier scans created stay. | [ ] |
 
 ## Delegation (`delegation`)
 
 Columns: `entryCode`, `applied`, `motivation`, `experience`, `assignedRoleId`, `memberCount`.
 
-Read
+### Read
 
-- [ ] member: own delegation, `assignedRoleId` only once released.
-- [ ] supervisor of any member: same.
-- [ ] PC: all of the conference, with `entryCode`.
-- [ ] team (any role): all of the conference, without `entryCode`.
-- [ ] admin: all.
-- [ ] user (any signed-in account): `previewDelegation(conferenceId, entryCode)` — head delegate's
-      full name, member count, schools; the code is the check, and 10 wrong codes in 10 minutes
-      lock the account out of every lookup by code. New codes have 8 letters, older 6-letter
-      ones still work. Not bound to the registration stage.
+| Who                                              | Sees                                                                                           | Notes                                                                                                                                                                                            | ✓   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| Delegate of the delegation                       | Own delegation, `assignedRoleId` only once released                                            |                                                                                                                                                                                                  | [ ] |
+| Supervisor of any member                         | The same                                                                                       |                                                                                                                                                                                                  | [ ] |
+| Project management, participant care             | Every delegation of the conference, with `entryCode`                                           |                                                                                                                                                                                                  | [ ] |
+| Member, reviewer, team coordinator, content lead | Every delegation of the conference, without `entryCode`                                        |                                                                                                                                                                                                  | [ ] |
+| System admin                                     | Every delegation                                                                               |                                                                                                                                                                                                  | [ ] |
+| Signed-in user                                   | `previewDelegation(conferenceId, entryCode)`: head delegate's full name, member count, schools | The code is the check; 10 wrong codes in 10 minutes lock the account out of every lookup by code. New codes have 8 letters, older 6-letter ones still work. Not bound to the registration stage. | [ ] |
 
-Write
+### Write
 
-- [ ] user not yet in the conference: `createDelegation` (becomes head delegate), while
-      registration is open.
-- [ ] head delegate, until applied: `updateDelegation` (texts, apply/withdraw, reset entry code,
-      hand over head delegate), `deleteDelegation`. Applying needs enough members, wishes, complete
-      data and the registration window.
-- [ ] PC: `updateDelegation` any time (the update ability has no `applied` guard for them), but
-      taking the application back only during PARTICIPANT_REGISTRATION. Rotating the entry code
-      stays open.
-- [ ] PC: `deleteDelegation` of their conference's delegations, applied or not ("delete
-      delegation" in the user card).
-- [ ] PC: the assignment draft and `applyAssignment` create, move, dissolve delegations.
+| Who                                      | Can                                                                                                                             | Notes                                                                                                                                                         | ✓   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Signed-in user not yet in the conference | `createDelegation` (becomes head delegate)                                                                                      | While registration is open.                                                                                                                                   | [ ] |
+| Head delegate, until applied             | `updateDelegation` (`motivation`, `experience`, apply/withdraw, reset `entryCode`, hand over head delegate), `deleteDelegation` | Applying needs enough members, wishes, complete data and the registration window.                                                                             | [ ] |
+| Project management, participant care     | `updateDelegation` any time                                                                                                     | The update ability has no `applied` guard for them, but taking the application back only during PARTICIPANT_REGISTRATION. Rotating the entry code stays open. | [ ] |
+| Project management, participant care     | `deleteDelegation` of their conference's delegations, applied or not                                                            | "Delete delegation" in the user card.                                                                                                                         | [ ] |
+| Project management, participant care     | The assignment draft and `applyAssignment` create, move and dissolve delegations                                                |                                                                                                                                                               | [ ] |
 
 ## Delegation member (`delegationMember`)
 
-Read
+### Read
 
-- [ ] co-delegate: each other, `assignedCommitteeId` only once released.
-- [ ] supervisor of any member of the delegation: all members of that delegation, same mask.
-- [ ] PC, admin: all of the conference.
-- [ ] team without PC role: nothing directly (they reach people through the delegation's
-      members relation only as far as this table allows, so not at all).
+| Who                                                | Sees                                                 | Notes                                                                                                        | ✓   |
+| -------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --- |
+| Co-delegate                                        | Each other, `assignedCommitteeId` only once released |                                                                                                              | [ ] |
+| Supervisor of any member of the delegation         | Every member of that delegation, with the same mask  |                                                                                                              | [ ] |
+| Project management, participant care, system admin | Every member of the conference                       |                                                                                                              | [ ] |
+| Member, reviewer, team coordinator, content lead   | Nothing directly                                     | They reach people through the delegation's members relation only as far as this table allows, so not at all. | [ ] |
 
-Write
+### Write
 
-- [ ] user not yet in the conference: `createDelegationMember(conferenceId, entryCode)` joins a
-      delegation that has not applied, while registration is open; beyond that the code is the
-      only check (rate-limited like `previewDelegation`).
-- [ ] self, until the delegation applied: leave (`deleteDelegationMember`).
-- [ ] head delegate, until applied: remove a member.
-- [ ] head delegate, any time, for members without a committee: the `update` ability — used by
-      `updateDelegationMemberCommittee` / `updateManyDelegationMemberCommittee`.
-- [ ] PC: remove any member; move any member to a committee of the conference (single, bulk, or
-      the assistant's `assignCommitteesToDelegationMembers`).
-- [ ] Every committee move, by anybody, is refused unless the committee seats the delegation's
-      assigned role (`assertCommitteeSeats`); the bulk move also checks the per-delegation seat
-      limit.
-- [ ] PC: `createAppliedDelegationMember(userId, conferenceId, roleId)` places **any account** in an
-      assigned delegation, clearing another registration of theirs in the conference, without the
-      person's involvement. Accepted (see `previewUserByIdOrEmail`).
+| Who                                                      | Can                                                                                                                                          | Notes                                                                                                                                                                     | ✓   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Signed-in user not yet in the conference                 | `createDelegationMember(conferenceId, entryCode)`: join a delegation that has not applied                                                    | While registration is open; beyond that the code is the only check (rate-limited like `previewDelegation`).                                                               | [ ] |
+| Self, until the delegation applied                       | Leave (`deleteDelegationMember`)                                                                                                             |                                                                                                                                                                           | [ ] |
+| Head delegate, until applied                             | Remove a member                                                                                                                              |                                                                                                                                                                           | [ ] |
+| Head delegate, any time, for members without a committee | The `update` ability, used by `updateDelegationMemberCommittee` / `updateManyDelegationMemberCommittee`                                      |                                                                                                                                                                           | [ ] |
+| Project management, participant care                     | Remove any member; move any member to a committee of the conference (single, bulk, or the assistant's `assignCommitteesToDelegationMembers`) |                                                                                                                                                                           | [ ] |
+| Anybody moving a member to a committee                   | Refused unless the committee seats the delegation's assigned role (`assertCommitteeSeats`)                                                   | The bulk move also checks the per-delegation seat limit.                                                                                                                  | [ ] |
+| Project management, participant care                     | `createAppliedDelegationMember(userId, conferenceId, roleId)`: place **any account** in an assigned delegation                               | Clears another registration of theirs in the conference, without the person's involvement. Accepted: direct placement of any account is how the assignment works for now. | [ ] |
 
 ## Single participant (`singleParticipant`)
 
-Read
+### Read
 
-- [ ] self: own row, role only once released.
-- [ ] supervisor: the people they supervise, same mask.
-- [ ] PC, admin: all of the conference.
+| Who                                                | Sees                                          | Notes | ✓   |
+| -------------------------------------------------- | --------------------------------------------- | ----- | --- |
+| Self                                               | Own row, `assignedRoleId` only once released  |       | [ ] |
+| Supervisor                                         | The people they supervise, with the same mask |       | [ ] |
+| Project management, participant care, system admin | Every single participant of the conference    |       | [ ] |
 
-Write
+### Write
 
-- [ ] user: `createSingleParticipant` for a custom role of the conference, while registration is
-      open (an existing own entry is edited instead, in any stage).
-- [ ] self, until applied: `updateSingleParticipant` (texts, wishes, apply), `deleteSingleParticipant`.
-- [ ] PC: update and delete any; `createAppliedSingleParticipant(userId, …)` places any account
-      with a role.
+| Who                                  | Can                                                                                               | Notes                                                                              | ✓   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --- |
+| Signed-in user                       | `createSingleParticipant` for a custom role of the conference                                     | While registration is open; an existing own entry is edited instead, in any stage. | [ ] |
+| Self, until applied                  | `updateSingleParticipant` (texts, wishes, apply), `deleteSingleParticipant`                       |                                                                                    | [ ] |
+| Project management, participant care | Update and delete any; `createAppliedSingleParticipant(userId, …)` places any account with a role |                                                                                    | [ ] |
 
 ## Supervisor (`conferenceSupervisor`)
 
 Columns: `plansOwnAttendenceAtConference`, `connectionCode`.
 
-Read
+### Read
 
-- [ ] self: own row with the code.
-- [ ] PC, admin: all, with codes.
-- [ ] supervised person: their supervisors, without the code.
-- [ ] co-supervisor: the other supervisors of a shared person, without the code.
+| Who                                                | Sees                                                               | Notes | ✓   |
+| -------------------------------------------------- | ------------------------------------------------------------------ | ----- | --- |
+| Self                                               | Own row, with `connectionCode`                                     |       | [ ] |
+| Project management, participant care, system admin | Every supervisor, with `connectionCode`                            |       | [ ] |
+| Supervised person                                  | Their supervisors, without `connectionCode`                        |       | [ ] |
+| Co-supervisor                                      | The other supervisors of a shared person, without `connectionCode` |       | [ ] |
 
-Write
+### Write
 
-- [ ] user: `createConferenceSupervisor` for themselves, while registration is open, as long as
-      they hold no other part in it (team included).
-- [ ] PC: `createConferenceSupervisor(userId)` for any account, in any stage.
-- [ ] self, PC: `updateConferenceSupervisor` (attendance plan), `rotateSupervisorConnectionCode`.
-- [ ] self: delete own supervisor row any time; PC: delete any.
-- [ ] participant (delegate or single) of the conference: `connectToConferenceSupervisor(code)`
-      attaches themselves; the code is the check. Team members and supervisors cannot be
-      supervised. Rate-limited like `previewDelegation`.
-- [ ] PC: connect anybody of the conference to a supervisor by code.
-- [ ] supervised person, the supervisor, or PC: `disconnectFromConferenceSupervisor`.
-- [ ] anybody with a part in the conference (delegate, single, supervisor, team):
-      `previewConferenceSupervisor(code)` — supervisor's name, school, city. Rate-limited.
+| Who                                                                                | Can                                                                                               | Notes                                                                                                                                       | ✓   |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Signed-in user                                                                     | `createConferenceSupervisor` for themselves                                                       | While registration is open, as long as they are not a delegate, single participant, supervisor or team member (any role) in the conference. | [ ] |
+| Project management, participant care                                               | `createConferenceSupervisor(userId)` for any account                                              | In any stage.                                                                                                                               | [ ] |
+| Self, project management, participant care                                         | `updateConferenceSupervisor` (`plansOwnAttendenceAtConference`), `rotateSupervisorConnectionCode` |                                                                                                                                             | [ ] |
+| Self                                                                               | Delete own supervisor row                                                                         | Any time.                                                                                                                                   | [ ] |
+| Project management, participant care                                               | Delete any supervisor row                                                                         |                                                                                                                                             | [ ] |
+| Delegate, single participant                                                       | `connectToConferenceSupervisor(code)`: attach themselves                                          | The code is the check. Team members and supervisors cannot be supervised. Rate-limited like `previewDelegation`.                            | [ ] |
+| Project management, participant care                                               | Connect any delegate or single participant of the conference to a supervisor by code              |                                                                                                                                             | [ ] |
+| Supervised person, the supervisor, project management, participant care            | `disconnectFromConferenceSupervisor`                                                              |                                                                                                                                             | [ ] |
+| Delegate, single participant, supervisor, team member (any role) of the conference | `previewConferenceSupervisor(code)`: supervisor's name, school, city                              | Rate-limited.                                                                                                                               | [ ] |
 
 ## Role application (`roleApplication`, a delegation's wishes)
 
-- [ ] member, supervisor of a member, PC, admin: read.
-- [ ] head delegate until applied: create (role must be a nation or non-state actor of the
-      conference), delete, swap ranks.
-- [ ] PC: read, update and delete the wishes of their conference's delegations, also after
-      applying (the user card's wish list); create through the delegation's update ability (no UI
-      yet).
+| Who                                                                                                    | Can                                                                                       | Notes                                                                                  | ✓   |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --- |
+| Delegate of the delegation, supervisor of a member, project management, participant care, system admin | Read                                                                                      |                                                                                        | [ ] |
+| Head delegate, until applied                                                                           | Create, delete, swap ranks                                                                | The role must be a nation or non-state actor of the conference.                        | [ ] |
+| Project management, participant care                                                                   | Read, update and delete the wishes of their conference's delegations, also after applying | The user card's wish list. Create through the delegation's update ability (no UI yet). | [ ] |
 
 ## Waiting list (`waitingListEntry`)
 
 Columns: `motivation`, `experience`, `requests`, `assigned`, `assignedAt`, `hidden`, `schoolId`.
 
-- [ ] self: read own entry; update (texts, school) and delete it until it is assigned. `hidden`
-      and `assigned` stay PC's (`assertCanSetWaitingListFlags`).
-- [ ] user: `createWaitingListEntry` while the conference is in PREPARATION, the assignment is not
-      released and they hold no seat.
-- [ ] PC, admin: read, update (texts, hidden, assigned), delete.
-- [ ] Seating from the list happens through `createAppliedDelegationMember` /
-      `createAppliedSingleParticipant`.
+| Who                                                | Can                                                                                                          | Notes                                                                                                       | ✓   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --- |
+| Self                                               | Read own entry; update `motivation`, `experience`, `requests`, `schoolId` and delete it until it is assigned | `hidden` and `assigned` stay with project management and participant care (`assertCanSetWaitingListFlags`). | [ ] |
+| Signed-in user                                     | `createWaitingListEntry`                                                                                     | While the conference is in PREPARATION, the assignment is not released and they hold no seat.               | [ ] |
+| Project management, participant care, system admin | Read, update (`motivation`, `experience`, `requests`, `hidden`, `assigned`), delete                          |                                                                                                             | [ ] |
+| Project management, participant care               | Seat somebody from the list                                                                                  | Through `createAppliedDelegationMember` / `createAppliedSingleParticipant`.                                 | [ ] |
 
 ## Conference (`conference`)
 
-`MEMBERS_ONLY` = bank details, postal address, the template file ids (contract, consents, terms,
-certificate) and `documentLayouts`. `TEAM_ONLY` = `linkToTeamWiki`, `linkToServicesPage`.
+Columns hidden from some readers below: `bankAccountHolder`, `iban`, `bic`, `bankName`, `postalName`, `postalStreet`, `postalApartment`, `postalZip`, `postalCity`, `postalCountry`, `contractFileId`, `guardianConsentFileId`, `mediaConsentFileId`, `termsAndConditionsFileId`, `certificateFileId`, `documentLayouts`,
+`linkToTeamWiki`, `linkToServicesPage`.
 
-Read
+### Read
 
-- [ ] anybody: conferences in PARTICIPANT_REGISTRATION or PREPARATION, everything but
-      MEMBERS_ONLY and TEAM_ONLY (incl. fee, image/logo/emblem files, info, dates, and the computed
-      counts `totalParticipants`, `totalSeats`, `waitingListLength`).
-- [ ] PC: `nextDocumentNumber` (`assertCanReadNextDocumentNumber`).
-- [ ] participant (delegate, single, supervisor): their conferences in any state, everything but
-      TEAM_ONLY (so bank details, postal address, templates).
-- [ ] team: everything. admin: everything.
-- [ ] a conference in PRE, ACTIVE or POST is invisible to outsiders.
+| Who                                      | Sees                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Notes                              | ✓   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --- |
+| Anybody                                  | Conferences in PARTICIPANT_REGISTRATION or PREPARATION: everything but `bankAccountHolder`, `iban`, `bic`, `bankName`, `postalName`, `postalStreet`, `postalApartment`, `postalZip`, `postalCity`, `postalCountry`, `contractFileId`, `guardianConsentFileId`, `mediaConsentFileId`, `termsAndConditionsFileId`, `certificateFileId`, `documentLayouts`, `linkToTeamWiki`, `linkToServicesPage`. Includes fee, `imageFileId`, `logoFileId`, `emblemFileId`, info, dates, and the computed counts `totalParticipants`, `totalSeats`, `waitingListLength` |                                    | [ ] |
+| Anybody                                  | Nothing of a conference in PRE, ACTIVE or POST                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                                    | [ ] |
+| Delegate, single participant, supervisor | Their conferences in any state: everything but `linkToTeamWiki` and `linkToServicesPage` (so `bankAccountHolder`, `iban`, `bic`, `bankName`, `postalName`, `postalStreet`, `postalApartment`, `postalZip`, `postalCity`, `postalCountry`, `contractFileId`, `guardianConsentFileId`, `mediaConsentFileId`, `termsAndConditionsFileId`, `certificateFileId`, `documentLayouts` included)                                                                                                                                                                 |                                    | [ ] |
+| Team member (any role), system admin     | Everything                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                    | [ ] |
+| Project management, participant care     | `nextDocumentNumber`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `assertCanReadNextDocumentNumber`. | [ ] |
 
-Write
+### Write
 
-- [ ] PM: `updateConference`, all arguments.
-- [ ] PC and CL: `updateConference` limited to info/announcement, links, postal address, template
-      files, `state`, `unlockPayments`, `unlockPostals`, `isOpenPaperSubmission`, `showCalendar`.
-      _(open)_
-- [ ] PM, PC, CL: `setDocumentLayout`.
-- [ ] admin: `seedNewConference`.
-- [ ] PC: `conferencePlausibility` (too young/old, should (not) be supervisor, data missing — user
-      rows through the caller's read ability).
-- [ ] anybody who may read the conference: `getAllConferenceNations`; `conference.schools`
-      (counts per school over the registrations the caller may read).
+| Who                                                                                                                                                                             | Can                                                                                                                                                                                                                                                                                                                                                        | Notes                                                         | ✓   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --- |
+| Project management                                                                                                                                                              | `updateConference`, all arguments                                                                                                                                                                                                                                                                                                                          |                                                               | [ ] |
+| Participant care, content lead                                                                                                                                                  | `updateConference` limited to info/announcement, links, `postalName`, `postalStreet`, `postalApartment`, `postalZip`, `postalCity`, `postalCountry`, `contractFileId`, `guardianConsentFileId`, `mediaConsentFileId`, `termsAndConditionsFileId`, `certificateFileId`, `state`, `unlockPayments`, `unlockPostals`, `isOpenPaperSubmission`, `showCalendar` | _(open)_                                                      | [ ] |
+| Project management, participant care, content lead                                                                                                                              | `setDocumentLayout`                                                                                                                                                                                                                                                                                                                                        |                                                               | [ ] |
+| System admin                                                                                                                                                                    | `seedNewConference`                                                                                                                                                                                                                                                                                                                                        |                                                               | [ ] |
+| Project management, participant care                                                                                                                                            | `conferencePlausibility`: too young/old, should (not) be supervisor, data missing                                                                                                                                                                                                                                                                          | User rows through the caller's read ability.                  | [ ] |
+| Anybody while the conference is in PARTICIPANT_REGISTRATION or PREPARATION; otherwise its delegates, single participants, supervisors and team members (any role); system admin | `getAllConferenceNations`; `conference.schools`                                                                                                                                                                                                                                                                                                            | Counts per school over the registrations the caller may read. | [ ] |
 
 ## Team (`teamMember`, `teamMemberInvitation`)
 
-- [ ] team: read teammates' rows (role, user).
-- [ ] PM: remove anybody or change their role; TC: the same for anybody but PM.
-      `updateTeamMemberRole` also needs the caller to be allowed to hand out the new role
-      (`assertCanChangeTeamRole`, as for invitations): only PM makes somebody PM.
-- [ ] PM, TC: read invitations (token masked; TC not those for PM), create invitations
-      (`createTeamMemberInvitations`, a known address is added to the team directly), revoke,
-      regenerate (optionally re-sending the mail), `checkTeamInvitationEmails` (tells whether an
-      address has an account). Only PM hands out PROJECT_MANAGEMENT.
-- [ ] invited person: redeemed at login through the cookie set by `/auth/accept-invitation`.
-- [ ] team: `recordSearch` (own global-search history; only the caller reads it).
+| Who                                  | Can                                                                                                                                                                                       | Notes                                                                                                                                                                                 | ✓   |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Team member (any role)               | Read teammates' rows (role, user)                                                                                                                                                         |                                                                                                                                                                                       | [ ] |
+| Project management                   | Remove anybody or change their role                                                                                                                                                       | `updateTeamMemberRole` also needs the caller to be allowed to hand out the new role (`assertCanChangeTeamRole`, as for invitations).                                                  | [ ] |
+| Team coordinator                     | Remove anybody but project management, or change their role                                                                                                                               | Only project management makes somebody project management.                                                                                                                            | [ ] |
+| Project management, team coordinator | Read invitations; create them (`createTeamMemberInvitations`); revoke; regenerate (optionally re-sending the mail); `checkTeamInvitationEmails` (tells whether an address has an account) | `token` masked; team coordinators do not see invitations for project management. A known address is added to the team directly. Only project management hands out PROJECT_MANAGEMENT. | [ ] |
+| Invited person                       | Join the team                                                                                                                                                                             | Redeemed at login through the cookie set by `/auth/accept-invitation`.                                                                                                                | [ ] |
+| Team member (any role)               | `recordSearch` (own global-search history)                                                                                                                                                | Only the caller reads it.                                                                                                                                                             | [ ] |
 
 ## Papers (`paper`, `paperVersion`, `paperReview`, `reviewerSnippet`, `resolution`)
 
-- [ ] author: read and update own papers; delete while DRAFT.
-- [ ] paper roles: read and update every paper of the conference; PM deletes any.
-- [ ] co-delegate, supervisor of a member: read the delegation's papers and versions that are not
-      drafts.
-- [ ] member of the delegation: `createPaper` in own name, for own delegation, on an agenda item
-      of the conference.
-- [ ] paper roles: `createPaperReview` (verdict + status change, mails the author), the reviewer
-      hub queries, `findNextPaperToReview`, leaderboard (anonymised names), `flagCollection`.
-- [ ] participant of the conference: `findGlobalIntroductionPapers`,
-      `findGlobalPapersGroupedByCommittee`, `findPublicPaperContent` (as far as the read ability
-      reaches).
-- [ ] supervisor: `findSupervisedPapers`.
-- [ ] reviews: author reads reviews of own papers; paper roles read all of the conference.
-- [ ] reviewer snippets: own only.
-- [ ] resolutions: participant and team read (and download the PDF); PM, PC, CL upload, retitle,
-      retag, delete.
+| Who                                                                            | Can                                                                                                                                                                     | Notes                               | ✓   |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | --- |
+| Paper author                                                                   | Read and update own papers; delete them while DRAFT                                                                                                                     |                                     | [ ] |
+| Reviewer, project management, participant care, team coordinator, content lead | Read and update every paper of the conference                                                                                                                           |                                     | [ ] |
+| Project management                                                             | Delete any paper                                                                                                                                                        |                                     | [ ] |
+| Co-delegate, supervisor of a member                                            | Read the delegation's papers and versions that are not drafts                                                                                                           |                                     | [ ] |
+| Delegate of the delegation                                                     | `createPaper` in own name, for own delegation, on an agenda item of the conference                                                                                      |                                     | [ ] |
+| Reviewer, project management, participant care, team coordinator, content lead | `createPaperReview` (verdict + status change, mails the author), the reviewer hub queries, `findNextPaperToReview`, leaderboard (anonymised names), `flagCollection`    |                                     | [ ] |
+| Delegate, single participant, supervisor                                       | `findIntroductionPapers`, `findPapersGroupedByCommittee` (reviewer, project management, participant care, team coordinator, content lead too), `findPublicPaperContent` | As far as the read ability reaches. | [ ] |
+| Supervisor                                                                     | `findSupervisedPapers`                                                                                                                                                  |                                     | [ ] |
+| Paper author                                                                   | Read the reviews of own papers                                                                                                                                          |                                     | [ ] |
+| Reviewer, project management, participant care, team coordinator, content lead | Read every review of the conference                                                                                                                                     |                                     | [ ] |
+| Author of the snippet                                                          | Read and write own reviewer snippets only                                                                                                                               |                                     | [ ] |
+| Delegate, single participant, supervisor, team member (any role)               | Read resolutions and download the PDF                                                                                                                                   |                                     | [ ] |
+| Project management, participant care, content lead                             | Upload, retitle, retag and delete resolutions                                                                                                                           |                                     | [ ] |
 
 ## Committees, roles, nations, places, calendar (reference data)
 
-- [ ] anybody: every nation (global reference data).
-- [ ] whoever may read the conference (anybody while it is in PARTICIPANT_REGISTRATION or
-      PREPARATION, otherwise participants and team; `readableConference`): its committees, agenda
-      items and conference roles (nations, non-state actors, custom roles) — what the seat
-      overview shows.
-- [ ] team, and participants once `showCalendar` is on (`calendarConference`): the schedule —
-      calendar days, tracks, places (address, directions, site plan) and calendar entries without
-      survey options.
-- [ ] of those, a participant who picked one of its survey options, and the team: calendar entries
-      limited to survey options.
-- [ ] PM: create and delete committees; PM + CL: update committees, seat nations
-      (`setCommitteeNationSeat`), regional baselines, create/update/delete non-state actors and
-      custom roles (deleting a held role is blocked), create/update/delete agenda items;
-      service user: create agenda items.
-- [ ] paper roles: `setAgendaItemReviewHelpStatus`.
-- [ ] PC: create/update/delete places (with site plan upload), calendar days (also import),
-      tracks, entries (every referenced id is checked to belong to the conference).
-- [ ] PM + CL: `seatPlanningAssignments`.
+| Who                                                                                                                                                                             | Can                                                                                                                                                                       | Notes                                                       | ✓   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --- |
+| Anybody                                                                                                                                                                         | Read every nation                                                                                                                                                         | Global reference data.                                      | [ ] |
+| Anybody while the conference is in PARTICIPANT_REGISTRATION or PREPARATION; otherwise its delegates, single participants, supervisors and team members (any role); system admin | Read its committees, agenda items and conference roles (nations, non-state actors, custom roles): what the seat overview shows                                            | `readableConference`.                                       | [ ] |
+| Team member (any role); delegate, single participant, supervisor once `showCalendar` is on                                                                                      | Read the schedule: calendar days, tracks, places (address, directions, site plan) and calendar entries without survey options                                             | `calendarConference`.                                       | [ ] |
+| Team member (any role); delegate, single participant, supervisor once `showCalendar` is on and who picked one of the entry's survey options                                     | Read calendar entries limited to survey options                                                                                                                           |                                                             | [ ] |
+| Project management                                                                                                                                                              | Create and delete committees                                                                                                                                              |                                                             | [ ] |
+| Project management, content lead                                                                                                                                                | Update committees, seat nations (`setCommitteeNationSeat`), regional baselines; create/update/delete non-state actors and custom roles; create/update/delete agenda items | Deleting a held role is blocked.                            | [ ] |
+| Service user                                                                                                                                                                    | Create agenda items                                                                                                                                                       |                                                             | [ ] |
+| Reviewer, project management, participant care, team coordinator, content lead                                                                                                  | `setAgendaItemReviewHelpStatus`                                                                                                                                           |                                                             | [ ] |
+| Project management, participant care                                                                                                                                            | Create/update/delete places (with site plan upload), calendar days (also import), tracks, entries                                                                         | Every referenced id is checked to belong to the conference. | [ ] |
+| Project management, content lead                                                                                                                                                | `seatPlanningAssignments`                                                                                                                                                 |                                                             | [ ] |
 
 ## Surveys (`surveyQuestion`, `surveyOption`, `surveyAnswer`)
 
-- [ ] participant: read published, non-hidden questions and their options of own conferences;
-      read and change own answer; withdraw it (`deleteSurveyAnswer`) until the question's deadline.
-- [ ] PC: create/update/delete questions and options, read, change and delete everybody's
-      answers, answer on anybody's behalf (past the deadline and over the limit),
-      `distributeUnansweredSurvey`.
-- [ ] `surveyOption.countSurveyAnswers` is readable wherever the option is.
+| Who                                                                                                              | Can                                                                                                                                                                                      | Notes                            | ✓   |
+| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | --- |
+| Delegate, single participant, supervisor                                                                         | Read published, non-hidden questions and their options of own conferences; read and change own answer; withdraw it (`deleteSurveyAnswer`) until the question's deadline                  |                                  | [ ] |
+| Project management, participant care                                                                             | Create/update/delete questions and options; read, change and delete everybody's answers; answer on anybody's behalf (past the deadline and over the limit); `distributeUnansweredSurvey` |                                  | [ ] |
+| Delegate, single participant, supervisor (published, non-hidden questions); project management, participant care | `surveyOption.countSurveyAnswers`                                                                                                                                                        | Readable wherever the option is. | [ ] |
 
 ## Attendance and scanner (`attendanceSession`, `attendanceEntry`, `scanLookup`)
 
-- [ ] self: read own attendance entries.
-- [ ] team: read every entry and session of the conference.
-- [ ] PC: start/end sessions, set an occasion on/off the certificates, `certificateOccasions`,
-      update/delete entries.
-- [ ] team (any role): `createAttendanceEntry(userId, conferenceId, sessionId)` for a delegate,
-      single participant or supervisor of the conference, optionally storing an access card. Team
-      members are refused (`assertParticipantToScan`): they are never scanned in.
-- [ ] team (any role): `scanLookup(conferenceId, code)` — code is an access card id of the
-      conference or a user id of somebody with a part in it (delegate, single, supervisor, team,
-      waiting list): answers name, birthday, part in the conference, seat, card id and statuses.
-      Team members are found and named but not `inConference`. Anybody else is "not found".
+| Who                                  | Can                                                                                                                                                            | Notes                                                                                                                                                                                                                                                 | ✓   |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Self                                 | Read own attendance entries                                                                                                                                    |                                                                                                                                                                                                                                                       | [ ] |
+| Team member (any role)               | Read every entry and session of the conference                                                                                                                 |                                                                                                                                                                                                                                                       | [ ] |
+| Project management, participant care | Start/end sessions, set an occasion on/off the certificates, `certificateOccasions`, update/delete entries                                                     |                                                                                                                                                                                                                                                       | [ ] |
+| Team member (any role)               | `createAttendanceEntry(userId, conferenceId, sessionId)` for a delegate, single participant or supervisor of the conference, optionally storing an access card | Team members are refused (`assertParticipantToScan`): they are never scanned in.                                                                                                                                                                      | [ ] |
+| Team member (any role)               | `scanLookup(conferenceId, code)`: name, birthday, part in the conference, seat, card id and statuses                                                           | The code is an access card id of the conference or a user id of a delegate, single participant, supervisor, team member (any role) or waiting list entry of it. Team members are found and named but not `inConference`. Anybody else is "not found". | [ ] |
 
 ## Certificates
 
-- [ ] self, or PC of the conference: `getCertificateJWT(conferenceId, userId)` — signed certificate
-      with full name, conference and the check-in occasions attended; null until attendance is
-      recorded.
-- [ ] anybody: `getCertificateJWTPublicKeyObject`; `/validateCertificate/[jwt]` and `/vc/[jwt]`
-      show what a presented certificate says.
+| Who                                        | Can                                                                                                                          | Notes                              | ✓   |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --- |
+| Self, project management, participant care | `getCertificateJWT(conferenceId, userId)`: signed certificate with full name, conference and the check-in occasions attended | Null until attendance is recorded. | [ ] |
+| Anybody                                    | `getCertificateJWTPublicKeyObject`; `/validateCertificate/[jwt]` and `/vc/[jwt]` show what a presented certificate says      |                                    | [ ] |
 
 ## Payments (`paymentTransaction`, `userReferenceInPaymentTransaction`)
 
-- [ ] payer: read own transfer references and whom they cover; covered person: read the references
-      that cover them.
-- [ ] PC: read and update (received at, amount) all of the conference.
-- [ ] participant: `createPaymentTransaction` in own name, covering people whose user row they may
-      read (themselves, co-delegates, supervised people, supervisors, …) who take part in the
-      conference. PC: on anybody's behalf.
+| Who                                      | Can                                                                                                                                                              | Notes                                                                     | ✓   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --- |
+| Payer                                    | Read own transfer references and whom they cover                                                                                                                 |                                                                           | [ ] |
+| Covered person                           | Read the references that cover them                                                                                                                              |                                                                           | [ ] |
+| Project management, participant care     | Read and update (received at, amount) every transaction of the conference                                                                                        |                                                                           | [ ] |
+| Delegate, single participant, supervisor | `createPaymentTransaction` in own name, covering people whose user row they may read and who are delegates, single participants or supervisors of the conference | Themselves, co-delegates, supervised people, supervisors, co-supervisors. | [ ] |
+| Project management, participant care     | `createPaymentTransaction` on anybody's behalf                                                                                                                   |                                                                           | [ ] |
 
 ## Assignment draft (`assignmentReview`, `assignmentUnit`, `assignmentUnitMember`, `assignmentSingleRole`, `assignmentWeights`)
 
-- [ ] PC, admin: everything; nobody else reads any of it.
-- [ ] PC: rate/flag/disqualify/require applications, weights, plan roles for delegations, parts and
-      singles, split/undo, convert singles, auto-assign, reset, discard, `applyAssignment`,
-      `setAssignmentReleased` (both ways). Every role id is checked to be the conference's.
-- [ ] PC: the sighting (`sightingDeck`, `sightingEntries`, `sightingNameMatches`,
-      `sightingSchools`).
+| Who                                                | Can                                                                                                                                                                            | Notes                                            | ✓   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | --- |
+| Project management, participant care, system admin | Everything                                                                                                                                                                     | Nobody else reads any of it.                     | [ ] |
+| Project management, participant care               | Rate/flag/disqualify/require applications, weights, plan roles for delegations, parts and singles, split/undo, convert singles, auto-assign, reset, discard, `applyAssignment` | Every role id is checked to be the conference's. | [ ] |
+| Project management, participant care               | The sighting: `sightingDeck`, `sightingEntries`, `sightingNameMatches`, `sightingSchools`                                                                                      |                                                  | [ ] |
 
 ## Schools (`school`, `schoolSuggestion`)
 
-- [ ] anybody: name, city, region, country of every school; `searchSchools`.
-- [ ] PC of a conference a person of that school takes part in or waits for: the full row
-      (address, website, contact name/email/phone, team `notes`), `updateSchool`, `mergeSchools`
-      (across all conferences), `schoolMetrics`.
-- [ ] PC: `conferenceSchools` (per-conference numbers), `analyzeSchoolSuggestions`,
-      read/dismiss suggestions.
-- [ ] Any registration mutation that takes `schoolName` creates a school row that everybody can
-      then find by name.
+| Who                                                                                                                                                          | Can                                                                                                                                                                                           | Notes                               | ✓   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | --- |
+| Anybody                                                                                                                                                      | Read `id`, timestamps, `name`, `city`, `region`, `country` of every school; `searchSchools`                                                                                                   |                                     | [ ] |
+| Project management, participant care of a conference in which a delegate, single participant or supervisor has that school, or a waiting list entry names it | Read the full row (`street`, `apartment`, `zip`, `website`, `contactName`, `contactEmail`, `contactPhone`, `notes`); `updateSchool`, `mergeSchools` (across all conferences), `schoolMetrics` |                                     | [ ] |
+| Project management, participant care                                                                                                                         | `conferenceSchools` (per-conference numbers), `analyzeSchoolSuggestions`, read and dismiss suggestions                                                                                        |                                     | [ ] |
+| Anybody calling a registration mutation with `schoolName`                                                                                                    | Create a school row                                                                                                                                                                           | Everybody can then find it by name. | [ ] |
 
 ## Possible duplicates (`possibleDuplicate`)
 
-- [ ] PC of a conference one of the two accounts is managed in, admin: read the pair (score,
-      reasons, status, both accounts' conference attendances by title) and decide it.
-- [ ] PC: `scanPossibleDuplicates(conferenceId)`; every profile change rescans in the background.
-      The comparison pool is everybody who attended a conference that is over or has a care note,
-      across organizers. _(open)_
+| Who                                                                                                                                                         | Can                                                                                                  | Notes                                                                                                                   | ✓   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --- |
+| Project management, participant care of a conference one of the two accounts is a delegate, single participant or supervisor in, or waits for; system admin | Read the pair (score, reasons, status, both accounts' conference attendances by title) and decide it |                                                                                                                         | [ ] |
+| Project management, participant care                                                                                                                        | `scanPossibleDuplicates(conferenceId)`; every profile change rescans in the background               | The comparison pool is everybody who attended a conference that is over or has a care note, across organizers. _(open)_ | [ ] |
 
 ## Emails (`conferenceEmailSetting`, `conferenceEmailText`, `conferenceEmailFooter`, `emailLog`)
 
-- [ ] team: read which kinds are on, the texts and footers.
-- [ ] PC: switch kinds (with "skip existing"), write texts and footers, `emailPreview` (rendered to
-      the caller's own data), `openEmailCount`, `emailStats`, read the log (recipient user and the
-      address the mail went to).
-- [ ] the `send-emails` job with `x-jobs-secret`: `POST /api/jobs/send-emails`.
+| Who                                         | Can                                                                                                                                                                                                              | Notes | ✓   |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- |
+| Team member (any role)                      | Read which kinds are on, the texts and footers                                                                                                                                                                   |       | [ ] |
+| Project management, participant care        | Switch kinds (with "skip existing"), write texts and footers, `emailPreview` (rendered to the caller's own data), `openEmailCount`, `emailStats`, read the log (recipient user and the address the mail went to) |       | [ ] |
+| The `send-emails` job, with `x-jobs-secret` | `POST /api/jobs/send-emails`                                                                                                                                                                                     |       | [ ] |
 
 ## Files (`storedFile`)
 
-- [ ] a file's `url` (presigned GET, valid 12 h, reused 6 h) goes to whoever may read the file,
-      which follows the row holding it: conference image, emblem, logo wherever the conference is
-      readable; templates to participants and team; resolution PDFs to participants and team;
-      site plans to whoever reads the conference's schedule (team, participants once
-      `showCalendar` is on); an unclaimed upload to its uploader only. A new file field is private
-      until it gets its own rule.
-- [ ] uploader, admin: `uploadedById`.
-- [ ] PM: upload conference images; PM, PC, CL: templates and resolution PDFs; PC: site plans
-      (`requestFileUpload`, then the row mutation claims the file: same uploader, same purpose,
-      same conference).
+A file's `url` (presigned GET, valid 12 h, reused 6 h) goes to whoever may read the file, which
+follows the row holding it. A new file field is private until it gets its own rule.
+
+| Who                                                                                                                                                                             | Can                                        | Notes                                                                                                                                    | ✓   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Anybody while the conference is in PARTICIPANT_REGISTRATION or PREPARATION; otherwise its delegates, single participants, supervisors and team members (any role); system admin | Read the conference image, emblem and logo |                                                                                                                                          | [ ] |
+| Delegate, single participant, supervisor, team member (any role)                                                                                                                | Read templates and resolution PDFs         |                                                                                                                                          | [ ] |
+| Team member (any role); delegate, single participant, supervisor once `showCalendar` is on                                                                                      | Read site plans                            |                                                                                                                                          | [ ] |
+| Uploader                                                                                                                                                                        | Read an unclaimed upload                   |                                                                                                                                          | [ ] |
+| Uploader, system admin                                                                                                                                                          | Read `uploadedById`                        |                                                                                                                                          | [ ] |
+| Project management                                                                                                                                                              | Upload conference images                   | `requestFileUpload`, then the row mutation claims the file: same uploader, same purpose, same conference. Applies to every upload below. | [ ] |
+| Project management, participant care, content lead                                                                                                                              | Upload templates and resolution PDFs       |                                                                                                                                          | [ ] |
+| Project management, participant care                                                                                                                                            | Upload site plans                          |                                                                                                                                          | [ ] |
 
 ## Statistics, nametags, participants table
 
-- [ ] team (any role): `getConferenceStatistics` — aggregates over the whole conference: counts by
-      age, gender, food preference, country and German zip prefix, status, papers, schools,
-      waiting list, supervisors. _(open)_
-- [ ] PC: `participantsPage` (search/filter/sort over contact data and care status, answers ids),
-      `nametagBins`, `nametagBinGroups`.
-- [ ] user: `ownNametagTable`.
+| Who                                  | Can                                                                                                                                                                                        | Notes    | ✓   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | --- |
+| Team member (any role)               | `getConferenceStatistics`: aggregates over the whole conference, counts by age, gender, food preference, country and German zip prefix, status, papers, schools, waiting list, supervisors | _(open)_ | [ ] |
+| Project management, participant care | `participantsPage` (search/filter/sort over contact data and care status, answers ids), `nametagBins`, `nametagBinGroups`                                                                  |          | [ ] |
+| Signed-in user                       | `ownNametagTable`                                                                                                                                                                          |          | [ ] |
 
 ## Outside GraphQL
 
-- [ ] user (any session): `POST /api/pdf` compiles Typst (resolution or raw source) to PDF. No
-      conference; 20 compiles per account in ten minutes (429), at most two at once per process
-      (503). Typst runs inside its temp dir, with only `PATH` and a dead HTTP(S) proxy in its
-      environment, so it sees none of the app's secrets and cannot download `@preview` packages.
-      Still open: a compile's memory is not capped, and Typst 0.10 is old.
-- [ ] anybody: `GET /schemata/presence`, the JSON schema of the CHASE presence import.
-- [ ] The API is same-origin only (`cors: false`); the SSR remote function cannot be called over
-      HTTP.
-- [ ] `/dashboard/[conferenceId]` and `/dashboard/[conferenceId]/seats` are public pages; every
-      other authenticated route redirects to the provider.
-- [ ] OIDC bearer tokens are accepted on the API (`allowBearerToken: true`).
-- [ ] Jobs: `mail-sync` sends email, name, user id and conference memberships to Listmonk;
-      `file-cleanup`, `invitation-cleanup`, `refresh-statistics` read the database directly.
-- [ ] Logs: impersonation start/stop/revocation with actor and subject ids; email conflicts with
-      masked addresses; Sentry with `SENTRY_SEND_DEFAULT_PII` deciding what it collects.
+| Who / what                     | Can                                                                                                                                                                    | Notes                                                                                                                                                                                                                                                                                                                                                | ✓   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Signed-in user (any session)   | `POST /api/pdf`: compile Typst (resolution or raw source) to PDF                                                                                                       | No conference; 20 compiles per account in ten minutes (429), at most two at once per process (503). Typst runs inside its temp dir, with only `PATH` and a dead HTTP(S) proxy in its environment, so it sees none of the app's secrets and cannot download `@preview` packages. Still open: a compile's memory is not capped, and Typst 0.10 is old. | [ ] |
+| Anybody                        | `GET /schemata/presence`, the JSON schema of the CHASE presence import                                                                                                 |                                                                                                                                                                                                                                                                                                                                                      | [ ] |
+| Anybody                        | `/dashboard/[conferenceId]` and `/dashboard/[conferenceId]/seats` (public pages)                                                                                       | Every other authenticated route redirects to the provider.                                                                                                                                                                                                                                                                                           | [ ] |
+| Other origins                  | Nothing                                                                                                                                                                | The API is same-origin only (`cors: false`); the SSR remote function cannot be called over HTTP.                                                                                                                                                                                                                                                     | [ ] |
+| Holder of an OIDC bearer token | Call the API                                                                                                                                                           | `allowBearerToken: true`.                                                                                                                                                                                                                                                                                                                            | [ ] |
+| Jobs                           | `mail-sync` sends email, name, user id and conference memberships to Listmonk; `file-cleanup`, `invitation-cleanup`, `refresh-statistics` read the database directly   |                                                                                                                                                                                                                                                                                                                                                      | [ ] |
+| Logs                           | Impersonation start/stop/revocation with actor and subject ids; email conflicts with masked addresses; Sentry with `SENTRY_SEND_DEFAULT_PII` deciding what it collects |                                                                                                                                                                                                                                                                                                                                                      | [ ] |

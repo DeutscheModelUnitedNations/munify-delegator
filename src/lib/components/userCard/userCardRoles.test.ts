@@ -74,10 +74,10 @@ describe('participationStage', () => {
 
 	test('shows somebody still waiting, but not once seated from the list', () => {
 		expect(
-			participationStage({ waitingListEntry: { assigned: false }, conferenceState: state })
+			participationStage({ waitingListEntry: { assignedAt: null }, conferenceState: state })
 		).toBe('waitingList');
 		expect(
-			participationStage({ waitingListEntry: { assigned: true }, conferenceState: state })
+			participationStage({ waitingListEntry: { assignedAt: new Date() }, conferenceState: state })
 		).toBeUndefined();
 	});
 

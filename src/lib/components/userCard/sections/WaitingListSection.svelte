@@ -23,7 +23,6 @@
 			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 			id: true,
 			createdAt: true,
-			assigned: true,
 			assignedAt: true,
 			hidden: true,
 			motivation: true,
@@ -41,13 +40,13 @@
 	<section class="flex flex-col gap-3">
 		<div class="flex flex-wrap items-center gap-3">
 			<h3 class="text-lg font-bold">{m.waitingList()}</h3>
-			{#if entry.assigned}
+			{#if entry.assignedAt}
 				<span class="badge badge-success badge-sm">{m.userCardSeatedFromWaitingList()}</span>
 			{/if}
 			{#if entry.hidden}
 				<span class="badge badge-ghost badge-sm">{m.userCardWaitingListHidden()}</span>
 			{/if}
-			{#if !entry.assigned}
+			{#if !entry.assignedAt}
 				<a
 					class="btn btn-primary btn-sm ml-auto"
 					href={resolve(`dashboard/${conferenceId}/team/seats?assignUserId=${userId}`)}

@@ -31,11 +31,11 @@
 		await client.liveQuery.conference({
 			__args: { id: conferenceId },
 			state: true,
-			startAssignment: true
+			applicationDeadline: true
 		})
 	);
 	const status = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
+		getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
 	);
 
 	// Delegates and supervisors cannot also register as individuals.

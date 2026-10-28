@@ -3,13 +3,14 @@ import { object, query, schemaBuilder } from '#api/rumble.js';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
+import { m } from '#lib/paraglide/messages.js';
 import { resolutionPubsub } from '#api/pubsub.js';
 import {
 	assertCanCreateResolution,
-	assertCanDeleteResolution,
 	assertCanUpdateResolution,
 	registerResolutionAbilities
 } from './resolutionPermissions';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerResolutionAbilities();
 
@@ -22,9 +23,8 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			committeeId: t.arg.id(),
-			/** Defaults to the file name. */
+			/** Defaults to the name the file was uploaded with. */
 			title: t.arg.string(),
-			fileName: t.arg.string({ required: true }),
 			/** The PDF, uploaded through `requestFileUpload`. */
 			fileId: t.arg.id({ required: true })
 		},
@@ -32,14 +32,17 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanCreateResolution(ctx, args);
 			// Its type and size were checked when the upload was handed out.
 			const fileId = await ensureUploadComplete(args.fileId);
+			const file = await db.query.storedFile.findFirst({
+				where: { id: fileId },
+				columns: { fileName: true }
+			});
 
 			const created = await db
 				.insert(schema.resolution)
 				.values({
 					conferenceId: args.conferenceId,
 					committeeId: args.committeeId ?? undefined,
-					title: args.title?.trim() || args.fileName,
-					fileName: args.fileName,
+					title: args.title?.trim() || file?.fileName || m.resolution(),
 					fileId
 				})
 				.returning({ id: schema.resolution.id })
@@ -48,12 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.created();
 
 			return db.query.resolution
-				.findFirst(
-					query(
-						(await ctx.abilities.resolution.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.resolution, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -81,12 +79,7 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.updated(args.id);
 
 			return db.query.resolution
-				.findFirst(
-					query(
-						(await ctx.abilities.resolution.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.resolution, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -95,8 +88,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteResolution(ctx, args.id);
-			await db.delete(schema.resolution).where(eq(schema.resolution.id, args.id));
+			await deleteAllowedRow(ctx, 'resolution', args.id);
 			resolutionPubsub.removed();
 			return true;
 		}

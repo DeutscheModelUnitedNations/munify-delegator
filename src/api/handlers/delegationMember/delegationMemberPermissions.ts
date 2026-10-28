@@ -1,7 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertOfferedIn,
 	assertTeamRole,
 	DELEGATION_MEMBER_ASSIGNMENT,
@@ -12,7 +11,8 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
 	userId,
-	where
+	where,
+	assertAllowedById
 } from '#api/services/authHelper.js';
 import type { Context } from '#api/context.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
@@ -79,10 +79,7 @@ export function registerDelegationMemberAbilities() {
 
 /** Refuses unless the caller may remove the delegate (the row's delete ability). */
 export async function assertCanDeleteDelegationMember(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.delegationMember,
-		(await ctx.abilities.delegationMember.filter('delete')).merge({ where: { id } }).sql.where
-	);
+	await assertAllowedById(ctx, 'delegationMember', 'delete', id);
 }
 
 /** The role a user is placed into has to be one the conference offers. */
@@ -142,69 +139,51 @@ export async function assertCanMoveDelegationMemberToCommittee(
 export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMemberToCommittee>>;
 
 /**
- * Refuses a committee that is not one of the conference's, or that does not seat the delegation
- * of every named delegate the caller may move (null clears the assignment, and needs no check).
- * Returns the where-clause matching the conference's delegates the caller may update, which
- * scopes the bulk write.
- */
-export async function authorizeDelegationMemberCommitteeMoves(
-	ctx: ApiContext,
-	conferenceId: string,
-	ids: string[],
-	assignedCommitteeId: string | null | undefined
-) {
-	const updatable = await ctx.abilities.delegationMember.filter('update');
-
-	if (assignedCommitteeId) {
-		const committee = await db.query.committee
-			.findFirst({
-				where: { id: assignedCommitteeId, conferenceId },
-				with: { roles: { columns: { id: true } } }
-			})
-			.then(assertFindFirstExists);
-		const members = await db.query.delegationMember.findMany({
-			...updatable.merge({ where: { id: { in: ids }, participant: { conferenceId } } }).query.many,
-			with: { delegation: { columns: { assignedRoleId: true } } }
-		});
-		for (const member of members) {
-			assertCommitteeSeats(committee, member.delegation.assignedRoleId);
-		}
-	}
-
-	return updatable.merge({ where: { participant: { conferenceId } } }).sql.where;
-}
-
-/**
- * Checks every pairing of the assignment assistant before anything is written: the caller may
- * update the delegate, the committee belongs to the same conference as the delegate, and it
- * actually seats the delegation's assigned nation. Checked in order, one pairing after the other,
- * so the first bad pairing decides the error.
+ * Checks every pairing of a committee assignment before anything is written: the caller may
+ * update each delegate, they are all of the conference, and every committee named is the
+ * conference's and seats the delegate's delegation. A null committee clears the assignment, which
+ * only needs the update.
  */
 export async function assertCanAssignCommittees(
 	ctx: ApiContext,
-	assignments: { delegationMemberId: string; committeeId: string }[]
+	conferenceId: string,
+	assignments: { delegationMemberId: string; committeeId?: string | null }[]
 ) {
+	const memberIds = [...new Set(assignments.map((a) => a.delegationMemberId))];
+	const committeeIds = [...new Set(assignments.flatMap((a) => a.committeeId ?? []))];
 	const updatable = await ctx.abilities.delegationMember.filter('update');
 
+	const [members, committees] = await Promise.all([
+		db.query.delegationMember.findMany({
+			...updatable.merge({ where: { id: { in: memberIds }, participant: { conferenceId } } }).query
+				.many,
+			columns: { id: true },
+			with: { delegation: { columns: { assignedRoleId: true } } }
+		}),
+		db.query.committee.findMany({
+			where: { id: { in: committeeIds } },
+			columns: { id: true, conferenceId: true },
+			with: { roles: { columns: { id: true } } }
+		})
+	]);
+	if (members.length !== memberIds.length) {
+		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+	}
+	const memberById = new Map(members.map((member) => [member.id, member]));
+	const committeeById = new Map(committees.map((committee) => [committee.id, committee]));
+
 	for (const assignment of assignments) {
-		const committee = await db.query.committee
-			.findFirst({
-				where: { id: assignment.committeeId },
-				with: { roles: { columns: { id: true } } }
-			})
-			.then(assertFindFirstExists);
-
-		const member = await db.query.delegationMember
-			.findFirst({
-				...updatable.merge({ where: { id: assignment.delegationMemberId } }).query.single,
-				with: { delegation: true }
-			})
-			.then(assertFindFirstExists);
-
-		if (committee.conferenceId !== member.delegation.conferenceId) {
+		if (!assignment.committeeId) continue;
+		const committee = committeeById.get(assignment.committeeId);
+		if (!committee) {
+			throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+		}
+		if (committee.conferenceId !== conferenceId) {
 			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
 		}
-
-		assertCommitteeSeats(committee, member.delegation?.assignedRoleId);
+		assertCommitteeSeats(
+			committee,
+			memberById.get(assignment.delegationMemberId)?.delegation.assignedRoleId
+		);
 	}
 }

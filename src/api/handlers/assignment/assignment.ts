@@ -11,6 +11,7 @@ import {
 	assignmentUnitMemberPubsub,
 	assignmentUnitPubsub,
 	assignmentWeightsPubsub,
+	conferenceEmailSettingPubsub,
 	conferencePubsub,
 	delegationMemberPubsub,
 	delegationPubsub,
@@ -23,6 +24,7 @@ import {
 	assertCanAssignSingleParticipant,
 	assertCanAssignUnit,
 	assertCanPlanAssignment,
+	assertCanReleaseAssignment,
 	assertCanReviewApplication,
 	assertCustomRoleOf,
 	assertSplitMembersOf,
@@ -45,6 +47,7 @@ import {
 	splitParts,
 	undoDelegationSplit
 } from './assignmentService';
+import { readableById } from '#api/services/authHelper.js';
 
 registerAssignmentAbilities();
 
@@ -54,7 +57,6 @@ countQuery({ table: 'assignmentReview' });
 object({ table: 'assignmentUnit' });
 query({ table: 'assignmentUnit' });
 object({ table: 'assignmentUnitMember' });
-query({ table: 'assignmentUnitMember' });
 object({ table: 'assignmentSingleRole' });
 query({ table: 'assignmentSingleRole' });
 const AssignmentWeightsRef = object({ table: 'assignmentWeights' });
@@ -130,13 +132,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignmentReviewPubsub.updated(reviewId);
 
 			return db.query.assignmentReview
-				.findFirst(
-					query(
-						(await ctx.abilities.assignmentReview.filter('read')).merge({
-							where: { id: reviewId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.assignmentReview, reviewId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -159,13 +155,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignmentWeightsPubsub.updated(weightsId);
 
 			return db.query.assignmentWeights
-				.findFirst(
-					query(
-						(await ctx.abilities.assignmentWeights.filter('read')).merge({
-							where: { id: weightsId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.assignmentWeights, weightsId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -324,7 +314,7 @@ schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Writes the draft into the registrations in one transaction: splits, merges, roles and
 	 * converted single participants. Refuses, changing nothing, while the draft has problems.
-	 * Whether participants see the result is `setAssignmentReleased`'s business.
+	 * Whether participants see the result is `conference.assignmentReleased`'s business.
 	 */
 	applyAssignment: t.field({
 		type: 'Boolean',
@@ -351,22 +341,27 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/** Shows participants their assigned roles, or hides them again. */
+	/**
+	 * Shows participants their assigned roles, or hides them again. Releasing with `sendEmails`
+	 * sends the result mails now (`true`) or skips them (`false`); see `setAssignmentReleased`.
+	 */
 	setAssignmentReleased: t.field({
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			released: t.arg.boolean({ required: true })
+			released: t.arg.boolean({ required: true }),
+			sendEmails: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
-			await setAssignmentReleased(args.conferenceId, args.released);
+			await assertCanReleaseAssignment(ctx, args.conferenceId, args.sendEmails != null);
+			await setAssignmentReleased(args.conferenceId, args.released, args.sendEmails ?? undefined);
 
 			conferencePubsub.updated(args.conferenceId);
 			// What participants may read of these changes with the flag.
 			delegationPubsub.updated();
 			delegationMemberPubsub.updated();
 			singleParticipantPubsub.updated();
+			if (args.sendEmails) conferenceEmailSettingPubsub.updated();
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 			return true;
 		}

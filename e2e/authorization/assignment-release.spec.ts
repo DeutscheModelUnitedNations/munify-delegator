@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '../support/test';
+import pg from 'pg';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import {
 	E2E_ASSIGNMENT_ADMIN_ID,
@@ -12,9 +13,10 @@ import { nationRoleId } from '../support/roles';
 const roleIdAs = (page: Page) =>
 	nationRoleId(page, E2E_UNRELEASED_CONFERENCE_ID, E2E_UNRELEASED_NATION_ALPHA3);
 
-// Until the team releases the assignment, a participant must not learn their role through any
-// path the API offers: the masked columns, the relations they back, and the relations pointing
-// back from the role and the committee. The release toggle then shows it, and hides it again.
+// Until the assignment is released, a participant must not learn their role through any path the
+// API offers: the masked columns, the relations they back, and the relations pointing back from
+// the role and the committee. Setting the flag then shows it, and clearing it hides it again. No
+// mutation sets it, so the test writes it straight into the database.
 
 type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
 
@@ -45,25 +47,25 @@ async function whatTheParticipantSees(page: Page) {
 	return result.data;
 }
 
-async function setReleased(page: Page, released: boolean) {
-	const result = await gql(
-		page,
-		`mutation ($c: ID!, $r: Boolean!) { setAssignmentReleased(conferenceId: $c, released: $r) }`,
-		{ c: E2E_UNRELEASED_CONFERENCE_ID, r: released }
-	);
-	expect(result.data?.setAssignmentReleased, JSON.stringify(result)).toBe(true);
+async function setReleased(released: boolean) {
+	const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+	await client.connect();
+	try {
+		await client.query(
+			'UPDATE conference SET assignment_released = $2, assignment_released_at = CASE WHEN $2 THEN now() END WHERE id = $1',
+			[E2E_UNRELEASED_CONFERENCE_ID, released]
+		);
+	} finally {
+		await client.end();
+	}
 }
 
 test('a participant sees their role only while the assignment is released', async ({ browser }) => {
 	const participant = await (await browser.newContext()).newPage();
-	const admin = await (await browser.newContext()).newPage();
 	await loginAs(participant, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
-	await loginAs(admin, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_UNRELEASED_CONFERENCE_ID}/team/assignment/finish`
-	});
 
 	try {
-		await setReleased(admin, false);
+		await setReleased(false);
 
 		expect(await whatTheParticipantSees(participant)).toEqual({
 			delegationMembers: [
@@ -84,7 +86,7 @@ test('a participant sees their role only while the assignment is released', asyn
 			participant.getByText(/die zuteilung läuft noch|the assignment is still in progress/i)
 		).toBeVisible();
 
-		await setReleased(admin, true);
+		await setReleased(true);
 
 		const released = await whatTheParticipantSees(participant);
 		expect(released?.delegationMembers).toEqual([
@@ -98,7 +100,7 @@ test('a participant sees their role only while the assignment is released', asyn
 			}
 		]);
 
-		await setReleased(admin, false);
+		await setReleased(false);
 		const hiddenAgain = await whatTheParticipantSees(participant);
 		expect(hiddenAgain?.delegationMembers).toEqual([
 			{
@@ -108,19 +110,12 @@ test('a participant sees their role only while the assignment is released', asyn
 			}
 		]);
 	} finally {
-		await setReleased(admin, false);
+		await setReleased(false);
 	}
 });
 
-test('only the assignment team may release, and nobody else reads the draft', async ({ page }) => {
+test('a participant does not read the assignment draft', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
-
-	const release = await gql(
-		page,
-		`mutation ($c: ID!) { setAssignmentReleased(conferenceId: $c, released: true) }`,
-		{ c: E2E_UNRELEASED_CONFERENCE_ID }
-	);
-	expect(release.errors?.[0]?.message, JSON.stringify(release)).toMatch(/requires one of/);
 
 	const draft = await gql(
 		page,

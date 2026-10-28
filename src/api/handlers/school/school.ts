@@ -1,11 +1,12 @@
 import { db } from '#api/db/db.js';
 import { sql } from 'drizzle-orm';
-import { countQuery, object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import {
 	assertCanReadConferenceSchools,
+	assertCanReadSchoolMetrics,
 	assertCanUpdateSchools,
 	registerSchoolAbilities
 } from './schoolPermissions';
@@ -28,12 +29,12 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub.js';
+import { readableById } from '#api/services/authHelper.js';
 
 registerSchoolAbilities();
 
 const SchoolRef = object({ table: 'school' });
 query({ table: 'school' });
-countQuery({ table: 'school' });
 
 const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {
 	description: 'How many people from one school took part in one conference, step by step.',
@@ -144,8 +145,8 @@ schemaBuilder.queryFields((t) => ({
 		type: [SchoolMetrics],
 		args: { schoolId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanUpdateSchools(ctx, [args.schoolId]);
-			return schoolMetrics(args.schoolId);
+			const conferenceIds = await assertCanReadSchoolMetrics(ctx, args.schoolId);
+			return schoolMetrics(args.schoolId, conferenceIds);
 		}
 	})
 }));
@@ -174,9 +175,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateSchool(id, update);
 			schoolPubsub.updated(id);
 			return db.query.school
-				.findFirst(
-					query((await ctx.abilities.school.filter('read')).merge({ where: { id } }).query.single)
-				)
+				.findFirst(query(await readableById(ctx.abilities.school, id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -207,12 +206,7 @@ schemaBuilder.mutationFields((t) => ({
 			schoolSuggestionVariantPubsub.updated();
 
 			return db.query.school
-				.findFirst(
-					query(
-						(await ctx.abilities.school.filter('read')).merge({ where: { id: args.targetId } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.school, args.targetId)))
 				.then(assertFindFirstExists);
 		}
 	})

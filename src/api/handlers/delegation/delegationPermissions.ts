@@ -1,7 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	DELEGATION_ASSIGNMENT,
 	isTeamMemberOfConference,
 	maskedUntilRelease,
@@ -82,11 +81,3 @@ export async function assertCanUpdateDelegation(ctx: ApiContext, id: string) {
 }
 
 export type UpdatableDelegation = Awaited<ReturnType<typeof assertCanUpdateDelegation>>;
-
-/** Refuses unless the caller may delete the delegation (the row's delete ability). */
-export async function assertCanDeleteDelegation(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.delegation,
-		(await ctx.abilities.delegation.filter('delete')).merge({ where: { id } }).sql.where
-	);
-}

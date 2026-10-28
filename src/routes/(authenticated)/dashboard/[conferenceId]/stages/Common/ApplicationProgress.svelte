@@ -27,13 +27,13 @@
 	const conference = $derived(
 		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			startAssignment: true,
+			applicationDeadline: true,
 			timezone: true
 		})
 	);
 
 	const deadline = $derived(
-		new Date(conference.startAssignment).toLocaleString(getLocale(), {
+		new Date(conference.applicationDeadline).toLocaleString(getLocale(), {
 			timeZone: conference.timezone,
 			dateStyle: 'full',
 			timeStyle: 'short'

@@ -27,14 +27,6 @@ export async function assertCanAnalyzeSchoolSuggestions(ctx: ApiContext, confere
 }
 
 /**
- * The suggestion if the caller may update it (the row's update ability), as a where-clause: a
- * dismissal the caller may not make changes nothing.
- */
-export async function updatableSchoolSuggestion(ctx: ApiContext, id: string) {
-	return (await ctx.abilities.schoolSuggestion.filter('update')).merge({ where: { id } }).sql.where;
-}
-
-/**
  * The applied registrations of the conference that name a school and that the caller may read, as
  * where clauses for `loadSchoolRows`.
  */

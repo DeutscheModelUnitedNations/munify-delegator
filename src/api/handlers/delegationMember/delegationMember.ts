@@ -4,7 +4,6 @@ import { object, query, schemaBuilder } from '#api/rumble.js';
 import {
 	assignCommittees,
 	joinDelegationByEntryCode,
-	moveManyMembersToCommittee,
 	moveMemberToCommittee,
 	placeUserInAssignedDelegation,
 	removeDelegationMember
@@ -15,7 +14,6 @@ import {
 	assertCanDeleteDelegationMember,
 	assertCanMoveDelegationMemberToCommittee,
 	assertOfferedIn,
-	authorizeDelegationMemberCommitteeMoves,
 	registerDelegationMemberAbilities
 } from './delegationMemberPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
@@ -28,6 +26,7 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub.js';
+import { readableById } from '#api/services/authHelper.js';
 
 registerDelegationMemberAbilities();
 
@@ -58,13 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegationMember
-				.findFirst(
-					query(
-						(await ctx.abilities.delegationMember.filter('read')).merge({
-							where: { id: createdId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.delegationMember, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -127,12 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.delegationMember
-				.findFirst(
-					query(
-						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: memberId } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.delegationMember, memberId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -158,41 +146,8 @@ schemaBuilder.mutationFields((t) => ({
 			delegationMemberPubsub.updated(args.id);
 
 			return db.query.delegationMember
-				.findFirst(
-					query(
-						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.delegationMember, args.id)))
 				.then(assertFindFirstExists);
-		}
-	}),
-
-	/** Bulk committee (un)assignment; a null committee clears the assignment. */
-	updateManyDelegationMemberCommittee: t.field({
-		type: 'Int',
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			ids: t.arg.idList({ required: true }),
-			assignedCommitteeId: t.arg.id()
-		},
-		resolve: async (_root, args, ctx) => {
-			if (args.ids.length === 0) return 0;
-			const updatableWhere = await authorizeDelegationMemberCommitteeMoves(
-				ctx,
-				args.conferenceId,
-				args.ids,
-				args.assignedCommitteeId
-			);
-			const count = await moveManyMembersToCommittee(
-				args.ids,
-				args.assignedCommitteeId,
-				updatableWhere
-			);
-
-			delegationMemberPubsub.updated(args.ids);
-
-			return count;
 		}
 	})
 }));
@@ -200,13 +155,15 @@ schemaBuilder.mutationFields((t) => ({
 const CommitteeAssignmentInput = schemaBuilder.inputType('CommitteeAssignmentInput', {
 	fields: (t) => ({
 		delegationMemberId: t.id({ required: true }),
-		committeeId: t.id({ required: true })
+		/** Null clears the delegate's committee. */
+		committeeId: t.id()
 	})
 });
 
 schemaBuilder.mutationFields((t) => ({
 	/**
-	 * Applies the committee assignment produced by the assignment assistant.
+	 * Applies a committee assignment: the assistant's result, or the delegation modal clearing its
+	 * members' committees (a null committee).
 	 *
 	 * Each pairing is validated before it is written: the committee must belong to the same
 	 * conference as the delegate, and it must actually seat the delegation's assigned nation.
@@ -220,7 +177,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignments: t.arg({ type: [CommitteeAssignmentInput], required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanAssignCommittees(ctx, args.assignments);
+			await assertCanAssignCommittees(ctx, args.conferenceId, args.assignments);
 			await assignCommittees(args.assignments);
 
 			delegationMemberPubsub.updated();

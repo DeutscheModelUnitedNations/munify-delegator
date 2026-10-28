@@ -20,7 +20,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			assignmentReleased: true,
 			unlockPostals: true,
 			unlockPayments: true,
-			startAssignment: true,
+			applicationDeadline: true,
 			startConference: true,
 			timezone: true,
 			certificateFileId: true
@@ -71,7 +71,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			}
 		}),
 		db.query.waitingListEntry.findMany({
-			where: { conferenceId, assigned: true },
+			where: { conferenceId, assignedAt: { isNotNull: true } },
 			columns: { id: true, userId: true }
 		}),
 		db.query.paperReview.findMany({
@@ -134,7 +134,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			assignmentReleased: conference.assignmentReleased,
 			unlockPostals: conference.unlockPostals,
 			unlockPayments: conference.unlockPayments,
-			startAssignment: conference.startAssignment,
+			applicationDeadline: conference.applicationDeadline,
 			startConference: conference.startConference,
 			timezone: conference.timezone,
 			certificateAvailable: !!conference.certificateFileId

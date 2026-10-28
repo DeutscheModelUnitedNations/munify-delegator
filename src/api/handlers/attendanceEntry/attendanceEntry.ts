@@ -18,7 +18,6 @@ import {
 	assertCanEndAttendanceSession,
 	assertCanStartAttendanceSession,
 	assertSessionOfConference,
-	deletableAttendanceEntryWhere,
 	registerAttendanceEntryAbilities
 } from './attendanceEntryPermissions';
 import {
@@ -28,6 +27,7 @@ import {
 } from '#api/pubsub.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerAttendanceEntryAbilities();
 
@@ -83,12 +83,7 @@ schemaBuilder.mutationFields((t) => ({
 			attendanceSessionPubsub.created();
 
 			return db.query.attendanceSession
-				.findFirst(
-					query(
-						(await ctx.abilities.attendanceSession.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.attendanceSession, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -183,12 +178,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			const readEntry = async (id: string) =>
 				db.query.attendanceEntry
-					.findFirst(
-						query(
-							(await ctx.abilities.attendanceEntry.filter('read')).merge({ where: { id } }).query
-								.single
-						)
-					)
+					.findFirst(query(await readableById(ctx.abilities.attendanceEntry, id)))
 					.then(assertFindFirstExists);
 
 			const accessCardId = args.accessCardId?.trim();
@@ -226,13 +216,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.attendanceEntry)
-				.where(await deletableAttendanceEntryWhere(ctx, args.id))
-				.returning({ id: schema.attendanceEntry.id });
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'attendanceEntry', args.id);
 			attendanceEntryPubsub.removed();
 
 			return true;

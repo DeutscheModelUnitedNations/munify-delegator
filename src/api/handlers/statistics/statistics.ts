@@ -378,7 +378,7 @@ const addressesType = schemaBuilder.simpleObject('StatisticsResultAddresses', {
 
 /** What every block of the statistics resolves from: its view rows are loaded on first use. */
 interface StatisticsSource {
-	conference: { startConference: Date; startAssignment: Date };
+	conference: { startConference: Date; applicationDeadline: Date };
 	filter: StatsFilterType;
 	rows: StatisticsRows;
 }
@@ -491,7 +491,7 @@ schemaBuilder.queryFields((t) => ({
 			const conference = await db.query.conference
 				.findFirst({
 					where: { id: args.conferenceId },
-					columns: { startConference: true, startAssignment: true }
+					columns: { startConference: true, applicationDeadline: true }
 				})
 				.then(assertFindFirstExists);
 

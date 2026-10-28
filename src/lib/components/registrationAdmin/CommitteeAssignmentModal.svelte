@@ -65,11 +65,16 @@
 	function resetAssignments() {
 		if (!members) return;
 		return runAssignment(
-			Promise.resolve(
-				client.mutate.updateManyDelegationMemberCommittee({
-					__args: { conferenceId, ids: members.map((member) => member.id) }
-				})
-			)
+			client.mutate.assignCommitteesToDelegationMembers({
+				__args: {
+					conferenceId,
+					assignments: members.map((member) => ({
+						delegationMemberId: member.id,
+						committeeId: null
+					}))
+				},
+				assignedCommittee: { id: true }
+			})
 		);
 	}
 

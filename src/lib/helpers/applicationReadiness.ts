@@ -23,16 +23,16 @@ export function applicationTextsComplete(texts: ApplicationTexts) {
 }
 
 /**
- * When the API stops taking applications: the advertised deadline (`startAssignment`) plus the
- * grace period. Participants are only ever shown `startAssignment`; the grace period is a buffer
+ * When the API stops taking applications: the advertised deadline (`applicationDeadline`) plus the
+ * grace period. Participants are only ever shown `applicationDeadline`; the grace period is a buffer
  * for those who were just about done.
  */
 export function technicalRegistrationDeadline(conference: {
-	startAssignment: Date;
+	applicationDeadline: Date;
 	registrationDeadlineGracePeriodMinutes: number;
 }) {
 	return new Date(
-		new Date(conference.startAssignment).getTime() +
+		new Date(conference.applicationDeadline).getTime() +
 			conference.registrationDeadlineGracePeriodMinutes * 60_000
 	);
 }
@@ -41,7 +41,7 @@ export function technicalRegistrationDeadline(conference: {
 export function acceptsApplications(
 	conference: {
 		state: ConferencestateEnum;
-		startAssignment: Date;
+		applicationDeadline: Date;
 		registrationDeadlineGracePeriodMinutes: number;
 	},
 	now = new Date()

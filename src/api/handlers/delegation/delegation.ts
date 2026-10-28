@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import { applicationArgs } from './applicationArgs';
 import {
@@ -6,20 +6,16 @@ import {
 	previewDelegationByEntryCode,
 	updateDelegationDetails
 } from './delegationService';
-import {
-	assertCanDeleteDelegation,
-	assertCanUpdateDelegation,
-	registerDelegationAbilities
-} from './delegationPermissions';
+import { assertCanUpdateDelegation, registerDelegationAbilities } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
 import {
 	conferenceParticipantPubsub,
 	delegationMemberPubsub,
 	delegationPubsub,
 	schoolPubsub
 } from '#api/pubsub.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerDelegationAbilities();
 
@@ -42,12 +38,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegation
-				.findFirst(
-					query(
-						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: createdId } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.delegation, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,12 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.delegation
-				.findFirst(
-					query(
-						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.delegation, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -87,8 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteDelegation(ctx, args.id);
-			await db.delete(schema.delegation).where(eq(schema.delegation.id, args.id));
+			await deleteAllowedRow(ctx, 'delegation', args.id);
 			delegationPubsub.removed();
 			delegationMemberPubsub.removed();
 

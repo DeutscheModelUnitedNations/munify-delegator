@@ -1,17 +1,15 @@
 import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { eq } from 'drizzle-orm';
 import {
 	assertCanCreatePlace,
 	assertCanUpdatePlace,
-	deletablePlaceWhere,
 	registerPlaceAbilities
 } from './placePermissions';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { placePubsub } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerPlaceAbilities();
 
@@ -34,10 +32,6 @@ const placeDetailArgs = (arg: ArgBuilder) => ({
 	/** A file uploaded through `requestFileUpload`. */
 	sitePlanFileId: arg.id()
 });
-
-/** The place with this id, as far as the caller may read it. */
-const readablePlace = async (ctx: ApiContext, id: string) =>
-	(await ctx.abilities.place.filter('read')).merge({ where: { id } }).query.single;
 
 schemaBuilder.mutationFields((t) => ({
 	createPlace: t.drizzleField({
@@ -69,7 +63,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.place
-				.findFirst(query(await readablePlace(ctx, created.id)))
+				.findFirst(query(await readableById(ctx.abilities.place, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -104,7 +98,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.updated(args.id);
 
 			return db.query.place
-				.findFirst(query(await readablePlace(ctx, args.id)))
+				.findFirst(query(await readableById(ctx.abilities.place, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -113,18 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			// The ability filter is part of the WHERE clause, so an unauthorized caller simply
-			// deletes nothing. Report that honestly instead of returning `true` regardless: the
-			// legacy resolver raised a not-found error in exactly this case, and silently telling a
-			// caller their delete succeeded is worse than either.
-			const deleted = await db
-				.delete(schema.place)
-				.where(await deletablePlaceWhere(ctx, args.id))
-				.returning({ id: schema.place.id });
-
-			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
-			}
+			await deleteAllowedRow(ctx, 'place', args.id);
 			placePubsub.removed();
 
 			return true;

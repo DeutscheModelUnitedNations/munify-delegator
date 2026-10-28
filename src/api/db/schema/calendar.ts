@@ -5,13 +5,15 @@ import {
 	timestamp,
 	integer,
 	date,
+	doublePrecision,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
-import { conferenceRef, place } from './conference';
+import { conferenceRef } from './conference';
+import { fileRef } from './storedFile';
 import { surveyOption } from './surveys';
 
-/** A conference's calendar: days, tracks and entries. */
+/** A conference's calendar: days, tracks, entries and the places they happen at. */
 
 export const calendarEntryColor = pgEnum('calendar_entry_color', [
 	'SESSION',
@@ -23,6 +25,30 @@ export const calendarEntryColor = pgEnum('calendar_entry_color', [
 	'HIGHLIGHT',
 	'INFO'
 ]);
+
+/** A venue of the conference that calendar entries can name, with directions and a site plan. */
+export const place = snakeCase.table(
+	'place',
+	{
+		...defaultIdAndTimestamps,
+		name: text().notNull(),
+		address: text(),
+		latitude: doublePrecision(),
+		longitude: doublePrecision(),
+		directions: text(),
+		info: text(),
+		websiteUrl: text(),
+		sitePlanFileId: fileRef(),
+		conferenceId: conferenceRef('cascade')
+	},
+	(table) => [
+		uniqueIndex('place_conference_id_name_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast(),
+			table.name.asc().nullsLast()
+		)
+	]
+);
 
 export const calendarDay = snakeCase.table(
 	'calendar_day',

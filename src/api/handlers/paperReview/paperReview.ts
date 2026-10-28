@@ -1,4 +1,4 @@
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { enum_, object, schemaBuilder } from '#api/rumble.js';
 import { createPaperReview } from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
 import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub.js';
@@ -7,7 +7,6 @@ import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
 registerPaperReviewAbilities();
 
 object({ table: 'paperReview' });
-query({ table: 'paperReview' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
 
 /** Which kind of flag a newly found piece belongs to. */

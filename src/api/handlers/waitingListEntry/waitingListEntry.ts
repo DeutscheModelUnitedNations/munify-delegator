@@ -1,18 +1,24 @@
 import { db, schema } from '#api/db/db.js';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { nullToUndefined } from '#api/services/args.js';
 import {
-	assertCanDeleteWaitingListEntry,
 	assertCanSetWaitingListFlags,
-	registerWaitingListEntryAbilities,
-	updatableWaitingListEntry
+	registerWaitingListEntryAbilities
 } from './waitingListEntryPermissions';
 import { schoolPubsub, waitingListEntryPubsub } from '#api/pubsub.js';
 import { assertWaitingListOpenFor } from './waitingListEntryService';
+import { m } from '#lib/paraglide/messages.js';
+import {
+	assertAllowedRow,
+	deleteAllowedRow,
+	allowedRowWhere,
+	assertUpdated,
+	readableById
+} from '#api/services/authHelper.js';
 
 registerWaitingListEntryAbilities();
 
@@ -63,13 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.waitingListEntry.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.waitingListEntry, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -90,35 +90,35 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSetWaitingListFlags(ctx, args.id, args);
-			const where = await updatableWaitingListEntry(ctx, args.id);
+			const where = await allowedRowWhere(ctx, 'waitingListEntry', 'update', args.id);
+			// before resolving the school: a typed name creates one
+			await assertAllowedRow(schema.waitingListEntry, where, m.updateNotFoundOrForbidden);
+			const schoolId = await resolveSchoolChoice(args);
 			const assignedAt =
 				args.assigned === true
 					? sql`coalesce(${schema.waitingListEntry.assignedAt}, now())`
 					: args.assigned === false
 						? null
 						: undefined;
-			await db
+			const updated = await db
 				.update(schema.waitingListEntry)
 				.set({
-					schoolId: await resolveSchoolChoice(args),
+					schoolId,
 					motivation: nullToUndefined(args.motivation),
 					experience: nullToUndefined(args.experience),
 					requests: nullToUndefined(args.requests),
 					hidden: nullToUndefined(args.hidden),
-					assigned: nullToUndefined(args.assigned),
 					assignedAt
 				})
-				.where(where);
+				.where(where)
+				.returning({ id: schema.waitingListEntry.id });
+			assertUpdated(updated);
 
 			waitingListEntryPubsub.updated(args.id);
+			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.waitingListEntry, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -127,8 +127,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteWaitingListEntry(ctx, args.id);
-			await db.delete(schema.waitingListEntry).where(eq(schema.waitingListEntry.id, args.id));
+			await deleteAllowedRow(ctx, 'waitingListEntry', args.id);
 			waitingListEntryPubsub.removed();
 
 			return true;

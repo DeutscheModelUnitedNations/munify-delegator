@@ -118,6 +118,9 @@ export const E2E_COMMITTEE_ASSIGN_MEMBER_ID = 'e2e00000delegationmember0004';
 // A committee of the same conference that does not seat the committee-assign nation, so a head
 // delegate trying to place a member there has to be refused.
 export const E2E_UNSEATED_COMMITTEE_ID = 'e2e00000committee000000005';
+// An agenda item of that committee, which the paper delegate (seated in E2E_COMMITTEE_ID) may
+// not write on.
+export const E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID = 'e2e00000agendaitem00000002';
 
 // Payment (group variant): the same supervisor above, but pre-linked (via seed, not the
 // connect-supervisor test's own action) to a second participant, so the group-payment default
@@ -175,10 +178,10 @@ export default async function seed() {
 	const conference = {
 		...makeSeedConference({
 			state: 'PARTICIPANT_REGISTRATION',
-			// Registration only shows as OPEN while startAssignment is in the future
+			// Registration only shows as OPEN while applicationDeadline is in the future
 			// (see src/lib/helpers/registrationStatus.ts) - the dev seed helper defaults this
 			// to a past date for PARTICIPANT_REGISTRATION, which would leave it CLOSED here.
-			startAssignment: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+			applicationDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 		}),
 		id: E2E_CONFERENCE_ID,
 		title: 'E2E Test Conference',
@@ -725,6 +728,15 @@ export default async function seed() {
 		.values(unseatedCommittee)
 		.onConflictDoUpdate({ target: schema.committee.id, set: unseatedCommittee });
 	await seatNations(db, unseatedCommittee, [E2E_NATION_ALPHA3]);
+	const otherCommitteeAgendaItem = {
+		id: E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
+		title: 'E2E Agenda Item Of Another Committee',
+		committeeId: unseatedCommittee.id
+	};
+	await db.insert(schema.committeeAgendaItem).values(otherCommitteeAgendaItem).onConflictDoUpdate({
+		target: schema.committeeAgendaItem.id,
+		set: otherCommitteeAgendaItem
+	});
 
 	// --- unreleased fixture: assigned in the database, not yet visible to the participant ---
 	const unreleasedConference = {

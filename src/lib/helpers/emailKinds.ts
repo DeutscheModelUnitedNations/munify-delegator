@@ -28,12 +28,16 @@ export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 export const isAlwaysSent = (kind: EmailkindEnum): kind is AlwaysSentKind =>
 	ALWAYS_SENT_KINDS.some((always) => always === kind);
 
+/** The mails releasing the assignment makes due: the result to each applicant and supervisor. */
+export const ASSIGNMENT_RESULT_KINDS = [
+	'ASSIGNMENT_ACCEPTED',
+	'ASSIGNMENT_REJECTED',
+	'SUPERVISOR_ASSIGNMENT_SUMMARY'
+] as const satisfies readonly EmailkindEnum[];
+
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [
-	{
-		id: 'assignment',
-		kinds: ['ASSIGNMENT_ACCEPTED', 'ASSIGNMENT_REJECTED', 'SUPERVISOR_ASSIGNMENT_SUMMARY']
-	},
+	{ id: 'assignment', kinds: ASSIGNMENT_RESULT_KINDS },
 	{ id: 'waitingList', kinds: ['WAITING_LIST_SEATED'] },
 	{ id: 'unlocked', kinds: ['POSTAL_UNLOCKED', 'PAYMENT_UNLOCKED'] },
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },

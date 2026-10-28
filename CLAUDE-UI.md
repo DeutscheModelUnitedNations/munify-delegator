@@ -438,7 +438,7 @@ and clears `schoolId`, so a new name creates a school on save; picking a suggest
 the three it is. To change a school later, open `SchoolChangeForm`
 (`current`, `save(choice)`, `onSaved`, `requireTaintedToSubmit`) in a `Modal`, or place it inline;
 `SchoolLine` (`#lib/components/userCard/sections/`) is the list row with that button, and
-`stages/Common/MySchool.svelte` the caller's own school on the dashboard (`setMySchool`).
+`stages/Common/MySchool.svelte` the caller's own school on the dashboard (`setParticipantSchool` without an `id`).
 
 **`mutationForm(initial, validators, save, { toastProgress })`** (`#lib/components/form/mutationForm.ts`)
 builds the superforms SPA form every mutation-backed form uses (see "Forms" in CLAUDE.md): validated

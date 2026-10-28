@@ -15,6 +15,7 @@ import type { reviewRow } from '#lib/assignment/review.js';
 import type { Target } from '#lib/assignment/state.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { assertCanManageEmails } from '#api/handlers/email/emailPermissions.js';
 
 /*
  * The assignment draft is the team's working copy: project management and participant care plan
@@ -47,6 +48,16 @@ export function registerAssignmentAbilities() {
 /** Refuses unless the caller does the assignments of the conference. */
 export async function assertCanPlanAssignment(ctx: ApiContext, conferenceId: string) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+}
+
+/** Releasing (or hiding) the assignment; deciding about the result mails on the way is managing mails. */
+export async function assertCanReleaseAssignment(
+	ctx: ApiContext,
+	conferenceId: string,
+	decidesEmails: boolean
+) {
+	await assertCanPlanAssignment(ctx, conferenceId);
+	if (decidesEmails) await assertCanManageEmails(ctx, conferenceId);
 }
 
 /** An applied delegation of a conference the caller does assignments in. */

@@ -1,6 +1,6 @@
 import { db } from '#api/db/db.js';
 import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
-import { userId } from '#api/services/authHelper.js';
+import { userId, readableById } from '#api/services/authHelper.js';
 import { decidePossibleDuplicate, scanConferenceForDuplicates } from './possibleDuplicates';
 import {
 	assertCanDecidePossibleDuplicate,
@@ -115,13 +115,7 @@ schemaBuilder.mutationFields((t) => ({
 			userPubsub.updated(pair.candidateId);
 
 			return db.query.possibleDuplicate
-				.findFirst(
-					query(
-						(await ctx.abilities.possibleDuplicate.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.possibleDuplicate, args.id)))
 				.then(assertFindFirstExists);
 		}
 	})

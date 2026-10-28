@@ -1,6 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble.js';
 import { applicationArgs } from '#api/handlers/delegation/applicationArgs.js';
 import {
 	createAssignedSingleParticipant,
@@ -10,24 +10,22 @@ import {
 } from './singleParticipantService';
 import {
 	assertCanCreateAppliedSingleParticipant,
-	assertCanDeleteSingleParticipant,
 	assertCanUpdateSingleParticipant,
 	assertCustomRolesOf,
 	registerSingleParticipantAbilities
 } from './singleParticipantPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
 import {
 	conferenceParticipantPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerSingleParticipantAbilities();
 
 const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
-countQuery({ table: 'singleParticipant' });
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Registering as a single participant. If the user already has an entry for this conference
@@ -51,12 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id: rowId } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.singleParticipant, rowId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -78,12 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 			singleParticipantPubsub.updated(args.id);
 
 			return db.query.singleParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.singleParticipant, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -92,8 +80,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteSingleParticipant(ctx, args.id);
-			await db.delete(schema.singleParticipant).where(eq(schema.singleParticipant.id, args.id));
+			await deleteAllowedRow(ctx, 'singleParticipant', args.id);
 			singleParticipantPubsub.removed();
 
 			return true;
@@ -121,13 +108,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.singleParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.singleParticipant.filter('read')).merge({
-							where: { id: createdId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.singleParticipant, createdId)))
 				.then(assertFindFirstExists);
 		}
 	})

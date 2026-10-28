@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { UserPreview } from '#lib/api/rumbleClient/client.js';
+	import type { UserPreview } from './userPreview';
 	import { m } from '#lib/paraglide/messages.js';
 	import formatNames from '#lib/helpers/formatNames.js';
 

@@ -181,8 +181,15 @@ const schoolMetricsRowSchema = z.object({
 	fromWaitingList: z.number()
 });
 
-/** Per conference, how many people from the school registered, applied, got a seat and came. */
-export async function schoolMetrics(schoolId: string) {
+/**
+ * Per conference, how many people from the school registered, applied, got a seat and came: in
+ * `conferenceIds`, or in every conference when that is `undefined`.
+ */
+export async function schoolMetrics(
+	schoolId: string,
+	conferenceIds: readonly string[] | undefined
+) {
+	if (conferenceIds?.length === 0) return [];
 	const result = await db.execute<{ result: unknown }>(sql`
 		-- each person by their own school, whatever delegation the assignment put them in
 		with people as (
@@ -202,7 +209,7 @@ export async function schoolMetrics(schoolId: string) {
 			where p.school_id = ${schoolId}
 		),
 		waiting as (
-			select conference_id, count(*)::int as entries, count(*) filter (where assigned)::int as assigned
+			select conference_id, count(*)::int as entries, count(*) filter (where assigned_at is not null)::int as assigned
 			from waiting_list_entry where school_id = ${schoolId} group by conference_id
 		),
 		conferences as (
@@ -225,6 +232,14 @@ export async function schoolMetrics(schoolId: string) {
 		from conferences x
 		join conference c on c.id = x.conference_id
 		left join waiting w on w.conference_id = c.id
+		${
+			conferenceIds
+				? sql`where c.id in (${sql.join(
+						conferenceIds.map((id) => sql`${id}`),
+						sql`, `
+					)})`
+				: sql``
+		}
 		order by c.start_conference desc`);
 	return z
 		.array(z.object({ result: schoolMetricsRowSchema }))
@@ -295,7 +310,7 @@ export async function conferenceSchoolsPage(args: {
 			union all
 			select w.school_id, null, false, false, 'WAITING'
 			from waiting_list_entry w
-			where w.conference_id = ${args.conferenceId} and w.school_id is not null and not w.assigned
+			where w.conference_id = ${args.conferenceId} and w.school_id is not null and w.assigned_at is null
 		),
 		rows as (
 			select s.id as school_id, s.name, s.city,

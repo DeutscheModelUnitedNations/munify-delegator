@@ -1,10 +1,9 @@
-import { db, schema } from '#api/db/db.js';
+import { db } from '#api/db/db.js';
 import { apiError } from '#api/services/errors/apiError.js';
 import { m } from '#lib/paraglide/messages.js';
 import type { TeamRole } from '#api/services/authHelper.js';
 import { abilityBuilder, type ApiContext } from '#api/rumble.js';
 import {
-	assertAllowedRow,
 	assertMayGrantRole,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
@@ -42,12 +41,4 @@ export async function assertCanChangeTeamRole(ctx: ApiContext, id: string, role:
 	});
 	if (!member) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
 	await assertMayGrantRole(ctx, member.conferenceId, role);
-}
-
-/** Refuses unless the caller may remove team member `id` from its team. */
-export async function assertCanDeleteTeamMember(ctx: ApiContext, id: string) {
-	await assertAllowedRow(
-		schema.teamMember,
-		(await ctx.abilities.teamMember.filter('delete')).merge({ where: { id } }).sql.where
-	);
 }

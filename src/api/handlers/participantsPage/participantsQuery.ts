@@ -65,7 +65,7 @@ const columns: Record<string, { expr: SQL; kind: Kind }> = {
 	// the person's waiting list entry in the conference, if any (see `matching`)
 	waitingListSince: { expr: sql`wl.created_at`, kind: 'number' },
 	seatedFromWaitingListAt: { expr: sql`wl.assigned_at`, kind: 'number' },
-	onWaitingList: { expr: sql`(wl.id is not null and not wl.assigned)`, kind: 'bool' },
+	onWaitingList: { expr: sql`(wl.id is not null and wl.assigned_at is null)`, kind: 'bool' },
 	hasOpenIssue: {
 		expr: sql`(reg.accepted and reg.role <> 'TEAM_MEMBER' and (
 			coalesce(s.payment_status::text, 'PENDING') <> 'DONE'
@@ -256,7 +256,7 @@ function registrations(conferenceId: string) {
 		select w.user_id, 'WAITING_LIST', null, null, null,
 			(select sc.name from school sc where sc.id = w.school_id), null, null, null, null, false
 		from waiting_list_entry w
-		where w.conference_id = ${conferenceId} and not w.assigned
+		where w.conference_id = ${conferenceId} and w.assigned_at is null
 			and not exists (
 				select 1 from conference_participant p
 				where p.user_id = w.user_id and p.conference_id = w.conference_id and (

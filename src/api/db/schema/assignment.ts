@@ -12,7 +12,7 @@ import { defaultIdAndTimestamps } from './helpers';
 import { sql } from 'drizzle-orm';
 import { conferenceRef } from './conference';
 import { conferenceRole } from './roles';
-import { delegation, delegationMember, singleParticipant } from './registration';
+import { delegation, delegationMember, singleParticipant } from './application';
 
 /** The assignment draft the team plans in before applying it. */
 

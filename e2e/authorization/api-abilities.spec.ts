@@ -19,6 +19,7 @@ import {
 	E2E_SURVEY_OPTION_A_ID,
 	E2E_SURVEY_QUESTION_ID,
 	E2E_MGMT_ADMIN_ID,
+	E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
 	E2E_TEAM_COORDINATOR_ID,
 	E2E_TEAMMATE_USER_ID,
 	E2E_UNSEATED_COMMITTEE_ID
@@ -150,7 +151,7 @@ test('unsubscribing works without a session and does not reveal accounts', async
 	}
 });
 
-test('co-delegates see each other’s names, not each other’s contact details', async ({
+test('co-delegates see each other’s names and email addresses, no other contact details', async ({
 	browser
 }) => {
 	const head = await (await browser.newContext()).newPage();
@@ -204,13 +205,15 @@ test('co-delegates see each other’s names, not each other’s contact details'
 	expect(other?.user.emergencyContacts).toBeNull();
 	expect(other?.user.birthday).toBeNull();
 
-	// Email is not a co-delegate's to read: asking for it refuses the whole query.
+	// Co-delegates may write to each other: the email address is theirs to read.
 	const withEmail = await gql(
 		member,
 		`query ($id: ID!) { delegation(id: $id) { members { user { id email } } } }`,
 		{ id: delegation.id }
 	);
-	expect(withEmail.errors, JSON.stringify(withEmail)).toBeTruthy();
+	expect(withEmail.errors, JSON.stringify(withEmail)).toBeUndefined();
+	const emails = (withEmail.data?.delegation as { members: { user: { email: string } }[] }).members;
+	expect(emails.every((m) => m.user.email)).toBe(true);
 });
 
 test('a team coordinator cannot hand out project management', async ({ page }) => {
@@ -239,7 +242,7 @@ test('payment details and documents are for people with a part in the conference
 	browser,
 	request
 }) => {
-	const query = `query ($id: ID!) { conference(id: $id) { title iban accountHolder postalStreet } }`;
+	const query = `query ($id: ID!) { conference(id: $id) { title iban bankAccountHolder postalStreet } }`;
 	const read = async (post: typeof request.post) =>
 		(
 			(await (
@@ -250,7 +253,7 @@ test('payment details and documents are for people with a part in the conference
 	// Anonymous: the conference is public, its bank and postal details are not.
 	const anonymous = await read(request.post.bind(request));
 	expect(anonymous.title).toBeTruthy();
-	expect(anonymous).toMatchObject({ iban: null, accountHolder: null, postalStreet: null });
+	expect(anonymous).toMatchObject({ iban: null, bankAccountHolder: null, postalStreet: null });
 
 	// A member of its team reads them.
 	const page = await (await browser.newContext()).newPage();
@@ -291,8 +294,8 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 	const requestUpload = `mutation ($c: ID!, $n: String!, $t: String!, $s: Int!) {
 		requestFileUpload(conferenceId: $c, kind: "resolution", field: "content", fileName: $n, mimeType: $t, size: $s) { id uploadUrl }
 	}`;
-	const create = `mutation ($c: ID!, $n: String!, $f: ID!) {
-		createResolution(conferenceId: $c, fileName: $n, fileId: $f) { id title }
+	const create = `mutation ($c: ID!, $f: ID!) {
+		createResolution(conferenceId: $c, fileId: $f) { id title }
 	}`;
 	const pdf = Buffer.from('%PDF-1.4 e2e');
 	const pdfUpload = (n: string) => ({
@@ -321,7 +324,7 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 
 	// Claiming the file before it arrived in the bucket is refused.
 	expectRefused(
-		await gql(management, create, { c: E2E_CONFERENCE_ID, n: fileName, f: upload.id }),
+		await gql(management, create, { c: E2E_CONFERENCE_ID, f: upload.id }),
 		/not been uploaded completely/
 	);
 	// The URL is signed for the announced type and size, so nothing else goes up through it.
@@ -338,7 +341,6 @@ test('the team uploads resolutions, everybody with a part in it downloads them',
 
 	const created = await gql(management, create, {
 		c: E2E_CONFERENCE_ID,
-		n: fileName,
 		f: upload.id
 	});
 	const resolution = created.data?.createResolution as {
@@ -503,7 +505,7 @@ test('anybody finds schools by name, but only their participants’ care team re
 	expectRefused(
 		await gql(
 			page,
-			`mutation ($c: ID!) { setMySchool(conferenceId: $c, schoolName: "x") { id } }`,
+			`mutation ($c: ID!) { setParticipantSchool(conferenceId: $c, schoolName: "x") { id } }`,
 			{
 				c: E2E_PREP_CONFERENCE_ID
 			}
@@ -608,15 +610,46 @@ test('a head delegate seats members only in committees that seat their delegatio
 	expectRefused(
 		await gql(
 			page,
-			`mutation ($conf: ID!, $ids: [ID!]!, $c: ID) {
-				updateManyDelegationMemberCommittee(conferenceId: $conf, ids: $ids, assignedCommitteeId: $c)
+			`mutation ($conf: ID!, $id: ID!, $c: ID) {
+				assignCommitteesToDelegationMembers(
+					conferenceId: $conf
+					assignments: [{ delegationMemberId: $id, committeeId: $c }]
+				) { id }
 			}`,
 			{
 				conf: E2E_CONFERENCE_ID,
-				ids: [E2E_COMMITTEE_ASSIGN_MEMBER_ID],
+				id: E2E_COMMITTEE_ASSIGN_MEMBER_ID,
 				c: E2E_UNSEATED_COMMITTEE_ID
 			}
 		),
 		unseated
 	);
+});
+
+test('a delegate writes papers only on their committee’s agenda items, as their role allows', async ({
+	page
+}) => {
+	// The paper delegate represents a nation and sits in E2E_COMMITTEE_ID. The other agenda item is
+	// one of the conference's, in a committee that even seats the same nation.
+	await loginAs(page, fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
+	const create = (type: string, agendaItemId: string | null) =>
+		gql(
+			page,
+			`mutation ($c: ID!, $a: ID!, $d: ID!, $i: ID) {
+				createPaper(conferenceId: $c, authorId: $a, delegationId: $d, agendaItemId: $i,
+					type: ${type}, content: {}, status: DRAFT) { id }
+			}`,
+			{
+				c: E2E_CONFERENCE_ID,
+				a: E2E_PAPER_DELEGATE_USER_ID,
+				d: E2E_PAPER_DELEGATION_ID,
+				i: agendaItemId
+			}
+		);
+
+	expectRefused(
+		await create('POSITION_PAPER', E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID),
+		/agenda items of your own committee/
+	);
+	expectRefused(await create('INTRODUCTION_PAPER', null), /Only non-state actors/);
 });

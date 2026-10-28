@@ -70,7 +70,7 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await waitForHydration(headPage);
 
 	// The OIDC subject is the user id, and the mock provider issues `preferred_username` as the
-	// subject. Co-delegates cannot look each other up by email: it is not theirs to read.
+	// subject.
 	const memberBUserId = memberB.preferred_username;
 	const memberCUserId = memberC.preferred_username;
 

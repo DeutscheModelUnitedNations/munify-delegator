@@ -75,7 +75,6 @@ export async function requestUpload(
 		mimeType: request.mimeType,
 		size: request.size,
 		fileName: request.fileName.trim() || null,
-		conferenceId: request.conferenceId,
 		uploadedById: uploaderId
 	});
 

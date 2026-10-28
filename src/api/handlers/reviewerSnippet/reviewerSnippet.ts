@@ -3,13 +3,13 @@ import { object, query, schemaBuilder } from '#api/rumble.js';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import {
-	assertCanDeleteReviewerSnippet,
 	assertCanUpdateReviewerSnippet,
 	registerReviewerSnippetAbilities
 } from './reviewerSnippetPermissions';
 import { reviewerSnippetPubsub } from '#api/pubsub.js';
 import { m } from '#lib/paraglide/messages.js';
 import { apiError } from '#api/services/errors/apiError.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
 
 registerReviewerSnippetAbilities();
 
@@ -50,13 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			reviewerSnippetPubsub.created();
 
 			return db.query.reviewerSnippet
-				.findFirst(
-					query(
-						(await ctx.abilities.reviewerSnippet.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.reviewerSnippet, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -78,12 +72,7 @@ schemaBuilder.mutationFields((t) => ({
 			reviewerSnippetPubsub.updated(args.id);
 
 			return db.query.reviewerSnippet
-				.findFirst(
-					query(
-						(await ctx.abilities.reviewerSnippet.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableById(ctx.abilities.reviewerSnippet, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -92,8 +81,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteReviewerSnippet(ctx, args.id);
-			await db.delete(schema.reviewerSnippet).where(eq(schema.reviewerSnippet.id, args.id));
+			await deleteAllowedRow(ctx, 'reviewerSnippet', args.id, m.snippetNotFound);
 			reviewerSnippetPubsub.removed();
 
 			return true;

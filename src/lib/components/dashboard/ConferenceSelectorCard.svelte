@@ -34,7 +34,7 @@
 				state: true,
 				startConference: true,
 				endConference: true,
-				startAssignment: true
+				applicationDeadline: true
 			}),
 			fetchMyParticipation(conferenceId)
 		])
@@ -55,7 +55,7 @@
 		!takesPart &&
 			!currentUser?.isAdmin &&
 			['OPEN', 'WAITING_LIST'].includes(
-				getRegistrationStatus(conference.state, new Date(conference.startAssignment))
+				getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
 			)
 	);
 

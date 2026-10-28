@@ -8,7 +8,7 @@
 		conference: {
 			title: string;
 			state: ConferencestateEnum;
-			startAssignment: Date;
+			applicationDeadline: Date;
 			totalSeats: number;
 			totalParticipants: number;
 			waitingListLength: number;
@@ -18,7 +18,7 @@
 	let { conference }: Props = $props();
 
 	let registrationStatus = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
+		getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
 	);
 
 	let waitingListStatus = $derived(

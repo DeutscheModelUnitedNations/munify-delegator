@@ -4,10 +4,10 @@ import { refreshSchoolSuggestions } from './schoolSuggestions';
 import {
 	assertCanAnalyzeSchoolSuggestions,
 	readableSchoolRegistrations,
-	registerSchoolSuggestionAbilities,
-	updatableSchoolSuggestion
+	registerSchoolSuggestionAbilities
 } from './schoolSuggestionPermissions';
 import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub.js';
+import { assertUpdated, allowedRowWhere } from '#api/services/authHelper.js';
 
 registerSchoolSuggestionAbilities();
 
@@ -36,10 +36,13 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await db
-				.update(schema.schoolSuggestion)
-				.set({ dismissed: true })
-				.where(await updatableSchoolSuggestion(ctx, args.id));
+			assertUpdated(
+				await db
+					.update(schema.schoolSuggestion)
+					.set({ dismissed: true })
+					.where(await allowedRowWhere(ctx, 'schoolSuggestion', 'update', args.id))
+					.returning({ id: schema.schoolSuggestion.id })
+			);
 			schoolSuggestionPubsub.updated(args.id);
 			return true;
 		}

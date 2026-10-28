@@ -19,13 +19,13 @@ export const load: LayoutLoad = async (event) => {
 	const conference = await client.query.conference({
 		__args: { id: event.params.conferenceId },
 		state: true,
-		startAssignment: true
+		applicationDeadline: true
 	});
 
 	const { conferenceId } = event.params;
 	const target = conference
 		? registrationRedirect(
-				getRegistrationStatus(conference.state, new Date(conference.startAssignment)),
+				getRegistrationStatus(conference.state, new Date(conference.applicationDeadline)),
 				event.url.pathname,
 				conferenceId
 			)

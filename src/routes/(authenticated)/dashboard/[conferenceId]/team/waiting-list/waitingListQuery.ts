@@ -68,7 +68,7 @@ export function waitingListWhere(
 	const school = stringFilter(filters.get('school'));
 	return {
 		conferenceId: { eq: conferenceId },
-		...(toggles.showSeated ? {} : { assigned: { eq: false } }),
+		...(toggles.showSeated ? {} : { assignedAt: { isNull: true } }),
 		...hiddenWhere(booleanFilter(filters.get('hidden')), toggles.hideHidden),
 		...(school ? { school: { name: school } } : {}),
 		...allOf([
@@ -136,7 +136,6 @@ function listEntries(
 		motivation: true,
 		requests: true,
 		hidden: true,
-		assigned: true,
 		assignedAt: true,
 		createdAt: true
 	});
@@ -151,7 +150,7 @@ export async function fetchWaitingListPositions(conferenceId: string) {
 		__args: {
 			where: {
 				conferenceId: { eq: conferenceId },
-				assigned: { eq: false },
+				assignedAt: { isNull: true },
 				hidden: { eq: false }
 			},
 			orderBy: { createdAt: 'asc', id: 'asc' }

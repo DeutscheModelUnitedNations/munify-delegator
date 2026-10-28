@@ -1,9 +1,11 @@
 import { test, expect, type Page } from '../support/test';
+import pg from 'pg';
 import { fixedTestUser, loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import {
 	E2E_MGMT_ADMIN_ID,
 	E2E_MGMT_TARGET_USER_ID,
 	E2E_PAYMENT_ADMIN_ID,
+	E2E_PREP_CONFERENCE_ID,
 	E2E_PREP_PARTICIPANT_USER_ID
 } from '../seed/seed';
 
@@ -51,11 +53,9 @@ test('participant care acts as a participant of their conference, and stops agai
 	const stop = page.getByRole('button', { name: /^(stellvertretung beenden|stop)$/i });
 	await expect(stop).toBeVisible({ timeout: 15_000 });
 
-	// No second impersonation on top, and no sign-in upsert writing the target's row
+	// No second impersonation on top
 	const nested = await start(page, E2E_PAYMENT_ADMIN_ID);
 	expect(nested.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
-	const upsert = await graphql(page, 'mutation { upsertSelf { userId } }');
-	expect(upsert.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
 
 	await stop.click();
 	await expect.poll(() => status(page)).toMatchObject({ isImpersonating: false });
@@ -70,6 +70,31 @@ test('participant care may not act as teammates, outsiders or themselves', async
 		expect(json.errors?.[0]?.extensions?.code, target).toBe('FORBIDDEN');
 	}
 	expect((await status(page)).isImpersonating).toBe(false);
+});
+
+test('participant care may not act as a participant who also has a part elsewhere', async ({
+	page
+}) => {
+	// The impersonation acts as the target in every conference, so one the actor does not look
+	// after - here a place on its waiting list - rules the target out.
+	const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+	await db.connect();
+	const entryId = `e2e-impersonation-elsewhere-${Math.random().toString(36).slice(2)}`;
+	try {
+		await db.query(
+			`INSERT INTO waiting_list_entry (id, conference_id, user_id, experience, motivation)
+			VALUES ($1, $2, $3, '', '')`,
+			[entryId, E2E_PREP_CONFERENCE_ID, E2E_MGMT_TARGET_USER_ID]
+		);
+		await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID));
+		expect(await canImpersonate(page, E2E_MGMT_TARGET_USER_ID)).toBe(false);
+		expect((await start(page, E2E_MGMT_TARGET_USER_ID)).errors?.[0]?.extensions?.code).toBe(
+			'FORBIDDEN'
+		);
+	} finally {
+		await db.query('DELETE FROM waiting_list_entry WHERE id = $1', [entryId]);
+		await db.end();
+	}
 });
 
 test('a plain participant may not act as anybody', async ({ page }) => {

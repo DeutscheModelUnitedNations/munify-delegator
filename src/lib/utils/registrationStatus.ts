@@ -6,12 +6,12 @@ export type RegistrationStatus = 'OPEN' | 'CLOSED' | 'WAITING_LIST' | 'NOT_YET_O
 
 /**
  * The registration status participants are shown. It closes at the advertised deadline
- * (`startAssignment`) on purpose: the API keeps taking applications for the grace period after it
+ * (`applicationDeadline`) on purpose: the API keeps taking applications for the grace period after it
  * (`acceptsApplications` in `#lib/helpers/applicationReadiness.js`), as a buffer nobody is told about.
  */
 export const getRegistrationStatus = (
 	conferenceState: ConferencestateEnum,
-	startAssignment: Date
+	applicationDeadline: Date
 ): RegistrationStatus => {
 	if (conferenceState === 'PRE') {
 		return 'NOT_YET_OPEN';
@@ -24,14 +24,14 @@ export const getRegistrationStatus = (
 	if (
 		conferenceState === 'ACTIVE' ||
 		conferenceState === 'POST' ||
-		new Date().getTime() > startAssignment.getTime()
+		new Date().getTime() > applicationDeadline.getTime()
 	) {
 		return 'CLOSED';
 	}
 
 	if (
 		conferenceState === 'PARTICIPANT_REGISTRATION' &&
-		new Date().getTime() <= startAssignment.getTime()
+		new Date().getTime() <= applicationDeadline.getTime()
 	) {
 		return 'OPEN';
 	}
