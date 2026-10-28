@@ -5,6 +5,7 @@
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import PaperEnum from '#lib/components/paper/paperEnum/index.js';
 	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
+	import MyPaperRows from './MyPaperRows.svelte';
 	import { client, type PapertypeEnum } from '#lib/api/rumbleClient/client.js';
 	import type { ResolvedPathname } from '$app/types';
 
@@ -56,7 +57,9 @@
 {#if paperQueryData && paperQueryData.length > 0}
 	<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
 		<h3 class="text-xl">{m.yourPapers()}</h3>
-		<div class="overflow-x-auto w-full">
+		<!-- Phones get one tappable row per paper instead of the wide table -->
+		<MyPaperRows papers={paperQueryData} {conferenceId} />
+		<div class="overflow-x-auto w-full max-sm:hidden">
 			<table class="table table-sm w-full">
 				<thead>
 					<tr>

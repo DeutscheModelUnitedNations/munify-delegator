@@ -70,17 +70,46 @@
 	}
 </script>
 
-<ResolutionEditor
-	store={resolutionStore}
-	{editable}
-	{headerData}
-	{labels}
-	preamblePhrases={germanPreamblePhrases}
-	operativePhrases={germanOperativePhrases}
-	onCopySuccess={handleCopySuccess}
-	onCopyError={handleCopyError}
-	{clauseToolbar}
-	{clauseAnnotations}
-	{previewHeader}
-	{previewFooter}
-/>
+<div class="resolution-editor-host w-full min-w-0">
+	<ResolutionEditor
+		store={resolutionStore}
+		{editable}
+		{headerData}
+		{labels}
+		preamblePhrases={germanPreamblePhrases}
+		operativePhrases={germanOperativePhrases}
+		onCopySuccess={handleCopySuccess}
+		onCopyError={handleCopyError}
+		{clauseToolbar}
+		{clauseAnnotations}
+		{previewHeader}
+		{previewFooter}
+	/>
+</div>
+
+<style>
+	/* The library's root is a grid <fieldset>; both it and its items otherwise grow to their min-content width. */
+	.resolution-editor-host :global(fieldset),
+	.resolution-editor-host :global(fieldset > *) {
+		min-inline-size: 0;
+	}
+
+	@media (max-width: 639px) {
+		/* Section headers put a title and up to three buttons in one row: let them wrap. */
+		.resolution-editor-host :global(.flex.items-center.justify-between),
+		.resolution-editor-host :global(.flex.items-center.justify-between > .flex) {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+
+		/* The preview mimics a printed page; on a phone it keeps the page look without its margins. */
+		.resolution-editor-host :global(.resolution-preview) {
+			padding-inline: 0.5rem;
+			overflow-wrap: anywhere;
+		}
+
+		.resolution-editor-host :global(.resolution-preview .text-3xl) {
+			font-size: 1.5rem;
+		}
+	}
+</style>

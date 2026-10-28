@@ -133,8 +133,8 @@
 	>
 		{#each visibleCommittees as { committee, columns, count } (committee.id)}
 			<section class="card bg-base-100 border border-base-300">
-				<header class="flex items-center justify-between gap-2 p-4 pb-2">
-					<div class="flex items-center gap-2">
+				<header class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
+					<div class="flex min-w-0 items-center gap-2">
 						<span class="badge badge-primary font-bold">{committee.abbreviation}</span>
 						<h3 class="text-lg font-semibold">{committee.name}</h3>
 					</div>
@@ -147,8 +147,8 @@
 
 		{#if filteredIntroPapers.length > 0}
 			<section class="card bg-base-100 border border-base-300">
-				<header class="flex items-center justify-between gap-2 p-4 pb-2">
-					<div class="flex items-center gap-2">
+				<header class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
+					<div class="flex min-w-0 items-center gap-2">
 						<span class="badge badge-secondary font-bold">{m.nonStateActorAbbreviation()}</span>
 						<h3 class="text-lg font-semibold">{m.paperTypeIntroductionPapers()}</h3>
 					</div>

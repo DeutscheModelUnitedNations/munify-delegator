@@ -232,12 +232,14 @@
 </div>
 
 {#if unsavedChanges}
-	<div class="fixed top-4 right-4 z-50">
+	<!-- On phones it sits at the bottom, where it does not cover the header -->
+	<div class="fixed z-50 bottom-4 left-4 sm:bottom-auto sm:left-auto sm:top-4 sm:right-4">
 		<div
-			class="bg-warning p-4 rounded-box shadow-lg tooltip tooltip-left tooltip-warning"
+			class="bg-warning p-2 sm:p-4 rounded-box shadow-lg tooltip tooltip-right sm:tooltip-left tooltip-warning"
 			data-tip={m.paperNotSavedAlert()}
 		>
-			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle fa-beat-fade text-4xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle fa-beat-fade text-2xl sm:text-4xl"
+			></i>
 		</div>
 	</div>
 {/if}

@@ -132,7 +132,7 @@
 				</span>
 			{/if}
 		</div>
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			{#if version.status}
 				{@render statusBadge(version.status)}
 			{/if}
@@ -161,7 +161,7 @@
 			</span>
 		</div>
 		{#if review.statusBefore && review.statusAfter}
-			<div class="flex items-center gap-1">
+			<div class="flex flex-wrap items-center gap-1">
 				{@render statusBadge(review.statusBefore)}
 				<i class="fa-sharp-duotone fa-solid fa-arrow-right text-xs text-base-content/50"></i>
 				{@render statusBadge(review.statusAfter)}
@@ -189,7 +189,7 @@
 				class="fa-sharp-duotone fa-solid fa-circle-chevron-right text-primary text-lg w-5 text-center"
 			></i>
 		</div>
-		<div class="timeline-end w-full pb-4">
+		<div class="timeline-end w-full min-w-0 pb-4">
 			{#if event.type === 'version'}
 				{@render versionEvent(event.version)}
 			{:else}

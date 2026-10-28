@@ -32,12 +32,14 @@
 	<div class="card-body p-4">
 		<!-- Top Row: Country/NSA + Status -->
 		<div class="flex items-center justify-between gap-4 flex-wrap">
-			<div class="flex items-center gap-3">
+			<div class="flex min-w-0 items-center gap-3">
 				<Flag size="md" alpha2Code={nation?.alpha2Code} nsa={!!nsa} icon={nsa?.fontAwesomeIcon} />
-				<span class="text-lg font-semibold">{paperEntityName(paper.delegation)}</span>
+				<span class="text-lg font-semibold min-w-0 break-words"
+					>{paperEntityName(paper.delegation)}</span
+				>
 			</div>
 			{#if status}
-				<div class="badge {getStatusBadgeClass(status)} badge-lg gap-2">
+				<div class="badge {getStatusBadgeClass(status)} badge-lg max-sm:badge-md gap-2">
 					<i class="fa-sharp-duotone fa-solid {getPaperStatusIcon(status)}"></i>
 					{translatePaperStatus(status)}
 				</div>
@@ -45,7 +47,7 @@
 		</div>
 
 		<!-- Title -->
-		<h1 class="text-2xl font-bold mt-2">{paperTitle(paper)}</h1>
+		<h1 class="text-2xl font-bold mt-2 break-words">{paperTitle(paper)}</h1>
 
 		<!-- Metadata Row -->
 		<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
@@ -80,7 +82,7 @@
 				{/if}
 			</div>
 			{#if actions}
-				<div class="flex items-center gap-2">
+				<div class="flex flex-wrap items-center gap-2">
 					{@render actions()}
 				</div>
 			{/if}

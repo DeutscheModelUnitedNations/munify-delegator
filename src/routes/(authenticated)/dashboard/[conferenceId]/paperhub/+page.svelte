@@ -61,14 +61,14 @@
 	);
 </script>
 
-<div class="flex flex-col gap-4 w-full p-6">
+<div class="flex flex-col gap-4 w-full py-4 sm:p-6">
 	<div class="flex flex-col gap-2">
 		{#if showViewToggle}
-			<div role="tablist" class="tabs tabs-border mt-2">
+			<div role="tablist" class="tabs tabs-border mt-2 max-sm:flex-nowrap max-sm:overflow-x-auto">
 				{#each viewTabs.filter((tab) => tab.available) as tab (tab.view)}
 					<button
 						role="tab"
-						class="tab"
+						class="tab shrink-0 whitespace-nowrap"
 						class:tab-active={currentView === tab.view}
 						onclick={() => (params.view = tab.view)}
 					>

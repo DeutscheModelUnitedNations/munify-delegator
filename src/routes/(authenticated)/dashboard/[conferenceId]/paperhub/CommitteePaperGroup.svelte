@@ -29,11 +29,13 @@
 	{aside}
 >
 	{#snippet header()}
-		<div class="flex items-center gap-2">
+		<div class="flex min-w-0 items-center gap-2">
 			<span class="badge {committee ? 'badge-primary' : 'badge-secondary'} font-bold">
 				{committee?.abbreviation ?? m.nonStateActorAbbreviation()}
 			</span>
-			<h3 class="text-lg font-semibold">{committee?.name ?? m.paperTypeIntroductionPapers()}</h3>
+			<h3 class="text-lg font-semibold min-w-0 break-words">
+				{committee?.name ?? m.paperTypeIntroductionPapers()}
+			</h3>
 		</div>
 	{/snippet}
 

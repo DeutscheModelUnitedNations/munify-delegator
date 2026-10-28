@@ -36,7 +36,7 @@
 >
 	<button
 		type="button"
-		class="flex w-full items-center justify-between gap-3 text-left transition-colors {hoverClass} {isCommittee
+		class="flex w-full items-center justify-between gap-x-3 gap-y-2 max-sm:flex-wrap text-left transition-colors {hoverClass} {isCommittee
 			? 'p-4 rounded-box'
 			: 'px-4 py-3'}"
 		aria-expanded={expanded}

@@ -9,7 +9,7 @@
 </script>
 
 <ul
-	class="menu w-full menu-vertical md:menu-horizontal bg-base-100 border-base-300 border-1 shadow-box rounded-box mb-4 gap-1"
+	class="menu menu-horizontal w-full flex-wrap bg-base-100 border-base-300 border-1 shadow-box rounded-box mb-4 gap-1"
 >
 	{@render children()}
 </ul>

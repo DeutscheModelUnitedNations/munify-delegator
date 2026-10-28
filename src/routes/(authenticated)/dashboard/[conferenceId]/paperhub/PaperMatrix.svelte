@@ -38,7 +38,7 @@
 	<table class="table table-sm">
 		<thead>
 			<tr class="text-xs align-bottom">
-				<th class="sticky left-0 z-10 bg-base-100 min-w-44">{m.country()}</th>
+				<th class="sticky left-0 z-10 bg-base-100 min-w-32 sm:min-w-44">{m.country()}</th>
 				{#each columns as column (column.id)}
 					<th class="min-w-32 max-w-56 text-center whitespace-normal" title={column.title}>
 						<span class="line-clamp-3">{column.title}</span>
@@ -52,7 +52,7 @@
 					<th class="sticky left-0 z-10 bg-base-100 font-normal">
 						<div class="flex items-center gap-2">
 							<RoleFlag role={row.delegation.assignedRole} />
-							<span class="truncate max-w-36" title={row.name}>{row.name}</span>
+							<span class="truncate max-w-24 sm:max-w-36" title={row.name}>{row.name}</span>
 						</div>
 					</th>
 					{#each columns as column (column.id)}

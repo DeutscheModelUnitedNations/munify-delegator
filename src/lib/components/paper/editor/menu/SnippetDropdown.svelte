@@ -23,7 +23,6 @@
 	<div class="dropdown dropdown-end">
 		<button tabindex="0" type="button" class="flex items-center gap-1 cursor-pointer" {disabled}>
 			<i class="fa-sharp-duotone fa-solid fa-bookmark"></i>
-			<span class="md:hidden">{m.snippets()}</span>
 			<i class="fa-sharp-duotone fa-solid fa-chevron-down text-[10px] opacity-60"></i>
 		</button>
 

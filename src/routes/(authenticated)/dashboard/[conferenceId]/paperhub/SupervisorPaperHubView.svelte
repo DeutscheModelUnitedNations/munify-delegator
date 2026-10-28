@@ -88,7 +88,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Summary stats -->
-	<div class="stats shadow bg-base-200">
+	<div class="stats stats-vertical sm:stats-horizontal shadow bg-base-200">
 		<div class="stat">
 			<div class="stat-title">{m.supervisorPapersTotal()}</div>
 			<div class="stat-value">{statusCounts.total}</div>
@@ -120,8 +120,8 @@
 		<!-- Papers grouped by delegation -->
 		{#each papersByDelegation as delegation (delegation.delegationId)}
 			<div class="card bg-base-200 shadow-md">
-				<div class="card-body">
-					<h3 class="card-title flex items-center gap-2">
+				<div class="card-body max-sm:p-4">
+					<h3 class="card-title flex flex-wrap items-center gap-2">
 						<Flag
 							size="sm"
 							alpha2Code={delegation.alpha2Code}

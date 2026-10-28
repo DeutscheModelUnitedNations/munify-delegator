@@ -82,7 +82,9 @@
 		</span>
 
 		<!-- Name -->
-		<span class="w-40 text-sm font-medium flex items-center gap-2 flex-wrap leading-tight">
+		<span
+			class="w-28 sm:w-40 shrink-0 text-sm font-medium flex items-center gap-2 flex-wrap leading-tight"
+		>
 			<span class="break-words">{reviewer.anonymizedName}</span>
 			{#if reviewer.isCurrentUser}
 				<span class="badge badge-primary badge-xs">{m.you()}</span>

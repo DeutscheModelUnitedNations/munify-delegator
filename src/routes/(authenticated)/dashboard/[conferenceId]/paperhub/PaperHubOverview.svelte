@@ -264,11 +264,11 @@
 		</div>
 	{/if}
 
-	<div role="tablist" class="tabs tabs-border">
+	<div role="tablist" class="tabs tabs-border max-sm:flex-nowrap max-sm:overflow-x-auto">
 		{#each sectionTabs as tab (tab.id)}
 			<button
 				role="tab"
-				class="tab"
+				class="tab shrink-0 whitespace-nowrap"
 				class:tab-active={section === tab.id}
 				onclick={() => (section = tab.id)}
 			>

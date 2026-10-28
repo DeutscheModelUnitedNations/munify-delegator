@@ -19,7 +19,7 @@
 
 <div class="flex flex-col gap-2">
 	<span class="text-sm font-semibold">{m.newStatus()}</span>
-	<div class="flex w-full gap-2">
+	<div class="flex w-full gap-2 max-sm:flex-col">
 		{#each transitions as transition (transition.value)}
 			<label class="flex-1 cursor-pointer">
 				<input

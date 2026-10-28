@@ -25,12 +25,13 @@
 	<h2 class="text-2xl font-bold">{title}</h2>
 
 	<Form {form} class="w-full flex flex-col xl:flex-row-reverse gap-4" showSubmitButton={false}>
-		<div class="flex flex-col gap-4 xl:w-1/3">
+		<!-- Below xl the column dissolves, so the buttons can follow the editor -->
+		<div class="contents xl:flex xl:flex-col xl:gap-4 xl:w-1/3">
 			<FormFieldset title={m.paperDetails()}>
 				{@render details()}
 			</FormFieldset>
 
-			<div class="join join-vertical w-full">
+			<div class="join join-vertical w-full max-xl:order-last">
 				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => onSave(false)}>
 					<i class="fa-sharp-duotone fa-solid fa-pencil mr-2"></i>
 					{m.paperSaveDraft()}
