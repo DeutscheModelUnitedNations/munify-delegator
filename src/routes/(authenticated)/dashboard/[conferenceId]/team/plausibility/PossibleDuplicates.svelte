@@ -73,6 +73,8 @@
 		const promise = client.mutate.decidePossibleDuplicate({ __args: { id, status }, status: true });
 		toast.promise(promise, genericPromiseToastMessages);
 	}
+
+	let dismissedOpen = $state(false);
 </script>
 
 {#snippet pairCard(pair: (typeof pairs)[number])}
@@ -157,15 +159,22 @@
 	{/if}
 
 	{#if dismissed.length > 0}
-		<details class="collapse-arrow border-base-300 collapse border">
-			<summary class="collapse-title font-semibold">
+		<div
+			class="collapse-arrow border-base-300 collapse border {dismissedOpen ? 'collapse-open' : ''}"
+		>
+			<button
+				type="button"
+				class="collapse-title w-full cursor-pointer text-left font-semibold"
+				aria-expanded={dismissedOpen}
+				onclick={() => (dismissedOpen = !dismissedOpen)}
+			>
 				{m.possibleDuplicatesDismissed({ count: dismissed.length })}
-			</summary>
+			</button>
 			<div class="collapse-content grid gap-4 lg:grid-cols-2">
 				{#each dismissed as pair (pair.id)}
 					{@render pairCard(pair)}
 				{/each}
 			</div>
-		</details>
+		</div>
 	{/if}
 </section>

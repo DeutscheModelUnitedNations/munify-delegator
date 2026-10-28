@@ -62,6 +62,8 @@
 		}, // success
 		{ name: m.paperStatusDraft(), value: paperStats.byStatus.draft, color: '#9ca3af' } // gray
 	]);
+
+	let byCommitteeOpen = $state(false);
 </script>
 
 <!-- Hidden entirely while there is nothing to show. -->
@@ -150,10 +152,19 @@
 
 			<!-- Committee breakdown (collapsible) -->
 			{#if paperStats.byCommittee.length > 0}
-				<details class="collapse collapse-arrow border border-base-300 mt-3">
-					<summary class="collapse-title text-sm font-medium py-2 min-h-0">
+				<div
+					class="collapse collapse-arrow border border-base-300 mt-3 {byCommitteeOpen
+						? 'collapse-open'
+						: ''}"
+				>
+					<button
+						type="button"
+						class="collapse-title w-full cursor-pointer py-2 min-h-0 text-left text-sm font-medium"
+						aria-expanded={byCommitteeOpen}
+						onclick={() => (byCommitteeOpen = !byCommitteeOpen)}
+					>
 						{m.statsPapersByCommittee()}
-					</summary>
+					</button>
 					<div class="collapse-content">
 						<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 							{#each paperStats.byCommittee.toSorted((a, b) => b.count - a.count) as committee (committee.committeeId)}
@@ -164,7 +175,7 @@
 							{/each}
 						</div>
 					</div>
-				</details>
+				</div>
 			{/if}
 		</div>
 	</section>
