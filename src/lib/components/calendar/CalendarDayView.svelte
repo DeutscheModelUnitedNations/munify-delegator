@@ -5,7 +5,7 @@
 	import OptionalTooltip from '#lib/components/OptionalTooltip.svelte';
 	import CalendarEntryCard from './CalendarEntryCard.svelte';
 	import CalendarTimeMarker from './CalendarTimeMarker.svelte';
-	import { hourRange, utcHourOf } from './calendarHours';
+	import { hourRange, utcEndHourOf, utcHourOf } from './calendarHours';
 
 	interface Props {
 		dayName: string;
@@ -68,7 +68,7 @@
 
 	function getEntryStyle(entry: Entry): string {
 		const startH = utcHourOf(entry.startTime);
-		const endH = utcHourOf(entry.endTime);
+		const endH = utcEndHourOf(entry);
 		const top = (startH - timeRange.startHour) * hourHeight;
 		const height = (endH - startH) * hourHeight;
 		return `top: ${top}px; height: ${height}px;`;
