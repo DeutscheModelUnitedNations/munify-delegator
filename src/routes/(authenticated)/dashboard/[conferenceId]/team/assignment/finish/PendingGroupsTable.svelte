@@ -66,7 +66,7 @@
 			{#each groups as group (group.key)}
 				{@const applicationId = group.delegationId ?? group.singleParticipantId}
 				<tr>
-					<td>
+					<td class="min-w-44">
 						{#if applicationId}
 							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved in sightingHref -->
 							<a
@@ -79,19 +79,25 @@
 						{:else}
 							{codenamize(group.key)}
 						{/if}
-						<span class="badge badge-xs">{group.size}</span>
+						<span class="badge badge-xs whitespace-nowrap">{group.size}</span>
 						{#if group.part}
-							<span class="badge badge-xs badge-info">{m.assignmentSplitPart()}</span>
+							<span class="badge badge-xs whitespace-nowrap badge-info"
+								>{m.assignmentSplitPart()}</span
+							>
 						{/if}
 						{#if group.singleParticipantId}
-							<span class="badge badge-xs badge-info">{m.assignmentConvertedSingle()}</span>
+							<span class="badge badge-xs whitespace-nowrap badge-info"
+								>{m.assignmentConvertedSingle()}</span
+							>
 						{/if}
 					</td>
 					<td>{@render role(group.liveTarget)}</td>
 					<td>
 						{@render role(group.target)}
 						{#if merged.has(targetKey(group.target) ?? '')}
-							<span class="badge badge-xs badge-warning">{m.assignmentMerged()}</span>
+							<span class="badge badge-xs whitespace-nowrap badge-warning"
+								>{m.assignmentMerged()}</span
+							>
 						{/if}
 					</td>
 					<td>{wishLabel(group)}</td>

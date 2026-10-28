@@ -87,10 +87,13 @@
 	</div>
 
 	<div class="flex w-full min-w-0 items-center justify-center gap-2">
-		<span class="text-base-content/50 w-16 text-right text-xs tabular-nums">
+		<span class="text-base-content/50 w-16 shrink-0 text-right text-xs tabular-nums max-sm:w-auto">
 			{#if deck.start > 0}{m.assignmentDeckBefore({ count: deck.start })}{/if}
 		</span>
-		<ol class="flex min-w-0 flex-nowrap justify-center gap-1" aria-label={m.assignmentDeckStrip()}>
+		<ol
+			class="flex min-w-0 flex-nowrap justify-center gap-1 max-sm:gap-px"
+			aria-label={m.assignmentDeckStrip()}
+		>
 			{#each deck.entries as entry, offset (entry.id)}
 				{@const status = statusOf(entry.status)}
 				{@const codename = codenamize(entry.id)}
@@ -98,7 +101,7 @@
 				{@const label = entry.required
 					? `${codename}: ${statusLabels[status]}, ${m.assignmentRequired()}`
 					: `${codename}: ${statusLabels[status]}`}
-				<li class="w-5 min-w-1 shrink">
+				<li class="w-5 min-w-1 shrink max-sm:min-w-0.5">
 					<button
 						class="block h-3 w-full cursor-pointer rounded-selector transition-all {entry.required
 							? requiredColor
@@ -113,7 +116,7 @@
 				</li>
 			{/each}
 		</ol>
-		<span class="text-base-content/50 w-16 text-xs tabular-nums">
+		<span class="text-base-content/50 w-16 shrink-0 text-xs tabular-nums max-sm:w-auto">
 			{#if after > 0}{m.assignmentDeckAfter({ count: after })}{/if}
 		</span>
 	</div>

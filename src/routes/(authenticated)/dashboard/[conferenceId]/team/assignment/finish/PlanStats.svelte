@@ -23,7 +23,7 @@
 
 <div class="stats stats-vertical sm:stats-horizontal">
 	{#each stats as stat (stat.title)}
-		<div class="stat">
+		<div class="stat max-sm:py-2">
 			<div class="stat-title">{stat.title}</div>
 			<div class="stat-value text-2xl">{stat.value}</div>
 		</div>

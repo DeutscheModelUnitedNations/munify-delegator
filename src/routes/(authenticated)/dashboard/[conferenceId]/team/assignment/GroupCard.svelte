@@ -16,6 +16,7 @@
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
+	import DragGrip from './DragGrip.svelte';
 	import GroupBadges from './GroupBadges.svelte';
 	import { sightingHref } from '#lib/helpers/sightingLink.js';
 
@@ -98,7 +99,7 @@
 	aria-busy={busy}
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
-		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-box border p-2 text-xs shadow-sm {cardBorder(
+		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-box border p-2 text-xs shadow-sm pointer-coarse:touch-pan-y! {cardBorder(
 		review,
 		group.pending
 	)}"
@@ -110,6 +111,7 @@
 			{group.size}
 		</span>
 		<span class="truncate font-bold">{names}</span>
+		<span class="ml-auto self-center"><DragGrip /></span>
 	</div>
 	{#if subtitle}
 		<span class="text-base-content/60 truncate" title={subtitle}>{subtitle}</span>

@@ -1058,6 +1058,10 @@ tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.sv
 - Drag and drop uses `@thisux/sveltednd` (`draggable` with `dragData: { id: group.key }`, `droppable`
   containers named `pool`, `role:<key>`); every drop is one draft mutation, and the live queries
   bring the result back - there is no local copy of the draft.
+- The library puts `touch-action: none` on every draggable, so on a touch screen a finger on a card
+  could neither scroll the pool nor the page. Draggable cards (`GroupCard`, `SingleCard`, the
+  members in `SplitPart`) add `pointer-coarse:touch-pan-y!` and a `DragGrip`, shown on touch
+  screens only, from which the drag starts there; with a mouse nothing changes.
 - **A page that awaits (`$derived(await …)`) must not read route params or URL state inside that
   derived.** A navigation - the table's or the sighting's own URL writes are one - hands the page
   fresh `params`, which re-ran the derived from the state a still-pending batch showed: the card

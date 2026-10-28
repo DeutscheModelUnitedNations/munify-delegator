@@ -29,13 +29,13 @@
 <svelte:window onkeydown={onKeydown} />
 
 <div class="flex flex-wrap items-center gap-2">
-	<kbd class="kbd kbd-xs" title={m.assignmentRateHotkey()}>1</kbd>
+	<kbd class="kbd kbd-xs hidden sm:inline-block" title={m.assignmentRateHotkey()}>1</kbd>
 	<StarRating
 		rating={review?.evaluation ?? 0}
 		changeRating={(evaluation) => onReview({ evaluation })}
 		deleteRating={() => onReview({ evaluation: null })}
 	/>
-	<kbd class="kbd kbd-xs" title={m.assignmentRateHotkey()}>5</kbd>
+	<kbd class="kbd kbd-xs hidden sm:inline-block" title={m.assignmentRateHotkey()}>5</kbd>
 	<button
 		class="btn btn-square {review?.flagged ? 'btn-warning' : 'btn-ghost'}"
 		aria-label={m.assignmentFlag()}

@@ -43,7 +43,7 @@
 {/snippet}
 
 {#snippet todoBadge()}
-	<span class="bg-warning size-2.5 rounded-full" aria-hidden="true"></span>
+	<span class="bg-warning size-2.5 shrink-0 rounded-full" aria-hidden="true"></span>
 {/snippet}
 
 <div class="flex flex-col gap-4">
@@ -52,7 +52,7 @@
 			<legend class="fieldset-legend text-base-content/70 pt-0 text-xs tracking-wide uppercase">
 				{m.assignmentGroupSize()}
 			</legend>
-			<div role="tablist" class="flex h-9 items-stretch">
+			<div role="tablist" class="flex h-9 items-stretch overflow-x-auto">
 				{#each descending as option, i (option.size)}
 					<button
 						role="tab"
@@ -109,6 +109,12 @@
 		flex: 1 1 0;
 		min-width: 3.5rem;
 		padding-inline: 1.25rem;
+	}
+	@media (width < 40rem) {
+		.step {
+			min-width: 3rem;
+			padding-inline: 0.875rem;
+		}
 	}
 	.step-first {
 		clip-path: polygon(

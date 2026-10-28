@@ -44,10 +44,10 @@
 </script>
 
 <div class="card bg-base-100 border-base-200 h-full border shadow-sm transition-colors {border}">
-	<div class="card-body gap-6 overflow-y-auto">
+	<div class="card-body gap-6 overflow-y-auto max-sm:gap-4 max-sm:p-4">
 		<div class="flex flex-wrap items-start justify-between gap-4">
-			<div class="flex flex-col">
-				<h3 class="flex items-center gap-2 text-xl font-bold">
+			<div class="flex min-w-0 flex-col">
+				<h3 class="flex items-center gap-2 text-xl font-bold break-words">
 					<i class="fa-sharp-duotone fa-solid {kind === 'delegation' ? 'fa-users' : 'fa-user'}"></i>
 					{#if person}
 						<button
@@ -75,10 +75,10 @@
 							{/if}
 						</span>
 					{:else}
-						{codename}
+						<span class="min-w-0">{codename}</span>
 					{/if}
 				</h3>
-				<span class="text-base-content/50 font-mono text-xs">{id}</span>
+				<span class="text-base-content/50 font-mono text-xs break-all">{id}</span>
 			</div>
 			<div class="flex items-center gap-2">
 				<ReviewControls {review} {onReview} />

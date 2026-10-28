@@ -150,10 +150,10 @@
 	{/if}
 
 	<section class="card bg-base-100 border-base-200 border shadow-sm">
-		<div class="card-body gap-4">
+		<div class="card-body gap-4 max-sm:p-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h3 class="card-title">{m.assignmentPendingChangesTitle()}</h3>
-				<div class="flex gap-2">
+				<div class="flex flex-wrap gap-2">
 					<button
 						class="btn btn-ghost btn-sm"
 						disabled={empty}

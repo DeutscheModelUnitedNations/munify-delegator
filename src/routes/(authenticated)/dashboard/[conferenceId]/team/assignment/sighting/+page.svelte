@@ -192,7 +192,7 @@
 		<div class="flex flex-col gap-1">
 			<p>{m.assignmentSightingHint()}</p>
 			<progress
-				class="progress progress-primary w-64"
+				class="progress progress-primary w-full max-w-64"
 				value={deck.overallRated}
 				max={deck.overallTotal}
 			></progress>
@@ -251,7 +251,7 @@
 	{:else if current && currentKind && application}
 		{#key current.id}
 			<div
-				class="h-[46rem] max-h-[75vh]"
+				class="sm:h-[46rem] sm:max-h-[75vh]"
 				in:fly={{ x: direction * 80, duration: prefersReducedMotion.current ? 0 : 160 }}
 			>
 				<ApplicationCard

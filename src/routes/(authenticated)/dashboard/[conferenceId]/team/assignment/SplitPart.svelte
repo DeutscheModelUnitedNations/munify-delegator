@@ -3,6 +3,7 @@
 	import { m } from '#lib/paraglide/messages.js';
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import type { BoardDelegation } from './board';
+	import DragGrip from './DragGrip.svelte';
 
 	/** One part in the split modal: a bin its members are dragged into and out of. */
 	interface Props {
@@ -53,7 +54,7 @@
 			use:draggable={{ container, dragData: { id: member.id } }}
 			ondragstart={() => onDragChange(member.id)}
 			ondragend={() => onDragChange(undefined)}
-			class="bg-base-100 border-base-300 flex cursor-grab items-center gap-2 rounded-box border px-3 py-2.5 text-base shadow-sm {draggedId ===
+			class="bg-base-100 border-base-300 flex cursor-grab items-center gap-2 rounded-box border px-3 py-2.5 text-base shadow-sm pointer-coarse:touch-pan-y! {draggedId ===
 			member.id
 				? 'opacity-50'
 				: ''}"
@@ -65,6 +66,7 @@
 				<i class="fa-sharp-duotone fa-solid fa-crown text-warning shrink-0" title={m.headDelegate()}
 				></i>
 			{/if}
+			<span class="ml-auto"><DragGrip /></span>
 		</div>
 	{:else}
 		<div

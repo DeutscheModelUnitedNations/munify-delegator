@@ -210,7 +210,7 @@
 {/snippet}
 
 <div class="flex flex-col gap-4">
-	<div class="alert alert-info alert-soft">
+	<div class="alert alert-info alert-soft max-sm:alert-vertical">
 		<i class="fa-sharp-duotone fa-solid fa-user-tie text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
 		<button

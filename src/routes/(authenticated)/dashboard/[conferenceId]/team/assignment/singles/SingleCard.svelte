@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BusyOverlay from '../BusyOverlay.svelte';
+	import DragGrip from '../DragGrip.svelte';
 	import { cardBorder, type BoardReviewRow } from '#lib/assignment/board.js';
 	import StarRating from '#lib/components/StarRating.svelte';
 	import formatNames from '#lib/helpers/formatNames.js';
@@ -63,7 +64,7 @@
 	aria-busy={busy}
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
-		: 'w-44'} cursor-grab gap-1 rounded-box border p-2 text-xs shadow-sm {cardBorder(
+		: 'w-44'} cursor-grab gap-1 rounded-box border p-2 text-xs shadow-sm pointer-coarse:touch-pan-y! {cardBorder(
 		review,
 		pending
 	)}"
@@ -107,7 +108,8 @@
 			</ul>
 		{/if}
 	</div>
-	<div class="flex shrink-0 flex-col justify-between gap-0.5">
+	<div class="flex shrink-0 flex-col items-center justify-between gap-0.5">
+		<DragGrip />
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, with the selection as query -->
 		<a
 			class="btn btn-ghost btn-xs btn-square shrink-0"
