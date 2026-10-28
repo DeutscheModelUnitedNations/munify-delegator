@@ -19,7 +19,7 @@
 	let inviteMembersModalOpen = $state(false);
 </script>
 
-<div class="flex items-end justify-between gap-4 px-6 pt-6">
+<div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-4 sm:px-6 sm:pt-6">
 	<Tabs>
 		<Tab title={m.teamMembers()} icon="users" active={!onInvitations} href={`${base}/members`} />
 		<Tab
@@ -35,7 +35,7 @@
 	</button>
 </div>
 
-<div class="flex flex-col gap-4 p-6 pt-4">
+<div class="flex flex-col gap-4 py-4 sm:p-6 sm:pt-4">
 	{@render children()}
 </div>
 

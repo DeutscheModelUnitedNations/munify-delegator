@@ -13,7 +13,7 @@
 
 <a
 	role="tab"
-	class="tab {active && 'tab-active'} {disabled && 'tab-disabled'}"
+	class="tab shrink-0 whitespace-nowrap {active && 'tab-active'} {disabled && 'tab-disabled'}"
 	aria-selected={active}
 	aria-disabled={disabled}
 	tabindex={disabled ? -1 : 0}

@@ -51,7 +51,7 @@ import path via the parameter! The home link is the wordmark in the header, so t
 			{@const breadcrumb = getBreadcrumb(pathSegment)}
 			{#snippet label()}
 				<i class="fa-sharp-duotone fa-solid fa-{breadcrumb.icon}"></i>
-				<span class="ml-1 truncate">
+				<span class="crumb-label ml-1 truncate">
 					{#if pathSegment.key === 'surveyId' && pathSegment.isParameter}
 						<svelte:boundary>
 							<SurveyCrumbTitle surveyId={pathSegment.value} />
@@ -65,14 +65,26 @@ import path via the parameter! The home link is the wordmark in the header, so t
 			{/snippet}
 			{#if hasPage(pathSegment)}
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
-				<a class="btn btn-ghost btn-sm max-w-48 !no-underline" href={pathSegment.href}>
+				<a
+					class="btn btn-ghost btn-sm max-sm:px-1.5 max-w-48 !no-underline"
+					href={pathSegment.href}
+				>
 					{@render label()}
 				</a>
 			{:else}
-				<span class="btn btn-ghost btn-sm pointer-events-none max-w-48 !no-underline">
+				<span class="btn btn-ghost btn-sm max-sm:px-1.5 pointer-events-none max-w-48 !no-underline">
 					{@render label()}
 				</span>
 			{/if}
 		{/if}
 	{/snippet}
 </Breadcrumbs>
+
+<style>
+	/* Phones show the trail as icons and spell out only the page they are on */
+	@media (width < 40rem) {
+		:global(.breadcrumbs li:not(:last-child)) .crumb-label {
+			display: none;
+		}
+	}
+</style>

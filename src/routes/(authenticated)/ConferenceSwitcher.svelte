@@ -22,9 +22,9 @@
 </script>
 
 <DropdownMenu.Root>
-	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5">
+	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5 max-sm:px-1.5">
 		<i class="fa-sharp-duotone fa-solid fa-flag"></i>
-		<span class="truncate font-semibold">{current?.title ?? m.conference()}</span>
+		<span class="crumb-label truncate font-semibold">{current?.title ?? m.conference()}</span>
 		<i class="fa-sharp-duotone fa-solid fa-chevron-down text-base-content/50 text-[0.6rem]"></i>
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
@@ -67,3 +67,11 @@
 		</DropdownMenu.Content>
 	</DropdownMenu.Portal>
 </DropdownMenu.Root>
+
+<style>
+	@media (width < 40rem) {
+		:global(.breadcrumbs li:not(:last-child)) .crumb-label {
+			display: none;
+		}
+	}
+</style>

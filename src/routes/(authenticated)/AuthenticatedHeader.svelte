@@ -44,7 +44,7 @@
 
 	// On mobile the title and breadcrumbs share one row that scrolls horizontally; keep the end
 	// (the current page) in view initially and whenever the crumbs change (navigation, lazily
-	// loaded titles).
+	// loaded titles, fonts arriving).
 	$effect(() => {
 		const scroller = titleScroller;
 		if (!scroller) return;
@@ -54,7 +54,13 @@
 		scrollToEnd();
 		const observer = new MutationObserver(scrollToEnd);
 		observer.observe(scroller, { childList: true, subtree: true, characterData: true });
-		return () => observer.disconnect();
+		const resizeObserver = new ResizeObserver(scrollToEnd);
+		for (const child of scroller.children) resizeObserver.observe(child);
+		resizeObserver.observe(scroller);
+		return () => {
+			observer.disconnect();
+			resizeObserver.disconnect();
+		};
 	});
 
 	let headerHeight = $state(0);
@@ -92,11 +98,23 @@
 		<!-- On mobile the title and the breadcrumbs form one row that scrolls horizontally (the conference switcher's dropdown is portaled, so scrolling does not clip it). From md up the title stays put and the breadcrumbs overflow and wrap instead. Drop daisyUI's own separators since the breadcrumbs draw chevrons -->
 		<div
 			bind:this={titleScroller}
-			class="flex min-w-0 flex-1 items-center gap-x-4 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden"
+			class="flex min-w-0 flex-1 items-center gap-x-2 overflow-x-auto sm:gap-x-4 [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden"
 		>
-			<a class="shrink-0 text-lg leading-none whitespace-nowrap" href={resolve('dashboard')}>
-				<span class="font-light">MUNify</span>
-				<span class="font-bold">DELEGATOR</span>
+			<!-- Next to the menu button phones need the room for the crumbs, whose first one leads home too -->
+			<a
+				class={[
+					'shrink-0 text-lg leading-none whitespace-nowrap',
+					headerState.openNavCallback !== undefined && 'max-sm:hidden'
+				]}
+				href={resolve('dashboard')}
+				aria-label="MUNify DELEGATOR"
+			>
+				<!-- On phones the wordmark would take half the row the breadcrumbs need -->
+				<img src="/favicon-32x32.png" alt="" class="size-6 sm:hidden" />
+				<span class="max-sm:hidden">
+					<span class="font-light">MUNify</span>
+					<span class="font-bold">DELEGATOR</span>
+				</span>
 			</a>
 
 			<div
