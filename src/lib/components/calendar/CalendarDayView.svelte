@@ -14,6 +14,11 @@
 		entries: Entry[];
 		filterTrackId?: string | null;
 		hourHeight?: number;
+		/**
+		 * The narrowest a track's column gets. Past it the day scrolls sideways (the times stay put),
+		 * so a phone shows readable entries instead of squeezing every track into a sliver.
+		 */
+		minTrackWidth?: string;
 		timezone?: string;
 		onEntryClick?: (entry: Entry) => void;
 	}
@@ -25,6 +30,7 @@
 		entries,
 		filterTrackId = null,
 		hourHeight = 90,
+		minTrackWidth = '9rem',
 		timezone = 'UTC',
 		onEntryClick
 	}: Props = $props();
@@ -95,97 +101,102 @@
 		{/if}
 	</div>
 
-	{#if visibleTracks.length > 0}
-		<div
-			class="mb-2 grid gap-px"
-			style="grid-template-columns: 3.5rem repeat({visibleTracks.length}, minmax(0, 1fr));"
-		>
-			<div></div>
-			{#each visibleTracks as track (track.id)}
-				<OptionalTooltip tip={track.description} class="tooltip-bottom">
-					<div
-						class="bg-base-200 truncate rounded-t-field px-2 py-2 text-center text-xs font-medium"
-						title={track.name}
-					>
-						{track.name}
-					</div>
-				</OptionalTooltip>
-			{/each}
-		</div>
-	{/if}
-
-	<div class="grid" style="grid-template-columns: 3.5rem repeat({columnCount}, minmax(0, 1fr));">
-		<!-- Time gutter -->
-		<div class="relative" style="height: {totalHeight}px;">
-			{#each hours as hour (hour)}
-				<div
-					class="text-base-content/40 absolute right-2 text-xs leading-none"
-					style="top: {(hour - timeRange.startHour) * hourHeight}px; transform: translateY(-50%);"
-				>
-					{formatClockMinutes(hour * 60)}
-				</div>
-			{/each}
-		</div>
-
-		<!-- Entries area -->
-		<div class="relative" style="height: {totalHeight}px; grid-column: 2 / {columnCount + 2};">
-			<!-- Gridlines -->
-			{#each hours as hour (hour)}
-				<div
-					class="border-base-200 absolute right-0 left-0 border-t"
-					style="top: {(hour - timeRange.startHour) * hourHeight}px;"
-				></div>
-				<!-- 15-minute dashed gridlines -->
-				{#each [0.25, 0.5, 0.75] as fraction (fraction)}
-					<div
-						class="border-base-200/40 absolute right-0 left-0 border-t border-dashed"
-						style="top: {(hour - timeRange.startHour + fraction) * hourHeight}px;"
-					></div>
-				{/each}
-			{/each}
-
-			<!-- Vertical track dividers -->
-			{#each { length: columnCount - 1 }, i}
-				<div
-					class="border-base-200/40 absolute top-0 bottom-0 border-l border-dashed"
-					style="left: calc((100% / {columnCount}) * {i + 1});"
-				></div>
-			{/each}
-
-			<!-- Entry cards -->
+	<div class="overflow-x-auto">
+		{#if visibleTracks.length > 0}
 			<div
-				class="absolute inset-0 grid"
-				style="grid-template-columns: repeat({columnCount}, minmax(0, 1fr));"
+				class="mb-2 grid gap-px"
+				style="grid-template-columns: 3.5rem repeat({visibleTracks.length}, minmax({minTrackWidth}, 1fr));"
 			>
-				{#each visibleEntries as entry (entry.id)}
-					{@const col = getColumnForEntry(entry)}
+				<div class="bg-base-100 sticky left-0 z-10"></div>
+				{#each visibleTracks as track (track.id)}
+					<OptionalTooltip tip={track.description} class="tooltip-bottom">
+						<div
+							class="bg-base-200 truncate rounded-t-field px-2 py-2 text-center text-xs font-medium"
+							title={track.name}
+						>
+							{track.name}
+						</div>
+					</OptionalTooltip>
+				{/each}
+			</div>
+		{/if}
+
+		<div
+			class="grid"
+			style="grid-template-columns: 3.5rem repeat({columnCount}, minmax({minTrackWidth}, 1fr));"
+		>
+			<!-- Time gutter, pinned while the tracks scroll sideways -->
+			<div class="bg-base-100 sticky left-0 z-10" style="height: {totalHeight}px;">
+				{#each hours as hour (hour)}
 					<div
-						class="absolute px-0.5 pb-px"
-						style="{getEntryStyle(entry)} left: calc((100% / {columnCount}) * {col.start -
-							1}); width: calc((100% / {columnCount}) * {col.span});"
+						class="text-base-content/40 absolute right-2 text-xs leading-none"
+						style="top: {(hour - timeRange.startHour) * hourHeight}px; transform: translateY(-50%);"
 					>
-						<CalendarEntryCard
-							name={entry.name}
-							fontAwesomeIcon={entry.fontAwesomeIcon}
-							color={entry.color}
-							startTime={new Date(entry.startTime)}
-							endTime={new Date(entry.endTime)}
-							place={entry.place}
-							room={entry.room}
-							compact={isCompact(entry)}
-							onclick={onEntryClick ? () => onEntryClick(entry) : undefined}
-						/>
+						{formatClockMinutes(hour * 60)}
 					</div>
 				{/each}
 			</div>
 
-			<!-- Time marker -->
-			<CalendarTimeMarker
-				startHour={timeRange.startHour}
-				endHour={timeRange.endHour}
-				{hourHeight}
-				{timezone}
-			/>
+			<!-- Entries area -->
+			<div class="relative" style="height: {totalHeight}px; grid-column: 2 / {columnCount + 2};">
+				<!-- Gridlines -->
+				{#each hours as hour (hour)}
+					<div
+						class="border-base-200 absolute right-0 left-0 border-t"
+						style="top: {(hour - timeRange.startHour) * hourHeight}px;"
+					></div>
+					<!-- 15-minute dashed gridlines -->
+					{#each [0.25, 0.5, 0.75] as fraction (fraction)}
+						<div
+							class="border-base-200/40 absolute right-0 left-0 border-t border-dashed"
+							style="top: {(hour - timeRange.startHour + fraction) * hourHeight}px;"
+						></div>
+					{/each}
+				{/each}
+
+				<!-- Vertical track dividers -->
+				{#each { length: columnCount - 1 }, i}
+					<div
+						class="border-base-200/40 absolute top-0 bottom-0 border-l border-dashed"
+						style="left: calc((100% / {columnCount}) * {i + 1});"
+					></div>
+				{/each}
+
+				<!-- Entry cards -->
+				<div
+					class="absolute inset-0 grid"
+					style="grid-template-columns: repeat({columnCount}, minmax(0, 1fr));"
+				>
+					{#each visibleEntries as entry (entry.id)}
+						{@const col = getColumnForEntry(entry)}
+						<div
+							class="absolute px-0.5 pb-px"
+							style="{getEntryStyle(entry)} left: calc((100% / {columnCount}) * {col.start -
+								1}); width: calc((100% / {columnCount}) * {col.span});"
+						>
+							<CalendarEntryCard
+								name={entry.name}
+								fontAwesomeIcon={entry.fontAwesomeIcon}
+								color={entry.color}
+								startTime={new Date(entry.startTime)}
+								endTime={new Date(entry.endTime)}
+								place={entry.place}
+								room={entry.room}
+								compact={isCompact(entry)}
+								onclick={onEntryClick ? () => onEntryClick(entry) : undefined}
+							/>
+						</div>
+					{/each}
+				</div>
+
+				<!-- Time marker -->
+				<CalendarTimeMarker
+					startHour={timeRange.startHour}
+					endHour={timeRange.endHour}
+					{hourHeight}
+					{timezone}
+				/>
+			</div>
 		</div>
 	</div>
 </div>

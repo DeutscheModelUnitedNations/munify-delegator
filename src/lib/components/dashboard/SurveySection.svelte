@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client.js';
+	import { slide } from 'svelte/transition';
 	import DashboardSection from './DashboardSection.svelte';
 	import SurveyCard from '#lib/components/survey/SurveyCard.svelte';
 	import { m } from '#lib/paraglide/messages.js';
@@ -124,7 +125,7 @@
 	</DashboardSection>
 
 	{#if sectionCollapsed && pinnedSelections.length > 0}
-		<div class="flex flex-wrap gap-3 -mt-4 ml-6">
+		<div class="flex flex-wrap gap-3 -mt-4 ml-6" transition:slide={{ duration: 200 }}>
 			{#each pinnedSelections as pinned (pinned.title)}
 				<div
 					class="bg-primary/10 border-primary/30 flex items-center gap-3 rounded-box border px-5 py-3.5 shadow-sm"

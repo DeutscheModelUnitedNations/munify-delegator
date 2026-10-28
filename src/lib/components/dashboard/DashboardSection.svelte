@@ -77,28 +77,32 @@
 			</div>
 		{/snippet}
 		{#if collapsible}
-			<div
-				class="flex cursor-pointer items-start gap-4 select-none"
-				class:mb-4={!collapsed}
-				role="button"
-				tabindex="0"
-				aria-expanded={!collapsed}
-				onclick={() => (collapsed = !collapsed)}
-				onkeydown={(e: KeyboardEvent) => {
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						collapsed = !collapsed;
-					}
-				}}
-			>
-				{@render header()}
+			<div class="collapse rounded-none {collapsed ? '' : 'collapse-open'}">
+				<div
+					class="flex cursor-pointer items-start gap-4 select-none"
+					role="button"
+					tabindex="0"
+					aria-expanded={!collapsed}
+					onclick={() => (collapsed = !collapsed)}
+					onkeydown={(e: KeyboardEvent) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							collapsed = !collapsed;
+						}
+					}}
+				>
+					{@render header()}
+				</div>
+				<div class="collapse-content px-0 pb-0">
+					<div class="flex flex-col gap-2 pt-4">
+						{@render children()}
+					</div>
+				</div>
 			</div>
 		{:else}
-			<div class="flex items-start gap-3 sm:gap-4" class:mb-4={!collapsed}>
+			<div class="mb-4 flex items-start gap-3 sm:gap-4">
 				{@render header()}
 			</div>
-		{/if}
-		{#if !collapsed}
 			{@render children()}
 		{/if}
 	</div>

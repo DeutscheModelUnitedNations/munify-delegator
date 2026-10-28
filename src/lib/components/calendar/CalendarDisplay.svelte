@@ -101,6 +101,7 @@
 				entries={day.entries}
 				{filterTrackId}
 				{timezone}
+				minTrackWidth="0"
 				onEntryClick={(entry) => handleEntryClick(entry, day)}
 			/>
 		{/each}

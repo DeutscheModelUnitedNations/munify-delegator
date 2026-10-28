@@ -23,7 +23,7 @@
 	class="bg-base-200 border-base-300 mt-4 flex flex-wrap items-center gap-2 rounded-box border p-2 pl-4"
 >
 	<p
-		class="max-w-full min-w-0 flex-1 overflow-x-auto font-mono text-xl tracking-[0.4rem] uppercase sm:tracking-[0.6rem]"
+		class="max-w-full flex-[1_0_auto] overflow-x-auto font-mono text-xl tracking-[0.4rem] uppercase sm:tracking-[0.6rem]"
 	>
 		{entryCode}
 	</p>

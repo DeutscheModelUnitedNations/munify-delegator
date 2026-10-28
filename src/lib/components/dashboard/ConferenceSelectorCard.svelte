@@ -87,7 +87,7 @@
 		/>
 	</figure>
 	<div class="card-body justify-between p-5">
-		<div class="flex items-start justify-between gap-2">
+		<div class="flex flex-wrap items-start justify-between gap-2">
 			{#if takesPart}
 				<div class="badge badge-neutral badge-sm gap-1.5 font-medium">
 					<i class="fa-sharp-duotone fa-solid fa-id-badge text-xs"></i>

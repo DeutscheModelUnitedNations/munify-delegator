@@ -268,7 +268,9 @@
 </script>
 
 {#snippet searchBox()}
-	<label class="no-print input input-bordered flex grow items-center gap-2">
+	<label
+		class="no-print input input-bordered flex grow basis-full items-center gap-2 sm:basis-auto"
+	>
 		<input
 			type="text"
 			class="grow"
@@ -292,7 +294,8 @@
 	</label>
 {/snippet}
 
-<div class="flex min-w-0 items-center gap-2">
+<!-- On a phone the search takes a row of its own and the controls wrap below it. -->
+<div class="flex min-w-0 flex-wrap items-center gap-2">
 	{#if enableSearch}
 		{@render searchBox()}
 	{:else}

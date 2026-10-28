@@ -77,45 +77,49 @@
 
 	<RegionalDeviationBars groups={deviation.groups} />
 
-	{#if expanded && recommendation}
-		<div class="border-base-300 mt-1 flex flex-col gap-2 border-t border-dashed pt-2 text-xs">
-			<p>
-				{m.regionalBalanceRemoveTitle({
-					group: translateRegionalGroup(recommendation.from.group, true)
-				})}
-			</p>
-			<div class="flex flex-wrap gap-1.5">
-				{#each removals as nation (nation)}
-					{@const name = getFullTranslatedCountryNameFromISO3Code(nation)}
-					<button
-						class="btn btn-outline btn-primary btn-xs rounded-full"
-						aria-label={m.regionalBalanceRemoveSeat({ nation: name, committee: abbreviation })}
-						onclick={() => planner.setSeat(deviation.committeeId, nation, false)}
-					>
-						− {name}
-					</button>
-				{:else}
-					<p class="text-base-content/70">{m.regionalBalanceNoCandidates()}</p>
-				{/each}
-			</div>
-			<p>
-				{m.regionalBalanceAddTitle({
-					group: translateRegionalGroup(recommendation.to.group, true)
-				})}
-			</p>
-			<div class="flex flex-wrap gap-1.5">
-				{#each additions as nation (nation)}
-					{@const name = getFullTranslatedCountryNameFromISO3Code(nation)}
-					<button
-						class="btn btn-outline btn-warning btn-xs rounded-full"
-						aria-label={m.regionalBalanceAddSeat({ nation: name, committee: abbreviation })}
-						onclick={() => planner.setSeat(deviation.committeeId, nation, true)}
-					>
-						+ {name}
-					</button>
-				{:else}
-					<p class="text-base-content/70">{m.regionalBalanceNoCandidates()}</p>
-				{/each}
+	{#if recommendation}
+		<div class="collapse rounded-none {expanded ? 'collapse-open' : ''}">
+			<div class="collapse-content px-0 pb-0">
+				<div class="border-base-300 mt-1 flex flex-col gap-2 border-t border-dashed pt-2 text-xs">
+					<p>
+						{m.regionalBalanceRemoveTitle({
+							group: translateRegionalGroup(recommendation.from.group, true)
+						})}
+					</p>
+					<div class="flex flex-wrap gap-1.5">
+						{#each removals as nation (nation)}
+							{@const name = getFullTranslatedCountryNameFromISO3Code(nation)}
+							<button
+								class="btn btn-outline btn-primary btn-xs rounded-full"
+								aria-label={m.regionalBalanceRemoveSeat({ nation: name, committee: abbreviation })}
+								onclick={() => planner.setSeat(deviation.committeeId, nation, false)}
+							>
+								− {name}
+							</button>
+						{:else}
+							<p class="text-base-content/70">{m.regionalBalanceNoCandidates()}</p>
+						{/each}
+					</div>
+					<p>
+						{m.regionalBalanceAddTitle({
+							group: translateRegionalGroup(recommendation.to.group, true)
+						})}
+					</p>
+					<div class="flex flex-wrap gap-1.5">
+						{#each additions as nation (nation)}
+							{@const name = getFullTranslatedCountryNameFromISO3Code(nation)}
+							<button
+								class="btn btn-outline btn-warning btn-xs rounded-full"
+								aria-label={m.regionalBalanceAddSeat({ nation: name, committee: abbreviation })}
+								onclick={() => planner.setSeat(deviation.committeeId, nation, true)}
+							>
+								+ {name}
+							</button>
+						{:else}
+							<p class="text-base-content/70">{m.regionalBalanceNoCandidates()}</p>
+						{/each}
+					</div>
+				</div>
 			</div>
 		</div>
 	{/if}

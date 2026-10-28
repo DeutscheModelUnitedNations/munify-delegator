@@ -29,7 +29,11 @@
 	const isCommittee = $derived(level === 'committee');
 </script>
 
-<div class={isCommittee ? 'rounded-box bg-base-200' : 'border-t border-base-300'}>
+<div
+	class="collapse {expanded ? 'collapse-open' : ''} {isCommittee
+		? 'bg-base-200'
+		: 'border-t border-base-300 rounded-none'}"
+>
 	<button
 		type="button"
 		class="flex w-full items-center justify-between gap-3 text-left transition-colors {hoverClass} {isCommittee
@@ -40,7 +44,7 @@
 	>
 		<span class="flex min-w-0 items-center {isCommittee ? 'gap-3' : 'gap-2'}">
 			<i
-				class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/50 text-sm transition-transform {expanded
+				class="fa-sharp-duotone fa-solid fa-chevron-right text-base-content/50 text-sm transition-transform duration-200 {expanded
 					? 'rotate-90'
 					: ''}"
 			></i>
@@ -49,7 +53,7 @@
 		{@render aside?.()}
 	</button>
 
-	{#if expanded}
+	<div class="collapse-content px-0 pb-0">
 		{@render children()}
-	{/if}
+	</div>
 </div>

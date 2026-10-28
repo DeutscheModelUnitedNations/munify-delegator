@@ -84,10 +84,10 @@
 		</div>
 	</DashboardSection>
 {:else if conferenceState === 'ACTIVE' && !dismissed}
-	<div class="alert alert-info">
+	<div class="alert alert-info alert-vertical sm:alert-horizontal">
 		<i class="fa-sharp-duotone fa-solid fa-mobile-screen text-xl"></i>
 		<span>{m.phoneReadyActiveReminder()}</span>
-		<div class="flex items-center gap-1">
+		<div class="flex flex-wrap items-center justify-center gap-1">
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above -->
 			<a class="btn btn-sm" href={nametagHref}>{m.phoneReadyOpenNametag()}</a>
 			<button

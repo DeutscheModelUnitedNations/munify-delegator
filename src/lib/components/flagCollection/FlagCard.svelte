@@ -104,8 +104,12 @@
 		</div>
 
 		<!-- Expanded piece list -->
-		{#if expanded && flag.pieces.length > 0}
-			{@render pieceList()}
+		{#if flag.pieces.length > 0}
+			<div class="collapse rounded-none {expanded ? 'collapse-open' : ''}">
+				<div class="collapse-content px-0 pb-0">
+					{@render pieceList()}
+				</div>
+			</div>
 		{/if}
 	</div>
 </div>

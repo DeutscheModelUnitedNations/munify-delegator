@@ -64,7 +64,7 @@
 >
 	<div class="card bg-base-200 shadow">
 		<div class="card-body gap-6 lg:flex-row lg:items-center">
-			<div class="flex flex-1 items-center gap-6">
+			<div class="flex flex-1 flex-col items-start gap-6 sm:flex-row sm:items-center">
 				{#if assignedNation || nonStateActor}
 					<Flag
 						alpha2Code={assignedNation?.alpha2Code}
