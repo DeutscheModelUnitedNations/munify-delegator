@@ -21,7 +21,13 @@
 
 <li class="md:tooltip" data-tip={m.snippets()}>
 	<div class="dropdown dropdown-end">
-		<button tabindex="0" type="button" class="flex items-center gap-1 cursor-pointer" {disabled}>
+		<button
+			tabindex="0"
+			type="button"
+			class="flex items-center gap-1 cursor-pointer"
+			aria-label={m.snippets()}
+			{disabled}
+		>
 			<i class="fa-sharp-duotone fa-solid fa-bookmark"></i>
 			<i class="fa-sharp-duotone fa-solid fa-chevron-down text-[10px] opacity-60"></i>
 		</button>
