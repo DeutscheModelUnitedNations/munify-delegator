@@ -13,7 +13,7 @@ export function registerCalendarTrackAbilities() {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { calendarDay: { conference } } } : undefined;
 	});
-	abilityBuilder.calendarTrack.allow(['update', 'delete']).when(systemAdmin);
+	abilityBuilder.calendarTrack.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
 		const calendarDay = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);

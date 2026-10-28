@@ -14,7 +14,7 @@ export function registerCalendarDayAbilities() {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { conference } } : undefined;
 	});
-	abilityBuilder.calendarDay.allow(['update', 'delete']).when(systemAdmin);
+	abilityBuilder.calendarDay.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.calendarDay
 		.allow(['update', 'delete'])
