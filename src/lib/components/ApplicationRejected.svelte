@@ -10,14 +10,16 @@
 	let { conferenceIdForWaitingListLink }: Props = $props();
 </script>
 
-<main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4">
+<main
+	class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4 max-sm:px-0"
+>
 	<img src={cancel} alt="Empty" class="w-1/2" />
 	<h1 class="text-center text-3xl">{m.applicationRejected()}</h1>
 	<p class="text-center">{m.applicationRejectedText()}</p>
 
 	{#if conferenceIdForWaitingListLink}
 		<div class="alert alert-info">
-			<i class="fa-sharp-duotone fa-solid user-clock text-2xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-user-clock text-2xl"></i>
 			<div class="flex flex-col gap-2">
 				<h2 class="text-2xl font-bold">{m.joinWaitingList()}</h2>
 				<p>{m.joinWaitingListText()}</p>

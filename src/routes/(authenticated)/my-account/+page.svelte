@@ -112,7 +112,7 @@
 {#if redirectUrl}
 	<div class="backdrop"></div>
 {/if}
-<div class="flex w-full flex-col items-center p-4 sm:p-10">
+<div class="flex w-full flex-col items-center p-4 max-sm:px-0 sm:p-10">
 	<section class="max-ch-md z-20 mt-6 text-center">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
@@ -131,13 +131,13 @@
 		{/if}
 	</section>
 	<div
-		class="mt-10 grid w-full max-w-6xl grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
+		class="mt-6 grid w-full max-w-6xl grid-cols-1 items-start gap-6 sm:mt-10 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
 	>
 		<div
 			class="card bg-base-100 border-base-200 z-20 border shadow-xl {redirectUrl &&
 				'highlight-card'}"
 		>
-			<div class="card-body bg-base-100 rounded-box">
+			<div class="card-body bg-base-100 rounded-box max-sm:p-4">
 				<h2 class="card-title mb-4 justify-center">
 					<i class="fa-sharp-duotone fa-solid fa-user-pen text-primary"></i>
 					{m.personalData()}

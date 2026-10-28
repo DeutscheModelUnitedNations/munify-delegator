@@ -29,7 +29,7 @@
 	<title>{dev ? '[dev] ' : ''}{conference.title} – {m.conferenceSeats()}</title>
 </svelte:head>
 
-<div class="flex w-full flex-col gap-6 p-4">
+<div class="flex w-full flex-col gap-6 p-4 max-sm:px-0">
 	<BackToDashboard {conferenceId} />
 	<header class="flex flex-col gap-2">
 		<AccentStripe />

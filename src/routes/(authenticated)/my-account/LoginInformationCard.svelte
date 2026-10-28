@@ -62,7 +62,7 @@
 </script>
 
 <div class="card bg-base-100 border-base-200 border shadow-xl">
-	<div class="card-body">
+	<div class="card-body max-sm:p-4">
 		<h2 class="card-title justify-center">
 			<i class="fa-sharp-duotone fa-solid fa-shield-halved text-primary"></i>
 			{m.loginInformation()}

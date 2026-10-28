@@ -27,52 +27,55 @@
 	>
 		{entryCode}
 	</p>
-	<button
-		class="btn btn-square btn-ghost tooltip"
-		data-tip={m.copyEntryCode()}
-		onclick={() => {
-			navigator.clipboard.writeText(entryCode);
-			toast.success(m.codeCopied());
-		}}
-		aria-label={m.copyEntryCode()}
-		><i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
-	</button>
-	<button
-		class="btn btn-square btn-ghost tooltip"
-		data-tip={m.copyJoinLink()}
-		onclick={() => {
-			navigator.clipboard.writeText(referralLink as string);
-			toast.success(m.linkCopied());
-		}}
-		aria-label={m.copyJoinLink()}
-		><i class="fa-sharp-duotone fa-solid fa-link text-xl"></i>
-	</button>
-	{#if supervisorLink}
+	<!-- The buttons wrap as one row, so a narrow screen never strands one of them on its own -->
+	<div class="flex gap-2">
 		<button
 			class="btn btn-square btn-ghost tooltip"
-			data-tip={m.copySupervisorLink()}
+			data-tip={m.copyEntryCode()}
 			onclick={() => {
-				navigator.clipboard.writeText(supervisorLink);
+				navigator.clipboard.writeText(entryCode);
+				toast.success(m.codeCopied());
+			}}
+			aria-label={m.copyEntryCode()}
+			><i class="fa-sharp-duotone fa-solid fa-clipboard text-xl"></i>
+		</button>
+		<button
+			class="btn btn-square btn-ghost tooltip"
+			data-tip={m.copyJoinLink()}
+			onclick={() => {
+				navigator.clipboard.writeText(referralLink as string);
 				toast.success(m.linkCopied());
 			}}
-			aria-label={m.copySupervisorLink()}
-			><i class="fa-sharp-duotone fa-solid fa-chalkboard-user text-xl"></i>
+			aria-label={m.copyJoinLink()}
+			><i class="fa-sharp-duotone fa-solid fa-link text-xl"></i>
 		</button>
-	{/if}
-	<button
-		class="btn btn-square btn-ghost tooltip"
-		data-tip={m.showQrCode()}
-		onclick={() => (qrModalOpen = true)}
-		aria-label={m.showQrCode()}
-		><i class="fa-sharp-duotone fa-solid fa-qrcode text-xl"></i>
-	</button>
-	{#if userHasRotationPermission}
-		<div class="tooltip" data-tip={m.rotateCode()}>
-			<button class="btn btn-square btn-ghost" onclick={rotationFn} aria-label={m.rotateCode()}
-				><i class="fa-sharp-duotone fa-solid fa-rotate text-xl"></i>
+		{#if supervisorLink}
+			<button
+				class="btn btn-square btn-ghost tooltip"
+				data-tip={m.copySupervisorLink()}
+				onclick={() => {
+					navigator.clipboard.writeText(supervisorLink);
+					toast.success(m.linkCopied());
+				}}
+				aria-label={m.copySupervisorLink()}
+				><i class="fa-sharp-duotone fa-solid fa-chalkboard-user text-xl"></i>
 			</button>
-		</div>
-	{/if}
+		{/if}
+		<button
+			class="btn btn-square btn-ghost tooltip"
+			data-tip={m.showQrCode()}
+			onclick={() => (qrModalOpen = true)}
+			aria-label={m.showQrCode()}
+			><i class="fa-sharp-duotone fa-solid fa-qrcode text-xl"></i>
+		</button>
+		{#if userHasRotationPermission}
+			<div class="tooltip" data-tip={m.rotateCode()}>
+				<button class="btn btn-square btn-ghost" onclick={rotationFn} aria-label={m.rotateCode()}
+					><i class="fa-sharp-duotone fa-solid fa-rotate text-xl"></i>
+				</button>
+			</div>
+		{/if}
+	</div>
 </div>
 
 <Modal bind:open={qrModalOpen}>

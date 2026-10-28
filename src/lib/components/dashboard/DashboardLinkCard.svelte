@@ -43,7 +43,7 @@
 
 {#if disabled}
 	<div class="card bg-base-200 cursor-not-allowed opacity-50">
-		<div class="card-body">
+		<div class="card-body max-sm:p-4">
 			<div class="flex items-center gap-3">
 				<i
 					class="fa-sharp-duotone fa-solid fa-{icon.replace(
@@ -84,10 +84,10 @@
 {/if}
 
 {#snippet body()}
-	<div class="card-body">
+	<div class="card-body max-sm:p-4">
 		<div class="flex items-center gap-3">
 			<i class="fa-sharp-duotone fa-solid fa-{icon.replace('fa-', '')} text-primary text-2xl"></i>
-			<h2 class="card-title">{title}</h2>
+			<h2 class="card-title min-w-0 break-words">{title}</h2>
 			{#if badge !== undefined}
 				<span class="badge {badgeClasses[badgeType]}">{badge}</span>
 			{/if}

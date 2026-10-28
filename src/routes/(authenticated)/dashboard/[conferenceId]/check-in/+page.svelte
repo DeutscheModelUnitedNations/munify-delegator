@@ -235,11 +235,11 @@
 	</section>
 {/snippet}
 
-<div class="mx-auto flex w-full max-w-md flex-col p-4 sm:py-8">
+<div class="mx-auto flex w-full max-w-md flex-col p-4 max-sm:px-0 sm:py-8">
 	<BackToDashboard {conferenceId} />
 	{#if scannedAt}
 		<!-- used: the stub is torn off along the perforation and lies beside what is left -->
-		<div class="flex flex-col gap-3">
+		<div class="mt-3 flex flex-col gap-3">
 			<div class="origin-bottom-left -translate-x-1 -rotate-2 drop-shadow-lg">
 				<div
 					class="rounded-t-box bg-base-200 overflow-hidden pb-3"

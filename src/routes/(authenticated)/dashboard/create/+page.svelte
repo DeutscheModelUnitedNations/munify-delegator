@@ -54,7 +54,7 @@
 	};
 </script>
 
-<div class="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 p-4 md:p-10">
+<div class="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 p-4 max-sm:px-0 md:p-10">
 	<header class="flex w-full flex-col gap-2">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h1 class="text-3xl font-bold">{m.createConference()}</h1>

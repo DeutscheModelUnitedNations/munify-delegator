@@ -47,10 +47,10 @@
 		class="fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
 	></div>
 	<div
-		class="no-scrollbar fixed top-0 right-0 z-40 h-screen overflow-y-auto duration-300"
+		class="no-scrollbar fixed top-0 right-0 z-40 h-screen max-w-full overflow-y-auto duration-300"
 		style="width: {width}"
 	>
-		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10">
+		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10 max-sm:gap-6 max-sm:px-4">
 			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />
 			{#if loading}
 				<div class="flex w-full items-center justify-center">

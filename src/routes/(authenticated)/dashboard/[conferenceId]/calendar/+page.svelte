@@ -35,7 +35,7 @@
 	<title>{dev ? '[dev] ' : ''}{conference.title} – {m.calendarSectionTitle()}</title>
 </svelte:head>
 
-<div class="flex w-full flex-col p-4">
+<div class="flex w-full flex-col p-4 max-sm:px-0">
 	<BackToDashboard {conferenceId} />
 	{#snippet heading()}
 		<header class="flex flex-col gap-2">

@@ -123,7 +123,7 @@
 	</button>
 {/snippet}
 
-<div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-8">
+<div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 max-sm:px-0 md:p-8">
 	<header class="flex flex-col gap-1">
 		<h1 class="text-3xl font-bold">{m.conferenceRequest()}</h1>
 		<p class="text-base-content/70 max-w-3xl">{m.conferenceRequestDescription()}</p>
