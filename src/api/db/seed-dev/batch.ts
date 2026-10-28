@@ -1,4 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import * as schema from '../schema';
 
 /**
@@ -118,15 +119,50 @@ async function insertChunked<T>(rows: T[], insert: (chunk: T[]) => Promise<unkno
 	}
 }
 
+const nullFileColumns = {
+	imageFileId: null,
+	guardianConsentFileId: null,
+	mediaConsentFileId: null,
+	termsAndConditionsFileId: null,
+	contractFileId: null,
+	certificateFileId: null,
+	emblemFileId: null,
+	logoFileId: null
+} satisfies Partial<typeof schema.conference.$inferInsert>;
+
+function conferenceFileColumns(row: typeof schema.conference.$inferInsert) {
+	return {
+		imageFileId: row.imageFileId ?? null,
+		guardianConsentFileId: row.guardianConsentFileId ?? null,
+		mediaConsentFileId: row.mediaConsentFileId ?? null,
+		termsAndConditionsFileId: row.termsAndConditionsFileId ?? null,
+		contractFileId: row.contractFileId ?? null,
+		certificateFileId: row.certificateFileId ?? null,
+		emblemFileId: row.emblemFileId ?? null,
+		logoFileId: row.logoFileId ?? null
+	};
+}
+
 /** Writes the batch, parents before children. */
 export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	const s = schema;
 	await insertChunked(batch.nation, (rows) => db.insert(s.nation).values(rows));
 	await insertChunked(batch.user, (rows) => db.insert(s.user).values(rows));
 	await insertChunked(batch.reviewerSnippet, (rows) => db.insert(s.reviewerSnippet).values(rows));
-	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
 	await insertChunked(batch.school, (rows) => db.insert(s.school).values(rows));
-	await insertChunked(batch.conference, (rows) => db.insert(s.conference).values(rows));
+	// Conferences and their files point at each other: the conference goes in without its file
+	// columns, the files after it, and the columns last.
+	const conferenceFiles = batch.conference.map(conferenceFileColumns);
+	await insertChunked(batch.conference, (rows) =>
+		db.insert(s.conference).values(rows.map((row) => ({ ...row, ...nullFileColumns })))
+	);
+	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
+	for (const [index, row] of batch.conference.entries()) {
+		const files = conferenceFiles[index];
+		if (row.id && files && Object.values(files).some(Boolean)) {
+			await db.update(s.conference).set(files).where(eq(s.conference.id, row.id));
+		}
+	}
 	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));
 	await insertChunked(batch.conferenceRole, (rows) => db.insert(s.conferenceRole).values(rows));
 	await insertChunked(batch.committeeToRole, (rows) => db.insert(s.committeeToRole).values(rows));
