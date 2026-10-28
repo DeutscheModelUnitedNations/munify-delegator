@@ -52,7 +52,7 @@
 				</label>
 				<textarea
 					id="announcement-info"
-					class="textarea textarea-bordered h-96 w-full font-mono text-sm"
+					class="textarea textarea-bordered h-64 w-full font-mono text-sm lg:h-96"
 					bind:value={info}
 					placeholder={m.markdownSupportedPlaceholder()}></textarea>
 			</div>
@@ -62,15 +62,19 @@
 					<span class="label-text">{m.preview()}</span>
 				</div>
 				<div
-					class="bg-base-200 rounded-box p-4 h-96 w-full overflow-auto prose prose-sm max-w-none"
+					class="bg-base-200 rounded-box p-4 max-h-96 min-h-24 w-full overflow-auto prose prose-sm max-w-none lg:h-96"
 				>
 					<Markdown source={info} />
 				</div>
 			</div>
 		</div>
 
-		<label class="label cursor-pointer justify-start gap-3 mt-4">
-			<input type="checkbox" class="toggle toggle-primary" bind:checked={showInfoExpanded} />
+		<label class="label cursor-pointer justify-start gap-3 mt-4 whitespace-normal">
+			<input
+				type="checkbox"
+				class="toggle toggle-primary shrink-0"
+				bind:checked={showInfoExpanded}
+			/>
 			<span class="label-text">{m.showInfoExpandedLabel()}</span>
 		</label>
 		<p class="text-xs opacity-50 mt-1">{m.showInfoExpandedDescription()}</p>

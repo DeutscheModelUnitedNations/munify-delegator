@@ -92,6 +92,7 @@
 				<tr class={outsideLimits ? 'bg-error/10' : ''}>
 					<td>
 						<RoleIconInput
+							class="min-w-24"
 							value={nsa.fontAwesomeIcon ?? ''}
 							onchange={(e) =>
 								update(e.currentTarget, nsa.fontAwesomeIcon ?? '', nsa.id, {
@@ -101,6 +102,7 @@
 					</td>
 					<td>
 						<RoleInput
+							class="min-w-36"
 							label={m.name()}
 							required
 							value={nsa.name}
@@ -110,6 +112,7 @@
 					</td>
 					<td>
 						<RoleInput
+							class="min-w-20"
 							label={m.abbreviation()}
 							required
 							value={nsa.abbreviation}
@@ -121,6 +124,7 @@
 					</td>
 					<td>
 						<RoleInput
+							class="min-w-48"
 							label={m.description()}
 							required
 							value={nsa.description}

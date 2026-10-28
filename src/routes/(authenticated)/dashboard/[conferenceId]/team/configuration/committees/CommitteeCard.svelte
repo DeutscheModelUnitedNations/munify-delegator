@@ -37,8 +37,8 @@
 	<header
 		class="bg-primary/15 border-primary/40 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b px-4 py-1"
 	>
-		<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-			<h3 class="text-lg font-bold">
+		<div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+			<h3 class="min-w-0 text-lg font-bold break-words hyphens-auto">
 				{committee.name}
 				<span class="text-primary">({committee.abbreviation})</span>
 			</h3>

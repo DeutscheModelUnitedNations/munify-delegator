@@ -129,11 +129,13 @@
 	</div>
 {/snippet}
 
-<article class="flex w-full flex-col gap-5 rounded-box border border-base-300 bg-base-200/50 p-5">
+<article
+	class="flex w-full flex-col gap-5 rounded-box border border-base-300 bg-base-200/50 p-4 sm:p-5"
+>
 	<header class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
 		<div class="flex min-w-0 flex-col gap-2">
 			<div class="flex flex-wrap items-center gap-2">
-				<h3 class="text-xl font-bold">{survey.title}</h3>
+				<h3 class="min-w-0 text-xl font-bold break-words">{survey.title}</h3>
 				{#if survey.hidden}
 					<span class="badge badge-soft">
 						<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>

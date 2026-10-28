@@ -44,7 +44,7 @@
 		</SideNavigationDrawer>
 	{/if}
 
-	<div class="flex h-full min-w-0 grow flex-col px-3">
+	<div class="flex h-full min-w-0 grow flex-col sm:px-3">
 		{#if !showMenu}
 			{@render withoutMenu?.()}
 		{/if}

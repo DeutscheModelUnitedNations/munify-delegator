@@ -368,10 +368,10 @@
 	}
 </script>
 
-<div class="card-body bg-base-100 dark:bg-base-200 rounded-box">
+<div class="card-body bg-base-100 dark:bg-base-200 rounded-box max-sm:px-3">
 	<h1 class="sr-only">{m.settings()}</h1>
 
-	<!-- One row always: labels truncate (full text in the tooltip) instead of wrapping. -->
+	<!-- One row always: labels truncate (full text in the tooltip) instead of wrapping; phones show only the icons. -->
 	<div class="mb-4">
 		<div role="tablist" class="tabs tabs-border flex-nowrap">
 			{#each tabs as tab (tab.value)}
@@ -382,7 +382,7 @@
 					title={tab.label}
 					onclick={() => setTab(tab.value)}
 				>
-					<span class="relative mr-2 shrink-0">
+					<span class="relative shrink-0 sm:mr-2">
 						<i class="fas {tab.icon}"></i>
 						{#if changeCount > 0}
 							<span
@@ -397,7 +397,7 @@
 							</span>
 						{/if}
 					</span>
-					<span class="truncate">{tab.label}</span>
+					<span class="truncate max-sm:sr-only">{tab.label}</span>
 				</button>
 			{/each}
 		</div>

@@ -52,7 +52,7 @@
 	let agendaItemToDelete = $state<AgendaItem>();
 </script>
 
-<div class="flex flex-col gap-20">
+<div class="flex flex-col gap-10 sm:gap-20">
 	{#if canCreateAndDelete}
 		<button
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"

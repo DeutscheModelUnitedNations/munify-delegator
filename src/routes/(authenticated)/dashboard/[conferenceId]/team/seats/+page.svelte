@@ -42,7 +42,7 @@
 	});
 </script>
 
-<div class="flex w-full flex-col items-start gap-10 p-4">
+<div class="flex w-full flex-col items-start gap-10 py-4 sm:px-4">
 	{#if assignUserParam.userId}
 		<div class="w-full">
 			<div class="alert alert-warning w-full">

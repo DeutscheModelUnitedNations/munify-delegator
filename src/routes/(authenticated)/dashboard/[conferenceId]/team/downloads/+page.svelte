@@ -14,7 +14,7 @@
 	let { params }: PageProps = $props();
 </script>
 
-<div class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 md:p-10">
+<div class="mx-auto flex w-full max-w-6xl flex-col gap-6 py-4 sm:p-6 md:p-10">
 	<p class="text-base-content/60 text-lg">{m.downloadsPageDescription()}</p>
 
 	<CsvSettingsPanel />

@@ -11,7 +11,7 @@
 	let activeTab = $state<'calendar' | 'days' | 'places'>('calendar');
 </script>
 
-<div class="flex flex-col gap-6 p-4">
+<div class="flex flex-col gap-6 py-4 sm:px-4">
 	<div role="tablist" class="tabs tabs-border">
 		<button
 			role="tab"

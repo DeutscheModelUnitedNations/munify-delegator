@@ -116,8 +116,8 @@
 	const totalParticipants = $derived(bins.reduce((sum, bin) => sum + bin.participants, 0) || 1);
 </script>
 
-<div class="flex w-full flex-col gap-6 p-4 md:p-8">
-	<div class="card bg-base-200 flex flex-col gap-6 p-5 md:flex-row md:items-start md:gap-10">
+<div class="flex w-full flex-col gap-6 py-4 sm:px-4 md:p-8">
+	<div class="card bg-base-200 flex flex-col gap-6 p-4 sm:p-5 md:flex-row md:items-start md:gap-10">
 		<div class="flex min-w-0 grow flex-col gap-2">
 			<h3 class="flex items-center gap-2 text-lg font-bold">
 				<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
@@ -131,7 +131,7 @@
 		</Form>
 	</div>
 
-	<div class="card bg-base-200 flex flex-col gap-5 p-5">
+	<div class="card bg-base-200 flex flex-col gap-5 p-4 sm:p-5">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h3 class="text-lg font-bold">{m.nametagBinsTitle()}</h3>
 			<div class="flex flex-wrap gap-2">

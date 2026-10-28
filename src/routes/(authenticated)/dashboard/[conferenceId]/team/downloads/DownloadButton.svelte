@@ -45,7 +45,7 @@
 			<i class="{icon} text-base"></i>
 		{/if}
 	</span>
-	<span class="min-w-0 flex-1 truncate">{title}</span>
+	<span class="min-w-0 flex-1 break-words sm:truncate">{title}</span>
 	<i
 		class="fa-sharp-duotone fa-solid fa-arrow-down-to-line text-base-content/30 group-hover:text-primary shrink-0 text-xs transition-colors"
 	></i>

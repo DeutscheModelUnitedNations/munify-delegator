@@ -27,7 +27,7 @@
 			? 'text-warning animate-pulse'
 			: 'text-base-content/60'}"
 	></i>
-	<div class="min-w-0 flex-1">
+	<div class="min-w-0 flex-1 break-words">
 		<span class="text-sm font-medium">{primary}</span>
 		{#if secondary}
 			<span class="ml-2 text-xs text-base-content/50">{secondary}</span>

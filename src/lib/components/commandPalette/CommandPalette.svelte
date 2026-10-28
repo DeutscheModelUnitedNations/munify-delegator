@@ -312,7 +312,7 @@
 	<!-- Backdrop -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex justify-center bg-black/40"
+		class="fixed inset-0 z-50 flex justify-center bg-black/40 max-sm:px-2"
 		onkeydown={handleKeydown}
 		onclick={() => closeCommandPalette()}
 	>
@@ -320,7 +320,7 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="border-base-300 bg-base-100 rounded-box mt-[15vh] h-fit w-full max-w-xl border shadow-2xl"
+			class="border-base-300 bg-base-100 rounded-box mt-4 h-fit w-full max-w-xl border shadow-2xl sm:mt-[15vh]"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Search input -->
@@ -331,18 +331,18 @@
 					bind:value={searchInput}
 					oninput={handleInput}
 					type="text"
-					class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+					class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40 max-sm:text-base"
 					placeholder={m.commandPalettePlaceholder()}
 				/>
 				<button
-					class="btn btn-ghost btn-xs btn-square {scanning ? 'btn-active' : ''}"
+					class="btn btn-ghost btn-xs btn-square max-sm:btn-sm {scanning ? 'btn-active' : ''}"
 					onclick={() => (scanning = !scanning)}
 					aria-label={m.quickScan()}
 					title={m.quickScan()}
 				>
 					<i class="fa-sharp-duotone fa-solid fa-camera"></i>
 				</button>
-				<Kbd hotkey="Esc" size="xs" />
+				<span class="max-sm:hidden"><Kbd hotkey="Esc" size="xs" /></span>
 			</div>
 
 			{#if scanning}

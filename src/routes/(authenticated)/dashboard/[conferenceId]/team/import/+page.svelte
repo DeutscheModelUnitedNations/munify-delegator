@@ -122,7 +122,7 @@
 	const selectRow = (row: { email: string }) => (selectedEmail = row.email);
 </script>
 
-<div class="flex w-full flex-col flex-wrap gap-8 p-10">
+<div class="flex w-full flex-col flex-wrap gap-8 py-4 sm:p-10">
 	<div class="flex flex-col gap-2">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.importDescription()}</p>
@@ -150,7 +150,7 @@
 			<label class="my-4 flex items-center">
 				{m.threshold()}:
 				<input
-					class="range mx-2 w-44"
+					class="range mx-2 w-44 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
 					type="range"
 					min="0"
 					max="100"
@@ -225,10 +225,11 @@
 	<a
 		href={resolve(`dashboard/${conferenceId}/team/participants?selected=${selectedEmail}`)}
 		target="_blank"
+		class="min-w-0"
 	>
-		<button class="btn btn-primary">
+		<button class="btn btn-primary max-w-full">
 			<i class="fas fa-arrow-up-right-from-square"></i>
-			{selectedEmail}
+			<span class="truncate">{selectedEmail}</span>
 		</button>
 	</a>
 {/snippet}
@@ -240,26 +241,28 @@
 		selectedEmail = undefined;
 	}}
 >
-	<table class="table">
-		<thead>
-			<tr>
-				<th>{m.timestamp()}</th>
-				<th>{m.committee()}</th>
-				<th>{m.attendanceStatus()}</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each selectedEvents as event (event.id)}
+	<div class="overflow-x-auto">
+		<table class="table">
+			<thead>
 				<tr>
-					<td
-						>{new Date(event.timestamp).toLocaleDateString(getLocale()) +
-							' ' +
-							new Date(event.timestamp).toLocaleTimeString(getLocale())}</td
-					>
-					<td>{committeeName(event.committeeId)}</td>
-					<td>{event.present ? m.present() + ' ✅' : m.absent() + ' ❌'}</td>
+					<th>{m.timestamp()}</th>
+					<th>{m.committee()}</th>
+					<th>{m.attendanceStatus()}</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{#each selectedEvents as event (event.id)}
+					<tr>
+						<td
+							>{new Date(event.timestamp).toLocaleDateString(getLocale()) +
+								' ' +
+								new Date(event.timestamp).toLocaleTimeString(getLocale())}</td
+						>
+						<td>{committeeName(event.committeeId)}</td>
+						<td>{event.present ? m.present() + ' ✅' : m.absent() + ' ❌'}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </Modal>

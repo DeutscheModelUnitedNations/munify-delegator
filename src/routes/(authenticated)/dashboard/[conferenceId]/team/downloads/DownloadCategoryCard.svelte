@@ -12,7 +12,9 @@
 </script>
 
 <section class="card bg-base-100 border-base-200 overflow-hidden border shadow-sm">
-	<header class="bg-base-200/40 border-base-200 flex items-center gap-4 border-b px-6 py-5">
+	<header
+		class="bg-base-200/40 border-base-200 flex items-center gap-4 border-b px-4 py-4 sm:px-6 sm:py-5"
+	>
 		<div
 			class="from-primary/25 to-primary/5 text-primary rounded-box flex size-12 shrink-0 items-center justify-center bg-gradient-to-br"
 		>
@@ -24,7 +26,7 @@
 		</div>
 	</header>
 
-	<div class="grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-3">
+	<div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
 		{@render children()}
 	</div>
 </section>

@@ -22,7 +22,6 @@
 	{/if}
 
 	<!-- fits the viewport and scrolls inside itself, so the header row and the first column never leave the screen -->
-	<!-- fits the viewport and scrolls inside itself, so the header row and the first column never leave the screen -->
 	<DataTable.Root
 		wrapperClass="max-h-[calc(100dvh-8rem)] w-full"
 		class="table-pin-cols text-center"

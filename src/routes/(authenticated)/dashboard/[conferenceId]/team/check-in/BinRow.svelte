@@ -23,17 +23,17 @@
 </script>
 
 <div class="bg-base-100 flex flex-col gap-3 rounded-lg p-2 md:flex-row md:items-start">
-	<div class="flex w-full shrink-0 items-center gap-4 px-2 py-2 md:w-96">
-		<span class="badge {tone.badge} badge-lg">
+	<div class="flex w-full shrink-0 items-center gap-3 px-2 py-2 sm:gap-4 md:w-96">
+		<span class="badge {tone.badge} badge-lg shrink-0">
 			{m.nametagBinTable()}
 			{bin.index + 1}
 		</span>
 		<div class="flex min-w-0 grow flex-col">
-			<span class="font-mono text-lg font-bold">
+			<span class="font-mono text-lg font-bold break-words hyphens-auto">
 				{#if range}
 					{range}
 				{:else if bin.otherParticipants > 0}
-					<span class="font-sans">{m.nametagBinOthers()}</span>
+					<span class="font-sans max-sm:text-base">{m.nametagBinOthers()}</span>
 				{:else}
 					<span class="text-base-content/50 font-sans">{m.nametagBinEmpty()}</span>
 				{/if}
@@ -44,7 +44,7 @@
 				</span>
 			{/if}
 		</div>
-		<span class="text-2xl font-bold tabular-nums">{bin.participants}</span>
+		<span class="shrink-0 text-2xl font-bold tabular-nums">{bin.participants}</span>
 	</div>
 	{#if bin.participants > 0}
 		<div class="min-w-0 grow px-2 py-2 md:border-l md:border-base-300 md:ps-6">

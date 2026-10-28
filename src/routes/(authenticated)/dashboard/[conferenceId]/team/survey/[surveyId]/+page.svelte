@@ -49,7 +49,7 @@
 	};
 </script>
 
-<div class="flex w-full flex-col gap-6 p-4">
+<div class="flex w-full flex-col gap-6 py-4 sm:px-4">
 	<header
 		class="flex flex-col gap-3 border-b border-base-300 pb-4 md:flex-row md:items-center md:justify-between"
 	>
@@ -62,7 +62,7 @@
 			>
 				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
 			</a>
-			<h2 class="truncate text-2xl font-bold">{survey?.title}</h2>
+			<h2 class="min-w-0 text-xl font-bold break-words sm:truncate sm:text-2xl">{survey?.title}</h2>
 			{#if survey?.hidden}
 				<span class="badge badge-soft">
 					<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
