@@ -95,7 +95,7 @@
 		document.getElementById(`pair-${id}`)?.scrollIntoView({ behavior: 'smooth' });
 </script>
 
-<div class="flex flex-col gap-6 p-6">
+<div class="flex flex-col gap-6 py-4 sm:p-6">
 	<div class="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
 		{#each userChecks as check (check.headline)}
 			<PlausibilityCheck {...check} onSelect={openUserCard} />

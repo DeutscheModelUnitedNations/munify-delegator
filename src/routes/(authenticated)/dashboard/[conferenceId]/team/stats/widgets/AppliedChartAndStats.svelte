@@ -88,7 +88,7 @@
 		<p class="text-xs text-base-content/60">{m.statsTotalDisclaimer()}</p>
 
 		<!-- Stats row -->
-		<div class="stats w-full">
+		<div class="stats stats-vertical sm:stats-horizontal w-full max-sm:grid-cols-2">
 			{#each statItems as item (item.title)}
 				<div class="stat py-3 px-4">
 					<div class="stat-title text-xs">{item.title}</div>

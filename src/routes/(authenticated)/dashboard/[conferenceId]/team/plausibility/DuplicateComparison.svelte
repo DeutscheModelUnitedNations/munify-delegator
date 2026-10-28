@@ -95,9 +95,10 @@
 
 {#snippet header(side: Side)}
 	{@const note = side.account.globalNotes?.trim()}
-	<th class="align-top font-normal">
-		<div class="flex items-start justify-between gap-2">
-			<span class="text-base font-bold">
+	<th class="align-top font-normal whitespace-normal">
+		<!-- On a phone the buttons go below the name, which has only half the width to wrap in -->
+		<div class="flex flex-col items-start justify-between gap-1 sm:flex-row sm:gap-2">
+			<span class="min-w-0 text-base font-bold wrap-anywhere">
 				{formatNames(side.account.givenName, side.account.familyName)}
 			</span>
 			<div class="flex items-center gap-1">
@@ -123,7 +124,7 @@
 			{#each side.attendances as attendance (attendance.conferenceId + attendance.role)}
 				<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<i class="fa-sharp-duotone fa-solid fa-flag text-base-content/60"></i>
-					<span>{attendance.title}</span>
+					<span class="min-w-0 wrap-anywhere">{attendance.title}</span>
 					<span class="badge badge-sm bg-base-100 border-0">
 						{roleLabels[attendance.role]?.()}
 					</span>
@@ -135,7 +136,7 @@
 	</th>
 {/snippet}
 
-<table class="table table-fixed">
+<table class="table-xs sm:table-md table table-fixed">
 	<thead>
 		<tr>
 			<th class="w-16 align-top">{@render corner?.()}</th>

@@ -23,12 +23,12 @@
 
 		{#snippet pending()}
 			<div class="flex h-full flex-col">
-				<div class="flex items-center gap-3 px-5 pt-3 pb-2 md:px-10 lg:px-16">
+				<div class="flex items-center gap-3 px-3 pt-3 pb-2 sm:px-5 md:px-10 lg:px-16">
 					<div
-						class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4"
+						class="flex min-w-0 flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4"
 					>
 						<div class="flex flex-wrap items-center gap-4">
-							<div class="skeleton h-9 w-64"></div>
+							<div class="skeleton h-9 w-64 max-w-full"></div>
 							<div class="skeleton h-4 w-4 rounded-full"></div>
 							<div class="skeleton h-3 w-14 rounded-full"></div>
 							<div class="ml-auto flex items-center gap-1">
@@ -47,7 +47,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="flex flex-col gap-3 p-5 md:px-10 md:py-6 lg:px-16">
+				<div class="flex flex-col gap-3 p-3 sm:p-5 md:px-10 md:py-6 lg:px-16">
 					<div class="skeleton h-24 w-full"></div>
 					<div class="skeleton h-24 w-full"></div>
 				</div>

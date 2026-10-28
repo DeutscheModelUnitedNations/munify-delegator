@@ -147,16 +147,18 @@
 						{@const expired = isExpired(invitation.expiresAt)}
 						<tr class={expired ? 'opacity-50' : ''}>
 							<td>{invitation.email}</td>
-							<td><span class="badge badge-ghost">{translateTeamRole(invitation.role)}</span></td>
+							<td class="whitespace-nowrap">
+								<span class="badge badge-ghost">{translateTeamRole(invitation.role)}</span>
+							</td>
 
-							<td>
+							<td class="whitespace-nowrap">
 								{#if invitation.userExists}
 									<span class="badge badge-success">{m.accountExists()}</span>
 								{:else}
 									<span class="badge badge-info">{m.newUser()}</span>
 								{/if}
 							</td>
-							<td>{@render expiry(invitation.expiresAt, expired)}</td>
+							<td class="whitespace-nowrap">{@render expiry(invitation.expiresAt, expired)}</td>
 							<td>
 								{invitation.invitedBy?.givenName}
 								{invitation.invitedBy?.familyName}

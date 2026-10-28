@@ -10,7 +10,7 @@
 	let modalData = $state<ModalData>();
 </script>
 
-<div class="flex w-full flex-col flex-wrap gap-10 p-10">
+<div class="flex w-full min-w-0 flex-col gap-8 py-4 sm:gap-10 sm:p-10">
 	<div class="flex flex-col gap-2">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.cleanupDescription()}</p>

@@ -12,7 +12,8 @@
 	let {
 		children,
 		class: className = '',
-		wrapperClass = 'max-h-[80vh] w-full',
+		// On a phone the page scrolls rather than a box inside it
+		wrapperClass = 'max-h-[80vh] w-full max-sm:max-h-none',
 		...rest
 	}: Props = $props();
 

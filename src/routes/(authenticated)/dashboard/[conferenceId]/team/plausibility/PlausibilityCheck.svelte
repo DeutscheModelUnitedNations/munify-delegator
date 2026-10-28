@@ -20,7 +20,7 @@
 				? 'fa-circle-xmark text-error'
 				: 'fa-circle-check text-success'}"
 		></i>
-		<span class="grow">{headline}</span>
+		<span class="min-w-0 grow">{headline}</span>
 		<span class="text-3xl tabular-nums {found ? '' : 'text-base-content/40'}">{entries.length}</span
 		>
 	</h2>
@@ -33,7 +33,7 @@
 					class="hover:bg-base-300 flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-left"
 					onclick={() => onSelect(entry.id)}
 				>
-					<span>{entry.label}</span>
+					<span class="min-w-0 wrap-anywhere">{entry.label}</span>
 					<i class="fa-sharp-duotone fa-solid fa-id-card text-base-content/60"></i>
 				</button>
 			</li>

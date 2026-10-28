@@ -22,7 +22,7 @@
 	};
 </script>
 
-<div class="overflow-x-auto px-5 md:px-10 lg:px-16" data-vaul-no-drag>
+<div class="overflow-x-auto px-3 sm:px-5 md:px-10 lg:px-16" data-vaul-no-drag>
 	<div role="tablist" class="tabs tabs-border flex-nowrap">
 		{#each tabs as tab (tab)}
 			{@const meta = TAB_META[tab]}

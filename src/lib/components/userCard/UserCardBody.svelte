@@ -116,7 +116,7 @@
 	/>
 
 	{#if !inConference}
-		<div class="alert alert-warning mx-5 md:mx-10 lg:mx-16" role="status">
+		<div class="alert alert-warning mx-3 sm:mx-5 md:mx-10 lg:mx-16" role="status">
 			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
 			<span>{m.notInConference()}</span>
 		</div>
@@ -124,7 +124,7 @@
 
 	<UserCardTabs {tabs} activeTab={shownTab} onTabChange={(tab) => (activeTab = tab)} />
 
-	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
+	<div class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
 		<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
 		{#key shownTab}
 			<svelte:boundary onerror={(error) => console.error('Failed to load user card tab:', error)}>

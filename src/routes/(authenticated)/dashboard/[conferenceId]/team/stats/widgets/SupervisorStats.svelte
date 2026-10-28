@@ -71,7 +71,7 @@
 		</h2>
 
 		<!-- Summary stats -->
-		<div class="stats w-full">
+		<div class="stats stats-vertical sm:stats-horizontal w-full max-sm:grid-cols-2">
 			<div class="stat py-2 px-3">
 				<div class="stat-title text-xs">{m.supervisors()}</div>
 				<div class="stat-value text-xl">{supervisorStats.total}</div>

@@ -263,7 +263,7 @@
 		aria-label={m.referenceSearch()}
 	/>
 
-	<div class="grid items-start gap-6 lg:grid-cols-2">
+	<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
 		<ScanHistory
 			entries={history}
 			activeId={params.searchValue}
@@ -272,7 +272,7 @@
 
 		{#if paymentTransaction && resultReady}
 			<section
-				class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-5"
+				class="flex min-w-0 flex-col gap-4 rounded-box border border-base-300 bg-base-200/50 p-3 sm:p-5"
 				aria-label={m.payment()}
 			>
 				<header class="flex items-center justify-between gap-2">
@@ -292,7 +292,7 @@
 
 				{@render transactionDetails(paymentTransaction)}
 
-				<footer class="flex gap-2 border-t border-base-300 pt-4">
+				<footer class="flex flex-wrap gap-2 border-t border-base-300 pt-4">
 					{#if !paymentTransaction.recievedAt}
 						<button
 							class="btn flex-1 btn-error"
@@ -338,12 +338,12 @@
 
 {#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
 	{@const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
-	<div class="bg-base-200 flex w-full items-center gap-4 rounded-field px-4 py-2">
+	<div class="bg-base-200 flex w-full items-center gap-2 rounded-field px-3 py-2 sm:gap-4 sm:px-4">
 		<i class="fa-sharp-duotone fa-solid {paymentStatusIcon(user.id, received)} text-2xl"></i>
-		<div class="text-lg font-bold">
+		<div class="min-w-0 text-lg font-bold break-words">
 			{name}
 		</div>
-		<div class="truncate text-sm opacity-60">{user.id}</div>
+		<div class="min-w-0 truncate text-sm opacity-60 max-sm:hidden">{user.id}</div>
 		<button
 			class="btn btn-soft btn-sm ml-auto"
 			onclick={() => openUserCard(user.id)}
@@ -357,7 +357,7 @@
 {#snippet transactionDetails(transaction: NonNullable<typeof paymentTransaction>)}
 	<!-- Payment reference ID -->
 	<div class="mb-4">
-		<h1 class="font-mono text-2xl font-bold">{transaction.id}</h1>
+		<h1 class="font-mono text-2xl font-bold break-all">{transaction.id}</h1>
 		<p class="opacity-60">
 			{new Date(transaction.createdAt).toLocaleString(getLocale(), {
 				year: 'numeric',

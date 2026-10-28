@@ -216,14 +216,14 @@
 			/>
 		</td>
 		<td>
-			<div class="flex items-center gap-2">
+			<div class="flex flex-wrap items-center gap-2 break-all">
 				{emailStatus.email}
 				{#if emailStatus.isExternal}
 					<span class="badge badge-warning badge-sm">{m.externalDomain()}</span>
 				{/if}
 			</div>
 		</td>
-		<td>
+		<td class="whitespace-nowrap">
 			<span class="badge {getStatusBadge(emailStatus.status).class}"
 				>{getStatusBadge(emailStatus.status).text}</span
 			>

@@ -315,9 +315,12 @@
 		<i class="fa-sharp-duotone fa-solid fa-columns"></i>
 		{m.columns()}
 	</button>
-	<span class="text-base-content/60 text-sm whitespace-nowrap">{shownRows}</span>
-	<SettingsButton />
-	<ExportButton filename={title || 'export'} {getExport} />
+	<!-- Kept together, so a wrapping toolbar never leaves the export alone on a row -->
+	<div class="flex items-center gap-1 max-sm:ml-auto sm:gap-2">
+		<span class="text-base-content/60 text-sm whitespace-nowrap">{shownRows}</span>
+		<SettingsButton />
+		<ExportButton filename={title || 'export'} {getExport} />
+	</div>
 </div>
 {#if hasFilters}
 	<ActiveFilters {table} {columns} {columnFilters} />

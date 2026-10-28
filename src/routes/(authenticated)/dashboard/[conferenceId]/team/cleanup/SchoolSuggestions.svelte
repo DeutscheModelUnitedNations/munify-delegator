@@ -125,14 +125,14 @@
 
 {#if current}
 	<div class="bg-base-200 border-base-300 rounded-box mb-6 border">
-		<div class="border-base-300 flex items-center gap-2 border-b px-4 py-2">
-			<div class="flex-1">
+		<div class="border-base-300 flex flex-wrap items-center gap-2 border-b px-4 py-2">
+			<div class="min-w-0 flex-1 max-sm:basis-full">
 				<span class="font-bold">{m.cleanupSuggestionsTitle()}</span>
 				<span class="text-sm opacity-60">{m.cleanupSuggestionsDescription()}</span>
 			</div>
 			<button
 				type="button"
-				class="btn btn-ghost btn-sm btn-circle"
+				class="btn btn-ghost btn-sm btn-circle max-sm:ml-auto"
 				aria-label={m.cleanupSuggestionsPrevious()}
 				disabled={open.length < 2}
 				onclick={() => cycle(-1)}
@@ -163,8 +163,8 @@
 						checked={variant.id === target}
 						onchange={() => (chosen[key] = variant.id)}
 					/>
-					<span class="flex-1">{variant.name}</span>
-					<span class="text-sm opacity-60">
+					<span class="min-w-0 flex-1 break-words">{variant.name}</span>
+					<span class="text-sm whitespace-nowrap opacity-60">
 						{m.cleanupSuggestionsParticipants({ count: variant.sumParticipants })}
 					</span>
 				</label>

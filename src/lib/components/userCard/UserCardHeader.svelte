@@ -228,11 +228,12 @@
 	};
 </script>
 
-<div class="flex items-center gap-3 px-5 pt-3 pb-2 md:px-10 lg:px-16">
+<div class="flex items-center gap-3 px-3 pt-3 pb-2 sm:px-5 md:px-10 lg:px-16">
 	<div
-		class="border-base-300 from-primary/10 to-base-200 rounded-box flex flex-1 flex-col gap-3 border bg-linear-to-br p-4"
+		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-3 border bg-linear-to-br p-3 sm:p-4"
 	>
-		<div class="flex items-start gap-4">
+		<!-- On a phone the actions take a row of their own below the name -->
+		<div class="flex flex-wrap items-start gap-x-4 gap-y-2 sm:flex-nowrap">
 			<!-- Initials, so a card is recognisable at a glance -->
 			<div class="avatar avatar-placeholder hidden sm:flex">
 				<div class="bg-primary/20 text-primary w-14 rounded-full text-xl font-bold">
@@ -240,9 +241,14 @@
 				</div>
 			</div>
 
-			<div class="flex min-w-0 flex-1 flex-col gap-1.5">
-				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-					<h2 class="text-3xl font-bold">{displayName}</h2>
+			<div class="flex min-w-0 flex-1 flex-col gap-1.5 max-sm:basis-full">
+				<!-- Clear of the drawer's close button, which a phone puts over the card -->
+				<div
+					class="flex flex-wrap items-center gap-x-3 gap-y-1 {mode === 'drawer'
+						? 'max-sm:pr-8'
+						: ''}"
+				>
+					<h2 class="text-2xl font-bold break-words sm:text-3xl">{displayName}</h2>
 					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
 					{#if pronouns}
 						<span class="text-base-content/60 text-sm">({pronouns})</span>
@@ -266,7 +272,7 @@
 			</div>
 
 			<!-- Action buttons -->
-			<div class="flex items-center gap-1">
+			<div class="flex items-center gap-1 max-sm:-ml-2">
 				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
 				{#if badgeSeat}
 					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
@@ -284,7 +290,8 @@
 
 				<!-- The rarer actions, the destructive one last -->
 				<!-- A <details> opens on click only, never because focus moved into it -->
-				<details class="dropdown dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
+				<!-- Opens to the right on a phone, where the actions sit at the left edge -->
+				<details class="dropdown sm:dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
 					<summary
 						class="btn btn-ghost btn-sm btn-square list-none"
 						aria-label={m.userCardMoreActions()}

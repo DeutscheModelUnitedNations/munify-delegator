@@ -7,7 +7,7 @@
 </script>
 
 <button
-	class="btn btn-square btn-ghost"
+	class="btn btn-square btn-ghost max-sm:btn-sm"
 	onclick={() => (confirmDialogOpen = true)}
 	aria-label={m.settings()}
 >

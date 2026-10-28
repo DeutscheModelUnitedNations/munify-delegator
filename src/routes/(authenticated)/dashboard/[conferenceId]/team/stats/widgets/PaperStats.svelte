@@ -76,7 +76,7 @@
 			</h2>
 
 			<!-- Stats row with historical comparison -->
-			<div class="stats w-full">
+			<div class="stats stats-vertical sm:stats-horizontal w-full max-sm:grid-cols-2">
 				<div class="stat py-3 px-4">
 					<div class="stat-title text-xs">{m.statsPaperTotal()}</div>
 					<div class="stat-value text-2xl">{paperStats.total}</div>

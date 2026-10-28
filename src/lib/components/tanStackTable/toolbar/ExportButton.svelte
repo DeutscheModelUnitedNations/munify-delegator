@@ -29,7 +29,7 @@
 </script>
 
 <div class="no-print dropdown dropdown-end">
-	<button tabindex="0" class="btn btn-square btn-ghost" aria-label={m.exportData()}>
+	<button tabindex="0" class="btn btn-square btn-ghost max-sm:btn-sm" aria-label={m.exportData()}>
 		<i class="fa-sharp-duotone fa-solid fa-file-export text-xl"></i>
 	</button>
 	<ul class="dropdown-content menu z-10 w-48 rounded-box bg-base-200 p-2 shadow">
