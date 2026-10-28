@@ -22,7 +22,8 @@ const NOTHING_FOUND = {
 	didAttend: false,
 	paymentStatus: 'PENDING',
 	termsAndConditions: 'PENDING',
-	guardianConsent: 'PENDING'
+	guardianConsent: 'PENDING',
+	missingSurveyOptions: []
 } as const;
 
 async function findScannedPerson(conferenceId: string, code: string) {
@@ -151,12 +152,49 @@ function describePerson(person: ScannedPerson, status: ScannedStatus) {
 	};
 }
 
-/** Looks the code up and describes the person it belongs to, or answers that nothing was found. */
-export async function lookupScan(conferenceId: string, code: string) {
+/**
+ * The titles of the survey options the session expects, when the person picked none of them;
+ * empty when they did, or when the session expects none.
+ */
+async function missingSurveyOptions(
+	conferenceId: string,
+	sessionId: string | null | undefined,
+	participantId: string | undefined
+) {
+	if (!sessionId) return [];
+	const session = await db.query.attendanceSession.findFirst({
+		where: { id: sessionId, conferenceId },
+		columns: {},
+		with: {
+			surveyOptions: {
+				columns: { title: true },
+				with: {
+					surveyAnswers: {
+						// Somebody without a participant row has answered nothing
+						where: { conferenceParticipantId: participantId ?? '' },
+						columns: { id: true }
+					}
+				}
+			}
+		}
+	});
+	const options = session?.surveyOptions ?? [];
+	if (options.some((option) => option.surveyAnswers.length > 0)) return [];
+	return options.map((option) => option.title);
+}
+
+/**
+ * Looks the code up and describes the person it belongs to, or answers that nothing was found.
+ * With a session, it also names the survey options the session expects that the person lacks.
+ */
+export async function lookupScan(conferenceId: string, code: string, sessionId?: string | null) {
 	const person = await findScannedPerson(conferenceId, code);
 	if (!person) return NOTHING_FOUND;
 	const status = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: person.id }
 	});
-	return describePerson(person, status);
+	return {
+		...describePerson(person, status),
+		missingSurveyOptions: await missingSurveyOptions(conferenceId, sessionId, status?.id)
+	};
 }

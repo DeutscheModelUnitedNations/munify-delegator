@@ -30,7 +30,12 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 		didAttend: t.boolean(),
 		paymentStatus: t.field({ type: administrativeStatusEnum }),
 		termsAndConditions: t.field({ type: administrativeStatusEnum }),
-		guardianConsent: t.field({ type: administrativeStatusEnum })
+		guardianConsent: t.field({ type: administrativeStatusEnum }),
+		/**
+		 * The titles of the survey options the session expects when the person picked none of
+		 * them; empty when they did, or without a session expecting any.
+		 */
+		missingSurveyOptions: t.stringList()
 	})
 });
 
@@ -40,17 +45,21 @@ schemaBuilder.queryFields((t) => ({
 	 * conference or a user id. Any team member may use it, which the scanner is for, so it answers
 	 * with this fixed set of fields instead of letting the caller read the participant's user and
 	 * status rows, which only participant care may - and only for people with a part in the
-	 * conference; anybody else is "not found".
+	 * conference; anybody else is "not found". With a session it also tells whether the person
+	 * picked one of the survey options the session expects; the titles come along, since the
+	 * team members working the scanner may not read the survey itself.
 	 */
 	scanLookup: t.field({
 		type: ScanLookupResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			code: t.arg.string({ required: true })
+			code: t.arg.string({ required: true }),
+			/** The scanner session the code was scanned in, whose expected survey options are checked. */
+			sessionId: t.arg.id()
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanLookupScan(ctx, args.conferenceId);
-			return lookupScan(args.conferenceId, args.code);
+			return lookupScan(args.conferenceId, args.code, args.sessionId);
 		}
 	})
 }));

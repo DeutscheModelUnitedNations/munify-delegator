@@ -25,6 +25,8 @@ export interface ScanSession {
 	started: boolean;
 	/** What a scan does in this session, fixed when it started. */
 	mode: ServerMode;
+	/** The survey options a scanned person should have picked one of, sent when it starts. */
+	surveyOptionIds?: string[];
 	entries: ScanLogEntry[];
 }
 
@@ -42,6 +44,16 @@ export function scanErrorText(err: unknown, offlineText: string, fallback: strin
 /** Whether the server refused a scan because another device logged the person in this session. */
 export function isAlreadyScanned(err: unknown) {
 	return hasErrorCode(err, 'ALREADY_SCANNED');
+}
+
+/**
+ * Where renaming session `id` takes effect: on the server unless it is this device's session and
+ * has not reached the server yet (it then starts under the new name), and here when it is this
+ * device's session.
+ */
+export function renameTargets(local: ScanSession | null, id: string) {
+	const isLocal = local?.id === id;
+	return { server: !isLocal || !!local?.started, local: isLocal ? local : null };
 }
 
 /** Whether any entry of the session is still waiting to be sent. */
@@ -97,7 +109,7 @@ export type Shown =
 			issues: ScanIssue[];
 			/** Whether the session held a scan of the person before this one. */
 			alreadyScanned: boolean;
-			awaiting: 'badge' | 'ack' | null;
+			awaiting: 'badge' | 'ack' | 'decide' | null;
 			badgeInput: string;
 	  };
 
@@ -106,10 +118,26 @@ export type ShownPerson = Extract<Shown, { state: 'person' }>;
 export const isShownPerson = (value: Shown | null): value is ShownPerson =>
 	value?.state === 'person';
 
-/** What a scanned person waits for: the card (badge mode), an acknowledgement of open points, or nothing. */
-export function scanStep(badgeMode: boolean, passed: boolean): ShownPerson['awaiting'] {
+/**
+ * What a scanned person waits for: the card (badge mode), nothing when all is clear, and with open
+ * points either an acknowledgement or, where the scan is recorded only on purpose (`decides`, the
+ * check mode), the decision whether to record it anyway.
+ */
+export function scanStep(
+	badgeMode: boolean,
+	passed: boolean,
+	decides = false
+): ShownPerson['awaiting'] {
 	if (badgeMode) return 'badge';
-	return passed ? null : 'ack';
+	if (passed) return null;
+	return decides ? 'decide' : 'ack';
+}
+
+/** Whether a person with these open points can be recorded anyway; the server would refuse these. */
+export function mayRecordAnyway(issues: readonly ScanIssue[]) {
+	return !issues.some(
+		(issue) => issue === 'alreadyScanned' || issue === 'notInConference' || issue === 'teamMember'
+	);
 }
 
 /** The result for a person who was looked up. */

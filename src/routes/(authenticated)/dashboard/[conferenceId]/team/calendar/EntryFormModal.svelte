@@ -7,6 +7,7 @@
 	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
 	import { m } from '#lib/paraglide/messages.js';
 	import ColorPaletteSelector from '#lib/components/calendar/ColorPaletteSelector.svelte';
+	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
 	import { untrack } from 'svelte';
 	import { retargetTrackRange } from './copyDayEntries';
 	import { entryFields } from './calendarEditing';
@@ -123,19 +124,6 @@
 		})
 	);
 
-	/** The survey questions whose options an entry can be limited to */
-	const surveyQuestions = $derived(
-		await client.liveQuery.surveyQuestions({
-			__args: {
-				where: { conferenceId: { eq: conferenceId } },
-				orderBy: { createdAt: 'asc' }
-			},
-			id: true,
-			title: true,
-			options: { id: true, title: true }
-		})
-	);
-
 	let isLoading = $state(false);
 
 	let entryName = $state(source?.name ?? '');
@@ -153,12 +141,6 @@
 	let entrySurveyOptionIds = $state<string[]>(
 		source?.surveyOptions.map((option) => option.id) ?? []
 	);
-
-	function toggleSurveyOption(id: string, picked: boolean) {
-		entrySurveyOptionIds = picked
-			? [...entrySurveyOptionIds, id]
-			: entrySurveyOptionIds.filter((optionId) => optionId !== id);
-	}
 
 	/** The entry's first and last track (it runs on those and every one between) */
 	const seedTracks = source?.tracks.map((track) => track.id) ?? seed?.trackIds ?? [];
@@ -425,40 +407,11 @@
 			<input type="text" bind:value={entryRoom} class="input w-full" />
 		</fieldset>
 	</div>
-	{#if surveyQuestions.length > 0}
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">{m.calendarEntryAudience()}</legend>
-			<div class="flex flex-col gap-3">
-				<label class="label cursor-pointer gap-2">
-					<input
-						type="checkbox"
-						class="checkbox checkbox-sm"
-						checked={entrySurveyOptionIds.length === 0}
-						disabled={entrySurveyOptionIds.length === 0}
-						onchange={() => (entrySurveyOptionIds = [])}
-					/>
-					<span class="text-base-content">{m.calendarEntryAudienceEveryone()}</span>
-				</label>
-				{#each surveyQuestions as question (question.id)}
-					<div>
-						<div class="text-base-content/60 mb-1 text-xs font-semibold">{question.title}</div>
-						<div class="flex flex-wrap gap-x-4 gap-y-1">
-							{#each question.options as option (option.id)}
-								<label class="label cursor-pointer gap-2">
-									<input
-										type="checkbox"
-										class="checkbox checkbox-sm checkbox-primary"
-										checked={entrySurveyOptionIds.includes(option.id)}
-										onchange={(event) => toggleSurveyOption(option.id, event.currentTarget.checked)}
-									/>
-									<span class="text-base-content">{option.title}</span>
-								</label>
-							{/each}
-						</div>
-					</div>
-				{/each}
-			</div>
-			<p class="label whitespace-normal">{m.calendarEntryAudienceHint()}</p>
-		</fieldset>
-	{/if}
+	<SurveyOptionPicker
+		{conferenceId}
+		bind:selected={entrySurveyOptionIds}
+		legend={m.calendarEntryAudience()}
+		noneLabel={m.calendarEntryAudienceEveryone()}
+		hint={m.calendarEntryAudienceHint()}
+	/>
 </ActionModal>

@@ -5,6 +5,7 @@ export type ScanIssue =
 	| 'paymentOpen'
 	| 'termsOpen'
 	| 'guardianConsentOpen'
+	| 'surveyOptionMissing'
 	| 'alreadyScanned';
 
 type AdministrativeStatus = 'DONE' | 'PROBLEM' | 'PENDING';
@@ -21,6 +22,8 @@ export interface ScanCheckInput {
 		guardianConsent: AdministrativeStatus;
 	} | null;
 	birthday: Date | null | undefined;
+	/** The survey options the session expects that the person picked none of. */
+	missingSurveyOptions?: readonly string[];
 	/** Whether this session holds a scan of the person already. */
 	alreadyScanned: boolean;
 	now?: Date;
@@ -53,6 +56,7 @@ export function scanIssues(input: ScanCheckInput): ScanIssue[] {
 		[status.paymentStatus !== 'DONE', 'paymentOpen'],
 		[status.termsAndConditions !== 'DONE', 'termsOpen'],
 		[needsConsent && status.guardianConsent !== 'DONE', 'guardianConsentOpen'],
+		[input.inConference && !!input.missingSurveyOptions?.length, 'surveyOptionMissing'],
 		[input.alreadyScanned, 'alreadyScanned']
 	];
 	return open.filter(([isOpen]) => isOpen).map(([, issue]) => issue);

@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import { onDestroy, onMount, untrack } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
 	import { resolveScannedCode } from '#lib/components/scanner/userSearch.js';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
@@ -14,7 +15,11 @@
 	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
 	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
 	import ScanCheckResult from './ScanCheckResult.svelte';
-	import CertificateOccasions from './CertificateOccasions.svelte';
+	import SessionTable from './SessionTable.svelte';
+	import { modeIcons, modeLabels, type SessionMode } from './sessionModes';
+	import EditableIdentityField from './EditableIdentityField.svelte';
+	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
+	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
 	import { isNetworkError, retryDelay, type QueueEntry } from './attendanceQueue';
 	import { scanIssues, type ScanIssue } from './scanCheck';
 	import {
@@ -24,10 +29,12 @@
 		hasUnsynced,
 		isAlreadyScanned,
 		queueFromEntries,
+		renameTargets,
 		scanErrorText,
 		scanIntake,
 		personShown,
 		scanStep,
+		mayRecordAnyway,
 		isShownPerson,
 		type ScanLogEntry,
 		type ScanSession,
@@ -35,20 +42,11 @@
 		type ShownPerson,
 		type ServerMode
 	} from './attendanceSession';
-	import ScanPageHeader from '#lib/components/scanner/ScanPageHeader.svelte';
 	import { acceptScannedCode, warmUpIdentityKey } from '#lib/api/identityCodeCheck.js';
 	import { loadScannedPerson, type FoundPerson } from './scanLoad';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
-
-	// --- Types ---
-
-	/**
-	 * What the page can be working in: a session, or INFO, which is the check without any record and
-	 * without any session. It lives in memory on this device and never reaches the server.
-	 */
-	type SessionMode = ServerMode | 'INFO';
 
 	// --- Props & Params ---
 
@@ -73,21 +71,12 @@
 
 	let occasion = $state('');
 	let sessionActive = $state(false);
+	/** The active session's name, as renamed on any device. */
+	const activeOccasion = $derived(
+		openSessions.find((open) => open.id === sessionStore.current?.id)?.occasion ?? occasion
+	);
 
 	// --- Kind of session ---
-
-	const modeIcons: Record<SessionMode, string> = {
-		CHECK: 'fa-user-check',
-		RECORD: 'fa-bolt',
-		BADGE: 'fa-id-card',
-		INFO: 'fa-circle-info'
-	};
-	const modeLabels: Record<SessionMode, () => string> = {
-		CHECK: m.scanModeCheck,
-		RECORD: m.scanModeRecord,
-		BADGE: m.scanBadgeOption,
-		INFO: m.scanModeInfo
-	};
 
 	/** What the active session does, fixed when it started; see `attendanceSessionMode`. */
 	let sessionMode = $state<SessionMode>('RECORD');
@@ -97,6 +86,10 @@
 
 	/** The form's choice; every new session starts out on the check. */
 	let setupMode = $state<ServerMode>('CHECK');
+	/** Whether the form for a new session is unfolded. */
+	let creating = $state(false);
+	/** The survey options the new session expects; a session that only records checks none. */
+	let setupSurveyOptionIds = $state<string[]>([]);
 
 	// --- localStorage backup ---
 
@@ -145,8 +138,11 @@
 			startedAt: new Date().toISOString(),
 			started: false,
 			mode: setupMode,
+			surveyOptionIds: setupMode === 'RECORD' ? [] : setupSurveyOptionIds,
 			entries: []
 		};
+		setupSurveyOptionIds = [];
+		creating = false;
 		sessionStore.current = session;
 		sessionMode = session.mode;
 		sessionActive = true;
@@ -193,7 +189,8 @@
 				id: session.id,
 				conferenceId,
 				occasion: session.occasion,
-				mode: session.mode
+				mode: session.mode,
+				surveyOptionIds: session.surveyOptionIds
 			},
 			id: true
 		});
@@ -208,6 +205,32 @@
 	/** The stored session this device works in; the info mode has none. */
 	function activeSession() {
 		return sessionMode === 'INFO' ? null : sessionStore.current;
+	}
+
+	/**
+	 * Renames a session. One that has not reached the server yet starts under the new name; the
+	 * active one is renamed here as well.
+	 */
+	async function renameSession(id: string, newOccasion: string) {
+		const trimmed = newOccasion.trim();
+		if (!trimmed) {
+			toast.error(m.attendanceOccasionEmpty());
+			throw new Error(m.attendanceOccasionEmpty());
+		}
+		const targets = renameTargets(activeSession(), id);
+		if (targets.server) await renameOnServer(id, trimmed);
+		if (!targets.local) return;
+		targets.local.occasion = trimmed;
+		sessionStore.current = targets.local;
+		occasion = trimmed;
+	}
+
+	async function renameOnServer(id: string, name: string) {
+		const promise = Promise.resolve(
+			client.mutate.renameAttendanceSession({ __args: { id, occasion: name } })
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 	}
 
 	/** Asks before leaving scans behind that were not sent yet. */
@@ -286,11 +309,21 @@
 		});
 	});
 
+	/**
+	 * The session a lookup checks the expected survey options of, once the server knows it; the
+	 * info mode has none.
+	 */
+	async function lookupSessionId() {
+		if (!activeSession()) return undefined;
+		const session = await ensureSessionStarted();
+		return session?.id;
+	}
+
 	/** The person a code leads to; `undefined` after a lookup that failed, which is reported. */
 	async function lookUp(code: string): Promise<FoundPerson | null | undefined> {
 		try {
 			// The server resolves an access card number as well as a user id
-			return await loadScannedPerson(conferenceId, code);
+			return await loadScannedPerson(conferenceId, code, await lookupSessionId());
 		} catch (err) {
 			toast.error(scanErrorText(err, m.scanCheckOffline(), m.genericToastError()));
 			return undefined;
@@ -349,10 +382,22 @@
 
 	/** Logs the scan of someone who is recorded, and returns what the mode waits for next. */
 	function recordScan(person: FoundPerson, issues: ReturnType<typeof checkIssues>) {
-		const awaiting = scanStep(badgeOn, issues.length === 0);
+		// The check records somebody with open points only when told to
+		const awaiting = scanStep(badgeOn, issues.length === 0, sessionMode === 'CHECK');
 		// With cards the scan is logged once the card is stored
-		if (awaiting !== 'badge') logScan(person.user.id, issues.length === 0, personLabel(person));
+		if (awaiting === null || awaiting === 'ack') {
+			logScan(person.user.id, issues.length === 0, personLabel(person));
+		}
 		return awaiting;
+	}
+
+	/** Records a person despite their open points, as not having passed the check. */
+	function recordAnyway() {
+		const current = shown;
+		if (!isShownPerson(current) || !mayRecordAnyway(current.issues)) return;
+		logScan(current.person.user.id, false, personLabel(current.person));
+		shown = null;
+		release();
 	}
 
 	const logScan = (userId: string, passed: boolean, label: string) =>
@@ -366,6 +411,7 @@
 			isTeamMember: person.roles.isTeamMember,
 			status: person.status,
 			birthday: person.user.birthday,
+			missingSurveyOptions: person.missingSurveyOptions,
 			alreadyScanned
 		});
 
@@ -465,7 +511,11 @@
 	async function reloadShown() {
 		const current = shown;
 		if (!isShownPerson(current)) return;
-		const person = await loadScannedPerson(conferenceId, current.person.user.id);
+		const person = await loadScannedPerson(
+			conferenceId,
+			current.person.user.id,
+			await lookupSessionId()
+		);
 		if (!person || shown !== current) return;
 		shown = {
 			...current,
@@ -474,16 +524,21 @@
 		};
 	}
 
-	/** The primary button: store the card and log, or acknowledge the open points. */
+	/** Store the card and log, acknowledge the open points, or record despite them. */
 	async function confirmResult() {
 		const current = shown;
-		if (!isShownPerson(current)) return;
-		if (current.awaiting === 'badge') await storeBadge(current);
-		else if (current.awaiting === 'ack') {
+		if (!isShownPerson(current) || current.awaiting === null) return;
+		await confirmations[current.awaiting](current);
+	}
+
+	const confirmations: Record<NonNullable<ShownPerson['awaiting']>, (c: ShownPerson) => unknown> = {
+		badge: storeBadge,
+		decide: recordAnyway,
+		ack: () => {
 			shown = null;
 			release();
 		}
-	}
+	};
 
 	/** The card and the scan are stored together, so a rejected card logs nothing. */
 	async function saveBadge(current: ShownPerson, accessCardId: string) {
@@ -729,36 +784,22 @@
 </script>
 
 {#snippet sessionSetup()}
-	{#if maySetUpSessions}
-		{@render setupForm()}
-	{:else}
+	{#if !maySetUpSessions && openSessions.length === 0}
 		<div class="alert alert-info alert-soft">
 			<i class="fa-sharp-duotone fa-solid fa-info-circle text-lg"></i>
 			<span>{m.scanSessionSetupNeedsRole()}</span>
 		</div>
 	{/if}
-	{@render openSessionList()}
-	{@render infoEntry()}
-	{#if maySetUpSessions}
-		<CertificateOccasions {conferenceId} />
-	{/if}
-{/snippet}
-
-<!-- Looking people up needs no session, and anyone on the team may do it -->
-{#snippet infoEntry()}
-	<div class="bg-base-200 flex flex-wrap items-center gap-3 rounded-box p-3 md:p-4">
-		<div class="flex min-w-0 flex-1 flex-col gap-1">
-			<span class="flex items-center gap-2 font-bold">
-				<i class="fa-sharp-duotone fa-solid {modeIcons.INFO}"></i>
-				{m.scanModeInfo()}
-			</span>
-			<span class="text-sm text-base-content/60">{m.scanModeInfoHint()}</span>
-		</div>
-		<button class="btn btn-primary btn-sm" onclick={startInfo}>
-			<i class="fa-sharp-duotone fa-solid fa-play"></i>
-			{m.scanStartInfo()}
-		</button>
-	</div>
+	<SessionTable
+		{conferenceId}
+		{openSessions}
+		canManage={maySetUpSessions}
+		bind:creating
+		createForm={setupForm}
+		onJoin={joinSession}
+		onStartInfo={startInfo}
+		onRenameSession={renameSession}
+	/>
 {/snippet}
 
 {#snippet setupForm()}
@@ -767,145 +808,155 @@
 		{ mode: 'RECORD', icon: 'fa-bolt', label: m.scanModeRecord(), hint: m.scanModeRecordHint() },
 		{ mode: 'BADGE', icon: 'fa-id-card', label: m.scanBadgeOption(), hint: m.scanBadgeHint() }
 	] as const}
-	<div class="bg-base-200 flex flex-col gap-2 rounded-box p-3 md:p-4">
-		<div class="flex flex-wrap items-end gap-x-4 gap-y-3">
-			<div class="flex w-full min-w-0 flex-col gap-1 sm:w-auto">
-				<span class="text-sm font-semibold">{m.scanSessionType()}</span>
-				<div class="join w-full" role="group" aria-label={m.scanMode()}>
-					{#each modes as option (option.mode)}
-						<button
-							class="btn join-item min-w-0 flex-1 px-2 sm:flex-none sm:px-4 {setupMode ===
-							option.mode
-								? 'btn-primary'
-								: 'btn-soft'}"
-							aria-pressed={setupMode === option.mode}
-							onclick={() => (setupMode = option.mode)}
-						>
-							<i class="fa-sharp-duotone fa-solid {option.icon} hidden sm:inline"></i>
-							<span class="truncate">{option.label}</span>
-						</button>
-					{/each}
-				</div>
-			</div>
-
-			<div class="flex min-w-60 flex-1 flex-col gap-1">
-				<label class="text-sm font-semibold" for="session-occasion">{m.sessionOccasion()}</label>
-				<div class="join w-full">
-					<input
-						id="session-occasion"
-						class="input join-item w-full min-w-0"
-						type="text"
-						bind:value={occasion}
-						placeholder={m.sessionOccasionPlaceholder()}
-						onkeydown={(e) => {
-							if (e.key === 'Enter') startSession();
-						}}
-					/>
+	<section
+		class="bg-base-200 flex flex-col gap-3 rounded-box p-3 md:p-4"
+		aria-label={m.scanNewSession()}
+		transition:slide={{ duration: 200 }}
+	>
+		<!-- What a scan does: the choice comes first, its explanation right under it -->
+		<div class="flex flex-col gap-1">
+			<div
+				class="grid grid-cols-3 gap-1 rounded-field bg-base-100/40 p-1"
+				role="group"
+				aria-label={m.scanSessionType()}
+			>
+				{#each modes as option (option.mode)}
 					<button
-						class="btn btn-primary join-item"
-						onclick={startSession}
-						disabled={!occasion.trim()}
+						class="btn btn-sm h-auto min-w-0 flex-col gap-0.5 py-1.5 sm:flex-row sm:gap-2 {setupMode ===
+						option.mode
+							? 'btn-primary'
+							: 'btn-ghost'}"
+						aria-pressed={setupMode === option.mode}
+						onclick={() => (setupMode = option.mode)}
 					>
-						<i class="fa-sharp-duotone fa-solid fa-play"></i>
-						{m.startSession()}
+						<i class="fa-sharp-duotone fa-solid {option.icon}"></i>
+						<span class="max-w-full truncate text-xs sm:text-sm">{option.label}</span>
 					</button>
-				</div>
+				{/each}
 			</div>
+			<p class="px-1 text-xs text-base-content/60">
+				{modes.find((option) => option.mode === setupMode)?.hint}
+			</p>
 		</div>
-		<p class="text-sm text-base-content/60">
-			{modes.find((option) => option.mode === setupMode)?.hint}
-		</p>
-	</div>
-{/snippet}
 
-{#snippet openSessionList()}
-	{#if openSessions.length > 0}
-		<div class="flex flex-col gap-2">
-			<h3 class="font-semibold">{m.scanOpenSessions()}</h3>
-			{#each openSessions as open (open.id)}
-				<div class="bg-base-200 flex items-center gap-3 rounded-box p-3">
-					<div class="flex min-w-0 flex-1 flex-col gap-1">
-						<span class="truncate font-bold">{open.occasion}</span>
-						<div class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
-							{@render modeBadge(open.mode)}
-							<span>
-								{open.startedAt.toLocaleString(getLocale(), {
-									dateStyle: 'short',
-									timeStyle: 'short'
-								})}
-							</span>
-						</div>
-					</div>
-					<button class="btn btn-sm btn-primary" onclick={() => joinSession(open)}>
-						<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
-						{m.scanJoinSession()}
-					</button>
-				</div>
-			{/each}
-		</div>
-	{/if}
+		{#if setupMode !== 'RECORD'}
+			<SurveyOptionPicker
+				{conferenceId}
+				bind:selected={setupSurveyOptionIds}
+				collapsible
+				legend={m.sessionSurveyOptions()}
+				noneLabel={m.sessionSurveyOptionsNone()}
+				hint={m.sessionSurveyOptionsHint()}
+			/>
+		{/if}
 
-	{#if openSessions.length === 0 && maySetUpSessions}
-		<div class="alert alert-info alert-soft">
-			<i class="fa-sharp-duotone fa-solid fa-info-circle text-lg"></i>
-			<span>{m.noActiveSession()}</span>
+		<div class="flex flex-col gap-2 sm:flex-row">
+			<input
+				class="input w-full min-w-0 sm:flex-1"
+				type="text"
+				bind:value={occasion}
+				aria-label={m.sessionOccasion()}
+				placeholder={m.sessionOccasionPlaceholder()}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') startSession();
+				}}
+			/>
+			<button class="btn btn-primary" onclick={startSession} disabled={!occasion.trim()}>
+				<i class="fa-sharp-duotone fa-solid fa-play"></i>
+				{m.startSession()}
+			</button>
 		</div>
-	{/if}
+	</section>
 {/snippet}
 
 {#snippet activeSessionBar()}
-	<div class="bg-base-200 flex flex-wrap items-center gap-2 rounded-box p-3 md:gap-4 md:p-4">
+	<div class="bg-base-200 flex flex-col gap-2 rounded-box p-3 md:p-4">
+		<!-- What is running, and what can be done with it -->
 		<div class="flex items-center gap-2">
-			<div class="inline-grid *:[grid-area:1/1]">
-				<span class="status status-success status-xl"></span>
-				<span class="status status-success status-xl animate-ping"></span>
+			<!-- Leaves the session on this device only; it stays open for everybody else -->
+			<button
+				class="btn btn-ghost btn-sm btn-square shrink-0"
+				onclick={() => leaveSession(false)}
+				aria-label={m.scanSwitchSession()}
+				title={m.scanSwitchSession()}
+			>
+				<i class="fa-sharp-duotone fa-solid fa-arrow-left"></i>
+			</button>
+			<div class="inline-grid shrink-0 *:[grid-area:1/1]" title={m.sessionActive()}>
+				<span class="status status-success status-lg"></span>
+				<span class="status status-success status-lg animate-ping"></span>
 			</div>
-			<span class="font-bold">{m.sessionActive()}</span>
+			<div class="min-w-0 flex-1">
+				{#if sessionMode !== 'INFO' && sessionStore.current}
+					{@render sessionName(sessionStore.current.id, activeOccasion)}
+				{:else}
+					<span class="font-bold">{m.sessionActive()}</span>
+				{/if}
+			</div>
 			{#if sessionMode !== 'INFO'}
-				<span class="text-base-content/70">— {occasion}</span>
+				<div class="flex shrink-0 gap-1">
+					<button
+						class="btn btn-ghost btn-sm max-lg:btn-square"
+						onclick={downloadBackup}
+						aria-label={m.downloadBackup()}
+						title={m.downloadBackup()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-download"></i>
+						<span class="hidden lg:inline">{m.downloadBackup()}</span>
+					</button>
+					{#if maySetUpSessions}
+						<button
+							class="btn btn-error btn-sm max-sm:btn-square"
+							onclick={() => leaveSession(true)}
+							aria-label={m.endSession()}
+							title={m.endSession()}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-stop"></i>
+							<span class="hidden sm:inline">{m.endSession()}</span>
+						</button>
+					{/if}
+				</div>
 			{/if}
 		</div>
 
-		{@render modeBadge(sessionMode)}
-
-		{#if sessionMode !== 'INFO'}
-			<div class="flex flex-wrap items-center gap-3 text-sm">
-				<span class="badge badge-soft badge-primary"
+		<!-- What a scan does, and how the scans on this device stand -->
+		<div class="flex flex-wrap items-center gap-2">
+			{@render modeBadge(sessionMode, 'badge-sm')}
+			{#if sessionMode !== 'INFO'}
+				<span class="badge badge-soft badge-primary badge-sm"
 					>{m.scanCount({ count: totalScansCounter.toString() })}</span
 				>
-				<span class="badge badge-soft badge-success">{syncedScansCounter} {m.scanSynced()}</span>
+				<span class="badge badge-soft badge-success badge-sm"
+					>{syncedScansCounter} {m.scanSynced()}</span
+				>
 				{#if pendingScans > 0}
-					<span class="badge badge-soft badge-warning">{pendingScans} {m.scanPending()}</span>
+					<span class="badge badge-soft badge-warning badge-sm"
+						>{pendingScans} {m.scanPending()}</span
+					>
 				{/if}
 				{#if errorScans > 0}
-					<span class="badge badge-soft badge-error">{errorScans} {m.errors()}</span>
+					<span class="badge badge-soft badge-error badge-sm">{errorScans} {m.errors()}</span>
 				{/if}
-			</div>
-		{/if}
-
-		<div class="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
-			{#if sessionMode !== 'INFO'}
-				<button class="btn btn-ghost btn-sm" onclick={downloadBackup}>
-					<i class="fa-sharp-duotone fa-solid fa-download"></i>
-					{m.downloadBackup()}
-				</button>
-			{/if}
-			<button class="btn btn-ghost btn-sm" onclick={() => leaveSession(false)}>
-				<i class="fa-sharp-duotone fa-solid fa-right-from-bracket"></i>
-				{m.scanLeaveSession()}
-			</button>
-			{#if maySetUpSessions && sessionMode !== 'INFO'}
-				<button class="btn btn-error btn-sm" onclick={() => leaveSession(true)}>
-					<i class="fa-sharp-duotone fa-solid fa-stop"></i>
-					{m.endSession()}
-				</button>
 			{/if}
 		</div>
 	</div>
 {/snippet}
 
-{#snippet modeBadge(mode: SessionMode)}
-	<span class="badge badge-soft badge-primary gap-1.5">
+<!-- Participant care may rename a session; everybody else sees its name -->
+{#snippet sessionName(id: string, name: string)}
+	<EditableIdentityField
+		size="sm"
+		readonly={!maySetUpSessions}
+		label={m.scanRenameSession({ occasion: name })}
+		initialValue={name}
+		onSave={(value) => renameSession(id, value)}
+	>
+		<span class="truncate font-bold">{name}</span>
+	</EditableIdentityField>
+{/snippet}
+
+{#snippet modeBadge(mode: SessionMode, size = '')}
+	<span class="badge badge-soft badge-primary gap-1.5 {size}">
 		<i class="fa-sharp-duotone fa-solid {modeIcons[mode]}"></i>
 		{modeLabels[mode]()}
 	</span>
@@ -921,6 +972,7 @@
 			bind:badgeInput={shown.badgeInput}
 			{busy}
 			onConfirm={confirmResult}
+			onRecordAnyway={recordAnyway}
 			onClose={closeResult}
 			onChanged={reloadShown}
 		/>
@@ -942,9 +994,6 @@
 {/snippet}
 
 <div class="flex w-full min-w-0 flex-col gap-4 md:gap-6 md:p-10">
-	{#snippet description()}{m.attendanceScannerDescription()}{/snippet}
-	<ScanPageHeader {description} />
-
 	<!-- Session Setup / Active Session -->
 	{#if !sessionActive}
 		{@render sessionSetup()}

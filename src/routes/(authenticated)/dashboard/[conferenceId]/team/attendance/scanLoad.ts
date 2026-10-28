@@ -32,17 +32,23 @@ export interface FoundPerson {
 		termsAndConditions: 'DONE' | 'PROBLEM' | 'PENDING';
 		guardianConsent: 'DONE' | 'PROBLEM' | 'PENDING';
 	};
+	/** The titles of the survey options the session expects that the person picked none of. */
+	missingSurveyOptions: string[];
 }
 
 const orNull = <T>(value: T | null | undefined): T | null => value ?? null;
 
-/** The person a code leads to, or `null` when it leads to nobody. A plain query, read again after changes. */
+/**
+ * The person a code leads to, or `null` when it leads to nobody. A plain query, read again after
+ * changes. With a session, the survey options it expects are checked too.
+ */
 export async function loadScannedPerson(
 	conferenceId: string,
-	code: string
+	code: string,
+	sessionId?: string
 ): Promise<FoundPerson | null> {
 	const found = await client.query.scanLookup({
-		__args: { conferenceId, code },
+		__args: { conferenceId, code, sessionId },
 		found: true,
 		userId: true,
 		givenName: true,
@@ -63,7 +69,8 @@ export async function loadScannedPerson(
 		didAttend: true,
 		paymentStatus: true,
 		termsAndConditions: true,
-		guardianConsent: true
+		guardianConsent: true,
+		missingSurveyOptions: true
 	});
 	if (!found.found || !found.userId) return null;
 	return {
@@ -92,6 +99,7 @@ export async function loadScannedPerson(
 			paymentStatus: found.paymentStatus,
 			termsAndConditions: found.termsAndConditions,
 			guardianConsent: found.guardianConsent
-		}
+		},
+		missingSurveyOptions: [...found.missingSurveyOptions]
 	};
 }

@@ -46,6 +46,64 @@ export async function storeSessionCard(
 		.where(eq(schema.conferenceParticipant.id, statusId));
 }
 
+/**
+ * Starts a session with the survey options it expects, so it never runs without them; starting
+ * it again changes nothing.
+ */
+export async function startSession(
+	values: typeof schema.attendanceSession.$inferInsert & { id: string },
+	surveyOptionIds: readonly string[]
+) {
+	await db.transaction(async (tx) => {
+		const [started] = await tx
+			.insert(schema.attendanceSession)
+			.values(values)
+			.onConflictDoNothing()
+			.returning({ id: schema.attendanceSession.id });
+		const ids = [...new Set(surveyOptionIds)];
+		if (!started || ids.length === 0) return;
+		await tx
+			.insert(schema.attendanceSessionToSurveyOption)
+			.values(ids.map((optionId) => ({ a: values.id, b: optionId })));
+	});
+}
+
+/**
+ * Gives one session another occasion. Joining an occasion that ran before takes over its place on
+ * the certificates; a new one keeps the session's.
+ */
+export async function renameSession(sessionId: string, conferenceId: string, occasion: string) {
+	const session = await db.query.attendanceSession.findFirst({
+		where: { id: sessionId },
+		columns: { showOnCertificate: true }
+	});
+	const showOnCertificate = await certificateFlagOf(
+		conferenceId,
+		occasion,
+		session?.showOnCertificate
+	);
+	await db
+		.update(schema.attendanceSession)
+		.set({ occasion, showOnCertificate })
+		.where(eq(schema.attendanceSession.id, sessionId));
+}
+
+/**
+ * Renames every session of an occasion. Renaming it to another occasion's name merges the two, and
+ * the merged occasion keeps the other one's place on the certificates.
+ */
+export async function renameOccasion(conferenceId: string, from: string, to: string) {
+	const showOnCertificate = await certificateFlagOf(
+		conferenceId,
+		to,
+		await certificateFlagOf(conferenceId, from)
+	);
+	await db
+		.update(schema.attendanceSession)
+		.set({ occasion: to, showOnCertificate })
+		.where(sameOccasion(conferenceId, from));
+}
+
 /** Sessions of the conference with this occasion, ignoring case and surrounding spaces. */
 function sameOccasion(conferenceId: string, occasion: string) {
 	return and(
@@ -56,15 +114,15 @@ function sameOccasion(conferenceId: string, occasion: string) {
 
 /**
  * Whether a new session of `occasion` goes on the certificates: as the occasion's earlier sessions
- * do, so all sessions of one occasion agree; a new occasion does.
+ * do, so all sessions of one occasion agree; a new occasion goes by `fallback`.
  */
-export async function certificateFlagOf(conferenceId: string, occasion: string) {
+export async function certificateFlagOf(conferenceId: string, occasion: string, fallback = true) {
 	const [earlier] = await db
 		.select({ show: schema.attendanceSession.showOnCertificate })
 		.from(schema.attendanceSession)
 		.where(sameOccasion(conferenceId, occasion))
 		.limit(1);
-	return earlier?.show ?? true;
+	return earlier?.show ?? fallback;
 }
 
 /** Lists every session of the occasion on the certificates, or none of them. */

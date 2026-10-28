@@ -68,6 +68,8 @@
 		paymentOpen: m.scanIssuePaymentOpen,
 		termsOpen: m.scanIssueTermsOpen,
 		guardianConsentOpen: m.scanIssueGuardianConsentOpen,
+		// Never raised here: only a scanner session expects survey options
+		surveyOptionMissing: () => m.scanIssueSurveyOptionMissing({ options: '' }),
 		alreadyScanned: m.duplicateScan
 	};
 

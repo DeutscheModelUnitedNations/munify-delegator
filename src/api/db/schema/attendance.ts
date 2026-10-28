@@ -1,9 +1,10 @@
 import { snakeCase, pgEnum, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { defaultIdAndTimestamps } from './helpers';
+import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
 import { userRef } from './users';
 import { conferenceRef } from './conference';
 import { conferenceParticipant } from './participants';
+import { surveyOption } from './surveys';
 
 /** Scanner sessions and the attendance they record. */
 
@@ -53,3 +54,14 @@ export const attendanceEntry = snakeCase.table('attendance_entry', {
 	 */
 	checkPassed: boolean()
 });
+
+/**
+ * The survey options a checking session expects (`a` the session, `b` the option): a scanned person
+ * who picked none of them is shown that as an open point. A session without any checks no choice;
+ * a session that only records never has any. Deleting an option drops the expectation.
+ */
+export const attendanceSessionToSurveyOption = implicitManyToMany(
+	'attendance_session_to_survey_option',
+	() => attendanceSession.id,
+	() => surveyOption.id
+);

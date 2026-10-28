@@ -372,6 +372,13 @@ export type Attendancesession = {
   search_distance: Float | null,
   showOnCertificate: Boolean,
   startedAt: DateTime,
+  surveyOptions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: SurveyoptionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: SurveyoptionWhereInputArgument | null | undefined
+  }) => Surveyoption[],
   updatedAt: DateTime    
 };
 		
@@ -404,6 +411,7 @@ export type AttendancesessionWhereInputArgument = {
   occasion?: StringWhereInputArgument | null | undefined,
   showOnCertificate?: BooleanWhereInputArgument | null | undefined,
   startedAt?: DateTimeWhereInputArgument | null | undefined,
+  surveyOptions?: SurveyoptionWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
@@ -2377,6 +2385,15 @@ export type Mutation = {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
   }) => RegenerateInvitationResult,
+  renameAttendanceOccasion: (p: {
+    conferenceId: ID,
+    newOccasion: String,
+    occasion: String
+  }) => Boolean,
+  renameAttendanceSession: (p: {
+    id: ID,
+    occasion: String
+  }) => Boolean,
   requestFileUpload: (p: {
     conferenceId: ID,
     field: String,
@@ -2487,7 +2504,8 @@ export type Mutation = {
     conferenceId: ID,
     id: ID,
     mode: AttendancesessionmodeEnum,
-    occasion: String
+    occasion: String,
+    surveyOptionIds?: ID[] | null | undefined
   }) => Attendancesession,
   startImpersonation: (p: {
     targetUserId: ID
@@ -3707,7 +3725,8 @@ export type Query = {
   }) => Roleapplication[],
   scanLookup: (p: {
     code: String,
-    conferenceId: ID
+    conferenceId: ID,
+    sessionId?: ID | null | undefined
   }) => ScanLookupResult,
   school: (p: {
     id: ID
@@ -4043,6 +4062,7 @@ export type ScanLookupResult = {
   isSupervisor: Boolean,
   isTeamMember: Boolean,
   isWaitingList: Boolean,
+  missingSurveyOptions: String[],
   nationAlpha2Code: String | null,
   nationAlpha3Code: String | null,
   nonStateActorIcon: String | null,
@@ -5360,6 +5380,13 @@ export type SurveyanswerWhereInputArgument = {
 };
 		
 export type Surveyoption = {
+  attendanceSessions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: AttendancesessionOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: AttendancesessionWhereInputArgument | null | undefined
+  }) => Attendancesession[],
   calendarEntries: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -5403,6 +5430,7 @@ export type SurveyoptionWhereInputArgument = {
   AND?: SurveyoptionWhereInputArgument[] | undefined,
   NOT?: SurveyoptionWhereInputArgument | null | undefined,
   OR?: SurveyoptionWhereInputArgument[] | undefined,
+  attendanceSessions?: AttendancesessionWhereInputArgument | null | undefined,
   calendarEntries?: CalendarentryWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,

@@ -51,7 +51,12 @@ export {
 	assignmentSingleRole,
 	assignmentWeights
 } from './assignment';
-export { attendanceSessionMode, attendanceSession, attendanceEntry } from './attendance';
+export {
+	attendanceSessionMode,
+	attendanceSession,
+	attendanceEntry,
+	attendanceSessionToSurveyOption
+} from './attendance';
 export {
 	emailKind,
 	emailStatus,

@@ -115,6 +115,11 @@ export const relations = defineRelations(schema, (r) => ({
 		entries: r.many.attendanceEntry({
 			from: r.attendanceSession.id,
 			to: r.attendanceEntry.sessionId
+		}),
+		/** A scanned person who picked none of these is shown that as an open point */
+		surveyOptions: r.many.surveyOption({
+			from: r.attendanceSession.id.through(r.attendanceSessionToSurveyOption.a),
+			to: r.surveyOption.id.through(r.attendanceSessionToSurveyOption.b)
 		})
 	},
 	calendarDay: {
@@ -714,6 +719,10 @@ export const relations = defineRelations(schema, (r) => ({
 		calendarEntries: r.many.calendarEntry({
 			from: r.surveyOption.id.through(r.calendarEntryToSurveyOption.b),
 			to: r.calendarEntry.id.through(r.calendarEntryToSurveyOption.a)
+		}),
+		attendanceSessions: r.many.attendanceSession({
+			from: r.surveyOption.id.through(r.attendanceSessionToSurveyOption.b),
+			to: r.attendanceSession.id.through(r.attendanceSessionToSurveyOption.a)
 		})
 	},
 	surveyQuestion: {

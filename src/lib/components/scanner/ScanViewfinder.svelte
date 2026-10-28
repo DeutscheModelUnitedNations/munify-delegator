@@ -107,8 +107,9 @@
 			<i
 				class="fa-sharp-duotone fa-solid fa-video-slash hidden text-base-content/40 md:block md:text-4xl"
 			></i>
-			<p class="text-base-content/70 text-sm">{m.cameraOff()}</p>
-			<button class="btn btn-primary" onclick={onstart} disabled={starting}>
+			<!-- On a phone the box is too low for the hint; the code field above says as much -->
+			<p class="text-base-content/70 hidden text-sm md:block">{m.cameraOff()}</p>
+			<button class="btn btn-primary btn-sm md:btn-md" onclick={onstart} disabled={starting}>
 				{#if starting}
 					<span class="loading loading-spinner loading-sm"></span>
 				{:else}

@@ -42,12 +42,30 @@ export function registerAttendanceEntryAbilities() {
 	});
 }
 
-/** Refuses unless the caller may start attendance sessions in the conference. */
-export async function assertCanStartAttendanceSession(ctx: ApiContext, conferenceId: string) {
+/**
+ * Refuses unless the caller may start attendance sessions in the conference, expecting the survey
+ * options it names, which have to be the conference's.
+ */
+export async function assertCanStartAttendanceSession(
+	ctx: ApiContext,
+	conferenceId: string,
+	surveyOptionIds: readonly string[] = []
+) {
 	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	const ids = [...new Set(surveyOptionIds)];
+	if (ids.length === 0) return;
+	const options = await db.query.surveyOption.findMany({
+		where: { id: { in: ids }, question: { conferenceId } },
+		columns: { id: true }
+	});
+	if (options.length !== ids.length) {
+		throw apiError('INVALID_INPUT', m.sessionSurveyOptionOtherConference());
+	}
 }
 
-/** Refuses unless the session exists and the caller may end it. */
+/**
+ * Refuses unless the session exists and the caller may end or rename it; answers its conference.
+ */
 export async function assertCanEndAttendanceSession(ctx: ApiContext, sessionId: string) {
 	const session = await db.query.attendanceSession.findFirst({
 		where: { id: sessionId },
@@ -57,6 +75,7 @@ export async function assertCanEndAttendanceSession(ctx: ApiContext, sessionId: 
 		throw apiError('NOT_FOUND', m.sessionNotFound());
 	}
 	await assertTeamRole(ctx, session.conferenceId, PARTICIPANT_CARE_ROLES);
+	return session.conferenceId;
 }
 
 /** The session, once it is known to belong to the conference the scan is recorded for. */

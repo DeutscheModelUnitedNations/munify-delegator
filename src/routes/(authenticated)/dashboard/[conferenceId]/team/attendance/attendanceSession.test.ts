@@ -8,8 +8,10 @@ import {
 	hasUnsynced,
 	isShownPerson,
 	scanStep,
+	mayRecordAnyway,
 	isAlreadyScanned,
 	queueFromEntries,
+	renameTargets,
 	scanErrorText,
 	scanIntake,
 	type ScanLogEntry,
@@ -93,10 +95,36 @@ describe('attendanceSession', () => {
 		expect(scanStep(true, true)).toBe('badge');
 		expect(scanStep(false, true)).toBeNull();
 		expect(scanStep(false, false)).toBe('ack');
+		expect(scanStep(false, false, true)).toBe('decide');
+		expect(scanStep(false, true, true)).toBeNull();
+	});
+
+	test('mayRecordAnyway', () => {
+		expect(mayRecordAnyway(['paymentOpen', 'surveyOptionMissing'])).toBe(true);
+		expect(mayRecordAnyway(['paymentOpen', 'alreadyScanned'])).toBe(false);
+		expect(mayRecordAnyway(['notInConference'])).toBe(false);
 	});
 
 	test('isShownPerson', () => {
 		expect(isShownPerson(null)).toBe(false);
 		expect(isShownPerson({ state: 'loading', userId: 'u' })).toBe(false);
+	});
+
+	test('renameTargets', () => {
+		const local: ScanSession = {
+			id: 's1',
+			occasion: 'Day 1',
+			conferenceId: 'c',
+			startedAt: 't',
+			started: false,
+			mode: 'CHECK',
+			entries: []
+		};
+		// not on the server yet: it starts under the new name
+		expect(renameTargets(local, 's1')).toEqual({ server: false, local });
+		expect(renameTargets({ ...local, started: true }, 's1').server).toBe(true);
+		// another device's session
+		expect(renameTargets(local, 's2')).toEqual({ server: true, local: null });
+		expect(renameTargets(null, 's2')).toEqual({ server: true, local: null });
 	});
 });

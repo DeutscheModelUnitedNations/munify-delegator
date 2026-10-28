@@ -61,4 +61,14 @@ describe('scanIssues', () => {
 	test('a team member who also takes part is checked like any participant', () => {
 		expect(scanIssues({ ...base, isTeamMember: true })).toEqual([]);
 	});
+
+	test('a missing survey choice the session expects is an open point', () => {
+		const missingSurveyOptions = ['Excursion A', 'Excursion B'];
+		expect(scanIssues({ ...base, missingSurveyOptions })).toEqual(['surveyOptionMissing']);
+		expect(scanIssues({ ...base, missingSurveyOptions: [] })).toEqual([]);
+		// somebody outside the conference has answered nothing anyway
+		expect(scanIssues({ ...base, inConference: false, missingSurveyOptions })).toEqual([
+			'notInConference'
+		]);
+	});
 });

@@ -5,8 +5,11 @@ import { and, eq, isNull } from 'drizzle-orm';
 import {
 	certificateFlagOf,
 	certificateOccasions,
+	renameOccasion,
+	renameSession,
 	scanInSession,
 	setOccasionOnCertificate,
+	startSession,
 	storeSessionCard
 } from './attendanceEntryService';
 import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
@@ -31,6 +34,13 @@ registerAttendanceEntryAbilities();
 const attendanceSessionModeEnum = enum_({ tsName: 'attendanceSessionMode' });
 const AttendanceEntryRef = object({ table: 'attendanceEntry' });
 const AttendanceSessionRef = object({ table: 'attendanceSession' });
+
+/** The occasion as stored, trimmed; an empty one is refused. */
+function checkedOccasion(occasion: string) {
+	const trimmed = occasion.trim();
+	if (!trimmed) throw apiError('INVALID_INPUT', m.attendanceOccasionEmpty());
+	return trimmed;
+}
 query({ table: 'attendanceEntry' });
 query({ table: 'attendanceSession' });
 schemaBuilder.mutationFields((t) => ({
@@ -41,26 +51,33 @@ schemaBuilder.mutationFields((t) => ({
 			id: t.arg.id({ required: true }),
 			conferenceId: t.arg.id({ required: true }),
 			occasion: t.arg.string({ required: true }),
-			mode: t.arg({ type: attendanceSessionModeEnum, required: true })
+			mode: t.arg({ type: attendanceSessionModeEnum, required: true }),
+			/**
+			 * Survey options of which a scanned person should have picked one; a person who picked none
+			 * is shown that as an open point. A session that only records checks nothing, so it takes none.
+			 */
+			surveyOptionIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
-			if (!args.occasion.trim()) {
-				throw apiError('INVALID_INPUT', m.attendanceOccasionEmpty());
+			const occasion = checkedOccasion(args.occasion);
+			const surveyOptionIds = args.surveyOptionIds ?? [];
+			if (args.mode === 'RECORD' && surveyOptionIds.length > 0) {
+				throw apiError('INVALID_INPUT', m.sessionSurveyOptionsNeedCheck());
 			}
-			await assertCanStartAttendanceSession(ctx, args.conferenceId);
+			await assertCanStartAttendanceSession(ctx, args.conferenceId, surveyOptionIds);
 
-			await db
-				.insert(schema.attendanceSession)
-				.values({
+			await startSession(
+				{
 					id: args.id,
 					conferenceId: args.conferenceId,
-					occasion: args.occasion.trim(),
+					occasion,
 					mode: args.mode,
 					createdById: callerId,
-					showOnCertificate: await certificateFlagOf(args.conferenceId, args.occasion)
-				})
-				.onConflictDoNothing();
+					showOnCertificate: await certificateFlagOf(args.conferenceId, occasion)
+				},
+				surveyOptionIds
+			);
 			// A repeated start must find the session where it was made, not in another conference
 			await assertSessionOfConference(args.id, args.conferenceId);
 			attendanceSessionPubsub.created();
@@ -90,6 +107,42 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanStartAttendanceSession(ctx, args.conferenceId);
 			await setOccasionOnCertificate(args.conferenceId, args.occasion, args.show);
+			attendanceSessionPubsub.updated();
+			return true;
+		}
+	}),
+
+	/** Gives one session another name, which is the occasion it records. */
+	renameAttendanceSession: t.field({
+		type: 'Boolean',
+		args: {
+			id: t.arg.id({ required: true }),
+			occasion: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const occasion = checkedOccasion(args.occasion);
+			const conferenceId = await assertCanEndAttendanceSession(ctx, args.id);
+			await renameSession(args.id, conferenceId, occasion);
+			attendanceSessionPubsub.updated(args.id);
+			return true;
+		}
+	}),
+
+	/**
+	 * Renames an occasion - every session of that name. A name another occasion has merges the two
+	 * on the certificates.
+	 */
+	renameAttendanceOccasion: t.field({
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			occasion: t.arg.string({ required: true }),
+			newOccasion: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const newOccasion = checkedOccasion(args.newOccasion);
+			await assertCanStartAttendanceSession(ctx, args.conferenceId);
+			await renameOccasion(args.conferenceId, args.occasion, newOccasion);
 			attendanceSessionPubsub.updated();
 			return true;
 		}

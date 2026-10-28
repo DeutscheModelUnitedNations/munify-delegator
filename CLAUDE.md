@@ -638,6 +638,11 @@ bun run preview
   follows. **Survey options fill under a row lock** (`surveyAnswerService.ts`): a participant is
   refused a full option, and `distributeUnansweredSurvey` hands everyone seated who has not answered
   the least full option with room (`surveyDistribution.ts`).
+- **Scanner sessions can expect a survey choice the same way**: a checking session (not one that
+  only records) names survey options (`attendance_session_to_survey_option`, set when it starts),
+  and `scanLookup`, given the session, answers the titles when the scanned person picked none of
+  them; the scanner shows that as an open point (`surveyOptionMissing`). The titles come with the
+  lookup because only participant care reads the survey itself.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model

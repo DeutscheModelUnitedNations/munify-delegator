@@ -7,6 +7,10 @@
 		initialValue: string;
 		type?: 'text' | 'date';
 		fullWidth?: boolean;
+		/** The small size fits into a list row; the large one is the scan result's. */
+		size?: 'sm' | 'lg';
+		/** What the button that starts editing says to assistive technology. */
+		label?: string;
 		/** Shows the value without the means to change it. */
 		readonly?: boolean;
 		onSave: (value: string) => Promise<void>;
@@ -18,6 +22,8 @@
 		initialValue,
 		type = 'text',
 		fullWidth = false,
+		size = 'lg',
+		label,
 		readonly = false,
 		onSave,
 		children
@@ -31,9 +37,16 @@
 		editing = true;
 	}
 
+	const inputSize = $derived(size === 'sm' ? 'input-sm' : 'input-lg');
+	const buttonSize = $derived(size === 'sm' ? 'btn-sm' : 'btn-lg');
+
 	async function save() {
-		await onSave(value);
-		editing = false;
+		try {
+			await onSave(value);
+			editing = false;
+		} catch {
+			// `onSave` reports the failure; the field stays open to try again
+		}
 	}
 </script>
 
@@ -42,7 +55,7 @@
 {:else if editing}
 	<div class="join {fullWidth ? 'w-full' : ''}">
 		<input
-			class="input join-item input-lg {fullWidth ? 'w-full' : ''}"
+			class="input join-item {inputSize} {fullWidth ? 'w-full' : ''}"
 			bind:value
 			{type}
 			onkeydown={(e) => {
@@ -50,11 +63,11 @@
 				if (e.key === 'Escape') editing = false;
 			}}
 		/>
-		<button class="btn btn-square btn-lg join-item" onclick={save} aria-label={m.save()}>
+		<button class="btn btn-square {buttonSize} join-item" onclick={save} aria-label={m.save()}>
 			<i class="fa-sharp-duotone fa-solid fa-save"></i>
 		</button>
 		<button
-			class="btn btn-square btn-lg btn-error join-item"
+			class="btn btn-square {buttonSize} btn-error join-item"
 			onclick={() => (editing = false)}
 			aria-label={m.cancel()}
 		>
@@ -65,10 +78,12 @@
 	<button
 		class="btn btn-ghost group h-auto justify-start px-0 py-1 text-left {fullWidth ? 'w-full' : ''}"
 		onclick={startEditing}
+		aria-label={label}
 	>
 		{@render children()}
+		<!-- On a phone the value itself is the obvious thing to tap -->
 		<i
-			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 text-sm opacity-50 transition-opacity group-hover:opacity-100"
+			class="fa-sharp-duotone fa-solid fa-pen-to-square ml-2 hidden text-sm opacity-50 transition-opacity group-hover:opacity-100 md:inline-block"
 		></i>
 	</button>
 {/if}
