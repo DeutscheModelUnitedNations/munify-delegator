@@ -187,3 +187,41 @@ export async function assertCanAssignCommittees(
 		);
 	}
 }
+
+/**
+ * Switching seats is participant care's, like placing someone (`createAppliedDelegationMember`).
+ * Every member the switch names - the one moving, the one swapped with, the chosen head delegates -
+ * has to be a delegate of the conference the caller may update, and the target role and committee
+ * the conference's.
+ */
+export async function assertCanSwitchDelegationMemberSeats(
+	ctx: ApiContext,
+	args: {
+		conferenceId: string;
+		memberId: string;
+		otherMemberId?: string | null;
+		targetRoleId?: string | null;
+		targetCommitteeId?: string | null;
+		headDelegateMemberIds?: readonly string[] | null;
+	}
+) {
+	const { conferenceId } = args;
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+	await assertOfferedIn(conferenceId, {
+		roleId: args.targetRoleId,
+		committeeId: args.targetCommitteeId
+	});
+
+	const memberIds = [
+		...new Set([args.memberId, args.otherMemberId ?? [], args.headDelegateMemberIds ?? []].flat())
+	];
+	const members = await db.query.delegationMember.findMany({
+		...(await ctx.abilities.delegationMember.filter('update')).merge({
+			where: { id: { in: memberIds }, participant: { conferenceId } }
+		}).query.many,
+		columns: { id: true }
+	});
+	if (members.length !== memberIds.length) {
+		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+	}
+}

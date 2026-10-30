@@ -5,7 +5,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerIdOf } from '#api/services/authHelper/utils';
+import { callerUserId } from '#api/services/authHelper/utils';
 import {
 	assertTeamPermissionForCalendarDay,
 	calendarConference
@@ -29,7 +29,7 @@ export function registerCalendarEntryAbilities() {
 
 	// ...one with options only for those of them who picked one of them...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		const conference = calendarConference(ctx);
 		return id && conference
 			? {

@@ -32,6 +32,7 @@ import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { upsertParticipant } from './participant';
 import { seatNations, upsertNationRole } from './conferenceRole';
 import { seedSeatPlanning } from './seatPlanning';
+import { seedSeats } from './seats';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -810,6 +811,7 @@ export default async function seed() {
 		.onConflictDoUpdate({ target: schema.teamMember.id, set: unreleasedTeamMember });
 
 	await seedSeatPlanning(db);
+	await seedSeats(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }

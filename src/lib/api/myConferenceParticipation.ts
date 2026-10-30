@@ -54,6 +54,8 @@ export async function fetchMyConferenceParticipation({
 			title: true,
 			state: true,
 			startConference: true,
+			applicationDeadline: true,
+			registrationDeadlineGracePeriodMinutes: true,
 			assignmentReleased: true
 		}),
 		client.liveQuery.delegationMembers({

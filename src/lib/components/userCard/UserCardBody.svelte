@@ -12,6 +12,8 @@
 	import SurveyAnswersTab from './tabs/SurveyAnswersTab.svelte';
 	import PapersTab from './tabs/PapersTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
+	import UserCardLoadError from './UserCardLoadError.svelte';
+	import UserCardNotFound from './UserCardNotFound.svelte';
 
 	interface Props {
 		userId: string;
@@ -25,7 +27,7 @@
 
 	const roles = $derived(await fetchUserCardRoles(userId, conferenceId));
 
-	const user = $derived(roles.user);
+	const user = $derived(roles.users.at(0));
 	const delegationMember = $derived(roles.delegationMembers.at(0));
 	const singleParticipant = $derived(roles.singleParticipants.at(0));
 	const conferenceSupervisor = $derived(roles.conferenceSupervisors.at(0));
@@ -96,54 +98,55 @@
 	{/if}
 {/snippet}
 
-<div class="flex h-full flex-col">
-	<UserCardHeader
-		{userId}
-		{conferenceId}
-		givenName={user.givenName}
-		familyName={user.familyName}
-		pronouns={user.pronouns}
-		gender={user.gender}
-		{delegationMember}
-		{singleParticipant}
-		{conferenceSupervisor}
-		{teamMember}
-		{mode}
-		{stage}
-		onOpenTab={(tab) => {
-			if (tabs.includes(tab)) activeTab = tab;
-		}}
-	/>
+{#if !user}
+	<UserCardNotFound {userId} />
+{:else}
+	<div class="flex h-full flex-col">
+		<UserCardHeader
+			{userId}
+			{conferenceId}
+			givenName={user.givenName}
+			familyName={user.familyName}
+			pronouns={user.pronouns}
+			gender={user.gender}
+			{delegationMember}
+			{singleParticipant}
+			{conferenceSupervisor}
+			{teamMember}
+			{mode}
+			{stage}
+			onOpenTab={(tab) => {
+				if (tabs.includes(tab)) activeTab = tab;
+			}}
+		/>
 
-	{#if !inConference}
-		<div class="alert alert-warning mx-3 sm:mx-5 md:mx-10 lg:mx-16" role="status">
-			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
-			<span>{m.notInConference()}</span>
+		{#if !inConference}
+			<div class="alert alert-warning mx-3 sm:mx-5 md:mx-10 lg:mx-16" role="status">
+				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+				<span>{m.notInConference()}</span>
+			</div>
+		{/if}
+
+		<UserCardTabs {tabs} activeTab={shownTab} onTabChange={(tab) => (activeTab = tab)} />
+
+		<div class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
+			<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
+			{#key shownTab}
+				<svelte:boundary onerror={(error) => console.error('Failed to load user card tab:', error)}>
+					{@render tabContent(shownTab)}
+
+					{#snippet pending()}
+						<div class="flex flex-col gap-3">
+							<div class="skeleton h-24 w-full"></div>
+							<div class="skeleton h-24 w-full"></div>
+						</div>
+					{/snippet}
+
+					{#snippet failed(_error, reset)}
+						<UserCardLoadError onretry={reset} />
+					{/snippet}
+				</svelte:boundary>
+			{/key}
 		</div>
-	{/if}
-
-	<UserCardTabs {tabs} activeTab={shownTab} onTabChange={(tab) => (activeTab = tab)} />
-
-	<div class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
-		<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
-		{#key shownTab}
-			<svelte:boundary onerror={(error) => console.error('Failed to load user card tab:', error)}>
-				{@render tabContent(shownTab)}
-
-				{#snippet pending()}
-					<div class="flex flex-col gap-3">
-						<div class="skeleton h-24 w-full"></div>
-						<div class="skeleton h-24 w-full"></div>
-					</div>
-				{/snippet}
-
-				{#snippet failed()}
-					<div class="alert alert-error">
-						<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
-						<span>{m.httpGenericError()}</span>
-					</div>
-				{/snippet}
-			</svelte:boundary>
-		{/key}
 	</div>
-</div>
+{/if}

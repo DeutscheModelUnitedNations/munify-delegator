@@ -2,6 +2,7 @@
  * Plumbing for the rules: turning a filter into a rule, and reading, changing or deleting one row
  * only if the caller's ability on its table allows it. A row the caller may not touch and a row
  * that does not exist both answer NOT_FOUND, so a refusal never tells whether the row is there.
+ * Every helper that queries takes a `tx` (default `db`) to run inside a transaction.
  */
 import { db, schema, type Transaction } from '#api/db/db';
 import { sql, type SQL } from 'drizzle-orm';
@@ -58,8 +59,6 @@ export async function whereAllowed<K extends TableWithId>(
 /**
  * Throws NOT_FOUND unless the caller may `action` the row `id` of `table`. For a check ahead of
  * other work; to just change or delete the row, use `updateIfAllowed` / `deleteIfAllowed`.
- *
- * Every helper here that queries takes a `tx` (default `db`), so it can run inside a transaction.
  */
 export async function assertAllowed<K extends TableWithId>(
 	ctx: ApiContext,

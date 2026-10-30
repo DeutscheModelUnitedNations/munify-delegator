@@ -18,3 +18,5 @@ Hand-made changes (keep them when pulling a newer upstream version):
 - `PATCH /subscribers/{id}` (listmonk >= v5). The mail sync depends on it: unlike PUT it leaves the
   subscriber's lists alone and merges `attribs` key by key.
 - `SubscriberQueryRequest.target_list_ids` is an array, not an integer.
+- `GET /subscribers` takes `list_id` (repeatable) and `per_page=all`. The mail sync fetches only the
+  subscribers on its own lists, in one request.

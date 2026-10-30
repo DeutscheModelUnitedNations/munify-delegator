@@ -18,12 +18,15 @@
 	import SupervisorConnectionCode from './SupervisorConnectionCode.svelte';
 	import SupervisedDelegationCard from './SupervisedDelegationCard.svelte';
 	import SupervisedSingleParticipantCard from './SupervisedSingleParticipantCard.svelte';
+	import SupervisorSelectionPendingStage from './SupervisorSelectionPendingStage.svelte';
 
 	interface Props {
 		conferenceId: string;
 		conferenceState: ConferenceState;
 		/** Whether the team has released the assignment; until then nobody is accepted or rejected. */
 		assignmentReleased: boolean;
+		/** Whether the application deadline has passed and the team is selecting. */
+		selectionInProgress: boolean;
 		supervisorId: string;
 		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'];
@@ -34,6 +37,7 @@
 		conferenceId,
 		conferenceState,
 		assignmentReleased,
+		selectionInProgress,
 		supervisorId,
 		user,
 		status,
@@ -294,7 +298,9 @@
 	{/if}
 {/snippet}
 
-{#if outcomeView === 'pending'}
+{#if selectionInProgress}
+	<SupervisorSelectionPendingStage {supervisorId} />
+{:else if outcomeView === 'pending'}
 	<AssignmentPending />
 {:else if outcomeView === 'rejected'}
 	<ApplicationRejected />

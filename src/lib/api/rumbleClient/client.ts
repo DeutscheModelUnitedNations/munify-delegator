@@ -2511,6 +2511,14 @@ export type Mutation = {
     firstRoleApplicationId: ID,
     secondRoleApplicationId: ID
   }) => Roleapplication[],
+  switchDelegationMemberSeats: (p: {
+    conferenceId: ID,
+    headDelegateMemberIds?: ID[] | null | undefined,
+    memberId: ID,
+    otherMemberId?: ID | null | undefined,
+    targetCommitteeId?: ID | null | undefined,
+    targetRoleId?: ID | null | undefined
+  }) => Delegationmember[],
   undoDelegationSplit: (p: {
     delegationId: ID
   }) => Boolean,

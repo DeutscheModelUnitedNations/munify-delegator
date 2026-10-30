@@ -4,9 +4,10 @@
 	import SeatsIconHeader from '../SeatsIconHeader.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { UserPreview } from '../userPreview';
-	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '#lib/components/Flag.svelte';
-	import AddParticipantBtn from '../AddParticipantBtn.svelte';
+	import EmptySeatBtn from '../EmptySeatBtn.svelte';
+	import SeatedMembers from '../SeatedMembers.svelte';
+	import DelegationMembersMenu from '../DelegationMembersMenu.svelte';
 	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
 
 	interface Props {
@@ -37,7 +38,13 @@
 				},
 				id: true,
 				assignedRoleId: true,
-				members: { id: true, user: { id: true, givenName: true, familyName: true } }
+				entryCode: true,
+				members: {
+					id: true,
+					isHeadDelegate: true,
+					school: { name: true },
+					user: { id: true, givenName: true, familyName: true }
+				}
 			})
 		])
 	);
@@ -62,11 +69,12 @@
 {/snippet}
 
 <SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
-	<SeatsIconHeader icon="fa-megaphone" />
+	<SeatsIconHeader icon="fa-megaphone" membersMenu />
 	<tbody>
 		{#each nonStateActors as nsa (nsa.id)}
 			{@const delegation = delegations.find((d) => d.assignedRoleId === nsa.id)}
 			{@const members = delegation?.members ?? []}
+			{@const seatLabel = `${nsa.abbreviation ?? ''} (${m.nonStateActors()})`}
 			<tr>
 				<td>
 					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
@@ -79,18 +87,14 @@
 				</td>
 				<td>
 					<div class="flex gap-1">
-						{#each members as member (member.id)}
-							<InitialsButton
-								given_name={member.user.givenName}
-								family_name={member.user.familyName}
-								userId={member.user.id}
-							/>
-						{/each}
+						{#if delegation}
+							<SeatedMembers {members} delegationId={delegation.id} {seatLabel} />
+						{/if}
 						<!-- a role nobody holds yet can always take someone -->
 						{#if !delegation || members.length < (nsa.seatAmount ?? 0)}
-							<AddParticipantBtn
+							<EmptySeatBtn
+								seat={{ delegationId: delegation?.id, roleId: nsa.id, seatLabel }}
 								bind:user
-								targetRole={`${nsa.abbreviation ?? ''} (${m.nonStateActors()})`}
 								addParticipant={async () => await addParticipant(nsa.id)}
 							/>
 						{/if}
@@ -101,6 +105,9 @@
 					{#if (nsa.seatAmount ?? 0) !== members.length}
 						<span class="text-xs">/ {nsa.seatAmount} </span>
 					{/if}
+				</td>
+				<td>
+					<DelegationMembersMenu {delegation} showCommittee={false} />
 				</td>
 			</tr>
 		{/each}

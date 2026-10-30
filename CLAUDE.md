@@ -238,7 +238,7 @@ bun run preview
   check. `authHelper/` holds only building blocks that are not about one entity, in two modules:
   `rules.ts` says who may do what (`systemAdmin`, the team and participant filters,
   `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks, `assertOfferedIn` /
-  `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerIdOf`, and the
+  `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
   reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement),
   `whereAllowed` (the `where` to write through yourself) and `queryAllowed` (re-read a row after a
@@ -989,9 +989,16 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 ## Testing Strategy
 
 - **Vitest** with jsdom environment
-- Test files: `src/tests/` directory
+- Test files: next to the code they test (`foo.ts` → `foo.test.ts`)
 - Coverage provider: v8
 - Run tests before pushing (enforced by lefthook pre-push hook)
+- **New features and behavior changes ship with tests, without being asked:**
+  - **Unit tests** for the logic. Keep decisions in plain functions (`#lib/helpers/`, a handler's
+    service, `src/api/services/`) so they can be tested without the UI or the database.
+  - **End-to-end tests** (Playwright, `e2e/`) for the user-facing flows, including error and empty
+    states. A spec that changes data gets its own fixture in `e2e/seed/` (see `e2e/seed/seats.ts`),
+    registered in `e2e/seed/seed.ts`.
+  - Bug fixes get a test that fails without the fix.
 - **Never run the e2e suite (`bun run test:e2e`, `playwright test`, `test:e2e:coverage`) unless
   explicitly asked to.** It takes a long time; verify changes with `bun run check` and `bun test`.
   When asked, it runs against a production build at the lowest CPU priority by default; see

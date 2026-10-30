@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { watchSelectionInProgress } from '#lib/helpers/selectionInProgress.svelte.js';
 	import RegistrationLanding from '../../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DelegationStages from './Delegation/DelegationStages.svelte';
 	import SingleParticipantStages from './SingleParticipant/SingleParticipantStages.svelte';
@@ -36,6 +37,15 @@
 	// update of the participation it was read from.
 	const singleParticipantId = $derived(singleParticipant?.id);
 	const delegationMemberId = $derived(delegationMember?.id);
+
+	const conferenceState = $derived(conference.state);
+	const applicationDeadline = $derived(conference.applicationDeadline);
+	const gracePeriodMinutes = $derived(conference.registrationDeadlineGracePeriodMinutes);
+	const selection = watchSelectionInProgress(() => ({
+		state: conferenceState,
+		applicationDeadline,
+		registrationDeadlineGracePeriodMinutes: gracePeriodMinutes
+	}));
 </script>
 
 {#if singleParticipant && singleParticipantId}
@@ -47,11 +57,20 @@
 			{user}
 			{status}
 			{ofAge}
+			selectionInProgress={selection.current}
 		/>
 	{/key}
 {:else if delegationMember && delegationMemberId}
 	{#key delegationMemberId}
-		<DelegationStages {conferenceId} {conference} {delegationMember} {user} {status} {ofAge} />
+		<DelegationStages
+			{conferenceId}
+			{conference}
+			{delegationMember}
+			{user}
+			{status}
+			{ofAge}
+			selectionInProgress={selection.current}
+		/>
 	{/key}
 {:else if supervisorId}
 	{#key supervisorId}
@@ -59,6 +78,7 @@
 			{conferenceId}
 			conferenceState={conference.state}
 			assignmentReleased={conference.assignmentReleased}
+			selectionInProgress={selection.current}
 			{supervisorId}
 			{user}
 			{status}

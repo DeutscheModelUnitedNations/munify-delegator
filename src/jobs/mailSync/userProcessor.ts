@@ -1,34 +1,27 @@
 import { config } from '../config';
 import { findMailSyncUsers, type MailSyncUser } from './mailSyncUsers';
-import dayjs from 'dayjs';
+import { mailSyncUserWhere } from './window';
 
 /**
  * Processes all eligible users in batches using cursor-based pagination.
  * Peak memory usage is limited to ~batchSize users instead of loading all at once.
  * After each batch callback completes, the batch array is eligible for GC.
+ *
+ * Eligible are users with a global opt-in or a participation in a conference that ended after
+ * `cutoff` (see `window.ts`).
  */
 export async function processUsersInBatches(
+	cutoff: Date,
 	callback: (users: MailSyncUser[]) => void | Promise<void>,
 	batchSize: number = config.MAIL_SYNC_BATCH_SIZE
 ): Promise<number> {
-	const lt = dayjs().add(10, 'month').toDate();
+	const eligible = mailSyncUserWhere(cutoff);
 	let totalProcessed = 0;
 	let lastId: string | undefined;
 
-	const participatesInARecentConference = {
-		OR: [
-			{ delegationMemberships: { conference: { endConference: { lt } } } },
-			{ singleParticipant: { conference: { endConference: { lt } } } },
-			{ conferenceSupervisor: { conference: { endConference: { lt } } } },
-			{ teamMember: { conference: { endConference: { lt } } } }
-		]
-	};
-
 	while (true) {
 		const batch = await findMailSyncUsers({
-			where: lastId
-				? { AND: [participatesInARecentConference, { id: { gt: lastId } }] }
-				: participatesInARecentConference,
+			where: lastId ? { AND: [eligible, { id: { gt: lastId } }] } : eligible,
 			limit: batchSize
 		});
 

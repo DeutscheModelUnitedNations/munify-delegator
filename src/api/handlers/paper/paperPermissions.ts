@@ -12,7 +12,7 @@ import {
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerIdOf, grantWhere } from '#api/services/authHelper/utils';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '#api/services/errors/apiError';
@@ -30,18 +30,18 @@ export function registerPaperAbilities() {
 
 	// Authors see and edit their own papers, and may delete one while it is still a draft.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { authorParticipant: { userId: id } } } : undefined;
 	});
 	abilityBuilder.paper.allow('delete').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { authorParticipant: { userId: id }, status: 'DRAFT' } } : undefined;
 	});
 
 	// Reviewers and conference management see the conference's papers and may edit their text (the
 	// reviewer edit mode); verdicts go through reviews.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { conference: paperTeam(id) } } : undefined;
 	});
 
@@ -52,7 +52,7 @@ export function registerPaperAbilities() {
 
 	// Supervisors see the submitted papers of the delegations they supervise.
 	abilityBuilder.paper.allow('read').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

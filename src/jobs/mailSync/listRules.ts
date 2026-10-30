@@ -6,6 +6,7 @@ import type {
 	ComputedSubscriberState
 } from './types';
 import { createGlobalListName, createConferenceListName } from './listNames';
+import { withinRetention } from './window';
 import formatNames from '#lib/helpers/formatNames';
 
 // Rule: Global newsletter subscription
@@ -249,14 +250,16 @@ const ALL_RULES: readonly ListAssignmentRule[] = [
 
 /**
  * Computes the desired subscriber state for a user by evaluating all rules.
- * Each rule is evaluated exactly once per user.
+ * Each rule is evaluated exactly once per user. Conferences that ended before `cutoff` are left
+ * out, so their participants drop off their lists (see `window.ts`).
  */
-export function computeSubscriberState(user: MailSyncUser): ComputedSubscriberState {
+export function computeSubscriberState(user: MailSyncUser, cutoff: Date): ComputedSubscriberState {
 	const allListNames: string[] = [];
 	const allConferenceAttribs: SubscriberAttribs['conferences'] = [];
+	const recentUser = withinRetention(user, cutoff);
 
 	for (const rule of ALL_RULES) {
-		const { listNames, conferenceAttribs } = rule.evaluate(user);
+		const { listNames, conferenceAttribs } = rule.evaluate(recentUser);
 		allListNames.push(...listNames);
 		allConferenceAttribs.push(...conferenceAttribs);
 	}

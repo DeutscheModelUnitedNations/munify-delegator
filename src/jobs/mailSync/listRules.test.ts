@@ -5,17 +5,25 @@ import type { MailSyncUser } from './types';
 type Conference = MailSyncUser['teamMember'][number]['conference'];
 type Delegation = MailSyncUser['delegationMemberships'][number]['delegation'];
 
+/** Every conference here ended after it; the retention window has its own tests in `window.test.ts`. */
+const CUTOFF = new Date('2026-01-01T00:00:00Z');
+const RECENT = new Date('2026-09-01T00:00:00Z');
+
+const stateOf = (u: MailSyncUser) => computeSubscriberState(u, CUTOFF);
+
 const registration: Conference = {
 	id: 'abcdef123',
 	title: 'MUN-SH',
 	state: 'PARTICIPANT_REGISTRATION',
-	assignmentReleased: false
+	assignmentReleased: false,
+	endConference: RECENT
 };
 const preparation: Conference = {
 	id: 'ghijkl456',
 	title: 'MUN-BW',
 	state: 'PREPARATION',
-	assignmentReleased: true
+	assignmentReleased: true,
+	endConference: RECENT
 };
 /** Registration is over, but the team has not released the assignment yet. */
 const unreleased: Conference = { ...preparation, assignmentReleased: false };
@@ -59,27 +67,29 @@ const asMember = (d: Delegation, isHeadDelegate = false) => ({
 
 describe('computeSubscriberState', () => {
 	test('normalizes the address and formats the name', () => {
-		const state = computeSubscriberState(user({ givenName: '' }));
+		const state = stateOf(user({ givenName: '' }));
 		expect(state).toEqual({
 			email: 'erika@example.org',
 			formattedName: 'Mustermann',
 			listNames: [],
 			attribs: { userId: 'u1', conferences: [] }
 		});
-		expect(computeSubscriberState(user()).formattedName).toBe('Erika Mustermann');
+		expect(stateOf(user()).formattedName).toBe('Erika Mustermann');
 	});
 
 	test('subscribes to the global lists the user opted into', () => {
 		expect(
-			computeSubscriberState(
-				user({ wantsToReceiveGeneralInformation: true, wantsJoinTeamInformation: true })
-			).listNames
+			stateOf(user({ wantsToReceiveGeneralInformation: true, wantsJoinTeamInformation: true }))
+				.listNames
 		).toEqual(['[global] DMUN_NEWSLETTER', '[global] DMUN_TEAM_TENDERS']);
+		expect(stateOf(user({ wantsToReceiveGeneralInformation: true })).attribs.conferences).toEqual(
+			[]
+		);
 	});
 
 	describe('delegation members', () => {
 		const listsOf = (d: Delegation, isHeadDelegate = false) =>
-			computeSubscriberState(user({ delegationMemberships: [asMember(d, isHeadDelegate)] }));
+			stateOf(user({ delegationMemberships: [asMember(d, isHeadDelegate)] }));
 
 		test('put a nation head delegate on the nation, head delegate and completed lists', () => {
 			const state = listsOf(delegation(nation), true);
@@ -135,7 +145,7 @@ describe('computeSubscriberState', () => {
 		) => ({ applied, assignedRoleId, conference });
 
 		test('sort applications by whether they applied and got a role', () => {
-			const state = computeSubscriberState(
+			const state = stateOf(
 				user({
 					singleParticipant: [single(true, 'press'), single(true, null), single(false, null)]
 				})
@@ -155,9 +165,7 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('hold back whether they got a role until the assignment is released', () => {
-			const state = computeSubscriberState(
-				user({ singleParticipant: [single(true, 'press', unreleased)] })
-			);
+			const state = stateOf(user({ singleParticipant: [single(true, 'press', unreleased)] }));
 			expect(state.listNames).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
 		});
 	});
@@ -177,8 +185,7 @@ describe('computeSubscriberState', () => {
 			applied,
 			assignedRoleId
 		});
-		const listsOf = (s: Supervision) =>
-			computeSubscriberState(user({ conferenceSupervisor: [s] })).listNames;
+		const listsOf = (s: Supervision) => stateOf(user({ conferenceSupervisor: [s] })).listNames;
 
 		test('during registration, follow whether their participants have applied', () => {
 			expect(listsOf(supervisor(registration, [supervised(true)], []))).toEqual([
@@ -222,9 +229,7 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('record the supervision in the attribs', () => {
-			const state = computeSubscriberState(
-				user({ conferenceSupervisor: [supervisor(registration, [], [])] })
-			);
+			const state = stateOf(user({ conferenceSupervisor: [supervisor(registration, [], [])] }));
 			expect(state.attribs.conferences).toEqual([
 				{ id: registration.id, role: 'SUPERVISOR', title: 'MUN-SH' }
 			]);
@@ -239,9 +244,7 @@ describe('computeSubscriberState', () => {
 		});
 
 		test('put participant care and project management on the registration lists too', () => {
-			const state = computeSubscriberState(
-				user({ teamMember: [member('PARTICIPANT_CARE'), member('MEMBER')] })
-			);
+			const state = stateOf(user({ teamMember: [member('PARTICIPANT_CARE'), member('MEMBER')] }));
 			expect(state.listNames).toEqual([
 				list(registration, 'TEAM'),
 				list(registration, 'REGISTRATION_COMPLETED'),
@@ -249,14 +252,41 @@ describe('computeSubscriberState', () => {
 				list(registration, 'SUPERVISORS')
 			]);
 			expect(state.attribs.conferences.map((c) => c.role)).toEqual(['PARTICIPANT_CARE', 'MEMBER']);
-			expect(
-				computeSubscriberState(user({ teamMember: [member('PROJECT_MANAGEMENT')] })).listNames
-			).toHaveLength(4);
+			expect(stateOf(user({ teamMember: [member('PROJECT_MANAGEMENT')] })).listNames).toHaveLength(
+				4
+			);
 		});
+
+		test.each(['MEMBER', 'REVIEWER', 'TEAM_COORDINATOR', 'CONTENT_LEAD'] as const)(
+			'put %s on the team list only',
+			(role) => {
+				const state = stateOf(user({ teamMember: [member(role)] }));
+				expect(state.listNames).toEqual([list(registration, 'TEAM')]);
+				expect(state.attribs.conferences.map((c) => c.role)).toEqual([role]);
+			}
+		);
+	});
+
+	test('keeps the lists and attribs of several conferences apart', () => {
+		const state = stateOf(
+			user({
+				teamMember: [{ conferenceId: registration.id, role: 'MEMBER', conference: registration }],
+				singleParticipant: [{ applied: true, assignedRoleId: 'press', conference: preparation }]
+			})
+		);
+		expect(state.listNames).toEqual([
+			list(preparation, 'REGISTRATION_COMPLETED'),
+			list(preparation, 'SINGLE_PARTICIPANTS'),
+			list(registration, 'TEAM')
+		]);
+		expect(state.attribs.conferences).toEqual([
+			{ id: preparation.id, role: 'SINGLE_PARTICIPANT', title: 'MUN-BW' },
+			{ id: registration.id, role: 'MEMBER', title: 'MUN-SH' }
+		]);
 	});
 
 	test('lists every list once, across rules', () => {
-		const state = computeSubscriberState(
+		const state = stateOf(
 			user({
 				delegationMemberships: [asMember(delegation())],
 				teamMember: [

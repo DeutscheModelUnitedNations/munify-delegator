@@ -8,7 +8,7 @@ WORKDIR /temp
 ARG OS_UPDATES_DATE
 RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade
 
-FROM patched AS runner
+FROM patched AS builder
 WORKDIR /run
 
 COPY package.json bun.lock tsconfig.json ./
@@ -26,6 +26,21 @@ ENV NODE_OPTIONS="--max-old-space-size=8192"
 # the docker-build `needs` list, so the image is only built once it has already passed.
 # The compute worker threads go into build/ next to the server, so the image needs nothing else.
 RUN bun run build:app && bun run build:compute
+# Strip the Go-built dev tools (lefthook, the native TypeScript 7 tsc): unused at runtime, and
+# Trivy's gobinary scan flags the Go stdlib compiled into them. esbuild stays: drizzle-kit needs it.
+RUN find node_modules -type d \( -name 'lefthook-linux-*' -o -path '*/@typescript/typescript-linux-*' \) \
+  -prune -exec rm -rf {} +
+
+# A fresh stage leaves the removed binaries, bun's install cache and the build layers behind.
+FROM patched AS runner
+WORKDIR /run
+COPY --from=builder /run /run
+
+ARG VERSION
+ENV PUBLIC_VERSION=$VERSION
+ARG SHA
+ENV PUBLIC_SHA=$SHA
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 USER bun
 ENV NODE_ENV=production

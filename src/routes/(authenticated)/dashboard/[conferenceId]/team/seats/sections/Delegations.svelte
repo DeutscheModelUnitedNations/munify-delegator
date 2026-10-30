@@ -3,10 +3,11 @@
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { UserPreview } from '../userPreview';
-	import InitialsButton from '../InitialsButton.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import Flag from '#lib/components/Flag.svelte';
-	import AddParticipantBtn from '../AddParticipantBtn.svelte';
+	import EmptySeatBtn from '../EmptySeatBtn.svelte';
+	import SeatedMembers from '../SeatedMembers.svelte';
+	import DelegationMembersMenu from '../DelegationMembersMenu.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -45,9 +46,12 @@
 				},
 				id: true,
 				assignedRoleId: true,
+				entryCode: true,
 				members: {
 					id: true,
-					assignedCommittee: { id: true },
+					isHeadDelegate: true,
+					school: { name: true },
+					assignedCommittee: { id: true, abbreviation: true },
 					user: { id: true, givenName: true, familyName: true }
 				}
 			})
@@ -130,14 +134,27 @@
 		);
 	}
 
+	const seatLabel = (nation: Nation, committee: Committee) =>
+		`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`;
+
 	/** `count` keys for an `{#each}` that renders one thing per seat. */
 	const seatKeys = (count: number) => Array.from({ length: count }, (_, seat) => seat);
 </script>
 
-{#snippet addParticipantBtn(nation: Nation, committee: Committee, warning: boolean = false)}
-	<AddParticipantBtn
+{#snippet addParticipantBtn(
+	nation: Nation,
+	committee: Committee,
+	delegation: Delegation | undefined,
+	warning: boolean = false
+)}
+	<EmptySeatBtn
+		seat={{
+			delegationId: delegation?.id,
+			roleId: nation.roleId,
+			committeeId: committee.id,
+			seatLabel: seatLabel(nation, committee)
+		}}
 		bind:user
-		targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
 		addParticipant={async () => await addParticipant(nation.roleId, committee.id)}
 		{warning}
 	/>
@@ -156,20 +173,18 @@
 	)}
 	{#if !delegation}
 		{#each seatKeys(seatsPerCommittee) as seat (seat)}
-			{@render addParticipantBtn(nation, committee)}
+			{@render addParticipantBtn(nation, committee, delegation)}
 		{/each}
 	{:else if assignedDelegationMember.length > 0}
 		<div class="flex justify-center gap-1">
-			{#each assignedDelegationMember as member (member.id)}
-				<InitialsButton
-					given_name={member.user.givenName}
-					family_name={member.user.familyName}
-					userId={member.user.id}
-				/>
-			{/each}
+			<SeatedMembers
+				members={assignedDelegationMember}
+				delegationId={delegation.id}
+				seatLabel={seatLabel(nation, committee)}
+			/>
 
 			{#each seatKeys(seatsPerCommittee - assignedDelegationMember.length) as seat (seat)}
-				{@render addParticipantBtn(nation, committee)}
+				{@render addParticipantBtn(nation, committee, delegation)}
 			{/each}
 		</div>
 	{:else if delegation.members.length < sumSeats}
@@ -177,6 +192,7 @@
 			{@render addParticipantBtn(
 				nation,
 				committee,
+				delegation,
 				delegation.members.some((x) => !x.assignedCommittee)
 			)}
 		{/each}
@@ -225,6 +241,9 @@
 				<span class="text-xs">/ {sumSeats} </span>
 			{/if}
 		</td>
+		<td>
+			<DelegationMembersMenu {delegation} />
+		</td>
 	</tr>
 {/snippet}
 
@@ -247,6 +266,7 @@
 				</th>
 			{/each}
 			<th class="bg-base-100 z-20!"><i class="fa-sharp-duotone fa-solid fa-sigma"></i></th>
+			<th class="bg-base-100 z-20!"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
 		</tr>
 	</thead>
 	<tbody>

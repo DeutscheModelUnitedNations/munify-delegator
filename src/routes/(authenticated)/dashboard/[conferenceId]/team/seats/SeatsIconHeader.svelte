@@ -3,9 +3,11 @@
 	interface Props {
 		/** FontAwesome icon class of the first column (e.g. 'fa-megaphone') */
 		icon: string;
+		/** Adds the column of the members menu (`DelegationMembersMenu`) */
+		membersMenu?: boolean;
 	}
 
-	let { icon }: Props = $props();
+	let { icon, membersMenu = false }: Props = $props();
 </script>
 
 <thead>
@@ -19,5 +21,10 @@
 		<td>
 			<i class="fa-sharp-duotone fa-solid fa-sigma"></i>
 		</td>
+		{#if membersMenu}
+			<td>
+				<i class="fa-sharp-duotone fa-solid fa-users"></i>
+			</td>
+		{/if}
 	</tr>
 </thead>

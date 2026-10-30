@@ -1,7 +1,7 @@
 import { db } from '../db';
 
 // The `where` slot also accepts drizzle's EmptyFilter symbol; only the object half is useful here.
-type UserFilter = Extract<
+export type UserFilter = Extract<
 	NonNullable<NonNullable<Parameters<typeof db.query.user.findMany>[0]>['where']>,
 	object
 >;
@@ -10,7 +10,7 @@ type UserFilter = Extract<
 // their data-URL images and legal documents along, which cost ~5-13 MB per user.
 
 const conferenceColumns = {
-	columns: { id: true, title: true, state: true, assignmentReleased: true }
+	columns: { id: true, title: true, state: true, assignmentReleased: true, endConference: true }
 } as const;
 
 const mailSyncUserQuery = {

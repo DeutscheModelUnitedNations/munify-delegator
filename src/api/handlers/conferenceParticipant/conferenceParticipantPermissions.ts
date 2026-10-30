@@ -9,7 +9,7 @@ import {
 	participatesIn,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerIdOf, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
+import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
 
@@ -23,13 +23,13 @@ export function registerConferenceParticipantAbilities() {
 	// Supervisors see the status of the people they supervise. Supervision links this very row, so
 	// it is the conference they supervise them in.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { supervisors: { user: { id } } } } : undefined;
 	});
 
 	// Delegation members see the status of their co-delegates, in the conference they share.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? { where: { delegationMember: { delegation: { members: { user: { id } } } } } }
 			: undefined;

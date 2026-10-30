@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages';
 	import UserCardBody from './UserCardBody.svelte';
+	import UserCardLoadError from './UserCardLoadError.svelte';
 	import type { UserCardTab } from './userCardTabs';
 
 	interface Props {
@@ -54,12 +54,9 @@
 			</div>
 		{/snippet}
 
-		{#snippet failed()}
+		{#snippet failed(_error, reset)}
 			<div class="p-5 md:px-10 lg:px-16">
-				<div class="alert alert-error">
-					<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
-					<span>{m.httpGenericError()}</span>
-				</div>
+				<UserCardLoadError onretry={reset} />
 			</div>
 		{/snippet}
 	</svelte:boundary>

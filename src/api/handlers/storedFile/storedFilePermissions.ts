@@ -7,7 +7,7 @@ import {
 	readableConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerIdOf } from '#api/services/authHelper/utils';
+import { callerUserId } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { m } from '#lib/paraglide/messages';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
@@ -34,7 +34,7 @@ export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(systemAdmin);
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { uploadedById: id } } : undefined;
 	});
 

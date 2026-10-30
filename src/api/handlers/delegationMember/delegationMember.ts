@@ -6,13 +6,15 @@ import {
 	joinDelegationByEntryCode,
 	moveMemberToCommittee,
 	placeUserInAssignedDelegation,
-	removeDelegationMember
+	removeDelegationMember,
+	switchSeats
 } from './delegationMemberService';
 import {
 	assertCanAssignCommittees,
 	assertCanCreateAppliedDelegationMember,
 	assertCanDeleteDelegationMember,
 	assertCanMoveDelegationMemberToCommittee,
+	assertCanSwitchDelegationMemberSeats,
 	assertOfferedIn,
 	registerDelegationMemberAbilities
 } from './delegationMemberPermissions';
@@ -186,6 +188,44 @@ schemaBuilder.mutationFields((t) => ({
 				query(
 					(await ctx.abilities.delegationMember.filter('read')).merge({
 						where: { participant: { conferenceId: args.conferenceId } }
+					}).query.many
+				)
+			);
+		}
+	})
+}));
+
+schemaBuilder.mutationFields((t) => ({
+	/**
+	 * Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat of
+	 * a role (`targetRoleId`, with `targetCommitteeId` for a nation). Head delegates stay with the
+	 * seat unless `headDelegateMemberIds` chooses them; every delegation keeps exactly one.
+	 */
+	switchDelegationMemberSeats: t.drizzleField({
+		type: [DelegationMemberRef],
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			memberId: t.arg.id({ required: true }),
+			otherMemberId: t.arg.id(),
+			targetRoleId: t.arg.id(),
+			targetCommitteeId: t.arg.id(),
+			headDelegateMemberIds: t.arg.idList()
+		},
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanSwitchDelegationMemberSeats(ctx, args);
+			const { memberIds, delegationIds, createdDelegation } = await switchSeats(args);
+
+			for (const id of memberIds) delegationMemberPubsub.updated(id);
+			// Head delegates may have changed in any delegation involved.
+			delegationMemberPubsub.updated();
+			for (const id of delegationIds) delegationPubsub.updated(id);
+			if (createdDelegation) delegationPubsub.created();
+			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+
+			return db.query.delegationMember.findMany(
+				query(
+					(await ctx.abilities.delegationMember.filter('read')).merge({
+						where: { id: { in: memberIds } }
 					}).query.many
 				)
 			);

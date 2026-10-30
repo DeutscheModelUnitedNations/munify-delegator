@@ -15,7 +15,7 @@ function userInConference(userId: string, conferenceId: string) {
 }
 
 /**
- * Who someone is in one conference: their name, which registrations they hold there, their
+ * Who someone is in one conference: their name (no row when there is no such person), which registrations they hold there, their
  * participant row and waiting list entry, and the conference's state.
  *
  * This is what the user card's header renders and what decides which tabs it offers. Every tab
@@ -25,7 +25,7 @@ export async function fetchUserCardRoles(userId: string, conferenceId: string) {
 	const { forUser, registrationOfUser } = userInConference(userId, conferenceId);
 
 	const [
-		user,
+		users,
 		delegationMembers,
 		singleParticipants,
 		conferenceSupervisors,
@@ -34,8 +34,9 @@ export async function fetchUserCardRoles(userId: string, conferenceId: string) {
 		waitingListEntries,
 		conference
 	] = await Promise.all([
-		client.liveQuery.user({
-			__args: { id: userId },
+		// a list, so an id nobody has (or the caller may not see) yields nothing rather than an error
+		client.liveQuery.users({
+			__args: { where: { id: { eq: userId } }, limit: 1 },
 			id: true,
 			givenName: true,
 			familyName: true,
@@ -83,7 +84,7 @@ export async function fetchUserCardRoles(userId: string, conferenceId: string) {
 	// Handed back as the live results themselves: they only stay live while they are read inside
 	// the caller's reactive context, so picking the one row out of each happens there.
 	return {
-		user,
+		users,
 		delegationMembers,
 		singleParticipants,
 		conferenceSupervisors,

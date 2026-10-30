@@ -8,6 +8,7 @@ vi.mock('./mailSyncUsers', () => ({ findMailSyncUsers }));
 const { processUsersInBatches } = await import('./userProcessor');
 
 const users = (...ids: string[]) => ids.map((id) => ({ id }));
+const CUTOFF = new Date('2026-01-01T00:00:00Z');
 
 describe('processUsersInBatches', () => {
 	beforeEach(() => {
@@ -26,7 +27,7 @@ describe('processUsersInBatches', () => {
 			.mockResolvedValueOnce(users('e'));
 		const seen: string[][] = [];
 
-		const total = await processUsersInBatches(async (batch) => {
+		const total = await processUsersInBatches(CUTOFF, async (batch) => {
 			seen.push(batch.map((user) => user.id));
 		});
 
@@ -35,7 +36,7 @@ describe('processUsersInBatches', () => {
 
 		const [first, second] = findMailSyncUsers.mock.calls.map(([args]) => args);
 		expect(first.limit).toBe(2);
-		expect(first.where.OR).toHaveLength(4);
+		expect(first.where.OR).toHaveLength(6);
 		expect(second.where.AND).toEqual([first.where, { id: { gt: 'b' } }]);
 	});
 
@@ -43,24 +44,23 @@ describe('processUsersInBatches', () => {
 		findMailSyncUsers.mockResolvedValueOnce(users('a', 'b')).mockResolvedValueOnce([]);
 		const callback = vi.fn();
 
-		expect(await processUsersInBatches(callback, 2)).toBe(2);
+		expect(await processUsersInBatches(CUTOFF, callback, 2)).toBe(2);
 		expect(callback).toHaveBeenCalledOnce();
 	});
 
 	test('processes nobody when there are no users', async () => {
 		findMailSyncUsers.mockResolvedValueOnce([]);
-		expect(await processUsersInBatches(vi.fn(), 10)).toBe(0);
+		expect(await processUsersInBatches(CUTOFF, vi.fn(), 10)).toBe(0);
 	});
 
-	test('only considers users of conferences ending within ten months', async () => {
+	test('loads opted-in users and participants of conferences that ended after the cutoff', async () => {
 		findMailSyncUsers.mockResolvedValueOnce([]);
-		vi.useFakeTimers({ now: new Date(2026, 0, 15) });
-		await processUsersInBatches(vi.fn(), 10);
-		vi.useRealTimers();
+		await processUsersInBatches(CUTOFF, vi.fn(), 10);
 
 		const [{ where }] = findMailSyncUsers.mock.calls[0];
-		expect(where.OR[0]).toEqual({
-			delegationMemberships: { conference: { endConference: { lt: new Date(2026, 10, 15) } } }
+		expect(where.OR).toContainEqual({ wantsToReceiveGeneralInformation: true });
+		expect(where.OR).toContainEqual({
+			delegationMemberships: { conference: { endConference: { gte: CUTOFF } } }
 		});
 	});
 });

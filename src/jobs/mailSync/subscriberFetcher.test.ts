@@ -9,18 +9,6 @@ const { fetchSubscriberMap } = await import('./subscriberFetcher');
 
 const subscriber = (id: number, email: string) => ({ id, email, name: `S${id}`, lists: [] });
 
-/** One page of 40 subscribers, numbered from `first`. */
-const page = (first: number, count: number, total: number) => ({
-	data: {
-		data: {
-			total,
-			results: Array.from({ length: count }, (_, i) =>
-				subscriber(first + i, ` User${first + i}@Example.org `)
-			)
-		}
-	}
-});
-
 describe('fetchSubscriberMap', () => {
 	beforeEach(() => {
 		vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -31,37 +19,43 @@ describe('fetchSubscriberMap', () => {
 		vi.resetAllMocks();
 	});
 
-	test('reads every page, keyed by normalized address', async () => {
-		mocks.GET.mockResolvedValueOnce(page(1, 40, 45)).mockResolvedValueOnce(page(41, 5, 45));
-
-		const map = await fetchSubscriberMap();
-
-		expect(map?.size).toBe(45);
-		expect(map?.get('user41@example.org')?.id).toBe(41);
-		expect(mocks.GET).toHaveBeenCalledTimes(2);
-		expect(mocks.GET).toHaveBeenLastCalledWith('/subscribers', {
-			params: { query: { per_page: 40, page: 2 } }
+	test('asks only for subscribers on our lists, in one request, keyed by normalized address', async () => {
+		mocks.GET.mockResolvedValueOnce({
+			data: {
+				data: {
+					results: [subscriber(1, ' Erika@Example.org '), subscriber(2, 'max@example.org')],
+					total: 2
+				}
+			}
 		});
-	});
 
-	test('stops after a single page that holds everything', async () => {
-		mocks.GET.mockResolvedValueOnce(page(1, 40, 40));
-		expect((await fetchSubscriberMap())?.size).toBe(40);
+		const map = await fetchSubscriberMap([3, 5]);
+
 		expect(mocks.GET).toHaveBeenCalledOnce();
+		expect(mocks.GET).toHaveBeenCalledWith('/subscribers', {
+			params: { query: { list_id: [3, 5], per_page: 'all' } }
+		});
+		expect([...(map?.keys() ?? [])]).toEqual(['erika@example.org', 'max@example.org']);
+		expect(map?.get('erika@example.org')?.id).toBe(1);
 	});
 
-	test('returns an empty map when Listmonk has no subscribers', async () => {
+	test('does not ask Listmonk at all without lists', async () => {
+		expect(await fetchSubscriberMap([])).toEqual(new Map());
+		expect(mocks.GET).not.toHaveBeenCalled();
+	});
+
+	test('returns an empty map when nobody is on our lists', async () => {
 		mocks.GET.mockResolvedValueOnce({ data: { data: { results: [] } } });
-		expect(await fetchSubscriberMap()).toEqual(new Map());
+		expect(await fetchSubscriberMap([3])).toEqual(new Map());
 	});
 
 	test.each([
 		['an error', { error: 'down' }],
 		['no data', { data: {} }],
 		['no results', { data: { data: { total: 3 } } }]
-	])('gives up when a page returns %s', async (_label, response) => {
-		mocks.GET.mockResolvedValueOnce(page(1, 40, 80)).mockResolvedValueOnce(response);
-		expect(await fetchSubscriberMap()).toBeUndefined();
+	])('gives up when the request returns %s', async (_label, response) => {
+		mocks.GET.mockResolvedValueOnce(response);
+		expect(await fetchSubscriberMap([3])).toBeUndefined();
 		expect(mocks.taskWarning).toHaveBeenCalledWith(
 			'Mail Service: Sync with Listmonk',
 			'Failed to fetch subscribers from Listmonk'

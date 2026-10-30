@@ -14,9 +14,19 @@
 		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'] | null;
 		ofAge: boolean;
+		/** Whether the application deadline has passed and the team is selecting. */
+		selectionInProgress: boolean;
 	}
 
-	let { conferenceId, conference, delegationMember, user, status, ofAge }: Props = $props();
+	let {
+		conferenceId,
+		conference,
+		delegationMember,
+		user,
+		status,
+		ofAge,
+		selectionInProgress
+	}: Props = $props();
 
 	const delegationMemberId = $derived(delegationMember.id);
 	const delegationRole = $derived(splitRole(delegationMember.delegation.assignedRole));
@@ -27,6 +37,12 @@
 	conferenceState={conference.state}
 	userId={user.sub}
 	assignmentReleased={conference.assignmentReleased}
+	{selectionInProgress}
+	application={{
+		participantType: 'delegation',
+		applied: delegationMember.delegation.applied,
+		supportId: delegationMember.delegation.id
+	}}
 	accepted={!!delegationMember.delegation.assignedRole}
 	{status}
 	{ofAge}

@@ -7,7 +7,7 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerIdOf, grantWhere } from '#api/services/authHelper/utils';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -16,13 +16,13 @@ const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
 
 /** The delegation the caller is a member of. */
 function ownDelegation(ctx: Context) {
-	const id = callerIdOf(ctx);
+	const id = callerUserId(ctx);
 	return id ? { members: { user: { id } } } : undefined;
 }
 
 /** The delegations the caller supervises. */
 function supervisedDelegation(ctx: Context) {
-	const id = callerIdOf(ctx);
+	const id = callerUserId(ctx);
 	return id ? { members: { supervisors: { user: { id } } } } : undefined;
 }
 
@@ -43,7 +43,7 @@ export function registerDelegationAbilities() {
 
 	// The head delegate may change the delegation until it has applied.
 	abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
-		const id = callerIdOf(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? { where: { applied: false, members: { user: { id }, isHeadDelegate: true } } }
 			: undefined;

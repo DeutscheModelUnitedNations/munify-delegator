@@ -7,12 +7,13 @@
 	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import type Certificate from './Certificate.svelte';
+	import SelectionPendingStage from './SelectionPendingStage.svelte';
 
 	/**
 	 * What a delegation member or single participant sees in each phase of the conference: their
-	 * registration while it is open; a wait until the team releases the assignment; once they have
-	 * a role, their preparation and finally their certificate; and the rejection if they were not
-	 * given one.
+	 * registration while it is open; whether they take part in the selection once the deadline has
+	 * passed; a wait until the team releases the assignment; once they have a role, their
+	 * preparation and finally their certificate; and the rejection if they were not given one.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -20,6 +21,10 @@
 		userId: string;
 		/** Whether the team has released the assignment; until then nobody is accepted or rejected. */
 		assignmentReleased: boolean;
+		/** Whether the application deadline has passed and the team is selecting. */
+		selectionInProgress: boolean;
+		/** The application the selection screen reports on. */
+		application: ComponentProps<typeof SelectionPendingStage>;
 		/** Whether the participant was given a role. */
 		accepted: boolean;
 		status: MyConferenceParticipation['participantStatus'] | null;
@@ -38,6 +43,8 @@
 		conferenceState,
 		userId,
 		assignmentReleased,
+		selectionInProgress,
+		application,
 		accepted,
 		status,
 		ofAge,
@@ -49,7 +56,9 @@
 	let isPreparing = $derived(conferenceState === 'PREPARATION' || conferenceState === 'ACTIVE');
 </script>
 
-{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
+{#if selectionInProgress}
+	<SelectionPendingStage {...application} />
+{:else if conferenceState === 'PARTICIPANT_REGISTRATION'}
 	{@render registration()}
 {:else if !assignmentReleased}
 	<AssignmentPending />

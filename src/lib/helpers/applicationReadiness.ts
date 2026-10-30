@@ -51,3 +51,14 @@ export function acceptsApplications(
 		now.getTime() <= technicalRegistrationDeadline(conference).getTime()
 	);
 }
+
+/**
+ * Whether the selection is running: the conference still takes registrations, but its technical
+ * deadline has passed, so nobody can apply any more and the team is sighting the applications.
+ */
+export function selectionInProgress(
+	conference: Parameters<typeof acceptsApplications>[0],
+	now = new Date()
+) {
+	return conference.state === 'PARTICIPANT_REGISTRATION' && !acceptsApplications(conference, now);
+}

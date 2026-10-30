@@ -9,13 +9,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { and, eq, ne, notInArray } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
-import { makeSeedConference } from '../../src/api/db/seed-data/conference';
 import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
 import { seatNations, upsertNationRole } from './conferenceRole';
 import { upsertTeamMember } from './teamMember';
+import { upsertCommittee, upsertConference } from './conference';
 
 export const E2E_SEAT_CONFERENCE_ID = 'e2e00000conference0000003';
 export const E2E_SEAT_GV_ID = 'e2e00000seatcommittee00001';
@@ -33,19 +33,12 @@ const LOCKED_DELEGATION_ID = 'e2e00000seatdelegation0001';
 const NSA_DELEGATION_ID = 'e2e00000seatdelegation0002';
 
 export async function seedSeatPlanning(db: NodePgDatabase) {
-	const conference = {
-		...makeSeedConference({ state: 'PRE' }),
+	const conference = await upsertConference(db, {
 		id: E2E_SEAT_CONFERENCE_ID,
-		title: 'E2E Seat Planning Conference'
-	};
-	await db
-		.insert(schema.conference)
-		.values(conference)
-		.onConflictDoUpdate({ target: schema.conference.id, set: conference });
-
-	for (const [alpha3Code, alpha2Code] of Object.entries(NATIONS)) {
-		await db.insert(schema.nation).values({ alpha3Code, alpha2Code }).onConflictDoNothing();
-	}
+		title: 'E2E Seat Planning Conference',
+		state: 'PRE',
+		nations: NATIONS
+	});
 
 	// nation roles are recreated with the seats below, so seats a previous run added leave nothing
 	await db
@@ -85,24 +78,10 @@ export async function seedSeatPlanning(db: NodePgDatabase) {
 		},
 		{ id: E2E_SEAT_SR_ID, name: 'Sicherheitsrat', abbreviation: 'SPSR', nations: ['nld'] }
 	];
-	for (const [index, { id, name, abbreviation, nations }] of committees.entries()) {
-		const committee = {
-			id,
-			conferenceId: conference.id,
-			name,
-			abbreviation,
-			numOfSeatsPerDelegation: 1,
-			regionalBaseline: 'UN_MEMBERS' as const,
-			regionalBaselineTargets: [],
-			// fixed order of the matrix columns
-			createdAt: new Date(2026, 0, 1 + index)
-		};
-		await db
-			.insert(schema.committee)
-			.values(committee)
-			.onConflictDoUpdate({ target: schema.committee.id, set: committee });
-
-		await db.delete(schema.committeeToRole).where(eq(schema.committeeToRole.a, id));
+	for (const [index, { nations, ...data }] of committees.entries()) {
+		// fixed order of the matrix columns
+		const committee = await upsertCommittee(db, conference.id, data, index);
+		await db.delete(schema.committeeToRole).where(eq(schema.committeeToRole.a, committee.id));
 		await seatNations(db, committee, nations);
 	}
 

@@ -19,6 +19,15 @@ import { apiError } from '#api/services/errors/apiError';
 import { codeNotFound } from '#api/services/errors/codeNotFound';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 import type { CommitteeMove } from './delegationMemberPermissions';
+import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole';
+import { isSerializationFailure } from '#api/services/errors/serializationFailure';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import {
+	headDelegateChanges,
+	isSameSeat,
+	type Seat,
+	type SeatSwitch
+} from '#lib/helpers/seatSwitch';
 
 /**
  * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it
@@ -320,4 +329,207 @@ export async function assignCommittees(
 			assignments.map((assignment) => assignment.delegationMemberId)
 		);
 	});
+}
+
+type SeatOf = Seat & { id: string };
+
+/** What a switch writes: the new seat per moved member, and the switch the head delegates follow. */
+interface SeatSwitchPlan {
+	seats: Map<string, Seat>;
+	change: SeatSwitch;
+	createdDelegation: boolean;
+}
+
+function loadSeat(tx: Transaction, id: string): Promise<SeatOf> {
+	return tx.query.delegationMember
+		.findFirst({
+			where: { id },
+			columns: { id: true, delegationId: true, assignedCommitteeId: true }
+		})
+		.then(assertFindFirstExists);
+}
+
+/** Both members take over each other's seat. */
+async function swapSeats(
+	tx: Transaction,
+	member: SeatOf,
+	otherMemberId: string
+): Promise<SeatSwitchPlan> {
+	const other = await loadSeat(tx, otherMemberId);
+	if (isSameSeat(member, other)) throw apiError('CONFLICT', m.seatSwitchSameSeat());
+	return {
+		seats: new Map([
+			[
+				member.id,
+				{ delegationId: other.delegationId, assignedCommitteeId: other.assignedCommitteeId }
+			],
+			[
+				other.id,
+				{ delegationId: member.delegationId, assignedCommitteeId: member.assignedCommitteeId }
+			]
+		]),
+		change: { kind: 'swap', memberId: member.id, otherMemberId: other.id },
+		createdDelegation: false
+	};
+}
+
+/**
+ * How many people one seat of the role takes: a nation's seat is per committee (one that seats
+ * it), a non-state actor's has no committee and counts the role's seats in total.
+ */
+async function seatCapacity(
+	tx: Transaction,
+	role: { id: string; kind: ConferenceRoleKind; seatAmount: number | null },
+	committeeId: string | null
+) {
+	if (role.kind !== 'NATION') {
+		if (committeeId) throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+		return role.seatAmount ?? 0;
+	}
+	if (!committeeId) throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+	const committee = await tx.query.committee.findFirst({
+		where: { id: committeeId, roles: { id: role.id } },
+		columns: { numOfSeatsPerDelegation: true }
+	});
+	if (!committee) throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
+	return committee.numOfSeatsPerDelegation;
+}
+
+/** The member takes a free seat of a role, whose delegation is created if it has none yet. */
+async function moveToFreeSeat(
+	tx: Transaction,
+	member: SeatOf,
+	conferenceId: string,
+	roleId: string,
+	committeeId: string | null
+): Promise<SeatSwitchPlan> {
+	const role = await tx.query.conferenceRole
+		.findFirst({
+			where: { id: roleId, conferenceId },
+			columns: { id: true, kind: true, seatAmount: true }
+		})
+		.then(assertFindFirstExists);
+	const capacity = await seatCapacity(tx, role, committeeId);
+	const existing = await tx.query.delegation.findFirst({
+		where: { conferenceId, assignedRoleId: roleId },
+		columns: { id: true },
+		with: { members: { columns: { id: true, isHeadDelegate: true, assignedCommitteeId: true } } }
+	});
+	if (
+		existing &&
+		isSameSeat(member, { delegationId: existing.id, assignedCommitteeId: committeeId })
+	) {
+		throw apiError('CONFLICT', m.seatSwitchSameSeat());
+	}
+
+	const occupied = (existing?.members ?? []).filter(
+		(x) => x.id !== member.id && (role.kind !== 'NATION' || x.assignedCommitteeId === committeeId)
+	);
+	if (occupied.length >= capacity) throw apiError('CONFLICT', m.seatSwitchSeatTaken());
+
+	const delegation = await prepareAssignedDelegation(tx, conferenceId, roleId, existing);
+	return {
+		seats: new Map([
+			[member.id, { delegationId: delegation.id, assignedCommitteeId: committeeId }]
+		]),
+		change: { kind: 'move', memberId: member.id, targetDelegationId: delegation.id },
+		createdDelegation: !existing
+	};
+}
+
+/** A switch names either another member or a free seat, never both. */
+function planSeatSwitch(tx: Transaction, member: SeatOf, args: SeatSwitchArgs) {
+	const { otherMemberId, targetRoleId } = args;
+	if (otherMemberId && !targetRoleId) return swapSeats(tx, member, otherMemberId);
+	if (targetRoleId && !otherMemberId) {
+		return moveToFreeSeat(
+			tx,
+			member,
+			args.conferenceId,
+			targetRoleId,
+			args.targetCommitteeId ?? null
+		);
+	}
+	throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+}
+
+/**
+ * Moves the members into their new seats and sets the head delegates of the delegations involved:
+ * the mover's own and the ones it lands in (which, for a swap, include the other member's).
+ * Returns the ids of those delegations.
+ */
+async function writeSeatSwitch(
+	tx: Transaction,
+	plan: SeatSwitchPlan,
+	fromDelegationId: string,
+	chosenHeadDelegateIds: readonly string[] | null | undefined
+) {
+	const delegationIds = [
+		...new Set([fromDelegationId, ...[...plan.seats.values()].map((x) => x.delegationId)])
+	];
+	const members = await tx.query.delegationMember.findMany({
+		where: { delegationId: { in: delegationIds } },
+		columns: { id: true, delegationId: true, isHeadDelegate: true }
+	});
+	const headChanges = headDelegateChanges(members, plan.change, chosenHeadDelegateIds);
+	if (!headChanges) throw apiError('INVALID_INPUT', m.seatSwitchHeadDelegatesInvalid());
+
+	for (const [id, seat] of plan.seats) {
+		await tx
+			.update(schema.delegationMember)
+			.set(seat)
+			.where(whereRows(schema.delegationMember, { id }));
+	}
+	for (const { id, isHeadDelegate } of headChanges) {
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate })
+			.where(whereRows(schema.delegationMember, { id }));
+	}
+	return delegationIds;
+}
+
+export interface SeatSwitchArgs {
+	conferenceId: string;
+	memberId: string;
+	/** Swap with this member, … */
+	otherMemberId?: string | null;
+	/** … or move into a free seat of this role (in this committee, for a nation). */
+	targetRoleId?: string | null;
+	targetCommitteeId?: string | null;
+	/** The head delegates chosen for the delegations involved; left out keeps the defaults. */
+	headDelegateMemberIds?: readonly string[] | null;
+}
+
+/**
+ * Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat. The
+ * caller checked every id (`assertCanSwitchDelegationMemberSeats`). Serializable, since the seat
+ * counts and head delegate checks read rows a concurrent switch may change; losing against one is
+ * a CONFLICT to retry. Returns the members moved, the delegations involved and whether one was
+ * created.
+ */
+export async function switchSeats(args: SeatSwitchArgs) {
+	try {
+		return await db.transaction(
+			async (tx) => {
+				const member = await loadSeat(tx, args.memberId);
+				const plan = await planSeatSwitch(tx, member, args);
+				const delegationIds = await writeSeatSwitch(
+					tx,
+					plan,
+					member.delegationId,
+					args.headDelegateMemberIds
+				);
+				return {
+					memberIds: [...plan.seats.keys()],
+					delegationIds,
+					createdDelegation: plan.createdDelegation
+				};
+			},
+			{ isolationLevel: 'serializable' }
+		);
+	} catch (error) {
+		if (isSerializationFailure(error)) throw apiError('CONFLICT', m.seatSwitchConflict());
+		throw error;
+	}
 }

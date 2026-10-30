@@ -51,7 +51,7 @@ describe('runMailSync', () => {
 		mocks.findConferences.mockResolvedValue(conferences);
 		mocks.ensureListsExist.mockResolvedValue(listIds);
 		mocks.fetchSubscriberMap.mockResolvedValue(subscribers);
-		mocks.processUsersInBatches.mockImplementation(async (callback) => {
+		mocks.processUsersInBatches.mockImplementation(async (_cutoff, callback) => {
 			await callback([{ id: 'u1' }]);
 			return 1;
 		});
@@ -69,12 +69,21 @@ describe('runMailSync', () => {
 		await runMailSync();
 
 		expect(mocks.ensureListsExist).toHaveBeenCalledWith(conferences);
-		expect(mocks.planUserBatch).toHaveBeenCalledWith([{ id: 'u1' }], subscribers, listIds, {
-			userActions: [{ kind: 'create' }, { kind: 'update' }],
-			releases: [],
-			upToDate: 0,
-			skippedNoLists: 0
-		});
+		expect(mocks.fetchSubscriberMap).toHaveBeenCalledWith([1]);
+		const [[cutoff]] = mocks.processUsersInBatches.mock.calls;
+		expect(cutoff).toBeInstanceOf(Date);
+		expect(mocks.planUserBatch).toHaveBeenCalledWith(
+			[{ id: 'u1' }],
+			subscribers,
+			listIds,
+			{
+				userActions: [{ kind: 'create' }, { kind: 'update' }],
+				releases: [],
+				upToDate: 0,
+				skippedNoLists: 0
+			},
+			cutoff
+		);
 		expect(mocks.planReleases).toHaveBeenCalledWith(subscribers, expect.anything());
 		expect(console.info).toHaveBeenCalledWith('  To create:            1');
 		expect(console.info).toHaveBeenCalledWith('  To update:            1');

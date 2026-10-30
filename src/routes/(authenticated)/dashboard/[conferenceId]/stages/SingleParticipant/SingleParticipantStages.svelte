@@ -13,9 +13,19 @@
 		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'] | null;
 		ofAge: boolean;
+		/** Whether the application deadline has passed and the team is selecting. */
+		selectionInProgress: boolean;
 	}
 
-	let { conferenceId, conference, singleParticipant, user, status, ofAge }: Props = $props();
+	let {
+		conferenceId,
+		conference,
+		singleParticipant,
+		user,
+		status,
+		ofAge,
+		selectionInProgress
+	}: Props = $props();
 
 	const singleParticipantId = $derived(singleParticipant.id);
 </script>
@@ -25,6 +35,12 @@
 	conferenceState={conference.state}
 	userId={user.sub}
 	assignmentReleased={conference.assignmentReleased}
+	{selectionInProgress}
+	application={{
+		participantType: 'singleParticipant',
+		applied: singleParticipant.applied,
+		supportId: singleParticipant.id
+	}}
 	accepted={!!singleParticipant.assignedRole}
 	{status}
 	{ofAge}
