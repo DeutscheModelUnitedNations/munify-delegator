@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import * as schema from '#api/db/schema/index.js';
-import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
+import { renderEmail, NotificationEmail } from '#api/services/email/templates/index.js';
 import { overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import { emailContent, recipientName } from './emailContent';
 import type { AutomaticEmailKind, DueEmail, EmailSnapshot, SnapshotPerson } from './dueEmails';

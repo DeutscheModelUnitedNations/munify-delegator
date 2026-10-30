@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages.js';
-	import EmailLayout from '../EmailLayout.svelte';
-	import EmailButton from '../EmailButton.svelte';
-	import EmailParagraphs from '../EmailParagraphs.svelte';
-	import { ruleStyle, smallStyle } from '../brand';
+	import EmailLayout from './EmailLayout.svelte';
+	import EmailButton from './EmailButton.svelte';
+	import EmailParagraphs from './EmailParagraphs.svelte';
+	import { ruleStyle, smallStyle } from './brand';
 
 	/**
 	 * An invitation into a conference's team. Heading and paragraphs are the conference's text

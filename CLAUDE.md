@@ -533,7 +533,7 @@ bun run preview
   `routePath(event.url)`: Paraglide prefixes non-default locales (`/en/…`) and `event.url` keeps
   the prefix, so matching `event.url.pathname` would miss every English URL. A redirect target
   that comes from the request (`/login?next=`) goes through `sameSitePath`
-  (`#lib/helpers/sameSitePath.ts`), which resolves it like a browser would; `startsWith('/')`
+  (`#api/services/sameSitePath.ts`), which resolves it like a browser would; `startsWith('/')`
   alone lets `/\evil.example` through.
 - **Locally, the provider is [oidc-mock](https://github.com/strehk/oidc-mock)**, started by the
   `oidcMock()` plugin in `vite.config.ts` whenever `vite dev` runs - no container. Its users live
@@ -881,7 +881,7 @@ bun run preview
   `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
   calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
   and anything missed. The app renders the mails (one template, `NotificationEmail.svelte` on
-  `#lib/emails/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`; values per kind in
+  `#api/services/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`; values per kind in
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
   triggered the sweep.
 

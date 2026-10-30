@@ -1,4 +1,4 @@
-import type { AssignmentGroup } from './state';
+import type { AssignmentGroup } from '#lib/assignment/state.js';
 
 /**
  * The share (0 to 1) of a group's people who were seated at an earlier conference.

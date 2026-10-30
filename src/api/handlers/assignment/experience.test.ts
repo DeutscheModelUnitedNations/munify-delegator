@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { experienceShare } from './experience';
-import { assignmentGroups } from './state';
+import { assignmentGroups } from '#lib/assignment/state.js';
 
 const delegation = (id: string, size: number) => ({
 	id,

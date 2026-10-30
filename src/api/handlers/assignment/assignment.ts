@@ -2,7 +2,7 @@ import { db } from '#api/db/db.js';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
 import { enum_, object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
 import { applyAssignmentDraft, draftDelegationTarget } from './assignmentDraft';
-import { reviewProblem, reviewRow } from '#lib/assignment/review.js';
+import { reviewProblem, reviewRow } from './review';
 import type { Target } from '#lib/assignment/state.js';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {

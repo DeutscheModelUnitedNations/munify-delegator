@@ -11,7 +11,7 @@ import {
 	where
 } from '#api/services/authHelper.js';
 import { apiError } from '#api/services/errors/apiError.js';
-import type { reviewRow } from '#lib/assignment/review.js';
+import type { reviewRow } from './review';
 import type { Target } from '#lib/assignment/state.js';
 import { m } from '#lib/paraglide/messages.js';
 import { assertFindFirstExists } from '@m1212e/rumble';

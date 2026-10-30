@@ -3,7 +3,7 @@ import { emailService } from '#api/services/email/emailService.js';
 import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
 import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
 import { m } from '#lib/paraglide/messages.js';
-import { renderEmail, NotificationEmail } from '#lib/emails/index.js';
+import { renderEmail, NotificationEmail } from '#api/services/email/templates/index.js';
 import { emailLogPubsub } from '#api/pubsub.js';
 import { sql } from 'drizzle-orm';
 import {

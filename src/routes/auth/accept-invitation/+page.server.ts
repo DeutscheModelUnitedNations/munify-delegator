@@ -2,7 +2,7 @@ import { db } from '#api/db/db.js';
 import { hashToken, pendingInvitationCookieName } from '#api/services/account/invitationToken.js';
 import { claimPendingInvitation } from '#api/services/account/upsertSelf.js';
 import type { PageServerLoad } from './$types';
-import { assertInvitationUsable } from './invitationValidity';
+import { assertInvitationUsable } from '#api/services/account/invitationValidity.js';
 import { error, redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
 
