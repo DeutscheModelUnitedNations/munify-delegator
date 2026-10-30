@@ -1,5 +1,5 @@
 <script lang="ts">
-	import codenamize from '#lib/helpers/codenamize.js';
+	import codenamize from '#lib/helpers/codenamize';
 	import {
 		SIGHTING_STATUSES,
 		delegationApplication,
@@ -8,8 +8,8 @@
 		singleApplication,
 		type SightingReview,
 		type SightingStatus
-	} from '#lib/assignment/sighting.js';
-	import { m } from '#lib/paraglide/messages.js';
+	} from '#lib/assignment/sighting';
+	import { m } from '#lib/paraglide/messages';
 	import { fly } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { queryParameters, ssp } from 'sveltekit-search-params';

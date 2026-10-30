@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
-import { getAgeAtConference } from '#lib/helpers/ageChecker.js';
-import type { WithLinkedAccounts } from '#lib/helpers/linkedNotes.js';
-import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
+import { getAgeAtConference } from '#lib/helpers/ageChecker';
+import type { WithLinkedAccounts } from '#lib/helpers/linkedNotes';
+import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 /** Pure helpers of the sighting. Which applications are shown, in which order, is the backend's: see `sightingDeck`. */
 
 export interface SightingReview {

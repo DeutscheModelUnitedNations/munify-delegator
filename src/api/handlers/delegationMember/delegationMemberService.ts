@@ -1,23 +1,23 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
+import { type Transaction, db, schema } from '#api/db/db';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
-} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import {
 	fetchParticipationsAndTeamMembership,
 	isParticipantOrTeamMember
-} from '#api/services/registration/participation.js';
-import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
-import { nullToUndefined } from '#api/services/args.js';
-import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
-import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/registration/participation';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
+import { nullToUndefined } from '#api/services/args';
+import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications';
+import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
+import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { apiError } from '#api/services/errors/apiError.js';
-import { codeNotFound } from '#api/services/errors/codeNotFound.js';
-import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
+import { apiError } from '#api/services/errors/apiError';
+import { codeNotFound } from '#api/services/errors/codeNotFound';
+import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 import type { CommitteeMove } from './delegationMemberPermissions';
 
 /**

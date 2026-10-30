@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import PendingInvitationsTable from '#lib/components/teamManagement/PendingInvitationsTable.svelte';
 	import type { PageProps } from './$types';

@@ -1,21 +1,19 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertTeamRole,
-	CONFERENCE_CONTENT_ROLES,
-	isParticipantOfConference,
+	assertTeamPermission,
+	isParticipantOf,
 	isSystemAdmin,
 	isTeamMemberOf,
-	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	publicConference,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
-import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
-import type { FileField } from '#api/handlers/storedFile/fileSources.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
+import type { FileField } from '#api/handlers/storedFile/fileSources';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 import type { ConferenceUpdateArgs } from './conferenceService';
 
 /** Where the fee goes, where postal documents go, and the documents themselves. */
@@ -52,8 +50,8 @@ export function registerConferenceAbilities() {
 
 	// Participants and supervisors also read the members-only columns.
 	abilityBuilder.conference.allow('read').when((ctx) => {
-		const participant = isParticipantOfConference(ctx);
-		return participant ? { where: participant.conference, columns: TEAM_ONLY } : undefined;
+		const participant = isParticipantOf(ctx);
+		return participant ? { where: participant, columns: TEAM_ONLY } : undefined;
 	});
 
 	// The team reads all of it.
@@ -70,7 +68,7 @@ export function registerConferenceAbilities() {
  * is participant care's: the next number tells how many were handed out so far.
  */
 export async function assertCanReadNextDocumentNumber(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }
 
 /**
@@ -122,7 +120,7 @@ export async function assertCanUpdateConference(ctx: ApiContext, args: Conferenc
 	}));
 	if (mayEditAll) return;
 
-	await assertTeamRole(ctx, args.id, CONFERENCE_CONTENT_ROLES);
+	await assertTeamPermission(ctx, args.id, 'editConferenceContent');
 	const forbidden = Object.entries(args).filter(
 		([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
 	);
@@ -152,7 +150,7 @@ export async function assertCanClaimConferenceFiles(ctx: ApiContext, args: Confe
 
 /** Placing the generated parts on the templates goes with the templates themselves. */
 export async function assertCanSetDocumentLayout(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, CONFERENCE_CONTENT_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'editConferenceContent');
 }
 
 /** Refused when `updateConference` matched no row, as when the update ability matches none. */
@@ -169,5 +167,5 @@ export function assertCanSeedConference(ctx: ApiContext) {
 
 /** The plausibility check is the conference's participant care's tool. */
 export async function assertCanReadPlausibility(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

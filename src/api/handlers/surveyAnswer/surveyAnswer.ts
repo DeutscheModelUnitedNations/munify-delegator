@@ -1,6 +1,6 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import { eq } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	distributeUnansweredSurvey,
 	loadAnswerOption,
@@ -14,8 +14,8 @@ import {
 	registerSurveyAnswerAbilities
 } from './surveyAnswerPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub.js';
-import { readableById } from '#api/services/authHelper.js';
+import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub';
+import { readableById } from '#api/services/authHelper';
 
 registerSurveyAnswerAbilities();
 

@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { execute, validate } from 'graphql';
 import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
-import { yoga } from '#api/yoga.js';
+import { yoga } from '#api/yoga';
 
 const graphqlRequestSchema = z.object({
 	query: z.any(),

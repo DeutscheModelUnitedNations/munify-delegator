@@ -1,6 +1,6 @@
 <script lang="ts" generics="V extends string | null">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 
 	/** Picks the day something is moved or copied to. */
 	interface Props {

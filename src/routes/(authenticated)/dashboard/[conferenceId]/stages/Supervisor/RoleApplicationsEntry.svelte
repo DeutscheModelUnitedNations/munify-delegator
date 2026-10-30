@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends { id: string }">
 	import type { Snippet } from 'svelte';
-	import InfoGrid from '#lib/components/infoGrid/index.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import InfoGrid from '#lib/components/infoGrid/index';
+	import { m } from '#lib/paraglide/messages';
 
 	/** The roles applied for, one `role` each, or a dash when there are none. */
 	interface Props {

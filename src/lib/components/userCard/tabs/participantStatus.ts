@@ -1,5 +1,5 @@
-import { client, type Mutation } from '#lib/api/rumbleClient/client.js';
-import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+import { client, type Mutation } from '#lib/api/rumbleClient/client';
+import { genericPromiseToastMessages } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
 
 /**

@@ -3,9 +3,7 @@ import { makeCookieNames, makeOIDC } from '@m1212e/sveltekit-oidc';
 import { OIDC_CLIENT_SECRET, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
 import { upsertSelfFromClaims } from './account/upsertSelf';
-import { deLocalizeUrl } from '#lib/paraglide/runtime.js';
-
-export const oidcRoles = ['admin', 'member', 'service_user'] as const;
+import { deLocalizeUrl } from '#lib/paraglide/runtime';
 
 /**
  * Everything behind the `(authenticated)` route group, except the conference selector at
@@ -114,7 +112,7 @@ function isLoopbackIssuer(authority: string): boolean {
  * The OIDC flow, owned by the library rather than by route loads.
  *
  * Its `handle` hook protects `authenticatedRoutes`, serves both callback routes and puts the
- * validated session on `event.locals.oidc`, which is where `#api/context.js` reads it. The callback
+ * validated session on `event.locals.oidc`, which is where `#api/context` reads it. The callback
  * routes keep the paths they had, so an identity provider's client configuration does not have to
  * change.
  */

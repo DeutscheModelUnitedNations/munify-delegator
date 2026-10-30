@@ -3,7 +3,7 @@ import {
 	type ChasePresence,
 	type ChasePresenceParticipant,
 	type ChasePresenceRepresentation
-} from '#lib/schemata/chasePresence.js';
+} from '#lib/schemata/chasePresence';
 
 /** The parsed file, or why it is not one. */
 export function parsePresenceExport(

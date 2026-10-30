@@ -1,6 +1,6 @@
-import { getLocale } from '#lib/paraglide/runtime.js';
-import formatNames, { formatInitials } from '#lib/helpers/formatNames.js';
-import type { ParticipantData, RecipientData } from '#lib/utils/pdfGenerator.js';
+import { getLocale } from '#lib/paraglide/runtime';
+import formatNames, { formatInitials } from '#lib/helpers/formatNames';
+import type { ParticipantData, RecipientData } from '#lib/utils/pdfGenerator';
 
 type Text = string | null | undefined;
 

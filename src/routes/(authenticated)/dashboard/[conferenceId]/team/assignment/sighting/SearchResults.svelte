@@ -5,8 +5,8 @@
 		type DeckStatus,
 		type SearchFieldKind,
 		type SightingEntry
-	} from '#lib/assignment/sighting.js';
-	import { m } from '#lib/paraglide/messages.js';
+	} from '#lib/assignment/sighting';
+	import { m } from '#lib/paraglide/messages';
 
 	/** The best matches of a search; picking one leaves the search and shows that application. */
 	interface Props {

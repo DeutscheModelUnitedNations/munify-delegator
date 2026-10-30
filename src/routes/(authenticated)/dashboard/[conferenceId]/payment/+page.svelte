@@ -1,8 +1,8 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
-	import Selection from '#lib/components/selection/index.js';
-	import { sortByNames } from '#lib/helpers/formatNames.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import Selection from '#lib/components/selection/index';
+	import { sortByNames } from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import { fetchConferencePaymentData } from './conferencePaymentData';
 	import { fetchPayablePeople } from './payablePeople';
 	import { findOtherSupervisors } from './otherSupervisors';

@@ -1,12 +1,12 @@
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 export function registerCalendarDayAbilities() {
 	// The schedule is for the people with a part in the conference (`calendarConference`).
@@ -23,5 +23,5 @@ export function registerCalendarDayAbilities() {
 
 /** Refuses unless the caller may add days to the conference's calendar, by hand or by import. */
 export async function assertCanCreateCalendarDay(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

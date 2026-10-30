@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /**
  * A scanned person as the entrance scanner shows them. The code may be an access card number or a

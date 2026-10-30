@@ -3,16 +3,16 @@
 	import SideNavigationDrawer from '#lib/components/SideNavigationDrawer.svelte';
 	import CommandPalette from '#lib/components/commandPalette/CommandPalette.svelte';
 	import SearchHistoryWatcher from '#lib/components/commandPalette/SearchHistoryWatcher.svelte';
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
-	import { hasAnyRole } from '#lib/helpers/teamAccess.js';
-	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles.js';
-	import { groupedTeamRoutes } from '#lib/data/teamRoutes.js';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
+	import { hasAnyRole } from '#lib/helpers/teamAccess';
+	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
+	import { groupedTeamRoutes } from '#lib/data/teamRoutes';
 	import TeamNavMenu from './TeamNavMenu.svelte';
 	import { fetchCanOpenPaperHub } from '../paperhub/myPaperHubRoles';
 
 	/**
 	 * The side navigation of the team area, and of the paper hub, which sits in the same menu. It
-	 * is nothing but `#lib/data/teamRoutes.js` filtered by what the caller may open: a page is in the
+	 * is nothing but `#lib/data/teamRoutes` filtered by what the caller may open: a page is in the
 	 * menu exactly when the route guard lets them in.
 	 */
 	let {

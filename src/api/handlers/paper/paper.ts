@@ -1,6 +1,6 @@
-import { db } from '#api/db/db.js';
-import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble.js';
-import { userId, deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { db } from '#api/db/db';
+import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
+import { userId, deleteAllowedRow, readableById } from '#api/services/authHelper';
 import {
 	createPaper,
 	findNextPaperToReview,
@@ -24,7 +24,7 @@ import {
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { paperPubsub, paperVersionPubsub } from '#api/pubsub.js';
+import { paperPubsub, paperVersionPubsub } from '#api/pubsub';
 
 registerPaperAbilities();
 

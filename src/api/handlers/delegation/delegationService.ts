@@ -1,30 +1,30 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
+import { type Transaction, db, schema } from '#api/db/db';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
-} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
-import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation.js';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService';
+import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import {
 	assertApplicationReady,
 	assertRegistrationOpen
-} from '#api/services/registration/applicationReadiness.js';
-import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications.js';
-import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
-import formatNames from '#lib/helpers/formatNames.js';
-import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+} from '#api/services/registration/applicationReadiness';
+import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
+import formatNames from '#lib/helpers/formatNames';
+import { applicationFormSchema } from '#lib/schemata/applicationForm';
 import {
 	MIN_DELEGATION_MEMBERS,
 	MIN_ROLE_APPLICATIONS
-} from '#lib/helpers/applicationReadiness.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#lib/helpers/applicationReadiness';
+import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { eq } from 'drizzle-orm';
 import { delegationColumnChanges } from './delegationColumnChanges';
-import { apiError } from '#api/services/errors/apiError.js';
-import { codeNotFound } from '#api/services/errors/codeNotFound.js';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
-import { distinctSchoolNames } from '#lib/helpers/delegationSchools.js';
+import { apiError } from '#api/services/errors/apiError';
+import { codeNotFound } from '#api/services/errors/codeNotFound';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import { distinctSchoolNames } from '#lib/helpers/delegationSchools';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate(

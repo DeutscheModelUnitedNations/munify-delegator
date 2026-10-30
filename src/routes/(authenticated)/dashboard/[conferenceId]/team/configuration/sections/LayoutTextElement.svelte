@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TextPlacement } from '#lib/helpers/documentLayout.js';
+	import type { TextPlacement } from '#lib/helpers/documentLayout';
 
 	/** A text on the layout editor's page: its first baseline at the point, left aligned or centred. */
 	interface Props {

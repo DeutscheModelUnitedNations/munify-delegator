@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Flag from '#lib/components/Flag.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { droppable, type DragDropState } from '@thisux/sveltednd';
 	import type { Snippet } from 'svelte';
 

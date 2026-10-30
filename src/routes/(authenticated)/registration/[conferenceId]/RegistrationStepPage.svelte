@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { ResolvedPathname } from '$app/types';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	/**

@@ -1,15 +1,15 @@
-import { db, schema } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { committeeAgendaItemPubsub } from '#api/pubsub.js';
+import { committeeAgendaItemPubsub } from '#api/pubsub';
 import {
 	assertCanCreateAgendaItem,
 	assertCanSetAgendaItemReviewHelpStatus,
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerCommitteeAgendaItemAbilities();
 

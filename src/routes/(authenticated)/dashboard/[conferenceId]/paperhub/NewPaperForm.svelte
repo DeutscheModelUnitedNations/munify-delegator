@@ -3,7 +3,7 @@
 	import type { SuperForm } from 'sveltekit-superforms';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * The page an author writes a new paper on: its details beside the editor, with save and submit

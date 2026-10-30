@@ -1,4 +1,4 @@
-import type { CertificateSessionMark } from '#lib/utils/certificateSessionLayout.js';
+import type { CertificateSessionMark } from '#lib/utils/certificateSessionLayout';
 
 /** What the certificate download is made of, as fetched for the participant. */
 export interface CertificateData {

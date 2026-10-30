@@ -5,7 +5,7 @@
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-sonner';
 	import Inspect from 'svelte-inspect-value';
-	import { locales, localizeHref } from '#lib/paraglide/runtime.js';
+	import { locales, localizeHref } from '#lib/paraglide/runtime';
 
 	// import GlobalErrorToast from '#lib/components/ErrorToast.svelte';
 	// import CookieBanner from '#lib/components/CookieBanner.svelte';

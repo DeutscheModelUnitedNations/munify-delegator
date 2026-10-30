@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { datetimeLocalToDate } from '#lib/helpers/conferenceTimezoneDate.js';
+import { datetimeLocalToDate } from '#lib/helpers/conferenceTimezoneDate';
 import { surveyFields } from './surveyForm';
 
 describe('surveyFields', () => {

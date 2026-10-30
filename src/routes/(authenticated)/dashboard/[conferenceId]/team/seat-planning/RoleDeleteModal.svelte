@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends { id: string; name: string }">
 	import Modal from '#lib/components/Modal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		role: T | undefined;

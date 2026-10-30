@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 
 	/**
 	 * What the account says beyond the person's details: the language their mails are written in,

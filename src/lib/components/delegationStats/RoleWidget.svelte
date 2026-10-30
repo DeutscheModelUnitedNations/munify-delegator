@@ -2,7 +2,7 @@
 	import Flag from '#lib/components/Flag.svelte';
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type * as schema from '../../../api/db/schema';
 
 	interface Props {

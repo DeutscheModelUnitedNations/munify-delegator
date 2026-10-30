@@ -1,14 +1,12 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isCaredForUser,
 	systemAdmin
-} from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerPossibleDuplicateAbilities() {
 	// Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
@@ -21,8 +19,8 @@ export function registerPossibleDuplicateAbilities() {
 }
 
 /** Scanning a conference for duplicates is participant care's. */
-export async function assertCanScanPossibleDuplicates(ctx: Context, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+export async function assertCanScanPossibleDuplicates(ctx: ApiContext, conferenceId: string) {
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }
 
 /** Refuses unless the caller may decide the pair; returns its two accounts. */

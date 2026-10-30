@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { toast } from 'svelte-sonner';
-	import { downloadCSV } from '#lib/utils/downloadHelpers.js';
-	import { badgeHeader, badgeRow, type Badge } from '#lib/helpers/badgeCsv.js';
+	import { downloadCSV } from '#lib/utils/downloadHelpers';
+	import { badgeHeader, badgeRow, type Badge } from '#lib/helpers/badgeCsv';
 
 	interface Props {
 		/** The rows of the file, read when it is asked for */

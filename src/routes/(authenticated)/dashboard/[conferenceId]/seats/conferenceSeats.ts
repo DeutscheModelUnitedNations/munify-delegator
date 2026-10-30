@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /** Everything the public seat overview shows: the committees with their nations, plus the NSAs. */
 export function fetchConferenceSeats(conferenceId: string) {

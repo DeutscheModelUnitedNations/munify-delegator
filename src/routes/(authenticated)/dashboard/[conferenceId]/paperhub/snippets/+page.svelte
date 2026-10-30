@@ -20,9 +20,9 @@
 </script>
 
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
@@ -34,13 +34,13 @@
 	import { getCommonExtensions } from '#lib/components/paper/editor/settings/common.svelte.js';
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
-	import Menu from '#lib/components/paper/editor/menu/index.js';
+	import Menu from '#lib/components/paper/editor/menu/index';
 	import { checkSnippet, saveErrorMessage } from './snippetValidation';
-	import { PlaceholderHighlight } from '#lib/components/paper/editor/extensions/PlaceholderHighlight.js';
+	import { PlaceholderHighlight } from '#lib/components/paper/editor/extensions/PlaceholderHighlight';
 	import {
 		isValidTipTapContent,
 		getEmptyTipTapDocument
-	} from '#lib/components/paper/editor/contentValidation.js';
+	} from '#lib/components/paper/editor/contentValidation';
 
 	const snippets = $derived(
 		await client.liveQuery.myReviewerSnippets({

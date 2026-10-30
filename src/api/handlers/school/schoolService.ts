@@ -1,6 +1,6 @@
-import { db, schema, type Transaction } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
+import { db, schema, type Transaction } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
 import { PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH } from '$app/env/public';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';

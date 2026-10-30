@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import cancel from '#assets/undraw/cancel.svg';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		conferenceIdForWaitingListLink?: string;

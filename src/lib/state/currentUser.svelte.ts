@@ -1,5 +1,5 @@
 import { browser } from '$app/env';
-import { fetchCurrentUser, type CurrentUser } from '#lib/api/currentUser.js';
+import { fetchCurrentUser, type CurrentUser } from '#lib/api/currentUser';
 
 /**
  * The signed-in person, fetched once per browser session.

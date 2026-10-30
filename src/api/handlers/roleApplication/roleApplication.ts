@@ -1,5 +1,5 @@
-import { db } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { appendRoleApplication, removeRoleApplication, swapRanks } from './roleApplicationService';
 import {
@@ -8,8 +8,8 @@ import {
 	assertCanSwapRoleApplicationRanks,
 	registerRoleApplicationAbilities
 } from './roleApplicationPermissions';
-import { roleApplicationPubsub } from '#api/pubsub.js';
-import { readableById } from '#api/services/authHelper.js';
+import { roleApplicationPubsub } from '#api/pubsub';
+import { readableById } from '#api/services/authHelper';
 
 registerRoleApplicationAbilities();
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
 	import ConferenceSelectorHeader from '#lib/components/dashboard/ConferenceSelectorHeader.svelte';

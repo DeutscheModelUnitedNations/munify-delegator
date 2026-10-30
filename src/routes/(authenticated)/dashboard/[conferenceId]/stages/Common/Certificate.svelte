@@ -1,15 +1,15 @@
 <script lang="ts">
 	import StudentsAcceptedStat from './StudentsAcceptedStat.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import ResolutionDownloads from './ResolutionDownloads.svelte';
 	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
 	import type { ComponentProps } from 'svelte';
 	import { planCertificateDownload, type CertificateData } from './certificateDownload';
-	import { resolveDocumentLayout } from '#lib/helpers/documentLayout.js';
+	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
 
 	type Role = ComponentProps<typeof RoleWidget>;
 

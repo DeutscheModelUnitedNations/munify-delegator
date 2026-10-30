@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { ReviewhelpstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { ReviewhelpstatusEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 
 	/** Whether reviewers of an agenda item want help, as a button that cycles through the options. */
 	interface Props {

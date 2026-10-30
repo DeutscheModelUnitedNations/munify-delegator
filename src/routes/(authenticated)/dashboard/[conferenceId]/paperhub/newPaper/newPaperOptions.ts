@@ -1,5 +1,5 @@
-import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
+import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
 
 interface Option<V extends string = string> {
 	value: V;

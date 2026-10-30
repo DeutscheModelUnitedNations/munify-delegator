@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { duplicatesOfConference } from './plausibility/possibleDuplicatesWhere';
 
 	/**

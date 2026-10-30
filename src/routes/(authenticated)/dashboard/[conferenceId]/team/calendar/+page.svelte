@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import CalendarEditor from './CalendarEditor.svelte';
 	import DaysTracksTab from './DaysTracksTab.svelte';
 	import PlacesTab from './PlacesTab.svelte';

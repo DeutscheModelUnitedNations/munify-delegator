@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 	import DashboardQuickLinks from './DashboardQuickLinks.svelte';
 
 	/**

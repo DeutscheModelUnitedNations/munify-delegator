@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { dev } from '$app/env';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
 	import Tab from '#lib/components/tabs/Tab.svelte';
 	import AccentStripe from '#lib/components/AccentStripe.svelte';

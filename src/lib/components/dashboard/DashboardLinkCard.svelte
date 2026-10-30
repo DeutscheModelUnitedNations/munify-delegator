@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DashboardHref } from '#lib/data/dashboardLinks.js';
+	import type { DashboardHref } from '#lib/data/dashboardLinks';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

@@ -1,15 +1,15 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { eq } from 'drizzle-orm';
 import {
 	assertCanCreatePlace,
 	assertCanUpdatePlace,
 	registerPlaceAbilities
 } from './placePermissions';
-import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { placePubsub } from '#api/pubsub.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { placePubsub } from '#api/pubsub';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerPlaceAbilities();
 

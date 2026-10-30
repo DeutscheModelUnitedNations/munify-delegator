@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import FlowStep from './FlowStep.svelte';
 	import ApplicationTextsSteps from './ApplicationTextsSteps.svelte';
 	import type { ApplyPath } from './applyPaths';

@@ -1,4 +1,4 @@
-import type { schemaBuilder } from '#api/rumble.js';
+import type { schemaBuilder } from '#api/rumble';
 
 type ArgBuilder = Pick<
 	PothosSchemaTypes.InputFieldBuilder<(typeof schemaBuilder)['$inferSchemaTypes'], 'Arg'>,

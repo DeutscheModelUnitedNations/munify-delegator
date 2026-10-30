@@ -1,15 +1,15 @@
-import { db } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
+	teamConference,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 export function registerWaitingListEntryAbilities() {
 	// Ported from abilities/entities/waitingListEntry.ts
@@ -40,9 +40,8 @@ export async function assertCanSetWaitingListFlags(
 ) {
 	if (args.hidden == null && args.assigned == null) return;
 	const entry = await db.query.waitingListEntry.findFirst({
-		where: { id },
-		columns: { conferenceId: true }
+		where: { id, conference: teamConference(ctx, 'manageParticipants') },
+		columns: { id: true }
 	});
 	if (!entry) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
-	await assertTeamRole(ctx, entry.conferenceId, PARTICIPANT_CARE_ROLES);
 }

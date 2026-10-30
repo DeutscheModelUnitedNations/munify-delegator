@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
-	import PaperEnum from '#lib/components/paper/paperEnum/index.js';
-	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import PaperEnum from '#lib/components/paper/paperEnum/index';
+	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
 
 	/** The caller's papers as one tappable row each, the phone layout of the "your papers" table. */
 	interface Props {

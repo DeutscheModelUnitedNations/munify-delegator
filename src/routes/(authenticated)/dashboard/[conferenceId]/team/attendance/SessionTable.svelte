@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import type { Snippet } from 'svelte';
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import { modeIcons, modeLabels } from './sessionModes';

@@ -1,6 +1,7 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { building } from '$app/env';
 import { z } from 'zod';
+import { oidcRoles } from '#api/services/oidcRoles';
 
 /** An unset or empty variable counts as not given. */
 const unlessEmpty = <T extends z.ZodType<unknown, string | undefined>>(schema: T) =>
@@ -53,7 +54,32 @@ export const variables = defineEnvVars({
 
 	OIDC_SCOPES: { schema: requiredAtRuntime(z.string(), '') },
 	OIDC_CLIENT_SECRET: { schema: z.string().optional() },
+	// Where the provider puts its role or group names: a claim name, or a dot path into nested
+	// claims (`realm_access.roles`). See `#api/services/roleClaims.ts`.
 	OIDC_ROLE_CLAIM: { schema: z.string().optional() },
+	// JSON: which of those names grant an app role, e.g. {"admin":["delegator-admins"]}. A role it
+	// leaves out is granted by a name equal to its own.
+	OIDC_ROLE_MAP: {
+		schema: unlessEmpty(
+			z
+				.string()
+				.transform((value, ctx) => {
+					try {
+						return JSON.parse(value);
+					} catch {
+						ctx.addIssue({ code: 'custom', message: 'OIDC_ROLE_MAP is not valid JSON' });
+						return z.NEVER;
+					}
+				})
+				.pipe(
+					z.partialRecord(
+						z.enum(oidcRoles),
+						z.union([z.string().transform((name) => [name]), z.array(z.string())])
+					)
+				)
+				.optional()
+		)
+	},
 	// The resource indicator the impersonation's token exchange asks for (Logto requires one). Sign
 	// in sends none.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },

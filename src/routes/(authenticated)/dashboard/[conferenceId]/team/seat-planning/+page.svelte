@@ -3,8 +3,8 @@
 	import { nonStateActorRow } from './nonStateActors';
 	import Tab from '#lib/components/tabs/Tab.svelte';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import type { PageProps } from './$types';
 	import { provideSeatPlanningParams } from './filters.svelte';
 	import HintsSidebar from './HintsSidebar.svelte';

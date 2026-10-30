@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import SurveyResults from './SurveyResults.svelte';
 	import SurveyDetailsCard from './SurveyDetailsCard.svelte';
 	import SurveyOptionsEditor from './SurveyOptionsEditor.svelte';

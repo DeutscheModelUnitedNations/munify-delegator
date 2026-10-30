@@ -15,7 +15,7 @@ import {
 	createAttemptLimiter,
 	createMemoryFailureStore,
 	createRedisFailureStore
-} from '#api/services/failureLimit.js';
+} from '#api/services/failureLimit';
 import {
 	assertSignedIn,
 	compileEnv,

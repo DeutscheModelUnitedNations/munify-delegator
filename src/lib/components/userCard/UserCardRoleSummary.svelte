@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { m } from '#lib/paraglide/messages';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import Flag from '../Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import type { UserCardRoles } from './userCardRoles';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 
 	let { delegationMember, singleParticipant, conferenceSupervisor, teamMember }: UserCardRoles =
 		$props();

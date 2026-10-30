@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Modal from '#lib/components/Modal.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { PUBLIC_TEAM_ORGANIZATION_DOMAIN } from '$app/env/public';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
 
 	interface Props {
 		open: boolean;

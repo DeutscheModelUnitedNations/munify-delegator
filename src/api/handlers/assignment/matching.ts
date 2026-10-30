@@ -1,5 +1,5 @@
 import { dev } from '$app/env';
-import type { AutoAssignSinglesInput, autoAssignSingles } from '#lib/assignment/autoAssign.js';
+import type { AutoAssignSinglesInput, autoAssignSingles } from '#lib/assignment/autoAssign';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 

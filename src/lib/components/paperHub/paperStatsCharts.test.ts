@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import { committeeTooltip, paperTypeChartColors, paperTypeLabel } from './paperStatsCharts';
 
 function point(seriesName: string, value: number | string) {

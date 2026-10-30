@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
 	import {
@@ -10,7 +10,7 @@
 		registerCommandPalette
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import type { TeamAccess } from '#lib/helpers/teamAccess.js';
+	import type { TeamAccess } from '#lib/helpers/teamAccess';
 	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
 	import {
 		describeItem,
@@ -25,10 +25,10 @@
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '#lib/components/Kbd.svelte';
 	import QuickScan from '#lib/components/scanner/QuickScan.svelte';
-	import { acceptScannedCode } from '#lib/api/identityCodeCheck.js';
-	import { readAimIdentifier } from '#lib/components/scanner/aimIdentifier.js';
-	import { resolveScannedCode } from '#lib/components/scanner/userSearch.js';
-	import { looksLikeUserId } from '#lib/components/scanner/suggestions.js';
+	import { acceptScannedCode } from '#lib/api/identityCodeCheck';
+	import { readAimIdentifier } from '#lib/components/scanner/aimIdentifier';
+	import { resolveScannedCode } from '#lib/components/scanner/userSearch';
+	import { looksLikeUserId } from '#lib/components/scanner/suggestions';
 	import { toast } from 'svelte-sonner';
 	import {
 		consumeHandoff,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { JSONContent } from '@tiptap/core';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import { checkSnippet, saveErrorMessage } from './snippetValidation';
 
 const doc = (text: string): JSONContent => ({

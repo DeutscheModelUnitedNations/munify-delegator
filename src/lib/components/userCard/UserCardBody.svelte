@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { fetchUserCardRoles, hasConferenceAccess, participationStage } from './userCardRoles';
 	import UserCardHeader from './UserCardHeader.svelte';
 	import UserCardTabs from './UserCardTabs.svelte';

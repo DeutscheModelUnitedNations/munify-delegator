@@ -1,7 +1,7 @@
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
+import type { ApiContext } from '#api/rumble';
+import { assertTeamPermission } from '#api/services/authHelper';
 
 /** The sighting - its deck, entries, codename search and schools - is participant care's. */
-export async function assertCanReadSightingDeck(ctx: Context, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+export async function assertCanReadSightingDeck(ctx: ApiContext, conferenceId: string) {
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 const updatePlace = vi.fn();
 const createPlace = vi.fn();
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({
+vi.mock('#lib/api/rumbleClient/client', () => ({
 	client: { mutate: { updatePlace, createPlace } }
 }));
 

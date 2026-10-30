@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
 	import ParticipantStages from '../Common/ParticipantStages.svelte';
 	import DelegationPreparationStage from './DelegationPreparationStage.svelte';

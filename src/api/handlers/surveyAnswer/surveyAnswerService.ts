@@ -1,8 +1,8 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
+import { type Transaction, db, schema } from '#api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { and, count, eq, inArray, ne } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 import { distributeToOptions } from './surveyDistribution';
 
 /** Locks the options, so answers given at the same time cannot both take an option's last seat. */

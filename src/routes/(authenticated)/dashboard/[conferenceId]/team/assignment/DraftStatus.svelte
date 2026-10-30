@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { pendingCount } from '#lib/assignment/board.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { pendingCount } from '#lib/assignment/board';
+	import { m } from '#lib/paraglide/messages';
 	import { fetchAssignmentDraft, fetchSeatedApplications, seatedSnapshot } from './board';
 
 	interface Props {

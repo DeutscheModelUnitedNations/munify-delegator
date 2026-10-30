@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import OptionalTooltip from '#lib/components/OptionalTooltip.svelte';
 	import type { CalendarTrack } from './calendarTypes';
 

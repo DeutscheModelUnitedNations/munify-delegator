@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { PaperstatusEnum, ReviewhelpstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import type { PaperstatusEnum, ReviewhelpstatusEnum } from '#lib/api/rumbleClient/client';
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperStatusDistribution from './PaperStatusDistribution.svelte';
 	import PaperTable from './PaperTable.svelte';
@@ -12,7 +12,7 @@
 	import ReviewHelpStatusToggle from './ReviewHelpStatusToggle.svelte';
 	import MyReviewStats from './MyReviewStats.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { FlagCollectionSection } from '#lib/components/flagCollection/index.js';
+	import { FlagCollectionSection } from '#lib/components/flagCollection/index';
 	import ReviewerLeaderboard from '#lib/components/paperHub/ReviewerLeaderboard.svelte';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import DetailedPaperStats from '#lib/components/paperHub/DetailedPaperStats.svelte';

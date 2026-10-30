@@ -1,6 +1,6 @@
 <script lang="ts" generics="D extends { savedAt: number }, C">
 	import Modal from '#lib/components/Modal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { DraftAutosave } from './draftAutosave.svelte';
 	import { formatRelativeTime } from './relativeTime';
 

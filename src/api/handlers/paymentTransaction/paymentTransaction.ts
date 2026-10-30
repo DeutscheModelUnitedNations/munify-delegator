@@ -1,18 +1,18 @@
-import { db } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
 	paymentTransactionPubsub,
 	userReferenceInPaymentTransactionPubsub
-} from '#api/pubsub.js';
+} from '#api/pubsub';
 import {
 	assertCanCreatePaymentTransaction,
 	assertCanUpdatePaymentTransaction,
 	registerPaymentTransactionAbilities
 } from './paymentTransactionPermissions';
 import { applyPaymentStatus, createPaymentTransaction } from './paymentTransactionService';
-import { readableById } from '#api/services/authHelper.js';
+import { readableById } from '#api/services/authHelper';
 
 registerPaymentTransactionAbilities();
 

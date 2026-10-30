@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import hotkeys from 'hotkeys-js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
-	import { resolveScannedCode } from '#lib/components/scanner/userSearch.js';
+	import { resolveScannedCode } from '#lib/components/scanner/userSearch';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { canWriteAccessCards } from '#lib/helpers/teamAccess.js';
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
+	import { canWriteAccessCards } from '#lib/helpers/teamAccess';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
 	import ScanCheckResult from './ScanCheckResult.svelte';
 	import SessionTable from './SessionTable.svelte';
 	import { modeIcons, modeLabels, type SessionMode } from './sessionModes';
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { isNetworkError, retryDelay, type QueueEntry } from './attendanceQueue';
 	import { scanIssues, type ScanIssue } from './scanCheck';
 	import {
@@ -42,7 +42,7 @@
 		type ShownPerson,
 		type ServerMode
 	} from './attendanceSession';
-	import { acceptScannedCode, warmUpIdentityKey } from '#lib/api/identityCodeCheck.js';
+	import { acceptScannedCode, warmUpIdentityKey } from '#lib/api/identityCodeCheck';
 	import { loadScannedPerson, type FoundPerson } from './scanLoad';
 	import type { PageProps } from './$types';
 

@@ -1,11 +1,11 @@
 import { importJWK, jwtVerify } from 'jose';
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import {
 	certificateAlg,
 	certificateRequiredClaims
-} from '#api/handlers/certificateConfig/certificateConfig.js';
-import type { CertificateJWTPayload } from '#api/handlers/certificate/certificate.js';
-import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout.js';
+} from '#api/handlers/certificateConfig/certificateConfig';
+import type { CertificateJWTPayload } from '#api/handlers/certificate/certificate';
+import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout';
 
 /** What the page shows for a certificate that did not verify. */
 const INVALID = {

@@ -1,5 +1,5 @@
-import { db } from '#api/db/db.js';
-import { schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { schemaBuilder } from '#api/rumble';
 import { assertCanReadStatistics } from './statisticsPermissions';
 import type { StatsFilterType } from './statisticsFilters';
 import {

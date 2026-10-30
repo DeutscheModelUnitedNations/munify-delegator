@@ -1,11 +1,11 @@
-import { LOCALE_HEADER } from '#lib/api/localeHeader.js';
+import { LOCALE_HEADER } from '#lib/api/localeHeader';
 import {
 	getLocale,
 	getServerAsyncLocalStorage,
 	isLocale,
 	toLocale,
 	type Locale
-} from '#lib/paraglide/runtime.js';
+} from '#lib/paraglide/runtime';
 
 /**
  * The locale an API request asks for.

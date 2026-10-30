@@ -1,5 +1,5 @@
 import { toast } from 'svelte-sonner';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 export interface PayableUser {
 	id: string;

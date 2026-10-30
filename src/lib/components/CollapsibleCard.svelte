@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { toggleButtonProps } from '#lib/helpers/toggleButtonProps.js';
+	import { toggleButtonProps } from '#lib/helpers/toggleButtonProps';
 
 	interface Props {
 		/** FontAwesome icon name (without the `fa-` prefix) shown next to the title. */

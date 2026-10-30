@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { defaults } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice.js';
+	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice';
 	import type { z } from 'zod';
 	import Form from './Form.svelte';
 	import SchoolPicker from './SchoolPicker.svelte';

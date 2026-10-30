@@ -4,21 +4,21 @@
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { Locale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import type { Locale } from '#lib/paraglide/runtime';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import EmailEditorLayout from './EmailEditorLayout.svelte';
 	import { debounced, fetchEmailPreview } from './emailPreview.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
 		defaultEmailText,
 		placeholdersOf,
 		type EmailPlaceholder,
 		type EmailText
-	} from '#lib/helpers/emailTemplates.js';
+	} from '#lib/helpers/emailTemplates';
 
 	/**
 	 * One kind's text in one language, with a preview of the mail as it would go out. Seeded once:

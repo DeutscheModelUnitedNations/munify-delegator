@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import type { Snippet } from 'svelte';
-	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client';
 	import Flag from '#lib/components/Flag.svelte';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getPaperStatusIcon, getPaperTypeIcon } from '#lib/utils/enumIcons.js';
-	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
-	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
+	import { m } from '#lib/paraglide/messages';
+	import { getPaperStatusIcon, getPaperTypeIcon } from '#lib/utils/enumIcons';
+	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
+	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers';
 	import { paperEntityName, paperTitle, type PaperIdentity } from './paperDisplay';
 
 	interface Props {

@@ -1,11 +1,11 @@
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 /**
  * The automatic mails are participant care's: they switch them on and off, write their texts and
@@ -39,5 +39,5 @@ export function registerEmailAbilities() {
  * participant care's.
  */
 export async function assertCanManageEmails(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

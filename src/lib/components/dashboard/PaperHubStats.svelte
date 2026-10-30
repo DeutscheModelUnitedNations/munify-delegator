@@ -7,7 +7,7 @@
 	to a Comment").
 -->
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		awaiting: number;

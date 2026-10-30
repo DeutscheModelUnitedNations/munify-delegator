@@ -2,7 +2,7 @@
 	import { onMount, untrack, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import {
 		createTable,
 		createFuzzySearch,
@@ -11,7 +11,7 @@
 		type ColumnVisibilityState,
 		type SortingState,
 		type Table
-	} from '#lib/components/tanStackTable/index.js';
+	} from '#lib/components/tanStackTable/index';
 	import {
 		columnIdOf,
 		defaultColumnVisibility,
@@ -24,9 +24,9 @@
 		tableExport,
 		type ManagedColumn,
 		type ManagedTableFeatures
-	} from '#lib/components/tanStackTable/managedTable.js';
-	import { DataTable } from '#lib/components/tanStackTable/ui/index.js';
-	import { filterFnFor } from '#lib/components/tanStackTable/filters.js';
+	} from '#lib/components/tanStackTable/managedTable';
+	import { DataTable } from '#lib/components/tanStackTable/ui/index';
+	import { filterFnFor } from '#lib/components/tanStackTable/filters';
 	import {
 		createTableState,
 		type TableState

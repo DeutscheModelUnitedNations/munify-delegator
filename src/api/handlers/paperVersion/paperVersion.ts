@@ -1,5 +1,5 @@
-import { object } from '#api/rumble.js';
-import { hashEditorContent } from '#lib/components/paper/editor/contentHash.js';
+import { object } from '#api/rumble';
+import { hashEditorContent } from '#lib/components/paper/editor/contentHash';
 import { registerPaperVersionAbilities } from './paperVersionPermissions';
 
 registerPaperVersionAbilities();

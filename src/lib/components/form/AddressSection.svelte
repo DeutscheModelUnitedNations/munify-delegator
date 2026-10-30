@@ -1,7 +1,7 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B, N extends FormPath<A> & keyof A">
 	import type { FormPath, SuperForm } from 'sveltekit-superforms';
-	import type { AddressFieldNames, AddressRules } from '#lib/helpers/addressRules.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { AddressFieldNames, AddressRules } from '#lib/helpers/addressRules';
+	import { m } from '#lib/paraglide/messages';
 	import AddressFields from './AddressFields.svelte';
 	import FormSection from './FormSection.svelte';
 

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '#lib/helpers/conferenceLanguage.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { CONFERENCE_LANGUAGES, conferenceLanguageName } from '#lib/helpers/conferenceLanguage';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { technicalRegistrationDeadline } from '#lib/helpers/applicationReadiness.js';
+	import { technicalRegistrationDeadline } from '#lib/helpers/applicationReadiness';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';

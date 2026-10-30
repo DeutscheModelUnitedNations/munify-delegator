@@ -1,8 +1,8 @@
-import { formatClockMinutes } from '#lib/helpers/formatClock.js';
+import { formatClockMinutes } from '#lib/helpers/formatClock';
 import { SvelteMap } from 'svelte/reactivity';
 import { toast } from 'svelte-sonner';
-import { client, type CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
+import { client, type CalendarentrycolorEnum } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
 import {
 	assignLanes,
 	buildGrid,

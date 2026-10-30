@@ -1,7 +1,7 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
+import { type Transaction, db, schema } from '#api/db/db';
 import { and, eq, inArray } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
 

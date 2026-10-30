@@ -1,5 +1,5 @@
-import { schemaBuilder } from '#api/rumble.js';
-import { assertCanReviewPapers } from '#api/handlers/paper/paperPermissions.js';
+import { schemaBuilder } from '#api/rumble';
+import { assertCanReviewPapers } from '#api/handlers/paper/paperPermissions';
 import type {
 	FlagCollectionData,
 	FlagCollectionStats,

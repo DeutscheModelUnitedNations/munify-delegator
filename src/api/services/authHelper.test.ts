@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
-import type { Context } from '#api/context.js';
+import type { Context } from '#api/context';
 
-vi.mock('#api/db/db.js', () => ({ db: {} }));
+vi.mock('#api/db/db', () => ({ db: {} }));
 
 const {
 	isCaredForUser,
@@ -92,7 +92,7 @@ describe('isCaredForUser', () => {
 			}
 		};
 		expect(isCaredForUser(user)).toEqual({
-			OR: [...participatesIn(conference).OR, { waitingListEntry: { conference } }]
+			OR: [participatesIn(conference), { waitingListEntry: { conference } }]
 		});
 	});
 });

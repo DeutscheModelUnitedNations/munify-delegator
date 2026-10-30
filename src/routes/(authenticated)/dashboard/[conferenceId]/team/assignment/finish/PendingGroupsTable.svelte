@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { wishStatus } from '#lib/assignment/board.js';
-	import { targetKey, type AssignmentGroup, type Target } from '#lib/assignment/state.js';
+	import { wishStatus } from '#lib/assignment/board';
+	import { targetKey, type AssignmentGroup, type Target } from '#lib/assignment/state';
 	import Flag from '#lib/components/Flag.svelte';
-	import codenamize from '#lib/helpers/codenamize.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import codenamize from '#lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages';
 	import type { BoardDelegation } from '../board';
-	import { sightingHref } from '#lib/helpers/sightingLink.js';
+	import { sightingHref } from '#lib/helpers/sightingLink';
 
 	/** The groups applying the draft gives a different role, before and after. */
 	interface Props {

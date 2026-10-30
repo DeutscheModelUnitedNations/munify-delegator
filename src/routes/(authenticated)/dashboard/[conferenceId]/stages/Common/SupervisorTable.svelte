@@ -3,12 +3,12 @@
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode.js';
+	import { ENTRY_CODE_LENGTH } from '#lib/helpers/entryCode';
 	import { createEntryCodeInput } from '#lib/helpers/entryCodeInput.svelte.js';
 
 	/** The supervisors of one registration: a delegation membership or a single participant. */

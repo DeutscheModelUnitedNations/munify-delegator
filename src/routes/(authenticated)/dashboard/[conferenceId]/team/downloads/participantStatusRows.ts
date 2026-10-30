@@ -1,7 +1,7 @@
 import type {
 	AdministrativestatusEnum,
 	MediaconsentstatusEnum
-} from '#lib/api/rumbleClient/client.js';
+} from '#lib/api/rumbleClient/client';
 
 /** The status columns of the participant status export. */
 export interface StatusData {

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
-	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
+	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 
 	interface Props {
 		conferenceId: string;

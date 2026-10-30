@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { PUBLIC_OIDC_ACCOUNT_URL, PUBLIC_OIDC_AUTHORITY } from '$app/env/public';
 	import { page } from '$app/state';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';

@@ -1,16 +1,16 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRoleForCalendarDay,
+	assertTeamPermissionForCalendarDay,
 	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerCalendarEntryAbilities() {
 	// Ported from abilities/entities/calendarEntry.ts
@@ -127,7 +127,7 @@ export async function assertCanCreateCalendarEntry(
 		surveyOptionIds?: readonly string[] | null;
 	}
 ) {
-	const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
+	const day = await assertTeamPermissionForCalendarDay(ctx, args.calendarDayId);
 	await assertReferences(day.conferenceId, {
 		calendarDayId: args.calendarDayId,
 		calendarTrackIds: args.calendarTrackIds ?? [],

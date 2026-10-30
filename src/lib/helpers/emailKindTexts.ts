@@ -1,12 +1,12 @@
-import { m } from '#lib/paraglide/messages.js';
-import type { EmailkindEnum, EmailstatusEnum } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages';
+import type { EmailkindEnum, EmailstatusEnum } from '#lib/api/rumbleClient/client';
 import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
 	type EmailGroupId
-} from '#lib/helpers/emailKinds.js';
+} from '#lib/helpers/emailKinds';
 
 /** What the e-mail page says about each automatic mail: when it goes, to whom, with what. */
 export interface EmailKindTexts {

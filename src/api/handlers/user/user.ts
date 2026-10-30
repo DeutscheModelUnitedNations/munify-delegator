@@ -1,10 +1,10 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import { eq } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { enum_ } from '#api/rumble.js';
-import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields.js';
-import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates.js';
+import { enum_ } from '#api/rumble';
+import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
+import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates';
 import {
 	countConferenceParticipations,
 	removeParticipation,
@@ -26,15 +26,15 @@ import {
 	delegationMemberPubsub,
 	singleParticipantPubsub,
 	userPubsub
-} from '#api/pubsub.js';
-import { OIDC } from '#api/services/OIDC.js';
+} from '#api/pubsub';
+import { OIDC } from '#api/services/OIDC';
 import {
 	impersonationConfigured,
 	impersonationTokens
-} from '#api/services/account/impersonation.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
-import { allowedRowWhere, readableById } from '#api/services/authHelper.js';
+} from '#api/services/account/impersonation';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
+import { allowedRowWhere, readableById } from '#api/services/authHelper';
 
 registerUserAbilities();
 

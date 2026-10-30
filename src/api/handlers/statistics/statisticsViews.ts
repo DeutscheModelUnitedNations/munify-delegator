@@ -1,4 +1,4 @@
-import type * as schema from '#api/db/schema/index.js';
+import type * as schema from '#api/db/schema/index';
 import { type StatsFilterType, matchesStatsFilter } from './statisticsFilters';
 
 /**

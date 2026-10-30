@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BoxPlacement } from '#lib/helpers/documentLayout.js';
+	import type { BoxPlacement } from '#lib/helpers/documentLayout';
 
 	/** An area on the layout editor's page, its sample content inside, resized from its corner. */
 	interface Props {

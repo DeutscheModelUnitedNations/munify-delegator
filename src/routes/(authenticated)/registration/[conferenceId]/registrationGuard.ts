@@ -1,4 +1,4 @@
-import type { RegistrationStatus } from '#lib/utils/registrationStatus.js';
+import type { RegistrationStatus } from '#lib/utils/registrationStatus';
 
 /**
  * Where the registration flow sends someone at `pathname`, or undefined to let them stay: to the

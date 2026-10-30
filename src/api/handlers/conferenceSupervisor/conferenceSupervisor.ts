@@ -1,6 +1,6 @@
-import { db, schema } from '#api/db/db.js';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
+import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	connectParticipantToSupervisor,
 	disconnectParticipantFromSupervisor,
@@ -18,7 +18,7 @@ import {
 	assertCanRotateSupervisorConnectionCode,
 	registerConferenceSupervisorAbilities
 } from './conferenceSupervisorPermissions';
-import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
@@ -26,14 +26,14 @@ import {
 	delegationMemberPubsub,
 	schoolPubsub,
 	singleParticipantPubsub
-} from '#api/pubsub.js';
+} from '#api/pubsub';
 import {
 	allowedRowWhere,
 	assertUpdated,
 	assertAllowedRow,
 	readableById
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
 
 registerConferenceSupervisorAbilities();
 

@@ -20,9 +20,9 @@
 		ResolutionHeaderData
 	} from '@deutschemodelunitednations/munify-resolution-editor/schema';
 	import { resolutionStore } from '../editorStore';
-	import { getResolutionLabels } from '#lib/resolution-editor-i18n.js';
+	import { getResolutionLabels } from '#lib/resolution-editor-i18n';
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import type { OperativeClause } from '@deutschemodelunitednations/munify-resolution-editor/schema';
 

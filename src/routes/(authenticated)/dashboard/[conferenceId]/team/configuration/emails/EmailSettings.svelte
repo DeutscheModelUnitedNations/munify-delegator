@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
-	import { EMAIL_GROUPS } from '#lib/helpers/emailKinds.js';
-	import { emailGroupTitle, emailKindTexts } from '#lib/helpers/emailKindTexts.js';
+	import { EMAIL_GROUPS } from '#lib/helpers/emailKinds';
+	import { emailGroupTitle, emailKindTexts } from '#lib/helpers/emailKindTexts';
 	import EmailKindCard from './EmailKindCard.svelte';
 	import EmailLog from './EmailLog.svelte';
 	import EmailEditorModal from './EmailEditorModal.svelte';

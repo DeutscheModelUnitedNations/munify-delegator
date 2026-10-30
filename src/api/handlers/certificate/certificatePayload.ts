@@ -1,4 +1,4 @@
-import formatNames from '#lib/helpers/formatNames.js';
+import formatNames from '#lib/helpers/formatNames';
 
 export interface CertificateJWTPayload extends Record<string, unknown> {
 	/** Deliberately terse: these end up in a QR code, so every byte counts. */

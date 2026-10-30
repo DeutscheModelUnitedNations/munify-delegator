@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#api/db/db.js', () => ({ db: {}, schema: {} }));
-import type * as schema from '#api/db/schema/index.js';
+vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
+import type * as schema from '#api/db/schema/index';
 import {
 	groupPapersByCommittee,
 	newPaperRows,

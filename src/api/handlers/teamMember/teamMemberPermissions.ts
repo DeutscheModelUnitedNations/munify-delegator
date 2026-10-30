@@ -1,15 +1,15 @@
-import { db } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
-import type { TeamRole } from '#api/services/authHelper.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
+import type { TeamRole } from '#api/services/authHelper';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertMayGrantRole,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);

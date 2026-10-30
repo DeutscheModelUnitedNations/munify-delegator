@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import LoadState from '#lib/components/LoadState.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/** The paper groups once loaded, or a spinner, the error, or the note that there are none. */
 	interface Props {

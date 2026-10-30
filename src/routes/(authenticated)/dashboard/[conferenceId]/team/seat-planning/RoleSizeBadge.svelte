@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints.js';
+	import { m } from '#lib/paraglide/messages';
+	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints';
 
 	interface Props {
 		size: number;

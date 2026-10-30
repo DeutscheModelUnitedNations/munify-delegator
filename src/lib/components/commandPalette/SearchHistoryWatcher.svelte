@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import {
 		HANDOFF_WINDOW_MS,
 		HISTORY_SHOWN,

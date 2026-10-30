@@ -1,6 +1,6 @@
 import { superForm, type FormOptions, type SuperValidated } from 'sveltekit-superforms';
 import { toast } from 'svelte-sonner';
-import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+import { genericPromiseToastMessages } from '#lib/utils/toast';
 
 /**
  * A superforms SPA form that submits through a mutation, in the shape every such form shares:

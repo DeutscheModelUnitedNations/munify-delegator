@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/** How many of a supervisor's students were given a role, out of all they registered. */
 	interface Props {

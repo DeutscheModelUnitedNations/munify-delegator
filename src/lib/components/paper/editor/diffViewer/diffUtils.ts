@@ -1,7 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
-import type { Resolution } from '#lib/components/paper/editor/resolution/index.js';
-import { migrateResolution, serialize } from '#lib/components/paper/editor/resolution/index.js';
+import type { Resolution } from '#lib/components/paper/editor/resolution/index';
+import { migrateResolution, serialize } from '#lib/components/paper/editor/resolution/index';
 
 /** The `type` of a TipTap JSON node, if the value is one. */
 function nodeType(node: unknown): unknown {

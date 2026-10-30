@@ -1,17 +1,17 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId,
 	where
-} from '#api/services/authHelper.js';
-import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /**
  * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is
@@ -79,7 +79,7 @@ export async function assertCanCreateConferenceSupervisor(
 ) {
 	const callerId = ctx.mustBeLoggedIn().sub;
 	if (subjectUserId && subjectUserId !== callerId) {
-		await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	}
 }
 
@@ -93,7 +93,7 @@ export async function assertCanConnectToConferenceSupervisor(
 	subjectId: string
 ) {
 	if (subjectId !== ctx.mustBeLoggedIn().sub) {
-		await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	}
 }
 
@@ -116,7 +116,7 @@ export async function assertCanDisconnectFromConferenceSupervisor(
 	const { conferenceId, userId: supervisorUserId } = supervisor.participant;
 	const caller = ctx.mustBeLoggedIn().sub;
 	if (caller !== subjectId && caller !== supervisorUserId) {
-		await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	}
 	return conferenceId;
 }

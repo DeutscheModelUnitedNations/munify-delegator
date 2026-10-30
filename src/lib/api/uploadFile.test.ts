@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
 	requestFileUpload: vi.fn(async () => ({ id: 'f1', uploadUrl: 'https://s3.test/put' }))
 }));
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: { mutate: mocks } }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: { mutate: mocks } }));
 
 import { uploadFile } from './uploadFile';
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { createFuzzySearch } from '#lib/components/tanStackTable/search.js';
+	import { createFuzzySearch } from '#lib/components/tanStackTable/search';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import PaperMatrix from './PaperMatrix.svelte';
 	import PaperGroupsState from './PaperGroupsState.svelte';
 	import { createPaperGroupsSnapshot } from './paperGroups.svelte';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 	import RoleFlag from '#lib/components/RoleFlag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 

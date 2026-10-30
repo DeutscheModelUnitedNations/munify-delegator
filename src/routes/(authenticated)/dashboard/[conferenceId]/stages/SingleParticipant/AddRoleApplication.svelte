@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import RoleChoiceGrid from '#lib/components/registration/RoleChoiceGrid.svelte';
 
 	/** Another role for a single participant's application, chosen right where the roles are listed. */

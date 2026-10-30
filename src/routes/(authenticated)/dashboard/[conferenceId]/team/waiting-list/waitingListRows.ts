@@ -1,4 +1,4 @@
-import { getAgeAtConference } from '#lib/helpers/ageChecker.js';
+import { getAgeAtConference } from '#lib/helpers/ageChecker';
 
 export interface WaitingListRow {
 	id: string;

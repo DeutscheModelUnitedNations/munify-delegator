@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: {} }));
 
 const { hasConferenceAccess, participationStage } = await import('./userCardRoles');
 

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import InfoGrid from '#lib/components/infoGrid/index.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import InfoGrid from '#lib/components/infoGrid/index';
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import formatNames from '#lib/helpers/formatNames';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';

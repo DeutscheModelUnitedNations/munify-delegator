@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import { client, type MediaconsentstatusEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import BadgeGeneratorLinks from '#lib/components/BadgeGeneratorLinks.svelte';
 	import { compareByFamilyName } from './exportFormatting';
-	import { personBadge, placardBadges } from '#lib/helpers/badgeCsv.js';
+	import { personBadge, placardBadges } from '#lib/helpers/badgeCsv';
 
 	interface Props {
 		conferenceId: string;

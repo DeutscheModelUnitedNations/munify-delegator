@@ -1,13 +1,13 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont, PDFName, PDFString } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
-import { downloadPDF } from '#lib/utils/downloadHelpers.js';
+import { downloadPDF } from '#lib/utils/downloadHelpers';
 import {
 	layoutCertificateSessions,
 	type CertificateSessionMark
-} from '#lib/utils/certificateSessionLayout.js';
+} from '#lib/utils/certificateSessionLayout';
 import {
 	boxInPoints,
 	defaultLayout,
@@ -16,7 +16,7 @@ import {
 	textInPoints,
 	type DocumentLayout,
 	type TextPlacement
-} from '#lib/helpers/documentLayout.js';
+} from '#lib/helpers/documentLayout';
 
 export interface ParticipantData {
 	id: string;

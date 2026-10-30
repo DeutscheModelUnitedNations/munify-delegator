@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import { localeOfRequest, localeOfUser, runWithLocale } from './requestLocale';
 
 const requestWith = (locale?: string) =>

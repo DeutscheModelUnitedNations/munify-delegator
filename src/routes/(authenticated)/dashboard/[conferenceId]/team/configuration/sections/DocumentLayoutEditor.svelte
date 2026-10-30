@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
 		defaultLayout,
 		dragPlacement,
@@ -15,7 +15,7 @@
 		type LayoutDocument,
 		type SquarePlacement,
 		type TextPlacement
-	} from '#lib/helpers/documentLayout.js';
+	} from '#lib/helpers/documentLayout';
 	import { elementLabel, elementSample, templateField, type LayoutElement } from './layoutElements';
 	import { renderFirstPage } from './templatePage';
 	import LayoutBoxElement from './LayoutBoxElement.svelte';

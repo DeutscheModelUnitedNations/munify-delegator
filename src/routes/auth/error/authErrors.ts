@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 // Known OIDC error codes, plus the internal ones the app raises itself. Anything else is
 // reported as unknown rather than echoed back into the page.

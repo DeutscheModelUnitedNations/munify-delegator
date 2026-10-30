@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/** The way back from a participant page to the conference's dashboard; first thing on every one. */
 	let { conferenceId }: { conferenceId: string } = $props();

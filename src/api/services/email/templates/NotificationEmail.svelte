@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import EmailLayout from './EmailLayout.svelte';
 	import EmailButton from './EmailButton.svelte';
 	import EmailParagraphs from './EmailParagraphs.svelte';
 	import { smallStyle, textStyle } from './brand';
 
-	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent.js`). */
+	/** One automatic mail to a participant or supervisor (`#api/handlers/email/emailContent`). */
 	interface Props {
 		heading: string;
 		recipientName: string;

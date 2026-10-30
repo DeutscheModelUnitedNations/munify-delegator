@@ -1,17 +1,17 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	hasTeamRole,
+	hasTeamPermission,
 	isTeamMemberOfConference,
 	participantIdsOf,
 	systemAdmin,
 	userId,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerPaymentTransactionAbilities() {
 	// Ported from abilities/entities/paymentTransaction.ts
@@ -45,7 +45,7 @@ export async function assertCanCreatePaymentTransaction(
 	// A reference is made by its payer, for people that payer can see in the conference -
 	// themselves, their delegation, the participants they supervise and the supervisors they
 	// share a student with. Participant care may make one on anybody's behalf.
-	if (!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))) {
+	if (!(await hasTeamPermission(ctx, args.conferenceId, 'manageParticipants'))) {
 		if (args.userId !== caller) {
 			throw apiError('FORBIDDEN', m.paymentOnlyOwnName());
 		}

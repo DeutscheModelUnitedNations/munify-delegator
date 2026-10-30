@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { sameSitePath } from '#api/services/sameSitePath.js';
+import { sameSitePath } from '#api/services/sameSitePath';
 import type { RequestHandler } from './$types';
 
 /**

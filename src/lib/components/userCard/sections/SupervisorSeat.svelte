@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import PersonName from '../PersonName.svelte';
 	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import { removeSupervision } from './removeSupervision';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
-	import codenmz from '#lib/helpers/codenamize.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
+	import codenmz from '#lib/helpers/codenamize';
 	import Flag from '#lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 
 	interface Props {
 		supervisorId: string;

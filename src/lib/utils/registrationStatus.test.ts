@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-vi.mock('#lib/paraglide/messages.js', () => ({
+vi.mock('#lib/paraglide/messages', () => ({
 	m: {
 		registrationClosed: () => 'closed',
 		vacancies: () => 'vacancies',

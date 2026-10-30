@@ -1,6 +1,6 @@
 // world-countries
 
-import { getLocale, locales } from '#lib/paraglide/runtime.js';
+import { getLocale, locales } from '#lib/paraglide/runtime';
 import allNations from 'world-countries';
 
 const addressNations = [

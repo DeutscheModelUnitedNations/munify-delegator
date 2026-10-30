@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import EmailLayout from './EmailLayout.svelte';
 	import EmailButton from './EmailButton.svelte';
 	import EmailParagraphs from './EmailParagraphs.svelte';
@@ -7,7 +7,7 @@
 
 	/**
 	 * The note to someone with an account who was added to a conference's team. Heading and
-	 * paragraphs are the conference's text (`TEAM_WELCOME` in `#lib/helpers/emailTemplates.js`); the
+	 * paragraphs are the conference's text (`TEAM_WELCOME` in `#lib/helpers/emailTemplates`); the
 	 * greeting, the button and the footer stay fixed.
 	 */
 	interface Props {

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { defaults } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
-	import { mutationForm } from '#lib/components/form/mutationForm.js';
-	import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
+	import { mutationForm } from '#lib/components/form/mutationForm';
+	import { applicationFormSchema } from '#lib/schemata/applicationForm';
 	import type { ApplicationAnswers } from '../../../dashboard/[conferenceId]/applicationForm';
 	import FlowStep from './FlowStep.svelte';
 

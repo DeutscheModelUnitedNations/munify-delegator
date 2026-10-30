@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type {
 		AdministrativestatusEnum,
 		MediaconsentstatusEnum
-	} from '#lib/api/rumbleClient/client.js';
+	} from '#lib/api/rumbleClient/client';
 	import ParticipantPaymentWidget from '#lib/components/ParticipantPaymentWidget.svelte';
 	import EmailLogSection from '../sections/EmailLogSection.svelte';
 	import CertificateSection from '../sections/CertificateSection.svelte';
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import DocumentNumberRow from '../sections/DocumentNumberRow.svelte';
 	import { toast } from 'svelte-sonner';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import {
 		downloadPostalRegistrationDocuments,
 		fetchPostalRegistrationSources
-	} from '#lib/api/postalRegistrationSources.js';
-	import { postalRecipient } from '#lib/api/postalRegistrationData.js';
+	} from '#lib/api/postalRegistrationSources';
+	import { postalRecipient } from '#lib/api/postalRegistrationData';
 	import { careTeamPostalParticipant, documentFileName, hasPostalAddress } from './statusDownloads';
 	import {
 		changeParticipantStatus,

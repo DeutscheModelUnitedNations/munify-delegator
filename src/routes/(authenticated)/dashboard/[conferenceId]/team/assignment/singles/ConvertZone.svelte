@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { CONVERT_CONTAINER } from '#lib/assignment/board.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { CONVERT_CONTAINER } from '#lib/assignment/board';
+	import formatNames from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import { droppable, type DragDropState } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
 

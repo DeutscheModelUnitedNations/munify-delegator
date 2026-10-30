@@ -7,9 +7,9 @@
 	import { fetchExistingRegistrations } from './existingRegistrations';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { getRegistrationStatus } from '#lib/utils/registrationStatus';
 	import NotParticipatingHint from '#lib/components/dashboard/NotParticipatingHint.svelte';
 
 	import MermaidWrapper from '#lib/components/MermaidWrapper.svelte';

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import Flag from '#lib/components/Flag.svelte';
 	import { describeParticipant } from '../registration-mode/participantInfo';
 	import IdentityCode from '#lib/components/IdentityCode.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { scanIssues, type ScanIssue } from '../team/attendance/scanCheck';
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';

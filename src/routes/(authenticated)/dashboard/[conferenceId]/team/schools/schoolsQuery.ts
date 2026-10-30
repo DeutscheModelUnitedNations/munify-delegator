@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 
 /** The columns the backend sorts the schools by (`conferenceSchools`). */

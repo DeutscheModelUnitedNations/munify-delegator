@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AssignmentBadge from '#lib/components/tanStackTable/cells/AssignmentBadge.svelte';
-	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence.js';
+	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence';
 
 	interface Props {
 		representation: ChasePresenceRepresentation;

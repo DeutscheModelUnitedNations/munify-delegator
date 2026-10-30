@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import type { ConferencePaymentData } from './conferencePaymentData';
 	import DisabledInput from '#lib/components/DisabledInput.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
-	import { hasErrorCode } from '#lib/api/errorCodes.js';
+	import { hasErrorCode } from '#lib/api/errorCodes';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {

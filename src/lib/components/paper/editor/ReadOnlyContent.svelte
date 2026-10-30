@@ -6,7 +6,7 @@
 	import Link from '@tiptap/extension-link';
 	import { BlockquoteWithFind } from './extensions/BlockquoteWithFind';
 	import Heading from '@tiptap/extension-heading';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
 	import { getSafeTipTapContent } from './contentValidation';
 

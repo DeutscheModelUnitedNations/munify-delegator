@@ -1,10 +1,5 @@
-import {
-	CONFERENCE_CONTENT_ROLES,
-	PARTICIPANT_CARE_ROLES,
-	PROJECT_MANAGEMENT_ROLES
-} from '#lib/helpers/teamRoles.js';
-import { MAX_RESOLUTION_FILE_SIZE } from '#lib/helpers/resolutionUpload.js';
-import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
+import type { TeamPermission } from '#lib/helpers/teamRoles';
+import { MAX_RESOLUTION_FILE_SIZE } from '#lib/helpers/resolutionUpload';
 import { filePurpose } from './storageClient';
 
 /**
@@ -16,14 +11,14 @@ import { filePurpose } from './storageClient';
  * from the bucket too: the row's `*Url` field is a presigned URL (`fileUrl`), null for a reader
  * whose column mask hides the file.
  *
- * `roles` may upload the file (a system admin always may), `mimeTypes` and `maxBytes` limit what
- * they upload.
+ * The team `permission` (`rolesWithTeamPermission`) uploads the file (a system admin always may),
+ * `mimeTypes` and `maxBytes` limit what they upload.
  */
 interface FileSource {
 	column: string;
 	mimeTypes: readonly string[];
 	maxBytes: number;
-	roles: readonly TeamroleEnum[];
+	permission: TeamPermission;
 }
 
 const PDF = ['application/pdf'];
@@ -34,7 +29,7 @@ const conferenceImage = (column: string): FileSource => ({
 	column,
 	mimeTypes: IMAGES,
 	maxBytes: 1_000_000,
-	roles: PROJECT_MANAGEMENT_ROLES
+	permission: 'manageConference'
 });
 
 /** The PDF templates the participants' documents are printed on, for members only. */
@@ -42,7 +37,7 @@ const conferenceTemplate = (column: string): FileSource => ({
 	column,
 	mimeTypes: PDF,
 	maxBytes: 10_000_000,
-	roles: CONFERENCE_CONTENT_ROLES
+	permission: 'editConferenceContent'
 });
 
 const FILE_SOURCES = {
@@ -61,7 +56,7 @@ const FILE_SOURCES = {
 			column: 'sitePlanFileId',
 			mimeTypes: PDF,
 			maxBytes: 10_000_000,
-			roles: PARTICIPANT_CARE_ROLES
+			permission: 'manageParticipants'
 		}
 	},
 	resolution: {
@@ -69,7 +64,7 @@ const FILE_SOURCES = {
 			column: 'fileId',
 			mimeTypes: PDF,
 			maxBytes: MAX_RESOLUTION_FILE_SIZE,
-			roles: CONFERENCE_CONTENT_ROLES
+			permission: 'editConferenceContent'
 		}
 	}
 } as const satisfies Record<string, Record<string, FileSource>>;

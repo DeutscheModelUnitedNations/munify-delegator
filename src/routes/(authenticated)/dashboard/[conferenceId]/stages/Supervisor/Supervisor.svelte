@@ -1,16 +1,16 @@
 <script lang="ts">
 	import StudentsAcceptedStat from '../Common/StudentsAcceptedStat.svelte';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
-	import type { ConferenceState } from '#lib/data/dashboardLinks.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import type { ConferenceState } from '#lib/data/dashboardLinks';
 	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import ApplicationRejected from '#lib/components/ApplicationRejected.svelte';
 	import AssignmentPending from '#lib/components/AssignmentPending.svelte';
 	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import formatNames from '#lib/helpers/formatNames';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import SupervisorPresence from './SupervisorPresence.svelte';

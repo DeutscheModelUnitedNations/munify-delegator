@@ -1,6 +1,6 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { DEFAULT_WEIGHTS, autoAssign } from '#lib/assignment/autoAssign.js';
+import { type Transaction, db, schema } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { DEFAULT_WEIGHTS, autoAssign } from '#lib/assignment/autoAssign';
 import { experienceShare } from './experience';
 import type { reviewRow } from './review';
 import {
@@ -10,15 +10,15 @@ import {
 	targetKey,
 	type AssignmentGroup,
 	type Target
-} from '#lib/assignment/state.js';
-import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#lib/assignment/state';
+import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds';
+import { m } from '#lib/paraglide/messages';
 import { eq } from 'drizzle-orm';
 import {
 	enabledKinds,
 	setEmailKindsEnabled,
 	skipOpenEmails
-} from '#api/handlers/email/emailSweep.js';
+} from '#api/handlers/email/emailSweep';
 import { clearDraft, draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
 import { loadExperiencedIds } from './assignmentExperience';
 import { matchSingles } from './matching';

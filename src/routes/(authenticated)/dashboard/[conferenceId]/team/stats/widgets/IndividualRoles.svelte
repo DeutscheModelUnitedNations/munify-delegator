@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { unifiedFilter, getSelectedHistoryEntry, statsQueryFilter } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
 

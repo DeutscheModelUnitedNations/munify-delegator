@@ -1,5 +1,5 @@
-import { db } from '#api/db/db.js';
-import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble';
 import { applicationArgs } from './applicationArgs';
 import {
 	createDelegationWithHead,
@@ -7,15 +7,15 @@ import {
 	updateDelegationDetails
 } from './delegationService';
 import { assertCanUpdateDelegation, registerDelegationAbilities } from './delegationPermissions';
-import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
 	delegationMemberPubsub,
 	delegationPubsub,
 	schoolPubsub
-} from '#api/pubsub.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+} from '#api/pubsub';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerDelegationAbilities();
 

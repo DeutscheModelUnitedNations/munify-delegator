@@ -1,7 +1,7 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
 
-/** Which file an upload is for, as `FILE_SOURCES` in `#api/handlers/storedFile/fileSources.js` lists them. */
+/** Which file an upload is for, as `FILE_SOURCES` in `#api/handlers/storedFile/fileSources` lists them. */
 export type UploadTarget =
 	| { kind: 'conference'; field: ConferenceFileField; conferenceId: string }
 	| { kind: 'place'; field: 'sitePlan'; conferenceId: string }

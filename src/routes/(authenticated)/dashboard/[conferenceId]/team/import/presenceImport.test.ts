@@ -8,7 +8,7 @@ import {
 import {
 	CHASE_PRESENCE_SCHEMA_URL,
 	type ChasePresenceParticipant
-} from '#lib/schemata/chasePresence.js';
+} from '#lib/schemata/chasePresence';
 
 const event = (present: boolean, i: number) => ({
 	id: `e${i}`,

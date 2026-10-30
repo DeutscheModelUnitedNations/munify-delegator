@@ -7,11 +7,11 @@
 </script>
 
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { downloadResolution } from '#lib/api/downloadResolution.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { downloadResolution } from '#lib/api/downloadResolution';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 
 	let {
 		resolutionId,

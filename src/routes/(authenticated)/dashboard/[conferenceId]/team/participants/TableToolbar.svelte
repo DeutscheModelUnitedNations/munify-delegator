@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import type { Table } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedTableFeatures } from '#lib/components/tanStackTable/managedTable.js';
+	import { m } from '#lib/paraglide/messages';
+	import type { Table } from '#lib/components/tanStackTable/index';
+	import type { ManagedTableFeatures } from '#lib/components/tanStackTable/managedTable';
 	import type { ParticipantRow } from './types';
 
 	/** The participants' own buttons in the table's toolbar row: open issues and the waiting list. */

@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * The formal steps of taking part, as a checklist: what is still open, and - struck through, so

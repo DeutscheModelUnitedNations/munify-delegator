@@ -1,10 +1,10 @@
-import { db } from '#api/db/db.js';
-import type * as schema from '#api/db/schema/index.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import type * as schema from '#api/db/schema/index';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertParticipantOfConference,
-	assertTeamRole,
-	hasTeamRole,
+	assertTeamPermission,
+	hasTeamPermission,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	PAPER_ROLES,
@@ -12,10 +12,10 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { apiError } from '#api/services/errors/apiError.js';
+import { apiError } from '#api/services/errors/apiError';
 
 type PaperType = (typeof schema.paper.$inferSelect)['type'];
 type RoleKind = (typeof schema.conferenceRole.$inferSelect)['kind'];
@@ -72,12 +72,12 @@ export function registerPaperAbilities() {
 
 /** Reviewers and conference management of the conference, or a system admin. */
 export function assertCanReviewPapers(ctx: ApiContext, conferenceId: string) {
-	return assertTeamRole(ctx, conferenceId, PAPER_ROLES);
+	return assertTeamPermission(ctx, conferenceId, 'reviewPapers');
 }
 
 /** The non-throwing form of `assertCanReviewPapers`. */
 export function canReviewPapers(ctx: ApiContext, conferenceId: string) {
-	return hasTeamRole(ctx, conferenceId, PAPER_ROLES);
+	return hasTeamPermission(ctx, conferenceId, 'reviewPapers');
 }
 
 /** The reviewer check for the conference an agenda item belongs to. */

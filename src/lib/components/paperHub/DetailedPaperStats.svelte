@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
 	import type { EChartsOption, TooltipComponentFormatterCallbackParams } from 'echarts';
 	import BarChart from '#lib/components/charts/echarts/BarChart.svelte';
 	import MultiSeriesBarChart from '#lib/components/charts/echarts/MultiSeriesBarChart.svelte';

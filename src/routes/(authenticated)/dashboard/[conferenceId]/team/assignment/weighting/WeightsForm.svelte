@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { DEFAULT_WEIGHTS, assignmentCost } from '#lib/assignment/autoAssign.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { DEFAULT_WEIGHTS, assignmentCost } from '#lib/assignment/autoAssign';
 	import {
 		weightImpacts,
 		type ImpactEffect,
 		type ImpactTone
-	} from '#lib/assignment/weightImpact.js';
+	} from '#lib/assignment/weightImpact';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import { assignmentWeightsSchema } from '#lib/schemata/assignmentWeights.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { m } from '#lib/paraglide/messages';
+	import { assignmentWeightsSchema } from '#lib/schemata/assignmentWeights';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';

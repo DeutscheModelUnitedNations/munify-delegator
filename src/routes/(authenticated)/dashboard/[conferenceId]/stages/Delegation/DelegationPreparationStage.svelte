@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Flag from '#lib/components/Flag.svelte';
-	import codenamize from '#lib/helpers/codenamize.js';
+	import codenamize from '#lib/helpers/codenamize';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import CountryStats from '#lib/components/countryStats/CountryStats.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationMembersStatusSection from './DelegationMembersStatusSection.svelte';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 
 	interface Props {
 		conferenceId: string;

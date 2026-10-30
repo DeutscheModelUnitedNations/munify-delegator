@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Selection from '#lib/components/selection/index.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import Selection from '#lib/components/selection/index';
+	import formatNames from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
 
 	/** One person a payment can cover, as a checkbox. Labelled with their name unless `label` is given. */

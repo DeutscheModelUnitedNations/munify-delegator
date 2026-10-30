@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import UserCardContent from '#lib/components/userCard/UserCardContent.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();

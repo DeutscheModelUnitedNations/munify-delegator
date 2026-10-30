@@ -1,8 +1,8 @@
-import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+import type { ConferencestateEnum } from '#lib/api/rumbleClient/client';
 
 /**
  * What an application needs before it may be sent, shared by the API (which refuses it,
- * `#api/services/registration/applicationReadiness.js`) and the registration stages (which show it as
+ * `#api/services/registration/applicationReadiness`) and the registration stages (which show it as
  * todos), so the two cannot disagree.
  */
 

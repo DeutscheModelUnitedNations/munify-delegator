@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Modal from './Modal.svelte';
 	import NormalizeSchools from './NormalizeSchools.svelte';
 	import type { ModalData } from './types';

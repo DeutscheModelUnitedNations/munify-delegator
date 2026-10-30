@@ -1,6 +1,6 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
-import { BACKEND_PAGE_LIMIT } from '#lib/components/tanStackTable/serverQuery.js';
+import { BACKEND_PAGE_LIMIT } from '#lib/components/tanStackTable/serverQuery';
 import { fetchConferenceParticipants } from './conferenceParticipants';
 import { toFilterInputs, type FilterKind } from './filterInputs';
 import { transformParticipants } from './dataTransform';

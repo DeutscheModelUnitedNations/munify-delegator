@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { planApply, planIsEmpty } from '#lib/assignment/applyPlan.js';
-	import { boardState, describeRole, mergedRoles } from '#lib/assignment/board.js';
-	import { seatedRoles, seatsByKey } from '#lib/assignment/capacity.js';
-	import { targetKey, type Target } from '#lib/assignment/state.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { planApply, planIsEmpty } from '#lib/assignment/applyPlan';
+	import { boardState, describeRole, mergedRoles } from '#lib/assignment/board';
+	import { seatedRoles, seatsByKey } from '#lib/assignment/capacity';
+	import { targetKey, type Target } from '#lib/assignment/state';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -15,14 +15,14 @@
 		fetchSeatedApplications,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { toastError } from '../toastError';
 	import {
 		requiredApplicationOf,
 		requiredWithoutSeat,
 		seatOccupancy
-	} from '#lib/assignment/seatChecks.js';
+	} from '#lib/assignment/seatChecks';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import SeatWarnings from './SeatWarnings.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';

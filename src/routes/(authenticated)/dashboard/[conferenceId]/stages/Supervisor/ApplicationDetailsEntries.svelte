@@ -1,6 +1,6 @@
 <script lang="ts">
-	import InfoGrid from '#lib/components/infoGrid/index.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import InfoGrid from '#lib/components/infoGrid/index';
+	import { m } from '#lib/paraglide/messages';
 
 	/** An application in short: the applicants' own schools, their experience and motivation. */
 	interface Props {

@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { fade, fly, scale, slide } from 'svelte/transition';
 	import { cubicOut, backOut } from 'svelte/easing';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getFlowInteraction } from './flowInteraction';
 
 	/**

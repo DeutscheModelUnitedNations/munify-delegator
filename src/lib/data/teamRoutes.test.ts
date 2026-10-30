@@ -6,7 +6,7 @@ import {
 	teamRoutes,
 	teamRoutesFor
 } from './teamRoutes';
-import { NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess.js';
+import { NO_TEAM_ACCESS, type TeamAccess } from '#lib/helpers/teamAccess';
 
 const as = (...roles: TeamAccess['roles']): TeamAccess => ({ isAdmin: false, roles });
 const ids = (access: TeamAccess & { canSeePaperHub?: boolean }) =>

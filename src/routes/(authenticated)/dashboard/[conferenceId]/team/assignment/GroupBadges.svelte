@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { BoardReviewRow } from '#lib/assignment/board.js';
-	import type { AssignmentGroup } from '#lib/assignment/state.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { BoardReviewRow } from '#lib/assignment/board';
+	import type { AssignmentGroup } from '#lib/assignment/state';
+	import { m } from '#lib/paraglide/messages';
 
 	/** What sets a group apart on its card: how it came about, the team's marks, its wish. */
 	interface Props {

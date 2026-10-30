@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { schoolSummary } from './schoolMetrics';
 
 	/** How many people from the school took part in each conference, and how it went for them. */

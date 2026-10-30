@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /**
  * Every conference the selector offers. The API's read rules narrow it to the conferences the

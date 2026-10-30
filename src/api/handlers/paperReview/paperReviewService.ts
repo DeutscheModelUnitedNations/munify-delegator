@@ -1,11 +1,11 @@
-import type { Context } from '#api/context.js';
-import { type Transaction, db, schema } from '#api/db/db.js';
+import type { Context } from '#api/context';
+import { type Transaction, db, schema } from '#api/db/db';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, count, eq } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { translatePaperStatus } from '#lib/utils/enumTranslations.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { splitRole } from '#lib/helpers/conferenceRole.js';
+import { m } from '#lib/paraglide/messages';
+import { translatePaperStatus } from '#lib/utils/enumTranslations';
+import { apiError } from '#api/services/errors/apiError';
+import { splitRole } from '#lib/helpers/conferenceRole';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
 type UnlockedPiece = {

@@ -1,25 +1,25 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
+import { type Transaction, db, schema } from '#api/db/db';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
-} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	fetchParticipationsAndTeamMembership,
 	isParticipantOrTeamMember
-} from '#api/services/registration/participation.js';
+} from '#api/services/registration/participation';
 import {
 	assertApplicationReady,
 	assertRegistrationOpen
-} from '#api/services/registration/applicationReadiness.js';
-import { nullToUndefined } from '#api/services/args.js';
-import { applicationFormSchema } from '#lib/schemata/applicationForm.js';
-import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/registration/applicationReadiness';
+import { nullToUndefined } from '#api/services/args';
+import { applicationFormSchema } from '#lib/schemata/applicationForm';
+import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
+import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '#api/services/errors/apiError.js';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
-import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService.js';
+import { apiError } from '#api/services/errors/apiError';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 
 /**
  * The caller's existing single registration in the conference, if any, after making sure they may

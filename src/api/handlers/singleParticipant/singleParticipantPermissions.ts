@@ -1,8 +1,8 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertCustomRolesOf,
-	assertTeamRole,
+	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
 	maskedUntilRelease,
@@ -12,8 +12,8 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
+} from '#api/services/authHelper';
+import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 /** The single participants the caller supervises. */
@@ -87,6 +87,6 @@ export async function assertCanCreateAppliedSingleParticipant(
 	conferenceId: string,
 	roleId: string
 ) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	await assertCustomRolesOf(conferenceId, [roleId]);
 }

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { ApplyError, planApply } from '#lib/assignment/applyPlan.js';
-	import type { Target } from '#lib/assignment/state.js';
-	import codenamize from '#lib/helpers/codenamize.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { ApplyError, planApply } from '#lib/assignment/applyPlan';
+	import type { Target } from '#lib/assignment/state';
+	import codenamize from '#lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages';
 
 	/** What blocks applying the draft, and what is allowed but probably wrong. */
 	interface Props {

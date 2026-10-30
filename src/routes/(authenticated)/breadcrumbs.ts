@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 /**
  * What each URL segment is called in the breadcrumbs, and its icon. Keyed by the segment as the

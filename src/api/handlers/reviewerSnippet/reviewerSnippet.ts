@@ -1,15 +1,15 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 import {
 	assertCanUpdateReviewerSnippet,
 	registerReviewerSnippetAbilities
 } from './reviewerSnippetPermissions';
-import { reviewerSnippetPubsub } from '#api/pubsub.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { reviewerSnippetPubsub } from '#api/pubsub';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerReviewerSnippetAbilities();
 

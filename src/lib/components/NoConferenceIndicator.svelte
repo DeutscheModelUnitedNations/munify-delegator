@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import svgempty from '#assets/undraw/empty_street.svg';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 </script>
 
 <main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4">

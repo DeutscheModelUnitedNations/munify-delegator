@@ -1,7 +1,7 @@
-import { m } from '#lib/paraglide/messages.js';
-import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+import { m } from '#lib/paraglide/messages';
+import { translateTeamRole } from '#lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
 /** What the registration desk is shown about who the caller is at this conference. */
 export type ParticipantInfo = {

@@ -1,9 +1,9 @@
-import { db } from '#api/db/db.js';
+import { db } from '#api/db/db';
 import { sql } from 'drizzle-orm';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 import {
 	assertCanReadConferenceSchools,
 	assertCanReadSchoolMetrics,
@@ -28,8 +28,8 @@ import {
 	schoolSuggestionVariantPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
-} from '#api/pubsub.js';
-import { readableById } from '#api/services/authHelper.js';
+} from '#api/pubsub';
+import { readableById } from '#api/services/authHelper';
 
 registerSchoolAbilities();
 

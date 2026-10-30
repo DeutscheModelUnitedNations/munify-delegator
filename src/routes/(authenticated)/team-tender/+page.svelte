@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { resolve } from '$app/paths';
 
 	// The signed-in person does not change while the page is open.

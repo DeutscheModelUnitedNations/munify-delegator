@@ -1,4 +1,4 @@
-import { keepWhileEqual } from '#lib/helpers/memoizeLast.js';
+import { keepWhileEqual } from '#lib/helpers/memoizeLast';
 
 /**
  * A plain copy of a live query result's rows, for a page that works over them a lot. Read it in

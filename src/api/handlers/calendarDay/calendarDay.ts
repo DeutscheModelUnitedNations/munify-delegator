@@ -1,5 +1,5 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertCanCreateCalendarDay, registerCalendarDayAbilities } from './calendarDayPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { createImportedDay, parseImportData } from './calendarDayService';
@@ -8,13 +8,13 @@ import {
 	calendarEntryPubsub,
 	calendarTrackPubsub,
 	placePubsub
-} from '#api/pubsub.js';
+} from '#api/pubsub';
 import {
 	deleteAllowedRow,
 	assertUpdated,
 	allowedRowWhere,
 	readableById
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 registerCalendarDayAbilities();
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
 
 	interface Props {
 		userId: string;

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getRegistrationStatus, registrationStatusLight } from '#lib/utils/registrationStatus.js';
-	import { getWaitingListStatus } from '#lib/helpers/waitingListStatus.js';
+	import { getRegistrationStatus, registrationStatusLight } from '#lib/utils/registrationStatus';
+	import { getWaitingListStatus } from '#lib/helpers/waitingListStatus';
 	import StatusLight from './StatusLight.svelte';
 
 	interface Props {

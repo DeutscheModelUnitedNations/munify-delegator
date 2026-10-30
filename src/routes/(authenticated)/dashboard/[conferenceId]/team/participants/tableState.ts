@@ -1,4 +1,4 @@
-import type { ColumnFiltersState } from '#lib/components/tanStackTable/index.js';
+import type { ColumnFiltersState } from '#lib/components/tanStackTable/index';
 
 /** Conference states in which the table opens filtered to accepted participants. */
 const statesWithDefaultAcceptedFilter = ['PREPARATION', 'ACTIVE', 'POST'];

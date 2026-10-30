@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { PUBLIC_FEEDBACK_URL } from '$app/env/public';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import LanguageSwitcher from '#lib/components/LanguageSwitcher.svelte';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/** The header's account menu: who is signed in, the account, language, feedback and logout. */
 

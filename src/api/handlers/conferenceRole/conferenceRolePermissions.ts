@@ -1,14 +1,14 @@
-import { db, schema } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	assertTeamRole,
+	assertTeamPermission,
 	isTeamMemberOfConference,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	where,
 	assertAllowedById
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 
@@ -36,7 +36,7 @@ export function registerConferenceRoleAbilities() {
 type PlannedRoleKind = 'NON_STATE_ACTOR' | 'CUSTOM';
 
 export async function assertCanCreateConferenceRole(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, SEAT_PLANNING_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'planSeats');
 }
 
 /** Loads the role of this `kind` through the caller's update ability, with its current seats. */

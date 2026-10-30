@@ -1,5 +1,5 @@
-import { db } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
@@ -7,7 +7,7 @@ import {
 	conferenceRolePubsub,
 	resolutionPubsub,
 	roleApplicationPubsub
-} from '#api/pubsub.js';
+} from '#api/pubsub';
 import {
 	assertCanCreateCommittee,
 	assertCanDeleteCommittee,
@@ -22,7 +22,7 @@ import {
 	setCommitteeRegionalBaseline,
 	updateCommittee
 } from './committeeService';
-import { readableById } from '#api/services/authHelper.js';
+import { readableById } from '#api/services/authHelper';
 
 registerCommitteeAbilities();
 

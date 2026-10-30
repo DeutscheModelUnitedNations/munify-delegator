@@ -1,11 +1,11 @@
-import { db, schema } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceEmailFooterPubsub,
 	conferenceEmailSettingPubsub,
 	conferenceEmailTextPubsub
-} from '#api/pubsub.js';
+} from '#api/pubsub';
 import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
 import {
 	countOpenEmails,
@@ -14,10 +14,10 @@ import {
 	setEmailKindsEnabled,
 	skipOpenEmails
 } from './emailSweep';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
-import { toLocale } from '#lib/paraglide/runtime.js';
-import { isAlwaysSent } from '#lib/helpers/emailKinds.js';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
+import { toLocale } from '#lib/paraglide/runtime';
+import { isAlwaysSent } from '#lib/helpers/emailKinds';
 import { and, eq } from 'drizzle-orm';
 
 registerEmailAbilities();

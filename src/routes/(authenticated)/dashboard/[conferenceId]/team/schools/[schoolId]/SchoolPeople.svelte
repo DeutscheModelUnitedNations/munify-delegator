@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import PersonName from '#lib/components/userCard/PersonName.svelte';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { schoolPeople, type SchoolPersonKind, type SchoolPersonStage } from './schoolPeople';
 
 	/** Everyone the school has in this conference, each by their own school. */

@@ -1,11 +1,11 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { containing } from '#lib/components/tanStackTable/serverQuery.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { containing } from '#lib/components/tanStackTable/serverQuery';
 import {
 	getFullTranslatedCountryNameFromISO3Code,
 	translatedNationCodeAddressFormOptions
 } from '#lib/utils/nationTranslationHelper.svelte.js';
 import Fuse from 'fuse.js';
-import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
+import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 import {
 	userParticipationType,
 	type SearchDelegation,

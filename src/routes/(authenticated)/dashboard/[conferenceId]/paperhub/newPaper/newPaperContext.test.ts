@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 const delegationMembers = vi.fn();
 const committeeAgendaItems = vi.fn();
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({
+vi.mock('#lib/api/rumbleClient/client', () => ({
 	client: { liveQuery: { delegationMembers, committeeAgendaItems } }
 }));
 vi.mock('../paperDisplay', () => ({

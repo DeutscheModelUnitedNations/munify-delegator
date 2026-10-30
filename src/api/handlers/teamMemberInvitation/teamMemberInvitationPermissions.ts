@@ -1,14 +1,13 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PROJECT_MANAGEMENT_ROLES,
-	TEAM_ADMIN_ROLES,
 	assertMayGrantRole,
-	assertTeamRole,
+	assertTeamPermission,
 	isTeamMemberOfConference,
 	systemAdmin,
 	type TeamRole
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerTeamMemberInvitationAbilities() {
@@ -34,7 +33,7 @@ export function registerTeamMemberInvitationAbilities() {
 
 /** Refuses unless the caller may invite people to the team of `conferenceId` at all. */
 export async function assertCanManageInvitations(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, TEAM_ADMIN_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageTeam');
 }
 
 /** Refuses unless the caller may hand out `role` on the team of `conferenceId`. */

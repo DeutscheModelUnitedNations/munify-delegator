@@ -2,13 +2,13 @@
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { toast } from 'svelte-sonner';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import { fetchCommitteeAssignment } from './committeeAssignment';
 	import { chosenAssignments } from './chosenAssignments';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import formatNames from '#lib/helpers/formatNames';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();

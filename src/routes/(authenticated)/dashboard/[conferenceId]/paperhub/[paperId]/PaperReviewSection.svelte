@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client';
 	import { writable, get } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import type { JSONContent } from '@tiptap/core';
-	import PaperEditor from '#lib/components/paper/editor/index.js';
-	import { PieceFoundModal } from '#lib/components/flagCollection/index.js';
+	import PaperEditor from '#lib/components/paper/editor/index';
+	import { PieceFoundModal } from '#lib/components/flagCollection/index';
 	import Modal from '#lib/components/Modal.svelte';
-	import { getEmptyTipTapDocument } from '#lib/components/paper/editor/contentValidation.js';
+	import { getEmptyTipTapDocument } from '#lib/components/paper/editor/contentValidation';
 	import { untrack } from 'svelte';
 	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';
 	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';

@@ -1,4 +1,4 @@
-import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
 
 const paperTypeIcons: Record<PapertypeEnum, string> = {
 	POSITION_PAPER: 'fa-file',

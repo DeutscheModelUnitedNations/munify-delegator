@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
-	import PaperEnum from '#lib/components/paper/paperEnum/index.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
+	import PaperEnum from '#lib/components/paper/paperEnum/index';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * The leading type and status columns of a paper list table: their header cells when `paper`

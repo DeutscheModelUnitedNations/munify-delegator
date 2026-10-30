@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import AccessCardSection from '../AccessCardSection.svelte';
 	import AttendanceSection from '../AttendanceSection.svelte';

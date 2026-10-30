@@ -2,7 +2,7 @@
 	import type { BarcodeFormat } from 'barcode-detector';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
 	import ScanPageHeader from '#lib/components/scanner/ScanPageHeader.svelte';
 	import ScanResultPanel from '#lib/components/scanner/ScanResultPanel.svelte';

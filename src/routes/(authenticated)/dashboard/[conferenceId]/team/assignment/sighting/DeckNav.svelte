@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { deckKeyTarget, NEXT_UNREVIEWED_KEY } from '#lib/assignment/deckKeys.js';
-	import type { DeckStatus } from '#lib/assignment/sighting.js';
-	import codenamize from '#lib/helpers/codenamize.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { DeckPosition, DeckWindowData } from '#lib/assignment/deckWindow.js';
+	import { deckKeyTarget, NEXT_UNREVIEWED_KEY } from '#lib/assignment/deckKeys';
+	import type { DeckStatus } from '#lib/assignment/sighting';
+	import codenamize from '#lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages';
+	import type { DeckPosition, DeckWindowData } from '#lib/assignment/deckWindow';
 
 	/**
 	 * Moves through the applications under review one at a time: back and forth, to the next one

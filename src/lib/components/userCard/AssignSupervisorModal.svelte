@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 
 	const SUPERVISOR_LIMIT = 20;
 

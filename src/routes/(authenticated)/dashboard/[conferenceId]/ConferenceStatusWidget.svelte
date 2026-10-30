@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import { client } from '#lib/api/rumbleClient/client';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import StatusChecklist, {
 		type ChecklistStatus
 	} from '#lib/components/dashboard/StatusChecklist.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 
 	interface Props {
 		conferenceId: string;

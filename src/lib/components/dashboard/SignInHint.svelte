@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import undrawSignIn from '#assets/undraw/around_the_world.svg';
 	import { page } from '$app/state';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/** What a visitor who is not signed in is missing, and the way back to this page after signing in. */
 	interface Props {

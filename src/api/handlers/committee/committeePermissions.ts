@@ -1,15 +1,16 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	assertTeamRole,
+	assertAllowedById,
+	assertTeamPermission,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	where,
-	assertAllowedById
-} from '#api/services/authHelper.js';
+	teamConference,
+	where
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
@@ -32,7 +33,7 @@ export function registerCommitteeAbilities() {
 
 /** Creating a committee changes the conference set-up, which is the management's call. */
 export async function assertCanCreateCommittee(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PROJECT_MANAGEMENT_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageConference');
 }
 
 /**
@@ -67,10 +68,9 @@ export async function assertCanDeleteCommittee(ctx: ApiContext, id: string) {
 export async function assertCanPlanCommitteeSeats(ctx: ApiContext, committeeId: string) {
 	const committee = await db.query.committee
 		.findFirst({
-			where: { id: committeeId },
+			where: { id: committeeId, conference: teamConference(ctx, 'planSeats') },
 			columns: { conferenceId: true, regionalBaselineTargets: true }
 		})
 		.then(assertFindFirstExists);
-	await assertTeamRole(ctx, committee.conferenceId, SEAT_PLANNING_ROLES);
 	return committee;
 }

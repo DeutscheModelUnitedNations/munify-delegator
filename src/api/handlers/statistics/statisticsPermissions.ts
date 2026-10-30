@@ -1,7 +1,7 @@
-import type { Context } from '#api/context.js';
-import { assertTeamRole } from '#api/services/authHelper.js';
+import type { ApiContext } from '#api/rumble';
+import { assertTeamPermission } from '#api/services/authHelper';
 
 /** A conference's statistics are for anyone on its team. */
-export async function assertCanReadStatistics(ctx: Context, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId);
+export async function assertCanReadStatistics(ctx: ApiContext, conferenceId: string) {
+	await assertTeamPermission(ctx, conferenceId, 'useTeamTools');
 }

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import CopyDayEntriesModal from './CopyDayEntriesModal.svelte';
 	import TrackMatrix from './TrackMatrix.svelte';
 	import DayFormModal from './DayFormModal.svelte';

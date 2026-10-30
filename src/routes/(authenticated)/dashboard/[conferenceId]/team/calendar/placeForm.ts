@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import { decodePlusCodeFull, recoverPlusCode } from './plusCode';
 
 /** Why a plus code could not be placed: not a code, a short code without a city, an unknown city. */

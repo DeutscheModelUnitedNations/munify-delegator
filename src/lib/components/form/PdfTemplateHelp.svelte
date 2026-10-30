@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
 
 	/** A small question mark that opens an explanation of how the PDF templates get filled in. */

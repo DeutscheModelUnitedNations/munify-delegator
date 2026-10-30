@@ -5,10 +5,10 @@ import {
 	S3_REGION,
 	S3_SECRET_ACCESS_KEY
 } from '$app/env/private';
-import { apiError } from '#api/services/errors/apiError.js';
-import { db, schema } from '#api/db/db.js';
-import { nanoid } from '#lib/helpers/nanoid.js';
-import { m } from '#lib/paraglide/messages.js';
+import { apiError } from '#api/services/errors/apiError';
+import { db, schema } from '#api/db/db';
+import { nanoid } from '#lib/helpers/nanoid';
+import { m } from '#lib/paraglide/messages';
 import { formatMegabytes, type findFileSource } from './fileSources';
 import { createStorage, objectKey, type Storage } from './storageClient';
 

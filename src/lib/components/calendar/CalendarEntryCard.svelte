@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatClock } from '#lib/helpers/formatClock.js';
-	import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
+	import { formatClock } from '#lib/helpers/formatClock';
+	import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client';
 	import { getColorConfig } from './calendarColors';
 
 	interface Props {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
-	import { locales } from '#lib/paraglide/runtime.js';
+	import { locales } from '#lib/paraglide/runtime';
 	import { breadcrumbs, hasPageAt, staticFirst, type LocalizedBreadcrumb } from './breadcrumbs';
 	import ConferenceSwitcher from './ConferenceSwitcher.svelte';
 	import SurveyCrumbTitle from './SurveyCrumbTitle.svelte';

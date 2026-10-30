@@ -1,4 +1,4 @@
-import { roleSeats } from '#lib/helpers/conferenceRole.js';
+import { roleSeats } from '#lib/helpers/conferenceRole';
 import { targetKey, type Target } from './state';
 
 /** A role a delegation can be given, with the seats it brings. */

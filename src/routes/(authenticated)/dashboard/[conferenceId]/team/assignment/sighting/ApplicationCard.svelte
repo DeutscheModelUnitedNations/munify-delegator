@@ -3,12 +3,12 @@
 		genderIcon,
 		type delegationApplication,
 		type SightingReview
-	} from '#lib/assignment/sighting.js';
+	} from '#lib/assignment/sighting';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { getAgeAtConference } from '#lib/helpers/ageChecker.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { careNotesOf } from '#lib/helpers/linkedNotes.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getAgeAtConference } from '#lib/helpers/ageChecker';
+	import formatNames from '#lib/helpers/formatNames';
+	import { careNotesOf } from '#lib/helpers/linkedNotes';
+	import { m } from '#lib/paraglide/messages';
 	import ApplicationDetails from './ApplicationDetails.svelte';
 	import NoteInput from './NoteInput.svelte';
 	import ReviewControls from './ReviewControls.svelte';

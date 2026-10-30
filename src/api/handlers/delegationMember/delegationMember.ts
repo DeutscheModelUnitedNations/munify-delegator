@@ -1,6 +1,6 @@
-import { db } from '#api/db/db.js';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
+import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	assignCommittees,
 	joinDelegationByEntryCode,
@@ -16,7 +16,7 @@ import {
 	assertOfferedIn,
 	registerDelegationMemberAbilities
 } from './delegationMemberPermissions';
-import { codeGuessLimiter } from '#api/services/codeGuessLimit.js';
+import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	conferenceParticipantPubsub,
@@ -25,8 +25,8 @@ import {
 	schoolPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
-} from '#api/pubsub.js';
-import { readableById } from '#api/services/authHelper.js';
+} from '#api/pubsub';
+import { readableById } from '#api/services/authHelper';
 
 registerDelegationMemberAbilities();
 

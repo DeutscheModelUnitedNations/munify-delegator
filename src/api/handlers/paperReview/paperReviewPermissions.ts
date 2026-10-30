@@ -1,10 +1,13 @@
-import type { Context } from '#api/context.js';
-import { db } from '#api/db/db.js';
-import { abilityBuilder } from '#api/rumble.js';
-import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
-import { assertFindFirstExists } from '@m1212e/rumble';
-import { apiError } from '#api/services/errors/apiError.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
+import {
+	PAPER_ROLES,
+	systemAdmin,
+	teamConference,
+	userId
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerPaperReviewAbilities() {
 	// Ported from abilities/entities/paper/paperReview.ts
@@ -33,18 +36,14 @@ export function registerPaperReviewAbilities() {
 	});
 }
 
-/** Rejects the review unless the paper exists and the caller is one of its conference's reviewers. */
-export async function assertCanReviewPaper(ctx: Context, paperId: string) {
-	const paper = await db.query.paper
-		.findFirst({
-			where: { id: paperId },
-			columns: {},
-			with: { delegation: { columns: { conferenceId: true } } }
-		})
-		.then(assertFindFirstExists);
-
-	// Reviewing is a reviewer's action; reading the paper is not enough.
-	if (!(await hasTeamRole(ctx, paper.delegation.conferenceId, PAPER_ROLES))) {
-		throw apiError('FORBIDDEN', m.reviewOnlyReviewers());
-	}
+/**
+ * Rejects the review unless the paper exists in a conference whose papers the caller reviews.
+ * Reviewing is a reviewer's action; reading the paper is not enough.
+ */
+export async function assertCanReviewPaper(ctx: ApiContext, paperId: string) {
+	const paper = await db.query.paper.findFirst({
+		where: { id: paperId, delegation: { conference: teamConference(ctx, 'reviewPapers') } },
+		columns: { id: true }
+	});
+	if (!paper) throw apiError('NOT_FOUND', m.reviewOnlyReviewers());
 }

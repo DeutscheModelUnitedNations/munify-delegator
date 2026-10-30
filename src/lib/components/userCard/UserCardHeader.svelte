@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import formatNames from '#lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
 	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
@@ -23,7 +23,7 @@
 		seatBadgeValues
 	} from './badgeSession';
 	import BadgeGeneratorLinks from '../BadgeGeneratorLinks.svelte';
-	import { personBadge } from '#lib/helpers/badgeCsv.js';
+	import { personBadge } from '#lib/helpers/badgeCsv';
 
 	interface Props extends UserCardRoles {
 		userId: string;

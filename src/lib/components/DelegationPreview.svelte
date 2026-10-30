@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { fly } from 'svelte/transition';
 	import Spinner from './Spinner.svelte';
 	import DelegationJoinForm from './DelegationJoinForm.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;

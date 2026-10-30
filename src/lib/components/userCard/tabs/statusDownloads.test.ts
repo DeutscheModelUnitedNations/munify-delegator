@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#lib/paraglide/runtime.js', () => ({ getLocale: () => 'de' }));
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
+vi.mock('#lib/paraglide/runtime', () => ({ getLocale: () => 'de' }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: {} }));
 
 const { careTeamPostalParticipant, certificateContentsOf, documentFileName, hasPostalAddress } =
 	await import('./statusDownloads');

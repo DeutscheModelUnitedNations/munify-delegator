@@ -1,5 +1,5 @@
-import { m } from '#lib/paraglide/messages.js';
-import type { ElementOf, LayoutDocument } from '#lib/helpers/documentLayout.js';
+import { m } from '#lib/paraglide/messages';
+import type { ElementOf, LayoutDocument } from '#lib/helpers/documentLayout';
 
 /** Every element any document has. */
 export type LayoutElement = { [D in LayoutDocument]: ElementOf<D> }[LayoutDocument];

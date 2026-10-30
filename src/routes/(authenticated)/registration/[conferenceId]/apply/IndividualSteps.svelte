@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { untrack } from 'svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import RoleChoiceGrid from '#lib/components/registration/RoleChoiceGrid.svelte';
 	import FlowStep from './FlowStep.svelte';
 	import ApplicationTextsSteps from './ApplicationTextsSteps.svelte';

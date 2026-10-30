@@ -1,6 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
-import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
-import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
 export type PaperSortKey =
 	'country' | 'type' | 'status' | 'createdAt' | 'updatedAt' | 'firstSubmittedAt';

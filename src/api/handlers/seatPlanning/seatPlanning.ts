@@ -1,6 +1,6 @@
-import { db } from '#api/db/db.js';
-import { schemaBuilder } from '#api/rumble.js';
-import { lockedCommitteeSeats } from '#api/services/seatPlanning.js';
+import { db } from '#api/db/db';
+import { schemaBuilder } from '#api/rumble';
+import { lockedCommitteeSeats } from '#api/services/seatPlanning';
 import { assertCanReadSeatPlanning } from './seatPlanningPermissions';
 
 const SeatPlanningCommitteeSeat = schemaBuilder.simpleObject('SeatPlanningCommitteeSeat', {

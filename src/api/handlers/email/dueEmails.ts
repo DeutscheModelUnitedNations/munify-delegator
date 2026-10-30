@@ -1,13 +1,13 @@
-import type * as schema from '#api/db/schema/index.js';
-import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
-import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+import type * as schema from '#api/db/schema/index';
+import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
+import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
 	type AlwaysSentKind
-} from '#lib/helpers/emailKinds.js';
+} from '#lib/helpers/emailKinds';
 
 /**
  * Which automatic mails a conference owes whom, decided from its current state alone. Every mail

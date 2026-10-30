@@ -1,15 +1,15 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import {
 	assertCommitteeDeletable,
 	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
 	committeeUpdateData,
 	seatRemovalBlockersWhere
-} from '#api/services/seatPlanning.js';
-import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import formatNames from '#lib/helpers/formatNames.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/seatPlanning';
+import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications';
+import { apiError } from '#api/services/errors/apiError';
+import formatNames from '#lib/helpers/formatNames';
+import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray } from 'drizzle-orm';
 

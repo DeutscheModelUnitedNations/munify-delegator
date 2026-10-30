@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Form from '#lib/components/form/Form.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
@@ -8,10 +8,10 @@
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 	import RegistrationStepPage from '../RegistrationStepPage.svelte';

@@ -1,9 +1,9 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Component } from 'svelte';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
-import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink.js';
+import generatePaperInboxLinkWithParams from '#lib/helpers/paperInboxLink';
 
 export type UserType = 'delegation' | 'singleParticipant' | 'supervisor';
 

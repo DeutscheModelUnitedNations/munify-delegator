@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#api/db/db.js', () => ({ db: {} }));
+vi.mock('#api/db/db', () => ({ db: {} }));
 
 const { delegationPart, reviewPart } = await import('./emailSnapshot');
 

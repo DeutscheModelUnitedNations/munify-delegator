@@ -215,7 +215,7 @@ bun run preview
   	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
   }
   export function assertCanCreateCommittee(ctx: ApiContext, conferenceId: string) {
-  	return assertTeamRole(ctx, conferenceId, SEAT_PLANNING_ROLES);
+  	return assertTeamPermission(ctx, conferenceId, 'planSeats');
   }
   ```
 
@@ -230,7 +230,7 @@ bun run preview
   ```
 
 - **Services never check permissions** - neither `<entity>Service.ts` nor anything in
-  `src/api/services/`. No `ctx.abilities`, no `assertTeamRole`, no role or ownership comparison:
+  `src/api/services/`. No `ctx.abilities`, no `assertTeamPermission`, no role or ownership comparison:
   they take the caller's id, or the rows and ids the permissions file already authorized, as
   plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
   checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
@@ -242,12 +242,12 @@ bun run preview
   came back empty), `readableById` (re-read a row through its read ability after a write),
   `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
   `assertParticipantOrTeamMemberIn`, `assertParticipantOfConference`. Permission functions take
-  `ApiContext` (`#api/rumble.js`), which carries `abilities`.
+  `ApiContext` (`#api/rumble`), which carries `abilities`.
 
 - **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
 
   ```ts
-  import { committeePubsub } from '#api/pubsub.js';
+  import { committeePubsub } from '#api/pubsub';
   // …
   committeePubsub.updated(args.id); // or created() / removed()
   ```
@@ -272,9 +272,15 @@ bun run preview
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
   - **Updates and deletes go through the row's own ability** (`filter('update').merge({ where:
 { id } })`). Load the row through it first when the resolver needs the row anyway.
-  - **Creates check the parent with `assertTeamRole(ctx, conferenceId, roles)`**, which runs the
-    same `isTeamMemberOf` filter against the conference row (chase checks the parent's `update`
-    ability for the same reason). A system admin always passes.
+  - **Team checks are team permissions** (`TEAM_PERMISSIONS` in `#lib/helpers/teamRoles.ts`,
+    shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
+    granted to the roles `rolesWithTeamPermission` names). `teamConference(ctx, permission)` is the
+    filter on the conference: put it into the query that loads the row anyway
+    (`{ id, conference: teamConference(ctx, 'manageParticipants') }`), so a caller who may not
+    finds nothing. A create with no row to load checks the parent conference with
+    `assertTeamPermission(ctx, conferenceId, permission)` (`hasTeamPermission` is the
+    non-throwing form; both take a `tx`). A system admin always passes. Never compare a
+    caller's roles by hand: a new kind of check is a new team permission.
   - **Every id an argument names is checked to belong where the row goes**: a track to its day, a
     place, role, committee or nation to the conference, a `userId` to the caller unless the
     caller is participant care. A missing check here is how a team of one conference writes into
@@ -309,7 +315,7 @@ bun run preview
   GraphQL document:
 
   ```ts
-  import { client } from '#lib/api/rumbleClient/client.js';
+  import { client } from '#lib/api/rumbleClient/client';
 
   const conference = await client.query.conference({
   	__args: { id: conferenceId },
@@ -369,7 +375,7 @@ bun run preview
     a live array row by row creates one per row, and renews them all every time it runs. A page
     that computes over many live rows reads each result once into a plain copy
     (`#lib/api/liveSnapshot`, which uses `slice`, a single read) in its own `$derived`, and
-    computes over the copies; `memoizeLast` (`#lib/helpers/memoizeLast.js`) then skips the work when
+    computes over the copies; `memoizeLast` (`#lib/helpers/memoizeLast`) then skips the work when
     a derived runs again over the same copies. On the assignment board this took a tab switch
     from ~45 board computations and a 0.5 s stall to 2 and ~0.1 s. Do not read live results in an
     `$effect` there instead: during the page's first async work that trips Svelte's "Batch has
@@ -448,13 +454,13 @@ bun run preview
   component is generic over `N extends FormPath<A> & keyof A`, so a misspelled field name is a
   compile error; for a typed `bind:` (a boolean or a `Date`) reach for `formFieldProxy`, which is
   what keeps those bindings type-safe without a cast.
-- **Uploads** go through `fileProxy`, then `uploadFile` (`#lib/api/uploadFile.js`), which puts the file
+- **Uploads** go through `fileProxy`, then `uploadFile` (`#lib/api/uploadFile`), which puts the file
   straight into the S3 bucket and returns its id for the mutation (`logoFileId`, …). An untouched
   field must yield `undefined` so the stored file survives; `null` removes it. See "Files" below.
 - **Personal data goes in through rumble's scalars**: `PersonName`, `EmailAddress`,
   `PhoneNumber` (stored as E.164), `Date` for a calendar day and `AddressInput` for an address
   (validated against libaddressinput's metadata, alpha-2 country codes; the user table keeps
-  alpha-3, `#lib/helpers/countryCodes.js` converts). Values that arrive some other way, such as
+  alpha-3, `#lib/helpers/countryCodes` converts). Values that arrive some other way, such as
   OIDC claims in `upsertSelf.ts`, go through rumble's exported `normalizePersonName` /
   `normalizeEmailAddress` / `parsePhoneNumber`. The account forms check the same rules first:
   `isPersonName`, and `addressRules`/`addressIssues` for which of postal code, city and region
@@ -606,7 +612,7 @@ bun run preview
   and `defineRelations` in `src/api/db/relations.ts`. Columns are camelCase in TypeScript and
   snake_case in the database; `snakeCase.table` does the mapping.
 - Row and insert shapes come from Drizzle itself (`typeof schema.conference.$inferSelect`,
-  `typeof schema.conference.$inferInsert`, with `import type * as schema from '#api/db/schema/index.js'`)
+  `typeof schema.conference.$inferInsert`, with `import type * as schema from '#api/db/schema/index'`)
   rather than from a generated client
 - Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
 - **A person's part in a conference is one `conferenceParticipant` row** (per user and conference),
@@ -779,7 +785,7 @@ bun run preview
   down.
 - **Confirmed means the notes follow the person.** The user card shows the care notes of accounts
   confirmed to be the same person (`LinkedAccountNotes`), and the sighting's red warning counts them
-  with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes.js`; select
+  with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes`; select
   `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
   nothing over.
 - **The dev seed replays the ways a returning person's data can differ**
@@ -905,14 +911,26 @@ bun run preview
 
 SvelteKit 3 has no `svelte.config.js`: its options are the `sveltekit()` plugin's, in
 `vite.config.ts`. There are no aliases (SvelteKit 3 deprecates the plugin's `alias`): `#lib`,
-`#api` and `#assets` are subpath imports (`imports` in `package.json`), written with the file
-extension (`#lib/helpers/formatNames.js`, `#api/db/db.js`; a directory as `…/index.js`):
+`#api` and `#assets` are subpath imports (`imports` in `package.json`), written **without** the
+`.js` extension (`#lib/helpers/formatNames`, `#api/db/db`; a directory as `…/index`, since Bun
+cannot resolve a bare directory). Two exceptions keep theirs: runes modules (`….svelte.js`,
+Svelte's own convention) and anything that is not a script (`….svelte`, `….svg`).
 
 ```
 #lib → src/lib
 #api → src/api
 #assets → src/assets
 ```
+
+Each tool needs its own reason to resolve the extensionless form, so a new prefix touches all three:
+
+- **Vite** (dev, build, vitest) maps through `imports` and then completes the extension itself.
+- **TypeScript** applies `imports` literally, so `tsconfig.json` repeats the prefixes as `paths`,
+  which it completes like a relative import.
+- **Bun** (the seed, the reset, `bun run jobs`, `scripts/`) completes nothing past `imports` and
+  calls runtime plugins only for paths it already resolved, so `imports` gives it a `bun`
+  condition that appends `.ts`, plus more specific keys for Paraglide's generated `.js` and
+  `….svelte.js`. tsdown and Vite never see the `bun` condition.
 
 ### Important Integrations
 
@@ -985,7 +1003,9 @@ Required variables (see `.env.example`):
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
 - `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
 - `OIDC_SCOPES` - OAuth scopes (must include `openid`)
-- `OIDC_ROLE_CLAIM` - JWT claim for roles
+- `OIDC_ROLE_CLAIM` - claim name or dot path of the provider's role/group names (any provider's shape;
+  `#api/services/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
+  them onto `admin` / `member` / `service_user`
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)

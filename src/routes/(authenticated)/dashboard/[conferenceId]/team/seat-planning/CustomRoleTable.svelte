@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { optionalText, type CustomRole } from './customRoles';
 	import RoleAddButton from './RoleAddButton.svelte';
 	import RoleDeleteModal from './RoleDeleteModal.svelte';

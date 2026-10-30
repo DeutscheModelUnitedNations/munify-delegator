@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { translateRegionalGroup } from '#lib/utils/enumTranslations.js';
-	import { seatedByGroup } from '#lib/helpers/seatPlanning/hints.js';
-	import { unMembers, type RegionalGroup } from '#lib/helpers/seatPlanning/unMembers.js';
+	import { m } from '#lib/paraglide/messages';
+	import { translateRegionalGroup } from '#lib/utils/enumTranslations';
+	import { seatedByGroup } from '#lib/helpers/seatPlanning/hints';
+	import { unMembers, type RegionalGroup } from '#lib/helpers/seatPlanning/unMembers';
 
 	interface Props {
 		seatCounts: Map<string, number>;

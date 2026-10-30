@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { chasePresenceSchema } from '#lib/schemata/chasePresence.js';
+import { chasePresenceSchema } from '#lib/schemata/chasePresence';
 import { z } from 'zod';
 
 export const GET: RequestHandler = () => {

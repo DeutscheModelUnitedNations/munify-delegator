@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SquarePlacement } from '#lib/helpers/documentLayout.js';
+	import type { SquarePlacement } from '#lib/helpers/documentLayout';
 
 	/** A code on the layout editor's page, square, its caption above, resized from its corner. */
 	interface Props {

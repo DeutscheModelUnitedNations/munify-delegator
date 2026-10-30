@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 /** The choices of the user's gender select. A function, so the labels follow the current locale. */
 export const genderOptions = () => [

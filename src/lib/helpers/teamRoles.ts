@@ -1,4 +1,4 @@
-import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
 
 /**
  * Which team roles may do what, shared by the API's abilities (`authHelper.ts`) and the team
@@ -51,3 +51,36 @@ export const CONFERENCE_CONTENT_ROLES = [
 export const PROJECT_MANAGEMENT_ROLES = [
 	'PROJECT_MANAGEMENT'
 ] as const satisfies readonly TeamroleEnum[];
+
+/**
+ * What the team may do in its conference, by name, and the roles each is granted to
+ * (`rolesWithTeamPermission`). The API turns one into a filter on the conference
+ * (`isTeamPermittedIn` / `teamConference` in `authHelper.ts`) that the query doing the work carries.
+ */
+export const TEAM_PERMISSIONS = [
+	'useTeamTools',
+	'manageParticipants',
+	'reviewPapers',
+	'manageTeam',
+	'planSeats',
+	'editConferenceContent',
+	'manageConference'
+] as const;
+
+export type TeamPermission = (typeof TEAM_PERMISSIONS)[number];
+
+/** The roles each team permission is granted to (`rolesWithTeamPermission`); undefined for any. */
+const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | undefined> = {
+	useTeamTools: undefined,
+	manageParticipants: PARTICIPANT_CARE_ROLES,
+	reviewPapers: PAPER_ROLES,
+	manageTeam: TEAM_ADMIN_ROLES,
+	planSeats: SEAT_PLANNING_ROLES,
+	editConferenceContent: CONFERENCE_CONTENT_ROLES,
+	manageConference: PROJECT_MANAGEMENT_ROLES
+};
+
+/** The team roles that hold `permission`, or undefined when every team role does. */
+export function rolesWithTeamPermission(permission: TeamPermission) {
+	return TEAM_PERMISSION_ROLES[permission];
+}

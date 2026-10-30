@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import {
 		CONVERT_CONTAINER,
 		POOL_CONTAINER,
 		boardState,
 		roleContainer,
 		singleDropAction
-	} from '#lib/assignment/board.js';
-	import { seatedRoles } from '#lib/assignment/capacity.js';
-	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
+	} from '#lib/assignment/board';
+	import { seatedRoles } from '#lib/assignment/capacity';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
-	import { memoizeLast } from '#lib/helpers/memoizeLast.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { memoizeLast } from '#lib/helpers/memoizeLast';
+	import { m } from '#lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -32,7 +32,7 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats';
 	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';

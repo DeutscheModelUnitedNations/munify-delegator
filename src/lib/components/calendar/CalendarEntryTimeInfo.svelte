@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { formatClock } from '#lib/helpers/formatClock.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { formatClock } from '#lib/helpers/formatClock';
 	import type { CalendarEntry, CalendarTrack } from './calendarTypes';
 
 	interface Props {

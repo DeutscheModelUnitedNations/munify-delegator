@@ -1,10 +1,10 @@
-import type { Context } from '#api/context.js';
-import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '#api/services/authHelper.js';
+import type { ApiContext } from '#api/rumble';
+import { assertTeamPermission } from '#api/services/authHelper';
 
 /**
  * The participants table is the care team's: filtering and ordering by contact data and care
  * status would otherwise reveal it to people who may not read it.
  */
-export async function assertCanReadParticipantsPage(ctx: Context, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+export async function assertCanReadParticipantsPage(ctx: ApiContext, conferenceId: string) {
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

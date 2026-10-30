@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import UserSearchModal from './UserSearchModal.svelte';
 	import type { UserPreview } from './userPreview';
 	import type { Snippet } from 'svelte';

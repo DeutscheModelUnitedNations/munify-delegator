@@ -5,8 +5,8 @@ import {
 	withReview,
 	type DeckPosition,
 	type DeckWindowData
-} from '#lib/assignment/deckWindow.js';
-import type { SightingReview } from '#lib/assignment/sighting.js';
+} from '#lib/assignment/deckWindow';
+import type { SightingReview } from '#lib/assignment/sighting';
 import { toastError } from '../toastError';
 import { fetchSightingDeck, type DeckFilter, type LoadedSightingDeck } from './applications';
 

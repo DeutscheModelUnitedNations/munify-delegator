@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 
 const payableUser = { id: true, givenName: true, familyName: true } as const;

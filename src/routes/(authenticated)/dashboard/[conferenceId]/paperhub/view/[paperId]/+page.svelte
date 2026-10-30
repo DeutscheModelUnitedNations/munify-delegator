@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { buildResolutionHeaderData } from '../../paperDisplay';
 	import PaperHeaderCard from '../../PaperHeaderCard.svelte';
 	import PaperContent from '../../PaperContent.svelte';

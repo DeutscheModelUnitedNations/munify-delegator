@@ -1,8 +1,8 @@
-import { db, schema } from '#api/db/db.js';
-import type { ApiContext } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import type { ApiContext } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
-import { m } from '#lib/paraglide/messages.js';
+import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
+import { m } from '#lib/paraglide/messages';
 import { eq, sql } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
@@ -10,15 +10,15 @@ import {
 	PARTICIPANT_MIN_AGE,
 	SUPERVISOR_MIN_AGE,
 	yearsAgo
-} from '#lib/helpers/plausibilityRules.js';
+} from '#lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { nullToUndefined } from '#api/services/args.js';
-import { totalSeats } from '#api/services/seatPlanning.js';
-import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins.js';
-import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
-import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout.js';
+import { nullToUndefined } from '#api/services/args';
+import { totalSeats } from '#api/services/seatPlanning';
+import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
+import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
+import { apiError } from '#api/services/errors/apiError';
+import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {

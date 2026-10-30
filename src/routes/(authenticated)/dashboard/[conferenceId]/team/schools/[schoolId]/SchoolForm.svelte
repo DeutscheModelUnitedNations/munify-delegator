@@ -3,15 +3,15 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import AddressSection from '#lib/components/form/AddressSection.svelte';
-	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { m } from '#lib/paraglide/messages';
 	import { schoolFormSchema, toUpdateSchoolArgs, type SchoolFormValues } from './schoolForm';
 
 	/** The team's details of a school. Its parent keys it by the school, so it seeds once per school. */

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import SquareButtonWithLoadingState from '#lib/components/SquareButtonWithLoadingState.svelte';
 	import AddRoleApplication from './AddRoleApplication.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type * as schema from '#api/db/schema/index.js';
+	import type * as schema from '#api/db/schema/index';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 

@@ -1,10 +1,10 @@
-import { db } from '#api/db/db.js';
-import { object, schemaBuilder } from '#api/rumble.js';
-import { storedFilePubsub } from '#api/pubsub.js';
+import { db } from '#api/db/db';
+import { object, schemaBuilder } from '#api/rumble';
+import { storedFilePubsub } from '#api/pubsub';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { downloadUrl, pendingUploadUrl, requestUpload } from './storedFileService';
 import { assertCanUploadFile, registerStoredFileAbilities } from './storedFilePermissions';
-import { readableById } from '#api/services/authHelper.js';
+import { readableById } from '#api/services/authHelper';
 
 registerStoredFileAbilities();
 

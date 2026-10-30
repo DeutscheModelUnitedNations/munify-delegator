@@ -1,11 +1,11 @@
-import { db, schema } from '#api/db/db.js';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { NationRef } from '#api/handlers/nation/nation.js';
-import { enum_ } from '#api/rumble.js';
+import { NationRef } from '#api/handlers/nation/nation';
+import { enum_ } from '#api/rumble';
 import { eq, max } from 'drizzle-orm';
-import { UserRef } from '#api/handlers/user/user.js';
+import { UserRef } from '#api/handlers/user/user';
 import {
 	assertValidConferenceSettings,
 	countOfferedSeats,
@@ -26,11 +26,11 @@ import {
 	conferenceUpdateRefused,
 	registerConferenceAbilities
 } from './conferencePermissions';
-import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub.js';
-import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout.js';
-import { readableById } from '#api/services/authHelper.js';
-import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions.js';
-import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions.js';
+import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub';
+import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
+import { readableById } from '#api/services/authHelper';
+import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions';
+import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });

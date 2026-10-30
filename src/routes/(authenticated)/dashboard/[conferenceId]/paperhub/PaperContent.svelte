@@ -1,6 +1,6 @@
 <script lang="ts">
-	import PaperEditor from '#lib/components/paper/editor/index.js';
-	import type { ResolutionHeaderData } from '#lib/components/paper/editor/resolution/index.js';
+	import PaperEditor from '#lib/components/paper/editor/index';
+	import type { ResolutionHeaderData } from '#lib/components/paper/editor/resolution/index';
 	import InvalidPaperFormatAlert from './InvalidPaperFormatAlert.svelte';
 	import type { LoadedPaper } from './loadedPaper.svelte';
 	import type { PaperIdentity } from './paperDisplay';

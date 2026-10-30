@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import type { DiffSegment } from './types';
 	import { splitIntoDiffLines } from './diffUtils';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		title: string;

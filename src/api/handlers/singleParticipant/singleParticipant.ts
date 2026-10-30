@@ -1,7 +1,7 @@
-import { db } from '#api/db/db.js';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
-import { applicationArgs } from '#api/handlers/delegation/applicationArgs.js';
+import { db } from '#api/db/db';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
+import { object, query, schemaBuilder } from '#api/rumble';
+import { applicationArgs } from '#api/handlers/delegation/applicationArgs';
 import {
 	createAssignedSingleParticipant,
 	ownRegistrationToEdit,
@@ -19,8 +19,8 @@ import {
 	conferenceParticipantPubsub,
 	singleParticipantPubsub,
 	waitingListEntryPubsub
-} from '#api/pubsub.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+} from '#api/pubsub';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerSingleParticipantAbilities();
 

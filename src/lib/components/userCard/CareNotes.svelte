@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { confirmedLinkedAccounts, linkedAccountNotes } from '#lib/helpers/linkedNotes.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { confirmedLinkedAccounts, linkedAccountNotes } from '#lib/helpers/linkedNotes';
+	import { m } from '#lib/paraglide/messages';
 	import GlobalNotes from './GlobalNotes.svelte';
 
 	/**

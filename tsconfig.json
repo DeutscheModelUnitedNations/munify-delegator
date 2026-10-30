@@ -3,6 +3,14 @@
 		"allowSyntheticDefaultImports": true,
 		"module": "ESNext",
 		"noImplicitAny": false,
+		// Imports name a module without its extension (`#lib/helpers/countryCodes`). TypeScript
+		// applies `package.json`'s `imports` literally and finds no file there; `paths` it completes
+		// like a relative import. Keep in step with `imports`.
+		"paths": {
+			"#lib/*": ["./src/lib/*"],
+			"#api/*": ["./src/api/*"],
+			"#assets/*": ["./src/assets/*"]
+		},
 		"rootDirs": [".", "./.svelte-kit/types"],
 		"sourceMap": true,
 		"strict": true,

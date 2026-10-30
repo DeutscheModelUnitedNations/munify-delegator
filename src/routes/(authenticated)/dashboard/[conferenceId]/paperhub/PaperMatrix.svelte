@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { ResolvedPathname } from '$app/types';
 	import RoleFlag from '#lib/components/RoleFlag.svelte';
-	import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
 	import { paperEntityName, type PaperDelegationRole } from './paperDisplay';
 	import PaperMatrixCell from './PaperMatrixCell.svelte';
 	import { matrixRows } from './paperMatrixRows';

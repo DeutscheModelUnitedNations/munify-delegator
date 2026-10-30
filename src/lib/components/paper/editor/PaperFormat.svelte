@@ -6,7 +6,7 @@
 	import Placeholder from '@tiptap/extension-placeholder';
 	import { UndoRedo } from '@tiptap/extensions';
 	import Menu from './menu';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		editable?: boolean;

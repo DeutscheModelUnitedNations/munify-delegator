@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints';
 	import RoleAddButton from './RoleAddButton.svelte';
 	import RoleDeleteModal from './RoleDeleteModal.svelte';
 	import RoleIconInput from './RoleIconInput.svelte';

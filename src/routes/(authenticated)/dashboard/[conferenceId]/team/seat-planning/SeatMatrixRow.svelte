@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Flag from '#lib/components/Flag.svelte';
-	import { translateRegionalGroup } from '#lib/utils/enumTranslations.js';
-	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints.js';
-	import type { UnMember } from '#lib/helpers/seatPlanning/unMembers.js';
+	import { translateRegionalGroup } from '#lib/utils/enumTranslations';
+	import { isOutsideSizeLimits, type SizeLimits } from '#lib/helpers/seatPlanning/hints';
+	import type { UnMember } from '#lib/helpers/seatPlanning/unMembers';
 	import RoleSizeBadge from './RoleSizeBadge.svelte';
 	import SeatCell from './SeatCell.svelte';
 	import type { SeatPlanner } from './seatPlanner.svelte';

@@ -1,5 +1,5 @@
-import { exceededBy, type SchoolSeatCount, type SchoolSeats } from '#lib/assignment/schoolSeats.js';
-import { m } from '#lib/paraglide/messages.js';
+import { exceededBy, type SchoolSeatCount, type SchoolSeats } from '#lib/assignment/schoolSeats';
+import { m } from '#lib/paraglide/messages';
 import { toast } from 'svelte-sonner';
 
 /** Warns (never blocks) when `added` seats take a school past the conference's limit. */

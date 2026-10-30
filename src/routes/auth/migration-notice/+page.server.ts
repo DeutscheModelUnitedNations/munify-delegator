@@ -5,8 +5,8 @@ import { dev } from '$app/env';
 import {
 	MIGRATION_NOTICE_VERSION,
 	MIGRATION_NOTICE_COOKIE
-} from '#api/services/migrationNotice.js';
-import { sameSitePath } from '#api/services/sameSitePath.js';
+} from '#api/services/migrationNotice';
+import { sameSitePath } from '#api/services/sameSitePath';
 
 export const actions: Actions = {
 	default: async (event) => {

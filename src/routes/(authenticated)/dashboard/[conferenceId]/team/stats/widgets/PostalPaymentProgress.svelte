@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { GaugeChart, StackedBarChart, BarChart } from '#lib/components/charts/echarts/index.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { GaugeChart, StackedBarChart, BarChart } from '#lib/components/charts/echarts/index';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { statsQueryFilter } from '../stats.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

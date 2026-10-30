@@ -3,7 +3,7 @@
 	import Question from '../Question.svelte';
 	import QuestionFlowState from '../flowEnum';
 	import Collapse from '../Collapse.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;

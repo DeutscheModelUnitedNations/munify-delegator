@@ -1,20 +1,20 @@
-import { db, schema } from '#api/db/db.js';
-import type { TeamRole } from '#api/services/authHelper.js';
+import { db, schema } from '#api/db/db';
+import type { TeamRole } from '#api/services/authHelper';
 import {
 	getInvitationExpiryDate,
 	hashToken,
 	makeInvitationToken
-} from '#api/services/account/invitationToken.js';
+} from '#api/services/account/invitationToken';
 import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail
-} from '#api/services/email/sendTeamInvitationEmail.js';
-import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
-import { localeOfUser } from '#api/services/requestLocale.js';
+} from '#api/services/email/sendTeamInvitationEmail';
+import { m } from '#lib/paraglide/messages';
+import { getLocale } from '#lib/paraglide/runtime';
+import { localeOfUser } from '#api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { isParticipantOrTeamMember } from '#api/services/registration/participation.js';
+import { isParticipantOrTeamMember } from '#api/services/registration/participation';
 
 /** An invitation as the service needs it, already authorized by the resolver. */
 type Invitation = {

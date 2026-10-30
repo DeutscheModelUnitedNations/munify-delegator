@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import defaultImage from '#assets/dmun-stock/bw1.jpg';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
-	import { getRegistrationStatus } from '#lib/utils/registrationStatus.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
+	import { getRegistrationStatus } from '#lib/utils/registrationStatus';
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import {
 		conferenceStateIcon,

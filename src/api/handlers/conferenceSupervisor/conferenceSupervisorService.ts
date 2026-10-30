@@ -1,17 +1,17 @@
-import { db, schema } from '#api/db/db.js';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService.js';
+import { db, schema } from '#api/db/db';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
-} from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
-import { isParticipantOrTeamMember } from '#api/services/registration/participation.js';
-import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness.js';
-import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
-import { normalizeEntryCode } from '#lib/helpers/entryCode.js';
+} from '#api/handlers/conferenceParticipant/conferenceParticipantService';
+import { isParticipantOrTeamMember } from '#api/services/registration/participation';
+import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
+import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { codeNotFound } from '#api/services/errors/codeNotFound.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
+import { codeNotFound } from '#api/services/errors/codeNotFound';
 import { and, eq } from 'drizzle-orm';
 import { supervisorPreview } from './supervisorPreview';
 

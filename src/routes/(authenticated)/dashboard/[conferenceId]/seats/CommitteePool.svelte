@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import Drawer from '#lib/components/Drawer.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import AgendaItemsCell from './AgendaItemsCell.svelte';
 	import type { ConferenceSeats } from './conferenceSeats';
 

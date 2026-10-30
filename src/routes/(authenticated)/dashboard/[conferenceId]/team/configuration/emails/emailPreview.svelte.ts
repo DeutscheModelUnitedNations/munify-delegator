@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /**
  * `read()` once it stops changing for `delay` ms, so a preview follows the text once typing

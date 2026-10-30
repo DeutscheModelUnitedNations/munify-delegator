@@ -1,7 +1,7 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
 	import type { Snippet } from 'svelte';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Form from '#lib/components/form/Form.svelte';
 	import EmailPreviewFrame from './EmailPreviewFrame.svelte';
 

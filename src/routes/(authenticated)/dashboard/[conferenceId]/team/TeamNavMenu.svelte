@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import NavMenu from '#lib/components/navMenu/NavMenu.svelte';
 	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
@@ -10,7 +10,7 @@
 		teamRouteGroupTitle,
 		type groupedTeamRoutes,
 		type TeamRoute
-	} from '#lib/data/teamRoutes.js';
+	} from '#lib/data/teamRoutes';
 	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 
 	/** The menu itself: the registry's sections, each page a button, the open one marked. */

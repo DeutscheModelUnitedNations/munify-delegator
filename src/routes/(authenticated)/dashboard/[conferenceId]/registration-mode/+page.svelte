@@ -1,11 +1,11 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { fetchMyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { fetchMyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import IdentityCode from '#lib/components/IdentityCode.svelte';
 	import Flag from '#lib/components/Flag.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
 	import { describeParticipant } from './participantInfo';
 	import type { PageProps } from './$types';

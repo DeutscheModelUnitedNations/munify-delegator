@@ -1,5 +1,5 @@
 import { toast } from 'svelte-sonner';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 /**
  * Runs a write while a loading flag is up and toasts the error when it fails.

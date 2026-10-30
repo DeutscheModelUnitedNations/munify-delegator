@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import ActionModal from '#lib/components/ActionModal.svelte';
-	import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds.js';
-	import { emailKindTexts } from '#lib/helpers/emailKindTexts.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds';
+	import { emailKindTexts } from '#lib/helpers/emailKindTexts';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { succeeded } from '../toastError';
 

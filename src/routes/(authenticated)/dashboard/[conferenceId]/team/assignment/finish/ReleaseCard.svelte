@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { releaseNotice } from '#lib/assignment/board.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { releaseNotice } from '#lib/assignment/board';
+	import { m } from '#lib/paraglide/messages';
 	import ReleaseDialog from './ReleaseDialog.svelte';
 
 	/**

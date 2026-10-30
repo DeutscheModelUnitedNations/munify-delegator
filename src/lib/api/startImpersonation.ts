@@ -1,8 +1,8 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { client } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
-import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
+import { genericPromiseToastMessages } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
 
 /**

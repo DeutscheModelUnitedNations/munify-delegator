@@ -1,4 +1,4 @@
-import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
+import type { PaperstatusEnum } from '#lib/api/rumbleClient/client';
 
 export interface VersionForComparison {
 	id: string;

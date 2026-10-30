@@ -1,4 +1,4 @@
-import { object } from '#api/rumble.js';
+import { object } from '#api/rumble';
 import { registerUserReferenceInPaymentTransactionAbilities } from './userReferenceInPaymentTransactionPermissions';
 
 registerUserReferenceInPaymentTransactionAbilities();

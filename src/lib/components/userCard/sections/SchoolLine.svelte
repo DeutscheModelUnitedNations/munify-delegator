@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Modal from '#lib/components/Modal.svelte';
 	import SchoolChangeForm from '#lib/components/form/SchoolChangeForm.svelte';
 	import InfoRow from './InfoRow.svelte';

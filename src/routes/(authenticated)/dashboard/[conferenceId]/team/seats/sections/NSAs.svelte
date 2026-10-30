@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import SeatsIconHeader from '../SeatsIconHeader.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import type { UserPreview } from '../userPreview';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '#lib/components/Flag.svelte';

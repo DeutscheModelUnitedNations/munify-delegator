@@ -1,7 +1,7 @@
 <script lang="ts">
 	import accessDenied from '#assets/undraw/access_denied.svg';
 	import svg500 from '#assets/undraw/500.svg';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';

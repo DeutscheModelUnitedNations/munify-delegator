@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#api/db/db.js', () => ({ db: {} }));
+vi.mock('#api/db/db', () => ({ db: {} }));
 
 const { renderTeamInvitationEmail, renderTeamWelcomeEmail } =
 	await import('./sendTeamInvitationEmail');

@@ -1,6 +1,6 @@
-import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
-import { client } from '#lib/api/rumbleClient/client.js';
-import { PAPER_ROLES } from '#lib/helpers/teamRoles.js';
+import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
+import { client } from '#lib/api/rumbleClient/client';
+import { PAPER_ROLES } from '#lib/helpers/teamRoles';
 import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 import { canOpenPaperHub, paperHubAccess } from './paperHubViews';
 

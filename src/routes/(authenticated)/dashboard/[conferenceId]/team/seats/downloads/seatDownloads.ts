@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import { stringify } from 'csv-stringify/browser/esm/sync';
 
 /** The conference title the seat exports put into their file names, fetched once per export. */

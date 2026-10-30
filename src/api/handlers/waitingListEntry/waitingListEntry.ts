@@ -1,24 +1,24 @@
-import { db, schema } from '#api/db/db.js';
-import { object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, countQuery, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { sql } from 'drizzle-orm';
-import { resolveSchoolChoice } from '#api/handlers/school/schoolService.js';
+import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
-import { nullToUndefined } from '#api/services/args.js';
+import { nullToUndefined } from '#api/services/args';
 import {
 	assertCanSetWaitingListFlags,
 	registerWaitingListEntryAbilities
 } from './waitingListEntryPermissions';
-import { schoolPubsub, waitingListEntryPubsub } from '#api/pubsub.js';
+import { schoolPubsub, waitingListEntryPubsub } from '#api/pubsub';
 import { assertWaitingListOpenFor } from './waitingListEntryService';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import {
 	assertAllowedRow,
 	deleteAllowedRow,
 	allowedRowWhere,
 	assertUpdated,
 	readableById
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 registerWaitingListEntryAbilities();
 

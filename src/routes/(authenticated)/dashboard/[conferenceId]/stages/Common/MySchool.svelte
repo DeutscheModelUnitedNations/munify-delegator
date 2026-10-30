@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import SchoolLine from '#lib/components/userCard/sections/SchoolLine.svelte';
 

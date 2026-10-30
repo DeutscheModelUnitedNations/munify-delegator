@@ -1,7 +1,7 @@
-import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
+import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
 
 /**
- * The automatic mails, shared by the API (`#api/handlers/email/dueEmails.js` decides who gets
+ * The automatic mails, shared by the API (`#api/handlers/email/dueEmails` decides who gets
  * which) and the e-mail page (which explains them), so the two describe the same rules.
  */
 

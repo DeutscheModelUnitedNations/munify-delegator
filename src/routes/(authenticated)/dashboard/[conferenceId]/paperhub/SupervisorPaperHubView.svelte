@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import Flag from '#lib/components/Flag.svelte';
 	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
 	import { groupPapersByDelegation } from './supervisedPapers';

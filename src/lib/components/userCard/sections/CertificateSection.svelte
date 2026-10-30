@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator.js';
-	import { resolveDocumentLayout } from '#lib/helpers/documentLayout.js';
+	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
+	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
 	import { certificateContentsOf, documentFileName } from '../tabs/statusDownloads';
 
 	/** The person's participation certificate, generated when it is asked for. */

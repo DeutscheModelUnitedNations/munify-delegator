@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import movingSvg from '#assets/undraw/moving.svg';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { PUBLIC_SUPPORT_EMAIL } from '$app/env/public';
 
 	const next = $derived(page.url.searchParams.get('next') || '/');

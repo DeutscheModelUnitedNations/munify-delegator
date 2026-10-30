@@ -1,10 +1,10 @@
-import { m } from '#lib/paraglide/messages.js';
-import { client } from '#lib/api/rumbleClient/client.js';
+import { m } from '#lib/paraglide/messages';
+import { client } from '#lib/api/rumbleClient/client';
 import {
 	looksLikeIdentityCode,
 	verifyIdentityCode,
 	type IdentityCodeCheck
-} from '#lib/helpers/identityCode.js';
+} from '#lib/helpers/identityCode';
 
 const STORAGE_KEY = 'identityCodePublicKey';
 

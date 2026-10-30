@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 
 	/** The person's email and phone, to write, call or copy without opening a tab. */

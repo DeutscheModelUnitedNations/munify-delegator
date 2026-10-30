@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { fetchMyPaperHubRoles } from './myPaperHubRoles';
-	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 	import GlobalPapersView from './GlobalPapersView.svelte';

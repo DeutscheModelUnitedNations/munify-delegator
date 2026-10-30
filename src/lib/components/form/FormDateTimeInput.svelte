@@ -10,11 +10,11 @@
 	} from 'sveltekit-superforms';
 	import { Control, Field, Label } from 'formsnap';
 	import { DatePicker } from '@svelte-plugins/datepicker';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 	import FormDescription from './FormDescription.svelte';
 	import FormFieldErrors from './FormFieldErrors.svelte';
-	import { dateToInputValue, inputValueToDate } from '#lib/helpers/dateTimeInput.js';
+	import { dateToInputValue, inputValueToDate } from '#lib/helpers/dateTimeInput';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { pickedDate } from './datePickerValue';
 

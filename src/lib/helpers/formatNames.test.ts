@@ -1,4 +1,4 @@
-import formatNames, { sortByNames } from '#lib/helpers/formatNames.js';
+import formatNames, { sortByNames } from '#lib/helpers/formatNames';
 import { expect, test, describe } from 'vitest';
 
 describe('formatNames', () => {

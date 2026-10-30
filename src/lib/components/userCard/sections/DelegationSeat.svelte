@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
-	import codenmz from '#lib/helpers/codenamize.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
+	import codenmz from '#lib/helpers/codenamize';
 	import Flag from '#lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from '#lib/components/registrationAdmin/CommitteeAssignmentModal.svelte';
 	import HeadDelegateModal from '#lib/components/registrationAdmin/HeadDelegateModal.svelte';

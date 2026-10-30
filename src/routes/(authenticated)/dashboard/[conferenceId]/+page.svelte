@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { getOptionalCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
-	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation.js';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
+	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
 	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
 	import ParticipationStages from './stages/ParticipationStages.svelte';
 	import SignInHint from '#lib/components/dashboard/SignInHint.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import PublicQuickLinks from './sections/PublicQuickLinks.svelte';
 	import ParticipantQuickLinks from './sections/ParticipantQuickLinks.svelte';
 	import DashboardConferenceOverview from './sections/DashboardConferenceOverview.svelte';
 	import type { PageProps } from './$types';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 
 	let { params }: PageProps = $props();
 

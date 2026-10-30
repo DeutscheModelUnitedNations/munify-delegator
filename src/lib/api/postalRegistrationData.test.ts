@@ -4,7 +4,7 @@ import {
 	postalParticipant,
 	postalRecipient
 } from './postalRegistrationData';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale } from '#lib/paraglide/runtime';
 
 const conference = {
 	postalName: 'DMUN e.V.',

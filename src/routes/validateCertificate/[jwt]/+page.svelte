@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { escapeHtml } from '#lib/helpers/escapeHtml.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
+	import { escapeHtml } from '#lib/helpers/escapeHtml';
 	import { blur } from 'svelte/transition';
 	import { verifyCertificate } from './verifyCertificate';
 	import type { PageProps } from './$types';

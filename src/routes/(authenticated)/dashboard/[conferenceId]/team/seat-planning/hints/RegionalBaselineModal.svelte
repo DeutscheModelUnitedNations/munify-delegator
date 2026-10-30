@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import {
 		translateRegionalBaseline,
 		translateRegionalGroup
-	} from '#lib/utils/enumTranslations.js';
+	} from '#lib/utils/enumTranslations';
 	import {
 		baselineTemplates,
 		isValidManualTargets,
@@ -14,8 +14,8 @@
 		regionalBaselines,
 		type BaselineCommittee,
 		type RegionalBaseline
-	} from '#lib/helpers/seatPlanning/baselines.js';
-	import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers.js';
+	} from '#lib/helpers/seatPlanning/baselines';
+	import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers';
 	import { toast } from 'svelte-sonner';
 
 	interface Props {

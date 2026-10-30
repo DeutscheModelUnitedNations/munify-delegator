@@ -1,11 +1,11 @@
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRoleForSurveyQuestion,
+	assertTeamPermissionForSurveyQuestion,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 export function registerSurveyOptionAbilities() {
 	// Ported from abilities/entities/surveyOption.ts
@@ -28,5 +28,5 @@ export function registerSurveyOptionAbilities() {
 
 /** Refuses unless the caller may add options to the question. */
 export async function assertCanCreateSurveyOption(ctx: ApiContext, questionId: string) {
-	await assertTeamRoleForSurveyQuestion(ctx, questionId);
+	await assertTeamPermissionForSurveyQuestion(ctx, questionId);
 }

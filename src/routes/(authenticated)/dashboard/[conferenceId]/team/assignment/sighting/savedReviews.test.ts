@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const setAssignmentReview = vi.fn();
-vi.mock('#lib/api/rumbleClient/client.js', () => ({
+vi.mock('#lib/api/rumbleClient/client', () => ({
 	client: { mutate: { setAssignmentReview: (input: unknown) => setAssignmentReview(input) } }
 }));
 const toastError = vi.fn();

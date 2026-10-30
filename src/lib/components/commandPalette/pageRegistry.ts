@@ -1,8 +1,8 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
-import { m } from '#lib/paraglide/messages.js';
-import { teamRoutesFor } from '#lib/data/teamRoutes.js';
-import type { TeamAccess } from '#lib/helpers/teamAccess.js';
+import { m } from '#lib/paraglide/messages';
+import { teamRoutesFor } from '#lib/data/teamRoutes';
+import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 export interface PageEntry {
 	id: string;

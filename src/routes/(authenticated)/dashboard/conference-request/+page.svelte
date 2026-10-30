@@ -4,8 +4,8 @@
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import {
 		emptyRequestForm,
 		fromSeedJsonText,
@@ -14,8 +14,8 @@
 		newNsa,
 		newRole,
 		toSeedJson
-	} from '#lib/seeding/conferenceRequest.js';
-	import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema.js';
+	} from '#lib/seeding/conferenceRequest';
+	import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 
 	const DRAFT_STORAGE_KEY = 'conference-request-draft';
 

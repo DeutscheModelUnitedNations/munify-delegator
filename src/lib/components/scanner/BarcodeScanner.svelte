@@ -4,7 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import { readAimIdentifier } from './aimIdentifier';
 	import { createPersistedState } from '#lib/state/persistedState.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import ScanSearchBar from './ScanSearchBar.svelte';
 	import ScanSuggestions from './ScanSuggestions.svelte';
 	import ScanViewfinder from './ScanViewfinder.svelte';

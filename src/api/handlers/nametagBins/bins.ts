@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import allNations from 'world-countries';
 

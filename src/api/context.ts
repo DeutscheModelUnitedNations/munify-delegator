@@ -1,20 +1,21 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
-import { OIDC_ROLE_CLAIM } from '$app/env/private';
-import { oidcRoles } from './services/OIDC';
-import { roleNamesInClaim } from './roleClaim';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { OIDC_ROLE_CLAIM, OIDC_ROLE_MAP } from '$app/env/private';
+import type { OidcRole } from './services/oidcRoles';
+import { appRolesOf, roleNamesInClaims } from './services/roleClaims';
+import { userInfoClaims } from './services/userInfoClaims';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
-type OidcRole = (typeof oidcRoles)[number];
-
-/** The system roles a session's tokens grant. */
+/**
+ * The system roles a session grants: the role names in the claim `OIDC_ROLE_CLAIM` names, in the
+ * access token, the ID token or the userinfo answer (`userInfoHandle` in `hooks.server.ts`), mapped
+ * through `OIDC_ROLE_MAP`.
+ */
 export function rolesOfSession(session: OIDCSession | undefined): OidcRole[] {
 	if (!OIDC_ROLE_CLAIM || !session) return [];
-	const tokens = [session.accessTokenClaims, session.idTokenClaims];
-	return roleNamesInClaim(tokens, OIDC_ROLE_CLAIM).filter((role): role is OidcRole =>
-		(oidcRoles as readonly string[]).includes(role)
-	);
+	const sources = [session.accessTokenClaims, session.idTokenClaims, userInfoClaims.of(session)];
+	return appRolesOf(roleNamesInClaims(sources, OIDC_ROLE_CLAIM), OIDC_ROLE_MAP);
 }
 
 /**

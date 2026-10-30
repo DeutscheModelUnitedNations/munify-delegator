@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { columnIdOf } from '#lib/components/tanStackTable/managedTable.js';
+	import { columnIdOf } from '#lib/components/tanStackTable/managedTable';
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { createColumnDefs, participantGroupOrder } from './columns';

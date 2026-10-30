@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { regionalDeviations } from '#lib/helpers/seatPlanning/baselines.js';
-	import { unMembers } from '#lib/helpers/seatPlanning/unMembers.js';
+	import { m } from '#lib/paraglide/messages';
+	import { regionalDeviations } from '#lib/helpers/seatPlanning/baselines';
+	import { unMembers } from '#lib/helpers/seatPlanning/unMembers';
 	import type { SeatPlanner } from '../seatPlanner.svelte';
 	import RegionalBaselineModal from './RegionalBaselineModal.svelte';
 	import RegionalBalanceCard from './RegionalBalanceCard.svelte';

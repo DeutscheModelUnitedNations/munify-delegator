@@ -1,4 +1,4 @@
-import type { BadgeSeat } from '#lib/helpers/badgeCsv.js';
+import type { BadgeSeat } from '#lib/helpers/badgeCsv';
 
 /** What the badge generator is told about a person; every field is left out when unknown. */
 export interface BadgeSessionBody {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { unifiedFilter, type StatsFilterOption } from '../stats.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

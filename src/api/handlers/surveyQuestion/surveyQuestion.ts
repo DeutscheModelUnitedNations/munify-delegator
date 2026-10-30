@@ -1,18 +1,18 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	assertCanCreateSurveyQuestion,
 	registerSurveyQuestionAbilities
 } from './surveyQuestionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { nullToUndefined } from '#api/services/args.js';
-import { surveyQuestionPubsub } from '#api/pubsub.js';
+import { nullToUndefined } from '#api/services/args';
+import { surveyQuestionPubsub } from '#api/pubsub';
 import {
 	deleteAllowedRow,
 	assertUpdated,
 	allowedRowWhere,
 	readableById
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 registerSurveyQuestionAbilities();
 

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf';
 	import { page } from '$app/state';
 	import type { PageProps } from './$types';
 

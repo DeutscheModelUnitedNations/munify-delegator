@@ -1,4 +1,4 @@
-import { enum_, schemaBuilder } from '#api/rumble.js';
+import { enum_, schemaBuilder } from '#api/rumble';
 import { lookupScan } from './scanLookupService';
 import { assertCanLookupScan } from './scanLookupPermissions';
 

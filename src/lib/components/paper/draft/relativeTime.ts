@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 /** Steps from seconds up to days: each unit's size in the previous one, and its message. */
 const units: { per: number; format: (count: number) => string }[] = [

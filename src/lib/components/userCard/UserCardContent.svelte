@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import UserCardBody from './UserCardBody.svelte';
 	import type { UserCardTab } from './userCardTabs';
 

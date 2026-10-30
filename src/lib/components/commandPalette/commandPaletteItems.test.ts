@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { resolve } from '$app/paths';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import {
 	describeItem,
 	describeTransaction,
@@ -12,7 +12,7 @@ import {
 	type ResultItem
 } from './commandPaletteItems';
 import type { ConfigEntry, PageEntry } from './pageRegistry';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale } from '#lib/paraglide/runtime';
 
 const conferenceId = 'conf-1';
 const user = {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 const toastError = vi.fn();
 vi.mock('svelte-sonner', () => ({ toast: { error: (message: string) => toastError(message) } }));

@@ -1,16 +1,16 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRoleForSurveyQuestion,
-	hasTeamRole,
+	assertTeamPermissionForSurveyQuestion,
+	hasTeamPermission,
 	isTeamMemberOfConference,
 	participantIdsOf,
 	systemAdmin,
 	userId
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerSurveyAnswerAbilities() {
 	// Ported from abilities/entities/surveyAnswer.ts
@@ -62,7 +62,7 @@ async function answeringFor(
 	const conferenceId = option.question.conferenceId;
 	const subject = requestedUserId ?? caller;
 
-	const ignoresLimits = await hasTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	const ignoresLimits = await hasTeamPermission(ctx, conferenceId, 'manageParticipants');
 	if (!ignoresLimits && subject !== caller) {
 		throw apiError('FORBIDDEN', m.surveyAnswerOnlyOwn());
 	}
@@ -144,5 +144,5 @@ export async function assertCanDeleteSurveyAnswer(
 
 /** Refuses unless the caller may answer the question for everybody who has not yet. */
 export async function assertCanDistributeSurvey(ctx: ApiContext, questionId: string) {
-	await assertTeamRoleForSurveyQuestion(ctx, questionId);
+	await assertTeamPermissionForSurveyQuestion(ctx, questionId);
 }

@@ -1,8 +1,8 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import { participatesIn } from '../../services/authHelper';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
-import { possibleDuplicatePubsub } from '#api/pubsub.js';
+import { possibleDuplicatePubsub } from '#api/pubsub';
 
 /*
  * Looks for accounts that may belong to the same person, so a care note survives a fresh signup.
@@ -46,7 +46,7 @@ function loadPool() {
 		columns: PROFILE_COLUMNS,
 		where: {
 			OR: [
-				...participatesIn({ endConference: { lt: new Date() } }).OR,
+				participatesIn({ endConference: { lt: new Date() } }),
 				{ globalNotes: { isNotNull: true, ne: '' } }
 			]
 		}

@@ -1,9 +1,9 @@
-import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
-import type { ResolutionHeaderData } from '#lib/components/paper/editor/resolution/index.js';
-import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
-import type { PaperTypstMeta } from '#lib/helpers/paperTypst.js';
-import { m } from '#lib/paraglide/messages.js';
-import { translatePaperType } from '#lib/utils/enumTranslations.js';
+import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
+import type { ResolutionHeaderData } from '#lib/components/paper/editor/resolution/index';
+import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole';
+import type { PaperTypstMeta } from '#lib/helpers/paperTypst';
+import { m } from '#lib/paraglide/messages';
+import { translatePaperType } from '#lib/utils/enumTranslations';
 import { paperEntityName } from '../paperDisplay';
 
 /** The fields of a paper its export reads. */

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import FlowStep from './FlowStep.svelte';
 

@@ -1,4 +1,4 @@
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import type { EntityType, FilterableCount, RoleCounts } from '../statsFilterValue';
 
 type Maybe<T> = T | null | undefined;

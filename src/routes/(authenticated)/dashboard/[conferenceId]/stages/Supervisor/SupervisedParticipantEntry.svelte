@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
-	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
-	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf.js';
+	import formatNames from '#lib/helpers/formatNames';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
+	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
+	import { downloadPostalRegistration } from '#lib/api/postalRegistrationPdf';
 	import type { PostalConference, SupervisedUser } from './supervisedParticipant';
 
 	/**

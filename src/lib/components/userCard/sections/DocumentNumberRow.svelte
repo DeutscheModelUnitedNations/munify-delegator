@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 
 	/** The number on the person's postal documents, as a row of the user card's documents list. */

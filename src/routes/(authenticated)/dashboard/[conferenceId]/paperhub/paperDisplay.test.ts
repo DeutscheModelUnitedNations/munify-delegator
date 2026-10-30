@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { get } from 'svelte/store';
-import { createEmptyResolution } from '#lib/components/paper/editor/resolution/index.js';
-import { editorContentStore, resolutionStore } from '#lib/components/paper/editor/editorStore.js';
+import { createEmptyResolution } from '#lib/components/paper/editor/resolution/index';
+import { editorContentStore, resolutionStore } from '#lib/components/paper/editor/editorStore';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-import { translatePaperType } from '#lib/utils/enumTranslations.js';
+import { translatePaperType } from '#lib/utils/enumTranslations';
 import {
 	buildResolutionHeaderData,
 	currentEditorContent,

@@ -1,8 +1,8 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes.js';
-import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow.js';
-import { containing } from '#lib/components/tanStackTable/serverQuery.js';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes';
+import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow';
+import { containing } from '#lib/components/tanStackTable/serverQuery';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 
 const person = {
 	id: true,

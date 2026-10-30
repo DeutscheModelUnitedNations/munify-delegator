@@ -1,6 +1,6 @@
-import { m } from '#lib/paraglide/messages.js';
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { m } from '#lib/paraglide/messages';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
@@ -12,9 +12,9 @@ import {
 	systemAdmin,
 	userId,
 	where
-} from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import type { Context } from '#api/context';
+import { apiError } from '#api/services/errors/apiError';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
@@ -287,7 +287,7 @@ export function assertCanUpdateNewsletterPreferences(
  * another conference, they were never given - and anybody with a part in (or a place on the
  * waiting list of) a conference the actor does not look after: the impersonation acts as them
  * everywhere, so it would reach into that conference too. The roles of the OIDC claim cannot be
- * lent: while impersonating, the context keeps only the roles both hold (`#api/context.js`).
+ * lent: while impersonating, the context keeps only the roles both hold (`#api/context`).
  */
 function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
 	const notSelf = { id: { ne: actor.sub } };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { RegistrationStatus } from '#lib/utils/registrationStatus.js';
+import type { RegistrationStatus } from '#lib/utils/registrationStatus';
 import { registrationRedirect } from './registrationGuard';
 
 describe('registrationRedirect', () => {

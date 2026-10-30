@@ -1,10 +1,10 @@
-import type { EmailkindEnum } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
-import type { Locale } from '#lib/paraglide/runtime.js';
+import type { EmailkindEnum } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
+import type { Locale } from '#lib/paraglide/runtime';
 
 /**
  * What an automatic mail says, as a template: subject, heading and body with `{placeholders}`.
- * Shared by the API, which fills it in for each recipient (`#api/handlers/email/emailContent.js`),
+ * Shared by the API, which fills it in for each recipient (`#api/handlers/email/emailContent`),
  * and the e-mail page, which edits it per conference (`conference_email_text`), so the editor
  * starts from the very text that would be sent. The greeting and the button are not part of it.
  */

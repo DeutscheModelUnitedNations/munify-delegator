@@ -1,8 +1,8 @@
 import { queryParameters } from 'sveltekit-search-params';
 import { toast } from 'svelte-sonner';
-import { client, type Mutation } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
-import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+import { client, type Mutation } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
+import { genericPromiseToastMessages } from '#lib/utils/toast';
 
 /** A status change a scan flow makes, minus the identifying fields the flow fills in. */
 export type StatusChange = Omit<

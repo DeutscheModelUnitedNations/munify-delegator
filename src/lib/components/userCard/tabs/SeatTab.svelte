@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
-	import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
+	import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
 	import DelegationSeat from '../sections/DelegationSeat.svelte';
 	import SingleSeat from '../sections/SingleSeat.svelte';
 	import SupervisorSeat from '../sections/SupervisorSeat.svelte';

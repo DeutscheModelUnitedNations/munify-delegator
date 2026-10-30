@@ -5,7 +5,7 @@ import type {
 	ColumnFiltersState,
 	PaginationState,
 	SortingState
-} from '#lib/components/tanStackTable/index.js';
+} from '#lib/components/tanStackTable/index';
 import { filtersParam, sameSorting, sortingParam } from './managedTable';
 
 export interface TableStateOptions {

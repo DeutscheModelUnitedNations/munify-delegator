@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import NumberMatrix from './NumberMatrix.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { statsQueryFilter } from '../stats.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

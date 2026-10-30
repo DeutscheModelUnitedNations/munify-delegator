@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { dateToDatetimeLocal, formatInTimezone } from '#lib/helpers/conferenceTimezoneDate.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { dateToDatetimeLocal, formatInTimezone } from '#lib/helpers/conferenceTimezoneDate';
 	import { surveyFields } from '../surveyForm';
 
 	interface Props {

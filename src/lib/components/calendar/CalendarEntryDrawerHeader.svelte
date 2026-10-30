@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import type { DrawerDirection } from '#lib/components/SlidePanel.svelte';
 	import { getColorConfig } from './calendarColors';
-	import { translateCalendarEntryColor } from '#lib/utils/enumTranslations.js';
+	import { translateCalendarEntryColor } from '#lib/utils/enumTranslations';
 	import type { CalendarEntry } from './calendarTypes';
 
 	interface Props {

@@ -1,4 +1,4 @@
-import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
+import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client';
 
 interface ColorConfig {
 	bg: string;

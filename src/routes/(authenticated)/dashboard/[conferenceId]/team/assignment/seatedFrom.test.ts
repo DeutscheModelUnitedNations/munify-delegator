@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { seatedFrom } from './board';
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: {} }));
 
 const review = (id: string) => ({
 	delegationId: id,

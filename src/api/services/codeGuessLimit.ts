@@ -1,8 +1,8 @@
 import { GraphQLError } from 'graphql';
 import { Redis } from 'ioredis';
 import { REDIS_URL } from '$app/env/private';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 import {
 	createFailureLimiter,
 	createMemoryFailureStore,

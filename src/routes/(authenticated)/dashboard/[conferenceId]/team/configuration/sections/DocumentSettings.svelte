@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import FormSection from '#lib/components/form/FormSection.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import PdfTemplateHelp from '#lib/components/form/PdfTemplateHelp.svelte';
 	import {
 		downloadCompleteCertificate,
 		downloadCompletePostalRegistrationPDF
-	} from '#lib/utils/pdfGenerator.js';
+	} from '#lib/utils/pdfGenerator';
 	import {
 		templateOrDefault,
 		testPrintCertificate,
 		testPrintParticipant,
 		testPrintRecipient
 	} from './testPrintData';
-	import { resolveDocumentLayout, type LayoutDocument } from '#lib/helpers/documentLayout.js';
+	import { resolveDocumentLayout, type LayoutDocument } from '#lib/helpers/documentLayout';
 	import DocumentLayoutEditor from './DocumentLayoutEditor.svelte';
 	import TemplateCard from './TemplateCard.svelte';
 	import type { ConferenceSettings } from '../form-schema';

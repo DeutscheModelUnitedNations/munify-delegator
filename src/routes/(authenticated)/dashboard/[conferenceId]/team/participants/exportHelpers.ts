@@ -1,13 +1,13 @@
-import { getLocale } from '#lib/paraglide/runtime.js';
-import { m } from '#lib/paraglide/messages.js';
-import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter.js';
+import { getLocale } from '#lib/paraglide/runtime';
+import { m } from '#lib/paraglide/messages';
+import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter';
 import {
 	translateGender,
 	translateTeamRole,
 	translateAdministrativeStatus,
 	translateParticipationRole,
 	translateFoodPreference
-} from '#lib/utils/enumTranslations.js';
+} from '#lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type { ParticipantRow } from './types';
 

@@ -1,8 +1,8 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertOfferedIn,
-	assertTeamRole,
+	assertTeamPermission,
 	DELEGATION_MEMBER_ASSIGNMENT,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
@@ -13,11 +13,11 @@ import {
 	userId,
 	where,
 	assertAllowedById
-} from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
+} from '#api/services/authHelper';
+import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /** The delegates of the delegations the caller supervises. */
 function supervisedMember(ctx: Context) {
@@ -90,7 +90,7 @@ export async function assertCanCreateAppliedDelegationMember(
 	ctx: ApiContext,
 	conferenceId: string
 ) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }
 
 /**

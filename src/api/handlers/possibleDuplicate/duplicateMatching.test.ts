@@ -6,7 +6,7 @@ import {
 	matchKeys,
 	type MatchProfile
 } from './duplicateMatching';
-import { DUPLICATE_THRESHOLD } from '#lib/helpers/plausibilityRules.js';
+import { DUPLICATE_THRESHOLD } from '#lib/helpers/plausibilityRules';
 
 let counter = 0;
 function profile(overrides: Partial<MatchProfile> = {}): MatchProfile {

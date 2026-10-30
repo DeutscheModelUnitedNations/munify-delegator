@@ -1,17 +1,16 @@
-import { apiError } from '#api/services/errors/apiError.js';
-import { db } from '#api/db/db.js';
-import type { Context } from '#api/context.js';
-import { abilityBuilder } from '#api/rumble.js';
+import { apiError } from '#api/services/errors/apiError';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	anyOf,
-	assertTeamRole,
+	assertTeamPermission,
 	calendarConference,
 	conferencesOfCaller,
 	readableConference,
 	systemAdmin,
 	userId
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 import { objectKey } from './storageClient';
 
@@ -91,13 +90,13 @@ export function registerStoredFileAbilities() {
  * the field's entry in `FILE_SOURCES` decides. Returns that entry.
  */
 export async function assertCanUploadFile(
-	ctx: Context,
+	ctx: ApiContext,
 	target: { kind: string; field: string; conferenceId: string }
 ) {
 	ctx.mustBeLoggedIn();
 	const source = findFileSource(target.kind, target.field);
 	if (!source) throw apiError('INVALID_INPUT', m.fileUploadUnknownPurpose());
-	await assertTeamRole(ctx, target.conferenceId, source.roles);
+	await assertTeamPermission(ctx, target.conferenceId, source.permission);
 	return source;
 }
 
@@ -111,7 +110,7 @@ export async function assertCanUploadFile(
  * that the file arrived in full is `ensureUploadComplete`'s.
  */
 export async function assertCanClaimFile<K extends FileKind>(
-	ctx: Context,
+	ctx: ApiContext,
 	fileId: string | null | undefined,
 	target: { kind: K; field: FileField<K>; conferenceId: string }
 ) {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Selection from '#lib/components/selection/index.js';
-	import { sortByNames } from '#lib/helpers/formatNames.js';
+	import Selection from '#lib/components/selection/index';
+	import { sortByNames } from '#lib/helpers/formatNames';
 	import SelectableParticipant from './SelectableParticipant.svelte';
 	import type { PayableUser, PaymentParticipantSelection } from './participantSelection.svelte';
 

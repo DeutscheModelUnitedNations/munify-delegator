@@ -4,10 +4,10 @@
 	import Supervisors from './sections/Supervisors.svelte';
 	import Delegations from './sections/Delegations.svelte';
 	import { provideAssignUser } from './assignUser.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import type { PageProps } from './$types';
 

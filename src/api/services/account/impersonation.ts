@@ -5,7 +5,7 @@ import {
 	OIDC_M2M_RESOURCE,
 	OIDC_RESOURCE
 } from '$app/env/private';
-import { OIDC } from '#api/services/OIDC.js';
+import { OIDC } from '#api/services/OIDC';
 
 const REQUEST_TIMEOUT = 10_000;
 

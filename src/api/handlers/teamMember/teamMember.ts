@@ -1,10 +1,10 @@
-import { db, schema } from '#api/db/db.js';
-import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble';
 import { eq } from 'drizzle-orm';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { teamMemberPubsub } from '#api/pubsub.js';
+import { teamMemberPubsub } from '#api/pubsub';
 import { assertCanChangeTeamRole, registerTeamMemberAbilities } from './teamMemberPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerTeamMemberAbilities();
 

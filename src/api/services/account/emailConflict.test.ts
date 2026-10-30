@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as Sentry from '@sentry/sveltekit';
-import { hasErrorCode } from '#lib/api/errorCodes.js';
+import { hasErrorCode } from '#lib/api/errorCodes';
 import { CombinedError } from '@urql/core';
 import {
 	describeEmailConflict,
@@ -10,7 +10,7 @@ import {
 } from './emailConflict';
 
 const findFirst = vi.hoisted(() => vi.fn());
-vi.mock('#api/db/db.js', () => ({ db: { query: { user: { findFirst } } } }));
+vi.mock('#api/db/db', () => ({ db: { query: { user: { findFirst } } } }));
 vi.mock('@sentry/sveltekit', () => ({ captureException: vi.fn() }));
 
 describe('maskEmail', () => {

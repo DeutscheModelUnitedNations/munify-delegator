@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { readSelectedTextFile } from '#lib/helpers/readSelectedTextFile.js';
+	import { readSelectedTextFile } from '#lib/helpers/readSelectedTextFile';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import RepresentationBadge from './RepresentationBadge.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import {
 		parsePresenceExport,
 		representationLabel,
@@ -20,7 +20,7 @@
 		type ScoredDelegate,
 		type ScoredNsa
 	} from './presenceImport';
-	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence.js';
+	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();

@@ -1,5 +1,6 @@
-import { schemaBuilder } from '#api/rumble.js';
-import { OIDC, oidcRoles } from '#api/services/OIDC.js';
+import { schemaBuilder } from '#api/rumble';
+import { OIDC } from '#api/services/OIDC';
+import { oidcRoles } from '#api/services/oidcRoles';
 import { offlineUserOf } from './offlineUser';
 import { oidcIdentityFields } from './oidcIdentityFields';
 

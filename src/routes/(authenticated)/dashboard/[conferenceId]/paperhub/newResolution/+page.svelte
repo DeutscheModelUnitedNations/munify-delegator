@@ -1,19 +1,19 @@
 <script lang="ts">
-	import PaperEditor from '#lib/components/paper/editor/index.js';
+	import PaperEditor from '#lib/components/paper/editor/index';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { fetchNewResolutionContext } from './newResolutionContext';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
-	import { resolutionStore } from '#lib/components/paper/editor/editorStore.js';
+	import { resolutionStore } from '#lib/components/paper/editor/editorStore';
 	import { untrack } from 'svelte';
 	import {
 		type Resolution,
 		isClauseEmpty,
 		createEmptyResolution
-	} from '#lib/components/paper/editor/resolution/index.js';
+	} from '#lib/components/paper/editor/resolution/index';
 	import { get } from 'svelte/store';
 	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';
 	import DraftRecoveryModal from '#lib/components/paper/draft/DraftRecoveryModal.svelte';

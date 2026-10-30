@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
-import type { ColumnFiltersState } from '#lib/components/tanStackTable/index.js';
+import type { ColumnFiltersState } from '#lib/components/tanStackTable/index';
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: {} }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: {} }));
 
 const { waitingListWhere } = await import('./waitingListQuery');
 

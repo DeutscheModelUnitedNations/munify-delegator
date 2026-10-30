@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { page } from '$app/state';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import codenamize from '#lib/helpers/codenamize.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import formatNames from '#lib/helpers/formatNames';
+	import codenamize from '#lib/helpers/codenamize';
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '#lib/components/delegationStatusTable/Entry.svelte';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';

@@ -1,15 +1,15 @@
-import { db } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { nullToUndefined } from '#api/services/args.js';
+import { nullToUndefined } from '#api/services/args';
 import { createCalendarEntry, updateCalendarEntry } from './calendarEntryService';
 import {
 	assertCanCreateCalendarEntry,
 	assertCanUpdateCalendarEntry,
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
-import { calendarEntryPubsub } from '#api/pubsub.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { calendarEntryPubsub } from '#api/pubsub';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerCalendarEntryAbilities();
 

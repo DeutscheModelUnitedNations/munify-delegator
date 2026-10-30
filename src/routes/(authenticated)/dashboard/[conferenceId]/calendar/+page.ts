@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { m } from '#lib/paraglide/messages.js';
-import { client } from '#lib/api/rumbleClient/client.js';
-import { fetchTeamAccess } from '#lib/api/teamAccess.js';
-import { isOnTeam } from '#lib/helpers/teamAccess.js';
+import { m } from '#lib/paraglide/messages';
+import { client } from '#lib/api/rumbleClient/client';
+import { fetchTeamAccess } from '#lib/api/teamAccess';
+import { isOnTeam } from '#lib/helpers/teamAccess';
 
 /**
  * The schedule is shown to everybody once the conference has switched it on, and to the team

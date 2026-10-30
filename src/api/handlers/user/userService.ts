@@ -1,9 +1,9 @@
-import { db, schema } from '#api/db/db.js';
-import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes.js';
+import { db, schema } from '#api/db/db';
+import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
 
 /**
  * How many conferences this person actually took part in - registrations that never got a

@@ -1,16 +1,16 @@
 <script lang="ts" generics="TData extends object">
-	import { m } from '#lib/paraglide/messages.js';
-	import type { Table } from '#lib/components/tanStackTable/index.js';
+	import { m } from '#lib/paraglide/messages';
+	import type { Table } from '#lib/components/tanStackTable/index';
 	import {
 		type ManagedColumn,
 		type ManagedTableFeatures
-	} from '#lib/components/tanStackTable/managedTable.js';
+	} from '#lib/components/tanStackTable/managedTable';
 	import {
 		toggledEnumFilter,
 		updatedRangeFilter,
 		type TextFilterMode
-	} from '#lib/components/tanStackTable/filters.js';
-	import { filterEntries } from '#lib/components/tanStackTable/columnEntries.js';
+	} from '#lib/components/tanStackTable/filters';
+	import { filterEntries } from '#lib/components/tanStackTable/columnEntries';
 	import SideDrawer from './SideDrawer.svelte';
 	import ColumnGroups from './ColumnGroups.svelte';
 

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import { toast } from 'svelte-sonner';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import hotkeys from 'hotkeys-js';

@@ -1,17 +1,17 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	assertCanCreateSurveyOption,
 	registerSurveyOptionAbilities
 } from './surveyOptionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { surveyOptionPubsub } from '#api/pubsub.js';
+import { surveyOptionPubsub } from '#api/pubsub';
 import {
 	deleteAllowedRow,
 	assertUpdated,
 	allowedRowWhere,
 	readableById
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 registerSurveyOptionAbilities();
 

@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /** A school the picker offers: what it is called and where it is. */
 export type SchoolOption = { id: string; name: string; city: string | null };

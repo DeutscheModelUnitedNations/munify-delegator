@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { startImpersonation as impersonate } from '#lib/api/startImpersonation.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { startImpersonation as impersonate } from '#lib/api/startImpersonation';
 
 	interface Props {
 		userId: string;

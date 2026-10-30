@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import type { ConferenceState } from '#lib/data/dashboardLinks.js';
+	import type { ConferenceState } from '#lib/data/dashboardLinks';
 
 	/**
 	 * At the conference, participants show their digital nametag and check-in code on their phone.

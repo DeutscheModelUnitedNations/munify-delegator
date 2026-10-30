@@ -4,9 +4,9 @@
  * with an `EMAIL_CONFLICT` error (or, on the login callback, the page that explains it).
  */
 import * as Sentry from '@sentry/sveltekit';
-import { db } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
+import { db } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
 
 /** Enough of an address to recognise it in a log without writing the whole thing down. */
 export function maskEmail(email: string): string {

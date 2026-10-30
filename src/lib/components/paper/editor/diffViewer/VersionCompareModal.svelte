@@ -4,7 +4,7 @@
 	import { computeDiff, areContentsEqual } from './diffUtils';
 	import type { VersionForComparison } from './types';
 	import { orderVersions } from './orderVersions';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		open: boolean;

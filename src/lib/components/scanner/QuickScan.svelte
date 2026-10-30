@@ -2,7 +2,7 @@
 	import { BarcodeDetector } from 'barcode-detector';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import ScanViewfinder from './ScanViewfinder.svelte';
 
 	interface Props {

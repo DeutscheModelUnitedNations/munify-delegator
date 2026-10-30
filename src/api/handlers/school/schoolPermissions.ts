@@ -1,16 +1,16 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isSystemAdmin,
 	isTeamMemberOf,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
-import type { Context } from '#api/context.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/authHelper';
+import type { Context } from '#api/context';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
 
 /**
  * Schools are shared by every conference. Anybody may read what names one - its name and where it
@@ -73,5 +73,5 @@ export async function assertCanReadSchoolMetrics(ctx: ApiContext, schoolId: stri
 
 /** The schools of a conference, with their numbers, are participant care's. */
 export async function assertCanReadConferenceSchools(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

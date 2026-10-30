@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import type { ResolvedPathname } from '$app/types';
-	import { getPaperTypeIcon } from '#lib/utils/enumIcons.js';
-	import { translatePaperType } from '#lib/utils/enumTranslations.js';
-	import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import { getPaperTypeIcon } from '#lib/utils/enumIcons';
+	import { translatePaperType } from '#lib/utils/enumTranslations';
+	import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
 
 	interface Props {
 		papers: { id: string; type: PapertypeEnum; firstSubmittedAt: Date | null }[];

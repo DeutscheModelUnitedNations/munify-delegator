@@ -1,4 +1,4 @@
-import formatNames from '#lib/helpers/formatNames.js';
+import formatNames from '#lib/helpers/formatNames';
 
 interface NamedUser {
 	givenName: string | null;

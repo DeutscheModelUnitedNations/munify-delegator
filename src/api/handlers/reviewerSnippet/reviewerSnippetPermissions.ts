@@ -1,6 +1,6 @@
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
-import { systemAdmin, userId, assertAllowedById } from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
+import { systemAdmin, userId, assertAllowedById } from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
 
 export function registerReviewerSnippetAbilities() {
 	// Ported from abilities/entities/reviewerSnippet.ts: users manage only their own snippets.

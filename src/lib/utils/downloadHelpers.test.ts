@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import type { CsvDelimiter, CsvEncoding } from '#lib/state/csvSettings.js';
+import type { CsvDelimiter, CsvEncoding } from '#lib/state/csvSettings';
 
 // The real state only persists in the browser; outside it, it keeps the value in memory.
-vi.mock('#lib/state/csvSettings.js', () => ({
+vi.mock('#lib/state/csvSettings', () => ({
 	csvSettings: {
 		current: { delimiter: ';', encoding: 'utf-8' } satisfies {
 			delimiter: CsvDelimiter;
@@ -12,7 +12,7 @@ vi.mock('#lib/state/csvSettings.js', () => ({
 }));
 
 const { downloadCSV, downloadJSON, downloadPDF } = await import('./downloadHelpers');
-const { csvSettings } = await import('#lib/state/csvSettings.js');
+const { csvSettings } = await import('#lib/state/csvSettings');
 
 describe('download helpers', () => {
 	let downloaded: { blob: Blob; filename: string }[];

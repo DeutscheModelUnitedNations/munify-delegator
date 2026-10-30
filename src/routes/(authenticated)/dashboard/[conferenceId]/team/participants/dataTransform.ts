@@ -1,7 +1,7 @@
 import type { AdministrativeStatus, ParticipantRow } from './types';
-import { getAgeAtConference, ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+import { getAgeAtConference, ofAgeAtConference } from '#lib/helpers/ageChecker';
 import type { ConferenceParticipants } from './conferenceParticipants';
-import { splitRole } from '#lib/helpers/conferenceRole.js';
+import { splitRole } from '#lib/helpers/conferenceRole';
 
 type Registrations = Omit<ConferenceParticipants, 'conference'>;
 

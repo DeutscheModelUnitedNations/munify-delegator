@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#api/db/db.js', () => ({ db: {} }));
-vi.mock('#api/rumble.js', () => ({ abilityBuilder: {} }));
+vi.mock('#api/db/db', () => ({ db: {} }));
+vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
 const { paperRefusal } = await import('./paperPermissions');
 
 const nation = { assignmentReleased: true, roleKind: 'NATION' as const, assignedCommitteeId: 'GA' };

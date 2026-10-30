@@ -1,7 +1,7 @@
 <!-- The caller's team roles in this conference, in the top right corner of the team's card on the dashboard. -->
 <script lang="ts">
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import codenamize from '#lib/helpers/codenamize.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import codenamize from '#lib/helpers/codenamize';
 	import Flag from '#lib/components/Flag.svelte';
-	import InfoGrid from '#lib/components/infoGrid/index.js';
+	import InfoGrid from '#lib/components/infoGrid/index';
 	import DelegationStatusTableWrapper from '#lib/components/delegationStatusTable/Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
-	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import SupervisedParticipantEntry from './SupervisedParticipantEntry.svelte';
 	import ApplicationDetailsEntries from './ApplicationDetailsEntries.svelte';

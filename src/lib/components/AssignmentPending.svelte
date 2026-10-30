@@ -1,6 +1,6 @@
 <script lang="ts">
 	import progress from '#assets/undraw/progress.svg';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * What participants see once registration has closed but the team has not released the

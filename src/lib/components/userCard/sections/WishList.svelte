@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Flag from '#lib/components/Flag.svelte';
 	import InfoRow from './InfoRow.svelte';
 	import type { Wish } from './wishes';

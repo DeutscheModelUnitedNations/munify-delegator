@@ -2,7 +2,7 @@
 	import Modal from '#lib/components/Modal.svelte';
 	import Flag from '#lib/components/Flag.svelte';
 	import CompletionCelebration from './CompletionCelebration.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 	interface Props {

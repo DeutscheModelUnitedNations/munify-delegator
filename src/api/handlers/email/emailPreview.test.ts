@@ -8,7 +8,7 @@ const stored = vi.hoisted(() => ({
 	footers: [] as { locale: string; text: string }[]
 }));
 
-vi.mock('#api/db/db.js', () => ({
+vi.mock('#api/db/db', () => ({
 	db: {
 		query: {
 			conferenceEmailText: { findMany: async () => stored.texts },
@@ -17,14 +17,14 @@ vi.mock('#api/db/db.js', () => ({
 	},
 	schema: {}
 }));
-vi.mock('#api/services/email/emailService.js', () => ({ emailService: {} }));
-vi.mock('#api/pubsub.js', () => ({ emailLogPubsub: { updated: () => undefined } }));
-vi.mock('#api/services/requestLocale.js', () => ({
+vi.mock('#api/services/email/emailService', () => ({ emailService: {} }));
+vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
+vi.mock('#api/services/requestLocale', () => ({
 	localeOfUser: (locale: string | null) => locale ?? 'de',
 	runWithLocale: (_locale: string, fn: () => unknown) => fn()
 }));
 vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot: async () => stored.snapshot }));
-vi.mock('#api/services/email/sendTeamInvitationEmail.js', () => ({
+vi.mock('#api/services/email/sendTeamInvitationEmail', () => ({
 	renderTeamInvitationEmail: (...args: unknown[]) => ({ team: 'invitation', args }),
 	renderTeamWelcomeEmail: (...args: unknown[]) => ({ team: 'welcome', args })
 }));

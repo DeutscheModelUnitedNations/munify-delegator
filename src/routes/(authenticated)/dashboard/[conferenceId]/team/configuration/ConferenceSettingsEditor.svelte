@@ -8,24 +8,24 @@
 	conference changes.
 -->
 <script lang="ts">
-	import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage';
+	import { m } from '#lib/paraglide/messages';
 	import { untrack } from 'svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
 	import Modal from '#lib/components/Modal.svelte';
-	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile.js';
+	import { uploadFile, type ConferenceFileField } from '#lib/api/uploadFile';
 	import {
 		canEditConference,
 		canEditConferenceContent,
 		canManageEmails as mayManageEmails
-	} from '#lib/helpers/teamAccess.js';
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	} from '#lib/helpers/teamAccess';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges } from './changePreview';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';

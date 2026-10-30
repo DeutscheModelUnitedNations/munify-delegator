@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { SchoolSeatCount } from '#lib/assignment/schoolSeats.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { SchoolSeatCount } from '#lib/assignment/schoolSeats';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * How many seats the plan gives each school, against the conference's limit per school. Past

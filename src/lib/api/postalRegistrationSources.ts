@@ -1,10 +1,10 @@
 import { client } from './rumbleClient/client';
-import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import {
 	downloadCompletePostalRegistrationPDF,
 	type ParticipantData,
 	type RecipientData
-} from '#lib/utils/pdfGenerator.js';
+} from '#lib/utils/pdfGenerator';
 
 /**
  * Reads everything a postal registration PDF is built from: the person's address and birthday,

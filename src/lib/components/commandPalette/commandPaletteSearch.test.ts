@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 	conferenceParticipants: vi.fn()
 }));
 
-vi.mock('#lib/api/rumbleClient/client.js', () => ({ client: { query: mocks } }));
+vi.mock('#lib/api/rumbleClient/client', () => ({ client: { query: mocks } }));
 
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { searchConference } from './commandPaletteSearch';

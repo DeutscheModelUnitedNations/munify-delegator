@@ -1,18 +1,18 @@
-import { db } from '#api/db/db.js';
+import { db } from '#api/db/db';
 import { emailService } from './emailService';
-import { renderEmail, TeamInvitationEmail, TeamWelcomeEmail } from './templates/index.js';
-import type { TeamRole } from '#api/services/authHelper.js';
-import { translateTeamRole } from '#lib/utils/enumTranslations.js';
-import { m } from '#lib/paraglide/messages.js';
-import type { Locale } from '#lib/paraglide/runtime.js';
-import type { AlwaysSentKind } from '#lib/helpers/emailKinds.js';
+import { renderEmail, TeamInvitationEmail, TeamWelcomeEmail } from './templates/index';
+import type { TeamRole } from '#api/services/authHelper';
+import { translateTeamRole } from '#lib/utils/enumTranslations';
+import { m } from '#lib/paraglide/messages';
+import type { Locale } from '#lib/paraglide/runtime';
+import type { AlwaysSentKind } from '#lib/helpers/emailKinds';
 import {
 	emailFooterParagraphs,
 	fillEmailText,
 	resolveEmailText,
 	type EmailPlaceholderValues,
 	type EmailTextOverride
-} from '#lib/helpers/emailTemplates.js';
+} from '#lib/helpers/emailTemplates';
 import { runWithLocale } from '../requestLocale';
 import type { SendEmailResult } from './types';
 

@@ -1,5 +1,5 @@
 import { stringify } from 'csv-stringify/browser/esm/sync';
-import { csvSettings, type CsvEncoding, type CsvDelimiter } from '#lib/state/csvSettings.js';
+import { csvSettings, type CsvEncoding, type CsvDelimiter } from '#lib/state/csvSettings';
 
 // UTF-8 BOM for Excel compatibility
 const UTF8_BOM = '\uFEFF';

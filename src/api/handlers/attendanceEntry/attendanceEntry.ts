@@ -1,5 +1,5 @@
-import { db, schema } from '#api/db/db.js';
-import { enum_, object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, isNull } from 'drizzle-orm';
 import {
@@ -12,7 +12,7 @@ import {
 	startSession,
 	storeSessionCard
 } from './attendanceEntryService';
-import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService.js';
+import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import {
 	assertCanCreateAttendanceEntry,
 	assertCanEndAttendanceSession,
@@ -24,10 +24,10 @@ import {
 	attendanceEntryPubsub,
 	attendanceSessionPubsub,
 	conferenceParticipantPubsub
-} from '#api/pubsub.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+} from '#api/pubsub';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerAttendanceEntryAbilities();
 

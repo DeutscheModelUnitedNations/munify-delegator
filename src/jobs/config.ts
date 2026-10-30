@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { StorageConfig } from '#api/handlers/storedFile/storageClient.js';
+import type { StorageConfig } from '#api/handlers/storedFile/storageClient';
 
 /**
  * Everything the jobs read from the environment, validated with zod. Jobs run outside SvelteKit,

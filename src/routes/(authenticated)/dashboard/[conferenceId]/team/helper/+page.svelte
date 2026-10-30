@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
 	import type { PageProps } from './$types';

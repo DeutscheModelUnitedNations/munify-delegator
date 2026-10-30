@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { foodPreferenceOptions, genderOptions } from '#lib/components/form/userFieldOptions.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { foodPreferenceOptions, genderOptions } from '#lib/components/form/userFieldOptions';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { adminUserFormSchema } from '../../../../routes/(authenticated)/my-account/form-schema';
@@ -12,14 +12,14 @@
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import { translatedNationCodeAddressFormOptions } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues.js';
+	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues';
 	import AddressRegionField from '#lib/components/form/AddressRegionField.svelte';
-	import { addressRules } from '#lib/helpers/addressRules.js';
+	import { addressRules } from '#lib/helpers/addressRules';
 	import { toast } from 'svelte-sonner';
 	import AccountSection from '../AccountSection.svelte';
 	import ParticipantSchoolSection from '../ParticipantSchoolSection.svelte';
 	import CopyField from '../CopyField.svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { untrack } from 'svelte';
 
 	interface Props {

@@ -11,11 +11,11 @@
 	import Heading from '@tiptap/extension-heading';
 	import Menu from './menu';
 	import SnippetDropdown from './menu/SnippetDropdown.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
 	import { SnippetSuggestion, type SnippetItem } from './extensions/SnippetSuggestion';
 	import PlaceholderPromptModal from './PlaceholderPromptModal.svelte';
-	import { extractPlaceholders, replacePlaceholders } from '#lib/helpers/snippetPlaceholders.js';
+	import { extractPlaceholders, replacePlaceholders } from '#lib/helpers/snippetPlaceholders';
 	import type { JSONContent } from '@tiptap/core';
 	import { getSafeTipTapContent, isEmptyTipTapDocument } from './contentValidation';
 	import { UndoRedo } from '@tiptap/extensions';

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 	import type { QueueEntry } from './attendanceQueue';
 
 	/** One scan in the attendance log: its sync state, who was scanned, and when. */

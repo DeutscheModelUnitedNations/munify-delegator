@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '#lib/components/ActionModal.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { uploadFile } from '#lib/api/uploadFile.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { uploadFile } from '#lib/api/uploadFile';
+	import { m } from '#lib/paraglide/messages';
 	import { placeFields, resolvePlusCode, savePlaceFields, type PlusCodeError } from './placeForm';
 	import { untrack } from 'svelte';
 

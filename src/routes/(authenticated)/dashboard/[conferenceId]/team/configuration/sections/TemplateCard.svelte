@@ -8,7 +8,7 @@
 		type FormPathLeaves,
 		type SuperForm
 	} from 'sveltekit-superforms';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import FormFile from '#lib/components/form/FormFile.svelte';
 
 	/**

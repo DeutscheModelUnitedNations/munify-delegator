@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ComponentProps, Snippet } from 'svelte';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
-	import type { ConferenceState } from '#lib/data/dashboardLinks.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import type { ConferenceState } from '#lib/data/dashboardLinks';
 	import ApplicationRejected from '#lib/components/ApplicationRejected.svelte';
 	import AssignmentPending from '#lib/components/AssignmentPending.svelte';
 	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';

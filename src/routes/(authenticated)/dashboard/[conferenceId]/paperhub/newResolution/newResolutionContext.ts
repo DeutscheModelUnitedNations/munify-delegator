@@ -1,7 +1,7 @@
 import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { error } from '@sveltejs/kit';
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import { paperEntityName } from '../paperDisplay';
 import { conferenceHeaderInfo } from '../conferenceHeaderInfo';
 import { newResolutionSchema } from './form-schema';

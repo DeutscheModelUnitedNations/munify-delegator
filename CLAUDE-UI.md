@@ -81,7 +81,7 @@ interface Props {
 
 ### Chart Subcomponents
 
-This component uses the following chart components from `#lib/components/charts/echarts//index.js`:
+This component uses the following chart components from `#lib/components/charts/echarts//index`:
 
 | Component             | Purpose                                    |
 | --------------------- | ------------------------------------------ |
@@ -332,7 +332,7 @@ to …" selects in the entry form set the first and last track.
 `#lib/components/RoleFlag.svelte` shows a delegation's role: a nation's flag or a non-state
 actor's icon (through `Flag`), nothing for no role. Pass the role as selected
 (`assignedRole { kind fontAwesomeIcon nation { alpha2Code } }`) and an optional `size` (`xs` by
-default). For the name next to it, narrow the role with `splitRole` from `#lib/helpers/conferenceRole.js`.
+default). For the name next to it, narrow the role with `splitRole` from `#lib/helpers/conferenceRole`.
 
 ```svelte
 <RoleFlag role={delegation.assignedRole} />
@@ -853,8 +853,8 @@ occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 
 ```svelte
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
 

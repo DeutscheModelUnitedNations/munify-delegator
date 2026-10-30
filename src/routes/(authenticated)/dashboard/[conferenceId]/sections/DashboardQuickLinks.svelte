@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import DashboardLinksGrid from '#lib/components/dashboard/DashboardLinksGrid.svelte';
 	import DashboardLinkCard from '#lib/components/dashboard/DashboardLinkCard.svelte';
@@ -8,9 +8,9 @@
 		getLinksForUserType,
 		type DashboardLinkContext,
 		type UserType
-	} from '#lib/data/dashboardLinks.js';
-	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus.js';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	} from '#lib/data/dashboardLinks';
+	import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import PhoneReadyHint from './PhoneReadyHint.svelte';
 
 	interface Props {

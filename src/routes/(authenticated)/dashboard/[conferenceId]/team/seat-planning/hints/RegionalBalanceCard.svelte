@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import {
 		translateRegionalBaseline,
 		translateRegionalGroup
-	} from '#lib/utils/enumTranslations.js';
+	} from '#lib/utils/enumTranslations';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import type { regionalDeviations } from '#lib/helpers/seatPlanning/baselines.js';
+	import type { regionalDeviations } from '#lib/helpers/seatPlanning/baselines';
 	import type { SeatPlanner } from '../seatPlanner.svelte';
 	import RegionalDeviationBars from './RegionalDeviationBars.svelte';
 

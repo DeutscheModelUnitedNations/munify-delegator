@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { fetchAllSchools, fetchSchoolsPage, type SchoolRow } from './schoolsQuery';
 	import type { PageProps } from './$types';
 

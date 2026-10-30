@@ -1,11 +1,11 @@
-import { m } from '#lib/paraglide/messages.js';
-import { db } from '#api/db/db.js';
-import type * as schema from '#api/db/schema/index.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { db } from '#api/db/db';
+import type * as schema from '#api/db/schema/index';
+import { apiError } from '#api/services/errors/apiError';
 import {
 	acceptsApplications,
 	applicationTextsComplete
-} from '#lib/helpers/applicationReadiness.js';
+} from '#lib/helpers/applicationReadiness';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {
@@ -42,7 +42,7 @@ export async function assertRegistrationOpen(conferenceId: string) {
  * few role applications, incomplete texts (judged with this update's edits applied), or a closed
  * registration window. Registering and joining are bound to the same window
  * (`assertRegistrationOpen`); editing a registration is open in any stage. The rules themselves live in
- * `#lib/helpers/applicationReadiness.js`, which the registration stages show as todos.
+ * `#lib/helpers/applicationReadiness`, which the registration stages show as todos.
  */
 export function assertApplicationReady(
 	applicant: {

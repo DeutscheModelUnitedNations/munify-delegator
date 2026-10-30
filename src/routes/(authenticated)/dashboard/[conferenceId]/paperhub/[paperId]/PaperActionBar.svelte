@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { PaperstatusEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * Save and submit for whoever may edit the paper (its author, or a reviewer who switched to

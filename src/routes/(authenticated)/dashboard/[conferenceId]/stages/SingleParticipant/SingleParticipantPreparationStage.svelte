@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
-	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation.js';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 
 	interface Props {

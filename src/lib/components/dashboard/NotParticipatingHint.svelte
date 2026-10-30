@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import undrawNew from '#assets/undraw/new.svg';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { RegistrationStatus } from '#lib/utils/registrationStatus.js';
+	import { m } from '#lib/paraglide/messages';
+	import type { RegistrationStatus } from '#lib/utils/registrationStatus';
 
 	/** For someone signed in without a part in a conference whose registration is not open. */
 	interface Props {

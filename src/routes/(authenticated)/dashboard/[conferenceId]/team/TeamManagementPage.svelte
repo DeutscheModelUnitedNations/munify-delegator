@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
 	import Tab from '#lib/components/tabs/Tab.svelte';
 	import InviteTeamMembersModal from '#lib/components/teamManagement/InviteTeamMembersModal.svelte';

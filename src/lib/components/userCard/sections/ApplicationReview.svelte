@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { sightingHref } from '#lib/helpers/sightingLink.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { sightingHref } from '#lib/helpers/sightingLink';
 	import StarRating from '#lib/components/StarRating.svelte';
 
 	/**

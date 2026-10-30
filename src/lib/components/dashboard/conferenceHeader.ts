@@ -1,6 +1,6 @@
-import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import type { ConferencestateEnum } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
+import { getLocale } from '#lib/paraglide/runtime';
 
 const longDate: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
 

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup.js';
-	import { roleSeats } from '#lib/helpers/conferenceRole.js';
+	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup';
+	import { roleSeats } from '#lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import FlagNameCell from './FlagNameCell.svelte';
 	import SeatsCell from './SeatsCell.svelte';
 	import type { ConferenceSeats, SeatedNation } from './conferenceSeats';

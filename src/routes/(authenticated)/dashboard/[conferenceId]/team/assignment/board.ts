@@ -3,11 +3,11 @@ import {
 	type AssignmentreviewWhereInputArgument,
 	type DelegationWhereInputArgument,
 	type SingleparticipantWhereInputArgument
-} from '#lib/api/rumbleClient/client.js';
-import { liveSnapshot } from '#lib/api/liveSnapshot.js';
-import type { BoardReviewRow } from '#lib/assignment/board.js';
-import { containing } from '#lib/components/tanStackTable/serverQuery.js';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
+} from '#lib/api/rumbleClient/client';
+import { liveSnapshot } from '#lib/api/liveSnapshot';
+import type { BoardReviewRow } from '#lib/assignment/board';
+import { containing } from '#lib/components/tanStackTable/serverQuery';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 
 /*
  * The assignment tabs never read a whole conference: it can hold tens of thousands of

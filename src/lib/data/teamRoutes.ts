@@ -1,12 +1,12 @@
-import { m } from '#lib/paraglide/messages.js';
-import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
-import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess.js';
+import { m } from '#lib/paraglide/messages';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
+import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess';
 import {
 	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
-} from '#lib/helpers/teamRoles.js';
+} from '#lib/helpers/teamRoles';
 
 /**
  * Every page of a conference's team area, once. The side navigation, the dashboard's team entry, the command

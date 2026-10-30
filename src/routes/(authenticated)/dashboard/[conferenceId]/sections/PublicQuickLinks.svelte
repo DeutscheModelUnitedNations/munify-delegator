@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import DashboardLinkCards from '#lib/components/dashboard/DashboardLinkCards.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '#lib/data/dashboardLinks.js';
+	import { getLinksForUserType, type DashboardLinkContext } from '#lib/data/dashboardLinks';
 
 	/** The quick links that lead to something public: the seat distribution and the preparation guide. */
 	interface Props {

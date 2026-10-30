@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client.js';
+	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client';
 	import { formatDateRange, getStateColor, translateState } from './conferenceHeader';
 
 	interface Props {

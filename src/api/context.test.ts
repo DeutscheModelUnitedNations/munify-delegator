@@ -1,8 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 
-vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles' }));
-vi.mock('./services/OIDC', () => ({ oidcRoles: ['admin', 'member', 'service_user'] }));
+vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles', OIDC_ROLE_MAP: undefined }));
 
 const { effectiveRoles, rolesOfSession, sessionClaims, sessionUser } = await import('./context');
 

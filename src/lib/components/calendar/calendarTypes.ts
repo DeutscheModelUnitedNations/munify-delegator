@@ -1,4 +1,4 @@
-import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client.js';
+import type { CalendarentrycolorEnum } from '#lib/api/rumbleClient/client';
 
 export interface CalendarPlace {
 	id: string;

@@ -4,9 +4,9 @@
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { schoolChoiceSchema } from '#lib/schemata/schoolChoice';
 	import Form from './form/Form.svelte';
 	import SchoolPicker from './form/SchoolPicker.svelte';
 	import { mutationForm } from './form/mutationForm';

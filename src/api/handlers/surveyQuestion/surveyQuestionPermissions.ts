@@ -1,12 +1,12 @@
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
+} from '#api/services/authHelper';
 
 export function registerSurveyQuestionAbilities() {
 	// Ported from abilities/entities/surveyQuestion.ts
@@ -28,5 +28,5 @@ export function registerSurveyQuestionAbilities() {
 
 /** Refuses unless the caller may add questions to the conference's surveys. */
 export async function assertCanCreateSurveyQuestion(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 
 	/** The roles of a conference single participants apply for, as cards to choose one from. */
 	interface Props {

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { findFileSource, formatMegabytes } from './fileSources';
+import { rolesWithTeamPermission } from '#lib/helpers/teamRoles';
 
 describe('findFileSource', () => {
 	test('maps a route to its column, purpose, limits and caching', () => {
@@ -8,7 +9,7 @@ describe('findFileSource', () => {
 			field: 'logo',
 			purpose: 'conference/logo',
 			column: 'logoFileId',
-			roles: ['PROJECT_MANAGEMENT']
+			permission: 'manageConference'
 		});
 		expect(findFileSource('conference', 'certificate')).toMatchObject({
 			mimeTypes: ['application/pdf']
@@ -17,8 +18,10 @@ describe('findFileSource', () => {
 	});
 
 	test('lets the content roles upload templates, but only project management the pictures', () => {
-		expect(findFileSource('conference', 'contract')?.roles).toContain('CONTENT_LEAD');
-		expect(findFileSource('conference', 'emblem')?.roles).not.toContain('CONTENT_LEAD');
+		expect(findFileSource('conference', 'contract')?.permission).toBe('editConferenceContent');
+		expect(rolesWithTeamPermission('editConferenceContent')).toContain('CONTENT_LEAD');
+		expect(findFileSource('conference', 'emblem')?.permission).toBe('manageConference');
+		expect(rolesWithTeamPermission('manageConference')).not.toContain('CONTENT_LEAD');
 	});
 
 	test('does not serve anything that is not listed', () => {

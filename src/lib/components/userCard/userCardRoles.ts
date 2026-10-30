@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /**
  * The filters for one person's rows in one conference: `forUser` for tables naming them directly

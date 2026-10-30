@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
-vi.mock('#lib/paraglide/runtime.js', () => ({ getLocale: () => 'en' }));
-vi.mock('#lib/paraglide/messages.js', () => ({
+vi.mock('#lib/paraglide/runtime', () => ({ getLocale: () => 'en' }));
+vi.mock('#lib/paraglide/messages', () => ({
 	m: {
 		conferenceStatusPre: () => 'pre',
 		conferenceStatusParticipantRegistration: () => 'registration',

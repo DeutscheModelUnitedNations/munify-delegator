@@ -1,18 +1,18 @@
-import { db } from '#api/db/db.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertTeamRole,
+	assertTeamPermission,
 	CONFERENCE_CONTENT_ROLES,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	offeredIn,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
-import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
+} from '#api/services/authHelper';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerResolutionAbilities() {
 	abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -46,7 +46,7 @@ export async function assertCanCreateResolution(
 	ctx: ApiContext,
 	args: { conferenceId: string; committeeId?: string | null; fileId: string }
 ) {
-	await assertTeamRole(ctx, args.conferenceId, CONFERENCE_CONTENT_ROLES);
+	await assertTeamPermission(ctx, args.conferenceId, 'editConferenceContent');
 	await assertCommitteeInConference(args.committeeId, args.conferenceId);
 	await assertCanClaimFile(ctx, args.fileId, {
 		kind: 'resolution',

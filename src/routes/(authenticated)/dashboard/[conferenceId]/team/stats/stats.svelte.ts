@@ -1,5 +1,5 @@
 import { createPersistedState } from '#lib/state/persistedState.svelte.js';
-import type { StatsFilter as GraphQLStatsFilter } from '#lib/api/rumbleClient/client.js';
+import type { StatsFilter as GraphQLStatsFilter } from '#lib/api/rumbleClient/client';
 import {
 	filteredStatValue,
 	type EntityType,

@@ -1,4 +1,4 @@
-import { db } from '#api/db/db.js';
+import { db } from '#api/db/db';
 import type {
 	EmailSnapshot,
 	SnapshotPerson,

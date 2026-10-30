@@ -1,14 +1,13 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	assertTeamRole,
+	assertAllowedById,
 	isTeamMemberOfConference,
-	PAPER_ROLES,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	assertAllowedById
-} from '#api/services/authHelper.js';
+	teamConference
+} from '#api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAgendaItemAbilities() {
@@ -30,12 +29,15 @@ export function registerCommitteeAgendaItemAbilities() {
  * project management may add them by hand.
  */
 export async function assertCanCreateAgendaItem(ctx: ApiContext, committeeId: string) {
-	const committee = await db.query.committee
-		.findFirst({ where: { id: committeeId }, columns: { conferenceId: true } })
+	await db.query.committee
+		.findFirst({
+			where: {
+				id: committeeId,
+				...(ctx.hasRole('service_user') ? {} : { conference: teamConference(ctx, 'planSeats') })
+			},
+			columns: { id: true }
+		})
 		.then(assertFindFirstExists);
-	if (!ctx.hasRole('service_user')) {
-		await assertTeamRole(ctx, committee.conferenceId, SEAT_PLANNING_ROLES);
-	}
 }
 
 /** Refuses unless the caller's update ability matches the agenda item. */
@@ -45,18 +47,17 @@ export async function assertCanUpdateAgendaItem(ctx: ApiContext, id: string) {
 
 /**
  * Reviewers get this on top of the update ability, which they do not otherwise hold for agenda
- * items - hence a role check rather than an ability filter.
+ * items - hence the team's `papers` filter on the agenda item's conference.
  */
 export async function assertCanSetAgendaItemReviewHelpStatus(
 	ctx: ApiContext,
 	agendaItemId: string
 ) {
-	const agendaItem = await db.query.committeeAgendaItem
+	await db.query.committeeAgendaItem
 		.findFirst({
-			where: { id: agendaItemId },
-			with: { committee: { columns: { conferenceId: true } } }
+			where: { id: agendaItemId, committee: { conference: teamConference(ctx, 'reviewPapers') } },
+			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
 
-	await assertTeamRole(ctx, agendaItem.committee.conferenceId, PAPER_ROLES);
 }

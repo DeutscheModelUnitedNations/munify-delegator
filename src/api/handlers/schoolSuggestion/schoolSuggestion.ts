@@ -1,13 +1,13 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
 import { refreshSchoolSuggestions } from './schoolSuggestions';
 import {
 	assertCanAnalyzeSchoolSuggestions,
 	readableSchoolRegistrations,
 	registerSchoolSuggestionAbilities
 } from './schoolSuggestionPermissions';
-import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub.js';
-import { assertUpdated, allowedRowWhere } from '#api/services/authHelper.js';
+import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub';
+import { assertUpdated, allowedRowWhere } from '#api/services/authHelper';
 
 registerSchoolSuggestionAbilities();
 

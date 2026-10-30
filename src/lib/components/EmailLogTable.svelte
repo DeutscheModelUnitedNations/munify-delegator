@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { EmailkindEnum, EmailstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { emailKindTexts, emailStatusLabel } from '#lib/helpers/emailKindTexts.js';
+	import type { EmailkindEnum, EmailstatusEnum } from '#lib/api/rumbleClient/client';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import formatNames from '#lib/helpers/formatNames';
+	import { emailKindTexts, emailStatusLabel } from '#lib/helpers/emailKindTexts';
 
 	/** Rows of the automatic mails' log: when, which mail, to whom, and how it went. */
 	interface Props {

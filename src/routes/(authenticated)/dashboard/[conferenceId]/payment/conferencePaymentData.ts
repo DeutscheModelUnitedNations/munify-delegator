@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /** The bank details every payment page needs to render a transfer reference. */
 export function fetchConferencePaymentData(conferenceId: string) {

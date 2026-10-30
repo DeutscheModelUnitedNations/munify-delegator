@@ -1,14 +1,14 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
-} from '#api/services/authHelper.js';
-import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions.js';
+} from '#api/services/authHelper';
+import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerPlaceAbilities() {
@@ -30,7 +30,7 @@ export async function assertCanCreatePlace(
 	conferenceId: string,
 	sitePlanFileId: string | null | undefined
 ) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	await assertCanClaimFile(ctx, sitePlanFileId, { kind: 'place', field: 'sitePlan', conferenceId });
 }
 

@@ -1,5 +1,5 @@
-import formatNames from '#lib/helpers/formatNames.js';
-import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import formatNames from '#lib/helpers/formatNames';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
 /** Pure helpers behind the survey CSV exports. */
 

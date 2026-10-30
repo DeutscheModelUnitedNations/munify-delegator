@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { userFormSchema } from './form-schema.js';
+	import { userFormSchema } from './form-schema';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
 	import FormDateTimeInput from '#lib/components/form/FormDateTimeInput.svelte';
 	import FormCheckbox from '#lib/components/form/FormCheckbox.svelte';
@@ -12,13 +12,13 @@
 	import { toast } from 'svelte-sonner';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import FormSection from '#lib/components/form/FormSection.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues.js';
+	import { buildUserFormValues, toUpdateUserArgs } from '#lib/api/userFormValues';
 	import AddressSection from '#lib/components/form/AddressSection.svelte';
-	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules.js';
+	import { ADDRESS_FIELDS, addressRules } from '#lib/helpers/addressRules';
 	import { page } from '$app/state';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 
 	const user = await getCurrentUser();
 

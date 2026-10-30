@@ -1,14 +1,14 @@
 import validator from 'validator';
 import { z } from 'zod';
-import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages';
+import { getLocale } from '#lib/paraglide/runtime';
 import {
 	isValidPhoneNumber,
 	parsePhoneNumberFromString,
 	findPhoneNumbersInText
 } from 'libphonenumber-js';
-import { isPersonName } from '#lib/helpers/personName.js';
-import { addressIssues, type AddressIssue } from '#lib/helpers/addressRules.js';
+import { isPersonName } from '#lib/helpers/personName';
+import { addressIssues, type AddressIssue } from '#lib/helpers/addressRules';
 
 // must be at least 13 years old
 const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);

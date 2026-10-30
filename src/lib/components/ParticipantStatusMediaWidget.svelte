@@ -1,7 +1,7 @@
 <script lang="ts">
 	import StatusWidget from './StatusWidget.svelte';
-	import type { MediaconsentstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { MediaconsentstatusEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		title: string;

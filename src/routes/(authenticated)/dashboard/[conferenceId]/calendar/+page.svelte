@@ -1,11 +1,11 @@
 <script lang="ts">
 	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
 	import { dev } from '$app/env';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import AccentStripe from '#lib/components/AccentStripe.svelte';
 	import CalendarDisplay from '#lib/components/calendar/CalendarDisplay.svelte';
-	import { fetchCalendarDays } from '#lib/api/calendarDays.js';
+	import { fetchCalendarDays } from '#lib/api/calendarDays';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();

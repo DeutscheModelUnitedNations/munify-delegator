@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
-	import PaperEnum from '#lib/components/paper/paperEnum/index.js';
+	import PaperEnum from '#lib/components/paper/paperEnum/index';
 	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
 	import MyPaperRows from './MyPaperRows.svelte';
-	import { client, type PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import { client, type PapertypeEnum } from '#lib/api/rumbleClient/client';
 	import type { ResolvedPathname } from '$app/types';
 
 	interface Props {

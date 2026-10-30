@@ -5,10 +5,10 @@
 	by the standalone committees page.
 -->
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { canEditCommittees, canEditConference } from '#lib/helpers/teamAccess.js';
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { canEditCommittees, canEditConference } from '#lib/helpers/teamAccess';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
+	import { m } from '#lib/paraglide/messages';
 	import AddAgendaItemModal from './AddAgendaItemModal.svelte';
 	import AddCommitteeModal from './AddCommitteeModal.svelte';
 	import CommitteeCard from './CommitteeCard.svelte';

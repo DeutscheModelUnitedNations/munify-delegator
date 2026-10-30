@@ -1,8 +1,8 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 import type {
 	WaitinglistentryOrderInputArgument,
 	WaitinglistentryWhereInputArgument
-} from '#lib/api/rumbleClient/client.js';
+} from '#lib/api/rumbleClient/client';
 import type { TableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 import {
 	allOf,
@@ -15,9 +15,9 @@ import {
 	pageOf,
 	rangeFilter,
 	stringFilter
-} from '#lib/components/tanStackTable/serverQuery.js';
-import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers.js';
-import { birthdayBoundsForAge } from '#lib/helpers/ageChecker.js';
+} from '#lib/components/tanStackTable/serverQuery';
+import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
+import { birthdayBoundsForAge } from '#lib/helpers/ageChecker';
 
 /** The names of the columns the user can filter by text, and where their value lives. */
 const userTextColumns = {

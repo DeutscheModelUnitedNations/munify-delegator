@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import {
 		POOL_CONTAINER,
 		boardState,
@@ -17,13 +17,13 @@
 		rolesWithSeats,
 		sizeOptions,
 		wishStatus
-	} from '#lib/assignment/board.js';
-	import { seatedRoles } from '#lib/assignment/capacity.js';
+	} from '#lib/assignment/board';
+	import { seatedRoles } from '#lib/assignment/capacity';
 	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
-	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
-	import { memoizeLast } from '#lib/helpers/memoizeLast.js';
-	import { targetKey, type AssignmentGroup } from '#lib/assignment/state.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
+	import { memoizeLast } from '#lib/helpers/memoizeLast';
+	import { targetKey, type AssignmentGroup } from '#lib/assignment/state';
+	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import type { DragDropState } from '@thisux/sveltednd';
 	import { toast } from 'svelte-sonner';
@@ -38,7 +38,7 @@
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats.js';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats';
 	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';

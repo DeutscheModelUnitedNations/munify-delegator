@@ -1,4 +1,4 @@
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale } from '#lib/paraglide/runtime';
 import {
 	autoFilterFns,
 	autoSortFns,
@@ -19,7 +19,7 @@ import {
 	type ColumnFiltersState,
 	type ColumnVisibilityState,
 	type SortingState
-} from '#lib/components/tanStackTable/index.js';
+} from '#lib/components/tanStackTable/index';
 import type { FilterType } from './filters';
 
 /** Everything `ManagedTable` uses, and the row models that implement it. */

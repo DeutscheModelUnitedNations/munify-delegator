@@ -3,14 +3,14 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import {
 		applicationTextsComplete,
 		MIN_DELEGATION_MEMBERS,
 		MIN_ROLE_APPLICATIONS
-	} from '#lib/helpers/applicationReadiness.js';
+	} from '#lib/helpers/applicationReadiness';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import type { ApplicationTexts } from '../../applicationForm';
 	import ApplicationQuestionnaire from '../Common/ApplicationQuestionnaire.svelte';

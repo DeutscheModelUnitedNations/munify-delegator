@@ -7,8 +7,8 @@
 -->
 <script lang="ts">
 	import DashboardLinkCards from '#lib/components/dashboard/DashboardLinkCards.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { fetchTeamAccess } from '#lib/api/teamAccess.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { PUBLIC_DOCS_URL } from '$app/env/public';
 	import { fetchCanOpenPaperHub } from '../../paperhub/myPaperHubRoles';
 	import {
@@ -16,7 +16,7 @@
 		getTeamEntryLink,
 		getTeamResourceLinks,
 		type TeamDashboardLinkContext
-	} from '#lib/data/teamDashboardLinks.js';
+	} from '#lib/data/teamDashboardLinks';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 

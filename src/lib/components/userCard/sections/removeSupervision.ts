@@ -1,8 +1,8 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { m } from '#lib/paraglide/messages.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { m } from '#lib/paraglide/messages';
 import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-import formatNames from '#lib/helpers/formatNames.js';
+import { genericPromiseToastMessages } from '#lib/utils/toast';
+import formatNames from '#lib/helpers/formatNames';
 import { toast } from 'svelte-sonner';
 
 interface Person {

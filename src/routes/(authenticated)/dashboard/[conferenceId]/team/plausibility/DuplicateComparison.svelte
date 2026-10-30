@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import formatNames from '#lib/helpers/formatNames';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	interface Account {

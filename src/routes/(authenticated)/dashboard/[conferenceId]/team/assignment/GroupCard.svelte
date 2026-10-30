@@ -1,24 +1,24 @@
 <script lang="ts">
 	import BusyOverlay from './BusyOverlay.svelte';
-	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 	import {
 		canSplit,
 		cardBorder,
 		wishList,
 		wishStatus,
 		type BoardReviewRow
-	} from '#lib/assignment/board.js';
-	import type { AssignmentGroup } from '#lib/assignment/state.js';
+	} from '#lib/assignment/board';
+	import type { AssignmentGroup } from '#lib/assignment/state';
 	import StarRating from '#lib/components/StarRating.svelte';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardDelegation, BoardSingleParticipant } from './board';
 	import GroupActions from './GroupActions.svelte';
 	import DragGrip from './DragGrip.svelte';
 	import GroupBadges from './GroupBadges.svelte';
-	import { sightingHref } from '#lib/helpers/sightingLink.js';
+	import { sightingHref } from '#lib/helpers/sightingLink';
 
 	/**
 	 * One group on the board: a delegation, a part of a split one, or a single participant turned

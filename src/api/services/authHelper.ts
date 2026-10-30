@@ -1,58 +1,13 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema, type Transaction } from '#api/db/db';
 import { and, eq, sql, type SQL } from 'drizzle-orm';
-import type { ApiContext } from '#api/rumble.js';
+import type { ApiContext } from '#api/rumble';
 import type { PgTable } from 'drizzle-orm/pg-core';
-import type { Context } from '#api/context.js';
-import type { teamRole } from '#api/db/schema/index.js';
-import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import type { Context } from '#api/context';
+import type { teamRole } from '#api/db/schema/index';
+import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
-/** The TeamRole enum values, taken from the schema so role lists stay type-checked. */
 export type TeamRole = (typeof teamRole.enumValues)[number];
 
-/**
- * Shared authorization, after munify-chase's `authHelper.ts`.
- *
- * There are two kinds of helper here, and they are built from the same pieces on purpose:
- *
- * - **Filters** (`isTeamMemberOf`, `isOwnUser`, …) return a drizzle relational `where` shape for
- *   `abilityBuilder.<table>.allow(...).when(...)`, or `undefined` when the rule grants nothing
- *   for this request. They never throw: an anonymous request simply matches no rule.
- * - **Assertions** (`assertTeamRole`, …) answer "may the caller do this here" when there is no
- *   row to filter yet - creating something inside a conference. They run the very filter the
- *   abilities use against the conference row, so a create and the update/delete of what it
- *   created can never disagree about who is on the team.
- *
- * Who may do what, in one place:
- *
- * | Who                         | Scope                                                                |
- * | --------------------------- | -------------------------------------------------------------------- |
- * | system admin (OIDC `admin`) | everything, everywhere, whether on the team or not                   |
- * | PROJECT_MANAGEMENT          | the conference, its structure, team, participants; deleting papers;  |
- * |                             | publishing the adopted resolutions                                   |
- * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
- * | TEAM_COORDINATOR            | the team and its members' details, short of granting PROJECT_MANAGEMENT |
- * | team admins (PM + TC)       | their teammates' details for planning, never their care notes         |
- * | CONTENT_LEAD                | the seat planning: which nations sit in which committee, the         |
- * |                             | non-state actors and the committees' regional baselines              |
- * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
- * | any role but MEMBER         | the same: reading, reviewing and editing the conference's papers     |
- * | any team role               | reading registrations, recording attendance, teammates' phone numbers |
- * | participants                | their registration, delegation, survey answers, and the submitted    |
- * |                             | papers of their own delegation (an author deletes a draft of theirs) |
- * | supervisors                 | the participants they supervise, contact details included            |
- * | anybody with a part in it   | the conference's payment and postal details, documents and adopted   |
- * |                             | resolutions                                                          |
- *
- * Registering yourself, joining a delegation and sending an application are bound to the
- * registration stage and its grace period (`assertRegistrationOpen`, `assertApplicationReady`),
- * since a registration makes the caller somebody with a part in the conference. Editing a
- * registration is open in every stage, and so is the team registering somebody else.
- *
- * An empty object `{}` means "no restriction"; that is how a system admin passes a filter, since
- * rumble has no global wildcard.
- */
-
-// The role lists live in `#lib/helpers/teamRoles`, where the pages' own checks share them.
 export {
 	CONFERENCE_CONTENT_ROLES,
 	PAPER_ROLES,
@@ -60,15 +15,15 @@ export {
 	PROJECT_MANAGEMENT_ROLES,
 	SEAT_PLANNING_ROLES,
 	TEAM_ADMIN_ROLES
-} from '#lib/helpers/teamRoles.js';
+} from '#lib/helpers/teamRoles';
 import {
 	PARTICIPANT_CARE_ROLES,
-	PROJECT_MANAGEMENT_ROLES,
-	TEAM_ADMIN_ROLES
-} from '#lib/helpers/teamRoles.js';
-import { m } from '#lib/paraglide/messages.js';
-import { translateTeamRole } from '#lib/utils/enumTranslations.js';
-import { apiError } from '#api/services/errors/apiError.js';
+	rolesWithTeamPermission,
+	type TeamPermission
+} from '#lib/helpers/teamRoles';
+import { m } from '#lib/paraglide/messages';
+import { translateTeamRole } from '#lib/utils/enumTranslations';
+import { apiError } from '#api/services/errors/apiError';
 
 /** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {
@@ -106,6 +61,25 @@ export function isTeamMemberOfConference(ctx: Context, roles?: readonly TeamRole
 	return conference === undefined ? undefined : { conference };
 }
 
+/** Matches a Conference row in which the user holds the team `permission` (`rolesWithTeamPermission`). */
+export function isTeamPermittedIn(ctx: Context, permission: TeamPermission) {
+	return isTeamMemberOf(ctx, rolesWithTeamPermission(permission));
+}
+
+/** A filter matching no row, for a query `where` that must not be left without one. */
+const NOTHING = { RAW: sql`false` };
+
+/**
+ * The conferences in which the caller holds `permission`, as a filter to put into a query:
+ * `where: { id, conference: teamConference(ctx, 'manageParticipants') }` finds nothing for a caller
+ * without it. Unlike `isTeamPermittedIn` it never returns undefined (which would match every row);
+ * it throws for an anonymous caller instead.
+ */
+export function teamConference(ctx: Context, permission: TeamPermission) {
+	ctx.mustBeLoggedIn();
+	return isTeamPermittedIn(ctx, permission) ?? NOTHING;
+}
+
 /** Matches rows belonging to the logged-in user through a `user` relation. */
 export function isOwnUser(ctx: Context) {
 	const id = userId(ctx);
@@ -119,41 +93,48 @@ export function isInOwnDelegation(ctx: Context) {
 }
 
 /**
- * Matches a row whose `conference` the user takes part in as delegate, single participant or
- * supervisor - the participant-side counterpart of `isTeamMemberOfConference`.
+ * A ConferenceParticipant row that is currently registered as delegate, single participant or
+ * supervisor (the row outlives the registration). Team and waiting list never count.
  */
-export function isParticipantOfConference(ctx: Context) {
+const conferenceParticipantWithRegistration = {
+	OR: [{ delegationMember: true }, { singleParticipant: true }, { conferenceSupervisor: true }]
+};
+
+/** Matches a Conference row the user takes part in - the counterpart of `isTeamMemberOf`. */
+export function isParticipantOf(ctx: Context) {
 	const id = userId(ctx);
-	if (!id) return undefined;
-	return {
-		conference: {
-			OR: [
-				{ delegations: { members: { participant: { userId: id } } } },
-				{ singleParticipants: { participant: { userId: id } } },
-				{ conferenceSupervisors: { participant: { userId: id } } }
-			]
-		}
-	};
+	return id ? { conferenceParticipants: { userId: id, ...conferenceParticipantWithRegistration } } : undefined;
 }
 
-/**
- * The states in which a conference is public: open for registration or, from the assignment on,
- * for the waiting list. Anybody reads such a conference, short of its members-only columns.
- */
-const PUBLIC_CONFERENCE_STATES = ['PARTICIPANT_REGISTRATION', 'PREPARATION'] as const;
+/** Matches a row whose `conference` the user takes part in. */
+export function isParticipantOfConference(ctx: Context) {
+	const conference = isParticipantOf(ctx);
+	return conference === undefined ? undefined : { conference };
+}
 
-/** Matches a public Conference row (see `PUBLIC_CONFERENCE_STATES`). */
-export const publicConference = { state: { in: [...PUBLIC_CONFERENCE_STATES] } };
+type ConferenceState = (typeof schema.conferenceState.enumValues)[number];
+
+/**
+ * Matches a public Conference row: open for registration or, from the assignment on, for the
+ * waiting list. Anybody reads such a conference, short of its members-only columns.
+ */
+export const publicConference = {
+	state: { in: ['PARTICIPANT_REGISTRATION', 'PREPARATION'] satisfies ConferenceState[] }
+};
 
 /**
  * Conference filters for the conferences the caller has a part in - as participant (delegate,
  * single participant, supervisor) or on the team - one per way, to `OR` together. Empty for an
- * anonymous caller; a system admin's team filter matches every conference.
+ * anonymous caller; a system admin's team filter matches every conference. `asParticipant`
+ * narrows the participant way only.
  */
-export function conferencesOfCaller(ctx: Context) {
-	const participant = isParticipantOfConference(ctx)?.conference;
+export function conferencesOfCaller(ctx: Context, asParticipant: object = {}) {
+	const participant = isParticipantOf(ctx);
 	const team = isTeamMemberOf(ctx);
-	return [...(participant ? [participant] : []), ...(team ? [team] : [])];
+	return [
+		...(participant ? [{ ...participant, ...asParticipant }] : []),
+		...(team ? [team] : [])
+	];
 }
 
 /** A filter matching any of `filters`, or undefined when there are none. */
@@ -176,28 +157,12 @@ export function readableConference(ctx: Context) {
  * which is when the dashboard shows it. Undefined for an anonymous caller.
  */
 export function calendarConference(ctx: Context) {
-	const participant = isParticipantOfConference(ctx)?.conference;
-	const team = isTeamMemberOf(ctx);
-	return anyOf([
-		...(participant ? [{ ...participant, showCalendar: true }] : []),
-		...(team ? [team] : [])
-	]);
+	return anyOf(conferencesOfCaller(ctx, { showCalendar: true }));
 }
 
-/**
- * A User row taking part in the conference as delegate, single participant or supervisor. This is
- * what "participant" means throughout: the team and the waiting list are not participants, and the
- * helpers that include them say so in their names (`assertParticipantOrTeamMemberIn`,
- * `isParticipantOrTeamMember`, `isCaredForUser`).
- */
+/** A User row taking part in a conference matching `conference` (see `withRegistration`). */
 export function participatesIn(conference: { id: string } | object) {
-	return {
-		OR: [
-			{ delegationMemberships: { delegation: { conference } } },
-			{ singleParticipant: { conference } },
-			{ conferenceSupervisor: { conference } }
-		]
-	};
+	return { conferenceParticipants: { conference, ...conferenceParticipantWithRegistration } };
 }
 
 /**
@@ -211,52 +176,43 @@ export function isCaredForUser(ctx: Context) {
 	if (isSystemAdmin(ctx)) return {};
 	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
 	if (!conference) return undefined;
-	return { OR: [...participatesIn(conference).OR, { waitingListEntry: { conference } }] };
-}
-
-/** Answers of `hasTeamRole`, per request: field resolvers ask it once per row. */
-const teamRoleAnswers = new WeakMap<object, Map<string, Promise<boolean>>>();
-
-/** Whether the caller holds one of `roles` on the conference's team, or is a system admin. */
-// fallow-ignore-next-line complexity
-export function hasTeamRole(
-	ctx: Context,
-	conferenceId: string,
-	roles?: readonly TeamRole[]
-): Promise<boolean> {
-	const team = isTeamMemberOf(ctx, roles);
-	if (!team) return Promise.resolve(false);
-
-	let answers = teamRoleAnswers.get(ctx);
-	if (!answers) {
-		answers = new Map();
-		teamRoleAnswers.set(ctx, answers);
-	}
-	const key = `${conferenceId}:${roles?.join(',') ?? '*'}`;
-	const known = answers.get(key);
-	if (known) return known;
-
-	const answer = db.query.conference
-		.findFirst({ where: { id: conferenceId, ...team }, columns: { id: true } })
-		.then((conference) => conference !== undefined);
-	answers.set(key, answer);
-	return answer;
+	return { OR: [participatesIn(conference), { waitingListEntry: { conference } }] };
 }
 
 /**
- * Refuses unless the caller holds one of `roles` on the conference's team (any team role when
- * omitted), or is a system admin.
- *
- * This is how a create is authorized: there is no row to run an ability filter against yet, so
- * the conference it goes into is checked with the same filter the abilities use.
+ * Whether the caller holds the team `permission` in the conference, asked on its own. Only for a check with no
+ * query of its own to carry `teamConference`; pass `tx` inside a transaction.
  */
-export async function assertTeamRole(
+export async function hasTeamPermission(
 	ctx: Context,
 	conferenceId: string,
-	roles?: readonly TeamRole[]
+	permission: TeamPermission,
+	tx: Transaction | typeof db = db
+) {
+	const team = isTeamPermittedIn(ctx, permission);
+	if (!team) return false;
+	const conference = await tx.query.conference.findFirst({
+		where: { id: conferenceId, ...team },
+		columns: { id: true }
+	});
+	return conference !== undefined;
+}
+
+/**
+ * Refuses unless the caller holds the team `permission` in the conference (`hasTeamPermission`).
+ *
+ * This is how a create is authorized: there is no row of its own to run an ability against yet, so
+ * the conference it goes into is checked for the permission.
+ */
+export async function assertTeamPermission(
+	ctx: ApiContext,
+	conferenceId: string,
+	permission: TeamPermission,
+	tx: Transaction | typeof db = db
 ) {
 	ctx.mustBeLoggedIn();
-	if (!(await hasTeamRole(ctx, conferenceId, roles))) {
+	if (!(await hasTeamPermission(ctx, conferenceId, permission, tx))) {
+		const roles = rolesWithTeamPermission(permission);
 		throw apiError(
 			'FORBIDDEN',
 			roles
@@ -271,45 +227,43 @@ export async function assertTeamRole(
  * coordinators manage the team, but only project management (or an admin) makes somebody project
  * management - otherwise a coordinator could promote themselves.
  */
-export async function assertMayGrantRole(ctx: Context, conferenceId: string, role: TeamRole) {
-	await assertTeamRole(
+export async function assertMayGrantRole(ctx: ApiContext, conferenceId: string, role: TeamRole) {
+	await assertTeamPermission(
 		ctx,
 		conferenceId,
-		role === 'PROJECT_MANAGEMENT' ? PROJECT_MANAGEMENT_ROLES : TEAM_ADMIN_ROLES
+		role === 'PROJECT_MANAGEMENT' ? 'manageConference' : 'manageTeam'
 	);
 }
 
-/** Same check, for rows that reach their conference through a calendar day. */
-export async function assertTeamRoleForCalendarDay(
-	ctx: Context,
+/** Refuses unless the calendar day exists in a conference where the caller holds `permission`. */
+export async function assertTeamPermissionForCalendarDay(
+	ctx: ApiContext,
 	calendarDayId: string,
-	roles: readonly TeamRole[] = PARTICIPANT_CARE_ROLES
+	permission: TeamPermission = 'manageParticipants'
 ) {
 	const day = await db.query.calendarDay.findFirst({
-		where: { id: calendarDayId },
+		where: { id: calendarDayId, conference: teamConference(ctx, permission) },
 		columns: { conferenceId: true }
 	});
 	if (!day) {
 		throw apiError('NOT_FOUND', m.calendarDayNotFound());
 	}
-	await assertTeamRole(ctx, day.conferenceId, roles);
 	return day;
 }
 
-/** Same check, for rows that reach their conference through a survey question. */
-export async function assertTeamRoleForSurveyQuestion(
-	ctx: Context,
+/** Refuses unless the survey question exists in a conference where the caller holds `permission`. */
+export async function assertTeamPermissionForSurveyQuestion(
+	ctx: ApiContext,
 	questionId: string,
-	roles: readonly TeamRole[] = PARTICIPANT_CARE_ROLES
+	permission: TeamPermission = 'manageParticipants'
 ) {
 	const question = await db.query.surveyQuestion.findFirst({
-		where: { id: questionId },
+		where: { id: questionId, conference: teamConference(ctx, permission) },
 		columns: { conferenceId: true }
 	});
 	if (!question) {
 		throw apiError('NOT_FOUND', m.surveyQuestionNotFound());
 	}
-	await assertTeamRole(ctx, question.conferenceId, roles);
 }
 
 /**
@@ -437,11 +391,7 @@ export async function participantIdsOf(
 	const unique = [...new Set(userIds)];
 	if (unique.length === 0) return new Map();
 	const found = await db.query.conferenceParticipant.findMany({
-		where: {
-			conferenceId,
-			userId: { in: unique },
-			user: participatesIn({ id: conferenceId })
-		},
+		where: { conferenceId, userId: { in: unique }, ...conferenceParticipantWithRegistration },
 		columns: { id: true, userId: true }
 	});
 	if (found.length !== unique.length) {
@@ -459,7 +409,7 @@ export async function assertParticipantOrTeamMemberIn(conferenceId: string, user
 	const user = await db.query.user.findFirst({
 		where: {
 			id: userId,
-			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
+			OR: [participatesIn({ id: conferenceId }), { teamMember: { conferenceId } }]
 		},
 		columns: { id: true }
 	});

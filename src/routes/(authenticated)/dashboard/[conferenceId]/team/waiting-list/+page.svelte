@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter.js';
+	import { capitalizeFirstLetter } from '#lib/helpers/capitalizeFirstLetter';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 	import type { PageProps } from './$types';
@@ -17,7 +17,7 @@
 		fetchWaitingListPage,
 		fetchWaitingListPositions
 	} from './waitingListQuery';
-	import { liveSnapshot } from '#lib/api/liveSnapshot.js';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
 
 	let { params }: PageProps = $props();
 

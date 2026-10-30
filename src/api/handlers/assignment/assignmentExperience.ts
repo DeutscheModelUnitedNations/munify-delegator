@@ -1,6 +1,6 @@
-import { db } from '#api/db/db.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { db } from '#api/db/db';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /**
  * The delegation members and single participants of a conference whose person was accepted to an

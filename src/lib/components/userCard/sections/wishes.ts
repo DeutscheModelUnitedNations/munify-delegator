@@ -1,4 +1,4 @@
-import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
 /** One line of `WishList`. */
 export interface Wish {

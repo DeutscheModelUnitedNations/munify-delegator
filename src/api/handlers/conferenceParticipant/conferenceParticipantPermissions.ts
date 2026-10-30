@@ -1,8 +1,8 @@
-import { db, schema } from '#api/db/db.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { abilityBuilder, type ApiContext } from '#api/rumble.js';
+import { db, schema } from '#api/db/db';
+import { apiError } from '#api/services/errors/apiError';
+import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertTeamRole,
+	assertTeamPermission,
 	assertParticipantOrTeamMemberIn,
 	isOwnUser,
 	isTeamMemberOfConference,
@@ -11,8 +11,8 @@ import {
 	userId,
 	where,
 	assertAllowedById
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
 import { eq } from 'drizzle-orm';
 
 export function registerConferenceParticipantAbilities() {
@@ -66,7 +66,7 @@ export async function assertCanUpsertParticipantStatus(
 		});
 		return;
 	}
-	await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, args.conferenceId, 'manageParticipants');
 }
 
 /**
@@ -78,13 +78,13 @@ export async function assertCanCreateParticipantStatus(
 	conferenceId: string,
 	userId: string
 ) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	await assertParticipantOrTeamMemberIn(conferenceId, userId);
 }
 
 /** The bulk attendance toggle is for the conference's participant care. */
 export async function assertCanSetAttendanceForAll(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }
 
 /**

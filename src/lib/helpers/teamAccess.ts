@@ -1,4 +1,4 @@
-import type { TeamroleEnum } from '#lib/api/rumbleClient/client.js';
+import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
 import {
 	CONFERENCE_CONTENT_ROLES,
 	PARTICIPANT_CARE_ROLES,

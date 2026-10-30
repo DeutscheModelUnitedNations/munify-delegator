@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import codenmz from '#lib/helpers/codenamize.js';
-	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools.js';
+	import codenmz from '#lib/helpers/codenamize';
+	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
 	import { toast } from 'svelte-sonner';
 	import QuotedText from '../QuotedText.svelte';
 	import AppliedBadge from './AppliedBadge.svelte';

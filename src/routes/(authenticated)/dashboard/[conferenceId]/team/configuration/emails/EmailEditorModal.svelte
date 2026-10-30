@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { conferenceLanguageName } from '#lib/helpers/conferenceLanguage.js';
-	import { getLocale, locales, type Locale } from '#lib/paraglide/runtime.js';
+	import { conferenceLanguageName } from '#lib/helpers/conferenceLanguage';
+	import { getLocale, locales, type Locale } from '#lib/paraglide/runtime';
 	import Modal from '#lib/components/Modal.svelte';
 
 	/**

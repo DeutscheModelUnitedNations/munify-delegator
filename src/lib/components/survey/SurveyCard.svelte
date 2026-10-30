@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DeadlineDisplay from '#lib/components/DeadlineDisplay.svelte';
 	import SurveyAnswerModal from './SurveyAnswerModal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface SurveyOption {
 		id: string;

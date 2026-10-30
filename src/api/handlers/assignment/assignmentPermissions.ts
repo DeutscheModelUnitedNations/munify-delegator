@@ -1,21 +1,22 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
 	assertCustomRolesOf,
-	assertTeamRole,
+	assertOfferedIn,
+	assertTeamPermission,
 	isTeamMemberOf,
 	isTeamMemberOfConference,
-	assertOfferedIn,
+	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
+	teamConference,
 	where
-} from '#api/services/authHelper.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { apiError } from '#api/services/errors/apiError';
 import type { reviewRow } from './review';
-import type { Target } from '#lib/assignment/state.js';
-import { m } from '#lib/paraglide/messages.js';
+import type { Target } from '#lib/assignment/state';
+import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { assertCanManageEmails } from '#api/handlers/email/emailPermissions.js';
+import { assertCanManageEmails } from '#api/handlers/email/emailPermissions';
 
 /*
  * The assignment draft is the team's working copy: project management and participant care plan
@@ -47,7 +48,7 @@ export function registerAssignmentAbilities() {
 
 /** Refuses unless the caller does the assignments of the conference. */
 export async function assertCanPlanAssignment(ctx: ApiContext, conferenceId: string) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 }
 
 /** Releasing (or hiding) the assignment; deciding about the result mails on the way is managing mails. */
@@ -64,12 +65,11 @@ export async function assertCanReleaseAssignment(
 export async function assertCanAssignDelegation(ctx: ApiContext, id: string) {
 	const delegation = await db.query.delegation
 		.findFirst({
-			where: { id, applied: true },
+			where: { id, applied: true, conference: teamConference(ctx, 'manageParticipants') },
 			columns: { id: true, conferenceId: true, assignedRoleId: true },
 			with: { members: { columns: { id: true } } }
 		})
 		.then(assertFindFirstExists);
-	await assertTeamRole(ctx, delegation.conferenceId, PARTICIPANT_CARE_ROLES);
 	return {
 		...delegation,
 		liveTarget: { roleId: delegation.assignedRoleId }
@@ -80,13 +80,16 @@ export async function assertCanAssignDelegation(ctx: ApiContext, id: string) {
 export async function assertCanAssignSingleParticipant(ctx: ApiContext, id: string) {
 	const participant = await db.query.singleParticipant
 		.findFirst({
-			where: { id, applied: true },
+			where: {
+				id,
+				applied: true,
+				participant: { conference: teamConference(ctx, 'manageParticipants') }
+			},
 			columns: { id: true, assignedRoleId: true },
 			with: { participant: { columns: { conferenceId: true } } }
 		})
 		.then(assertFindFirstExists);
 	const conferenceId = participant.participant.conferenceId;
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
 	return { id: participant.id, assignedRoleId: participant.assignedRoleId, conferenceId };
 }
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import PieChart from '#lib/components/charts/echarts/PieChart.svelte';
-	import { formatInTimezone } from '#lib/helpers/conferenceTimezoneDate.js';
+	import { formatInTimezone } from '#lib/helpers/conferenceTimezoneDate';
 
 	interface Props {
 		surveyId: string;

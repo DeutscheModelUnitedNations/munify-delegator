@@ -1,16 +1,16 @@
-import { db, schema } from '#api/db/db.js';
-import { object, query, schemaBuilder } from '#api/rumble.js';
-import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService.js';
+import { db, schema } from '#api/db/db';
+import { object, query, schemaBuilder } from '#api/rumble';
+import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { resolutionPubsub } from '#api/pubsub.js';
+import { m } from '#lib/paraglide/messages';
+import { resolutionPubsub } from '#api/pubsub';
 import {
 	assertCanCreateResolution,
 	assertCanUpdateResolution,
 	registerResolutionAbilities
 } from './resolutionPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper.js';
+import { deleteAllowedRow, readableById } from '#api/services/authHelper';
 
 registerResolutionAbilities();
 

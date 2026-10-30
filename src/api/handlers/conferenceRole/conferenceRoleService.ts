@@ -1,13 +1,13 @@
-import { db, schema } from '#api/db/db.js';
-import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation.js';
-import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks.js';
-import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications.js';
+import { db, schema } from '#api/db/db';
+import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation';
+import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks';
+import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications';
 import {
 	assertNonStateActorDeletable,
 	assertSeatsPerDelegationAllowed
-} from '#api/services/seatPlanning.js';
-import { apiError } from '#api/services/errors/apiError.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#api/services/seatPlanning';
+import { apiError } from '#api/services/errors/apiError';
+import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
 

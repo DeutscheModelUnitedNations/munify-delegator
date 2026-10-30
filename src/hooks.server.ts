@@ -1,7 +1,7 @@
 import { isRedirect, redirect, type Cookies, type RequestEvent } from '@sveltejs/kit';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 import * as Sentry from '@sentry/sveltekit';
-import { sentryDataCollection } from '#lib/sentryDataCollection.js';
+import { sentryDataCollection } from '#lib/sentryDataCollection';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
 import {
@@ -10,13 +10,14 @@ import {
 	isPublicRoute,
 	oidcCookieNames,
 	routePath
-} from '#api/services/OIDC.js';
-import { rolesOfSession } from '#api/context.js';
-import { impersonatableUser } from '#api/handlers/user/userPermissions.js';
-import { paraglideMiddleware } from '#lib/paraglide/server.js';
-import { localeOfRequest, runWithLocale } from '#api/services/requestLocale.js';
+} from '#api/services/OIDC';
+import { rolesOfSession } from '#api/context';
+import { userInfoClaims } from '#api/services/userInfoClaims';
+import { impersonatableUser } from '#api/handlers/user/userPermissions';
+import { paraglideMiddleware } from '#lib/paraglide/server';
+import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
-import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
+import { NODE_ENV, OIDC_ROLE_CLAIM, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {
 	PUBLIC_FONTAWESOME_CSS_URL,
 	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL,
@@ -26,7 +27,7 @@ import {
 import {
 	MIGRATION_NOTICE_COOKIE,
 	MIGRATION_NOTICE_VERSION
-} from '#api/services/migrationNotice.js';
+} from '#api/services/migrationNotice';
 // --- END TEMPORARY ---
 
 // Initialize Sentry (only if DSN provided and not building)
@@ -114,6 +115,27 @@ const oidcHandle: Handle = async (input) => {
 };
 
 /**
+ * Asks the provider's userinfo endpoint for the roles claim when neither token carries it, for the
+ * session and, while impersonating, the impersonator's own (`rolesOfSession` reads both). Cached
+ * per access token, so this is one request per token, not per page.
+ */
+const userInfoHandle: Handle = async ({ event, resolve }) => {
+	const claim = OIDC_ROLE_CLAIM;
+	const session = event.locals.oidc;
+	if (claim && session) {
+		const sessions = session.impersonator ? [session, session.impersonator] : [session];
+		await Promise.all(
+			sessions.map((s) =>
+				userInfoClaims.load(s, claim, (accessToken, sub) =>
+					OIDC.core.fetchUserInfoFromIssuer({ accessToken, expectedSubject: sub })
+				)
+			)
+		);
+	}
+	return resolve(event);
+};
+
+/**
  * Ends an impersonation the impersonator may no longer hold - they left the target's conference
  * team, the target joined a team, lost the conference or their row - and otherwise loads who the
  * impersonated user is, which the exchanged token may not say (`locals.impersonatedIdentity`).
@@ -157,6 +179,7 @@ export const handle: Handle = sequence(
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
 	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.
 	oidcHandle,
+	userInfoHandle,
 	impersonationHandle,
 	paraglideHandle
 );

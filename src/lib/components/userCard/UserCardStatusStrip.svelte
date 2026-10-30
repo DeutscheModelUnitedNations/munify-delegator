@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
+	import { m } from '#lib/paraglide/messages';
+	import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 	import type { UserCardTab } from './userCardTabs';
 	import { fetchStatusWithAge } from './tabs/participantStatus';
 

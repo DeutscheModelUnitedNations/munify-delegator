@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dialogs } from '#lib/state/dialogs.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	const request = $derived(dialogs.current);
 	let value = $state('');

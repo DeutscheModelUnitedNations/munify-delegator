@@ -1,5 +1,5 @@
-import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup.js';
-import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole.js';
+import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup';
+import { splitRole, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 
 /** Builds the import file munify-chase reads (the input of `src/api/handlers/import.ts` there). */
 

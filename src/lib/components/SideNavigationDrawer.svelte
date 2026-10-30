@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { afterNavigate } from '$app/navigation';
 	import { setHeaderStatus } from '#lib/state/authenticatedHeaderStatus.svelte.js';
 	import type { Snippet } from 'svelte';

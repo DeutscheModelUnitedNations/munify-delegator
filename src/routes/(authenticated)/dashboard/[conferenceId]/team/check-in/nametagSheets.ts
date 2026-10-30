@@ -1,7 +1,7 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { flagPng, iconPng, urlToPng } from '#lib/api/nametagSheetImages.js';
-import type { NametagSheet, NametagSheetEntry } from '#lib/api/nametagSheetsPdf.js';
-import { m } from '#lib/paraglide/messages.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { flagPng, iconPng, urlToPng } from '#lib/api/nametagSheetImages';
+import type { NametagSheet, NametagSheetEntry } from '#lib/api/nametagSheetsPdf';
+import { m } from '#lib/paraglide/messages';
 import outfitRegularUrl from '@fontsource/outfit/files/outfit-latin-400-normal.woff?url';
 import outfitBoldUrl from '@fontsource/outfit/files/outfit-latin-700-normal.woff?url';
 

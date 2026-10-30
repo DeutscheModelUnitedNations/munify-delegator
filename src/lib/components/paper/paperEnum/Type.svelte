@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PapertypeEnum } from '#lib/api/rumbleClient/client.js';
-	import { getPaperTypeIcon } from '#lib/utils/enumIcons.js';
-	import { translatePaperType } from '#lib/utils/enumTranslations.js';
+	import type { PapertypeEnum } from '#lib/api/rumbleClient/client';
+	import { getPaperTypeIcon } from '#lib/utils/enumIcons';
+	import { translatePaperType } from '#lib/utils/enumTranslations';
 	import Common from './Common.svelte';
 
 	interface Props {

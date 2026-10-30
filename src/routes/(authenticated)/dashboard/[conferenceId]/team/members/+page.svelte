@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
-	import { renderComponent } from '#lib/components/tanStackTable/index.js';
-	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable.js';
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import BadgeCell from '#lib/components/tanStackTable/cells/BadgeCell.svelte';
 	import TeamMemberActions from './TeamMemberActions.svelte';
 	import TeamRoleCell from './TeamRoleCell.svelte';
 	import TeamManagementPage from '../TeamManagementPage.svelte';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 	import { TEAM_ROLES, fetchAllTeamMembers, fetchTeamMembersPage } from './teamMembersQuery';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
-	import { startImpersonation } from '#lib/api/startImpersonation.js';
+	import { startImpersonation } from '#lib/api/startImpersonation';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();

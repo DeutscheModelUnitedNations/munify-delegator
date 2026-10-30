@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { formatClockMinutes } from '#lib/helpers/formatClock.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { formatClockMinutes } from '#lib/helpers/formatClock';
 	import type { CalendarEntry as Entry, CalendarTrack as Track } from './calendarTypes';
 	import OptionalTooltip from '#lib/components/OptionalTooltip.svelte';
 	import CalendarEntryCard from './CalendarEntryCard.svelte';

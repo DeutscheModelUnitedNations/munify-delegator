@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import SortButton from '#lib/components/tanStackTable/ui/SortButton.svelte';
 	import type { Snippet } from 'svelte';
 

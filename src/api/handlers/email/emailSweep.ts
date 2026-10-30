@@ -1,10 +1,10 @@
-import { db, schema } from '#api/db/db.js';
-import { emailService } from '#api/services/email/emailService.js';
-import { localeOfUser, runWithLocale } from '#api/services/requestLocale.js';
-import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
-import { m } from '#lib/paraglide/messages.js';
-import { renderEmail, NotificationEmail } from '#api/services/email/templates/index.js';
-import { emailLogPubsub } from '#api/pubsub.js';
+import { db, schema } from '#api/db/db';
+import { emailService } from '#api/services/email/emailService';
+import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
+import { getLocale, toLocale } from '#lib/paraglide/runtime';
+import { m } from '#lib/paraglide/messages';
+import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
+import { emailLogPubsub } from '#api/pubsub';
 import { sql } from 'drizzle-orm';
 import {
 	dueEmails,
@@ -16,15 +16,15 @@ import {
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
 import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
-import { emailFooterParagraphs } from '#lib/helpers/emailTemplates.js';
-import type { EmailTextOverride } from '#lib/helpers/emailTemplates.js';
-import { isAlwaysSent, type AlwaysSentKind } from '#lib/helpers/emailKinds.js';
+import { emailFooterParagraphs } from '#lib/helpers/emailTemplates';
+import type { EmailTextOverride } from '#lib/helpers/emailTemplates';
+import { isAlwaysSent, type AlwaysSentKind } from '#lib/helpers/emailKinds';
 import {
 	renderTeamInvitationEmail,
 	renderTeamWelcomeEmail,
 	type TeamInvitationEmailValues
-} from '#api/services/email/sendTeamInvitationEmail.js';
-import { getInvitationExpiryDate } from '#api/services/account/invitationToken.js';
+} from '#api/services/email/sendTeamInvitationEmail';
+import { getInvitationExpiryDate } from '#api/services/account/invitationToken';
 
 /**
  * Sends what `dueEmails` says a conference owes and nobody sent yet. Each mail is claimed by

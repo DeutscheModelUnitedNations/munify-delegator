@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { formatClockMinutes } from '#lib/helpers/formatClock.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { formatClockMinutes } from '#lib/helpers/formatClock';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import {
 		createCalendarEditor,
 		toEditorDay,

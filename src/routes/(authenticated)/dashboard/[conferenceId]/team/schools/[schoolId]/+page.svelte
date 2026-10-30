@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { resolve } from '$app/paths';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import SchoolForm from './SchoolForm.svelte';
 	import SchoolMetrics from './SchoolMetrics.svelte';
 	import SchoolPeople from './SchoolPeople.svelte';

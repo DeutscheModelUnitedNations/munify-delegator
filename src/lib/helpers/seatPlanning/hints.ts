@@ -1,4 +1,4 @@
-import { createFuzzySearch } from '#lib/components/tanStackTable/search.js';
+import { createFuzzySearch } from '#lib/components/tanStackTable/search';
 import { regionalGroups, type RegionalGroup, type UnMember } from './unMembers';
 
 /**

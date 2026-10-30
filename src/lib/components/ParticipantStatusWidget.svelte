@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client.js';
+	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import StatusWidget from './StatusWidget.svelte';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		title: string;

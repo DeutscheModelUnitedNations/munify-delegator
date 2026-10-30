@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import ActionModal from '#lib/components/ActionModal.svelte';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import LabeledField from '#lib/components/form/LabeledField.svelte';
-	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { CalendarDayExportData } from '#lib/schemata/calendarDayExport.js';
+	import { saveWithToast } from '#lib/helpers/saveWithToast';
+	import { m } from '#lib/paraglide/messages';
+	import type { CalendarDayExportData } from '#lib/schemata/calendarDayExport';
 	import { dayFields, parseDayImport } from './calendarEditing';
 
 	interface Props {

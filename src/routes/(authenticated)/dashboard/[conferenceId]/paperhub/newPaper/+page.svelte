@@ -1,14 +1,14 @@
 <script lang="ts">
-	import PaperEditor from '#lib/components/paper/editor/index.js';
+	import PaperEditor from '#lib/components/paper/editor/index';
 	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 	import { page } from '$app/state';
 	import { fetchNewPaperContext } from './newPaperContext';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
-	import { editorContentStore } from '#lib/components/paper/editor/editorStore.js';
+	import { editorContentStore } from '#lib/components/paper/editor/editorStore';
 	import { untrack } from 'svelte';
 	import { get } from 'svelte/store';
 	import { createDraftAutosave } from '#lib/components/paper/draft/draftAutosave.svelte.js';

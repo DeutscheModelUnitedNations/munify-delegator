@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { UserPreview } from './userPreview';
-	import { m } from '#lib/paraglide/messages.js';
-	import formatNames from '#lib/helpers/formatNames.js';
+	import { m } from '#lib/paraglide/messages';
+	import formatNames from '#lib/helpers/formatNames';
 
 	interface Props {
 		suggestions: UserPreview[];

@@ -1,4 +1,4 @@
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale } from '#lib/paraglide/runtime';
 /**
  * Converts a datetime-local input value (e.g. "2026-02-20T18:00")
  * into a Date object as if the time was specified in the given timezone.

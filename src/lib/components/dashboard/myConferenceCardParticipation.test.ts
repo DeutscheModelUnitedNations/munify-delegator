@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+import { translateTeamRole } from '#lib/utils/enumTranslations';
 import {
 	applicationStatus,
 	participationOf,

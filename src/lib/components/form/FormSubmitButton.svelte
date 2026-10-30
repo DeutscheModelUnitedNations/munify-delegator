@@ -1,5 +1,5 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import Spinner from '../Spinner.svelte';
 	import type { SuperForm } from 'sveltekit-superforms';
 

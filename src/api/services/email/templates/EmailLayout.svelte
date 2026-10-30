@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Html, Head, Body, Preview } from '@better-svelte-email/components';
 	import type { Snippet } from 'svelte';
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { brand } from './brand';
 	import {
 		outlookColumnEnd,

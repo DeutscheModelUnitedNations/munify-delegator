@@ -1,7 +1,7 @@
-import { db, schema, type Transaction } from '#api/db/db.js';
+import { db, schema, type Transaction } from '#api/db/db';
 import { and, eq, sql } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /**
  * Refuses a waiting list entry the conference cannot take: the waiting list is only open during

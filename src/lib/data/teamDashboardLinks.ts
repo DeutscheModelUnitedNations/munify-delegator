@@ -3,10 +3,10 @@ import { resolve } from '$app/paths';
 import CalendarLinkInfo from '#lib/components/dashboard/CalendarLinkInfo.svelte';
 import PaperHubLinkInfo from '#lib/components/dashboard/PaperHubLinkInfo.svelte';
 import TeamEntryInfo from '#lib/components/dashboard/TeamEntryInfo.svelte';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 import type { DashboardHref } from './dashboardLinks';
 import { publicCalendarPath, publicSeatsPath, teamRoutesFor } from './teamRoutes';
-import type { TeamAccess } from '#lib/helpers/teamAccess.js';
+import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;

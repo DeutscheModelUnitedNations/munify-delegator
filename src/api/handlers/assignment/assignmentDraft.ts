@@ -1,17 +1,17 @@
-import { type Transaction, db, schema } from '#api/db/db.js';
-import { makeEntryCode } from '#api/services/registration/entryCodeGenerator.js';
+import { type Transaction, db, schema } from '#api/db/db';
+import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import {
 	planApply,
 	type ApplyError,
 	type ApplyPlan,
 	type DelegationRef
-} from '#lib/assignment/applyPlan.js';
-import { seatedRoles, seatsByKey } from '#lib/assignment/capacity.js';
-import { sameTarget, type Target } from '#lib/assignment/state.js';
-import { m } from '#lib/paraglide/messages.js';
+} from '#lib/assignment/applyPlan';
+import { seatedRoles, seatsByKey } from '#lib/assignment/capacity';
+import { sameTarget, type Target } from '#lib/assignment/state';
+import { m } from '#lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { and, eq, inArray } from 'drizzle-orm';
-import { apiError } from '#api/services/errors/apiError.js';
+import { apiError } from '#api/services/errors/apiError';
 
 type Reader = Transaction | typeof db;
 

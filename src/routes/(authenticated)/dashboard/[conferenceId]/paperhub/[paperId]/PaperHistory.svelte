@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import PaperEditor from '#lib/components/paper/editor/index.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { client, type PaperstatusEnum } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import PaperEditor from '#lib/components/paper/editor/index';
 	import {
 		VersionCompareModal,
 		computeDiffStats
-	} from '#lib/components/paper/editor/diffViewer/index.js';
+	} from '#lib/components/paper/editor/diffViewer/index';
 	import type {
 		ComparisonState,
 		VersionForComparison,
 		DiffStats
-	} from '#lib/components/paper/editor/diffViewer/index.js';
-	import { translatePaperStatus } from '#lib/utils/enumTranslations.js';
-	import { getPaperStatusIcon } from '#lib/utils/enumIcons.js';
-	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers.js';
+	} from '#lib/components/paper/editor/diffViewer/index';
+	import { translatePaperStatus } from '#lib/utils/enumTranslations';
+	import { getPaperStatusIcon } from '#lib/utils/enumIcons';
+	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers';
 	import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 
 	let { title = $bindable(), teaserText = $bindable() }: { title: string; teaserText: string } =
 		$props();

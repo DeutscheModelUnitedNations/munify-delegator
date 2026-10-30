@@ -2,18 +2,18 @@
 	import { untrack } from 'svelte';
 	import BinRow from './BinRow.svelte';
 	import Modal from '#lib/components/Modal.svelte';
-	import { buildNametagQrPdf } from '#lib/api/nametagQrPdf.js';
-	import { buildNametagSheetsPdf, downloadPdf } from '#lib/api/nametagSheetsPdf.js';
+	import { buildNametagQrPdf } from '#lib/api/nametagQrPdf';
+	import { buildNametagSheetsPdf, downloadPdf } from '#lib/api/nametagSheetsPdf';
 	import { binTone, buildSheets, loadSheetAssets } from './nametagSheets';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();

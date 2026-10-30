@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { RequiredApplication } from '#lib/assignment/seatChecks.js';
-	import codenamize from '#lib/helpers/codenamize.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import type { RequiredApplication } from '#lib/assignment/seatChecks';
+	import codenamize from '#lib/helpers/codenamize';
+	import { m } from '#lib/paraglide/messages';
 
 	/**
 	 * What applying the draft would do that is allowed but worth a second look: required

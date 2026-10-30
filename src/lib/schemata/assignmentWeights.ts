@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { WISH_EFFECTS } from '#lib/assignment/autoAssign.js';
+import { WISH_EFFECTS } from '#lib/assignment/autoAssign';
 
-/** The weights the automatic assignment runs with; see `#lib/assignment/autoAssign.js`. */
+/** The weights the automatic assignment runs with; see `#lib/assignment/autoAssign`. */
 export const assignmentWeightsSchema = z.object({
 	nullRating: z.number().min(0.5).max(5),
 	ratingFactor: z.number().min(0).max(100),

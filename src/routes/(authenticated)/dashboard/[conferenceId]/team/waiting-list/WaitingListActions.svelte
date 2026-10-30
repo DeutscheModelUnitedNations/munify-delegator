@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
+	import { m } from '#lib/paraglide/messages';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 
 	interface Props {

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { resolve } from '$app/paths';
-	import { reveal } from '#lib/attachments/reveal.js';
+	import { reveal } from '#lib/attachments/reveal';
 	import SHLogo from '#assets/logo/mun-sh_logo.png';
 	import BWLogo from '#assets/logo/munbw_logo.png';
 	import zweig from '#assets/logo/dmun-zweig-halbtransparent.svg';

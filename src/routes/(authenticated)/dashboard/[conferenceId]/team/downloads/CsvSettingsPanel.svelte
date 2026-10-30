@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import {
 		csvSettings,
 		getDelimiterLabel,
 		getEncodingLabel,
 		type CsvDelimiter,
 		type CsvEncoding
-	} from '#lib/state/csvSettings.js';
+	} from '#lib/state/csvSettings';
 
 	const delimiters: CsvDelimiter[] = [';', ',', '\t', '|'];
 	const encodings: CsvEncoding[] = ['utf-8', 'utf-8-bom', 'iso-8859-1'];

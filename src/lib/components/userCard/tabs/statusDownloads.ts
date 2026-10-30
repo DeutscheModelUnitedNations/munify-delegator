@@ -1,7 +1,7 @@
-import { getLocale } from '#lib/paraglide/runtime.js';
-import { formatPostalParticipantName } from '#lib/api/postalRegistrationSources.js';
-import formatNames from '#lib/helpers/formatNames.js';
-import type { ParticipantData } from '#lib/utils/pdfGenerator.js';
+import { getLocale } from '#lib/paraglide/runtime';
+import { formatPostalParticipantName } from '#lib/api/postalRegistrationSources';
+import formatNames from '#lib/helpers/formatNames';
+import type { ParticipantData } from '#lib/utils/pdfGenerator';
 
 type Text = string | null | undefined;
 

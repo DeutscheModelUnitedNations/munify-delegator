@@ -1,4 +1,4 @@
-import { client } from '#lib/api/rumbleClient/client.js';
+import { client } from '#lib/api/rumbleClient/client';
 
 /** The columns every participant table row needs, whatever the registration type. */
 const participantUser = {

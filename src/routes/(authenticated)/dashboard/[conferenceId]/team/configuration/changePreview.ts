@@ -1,5 +1,5 @@
-import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages';
+import { getLocale } from '#lib/paraglide/runtime';
 import type { ConferenceSettings } from './form-schema';
 
 type SettingsFieldKey = keyof ConferenceSettings;
@@ -80,7 +80,7 @@ function conferenceStateLabel(value: unknown): string {
 }
 
 /**
- * Date-only fields are stored as UTC midnight (see `#lib/helpers/dateTimeInput.js`),
+ * Date-only fields are stored as UTC midnight (see `#lib/helpers/dateTimeInput`),
  * so they must be read back in UTC - rendering them in the browser timezone would
  * move them to the previous day for anyone west of UTC and append a meaningless
  * 00:00. Mirrors how FormDateTimeInput displays the same value.

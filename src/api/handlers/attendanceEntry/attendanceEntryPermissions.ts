@@ -1,14 +1,15 @@
-import { db } from '#api/db/db.js';
-import { type ApiContext, abilityBuilder } from '#api/rumble.js';
+import { db } from '#api/db/db';
+import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
-	assertTeamRole,
+	assertTeamPermission,
 	isTeamMemberOfConference,
+	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
+	teamConference,
 	userId
-} from '#api/services/authHelper.js';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+} from '#api/services/authHelper';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /** The abilities of attendance entries and of the sessions they are recorded in. */
 export function registerAttendanceEntryAbilities() {
@@ -51,7 +52,7 @@ export async function assertCanStartAttendanceSession(
 	conferenceId: string,
 	surveyOptionIds: readonly string[] = []
 ) {
-	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
 	const ids = [...new Set(surveyOptionIds)];
 	if (ids.length === 0) return;
 	const options = await db.query.surveyOption.findMany({
@@ -68,13 +69,12 @@ export async function assertCanStartAttendanceSession(
  */
 export async function assertCanEndAttendanceSession(ctx: ApiContext, sessionId: string) {
 	const session = await db.query.attendanceSession.findFirst({
-		where: { id: sessionId },
+		where: { id: sessionId, conference: teamConference(ctx, 'manageParticipants') },
 		columns: { conferenceId: true }
 	});
 	if (!session) {
 		throw apiError('NOT_FOUND', m.sessionNotFound());
 	}
-	await assertTeamRole(ctx, session.conferenceId, PARTICIPANT_CARE_ROLES);
 	return session.conferenceId;
 }
 
@@ -122,7 +122,7 @@ async function assertParticipantToScan(conferenceId: string, subjectId: string) 
  * on every team member's dashboard - and only for somebody who takes part in the conference.
  */
 async function assertMayRecordAttendance(ctx: ApiContext, conferenceId: string, subjectId: string) {
-	await assertTeamRole(ctx, conferenceId);
+	await assertTeamPermission(ctx, conferenceId, 'useTeamTools');
 	await assertParticipantToScan(conferenceId, subjectId);
 }
 

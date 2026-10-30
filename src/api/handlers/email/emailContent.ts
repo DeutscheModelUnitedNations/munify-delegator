@@ -1,7 +1,7 @@
-import { m } from '#lib/paraglide/messages.js';
-import { getLocale, toLocale } from '#lib/paraglide/runtime.js';
-import formatNames from '#lib/helpers/formatNames.js';
-import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations.js';
+import { m } from '#lib/paraglide/messages';
+import { getLocale, toLocale } from '#lib/paraglide/runtime';
+import formatNames from '#lib/helpers/formatNames';
+import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type {
 	DueEmail,
@@ -18,12 +18,12 @@ import {
 	resolveEmailText,
 	type EmailPlaceholderValues,
 	type EmailTextOverride
-} from '#lib/helpers/emailTemplates.js';
+} from '#lib/helpers/emailTemplates';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the
  * same template (`NotificationEmail.svelte`) with its own text: the conference's own where it wrote
- * one (`conference_email_text`), else the default (`#lib/helpers/emailTemplates.js`), filled in here.
+ * one (`conference_email_text`), else the default (`#lib/helpers/emailTemplates`), filled in here.
  */
 export interface EmailContent {
 	subject: string;

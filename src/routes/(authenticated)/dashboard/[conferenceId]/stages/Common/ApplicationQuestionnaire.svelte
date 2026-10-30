@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { m } from '#lib/paraglide/messages.js';
-	import { applicationTextsSchema } from '#lib/schemata/applicationForm.js';
+	import { m } from '#lib/paraglide/messages';
+	import { applicationTextsSchema } from '#lib/schemata/applicationForm';
 	import Form from '#lib/components/form/Form.svelte';
-	import { mutationForm } from '#lib/components/form/mutationForm.js';
+	import { mutationForm } from '#lib/components/form/mutationForm';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
 	import { makeApplicationForm, type ApplicationTexts } from '../../applicationForm';
 

@@ -1,9 +1,9 @@
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
-import { createYoga } from '#api/rumble.js';
+import { createYoga } from '#api/rumble';
 import { dev } from '$app/env';
-import { GRAPHQL_STREAM_ENDPOINT } from '#lib/api/streamEndpoint.js';
+import { GRAPHQL_STREAM_ENDPOINT } from '#lib/api/streamEndpoint';
 
-import '#api/handlers/register.js';
+import '#api/handlers/register';
 
 /**
  * The one yoga instance, shared by `/api/graphql`, `/api/graphql/stream` and the SSR remote function.
@@ -22,10 +22,6 @@ export const yoga = createYoga({
 	graphqlEndpoint: '/api/graphql',
 	maskedErrors: !dev,
 	plugins: [useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT })],
-	// No `cors` option: rumble (≥ 0.26.3) defaults it to `false`, so the API sends no CORS headers
-	// and stays same-origin. Never set it to yoga's default, which reflects any `Origin` with
-	// `Access-Control-Allow-Credentials: true` and lets every website run queries and mutations
-	// with a visitor's session cookies.
 	fetchAPI: {
 		fetch,
 		Request,

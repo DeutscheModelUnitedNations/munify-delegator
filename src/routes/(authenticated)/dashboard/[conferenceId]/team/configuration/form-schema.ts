@@ -1,8 +1,8 @@
-import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage.js';
+import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import valiator from 'validator';
 import IBAN from 'iban';
 import { z } from 'zod';
-import { m } from '#lib/paraglide/messages.js';
+import { m } from '#lib/paraglide/messages';
 
 export const conferenceSettingsFormSchema = z.object({
 	title: z.string().min(3, {

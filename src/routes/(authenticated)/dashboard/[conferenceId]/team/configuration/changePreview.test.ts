@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { collectConfigChanges, formatValue, groupConfigChanges } from './changePreview';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { getLocale } from '#lib/paraglide/runtime';
 
 type ConferenceState = 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 	import PieChart from '#lib/components/charts/echarts/PieChart.svelte';
 	import BarChart from '#lib/components/charts/echarts/BarChart.svelte';
 	import GaugeChart from '#lib/components/charts/echarts/GaugeChart.svelte';
@@ -11,9 +11,9 @@
 	import { compareByDisplayName } from './surveyExport';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { client } from '#lib/api/rumbleClient/client';
 	import ActionModal from '#lib/components/ActionModal.svelte';
-	import { saveWithToast } from '#lib/helpers/saveWithToast.js';
+	import { saveWithToast } from '#lib/helpers/saveWithToast';
 	import type { Snippet } from 'svelte';
 
 	interface Props {

@@ -4,11 +4,11 @@
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { z } from 'zod';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import type { Locale } from '#lib/paraglide/runtime.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import type { Locale } from '#lib/paraglide/runtime';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';
-	import { genericPromiseToastMessages } from '#lib/utils/toast.js';
+	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import EmailEditorLayout from './EmailEditorLayout.svelte';
 	import { debounced, fetchEmailPreview } from './emailPreview.svelte';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 	import CalendarListTable from './CalendarListTable.svelte';
 	import RowActionButton from './RowActionButton.svelte';

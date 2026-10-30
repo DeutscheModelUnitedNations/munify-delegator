@@ -1,5 +1,5 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { downloadJSON } from '#lib/utils/downloadHelpers.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { downloadJSON } from '#lib/utils/downloadHelpers';
 import { toCalendarDayExport } from './calendarDayExportData';
 
 /** Fetches one day's tracks and entries on demand and downloads them as an import file. */

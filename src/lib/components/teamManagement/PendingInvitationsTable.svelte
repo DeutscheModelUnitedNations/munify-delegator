@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
+	import { getLocale } from '#lib/paraglide/runtime';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { translateTeamRole } from '#lib/utils/enumTranslations.js';
+	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import { page } from '$app/state';
 	import { runInvitationAction } from './invitationActions';
 

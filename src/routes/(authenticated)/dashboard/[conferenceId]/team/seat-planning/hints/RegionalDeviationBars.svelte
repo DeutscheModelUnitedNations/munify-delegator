@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { translateRegionalGroup } from '#lib/utils/enumTranslations.js';
-	import type { GroupDeviation } from '#lib/helpers/seatPlanning/baselines.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { translateRegionalGroup } from '#lib/utils/enumTranslations';
+	import type { GroupDeviation } from '#lib/helpers/seatPlanning/baselines';
 
 	interface Props {
 		groups: GroupDeviation[];

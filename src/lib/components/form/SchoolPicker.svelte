@@ -8,7 +8,7 @@
 		type SuperForm,
 		formFieldProxy
 	} from 'sveltekit-superforms';
-	import { m } from '#lib/paraglide/messages.js';
+	import { m } from '#lib/paraglide/messages';
 	import FormField from './FormField.svelte';
 	import { searchSchoolOptions, type SchoolOption } from './schoolOptions';
 

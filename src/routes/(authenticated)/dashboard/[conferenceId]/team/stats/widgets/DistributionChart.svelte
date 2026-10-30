@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { PieChart } from '#lib/components/charts/echarts/index.js';
-	import { m } from '#lib/paraglide/messages.js';
-	import { client } from '#lib/api/rumbleClient/client.js';
+	import { PieChart } from '#lib/components/charts/echarts/index';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { statsQueryFilter, unifiedFilter } from '../stats.svelte';
 	import { distributionChartData } from './chartData';
 

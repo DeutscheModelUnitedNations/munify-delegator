@@ -1,6 +1,6 @@
-import { client } from '#lib/api/rumbleClient/client.js';
-import { fetchCurrentUser } from '#lib/api/currentUser.js';
-import type { TeamAccess } from '#lib/helpers/teamAccess.js';
+import { client } from '#lib/api/rumbleClient/client';
+import { fetchCurrentUser } from '#lib/api/currentUser';
+import type { TeamAccess } from '#lib/helpers/teamAccess';
 
 /**
  * What the caller is in one conference's team: all the roles they hold there, and whether they

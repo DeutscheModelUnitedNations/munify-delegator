@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import type { ErrorCode } from '#lib/api/errorCodes.js';
+import type { ErrorCode } from '#lib/api/errorCodes';
 
 /**
  * An error the client recognises by `code` (see `#lib/api/errorCodes`) and shows `message` for.

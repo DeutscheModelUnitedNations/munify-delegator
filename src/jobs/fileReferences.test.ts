@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import * as schema from '#api/db/schema/index.js';
+import * as schema from '#api/db/schema/index';
 import { fileReferenceColumns, orphanedObjectKeys } from './fileReferences';
 
 describe('fileReferenceColumns', () => {

@@ -1,4 +1,4 @@
-import { object, query } from '#api/rumble.js';
+import { object, query } from '#api/rumble';
 import { registerNationAbilities } from './nationPermissions';
 
 registerNationAbilities();

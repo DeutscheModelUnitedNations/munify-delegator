@@ -1,6 +1,6 @@
 import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import { applicationFormSchema, applicationTextsSchema } from '#lib/schemata/applicationForm.js';
+import { applicationFormSchema, applicationTextsSchema } from '#lib/schemata/applicationForm';
 import type { z } from 'zod';
 
 /** The answers an application starts with: the applicant's own school and the texts. */

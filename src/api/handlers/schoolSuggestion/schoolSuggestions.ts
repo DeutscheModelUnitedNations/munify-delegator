@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db.js';
+import { db, schema } from '#api/db/db';
 import type { ReadableSchoolRegistrations } from './schoolSuggestionPermissions';
 import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';

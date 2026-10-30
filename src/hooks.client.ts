@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/sveltekit';
-import { sentryDataCollection } from '#lib/sentryDataCollection.js';
+import { sentryDataCollection } from '#lib/sentryDataCollection';
 import { building } from '$app/env';
 import { PUBLIC_SENTRY_DSN, PUBLIC_SENTRY_SEND_DEFAULT_PII } from '$app/env/public';
 

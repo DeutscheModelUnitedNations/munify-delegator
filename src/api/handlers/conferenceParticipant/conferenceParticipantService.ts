@@ -1,10 +1,10 @@
-import { ofAgeAtConference } from '#lib/helpers/ageChecker.js';
-import { type Transaction, db, schema } from '#api/db/db.js';
-import { nullToUndefined } from '#api/services/args.js';
+import { ofAgeAtConference } from '#lib/helpers/ageChecker';
+import { type Transaction, db, schema } from '#api/db/db';
+import { nullToUndefined } from '#api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq, inArray, isNull, max } from 'drizzle-orm';
-import { m } from '#lib/paraglide/messages.js';
-import { apiError } from '#api/services/errors/apiError.js';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 /**
  * The person's row in the conference, created the first time they register there (as delegate,

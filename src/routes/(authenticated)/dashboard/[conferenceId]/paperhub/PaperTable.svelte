@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import type { ResolvedPathname } from '$app/types';
 	import Flag from '#lib/components/Flag.svelte';
-	import { splitRole } from '#lib/helpers/conferenceRole.js';
+	import { splitRole } from '#lib/helpers/conferenceRole';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import { getPaperTypeIcon, getPaperStatusIcon } from '#lib/utils/enumIcons.js';
-	import { translatePaperType, translatePaperStatus } from '#lib/utils/enumTranslations.js';
-	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client.js';
+	import { getPaperTypeIcon, getPaperStatusIcon } from '#lib/utils/enumIcons';
+	import { translatePaperType, translatePaperStatus } from '#lib/utils/enumTranslations';
+	import type { PaperstatusEnum, PapertypeEnum } from '#lib/api/rumbleClient/client';
 	import type { PaperDelegationRole } from './paperDisplay';
 	import type { PaperSortKey, SortConfig } from './paperSorting';
 

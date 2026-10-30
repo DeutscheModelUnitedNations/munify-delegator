@@ -1,13 +1,13 @@
 <script lang="ts">
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import DragGrip from '../DragGrip.svelte';
-	import { cardBorder, type BoardReviewRow } from '#lib/assignment/board.js';
+	import { cardBorder, type BoardReviewRow } from '#lib/assignment/board';
 	import StarRating from '#lib/components/StarRating.svelte';
-	import formatNames from '#lib/helpers/formatNames.js';
-	import { m } from '#lib/paraglide/messages.js';
+	import formatNames from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import { draggable } from '@thisux/sveltednd';
 	import type { BoardSingleParticipant } from '../board';
-	import { sightingHref } from '#lib/helpers/sightingLink.js';
+	import { sightingHref } from '#lib/helpers/sightingLink';
 
 	/** A single participant on the board, dragged by their id out of `container`. */
 	interface Props {

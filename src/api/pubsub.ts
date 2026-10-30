@@ -1,4 +1,4 @@
-import { pubsub } from '#api/rumble.js';
+import { pubsub } from '#api/rumble';
 
 export const assignmentReviewPubsub = pubsub({ table: 'assignmentReview' });
 export const assignmentSingleRolePubsub = pubsub({ table: 'assignmentSingleRole' });
