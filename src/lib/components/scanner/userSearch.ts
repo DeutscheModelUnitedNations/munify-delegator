@@ -1,8 +1,5 @@
 import { client } from '#lib/api/rumbleClient/client';
-import {
-	participation,
-	registrationIn
-} from '#lib/components/commandPalette/commandPaletteSearch';
+import { participation, registrationIn } from '#lib/components/commandPalette/commandPaletteSearch';
 import { looksLikeUserId, takesPart, type UserSuggestion } from './suggestions';
 
 const SUGGESTION_LIMIT = 5;

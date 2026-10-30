@@ -10,14 +10,14 @@ const MAX_TIMEOUT = 2_147_483_647;
  * switches over on its own. Call it while a component initializes.
  */
 export function watchSelectionInProgress(conference: () => DeadlineConference) {
-	let now = $state(new Date());
+	let now = $state(Date.now());
 
 	$effect(() => {
 		const current = conference();
 		if (current.state !== 'PARTICIPANT_REGISTRATION') return;
-		const delay = technicalRegistrationDeadline(current).getTime() - now.getTime() + 1000;
+		const delay = technicalRegistrationDeadline(current).getTime() - now + 1000;
 		if (delay <= 0) return;
-		const timeout = setTimeout(() => (now = new Date()), Math.min(delay, MAX_TIMEOUT));
+		const timeout = setTimeout(() => (now = Date.now()), Math.min(delay, MAX_TIMEOUT));
 		return () => clearTimeout(timeout);
 	});
 

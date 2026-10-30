@@ -24,10 +24,7 @@ import {
 	PUBLIC_OIDC_MIGRATION_NOTICE
 } from '$app/env/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
-import {
-	MIGRATION_NOTICE_COOKIE,
-	MIGRATION_NOTICE_VERSION
-} from '#api/services/migrationNotice';
+import { MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION } from '#api/services/migrationNotice';
 // --- END TEMPORARY ---
 
 // Initialize Sentry (only if DSN provided and not building)

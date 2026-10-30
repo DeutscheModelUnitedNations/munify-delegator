@@ -7,9 +7,9 @@
 		// applies `package.json`'s `imports` literally and finds no file there; `paths` it completes
 		// like a relative import. Keep in step with `imports`.
 		"paths": {
-			"#lib/*": ["./src/lib/*"],
 			"#api/*": ["./src/api/*"],
-			"#assets/*": ["./src/assets/*"]
+			"#assets/*": ["./src/assets/*"],
+			"#lib/*": ["./src/lib/*"]
 		},
 		"rootDirs": [".", "./.svelte-kit/types"],
 		"sourceMap": true,

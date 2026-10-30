@@ -44,11 +44,11 @@ export function acceptsApplications(
 		applicationDeadline: Date;
 		registrationDeadlineGracePeriodMinutes: number;
 	},
-	now = new Date()
+	now: Date | number = Date.now()
 ) {
 	return (
 		conference.state === 'PARTICIPANT_REGISTRATION' &&
-		now.getTime() <= technicalRegistrationDeadline(conference).getTime()
+		Number(now) <= technicalRegistrationDeadline(conference).getTime()
 	);
 }
 
@@ -58,7 +58,7 @@ export function acceptsApplications(
  */
 export function selectionInProgress(
 	conference: Parameters<typeof acceptsApplications>[0],
-	now = new Date()
+	now: Date | number = Date.now()
 ) {
 	return conference.state === 'PARTICIPANT_REGISTRATION' && !acceptsApplications(conference, now);
 }

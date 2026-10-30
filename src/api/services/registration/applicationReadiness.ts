@@ -2,10 +2,7 @@ import { m } from '#lib/paraglide/messages';
 import { db } from '#api/db/db';
 import type * as schema from '#api/db/schema/index';
 import { apiError } from '#api/services/errors/apiError';
-import {
-	acceptsApplications,
-	applicationTextsComplete
-} from '#lib/helpers/applicationReadiness';
+import { acceptsApplications, applicationTextsComplete } from '#lib/helpers/applicationReadiness';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {

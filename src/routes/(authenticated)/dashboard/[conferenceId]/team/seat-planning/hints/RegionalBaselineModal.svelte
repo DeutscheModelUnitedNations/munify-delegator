@@ -3,10 +3,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import Modal from '#lib/components/Modal.svelte';
 	import { m } from '#lib/paraglide/messages';
-	import {
-		translateRegionalBaseline,
-		translateRegionalGroup
-	} from '#lib/utils/enumTranslations';
+	import { translateRegionalBaseline, translateRegionalGroup } from '#lib/utils/enumTranslations';
 	import {
 		baselineTemplates,
 		isValidManualTargets,
