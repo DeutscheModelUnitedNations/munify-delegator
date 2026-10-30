@@ -22,11 +22,10 @@ export const yoga = createYoga({
 	graphqlEndpoint: '/api/graphql',
 	maskedErrors: !dev,
 	plugins: [useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT })],
-	// The API is only ever called from its own origin. Yoga's default would reflect any `Origin`
-	// with `Access-Control-Allow-Credentials: true`, letting every website run queries and
-	// mutations with a visitor's session cookies. rumble defaults to this from 0.26.3 on; stated
-	// here anyway.
-	cors: false,
+	// No `cors` option: rumble (≥ 0.26.3) defaults it to `false`, so the API sends no CORS headers
+	// and stays same-origin. Never set it to yoga's default, which reflects any `Origin` with
+	// `Access-Control-Allow-Credentials: true` and lets every website run queries and mutations
+	// with a visitor's session cookies.
 	fetchAPI: {
 		fetch,
 		Request,

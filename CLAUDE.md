@@ -470,7 +470,7 @@ bun run preview
   `vite.config.ts`. It refuses HTTP calls (`event.isRemoteRequest`): SvelteKit serves every
   `query` remote function as a `GET` endpoint, which would otherwise execute any document a
   browser sends with the visitor's cookies, past yoga, armor and the error masking. `/api/graphql`
-  sends no CORS headers (`cors: false`): the API is same-origin only, and yoga's default reflects
+  sends no CORS headers (`cors: false`, rumble's default since 0.26.3, so `yoga.ts` leaves it out): the API is same-origin only, and yoga's default reflects
   any origin with credentials.
 - **Files live in an S3 bucket** (any S3-compatible service, through
   [s3mini](https://code.nolog.cz/thinking.tools/s3mini); locally RustFS from
