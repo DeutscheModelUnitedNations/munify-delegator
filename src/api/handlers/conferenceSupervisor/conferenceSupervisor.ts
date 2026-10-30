@@ -1,4 +1,4 @@
-import { db, schema } from '#api/db/db';
+import { db } from '#api/db/db';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '#api/rumble';
 import {
@@ -27,13 +27,7 @@ import {
 	schoolPubsub,
 	singleParticipantPubsub
 } from '#api/pubsub';
-import {
-	allowedRowWhere,
-	assertUpdated,
-	assertAllowedRow,
-	readableById
-} from '#api/services/authHelper';
-import { m } from '#lib/paraglide/messages';
+import { assertAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceSupervisorAbilities();
 
@@ -69,7 +63,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await readableById(ctx.abilities.conferenceSupervisor, createdId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -81,23 +75,18 @@ schemaBuilder.mutationFields((t) => ({
 			plansOwnAttendenceAtConference: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const where = await allowedRowWhere(ctx, 'conferenceSupervisor', 'update', args.id);
 			if (typeof args.plansOwnAttendenceAtConference === 'boolean') {
-				assertUpdated(
-					await db
-						.update(schema.conferenceSupervisor)
-						.set({ plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference })
-						.where(where)
-						.returning({ id: schema.conferenceSupervisor.id })
-				);
+				await updateIfAllowed(ctx, 'conferenceSupervisor', args.id, {
+					plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
+				});
 			} else {
-				await assertAllowedRow(schema.conferenceSupervisor, where, m.updateNotFoundOrForbidden);
+				await assertAllowed(ctx, 'conferenceSupervisor', 'update', args.id);
 			}
 
 			conferenceSupervisorPubsub.updated(args.id);
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await readableById(ctx.abilities.conferenceSupervisor, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -132,7 +121,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.conferenceSupervisor
 				.findFirst(
-					query(await readableById(ctx.abilities.conferenceSupervisor, linked.supervisorId))
+					query(await queryAllowed(ctx.abilities.conferenceSupervisor, linked.supervisorId))
 				)
 				.then(assertFindFirstExists);
 		}
@@ -181,7 +170,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceSupervisorPubsub.updated(supervisor.id);
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await readableById(ctx.abilities.conferenceSupervisor, supervisor.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, supervisor.id)))
 				.then(assertFindFirstExists);
 		}
 	})

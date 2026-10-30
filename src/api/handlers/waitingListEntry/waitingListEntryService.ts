@@ -1,5 +1,6 @@
 import { db, schema, type Transaction } from '#api/db/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -65,12 +66,7 @@ export async function markSeatedFromWaitingList(
 	const [entry] = await tx
 		.update(schema.waitingListEntry)
 		.set({ assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())` })
-		.where(
-			and(
-				eq(schema.waitingListEntry.conferenceId, conferenceId),
-				eq(schema.waitingListEntry.userId, userId)
-			)
-		)
+		.where(whereRows(schema.waitingListEntry, { conferenceId, userId }))
 		.returning({ schoolId: schema.waitingListEntry.schoolId });
 	return entry;
 }

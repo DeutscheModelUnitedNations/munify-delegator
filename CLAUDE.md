@@ -166,7 +166,7 @@ bun run preview
     `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
-  - `services/` - Business logic shared by several handlers or routes, and `authHelper.ts`, the
+  - `services/` - Business logic shared by several handlers or routes, and `authHelper/`, the
     authorization building blocks every `*Permissions.ts` composes from (after chase);
     `services/README.md` indexes them. Like handler services, these never check permissions.
 
@@ -235,14 +235,18 @@ bun run preview
   plain arguments. Checks about _what_ (a stage, a size limit, uniqueness) stay in the service;
   checks about _who_ go in `<entity>Permissions.ts`. Applying the `read` ability to shape what a
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
-  check. A check several entities need goes into `authHelper.ts`, not into two permission files:
-  `assertAllowedById` / `assertAllowedRow` (a row through its own update/delete ability, else
-  NOT_FOUND), `allowedRowWhere` (that row as a `where` to write through), `deleteAllowedRow` (delete
-  it in one statement, NOT_FOUND when nothing went), `assertUpdated` (an update's `.returning()`
-  came back empty), `readableById` (re-read a row through its read ability after a write),
-  `assertOfferedIn` / `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`,
-  `assertParticipantOrTeamMemberIn`, `assertParticipantOfConference`. Permission functions take
-  `ApiContext` (`#api/rumble`), which carries `abilities`.
+  check. `authHelper/` holds only building blocks that are not about one entity, in two modules:
+  `rules.ts` says who may do what (`systemAdmin`, the team and participant filters,
+  `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks, `assertOfferedIn` /
+  `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerIdOf`, and the
+  row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
+  reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement),
+  `whereAllowed` (the `where` to write through yourself) and `queryAllowed` (re-read a row after a
+  write). A check used once
+  stays private in its permissions file; one about a single entity that others need (a calendar
+  day's `calendarConference` and `assertTeamPermissionForCalendarDay`, a survey question's check,
+  `assertMayGrantRole` for team roles) is exported from that entity's permissions file. Permission
+  functions take `ApiContext` (`#api/rumble`), which carries `abilities`.
 
 - **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
 
@@ -263,14 +267,14 @@ bun run preview
   ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
   ```
 
-  `services/authHelper.ts` is the one place authorization is built from; its header holds the
-  role matrix (who may do what). Rules of thumb, all of them enforced by `e2e/authorization/`:
+  `services/authHelper/` is the one place authorization is built from. Rules of thumb, all of them enforced by `e2e/authorization/`:
 
   - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
-    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `where(...)`. A helper returns
+    `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `grantWhere(...)`. A helper returns
     `undefined` for "grants nothing" and never throws. Every table also gets
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
-  - **Updates and deletes go through the row's own ability** (`filter('update').merge({ where:
+  - **Updates and deletes go through the row's own ability** (`updateIfAllowed`, `deleteIfAllowed`,
+    or `filter('update').merge({ where:
 { id } })`). Load the row through it first when the resolver needs the row anyway.
   - **Team checks are team permissions** (`TEAM_PERMISSIONS` in `#lib/helpers/teamRoles.ts`,
     shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
@@ -583,7 +587,7 @@ bun run preview
     is redesigned, brings its own
   - Each entity's abilities live in its `<entity>Permissions.ts`
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
-  in `#lib/helpers/teamRoles.ts`, shared by the API (`authHelper.ts` re-exports them) and the UI.
+  in `#lib/helpers/teamRoles.ts`, shared by the API (`authHelper/rules.ts` re-exports them) and the UI.
   `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
   postal address, templates, status, resolutions) next to the scanner and the settings.
 
@@ -755,7 +759,7 @@ bun run preview
   skipped (computed as if released, before the flag is written, so no sweep sends them first);
   either needs `assertCanManageEmails` too. Until then their read rules mask the delegation's and the single
   participant's `assignedRoleId` and the member's `assignedCommitteeId`
-  (`src/api/services/authHelper.ts`, two rules per participant-side ability:
+  (`src/api/services/authHelper/rules.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
   follows the masks. A relation backed by a masked key (`assignedRole`, `assignedCommittee`, …)
   resolves to nothing, the relations pointing back (`conferenceRole.assignedDelegations`,
@@ -1017,7 +1021,7 @@ Required variables (see `.env.example`):
 
 1. Create `src/api/handlers/<entity>/` with `<entity>.ts` (GraphQL layer),
    `<entity>Permissions.ts` (`register<Entity>Abilities()` plus the `assertCan…` checks, built from
-   `authHelper.ts`) and, when there is logic beyond the resolvers, `<entity>Service.ts` (no
+   `authHelper/`) and, when there is logic beyond the resolvers, `<entity>Service.ts` (no
    permission checks)
 2. Import `<entity>.ts` in `src/api/handlers/register.ts`
 3. Call `register<Entity>Abilities()` at the top of `<entity>.ts`

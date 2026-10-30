@@ -8,17 +8,18 @@ import {
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
-	SINGLE_PARTICIPANT_ASSIGNMENT,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
+/** The column that carries a single participant's assignment (`maskedUntilRelease`). */
+const SINGLE_PARTICIPANT_ASSIGNMENT = { assignedRoleId: false } as const;
+
 /** The single participants the caller supervises. */
 function supervisedParticipant(ctx: Context) {
-	const id = userId(ctx);
+	const id = callerUserId(ctx);
 	return id ? { supervisors: { user: { id } } } : undefined;
 }
 
@@ -36,11 +37,11 @@ export function registerSingleParticipantAbilities() {
 	// Participant care and project management see and manage their conference's participants.
 	abilityBuilder.singleParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Users may change their own entry only until they have applied.
 	abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { user: { id }, applied: false } } : undefined;
 	});
 

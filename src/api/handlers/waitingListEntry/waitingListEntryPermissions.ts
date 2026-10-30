@@ -7,9 +7,9 @@ import {
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
-	teamConference,
-	where
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerWaitingListEntryAbilities() {
 	// Ported from abilities/entities/waitingListEntry.ts
@@ -17,7 +17,7 @@ export function registerWaitingListEntryAbilities() {
 
 	// Users see their own entry, and change or withdraw it until they are given a seat. Whether it
 	// is hidden or seated is participant care's (`assertCanSetWaitingListFlags`).
-	abilityBuilder.waitingListEntry.allow('read').when((ctx) => where(isOwnUser(ctx)));
+	abilityBuilder.waitingListEntry.allow('read').when((ctx) => grantWhere(isOwnUser(ctx)));
 	abilityBuilder.waitingListEntry.allow(['update', 'delete']).when((ctx) => {
 		const own = isOwnUser(ctx);
 		return own ? { where: { ...own, assignedAt: { isNull: true } } } : undefined;
@@ -26,7 +26,7 @@ export function registerWaitingListEntryAbilities() {
 	// Participant care and project management manage their conference's waiting list.
 	abilityBuilder.waitingListEntry
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /**

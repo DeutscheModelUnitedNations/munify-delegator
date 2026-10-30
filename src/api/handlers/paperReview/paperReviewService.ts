@@ -1,7 +1,7 @@
 import type { Context } from '#api/context';
 import { type Transaction, db, schema } from '#api/db/db';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, count, eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { translatePaperStatus } from '#lib/utils/enumTranslations';
 import { apiError } from '#api/services/errors/apiError';
@@ -77,29 +77,19 @@ function agendaItemLabel(paper: PaperForReview) {
 		: undefined;
 }
 
-/** Whether a `count()` row, which a query over no rows may leave out, counted nothing. */
-function isZeroCount(row: { value: number } | undefined) {
-	return (row?.value ?? 0) === 0;
-}
-
 /** Nation delegations: one piece per agenda item, found when it has no review yet. */
 async function isFirstNationPieceReview(
 	tx: Transaction,
 	paper: PaperForReview,
 	agendaItemId: string
 ) {
-	const [existing] = await tx
-		.select({ value: count() })
-		.from(schema.paperReview)
-		.innerJoin(schema.paperVersion, eq(schema.paperReview.paperVersionId, schema.paperVersion.id))
-		.innerJoin(schema.paper, eq(schema.paperVersion.paperId, schema.paper.id))
-		.where(
-			and(
-				eq(schema.paper.delegationId, paper.delegationId),
-				eq(schema.paper.agendaItemId, agendaItemId)
-			)
-		);
-	return isZeroCount(existing);
+	const existing = await tx.query.paperReview.findFirst({
+		where: {
+			paperVersion: { paper: { delegationId: paper.delegationId, agendaItemId } }
+		},
+		columns: { id: true }
+	});
+	return existing === undefined;
 }
 
 /**
@@ -118,12 +108,11 @@ async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
 	if (paper.type === 'INTRODUCTION_PAPER') return reviewedOfKind.length === 0;
 	if (reviewedOfKind.length >= 2) return false;
 
-	const [existing] = await tx
-		.select({ value: count() })
-		.from(schema.paperReview)
-		.innerJoin(schema.paperVersion, eq(schema.paperReview.paperVersionId, schema.paperVersion.id))
-		.where(eq(schema.paperVersion.paperId, paper.id));
-	return isZeroCount(existing);
+	const existing = await tx.query.paperReview.findFirst({
+		where: { paperVersion: { paperId: paper.id } },
+		columns: { id: true }
+	});
+	return existing === undefined;
 }
 
 /** Whether this review, written before it is inserted, finds a new piece of the flag. */
@@ -246,11 +235,11 @@ export async function createPaperReview(
 		await tx
 			.update(schema.paper)
 			.set({ status: args.newStatus })
-			.where(eq(schema.paper.id, args.paperId));
+			.where(whereRows(schema.paper, { id: args.paperId }));
 		await tx
 			.update(schema.paperVersion)
 			.set({ status: args.newStatus })
-			.where(eq(schema.paperVersion.id, latestVersion.id));
+			.where(whereRows(schema.paperVersion, { id: latestVersion.id }));
 
 		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece(tx, paper) : null;
 

@@ -2,7 +2,8 @@ import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import { type Transaction, db, schema } from '#api/db/db';
 import { nullToUndefined } from '#api/services/args';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray, isNull, max } from 'drizzle-orm';
+import { max } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -42,7 +43,7 @@ export async function setParticipantSchool(
 	await tx
 		.update(schema.conferenceParticipant)
 		.set({ schoolId })
-		.where(inArray(schema.conferenceParticipant.id, [...participantIds]));
+		.where(whereRows(schema.conferenceParticipant, { id: { in: [...participantIds] } }));
 }
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
@@ -65,7 +66,7 @@ async function documentNumberOf(args: {
 	const [highest] = await db
 		.select({ value: max(schema.conferenceParticipant.assignedDocumentNumber) })
 		.from(schema.conferenceParticipant)
-		.where(eq(schema.conferenceParticipant.conferenceId, args.conferenceId));
+		.where(whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId }));
 	return (highest?.value ?? 0) + 1;
 }
 
@@ -79,7 +80,7 @@ export async function updateStatus(id: string, values: StatusValues) {
 	const [updated] = await db
 		.update(schema.conferenceParticipant)
 		.set(values)
-		.where(eq(schema.conferenceParticipant.id, id))
+		.where(whereRows(schema.conferenceParticipant, { id }))
 		.returning({ id: schema.conferenceParticipant.id });
 	if (!updated) {
 		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());

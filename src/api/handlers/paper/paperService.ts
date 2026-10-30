@@ -2,7 +2,8 @@ import { db, schema } from '#api/db/db';
 import codenmz from '#lib/helpers/codenamize';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { type InferSelectModel, eq } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors/apiError';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
@@ -127,7 +128,7 @@ export async function updatePaper(args: {
 		await tx
 			.update(schema.paper)
 			.set({ status, firstSubmittedAt, updatedAt: new Date() })
-			.where(eq(schema.paper.id, args.paperId));
+			.where(whereRows(schema.paper, { id: args.paperId }));
 
 		await tx.insert(schema.paperVersion).values({
 			paperId: args.paperId,

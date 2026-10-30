@@ -11,14 +11,12 @@ import {
 } from './waitingListEntryPermissions';
 import { schoolPubsub, waitingListEntryPubsub } from '#api/pubsub';
 import { assertWaitingListOpenFor } from './waitingListEntryService';
-import { m } from '#lib/paraglide/messages';
 import {
-	assertAllowedRow,
-	deleteAllowedRow,
-	allowedRowWhere,
-	assertUpdated,
-	readableById
-} from '#api/services/authHelper';
+	assertAllowed,
+	deleteIfAllowed,
+	queryAllowed,
+	updateIfAllowed
+} from '#api/services/authHelper/utils';
 
 registerWaitingListEntryAbilities();
 
@@ -69,7 +67,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
-				.findFirst(query(await readableById(ctx.abilities.waitingListEntry, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.waitingListEntry, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -90,9 +88,8 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSetWaitingListFlags(ctx, args.id, args);
-			const where = await allowedRowWhere(ctx, 'waitingListEntry', 'update', args.id);
 			// before resolving the school: a typed name creates one
-			await assertAllowedRow(schema.waitingListEntry, where, m.updateNotFoundOrForbidden);
+			await assertAllowed(ctx, 'waitingListEntry', 'update', args.id);
 			const schoolId = await resolveSchoolChoice(args);
 			const assignedAt =
 				args.assigned === true
@@ -100,25 +97,20 @@ schemaBuilder.mutationFields((t) => ({
 					: args.assigned === false
 						? null
 						: undefined;
-			const updated = await db
-				.update(schema.waitingListEntry)
-				.set({
-					schoolId,
-					motivation: nullToUndefined(args.motivation),
-					experience: nullToUndefined(args.experience),
-					requests: nullToUndefined(args.requests),
-					hidden: nullToUndefined(args.hidden),
-					assignedAt
-				})
-				.where(where)
-				.returning({ id: schema.waitingListEntry.id });
-			assertUpdated(updated);
+			await updateIfAllowed(ctx, 'waitingListEntry', args.id, {
+				schoolId,
+				motivation: nullToUndefined(args.motivation),
+				experience: nullToUndefined(args.experience),
+				requests: nullToUndefined(args.requests),
+				hidden: nullToUndefined(args.hidden),
+				assignedAt
+			});
 
 			waitingListEntryPubsub.updated(args.id);
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
-				.findFirst(query(await readableById(ctx.abilities.waitingListEntry, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.waitingListEntry, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -127,7 +119,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'waitingListEntry', args.id);
+			await deleteIfAllowed(ctx, 'waitingListEntry', args.id);
 			waitingListEntryPubsub.removed();
 
 			return true;

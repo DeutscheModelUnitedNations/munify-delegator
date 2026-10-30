@@ -3,25 +3,25 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertOfferedIn,
 	assertTeamPermission,
-	DELEGATION_MEMBER_ASSIGNMENT,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where,
-	assertAllowedById
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
+/** The column that carries the committee a delegate was seated in (`maskedUntilRelease`). */
+const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;
+
 /** The delegates of the delegations the caller supervises. */
 function supervisedMember(ctx: Context) {
-	const id = userId(ctx);
+	const id = callerUserId(ctx);
 	return id ? { delegation: { members: { supervisors: { user: { id } } } } } : undefined;
 }
 
@@ -43,11 +43,11 @@ export function registerDelegationMemberAbilities() {
 	// Project management and participant care manage their conference's delegation members.
 	abilityBuilder.delegationMember
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Only the head delegate may remove a delegate, and only before the delegation has applied.
 	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -59,13 +59,13 @@ export function registerDelegationMemberAbilities() {
 
 	// Anyone may leave a delegation that has not applied yet.
 	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { user: { id }, delegation: { applied: false } } } : undefined;
 	});
 
 	// The head delegate may edit members who have no committee assigned yet.
 	abilityBuilder.delegationMember.allow('update').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -79,7 +79,7 @@ export function registerDelegationMemberAbilities() {
 
 /** Refuses unless the caller may remove the delegate (the row's delete ability). */
 export async function assertCanDeleteDelegationMember(ctx: ApiContext, id: string) {
-	await assertAllowedById(ctx, 'delegationMember', 'delete', id);
+	await assertAllowed(ctx, 'delegationMember', 'delete', id);
 }
 
 /** The role a user is placed into has to be one the conference offers. */

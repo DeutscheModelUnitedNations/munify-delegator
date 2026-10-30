@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { userId } from '#api/services/authHelper';
+import { callerUserId } from '#api/services/authHelper/utils';
 import {
 	checkInvitationEmails,
 	createInvitations,
@@ -92,7 +92,7 @@ schemaBuilder.mutationFields((t) => ({
 			invitations: t.arg({ type: [CreateInvitationInput], required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const callerId = userId(ctx);
+			const callerId = callerUserId(ctx);
 			if (!callerId) {
 				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}
@@ -134,7 +134,7 @@ schemaBuilder.mutationFields((t) => ({
 			sendEmail: t.arg.boolean({ defaultValue: false })
 		},
 		resolve: async (_root, args, ctx) => {
-			const callerId = userId(ctx);
+			const callerId = callerUserId(ctx);
 			if (!callerId) {
 				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 			}

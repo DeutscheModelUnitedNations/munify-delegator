@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import type { TeamRole } from '#api/services/authHelper';
+import type { TeamRole } from '#api/services/authHelper/rules';
 import {
 	getInvitationExpiryDate,
 	hashToken,
@@ -13,7 +13,7 @@ import { m } from '#lib/paraglide/messages';
 import { getLocale } from '#lib/paraglide/runtime';
 import { localeOfUser } from '#api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
 
 /** An invitation as the service needs it, already authorized by the resolver. */
@@ -257,7 +257,7 @@ export async function revokeInvitation(invitation: Invitation) {
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ revokedAt: new Date() })
-		.where(eq(schema.teamMemberInvitation.id, invitation.id));
+		.where(whereRows(schema.teamMemberInvitation, { id: invitation.id }));
 
 	return { success: true, message: null };
 }
@@ -285,7 +285,7 @@ export async function regenerateInvitation(
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ token: hashToken(newToken), expiresAt: newExpiresAt, revokedAt: null })
-		.where(eq(schema.teamMemberInvitation.id, invitation.id));
+		.where(whereRows(schema.teamMemberInvitation, { id: invitation.id }));
 
 	if (sendEmail) {
 		await resendInvitationEmail(invitation, callerId, origin, newToken, newExpiresAt);

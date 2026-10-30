@@ -2,17 +2,17 @@ import { db } from '#api/db/db';
 import type * as schema from '#api/db/schema/index';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertParticipantOfConference,
 	assertTeamPermission,
 	hasTeamPermission,
 	isInOwnDelegation,
+	isSystemAdmin,
 	isTeamMemberOfConference,
 	PAPER_ROLES,
+	participatesIn,
 	PROJECT_MANAGEMENT_ROLES,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerIdOf, grantWhere } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { apiError } from '#api/services/errors/apiError';
@@ -30,29 +30,29 @@ export function registerPaperAbilities() {
 
 	// Authors see and edit their own papers, and may delete one while it is still a draft.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id ? { where: { authorParticipant: { userId: id } } } : undefined;
 	});
 	abilityBuilder.paper.allow('delete').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id ? { where: { authorParticipant: { userId: id }, status: 'DRAFT' } } : undefined;
 	});
 
 	// Reviewers and conference management see the conference's papers and may edit their text (the
 	// reviewer edit mode); verdicts go through reviews.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id ? { where: { conference: paperTeam(id) } } : undefined;
 	});
 
 	// Only project management deletes somebody else's paper.
 	abilityBuilder.paper
 		.allow('delete')
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
 	// Supervisors see the submitted papers of the delegations they supervise.
 	abilityBuilder.paper.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id
 			? {
 					where: {
@@ -101,6 +101,22 @@ export async function assertCanReviewAgendaItemPapers(ctx: ApiContext, agendaIte
 export async function assertCanReadConferencePapers(ctx: ApiContext, conferenceId: string) {
 	if (await canReviewPapers(ctx, conferenceId)) return;
 	await assertParticipantOfConference(ctx, conferenceId);
+}
+
+/**
+ * Refuses unless the caller takes part in the conference (delegate, single participant or
+ * supervisor), or is a system admin.
+ */
+async function assertParticipantOfConference(ctx: ApiContext, conferenceId: string) {
+	const caller = ctx.mustBeLoggedIn().sub;
+	if (isSystemAdmin(ctx)) return;
+	const participant = await db.query.user.findFirst({
+		where: { id: caller, ...participatesIn({ id: conferenceId }) },
+		columns: { id: true }
+	});
+	if (!participant) {
+		throw apiError('FORBIDDEN', m.accessDeniedParticipant());
+	}
 }
 
 /**

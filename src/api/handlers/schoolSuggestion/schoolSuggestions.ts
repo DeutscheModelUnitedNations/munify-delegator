@@ -2,7 +2,8 @@ import { db, schema } from '#api/db/db';
 import type { ReadableSchoolRegistrations } from './schoolSuggestionPermissions';
 import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 /**
  * The people of applied registrations the caller may read (`readableSchoolRegistrations`), grouped
@@ -50,15 +51,17 @@ export async function refreshSchoolSuggestions(
 	}));
 
 	await db.transaction(async (tx) => {
-		const existing = await tx
-			.select({ id: schema.schoolSuggestion.id, key: schema.schoolSuggestion.key })
-			.from(schema.schoolSuggestion)
-			.where(eq(schema.schoolSuggestion.conferenceId, conferenceId));
+		const existing = await tx.query.schoolSuggestion.findMany({
+			where: { conferenceId },
+			columns: { id: true, key: true }
+		});
 
 		const foundKeys = new Set(found.map((suggestion) => suggestion.key));
 		const stale = existing.filter((row) => !foundKeys.has(row.key)).map((row) => row.id);
 		if (stale.length > 0) {
-			await tx.delete(schema.schoolSuggestion).where(inArray(schema.schoolSuggestion.id, stale));
+			await tx
+				.delete(schema.schoolSuggestion)
+				.where(whereRows(schema.schoolSuggestion, { id: { in: stale } }));
 		}
 
 		const idByKey = new Map(existing.map((row) => [row.key, row.id]));
@@ -81,7 +84,7 @@ export async function refreshSchoolSuggestions(
 			await tx
 				.update(schema.schoolSuggestion)
 				.set({ similarity: suggestion.similarity })
-				.where(eq(schema.schoolSuggestion.id, idByKey.get(suggestion.key) ?? ''));
+				.where(whereRows(schema.schoolSuggestion, { id: idByKey.get(suggestion.key) ?? '' }));
 		}
 
 		// The counts change whenever registrations do, so every group's variants are rewritten.
@@ -89,7 +92,7 @@ export async function refreshSchoolSuggestions(
 		if (ids.length > 0) {
 			await tx
 				.delete(schema.schoolSuggestionVariant)
-				.where(inArray(schema.schoolSuggestionVariant.suggestionId, ids));
+				.where(whereRows(schema.schoolSuggestionVariant, { suggestionId: { in: ids } }));
 			await tx.insert(schema.schoolSuggestionVariant).values(
 				found.flatMap((suggestion) =>
 					suggestion.variants.map((variant) => ({

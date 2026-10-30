@@ -29,7 +29,7 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerSchoolAbilities();
 
@@ -175,7 +175,7 @@ schemaBuilder.mutationFields((t) => ({
 			await updateSchool(id, update);
 			schoolPubsub.updated(id);
 			return db.query.school
-				.findFirst(query(await readableById(ctx.abilities.school, id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.school, id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -206,7 +206,7 @@ schemaBuilder.mutationFields((t) => ({
 			schoolSuggestionVariantPubsub.updated();
 
 			return db.query.school
-				.findFirst(query(await readableById(ctx.abilities.school, args.targetId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.school, args.targetId)))
 				.then(assertFindFirstExists);
 		}
 	})

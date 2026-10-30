@@ -3,9 +3,9 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
 	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerSchoolSuggestionAbilities() {
 	abilityBuilder.schoolSuggestion.allow(['read', 'update']).when(systemAdmin);
@@ -14,7 +14,7 @@ export function registerSchoolSuggestionAbilities() {
 	// The cleanup page belongs to the people who manage the participants.
 	abilityBuilder.schoolSuggestion
 		.allow(['read', 'update'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 	abilityBuilder.schoolSuggestionVariant.allow('read').when((ctx) => {
 		const conference = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
 		return conference ? { where: { suggestion: conference } } : undefined;

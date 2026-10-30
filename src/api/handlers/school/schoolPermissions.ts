@@ -5,9 +5,9 @@ import {
 	assertTeamPermission,
 	isSystemAdmin,
 	isTeamMemberOf,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
@@ -40,7 +40,7 @@ function managedSchool(ctx: Context) {
 export function registerSchoolAbilities() {
 	abilityBuilder.school.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.school.allow('read').when(() => ({ columns: PUBLIC_COLUMNS }));
-	abilityBuilder.school.allow(['read', 'update']).when((ctx) => where(managedSchool(ctx)));
+	abilityBuilder.school.allow(['read', 'update']).when((ctx) => grantWhere(managedSchool(ctx)));
 }
 
 /** Refuses unless the caller may edit every school in `ids` (which includes reading them in full). */

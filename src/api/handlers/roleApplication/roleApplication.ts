@@ -9,7 +9,7 @@ import {
 	registerRoleApplicationAbilities
 } from './roleApplicationPermissions';
 import { roleApplicationPubsub } from '#api/pubsub';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerRoleApplicationAbilities();
 
@@ -34,7 +34,7 @@ schemaBuilder.mutationFields((t) => ({
 			roleApplicationPubsub.created();
 
 			return db.query.roleApplication
-				.findFirst(query(await readableById(ctx.abilities.roleApplication, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.roleApplication, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),

@@ -1,5 +1,6 @@
 import { db, schema } from '#api/db/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
@@ -43,7 +44,7 @@ export async function storeSessionCard(
 	await db
 		.update(schema.conferenceParticipant)
 		.set({ accessCardId })
-		.where(eq(schema.conferenceParticipant.id, statusId));
+		.where(whereRows(schema.conferenceParticipant, { id: statusId }));
 }
 
 /**
@@ -85,7 +86,7 @@ export async function renameSession(sessionId: string, conferenceId: string, occ
 	await db
 		.update(schema.attendanceSession)
 		.set({ occasion, showOnCertificate })
-		.where(eq(schema.attendanceSession.id, sessionId));
+		.where(whereRows(schema.attendanceSession, { id: sessionId }));
 }
 
 /**
@@ -101,15 +102,16 @@ export async function renameOccasion(conferenceId: string, from: string, to: str
 	await db
 		.update(schema.attendanceSession)
 		.set({ occasion: to, showOnCertificate })
-		.where(sameOccasion(conferenceId, from));
+		.where(whereRows(schema.attendanceSession, sameOccasion(conferenceId, from)));
 }
 
 /** Sessions of the conference with this occasion, ignoring case and surrounding spaces. */
 function sameOccasion(conferenceId: string, occasion: string) {
-	return and(
-		eq(schema.attendanceSession.conferenceId, conferenceId),
-		sql`lower(btrim(${schema.attendanceSession.occasion})) = lower(btrim(${occasion}))`
-	);
+	return {
+		conferenceId,
+		RAW: (session: typeof schema.attendanceSession) =>
+			sql`lower(btrim(${session.occasion})) = lower(btrim(${occasion}))`
+	};
 }
 
 /**
@@ -117,12 +119,11 @@ function sameOccasion(conferenceId: string, occasion: string) {
  * do, so all sessions of one occasion agree; a new occasion goes by `fallback`.
  */
 export async function certificateFlagOf(conferenceId: string, occasion: string, fallback = true) {
-	const [earlier] = await db
-		.select({ show: schema.attendanceSession.showOnCertificate })
-		.from(schema.attendanceSession)
-		.where(sameOccasion(conferenceId, occasion))
-		.limit(1);
-	return earlier?.show ?? fallback;
+	const earlier = await db.query.attendanceSession.findFirst({
+		where: sameOccasion(conferenceId, occasion),
+		columns: { showOnCertificate: true }
+	});
+	return earlier?.showOnCertificate ?? fallback;
 }
 
 /** Lists every session of the occasion on the certificates, or none of them. */
@@ -134,7 +135,7 @@ export async function setOccasionOnCertificate(
 	await db
 		.update(schema.attendanceSession)
 		.set({ showOnCertificate: show })
-		.where(sameOccasion(conferenceId, occasion));
+		.where(whereRows(schema.attendanceSession, sameOccasion(conferenceId, occasion)));
 }
 
 const occasionRowSchema = z.object({

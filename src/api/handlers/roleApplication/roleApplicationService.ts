@@ -1,6 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { count, eq } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks';
 
 /** Adds an application at the end of the delegation's ranking. Returns the new row. */
@@ -11,7 +12,7 @@ export async function appendRoleApplication(args: { delegationId: string; roleId
 		const [existing] = await tx
 			.select({ value: count() })
 			.from(schema.roleApplication)
-			.where(eq(schema.roleApplication.delegationId, args.delegationId));
+			.where(whereRows(schema.roleApplication, { delegationId: args.delegationId }));
 
 		return tx
 			.insert(schema.roleApplication)
@@ -28,7 +29,9 @@ export async function appendRoleApplication(args: { delegationId: string; roleId
 /** Deletes an application and closes the gap it leaves in the delegation's ranking. */
 export async function removeRoleApplication(application: { id: string; delegationId: string }) {
 	await db.transaction(async (tx) => {
-		await tx.delete(schema.roleApplication).where(eq(schema.roleApplication.id, application.id));
+		await tx
+			.delete(schema.roleApplication)
+			.where(whereRows(schema.roleApplication, { id: application.id }));
 		await normalizeRoleApplicationRanks(application.delegationId, tx);
 	});
 }
@@ -44,14 +47,14 @@ export async function swapRanks(
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: -1 })
-			.where(eq(schema.roleApplication.id, first.id));
+			.where(whereRows(schema.roleApplication, { id: first.id }));
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: first.rank })
-			.where(eq(schema.roleApplication.id, second.id));
+			.where(whereRows(schema.roleApplication, { id: second.id }));
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: second.rank })
-			.where(eq(schema.roleApplication.id, first.id));
+			.where(whereRows(schema.roleApplication, { id: first.id }));
 	});
 }

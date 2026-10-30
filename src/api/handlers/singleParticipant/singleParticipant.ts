@@ -20,7 +20,7 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerSingleParticipantAbilities();
 
@@ -49,7 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
-				.findFirst(query(await readableById(ctx.abilities.singleParticipant, rowId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, rowId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -71,7 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 			singleParticipantPubsub.updated(args.id);
 
 			return db.query.singleParticipant
-				.findFirst(query(await readableById(ctx.abilities.singleParticipant, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -80,7 +80,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'singleParticipant', args.id);
+			await deleteIfAllowed(ctx, 'singleParticipant', args.id);
 			singleParticipantPubsub.removed();
 
 			return true;
@@ -108,7 +108,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.singleParticipant
-				.findFirst(query(await readableById(ctx.abilities.singleParticipant, createdId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, createdId)))
 				.then(assertFindFirstExists);
 		}
 	})

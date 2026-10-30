@@ -3,7 +3,8 @@ import type { ApiContext } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
 	PARTICIPANT_MAX_AGE,
@@ -45,7 +46,7 @@ export async function countSeatedParticipants(conferenceId: string) {
 export async function countOfferedSeats(conferenceId: string) {
 	const [committees, nonStateActors] = await Promise.all([
 		db.query.committee.findMany({
-			where: { conferenceId: conferenceId },
+			where: { conferenceId },
 			columns: { numOfSeatsPerDelegation: true },
 			with: { roles: { columns: { id: true } } }
 		}),
@@ -149,7 +150,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			postalCountry: args.postalCountry,
 			...files
 		})
-		.where(eq(schema.conference.id, args.id))
+		.where(whereRows(schema.conference, { id: args.id }))
 		.returning({ id: schema.conference.id });
 
 	return updated.length > 0;
@@ -343,7 +344,7 @@ export async function setDocumentLayout(
 	const updated = await db
 		.update(schema.conference)
 		.set({ documentLayouts: value })
-		.where(eq(schema.conference.id, conferenceId))
+		.where(whereRows(schema.conference, { id: conferenceId }))
 		.returning({ id: schema.conference.id });
 	return updated.length > 0;
 }

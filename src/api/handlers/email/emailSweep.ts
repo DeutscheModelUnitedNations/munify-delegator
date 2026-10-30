@@ -6,6 +6,7 @@ import { m } from '#lib/paraglide/messages';
 import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
 import { emailLogPubsub } from '#api/pubsub';
 import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import {
 	dueEmails,
 	emailKey,
@@ -109,9 +110,15 @@ async function claim(conferenceId: string, email: DueEmail) {
 				error: null,
 				updatedAt: now
 			},
-			setWhere: sql`(${schema.emailLog.status} = 'FAILED' and ${schema.emailLog.attempts} < ${MAX_ATTEMPTS})
-				or (${schema.emailLog.status} = 'SENDING'
-					and ${schema.emailLog.updatedAt} < ${new Date(now.getTime() - STALE_CLAIM_MINUTES * 60_000)})`
+			setWhere: whereRows(schema.emailLog, {
+				OR: [
+					{ status: 'FAILED', attempts: { lt: MAX_ATTEMPTS } },
+					{
+						status: 'SENDING',
+						updatedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MINUTES * 60_000) }
+					}
+				]
+			})
 		})
 		.returning({ id: schema.emailLog.id });
 	return claimed?.id;
@@ -176,7 +183,7 @@ async function settle(logId: string, error: string | undefined) {
 				? { status: 'SENT', sentAt: new Date(), error: null }
 				: { status: 'FAILED', error }
 		)
-		.where(sql`${schema.emailLog.id} = ${logId}`);
+		.where(whereRows(schema.emailLog, { id: logId }));
 	return error === undefined;
 }
 

@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, isNull } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import {
 	certificateFlagOf,
 	certificateOccasions,
@@ -27,7 +27,7 @@ import {
 } from '#api/pubsub';
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerAttendanceEntryAbilities();
 
@@ -83,7 +83,7 @@ schemaBuilder.mutationFields((t) => ({
 			attendanceSessionPubsub.created();
 
 			return db.query.attendanceSession
-				.findFirst(query(await readableById(ctx.abilities.attendanceSession, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.attendanceSession, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -153,9 +153,7 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.attendanceSession)
 				.set({ endedAt: new Date() })
-				.where(
-					and(eq(schema.attendanceSession.id, args.id), isNull(schema.attendanceSession.endedAt))
-				);
+				.where(whereRows(schema.attendanceSession, { id: args.id, endedAt: { isNull: true } }));
 			attendanceSessionPubsub.updated(args.id);
 			return true;
 		}
@@ -178,7 +176,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			const readEntry = async (id: string) =>
 				db.query.attendanceEntry
-					.findFirst(query(await readableById(ctx.abilities.attendanceEntry, id)))
+					.findFirst(query(await queryAllowed(ctx.abilities.attendanceEntry, id)))
 					.then(assertFindFirstExists);
 
 			const accessCardId = args.accessCardId?.trim();
@@ -216,7 +214,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'attendanceEntry', args.id);
+			await deleteIfAllowed(ctx, 'attendanceEntry', args.id);
 			attendanceEntryPubsub.removed();
 
 			return true;

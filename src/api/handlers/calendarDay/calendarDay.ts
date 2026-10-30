@@ -9,12 +9,7 @@ import {
 	calendarTrackPubsub,
 	placePubsub
 } from '#api/pubsub';
-import {
-	deleteAllowedRow,
-	assertUpdated,
-	allowedRowWhere,
-	readableById
-} from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerCalendarDayAbilities();
 
@@ -60,7 +55,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayPubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await readableById(ctx.abilities.calendarDay, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -74,22 +69,16 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			assertUpdated(
-				await db
-					.update(schema.calendarDay)
-					.set({
-						name: args.name ?? undefined,
-						date: args.date ?? undefined,
-						sortOrder: args.sortOrder ?? undefined
-					})
-					.where(await allowedRowWhere(ctx, 'calendarDay', 'update', args.id))
-					.returning({ id: schema.calendarDay.id })
-			);
+			await updateIfAllowed(ctx, 'calendarDay', args.id, {
+				name: args.name ?? undefined,
+				date: args.date ?? undefined,
+				sortOrder: args.sortOrder ?? undefined
+			});
 
 			calendarDayPubsub.updated(args.id);
 
 			return db.query.calendarDay
-				.findFirst(query(await readableById(ctx.abilities.calendarDay, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -98,7 +87,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'calendarDay', args.id);
+			await deleteIfAllowed(ctx, 'calendarDay', args.id);
 			calendarDayPubsub.removed();
 
 			return true;
@@ -133,7 +122,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await readableById(ctx.abilities.calendarDay, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, created.id)))
 				.then(assertFindFirstExists);
 		}
 	})

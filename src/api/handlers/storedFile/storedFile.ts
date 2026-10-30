@@ -4,7 +4,7 @@ import { storedFilePubsub } from '#api/pubsub';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { downloadUrl, pendingUploadUrl, requestUpload } from './storedFileService';
 import { assertCanUploadFile, registerStoredFileAbilities } from './storedFilePermissions';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerStoredFileAbilities();
 
@@ -55,7 +55,7 @@ schemaBuilder.mutationFields((t) => ({
 			storedFilePubsub.created();
 
 			return db.query.storedFile
-				.findFirst(query(await readableById(ctx.abilities.storedFile, id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.storedFile, id)))
 				.then(assertFindFirstExists);
 		}
 	})

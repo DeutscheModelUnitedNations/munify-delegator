@@ -18,7 +18,7 @@ import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
 import { toLocale } from '#lib/paraglide/runtime';
 import { isAlwaysSent } from '#lib/helpers/emailKinds';
-import { and, eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 registerEmailAbilities();
 
@@ -176,13 +176,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (!text.subject && !text.heading && !text.body) {
 				await db
 					.delete(table)
-					.where(
-						and(
-							eq(table.conferenceId, args.conferenceId),
-							eq(table.kind, args.kind),
-							eq(table.locale, locale)
-						)
-					);
+					.where(whereRows(table, { conferenceId: args.conferenceId, kind: args.kind, locale }));
 			} else {
 				await db
 					.insert(table)
@@ -214,9 +208,7 @@ schemaBuilder.mutationFields((t) => ({
 			const text = ownText(args.text);
 			const table = schema.conferenceEmailFooter;
 			if (!text) {
-				await db
-					.delete(table)
-					.where(and(eq(table.conferenceId, args.conferenceId), eq(table.locale, locale)));
+				await db.delete(table).where(whereRows(table, { conferenceId: args.conferenceId, locale }));
 			} else {
 				await db
 					.insert(table)

@@ -1,11 +1,13 @@
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamPermissionForCalendarDay,
-	calendarConference,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '#api/services/authHelper';
+} from '#api/services/authHelper/rules';
+import {
+	assertTeamPermissionForCalendarDay,
+	calendarConference
+} from '#api/handlers/calendarDay/calendarDayPermissions';
 
 export function registerCalendarTrackAbilities() {
 	// The schedule is for the people with a part in the conference (`calendarConference`).

@@ -5,9 +5,9 @@ import {
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
-	teamConference,
-	userId
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -18,7 +18,7 @@ export function registerAttendanceEntryAbilities() {
 
 	// Users see their own attendance entries.
 	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { conferenceParticipant: { user: { id } } } } : undefined;
 	});
 
@@ -131,7 +131,7 @@ export async function assertCanCreateAttendanceEntry(
 	ctx: ApiContext,
 	args: { userId: string; conferenceId: string; sessionId: string }
 ) {
-	const callerId = userId(ctx);
+	const callerId = callerUserId(ctx);
 	if (!callerId) {
 		throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
 	}

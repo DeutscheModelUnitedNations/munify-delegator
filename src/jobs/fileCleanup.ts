@@ -1,4 +1,5 @@
-import { and, asc, eq, gt, inArray, lt, notExists, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, lt, notExists, sql, type SQL } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { createStorage, type Storage } from '#api/handlers/storedFile/storageClient';
 import { storageConfig } from './config';
 import { db, schema } from './db';
@@ -61,32 +62,29 @@ function unusedSince(cutoff: Date) {
  * catches a reference that landed between the page's query and the lock.
  */
 async function deleteFiles(storage: Storage, unused: SQL | undefined) {
+	const unusedWhere = rawWhere(unused);
 	let deleted = 0;
 	let after: string | undefined;
 	for (;;) {
+		const afterWhere = idAfter(after);
 		const page = await db.transaction(async (tx) => {
 			const locked = await tx
 				.select({ id: file.id })
 				.from(file)
-				.where(and(unused, after === undefined ? undefined : gt(file.id, after)))
+				.where(whereRows(file, { ...unusedWhere, ...afterWhere }))
 				.orderBy(asc(file.id))
 				.limit(BATCH)
 				.for('update');
 			if (locked.length === 0) return undefined;
 			const ids = locked.map((row) => row.id);
 
-			const garbage = await tx
-				.select({ id: file.id, key: file.key })
-				.from(file)
-				.where(and(inArray(file.id, ids), unused));
+			const garbage = await tx.query.storedFile.findMany({
+				columns: { id: true, key: true },
+				where: { id: { in: ids }, ...unusedWhere }
+			});
 			await storage.delete(garbage.map((row) => row.key));
 			if (garbage.length > 0) {
-				await tx.delete(file).where(
-					inArray(
-						file.id,
-						garbage.map((row) => row.id)
-					)
-				);
+				await tx.delete(file).where(whereRows(file, { id: { in: garbage.map((row) => row.id) } }));
 			}
 			return { last: ids[ids.length - 1], deleted: garbage.length };
 		});
@@ -96,8 +94,18 @@ async function deleteFiles(storage: Storage, unused: SQL | undefined) {
 	}
 }
 
+function rawWhere(condition: SQL | undefined) {
+	return condition ? { RAW: condition } : {};
+}
+
+function idAfter(id: string | undefined) {
+	return id === undefined ? {} : { id: { gt: id } };
+}
+
 /** Objects in the bucket no file knows, older than `cutoff`. */
 async function orphanedObjects(storage: Storage, cutoff: Date) {
-	const knownKeys = new Set((await db.select({ key: file.key }).from(file)).map((row) => row.key));
+	const knownKeys = new Set(
+		(await db.query.storedFile.findMany({ columns: { key: true } })).map((row) => row.key)
+	);
 	return orphanedObjectKeys(await storage.list(), knownKeys, cutoff);
 }

@@ -3,9 +3,9 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
 	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 
 /**
  * The automatic mails are participant care's: they switch them on and off, write their texts and
@@ -16,22 +16,22 @@ export function registerEmailAbilities() {
 	abilityBuilder.conferenceEmailSetting.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.conferenceEmailSetting
 		.allow('read')
-		.when((ctx) => where(isTeamMemberOfConference(ctx)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
 
 	abilityBuilder.conferenceEmailText.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.conferenceEmailText
 		.allow('read')
-		.when((ctx) => where(isTeamMemberOfConference(ctx)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
 
 	abilityBuilder.conferenceEmailFooter.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.conferenceEmailFooter
 		.allow('read')
-		.when((ctx) => where(isTeamMemberOfConference(ctx)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
 
 	abilityBuilder.emailLog.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.emailLog
 		.allow('read')
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /**

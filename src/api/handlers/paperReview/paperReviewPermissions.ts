@@ -1,11 +1,7 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import {
-	PAPER_ROLES,
-	systemAdmin,
-	teamConference,
-	userId
-} from '#api/services/authHelper';
+import { PAPER_ROLES, systemAdmin, teamConference } from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -14,14 +10,14 @@ export function registerPaperReviewAbilities() {
 	abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? { where: { paperVersion: { paper: { authorParticipant: { userId: id } } } } }
 			: undefined;
 	});
 
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

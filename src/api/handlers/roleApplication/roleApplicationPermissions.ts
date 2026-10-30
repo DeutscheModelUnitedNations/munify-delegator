@@ -5,10 +5,9 @@ import {
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
@@ -18,12 +17,12 @@ export function registerRoleApplicationAbilities() {
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Delegation members see their own delegation's applications.
-	abilityBuilder.roleApplication.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
+	abilityBuilder.roleApplication.allow('read').when((ctx) => grantWhere(isInOwnDelegation(ctx)));
 
 	// Only the head delegate may change them, and only until the delegation has applied - the same
 	// line the delegation's own update ability draws.
 	abilityBuilder.roleApplication.allow(['update', 'delete']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -43,7 +42,7 @@ export function registerRoleApplicationAbilities() {
 
 	// Supervisors see the applications of the delegations they supervise.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? { where: { delegation: { members: { supervisors: { user: { id } } } } } }
 			: undefined;

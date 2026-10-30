@@ -1,5 +1,6 @@
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import { systemAdmin, userId, assertAllowedById } from '#api/services/authHelper';
+import { systemAdmin } from '#api/services/authHelper/rules';
+import { callerUserId, assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 
 export function registerReviewerSnippetAbilities() {
@@ -7,12 +8,12 @@ export function registerReviewerSnippetAbilities() {
 	abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { userId: id } } : undefined;
 	});
 }
 
 /** Refuses unless the snippet exists and the caller may update it: it is their own. */
 export async function assertCanUpdateReviewerSnippet(ctx: ApiContext, id: string) {
-	await assertAllowedById(ctx, 'reviewerSnippet', 'update', id, { message: m.snippetNotFound });
+	await assertAllowed(ctx, 'reviewerSnippet', 'update', id, { message: m.snippetNotFound });
 }

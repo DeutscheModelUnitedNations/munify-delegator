@@ -9,7 +9,7 @@ import {
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '#api/pubsub';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerCalendarEntryAbilities();
 
@@ -57,7 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarEntryPubsub.created();
 
 			return db.query.calendarEntry
-				.findFirst(query(await readableById(ctx.abilities.calendarEntry, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.calendarEntry, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -105,7 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 			calendarEntryPubsub.updated(args.id);
 
 			return db.query.calendarEntry
-				.findFirst(query(await readableById(ctx.abilities.calendarEntry, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.calendarEntry, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -114,7 +114,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'calendarEntry', args.id);
+			await deleteIfAllowed(ctx, 'calendarEntry', args.id);
 			calendarEntryPubsub.removed();
 
 			return true;

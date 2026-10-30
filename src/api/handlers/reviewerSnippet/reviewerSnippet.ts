@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import {
 	assertCanUpdateReviewerSnippet,
 	registerReviewerSnippetAbilities
@@ -9,7 +9,7 @@ import {
 import { reviewerSnippetPubsub } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerReviewerSnippetAbilities();
 
@@ -50,7 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			reviewerSnippetPubsub.created();
 
 			return db.query.reviewerSnippet
-				.findFirst(query(await readableById(ctx.abilities.reviewerSnippet, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.reviewerSnippet, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -67,12 +67,12 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.reviewerSnippet)
 				.set({ name: args.name, content: args.content })
-				.where(eq(schema.reviewerSnippet.id, args.id));
+				.where(whereRows(schema.reviewerSnippet, { id: args.id }));
 
 			reviewerSnippetPubsub.updated(args.id);
 
 			return db.query.reviewerSnippet
-				.findFirst(query(await readableById(ctx.abilities.reviewerSnippet, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.reviewerSnippet, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -81,7 +81,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'reviewerSnippet', args.id, m.snippetNotFound);
+			await deleteIfAllowed(ctx, 'reviewerSnippet', args.id, { message: m.snippetNotFound });
 			reviewerSnippetPubsub.removed();
 
 			return true;

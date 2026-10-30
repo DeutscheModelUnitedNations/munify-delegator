@@ -2,7 +2,7 @@ import { db, schema } from '#api/db/db';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { resolutionPubsub } from '#api/pubsub';
 import {
@@ -10,7 +10,7 @@ import {
 	assertCanUpdateResolution,
 	registerResolutionAbilities
 } from './resolutionPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerResolutionAbilities();
 
@@ -51,7 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.created();
 
 			return db.query.resolution
-				.findFirst(query(await readableById(ctx.abilities.resolution, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.resolution, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -74,12 +74,12 @@ schemaBuilder.mutationFields((t) => ({
 					title: args.title?.trim() || undefined,
 					committeeId: args.committeeId
 				})
-				.where(eq(schema.resolution.id, args.id));
+				.where(whereRows(schema.resolution, { id: args.id }));
 
 			resolutionPubsub.updated(args.id);
 
 			return db.query.resolution
-				.findFirst(query(await readableById(ctx.abilities.resolution, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.resolution, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -88,7 +88,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'resolution', args.id);
+			await deleteIfAllowed(ctx, 'resolution', args.id);
 			resolutionPubsub.removed();
 			return true;
 		}

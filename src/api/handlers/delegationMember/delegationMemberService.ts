@@ -14,7 +14,7 @@ import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplica
 import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors/apiError';
 import { codeNotFound } from '#api/services/errors/codeNotFound';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
@@ -77,7 +77,7 @@ export async function removeDelegationMember(id: string) {
 	const delegationId = await db.transaction(async (tx) => {
 		const [deleted] = await tx
 			.delete(schema.delegationMember)
-			.where(eq(schema.delegationMember.id, id))
+			.where(whereRows(schema.delegationMember, { id }))
 			.returning({
 				id: schema.delegationMember.id,
 				delegationId: schema.delegationMember.delegationId,
@@ -94,14 +94,16 @@ export async function removeDelegationMember(id: string) {
 			});
 
 			if (!successor) {
-				await tx.delete(schema.delegation).where(eq(schema.delegation.id, deleted.delegationId));
+				await tx
+					.delete(schema.delegation)
+					.where(whereRows(schema.delegation, { id: deleted.delegationId }));
 				return undefined;
 			}
 
 			await tx
 				.update(schema.delegationMember)
 				.set({ isHeadDelegate: true })
-				.where(eq(schema.delegationMember.id, successor.id));
+				.where(whereRows(schema.delegationMember, { id: successor.id }));
 		}
 
 		// Only meaningful while the delegation still exists.
@@ -135,13 +137,13 @@ async function clearParticipation(tx: Transaction, conferenceId: string, userId:
 
 	const removedMember = await tx
 		.delete(schema.delegationMember)
-		.where(eq(schema.delegationMember.conferenceParticipantId, participant.id))
+		.where(whereRows(schema.delegationMember, { conferenceParticipantId: participant.id }))
 		.returning({ id: schema.delegationMember.id });
 	if (removedMember.length > 0) return;
 
 	const removedSingle = await tx
 		.delete(schema.singleParticipant)
-		.where(eq(schema.singleParticipant.conferenceParticipantId, participant.id))
+		.where(whereRows(schema.singleParticipant, { conferenceParticipantId: participant.id }))
 		.returning({ id: schema.singleParticipant.id });
 	if (removedSingle.length === 0) {
 		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
@@ -181,7 +183,7 @@ async function prepareAssignedDelegation(
 		await tx
 			.update(schema.delegation)
 			.set(ASSIGNED_DELEGATION_INFOS)
-			.where(eq(schema.delegation.id, existing.id));
+			.where(whereRows(schema.delegation, { id: existing.id }));
 	}
 	return existing;
 }
@@ -251,14 +253,14 @@ export async function moveMemberToCommittee({ member, committee }: CommitteeMove
 				await tx
 					.update(schema.delegationMember)
 					.set({ assignedCommitteeId: member.assignedCommitteeId ?? null })
-					.where(eq(schema.delegationMember.id, displaced.id));
+					.where(whereRows(schema.delegationMember, { id: displaced.id }));
 			}
 		}
 
 		await tx
 			.update(schema.delegationMember)
 			.set({ assignedCommitteeId: committee.id })
-			.where(eq(schema.delegationMember.id, member.id));
+			.where(whereRows(schema.delegationMember, { id: member.id }));
 	});
 }
 
@@ -308,7 +310,7 @@ export async function assignCommittees(
 			await tx
 				.update(schema.delegationMember)
 				.set({ assignedCommitteeId: assignment.committeeId ?? null })
-				.where(eq(schema.delegationMember.id, assignment.delegationMemberId));
+				.where(whereRows(schema.delegationMember, { id: assignment.delegationMemberId }));
 		}
 
 		// Each committee seats a fixed number of every delegation; the assignment page checks

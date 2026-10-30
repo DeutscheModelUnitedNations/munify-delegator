@@ -1,10 +1,6 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import {
-	assertTeamPermission,
-	isCaredForUser,
-	systemAdmin
-} from '#api/services/authHelper';
+import { assertTeamPermission, isCaredForUser, systemAdmin } from '#api/services/authHelper/rules';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 

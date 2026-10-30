@@ -5,12 +5,11 @@ import {
 	isTeamMemberOfConference,
 	readableConference,
 	SEAT_PLANNING_ROLES,
-	systemAdmin,
-	where,
-	assertAllowedById
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere, assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceRoleAbilities() {
 	// The roles a conference offers are part of its seat overview: readable wherever the conference
@@ -26,7 +25,7 @@ export function registerConferenceRoleAbilities() {
 	// directly.
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when((ctx) => {
 		const team = isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES);
-		return where(
+		return grantWhere(
 			team && { ...team, kind: { in: ['NON_STATE_ACTOR' as const, 'CUSTOM' as const] } }
 		);
 	});
@@ -62,7 +61,7 @@ export async function assertCanDeleteConferenceRole(
 	id: string,
 	kind: PlannedRoleKind
 ) {
-	await assertAllowedById(ctx, 'conferenceRole', 'delete', id, {
-		extra: eq(schema.conferenceRole.kind, kind)
+	await assertAllowed(ctx, 'conferenceRole', 'delete', id, {
+		extra: whereRows(schema.conferenceRole, { kind })
 	});
 }

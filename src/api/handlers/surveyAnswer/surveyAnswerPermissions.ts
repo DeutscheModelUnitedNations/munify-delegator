@@ -2,13 +2,13 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamPermissionForSurveyQuestion,
 	hasTeamPermission,
 	isTeamMemberOfConference,
 	participantIdsOf,
-	systemAdmin,
-	userId
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
+import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -19,11 +19,11 @@ export function registerSurveyAnswerAbilities() {
 	// Users read and update their own answers, and take one back until the question's deadline,
 	// after which answering is closed for them too.
 	abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { participant: { userId: id } } } : undefined;
 	});
 	abilityBuilder.surveyAnswer.allow('delete').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

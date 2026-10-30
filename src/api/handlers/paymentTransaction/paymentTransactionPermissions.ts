@@ -5,10 +5,9 @@ import {
 	hasTeamPermission,
 	isTeamMemberOfConference,
 	participantIdsOf,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
@@ -20,13 +19,13 @@ export function registerPaymentTransactionAbilities() {
 	// Only project management and participant care of the conference, as in the CASL rules.
 	abilityBuilder.paymentTransaction
 		.allow(['read', 'update'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
 	// its creator, whose reference is the whole point of the payment pages. The legacy resolver
 	// returned it without a read check, so this is what keeps that working through the ability layer.
 	abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { payer: { userId: id } } } : undefined;
 	});
 }

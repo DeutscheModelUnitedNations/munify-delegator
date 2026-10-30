@@ -3,11 +3,11 @@ import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
-	calendarConference,
 	isTeamMemberOfConference,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
+import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -21,7 +21,7 @@ export function registerPlaceAbilities() {
 
 	abilityBuilder.place
 		.allow(['update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /** Refuses unless the caller may add places to the conference and store the site plan given. */

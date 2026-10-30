@@ -1,5 +1,5 @@
 import { schema, type Transaction } from '#api/db/db';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 /**
  * Renumbers the role applications of a delegation to a gapless 1..n sequence, keeping their order.
@@ -23,12 +23,12 @@ export async function normalizeRoleApplicationRanks(delegationId: string, tx: Tr
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: -(index + 1) })
-			.where(eq(schema.roleApplication.id, application.id));
+			.where(whereRows(schema.roleApplication, { id: application.id }));
 	}
 	for (const [index, application] of applications.entries()) {
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: index + 1 })
-			.where(eq(schema.roleApplication.id, application.id));
+			.where(whereRows(schema.roleApplication, { id: application.id }));
 	}
 }

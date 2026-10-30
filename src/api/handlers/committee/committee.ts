@@ -22,7 +22,7 @@ import {
 	setCommitteeRegionalBaseline,
 	updateCommittee
 } from './committeeService';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerCommitteeAbilities();
 
@@ -47,7 +47,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.created();
 
 			return db.query.committee
-				.findFirst(query(await readableById(ctx.abilities.committee, createdId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committee, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -69,7 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (applicationsTidied) roleApplicationPubsub.removed();
 
 			return db.query.committee
-				.findFirst(query(await readableById(ctx.abilities.committee, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -123,7 +123,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(query(await readableById(ctx.abilities.committee, args.committeeId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.committeeId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -150,7 +150,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(query(await readableById(ctx.abilities.committee, args.committeeId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.committeeId)))
 				.then(assertFindFirstExists);
 		}
 	})

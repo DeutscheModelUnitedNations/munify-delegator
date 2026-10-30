@@ -2,12 +2,14 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamPermissionForCalendarDay,
-	calendarConference,
 	isTeamMemberOfConference,
-	systemAdmin,
-	userId
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerIdOf } from '#api/services/authHelper/utils';
+import {
+	assertTeamPermissionForCalendarDay,
+	calendarConference
+} from '#api/handlers/calendarDay/calendarDayPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
@@ -27,7 +29,7 @@ export function registerCalendarEntryAbilities() {
 
 	// ...one with options only for those of them who picked one of them...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		const conference = calendarConference(ctx);
 		return id && conference
 			? {

@@ -9,7 +9,7 @@ import {
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 /** Names and abbreviations are unique per conference; the database says so as a 23505. */
 async function withUniqueNameCheck<T>(operation: Promise<T>) {
@@ -66,7 +66,10 @@ export async function updateNonStateActor(
 
 	await db.transaction(async (tx) => {
 		await withUniqueNameCheck(
-			tx.update(schema.conferenceRole).set(data).where(eq(schema.conferenceRole.id, before.id))
+			tx
+				.update(schema.conferenceRole)
+				.set(data)
+				.where(whereRows(schema.conferenceRole, { id: before.id }))
 		);
 		if (shrunk) await tidyRoleApplicationsForRoles(before.conferenceId, [before.id], tx);
 	});
@@ -93,13 +96,15 @@ export async function deleteNonStateActor(id: string) {
 		// applications for it go with it, closing the gaps they leave in the rankings
 		const applications = await tx
 			.delete(schema.roleApplication)
-			.where(eq(schema.roleApplication.roleId, existing.id))
+			.where(whereRows(schema.roleApplication, { roleId: existing.id }))
 			.returning({ delegationId: schema.roleApplication.delegationId });
 		for (const delegationId of new Set(applications.map((a) => a.delegationId))) {
 			await normalizeRoleApplicationRanks(delegationId, tx);
 		}
 
-		await tx.delete(schema.conferenceRole).where(eq(schema.conferenceRole.id, existing.id));
+		await tx
+			.delete(schema.conferenceRole)
+			.where(whereRows(schema.conferenceRole, { id: existing.id }));
 	});
 }
 
@@ -146,7 +151,7 @@ export async function updateCustomRole(
 		if (data.seatAmount < 1) throw apiError('INVALID_INPUT', m.customRoleSeatsRange());
 		const holders = await db.$count(
 			schema.singleParticipant,
-			eq(schema.singleParticipant.assignedRoleId, id)
+			whereRows(schema.singleParticipant, { assignedRoleId: id })
 		);
 		if (data.seatAmount < holders) {
 			throw apiError('CONFLICT', m.customRoleSeatsBelowAssigned({ assigned: holders }));
@@ -161,7 +166,7 @@ export async function updateCustomRole(
 				fontAwesomeIcon: data.fontAwesomeIcon,
 				seatAmount: data.seatAmount ?? undefined
 			})
-			.where(eq(schema.conferenceRole.id, id))
+			.where(whereRows(schema.conferenceRole, { id }))
 	);
 }
 
@@ -169,8 +174,8 @@ export async function updateCustomRole(
 export async function deleteCustomRole(id: string) {
 	const holders = await db.$count(
 		schema.singleParticipant,
-		eq(schema.singleParticipant.assignedRoleId, id)
+		whereRows(schema.singleParticipant, { assignedRoleId: id })
 	);
 	if (holders > 0) throw apiError('CONFLICT', m.customRoleStillAssigned());
-	await db.delete(schema.conferenceRole).where(eq(schema.conferenceRole.id, id));
+	await db.delete(schema.conferenceRole).where(whereRows(schema.conferenceRole, { id }));
 }

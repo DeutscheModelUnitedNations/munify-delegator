@@ -21,7 +21,7 @@ import {
 	assertCanSetParticipantSchool
 } from './conferenceParticipantPermissions';
 import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceParticipantAbilities();
 
@@ -90,7 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.conferenceParticipant
-				.findFirst(query(await readableById(ctx.abilities.conferenceParticipant, statusId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conferenceParticipant, statusId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -118,7 +118,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceParticipant
-				.findFirst(query(await readableById(ctx.abilities.conferenceParticipant, id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conferenceParticipant, id)))
 				.then(assertFindFirstExists);
 		}
 	}),

@@ -13,12 +13,8 @@ import {
 } from '#lib/assignment/state';
 import { ASSIGNMENT_RESULT_KINDS } from '#lib/helpers/emailKinds';
 import { m } from '#lib/paraglide/messages';
-import { eq } from 'drizzle-orm';
-import {
-	enabledKinds,
-	setEmailKindsEnabled,
-	skipOpenEmails
-} from '#api/handlers/email/emailSweep';
+import { whereRows } from '#api/db/whereRows';
+import { enabledKinds, setEmailKindsEnabled, skipOpenEmails } from '#api/handlers/email/emailSweep';
 import { clearDraft, draftDelegationTarget, loadAssignmentInput } from './assignmentDraft';
 import { loadExperiencedIds } from './assignmentExperience';
 import { matchSingles } from './matching';
@@ -83,7 +79,7 @@ export async function draftUnitTarget(
 	await tx
 		.update(schema.assignmentUnit)
 		.set({ roleId: target.roleId })
-		.where(eq(schema.assignmentUnit.id, unitId));
+		.where(whereRows(schema.assignmentUnit, { id: unitId }));
 }
 
 /**
@@ -108,7 +104,7 @@ export async function splitDelegation(
 	await db.transaction(async (tx) => {
 		await tx
 			.delete(schema.assignmentUnit)
-			.where(eq(schema.assignmentUnit.sourceDelegationId, delegation.id));
+			.where(whereRows(schema.assignmentUnit, { sourceDelegationId: delegation.id }));
 		for (const part of parts) {
 			const [unit] = await tx
 				.insert(schema.assignmentUnit)
@@ -128,7 +124,7 @@ export async function splitDelegation(
 export async function undoDelegationSplit(delegationId: string) {
 	await db
 		.delete(schema.assignmentUnit)
-		.where(eq(schema.assignmentUnit.sourceDelegationId, delegationId));
+		.where(whereRows(schema.assignmentUnit, { sourceDelegationId: delegationId }));
 }
 
 /** Plans to turn a single participant into a delegation of their own, to give it a nation. */
@@ -145,7 +141,7 @@ export async function convertSingleParticipant(participant: { id: string; confer
 export async function revertSingleParticipantConversion(singleParticipantId: string) {
 	await db
 		.delete(schema.assignmentUnit)
-		.where(eq(schema.assignmentUnit.sourceSingleParticipantId, singleParticipantId));
+		.where(whereRows(schema.assignmentUnit, { sourceSingleParticipantId: singleParticipantId }));
 }
 
 /** Plans a custom role for a single participant, or (without one) none. */
@@ -157,7 +153,7 @@ export async function planSingleParticipantRole(
 	if (roleId === participant.assignedRoleId) {
 		await tx
 			.delete(schema.assignmentSingleRole)
-			.where(eq(schema.assignmentSingleRole.singleParticipantId, participant.id));
+			.where(whereRows(schema.assignmentSingleRole, { singleParticipantId: participant.id }));
 	} else {
 		await tx
 			.insert(schema.assignmentSingleRole)
@@ -339,5 +335,5 @@ export async function setAssignmentReleased(
 			assignmentReleased: released,
 			assignmentReleasedAt: released ? new Date() : null
 		})
-		.where(eq(schema.conference.id, conferenceId));
+		.where(whereRows(schema.conference, { id: conferenceId }));
 }

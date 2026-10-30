@@ -2,11 +2,7 @@ import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { nonStateActorUpdateData } from '#api/services/seatPlanning';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	conferenceRolePubsub,
-	roleApplicationPubsub,
-	singleParticipantPubsub
-} from '#api/pubsub';
+import { conferenceRolePubsub, roleApplicationPubsub, singleParticipantPubsub } from '#api/pubsub';
 import {
 	assertCanCreateConferenceRole,
 	assertCanDeleteConferenceRole,
@@ -21,7 +17,7 @@ import {
 	updateCustomRole,
 	updateNonStateActor
 } from './conferenceRoleService';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceRoleAbilities();
 
@@ -40,7 +36,7 @@ async function createRole<A extends { conferenceId: string }>(
 	await assertCanCreateConferenceRole(ctx, args.conferenceId);
 	const createdId = await create(args);
 	conferenceRolePubsub.created();
-	return readableById(ctx.abilities.conferenceRole, createdId);
+	return queryAllowed(ctx.abilities.conferenceRole, createdId);
 }
 
 schemaBuilder.mutationFields((t) => {
@@ -85,7 +81,7 @@ schemaBuilder.mutationFields((t) => {
 				if (applicationsTidied) roleApplicationPubsub.removed();
 
 				return db.query.conferenceRole
-					.findFirst(query(await readableById(ctx.abilities.conferenceRole, args.id)))
+					.findFirst(query(await queryAllowed(ctx.abilities.conferenceRole, args.id)))
 					.then(assertFindFirstExists);
 			}
 		}),
@@ -130,7 +126,7 @@ schemaBuilder.mutationFields((t) => {
 				conferenceRolePubsub.updated(id);
 
 				return db.query.conferenceRole
-					.findFirst(query(await readableById(ctx.abilities.conferenceRole, id)))
+					.findFirst(query(await queryAllowed(ctx.abilities.conferenceRole, id)))
 					.then(assertFindFirstExists);
 			}
 		}),

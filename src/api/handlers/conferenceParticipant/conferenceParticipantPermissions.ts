@@ -3,35 +3,33 @@ import { apiError } from '#api/services/errors/apiError';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
-	assertParticipantOrTeamMemberIn,
 	isOwnUser,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where,
-	assertAllowedById
-} from '#api/services/authHelper';
+	participatesIn,
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerIdOf, grantWhere, assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceParticipantAbilities() {
 	// Ported from abilities/entities/conferenceParticipant.ts
 	abilityBuilder.conferenceParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Users see their own status.
-	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => where(isOwnUser(ctx)));
+	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => grantWhere(isOwnUser(ctx)));
 
 	// Supervisors see the status of the people they supervise. Supervision links this very row, so
 	// it is the conference they supervise them in.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id ? { where: { supervisors: { user: { id } } } } : undefined;
 	});
 
 	// Delegation members see the status of their co-delegates, in the conference they share.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id
 			? { where: { delegationMember: { delegation: { members: { user: { id } } } } } }
 			: undefined;
@@ -40,12 +38,12 @@ export function registerConferenceParticipantAbilities() {
 	// Participant care and project management manage their conference's statuses.
 	abilityBuilder.conferenceParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /** Refuses unless the caller's `update` ability reaches the status row `id`. */
 export async function assertCanUpdateParticipantStatus(ctx: ApiContext, id: string) {
-	await assertAllowedById(ctx, 'conferenceParticipant', 'update', id);
+	await assertAllowed(ctx, 'conferenceParticipant', 'update', id);
 }
 
 /**
@@ -61,12 +59,29 @@ export async function assertCanUpsertParticipantStatus(
 ) {
 	ctx.mustBeLoggedIn();
 	if (args.id) {
-		await assertAllowedById(ctx, 'conferenceParticipant', 'update', args.id, {
-			extra: eq(schema.conferenceParticipant.conferenceId, args.conferenceId)
+		await assertAllowed(ctx, 'conferenceParticipant', 'update', args.id, {
+			extra: whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId })
 		});
 		return;
 	}
 	await assertTeamPermission(ctx, args.conferenceId, 'manageParticipants');
+}
+
+/**
+ * Refuses unless the user is a participant of the conference (`participatesIn`) or on its team.
+ * Attendance is narrower: it records participants only (`attendanceEntryPermissions.ts`).
+ */
+async function assertParticipantOrTeamMemberIn(conferenceId: string, userId: string) {
+	const user = await db.query.user.findFirst({
+		where: {
+			id: userId,
+			OR: [participatesIn({ id: conferenceId }), { teamMember: { conferenceId } }]
+		},
+		columns: { id: true }
+	});
+	if (!user) {
+		throw apiError('INVALID_INPUT', m.userNotInConference());
+	}
 }
 
 /**
@@ -97,8 +112,8 @@ export async function assertCanSetParticipantSchool(
 	args: { conferenceId: string; id?: string | null }
 ) {
 	if (args.id) {
-		await assertAllowedById(ctx, 'conferenceParticipant', 'update', args.id, {
-			extra: eq(schema.conferenceParticipant.conferenceId, args.conferenceId)
+		await assertAllowed(ctx, 'conferenceParticipant', 'update', args.id, {
+			extra: whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId })
 		});
 		return args.id;
 	}

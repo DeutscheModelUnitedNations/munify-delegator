@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { whereRows } from '#api/db/whereRows';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
@@ -187,7 +188,7 @@ export async function updateIdentity(
 			familyName: args.familyName ?? undefined,
 			birthday: args.birthday ?? undefined
 		})
-		.where(eq(schema.user.id, id));
+		.where(whereRows(schema.user, { id }));
 }
 
 /**

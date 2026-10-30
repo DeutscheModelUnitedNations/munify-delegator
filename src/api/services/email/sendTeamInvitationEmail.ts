@@ -1,7 +1,7 @@
 import { db } from '#api/db/db';
 import { emailService } from './emailService';
 import { renderEmail, TeamInvitationEmail, TeamWelcomeEmail } from './templates/index';
-import type { TeamRole } from '#api/services/authHelper';
+import type { TeamRole } from '#api/services/authHelper/rules';
 import { translateTeamRole } from '#lib/utils/enumTranslations';
 import { m } from '#lib/paraglide/messages';
 import type { Locale } from '#lib/paraglide/runtime';

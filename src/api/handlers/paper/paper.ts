@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
-import { userId, deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { callerUserId, deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 import {
 	createPaper,
 	findNextPaperToReview,
@@ -78,7 +78,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await readableById(ctx.abilities.paper, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.paper, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -99,7 +99,7 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await readableById(ctx.abilities.paper, args.paperId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.paper, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -108,7 +108,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'paper', args.id);
+			await deleteIfAllowed(ctx, 'paper', args.id);
 			paperPubsub.removed();
 
 			return true;
@@ -170,7 +170,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(query(await readableById(ctx.abilities.paper, args.paperId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.paper, args.paperId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -237,7 +237,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [ReviewerStat],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const callerId = userId(ctx);
+			const callerId = callerUserId(ctx);
 			await assertCanReviewPapers(ctx, args.conferenceId);
 
 			return reviewerLeaderboard(args.conferenceId, callerId);
@@ -250,7 +250,7 @@ schemaBuilder.queryFields((t) => ({
 		nullable: true,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const callerId = userId(ctx);
+			const callerId = callerUserId(ctx);
 			if (!callerId) return null;
 
 			if (!(await canReviewPapers(ctx, args.conferenceId))) return null;

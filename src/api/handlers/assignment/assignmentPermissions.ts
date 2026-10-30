@@ -8,9 +8,9 @@ import {
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
 	systemAdmin,
-	teamConference,
-	where
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors/apiError';
 import type { reviewRow } from './review';
 import type { Target } from '#lib/assignment/state';
@@ -23,7 +23,7 @@ import { assertCanManageEmails } from '#api/handlers/email/emailPermissions';
  * who gets which role here, and nobody else sees any of it.
  */
 const assignmentTeam = (ctx: Parameters<typeof isTeamMemberOfConference>[0]) =>
-	where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES));
+	grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES));
 
 /** The same for a planned single role, which reaches its conference through the participant. */
 const singleRoleAssignmentTeam = (ctx: Parameters<typeof isTeamMemberOf>[0]) => {

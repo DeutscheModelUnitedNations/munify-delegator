@@ -1,3 +1,4 @@
+import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
@@ -5,8 +6,12 @@ import {
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
+import type { TeamPermission } from '#lib/helpers/teamRoles';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
 
 export function registerSurveyQuestionAbilities() {
 	// Ported from abilities/entities/surveyQuestion.ts
@@ -23,10 +28,28 @@ export function registerSurveyQuestionAbilities() {
 	// Creation is checked by `assertCanCreateSurveyQuestion`, as it was in the resolver under CASL.
 	abilityBuilder.surveyQuestion
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /** Refuses unless the caller may add questions to the conference's surveys. */
 export async function assertCanCreateSurveyQuestion(ctx: ApiContext, conferenceId: string) {
 	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+}
+
+/**
+ * Refuses unless the survey question exists in a conference where the caller holds `permission`,
+ * for what goes under a question (options, answers given for others).
+ */
+export async function assertTeamPermissionForSurveyQuestion(
+	ctx: ApiContext,
+	questionId: string,
+	permission: TeamPermission = 'manageParticipants'
+) {
+	const question = await db.query.surveyQuestion.findFirst({
+		where: { id: questionId, conference: teamConference(ctx, permission) },
+		columns: { conferenceId: true }
+	});
+	if (!question) {
+		throw apiError('NOT_FOUND', m.surveyQuestionNotFound());
+	}
 }

@@ -1,13 +1,13 @@
 import { type Transaction, db, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 /** Makes `trackIds` the tracks of an entry. */
 async function setTracks(tx: Transaction, entryId: string, trackIds: readonly string[]) {
 	const ids = [...new Set(trackIds)];
 	await tx
 		.delete(schema.calendarEntryToCalendarTrack)
-		.where(eq(schema.calendarEntryToCalendarTrack.a, entryId));
+		.where(whereRows(schema.calendarEntryToCalendarTrack, { a: entryId }));
 	if (ids.length > 0) {
 		await tx
 			.insert(schema.calendarEntryToCalendarTrack)
@@ -20,7 +20,7 @@ async function setSurveyOptions(tx: Transaction, entryId: string, optionIds: rea
 	const ids = [...new Set(optionIds)];
 	await tx
 		.delete(schema.calendarEntryToSurveyOption)
-		.where(eq(schema.calendarEntryToSurveyOption.a, entryId));
+		.where(whereRows(schema.calendarEntryToSurveyOption, { a: entryId }));
 	if (ids.length > 0) {
 		await tx
 			.insert(schema.calendarEntryToSurveyOption)
@@ -60,7 +60,10 @@ export async function updateCalendarEntry(
 	surveyOptionIds: readonly string[] | null | undefined
 ) {
 	await db.transaction(async (tx) => {
-		await tx.update(schema.calendarEntry).set(values).where(eq(schema.calendarEntry.id, id));
+		await tx
+			.update(schema.calendarEntry)
+			.set(values)
+			.where(whereRows(schema.calendarEntry, { id }));
 		if (trackIds) await setTracks(tx, id, trackIds);
 		if (surveyOptionIds) await setSurveyOptions(tx, id, surveyOptionIds);
 	});

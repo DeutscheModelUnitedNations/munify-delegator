@@ -2,14 +2,13 @@ import { apiError } from '#api/services/errors/apiError';
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	anyOf,
 	assertTeamPermission,
-	calendarConference,
-	conferencesOfCaller,
+	hasPartIn,
 	readableConference,
-	systemAdmin,
-	userId
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerIdOf } from '#api/services/authHelper/utils';
+import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { m } from '#lib/paraglide/messages';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 import { objectKey } from './storageClient';
@@ -35,7 +34,7 @@ export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(systemAdmin);
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id ? { where: { uploadedById: id } } : undefined;
 	});
 
@@ -50,7 +49,7 @@ export function registerStoredFileAbilities() {
 	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = anyOf(conferencesOfCaller(ctx));
+		const conference = hasPartIn(ctx);
 		return conference
 			? {
 					where: {
@@ -75,7 +74,7 @@ export function registerStoredFileAbilities() {
 	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = anyOf(conferencesOfCaller(ctx));
+		const conference = hasPartIn(ctx);
 		return conference
 			? { where: { resolutionOf: { conference } }, columns: WITHOUT_UPLOADER }
 			: undefined;

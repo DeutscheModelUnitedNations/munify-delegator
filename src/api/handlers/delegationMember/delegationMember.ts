@@ -26,7 +26,7 @@ import {
 	singleParticipantPubsub,
 	waitingListEntryPubsub
 } from '#api/pubsub';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerDelegationMemberAbilities();
 
@@ -57,7 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegationMember
-				.findFirst(query(await readableById(ctx.abilities.delegationMember, createdId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -120,7 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
 
 			return db.query.delegationMember
-				.findFirst(query(await readableById(ctx.abilities.delegationMember, memberId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, memberId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -146,7 +146,7 @@ schemaBuilder.mutationFields((t) => ({
 			delegationMemberPubsub.updated(args.id);
 
 			return db.query.delegationMember
-				.findFirst(query(await readableById(ctx.abilities.delegationMember, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, args.id)))
 				.then(assertFindFirstExists);
 		}
 	})

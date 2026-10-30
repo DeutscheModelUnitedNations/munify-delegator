@@ -1,13 +1,13 @@
 import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	assertAllowedById,
 	isTeamMemberOfConference,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
 	teamConference
-} from '#api/services/authHelper';
+} from '#api/services/authHelper/rules';
+import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAgendaItemAbilities() {
@@ -42,7 +42,7 @@ export async function assertCanCreateAgendaItem(ctx: ApiContext, committeeId: st
 
 /** Refuses unless the caller's update ability matches the agenda item. */
 export async function assertCanUpdateAgendaItem(ctx: ApiContext, id: string) {
-	await assertAllowedById(ctx, 'committeeAgendaItem', 'update', id);
+	await assertAllowed(ctx, 'committeeAgendaItem', 'update', id);
 }
 
 /**
@@ -59,5 +59,4 @@ export async function assertCanSetAgendaItemReviewHelpStatus(
 			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
-
 }

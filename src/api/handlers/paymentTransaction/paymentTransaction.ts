@@ -12,7 +12,7 @@ import {
 	registerPaymentTransactionAbilities
 } from './paymentTransactionPermissions';
 import { applyPaymentStatus, createPaymentTransaction } from './paymentTransactionService';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerPaymentTransactionAbilities();
 
@@ -49,7 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 			userReferenceInPaymentTransactionPubsub.created();
 
 			return db.query.paymentTransaction
-				.findFirst(query(await readableById(ctx.abilities.paymentTransaction, id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.paymentTransaction, id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -70,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.updated();
 
 			return db.query.paymentTransaction
-				.findFirst(query(await readableById(ctx.abilities.paymentTransaction, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.paymentTransaction, args.id)))
 				.then(assertFindFirstExists);
 		}
 	})

@@ -2,7 +2,8 @@ import { db, schema, type Transaction } from '#api/db/db';
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
 import { PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH } from '$app/env/public';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
 
 /**
@@ -88,7 +89,7 @@ export async function updateSchool(id: string, update: SchoolUpdate) {
 	await db
 		.update(schema.school)
 		.set({ ...update, name })
-		.where(eq(schema.school.id, id));
+		.where(whereRows(schema.school, { id }));
 }
 
 /**
@@ -113,7 +114,10 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 			.join('\n\n');
 
 		for (const table of [schema.waitingListEntry, schema.conferenceParticipant]) {
-			await tx.update(table).set({ schoolId: targetId }).where(inArray(table.schoolId, sources));
+			await tx
+				.update(table)
+				.set({ schoolId: targetId })
+				.where(whereRows(table, { schoolId: { in: sources } }));
 		}
 
 		await tx
@@ -132,11 +136,11 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 				contactPhone: fill('contactPhone'),
 				notes: notes || null
 			})
-			.where(eq(schema.school.id, targetId));
+			.where(whereRows(schema.school, { id: targetId }));
 
 		// The sources' variants cascade with them; a suggestion left with the target alone has
 		// nothing to suggest any more.
-		await tx.delete(schema.school).where(inArray(schema.school.id, sources));
+		await tx.delete(schema.school).where(whereRows(schema.school, { id: { in: sources } }));
 		await tx.execute(sql`
 			delete from school_suggestion s
 			where s.id in (select suggestion_id from school_suggestion_variant where school_id = ${targetId})

@@ -16,7 +16,7 @@ import { applicationFormSchema } from '#lib/schemata/applicationForm';
 import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors/apiError';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
@@ -71,10 +71,7 @@ async function unapplyForRoles(tx: Transaction, singleParticipantId: string, rol
 	await tx
 		.delete(schema.singleParticipantRoleWish)
 		.where(
-			and(
-				eq(schema.singleParticipantRoleWish.b, singleParticipantId),
-				inArray(schema.singleParticipantRoleWish.a, roleIds)
-			)
+			whereRows(schema.singleParticipantRoleWish, { b: singleParticipantId, a: { in: roleIds } })
 		);
 }
 
@@ -106,7 +103,7 @@ export async function registerSingleParticipant(
 			await tx
 				.update(schema.singleParticipant)
 				.set({ motivation: args.motivation, experience: args.experience })
-				.where(eq(schema.singleParticipant.id, existing.id));
+				.where(whereRows(schema.singleParticipant, { id: existing.id }));
 			rowId = existing.id;
 		} else {
 			const created = await tx
@@ -165,7 +162,7 @@ export async function updateSingleParticipantApplication(args: {
 			await tx
 				.update(schema.singleParticipant)
 				.set(values)
-				.where(eq(schema.singleParticipant.id, args.id));
+				.where(whereRows(schema.singleParticipant, { id: args.id }));
 		}
 
 		await applyForRoles(tx, args.id, args.applyForRolesIdList ?? []);

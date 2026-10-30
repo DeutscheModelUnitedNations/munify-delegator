@@ -7,9 +7,9 @@ import {
 	isTeamMemberOf,
 	PROJECT_MANAGEMENT_ROLES,
 	publicConference,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import type { FileField } from '#api/handlers/storedFile/fileSources';
 import { m } from '#lib/paraglide/messages';
@@ -55,12 +55,12 @@ export function registerConferenceAbilities() {
 	});
 
 	// The team reads all of it.
-	abilityBuilder.conference.allow('read').when((ctx) => where(isTeamMemberOf(ctx)));
+	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf(ctx)));
 
 	// Update and delete are limited to the conference's own project management.
 	abilityBuilder.conference
 		.allow(['update', 'delete'])
-		.when((ctx) => where(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
 }
 
 /**

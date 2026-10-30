@@ -4,7 +4,8 @@ import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { NationRef } from '#api/handlers/nation/nation';
 import { enum_ } from '#api/rumble';
-import { eq, max } from 'drizzle-orm';
+import { max } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { UserRef } from '#api/handlers/user/user';
 import {
 	assertValidConferenceSettings,
@@ -28,7 +29,7 @@ import {
 } from './conferencePermissions';
 import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions';
 import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions';
 
@@ -70,7 +71,10 @@ const ConferenceRef = object({
 		waitingListLength: t.field({
 			type: 'Int',
 			resolve: (conference) =>
-				db.$count(schema.waitingListEntry, eq(schema.waitingListEntry.conferenceId, conference.id))
+				db.$count(
+					schema.waitingListEntry,
+					whereRows(schema.waitingListEntry, { conferenceId: conference.id })
+				)
 		}),
 
 		/** The document number to hand to the next participant who needs one. */
@@ -81,7 +85,7 @@ const ConferenceRef = object({
 				const [highest] = await db
 					.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
 					.from(schema.conferenceParticipant)
-					.where(eq(schema.conferenceParticipant.conferenceId, conference.id));
+					.where(whereRows(schema.conferenceParticipant, { conferenceId: conference.id }));
 
 				return (highest?.max ?? 0) + 1;
 			}
@@ -166,7 +170,7 @@ schemaBuilder.mutationFields((t) => ({
 			scheduleEmailSweep(args.id, ctx.requestUrl().origin);
 
 			return db.query.conference
-				.findFirst(query(await readableById(ctx.abilities.conference, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conference, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -190,7 +194,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 			conferencePubsub.updated(args.conferenceId);
 			return db.query.conference
-				.findFirst(query(await readableById(ctx.abilities.conference, args.conferenceId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conference, args.conferenceId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -211,7 +215,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRolePubsub.created();
 
 			return db.query.conference
-				.findFirst(query(await readableById(ctx.abilities.conference, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.conference, created.id)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -225,7 +229,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await db.query.conference
 				.findFirst({
-					...(await readableById(ctx.abilities.conference, args.conferenceId)),
+					...(await queryAllowed(ctx.abilities.conference, args.conferenceId)),
 					columns: { id: true }
 				})
 				.then(assertFindFirstExists);

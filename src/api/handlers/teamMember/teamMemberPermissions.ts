@@ -1,26 +1,26 @@
 import { db } from '#api/db/db';
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
-import type { TeamRole } from '#api/services/authHelper';
+import type { TeamRole } from '#api/services/authHelper/rules';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertMayGrantRole,
+	assertTeamPermission,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Team members can see each other.
-	abilityBuilder.teamMember.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
+	abilityBuilder.teamMember.allow('read').when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
 
 	// Project management removes anybody from the team, or gives them another role.
 	abilityBuilder.teamMember
 		.allow(['update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
 	// Team coordinators remove anybody but project management. Who joins, with which role, goes
 	// through invitations (see `assertMayGrantRole`).
@@ -41,4 +41,17 @@ export async function assertCanChangeTeamRole(ctx: ApiContext, id: string, role:
 	});
 	if (!member) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
 	await assertMayGrantRole(ctx, member.conferenceId, role);
+}
+
+/**
+ * Refuses to hand out a team role the caller may not grant: project management and team
+ * coordinators manage the team, but only project management (or an admin) makes somebody project
+ * management - otherwise a coordinator could promote themselves.
+ */
+export async function assertMayGrantRole(ctx: ApiContext, conferenceId: string, role: TeamRole) {
+	await assertTeamPermission(
+		ctx,
+		conferenceId,
+		role === 'PROJECT_MANAGEMENT' ? 'manageConference' : 'manageTeam'
+	);
 }

@@ -2,9 +2,9 @@ import { abilityBuilder } from '#api/rumble';
 import {
 	isTeamMemberOf,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
 
 export function registerUserReferenceInPaymentTransactionAbilities() {
 	/**
@@ -23,7 +23,7 @@ export function registerUserReferenceInPaymentTransactionAbilities() {
 
 	// The payer sees whom they paid for, and everybody sees the payments that cover them.
 	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

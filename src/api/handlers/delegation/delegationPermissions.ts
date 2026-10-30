@@ -1,27 +1,28 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	DELEGATION_ASSIGNMENT,
 	isTeamMemberOfConference,
 	maskedUntilRelease,
 	onceReleased,
 	PARTICIPANT_CARE_ROLES,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerIdOf, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
+/** The column that carries a delegation's assignment (`maskedUntilRelease`). */
+const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
+
 /** The delegation the caller is a member of. */
 function ownDelegation(ctx: Context) {
-	const id = userId(ctx);
+	const id = callerIdOf(ctx);
 	return id ? { members: { user: { id } } } : undefined;
 }
 
 /** The delegations the caller supervises. */
 function supervisedDelegation(ctx: Context) {
-	const id = userId(ctx);
+	const id = callerIdOf(ctx);
 	return id ? { members: { supervisors: { user: { id } } } } : undefined;
 }
 
@@ -42,7 +43,7 @@ export function registerDelegationAbilities() {
 
 	// The head delegate may change the delegation until it has applied.
 	abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
-		const id = userId(ctx);
+		const id = callerIdOf(ctx);
 		return id
 			? { where: { applied: false, members: { user: { id }, isHeadDelegate: true } } }
 			: undefined;
@@ -52,7 +53,7 @@ export function registerDelegationAbilities() {
 	// included: whoever may change a delegation after it applied may also take it out.
 	abilityBuilder.delegation
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Any team member of the conference may see them - without the join code, which the members,
 	// their supervisors and participant care hand out.

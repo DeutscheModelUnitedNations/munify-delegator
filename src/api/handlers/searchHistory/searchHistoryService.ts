@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -20,15 +20,13 @@ export async function recordSearch(
 
 	const { searchHistory } = schema;
 	await db.transaction(async (tx) => {
-		await tx
-			.delete(searchHistory)
-			.where(
-				and(
-					eq(searchHistory.userId, userId),
-					eq(searchHistory.conferenceId, args.conferenceId),
-					eq(searchHistory.resultId, args.resultId)
-				)
-			);
+		await tx.delete(searchHistory).where(
+			whereRows(searchHistory, {
+				userId,
+				conferenceId: args.conferenceId,
+				resultId: args.resultId
+			})
+		);
 		await tx.insert(searchHistory).values({
 			userId,
 			conferenceId: args.conferenceId,
@@ -36,19 +34,16 @@ export async function recordSearch(
 			resultId: args.resultId,
 			label
 		});
-		const stale = await tx
-			.select({ id: searchHistory.id })
-			.from(searchHistory)
-			.where(eq(searchHistory.userId, userId))
-			.orderBy(desc(searchHistory.createdAt))
-			.offset(KEPT_ENTRIES);
+		const stale = await tx.query.searchHistory.findMany({
+			where: { userId },
+			columns: { id: true },
+			orderBy: { createdAt: 'desc' },
+			offset: KEPT_ENTRIES
+		});
 		if (stale.length > 0) {
-			await tx.delete(searchHistory).where(
-				inArray(
-					searchHistory.id,
-					stale.map((entry) => entry.id)
-				)
-			);
+			await tx
+				.delete(searchHistory)
+				.where(whereRows(searchHistory, { id: { in: stale.map((entry) => entry.id) } }));
 		}
 	});
 }

@@ -1,11 +1,11 @@
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertTeamPermissionForSurveyQuestion,
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	systemAdmin
-} from '#api/services/authHelper';
+} from '#api/services/authHelper/rules';
+import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 
 export function registerSurveyOptionAbilities() {
 	// Ported from abilities/entities/surveyOption.ts

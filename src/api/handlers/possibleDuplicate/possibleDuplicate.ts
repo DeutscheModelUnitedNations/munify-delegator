@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { userId, readableById } from '#api/services/authHelper';
+import { callerUserId, queryAllowed } from '#api/services/authHelper/utils';
 import { decidePossibleDuplicate, scanConferenceForDuplicates } from './possibleDuplicates';
 import {
 	assertCanDecidePossibleDuplicate,
@@ -107,7 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const pair = await assertCanDecidePossibleDuplicate(ctx, args.id);
-			await decidePossibleDuplicate(args.id, args.status, userId(ctx) ?? null);
+			await decidePossibleDuplicate(args.id, args.status, callerUserId(ctx) ?? null);
 
 			possibleDuplicatePubsub.updated(args.id);
 			// what of each account the care team may read follows the decision
@@ -115,7 +115,7 @@ schemaBuilder.mutationFields((t) => ({
 			userPubsub.updated(pair.candidateId);
 
 			return db.query.possibleDuplicate
-				.findFirst(query(await readableById(ctx.abilities.possibleDuplicate, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.possibleDuplicate, args.id)))
 				.then(assertFindFirstExists);
 		}
 	})

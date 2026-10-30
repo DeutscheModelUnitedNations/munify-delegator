@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '#api/rumble';
@@ -28,13 +28,10 @@ import {
 	userPubsub
 } from '#api/pubsub';
 import { OIDC } from '#api/services/OIDC';
-import {
-	impersonationConfigured,
-	impersonationTokens
-} from '#api/services/account/impersonation';
+import { impersonationConfigured, impersonationTokens } from '#api/services/account/impersonation';
 import { apiError } from '#api/services/errors/apiError';
 import { m } from '#lib/paraglide/messages';
-import { allowedRowWhere, readableById } from '#api/services/authHelper';
+import { whereAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerUserAbilities();
 
@@ -93,7 +90,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.removed();
 
 			return db.query.user
-				.findFirst(query(await readableById(ctx.abilities.user, args.userId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.user, args.userId)))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -123,12 +120,12 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateProfile(args, await allowedRowWhere(ctx, 'user', 'update', args.id));
+			await updateProfile(args, await whereAllowed(ctx, 'user', 'update', args.id));
 
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -169,12 +166,12 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.user)
 				.set({ globalNotes: args.globalNotes })
-				.where(eq(schema.user.id, args.id));
+				.where(whereRows(schema.user, { id: args.id }));
 
 			userPubsub.updated(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -196,7 +193,7 @@ schemaBuilder.mutationFields((t) => ({
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await readableById(ctx.abilities.user, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),

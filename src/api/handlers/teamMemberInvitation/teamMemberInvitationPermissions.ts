@@ -2,12 +2,12 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	PROJECT_MANAGEMENT_ROLES,
-	assertMayGrantRole,
 	assertTeamPermission,
 	isTeamMemberOfConference,
 	systemAdmin,
 	type TeamRole
-} from '#api/services/authHelper';
+} from '#api/services/authHelper/rules';
+import { assertMayGrantRole } from '#api/handlers/teamMember/teamMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerTeamMemberInvitationAbilities() {

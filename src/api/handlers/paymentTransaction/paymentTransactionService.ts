@@ -1,5 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
-import { and, eq, inArray } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -32,10 +32,10 @@ async function assertNobodyPaid(tx: Transaction, participantIds: readonly string
 		.select({ id: schema.conferenceParticipant.id })
 		.from(schema.conferenceParticipant)
 		.where(
-			and(
-				inArray(schema.conferenceParticipant.id, [...new Set(participantIds)]),
-				eq(schema.conferenceParticipant.paymentStatus, 'DONE')
-			)
+			whereRows(schema.conferenceParticipant, {
+				id: { in: [...new Set(participantIds)] },
+				paymentStatus: 'DONE'
+			})
 		)
 		.for('update');
 	if (paid.length > 0) {
@@ -105,7 +105,7 @@ export async function applyPaymentStatus(
 			await tx
 				.update(schema.paymentTransaction)
 				.set({ recievedAt: recievedAt ?? undefined })
-				.where(eq(schema.paymentTransaction.id, transaction.id));
+				.where(whereRows(schema.paymentTransaction, { id: transaction.id }));
 		}
 
 		// The payment status is carried over to every participant the transaction covers.
@@ -114,7 +114,7 @@ export async function applyPaymentStatus(
 			await tx
 				.update(schema.conferenceParticipant)
 				.set({ paymentStatus: assignedStatus })
-				.where(inArray(schema.conferenceParticipant.id, covered));
+				.where(whereRows(schema.conferenceParticipant, { id: { in: covered } }));
 		}
 	});
 }

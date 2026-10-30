@@ -1,6 +1,7 @@
 import { type Transaction, db, schema } from '#api/db/db';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { and, count, eq, inArray, ne } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 import { distributeToOptions } from './surveyDistribution';
@@ -10,7 +11,7 @@ async function lockOptions(tx: Transaction, optionIds: string[]) {
 	await tx
 		.select({ id: schema.surveyOption.id })
 		.from(schema.surveyOption)
-		.where(inArray(schema.surveyOption.id, optionIds))
+		.where(whereRows(schema.surveyOption, { id: { in: optionIds } }))
 		.for('update');
 }
 
@@ -33,10 +34,10 @@ async function assertOptionOpen(
 		.select({ taken: count() })
 		.from(schema.surveyAnswer)
 		.where(
-			and(
-				eq(schema.surveyAnswer.optionId, option.id),
-				ne(schema.surveyAnswer.conferenceParticipantId, participantId)
-			)
+			whereRows(schema.surveyAnswer, {
+				optionId: option.id,
+				conferenceParticipantId: { ne: participantId }
+			})
 		);
 	if (taken >= option.upperLimit) {
 		throw apiError('CONFLICT', m.optionUpperLimitReached(option.upperLimit));
@@ -87,7 +88,7 @@ export async function saveSurveyAnswer(
 					await tx
 						.update(schema.surveyAnswer)
 						.set({ optionId: option.id })
-						.where(eq(schema.surveyAnswer.id, answer.updatableAnswerId))
+						.where(whereRows(schema.surveyAnswer, { id: answer.updatableAnswerId }))
 						.returning({ id: schema.surveyAnswer.id })
 				)[0].id
 			: (
@@ -146,7 +147,7 @@ export async function distributeUnansweredSurvey(questionId: string) {
 			tx
 				.select({ optionId: schema.surveyAnswer.optionId, taken: count() })
 				.from(schema.surveyAnswer)
-				.where(eq(schema.surveyAnswer.questionId, questionId))
+				.where(whereRows(schema.surveyAnswer, { questionId }))
 				.groupBy(schema.surveyAnswer.optionId),
 			// The same people the results page lists as not having answered: those holding a seat.
 			tx.query.conferenceParticipant.findMany({

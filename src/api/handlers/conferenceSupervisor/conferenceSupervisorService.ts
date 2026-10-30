@@ -12,7 +12,7 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
 import { codeNotFound } from '#api/services/errors/codeNotFound';
-import { and, eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { supervisorPreview } from './supervisorPreview';
 
 /** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
@@ -137,7 +137,7 @@ export async function disconnectParticipantFromSupervisor(
 
 	await db
 		.delete(schema.supervision)
-		.where(and(eq(schema.supervision.a, supervisorId), eq(schema.supervision.b, participant.id)));
+		.where(whereRows(schema.supervision, { a: supervisorId, b: participant.id }));
 
 	return {
 		participantId: participant.id,
@@ -178,5 +178,5 @@ export async function rotateConnectionCode(supervisorId: string) {
 	await db
 		.update(schema.conferenceSupervisor)
 		.set({ connectionCode: await unusedConnectionCode() })
-		.where(eq(schema.conferenceSupervisor.id, supervisorId));
+		.where(whereRows(schema.conferenceSupervisor, { id: supervisorId }));
 }

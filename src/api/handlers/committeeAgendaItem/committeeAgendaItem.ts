@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { committeeAgendaItemPubsub } from '#api/pubsub';
 import {
 	assertCanCreateAgendaItem,
@@ -9,7 +9,7 @@ import {
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -42,7 +42,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeAgendaItemPubsub.created();
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -59,12 +59,12 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.committeeAgendaItem)
 				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
-				.where(eq(schema.committeeAgendaItem.id, args.id));
+				.where(whereRows(schema.committeeAgendaItem, { id: args.id }));
 
 			committeeAgendaItemPubsub.updated(args.id);
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,7 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'committeeAgendaItem', args.id);
+			await deleteIfAllowed(ctx, 'committeeAgendaItem', args.id);
 			committeeAgendaItemPubsub.removed();
 
 			return true;
@@ -92,12 +92,12 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.committeeAgendaItem)
 				.set({ reviewHelpStatus: args.status })
-				.where(eq(schema.committeeAgendaItem.id, args.agendaItemId));
+				.where(whereRows(schema.committeeAgendaItem, { id: args.agendaItemId }));
 
 			committeeAgendaItemPubsub.updated(args.agendaItemId);
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await readableById(ctx.abilities.committeeAgendaItem, args.agendaItemId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, args.agendaItemId)))
 				.then(assertFindFirstExists);
 		}
 	})

@@ -1,17 +1,18 @@
 import { abilityBuilder } from '#api/rumble';
-import { PAPER_ROLES, isInOwnDelegation, systemAdmin, userId } from '#api/services/authHelper';
+import { PAPER_ROLES, isInOwnDelegation, systemAdmin } from '#api/services/authHelper/rules';
+import { callerUserId } from '#api/services/authHelper/utils';
 
 export function registerPaperVersionAbilities() {
 	// Ported from abilities/entities/paper/paperVersion.ts
 	abilityBuilder.paperVersion.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { paper: { authorParticipant: { userId: id } } } } : undefined;
 	});
 
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -27,7 +28,7 @@ export function registerPaperVersionAbilities() {
 	// never a draft. Without these the public paper view and the supervisor view load a paper with
 	// no versions, i.e. without its content.
 	abilityBuilder.paperVersion.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

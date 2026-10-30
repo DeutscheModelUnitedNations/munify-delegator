@@ -1,6 +1,6 @@
 import { db, schema } from '#api/db/db';
 import { object, query, schemaBuilder } from '#api/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import {
 	assertCanCreatePlace,
 	assertCanUpdatePlace,
@@ -9,7 +9,7 @@ import {
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { placePubsub } from '#api/pubsub';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerPlaceAbilities();
 
@@ -63,7 +63,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.place
-				.findFirst(query(await readableById(ctx.abilities.place, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.place, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -93,12 +93,12 @@ schemaBuilder.mutationFields((t) => ({
 					websiteUrl: args.websiteUrl,
 					sitePlanFileId
 				})
-				.where(eq(schema.place.id, args.id));
+				.where(whereRows(schema.place, { id: args.id }));
 
 			placePubsub.updated(args.id);
 
 			return db.query.place
-				.findFirst(query(await readableById(ctx.abilities.place, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.place, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -107,7 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'place', args.id);
+			await deleteIfAllowed(ctx, 'place', args.id);
 			placePubsub.removed();
 
 			return true;

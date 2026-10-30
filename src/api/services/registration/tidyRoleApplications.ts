@@ -1,5 +1,5 @@
 import { schema, type Transaction } from '#api/db/db';
-import { inArray } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { roleSeats } from '#lib/helpers/conferenceRole';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
@@ -35,7 +35,9 @@ export async function tidyRoleApplications(delegationId: string, tx: Transaction
 		.map((application) => application.id);
 
 	if (tooSmall.length > 0) {
-		await tx.delete(schema.roleApplication).where(inArray(schema.roleApplication.id, tooSmall));
+		await tx
+			.delete(schema.roleApplication)
+			.where(whereRows(schema.roleApplication, { id: { in: tooSmall } }));
 	}
 
 	// Close the gaps the deletions above may have left in the ranking.

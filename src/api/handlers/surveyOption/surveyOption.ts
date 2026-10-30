@@ -6,12 +6,7 @@ import {
 } from './surveyOptionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { surveyOptionPubsub } from '#api/pubsub';
-import {
-	deleteAllowedRow,
-	assertUpdated,
-	allowedRowWhere,
-	readableById
-} from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSurveyOptionAbilities();
 
@@ -60,7 +55,7 @@ schemaBuilder.mutationFields((t) => ({
 			surveyOptionPubsub.created();
 
 			return db.query.surveyOption
-				.findFirst(query(await readableById(ctx.abilities.surveyOption, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.surveyOption, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -74,22 +69,16 @@ schemaBuilder.mutationFields((t) => ({
 			upperLimit: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			assertUpdated(
-				await db
-					.update(schema.surveyOption)
-					.set({
-						title: args.title ?? undefined,
-						description: args.description ?? undefined,
-						upperLimit: args.upperLimit ?? undefined
-					})
-					.where(await allowedRowWhere(ctx, 'surveyOption', 'update', args.id))
-					.returning({ id: schema.surveyOption.id })
-			);
+			await updateIfAllowed(ctx, 'surveyOption', args.id, {
+				title: args.title ?? undefined,
+				description: args.description ?? undefined,
+				upperLimit: args.upperLimit ?? undefined
+			});
 
 			surveyOptionPubsub.updated(args.id);
 
 			return db.query.surveyOption
-				.findFirst(query(await readableById(ctx.abilities.surveyOption, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.surveyOption, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -98,7 +87,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'surveyOption', args.id);
+			await deleteIfAllowed(ctx, 'surveyOption', args.id);
 			surveyOptionPubsub.removed();
 
 			return true;

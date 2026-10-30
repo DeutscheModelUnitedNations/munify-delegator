@@ -15,7 +15,7 @@ import {
 	delegationPubsub,
 	schoolPubsub
 } from '#api/pubsub';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerDelegationAbilities();
 
@@ -38,7 +38,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegation
-				.findFirst(query(await readableById(ctx.abilities.delegation, createdId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.delegation, createdId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -64,7 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.delegation
-				.findFirst(query(await readableById(ctx.abilities.delegation, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.delegation, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,7 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'delegation', args.id);
+			await deleteIfAllowed(ctx, 'delegation', args.id);
 			delegationPubsub.removed();
 			delegationMemberPubsub.removed();
 

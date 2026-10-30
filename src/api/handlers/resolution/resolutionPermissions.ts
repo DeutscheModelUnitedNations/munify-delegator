@@ -6,9 +6,9 @@ import {
 	isParticipantOfConference,
 	isTeamMemberOfConference,
 	offeredIn,
-	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
@@ -19,13 +19,13 @@ export function registerResolutionAbilities() {
 
 	// Everybody with a part in the conference downloads its adopted resolutions: participants,
 	// supervisors and the team.
-	abilityBuilder.resolution.allow('read').when((ctx) => where(isParticipantOfConference(ctx)));
-	abilityBuilder.resolution.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
+	abilityBuilder.resolution.allow('read').when((ctx) => grantWhere(isParticipantOfConference(ctx)));
+	abilityBuilder.resolution.allow('read').when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
 
 	// Project management, participant care and the content lead upload and curate them.
 	abilityBuilder.resolution
 		.allow(['update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, CONFERENCE_CONTENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, CONFERENCE_CONTENT_ROLES)));
 }
 
 /** A committee tag is optional, but one that is given has to be the resolution's conference's. */

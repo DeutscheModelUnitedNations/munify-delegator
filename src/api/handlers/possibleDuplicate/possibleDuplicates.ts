@@ -1,6 +1,7 @@
-import { eq, inArray, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { db, schema } from '#api/db/db';
-import { participatesIn } from '../../services/authHelper';
+import { participatesIn } from '#api/services/authHelper/rules';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
 import { possibleDuplicatePubsub } from '#api/pubsub';
 
@@ -90,12 +91,9 @@ async function store(
 			return poolIds.has(other);
 		});
 		for (const batch of batches(stale)) {
-			await tx.delete(schema.possibleDuplicate).where(
-				inArray(
-					schema.possibleDuplicate.id,
-					batch.map((row) => row.id)
-				)
-			);
+			await tx
+				.delete(schema.possibleDuplicate)
+				.where(whereRows(schema.possibleDuplicate, { id: { in: batch.map((row) => row.id) } }));
 		}
 
 		for (const batch of batches(pairs)) {
@@ -176,5 +174,5 @@ export async function decidePossibleDuplicate(
 			decidedById: decided ? decidedById : null,
 			decidedAt: decided ? new Date() : null
 		})
-		.where(eq(schema.possibleDuplicate.id, id));
+		.where(whereRows(schema.possibleDuplicate, { id }));
 }

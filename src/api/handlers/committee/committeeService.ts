@@ -11,7 +11,7 @@ import { apiError } from '#api/services/errors/apiError';
 import formatNames from '#lib/helpers/formatNames';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -64,7 +64,7 @@ export async function updateCommittee(
 		await tx
 			.update(schema.committee)
 			.set(committeeUpdateData(data))
-			.where(eq(schema.committee.id, id));
+			.where(whereRows(schema.committee, { id }));
 
 		if (shrunk) {
 			await tidyRoleApplicationsForRoles(
@@ -94,7 +94,9 @@ async function dropUnseatedNationRoles(tx: Transaction, roleIds: string[]) {
 	});
 	const ids = unseated.map((role) => role.id);
 	if (ids.length > 0) {
-		await tx.delete(schema.conferenceRole).where(inArray(schema.conferenceRole.id, ids));
+		await tx
+			.delete(schema.conferenceRole)
+			.where(whereRows(schema.conferenceRole, { id: { in: ids } }));
 	}
 	return ids;
 }
@@ -124,7 +126,7 @@ export async function deleteCommittee(id: string) {
 
 		assertCommitteeDeletable(existing.delegationMembers.length, papers.length);
 
-		await tx.delete(schema.committee).where(eq(schema.committee.id, existing.id));
+		await tx.delete(schema.committee).where(whereRows(schema.committee, { id: existing.id }));
 		const roleIds = existing.roles.map((role) => role.id);
 		const droppedRoleIds = await dropUnseatedNationRoles(tx, roleIds);
 		await tidyRoleApplicationsForRoles(existing.conferenceId, roleIds, tx);
@@ -202,9 +204,7 @@ export async function setCommitteeNationSeat(
 
 		await tx
 			.delete(schema.committeeToRole)
-			.where(
-				and(eq(schema.committeeToRole.a, committee.id), eq(schema.committeeToRole.b, role.id))
-			);
+			.where(whereRows(schema.committeeToRole, { a: committee.id, b: role.id }));
 		const droppedRoles = await dropUnseatedNationRoles(tx, [role.id]);
 		if (droppedRoles.length === 0) {
 			await tidyRoleApplicationsForRoles(committee.conferenceId, [role.id], tx);
@@ -227,5 +227,5 @@ export async function setCommitteeRegionalBaseline(
 	await db
 		.update(schema.committee)
 		.set({ regionalBaseline: baseline, regionalBaselineTargets: targets })
-		.where(eq(schema.committee.id, committee.id));
+		.where(whereRows(schema.committee, { id: committee.id }));
 }

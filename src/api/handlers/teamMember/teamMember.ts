@@ -1,10 +1,10 @@
 import { db, schema } from '#api/db/db';
 import { enum_, object, countQuery, query, schemaBuilder } from '#api/rumble';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { teamMemberPubsub } from '#api/pubsub';
 import { assertCanChangeTeamRole, registerTeamMemberAbilities } from './teamMemberPermissions';
-import { deleteAllowedRow, readableById } from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerTeamMemberAbilities();
 
@@ -26,11 +26,11 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.teamMember)
 				.set({ role: args.role })
-				.where(eq(schema.teamMember.id, args.id));
+				.where(whereRows(schema.teamMember, { id: args.id }));
 			teamMemberPubsub.updated(args.id);
 
 			return db.query.teamMember
-				.findFirst(query(await readableById(ctx.abilities.teamMember, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.teamMember, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -39,7 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'teamMember', args.id);
+			await deleteIfAllowed(ctx, 'teamMember', args.id);
 			teamMemberPubsub.removed();
 
 			return true;

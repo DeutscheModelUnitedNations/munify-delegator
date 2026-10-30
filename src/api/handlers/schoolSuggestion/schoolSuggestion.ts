@@ -1,4 +1,3 @@
-import { db, schema } from '#api/db/db';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { refreshSchoolSuggestions } from './schoolSuggestions';
 import {
@@ -7,7 +6,7 @@ import {
 	registerSchoolSuggestionAbilities
 } from './schoolSuggestionPermissions';
 import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub';
-import { assertUpdated, allowedRowWhere } from '#api/services/authHelper';
+import { updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSchoolSuggestionAbilities();
 
@@ -36,13 +35,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			assertUpdated(
-				await db
-					.update(schema.schoolSuggestion)
-					.set({ dismissed: true })
-					.where(await allowedRowWhere(ctx, 'schoolSuggestion', 'update', args.id))
-					.returning({ id: schema.schoolSuggestion.id })
-			);
+			await updateIfAllowed(ctx, 'schoolSuggestion', args.id, { dismissed: true });
 			schoolSuggestionPubsub.updated(args.id);
 			return true;
 		}

@@ -12,14 +12,11 @@ import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplica
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import formatNames from '#lib/helpers/formatNames';
 import { applicationFormSchema } from '#lib/schemata/applicationForm';
-import {
-	MIN_DELEGATION_MEMBERS,
-	MIN_ROLE_APPLICATIONS
-} from '#lib/helpers/applicationReadiness';
+import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { delegationColumnChanges } from './delegationColumnChanges';
 import { apiError } from '#api/services/errors/apiError';
 import { codeNotFound } from '#api/services/errors/codeNotFound';
@@ -50,11 +47,11 @@ async function transferHeadDelegate(
 	await tx
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: false })
-		.where(eq(schema.delegationMember.id, current.id));
+		.where(whereRows(schema.delegationMember, { id: current.id }));
 	await tx
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: true })
-		.where(eq(schema.delegationMember.id, next.id));
+		.where(whereRows(schema.delegationMember, { id: next.id }));
 }
 
 /**
@@ -146,7 +143,7 @@ async function setApplied(
 	await tx
 		.update(schema.delegation)
 		.set({ applied })
-		.where(eq(schema.delegation.id, delegation.id));
+		.where(whereRows(schema.delegation, { id: delegation.id }));
 }
 
 /**
@@ -168,7 +165,7 @@ export async function updateDelegationDetails(
 			await tx
 				.update(schema.delegation)
 				.set(changes)
-				.where(eq(schema.delegation.id, delegation.id));
+				.where(whereRows(schema.delegation, { id: delegation.id }));
 		}
 
 		if (args.newHeadDelegateUserId) {

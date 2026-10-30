@@ -1,4 +1,5 @@
-import { count, lt } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { db, schema } from './db';
 import { DEFAULT_RETENTION_DAYS, retentionCutoff } from './retention';
 
@@ -13,7 +14,9 @@ export async function runInvitationCleanup(
 	options: { retentionDays?: number; dryRun?: boolean; now?: Date } = {}
 ): Promise<number> {
 	const { retentionDays = DEFAULT_RETENTION_DAYS, dryRun = false, now = new Date() } = options;
-	const expired = lt(schema.teamMemberInvitation.expiresAt, retentionCutoff(now, retentionDays));
+	const expired = whereRows(schema.teamMemberInvitation, {
+		expiresAt: { lt: retentionCutoff(now, retentionDays) }
+	});
 
 	if (dryRun) {
 		const [{ total }] = await db

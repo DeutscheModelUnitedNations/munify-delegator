@@ -1,5 +1,5 @@
 import type { ApiContext } from '#api/rumble';
-import { assertTeamPermission } from '#api/services/authHelper';
+import { assertTeamPermission } from '#api/services/authHelper/rules';
 
 /**
  * Any team member may look a scanned code up, which the entrance scanner is for: the lookup

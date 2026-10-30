@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	distributeUnansweredSurvey,
@@ -15,7 +15,7 @@ import {
 } from './surveyAnswerPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerSurveyAnswerAbilities();
 
@@ -50,7 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.surveyAnswer
-				.findFirst(query(await readableById(ctx.abilities.surveyAnswer, answerId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.surveyAnswer, answerId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -64,7 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: { questionId: t.arg.id({ required: true }), userId: t.arg.id() },
 		resolve: async (_root, args, ctx) => {
 			const answer = await assertCanDeleteSurveyAnswer(ctx, args);
-			await db.delete(schema.surveyAnswer).where(eq(schema.surveyAnswer.id, answer.id));
+			await db.delete(schema.surveyAnswer).where(whereRows(schema.surveyAnswer, { id: answer.id }));
 
 			surveyAnswerPubsub.removed();
 			for (const optionId of await optionIdsOfQuestion(answer.questionId)) {

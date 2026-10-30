@@ -5,10 +5,9 @@ import {
 	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors/apiError';
@@ -26,11 +25,11 @@ export function registerConferenceSupervisorAbilities() {
 	// Participant care and project management manage their conference's supervisors.
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 	// Supervised participants see their own supervisors.
 	abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -47,12 +46,12 @@ export function registerConferenceSupervisorAbilities() {
 	// Supervisors manage their own entry.
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => where(isOwnUser(ctx)));
+		.when((ctx) => grantWhere(isOwnUser(ctx)));
 
 	// Supervisors see the other supervisors of the participants they share - the group payment page
 	// splits a fee between them.
 	abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		if (!id) return undefined;
 		const supervisedByMe = { supervisors: { user: { id } } };
 		return {

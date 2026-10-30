@@ -1,5 +1,5 @@
 import type { ApiContext } from '#api/rumble';
-import { assertTeamPermission } from '#api/services/authHelper';
+import { assertTeamPermission } from '#api/services/authHelper/rules';
 
 /**
  * The participants table is the care team's: filtering and ordering by contact data and care

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
@@ -137,7 +137,7 @@ export async function claimPendingInvitation(userId: string) {
 		if (!isOpenInvitation(invitation)) return;
 
 		const usedNow = { usedAt: new Date(), acceptedById: userId };
-		const invitationRow = eq(schema.teamMemberInvitation.id, invitation.id);
+		const invitationRow = whereRows(schema.teamMemberInvitation, { id: invitation.id });
 		const existingMember = await db.query.teamMember.findFirst({
 			where: { conferenceId: invitation.conferenceId, userId }
 		});

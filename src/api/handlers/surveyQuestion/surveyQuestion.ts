@@ -7,12 +7,7 @@ import {
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args';
 import { surveyQuestionPubsub } from '#api/pubsub';
-import {
-	deleteAllowedRow,
-	assertUpdated,
-	allowedRowWhere,
-	readableById
-} from '#api/services/authHelper';
+import { deleteIfAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSurveyQuestionAbilities();
 
@@ -51,7 +46,7 @@ schemaBuilder.mutationFields((t) => ({
 			surveyQuestionPubsub.created();
 
 			return db.query.surveyQuestion
-				.findFirst(query(await readableById(ctx.abilities.surveyQuestion, created.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.surveyQuestion, created.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -68,25 +63,19 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			assertUpdated(
-				await db
-					.update(schema.surveyQuestion)
-					.set({
-						title: nullToUndefined(args.title),
-						description: nullToUndefined(args.description),
-						deadline: nullToUndefined(args.deadline),
-						draft: nullToUndefined(args.draft),
-						hidden: nullToUndefined(args.hidden),
-						showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
-					})
-					.where(await allowedRowWhere(ctx, 'surveyQuestion', 'update', args.id))
-					.returning({ id: schema.surveyQuestion.id })
-			);
+			await updateIfAllowed(ctx, 'surveyQuestion', args.id, {
+				title: nullToUndefined(args.title),
+				description: nullToUndefined(args.description),
+				deadline: nullToUndefined(args.deadline),
+				draft: nullToUndefined(args.draft),
+				hidden: nullToUndefined(args.hidden),
+				showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
+			});
 
 			surveyQuestionPubsub.updated(args.id);
 
 			return db.query.surveyQuestion
-				.findFirst(query(await readableById(ctx.abilities.surveyQuestion, args.id)))
+				.findFirst(query(await queryAllowed(ctx.abilities.surveyQuestion, args.id)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -95,7 +84,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteAllowedRow(ctx, 'surveyQuestion', args.id);
+			await deleteIfAllowed(ctx, 'surveyQuestion', args.id);
 			surveyQuestionPubsub.removed();
 
 			return true;

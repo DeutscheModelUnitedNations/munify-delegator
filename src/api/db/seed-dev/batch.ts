@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { whereRows } from '../whereRows';
 import * as schema from '../schema';
 
 /**
@@ -160,7 +160,10 @@ export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
 	for (const [index, row] of batch.conference.entries()) {
 		const files = conferenceFiles[index];
 		if (row.id && files && Object.values(files).some(Boolean)) {
-			await db.update(s.conference).set(files).where(eq(s.conference.id, row.id));
+			await db
+				.update(s.conference)
+				.set(files)
+				.where(whereRows(s.conference, { id: row.id }));
 		}
 	}
 	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));

@@ -10,9 +10,9 @@ const {
 	isTeamMemberOf,
 	isTeamMemberOfConference,
 	participatesIn,
-	systemAdmin,
-	where
-} = await import('./authHelper');
+	systemAdmin
+} = await import('./rules');
+const { grantWhere } = await import('./utils');
 
 /** Just enough of a request context for the filter builders, which read only these two parts. */
 function contextFor(sub: string | undefined, roles: string[] = []): Context {
@@ -97,9 +97,9 @@ describe('isCaredForUser', () => {
 	});
 });
 
-describe('where', () => {
+describe('grantWhere', () => {
 	test('wraps a filter for an ability rule, and grants nothing without one', () => {
-		expect(where({ id: 'x' })).toEqual({ where: { id: 'x' } });
-		expect(where(undefined)).toBeUndefined();
+		expect(grantWhere({ id: 'x' })).toEqual({ where: { id: 'x' } });
+		expect(grantWhere(undefined)).toBeUndefined();
 	});
 });

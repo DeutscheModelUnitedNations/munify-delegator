@@ -1,16 +1,15 @@
 import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
-	assertAllowedById,
 	assertTeamPermission,
 	isTeamMemberOfConference,
 	PROJECT_MANAGEMENT_ROLES,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
-	teamConference,
-	where
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
@@ -24,11 +23,11 @@ export function registerCommitteeAbilities() {
 	// call, which the content lead shares (`setCommitteeNationSeat`, `setCommitteeRegionalBaseline`).
 	abilityBuilder.committee
 		.allow('delete')
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 	// The content lead shapes the committees' content: names, headline and seats.
 	abilityBuilder.committee
 		.allow('update')
-		.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 }
 
 /** Creating a committee changes the conference set-up, which is the management's call. */
@@ -58,7 +57,7 @@ export async function assertCanUpdateCommittee(ctx: ApiContext, id: string) {
 
 /** Refuses unless the caller's delete ability matches the committee. */
 export async function assertCanDeleteCommittee(ctx: ApiContext, id: string) {
-	await assertAllowedById(ctx, 'committee', 'delete', id);
+	await assertAllowed(ctx, 'committee', 'delete', id);
 }
 
 /**

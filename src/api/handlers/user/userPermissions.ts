@@ -9,10 +9,9 @@ import {
 	isSystemAdmin,
 	isTeamMemberOf,
 	participatesIn,
-	systemAdmin,
-	userId,
-	where
-} from '#api/services/authHelper';
+	systemAdmin
+} from '#api/services/authHelper/rules';
+import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { apiError } from '#api/services/errors/apiError';
 
@@ -71,7 +70,7 @@ function duplicateOfManaged(ctx: Context, status: ('OPEN' | 'CONFIRMED' | 'DISMI
 
 /** A delegation membership or single participation the caller supervises. */
 function supervisedByCaller(ctx: Context) {
-	const id = userId(ctx);
+	const id = callerUserId(ctx);
 	return id ? { supervisors: { user: { id } } } : undefined;
 }
 
@@ -81,17 +80,17 @@ export function registerUserAbilities() {
 
 	// Users see and edit themselves - but not what the care team noted about them.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { id }, columns: WITHOUT_CARE_NOTES } : undefined;
 	});
 	abilityBuilder.user.allow('update').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id ? { where: { id } } : undefined;
 	});
 
 	// Project management and participant care see everybody they look after - the participants and
 	// waiting-list entrants of the conferences they manage - in full.
-	abilityBuilder.user.allow('read').when((ctx) => where(isCaredForUser(ctx)));
+	abilityBuilder.user.allow('read').when((ctx) => grantWhere(isCaredForUser(ctx)));
 
 	// The other account of a possible duplicate (see `duplicateOfManaged`).
 	abilityBuilder.user.allow('read').when((ctx) => {
@@ -125,7 +124,7 @@ export function registerUserAbilities() {
 
 	// Team members see each other, phone numbers included.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: { teamMember: { conference: { teamMembers: { user: { id } } } } },
@@ -136,7 +135,7 @@ export function registerUserAbilities() {
 
 	// Delegates see each other's names and email addresses, to get in touch.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
@@ -147,7 +146,7 @@ export function registerUserAbilities() {
 
 	// Participants see their own supervisors.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -185,7 +184,7 @@ export function registerUserAbilities() {
 	// every paper there, and a paper's `author` is non-nullable, so without this a single paper by
 	// someone the team member may not otherwise read fails the whole review page.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
@@ -202,7 +201,7 @@ export function registerUserAbilities() {
 	// so without this the paper's history fails for an author whose reviewer they cannot otherwise
 	// read.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const id = userId(ctx);
+		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {

@@ -1,15 +1,29 @@
+import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
+import type { Context } from '#api/context';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
-	calendarConference,
+	hasPartIn,
 	isTeamMemberOfConference,
 	systemAdmin,
-	where
-} from '#api/services/authHelper';
+	teamConference
+} from '#api/services/authHelper/rules';
+import { grantWhere } from '#api/services/authHelper/utils';
+import type { TeamPermission } from '#lib/helpers/teamRoles';
+import { m } from '#lib/paraglide/messages';
+import { apiError } from '#api/services/errors/apiError';
+
+/**
+ * The conferences whose schedule (calendar days, tracks, entries, places, site plans) the caller
+ * may read: the team's always, a participant's once the team has switched the calendar on
+ * (`showCalendar`), which is when the dashboard shows it. Undefined for an anonymous caller.
+ */
+export function calendarConference(ctx: Context) {
+	return hasPartIn(ctx, { showCalendar: true });
+}
 
 export function registerCalendarDayAbilities() {
-	// The schedule is for the people with a part in the conference (`calendarConference`).
 	abilityBuilder.calendarDay.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { conference } } : undefined;
@@ -18,10 +32,29 @@ export function registerCalendarDayAbilities() {
 
 	abilityBuilder.calendarDay
 		.allow(['update', 'delete'])
-		.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 }
 
 /** Refuses unless the caller may add days to the conference's calendar, by hand or by import. */
 export async function assertCanCreateCalendarDay(ctx: ApiContext, conferenceId: string) {
 	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+}
+
+/**
+ * Refuses unless the calendar day exists in a conference where the caller holds `permission`, for
+ * what goes onto a day (tracks, entries). Answers the day's conference.
+ */
+export async function assertTeamPermissionForCalendarDay(
+	ctx: ApiContext,
+	calendarDayId: string,
+	permission: TeamPermission = 'manageParticipants'
+) {
+	const day = await db.query.calendarDay.findFirst({
+		where: { id: calendarDayId, conference: teamConference(ctx, permission) },
+		columns: { conferenceId: true }
+	});
+	if (!day) {
+		throw apiError('NOT_FOUND', m.calendarDayNotFound());
+	}
+	return day;
 }

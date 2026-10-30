@@ -47,7 +47,7 @@ import {
 	splitParts,
 	undoDelegationSplit
 } from './assignmentService';
-import { readableById } from '#api/services/authHelper';
+import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerAssignmentAbilities();
 
@@ -132,7 +132,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignmentReviewPubsub.updated(reviewId);
 
 			return db.query.assignmentReview
-				.findFirst(query(await readableById(ctx.abilities.assignmentReview, reviewId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.assignmentReview, reviewId)))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -155,7 +155,7 @@ schemaBuilder.mutationFields((t) => ({
 			assignmentWeightsPubsub.updated(weightsId);
 
 			return db.query.assignmentWeights
-				.findFirst(query(await readableById(ctx.abilities.assignmentWeights, weightsId)))
+				.findFirst(query(await queryAllowed(ctx.abilities.assignmentWeights, weightsId)))
 				.then(assertFindFirstExists);
 		}
 	}),
