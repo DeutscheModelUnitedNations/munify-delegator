@@ -14,6 +14,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
+/** The abilities of adopted resolutions. */
 export function registerResolutionAbilities() {
 	abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -45,8 +46,10 @@ async function assertCommitteeInConference({
 }
 
 /**
- * Refuses unless the caller holds `editConferenceContent` in the conference, the committee tag is
- * the conference's, and the caller uploaded the PDF as a resolution of that conference.
+ * Refuses unless the caller holds `editConferenceContent` (project management, participant care,
+ * content lead) in the conference (FORBIDDEN), the committee tag is the conference's
+ * (INVALID_INPUT), and the caller uploaded the PDF as a resolution of that conference
+ * (INVALID_INPUT, `assertCanClaimFile`).
  */
 export async function assertCanCreateResolution({
 	ctx,
@@ -76,8 +79,9 @@ export async function assertCanCreateResolution({
 }
 
 /**
- * Refuses unless the resolution exists, the caller may update it (the content roles, a system
- * admin), and a new committee tag is its conference's.
+ * Refuses unless the resolution exists and the caller may update it (the update ability: project
+ * management, participant care, content lead, a system admin; NOT_FOUND otherwise), and a new
+ * committee tag is its conference's (INVALID_INPUT).
  */
 export async function assertCanUpdateResolution({
 	ctx,
