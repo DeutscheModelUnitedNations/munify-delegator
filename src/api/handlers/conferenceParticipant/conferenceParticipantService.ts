@@ -6,6 +6,7 @@ import { max } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { conferenceParticipantPubsub } from '#api/pubsub';
 
 /**
  * The person's row in the conference, created the first time they register there (as delegate,
@@ -30,6 +31,7 @@ export async function ensureConferenceParticipant({
 		})
 		.returning({ id: schema.conferenceParticipant.id })
 		.then(assertFirstEntryExists);
+	conferenceParticipantPubsub.updated(row.id);
 	return row.id;
 }
 
@@ -57,6 +59,7 @@ export async function setParticipantSchool({
 				filter: { id: { in: [...participantIds] } }
 			})
 		);
+	conferenceParticipantPubsub.updated([...participantIds]);
 }
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
@@ -103,6 +106,7 @@ export async function updateStatus({ id, values }: { id: string; values: StatusV
 	if (!updated) {
 		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
+	conferenceParticipantPubsub.updated(updated.id);
 	return updated.id;
 }
 
@@ -124,6 +128,8 @@ export async function createStatus({
 		.values({ ...values, userId, conferenceId })
 		.returning()
 		.then(assertFirstEntryExists);
+	// announced as an update, like an existing row the upsert writes
+	conferenceParticipantPubsub.updated(created.id);
 	return created.id;
 }
 
@@ -172,10 +178,6 @@ export async function planParticipantStatusUpsert(
 ): Promise<
 	{ values: StatusValues } & ({ existingId: string } | { existingId?: undefined; userId: string })
 > {
-	if (!args.id && !args.userId && !args.userEmail) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.participantStatusNeedsLookup() });
-	}
-
 	const targetUserId = await targetUserIdOf(args);
 	const documentNumber = await documentNumberOf(args);
 
@@ -244,6 +246,7 @@ export async function setAttendanceForAll(args: {
 			changed.push(row.id);
 		}
 	});
+	conferenceParticipantPubsub.created();
 
 	return changed.length;
 }

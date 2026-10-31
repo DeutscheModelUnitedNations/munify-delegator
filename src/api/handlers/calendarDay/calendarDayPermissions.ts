@@ -24,18 +24,24 @@ export function calendarConference(ctx: Context) {
 }
 
 export function registerCalendarDayAbilities() {
+	// Whoever reads the conference's schedule (`calendarConference`) reads its days.
 	abilityBuilder.calendarDay.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { conference } } : undefined;
 	});
 	abilityBuilder.calendarDay.allow(['read', 'update', 'delete']).when(systemAdmin);
 
+	// Participant care (project management and participant care) updates and deletes its
+	// conference's days.
 	abilityBuilder.calendarDay
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
-/** Refuses unless the caller may add days to the conference's calendar, by hand or by import. */
+/**
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the conference, who add days to its calendar, by hand or by import.
+ */
 export async function assertCanCreateCalendarDay({
 	ctx,
 	conferenceId
@@ -47,8 +53,9 @@ export async function assertCanCreateCalendarDay({
 }
 
 /**
- * Refuses unless the calendar day exists in a conference where the caller holds `permission`, for
- * what goes onto a day (tracks, entries). Answers the day's conference.
+ * Refuses unless the calendar day exists in a conference where the caller holds `permission`
+ * (`manageParticipants` by default), for creating what goes onto a day (tracks, entries). Returns
+ * the day's conference id.
  */
 export async function assertTeamPermissionForCalendarDay({
 	ctx,

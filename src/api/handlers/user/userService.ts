@@ -1,9 +1,17 @@
 import { db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
+import {
+	conferenceParticipantPubsub,
+	conferenceSupervisorPubsub,
+	delegationMemberPubsub,
+	singleParticipantPubsub,
+	userPubsub
+} from '#api/pubsub';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
-import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userUpdateSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { apiError } from '#api/services/errors';
+import { nullToUndefined } from '#api/services/args';
 import { m } from '#lib/paraglide/messages';
 
 /**
@@ -103,35 +111,63 @@ export async function removeParticipation({
 				)
 			);
 	});
+	delegationMemberPubsub.removed();
+	singleParticipantPubsub.removed();
+	conferenceSupervisorPubsub.removed();
+	conferenceParticipantPubsub.removed();
 }
 
-/** What the self-service profile form submits, as the mutation receives it. */
+/**
+ * What the profile forms submit, as the mutation receives it. A field left out (or `null`, for
+ * one the profile always has) stays as it is.
+ */
 export type ProfileUpdate = {
 	id: string;
-	givenName: string;
-	familyName: string;
-	birthday: Date;
-	phone: { number: string };
-	address: {
+	givenName?: string | null;
+	familyName?: string | null;
+	birthday?: Date | null;
+	phone?: { number: string } | null;
+	/** Always whole: the country decides which of the other parts it needs. */
+	address?: {
 		countryCode: string;
 		streetAddress: string;
 		postalCode?: string | null;
 		locality?: string | null;
 		region?: string | null;
-	};
+	} | null;
+	/** `null` clears it. */
 	apartment?: string | null;
-	gender: (typeof schema.user.$inferInsert)['gender'];
+	gender?: (typeof schema.user.$inferInsert)['gender'] | null;
+	/** `null` clears it. */
 	pronouns?: string | null;
-	foodPreference: (typeof schema.user.$inferInsert)['foodPreference'];
-	emergencyContacts: string;
+	foodPreference?: (typeof schema.user.$inferInsert)['foodPreference'] | null;
+	emergencyContacts?: string | null;
 	wantsToReceiveGeneralInformation?: boolean | null;
 	wantsJoinTeamInformation?: boolean | null;
 };
 
+/** The address columns of an address input, or `undefined` when it names none. */
+function addressColumns(address: ProfileUpdate['address']) {
+	if (!address) return undefined;
+	const country = alpha2ToAlpha3(address.countryCode);
+	if (!country)
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.userUnknownCountry({ country: address.countryCode })
+		});
+	return {
+		street: address.streetAddress,
+		zip: address.postalCode ?? null,
+		city: address.locality ?? null,
+		region: address.region ?? null,
+		country
+	};
+}
+
 /**
  * The my-account form and the user card's. rumble's scalars normalize what they can; the same
- * zod schema the form uses then judges the rest. Writes only the row `updatable` (pre-authorized)
- * matches.
+ * zod rules the form uses then judge the fields given. Writes only those, and only to the row
+ * `updatable` (pre-authorized) matches.
  */
 export async function updateProfile({
 	args,
@@ -140,53 +176,29 @@ export async function updateProfile({
 	args: ProfileUpdate;
 	updatable: SQL | undefined;
 }) {
-	const country = alpha2ToAlpha3(args.address.countryCode);
-	if (!country)
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: m.userUnknownCountry({ country: args.address.countryCode })
-		});
-	const address = {
-		street: args.address.streetAddress,
-		zip: args.address.postalCode ?? null,
-		city: args.address.locality ?? null,
-		region: args.address.region ?? null,
-		country
-	};
-	const phone = args.phone.number;
-
-	userFormSchema.parse({
-		given_name: args.givenName,
-		family_name: args.familyName,
-		birthday: args.birthday,
-		phone,
-		...address,
+	const changes = {
+		givenName: nullToUndefined(args.givenName),
+		familyName: nullToUndefined(args.familyName),
+		birthday: nullToUndefined(args.birthday),
+		phone: args.phone?.number,
+		...addressColumns(args.address),
 		apartment: args.apartment,
-		gender: args.gender,
+		gender: nullToUndefined(args.gender),
 		pronouns: args.pronouns,
-		foodPreference: args.foodPreference,
-		emergencyContacts: args.emergencyContacts,
-		wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation,
-		wantsJoinTeamInformation: args.wantsJoinTeamInformation
-	});
+		foodPreference: nullToUndefined(args.foodPreference),
+		emergencyContacts: nullToUndefined(args.emergencyContacts),
+		wantsToReceiveGeneralInformation: nullToUndefined(args.wantsToReceiveGeneralInformation),
+		wantsJoinTeamInformation: nullToUndefined(args.wantsJoinTeamInformation)
+	};
+
+	const { givenName, familyName, ...rest } = changes;
+	userUpdateSchema.parse({ given_name: givenName, family_name: familyName, ...rest });
 
 	await db
 		.update(schema.user)
-		.set({
-			givenName: args.givenName,
-			familyName: args.familyName,
-			birthday: args.birthday,
-			phone,
-			...address,
-			apartment: args.apartment ?? null,
-			gender: args.gender,
-			pronouns: args.pronouns ?? null,
-			foodPreference: args.foodPreference,
-			emergencyContacts: args.emergencyContacts,
-			wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
-			wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
-		})
+		.set({ ...changes, updatedAt: new Date() })
 		.where(updatable);
+	userPubsub.updated(args.id);
 }
 
 /** Name and birthday corrections by management; an absent field is left as it is. */
@@ -205,11 +217,10 @@ export async function updateIdentity({
 			birthday: args.birthday ?? undefined
 		})
 		.where(whereRows({ table: schema.user, filter: { id } }));
+	userPubsub.updated(id);
 }
 
-/**
- * Newsletter opt-ins, addressed by email rather than id. Returns the ids of the rows that changed.
- */
+/** Newsletter opt-ins, addressed by email rather than id. */
 export async function updateNewsletterPreferences(args: {
 	email: string;
 	wantsToReceiveGeneralInformation?: boolean | null;
@@ -225,5 +236,5 @@ export async function updateNewsletterPreferences(args: {
 		.where(sql`lower(${schema.user.email}) = ${args.email}`)
 		.returning({ id: schema.user.id });
 
-	return updated.map(({ id }) => id);
+	for (const { id } of updated) userPubsub.updated(id);
 }

@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { singleParticipantPubsub } from '#api/pubsub';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
@@ -12,11 +13,7 @@ import {
 	assertRegistrationOpen
 } from '#api/services/registration/applicationReadiness';
 import { nullToUndefined } from '#api/services/args';
-import { applicationFormSchema } from '#lib/schemata/applicationForm';
-import {
-	type ApplicationArgs,
-	parseApplicationArgs
-} from '#api/services/registration/applicationArgs';
+import { type ApplicationArgs } from '#api/services/registration/applicationArgs';
 import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -39,8 +36,6 @@ export async function ownRegistrationToEdit({
 	userId: string;
 	args: ApplicationArgs;
 }) {
-	parseApplicationArgs(args);
-
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
 		await fetchParticipationsAndTeamMembership({ conferenceId: args.conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
@@ -113,7 +108,7 @@ export async function registerSingleParticipant({
 	if (!existing) await assertRegistrationOpen(args.conferenceId);
 	// The person's row, the registration and the role it applies for go in together, so a refused
 	// insert leaves none of them.
-	return db.transaction(async (tx) => {
+	const rowId = await db.transaction(async (tx) => {
 		const participantId = await ensureConferenceParticipant({
 			tx,
 			conferenceId: args.conferenceId,
@@ -149,6 +144,9 @@ export async function registerSingleParticipant({
 
 		return rowId;
 	});
+	if (existing) singleParticipantPubsub.updated(existing.id);
+	else singleParticipantPubsub.created();
+	return rowId;
 }
 
 /**
@@ -178,8 +176,6 @@ export async function updateSingleParticipantApplication(args: {
 		});
 	}
 
-	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
-
 	// A call that only changes role applications has nothing to set, and drizzle rejects an
 	// empty `set` ("No values to set").
 	await db.transaction(async (tx) => {
@@ -207,6 +203,7 @@ export async function updateSingleParticipantApplication(args: {
 			roleIds: args.unApplyForRolesIdList ?? []
 		});
 	});
+	singleParticipantPubsub.updated(args.id);
 }
 
 /**
@@ -239,7 +236,7 @@ export async function createAssignedSingleParticipant(args: {
 			schoolId: waiting?.schoolId ?? undefined
 		});
 
-		return tx
+		const participant = await tx
 			.insert(schema.singleParticipant)
 			.values({
 				conferenceParticipantId: participantId,
@@ -248,7 +245,9 @@ export async function createAssignedSingleParticipant(args: {
 			})
 			.returning()
 			.then(assertFirstEntryExists);
+		return participant;
 	});
+	singleParticipantPubsub.created();
 
 	return created.id;
 }

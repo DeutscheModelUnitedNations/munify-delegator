@@ -5,7 +5,7 @@ import {
 	readableSchoolRegistrations,
 	registerSchoolSuggestionAbilities
 } from './schoolSuggestionPermissions';
-import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub';
+import { schoolSuggestionPubsub } from '#api/pubsub';
 import { updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSchoolSuggestionAbilities();
@@ -15,8 +15,9 @@ object({ table: 'schoolSuggestionVariant' });
 query({ table: 'schoolSuggestion' });
 
 schemaBuilder.mutationFields((t) => ({
-	/** Looks for similar school names in the conference and fills the suggestion tables. */
 	analyzeSchoolSuggestions: t.field({
+		description:
+			'Looks for similar school names in the conference and fills the suggestion tables.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -25,8 +26,6 @@ schemaBuilder.mutationFields((t) => ({
 				conferenceId: args.conferenceId,
 				readable: await readableSchoolRegistrations({ ctx, conferenceId: args.conferenceId })
 			});
-			schoolSuggestionPubsub.updated();
-			schoolSuggestionVariantPubsub.updated();
 			return true;
 		}
 	}),

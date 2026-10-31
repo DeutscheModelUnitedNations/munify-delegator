@@ -6,6 +6,8 @@ import { m } from '#lib/paraglide/messages';
 import { translatePaperStatus } from '#lib/utils/enumTranslations';
 import { apiError } from '#api/services/errors';
 import { splitRole } from '#lib/helpers/conferenceRole';
+import { z } from 'zod';
+import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
 type UnlockedPiece = {
@@ -22,7 +24,11 @@ type UnlockedPiece = {
 };
 
 const REVIEWABLE_STATUSES = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEPTED'];
-const ALLOWED_NEW_STATUSES = ['CHANGES_REQUESTED', 'ACCEPTED'];
+
+/** The verdicts a review may give. */
+export const reviewVerdictSchema = z.enum(['CHANGES_REQUESTED', 'ACCEPTED'], {
+	error: (issue) => m.reviewInvalidStatus({ status: String(issue.input) })
+});
 
 /** Papers that are past draft and already carry at least one review. */
 const reviewedPaperWhere = (delegationId: string) => ({
@@ -49,23 +55,16 @@ function fetchPaperForReview({ tx, paperId }: { tx: Transaction; paperId: string
 type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
 
 /**
- * Rejects the review unless the paper and verdict allow it. Whether the caller may review at all
+ * Rejects the review unless the paper can be reviewed. Whether the caller may review at all
  * is `assertCanReviewPaper`'s business.
  */
-function assertReviewable({ paper, newStatus }: { paper: PaperForReview; newStatus: string }) {
+function assertReviewable({ paper }: { paper: PaperForReview }) {
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
 		throw apiError({
 			code: 'CONFLICT',
 			message: m.reviewStatusNotReviewable({ status: translatePaperStatus(paper.status) })
 		});
 	}
-	if (!ALLOWED_NEW_STATUSES.includes(newStatus)) {
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: m.reviewInvalidStatus({ status: newStatus })
-		});
-	}
-
 	const latestVersion = paper.versions[0];
 	if (!latestVersion) {
 		throw apiError({ code: 'CONFLICT', message: m.reviewNoVersions() });
@@ -230,13 +229,13 @@ export async function createPaperReview({
 	args: {
 		paperId: string;
 		comments?: (typeof schema.paperReview.$inferInsert)['comments'];
-		newStatus: (typeof schema.paper.$inferSelect)['status'];
+		newStatus: z.output<typeof reviewVerdictSchema>;
 	};
 	reviewer: Reviewer;
 }) {
-	const { paper, result } = await db.transaction(async (tx) => {
+	const { paper, versionId, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview({ tx, paperId: args.paperId });
-		const latestVersion = assertReviewable({ paper, newStatus: args.newStatus });
+		const latestVersion = assertReviewable({ paper });
 		const wasFirstReviewForPiece = await isFirstReviewForPiece({ tx, paper });
 
 		const review = await tx
@@ -264,6 +263,7 @@ export async function createPaperReview({
 
 		return {
 			paper,
+			versionId: latestVersion.id,
 			result: {
 				reviewId: review.id,
 				pieceUnlocked: wasFirstReviewForPiece && unlockedPieceData !== null,
@@ -271,6 +271,9 @@ export async function createPaperReview({
 			}
 		};
 	});
+	paperReviewPubsub.created();
+	paperPubsub.updated(args.paperId);
+	paperVersionPubsub.updated(versionId);
 
 	return { result, conferenceId: paper.delegation.conferenceId };
 }

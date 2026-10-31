@@ -1,11 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	conferenceEmailFooterPubsub,
-	conferenceEmailSettingPubsub,
-	conferenceEmailTextPubsub
-} from '#api/pubsub';
+import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { conferenceEmailFooterPubsub, conferenceEmailTextPubsub } from '#api/pubsub';
 import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
 import {
 	countOpenEmails,
@@ -17,6 +13,7 @@ import {
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { toLocale } from '#lib/paraglide/runtime';
+import { z } from 'zod';
 import { isAlwaysSent } from '#lib/helpers/emailKinds';
 import { whereRows } from '#api/db/whereRows';
 import { callerUserId } from '#api/services/authHelper/utils';
@@ -58,14 +55,17 @@ const PersonEmail = schemaBuilder.simpleObject('PersonEmail', {
 	description: 'A mail one person is owed right now, which the team can send them by hand.',
 	fields: (t) => ({
 		kind: t.field({ type: emailKindEnum }),
-		/** With kind and person, which mail it is. */
-		subjectKey: t.string(),
-		/** What tells it apart from the person's other mails of its kind. */
-		detail: t.string({ nullable: true }),
-		/** The conference sends it on its own. */
-		automatic: t.boolean(),
-		/** How the last try went; none if it was never sent. */
-		lastStatus: t.field({ type: emailStatusEnum, nullable: true }),
+		subjectKey: t.string({ description: 'With kind and person, which mail it is.' }),
+		detail: t.string({
+			description: "What tells it apart from the person's other mails of its kind.",
+			nullable: true
+		}),
+		automatic: t.boolean({ description: 'The conference sends it on its own.' }),
+		lastStatus: t.field({
+			description: 'How the last try went; none if it was never sent.',
+			type: emailStatusEnum,
+			nullable: true
+		}),
 		lastAt: t.field({ type: 'Date', nullable: true })
 	})
 });
@@ -73,17 +73,22 @@ const PersonEmail = schemaBuilder.simpleObject('PersonEmail', {
 const SendPersonEmailResult = schemaBuilder.simpleObject('SendPersonEmailResult', {
 	fields: (t) => ({
 		sent: t.boolean(),
-		/** Why the mail service did not send it. */
-		error: t.string({ nullable: true })
+		error: t.string({ description: 'Why the mail service did not send it.', nullable: true })
 	})
 });
 
+/** A language the app speaks. */
+const localeSchema = z.string().transform((value, ctx) => {
+	const locale = toLocale(value);
+	if (locale) return locale;
+	ctx.issues.push({ code: 'custom', input: value, message: m.emailTextUnknownLanguage() });
+	return z.NEVER;
+});
+
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * The mails a person is owed in the conference right now, switched on or not, with how each went
-	 * so far. Reminders count any time before their date: they can be sent early by hand.
-	 */
 	personEmails: t.field({
+		description:
+			'The mails a person is owed in the conference right now, switched on or not, with how each went so far. Reminders count any time before their date: they can be sent early by hand.',
 		type: [PersonEmail],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -97,8 +102,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** How many mails of `kind` the conference would send right away if it were switched on. */
 	openEmailCount: t.field({
+		description:
+			'How many mails of `kind` the conference would send right away if it were switched on.',
 		type: 'Int',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -110,8 +116,8 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** Sent, failed and skipped mails per kind. */
 	emailStats: t.field({
+		description: 'Sent, failed and skipped mails per kind.',
 		type: [EmailKindStats],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -136,17 +142,17 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/**
-	 * A mail of `kind` as it would look, addressed to the caller with made-up details: in `locale`
-	 * (else the caller's), with the text being edited when `draft` is set (else what is stored), and
-	 * with `footer` as the footer when given (else the stored one; empty for none).
-	 */
 	emailPreview: t.field({
+		description:
+			"A mail of `kind` as it would look, addressed to the caller with made-up details: in `locale` (else the caller's), with the text being edited when `draft` is set (else what is stored), and with `footer` as the footer when given (else the stored one; empty for none).",
 		type: EmailPreview,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			kind: t.arg({ type: emailKindEnum, required: true }),
-			locale: t.arg.string(),
+			/** Empty or left out: the caller's. */
+			locale: t.arg
+				.string()
+				.validate(z.union([z.literal('').transform(() => undefined), localeSchema]).nullish()),
 			draft: t.arg.boolean(),
 			subject: t.arg.string(),
 			heading: t.arg.string(),
@@ -169,7 +175,7 @@ schemaBuilder.queryFields((t) => ({
 					}
 				})
 				.then(assertFindFirstExists);
-			const locale = args.locale ? assertLocale(args.locale) : user.locale;
+			const locale = args.locale ?? user.locale;
 			const preview = await previewEmail({
 				conferenceId: args.conferenceId,
 				kind: args.kind,
@@ -186,22 +192,13 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
-/** A language the app speaks, or the request fails. */
-function assertLocale(value: string) {
-	const locale = toLocale(value);
-	if (!locale) throw apiError({ code: 'INVALID_INPUT', message: m.emailTextUnknownLanguage() });
-	return locale;
-}
-
 /** Empty or blank: the default text. */
 const ownText = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Sends a person one mail they are owed right now, however often it went out before and whether
-	 * or not its kind is switched on. Logged as sent by hand, by the caller.
-	 */
 	sendPersonEmail: t.field({
+		description:
+			'Sends a person one mail they are owed right now, however often it went out before and whether or not its kind is switched on. Logged as sent by hand, by the caller.',
 		type: SendPersonEmailResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -226,90 +223,92 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/**
-	 * Writes a conference's own text for one kind and language. A field left empty keeps the
-	 * default; all three empty removes the row, back to the default text.
-	 */
-	setConferenceEmailText: t.field({
+	upsertConferenceEmailText: t.field({
+		description:
+			"Changes a conference's own text for one kind and language. A field left out stays as it is; an empty one or `null` goes back to the default. Once all three are back, the row goes.",
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			kind: t.arg({ type: emailKindEnum, required: true }),
-			locale: t.arg.string({ required: true }),
+			locale: t.arg.string({ required: true }).validate(localeSchema),
 			subject: t.arg.string(),
 			heading: t.arg.string(),
 			body: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const locale = assertLocale(args.locale);
-			const text = {
-				subject: ownText(args.subject),
-				heading: ownText(args.heading),
-				body: ownText(args.body)
+			const { locale } = args;
+			const changes = {
+				subject: args.subject === undefined ? undefined : ownText(args.subject),
+				heading: args.heading === undefined ? undefined : ownText(args.heading),
+				body: args.body === undefined ? undefined : ownText(args.body)
 			};
 			const table = schema.conferenceEmailText;
-			if (!text.subject && !text.heading && !text.body) {
-				await db.delete(table).where(
-					whereRows({
-						table,
-						filter: { conferenceId: args.conferenceId, kind: args.kind, locale }
-					})
-				);
-			} else {
-				await db
+			const { id, deleted } = await db.transaction(async (tx) => {
+				const [row] = await tx
 					.insert(table)
-					.values({ conferenceId: args.conferenceId, kind: args.kind, locale, ...text })
+					.values({ conferenceId: args.conferenceId, kind: args.kind, locale, ...changes })
 					.onConflictDoUpdate({
 						target: [table.conferenceId, table.kind, table.locale],
-						set: { ...text, updatedAt: new Date() }
-					});
+						set: { ...changes, updatedAt: new Date() }
+					})
+					.returning();
+				if (!row.subject && !row.heading && !row.body) {
+					await tx.delete(table).where(whereRows({ table, filter: { id: row.id } }));
+					return { id: row.id, deleted: true };
+				}
+				return { id: row.id, deleted: false };
+			});
+			if (deleted) conferenceEmailTextPubsub.removed();
+			else {
+				// an upsert: a new row for the lists, a changed one by id
+				conferenceEmailTextPubsub.created();
+				conferenceEmailTextPubsub.updated(id);
 			}
-			conferenceEmailTextPubsub.updated();
 			return true;
 		}
 	}),
 
-	/**
-	 * Writes the footer under every mail the conference sends, for one language. An empty one
-	 * removes it: mails in that language go out without.
-	 */
 	setConferenceEmailFooter: t.field({
+		description:
+			'Writes the footer under every mail the conference sends, for one language. An empty one removes it: mails in that language go out without.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			locale: t.arg.string({ required: true }),
+			locale: t.arg.string({ required: true }).validate(localeSchema),
 			text: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const locale = assertLocale(args.locale);
+			const { locale } = args;
 			const text = ownText(args.text);
 			const table = schema.conferenceEmailFooter;
 			if (!text) {
 				await db
 					.delete(table)
 					.where(whereRows({ table, filter: { conferenceId: args.conferenceId, locale } }));
+				conferenceEmailFooterPubsub.removed();
 			} else {
-				await db
+				const row = await db
 					.insert(table)
 					.values({ conferenceId: args.conferenceId, locale, text })
 					.onConflictDoUpdate({
 						target: [table.conferenceId, table.locale],
 						set: { text, updatedAt: new Date() }
-					});
+					})
+					.returning({ id: table.id })
+					.then(assertFirstEntryExists);
+				// an upsert: a new row for the lists, a changed one by id
+				conferenceEmailFooterPubsub.created();
+				conferenceEmailFooterPubsub.updated(row.id);
 			}
-			conferenceEmailFooterPubsub.updated();
 			return true;
 		}
 	}),
 
-	/**
-	 * Switches one kind of automatic mail on or off for a conference. Switching it on with
-	 * `notifyExisting: false` marks everybody it would reach right now as skipped, so only what
-	 * happens from now on is sent.
-	 */
 	setConferenceEmailEnabled: t.field({
+		description:
+			'Switches one kind of automatic mail on or off for a conference. Switching it on with `notifyExisting: false` marks everybody it would reach right now as skipped, so only what happens from now on is sent.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -317,10 +316,11 @@ schemaBuilder.mutationFields((t) => ({
 			enabled: t.arg.boolean({ required: true }),
 			notifyExisting: t.arg.boolean()
 		},
+		validate: z
+			.object({ kind: z.string() })
+			.refine(({ kind }) => !isAlwaysSent(kind), { error: () => m.emailKindAlwaysSent() }),
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			if (isAlwaysSent(args.kind))
-				throw apiError({ code: 'INVALID_INPUT', message: m.emailKindAlwaysSent() });
 			if (args.enabled && args.notifyExisting === false) {
 				await skipOpenEmails({ conferenceId: args.conferenceId, kinds: [args.kind] });
 			}
@@ -329,7 +329,6 @@ schemaBuilder.mutationFields((t) => ({
 				kinds: [args.kind],
 				enabled: args.enabled
 			});
-			conferenceEmailSettingPubsub.updated();
 			if (args.enabled)
 				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;

@@ -114,8 +114,9 @@ export function toUpdateUserArgs({ id, values }: { id: string; values: UserFormD
 		givenName: given_name,
 		familyName: family_name,
 		birthday: toCalendarDay(birthday),
-		apartment: optionalText(rest.apartment),
-		pronouns: optionalText(rest.pronouns),
+		// `updateUser` keeps a field left out, so an emptied one is sent as null to clear it
+		apartment: optionalText(rest.apartment) ?? null,
+		pronouns: optionalText(rest.pronouns) ?? null,
 		address: {
 			streetAddress: street,
 			postalCode: uses.zip ? optionalText(zip) : undefined,

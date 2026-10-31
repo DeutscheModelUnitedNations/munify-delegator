@@ -12,10 +12,8 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 		userId: t.string({ nullable: true }),
 		givenName: t.string({ nullable: true }),
 		familyName: t.string({ nullable: true }),
-		/** The calendar day as an ISO date. */
-		birthday: t.string({ nullable: true }),
-		/** Whether the person has any part in the conference. */
-		inConference: t.boolean(),
+		birthday: t.string({ description: 'The calendar day as an ISO date.', nullable: true }),
+		inConference: t.boolean({ description: 'Whether the person has any part in the conference.' }),
 		isHeadDelegate: t.boolean(),
 		isSupervisor: t.boolean(),
 		isTeamMember: t.boolean(),
@@ -31,25 +29,17 @@ const ScanLookupResult = schemaBuilder.simpleObject('ScanLookupResult', {
 		paymentStatus: t.field({ type: administrativeStatusEnum }),
 		termsAndConditions: t.field({ type: administrativeStatusEnum }),
 		guardianConsent: t.field({ type: administrativeStatusEnum }),
-		/**
-		 * The titles of the survey options the session expects when the person picked none of
-		 * them; empty when they did, or without a session expecting any.
-		 */
-		missingSurveyOptions: t.stringList()
+		missingSurveyOptions: t.stringList({
+			description:
+				'The titles of the survey options the session expects when the person picked none of them; empty when they did, or without a session expecting any.'
+		})
 	})
 });
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Looks a scanned code up for the entrance scanner: the code is an access card number of the
-	 * conference or a user id. Any team member may use it, which the scanner is for, so it answers
-	 * with this fixed set of fields instead of letting the caller read the participant's user and
-	 * status rows, which only participant care may - and only for people with a part in the
-	 * conference; anybody else is "not found". With a session it also tells whether the person
-	 * picked one of the survey options the session expects; the titles come along, since the
-	 * team members working the scanner may not read the survey itself.
-	 */
 	scanLookup: t.field({
+		description:
+			'Looks a scanned code up for the entrance scanner: the code is an access card number of the conference or a user id. Any team member may use it, which the scanner is for, so it answers with this fixed set of fields instead of letting the caller read the participant\'s user and status rows, which only participant care may - and only for people with a part in the conference; anybody else is "not found". With a session it also tells whether the person picked one of the survey options the session expects; the titles come along, since the team members working the scanner may not read the survey itself.',
 		type: ScanLookupResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

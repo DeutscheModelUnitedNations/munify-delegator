@@ -7,7 +7,6 @@ import {
 	regenerateInvitation,
 	revokeInvitation
 } from './teamMemberInvitationService';
-import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -23,8 +22,9 @@ registerTeamMemberInvitationAbilities();
 object({
 	table: 'teamMemberInvitation',
 	adjust: (t) => ({
-		/** Whether the invited address already has an account, which changes the invitation copy. */
 		userExists: t.field({
+			description:
+				'Whether the invited address already has an account, which changes the invitation copy.',
 			type: 'Boolean',
 			resolve: async (invitation) =>
 				(await db.query.user.findFirst({
@@ -49,8 +49,10 @@ const CreatedInvitation = schemaBuilder.simpleObject('CreatedInvitation', {
 		id: t.string(),
 		email: t.string(),
 		role: t.string(),
-		/** Plaintext, for copy-to-clipboard. Null when the user was added directly. */
-		token: t.string({ nullable: true }),
+		token: t.string({
+			description: 'Plaintext, for copy-to-clipboard. Null when the user was added directly.',
+			nullable: true
+		}),
 		expiresAt: t.field({ type: 'DateTime' }),
 		addedDirectly: t.boolean()
 	})
@@ -81,12 +83,9 @@ const RegenerateInvitationResult = schemaBuilder.simpleObject('RegenerateInvitat
 });
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Invites several people at once. Each address is handled independently: one failure is
-	 * reported in `errors` and the rest still go through, which is why this returns a result
-	 * object rather than throwing.
-	 */
 	createTeamMemberInvitations: t.field({
+		description:
+			'Invites several people at once. Each address is handled independently: one failure is reported in `errors` and the rest still go through, which is why this returns a result object rather than throwing.',
 		type: CreateInvitationsResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -108,8 +107,6 @@ schemaBuilder.mutationFields((t) => ({
 					assertCanGrantInvitationRole({ ctx, conferenceId: args.conferenceId, role })
 			});
 
-			teamMemberInvitationPubsub.created();
-			teamMemberPubsub.created();
 			// Someone with an account joins right away, and is owed the welcome
 			if (result.created.some((invitation) => invitation.addedDirectly))
 				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
@@ -123,12 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
-			const result = await revokeInvitation(invitation);
-			if (!result.success) return result;
-
-			teamMemberInvitationPubsub.updated(args.invitationId);
-
-			return result;
+			return revokeInvitation(invitation);
 		}
 	}),
 
@@ -145,15 +137,12 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
-			const result = await regenerateInvitation({
+			return regenerateInvitation({
 				invitation,
 				callerId,
 				origin: ctx.requestUrl().origin,
 				sendEmail: args.sendEmail
 			});
-			if (result.success) teamMemberInvitationPubsub.updated(args.invitationId);
-
-			return result;
 		}
 	})
 }));
@@ -165,19 +154,18 @@ const CheckEmailInput = schemaBuilder.inputType('CheckEmailInput', {
 const EmailStatusResult = schemaBuilder.simpleObject('EmailStatusResult', {
 	fields: (t) => ({
 		email: t.string(),
-		/** One of: already_member, pending_invitation, exists, new_user. */
-		status: t.string(),
+		status: t.string({
+			description: 'One of: already_member, pending_invitation, exists, new_user.'
+		}),
 		userId: t.string({ nullable: true }),
 		pendingInvitationId: t.string({ nullable: true })
 	})
 });
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Tells the invite form what will happen to each address before anything is sent: already on
-	 * the team, already invited, a known user who would be added directly, or a genuinely new one.
-	 */
 	checkTeamInvitationEmails: t.field({
+		description:
+			'Tells the invite form what will happen to each address before anything is sent: already on the team, already invited, a known user who would be added directly, or a genuinely new one.',
 		type: [EmailStatusResult],
 		args: {
 			conferenceId: t.arg.id({ required: true }),

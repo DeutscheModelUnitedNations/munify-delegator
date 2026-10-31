@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
+import { m } from '#lib/paraglide/messages';
 
 /** The statuses the sighting filters by; `all` lets everything through. */
 const SIGHTING_STATUS_FILTERS = [
@@ -12,9 +13,11 @@ const SIGHTING_STATUS_FILTERS = [
 ] as const;
 export type SightingStatusFilter = (typeof SIGHTING_STATUS_FILTERS)[number];
 
-export function isSightingStatusFilter(value: string): value is SightingStatusFilter {
-	return SIGHTING_STATUS_FILTERS.some((status) => status === value);
-}
+/** The `status` argument: one of the filters, all when left out. */
+export const sightingStatusSchema = z
+	.enum(SIGHTING_STATUS_FILTERS, { error: () => m.sightingStatusUnknown() })
+	.nullish()
+	.transform((status) => status ?? 'all');
 
 /** Mirrors the browser's old filter: a flagged application that is not rated counts as unrated. */
 const statusPredicates: Record<SightingStatusFilter, SQL> = {

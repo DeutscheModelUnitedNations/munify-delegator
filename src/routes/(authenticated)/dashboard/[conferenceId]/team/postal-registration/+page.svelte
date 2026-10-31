@@ -67,7 +67,7 @@
 		flow.changeStatus({
 			userId,
 			write: (userId) =>
-				client.mutate.updateConferenceParticipant({
+				client.mutate.upsertConferenceParticipant({
 					__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
 					...postalStatusFields
 				})

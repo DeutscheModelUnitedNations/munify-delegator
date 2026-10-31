@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors';
+import { z } from 'zod';
 import {
 	assertCanReadConferenceSchools,
 	assertCanReadSchoolMetrics,
@@ -16,20 +16,8 @@ import {
 	mergeSchools,
 	schoolMetrics,
 	searchSchoolIds,
-	updateSchool,
-	type ConferenceSchoolSortColumn
+	updateSchool
 } from './schoolService';
-import {
-	conferenceParticipantPubsub,
-	conferenceSupervisorPubsub,
-	delegationPubsub,
-	schoolPubsub,
-	schoolSuggestionPubsub,
-	schoolSuggestionVariantPubsub,
-	singleParticipantPubsub,
-	waitingListEntryPubsub
-} from '#api/pubsub';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerSchoolAbilities();
 
@@ -43,16 +31,13 @@ const SchoolMetrics = schemaBuilder.simpleObject('SchoolConferenceMetrics', {
 		conferenceTitle: t.string(),
 		startConference: t.field({ type: 'DateTime' }),
 		delegations: t.int(),
-		/** Delegation members and single participants */
-		participants: t.int(),
+		participants: t.int({ description: 'Delegation members and single participants' }),
 		applied: t.int(),
-		/** Participants holding a role */
-		seated: t.int(),
+		seated: t.int({ description: 'Participants holding a role' }),
 		attended: t.int(),
 		supervisors: t.int(),
 		waitingList: t.int(),
-		/** Waiting list entries that were given a seat */
-		fromWaitingList: t.int()
+		fromWaitingList: t.int({ description: 'Waiting list entries that were given a seat' })
 	})
 });
 
@@ -62,14 +47,11 @@ const ConferenceSchoolRow = schemaBuilder.simpleObject('ConferenceSchoolRow', {
 		name: t.string(),
 		city: t.string({ nullable: true }),
 		delegations: t.int(),
-		/** Delegation members and single participants */
-		participants: t.int(),
+		participants: t.int({ description: 'Delegation members and single participants' }),
 		applied: t.int(),
-		/** Participants holding a role */
-		seated: t.int(),
+		seated: t.int({ description: 'Participants holding a role' }),
 		supervisors: t.int(),
-		/** Entries still waiting */
-		waitingList: t.int()
+		waitingList: t.int({ description: 'Entries still waiting' })
 	})
 });
 
@@ -81,16 +63,16 @@ const ConferenceSchoolsPage = schemaBuilder.simpleObject('ConferenceSchoolsPage'
 	})
 });
 
-function isSortColumn(column: string): column is ConferenceSchoolSortColumn {
-	return CONFERENCE_SCHOOL_SORT_COLUMNS.some((known) => known === column);
-}
+/** The column the schools page sorts by, the participants when left out. */
+const sortColumnSchema = z
+	.enum(CONFERENCE_SCHOOL_SORT_COLUMNS, { error: () => m.invalidSortColumn() })
+	.nullish()
+	.transform((column) => column ?? 'participants');
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Schools matching what an applicant typed, the likeliest first, for picking one instead of
-	 * typing it again.
-	 */
 	searchSchools: t.drizzleField({
+		description:
+			'Schools matching what an applicant typed, the likeliest first, for picking one instead of typing it again.',
 		type: [SchoolRef],
 		args: {
 			search: t.arg.string({ required: true }),
@@ -117,26 +99,24 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The schools named in a conference, with how many people each sends. Participant care only. */
 	conferenceSchools: t.field({
+		description:
+			'The schools named in a conference, with how many people each sends. Participant care only.',
 		type: ConferenceSchoolsPage,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			search: t.arg.string(),
-			sortColumn: t.arg.string(),
+			sortColumn: t.arg.string().validate(sortColumnSchema),
 			sortDesc: t.arg.boolean(),
 			limit: t.arg.int({ required: true }),
 			offset: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadConferenceSchools({ ctx, conferenceId: args.conferenceId });
-			const sortColumn = args.sortColumn ?? 'participants';
-			if (!isSortColumn(sortColumn))
-				throw apiError({ code: 'INVALID_INPUT', message: m.invalidSortColumn() });
 			return conferenceSchoolsPage({
 				conferenceId: args.conferenceId,
 				search: args.search,
-				sortColumn,
+				sortColumn: args.sortColumn,
 				sortDesc: args.sortDesc ?? true,
 				limit: Math.min(Math.max(args.limit, 1), 500),
 				offset: Math.max(args.offset, 0)
@@ -144,12 +124,13 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** Per conference, how many people from the school registered, applied, got a seat and came. */
 	schoolMetrics: t.field({
+		description:
+			'Per conference, how many people from the school registered, applied, got a seat and came.',
 		type: [SchoolMetrics],
 		args: { schoolId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const conferenceIds = await assertCanReadSchoolMetrics({ ctx, schoolId: args.schoolId });
+			const { conferenceIds } = await assertCanReadSchoolMetrics({ ctx, schoolId: args.schoolId });
 			return schoolMetrics({ schoolId: args.schoolId, conferenceIds });
 		}
 	})
@@ -177,18 +158,17 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, { id, ...update }, ctx) => {
 			await assertCanUpdateSchools({ ctx, ids: [id] });
 			await updateSchool({ id, update });
-			schoolPubsub.updated(id);
 			return db.query.school
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.school, id })))
+				.findFirst(
+					query((await ctx.abilities.school.filter('read')).merge({ where: { id } }).query.single)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/**
-	 * Folds duplicates into one school: everything naming one of `sourceIds` names `targetId`
-	 * afterwards, across every conference, and the sources are deleted.
-	 */
 	mergeSchools: t.drizzleField({
+		description:
+			'Folds duplicates into one school: everything naming one of `sourceIds` names `targetId` afterwards, across every conference, and the sources are deleted.',
 		type: SchoolRef,
 		args: {
 			targetId: t.arg.id({ required: true }),
@@ -204,17 +184,13 @@ schemaBuilder.mutationFields((t) => ({
 				name: args.name ?? undefined
 			});
 
-			schoolPubsub.updated();
-			delegationPubsub.updated();
-			singleParticipantPubsub.updated();
-			conferenceSupervisorPubsub.updated();
-			waitingListEntryPubsub.updated();
-			conferenceParticipantPubsub.updated();
-			schoolSuggestionPubsub.updated();
-			schoolSuggestionVariantPubsub.updated();
-
 			return db.query.school
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.school, id: args.targetId })))
+				.findFirst(
+					query(
+						(await ctx.abilities.school.filter('read')).merge({ where: { id: args.targetId } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})

@@ -13,16 +13,14 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerSurveyAnswerAbilities() {
-	// Ported from abilities/entities/surveyAnswer.ts
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users read and update their own answers, and take one back until the question's deadline,
-	// after which answering is closed for them too.
-	abilityBuilder.surveyAnswer.allow(['read', 'update']).when((ctx) => {
+	// Everybody reads their own answers, and changes or withdraws them until the question's deadline.
+	abilityBuilder.surveyAnswer.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { participant: { userId: id } } } : undefined;
 	});
-	abilityBuilder.surveyAnswer.allow('delete').when((ctx) => {
+	abilityBuilder.surveyAnswer.allow(['update', 'delete']).when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
 			? {
@@ -34,26 +32,27 @@ export function registerSurveyAnswerAbilities() {
 			: undefined;
 	});
 
-	// Participant care and project management manage their conference's answers.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// answers to its conference's questions.
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
 		const question = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return question ? { where: { question } } : undefined;
 	});
 }
 
-/** The option an answer picks, as far as deciding who may give it goes. */
+/** The option an answer picks, with what deciding who may give it needs. */
 interface AnsweredOption {
 	questionId: string;
 	question: { conferenceId: string };
 }
 
 /**
- * Who an answer may be given for: participant care answers for anybody in its conference, and
- * everybody else only for themselves, in a conference they take part in. Returns the participant
- * row the answer belongs to, and whether the caller answers as participant care - organizers may
- * overfill an option and answer past the deadline; participants may not.
+ * Refuses unless the caller may answer for `requestedUserId` (by default themselves): participant
+ * care for anybody in its conference, everybody else only for themselves; either way the subject
+ * has to take part in the conference. Returns the subject's participant row and whether the caller
+ * answers as participant care, who may overfill an option and answer past the deadline.
  */
-async function answeringFor({
+async function assertCanAnswerFor({
 	ctx,
 	option,
 	requestedUserId
@@ -83,8 +82,8 @@ async function answeringFor({
 }
 
 /**
- * Whom an answer is for, checked: the user it names, or, addressed by id alone, whoever the
- * answer already belongs to. The question it names has to be the option's.
+ * Whom an answer is for: the user it names, or, addressed by id alone, whoever the answer already
+ * belongs to - checked by `assertCanAnswerFor`. Refuses a question that is not the option's.
  */
 async function answerSubject({
 	ctx,
@@ -106,7 +105,7 @@ async function answerSubject({
 				with: { participant: { columns: { userId: true } } }
 			})
 		: undefined;
-	return answeringFor({
+	return assertCanAnswerFor({
 		ctx,
 		option,
 		requestedUserId: args.userId ?? addressed?.participant.userId
@@ -114,7 +113,8 @@ async function answerSubject({
 }
 
 /**
- * Refuses unless the caller may give the answer `option` stands for. Returns whom it is for (their
+ * Refuses unless the caller may give the answer `option` stands for, for themselves or, as
+ * participant care, for someone else. Returns whom it is for (their
  * participant row in the question's conference), whether the option's limits apply to the caller,
  * and the caller's answer to replace, if there is one they may update.
  */
@@ -144,8 +144,9 @@ export async function assertCanAnswerSurvey({
 }
 
 /**
- * Refuses unless the caller may take back the answer `userId` (by default the caller) gave to the
- * question (the row's delete ability). Returns it.
+ * Refuses (NOT_FOUND) unless the caller may delete the answer `userId` (by default the caller)
+ * gave to the question: their own before the deadline, or anybody's as participant care. Returns
+ * it.
  */
 export async function assertCanDeleteSurveyAnswer({
 	ctx,
@@ -165,7 +166,10 @@ export async function assertCanDeleteSurveyAnswer({
 	return answer;
 }
 
-/** Refuses unless the caller may answer the question for everybody who has not yet. */
+/**
+ * Refuses unless the caller is participant care in the question's conference, who may answer it
+ * for everybody who has not yet.
+ */
 export async function assertCanDistributeSurvey({
 	ctx,
 	questionId

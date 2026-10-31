@@ -17,20 +17,21 @@ import { apiError } from '#api/services/errors';
 export function registerResolutionAbilities() {
 	abilityBuilder.resolution.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Everybody with a part in the conference downloads its adopted resolutions: participants,
-	// supervisors and the team.
+	// Everybody with a part in the conference reads (downloads) its adopted resolutions: its
+	// participants (delegates, single participants, supervisors) and its whole team.
 	abilityBuilder.resolution.allow('read').when((ctx) => grantWhere(isParticipantOfConference(ctx)));
 	abilityBuilder.resolution
 		.allow('read')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
 
-	// Project management, participant care and the content lead upload and curate them.
+	// The content roles (project management, participant care, content lead) update and delete
+	// them; creating is `assertCanCreateResolution`.
 	abilityBuilder.resolution
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: CONFERENCE_CONTENT_ROLES })));
 }
 
-/** A committee tag is optional, but one that is given has to be the resolution's conference's. */
+/** Refuses (INVALID_INPUT) a committee tag that is not the conference's; no tag passes. */
 async function assertCommitteeInConference({
 	committeeId,
 	conferenceId
@@ -44,8 +45,8 @@ async function assertCommitteeInConference({
 }
 
 /**
- * Refuses unless the caller curates the conference's resolutions, the committee tag is the
- * conference's, and the caller uploaded the PDF for a resolution.
+ * Refuses unless the caller holds `editConferenceContent` in the conference, the committee tag is
+ * the conference's, and the caller uploaded the PDF as a resolution of that conference.
  */
 export async function assertCanCreateResolution({
 	ctx,
@@ -75,8 +76,8 @@ export async function assertCanCreateResolution({
 }
 
 /**
- * Refuses unless the resolution exists, the caller may update it, and a new committee tag is its
- * conference's.
+ * Refuses unless the resolution exists, the caller may update it (the content roles, a system
+ * admin), and a new committee tag is its conference's.
  */
 export async function assertCanUpdateResolution({
 	ctx,

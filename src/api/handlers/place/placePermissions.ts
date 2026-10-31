@@ -12,19 +12,23 @@ import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissio
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerPlaceAbilities() {
-	// Places belong to the schedule: readable by whoever reads the conference's calendar.
+	// Whoever reads the conference's schedule (`calendarConference`) reads its places.
 	abilityBuilder.place.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { conference } } : undefined;
 	});
 	abilityBuilder.place.allow(['update', 'delete']).when(systemAdmin);
 
+	// Participant care (project management and participant care) updates and deletes them.
 	abilityBuilder.place
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
-/** Refuses unless the caller may add places to the conference and store the site plan given. */
+/**
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the conference and uploaded the site plan given (`assertCanClaimFile`).
+ */
 export async function assertCanCreatePlace({
 	ctx,
 	conferenceId,
@@ -42,7 +46,10 @@ export async function assertCanCreatePlace({
 	});
 }
 
-/** Refuses unless the caller may update the place and store the site plan given in it. */
+/**
+ * Refuses unless the caller may update the place (participant care of its conference) and uploaded
+ * the site plan given (`assertCanClaimFile`).
+ */
 export async function assertCanUpdatePlace({
 	ctx,
 	id,

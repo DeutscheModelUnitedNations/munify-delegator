@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
-import { callerUserId, deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { callerUserId, deleteIfAllowed } from '#api/services/authHelper/utils';
 import {
 	createPaper,
 	findNextPaperToReview,
@@ -24,7 +24,9 @@ import {
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { paperPubsub, paperVersionPubsub } from '#api/pubsub';
+import { z } from 'zod';
+import { m } from '#lib/paraglide/messages';
+import { paperPubsub } from '#api/pubsub';
 
 registerPaperAbilities();
 
@@ -70,6 +72,10 @@ countQuery({ table: 'paper' }); // generates `papersCount(where)`, which the tea
 const paperTypeEnum = enum_({ tsName: 'paperType' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
 
+/** The paper with this id, as far as the caller may read it. */
+const readablePaper = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
+	(await ctx.abilities.paper.filter('read')).merge({ where: { id } }).query.single;
+
 schemaBuilder.mutationFields((t) => ({
 	createPaper: t.drizzleField({
 		type: PaperRef,
@@ -82,21 +88,24 @@ schemaBuilder.mutationFields((t) => ({
 			content: t.arg({ type: 'JSON', required: true }),
 			status: t.arg({ type: paperStatusEnum })
 		},
+		// REVISED answers a review, and a new paper has had none.
+		validate: z
+			.object({ status: z.string().nullish() })
+			.refine((args) => args.status !== 'REVISED', {
+				error: () => m.paperNewDraftOrSubmission()
+			}),
 		resolve: async (query, _root, args, ctx) => {
 			const { authorParticipantId } = await assertCanCreatePaper({ ctx, args });
 			const created = await createPaper({ ...args, authorParticipantId });
 
-			paperPubsub.created();
-			paperVersionPubsub.created();
-
 			return db.query.paper
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: created.id })))
+				.findFirst(query(await readablePaper({ ctx, id: created.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/** Each update appends a new version rather than editing the previous one. */
 	updatePaper: t.drizzleField({
+		description: 'Each update appends a new version rather than editing the previous one.',
 		type: PaperRef,
 		args: {
 			paperId: t.arg.id({ required: true }),
@@ -107,11 +116,8 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanUpdatePaper({ ctx, paperId: args.paperId });
 			await updatePaper(args);
 
-			paperPubsub.updated(args.paperId);
-			paperVersionPubsub.created();
-
 			return db.query.paper
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: args.paperId })))
+				.findFirst(query(await readablePaper({ ctx, id: args.paperId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -129,12 +135,9 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Introduction papers are the ones with no agenda item - a non-state actor writes one per
-	 * conference rather than one per topic. For the reviewer hub and the participants' paper view
-	 * alike; the read ability decides which papers each of them gets.
-	 */
 	findIntroductionPapers: t.drizzleField({
+		description:
+			"Introduction papers are the ones with no agenda item - a non-state actor writes one per conference rather than one per topic. For the reviewer hub and the participants' paper view alike; the read ability decides which papers each of them gets.",
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
@@ -146,8 +149,8 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** Papers of the delegations the caller supervises. */
 	findSupervisedPapers: t.drizzleField({
+		description: 'Papers of the delegations the caller supervises.',
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
@@ -175,17 +178,15 @@ schemaBuilder.queryFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * A single paper for the public paper view: exactly what the read ability allows - authors and
-	 * reviewers in any state, participants of the conference once it is no longer a draft.
-	 */
 	findPublicPaperContent: t.drizzleField({
+		description:
+			'A single paper for the public paper view: exactly what the read ability allows - authors and reviewers in any state, participants of the conference once it is no longer a draft.',
 		type: PaperRef,
 		args: { paperId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: args.paperId })))
+				.findFirst(query(await readablePaper({ ctx, id: args.paperId })))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -195,9 +196,9 @@ const AgendaItemPaperGroup = schemaBuilder
 	.objectRef<AgendaItemGroup>('AgendaItemPaperGroup')
 	.implement({
 		fields: (t) => ({
-			// Groups are keyed by agenda item, so there is always one - papers without an agenda
-			// item are introduction papers and have their own query.
 			agendaItem: t.field({
+				description:
+					'Groups are keyed by agenda item, so there is always one - papers without an agenda item are introduction papers and have their own query.',
 				type: CommitteeAgendaItemRef,
 				resolve: (parent) => parent.agendaItem
 			}),
@@ -218,8 +219,9 @@ const CommitteePaperGroup = schemaBuilder
 	});
 
 schemaBuilder.queryFields((t) => ({
-	/** The conference's papers by committee and agenda item, for reviewers and participants alike. */
 	findPapersGroupedByCommittee: t.field({
+		description:
+			"The conference's papers by committee and agenda item, for reviewers and participants alike.",
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -247,8 +249,9 @@ const MyReviewStats = schemaBuilder.simpleObject('MyReviewStats', {
 });
 
 schemaBuilder.queryFields((t) => ({
-	/** Top ten reviewers of a conference, ranked by how often they got to a paper first. */
 	reviewerLeaderboard: t.field({
+		description:
+			'Top ten reviewers of a conference, ranked by how often they got to a paper first.',
 		type: [ReviewerStat],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -259,8 +262,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The caller's own review counts. Null rather than an error when they are not a reviewer. */
 	myReviewStats: t.field({
+		description:
+			"The caller's own review counts. Null rather than an error when they are not a reviewer.",
 		type: MyReviewStats,
 		nullable: true,
 		args: { conferenceId: t.arg.id({ required: true }) },
@@ -276,11 +280,9 @@ schemaBuilder.queryFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * The paper a reviewer should pick up next for an agenda item: the least recently touched
-	 * one, with never-reviewed submissions taking precedence over revisions.
-	 */
 	findNextPaperToReview: t.field({
+		description:
+			'The paper a reviewer should pick up next for an agenda item: the least recently touched one, with never-reviewed submissions taking precedence over revisions.',
 		type: PaperRef,
 		args: { agendaItemId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

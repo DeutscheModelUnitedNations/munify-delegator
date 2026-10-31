@@ -1,4 +1,5 @@
-import { type Transaction, db, schema } from '#api/db/db';
+import { db, type Transaction, schema } from '#api/db/db';
+import { calendarEntryPubsub } from '#api/pubsub';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
@@ -57,7 +58,7 @@ export async function createCalendarEntry({
 	trackIds: readonly string[] | null | undefined;
 	surveyOptionIds: readonly string[] | null | undefined;
 }) {
-	return db.transaction(async (tx) => {
+	const created = await db.transaction(async (tx) => {
 		const created = await tx
 			.insert(schema.calendarEntry)
 			.values(values)
@@ -68,6 +69,8 @@ export async function createCalendarEntry({
 			await setSurveyOptions({ tx, entryId: created.id, optionIds: surveyOptionIds });
 		return created;
 	});
+	calendarEntryPubsub.created();
+	return created;
 }
 
 /**
@@ -93,4 +96,5 @@ export async function updateCalendarEntry({
 		if (trackIds) await setTracks({ tx, entryId: id, trackIds });
 		if (surveyOptionIds) await setSurveyOptions({ tx, entryId: id, optionIds: surveyOptionIds });
 	});
+	calendarEntryPubsub.updated(id);
 }

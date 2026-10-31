@@ -1,6 +1,14 @@
 import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
+vi.mock('#api/pubsub', () => ({
+	paperPubsub: { created: () => undefined, updated: () => undefined, removed: () => undefined },
+	paperVersionPubsub: {
+		created: () => undefined,
+		updated: () => undefined,
+		removed: () => undefined
+	}
+}));
 import type * as schema from '#api/db/schema/index';
 import {
 	groupPapersByCommittee,

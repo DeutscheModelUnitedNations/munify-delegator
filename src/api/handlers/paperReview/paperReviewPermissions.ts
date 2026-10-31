@@ -6,9 +6,9 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerPaperReviewAbilities() {
-	// Ported from abilities/entities/paper/paperReview.ts
 	abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 
+	// Authors read the reviews of their own papers.
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -16,6 +16,8 @@ export function registerPaperReviewAbilities() {
 			: undefined;
 	});
 
+	// The paper team (every team role but the plain member) reads the reviews of the conference's
+	// papers. Reviews are written through `createPaperReview`, never updated.
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -33,8 +35,8 @@ export function registerPaperReviewAbilities() {
 }
 
 /**
- * Rejects the review unless the paper exists in a conference whose papers the caller reviews.
- * Reviewing is a reviewer's action; reading the paper is not enough.
+ * Refuses (NOT_FOUND) unless the paper exists in a conference where the caller is on the paper
+ * team (`reviewPapers`). Reading the paper is not enough to review it.
  */
 export async function assertCanReviewPaper({ ctx, paperId }: { ctx: ApiContext; paperId: string }) {
 	const paper = await db.query.paper.findFirst({

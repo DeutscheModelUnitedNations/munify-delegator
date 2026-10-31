@@ -1,7 +1,17 @@
 import { db, schema, type Transaction } from '#api/db/db';
+import {
+	conferenceParticipantPubsub,
+	conferenceSupervisorPubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	schoolPubsub,
+	schoolSuggestionPubsub,
+	schoolSuggestionVariantPubsub,
+	singleParticipantPubsub,
+	waitingListEntryPubsub
+} from '#api/pubsub';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
-import { PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH } from '$app/env/public';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
@@ -36,9 +46,6 @@ async function existingSchool({ id, tx }: { id: string; tx: Db }) {
 async function schoolNamed({ typed, tx }: { typed: string; tx: Db }) {
 	const name = cleanSchoolName(typed);
 	if (!name) return null;
-	if (name.length > PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.schoolNameTooLong() });
-	}
 	const [existing] = await tx
 		.select({ id: schema.school.id })
 		.from(schema.school)
@@ -47,6 +54,7 @@ async function schoolNamed({ typed, tx }: { typed: string; tx: Db }) {
 		.limit(1);
 	if (existing) return existing.id;
 	const [created] = await tx.insert(schema.school).values({ name }).returning();
+	if (created) schoolPubsub.created();
 	return created?.id ?? null;
 }
 
@@ -93,6 +101,7 @@ export async function updateSchool({ id, update }: { id: string; update: SchoolU
 		.update(schema.school)
 		.set({ ...update, name })
 		.where(whereRows({ table: schema.school, filter: { id } }));
+	schoolPubsub.updated(id);
 }
 
 /**
@@ -112,7 +121,7 @@ export async function mergeSchools({
 	const sources = [...new Set(sourceIds)].filter((id) => id !== targetId);
 	if (sources.length === 0) return;
 
-	await db.transaction(async (tx) => {
+	const repointed = await db.transaction(async (tx) => {
 		const rows = await tx.query.school.findMany({ where: { id: { in: [targetId, ...sources] } } });
 		const target = rows.find((row) => row.id === targetId);
 		if (!target) throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
@@ -124,12 +133,34 @@ export async function mergeSchools({
 			.filter((note): note is string => !!note?.trim())
 			.join('\n\n');
 
-		for (const table of [schema.waitingListEntry, schema.conferenceParticipant]) {
-			await tx
-				.update(table)
-				.set({ schoolId: targetId })
-				.where(whereRows({ table, filter: { schoolId: { in: sources } } }));
-		}
+		const [waitingListEntries, participants] = await Promise.all(
+			[schema.waitingListEntry, schema.conferenceParticipant].map((table) =>
+				tx
+					.update(table)
+					.set({ schoolId: targetId })
+					.where(whereRows({ table, filter: { schoolId: { in: sources } } }))
+					.returning({ id: table.id })
+			)
+		);
+		const participantIds = participants.map((row) => row.id);
+		// registrations read their school through the participant row
+		const registrationWhere = { conferenceParticipantId: { in: participantIds } };
+		const [members, singleParticipants, supervisors] = participantIds.length
+			? await Promise.all([
+					tx.query.delegationMember.findMany({
+						where: registrationWhere,
+						columns: { id: true, delegationId: true }
+					}),
+					tx.query.singleParticipant.findMany({
+						where: registrationWhere,
+						columns: { id: true }
+					}),
+					tx.query.conferenceSupervisor.findMany({
+						where: registrationWhere,
+						columns: { id: true }
+					})
+				])
+			: [[], [], []];
 
 		await tx
 			.update(schema.school)
@@ -159,7 +190,30 @@ export async function mergeSchools({
 			where s.id in (select suggestion_id from school_suggestion_variant where school_id = ${targetId})
 				and (select count(*) from school_suggestion_variant v where v.suggestion_id = s.id) < 2
 		`);
+
+		return {
+			waitingListEntryIds: waitingListEntries.map((row) => row.id),
+			participantIds,
+			memberIds: members.map((row) => row.id),
+			delegationIds: [...new Set(members.map((row) => row.delegationId))],
+			singleParticipantIds: singleParticipants.map((row) => row.id),
+			supervisorIds: supervisors.map((row) => row.id)
+		};
 	});
+	schoolPubsub.updated(targetId);
+	schoolPubsub.removed();
+	// the sources' variants cascaded, and suggestions left with one school may be gone
+	schoolSuggestionPubsub.removed();
+	schoolSuggestionVariantPubsub.removed();
+	const announce: [{ updated: (ids: string[]) => void }, string[]][] = [
+		[waitingListEntryPubsub, repointed.waitingListEntryIds],
+		[conferenceParticipantPubsub, repointed.participantIds],
+		[delegationMemberPubsub, repointed.memberIds],
+		[delegationPubsub, repointed.delegationIds],
+		[singleParticipantPubsub, repointed.singleParticipantIds],
+		[conferenceSupervisorPubsub, repointed.supervisorIds]
+	];
+	for (const [pubsub, ids] of announce) if (ids.length > 0) pubsub.updated(ids);
 }
 
 /**

@@ -3,6 +3,7 @@ import { getRequestEvent } from '$app/server';
 import { whereRows } from '#api/db/whereRows';
 import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
+import { teamMemberInvitationPubsub, teamMemberPubsub, userPubsub } from '#api/pubsub';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { isUniqueViolationOn } from '#api/services/errors';
@@ -93,6 +94,8 @@ export async function upsertSelfFromClaims({
 		if (!isUniqueViolationOn({ error, column: 'email' })) throw error;
 		return redirectToEmailConflict({ userSubject: claims.sub, email });
 	}
+	// a new account is in no list yet, so announcing its row is enough
+	userPubsub.updated(user.id);
 
 	await claimPendingInvitation(user.id);
 
@@ -135,6 +138,7 @@ export async function claimPendingInvitation(userId: string) {
 		if (existingMember) {
 			// Already a member, so the invitation just gets closed out.
 			await db.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
+			teamMemberInvitationPubsub.updated(invitation.id);
 			return;
 		}
 
@@ -154,6 +158,8 @@ export async function claimPendingInvitation(userId: string) {
 				.values({ conferenceId: invitation.conferenceId, userId, role: invitation.role });
 			await tx.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
 		});
+		teamMemberPubsub.created();
+		teamMemberInvitationPubsub.updated(invitation.id);
 		scheduleEmailSweep({ conferenceId: invitation.conferenceId, origin: event.url.origin });
 	} catch (error) {
 		logger.error('Failed to process pending invitation', error);

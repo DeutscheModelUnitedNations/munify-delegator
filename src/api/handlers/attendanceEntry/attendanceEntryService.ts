@@ -4,6 +4,7 @@ import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { attendanceSessionPubsub, conferenceParticipantPubsub } from '#api/pubsub';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
@@ -56,6 +57,7 @@ export async function storeSessionCard({
 		.update(schema.conferenceParticipant)
 		.set({ accessCardId })
 		.where(whereRows({ table: schema.conferenceParticipant, filter: { id: statusId } }));
+	conferenceParticipantPubsub.updated(statusId);
 }
 
 /**
@@ -69,18 +71,21 @@ export async function startSession({
 	values: typeof schema.attendanceSession.$inferInsert & { id: string };
 	surveyOptionIds: readonly string[];
 }) {
-	await db.transaction(async (tx) => {
+	const started = await db.transaction(async (tx) => {
 		const [started] = await tx
 			.insert(schema.attendanceSession)
 			.values(values)
 			.onConflictDoNothing()
 			.returning({ id: schema.attendanceSession.id });
 		const ids = [...new Set(surveyOptionIds)];
-		if (!started || ids.length === 0) return;
-		await tx
-			.insert(schema.attendanceSessionToSurveyOption)
-			.values(ids.map((optionId) => ({ a: values.id, b: optionId })));
+		if (started && ids.length > 0) {
+			await tx
+				.insert(schema.attendanceSessionToSurveyOption)
+				.values(ids.map((optionId) => ({ a: values.id, b: optionId })));
+		}
+		return started;
 	});
+	if (started) attendanceSessionPubsub.created();
 }
 
 /**
@@ -109,6 +114,7 @@ export async function renameSession({
 		.update(schema.attendanceSession)
 		.set({ occasion, showOnCertificate })
 		.where(whereRows({ table: schema.attendanceSession, filter: { id: sessionId } }));
+	attendanceSessionPubsub.updated(sessionId);
 }
 
 /**
@@ -129,7 +135,7 @@ export async function renameOccasion({
 		occasion: to,
 		fallback: await certificateFlagOf({ conferenceId, occasion: from })
 	});
-	await db
+	const renamed = await db
 		.update(schema.attendanceSession)
 		.set({ occasion: to, showOnCertificate })
 		.where(
@@ -137,7 +143,9 @@ export async function renameOccasion({
 				table: schema.attendanceSession,
 				filter: sameOccasion({ conferenceId, occasion: from })
 			})
-		);
+		)
+		.returning({ id: schema.attendanceSession.id });
+	if (renamed.length > 0) attendanceSessionPubsub.updated(renamed.map((session) => session.id));
 }
 
 /** Sessions of the conference with this occasion, ignoring case and surrounding spaces. */
@@ -179,7 +187,7 @@ export async function setOccasionOnCertificate({
 	occasion: string;
 	show: boolean;
 }) {
-	await db
+	const changed = await db
 		.update(schema.attendanceSession)
 		.set({ showOnCertificate: show })
 		.where(
@@ -187,7 +195,9 @@ export async function setOccasionOnCertificate({
 				table: schema.attendanceSession,
 				filter: sameOccasion({ conferenceId, occasion })
 			})
-		);
+		)
+		.returning({ id: schema.attendanceSession.id });
+	if (changed.length > 0) attendanceSessionPubsub.updated(changed.map((session) => session.id));
 }
 
 const occasionRowSchema = z.object({

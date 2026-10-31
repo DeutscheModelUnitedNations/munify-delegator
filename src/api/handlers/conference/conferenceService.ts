@@ -19,7 +19,14 @@ import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { apiError } from '#api/services/errors';
-import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout';
+import {
+	LAYOUT_DOCUMENTS,
+	documentLayoutSchema,
+	type LayoutDocument
+} from '#lib/helpers/documentLayout';
+import { jsonDocument } from '#api/services/argSchemas';
+import { z } from 'zod';
+import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
@@ -60,29 +67,21 @@ export async function countOfferedSeats(conferenceId: string) {
 }
 
 /** The settings with a closed set of values; an omitted or cleared one is left to the column. */
-export function assertValidConferenceSettings(args: {
-	nametagBinCount?: number | null;
-	maxSeatsPerSchool?: number | null;
-	language?: string | null;
-}) {
-	if (args.maxSeatsPerSchool != null && args.maxSeatsPerSchool < 1) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceMaxSeatsPerSchoolRange() });
-	}
-
-	if (
-		args.nametagBinCount != null &&
-		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
-	) {
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS })
-		});
-	}
-
-	if (args.language != null && !isConferenceLanguage(args.language)) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceLanguageUnsupported() });
-	}
-}
+export const conferenceSettingSchemas = {
+	maxSeatsPerSchool: z
+		.number()
+		.min(1, { error: () => m.conferenceMaxSeatsPerSchoolRange() })
+		.nullish(),
+	nametagBinCount: z
+		.number()
+		.min(1, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
+		.max(MAX_NAMETAG_BINS, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
+		.nullish(),
+	language: z
+		.string()
+		.refine(isConferenceLanguage, { error: () => m.conferenceLanguageUnsupported() })
+		.nullish()
+};
 
 type ConferenceInsert = typeof schema.conference.$inferInsert;
 /** The arguments of `updateConference`: any column but the id, left out or cleared with null. */
@@ -155,21 +154,24 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 		})
 		.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
 		.returning({ id: schema.conference.id });
-
-	return updated.length > 0;
+	if (updated.length === 0) return false;
+	conferencePubsub.updated(args.id);
+	return true;
 }
+
+/** A seeding document, as JSON string or parsed. */
+export const seedingDataSchema = jsonDocument({
+	schema: ConferenceSeedingSchema,
+	malformed: () => m.plausibilityIncompleteOrInvalidData(),
+	invalid: (details) => m.conferenceSeedingInvalid({ details })
+});
+type ConferenceSeedingData = z.output<typeof seedingDataSchema>;
 
 /**
  * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
  * document. Admin only.
  */
-export async function seedConference(input: unknown) {
-	if (!input) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.plausibilityIncompleteOrInvalidData() });
-	}
-
-	const data = ConferenceSeedingSchema.parse(input);
-
+export async function seedConference(data: ConferenceSeedingData) {
 	// Checked before the transaction so every offending code can be reported at once: a
 	// nation with no row cannot be linked to a committee, and failing mid-transaction would
 	// only reveal the first one.
@@ -248,6 +250,10 @@ export async function seedConference(input: unknown) {
 
 		return conference;
 	});
+	conferencePubsub.created();
+	// with its committees and roles
+	committeePubsub.created();
+	conferenceRolePubsub.created();
 
 	return created;
 }
@@ -332,6 +338,21 @@ export async function findPlausibilityIssues({
 	};
 }
 
+/** The arguments of `setDocumentLayout`: a layout has to fit its document; null clears it. */
+export const documentLayoutArgsSchema = z
+	.object({
+		conferenceId: z.string(),
+		document: z.enum(LAYOUT_DOCUMENTS),
+		layout: z.unknown()
+	})
+	.transform((args, ctx) => {
+		if (args.layout === null || args.layout === undefined) return { ...args, layout: null };
+		const parsed = documentLayoutSchema(args.document).safeParse(args.layout);
+		if (parsed.success) return { ...args, layout: parsed.data };
+		ctx.issues.push({ code: 'custom', input: args.layout, message: m.documentLayoutInvalid() });
+		return z.NEVER;
+	});
+
 /**
  * Stores where a document's generated parts go on its template; null goes back to the defaults.
  * The other documents' layouts stay as they are. Answers whether the conference exists.
@@ -343,22 +364,19 @@ export async function setDocumentLayout({
 }: {
 	conferenceId: string;
 	document: LayoutDocument;
-	layout: unknown;
+	layout?: z.output<ReturnType<typeof documentLayoutSchema>> | null;
 }) {
 	const column = schema.conference.documentLayouts;
-	let value;
-	if (layout === null || layout === undefined) {
-		value = sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`;
-	} else {
-		const parsed = documentLayoutSchema(document).safeParse(layout);
-		if (!parsed.success)
-			throw apiError({ code: 'INVALID_INPUT', message: m.documentLayoutInvalid() });
-		value = sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(parsed.data)}::jsonb)`;
-	}
+	const value =
+		layout == null
+			? sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`
+			: sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(layout)}::jsonb)`;
 	const updated = await db
 		.update(schema.conference)
 		.set({ documentLayouts: value })
 		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }))
 		.returning({ id: schema.conference.id });
-	return updated.length > 0;
+	if (updated.length === 0) return false;
+	conferencePubsub.updated(conferenceId);
+	return true;
 }

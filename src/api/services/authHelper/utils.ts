@@ -40,7 +40,8 @@ type IdFilterable = {
 
 /**
  * A SQL `where` matching the row `id` of `table` only if the caller may `action` it, for writing
- * through: `.where(await whereAllowed(ctx, 'user', 'update', id))` touches nothing otherwise.
+ * through: `.where(await whereAllowed({ ctx, table: 'user', action: 'update', id }))` touches nothing
+ * otherwise.
  * `extra` narrows it further (a role of one `kind`, a row of one conference).
  */
 export async function whereAllowed<K extends TableWithId>({
@@ -138,26 +139,4 @@ export async function deleteIfAllowed<K extends TableWithId>({
 			message: (options.message ?? m.deleteNotFoundOrForbidden)()
 		});
 	}
-}
-
-/**
- * The query that finds the row `id` only if the caller may `action` it (read by default), mostly
- * to return a row after writing it: `db.query.x.findFirst(query(await queryAllowed(ctx.abilities.x, id)))`.
- * It takes the ability rather than the table name because drizzle cannot type the relational query
- * of a table that is only known generically.
- */
-export async function queryAllowed<S>({
-	ability,
-	id,
-	action = 'read'
-}: {
-	ability: {
-		filter(
-			action: RowAction
-		): Promise<{ merge(filter: { where: { id: string } }): { query: { single: S } } }>;
-	};
-	id: string;
-	action?: RowAction;
-}) {
-	return (await ability.filter(action)).merge({ where: { id } }).query.single;
 }

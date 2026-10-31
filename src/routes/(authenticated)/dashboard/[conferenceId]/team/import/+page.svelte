@@ -120,7 +120,7 @@
 		try {
 			await Promise.all(
 				rows.map((row) =>
-					client.mutate.updateConferenceParticipant({
+					client.mutate.upsertConferenceParticipant({
 						__args: { conferenceId, didAttend, userEmail: row.email },
 						id: true,
 						didAttend: true

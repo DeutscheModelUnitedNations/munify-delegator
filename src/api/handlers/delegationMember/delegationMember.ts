@@ -1,3 +1,4 @@
+import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import { db } from '#api/db/db';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '#api/rumble';
@@ -20,30 +21,21 @@ import {
 } from './delegationMemberPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	conferenceParticipantPubsub,
-	delegationMemberPubsub,
-	delegationPubsub,
-	schoolPubsub,
-	singleParticipantPubsub,
-	waitingListEntryPubsub
-} from '#api/pubsub';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerDelegationMemberAbilities();
 
 const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
 schemaBuilder.mutationFields((t) => ({
-	/** Joining a delegation by entry code, with the newcomer's own school. */
 	createDelegationMember: t.drizzleField({
+		description: "Joining a delegation by entry code, with the newcomer's own school.",
 		type: DelegationMemberRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			entryCode: t.arg.string({ required: true }),
 			/** An existing school, or `schoolName` to find or create one; neither keeps theirs. */
 			schoolId: t.arg.id(),
-			schoolName: t.arg.string()
+			schoolName: t.arg.string().validate(schoolNameSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const caller = ctx.mustBeLoggedIn().sub;
@@ -61,37 +53,26 @@ schemaBuilder.mutationFields((t) => ({
 					})
 			});
 
-			delegationMemberPubsub.created();
-			conferenceParticipantPubsub.updated();
-			if (args.schoolName) schoolPubsub.created();
-
 			return db.query.delegationMember
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: createdId }))
+					query(
+						(await ctx.abilities.delegationMember.filter('read')).merge({
+							where: { id: createdId }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/**
-	 * Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is
-	 * left, the delegation itself goes. Same ordering as the legacy resolver.
-	 */
 	deleteDelegationMember: t.field({
+		description:
+			'Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is left, the delegation itself goes. Same ordering as the legacy resolver.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanDeleteDelegationMember({ ctx, id: args.id });
-			const delegationId = await removeDelegationMember(args.id);
-
-			delegationMemberPubsub.removed();
-			// The delegation either lost its last member and went with it, or had a new head
-			// delegate promoted into place.
-			if (delegationId) {
-				delegationPubsub.updated(delegationId);
-			} else {
-				delegationPubsub.removed();
-			}
+			await removeDelegationMember(args.id);
 
 			return true;
 		}
@@ -99,11 +80,9 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Management placing a user straight into an assigned delegation, bypassing the normal
-	 * application flow. The delegation is created on demand for the role if none holds it yet.
-	 */
 	createAppliedDelegationMember: t.drizzleField({
+		description:
+			'Management placing a user straight into an assigned delegation, bypassing the normal application flow. The delegation is created on demand for the role if none holds it yet.',
 		type: DelegationMemberRef,
 		args: {
 			userId: t.arg.id({ required: true }),
@@ -124,18 +103,14 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			const memberId = await placeUserInAssignedDelegation(args);
-
-			delegationMemberPubsub.created();
-			delegationPubsub.created();
-			conferenceParticipantPubsub.updated();
-			waitingListEntryPubsub.updated();
-			// An existing single registration for the same person is cleared out of the way.
-			singleParticipantPubsub.removed();
 			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: memberId }))
+					query(
+						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: memberId } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -143,12 +118,9 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Moves a delegate into a committee. Committees have a per-delegation seat limit, so when the
-	 * target is already full for this delegation the longest-untouched occupant is displaced into
-	 * the seat this member is leaving - a swap, rather than a refusal.
-	 */
 	updateDelegationMemberCommittee: t.drizzleField({
+		description:
+			'Moves a delegate into a committee. Committees have a per-delegation seat limit, so when the target is already full for this delegation the longest-untouched occupant is displaced into the seat this member is leaving - a swap, rather than a refusal.',
 		type: DelegationMemberRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -163,11 +135,12 @@ schemaBuilder.mutationFields((t) => ({
 				})
 			);
 
-			delegationMemberPubsub.updated(args.id);
-
 			return db.query.delegationMember
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: args.id }))
+					query(
+						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -177,22 +150,14 @@ schemaBuilder.mutationFields((t) => ({
 const CommitteeAssignmentInput = schemaBuilder.inputType('CommitteeAssignmentInput', {
 	fields: (t) => ({
 		delegationMemberId: t.id({ required: true }),
-		/** Null clears the delegate's committee. */
-		committeeId: t.id()
+		committeeId: t.id({ description: "Null clears the delegate's committee." })
 	})
 });
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Applies a committee assignment: the assistant's result, or the delegation modal clearing its
-	 * members' committees (a null committee).
-	 *
-	 * Each pairing is validated before it is written: the committee must belong to the same
-	 * conference as the delegate, and it must actually seat the delegation's assigned nation.
-	 * One bad pairing rolls the whole batch back, which is why this runs in a transaction rather
-	 * than writing as it goes.
-	 */
 	assignCommitteesToDelegationMembers: t.drizzleField({
+		description:
+			"Applies a committee assignment: the assistant's result, or the delegation modal clearing its members' committees (a null committee). Each pairing is validated before it is written: the committee must belong to the same conference as the delegate, and it must actually seat the delegation's assigned nation. One bad pairing rolls the whole batch back, which is why this runs in a transaction rather than writing as it goes.",
 		type: [DelegationMemberRef],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -206,8 +171,6 @@ schemaBuilder.mutationFields((t) => ({
 			});
 			await assignCommittees(args.assignments);
 
-			delegationMemberPubsub.updated();
-
 			return db.query.delegationMember.findMany(
 				query(
 					(await ctx.abilities.delegationMember.filter('read')).merge({
@@ -220,12 +183,9 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat of
-	 * a role (`targetRoleId`, with `targetCommitteeId` for a nation). Head delegates stay with the
-	 * seat unless `headDelegateMemberIds` chooses them; every delegation keeps exactly one.
-	 */
 	switchDelegationMemberSeats: t.drizzleField({
+		description:
+			'Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat of a role (`targetRoleId`, with `targetCommitteeId` for a nation). Head delegates stay with the seat unless `headDelegateMemberIds` chooses them; every delegation keeps exactly one.',
 		type: [DelegationMemberRef],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -237,13 +197,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSwitchDelegationMemberSeats({ ctx, args });
-			const { memberIds, delegationIds, createdDelegation } = await switchSeats(args);
-
-			for (const id of memberIds) delegationMemberPubsub.updated(id);
-			// Head delegates may have changed in any delegation involved.
-			delegationMemberPubsub.updated();
-			for (const id of delegationIds) delegationPubsub.updated(id);
-			if (createdDelegation) delegationPubsub.created();
+			const memberIds = await switchSeats(args);
 			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember.findMany(

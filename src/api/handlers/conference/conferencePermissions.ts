@@ -16,7 +16,7 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import type { ConferenceUpdateArgs } from './conferenceService';
 
-/** Where the fee goes, where postal documents go, and the documents themselves. */
+/** Columns only the conference's participants and team read: bank details, postal address, templates. */
 const MEMBERS_ONLY = {
 	bankAccountHolder: false,
 	iban: false,
@@ -35,37 +35,40 @@ const MEMBERS_ONLY = {
 	certificateFileId: false,
 	documentLayouts: false
 };
-/** The team's internal tools. */
+/** Columns only the conference's team reads: links to its internal tools. */
 const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
 
 export function registerConferenceAbilities() {
-	// Everyone can see the conferences that are open for registration (or, from the assignment on,
-	// for the waiting list) and their details - short of the members-only and team-only columns. Any
-	// other conference is only visible to the people who have a part in it (the rules below).
+	// Anyone (signed in or not) reads the public conferences - open for registration or, from the
+	// assignment on, for the waiting list - without the members-only and team-only columns. Any other
+	// conference is read only by those who have a part in it (the rules below).
 	abilityBuilder.conference.allow('read').when(() => ({
 		where: publicConference,
 		columns: { ...MEMBERS_ONLY, ...TEAM_ONLY }
 	}));
 	abilityBuilder.conference.allow('read').when(systemAdmin);
 
-	// Participants and supervisors also read the members-only columns.
+	// Its registered participants (delegates, single participants, supervisors) read their
+	// conference with the members-only columns, without the team-only ones.
 	abilityBuilder.conference.allow('read').when((ctx) => {
 		const participant = isParticipantOf(ctx);
 		return participant ? { where: participant, columns: TEAM_ONLY } : undefined;
 	});
 
-	// The team reads all of it.
+	// Every team member reads their conference in full.
 	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf({ ctx })));
 
-	// Update and delete are limited to the conference's own project management.
+	// Project management updates and deletes its conference. Content roles edit a part of it through
+	// `assertCanUpdateConference`, not this ability.
 	abilityBuilder.conference
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOf({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 }
 
 /**
- * Refuses unless the caller hands out document numbers in the conference (the postal page), which
- * is participant care's: the next number tells how many were handed out so far.
+ * Refuses unless the caller is participant care (project management and participant care) of the
+ * conference, who hand out the document numbers on the postal page; the next number tells how many
+ * were handed out so far.
  */
 export async function assertCanReadNextDocumentNumber({
 	ctx,
@@ -78,9 +81,9 @@ export async function assertCanReadNextDocumentNumber({
 }
 
 /**
- * The arguments of `updateConference` that participant care and the content lead may send: links,
- * postal address, templates, the participants' announcement, the conference status and the
- * feature switches.
+ * The arguments of `updateConference` the content roles (`editConferenceContent`: project
+ * management, participant care, content lead) may send: links, postal address, templates, the
+ * participants' announcement, the conference status and the feature switches.
  */
 const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 	'id',
@@ -109,12 +112,9 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 ];
 
 /**
- * Refuses unless the caller may send these arguments to `updateConference`.
- *
- * Project management edits everything; participant care and the content lead may only touch the
- * links, the postal address, the templates, the announcement, the status and the features. The update ability is
- * project management's, so the link-only path checks the role itself and refuses any other
- * argument rather than ignoring it.
+ * Refuses unless the caller may send these arguments to `updateConference`: anything if the
+ * conference's update ability matches (project management), otherwise only `CONFERENCE_CONTENT_ARGS`
+ * and only with `editConferenceContent`. Any other argument is refused, not ignored.
  */
 export async function assertCanUpdateConference({
 	ctx,
@@ -146,7 +146,10 @@ export async function assertCanUpdateConference({
 	}
 }
 
-/** Refuses unless the caller uploaded every file `updateConference` is asked to store, for its field. */
+/**
+ * Refuses unless the caller uploaded every file `updateConference` is asked to store, for that field
+ * of this conference (`assertCanClaimFile`).
+ */
 export async function assertCanClaimConferenceFiles({
 	ctx,
 	args
@@ -176,7 +179,10 @@ export async function assertCanClaimConferenceFiles({
 	await claim({ field: 'certificate', fileId: args.certificateFileId });
 }
 
-/** Placing the generated parts on the templates goes with the templates themselves. */
+/**
+ * Refuses unless the caller holds `editConferenceContent` (project management, participant care,
+ * content lead) in the conference: the layout goes with the templates it is placed on.
+ */
 export async function assertCanSetDocumentLayout({
 	ctx,
 	conferenceId
@@ -187,19 +193,22 @@ export async function assertCanSetDocumentLayout({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'editConferenceContent' });
 }
 
-/** Refused when `updateConference` matched no row, as when the update ability matches none. */
+/** The error `updateConference` answers when its write matched no row, i.e. the caller may not update it. */
 export function conferenceUpdateRefused() {
 	return apiError({ code: 'FORBIDDEN', message: m.accessDeniedProjectManagement() });
 }
 
-/** Creating a conference from a seeding document is for system admins. */
+/** Refuses unless the caller is a system admin, the only one who creates a conference from a seeding document. */
 export function assertCanSeedConference(ctx: ApiContext) {
 	if (!isSystemAdmin(ctx)) {
 		throw apiError({ code: 'FORBIDDEN', message: m.unauthorized({ error: 'User is not admin' }) });
 	}
 }
 
-/** The plausibility check is the conference's participant care's tool. */
+/**
+ * Refuses unless the caller is participant care (project management and participant care) of the
+ * conference, whose tool the plausibility page is.
+ */
 export async function assertCanReadPlausibility({
 	ctx,
 	conferenceId

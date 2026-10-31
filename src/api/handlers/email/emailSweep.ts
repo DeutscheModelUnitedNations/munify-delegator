@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { localeOfUser } from '#api/services/requestLocale';
 import { m } from '#lib/paraglide/messages';
-import { emailLogPubsub } from '#api/pubsub';
+import { conferenceEmailSettingPubsub, emailLogPubsub } from '#api/pubsub';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import {
@@ -206,13 +206,15 @@ async function sendEach({
 }) {
 	let sent = 0;
 	let failed = 0;
+	const logIds: string[] = [];
 	for (const email of batch) {
 		const logId = await claim({ conferenceId, email });
 		if (!logId) continue;
+		logIds.push(logId);
 		if (await send(email, logId)) sent++;
 		else failed++;
 	}
-	return { sent, failed };
+	return { sent, failed, logIds };
 }
 
 /**
@@ -237,12 +239,16 @@ export async function sendDueEmails({
 	const open = await openEmails({ snapshot, kinds, now });
 	const batch = open.slice(0, limit);
 	const wording = await loadWording(conferenceId);
-	const counts = await sendEach({
+	const { logIds, ...counts } = await sendEach({
 		conferenceId,
 		batch,
 		send: (email, logId) => send({ email, snapshot, origin, wording, logId })
 	});
-	if (batch.length > 0) emailLogPubsub.updated();
+	// a claim either inserts the row or retries an existing one
+	if (logIds.length > 0) {
+		emailLogPubsub.created();
+		emailLogPubsub.updated(logIds);
+	}
 	return { ...counts, remaining: open.length - batch.length };
 }
 
@@ -292,7 +298,7 @@ export async function skipOpenEmails({
 			)
 			.onConflictDoNothing();
 	}
-	emailLogPubsub.updated();
+	if (open.length > 0) emailLogPubsub.created();
 }
 
 /** Switches kinds of automatic mail on or off for a conference. */
@@ -306,13 +312,17 @@ export async function setEmailKindsEnabled({
 	enabled: boolean;
 }) {
 	if (kinds.length === 0) return;
-	await db
+	const rows = await db
 		.insert(schema.conferenceEmailSetting)
 		.values(kinds.map((kind) => ({ conferenceId, kind, enabled })))
 		.onConflictDoUpdate({
 			target: [schema.conferenceEmailSetting.conferenceId, schema.conferenceEmailSetting.kind],
 			set: { enabled, updatedAt: new Date() }
-		});
+		})
+		.returning({ id: schema.conferenceEmailSetting.id });
+	// an upsert: new rows for the lists, changed ones by id
+	conferenceEmailSettingPubsub.created();
+	conferenceEmailSettingPubsub.updated(rows.map((row) => row.id));
 }
 
 /** Every conference that sends any automatic mail. */

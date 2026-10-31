@@ -9,7 +9,7 @@ import {
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { placePubsub } from '#api/pubsub';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerPlaceAbilities();
 
@@ -67,7 +67,12 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.place
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.place, id: created.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.place.filter('read')).merge({ where: { id: created.id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -102,7 +107,12 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.updated(args.id);
 
 			return db.query.place
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.place, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.place.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

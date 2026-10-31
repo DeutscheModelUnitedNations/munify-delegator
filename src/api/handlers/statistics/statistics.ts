@@ -102,8 +102,9 @@ const nationalityStats = schemaBuilder.simpleObject('StatisticsResultNationality
 const schoolStats = schemaBuilder.simpleObject('StatisticsResultSchool', {
 	fields: (t) => ({
 		school: t.string(),
-		/** Delegation members and single participants whose own school it is. */
-		people: t.int()
+		people: t.int({
+			description: 'Delegation members and single participants whose own school it is.'
+		})
 	})
 });
 

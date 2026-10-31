@@ -5,16 +5,17 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerPossibleDuplicateAbilities() {
-	// Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
-	// *other* account, and how much of it, is a rule on the user table (`userPermissions.ts`).
+	// System admins read and decide every pair.
 	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when(systemAdmin);
+	// Participant care reads and decides a pair when either account is in its care
+	// (`isCaredForUser`). How much of the *other* account it reads is a rule on the user table.
 	abilityBuilder.possibleDuplicate.allow(['read', 'update']).when((ctx) => {
-		const managed = isCaredForUser(ctx);
-		return managed ? { where: { OR: [{ user: managed }, { candidate: managed }] } } : undefined;
+		const caredFor = isCaredForUser(ctx);
+		return caredFor ? { where: { OR: [{ user: caredFor }, { candidate: caredFor }] } } : undefined;
 	});
 }
 
-/** Scanning a conference for duplicates is participant care's. */
+/** Refuses scanning a conference for duplicates unless the caller holds `manageParticipants` in it. */
 export async function assertCanScanPossibleDuplicates({
 	ctx,
 	conferenceId
@@ -25,7 +26,7 @@ export async function assertCanScanPossibleDuplicates({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
-/** Refuses unless the caller may decide the pair; returns its two accounts. */
+/** Refuses unless the caller may decide the pair (its update ability). */
 export async function assertCanDecidePossibleDuplicate({
 	ctx,
 	id
@@ -36,8 +37,7 @@ export async function assertCanDecidePossibleDuplicate({
 	const pair = await db.query.possibleDuplicate.findFirst({
 		...(await ctx.abilities.possibleDuplicate.filter('update')).merge({ where: { id } }).query
 			.single,
-		columns: { userId: true, candidateId: true }
+		columns: { id: true }
 	});
 	if (!pair) throw apiError({ code: 'NOT_FOUND', message: m.possibleDuplicateNotFound() });
-	return pair;
 }

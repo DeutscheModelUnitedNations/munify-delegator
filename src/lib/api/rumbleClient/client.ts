@@ -2448,24 +2448,6 @@ export type Mutation = {
     released: Boolean,
     sendEmails?: Boolean | null | undefined
   }) => Boolean,
-  setAssignmentReview: (p: {
-    delegationId?: ID | null | undefined,
-    disqualified: Boolean,
-    evaluation?: Float | null | undefined,
-    flagged: Boolean,
-    note?: String | null | undefined,
-    required?: Boolean | null | undefined,
-    singleParticipantId?: ID | null | undefined
-  }) => Assignmentreview,
-  setAssignmentWeights: (p: {
-    conferenceId: ID,
-    experienceEffect: AssignmentexperienceeffectEnum,
-    experienceModifier: Float,
-    markBonus: Float,
-    markEffect: AssignmentmarkeffectEnum,
-    nullRating: Float,
-    ratingFactor: Float
-  }) => Assignmentweights,
   setAttendanceOccasionOnCertificate: (p: {
     conferenceId: ID,
     occasion: String,
@@ -2491,14 +2473,6 @@ export type Mutation = {
     conferenceId: ID,
     locale: String,
     text: String
-  }) => Boolean,
-  setConferenceEmailText: (p: {
-    body?: String | null | undefined,
-    conferenceId: ID,
-    heading?: String | null | undefined,
-    kind: EmailkindEnum,
-    locale: String,
-    subject?: String | null | undefined
   }) => Boolean,
   setDocumentLayout: (p: {
     conferenceId: ID,
@@ -2554,6 +2528,24 @@ export type Mutation = {
     conferenceId: ID,
     didAttend?: Boolean | null | undefined
   }) => UpdateAllConferenceParticipantsResponse,
+  upsertAssignmentReview: (p?: {
+    delegationId?: ID | null | undefined,
+    disqualified?: Boolean | null | undefined,
+    evaluation?: Float | null | undefined,
+    flagged?: Boolean | null | undefined,
+    note?: String | null | undefined,
+    required?: Boolean | null | undefined,
+    singleParticipantId?: ID | null | undefined
+  }) => Assignmentreview,
+  upsertAssignmentWeights: (p: {
+    conferenceId: ID,
+    experienceEffect?: AssignmentexperienceeffectEnum | null | undefined,
+    experienceModifier?: Float | null | undefined,
+    markBonus?: Float | null | undefined,
+    markEffect?: AssignmentmarkeffectEnum | null | undefined,
+    nullRating?: Float | null | undefined,
+    ratingFactor?: Float | null | undefined
+  }) => Assignmentweights,
   updateCalendarDay: (p: {
     date?: DateTime | null | undefined,
     id: ID,
@@ -2633,7 +2625,15 @@ export type Mutation = {
     unlockPostals?: Boolean | null | undefined,
     website?: String | null | undefined
   }) => Conference,
-  updateConferenceParticipant: (p: {
+  upsertConferenceEmailText: (p: {
+    body?: String | null | undefined,
+    conferenceId: ID,
+    heading?: String | null | undefined,
+    kind: EmailkindEnum,
+    locale: String,
+    subject?: String | null | undefined
+  }) => Boolean,
+  upsertConferenceParticipant: (p: {
     accessCardId?: String | null | undefined,
     assignNextDocumentNumber?: Boolean | null | undefined,
     assignedDocumentNumber?: Int | null | undefined,
@@ -2706,9 +2706,9 @@ export type Mutation = {
     title?: String | null | undefined
   }) => Resolution,
   updateReviewerSnippet: (p: {
-    content: JSON,
+    content?: JSON | null | undefined,
     id: ID,
-    name: String
+    name?: String | null | undefined
   }) => Reviewersnippet,
   updateSchool: (p: {
     apartment?: String | null | undefined,
@@ -2733,7 +2733,7 @@ export type Mutation = {
     motivation?: String | null | undefined,
     unApplyForRolesIdList?: ID[] | null | undefined
   }) => Singleparticipant,
-  updateSurveyAnswer: (p: {
+  upsertSurveyAnswer: (p: {
     id?: ID | null | undefined,
     optionId: ID,
     questionId?: ID | null | undefined,
@@ -2759,16 +2759,16 @@ export type Mutation = {
     role: TeamroleEnum
   }) => Teammember,
   updateUser: (p: {
-    address: AddressInput,
+    address?: AddressInput | null | undefined,
     apartment?: String | null | undefined,
-    birthday: Date,
-    emergencyContacts: String,
-    familyName: PersonName,
-    foodPreference: FoodpreferenceEnum,
-    gender: GenderEnum,
-    givenName: PersonName,
+    birthday?: Date | null | undefined,
+    emergencyContacts?: String | null | undefined,
+    familyName?: PersonName | null | undefined,
+    foodPreference?: FoodpreferenceEnum | null | undefined,
+    gender?: GenderEnum | null | undefined,
+    givenName?: PersonName | null | undefined,
     id: ID,
-    phone: PhoneNumber,
+    phone?: PhoneNumber | null | undefined,
     pronouns?: String | null | undefined,
     wantsJoinTeamInformation?: Boolean | null | undefined,
     wantsToReceiveGeneralInformation?: Boolean | null | undefined

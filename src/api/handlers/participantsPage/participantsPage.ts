@@ -1,13 +1,17 @@
 import { db } from '#api/db/db';
 import { schemaBuilder } from '#api/rumble';
 import { assertCanReadParticipantsPage } from './participantsPagePermissions';
-import { participantsCountSql, participantsPageSql } from './participantsQuery';
+import {
+	participantColumnSchema,
+	participantsCountSql,
+	participantsPageSql
+} from './participantsQuery';
 
 const ParticipantFilterInput = schemaBuilder.inputType('ParticipantFilterInput', {
 	description:
 		'One column filter of the participants table. Which of the value fields applies follows from the column: text columns take `mode` and `text`, enum columns `values`, boolean columns `bool`, number columns `min` / `max`. The nation column also takes `values`, the nation codes whose (translated) name matched.',
 	fields: (t) => ({
-		column: t.string({ required: true }),
+		column: t.string({ required: true, validate: participantColumnSchema }),
 		mode: t.string(),
 		text: t.string(),
 		values: t.stringList(),
@@ -29,23 +33,14 @@ const ParticipantsPage = schemaBuilder.simpleObject('ParticipantsPage', {
 	fields: (t) => ({
 		userIds: t.idList(),
 		hasMore: t.boolean(),
-		/** Everyone the search and filters match, across all pages */
-		total: t.int()
+		total: t.int({ description: 'Everyone the search and filters match, across all pages' })
 	})
 });
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * The users of one page of the participants table. The table merges four kinds of registration
-	 * and the status of each person's paperwork into one row, so it has no list query of its own to
-	 * search, filter and order by: this answers with the ordered ids, and the page reads the rows'
-	 * details through the ordinary queries by id.
-	 *
-	 * Care team only: filtering and ordering by contact data and care status would otherwise
-	 * reveal it to people who may not read it. Not live; the page refetches when it is told the
-	 * registrations changed.
-	 */
 	participantsPage: t.field({
+		description:
+			"The users of one page of the participants table. The table merges four kinds of registration and the status of each person's paperwork into one row, so it has no list query of its own to search, filter and order by: this answers with the ordered ids, and the page reads the rows' details through the ordinary queries by id. Care team only: filtering and ordering by contact data and care status would otherwise reveal it to people who may not read it. Not live; the page refetches when it is told the registrations changed.",
 		type: ParticipantsPage,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

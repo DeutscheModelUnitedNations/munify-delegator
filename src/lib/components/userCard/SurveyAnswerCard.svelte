@@ -22,7 +22,7 @@
 	const changeAnswer = async (optionId: string) => {
 		loading = true;
 		try {
-			await client.mutate.updateSurveyAnswer({
+			await client.mutate.upsertSurveyAnswer({
 				__args: { questionId: survey.id, userId, optionId },
 				id: true,
 				option: { id: true, title: true }

@@ -65,7 +65,7 @@
 
 	async function save({ subject, heading, body }: EmailText) {
 		const promise = Promise.resolve(
-			client.mutate.setConferenceEmailText({
+			client.mutate.upsertConferenceEmailText({
 				__args: {
 					conferenceId,
 					kind,

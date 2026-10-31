@@ -12,20 +12,21 @@ import {
 import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerTeamMemberAbilities() {
+	// System admins read, update and delete every team membership.
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Team members can see each other.
+	// Team members read the memberships of every team they are on.
 	abilityBuilder.teamMember
 		.allow('read')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
 
-	// Project management removes anybody from the team, or gives them another role.
+	// Project management changes the role of anybody on its team, or removes them.
 	abilityBuilder.teamMember
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 
-	// Team coordinators remove anybody but project management. Who joins, with which role, goes
-	// through invitations (see `assertMayGrantRole`).
+	// Team coordinators do the same for anybody on their team but project management. Which role
+	// someone may be given is checked on top (`assertCanGrantTeamRole`).
 	abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
 		return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
@@ -34,7 +35,7 @@ export function registerTeamMemberAbilities() {
 
 /**
  * Refuses unless the caller may change team member `id` (the row's update ability) and hand out
- * `role` in its conference, the same as inviting somebody with it (`assertMayGrantRole`).
+ * `role` in its conference, the same as inviting somebody with it (`assertCanGrantTeamRole`).
  */
 export async function assertCanChangeTeamRole({
 	ctx,
@@ -50,15 +51,15 @@ export async function assertCanChangeTeamRole({
 		columns: { conferenceId: true }
 	});
 	if (!member) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
-	await assertMayGrantRole({ ctx, conferenceId: member.conferenceId, role });
+	await assertCanGrantTeamRole({ ctx, conferenceId: member.conferenceId, role });
 }
 
 /**
- * Refuses to hand out a team role the caller may not grant: project management and team
- * coordinators manage the team, but only project management (or an admin) makes somebody project
- * management - otherwise a coordinator could promote themselves.
+ * Refuses unless the caller may hand out `role` on the conference's team: `manageTeam` (project
+ * management, team coordinators) for any role, `manageConference` (project management) for project
+ * management itself - otherwise a coordinator could promote themselves.
  */
-export async function assertMayGrantRole({
+export async function assertCanGrantTeamRole({
 	ctx,
 	conferenceId,
 	role

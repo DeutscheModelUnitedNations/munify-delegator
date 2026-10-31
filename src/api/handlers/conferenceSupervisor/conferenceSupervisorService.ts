@@ -1,4 +1,10 @@
 import { db, schema } from '#api/db/db';
+import {
+	conferenceSupervisorPubsub,
+	delegationMemberPubsub,
+	conferenceParticipantPubsub,
+	singleParticipantPubsub
+} from '#api/pubsub';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import {
 	ensureConferenceParticipant,
@@ -73,6 +79,7 @@ export async function registerSupervisor(
 			.returning()
 			.then(assertFirstEntryExists);
 	});
+	conferenceSupervisorPubsub.created();
 
 	return created.id;
 }
@@ -101,8 +108,6 @@ export async function findSupervisorByConnectionCode({
 /**
  * Attaches a participant to a supervisor, through the participation `assertCanBeSupervised`
  * found. The link is to the person (`conferenceParticipant`), so it outlives the registration.
- * Returns the supervisor and the registration that is now supervised, so the caller can announce
- * them.
  */
 export async function connectParticipantToSupervisor({
 	supervisorId,
@@ -124,18 +129,15 @@ export async function connectParticipantToSupervisor({
 			.onConflictDoNothing();
 	}
 
-	return {
-		supervisorId,
-		delegationMemberId: participation.foundDelegationMember?.id,
-		singleParticipantId: participation.foundSingleParticipant?.id
-	};
+	// Nothing on these rows changed, but who supervises whom did.
+	conferenceSupervisorPubsub.updated(supervisorId);
+	const delegationMemberId = participation.foundDelegationMember?.id;
+	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
+	const singleParticipantId = participation.foundSingleParticipant?.id;
+	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
 }
 
-/**
- * Ends a supervision: the supervisor no longer looks after the person. Returns the registrations
- * the person holds in the conference, so the caller can announce them; nothing when there was no
- * such person.
- */
+/** Ends a supervision: the supervisor no longer looks after the person. */
 export async function disconnectParticipantFromSupervisor({
 	supervisorId,
 	conferenceId,
@@ -153,7 +155,7 @@ export async function disconnectParticipantFromSupervisor({
 			singleParticipant: { columns: { id: true } }
 		}
 	});
-	if (!participant) return undefined;
+	if (!participant) return;
 
 	await db
 		.delete(schema.supervision)
@@ -161,11 +163,12 @@ export async function disconnectParticipantFromSupervisor({
 			whereRows({ table: schema.supervision, filter: { a: supervisorId, b: participant.id } })
 		);
 
-	return {
-		participantId: participant.id,
-		delegationMemberId: participant.delegationMember?.id,
-		singleParticipantId: participant.singleParticipant?.id
-	};
+	conferenceSupervisorPubsub.updated(supervisorId);
+	conferenceParticipantPubsub.updated(participant.id);
+	const delegationMemberId = participant.delegationMember?.id;
+	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
+	const singleParticipantId = participant.singleParticipant?.id;
+	if (singleParticipantId) singleParticipantPubsub.updated(singleParticipantId);
 }
 
 /**
@@ -205,4 +208,5 @@ export async function rotateConnectionCode(supervisorId: string) {
 		.update(schema.conferenceSupervisor)
 		.set({ connectionCode: await unusedConnectionCode() })
 		.where(whereRows({ table: schema.conferenceSupervisor, filter: { id: supervisorId } }));
+	conferenceSupervisorPubsub.updated(supervisorId);
 }

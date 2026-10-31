@@ -69,7 +69,7 @@ export function liveQueryUpdates(schema: IntrospectionQuery): UpdatesConfig {
  * got the deck from before it, and every card it had recoloured turned grey again.
  */
 const staleAfter: Record<string, string[]> = {
-	setAssignmentReview: ['sightingDeck', 'sightingEntries']
+	upsertAssignmentReview: ['sightingDeck', 'sightingEntries']
 };
 
 /** Graphcache's `updates.Mutation`: drops the cached answers a mutation made stale (`staleAfter`). */

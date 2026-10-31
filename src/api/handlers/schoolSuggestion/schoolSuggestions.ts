@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { schoolSuggestionPubsub, schoolSuggestionVariantPubsub } from '#api/pubsub';
 import type { ReadableSchoolRegistrations } from './schoolSuggestionPermissions';
 import { schoolRows } from './conferenceAggregates';
 import { findSimilarSchools, suggestionKey } from './similarSchools';
@@ -53,7 +54,7 @@ export async function refreshSchoolSuggestions({
 		key: suggestionKey(suggestion.variants.map((variant) => variant.schoolId))
 	}));
 
-	await db.transaction(async (tx) => {
+	const written = await db.transaction(async (tx) => {
 		const existing = await tx.query.schoolSuggestion.findMany({
 			where: { conferenceId },
 			columns: { id: true, key: true }
@@ -83,7 +84,8 @@ export async function refreshSchoolSuggestions({
 			for (const row of inserted) idByKey.set(row.key, row.id);
 		}
 
-		for (const suggestion of found.filter((s) => !fresh.includes(s))) {
+		const kept = found.filter((s) => !fresh.includes(s));
+		for (const suggestion of kept) {
 			await tx
 				.update(schema.schoolSuggestion)
 				.set({ similarity: suggestion.similarity })
@@ -114,5 +116,19 @@ export async function refreshSchoolSuggestions({
 				)
 			);
 		}
+
+		return {
+			stale,
+			fresh: fresh.length,
+			kept: kept.flatMap((suggestion) => idByKey.get(suggestion.key) ?? []),
+			variantsRewritten: ids.length > 0
+		};
 	});
+	if (written.stale.length > 0) schoolSuggestionPubsub.removed();
+	if (written.fresh > 0) schoolSuggestionPubsub.created();
+	if (written.kept.length > 0) schoolSuggestionPubsub.updated(written.kept);
+	// stale suggestions took their variants along
+	if (written.variantsRewritten || written.stale.length > 0)
+		schoolSuggestionVariantPubsub.removed();
+	if (written.variantsRewritten) schoolSuggestionVariantPubsub.created();
 }

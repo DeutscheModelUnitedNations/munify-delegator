@@ -7,7 +7,7 @@ import {
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args';
 import { surveyQuestionPubsub } from '#api/pubsub';
-import { deleteIfAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSurveyQuestionAbilities();
 
@@ -47,7 +47,10 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.surveyQuestion
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.surveyQuestion, id: created.id }))
+					query(
+						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -83,7 +86,10 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.surveyQuestion
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.surveyQuestion, id: args.id }))
+					query(
+						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}

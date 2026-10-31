@@ -1,9 +1,6 @@
 import type { AssignmentGroup } from '#lib/assignment/state';
 
-/**
- * The share (0 to 1) of a group's people who were seated at an earlier conference.
- * `experiencedIds` holds the ids of the delegation members and single participants who were.
- */
+/** The share (0 to 1) of a group's people whose id is in `experiencedIds`. */
 export function experienceShare({
 	group,
 	experiencedIds

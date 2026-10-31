@@ -1,5 +1,7 @@
 import { rumble } from '@m1212e/rumble';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
+// rumble installs the plugin; this brings in its types (`validate`, `t.validate`).
+import type {} from '@pothos/plugin-validation';
 import { trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
@@ -10,6 +12,7 @@ import {
 	REDIS_URL
 } from '$app/env/private';
 import { graphqlLogger } from '#lib/logger';
+import { apiError } from './services/errors';
 import { db, schema } from './db/db';
 import { context } from './context';
 
@@ -45,6 +48,14 @@ export const {
 		includeVariables: false
 	},
 	logger: { enabled: true, logger: graphqlLogger, includeVariables: false },
+	// Argument schemas word their issues with `m.…()` messages, so these are shown as they are.
+	validation: {
+		validationError: (failure) =>
+			apiError({
+				code: 'INVALID_INPUT',
+				message: failure.issues.map((issue) => issue.message).join(' ')
+			})
+	},
 	pothosConfig: {
 		plugins: [SimpleObjectsPlugin]
 	}

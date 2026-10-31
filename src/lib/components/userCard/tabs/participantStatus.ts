@@ -48,7 +48,7 @@ export async function fetchStatusWithAge({
 
 /** The mutation's own argument type minus the identifying fields `changeParticipantStatus` fills in. */
 export type StatusChange = Omit<
-	Parameters<Mutation['updateConferenceParticipant']>[0],
+	Parameters<Mutation['upsertConferenceParticipant']>[0],
 	'id' | 'conferenceId' | 'userId'
 >;
 
@@ -60,7 +60,7 @@ export async function changeParticipantStatus({
 	target: { id: string | undefined; conferenceId: string; userId: string };
 	input: StatusChange;
 }) {
-	const promise = client.mutate.updateConferenceParticipant({
+	const promise = client.mutate.upsertConferenceParticipant({
 		__args: { ...input, ...target },
 		id: true,
 		termsAndConditions: true,

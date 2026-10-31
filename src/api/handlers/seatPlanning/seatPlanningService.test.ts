@@ -7,6 +7,7 @@ import {
 	committeeUpdateData,
 	lockedCommitteeSeats,
 	nonStateActorUpdateData,
+	seatCountSchema,
 	totalSeats
 } from './seatPlanningService';
 
@@ -49,6 +50,13 @@ describe('lockedCommitteeSeats', () => {
 	});
 });
 
+describe('seatCountSchema', () => {
+	test('needs at least one seat', () => {
+		expect(seatCountSchema.safeParse(0).success).toBe(false);
+		expect(seatCountSchema.safeParse(1).success).toBe(true);
+	});
+});
+
 describe('assertSeatsPerDelegationAllowed', () => {
 	test('accepts a value that is not part of the update', () => {
 		expect(() =>
@@ -60,12 +68,6 @@ describe('assertSeatsPerDelegationAllowed', () => {
 		expect(() =>
 			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: undefined, assignedMembers: [] })
 		).not.toThrow();
-	});
-
-	test('rejects fewer than one seat', () => {
-		expect(() =>
-			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: 0, assignedMembers: [] })
-		).toThrow();
 	});
 
 	test('rejects values below the biggest delegation assigned to the committee', () => {
@@ -118,8 +120,7 @@ describe('nonStateActorUpdateData', () => {
 		expect(nonStateActorUpdateData({ fontAwesomeIcon: 'fa-tree' }).fontAwesomeIcon).toBe('fa-tree');
 	});
 
-	test('rejects a seat amount below one', () => {
-		expect(() => nonStateActorUpdateData({ seatAmount: 0 })).toThrow();
+	test('passes the seat amount on', () => {
 		expect(nonStateActorUpdateData({ seatAmount: 3 }).seatAmount).toBe(3);
 	});
 });

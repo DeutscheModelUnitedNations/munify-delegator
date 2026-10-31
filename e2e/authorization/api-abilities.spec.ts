@@ -22,6 +22,7 @@ import {
 	E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
 	E2E_TEAM_COORDINATOR_ID,
 	E2E_TEAMMATE_USER_ID,
+	E2E_UNRELEASED_FORMER_SCHOOL_ID,
 	E2E_UNSEATED_COMMITTEE_ID
 } from '../seed/seed';
 
@@ -53,7 +54,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 		await gql(
 			page,
 			`mutation ($c: ID!, $u: ID!) {
-				updateConferenceParticipant(conferenceId: $c, userId: $u, paymentStatus: DONE) { id }
+				upsertConferenceParticipant(conferenceId: $c, userId: $u, paymentStatus: DONE) { id }
 			}`,
 			{ c: E2E_CONFERENCE_ID, u: E2E_CONNECT_PARTICIPANT_ID }
 		),
@@ -65,7 +66,7 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 		await gql(
 			page,
 			`mutation ($q: ID!, $u: ID!, $o: ID!) {
-				updateSurveyAnswer(questionId: $q, userId: $u, optionId: $o) { id }
+				upsertSurveyAnswer(questionId: $q, userId: $u, optionId: $o) { id }
 			}`,
 			{ q: E2E_SURVEY_QUESTION_ID, u: E2E_PREP_PARTICIPANT_USER_ID, o: E2E_SURVEY_OPTION_A_ID }
 		),
@@ -510,6 +511,27 @@ test('anybody finds schools by name, but only their participants’ care team re
 				c: E2E_PREP_CONFERENCE_ID
 			}
 		),
+		/not found/i
+	);
+});
+
+test('participant care no longer reaches the school of somebody whose registration ended', async ({
+	page
+}) => {
+	// The only one naming the school is a participant row of the unreleased conference without a
+	// registration; the admin is participant care there.
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
+
+	const read = await gql(page, `query ($id: ID!) { school(id: $id) { name notes } }`, {
+		id: E2E_UNRELEASED_FORMER_SCHOOL_ID
+	});
+	expect(read.errors, JSON.stringify(read)).toBeUndefined();
+	expect(read.data?.school).toEqual({ name: 'E2E Schule Ehemalig', notes: null });
+
+	expectRefused(
+		await gql(page, `mutation ($id: ID!) { updateSchool(id: $id, notes: "x") { id } }`, {
+			id: E2E_UNRELEASED_FORMER_SCHOOL_ID
+		}),
 		/not found/i
 	);
 });

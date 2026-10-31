@@ -4,7 +4,7 @@ import { whereRows } from '#api/db/whereRows';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { teamMemberPubsub } from '#api/pubsub';
 import { assertCanChangeTeamRole, registerTeamMemberAbilities } from './teamMemberPermissions';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerTeamMemberAbilities();
 
@@ -14,8 +14,8 @@ query({ table: 'teamMember' });
 countQuery({ table: 'teamMember' });
 
 schemaBuilder.mutationFields((t) => ({
-	/** Gives a team member another role, as the caller could invite somebody with it. */
 	updateTeamMemberRole: t.drizzleField({
+		description: 'Gives a team member another role, as the caller could invite somebody with it.',
 		type: TeamMemberRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -30,7 +30,12 @@ schemaBuilder.mutationFields((t) => ({
 			teamMemberPubsub.updated(args.id);
 
 			return db.query.teamMember
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.teamMember, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

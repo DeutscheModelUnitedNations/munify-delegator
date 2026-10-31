@@ -5,8 +5,9 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerSearchHistoryAbilities() {
-	// A history is only ever read by the person who made it, from any of their devices.
+	// System admins read, update and delete every history.
 	abilityBuilder.searchHistory.allow(['read', 'update', 'delete']).when(systemAdmin);
+	// Everybody reads their own search history, from any of their devices.
 	abilityBuilder.searchHistory.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return grantWhere(id ? { userId: id } : undefined);
@@ -14,8 +15,8 @@ export function registerSearchHistoryAbilities() {
 }
 
 /**
- * Refuses unless the caller is on the conference's team, whose search this is. Returns the
- * caller's id, whose history the search goes into.
+ * Refuses unless the caller is on the conference's team (`useTeamTools`), whose search this is.
+ * Returns the caller's id, whose history the search goes into.
  */
 export async function assertCanRecordSearch({
 	ctx,
@@ -27,5 +28,5 @@ export async function assertCanRecordSearch({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'useTeamTools' });
 	const id = callerUserId(ctx);
 	if (!id) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-	return id;
+	return { userId: id };
 }

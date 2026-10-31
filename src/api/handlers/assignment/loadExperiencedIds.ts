@@ -3,9 +3,8 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 /**
- * The delegation members and single participants of a conference whose person was accepted to an
- * earlier one: seated in an applied delegation (a nation or non-state actor) or given a role as an
- * applied single participant, at a conference that ended before this one starts.
+ * The ids of the conference's delegation members and single participants who got a role at a
+ * conference that ended before this one starts.
  */
 export async function loadExperiencedIds(conferenceId: string) {
 	const conference = await db.query.conference.findFirst({
@@ -14,28 +13,26 @@ export async function loadExperiencedIds(conferenceId: string) {
 	});
 	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 	const earlier = { id: { ne: conferenceId }, endConference: { lt: conference.startConference } };
+	const withUser = { participant: { columns: { userId: true } } } as const;
 
-	const [members, singles, seatedMembers, seatedSingles] = await Promise.all([
+	const [members, singles, earlierMembers, earlierSingles] = await Promise.all([
 		db.query.delegationMember.findMany({
 			where: { participant: { conferenceId }, delegation: { applied: true } },
 			columns: { id: true },
-			with: { participant: { columns: { userId: true } } }
+			with: withUser
 		}),
 		db.query.singleParticipant.findMany({
 			where: { participant: { conferenceId }, applied: true },
 			columns: { id: true },
-			with: { participant: { columns: { userId: true } } }
+			with: withUser
 		}),
 		db.query.delegationMember.findMany({
 			where: {
 				participant: { conference: earlier },
-				delegation: {
-					applied: true,
-					assignedRoleId: { isNotNull: true }
-				}
+				delegation: { applied: true, assignedRoleId: { isNotNull: true } }
 			},
 			columns: { id: true },
-			with: { participant: { columns: { userId: true } } }
+			with: withUser
 		}),
 		db.query.singleParticipant.findMany({
 			where: {
@@ -44,16 +41,16 @@ export async function loadExperiencedIds(conferenceId: string) {
 				assignedRoleId: { isNotNull: true }
 			},
 			columns: { id: true },
-			with: { participant: { columns: { userId: true } } }
+			with: withUser
 		})
 	]);
 
-	const experienced = new Set(
-		[...seatedMembers, ...seatedSingles].map(({ participant }) => participant.userId)
+	const experiencedUserIds = new Set(
+		[...earlierMembers, ...earlierSingles].map(({ participant }) => participant.userId)
 	);
 	return new Set(
 		[...members, ...singles]
-			.filter(({ participant }) => experienced.has(participant.userId))
+			.filter(({ participant }) => experiencedUserIds.has(participant.userId))
 			.map(({ id }) => id)
 	);
 }

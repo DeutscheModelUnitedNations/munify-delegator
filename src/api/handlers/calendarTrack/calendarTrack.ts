@@ -9,7 +9,7 @@ import { whereRows } from '#api/db/whereRows';
 import { calendarEntryPubsub, calendarTrackPubsub } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
-import { queryAllowed, updateIfAllowed, whereAllowed } from '#api/services/authHelper/utils';
+import { updateIfAllowed, whereAllowed } from '#api/services/authHelper/utils';
 
 registerCalendarTrackAbilities();
 
@@ -43,7 +43,10 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.calendarTrack
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.calendarTrack, id: created.id }))
+					query(
+						(await ctx.abilities.calendarTrack.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -73,7 +76,12 @@ schemaBuilder.mutationFields((t) => ({
 			calendarTrackPubsub.updated(args.id);
 
 			return db.query.calendarTrack
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.calendarTrack, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.calendarTrack.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

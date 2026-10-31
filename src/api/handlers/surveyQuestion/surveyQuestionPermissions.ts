@@ -14,24 +14,23 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerSurveyQuestionAbilities() {
-	// Ported from abilities/entities/surveyQuestion.ts
 	abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Participants see the published questions of their own conferences - not drafts, and not the
-	// ones the organizers hid.
+	// Participants read the published questions of their conferences - not drafts, and not the
+	// ones the team hid.
 	abilityBuilder.surveyQuestion.allow('read').when((ctx) => {
 		const participant = isParticipantOfConference(ctx);
 		return participant ? { where: { ...participant, draft: false, hidden: false } } : undefined;
 	});
 
-	// Participant care and project management manage their conference's questions.
-	// Creation is checked by `assertCanCreateSurveyQuestion`, as it was in the resolver under CASL.
+	// Participant care (project management and participant care) reads, updates and deletes its
+	// conference's questions; creating one is `assertCanCreateSurveyQuestion`.
 	abilityBuilder.surveyQuestion
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
-/** Refuses unless the caller may add questions to the conference's surveys. */
+/** Refuses unless the caller is participant care (`manageParticipants`) in the conference. */
 export async function assertCanCreateSurveyQuestion({
 	ctx,
 	conferenceId
@@ -43,8 +42,9 @@ export async function assertCanCreateSurveyQuestion({
 }
 
 /**
- * Refuses unless the survey question exists in a conference where the caller holds `permission`,
- * for what goes under a question (options, answers given for others).
+ * Refuses (NOT_FOUND) unless the question exists in a conference where the caller holds
+ * `permission` (participant care by default). For what goes under a question: options, answers
+ * given for others, the distribution.
  */
 export async function assertTeamPermissionForSurveyQuestion({
 	ctx,

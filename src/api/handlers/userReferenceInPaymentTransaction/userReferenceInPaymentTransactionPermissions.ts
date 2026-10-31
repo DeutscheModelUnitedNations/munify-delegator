@@ -7,21 +7,20 @@ import {
 import { callerUserId } from '#api/services/authHelper/utils';
 
 export function registerUserReferenceInPaymentTransactionAbilities() {
-	/**
-	 * Who a payment covers. Written only by `createPaymentTransaction`, never edited on its own, so
-	 * the rules here are reads (and the admin wildcard).
-	 */
+	// Who a payment covers. Written only by `createPaymentTransaction`, never on its own, so besides
+	// the system admin every rule here is a read.
 	abilityBuilder.userReferenceInPaymentTransaction
 		.allow(['read', 'update', 'delete'])
 		.when(systemAdmin);
 
-	// Participant care sees who the conference's payments cover.
+	// Participant care (project management and participant care) reads whom its conference's
+	// payments cover.
 	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
 		const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return conference ? { where: { paymentTransaction: { conference } } } : undefined;
 	});
 
-	// The payer sees whom they paid for, and everybody sees the payments that cover them.
+	// The payer reads whom they paid for, and everybody reads the references that cover them.
 	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id

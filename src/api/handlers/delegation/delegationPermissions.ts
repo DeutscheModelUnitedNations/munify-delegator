@@ -11,27 +11,26 @@ import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
-/** The column that carries a delegation's assignment (`maskedUntilRelease`). */
+/** The column masked from participants until release: the delegation's assigned role. */
 const DELEGATION_ASSIGNMENT = { assignedRoleId: false } as const;
 
-/** The delegation the caller is a member of. */
+/** Matches the delegations the caller is a member of. */
 function ownDelegation(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { members: { user: { id } } } : undefined;
 }
 
-/** The delegations the caller supervises. */
+/** Matches the delegations the caller supervises (any of their members). */
 function supervisedDelegation(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { members: { supervisors: { user: { id } } } } : undefined;
 }
 
 export function registerDelegationAbilities() {
-	// Ported from abilities/entities/delegation.ts
 	abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Delegates see their own delegation, and supervisors the ones they supervise - the assigned
-	// nation or non-state actor only once the team has released the assignment.
+	// Delegates read their own delegation, supervisors the ones they supervise; `assignedRoleId`
+	// stays masked until the assignment is released.
 	abilityBuilder.delegation
 		.allow('read')
 		.when((ctx) =>
@@ -46,7 +45,7 @@ export function registerDelegationAbilities() {
 	);
 	abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
 
-	// The head delegate may change the delegation until it has applied.
+	// The head delegate may update and delete their delegation until it has applied.
 	abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -54,14 +53,14 @@ export function registerDelegationAbilities() {
 			: undefined;
 	});
 
-	// Project management and participant care manage their conference's delegations, deleting
-	// included: whoever may change a delegation after it applied may also take it out.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// delegations of its conference, applied or not.
 	abilityBuilder.delegation
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
-	// Any team member of the conference may see them - without the join code, which the members,
-	// their supervisors and participant care hand out.
+	// Every team member reads the delegations of their conference, without `entryCode`: only the
+	// members, their supervisors and participant care hand out the join code.
 	abilityBuilder.delegation.allow('read').when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx });
 		return team ? { where: team, columns: { entryCode: false } } : undefined;
@@ -69,8 +68,8 @@ export function registerDelegationAbilities() {
 }
 
 /**
- * Refuses unless the caller may update the delegation (the row's update ability). Returns it with
- * its members, conference and role applications, which `updateDelegation` judges it by.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation. Returns it with
+ * its members, conference and role applications, which `updateDelegation` judges the change by.
  */
 export async function assertCanUpdateDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const updatable = (await ctx.abilities.delegation.filter('update')).merge({ where: { id } });

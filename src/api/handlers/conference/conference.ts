@@ -8,11 +8,13 @@ import { max } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { UserRef } from '#api/handlers/user/user';
 import {
-	assertValidConferenceSettings,
+	conferenceSettingSchemas,
+	documentLayoutArgsSchema,
 	countOfferedSeats,
 	countSeatedParticipants,
 	findPlausibilityIssues,
 	seedConference,
+	seedingDataSchema,
 	setDocumentLayout,
 	updateConference,
 	type PlausibilityUser
@@ -27,9 +29,7 @@ import {
 	conferenceUpdateRefused,
 	registerConferenceAbilities
 } from './conferencePermissions';
-import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
-import { queryAllowed } from '#api/services/authHelper/utils';
 import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions';
 import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions';
 
@@ -39,8 +39,7 @@ const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LA
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
 		schoolId: t.id(),
-		/** The school's name */
-		school: t.string(),
+		school: t.string({ description: "The school's name" }),
 		delegationCount: t.int(),
 		delegationMembers: t.int(),
 		singleParticipants: t.int(),
@@ -53,17 +52,16 @@ registerConferenceAbilities();
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
-		/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 		totalParticipants: t.field({
+			description:
+				'Everyone who actually holds a seat - delegates of assigned delegations plus role holders.',
 			type: 'Int',
 			resolve: (conference) => countSeatedParticipants(conference.id)
 		}),
 
-		/**
-		 * Seats on offer: every nation of a committee is worth its `numOfSeatsPerDelegation`, every
-		 * non-state actor its `seatAmount`.
-		 */
 		totalSeats: t.field({
+			description:
+				'Seats on offer: every nation of a committee is worth its `numOfSeatsPerDelegation`, every non-state actor its `seatAmount`.',
 			type: 'Int',
 			resolve: (conference) => countOfferedSeats(conference.id)
 		}),
@@ -77,8 +75,8 @@ const ConferenceRef = object({
 				)
 		}),
 
-		/** The document number to hand to the next participant who needs one. */
 		nextDocumentNumber: t.field({
+			description: 'The document number to hand to the next participant who needs one.',
 			type: 'Int',
 			resolve: async (conference, _args, ctx) => {
 				await assertCanReadNextDocumentNumber({ ctx, conferenceId: conference.id });
@@ -96,11 +94,9 @@ const ConferenceRef = object({
 			}
 		}),
 
-		/**
-		 * The people of applied registrations grouped by their own school, which is how the
-		 * organizers see which schools are sending how many people.
-		 */
 		schools: t.field({
+			description:
+				'The people of applied registrations grouped by their own school, which is how the organizers see which schools are sending how many people.',
 			type: [ConferenceSchools],
 			resolve: async (conference, _args, ctx) =>
 				loadSchoolRows(await readableSchoolRegistrations({ ctx, conferenceId: conference.id }))
@@ -120,7 +116,7 @@ schemaBuilder.mutationFields((t) => ({
 			title: t.arg.string(),
 			longTitle: t.arg.string(),
 			location: t.arg.string(),
-			language: t.arg.string(),
+			language: t.arg.string().validate(conferenceSettingSchemas.language),
 			website: t.arg.string(),
 			info: t.arg.string(),
 			showInfoExpanded: t.arg.boolean(),
@@ -131,9 +127,9 @@ schemaBuilder.mutationFields((t) => ({
 			isOpenPaperSubmission: t.arg.boolean(),
 			showCalendar: t.arg.boolean(),
 			timezone: t.arg.string(),
-			nametagBinCount: t.arg.int(),
+			nametagBinCount: t.arg.int().validate(conferenceSettingSchemas.nametagBinCount),
 			/** How many seats one school may be given before the assignment warns; null for no limit. */
-			maxSeatsPerSchool: t.arg.int(),
+			maxSeatsPerSchool: t.arg.int().validate(conferenceSettingSchemas.maxSeatsPerSchool),
 			state: t.arg({ type: conferenceStateEnum }),
 			applicationDeadline: t.arg({ type: 'DateTime' }),
 			startConference: t.arg({ type: 'DateTime' }),
@@ -165,84 +161,84 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateConference({ ctx, args });
-			assertValidConferenceSettings(args);
 			await assertCanClaimConferenceFiles({ ctx, args });
 			// Nothing matches when the conference is gone.
 			if (!(await updateConference(args))) throw conferenceUpdateRefused();
 
-			conferencePubsub.updated(args.id);
 			// unlocking postals or payments, or the state, may owe mails
 			scheduleEmailSweep({ conferenceId: args.id, origin: ctx.requestUrl().origin });
 
 			return db.query.conference
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conference, id: args.id })))
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	/**
-	 * Places a document's generated parts on the conference's template (the layout editor in the
-	 * document settings); `null` returns that document to the default positions.
-	 */
-	setDocumentLayout: t.drizzleField({
-		// The conference, so the client's cache holds the new layouts at once.
-		type: ConferenceRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			document: t.arg({ type: LayoutDocumentEnum, required: true }),
-			layout: t.arg({ type: 'JSON' })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanSetDocumentLayout({ ctx, conferenceId: args.conferenceId });
-			if (
-				!(await setDocumentLayout({
-					conferenceId: args.conferenceId,
-					document: args.document,
-					layout: args.layout
-				}))
-			) {
-				throw conferenceUpdateRefused();
-			}
-			conferencePubsub.updated(args.conferenceId);
-			return db.query.conference
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.conference, id: args.conferenceId }))
+					query(
+						(await ctx.abilities.conference.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/**
-	 * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
-	 * document. Admin only.
-	 */
-	seedNewConference: t.drizzleField({
+	setDocumentLayout: t.drizzleField({
+		description:
+			"Places a document's generated parts on the conference's template (the layout editor in the document settings); `null` returns that document to the default positions.",
+		// The conference, so the client's cache holds the new layouts at once.
 		type: ConferenceRef,
-		args: { data: t.arg({ type: 'JSON', required: true }) },
+		args: t.validate(
+			{
+				conferenceId: t.arg.id({ required: true }),
+				document: t.arg({ type: LayoutDocumentEnum, required: true }),
+				layout: t.arg({ type: 'JSON' })
+			},
+			documentLayoutArgsSchema
+		),
+		resolve: async (query, _root, args, ctx) => {
+			await assertCanSetDocumentLayout({ ctx, conferenceId: args.conferenceId });
+			if (!(await setDocumentLayout(args))) throw conferenceUpdateRefused();
+			return db.query.conference
+				.findFirst(
+					query(
+						(await ctx.abilities.conference.filter('read')).merge({
+							where: { id: args.conferenceId }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	seedNewConference: t.drizzleField({
+		description:
+			'Creates a whole conference - committees, non-state actors and custom roles - from a seeding document. Admin only.',
+		type: ConferenceRef,
+		args: { data: t.arg({ type: 'JSON', required: true }).validate(seedingDataSchema) },
 		resolve: async (query, _root, args, ctx) => {
 			assertCanSeedConference(ctx);
 			const created = await seedConference(args.data);
 
-			conferencePubsub.created();
-			committeePubsub.created();
-			conferenceRolePubsub.created();
-
 			return db.query.conference
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conference, id: created.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.conference.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/** Every nation seated in any of a conference's committees, each once. */
 	getAllConferenceNations: t.drizzleField({
+		description: "Every nation seated in any of a conference's committees, each once.",
 		type: [NationRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
 			await db.query.conference
 				.findFirst({
-					...(await queryAllowed({ ability: ctx.abilities.conference, id: args.conferenceId })),
+					...(await ctx.abilities.conference.filter('read')).merge({
+						where: { id: args.conferenceId }
+					}).query.single,
 					columns: { id: true }
 				})
 				.then(assertFindFirstExists);
@@ -281,12 +277,9 @@ const PlausibilityResult = schemaBuilder
 	});
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Flags participants whose age does not fit the role they registered for, plus those whose
-	 * account data no longer satisfies the registration form. Purely advisory - nothing here
-	 * blocks a registration, it only gives the organizers a list to look at.
-	 */
 	conferencePlausibility: t.field({
+		description:
+			'Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. Purely advisory - nothing here blocks a registration, it only gives the organizers a list to look at.',
 		type: PlausibilityResult,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

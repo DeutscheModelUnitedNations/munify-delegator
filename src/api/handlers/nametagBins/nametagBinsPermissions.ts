@@ -1,7 +1,7 @@
 import type { ApiContext } from '#api/rumble';
 import { assertTeamPermission } from '#api/services/authHelper/rules';
 
-/** The nametag handout is participant care's. */
+/** Refuses unless the caller holds `manageParticipants` (participant care) in the conference. */
 export async function assertCanReadNametagBins({
 	ctx,
 	conferenceId

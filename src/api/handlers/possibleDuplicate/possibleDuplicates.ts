@@ -3,7 +3,7 @@ import { whereRows } from '#api/db/whereRows';
 import { db, schema } from '#api/db/db';
 import { participatesIn } from '#api/services/authHelper/rules';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
-import { possibleDuplicatePubsub } from '#api/pubsub';
+import { possibleDuplicatePubsub, userPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
 
 /*
@@ -86,7 +86,7 @@ async function store({
 }) {
 	const found = new Set(pairs.map((pair) => `${pair.userId}|${pair.candidateId}`));
 
-	await db.transaction(async (tx) => {
+	const written = await db.transaction(async (tx) => {
 		const existing = await tx.query.possibleDuplicate.findMany({
 			columns: { id: true, userId: true, candidateId: true },
 			where: { status: 'OPEN', OR: [{ user: scannedWhere }, { candidate: scannedWhere }] }
@@ -105,8 +105,9 @@ async function store({
 			);
 		}
 
+		const upserted: { id: string; inserted: boolean }[] = [];
 		for (const batch of batches(pairs)) {
-			await tx
+			const rows = await tx
 				.insert(schema.possibleDuplicate)
 				.values(batch)
 				.onConflictDoUpdate({
@@ -116,11 +117,18 @@ async function store({
 						reasons: sql`excluded.reasons`,
 						updatedAt: sql`CURRENT_TIMESTAMP`
 					}
-				});
+				})
+				// xmax is 0 on a row the statement inserted, set on one it updated
+				.returning({ id: schema.possibleDuplicate.id, inserted: sql<boolean>`xmax = 0` });
+			upserted.push(...rows);
 		}
+		return { removed: stale.length > 0, upserted };
 	});
+	if (written.removed) possibleDuplicatePubsub.removed();
+	if (written.upserted.some((row) => row.inserted)) possibleDuplicatePubsub.created();
+	const refreshed = written.upserted.filter((row) => !row.inserted).map((row) => row.id);
+	if (refreshed.length > 0) possibleDuplicatePubsub.updated(refreshed);
 
-	possibleDuplicatePubsub.updated();
 	return pairs.length;
 }
 
@@ -180,12 +188,23 @@ export async function decidePossibleDuplicate({
 	decidedById: string | null;
 }) {
 	const decided = status !== 'OPEN';
-	await db
+	const updated = await db
 		.update(schema.possibleDuplicate)
 		.set({
 			status,
 			decidedById: decided ? decidedById : null,
 			decidedAt: decided ? new Date() : null
 		})
-		.where(whereRows({ table: schema.possibleDuplicate, filter: { id } }));
+		.where(whereRows({ table: schema.possibleDuplicate, filter: { id } }))
+		.returning({
+			userId: schema.possibleDuplicate.userId,
+			candidateId: schema.possibleDuplicate.candidateId
+		});
+
+	possibleDuplicatePubsub.updated(id);
+	// what of each account the care team may read follows the decision
+	for (const pair of updated) {
+		userPubsub.updated(pair.userId);
+		userPubsub.updated(pair.candidateId);
+	}
 }

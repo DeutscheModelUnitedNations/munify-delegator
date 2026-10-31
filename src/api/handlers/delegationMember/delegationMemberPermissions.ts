@@ -16,21 +16,20 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
-/** The column that carries the committee a delegate was seated in (`maskedUntilRelease`). */
+/** The column masked from participants until release: the committee a delegate was seated in. */
 const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;
 
-/** The delegates of the delegations the caller supervises. */
+/** Matches the members of delegations the caller supervises (any of their members). */
 function supervisedMember(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { delegation: { members: { supervisors: { user: { id } } } } } : undefined;
 }
 
 export function registerDelegationMemberAbilities() {
-	// Ported from abilities/entities/delegationMember.ts
 	abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Co-delegates see each other, and supervisors the delegates they supervise - the committee they
-	// were seated in only once the team has released the assignment.
+	// Delegates read the members of their own delegation, supervisors those of the delegations they
+	// supervise; `assignedCommitteeId` stays masked until the assignment is released.
 	abilityBuilder.delegationMember.allow('read').when((ctx) =>
 		maskedUntilRelease({
 			filter: isInOwnDelegation(ctx),
@@ -46,12 +45,13 @@ export function registerDelegationMemberAbilities() {
 	);
 	abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(supervisedMember(ctx)));
 
-	// Project management and participant care manage their conference's delegation members.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// delegation members of its conference.
 	abilityBuilder.delegationMember
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
-	// Only the head delegate may remove a delegate, and only before the delegation has applied.
+	// The head delegate may remove members of their delegation until it has applied.
 	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -63,19 +63,22 @@ export function registerDelegationMemberAbilities() {
 			: undefined;
 	});
 
-	// Anyone may leave a delegation that has not applied yet.
+	// A delegate may delete their own membership (leave) until the delegation has applied.
 	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { user: { id }, delegation: { applied: false } } } : undefined;
 	});
 
-	// The head delegate may edit members who have no committee assigned yet.
+	// The head delegate may seat the members of their delegation who have no committee yet, once the
+	// assignment is released: the committee checks test against the delegation's role, which would
+	// reveal it before then.
 	abilityBuilder.delegationMember.allow('update').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
 			? {
 					where: {
 						assignedCommitteeId: { isNull: true },
+						conference: { assignmentReleased: true },
 						delegation: { members: { isHeadDelegate: true, user: { id } } }
 					}
 				}
@@ -83,7 +86,7 @@ export function registerDelegationMemberAbilities() {
 	});
 }
 
-/** Refuses unless the caller may remove the delegate (the row's delete ability). */
+/** Refuses (NOT_FOUND) unless the caller's delete ability reaches the delegation member. */
 export async function assertCanDeleteDelegationMember({
 	ctx,
 	id
@@ -94,10 +97,13 @@ export async function assertCanDeleteDelegationMember({
 	await assertAllowed({ ctx, table: 'delegationMember', action: 'delete', id });
 }
 
-/** The role a user is placed into has to be one the conference offers. */
+/** Refuses a role or committee the conference does not offer (placing a user into a delegation). */
 export { assertOfferedIn };
 
-/** Placing a user straight into an assigned delegation is participant care's. */
+/**
+ * Refuses unless the caller holds `manageParticipants` (participant care) in the conference: only
+ * they place a user straight into an applied delegation.
+ */
 export async function assertCanCreateAppliedDelegationMember({
 	ctx,
 	conferenceId
@@ -109,8 +115,8 @@ export async function assertCanCreateAppliedDelegationMember({
 }
 
 /**
- * Refuses a committee that does not seat the delegation's assigned role: a delegate can only sit
- * where their delegation has a seat, and a delegation without a role has none.
+ * Refuses (INVALID_INPUT) a committee that does not seat the delegation's assigned role: a delegate
+ * can only sit where their delegation has a seat, and a delegation without a role has none.
  */
 function assertCommitteeSeats({
 	committee,
@@ -125,10 +131,9 @@ function assertCommitteeSeats({
 }
 
 /**
- * Refuses unless the caller may update the delegate (the row's update ability) and the committee
- * is one of the delegate's own conference that seats their delegation, not any committee id at
- * all. Returns both, the member with its delegation's members, which the move needs to find a
- * seat.
+ * Refuses unless the caller's update ability reaches the delegation member and the committee is
+ * one of the member's conference that seats their delegation. Returns both, the member with its
+ * delegation's members, which the move needs to find a seat.
  */
 export async function assertCanMoveDelegationMemberToCommittee({
 	ctx,
@@ -161,10 +166,9 @@ export async function assertCanMoveDelegationMemberToCommittee({
 export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMemberToCommittee>>;
 
 /**
- * Checks every pairing of a committee assignment before anything is written: the caller may
- * update each delegate, they are all of the conference, and every committee named is the
- * conference's and seats the delegate's delegation. A null committee clears the assignment, which
- * only needs the update.
+ * Refuses unless, for every pairing, the caller's update ability reaches the delegation member, the
+ * member is of `conferenceId`, and the committee (if any) is the conference's and seats the
+ * member's delegation. Checked before anything is written; a null committee only clears the seat.
  */
 export async function assertCanAssignCommittees({
 	ctx,
@@ -218,10 +222,10 @@ export async function assertCanAssignCommittees({
 }
 
 /**
- * Switching seats is participant care's, like placing someone (`createAppliedDelegationMember`).
- * Every member the switch names - the one moving, the one swapped with, the chosen head delegates -
- * has to be a delegate of the conference the caller may update, and the target role and committee
- * the conference's.
+ * Refuses unless the caller holds `manageParticipants` (participant care) in the conference, the
+ * target role and committee are the conference's, and the caller's update ability reaches every
+ * member the switch names (the one moving, the one swapped with, the new head delegates) within
+ * that conference.
  */
 export async function assertCanSwitchDelegationMemberSeats({
 	ctx,

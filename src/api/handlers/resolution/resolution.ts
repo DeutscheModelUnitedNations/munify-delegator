@@ -10,7 +10,7 @@ import {
 	assertCanUpdateResolution,
 	registerResolutionAbilities
 } from './resolutionPermissions';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerResolutionAbilities();
 
@@ -51,7 +51,12 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.created();
 
 			return db.query.resolution
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.resolution, id: created.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.resolution.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -79,7 +84,12 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.updated(args.id);
 
 			return db.query.resolution
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.resolution, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.resolution.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

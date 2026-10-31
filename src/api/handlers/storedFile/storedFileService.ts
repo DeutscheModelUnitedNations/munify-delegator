@@ -7,6 +7,7 @@ import {
 } from '$app/env/private';
 import { apiError } from '#api/services/errors';
 import { db, schema } from '#api/db/db';
+import { storedFilePubsub } from '#api/pubsub';
 import { nanoid } from '#lib/helpers/nanoid';
 import { m } from '#lib/paraglide/messages';
 import { formatMegabytes, type findFileSource } from './fileSources';
@@ -88,6 +89,7 @@ export async function requestUpload({
 		fileName: request.fileName.trim() || null,
 		uploadedById: uploaderId
 	});
+	storedFilePubsub.created();
 
 	return id;
 }

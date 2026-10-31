@@ -1,47 +1,47 @@
-/** The arguments of `setAssignmentReview`, checked and turned into the row it writes. Pure. */
+import { z } from 'zod';
+import { m } from '#lib/paraglide/messages';
 
-type Nullable<T> = T | null | undefined;
-
-export interface ReviewInput {
-	delegationId?: Nullable<string>;
-	singleParticipantId?: Nullable<string>;
-	evaluation?: Nullable<number>;
-	flagged: boolean;
-	disqualified: boolean;
-	/** Has to end up with a seat; left out, it counts as not required. */
-	required?: Nullable<boolean>;
-	note?: Nullable<string>;
-}
+/** A flag is never null in the table: null leaves it as it is, like undefined. */
+const flagChange = z
+	.boolean()
+	.nullish()
+	.transform((flag) => flag ?? undefined);
 
 /**
- * Why a review cannot be recorded: it names no or two applications, a rating off the scale, or an
- * application both excluded and required.
+ * The arguments of `upsertAssignmentReview`, checked and turned into the columns it writes. Only
+ * the fields given are changed; `null` clears the rating or the note.
  */
-export function reviewProblem(input: ReviewInput) {
-	if (!input.delegationId === !input.singleParticipantId) return 'application' as const;
-	if (input.disqualified && input.required) return 'requiredAndExcluded' as const;
-	const evaluation = input.evaluation ?? 2.5;
-	if (evaluation < 0.5 || evaluation > 5) return 'evaluation' as const;
-	return undefined;
-}
+export const reviewArgsSchema = z
+	.object({
+		delegationId: z.string().nullish(),
+		singleParticipantId: z.string().nullish(),
+		evaluation: z
+			.number()
+			.min(0.5, { error: () => m.assignmentReviewRatingRange() })
+			.max(5, { error: () => m.assignmentReviewRatingRange() })
+			.nullish(),
+		flagged: flagChange,
+		disqualified: flagChange,
+		/** Must get a seat. */
+		required: flagChange,
+		note: z
+			.string()
+			.nullish()
+			.transform((note) => (note === undefined ? undefined : note || null))
+	})
+	.refine((args) => !args.delegationId !== !args.singleParticipantId, {
+		error: () => m.assignmentReviewNameOneApplication()
+	})
+	.refine((args) => !(args.disqualified && args.required), {
+		error: () => m.assignmentReviewRequiredAndExcluded()
+	})
+	.transform(({ delegationId, singleParticipantId, ...changes }) => ({
+		application: delegationId
+			? { kind: 'delegation' as const, id: delegationId }
+			: { kind: 'single' as const, id: singleParticipantId ?? '' },
+		keys: { delegationId: delegationId ?? null, singleParticipantId: singleParticipantId ?? null },
+		changes
+	}));
 
-/** The application a valid review is about, and the columns it sets. */
-export function reviewRow(input: ReviewInput) {
-	const application = input.delegationId
-		? { kind: 'delegation' as const, id: input.delegationId }
-		: { kind: 'single' as const, id: input.singleParticipantId ?? '' };
-	return {
-		application,
-		keys: {
-			delegationId: input.delegationId ?? null,
-			singleParticipantId: input.singleParticipantId ?? null
-		},
-		values: {
-			evaluation: input.evaluation ?? null,
-			flagged: input.flagged,
-			disqualified: input.disqualified,
-			required: !!input.required,
-			note: input.note || null
-		}
-	};
-}
+export type ReviewUpdate = z.output<typeof reviewArgsSchema>;
+export type ReviewedApplication = ReviewUpdate['application'];

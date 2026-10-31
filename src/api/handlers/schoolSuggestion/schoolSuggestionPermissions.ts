@@ -8,10 +8,12 @@ import {
 import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerSchoolSuggestionAbilities() {
+	// System admins read and decide every suggestion and read its variants.
 	abilityBuilder.schoolSuggestion.allow(['read', 'update']).when(systemAdmin);
 	abilityBuilder.schoolSuggestionVariant.allow('read').when(systemAdmin);
 
-	// The cleanup page belongs to the people who manage the participants.
+	// Participant care (project management and participant care) reads and decides the suggestions
+	// of its conference's cleanup page, and reads their variants.
 	abilityBuilder.schoolSuggestion
 		.allow(['read', 'update'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
@@ -21,7 +23,10 @@ export function registerSchoolSuggestionAbilities() {
 	});
 }
 
-/** Looking for similar school names is participant care's. */
+/**
+ * Refuses analysing a conference's schools for similar names unless the caller holds
+ * `manageParticipants` in it.
+ */
 export async function assertCanAnalyzeSchoolSuggestions({
 	ctx,
 	conferenceId
@@ -33,8 +38,8 @@ export async function assertCanAnalyzeSchoolSuggestions({
 }
 
 /**
- * The applied registrations of the conference that name a school and that the caller may read, as
- * where clauses for `loadSchoolRows`.
+ * The applied delegations and single participants of the conference the caller may read, as one
+ * SQL `where` per table through their read abilities, for `loadSchoolRows`.
  */
 export async function readableSchoolRegistrations({
 	ctx,

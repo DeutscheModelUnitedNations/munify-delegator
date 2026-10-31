@@ -1,7 +1,10 @@
 import type { ApiContext } from '#api/rumble';
 import { assertTeamPermission } from '#api/services/authHelper/rules';
 
-/** The seat planning is project management's and the content lead's. */
+/**
+ * Refuses unless the caller holds `planSeats` (project management and content lead) in the
+ * conference.
+ */
 export async function assertCanReadSeatPlanning({
 	ctx,
 	conferenceId

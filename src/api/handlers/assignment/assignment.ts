@@ -1,24 +1,10 @@
 import { db } from '#api/db/db';
 import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { enum_, object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble';
-import { applyAssignmentDraft, draftDelegationTarget } from './assignmentDraft';
-import { reviewProblem, reviewRow } from './review';
-import type { Target } from '#lib/assignment/state';
+import { applyAssignmentDraft } from './applyDraft';
+import { reviewArgsSchema } from './review';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	assignmentReviewPubsub,
-	assignmentSingleRolePubsub,
-	assignmentUnitMemberPubsub,
-	assignmentUnitPubsub,
-	assignmentWeightsPubsub,
-	conferenceEmailSettingPubsub,
-	conferencePubsub,
-	delegationMemberPubsub,
-	delegationPubsub,
-	singleParticipantPubsub
-} from '#api/pubsub';
-import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors';
+import { assertCustomRolesOf, assertOfferedIn } from '#api/services/authHelper/rules';
 import {
 	assertCanAssignDelegation,
 	assertCanAssignSingleParticipant,
@@ -26,9 +12,7 @@ import {
 	assertCanPlanAssignment,
 	assertCanReleaseAssignment,
 	assertCanReviewApplication,
-	assertCustomRoleOf,
-	assertSplitMembersOf,
-	assertTargetOf,
+	assertPartsAreOwnMembers,
 	registerAssignmentAbilities
 } from './assignmentPermissions';
 import {
@@ -36,18 +20,18 @@ import {
 	autoAssignSingleParticipants,
 	convertSingleParticipant,
 	discardAssignmentDraft,
-	draftUnitTarget,
+	parseSplitParts,
+	planDelegationRole,
 	planSingleParticipantRole,
+	planUnitRole,
 	resetAssignmentSize,
 	revertSingleParticipantConversion,
 	setAssignmentReleased,
-	setAssignmentReview,
-	setAssignmentWeights,
 	splitDelegation,
-	splitParts,
-	undoDelegationSplit
+	undoDelegationSplit,
+	upsertAssignmentReview,
+	upsertAssignmentWeights
 } from './assignmentService';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerAssignmentAbilities();
 
@@ -65,118 +49,103 @@ query({ table: 'assignmentWeights' });
 const markEffectEnum = enum_({ tsName: 'assignmentMarkEffect' });
 const experienceEffectEnum = enum_({ tsName: 'assignmentExperienceEffect' });
 
-/**
- * Every draft table changed. A draft write creates, changes and deletes rows in one go, and the
- * board's lists only hear about rows coming and going, so all three are announced.
- */
-function triggerDraftPubsub() {
-	for (const pubsub of [
-		assignmentUnitPubsub,
-		assignmentUnitMemberPubsub,
-		assignmentSingleRolePubsub
-	]) {
-		pubsub.created();
-	}
-}
-
-/** A resolver for a draft change to one single participant the caller may assign. */
-const singleParticipantDraftChange =
-	(
-		change: (
-			participant: Awaited<ReturnType<typeof assertCanAssignSingleParticipant>>
-		) => Promise<unknown>
-	) =>
-	async (_root: unknown, args: { singleParticipantId: string }, ctx: ApiContext) => {
-		await change(await assertCanAssignSingleParticipant({ ctx, id: args.singleParticipantId }));
-		triggerDraftPubsub();
-		return true;
-	};
-
-/** A resolver for a change to the whole draft of a conference the caller may plan. */
-const conferenceDraftChange =
-	(change: (args: { conferenceId: string; ctx: ApiContext }) => Promise<unknown>) =>
-	async (_root: unknown, args: { conferenceId: string }, ctx: ApiContext) => {
-		await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
-		await change({ conferenceId: args.conferenceId, ctx });
-		triggerDraftPubsub();
-		return true;
-	};
-
 const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
 	fields: (t) => ({ memberIds: t.idList({ required: true }) })
 });
 
-const targetFrom = (args: { roleId?: string | null }): Target => ({ roleId: args.roleId || null });
-
-const REVIEW_PROBLEMS = {
-	application: () => m.assignmentReviewNameOneApplication(),
-	evaluation: () => m.assignmentReviewRatingRange(),
-	requiredAndExcluded: () => m.assignmentReviewRequiredAndExcluded()
-};
+/** Checks the caller may plan this single participant's assignment, then plans `change`. */
+async function onSingleParticipant({
+	ctx,
+	id,
+	change
+}: {
+	ctx: ApiContext;
+	id: string;
+	change: (
+		participant: Awaited<ReturnType<typeof assertCanAssignSingleParticipant>>
+	) => Promise<unknown>;
+}) {
+	await change(await assertCanAssignSingleParticipant({ ctx, id }));
+	return true;
+}
 
 schemaBuilder.mutationFields((t) => ({
-	/** Records the team's rating of one application, replacing the previous one. */
-	setAssignmentReview: t.drizzleField({
+	upsertAssignmentReview: t.drizzleField({
+		description:
+			"Changes the team's review of one application, creating it on the first change. Fields left out stay as they are; `null` clears the rating or the note.",
 		type: AssignmentReviewRef,
-		args: {
-			delegationId: t.arg.id({ required: false }),
-			singleParticipantId: t.arg.id({ required: false }),
-			evaluation: t.arg.float({ required: false }),
-			flagged: t.arg.boolean({ required: true }),
-			disqualified: t.arg.boolean({ required: true }),
-			/** Left out keeps nothing: the review is replaced whole, so it counts as not required. */
-			required: t.arg.boolean({ required: false }),
-			note: t.arg.string({ required: false })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			const problem = reviewProblem(args);
-			if (problem) throw apiError({ code: 'INVALID_INPUT', message: REVIEW_PROBLEMS[problem]() });
-			const review = reviewRow(args);
-			const conferenceId = await assertCanReviewApplication({
+		args: t.validate(
+			{
+				delegationId: t.arg.id({ required: false }),
+				singleParticipantId: t.arg.id({ required: false }),
+				evaluation: t.arg.float({ required: false }),
+				flagged: t.arg.boolean({ required: false }),
+				disqualified: t.arg.boolean({ required: false }),
+				required: t.arg.boolean({ required: false }),
+				note: t.arg.string({ required: false })
+			},
+			reviewArgsSchema
+		),
+		resolve: async (query, _root, review, ctx) => {
+			const { conferenceId } = await assertCanReviewApplication({
 				ctx,
 				application: review.application
 			});
 
-			const reviewId = await setAssignmentReview({ conferenceId, review });
-			// An upsert: the first rating creates the row.
-			assignmentReviewPubsub.created();
-			assignmentReviewPubsub.updated(reviewId);
+			const reviewId = await upsertAssignmentReview({ conferenceId, review });
 
 			return db.query.assignmentReview
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.assignmentReview, id: reviewId }))
+					query(
+						(await ctx.abilities.assignmentReview.filter('read')).merge({ where: { id: reviewId } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	setAssignmentWeights: t.drizzleField({
+	upsertAssignmentWeights: t.drizzleField({
+		description:
+			'Changes the given weights of the automatic assignment; the others stay as they are.',
 		type: AssignmentWeightsRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			nullRating: t.arg.float({ required: true }),
-			ratingFactor: t.arg.float({ required: true }),
-			markBonus: t.arg.float({ required: true }),
-			markEffect: t.arg({ type: markEffectEnum, required: true }),
-			experienceModifier: t.arg.float({ required: true }),
-			experienceEffect: t.arg({ type: experienceEffectEnum, required: true })
+			nullRating: t.arg.float(),
+			ratingFactor: t.arg.float(),
+			markBonus: t.arg.float(),
+			markEffect: t.arg({ type: markEffectEnum }),
+			experienceModifier: t.arg.float(),
+			experienceEffect: t.arg({ type: experienceEffectEnum })
 		},
-		resolve: async (query, _root, { conferenceId, ...weights }, ctx) => {
+		resolve: async (query, _root, { conferenceId, ...args }, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId });
-			const weightsId = await setAssignmentWeights({ conferenceId, weights });
-			assignmentWeightsPubsub.created();
-			assignmentWeightsPubsub.updated(weightsId);
+			// The weights are never null in the table: null leaves one as it is, like undefined.
+			const weights = {
+				nullRating: args.nullRating ?? undefined,
+				ratingFactor: args.ratingFactor ?? undefined,
+				markBonus: args.markBonus ?? undefined,
+				markEffect: args.markEffect ?? undefined,
+				experienceModifier: args.experienceModifier ?? undefined,
+				experienceEffect: args.experienceEffect ?? undefined
+			};
+			const weightsId = await upsertAssignmentWeights({ conferenceId, weights });
 
 			return db.query.assignmentWeights
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.assignmentWeights, id: weightsId }))
+					query(
+						(await ctx.abilities.assignmentWeights.filter('read')).merge({
+							where: { id: weightsId }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/** Plans a nation or non-state actor, or (without a role) none, for a whole delegation. */
 	assignDelegation: t.field({
+		description:
+			'Plans a nation or non-state actor for a whole delegation; no `roleId` plans none.',
 		type: 'Boolean',
 		args: {
 			delegationId: t.arg.id({ required: true }),
@@ -184,16 +153,16 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
-			const target = targetFrom(args);
-			await assertTargetOf({ conferenceId: delegation.conferenceId, target });
-			await draftDelegationTarget({ tx: db, delegation, target });
-			triggerDraftPubsub();
+			const roleId = args.roleId || null;
+			if (roleId) await assertOfferedIn({ conferenceId: delegation.conferenceId, ref: { roleId } });
+			await planDelegationRole({ delegation, roleId });
 			return true;
 		}
 	}),
 
-	/** Plans a role for one part of a split delegation or a converted single participant. */
 	assignAssignmentUnit: t.field({
+		description:
+			'Plans a role for one part of a split delegation or a converted single participant.',
 		type: 'Boolean',
 		args: {
 			unitId: t.arg.id({ required: true }),
@@ -201,16 +170,16 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const unit = await assertCanAssignUnit({ ctx, unitId: args.unitId });
-			const target = targetFrom(args);
-			await assertTargetOf({ conferenceId: unit.conferenceId, target });
-			await draftUnitTarget({ unitId: unit.id, target });
-			triggerDraftPubsub();
+			const roleId = args.roleId || null;
+			if (roleId) await assertOfferedIn({ conferenceId: unit.conferenceId, ref: { roleId } });
+			await planUnitRole({ unitId: unit.id, roleId });
 			return true;
 		}
 	}),
 
-	/** Splits a delegation into parts, each to be assigned on its own. Replaces an earlier split. */
 	splitDelegation: t.field({
+		description:
+			'Splits a delegation into parts that are assigned separately. Replaces an earlier split.',
 		type: 'Boolean',
 		args: {
 			delegationId: t.arg.id({ required: true }),
@@ -218,43 +187,44 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
-			const parts = splitParts({ parts: args.parts, memberCount: delegation.members.length });
-			assertSplitMembersOf({ delegation, parts });
+			const parts = parseSplitParts({ parts: args.parts, memberCount: delegation.members.length });
+			assertPartsAreOwnMembers({ delegation, parts });
 			await splitDelegation({ delegation, parts });
-			triggerDraftPubsub();
 			return true;
 		}
 	}),
 
-	/** Drops a delegation's split, and with it the roles planned for its parts. */
 	undoDelegationSplit: t.field({
 		type: 'Boolean',
 		args: { delegationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
 			await undoDelegationSplit(delegation.id);
-			triggerDraftPubsub();
 			return true;
 		}
 	}),
 
-	/** Plans to turn a single participant into a delegation of their own, to give it a nation. */
 	convertSingleParticipant: t.field({
+		description: 'Plans to turn a single participant into a delegation of their own.',
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: singleParticipantDraftChange(convertSingleParticipant)
+		resolve: (_root, args, ctx) =>
+			onSingleParticipant({ ctx, id: args.singleParticipantId, change: convertSingleParticipant })
 	}),
 
 	revertSingleParticipantConversion: t.field({
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: singleParticipantDraftChange((participant) =>
-			revertSingleParticipantConversion(participant.id)
-		)
+		resolve: (_root, args, ctx) =>
+			onSingleParticipant({
+				ctx,
+				id: args.singleParticipantId,
+				change: (participant) => revertSingleParticipantConversion(participant.id)
+			})
 	}),
 
-	/** Plans a custom role for a single participant, or (without one) none. */
 	assignSingleParticipantRole: t.field({
+		description: 'Plans a custom role for a single participant; no `roleId` plans none.',
 		type: 'Boolean',
 		args: {
 			singleParticipantId: t.arg.id({ required: true }),
@@ -266,98 +236,78 @@ schemaBuilder.mutationFields((t) => ({
 				id: args.singleParticipantId
 			});
 			const roleId = args.roleId || null;
-			await assertCustomRoleOf({ conferenceId: participant.conferenceId, roleId });
+			await assertCustomRolesOf({
+				conferenceId: participant.conferenceId,
+				roleIds: roleId ? [roleId] : []
+			});
 			await planSingleParticipantRole({ participant, roleId });
-			triggerDraftPubsub();
 			return true;
 		}
 	}),
 
-	/**
-	 * Gives the unassigned groups of one size the roles with exactly that many free seats, at the
-	 * lowest cost by their wishes, ratings, flags and experience. Groups without a wish get the roles left
-	 * over. Returns how many groups got a role.
-	 */
 	autoAssignDelegations: t.field({
+		description: 'Returns how many delegations got a role.',
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }), size: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
-			const assigned = await autoAssignDelegations({
+			const assignedCount = await autoAssignDelegations({
 				conferenceId: args.conferenceId,
 				size: args.size
 			});
-			triggerDraftPubsub();
-			return assigned;
+			return assignedCount;
 		}
 	}),
 
-	/**
-	 * Gives the single participants without a role one of the custom roles they applied for, at the
-	 * lowest cost by their ratings, flags and experience. Roles planned by hand stay and use up their
-	 * seats; nobody gets a role they did not apply for. Returns how many got a role.
-	 */
 	autoAssignSingleParticipants: t.field({
+		description: 'Returns how many single participants got a role.',
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
-			const assigned = await autoAssignSingleParticipants(args.conferenceId);
-			triggerDraftPubsub();
-			return assigned;
+			const assignedCount = await autoAssignSingleParticipants(args.conferenceId);
+			return assignedCount;
 		}
 	}),
 
-	/** Takes the planned roles of the given seat count away again, to assign them anew. */
 	resetAssignmentSize: t.field({
+		description: 'Unplans every role with `seats` seats.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }), seats: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
-			await resetAssignmentSize({ conferenceId: args.conferenceId, seats: args.seats });
-			triggerDraftPubsub();
+			await resetAssignmentSize(args);
 			return true;
 		}
 	}),
 
-	/** Throws the planned changes away. Ratings and weights stay. */
 	discardAssignmentDraft: t.field({
+		description: 'Deletes the draft. Ratings and weights stay.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: conferenceDraftChange(({ conferenceId }) => discardAssignmentDraft(conferenceId))
+		resolve: async (_root, args, ctx) => {
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+			await discardAssignmentDraft(args.conferenceId);
+			return true;
+		}
 	}),
 
-	/**
-	 * Writes the draft into the registrations in one transaction: splits, merges, roles and
-	 * converted single participants. Refuses, changing nothing, while the draft has problems.
-	 * Whether participants see the result is `conference.assignmentReleased`'s business.
-	 */
 	applyAssignment: t.field({
+		description:
+			'Writes the draft into the registrations, or refuses while it has problems. Participants see the result only once it is released.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: conferenceDraftChange(async ({ conferenceId, ctx }) => {
-			await applyAssignmentDraft(conferenceId);
-			// Delegations are created and dissolved, members move, single participants become
-			// delegates; reviews of dissolved delegations go with them.
-			for (const pubsub of [
-				delegationPubsub,
-				delegationMemberPubsub,
-				singleParticipantPubsub,
-				assignmentReviewPubsub
-			]) {
-				pubsub.created();
-				pubsub.removed();
-				pubsub.updated();
-			}
-			scheduleEmailSweep({ conferenceId, origin: ctx.requestUrl().origin });
-		})
+		resolve: async (_root, args, ctx) => {
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+			await applyAssignmentDraft(args.conferenceId);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
+			return true;
+		}
 	}),
 
-	/**
-	 * Shows participants their assigned roles, or hides them again. Releasing with `sendEmails`
-	 * sends the result mails now (`true`) or skips them (`false`); see `setAssignmentReleased`.
-	 */
 	setAssignmentReleased: t.field({
+		description:
+			'Shows participants their roles, or hides them. See `setAssignmentReleased` for `sendEmails`.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -375,13 +325,6 @@ schemaBuilder.mutationFields((t) => ({
 				released: args.released,
 				sendEmails: args.sendEmails ?? undefined
 			});
-
-			conferencePubsub.updated(args.conferenceId);
-			// What participants may read of these changes with the flag.
-			delegationPubsub.updated();
-			delegationMemberPubsub.updated();
-			singleParticipantPubsub.updated();
-			if (args.sendEmails) conferenceEmailSettingPubsub.updated();
 			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;
 		}

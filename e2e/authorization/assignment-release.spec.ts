@@ -3,6 +3,7 @@ import pg from 'pg';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import {
 	E2E_ASSIGNMENT_ADMIN_ID,
+	E2E_UNRELEASED_CODELEGATE_MEMBER_ID,
 	E2E_UNRELEASED_COMMITTEE_ID,
 	E2E_UNRELEASED_CONFERENCE_ID,
 	E2E_UNRELEASED_NATION_ALPHA3,
@@ -191,4 +192,35 @@ test('the team can still filter by assignment', async ({ page }) => {
 
 	const missing = await gql(page, `query { missing: ${wrong.byColumn} }`);
 	expect(missing.data).toEqual({ missing: [] });
+});
+
+// Seating a member checks the committee against the delegation's role, so a head delegate trying
+// committees before the release would learn it from which one is accepted.
+test('a head delegate seats nobody before the assignment is released', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_UNRELEASED_PARTICIPANT_USER_ID));
+
+	const moved = await gql(
+		page,
+		`mutation ($id: ID!, $c: ID!) {
+			updateDelegationMemberCommittee(id: $id, assignedCommitteeId: $c) { id }
+		}`,
+		{ id: E2E_UNRELEASED_CODELEGATE_MEMBER_ID, c: E2E_UNRELEASED_COMMITTEE_ID }
+	);
+	expect(moved.errors?.[0]?.message, JSON.stringify(moved)).toMatch(/not found/i);
+
+	const assigned = await gql(
+		page,
+		`mutation ($conf: ID!, $id: ID!, $c: ID) {
+			assignCommitteesToDelegationMembers(
+				conferenceId: $conf
+				assignments: [{ delegationMemberId: $id, committeeId: $c }]
+			) { id }
+		}`,
+		{
+			conf: E2E_UNRELEASED_CONFERENCE_ID,
+			id: E2E_UNRELEASED_CODELEGATE_MEMBER_ID,
+			c: E2E_UNRELEASED_COMMITTEE_ID
+		}
+	);
+	expect(assigned.errors?.[0]?.message, JSON.stringify(assigned)).toMatch(/not found/i);
 });

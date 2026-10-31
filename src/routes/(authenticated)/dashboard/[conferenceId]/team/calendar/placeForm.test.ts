@@ -7,7 +7,7 @@ vi.mock('#lib/api/rumbleClient/client', () => ({
 	client: { mutate: { updatePlace, createPlace } }
 }));
 
-const { placeFields, resolvePlusCode, savePlaceFields } = await import('./placeForm');
+const { placeFields, resolvePlusCode, upsertPlace } = await import('./placeForm');
 
 const zurich = { latitude: 47.3769, longitude: 8.5417 };
 const noCity = () => Promise.resolve(undefined);
@@ -71,7 +71,7 @@ describe('placeFields', () => {
 	});
 });
 
-describe('savePlaceFields', () => {
+describe('upsertPlace', () => {
 	beforeEach(() => {
 		updatePlace.mockReset();
 		createPlace.mockReset();
@@ -79,14 +79,14 @@ describe('savePlaceFields', () => {
 
 	test('updates the place being edited', async () => {
 		const fields = placeFields({ values, sitePlanFileId: undefined });
-		await savePlaceFields({ conferenceId: 'c1', placeId: 'p1', fields });
+		await upsertPlace({ conferenceId: 'c1', placeId: 'p1', fields });
 		expect(updatePlace).toHaveBeenCalledWith({ __args: { id: 'p1', ...fields }, id: true });
 		expect(createPlace).not.toHaveBeenCalled();
 	});
 
 	test('creates a place in the conference otherwise', async () => {
 		const fields = placeFields({ values, sitePlanFileId: undefined });
-		await savePlaceFields({ conferenceId: 'c1', placeId: undefined, fields });
+		await upsertPlace({ conferenceId: 'c1', placeId: undefined, fields });
 		expect(createPlace).toHaveBeenCalledWith({
 			__args: { conferenceId: 'c1', ...fields },
 			id: true

@@ -9,7 +9,7 @@ import {
 	registerCalendarEntryAbilities
 } from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '#api/pubsub';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerCalendarEntryAbilities();
 
@@ -54,11 +54,12 @@ schemaBuilder.mutationFields((t) => ({
 				surveyOptionIds: args.surveyOptionIds
 			});
 
-			calendarEntryPubsub.created();
-
 			return db.query.calendarEntry
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.calendarEntry, id: created.id }))
+					query(
+						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -104,10 +105,13 @@ schemaBuilder.mutationFields((t) => ({
 				surveyOptionIds: args.surveyOptionIds
 			});
 
-			calendarEntryPubsub.updated(args.id);
-
 			return db.query.calendarEntry
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.calendarEntry, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

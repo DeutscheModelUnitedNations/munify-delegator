@@ -142,33 +142,16 @@ describe('application details', () => {
 });
 
 describe('reviewArgs', () => {
-	it('sends the whole review with the change applied', () => {
-		expect(
-			reviewArgs({ kind: 'delegation', id: 'd', review: undefined, change: { flagged: true } })
-		).toEqual({
+	it('sends only the change, for the application it names', () => {
+		expect(reviewArgs({ kind: 'delegation', id: 'd', change: { flagged: true } })).toEqual({
 			delegationId: 'd',
 			singleParticipantId: undefined,
-			evaluation: undefined,
-			flagged: true,
-			disqualified: false,
-			required: false,
-			note: undefined
+			flagged: true
 		});
-		expect(
-			reviewArgs({
-				kind: 'single',
-				id: 's',
-				review: { evaluation: 3, flagged: true, disqualified: false, required: true, note: 'x' },
-				change: { evaluation: null }
-			})
-		).toEqual({
+		expect(reviewArgs({ kind: 'single', id: 's', change: { evaluation: null } })).toEqual({
 			delegationId: undefined,
 			singleParticipantId: 's',
-			evaluation: undefined,
-			flagged: true,
-			disqualified: false,
-			required: true,
-			note: 'x'
+			evaluation: null
 		});
 	});
 });

@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub';
 import type { TeamRole } from '#api/services/authHelper/rules';
 import { getInvitationExpiryDate, hashToken, makeInvitationToken } from './invitationToken';
 import { sendTeamInvitationEmail } from '#api/handlers/email/teamInvitationEmail';
@@ -147,6 +148,8 @@ async function addKnownUser({
 
 		return member;
 	});
+	teamMemberPubsub.created();
+	teamMemberInvitationPubsub.created();
 
 	return { id: teamMember.id, email, role, token: null, expiresAt: now, addedDirectly: true };
 }
@@ -176,6 +179,7 @@ async function inviteUnknownUser({
 		})
 		.returning()
 		.then(assertFirstEntryExists);
+	teamMemberInvitationPubsub.created();
 
 	sendTeamInvitationEmail({
 		conferenceId,
@@ -265,6 +269,7 @@ export async function revokeInvitation(invitation: Invitation) {
 		.update(schema.teamMemberInvitation)
 		.set({ revokedAt: new Date() })
 		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
+	teamMemberInvitationPubsub.updated(invitation.id);
 
 	return { success: true, message: null };
 }
@@ -298,6 +303,7 @@ export async function regenerateInvitation({
 		.update(schema.teamMemberInvitation)
 		.set({ token: hashToken(newToken), expiresAt: newExpiresAt, revokedAt: null })
 		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
+	teamMemberInvitationPubsub.updated(invitation.id);
 
 	if (sendEmail) {
 		await resendInvitationEmail({

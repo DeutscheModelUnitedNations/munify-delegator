@@ -143,6 +143,25 @@ test('a parent cannot carry the rows naming it into another conference', async (
 			name: 'a supervisor, with their supervisions, moved to a person of another conference',
 			sql: 'UPDATE conference_supervisor SET conference_participant_id = $1 WHERE id = $2',
 			params: [there, E2E_SUPERVISOR_ID]
+		},
+		{
+			// person and delegation move together, so the member's own check passes; its draft
+			// rows would follow it
+			name: 'a delegation member moved with its delegation to a person of another conference',
+			sql: `WITH p AS (
+					INSERT INTO conference_participant (id, conference_id, user_id)
+					VALUES ($1, $2, $3) RETURNING id
+				)
+				UPDATE delegation_member SET delegation_id = $4, conference_participant_id = p.id,
+					assigned_committee_id = NULL
+				FROM p WHERE conference_participant_id = $5`,
+			params: [
+				id(),
+				E2E_PREP_CONFERENCE_ID,
+				E2E_PAPER_DELEGATE_USER_ID,
+				E2E_PREP_DELEGATION_ID,
+				here
+			]
 		}
 	];
 	for (const write of carrying) {

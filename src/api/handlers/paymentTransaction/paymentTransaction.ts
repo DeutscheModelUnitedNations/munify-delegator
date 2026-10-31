@@ -2,17 +2,11 @@ import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
-	conferenceParticipantPubsub,
-	paymentTransactionPubsub,
-	userReferenceInPaymentTransactionPubsub
-} from '#api/pubsub';
-import {
 	assertCanCreatePaymentTransaction,
 	assertCanUpdatePaymentTransaction,
 	registerPaymentTransactionAbilities
 } from './paymentTransactionPermissions';
 import { applyPaymentStatus, createPaymentTransaction } from './paymentTransactionService';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerPaymentTransactionAbilities();
 
@@ -44,11 +38,13 @@ schemaBuilder.mutationFields((t) => ({
 				paymentFor: coveredParticipantIds
 			});
 
-			paymentTransactionPubsub.created();
-			userReferenceInPaymentTransactionPubsub.created();
-
 			return db.query.paymentTransaction
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paymentTransaction, id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({ where: { id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -61,20 +57,21 @@ schemaBuilder.mutationFields((t) => ({
 			recievedAt: t.arg({ type: 'DateTime' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const transaction = await assertCanUpdatePaymentTransaction({ ctx, id: args.id });
+			const payment = await assertCanUpdatePaymentTransaction({ ctx, id: args.id });
 
 			await applyPaymentStatus({
-				transaction,
+				payment,
 				assignedStatus: args.assignedStatus,
 				recievedAt: args.recievedAt
 			});
 
-			paymentTransactionPubsub.updated(args.id);
-			conferenceParticipantPubsub.updated();
-
 			return db.query.paymentTransaction
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.paymentTransaction, id: args.id }))
+					query(
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}

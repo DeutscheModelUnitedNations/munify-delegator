@@ -83,7 +83,7 @@ export function placeFields({
 }
 
 /** Updates the place, or creates one in the conference when there is none to update yet. */
-export async function savePlaceFields({
+export async function upsertPlace({
 	conferenceId,
 	placeId,
 	fields

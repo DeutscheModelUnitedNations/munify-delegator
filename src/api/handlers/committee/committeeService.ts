@@ -1,4 +1,10 @@
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
+import {
+	committeeAgendaItemPubsub,
+	committeePubsub,
+	conferenceRolePubsub,
+	resolutionPubsub
+} from '#api/pubsub';
 import {
 	assertCommitteeDeletable,
 	assertRegionalBaselineTargets,
@@ -12,8 +18,6 @@ import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 type RegionalBaseline = (typeof schema.regionalBaseline.enumValues)[number];
 
 /** Creates a committee and returns its id. */
@@ -23,11 +27,6 @@ export async function createCommittee(data: {
 	abbreviation: string;
 	numOfSeatsPerDelegation: number;
 }) {
-	assertSeatsPerDelegationAllowed({
-		numOfSeatsPerDelegation: data.numOfSeatsPerDelegation,
-		assignedMembers: []
-	});
-
 	const created = await db
 		.insert(schema.committee)
 		.values({
@@ -38,6 +37,7 @@ export async function createCommittee(data: {
 		})
 		.returning({ id: schema.committee.id })
 		.then(assertFirstEntryExists);
+	committeePubsub.created();
 	return created.id;
 }
 
@@ -45,7 +45,7 @@ export async function createCommittee(data: {
  * Updates a committee the caller may update. `before` is the committee as it was, with the members
  * assigned to it, which bound how far its seats per delegation may go down. Fewer seats per
  * delegation shrink every nation of the committee, so the applications that no longer fit go in
- * the same transaction. Returns whether that happened.
+ * the same transaction.
  */
 export async function updateCommittee({
 	id,
@@ -83,7 +83,7 @@ export async function updateCommittee({
 			});
 		}
 	});
-	return { applicationsTidied: shrunk };
+	committeePubsub.updated(id);
 }
 
 /**
@@ -106,23 +106,24 @@ async function dropUnseatedNationRoles({ tx, roleIds }: { tx: Transaction; roleI
 		await tx
 			.delete(schema.conferenceRole)
 			.where(whereRows({ table: schema.conferenceRole, filter: { id: { in: ids } } }));
+		conferenceRolePubsub.removed();
 	}
 	return ids;
 }
 
 /**
  * Deletes a committee the caller may delete, unless somebody is assigned to it or one of its
- * agenda items has papers, and tidies the applications for its nation roles. Returns the roles
- * that went with it.
+ * agenda items has papers, and tidies the applications for its nation roles.
  */
 export async function deleteCommittee(id: string) {
-	return db.transaction(async (tx) => {
+	const resolutionIds = await db.transaction(async (tx) => {
 		const existing = await tx.query.committee.findFirst({
 			where: { id },
 			columns: { id: true, conferenceId: true },
 			with: {
 				roles: { columns: { id: true } },
-				delegationMembers: { columns: { id: true } }
+				delegationMembers: { columns: { id: true } },
+				resolutions: { columns: { id: true } }
 			}
 		});
 		if (!existing) {
@@ -142,18 +143,21 @@ export async function deleteCommittee(id: string) {
 			.delete(schema.committee)
 			.where(whereRows({ table: schema.committee, filter: { id: existing.id } }));
 		const roleIds = existing.roles.map((role) => role.id);
-		const droppedRoleIds = await dropUnseatedNationRoles({ tx, roleIds });
+		await dropUnseatedNationRoles({ tx, roleIds });
 		await tidyRoleApplicationsForRoles({ conferenceId: existing.conferenceId, roleIds, tx });
-
-		return { droppedRoleIds };
+		return existing.resolutions.map((resolution) => resolution.id);
 	});
+	committeePubsub.removed();
+	// its agenda items go with it, its resolutions lose their committee
+	committeeAgendaItemPubsub.removed();
+	if (resolutionIds.length > 0) resolutionPubsub.updated(resolutionIds);
 }
 
 /**
  * Gives a nation a seat in a committee or takes it away. The first seat makes the nation one of the
  * conference's roles, the last one ends that (see `dropUnseatedNationRoles`). Taking a seat away is
  * refused while members of the delegation holding the nation are assigned to the committee;
- * applications that no longer fit are dropped. Returns whether a role was created or dropped.
+ * applications that no longer fit are dropped.
  */
 export async function setCommitteeNationSeat({
 	committee,
@@ -171,7 +175,7 @@ export async function setCommitteeNationSeat({
 	if (!nation) throw apiError({ code: 'NOT_FOUND', message: m.nationNotFound() });
 
 	if (enabled) {
-		return db.transaction(async (tx) => {
+		const roleCreated = await db.transaction(async (tx) => {
 			const created = await tx
 				.insert(schema.conferenceRole)
 				.values({
@@ -191,8 +195,11 @@ export async function setCommitteeNationSeat({
 				.insert(schema.committeeToRole)
 				.values({ a: committee.id, b: role.id })
 				.onConflictDoNothing();
-			return { rolesChanged: created.length > 0 };
+			return created.length > 0;
 		});
+		if (roleCreated) conferenceRolePubsub.created();
+		committeePubsub.updated(committee.id);
+		return;
 	}
 
 	const role = await db.query.conferenceRole.findFirst({
@@ -200,9 +207,9 @@ export async function setCommitteeNationSeat({
 		columns: { id: true }
 	});
 	// never seated here, so there is nothing to take away
-	if (!role) return { rolesChanged: false };
+	if (!role) return;
 
-	const dropped = await db.transaction(async (tx) => {
+	await db.transaction(async (tx) => {
 		// members of the nation's delegation sitting in exactly this committee would lose their seat
 		const blockers = await tx.query.delegationMember.findMany({
 			where: { assignedCommitteeId: committee.id, delegation: { assignedRoleId: role.id } },
@@ -234,10 +241,8 @@ export async function setCommitteeNationSeat({
 				tx
 			});
 		}
-		return droppedRoles;
 	});
-
-	return { rolesChanged: dropped.length > 0 };
+	committeePubsub.updated(committee.id);
 }
 
 /** Sets a committee's regional baseline; without new targets the stored ones are kept. */
@@ -257,4 +262,5 @@ export async function setCommitteeRegionalBaseline({
 		.update(schema.committee)
 		.set({ regionalBaseline: baseline, regionalBaselineTargets: targets })
 		.where(whereRows({ table: schema.committee, filter: { id: committee.id } }));
+	committeePubsub.updated(committee.id);
 }

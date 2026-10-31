@@ -23,7 +23,8 @@ export function savedReview(id: string) {
 
 /**
  * Saves a change to an application's review: shown at once, and taken back with a toast if the
- * backend refuses it. `review` is the one shown, so quick changes build on each other. Resolves
+ * backend refuses it. Only `change` is sent; `review` is the one shown, which the change is laid
+ * over until the backend answers, so quick changes build on each other. Resolves
  * with the review the backend stored, or `undefined` when it failed or a later save took over.
  */
 export async function saveReview({
@@ -42,8 +43,8 @@ export async function saveReview({
 	const before = saved.get(id);
 	saved.set(id, { flagged: false, disqualified: false, ...review, ...change });
 	try {
-		const stored = await client.mutate.setAssignmentReview({
-			__args: reviewArgs({ kind, id, review, change }),
+		const stored = await client.mutate.upsertAssignmentReview({
+			__args: reviewArgs({ kind, id, change }),
 			evaluation: true,
 			flagged: true,
 			disqualified: true,

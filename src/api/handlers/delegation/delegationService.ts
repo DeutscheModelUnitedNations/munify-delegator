@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { delegationMemberPubsub, delegationPubsub } from '#api/pubsub';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
@@ -11,11 +12,7 @@ import {
 import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import formatNames from '#lib/helpers/formatNames';
-import { applicationFormSchema } from '#lib/schemata/applicationForm';
-import {
-	type ApplicationArgs,
-	parseApplicationArgs
-} from '#api/services/registration/applicationArgs';
+import { type ApplicationArgs } from '#api/services/registration/applicationArgs';
 import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -29,10 +26,12 @@ import { distinctSchoolNames } from '#lib/helpers/delegationSchools';
 /** Hands the head delegate role from the current holder to another member of the delegation. */
 async function transferHeadDelegate({
 	tx,
+	delegationId,
 	members,
 	newHeadDelegateUserId
 }: {
 	tx: Transaction;
+	delegationId: string;
 	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[];
 	newHeadDelegateUserId: string;
 }) {
@@ -59,6 +58,8 @@ async function transferHeadDelegate({
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: true })
 		.where(whereRows({ table: schema.delegationMember, filter: { id: next.id } }));
+	delegationMemberPubsub.updated([current.id, next.id]);
+	delegationPubsub.updated(delegationId);
 }
 
 /**
@@ -72,8 +73,6 @@ export async function createDelegationWithHead({
 	userId: string;
 	args: ApplicationArgs;
 }) {
-	parseApplicationArgs(args);
-
 	await assertRegistrationOpen(args.conferenceId);
 	// Refuses if the user already takes part in this conference in any role.
 	await fetchParticipationsAndTeamMembership({
@@ -113,6 +112,8 @@ export async function createDelegationWithHead({
 
 		return delegation;
 	});
+	delegationPubsub.created();
+	delegationMemberPubsub.created();
 
 	return created.id;
 }
@@ -162,12 +163,13 @@ async function setApplied({
 		.update(schema.delegation)
 		.set({ applied })
 		.where(whereRows({ table: schema.delegation, filter: { id: delegation.id } }));
+	delegationPubsub.updated(delegation.id);
 }
 
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
- * leaves the delegation as it was. The caller publishes afterwards.
+ * leaves the delegation as it was.
  */
 export async function updateDelegationDetails({
 	delegation,
@@ -176,14 +178,13 @@ export async function updateDelegationDetails({
 	delegation: UpdatableDelegation;
 	args: DelegationDetailArgs;
 }) {
-	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
-
+	const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
+	const changesColumns = Object.keys(changes).length > 0;
 	await db.transaction(async (tx) => {
 		if (typeof args.applied === 'boolean')
 			await setApplied({ tx, delegation, args, applied: args.applied });
 
-		const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
-		if (Object.keys(changes).length > 0) {
+		if (changesColumns) {
 			await tx
 				.update(schema.delegation)
 				.set(changes)
@@ -193,11 +194,13 @@ export async function updateDelegationDetails({
 		if (args.newHeadDelegateUserId) {
 			await transferHeadDelegate({
 				tx,
+				delegationId: delegation.id,
 				members: delegation.members,
 				newHeadDelegateUserId: args.newHeadDelegateUserId
 			});
 		}
 	});
+	if (changesColumns) delegationPubsub.updated(delegation.id);
 }
 
 /** What somebody sees after entering a delegation's join code, before committing to join. */

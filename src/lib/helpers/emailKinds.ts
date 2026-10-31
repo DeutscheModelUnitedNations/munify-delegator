@@ -23,7 +23,7 @@ export const SURVEY_REMINDER_DAYS = 3;
 const ALWAYS_SENT_KINDS = ['TEAM_INVITATION'] as const satisfies readonly EmailkindEnum[];
 export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 
-export const isAlwaysSent = (kind: EmailkindEnum): kind is AlwaysSentKind =>
+export const isAlwaysSent = (kind: string): kind is AlwaysSentKind =>
 	ALWAYS_SENT_KINDS.some((always) => always === kind);
 
 /** The mails releasing the assignment makes due: the result to each applicant and supervisor. */

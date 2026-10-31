@@ -1,5 +1,10 @@
 import { type Transaction, db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
+import {
+	conferenceParticipantPubsub,
+	paymentTransactionPubsub,
+	userReferenceInPaymentTransactionPubsub
+} from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
@@ -100,6 +105,8 @@ export async function createPaymentTransaction({
 			);
 		}
 	});
+	paymentTransactionPubsub.created();
+	if (paymentFor.length > 0) userReferenceInPaymentTransactionPubsub.created();
 
 	return id;
 }
@@ -109,24 +116,23 @@ export async function createPaymentTransaction({
  * status over to everybody it covers.
  */
 export async function applyPaymentStatus({
-	transaction,
+	payment,
 	assignedStatus,
 	recievedAt
 }: {
-	transaction: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	payment: { id: string; paymentFor: { conferenceParticipantId: string }[] };
 	assignedStatus: AdministrativeStatus;
 	recievedAt: Date | null | undefined;
 }) {
+	// The payment status is carried over to every participant the transaction covers.
+	const covered = payment.paymentFor.map((reference) => reference.conferenceParticipantId);
 	await db.transaction(async (tx) => {
 		if (assignedStatus === 'DONE') {
 			await tx
 				.update(schema.paymentTransaction)
 				.set({ recievedAt: recievedAt ?? undefined })
-				.where(whereRows({ table: schema.paymentTransaction, filter: { id: transaction.id } }));
+				.where(whereRows({ table: schema.paymentTransaction, filter: { id: payment.id } }));
 		}
-
-		// The payment status is carried over to every participant the transaction covers.
-		const covered = transaction.paymentFor.map((reference) => reference.conferenceParticipantId);
 		if (covered.length > 0) {
 			await tx
 				.update(schema.conferenceParticipant)
@@ -134,4 +140,6 @@ export async function applyPaymentStatus({
 				.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
 		}
 	});
+	paymentTransactionPubsub.updated(payment.id);
+	if (covered.length > 0) conferenceParticipantPubsub.updated(covered);
 }

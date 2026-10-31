@@ -4,6 +4,7 @@ import type * as schema from '#api/db/schema/index';
 import { isValidManualTargets } from '#lib/helpers/seatPlanning/baselines';
 import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers';
 import { apiError } from '#api/services/errors';
+import { z } from 'zod';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
@@ -52,6 +53,9 @@ export function totalSeats({
 	return committeeSeats + nsaSeats;
 }
 
+/** How many seats a committee gives each delegation, or a non-state actor has: at least one. */
+export const seatCountSchema = z.number().min(1, { error: () => m.seatsPerDelegationAtLeastOne() });
+
 /**
  * Throws when `numOfSeatsPerDelegation` would leave a delegation with more members assigned to the
  * committee than it has seats there.
@@ -65,9 +69,6 @@ export function assertSeatsPerDelegationAllowed({
 }) {
 	// not part of the update
 	if (numOfSeatsPerDelegation == null) return;
-	if (numOfSeatsPerDelegation < 1) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.seatsPerDelegationAtLeastOne() });
-	}
 	const min = minSeatsPerDelegation(assignedMembers);
 	if (numOfSeatsPerDelegation < min) {
 		throw apiError({ code: 'CONFLICT', message: m.seatsPerDelegationBelowAssigned({ min }) });
@@ -117,16 +118,11 @@ interface NonStateActorUpdateInput {
 
 /**
  * Maps the optional GraphQL update arguments of a non state actor to update data: omitted fields
- * stay untouched, an empty icon clears the icon and the seat amount has to be positive.
+ * stay untouched and an empty icon clears the icon.
  */
 export function nonStateActorUpdateData(
 	data: NonStateActorUpdateInput
 ): Partial<typeof schema.conferenceRole.$inferInsert> {
-	assertSeatsPerDelegationAllowed({
-		numOfSeatsPerDelegation: data.seatAmount,
-		assignedMembers: []
-	});
-
 	return {
 		name: data.name ?? undefined,
 		abbreviation: data.abbreviation ?? undefined,

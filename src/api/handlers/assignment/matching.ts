@@ -3,22 +3,15 @@ import type { AutoAssignSinglesInput, autoAssignSingles } from '#lib/assignment/
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-/** A matching that takes longer than this is abandoned, so a pathological input cannot hang. */
+/** Longer matchings are abandoned, so a pathological input cannot hang. */
 const TIMEOUT_MS = 30_000;
 
-/**
- * Where the worker lives. A production build runs the bundle `bun run build:compute` puts next to
- * the adapter's `index.js`; the development server runs the source directly (through tsx, which
- * resolves the extensionless imports and path aliases a plain Node worker cannot), so an edit is
- * picked up by the next run without rebuilding anything.
- */
+// Development runs the source through tsx (a plain Node worker cannot resolve the aliases),
+// production the bundle `bun run build:compute` writes.
 const workerSource = join(process.cwd(), 'src', 'lib', 'assignment', 'matching.worker.ts');
 const workerBundle = join(process.cwd(), 'build', 'compute', 'matching.mjs');
 
-/**
- * Seats single participants (see `autoAssignSingles`) on a worker thread, so a large conference
- * does not block the event loop for everybody else.
- */
+/** Runs `autoAssignSingles` on a worker thread, so a large conference does not block the event loop. */
 export function matchSingles(input: AutoAssignSinglesInput) {
 	return new Promise<ReturnType<typeof autoAssignSingles>>((resolve, reject) => {
 		const worker = dev

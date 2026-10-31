@@ -8,8 +8,6 @@ import {
 	assertCanSwapRoleApplicationRanks,
 	registerRoleApplicationAbilities
 } from './roleApplicationPermissions';
-import { roleApplicationPubsub } from '#api/pubsub';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerRoleApplicationAbilities();
 
@@ -31,11 +29,13 @@ schemaBuilder.mutationFields((t) => ({
 
 			const created = await appendRoleApplication(args);
 
-			roleApplicationPubsub.created();
-
 			return db.query.roleApplication
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.roleApplication, id: created.id }))
+					query(
+						(await ctx.abilities.roleApplication.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -47,8 +47,6 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const application = await assertCanDeleteRoleApplication({ ctx, id: args.id });
 			await removeRoleApplication(application);
-			roleApplicationPubsub.removed();
-			roleApplicationPubsub.updated();
 
 			return true;
 		}
@@ -61,14 +59,12 @@ schemaBuilder.mutationFields((t) => ({
 			secondRoleApplicationId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const [first, second] = await assertCanSwapRoleApplicationRanks({
+			const { first, second } = await assertCanSwapRoleApplicationRanks({
 				ctx,
 				firstId: args.firstRoleApplicationId,
 				secondId: args.secondRoleApplicationId
 			});
 			await swapRanks({ first, second });
-
-			roleApplicationPubsub.updated([args.firstRoleApplicationId, args.secondRoleApplicationId]);
 
 			return db.query.roleApplication.findMany(
 				query(

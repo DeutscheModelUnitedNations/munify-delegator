@@ -1,5 +1,6 @@
 import { schema, type Transaction } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
+import { roleApplicationPubsub } from '#api/pubsub';
 
 /**
  * Renumbers the role applications of a delegation to a gapless 1..n sequence, keeping their order.
@@ -37,4 +38,5 @@ export async function normalizeRoleApplicationRanks({
 			.set({ rank: index + 1 })
 			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));
 	}
+	roleApplicationPubsub.updated(applications.map((application) => application.id));
 }

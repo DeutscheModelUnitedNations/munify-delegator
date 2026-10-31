@@ -7,22 +7,24 @@ import {
 	systemAdmin,
 	type TeamRole
 } from '#api/services/authHelper/rules';
-import { assertMayGrantRole } from '#api/handlers/teamMember/teamMemberPermissions';
+import { assertCanGrantTeamRole } from '#api/handlers/teamMember/teamMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerTeamMemberInvitationAbilities() {
+	// System admins read, update and delete every invitation.
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Only the hash of an invitation's token is stored, and nothing in the app needs even that back.
+	// Masks the token: only its hash is stored, and nothing in the app needs even that back.
 	const WITHOUT_TOKEN = { token: false };
 
-	// Project management manages every invitation of its conference.
+	// Project management reads, updates and deletes every invitation of its conference.
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES });
 		return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
 	});
 
-	// Team coordinators manage the invitations they may hand out - everything but project management.
+	// Team coordinators read, update and delete the invitations of their conference to any role but
+	// project management, which they may not hand out (`assertCanGrantTeamRole`).
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
 		return team
@@ -31,7 +33,10 @@ export function registerTeamMemberInvitationAbilities() {
 	});
 }
 
-/** Refuses unless the caller may invite people to the team of `conferenceId` at all. */
+/**
+ * Refuses unless the caller holds `manageTeam` (project management, team coordinators) in the
+ * conference: may invite people to its team at all.
+ */
 export async function assertCanManageInvitations({
 	ctx,
 	conferenceId
@@ -42,7 +47,7 @@ export async function assertCanManageInvitations({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageTeam' });
 }
 
-/** Refuses unless the caller may hand out `role` on the team of `conferenceId`. */
+/** Refuses unless the caller may hand out `role` on the conference's team (`assertCanGrantTeamRole`). */
 export async function assertCanGrantInvitationRole({
 	ctx,
 	conferenceId,
@@ -52,10 +57,10 @@ export async function assertCanGrantInvitationRole({
 	conferenceId: string;
 	role: TeamRole;
 }) {
-	await assertMayGrantRole({ ctx, conferenceId, role });
+	await assertCanGrantTeamRole({ ctx, conferenceId, role });
 }
 
-/** An invitation the caller may change, or an error. */
+/** Refuses unless the caller may update the invitation (its update ability); returns it. */
 export async function assertCanUpdateInvitation({
 	ctx,
 	invitationId

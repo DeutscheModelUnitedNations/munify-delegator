@@ -298,29 +298,22 @@ const GENDER_ICONS: Record<string, string> = { FEMALE: 'venus', MALE: 'mars' };
 export const genderIcon = (gender: Nullable<string>) => GENDER_ICONS[gender ?? ''] ?? 'venus-mars';
 
 /**
- * The arguments of `setAssignmentReview`, which takes the whole review: the current one with
- * `change` applied, for the delegation or single participant `id` names.
+ * The arguments of `upsertAssignmentReview`: only `change`, for the delegation or single
+ * participant `id` names, so two people reviewing at once do not undo each other's fields.
  */
 export function reviewArgs({
 	kind,
 	id,
-	review,
 	change
 }: {
 	kind: SightingEntry['kind'];
 	id: string;
-	review: SightingReview | undefined;
 	change: Partial<SightingReview>;
 }) {
-	const next = { flagged: false, disqualified: false, ...review, ...change };
 	return {
 		delegationId: kind === 'delegation' ? id : undefined,
 		singleParticipantId: kind === 'single' ? id : undefined,
-		evaluation: next.evaluation ?? undefined,
-		flagged: next.flagged,
-		disqualified: next.disqualified,
-		required: next.required ?? false,
-		note: next.note ?? undefined
+		...change
 	};
 }
 

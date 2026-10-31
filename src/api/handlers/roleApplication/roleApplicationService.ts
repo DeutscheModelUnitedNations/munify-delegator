@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { roleApplicationPubsub } from '#api/pubsub';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
@@ -6,7 +7,7 @@ import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /** Adds an application at the end of the delegation's ranking. Returns the new row. */
 export async function appendRoleApplication(args: { delegationId: string; roleId: string }) {
-	return db.transaction(async (tx) => {
+	const created = await db.transaction(async (tx) => {
 		// Close any gap first, so "one past the count" cannot collide with an existing rank.
 		await normalizeRoleApplicationRanks({ delegationId: args.delegationId, tx });
 		const [existing] = await tx
@@ -26,6 +27,8 @@ export async function appendRoleApplication(args: { delegationId: string; roleId
 			.returning()
 			.then(assertFirstEntryExists);
 	});
+	roleApplicationPubsub.created();
+	return created;
 }
 
 /** Deletes an application and closes the gap it leaves in the delegation's ranking. */
@@ -36,6 +39,7 @@ export async function removeRoleApplication(application: { id: string; delegatio
 			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));
 		await normalizeRoleApplicationRanks({ delegationId: application.delegationId, tx });
 	});
+	roleApplicationPubsub.removed();
 }
 
 /** Swaps the ranks of two applications. */
@@ -62,4 +66,5 @@ export async function swapRanks({
 			.set({ rank: second.rank })
 			.where(whereRows({ table: schema.roleApplication, filter: { id: first.id } }));
 	});
+	roleApplicationPubsub.updated([first.id, second.id]);
 }

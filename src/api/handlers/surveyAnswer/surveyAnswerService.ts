@@ -4,7 +4,9 @@ import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { z } from 'zod';
 import { distributeToOptions } from './surveyDistribution';
+import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub';
 
 /** Locks the options, so answers given at the same time cannot both take an option's last seat. */
 async function lockOptions({ tx, optionIds }: { tx: Transaction; optionIds: string[] }) {
@@ -51,6 +53,17 @@ async function assertOptionOpen({
 	}
 }
 
+/** An answer is addressed either by its id or by its question and user. */
+export const answerLookupSchema = z
+	.object({
+		id: z.string().nullish(),
+		questionId: z.string().nullish(),
+		userId: z.string().nullish()
+	})
+	.refine((args) => args.id || (args.questionId && args.userId), {
+		error: () => m.surveyAnswerNeedsLookup()
+	});
+
 /**
  * The option an answer picks, with its question and the answers it holds. The answer has to be
  * addressed either by id or by question and user.
@@ -61,10 +74,6 @@ export async function loadAnswerOption(args: {
 	userId?: string | null;
 	optionId: string;
 }) {
-	if (!args.id && (!args.questionId || !args.userId)) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.surveyAnswerNeedsLookup() });
-	}
-
 	return db.query.surveyOption
 		.findFirst({
 			where: { id: args.optionId },
@@ -75,9 +84,9 @@ export async function loadAnswerOption(args: {
 
 /**
  * Stores the answer an option stands for, updating `updatableAnswerId` when given or creating it.
- * Reports whether a row existed, which decides what the caller publishes.
+ * Returns the answer's id.
  */
-export async function saveSurveyAnswer({
+export async function upsertSurveyAnswer({
 	option,
 	answer
 }: {
@@ -88,7 +97,7 @@ export async function saveSurveyAnswer({
 		updatableAnswerId: string | undefined;
 	};
 }) {
-	return db.transaction(async (tx) => {
+	const { answerId, optionIds } = await db.transaction(async (tx) => {
 		if (!answer.ignoresLimits) {
 			await assertOptionOpen({ tx, option, participantId: answer.subjectParticipantId });
 		}
@@ -119,16 +128,30 @@ export async function saveSurveyAnswer({
 						.returning({ id: schema.surveyAnswer.id })
 				)[0].id;
 
-		return { answerId, existed: Boolean(answer.updatableAnswerId) };
+		const optionIds = await optionIdsOfQuestion({ tx, questionId: option.questionId });
+		return { answerId, optionIds };
 	});
+	// A new row has to reach list queries (`created`), which an update of its id does not
+	if (answer.updatableAnswerId) surveyAnswerPubsub.updated(answerId);
+	else surveyAnswerPubsub.created();
+	// The options show how many answers they hold: the one left and the one picked both change
+	for (const optionId of optionIds) surveyOptionPubsub.updated(optionId);
+
+	return answerId;
 }
 
 /**
  * The options of a question, by id. A changed answer moves a count from one of them to another,
  * and an option in a live result only hears an update named with its own id.
  */
-export async function optionIdsOfQuestion(questionId: string) {
-	const options = await db.query.surveyOption.findMany({
+export async function optionIdsOfQuestion({
+	tx,
+	questionId
+}: {
+	tx: Transaction | typeof db;
+	questionId: string;
+}) {
+	const options = await tx.query.surveyOption.findMany({
 		where: { questionId },
 		columns: { id: true }
 	});
@@ -138,10 +161,11 @@ export async function optionIdsOfQuestion(questionId: string) {
 /**
  * Gives everybody who holds a seat in the question's conference and has not answered it yet an
  * option that still has room (`distributeToOptions`). Those for whom no option has room are left
- * without an answer. Returns the options and how many answers were written.
+ * without an answer. Returns how many answers were written.
  */
 export async function distributeUnansweredSurvey(questionId: string) {
-	return db.transaction(async (tx) => {
+	const { written, optionIds } = await db.transaction(async (tx) => {
+		const nothing = { written: 0, optionIds: [] };
 		const question = await tx.query.surveyQuestion
 			.findFirst({ where: { id: questionId }, columns: { conferenceId: true } })
 			.then(assertFindFirstExists);
@@ -149,7 +173,7 @@ export async function distributeUnansweredSurvey(questionId: string) {
 			where: { questionId },
 			columns: { id: true, upperLimit: true }
 		});
-		if (options.length === 0) return { optionIds: [], assigned: 0 };
+		if (options.length === 0) return nothing;
 		await lockOptions({ tx, optionIds: options.map((option) => option.id) });
 
 		const [taken, unanswered] = await Promise.all([
@@ -180,7 +204,7 @@ export async function distributeUnansweredSurvey(questionId: string) {
 				taken: taken.find((row) => row.optionId === option.id)?.taken ?? 0
 			}))
 		});
-		if (plan.length === 0) return { optionIds: options.map((o) => o.id), assigned: 0 };
+		if (plan.length === 0) return nothing;
 
 		const inserted = await tx
 			.insert(schema.surveyAnswer)
@@ -196,9 +220,14 @@ export async function distributeUnansweredSurvey(questionId: string) {
 				target: [schema.surveyAnswer.questionId, schema.surveyAnswer.conferenceParticipantId]
 			})
 			.returning({ id: schema.surveyAnswer.id });
-
-		return { optionIds: options.map((o) => o.id), assigned: inserted.length };
+		return { written: inserted.length, optionIds: options.map((option) => option.id) };
 	});
+	if (written > 0) {
+		surveyAnswerPubsub.created();
+		for (const optionId of optionIds) surveyOptionPubsub.updated(optionId);
+	}
+
+	return written;
 }
 
 /** A copy of `items` in random order, so who is left over when seats run out is down to chance. */

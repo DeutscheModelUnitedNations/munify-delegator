@@ -14,21 +14,20 @@ import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
-/** The column that carries a single participant's assignment (`maskedUntilRelease`). */
+/** The column masked from participants until release: the single participant's assigned role. */
 const SINGLE_PARTICIPANT_ASSIGNMENT = { assignedRoleId: false } as const;
 
-/** The single participants the caller supervises. */
+/** Matches the single participants the caller supervises. */
 function supervisedParticipant(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { supervisors: { user: { id } } } : undefined;
 }
 
 export function registerSingleParticipantAbilities() {
-	// Ported from abilities/entities/singleParticipant.ts
 	abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users see their own entry - the role they were given only once the team has released the
-	// assignment.
+	// Users read their own registration; `assignedRoleId` stays masked until the assignment is
+	// released.
 	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
 		maskedUntilRelease({
 			filter: isOwnUser(ctx),
@@ -37,18 +36,20 @@ export function registerSingleParticipantAbilities() {
 	);
 	abilityBuilder.singleParticipant.allow('read').when((ctx) => onceReleased(isOwnUser(ctx)));
 
-	// Participant care and project management see and manage their conference's participants.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// single participants of its conference.
 	abilityBuilder.singleParticipant
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
-	// Users may change their own entry only until they have applied.
+	// Users may update and delete their own registration until they have applied.
 	abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { user: { id }, applied: false } } : undefined;
 	});
 
-	// Supervisors see the participants they supervise, with their role once it is released.
+	// Supervisors read the single participants they supervise; `assignedRoleId` stays masked until
+	// the assignment is released.
 	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
 		maskedUntilRelease({
 			filter: supervisedParticipant(ctx),
@@ -61,8 +62,8 @@ export function registerSingleParticipantAbilities() {
 }
 
 /**
- * Refuses unless the caller may update the single participant (the row's update ability) and
- * every role it is to apply for is one of its conference's.
+ * Refuses unless the caller's update ability reaches the single participant and every role in
+ * `applyForRolesIdList` is a custom role of its conference.
  */
 export async function assertCanUpdateSingleParticipant({
 	ctx,
@@ -89,12 +90,12 @@ export async function assertCanUpdateSingleParticipant({
 	});
 }
 
-/** The roles a single participant applies for have to be the conference's. */
+/** Refuses role ids that are not custom roles of the conference a single participant applies in. */
 export { assertCustomRolesOf };
 
 /**
- * Assigning a user directly as a single participant is participant care's, and the role has to be
- * one of the conference's.
+ * Refuses unless the caller holds `manageParticipants` (participant care) in the conference and
+ * `roleId` is one of its custom roles: only they place a user straight into a role.
  */
 export async function assertCanCreateAppliedSingleParticipant({
 	ctx,

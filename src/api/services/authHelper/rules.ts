@@ -35,7 +35,10 @@ export function systemAdmin(ctx: Context) {
 export function isSystemAdmin(ctx: Context) {
 	return ctx.hasRole('admin');
 }
-/** Matches a Conference row whose team includes the user, optionally with one of `roles`. */
+/**
+ * Matches a Conference row whose team includes the caller, optionally only with one of `roles`.
+ * A system admin matches every conference; undefined (nobody) for an anonymous caller.
+ */
 export function isTeamMemberOf({ ctx, roles }: { ctx: Context; roles?: readonly TeamRole[] }) {
 	if (isSystemAdmin(ctx)) return {};
 	const id = callerUserId(ctx);
@@ -45,7 +48,7 @@ export function isTeamMemberOf({ ctx, roles }: { ctx: Context; roles?: readonly 
 	};
 }
 
-/** Matches a row whose `conference` has the user on its team, optionally with one of `roles`. */
+/** `isTeamMemberOf` one level down: matches a row whose `conference` has the caller on its team. */
 export function isTeamMemberOfConference({
 	ctx,
 	roles
@@ -57,7 +60,7 @@ export function isTeamMemberOfConference({
 	return conference === undefined ? undefined : { conference };
 }
 
-/** Matches a Conference row in which the user holds the team `permission` (`rolesWithTeamPermission`). */
+/** Matches a Conference row in which the caller holds the team `permission` (`rolesWithTeamPermission`). */
 function isTeamPermittedIn({ ctx, permission }: { ctx: Context; permission: TeamPermission }) {
 	return isTeamMemberOf({ ctx, roles: rolesWithTeamPermission(permission) });
 }
@@ -67,7 +70,7 @@ const NOTHING = { RAW: sql`false` };
 
 /**
  * The conferences in which the caller holds `permission`, as a filter to put into a query:
- * `where: { id, conference: teamConference(ctx, 'manageParticipants') }` finds nothing for a caller
+ * `where: { id, conference: teamConference({ ctx, permission: 'manageParticipants' }) }` finds nothing for a caller
  * without it. Unlike `isTeamPermittedIn` it never returns undefined (which would match every row);
  * it throws for an anonymous caller instead.
  */
@@ -131,13 +134,13 @@ export async function assertTeamPermission({
 	}
 }
 
-/** Matches rows belonging to the logged-in user through a `user` relation. */
+/** Matches a row whose `user` is the caller; undefined for an anonymous caller. */
 export function isOwnUser(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { user: { id } } : undefined;
 }
 
-/** Matches a row whose `delegation` has the logged-in user among its members. */
+/** Matches a row whose `delegation` has the caller among its members; undefined for an anonymous caller. */
 export function isInOwnDelegation(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { delegation: { members: { user: { id } } } } : undefined;
@@ -151,7 +154,10 @@ const conferenceParticipantWithRegistration = {
 	OR: [{ delegationMember: true }, { singleParticipant: true }, { conferenceSupervisor: true }]
 };
 
-/** Matches a Conference row the user takes part in - the counterpart of `isTeamMemberOf`. */
+/**
+ * Matches a Conference row the caller is registered in as delegate, single participant or
+ * supervisor - the participant counterpart of `isTeamMemberOf`. Team and waiting list do not count.
+ */
 export function isParticipantOf(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id
@@ -159,15 +165,23 @@ export function isParticipantOf(ctx: Context) {
 		: undefined;
 }
 
-/** Matches a row whose `conference` the user takes part in. */
+/** `isParticipantOf` one level down: matches a row whose `conference` the caller is registered in. */
 export function isParticipantOfConference(ctx: Context) {
 	const conference = isParticipantOf(ctx);
 	return conference === undefined ? undefined : { conference };
 }
 
-/** A User row taking part in a conference matching `conference` (see `withRegistration`). */
+/**
+ * Matches a ConferenceParticipant row registered (delegate, single participant or supervisor) in a
+ * conference matching `conference`. A row kept after its registration ended does not match.
+ */
+export function registeredParticipantIn(conference: { id: string } | object) {
+	return { conference, ...conferenceParticipantWithRegistration };
+}
+
+/** Matches a User row registered as participant in a conference matching `conference`. */
 export function participatesIn(conference: { id: string } | object) {
-	return { conferenceParticipants: { conference, ...conferenceParticipantWithRegistration } };
+	return { conferenceParticipants: registeredParticipantIn(conference) };
 }
 
 /**
@@ -209,7 +223,7 @@ function conferencesOfCaller({ ctx, asParticipant }: { ctx: Context; asParticipa
 /**
  * Matches a Conference row the caller has a part in, as participant or on the team; undefined for
  * an anonymous caller. `asParticipant` narrows what participants get to see, the team always
- * does: `hasPartIn(ctx, { showCalendar: true })` for the schedule.
+ * does: `hasPartIn({ ctx, asParticipant: { showCalendar: true } })` for the schedule.
  */
 export function hasPartIn({ ctx, asParticipant = {} }: { ctx: Context; asParticipant?: object }) {
 	const ways = conferencesOfCaller({ ctx, asParticipant });
@@ -284,7 +298,7 @@ export async function offeredIn({
 	return Boolean(role && committee);
 }
 
-/** Refuses a role or committee that the conference does not have. */
+/** Refuses (INVALID_INPUT) a role or committee that the conference does not have (`offeredIn`). */
 export async function assertOfferedIn({
 	conferenceId,
 	ref,
@@ -301,7 +315,7 @@ export async function assertOfferedIn({
 	}
 }
 
-/** Refuses role ids that are not custom roles of the given conference. */
+/** Refuses (INVALID_INPUT) role ids that are not custom roles of the given conference. */
 export async function assertCustomRolesOf({
 	conferenceId,
 	roleIds,

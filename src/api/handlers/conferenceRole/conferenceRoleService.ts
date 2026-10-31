@@ -1,12 +1,11 @@
 import { db, schema } from '#api/db/db';
+import { conferenceRolePubsub, roleApplicationPubsub, singleParticipantPubsub } from '#api/pubsub';
 import { apiError, isUniqueViolationOn } from '#api/services/errors';
 import { normalizeRoleApplicationRanks } from '#api/handlers/roleApplication/normalizeRoleApplicationRanks';
 import { tidyRoleApplicationsForRoles } from '#api/handlers/roleApplication/tidyRoleApplications';
-import {
-	assertNonStateActorDeletable,
-	assertSeatsPerDelegationAllowed
-} from '#api/handlers/seatPlanning/seatPlanningService';
+import { assertNonStateActorDeletable } from '#api/handlers/seatPlanning/seatPlanningService';
 import { m } from '#lib/paraglide/messages';
+import { z } from 'zod';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
@@ -31,11 +30,6 @@ export async function createNonStateActor(data: {
 	fontAwesomeIcon?: string | null;
 	seatAmount: number;
 }) {
-	assertSeatsPerDelegationAllowed({
-		numOfSeatsPerDelegation: data.seatAmount,
-		assignedMembers: []
-	});
-
 	const created = await withUniqueNameCheck(
 		db
 			.insert(schema.conferenceRole)
@@ -51,13 +45,13 @@ export async function createNonStateActor(data: {
 			.returning({ id: schema.conferenceRole.id })
 			.then(assertFirstEntryExists)
 	);
+	conferenceRolePubsub.created();
 	return created.id;
 }
 
 /**
  * Writes the update data of `nonStateActorUpdateData` to a non-state actor. Lowering the seats is
- * allowed, but the applications that no longer fit are dropped in the same transaction. Returns
- * whether that happened.
+ * allowed, but the applications that no longer fit are dropped in the same transaction.
  */
 export async function updateNonStateActor({
 	before,
@@ -83,7 +77,7 @@ export async function updateNonStateActor({
 				tx
 			});
 	});
-	return { applicationsTidied: shrunk };
+	conferenceRolePubsub.updated(before.id);
 }
 
 /**
@@ -91,7 +85,7 @@ export async function updateNonStateActor({
  * for it.
  */
 export async function deleteNonStateActor(id: string) {
-	await db.transaction(async (tx) => {
+	const applicationsRemoved = await db.transaction(async (tx) => {
 		const existing = await tx.query.conferenceRole.findFirst({
 			where: { id, kind: 'NON_STATE_ACTOR' },
 			columns: { id: true },
@@ -115,8 +109,14 @@ export async function deleteNonStateActor(id: string) {
 		await tx
 			.delete(schema.conferenceRole)
 			.where(whereRows({ table: schema.conferenceRole, filter: { id: existing.id } }));
+		return applications.length > 0;
 	});
+	if (applicationsRemoved) roleApplicationPubsub.removed();
+	conferenceRolePubsub.removed();
 }
+
+/** How many single participants a custom role seats: at least one. */
+export const customRoleSeatsSchema = z.number().min(1, { error: () => m.customRoleSeatsRange() });
 
 /** Creates a custom role for single participants (the press, …) and returns its id. */
 export async function createCustomRole(data: {
@@ -126,8 +126,6 @@ export async function createCustomRole(data: {
 	fontAwesomeIcon?: string | null;
 	seatAmount: number;
 }) {
-	if (data.seatAmount < 1)
-		throw apiError({ code: 'INVALID_INPUT', message: m.customRoleSeatsRange() });
 	const created = await withUniqueNameCheck(
 		db
 			.insert(schema.conferenceRole)
@@ -142,6 +140,7 @@ export async function createCustomRole(data: {
 			.returning({ id: schema.conferenceRole.id })
 			.then(assertFirstEntryExists)
 	);
+	conferenceRolePubsub.created();
 	return created.id;
 }
 
@@ -162,8 +161,6 @@ export async function updateCustomRole({
 	};
 }) {
 	if (data.seatAmount !== undefined && data.seatAmount !== null) {
-		if (data.seatAmount < 1)
-			throw apiError({ code: 'INVALID_INPUT', message: m.customRoleSeatsRange() });
 		const holders = await db.$count(
 			schema.singleParticipant,
 			whereRows({ table: schema.singleParticipant, filter: { assignedRoleId: id } })
@@ -186,6 +183,7 @@ export async function updateCustomRole({
 			})
 			.where(whereRows({ table: schema.conferenceRole, filter: { id } }))
 	);
+	conferenceRolePubsub.updated(id);
 }
 
 /** Deletes a custom role unless somebody holds it; the wishes for it go with it. */
@@ -195,7 +193,14 @@ export async function deleteCustomRole(id: string) {
 		whereRows({ table: schema.singleParticipant, filter: { assignedRoleId: id } })
 	);
 	if (holders > 0) throw apiError({ code: 'CONFLICT', message: m.customRoleStillAssigned() });
+	// the single participants whose wishes for it go with it
+	const wishing = await db.query.singleParticipant.findMany({
+		where: { appliedForRoles: { id } },
+		columns: { id: true }
+	});
 	await db
 		.delete(schema.conferenceRole)
 		.where(whereRows({ table: schema.conferenceRole, filter: { id } }));
+	conferenceRolePubsub.removed();
+	if (wishing.length > 0) singleParticipantPubsub.updated(wishing.map((wisher) => wisher.id));
 }

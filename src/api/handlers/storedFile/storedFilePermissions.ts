@@ -13,7 +13,7 @@ import { m } from '#lib/paraglide/messages';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 import { objectKey } from './storageClient';
 
-/** Who uploaded a file is the uploader's (and an admin's) to know. */
+/** Masks who uploaded a file: only the uploader (and a system admin) reads it. */
 const WITHOUT_UPLOADER = { uploadedById: false };
 
 /**
@@ -33,11 +33,13 @@ const WITHOUT_UPLOADER = { uploadedById: false };
 export function registerStoredFileAbilities() {
 	abilityBuilder.storedFile.allow('read').when(systemAdmin);
 
+	// The uploader reads their own files, held by a row or not, with every column.
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { uploadedById: id } } : undefined;
 	});
 
+	// Image, emblem and logo: whoever may read the conference.
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const conference = readableConference(ctx);
 		return {
@@ -48,6 +50,7 @@ export function registerStoredFileAbilities() {
 		};
 	});
 
+	// Templates: the conference's participants and team.
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const conference = hasPartIn({ ctx });
 		return conference
@@ -66,6 +69,7 @@ export function registerStoredFileAbilities() {
 			: undefined;
 	});
 
+	// Site plans: whoever reads the conference's calendar.
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference
@@ -73,6 +77,7 @@ export function registerStoredFileAbilities() {
 			: undefined;
 	});
 
+	// Resolution PDFs: the conference's participants and team.
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
 		const conference = hasPartIn({ ctx });
 		return conference
@@ -85,8 +90,9 @@ export function registerStoredFileAbilities() {
 // is checked here.
 
 /**
- * Refuses unless the caller may upload the file `field` of a `kind` row of `conferenceId`, which
- * the field's entry in `FILE_SOURCES` decides. Returns that entry.
+ * Refuses unless the caller holds, in `conferenceId`, the team permission the field's entry in
+ * `FILE_SOURCES` names for uploading the file `field` of a `kind` row; INVALID_INPUT for a field
+ * that takes no file. Returns that entry.
  */
 export async function assertCanUploadFile({
 	ctx,
@@ -108,9 +114,9 @@ export async function assertCanUploadFile({
 
 /**
  * Refuses unless the caller may store `fileId` in `field` of a `kind` row of `conferenceId`: they
- * uploaded it, for that field of that conference. A file names no conference, but the key
- * `requestFileUpload` gave it does (`objectKey`). Passes `null` (clear the field) and `undefined`
- * (leave it alone) through, so it wraps a mutation argument as it is.
+ * uploaded it themselves, for that field of that conference. A file names no conference, but the
+ * key `requestFileUpload` gave it does (`objectKey`). Passes `null` (clear the field) and
+ * `undefined` (leave it alone) through, so it wraps a mutation argument as it is.
  *
  * The caller's right to write the row itself is the mutation's business, as for any other column;
  * that the file arrived in full is `ensureUploadComplete`'s.

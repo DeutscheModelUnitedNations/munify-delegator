@@ -5,14 +5,13 @@ import {
 	deckSchema,
 	deckSql,
 	entriesSql,
-	isSightingStatusFilter,
+	sightingStatusSchema,
 	schoolRowSchema,
 	schoolsSql
 } from './sightingDeckQuery';
 import { assertCanReadSightingDeck } from './sightingDeckPermissions';
 import codenmz from '#lib/helpers/codenamize';
 import { z } from 'zod';
-import { apiError } from '#api/services/errors';
 
 const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 	description: 'One application under review: what the deck orders, filters and colours it by.',
@@ -22,8 +21,7 @@ const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 		school: t.string({ nullable: true }),
 		size: t.int(),
 		status: t.string(),
-		/** Marked as one that has to get a seat */
-		required: t.boolean()
+		required: t.boolean({ description: 'Marked as one that has to get a seat' })
 	})
 });
 
@@ -73,24 +71,14 @@ const MAX_WINDOW = 200;
 const MAX_ENTRIES = 100;
 const MAX_NAME_MATCHES = 50;
 
-function statusOf(value: string | null | undefined) {
-	const status = value ?? 'all';
-	if (!isSightingStatusFilter(status))
-		throw apiError({ code: 'INVALID_INPUT', message: `Unknown status ${status}` });
-	return status;
-}
-
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * A window of the sighting's deck, filtered and ordered here: with tens of thousands of
-	 * applications the browser holds neither the deck nor its reviews, only the window around the
-	 * card on top. Not live - the page asks again when a review changes.
-	 */
 	sightingDeck: t.field({
+		description:
+			"A window of the sighting's deck, filtered and ordered here: with tens of thousands of applications the browser holds neither the deck nor its reviews, only the window around the card on top. Not live - the page asks again when a review changes.",
 		type: SightingDeck,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			status: t.arg.string(),
+			status: t.arg.string().validate(sightingStatusSchema),
 			school: t.arg.string(),
 			currentId: t.arg.id(),
 			index: t.arg.int(),
@@ -103,7 +91,7 @@ schemaBuilder.queryFields((t) => ({
 			const result = await db.execute<{ result: unknown }>(
 				deckSql({
 					conferenceId: args.conferenceId,
-					status: statusOf(args.status),
+					status: args.status,
 					school: args.school ?? null,
 					currentId: args.currentId ?? null,
 					index: args.index ?? null,
@@ -114,13 +102,14 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The entries among `ids` that pass the filters - the hits of a search, with their status. */
 	sightingEntries: t.field({
+		description:
+			'The entries among `ids` that pass the filters - the hits of a search, with their status.',
 		type: [SightingDeckEntry],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			ids: t.arg.idList({ required: true }),
-			status: t.arg.string(),
+			status: t.arg.string().validate(sightingStatusSchema),
 			school: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
@@ -131,7 +120,7 @@ schemaBuilder.queryFields((t) => ({
 				entriesSql({
 					conferenceId: args.conferenceId,
 					ids,
-					status: statusOf(args.status),
+					status: args.status,
 					school: args.school ?? null
 				})
 			);
@@ -139,11 +128,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/**
-	 * The applications whose codename or id contains the search. Codenames are
-	 * worked out from the id and stored nowhere, so they are matched here, not in SQL.
-	 */
 	sightingNameMatches: t.field({
+		description:
+			'The applications whose codename or id contains the search. Codenames are worked out from the id and stored nowhere, so they are matched here, not in SQL.',
 		type: [SightingNameMatch],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -164,8 +151,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The schools to pick from in the school filter: a few matching a search, not all thousands. */
 	sightingSchools: t.field({
+		description:
+			'The schools to pick from in the school filter: a few matching a search, not all thousands.',
 		type: [SightingSchool],
 		args: {
 			conferenceId: t.arg.id({ required: true }),

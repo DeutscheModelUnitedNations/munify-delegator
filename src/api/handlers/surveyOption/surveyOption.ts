@@ -6,15 +6,15 @@ import {
 } from './surveyOptionPermissions';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { surveyOptionPubsub } from '#api/pubsub';
-import { deleteIfAllowed, queryAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerSurveyOptionAbilities();
 
 const SurveyOptionRef = object({
 	table: 'surveyOption',
 	adjust: (t) => ({
-		/** How many participants picked this option - the survey result, in effect. */
 		countSurveyAnswers: t.field({
+			description: 'How many participants picked this option - the survey result, in effect.',
 			type: 'Int',
 			resolve: async (option) =>
 				(
@@ -56,7 +56,10 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.surveyOption
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.surveyOption, id: created.id }))
+					query(
+						(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: created.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -85,7 +88,12 @@ schemaBuilder.mutationFields((t) => ({
 			surveyOptionPubsub.updated(args.id);
 
 			return db.query.surveyOption
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.surveyOption, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),

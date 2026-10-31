@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#api/db/db', () => ({ db: {} }));
 vi.mock('#api/rumble', () => ({ abilityBuilder: {} }));
-const { paperRefusal } = await import('./paperPermissions');
+const { paperWriteRefusal } = await import('./paperPermissions');
 
 const nation = { assignmentReleased: true, roleKind: 'NATION' as const, assignedCommitteeId: 'GA' };
 const nsa = {
@@ -11,11 +11,11 @@ const nsa = {
 	assignedCommitteeId: null
 };
 
-type RefusalArgs = Parameters<typeof paperRefusal>[0];
+type RefusalArgs = Parameters<typeof paperWriteRefusal>[0];
 const refusalOf = (member: RefusalArgs['member'], paper: RefusalArgs['paper']) =>
-	paperRefusal({ member, paper })?.extensions.code;
+	paperWriteRefusal({ member, paper })?.extensions.code;
 
-describe('paperRefusal', () => {
+describe('paperWriteRefusal', () => {
 	test('a nation writes on the agenda items of its own committee only', () => {
 		expect(refusalOf(nation, { type: 'POSITION_PAPER', agendaItemCommitteeId: 'GA' })).toBe(
 			undefined

@@ -175,8 +175,8 @@ export async function sendByHand({
 		})
 		.returning({ id: schema.emailLog.id })
 		.then(assertFirstEntryExists);
-	emailLogPubsub.updated();
+	emailLogPubsub.created();
 	const error = await deliver({ logId: row.id, to, render });
-	emailLogPubsub.updated();
+	emailLogPubsub.updated(row.id);
 	return error;
 }

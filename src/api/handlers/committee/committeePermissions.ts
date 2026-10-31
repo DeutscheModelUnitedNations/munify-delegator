@@ -13,24 +13,25 @@ import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAbilities() {
-	// The committees are part of the seat overview: readable wherever their conference is.
+	// Anyone who may read the conference (`readableConference`) reads its committees: they are part
+	// of the seat overview.
 	abilityBuilder.committee
 		.allow('read')
 		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
 	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
-	// Project management sets up its committees. Which nations sit in them is the seat planning's
-	// call, which the content lead shares (`setCommitteeNationSeat`, `setCommitteeRegionalBaseline`).
+	// Project management deletes its conference's committees.
 	abilityBuilder.committee
 		.allow('delete')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
-	// The content lead shapes the committees' content: names, headline and seats.
+	// Seat planning (project management and content lead) updates its conference's committees: names,
+	// headline and seats. Which nations sit in them is checked by `assertCanPlanCommitteeSeats`.
 	abilityBuilder.committee
 		.allow('update')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES })));
 }
 
-/** Creating a committee changes the conference set-up, which is the management's call. */
+/** Refuses unless the caller holds `manageConference` (project management) in the conference. */
 export async function assertCanCreateCommittee({
 	ctx,
 	conferenceId
@@ -42,8 +43,9 @@ export async function assertCanCreateCommittee({
 }
 
 /**
- * Loads the committee through the caller's update ability, with what an update has to check
- * against: its seats per delegation, nation roles and assigned members.
+ * Refuses unless the caller may update the committee (seat planning of its conference). Returns
+ * what an update has to check against: its conference, seats per delegation, roles and the
+ * delegations of its seated members.
  */
 export async function assertCanUpdateCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const updateFilter = (await ctx.abilities.committee.filter('update')).merge({
@@ -61,14 +63,14 @@ export async function assertCanUpdateCommittee({ ctx, id }: { ctx: ApiContext; i
 		.then(assertFindFirstExists);
 }
 
-/** Refuses unless the caller's delete ability matches the committee. */
+/** Refuses unless the caller may delete the committee (project management of its conference). */
 export async function assertCanDeleteCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 	await assertAllowed({ ctx, table: 'committee', action: 'delete', id });
 }
 
 /**
- * Refuses unless the caller plans the seats of the committee's conference. Returns the committee's
- * conference and its regional baseline targets.
+ * Refuses unless the caller holds `planSeats` (project management and content lead) in the
+ * committee's conference. Returns the committee's conference and its regional baseline targets.
  */
 export async function assertCanPlanCommitteeSeats({
 	ctx,

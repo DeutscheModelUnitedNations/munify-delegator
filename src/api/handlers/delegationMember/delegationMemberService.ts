@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { delegationMemberPubsub, delegationPubsub, singleParticipantPubsub } from '#api/pubsub';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
@@ -83,18 +84,18 @@ export async function joinDelegationByEntryCode({
 
 		return member;
 	});
+	delegationMemberPubsub.created();
 
 	return created.id;
 }
 
 /**
  * Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is
- * left, the delegation itself goes. Same ordering as the legacy resolver. Returns the id of the
- * delegation, or undefined when it went with its last member. The caller checks first that the
- * delegate may be removed (`assertCanDeleteDelegationMember`).
+ * left, the delegation itself goes. Same ordering as the legacy resolver. The caller checks first
+ * that the delegate may be removed (`assertCanDeleteDelegationMember`).
  */
 export async function removeDelegationMember(id: string) {
-	const delegationId = await db.transaction(async (tx) => {
+	const removed = await db.transaction(async (tx) => {
 		const [deleted] = await tx
 			.delete(schema.delegationMember)
 			.where(whereRows({ table: schema.delegationMember, filter: { id } }))
@@ -108,6 +109,7 @@ export async function removeDelegationMember(id: string) {
 			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 		}
 
+		let successorId: string | undefined;
 		if (deleted.isHeadDelegate) {
 			const successor = await tx.query.delegationMember.findFirst({
 				where: { delegationId: deleted.delegationId }
@@ -117,22 +119,29 @@ export async function removeDelegationMember(id: string) {
 				await tx
 					.delete(schema.delegation)
 					.where(whereRows({ table: schema.delegation, filter: { id: deleted.delegationId } }));
-				return undefined;
+				return { delegationId: deleted.delegationId, delegationRemoved: true, successorId };
 			}
 
 			await tx
 				.update(schema.delegationMember)
 				.set({ isHeadDelegate: true })
 				.where(whereRows({ table: schema.delegationMember, filter: { id: successor.id } }));
+			successorId = successor.id;
 		}
 
 		// Only meaningful while the delegation still exists.
 		await tidyRoleApplications({ delegationId: deleted.delegationId, tx });
-
-		return deleted.delegationId;
+		return { delegationId: deleted.delegationId, delegationRemoved: false, successorId };
 	});
 
-	return delegationId;
+	delegationMemberPubsub.removed();
+	if (removed.delegationRemoved) {
+		delegationPubsub.removed();
+		return;
+	}
+	if (removed.successorId) delegationMemberPubsub.updated(removed.successorId);
+	// it lost a member, and maybe its head delegate
+	delegationPubsub.updated(removed.delegationId);
 }
 
 /** Placeholder details, so an assigned delegation looks "applied" like any other. */
@@ -172,7 +181,10 @@ async function clearParticipation({
 			})
 		)
 		.returning({ id: schema.delegationMember.id });
-	if (removedMember.length > 0) return;
+	if (removedMember.length > 0) {
+		delegationMemberPubsub.removed();
+		return;
+	}
 
 	const removedSingle = await tx
 		.delete(schema.singleParticipant)
@@ -186,6 +198,7 @@ async function clearParticipation({
 	if (removedSingle.length === 0) {
 		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
 	}
+	singleParticipantPubsub.removed();
 }
 
 type AssignedDelegation = {
@@ -219,6 +232,7 @@ async function prepareAssignedDelegation({
 			})
 			.returning()
 			.then(assertFirstEntryExists);
+		delegationPubsub.created();
 		return { ...created, members: [] };
 	}
 
@@ -227,6 +241,7 @@ async function prepareAssignedDelegation({
 			.update(schema.delegation)
 			.set(ASSIGNED_DELEGATION_INFOS)
 			.where(whereRows({ table: schema.delegation, filter: { id: existing.id } }));
+		delegationPubsub.updated(existing.id);
 	}
 	return existing;
 }
@@ -242,7 +257,7 @@ export async function placeUserInAssignedDelegation(args: {
 	assignedRoleId: string;
 	assignedCommitteeId?: string | null;
 }) {
-	return db.transaction(async (tx) => {
+	const memberId = await db.transaction(async (tx) => {
 		const existing = await tx.query.delegation.findFirst({
 			where: { conferenceId: args.conferenceId, assignedRoleId: args.assignedRoleId },
 			with: { members: true }
@@ -287,6 +302,8 @@ export async function placeUserInAssignedDelegation(args: {
 
 		return member.id;
 	});
+	delegationMemberPubsub.created();
+	return memberId;
 }
 
 /**
@@ -296,27 +313,31 @@ export async function placeUserInAssignedDelegation(args: {
  * `assertCanMoveDelegationMemberToCommittee` checked and loaded.
  */
 export async function moveMemberToCommittee({ member, committee }: CommitteeMove) {
-	await db.transaction(async (tx) => {
+	const displacedId = await db.transaction(async (tx) => {
 		const siblings = (member.delegation?.members ?? []).filter((x) => x.id !== member.id);
 		const occupying = siblings.filter((x) => x.assignedCommitteeId === committee.id);
 
-		if (occupying.length >= committee.numOfSeatsPerDelegation) {
-			const displaced = [...occupying].sort(
-				(a, b) => (a.updatedAt?.getTime() ?? 0) - (b.updatedAt?.getTime() ?? 0)
-			)[0];
-			if (displaced) {
-				await tx
-					.update(schema.delegationMember)
-					.set({ assignedCommitteeId: member.assignedCommitteeId ?? null })
-					.where(whereRows({ table: schema.delegationMember, filter: { id: displaced.id } }));
-			}
+		const displaced =
+			occupying.length >= committee.numOfSeatsPerDelegation
+				? [...occupying].sort(
+						(a, b) => (a.updatedAt?.getTime() ?? 0) - (b.updatedAt?.getTime() ?? 0)
+					)[0]
+				: undefined;
+		if (displaced) {
+			await tx
+				.update(schema.delegationMember)
+				.set({ assignedCommitteeId: member.assignedCommitteeId ?? null })
+				.where(whereRows({ table: schema.delegationMember, filter: { id: displaced.id } }));
 		}
 
 		await tx
 			.update(schema.delegationMember)
 			.set({ assignedCommitteeId: committee.id })
 			.where(whereRows({ table: schema.delegationMember, filter: { id: member.id } }));
+		return displaced?.id;
 	});
+	if (displacedId) delegationMemberPubsub.updated(displacedId);
+	delegationMemberPubsub.updated(member.id);
 }
 
 /** Refuses when a delegation of the given members now fills a committee beyond its seats. */
@@ -380,6 +401,8 @@ export async function assignCommittees(
 			memberIds: assignments.map((assignment) => assignment.delegationMemberId)
 		});
 	});
+	const memberIds = assignments.map((assignment) => assignment.delegationMemberId);
+	if (memberIds.length > 0) delegationMemberPubsub.updated(memberIds);
 }
 
 type SeatOf = Seat & { id: string };
@@ -388,7 +411,6 @@ type SeatOf = Seat & { id: string };
 interface SeatSwitchPlan {
 	seats: Map<string, Seat>;
 	change: SeatSwitch;
-	createdDelegation: boolean;
 }
 
 function loadSeat({ tx, id }: { tx: Transaction; id: string }): Promise<SeatOf> {
@@ -424,8 +446,7 @@ async function swapSeats({
 				{ delegationId: member.delegationId, assignedCommitteeId: member.assignedCommitteeId }
 			]
 		]),
-		change: { kind: 'swap', memberId: member.id, otherMemberId: other.id },
-		createdDelegation: false
+		change: { kind: 'swap', memberId: member.id, otherMemberId: other.id }
 	};
 }
 
@@ -506,8 +527,7 @@ async function moveToFreeSeat({
 		seats: new Map([
 			[member.id, { delegationId: delegation.id, assignedCommitteeId: committeeId }]
 		]),
-		change: { kind: 'move', memberId: member.id, targetDelegationId: delegation.id },
-		createdDelegation: !existing
+		change: { kind: 'move', memberId: member.id, targetDelegationId: delegation.id }
 	};
 }
 
@@ -578,7 +598,7 @@ async function writeSeatSwitch({
 			.set({ isHeadDelegate })
 			.where(whereRows({ table: schema.delegationMember, filter: { id } }));
 	}
-	return delegationIds;
+	return { delegationIds, headDelegateIds: headChanges.map((change) => change.id) };
 }
 
 export interface SeatSwitchArgs {
@@ -597,26 +617,22 @@ export interface SeatSwitchArgs {
  * Swaps the seats (delegation and committee) of two delegates, or moves one into a free seat. The
  * caller checked every id (`assertCanSwitchDelegationMemberSeats`). Serializable, since the seat
  * counts and head delegate checks read rows a concurrent switch may change; losing against one is
- * a CONFLICT to retry. Returns the members moved, the delegations involved and whether one was
- * created.
+ * a CONFLICT to retry. Returns the members moved.
  */
 export async function switchSeats(args: SeatSwitchArgs) {
+	let switched: { memberIds: string[]; delegationIds: string[]; headDelegateIds: string[] };
 	try {
-		return await db.transaction(
+		switched = await db.transaction(
 			async (tx) => {
 				const member = await loadSeat({ tx, id: args.memberId });
 				const plan = await planSeatSwitch({ tx, member, args });
-				const delegationIds = await writeSeatSwitch({
+				const written = await writeSeatSwitch({
 					tx,
 					plan,
 					fromDelegationId: member.delegationId,
 					chosenHeadDelegateIds: args.headDelegateMemberIds
 				});
-				return {
-					memberIds: [...plan.seats.keys()],
-					delegationIds,
-					createdDelegation: plan.createdDelegation
-				};
+				return { memberIds: [...plan.seats.keys()], ...written };
 			},
 			{ isolationLevel: 'serializable' }
 		);
@@ -625,4 +641,10 @@ export async function switchSeats(args: SeatSwitchArgs) {
 			throw apiError({ code: 'CONFLICT', message: m.seatSwitchConflict() });
 		throw error;
 	}
+	// the moved members and those whose head delegate flag changed
+	delegationMemberPubsub.updated([
+		...new Set([...switched.memberIds, ...switched.headDelegateIds])
+	]);
+	delegationPubsub.updated(switched.delegationIds);
+	return switched.memberIds;
 }

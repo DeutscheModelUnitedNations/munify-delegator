@@ -11,7 +11,9 @@ import {
 	updateStatus
 } from './conferenceParticipantService';
 import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
-import { schoolChoiceSchema } from '#lib/schemata/schoolChoice';
+import { schoolNameSchema } from '#lib/schemata/schoolChoice';
+import { z } from 'zod';
+import { m } from '#lib/paraglide/messages';
 import {
 	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
@@ -20,16 +22,15 @@ import {
 	registerConferenceParticipantAbilities,
 	assertCanSetParticipantSchool
 } from './conferenceParticipantPermissions';
-import { conferenceParticipantPubsub, schoolPubsub } from '#api/pubsub';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceParticipantAbilities();
 
 const ConferenceParticipantRef = object({
 	table: 'conferenceParticipant',
 	adjust: (t) => ({
-		/** 18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`. */
 		ofAgeAtConference: t.field({
+			description:
+				'18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`.',
 			type: 'Boolean',
 			resolve: (participant) => isOfAgeAtConference(participant.id)
 		})
@@ -40,8 +41,7 @@ const BulkStatusUpdateResult = schemaBuilder.simpleObject(
 	'UpdateAllConferenceParticipantsResponse',
 	{
 		fields: (t) => ({
-			/** How many participants the bulk update touched. */
-			changed: t.int()
+			changed: t.int({ description: 'How many participants the bulk update touched.' })
 		})
 	}
 );
@@ -51,12 +51,9 @@ const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Upserts a participant's status. The row is addressed either by id, or by conference plus
-	 * user id, or by conference plus user email - the management UI knows different things in
-	 * different places, which is why all three are accepted.
-	 */
-	updateConferenceParticipant: t.drizzleField({
+	upsertConferenceParticipant: t.drizzleField({
+		description:
+			"Upserts a participant's status. The row is addressed either by id, or by conference plus user id, or by conference plus user email - the management UI knows different things in different places, which is why all three are accepted.",
 		type: ConferenceParticipantRef,
 		args: {
 			id: t.arg.id(),
@@ -73,6 +70,15 @@ schemaBuilder.mutationFields((t) => ({
 			assignNextDocumentNumber: t.arg.boolean(),
 			accessCardId: t.arg.string()
 		},
+		validate: z
+			.object({
+				id: z.string().nullish(),
+				userId: z.string().nullish(),
+				userEmail: z.string().nullish()
+			})
+			.refine((args) => args.id || args.userId || args.userEmail, {
+				error: () => m.participantStatusNeedsLookup()
+			}),
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpsertParticipantStatus({ ctx, args });
 			const upsert = await planParticipantStatusUpsert(args);
@@ -93,52 +99,52 @@ schemaBuilder.mutationFields((t) => ({
 				});
 			}
 
-			// Updated or created on the spot, so one notification on whichever row now holds it.
-			conferenceParticipantPubsub.updated(statusId);
 			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.conferenceParticipant
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.conferenceParticipant, id: statusId }))
+					query(
+						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
+							where: { id: statusId }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/**
-	 * Sets a person's school in a conference: the only school a person taking part has, which the
-	 * seats and numbers per school count, and which the assignment never changes. Without `id` it is
-	 * the caller's own (as a delegate, single participant or supervisor); with it, participant care
-	 * correcting somebody's. Both school arguments null removes it.
-	 */
 	setParticipantSchool: t.drizzleField({
+		description:
+			"Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it.",
 		type: ConferenceParticipantRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			id: t.arg.id(),
 			schoolId: t.arg.id(),
-			schoolName: t.arg.string()
+			schoolName: t.arg.string().validate(schoolNameSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			schoolChoiceSchema.parse(args);
-			const id = await assertCanSetParticipantSchool({ ctx, args });
+			const { participantId } = await assertCanSetParticipantSchool({ ctx, args });
 			await setParticipantSchool({
 				tx: db,
-				participantIds: [id],
+				participantIds: [participantId],
 				schoolId: await resolveSchoolChoice({ choice: args })
 			});
 
-			conferenceParticipantPubsub.updated(id);
-			if (args.schoolName) schoolPubsub.created();
-
 			return db.query.conferenceParticipant
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conferenceParticipant, id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
+							where: { id: participantId }
+						}).query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
 
-	/** Bulk attendance toggle across a whole conference, for its participant care. */
 	updateAllConferenceParticipants: t.field({
+		description: 'Bulk attendance toggle across a whole conference, for its participant care.',
 		type: BulkStatusUpdateResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -148,7 +154,6 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanSetAttendanceForAll({ ctx, conferenceId: args.conferenceId });
 			const changed = await setAttendanceForAll(args);
 
-			conferenceParticipantPubsub.created();
 			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return { changed };

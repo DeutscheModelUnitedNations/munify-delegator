@@ -13,29 +13,29 @@ import { apiError } from '#api/services/errors';
 
 /** The abilities of attendance entries and of the sessions they are recorded in. */
 export function registerAttendanceEntryAbilities() {
-	// Ported from abilities/entities/attendanceEntry.ts
 	abilityBuilder.attendanceEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users see their own attendance entries.
+	// Everyone reads their own attendance entries.
 	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { conferenceParticipant: { user: { id } } } } : undefined;
 	});
 
-	// Every team member of the conference may read them.
+	// Every team member reads those of their conference.
 	abilityBuilder.attendanceEntry.allow('read').when((ctx) => {
 		const conferenceParticipant = isTeamMemberOfConference({ ctx });
 		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
 	});
 
-	// Participant care and project management manage them.
+	// Participant care (project management and participant care) updates and deletes them.
 	abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
 		const conferenceParticipant = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return conferenceParticipant ? { where: { conferenceParticipant } } : undefined;
 	});
 
-	// The sessions of a conference are the team's: every team member reads them, and starting and
-	// ending one goes through the mutations, which check the team role themselves.
+	// Every team member reads their conference's sessions. Nobody but a system admin updates or
+	// deletes them through the ability: starting, renaming and ending go through
+	// `assertCanStartAttendanceSession` / `assertCanManageAttendanceSession`.
 	abilityBuilder.attendanceSession.allow(['read', 'update', 'delete']).when(systemAdmin);
 	abilityBuilder.attendanceSession.allow('read').when((ctx) => {
 		const inTeamConference = isTeamMemberOfConference({ ctx });
@@ -44,8 +44,8 @@ export function registerAttendanceEntryAbilities() {
 }
 
 /**
- * Refuses unless the caller may start attendance sessions in the conference, expecting the survey
- * options it names, which have to be the conference's.
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the conference, and every survey option the session expects is one of the conference's.
  */
 export async function assertCanStartAttendanceSession({
 	ctx,
@@ -69,9 +69,10 @@ export async function assertCanStartAttendanceSession({
 }
 
 /**
- * Refuses unless the session exists and the caller may end or rename it; answers its conference.
+ * Refuses unless the session exists in a conference where the caller holds `manageParticipants`
+ * (project management and participant care), who end and rename sessions. Returns its conference id.
  */
-export async function assertCanEndAttendanceSession({
+export async function assertCanManageAttendanceSession({
 	ctx,
 	sessionId
 }: {
@@ -85,10 +86,10 @@ export async function assertCanEndAttendanceSession({
 	if (!session) {
 		throw apiError({ code: 'NOT_FOUND', message: m.sessionNotFound() });
 	}
-	return session.conferenceId;
+	return { conferenceId: session.conferenceId };
 }
 
-/** The session, once it is known to belong to the conference the scan is recorded for. */
+/** Refuses (INVALID_INPUT) unless the session belongs to the conference, e.g. the one a scan is recorded for. */
 export async function assertSessionOfConference({
 	sessionId,
 	conferenceId
@@ -106,9 +107,9 @@ export async function assertSessionOfConference({
 }
 
 /**
- * Refuses a scan of somebody who does not take part in the conference as delegate, single
- * participant or supervisor. Recording attendance creates the person's participant row, which the
- * team has none of: a team member is shown by the scanner but never recorded.
+ * Refuses (INVALID_INPUT) unless the scanned user is registered in the conference as delegate,
+ * single participant or supervisor. A team member is shown by the scanner but never recorded: they
+ * have no participant row to record attendance on.
  */
 async function assertParticipantToScan({
 	conferenceId,
@@ -140,8 +141,8 @@ async function assertParticipantToScan({
 }
 
 /**
- * Any team member of the conference may record attendance, not just management - the scanner is
- * on every team member's dashboard - and only for somebody who takes part in the conference.
+ * Refuses unless the caller is on the conference's team (any role: the scanner is on every team
+ * member's dashboard) and the scanned user takes part in it (`assertParticipantToScan`).
  */
 async function assertMayRecordAttendance({
 	ctx,
@@ -156,7 +157,11 @@ async function assertMayRecordAttendance({
 	await assertParticipantToScan({ conferenceId, subjectId });
 }
 
-/** Who records the scan; refuses an anonymous caller and a foreign session. */
+/**
+ * Refuses unless the caller is signed in and may record the user's attendance
+ * (`assertMayRecordAttendance`) in a session of the same conference. Returns the caller's user id,
+ * who is recorded as the scanner.
+ */
 export async function assertCanCreateAttendanceEntry({
 	ctx,
 	args
@@ -171,5 +176,5 @@ export async function assertCanCreateAttendanceEntry({
 
 	await assertMayRecordAttendance({ ctx, conferenceId: args.conferenceId, subjectId: args.userId });
 	await assertSessionOfConference({ sessionId: args.sessionId, conferenceId: args.conferenceId });
-	return callerId;
+	return { callerId };
 }

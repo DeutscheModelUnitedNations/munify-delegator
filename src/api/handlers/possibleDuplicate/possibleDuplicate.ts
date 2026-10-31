@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { callerUserId, queryAllowed } from '#api/services/authHelper/utils';
+import { callerUserId } from '#api/services/authHelper/utils';
 import { decidePossibleDuplicate, scanConferenceForDuplicates } from './possibleDuplicates';
 import {
 	assertCanDecidePossibleDuplicate,
@@ -8,7 +8,6 @@ import {
 	registerPossibleDuplicateAbilities
 } from './possibleDuplicatePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { possibleDuplicatePubsub, userPubsub } from '#api/pubsub';
 
 registerPossibleDuplicateAbilities();
 
@@ -90,8 +89,9 @@ const PossibleDuplicateRef = object({
 query({ table: 'possibleDuplicate' });
 
 schemaBuilder.mutationFields((t) => ({
-	/** Looks for duplicates of everyone taking part in the conference; answers the pairs found. */
 	scanPossibleDuplicates: t.field({
+		description:
+			'Looks for duplicates of everyone taking part in the conference; answers the pairs found.',
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -100,32 +100,28 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/**
-	 * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`. A
-	 * dismissed pair no longer lets the care team read the other account's notes.
-	 */
 	decidePossibleDuplicate: t.drizzleField({
+		description:
+			"Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`. A dismissed pair no longer lets the care team read the other account's notes.",
 		type: PossibleDuplicateRef,
 		args: {
 			id: t.arg.id({ required: true }),
 			status: t.arg({ type: statusEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const pair = await assertCanDecidePossibleDuplicate({ ctx, id: args.id });
+			await assertCanDecidePossibleDuplicate({ ctx, id: args.id });
 			await decidePossibleDuplicate({
 				id: args.id,
 				status: args.status,
 				decidedById: callerUserId(ctx) ?? null
 			});
 
-			possibleDuplicatePubsub.updated(args.id);
-			// what of each account the care team may read follows the decision
-			userPubsub.updated(pair.userId);
-			userPubsub.updated(pair.candidateId);
-
 			return db.query.possibleDuplicate
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.possibleDuplicate, id: args.id }))
+					query(
+						(await ctx.abilities.possibleDuplicate.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const setAssignmentReview = vi.fn();
+const upsertAssignmentReview = vi.fn();
 vi.mock('#lib/api/rumbleClient/client', () => ({
 	client: {
 		mutate: {
-			setAssignmentReview: (input: unknown) => setAssignmentReview(input)
+			upsertAssignmentReview: (input: unknown) => upsertAssignmentReview(input)
 		}
 	}
 }));
@@ -22,14 +22,14 @@ const stored = (review: object) => ({
 });
 
 beforeEach(() => {
-	setAssignmentReview.mockReset();
+	upsertAssignmentReview.mockReset();
 	toastError.mockReset();
 });
 
 describe('saveReview', () => {
 	it('shows the review before the backend has answered, then what it stored', async () => {
 		let answer!: (value: object) => void;
-		setAssignmentReview.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+		upsertAssignmentReview.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
 		const saving = saveReview({
 			kind: 'delegation',
 			id: 'a',
@@ -42,25 +42,25 @@ describe('saveReview', () => {
 		expect(savedReview('a')?.note).toBe('kept');
 	});
 
-	it('sends the whole review, built on the one shown', async () => {
-		setAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 2, flagged: true }));
+	it('sends only the change', async () => {
+		upsertAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 2, flagged: true }));
 		await saveReview({
 			kind: 'single',
 			id: 'b',
 			review: { evaluation: 2, flagged: false, disqualified: false },
 			change: { flagged: true }
 		});
-		expect(setAssignmentReview).toHaveBeenCalledWith(
+		expect(upsertAssignmentReview).toHaveBeenCalledWith(
 			expect.objectContaining({
-				__args: expect.objectContaining({ singleParticipantId: 'b', evaluation: 2, flagged: true })
+				__args: { delegationId: undefined, singleParticipantId: 'b', flagged: true }
 			})
 		);
 	});
 
 	it('does not let an earlier answer undo a later save', async () => {
 		let first!: (value: object) => void;
-		setAssignmentReview.mockReturnValueOnce(new Promise((resolve) => (first = resolve)));
-		setAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 3, flagged: true }));
+		upsertAssignmentReview.mockReturnValueOnce(new Promise((resolve) => (first = resolve)));
+		upsertAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 3, flagged: true }));
 		const earlier = saveReview({
 			kind: 'delegation',
 			id: 'c',
@@ -79,9 +79,9 @@ describe('saveReview', () => {
 	});
 
 	it('takes a refused review back and says why', async () => {
-		setAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 1 }));
+		upsertAssignmentReview.mockResolvedValueOnce(stored({ evaluation: 1 }));
 		await saveReview({ kind: 'delegation', id: 'd', review: undefined, change: { evaluation: 1 } });
-		setAssignmentReview.mockRejectedValueOnce(new Error('nope'));
+		upsertAssignmentReview.mockRejectedValueOnce(new Error('nope'));
 		expect(
 			await saveReview({
 				kind: 'delegation',
@@ -93,7 +93,7 @@ describe('saveReview', () => {
 		expect(savedReview('d')?.evaluation).toBe(1);
 		expect(toastError).toHaveBeenCalledOnce();
 
-		setAssignmentReview.mockRejectedValueOnce(new Error('nope'));
+		upsertAssignmentReview.mockRejectedValueOnce(new Error('nope'));
 		await saveReview({ kind: 'delegation', id: 'e', review: undefined, change: { flagged: true } });
 		expect(savedReview('e')).toBeUndefined();
 	});

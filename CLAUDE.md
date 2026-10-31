@@ -246,25 +246,60 @@ bun run preview
   `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks, `assertOfferedIn` /
   `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
-  reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement),
-  `whereAllowed` (the `where` to write through yourself) and `queryAllowed` (re-read a row after a
-  write). A check used once
+  reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement)
+  and `whereAllowed` (the `where` to write through yourself). A row is re-read after a write with
+  `(await ctx.abilities.x.filter('read')).merge({ where: { id } }).query.single`. A check used once
   stays private in its permissions file; one about a single entity that others need (a calendar
   day's `calendarConference` and `assertTeamPermissionForCalendarDay`, a survey question's check,
-  `assertMayGrantRole` for team roles) is exported from that entity's permissions file. Permission
+  `assertCanGrantTeamRole` for team roles) is exported from that entity's permissions file. Permission
   functions take `ApiContext` (`#api/rumble`), which carries `abilities`.
 
-- **Every mutation publishes.** Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every handler and service that writes it. Never create one in a handler:
+- **Arguments are checked by zod schemas on the arguments, never by hand in a resolver or service.**
+  rumble installs `@pothos/plugin-validation`: one argument with `t.arg.int().validate(schema)`,
+  several together with `validate: schema` on the field, and `args: t.validate({ … }, schema)`
+  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). Word each issue
+  with a lazy `m.…()` (`{ error: () => m.x() }`): a failure becomes an `INVALID_INPUT` error with
+  those messages (`validation.validationError` in `rumble.ts`). A JSON argument holding a whole
+  document goes through `jsonDocument` (`#api/services/argSchemas`). Keep the schema in the
+  service (or `#lib/schemata/` when a form shares it) so it is unit tested. Only checks that need
+  the database stay in code.
+- **Every write publishes, from the service that writes, once it has committed** (after avv).
+  Pubsub instances live in `src/api/pubsub.ts`, one per table, shared by every service that writes
+  it. Never create one in a handler, and never publish from a resolver: the code that writes a row
+  announces it, right next to the write, so a helper called from several services (the
+  role application tidying, `resolveSchoolChoice`) announces for all of them. A service that opens
+  a `db.transaction` publishes after awaiting it, so subscribers hear of the change only once the
+  rows are there to read, and never of a rolled back one; when what to announce is only known
+  inside, the transaction returns it:
 
   ```ts
   import { committeePubsub } from '#api/pubsub';
   // …
-  committeePubsub.updated(args.id); // or created() / removed()
+  await db.transaction(async (tx) => {
+  	await tx.update(schema.committee).set(data).where(/* … */);
+  });
+  committeePubsub.updated(id); // or created() / removed()
   ```
 
-  Publish for **every** table a resolver touches, not just its own — deleting a delegation has to
-  announce its members too, or a subscriber watching members never hears about it. Use `updated(id)`
-  when one row changed and the bare `updated()` for a bulk write with no single id.
+  A helper handed a `tx` cannot see the commit, so it publishes right after its write, inside the
+  transaction. A single statement outside a transaction publishes directly after it is awaited.
+  Publish for **every** table a write touches, not just its own —
+  deleting a delegation has to announce its members too, or a subscriber watching members never
+  hears about it. Announce changed rows by id: `updated(id)`, or `updated(ids)` for a bulk write
+  (`.returning({ id })`). A bare `updated()` reaches nobody: rows listen on their own id, lists
+  only on `created()` / `removed()`. A service returns nothing just so its caller knows what to announce. Only a
+  write a resolver makes itself (`updateIfAllowed` / `deleteIfAllowed`) publishes in the resolver,
+  right after it.
+
+- **Updates are granular, never set-replacements.** An `update…` mutation takes every field but
+  the key as optional and writes only the ones given, so two people editing the same row do not
+  undo each other's fields: left out keeps the value, `null` clears a nullable column and keeps a
+  non-null one (`args.x ?? undefined`). A row created on its first change (a review, the weights)
+  is an upsert whose conflict `set` holds only the given fields plus `updatedAt`. A rule across
+  several fields (never required _and_ excluded) is checked on the row as written, inside the
+  transaction, not on the arguments. A value that is only meaningful whole (an address, a
+  document layout) stays one argument. The client sends only what changed
+  (`upsertAssignmentReview` from the sighting).
 
 - **Authorization** lives in those `abilityBuilder` calls. An ability is a drizzle filter, so it
   composes into a query rather than being checked after the fact:
@@ -652,8 +687,8 @@ bun run preview
   application step may write in any order within its transaction. A `conference_id` a row keeps
   cannot change (`conference_id_is_immutable`); rewriting the same value passes. A row that
   reaches its conference through a link of its own and is named by other rows (a track's day, a
-  survey option's question, an agenda item's committee, a single participant's, supervisor's or
-  payment's participant row) may change that link within the conference, never out of it
+  survey option's question, an agenda item's committee, a delegation member's, single participant's,
+  supervisor's or payment's participant row) may change that link within the conference, never out of it
   (`reached_conference_is_immutable`, in the `conference_reach_unchanged` migration), or it would
   carry the rows naming it along past their checks. None of this is
   drizzle-managed: a new table with two such parents gets its trigger in its migration, as does a
@@ -727,7 +762,7 @@ bun run preview
   `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
   dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
   (only roles with _exactly_ as many free seats as the group has members). The board in
-  `team/assignment/` and `applyAssignment` (`src/api/handlers/assignment/assignmentDraft.ts`) both go
+  `team/assignment/` and `applyAssignment` (`src/api/handlers/assignment/applyDraft.ts`) both go
   through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
   of re-creating them and clears the draft (ratings and weights stay); supervision and statuses
   hang on the person's `conferenceParticipant`, so they survive either way.

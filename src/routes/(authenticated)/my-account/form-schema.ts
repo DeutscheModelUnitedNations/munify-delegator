@@ -93,6 +93,14 @@ function addressIssueMessage({ path }: AddressIssue) {
 
 export const userFormSchema = userFormFields.superRefine(checkAddress);
 
+/**
+ * What a profile update names, each field checked on its own; an address comes whole (its country
+ * decides which parts it needs), so it is checked whole too.
+ */
+export const userUpdateSchema = userFormFields.partial().superRefine((user, ctx) => {
+	if (user.country !== undefined) checkAddress(user, ctx);
+});
+
 /** The user card's form: the same, but the newsletter choices are the person's own to make. */
 export const adminUserFormSchema = userFormFields
 	.omit({ wantsToReceiveGeneralInformation: true, wantsJoinTeamInformation: true })

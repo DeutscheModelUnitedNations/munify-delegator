@@ -48,7 +48,7 @@
 		const saved = await saveWithToast({
 			setLoading: (isLoading) => (loading = isLoading),
 			write: async () => {
-				await client.mutate.updateSurveyAnswer({
+				await client.mutate.upsertSurveyAnswer({
 					__args: { userId, questionId: question.id, optionId },
 					id: true,
 					question: { id: true },

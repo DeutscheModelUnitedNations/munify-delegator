@@ -49,8 +49,9 @@ describe('toUpdateUserArgs', () => {
 			id: 'user-1',
 			givenName: 'Lena',
 			familyName: 'Schmidt',
-			pronouns: undefined,
-			apartment: undefined,
+			// emptied, so sent as null: `updateUser` keeps a field left out
+			pronouns: null,
+			apartment: null,
 			address: {
 				streetAddress: 'Hauptstraße 1',
 				postalCode: '10115',

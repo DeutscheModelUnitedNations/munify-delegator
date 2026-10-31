@@ -52,11 +52,9 @@ async function binConference(conferenceId: string) {
 }
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * How the seated participants split into the conference's nametag bins. Computed on request:
-	 * it only moves when the assignment does, and the team reads it while handing out nametags.
-	 */
 	nametagBins: t.field({
+		description:
+			"How the seated participants split into the conference's nametag bins. Computed on request: it only moves when the assignment does, and the team reads it while handing out nametags.",
 		type: [NametagBin],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -81,11 +79,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/**
-	 * The table the caller picks up their nametag at; `null` while they hold no visible seat. The
-	 * seat stays hidden until the assignment is released, like everywhere else.
-	 */
 	ownNametagTable: t.field({
+		description:
+			'The table the caller picks up their nametag at; `null` while they hold no visible seat. The seat stays hidden until the assignment is released, like everywhere else.',
 		type: OwnNametagTable,
 		nullable: true,
 		args: {
@@ -107,8 +103,9 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The nations (named in the conference's language), non-state actors and roles sent to one bin, read when the team opens it. */
 	nametagBinGroups: t.field({
+		description:
+			"The nations (named in the conference's language), non-state actors and roles sent to one bin, read when the team opens it.",
 		type: [NametagBinGroup],
 		args: {
 			conferenceId: t.arg.id({ required: true }),

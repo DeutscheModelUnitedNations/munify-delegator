@@ -13,14 +13,13 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerRoleApplicationAbilities() {
-	// Ported from abilities/entities/roleApplication.ts
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Delegation members see their own delegation's applications.
+	// Delegates read their own delegation's role applications.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => grantWhere(isInOwnDelegation(ctx)));
 
-	// Only the head delegate may change them, and only until the delegation has applied - the same
-	// line the delegation's own update ability draws.
+	// The head delegate may update and delete their delegation's role applications until it has
+	// applied - the same line the delegation's own update ability draws.
 	abilityBuilder.roleApplication.allow(['update', 'delete']).when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -32,15 +31,14 @@ export function registerRoleApplicationAbilities() {
 			: undefined;
 	});
 
-	// Participant care and project management see their conference's applications, and change them
-	// even after the delegation applied, like the delegation itself (`createRoleApplication` checks
-	// the delegation's update ability).
+	// Participant care (project management and participant care) reads, updates and deletes the role
+	// applications of its conference, also after the delegation applied, as it may the delegation.
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when((ctx) => {
 		const delegation = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return delegation ? { where: { delegation } } : undefined;
 	});
 
-	// Supervisors see the applications of the delegations they supervise.
+	// Supervisors read the role applications of the delegations they supervise.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -50,8 +48,8 @@ export function registerRoleApplicationAbilities() {
 }
 
 /**
- * Refuses unless the caller may update the delegation the application belongs to, and the role
- * applied for is on offer in that delegation's conference.
+ * Refuses unless the caller's update ability reaches the delegation (so the head delegate before
+ * applying, or participant care) and the role is on offer in its conference.
  */
 export async function assertCanCreateRoleApplication({
 	ctx,
@@ -73,8 +71,8 @@ export async function assertCanCreateRoleApplication({
 }
 
 /**
- * Refuses unless the caller may delete the application (the row's delete ability). Returns it,
- * with the delegation whose ranks close the gap afterwards.
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the role application. Returns its
+ * id and delegation, whose ranks close the gap afterwards.
  */
 export async function assertCanDeleteRoleApplication({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const deletable = await db.query.roleApplication.findFirst({
@@ -88,8 +86,8 @@ export async function assertCanDeleteRoleApplication({ ctx, id }: { ctx: ApiCont
 }
 
 /**
- * Refuses unless the caller may update both applications and they rank within one delegation.
- * Returns them.
+ * Refuses unless the caller's update ability reaches both role applications and they belong to one
+ * delegation. Returns them.
  */
 export async function assertCanSwapRoleApplicationRanks({
 	ctx,
@@ -112,5 +110,5 @@ export async function assertCanSwapRoleApplicationRanks({
 	if (first.delegationId !== second.delegationId) {
 		throw apiError({ code: 'INVALID_INPUT', message: m.roleApplicationsOfDifferentDelegations() });
 	}
-	return [first, second];
+	return { first, second };
 }

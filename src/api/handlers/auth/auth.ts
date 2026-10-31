@@ -39,12 +39,9 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, _args, ctx) => (await OIDC.getLogoutUrl(ctx.event)).toString()
 	}),
 
-	/**
-	 * The session as the client should see it, without a round trip to the identity provider.
-	 * Claims that vary by provider are narrowed rather than trusted, so a provider that omits or
-	 * reshapes one yields null instead of a type error at the boundary.
-	 */
 	offlineUserRefresh: t.field({
+		description:
+			'The session as the client should see it, without a round trip to the identity provider. Claims that vary by provider are narrowed rather than trusted, so a provider that omits or reshapes one yields null instead of a type error at the boundary.',
 		type: OfflineUserRefresh,
 		resolve: (_root, _args, ctx) => {
 			const user = ctx.oidc.user;

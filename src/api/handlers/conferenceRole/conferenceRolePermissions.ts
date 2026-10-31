@@ -12,17 +12,16 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceRoleAbilities() {
-	// The roles a conference offers are part of its seat overview: readable wherever the conference
-	// is. The nations they stand for are global reference data and public.
+	// Everybody who may read the conference (`readableConference`) reads its roles: they are part
+	// of its seat overview. The nations they stand for are global reference data and public.
 	abilityBuilder.conferenceRole
 		.allow('read')
 		.when((ctx) => ({ where: { conference: readableConference(ctx) } }));
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when(systemAdmin);
 
-	// The non-state actors and the custom roles (the press, …) are part of the seat planning, which
-	// project management shares with the content lead. Deleting one is blocked while somebody holds
-	// it. Nation roles follow the committee seats (`setCommitteeNationSeat`) and are not edited
-	// directly.
+	// Seat planning (project management and content lead) updates and deletes the non-state actors
+	// and custom roles (the press, …) of its conference. Nation roles follow the committee seats
+	// (`setCommitteeNationSeat`) and are not edited directly.
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when((ctx) => {
 		const team = isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES });
 		return grantWhere(
@@ -34,6 +33,10 @@ export function registerConferenceRoleAbilities() {
 /** The kinds of role the seat planning creates, edits and deletes directly. */
 type PlannedRoleKind = 'NON_STATE_ACTOR' | 'CUSTOM';
 
+/**
+ * Refuses unless the caller holds `planSeats` (project management and content lead) in the
+ * conference.
+ */
 export async function assertCanCreateConferenceRole({
 	ctx,
 	conferenceId
@@ -44,7 +47,10 @@ export async function assertCanCreateConferenceRole({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' });
 }
 
-/** Loads the role of this `kind` through the caller's update ability, with its current seats. */
+/**
+ * Refuses (NOT_FOUND) unless the role is of `kind` and the caller's update ability reaches it.
+ * Returns it with its conference and current seats.
+ */
 export async function assertCanUpdateConferenceRole({
 	ctx,
 	id,
@@ -65,7 +71,7 @@ export async function assertCanUpdateConferenceRole({
 		.then(assertFindFirstExists);
 }
 
-/** Refuses unless the caller's delete ability matches the role of this `kind`. */
+/** Refuses (NOT_FOUND) unless the role is of `kind` and the caller's delete ability reaches it. */
 export async function assertCanDeleteConferenceRole({
 	ctx,
 	id,

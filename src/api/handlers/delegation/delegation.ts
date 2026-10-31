@@ -1,3 +1,4 @@
+import { applicationFormSchema } from '#lib/schemata/applicationForm';
 import { db } from '#api/db/db';
 import { object, countQuery, query, schemaBuilder } from '#api/rumble';
 import { applicationArgs } from './applicationArgs';
@@ -9,13 +10,8 @@ import {
 import { assertCanUpdateDelegation, registerDelegationAbilities } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	conferenceParticipantPubsub,
-	delegationMemberPubsub,
-	delegationPubsub,
-	schoolPubsub
-} from '#api/pubsub';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { delegationMemberPubsub, delegationPubsub } from '#api/pubsub';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerDelegationAbilities();
 
@@ -32,13 +28,13 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const createdId = await createDelegationWithHead({ userId: ctx.mustBeLoggedIn().sub, args });
 
-			delegationPubsub.created();
-			delegationMemberPubsub.created();
-			conferenceParticipantPubsub.updated();
-			if (args.schoolName) schoolPubsub.created();
-
 			return db.query.delegation
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.delegation, id: createdId })))
+				.findFirst(
+					query(
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: createdId } })
+							.query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -50,21 +46,20 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean(),
 			resetEntryCode: t.arg.boolean(),
 			newHeadDelegateUserId: t.arg.id(),
-			experience: t.arg.string(),
-			motivation: t.arg.string()
+			experience: t.arg.string().validate(applicationFormSchema.shape.experience),
+			motivation: t.arg.string().validate(applicationFormSchema.shape.motivation)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const delegation = await assertCanUpdateDelegation({ ctx, id: args.id });
 			await updateDelegationDetails({ delegation, args });
 
-			delegationPubsub.updated(args.id);
-			// A new head delegate flips the flag on two members.
-			if (args.newHeadDelegateUserId) {
-				delegationMemberPubsub.updated();
-			}
-
 			return db.query.delegation
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.delegation, id: args.id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -87,11 +82,12 @@ const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
 		id: t.string(),
 		conferenceId: t.string(),
 		entryCode: t.string(),
-		/** The head delegate's own school, which the join form offers the newcomer. */
-		headDelegateSchoolId: t.string({ nullable: true }),
+		headDelegateSchoolId: t.string({
+			description: "The head delegate's own school, which the join form offers the newcomer.",
+			nullable: true
+		}),
 		headDelegateSchoolName: t.string({ nullable: true }),
-		/** The members' own schools, most common first. */
-		schools: t.stringList(),
+		schools: t.stringList({ description: "The members' own schools, most common first." }),
 		memberCount: t.int(),
 		headDelegateFullName: t.string(),
 		applied: t.boolean(),
@@ -100,13 +96,9 @@ const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
 });
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * What somebody sees after entering a delegation's join code, before committing to join.
-	 *
-	 * Deliberately not ability-filtered: the caller is by definition not a member yet. Knowing the
-	 * entry code is the authorisation, which is why it only needs a logged-in user.
-	 */
 	previewDelegation: t.field({
+		description:
+			"What somebody sees after entering a delegation's join code, before committing to join. Deliberately not ability-filtered: the caller is by definition not a member yet. Knowing the entry code is the authorisation, which is why it only needs a logged-in user.",
 		type: DelegationPreview,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

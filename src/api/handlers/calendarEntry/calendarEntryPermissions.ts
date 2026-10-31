@@ -15,11 +15,10 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerCalendarEntryAbilities() {
-	// Ported from abilities/entities/calendarEntry.ts
 	abilityBuilder.calendarEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// An entry without survey options is for everybody who reads the conference's schedule
-	// (`calendarConference`)...
+	// Whoever reads the conference's schedule (`calendarConference`) reads its entries without survey
+	// options...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference
@@ -27,7 +26,7 @@ export function registerCalendarEntryAbilities() {
 			: undefined;
 	});
 
-	// ...one with options only for those of them who picked one of them...
+	// ...and those whose survey options include one they picked...
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		const conference = calendarConference(ctx);
@@ -41,12 +40,13 @@ export function registerCalendarEntryAbilities() {
 			: undefined;
 	});
 
-	// ...and for the conference's team, which plans it.
+	// ...and every team member reads all of their conference's entries.
 	abilityBuilder.calendarEntry.allow('read').when((ctx) => {
 		const calendarDay = isTeamMemberOfConference({ ctx });
 		return calendarDay ? { where: { calendarDay } } : undefined;
 	});
 
+	// Participant care (project management and participant care) updates and deletes them.
 	abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
 		const calendarDay = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return calendarDay ? { where: { calendarDay } } : undefined;
@@ -54,12 +54,11 @@ export function registerCalendarEntryAbilities() {
 }
 
 /**
- * An entry's day, tracks, place and survey options are ids from the client, so each has to belong
- * where the entry does: the track to the entry's day, the rest to the entry's conference.
- * Otherwise a conference's calendar could pull in another conference's venues, or move entries
- * over to it.
+ * Refuses (INVALID_INPUT) unless the day, place and survey options an entry names are the
+ * conference's and the tracks are the day's, and a given track list is not empty. Otherwise a
+ * conference's calendar could pull in another conference's venues, or move entries over to it.
  */
-async function assertReferences({
+async function assertReferencesInConference({
 	conferenceId,
 	refs
 }: {
@@ -136,8 +135,8 @@ async function tracksOfDay({
 }
 
 /**
- * Refuses unless the caller may add the entry to the day, with the tracks, place and survey
- * options it names.
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the day's conference, and the tracks, place and survey options the entry names belong there.
  */
 export async function assertCanCreateCalendarEntry({
 	ctx,
@@ -152,7 +151,7 @@ export async function assertCanCreateCalendarEntry({
 	};
 }) {
 	const day = await assertTeamPermissionForCalendarDay({ ctx, calendarDayId: args.calendarDayId });
-	await assertReferences({
+	await assertReferencesInConference({
 		conferenceId: day.conferenceId,
 		refs: {
 			calendarDayId: args.calendarDayId,
@@ -164,8 +163,8 @@ export async function assertCanCreateCalendarEntry({
 }
 
 /**
- * Refuses unless the caller may update the entry, and the day, tracks, place and survey options it
- * is given belong to its conference.
+ * Refuses unless the caller may update the entry (participant care of its conference), and the day,
+ * tracks, place and survey options it is given belong to its conference.
  */
 export async function assertCanUpdateCalendarEntry({
 	ctx,
@@ -192,7 +191,7 @@ export async function assertCanUpdateCalendarEntry({
 		})
 		.then(assertFindFirstExists);
 	const calendarDayId = args.calendarDayId ?? entry.calendarDayId;
-	await assertReferences({
+	await assertReferencesInConference({
 		conferenceId: entry.calendarDay.conferenceId,
 		refs: {
 			calendarDayId,

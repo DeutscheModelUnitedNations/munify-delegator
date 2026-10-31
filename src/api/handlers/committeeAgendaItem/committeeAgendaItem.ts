@@ -9,7 +9,7 @@ import {
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
-import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -43,7 +43,11 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.committeeAgendaItem
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.committeeAgendaItem, id: created.id }))
+					query(
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -67,7 +71,11 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.committeeAgendaItem
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.committeeAgendaItem, id: args.id }))
+					query(
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -103,10 +111,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
-						await queryAllowed({
-							ability: ctx.abilities.committeeAgendaItem,
-							id: args.agendaItemId
-						})
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.agendaItemId }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);

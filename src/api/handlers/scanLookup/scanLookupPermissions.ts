@@ -2,8 +2,9 @@ import type { ApiContext } from '#api/rumble';
 import { assertTeamPermission } from '#api/services/authHelper/rules';
 
 /**
- * Any team member may look a scanned code up, which the entrance scanner is for: the lookup
- * answers a fixed set of fields instead of the participant's user and status rows.
+ * Refuses unless the caller is on the conference's team (any role), who all use the entrance
+ * scanner. Safe for every role since the lookup answers a fixed set of fields, not the
+ * participant's user and status rows.
  */
 export async function assertCanLookupScan({
 	ctx,

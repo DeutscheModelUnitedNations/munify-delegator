@@ -9,14 +9,9 @@ import {
 	assertCanSetWaitingListFlags,
 	registerWaitingListEntryAbilities
 } from './waitingListEntryPermissions';
-import { schoolPubsub, waitingListEntryPubsub } from '#api/pubsub';
+import { waitingListEntryPubsub } from '#api/pubsub';
 import { assertWaitingListOpenFor } from './waitingListEntryService';
-import {
-	assertAllowed,
-	deleteIfAllowed,
-	queryAllowed,
-	updateIfAllowed
-} from '#api/services/authHelper/utils';
+import { assertAllowed, deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerWaitingListEntryAbilities();
 
@@ -36,17 +31,10 @@ schemaBuilder.mutationFields((t) => ({
 			experience: t.arg.string({ required: true }),
 			requests: t.arg.string()
 		},
+		// The registration form's schema, so the limits stay in one place.
+		validate: waitingListFormSchema,
 		resolve: async (query, _root, args, ctx) => {
 			const id = ctx.mustBeLoggedIn().sub;
-
-			// Same zod schema the registration form uses, so the length limits stay in one place.
-			waitingListFormSchema.parse({
-				schoolId: args.schoolId,
-				schoolName: args.schoolName,
-				motivation: args.motivation,
-				experience: args.experience,
-				requests: args.requests
-			});
 
 			await assertWaitingListOpenFor({ conferenceId: args.conferenceId, userId: id });
 
@@ -64,11 +52,14 @@ schemaBuilder.mutationFields((t) => ({
 				.then(assertFirstEntryExists);
 
 			waitingListEntryPubsub.created();
-			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.waitingListEntry, id: created.id }))
+					query(
+						(await ctx.abilities.waitingListEntry.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -80,10 +71,10 @@ schemaBuilder.mutationFields((t) => ({
 			id: t.arg.id({ required: true }),
 			/** Both null removes the school; both left out keeps it. */
 			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
-			motivation: t.arg.string(),
-			experience: t.arg.string(),
-			requests: t.arg.string(),
+			schoolName: t.arg.string().validate(waitingListFormSchema.shape.schoolName),
+			motivation: t.arg.string().validate(waitingListFormSchema.shape.motivation.nullish()),
+			experience: t.arg.string().validate(waitingListFormSchema.shape.experience.nullish()),
+			requests: t.arg.string().validate(waitingListFormSchema.shape.requests),
 			hidden: t.arg.boolean(),
 			/** Setting it records when the entrant was given a seat; clearing it forgets the date. */
 			assigned: t.arg.boolean()
@@ -114,11 +105,13 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			waitingListEntryPubsub.updated(args.id);
-			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.waitingListEntry
 				.findFirst(
-					query(await queryAllowed({ ability: ctx.abilities.waitingListEntry, id: args.id }))
+					query(
+						(await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id: args.id } })
+							.query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}

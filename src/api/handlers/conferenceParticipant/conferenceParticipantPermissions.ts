@@ -14,20 +14,20 @@ import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceParticipantAbilities() {
-	// Ported from abilities/entities/conferenceParticipant.ts
+	// System admins read, update and delete every participant row.
 	abilityBuilder.conferenceParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users see their own status.
+	// Everybody reads their own participant rows (payment, postal, attendance).
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => grantWhere(isOwnUser(ctx)));
 
-	// Supervisors see the status of the people they supervise. Supervision links this very row, so
-	// it is the conference they supervise them in.
+	// Supervisors read the participant rows of their students. Supervision links this very row, so
+	// only the conference they supervise them in.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { supervisors: { user: { id } } } } : undefined;
 	});
 
-	// Delegation members see the status of their co-delegates, in the conference they share.
+	// Delegates read the participant rows of their co-delegates.
 	abilityBuilder.conferenceParticipant.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -35,13 +35,14 @@ export function registerConferenceParticipantAbilities() {
 			: undefined;
 	});
 
-	// Participant care and project management manage their conference's statuses.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// participant rows of its conference.
 	abilityBuilder.conferenceParticipant
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
-/** Refuses unless the caller's `update` ability reaches the status row `id`. */
+/** Refuses (NOT_FOUND) unless the caller may update the participant row `id` (participant care). */
 export async function assertCanUpdateParticipantStatus({
 	ctx,
 	id
@@ -53,10 +54,9 @@ export async function assertCanUpdateParticipantStatus({
 }
 
 /**
- * Refuses unless the caller may write a status in the place the arguments name, before anything
- * is looked up: addressed by `id`, the row has to be in `conferenceId` and within the caller's
- * `update` ability; addressed by user or email, the caller has to be the conference's participant
- * care. Running first keeps the lookups (does this address have an account, is this card in use)
+ * Refuses unless the caller may write a participant's status where the arguments point, before
+ * anything is looked up: by `id`, the row has to be in `conferenceId` and updatable by the caller;
+ * by user or email, the caller has to hold `manageParticipants` in the conference. Running first keeps the lookups (does this address have an account, is this card in use)
  * from answering anyone who may not write there.
  */
 export async function assertCanUpsertParticipantStatus({
@@ -90,8 +90,9 @@ export async function assertCanUpsertParticipantStatus({
 }
 
 /**
- * Refuses unless the user is a participant of the conference (`participatesIn`) or on its team.
- * Attendance is narrower: it records participants only (`attendanceEntryPermissions.ts`).
+ * Refuses (INVALID_INPUT) unless the user is registered in the conference (`participatesIn`) or on
+ * its team. About the user, not the caller. Attendance is narrower: it records participants only
+ * (`attendanceEntryPermissions.ts`).
  */
 async function assertParticipantOrTeamMemberIn({
 	conferenceId,
@@ -113,8 +114,8 @@ async function assertParticipantOrTeamMemberIn({
 }
 
 /**
- * Refuses to create a status row unless the caller is the conference's participant care, and the
- * user actually belongs to the conference. There is no row for the update ability to judge yet.
+ * Refuses creating a participant row unless the caller holds `manageParticipants` in the conference
+ * and the user belongs to it (`assertParticipantOrTeamMemberIn`).
  */
 export async function assertCanCreateParticipantStatus({
 	ctx,
@@ -129,7 +130,7 @@ export async function assertCanCreateParticipantStatus({
 	await assertParticipantOrTeamMemberIn({ conferenceId, userId });
 }
 
-/** The bulk attendance toggle is for the conference's participant care. */
+/** Refuses the bulk attendance toggle unless the caller holds `manageParticipants` in the conference. */
 export async function assertCanSetAttendanceForAll({
 	ctx,
 	conferenceId
@@ -141,9 +142,9 @@ export async function assertCanSetAttendanceForAll({
 }
 
 /**
- * The participant row whose school the caller may set, by id through the row's update ability
- * (participant care), or without one the caller's own row in the conference. Refuses when they take
- * no part in it (the team and the waiting list have no row).
+ * Refuses unless the caller may set the school of the participant row: by `id`, a row of the
+ * conference they may update (participant care); without, their own row in the conference, which
+ * the team and the waiting list do not have. Returns the row's id.
  */
 export async function assertCanSetParticipantSchool({
 	ctx,
@@ -165,12 +166,12 @@ export async function assertCanSetParticipantSchool({
 				})
 			}
 		});
-		return args.id;
+		return { participantId: args.id };
 	}
 	const own = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId: args.conferenceId, userId: ctx.mustBeLoggedIn().sub },
 		columns: { id: true }
 	});
 	if (!own) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
-	return own.id;
+	return { participantId: own.id };
 }

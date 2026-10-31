@@ -1,10 +1,8 @@
 import { db } from '#api/db/db';
 import { object, schemaBuilder } from '#api/rumble';
-import { storedFilePubsub } from '#api/pubsub';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { downloadUrl, pendingUploadUrl, requestUpload } from './storedFileService';
 import { assertCanUploadFile, registerStoredFileAbilities } from './storedFilePermissions';
-import { queryAllowed } from '#api/services/authHelper/utils';
 
 registerStoredFileAbilities();
 
@@ -15,16 +13,15 @@ registerStoredFileAbilities();
 const StoredFileRef = object({
 	table: 'storedFile',
 	adjust: (t) => ({
-		/** The file straight from the bucket; the URL stays the same for hours, so it caches. */
 		url: t.field({
+			description:
+				'The file straight from the bucket; the URL stays the same for hours, so it caches.',
 			type: 'String',
 			resolve: (file) => downloadUrl(file)
 		}),
-		/**
-		 * Where the browser PUTs the file, with its `Content-Type`; valid for minutes. Null once
-		 * the file has arrived.
-		 */
 		uploadUrl: t.field({
+			description:
+				'Where the browser PUTs the file, with its `Content-Type`; valid for minutes. Null once the file has arrived.',
 			type: 'String',
 			nullable: true,
 			resolve: (file) => pendingUploadUrl(file)
@@ -33,13 +30,9 @@ const StoredFileRef = object({
 });
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Records an upload of one file for the field `field` of a `kind` row of the conference
-	 * (`conference`/`logo`, `place`/`sitePlan`, `resolution`/`content`, …) and answers with the
-	 * file: its `id` goes into the mutation saving the row (`logoFileId`, …), its `uploadUrl` is
-	 * where the bytes go. Only who may set that field may upload, and only an allowed type and size.
-	 */
 	requestFileUpload: t.drizzleField({
+		description:
+			'Records an upload of one file for the field `field` of a `kind` row of the conference (`conference`/`logo`, `place`/`sitePlan`, `resolution`/`content`, …) and answers with the file: its `id` goes into the mutation saving the row (`logoFileId`, …), its `uploadUrl` is where the bytes go. Only who may set that field may upload, and only an allowed type and size.',
 		type: StoredFileRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -56,10 +49,13 @@ schemaBuilder.mutationFields((t) => ({
 				uploaderId: ctx.mustBeLoggedIn().sub,
 				request: args
 			});
-			storedFilePubsub.created();
 
 			return db.query.storedFile
-				.findFirst(query(await queryAllowed({ ability: ctx.abilities.storedFile, id })))
+				.findFirst(
+					query(
+						(await ctx.abilities.storedFile.filter('read')).merge({ where: { id } }).query.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})

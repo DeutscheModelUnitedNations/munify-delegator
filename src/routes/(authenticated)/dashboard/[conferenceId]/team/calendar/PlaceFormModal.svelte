@@ -5,7 +5,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { uploadFile } from '#lib/api/uploadFile';
 	import { m } from '#lib/paraglide/messages';
-	import { placeFields, resolvePlusCode, savePlaceFields, type PlusCodeError } from './placeForm';
+	import { placeFields, resolvePlusCode, upsertPlace, type PlusCodeError } from './placeForm';
 	import { untrack } from 'svelte';
 
 	interface Props {
@@ -119,7 +119,7 @@
 				info: placeInfo,
 				websiteUrl: placeWebsiteUrl
 			};
-			await savePlaceFields({
+			await upsertPlace({
 				conferenceId,
 				placeId: editedPlaceId,
 				fields: placeFields({ values, sitePlanFileId })

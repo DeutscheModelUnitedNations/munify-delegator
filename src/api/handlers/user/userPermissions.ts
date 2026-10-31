@@ -19,6 +19,7 @@ import { rolesOfSession, type Context } from '#api/context';
 import { OIDC } from '#api/services/oidc/OIDC';
 import { logger } from '#lib/logger';
 import { apiError } from '#api/services/errors';
+import { normalizeEmailAddress } from '@m1212e/rumble';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
@@ -57,39 +58,39 @@ const IDENTITY = {
 };
 const WITHOUT_CARE_NOTES = { globalNotes: false };
 
-// Participant care sees the other account of a possible duplicate of someone they look after:
-// who it is and, while the pair stands (open or confirmed), the care notes on it - the reason the
-// pair is shown - but no contact details. A dismissed pair keeps the name only, so the page can
-// still list it and the dismissal can be undone; the notes are withheld again.
-function duplicateOfManaged({
+/**
+ * Matches a User row paired, in a possible duplicate of one of `status`, with an account in the
+ * caller's care (`isCaredForUser`): the other account of the pair.
+ */
+function duplicateOfCaredForUser({
 	ctx,
 	status
 }: {
 	ctx: Context;
 	status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[];
 }) {
-	const managed = isCaredForUser(ctx);
-	if (!managed) return undefined;
+	const caredFor = isCaredForUser(ctx);
+	if (!caredFor) return undefined;
 	const standing = { status: { in: status } };
 	return {
 		OR: [
-			{ duplicatesAsUser: { ...standing, candidate: managed } },
-			{ duplicatesAsCandidate: { ...standing, user: managed } }
+			{ duplicatesAsUser: { ...standing, candidate: caredFor } },
+			{ duplicatesAsCandidate: { ...standing, user: caredFor } }
 		]
 	};
 }
 
-/** A delegation membership or single participation the caller supervises. */
+/** Matches a delegation membership or single participation the caller supervises. */
 function supervisedByCaller(ctx: Context) {
 	const id = callerUserId(ctx);
 	return id ? { supervisors: { user: { id } } } : undefined;
 }
 
 export function registerUserAbilities() {
-	// System admins may do anything to any account.
+	// System admins read, update and delete every account.
 	abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users see and edit themselves - but not what the care team noted about them.
+	// Everybody reads their own account, but for the care notes about them, and updates it.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { id }, columns: WITHOUT_CARE_NOTES } : undefined;
@@ -99,21 +100,23 @@ export function registerUserAbilities() {
 		return id ? { where: { id } } : undefined;
 	});
 
-	// Project management and participant care see everybody they look after - the participants and
-	// waiting-list entrants of the conferences they manage - in full.
+	// Participant care (project management and participant care) reads the participants and waiting
+	// list entrants of its conferences in full; not the team (`isCaredForUser`).
 	abilityBuilder.user.allow('read').when((ctx) => grantWhere(isCaredForUser(ctx)));
 
-	// The other account of a possible duplicate (see `duplicateOfManaged`).
+	// Participant care reads the other account of a possible duplicate of someone in its care: while
+	// the pair is open or confirmed its identity and care notes (the reason the pair is shown), no
+	// contact details; once dismissed only the identity, so the dismissal can still be undone.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfManaged({ ctx, status: ['OPEN', 'CONFIRMED'] });
+		const filter = duplicateOfCaredForUser({ ctx, status: ['OPEN', 'CONFIRMED'] });
 		return filter ? { where: filter, columns: { ...IDENTITY, globalNotes: true } } : undefined;
 	});
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfManaged({ ctx, status: ['DISMISSED'] });
+		const filter = duplicateOfCaredForUser({ ctx, status: ['DISMISSED'] });
 		return filter ? { where: filter, columns: IDENTITY } : undefined;
 	});
 
-	// Supervisors see the participants they supervise, contact details included.
+	// Supervisors read the delegates and single participants they supervise, all but the care notes.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const supervised = supervisedByCaller(ctx);
 		return supervised
@@ -124,8 +127,8 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Team admins see their team in full but for the care notes: the team members page lists
-	// everybody's address, gender and food preference for planning.
+	// Team admins (project management and team coordinators) read their conference's team, all but
+	// the care notes: the team members page lists address, gender and food preference for planning.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const conference = isTeamMemberOf({ ctx, roles: TEAM_ADMIN_ROLES });
 		return conference
@@ -133,7 +136,7 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Team members see each other, phone numbers included.
+	// Team members read the identity and phone number of everybody on a team they share.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -144,7 +147,7 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Delegates see each other's names and email addresses, to get in touch.
+	// Delegates read their co-delegates' names and email addresses, to get in touch.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -155,7 +158,7 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Participants see their own supervisors.
+	// Delegates and single participants read the names and email addresses of their supervisors.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -173,7 +176,7 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Supervisors see the other supervisors of the participants they share.
+	// Supervisors read the names and email addresses of the co-supervisors of their students.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const supervised = supervisedByCaller(ctx);
 		return supervised
@@ -191,9 +194,9 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Reviewers and conference management see the authors of the conference's papers. They can read
-	// every paper there, and a paper's `author` is non-nullable, so without this a single paper by
-	// someone the team member may not otherwise read fails the whole review page.
+	// The paper roles (everybody on the team but plain members) read the names of the authors of
+	// their conference's papers. A paper's `author` is non-nullable, so without this one paper by
+	// someone they may not otherwise read fails the whole review page.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -208,9 +211,8 @@ export function registerUserAbilities() {
 			: undefined;
 	});
 
-	// Authors see who reviewed their papers, by name only. A review's `reviewer` is non-nullable,
-	// so without this the paper's history fails for an author whose reviewer they cannot otherwise
-	// read.
+	// Authors read the names of whoever reviewed their papers. A review's `reviewer` is non-nullable,
+	// so without this the paper's history fails for an author who may not otherwise read the reviewer.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -224,7 +226,10 @@ export function registerUserAbilities() {
 	});
 }
 
-/** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
+/**
+ * Refuses (NOT_FOUND) unless the user is in the caller's care (`isCaredForUser`): for the care
+ * team's edits of somebody else's account, not self-service.
+ */
 export async function assertCanManageUser({ ctx, id }: { ctx: Context; id: string }) {
 	ctx.mustBeLoggedIn();
 	const managed = isCaredForUser(ctx);
@@ -237,9 +242,9 @@ export async function assertCanManageUser({ ctx, id }: { ctx: Context; id: strin
 }
 
 /**
- * What of a user's participation in one conference the caller may remove, one where-clause per
- * table. Each carries its own ability filter, merged with the conference/user scope, so a caller
- * who may remove one kind of participation but not another removes only what they are allowed to.
+ * The parts of a user's participation in one conference the caller may delete, as one SQL `where`
+ * per table, each through that table's delete ability: a caller allowed to remove one kind of
+ * participation but not another removes only what they may.
  */
 export async function deletableParticipation({
 	ctx,
@@ -270,8 +275,10 @@ export async function deletableParticipation({
 }
 
 /**
- * Opting out of the newsletters works without a session, because this backs the unsubscribe link
- * in outgoing mail; opting in is consent, so only the account itself may give it.
+ * Refuses an opt-in to a newsletter unless the caller is signed in with `email` (compared as the
+ * `EmailAddress` scalar normalises it); an opt-out passes
+ * for anybody, signed in or not, since it backs the unsubscribe link in outgoing mail. Opting in is
+ * consent, which only the account itself may give.
  *
  * TODO(security): anybody can switch anybody's newsletters off, since the address is the only
  * thing the link carries. The fix is a signed token in the link: an HMAC of the user id under a
@@ -292,13 +299,17 @@ export function assertCanUpdateNewsletterPreferences({
 	};
 }) {
 	const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
-	if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email) {
+	const ownEmail = ctx.oidc.user?.email;
+	if (
+		optsIn &&
+		(!ownEmail || normalizeEmailAddress(ownEmail) !== normalizeEmailAddress(args.email))
+	) {
 		throw apiError({ code: 'FORBIDDEN', message: m.userNewsletterOnlyOwn() });
 	}
 }
 
 /**
- * Whom `actor` may impersonate. A system admin: anybody but themselves. Participant care and project
+ * Matches the User rows `actor` may impersonate. A system admin: anybody but themselves. Participant care and project
  * management: the participants (delegates, single participants, supervisors) of their conferences,
  * except anybody on a team - impersonating them would lend the actor a team role, possibly of
  * another conference, they were never given - and anybody with a part in (or a place on the
@@ -325,8 +336,8 @@ function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
 }
 
 /**
- * The user `targetId` with what the app shows of their identity, if `actor` may impersonate them
- * as `impersonatableBy` defines it.
+ * Loads the user `targetId` with their identity if `actor` may impersonate them
+ * (`impersonatableBy`); undefined otherwise.
  */
 function impersonatableUser({
 	actor,
@@ -362,7 +373,7 @@ export async function canImpersonate({ ctx, targetId }: { ctx: Context; targetId
 	}));
 }
 
-/** Refuses unless `canImpersonate`. */
+/** Refuses (FORBIDDEN) unless `canImpersonate`, saying so when the caller already impersonates. */
 export async function assertCanImpersonate({ ctx, targetId }: { ctx: Context; targetId: string }) {
 	ctx.mustBeLoggedIn();
 	if (ctx.oidc.impersonator) {
@@ -374,9 +385,10 @@ export async function assertCanImpersonate({ ctx, targetId }: { ctx: Context; ta
 }
 
 /**
- * Ends an impersonation the impersonator may no longer hold - they left the target's conference
- * team, the target joined a team, lost the conference or their row - and otherwise loads who the
- * impersonated user is, which the exchanged token may not say (`locals.impersonatedIdentity`).
+ * Re-checks a running impersonation on every request: ends it when the impersonator may no longer
+ * hold it (they left the target's conference team, the target joined a team, lost the conference
+ * or their row), and otherwise loads who the impersonated user is, which the exchanged token may
+ * not say (`locals.impersonatedIdentity`).
  * The OIDC library has already checked that the impersonation belongs to this session.
  */
 async function checkImpersonation({
@@ -408,6 +420,7 @@ async function checkImpersonation({
 	};
 }
 
+/** The hook that runs `checkImpersonation` for every request made while impersonating. */
 export const impersonationHandle: Handle = async ({ event, resolve }) => {
 	const session = event.locals.oidc;
 	if (session?.impersonator)

@@ -53,17 +53,17 @@ const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 	fields: (t) => ({
 		jwt: t.string({ nullable: true }),
 		fullName: t.string({ nullable: true }),
-		/** The conference's check-in occasions, ticked where the holder was checked in. */
-		sessions: t.field({ type: [CertificateSession] })
+		sessions: t.field({
+			description: "The conference's check-in occasions, ticked where the holder was checked in.",
+			type: [CertificateSession]
+		})
 	})
 });
 
 schemaBuilder.queryFields((t) => ({
-	/**
-	 * Issues a signed participation certificate, but only once attendance is recorded - an absent
-	 * participant gets nulls rather than an error, so the UI can say "not yet available".
-	 */
 	getCertificateJWT: t.field({
+		description:
+			'Issues a signed participation certificate, but only once attendance is recorded - an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
 		type: CertificateJWT,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -127,8 +127,8 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	/** The public half, so certificates can be verified without this app. */
 	getCertificateJWTPublicKeyObject: t.field({
+		description: 'The public half, so certificates can be verified without this app.',
 		type: JWK,
 		resolve: async () => await jwkPublicKey
 	})

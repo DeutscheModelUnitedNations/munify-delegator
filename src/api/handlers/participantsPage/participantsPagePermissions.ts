@@ -2,8 +2,8 @@ import type { ApiContext } from '#api/rumble';
 import { assertTeamPermission } from '#api/services/authHelper/rules';
 
 /**
- * The participants table is the care team's: filtering and ordering by contact data and care
- * status would otherwise reveal it to people who may not read it.
+ * Refuses unless the caller holds `manageParticipants` (participant care) in the conference:
+ * filtering and ordering by contact data and care status would reveal both to anyone else.
  */
 export async function assertCanReadParticipantsPage({
 	ctx,

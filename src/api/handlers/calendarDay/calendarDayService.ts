@@ -1,32 +1,24 @@
-import { type Transaction, db, schema } from '#api/db/db';
+import { db, type Transaction, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import {
 	type CalendarDayExportData,
 	calendarDayExportSchema
 } from '#lib/schemata/calendarDayExport';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors';
+import { jsonDocument } from '#api/services/argSchemas';
+import {
+	calendarDayPubsub,
+	calendarEntryPubsub,
+	calendarTrackPubsub,
+	placePubsub
+} from '#api/pubsub';
 
-/** The import document arrives either as a JSON string or already parsed. */
-export function parseImportData(importData: unknown) {
-	let raw = importData;
-	if (typeof importData === 'string') {
-		try {
-			raw = JSON.parse(importData);
-		} catch {
-			throw apiError({ code: 'INVALID_INPUT', message: m.calendarImportMalformed() });
-		}
-	}
-
-	const parsed = calendarDayExportSchema.safeParse(raw);
-	if (!parsed.success) {
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: m.calendarImportInvalid({ details: parsed.error.message })
-		});
-	}
-	return parsed.data;
-}
+/** The import document, sent as a JSON string or already parsed. */
+export const importDataSchema = jsonDocument({
+	schema: calendarDayExportSchema,
+	malformed: () => m.calendarImportMalformed(),
+	invalid: (details) => m.calendarImportInvalid({ details })
+});
 
 /** Creates the day's tracks and maps each track name to its new id. */
 async function importTracks({
@@ -75,6 +67,7 @@ async function importPlaces({
 	entries: CalendarDayExportData['entries'];
 }) {
 	const placeIdByName = new Map<string, string>();
+	let created = false;
 	for (const place of distinctPlaces(entries)) {
 		const existing = await tx.query.place.findFirst({
 			where: { conferenceId, name: place.name }
@@ -99,7 +92,9 @@ async function importPlaces({
 			.returning()
 			.then(assertFirstEntryExists);
 		placeIdByName.set(place.name, row.id);
+		created = true;
 	}
+	if (created) placePubsub.created();
 	return placeIdByName;
 }
 
@@ -118,7 +113,7 @@ export async function createImportedDay({
 	args: { conferenceId: string; name: string; date: Date; sortOrder: number };
 	importData: CalendarDayExportData;
 }) {
-	return db.transaction(async (tx) => {
+	const day = await db.transaction(async (tx) => {
 		const day = await tx
 			.insert(schema.calendarDay)
 			.values({
@@ -167,4 +162,8 @@ export async function createImportedDay({
 
 		return day;
 	});
+	calendarDayPubsub.created();
+	if (importData.tracks.length > 0) calendarTrackPubsub.created();
+	if (importData.entries.length > 0) calendarEntryPubsub.created();
+	return day;
 }

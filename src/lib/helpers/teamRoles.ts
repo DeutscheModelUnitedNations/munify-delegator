@@ -1,9 +1,9 @@
 import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
 
 /**
- * Which team roles may do what, shared by the API's abilities (`authHelper.ts`) and the team
- * pages' own checks (`teamAccess.ts`, the route registry), so a page never offers what the API
- * refuses and the other way round. The full matrix is the header of `authHelper.ts`.
+ * Which team roles may do what, shared by the API's abilities (`authHelper/rules.ts`) and the
+ * team pages' own checks (`teamAccess.ts`, the route registry), so a page never offers what the
+ * API refuses and the other way round.
  */
 
 /** Everything about the participants, their money and their papers. */
@@ -55,9 +55,9 @@ export const PROJECT_MANAGEMENT_ROLES = [
 /**
  * What the team may do in its conference, by name, and the roles each is granted to
  * (`rolesWithTeamPermission`). The API turns one into a filter on the conference
- * (`isTeamPermittedIn` / `teamConference` in `authHelper.ts`) that the query doing the work carries.
+ * (`isTeamPermittedIn` / `teamConference` in `authHelper/rules.ts`) that the query doing the work carries.
  */
-export const TEAM_PERMISSIONS = [
+const TEAM_PERMISSIONS = [
 	'useTeamTools',
 	'manageParticipants',
 	'reviewPapers',

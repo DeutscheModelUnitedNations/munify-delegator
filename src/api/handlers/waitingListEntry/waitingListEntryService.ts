@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { waitingListEntryPubsub } from '#api/pubsub';
 
 /**
  * Refuses a waiting list entry the conference cannot take: the waiting list is only open during
@@ -78,6 +79,8 @@ export async function markSeatedFromWaitingList({
 		.update(schema.waitingListEntry)
 		.set({ assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())` })
 		.where(whereRows({ table: schema.waitingListEntry, filter: { conferenceId, userId } }))
-		.returning({ schoolId: schema.waitingListEntry.schoolId });
-	return entry;
+		.returning({ id: schema.waitingListEntry.id, schoolId: schema.waitingListEntry.schoolId });
+	if (!entry) return undefined;
+	waitingListEntryPubsub.updated(entry.id);
+	return { schoolId: entry.schoolId };
 }

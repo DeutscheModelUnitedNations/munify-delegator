@@ -10,12 +10,9 @@ const IdentityCodePublicKey = schemaBuilder.simpleObject('IdentityCodePublicKey'
 });
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * A fresh identity code for the caller, to show as a QR code for the team to scan. A mutation
-	 * so no client cache can hand back an old, expired one; it writes nothing, so it publishes
-	 * nothing. Only ever the caller's own id is signed.
-	 */
 	issueIdentityCode: t.field({
+		description:
+			"A fresh identity code for the caller, to show as a QR code for the team to scan. A mutation so no client cache can hand back an old, expired one; it writes nothing, so it publishes nothing. Only ever the caller's own id is signed.",
 		type: IdentityCode,
 		resolve: async (_root, _args, ctx) => ({
 			code: await issueIdentityCode({ userId: ctx.mustBeLoggedIn().sub })
@@ -24,8 +21,9 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.queryFields((t) => ({
-	/** The public key identity codes are checked against, raw and base64url. Public by nature. */
 	identityCodePublicKey: t.field({
+		description:
+			'The public key identity codes are checked against, raw and base64url. Public by nature.',
 		type: IdentityCodePublicKey,
 		resolve: async (_root, _args, ctx) => {
 			ctx.mustBeLoggedIn();

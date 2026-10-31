@@ -80,6 +80,10 @@ export const E2E_UNRELEASED_NATION_ALPHA2 = 'PT';
 export const E2E_UNRELEASED_COMMITTEE_ID = 'e2e00000committee000000004';
 export const E2E_UNRELEASED_DELEGATION_ID = 'e2e00000delegation00000006';
 export const E2E_UNRELEASED_PARTICIPANT_USER_ID = 'e2e-unreleased-participant';
+/** A co-delegate of the unreleased delegation without a committee, for the head delegate to seat. */
+export const E2E_UNRELEASED_CODELEGATE_MEMBER_ID = 'e2e00000delegationmember0007';
+/** A participant row of the unreleased conference whose registration has ended, keeping its school. */
+export const E2E_UNRELEASED_FORMER_SCHOOL_ID = 'e2e00000school0000000001';
 
 export const E2E_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0001';
 export const E2E_SURVEY_QUESTION_TITLE = 'E2E Seeded Survey';
@@ -809,6 +813,47 @@ export default async function seed() {
 		.insert(schema.teamMember)
 		.values(unreleasedTeamMember)
 		.onConflictDoUpdate({ target: schema.teamMember.id, set: unreleasedTeamMember });
+
+	await upsertActorUser('e2e-unreleased-codelegate');
+	const unreleasedCodelegate = {
+		...makeSeedDelegationMember({
+			delegationId: unreleasedDelegation.id,
+			conferenceParticipantId: await upsertParticipant(
+				db,
+				unreleasedConference.id,
+				'e2e-unreleased-codelegate'
+			),
+			isHeadDelegate: false,
+			assignedCommitteeId: null
+		}),
+		id: E2E_UNRELEASED_CODELEGATE_MEMBER_ID
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(unreleasedCodelegate)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: unreleasedCodelegate });
+
+	// Somebody who withdrew: the participant row stays (papers or payments may name it), and with
+	// it the school, but participant care no longer looks after them.
+	const formerSchool = {
+		id: E2E_UNRELEASED_FORMER_SCHOOL_ID,
+		name: 'E2E Schule Ehemalig',
+		notes: 'former participant'
+	};
+	await db
+		.insert(schema.school)
+		.values(formerSchool)
+		.onConflictDoUpdate({ target: schema.school.id, set: formerSchool });
+	await upsertActorUser('e2e-unreleased-former');
+	await db
+		.update(schema.conferenceParticipant)
+		.set({ schoolId: formerSchool.id })
+		.where(
+			eq(
+				schema.conferenceParticipant.id,
+				await upsertParticipant(db, unreleasedConference.id, 'e2e-unreleased-former')
+			)
+		);
 
 	await seedSeatPlanning(db);
 	await seedSeats(db);

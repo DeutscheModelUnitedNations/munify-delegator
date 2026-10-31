@@ -64,7 +64,7 @@
 		onError: (e) => toast.error(e.result.error.message),
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
-			const promise = client.mutate.setAssignmentWeights({
+			const promise = client.mutate.upsertAssignmentWeights({
 				__args: { conferenceId, ...validated.data },
 				nullRating: true
 			});

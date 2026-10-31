@@ -12,26 +12,28 @@ import {
 import { grantWhere } from '#api/services/authHelper/utils';
 
 export function registerWaitingListEntryAbilities() {
-	// Ported from abilities/entities/waitingListEntry.ts
+	// System admins read, update and delete every entry.
 	abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Users see their own entry, and change or withdraw it until they are given a seat. Whether it
-	// is hidden or seated is participant care's (`assertCanSetWaitingListFlags`).
+	// Entrants read their own entry, and update or withdraw it until they are given a seat; hiding
+	// or seating it is participant care's alone (`assertCanSetWaitingListFlags`).
 	abilityBuilder.waitingListEntry.allow('read').when((ctx) => grantWhere(isOwnUser(ctx)));
 	abilityBuilder.waitingListEntry.allow(['update', 'delete']).when((ctx) => {
 		const own = isOwnUser(ctx);
 		return own ? { where: { ...own, assignedAt: { isNull: true } } } : undefined;
 	});
 
-	// Participant care and project management manage their conference's waiting list.
+	// Participant care (project management and participant care) reads, updates and deletes the
+	// entries of its conference.
 	abilityBuilder.waitingListEntry
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
 /**
- * Refuses unless the caller may hide the entry or record a seat for it, which is participant
- * care's alone: the entrant edits their own texts and school, never these.
+ * Refuses (NOT_FOUND) setting `hidden` or `assigned` unless the caller holds `manageParticipants` in
+ * the entry's conference: the entrant edits their own texts and school, never these. Passes when
+ * neither is set.
  */
 export async function assertCanSetWaitingListFlags({
 	ctx,

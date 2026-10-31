@@ -1,5 +1,6 @@
 import { schema, type Transaction } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
+import { roleApplicationPubsub } from '#api/pubsub';
 import { roleSeats } from '#lib/helpers/conferenceRole';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
@@ -44,6 +45,7 @@ export async function tidyRoleApplications({
 		await tx
 			.delete(schema.roleApplication)
 			.where(whereRows({ table: schema.roleApplication, filter: { id: { in: tooSmall } } }));
+		roleApplicationPubsub.removed();
 	}
 
 	// Close the gaps the deletions above may have left in the ranking.

@@ -20,15 +20,15 @@ import { apiError } from '#api/services/errors';
 type PaperType = (typeof schema.paper.$inferSelect)['type'];
 type RoleKind = (typeof schema.conferenceRole.$inferSelect)['kind'];
 
-const paperTeam = (id: string) => ({
+/** Matches a Conference row where the user `id` is on the paper team (`PAPER_ROLES`). */
+const paperTeamConference = (id: string) => ({
 	teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } }
 });
 
 export function registerPaperAbilities() {
-	// Ported from abilities/entities/paper/paper.ts
 	abilityBuilder.paper.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Authors see and edit their own papers, and may delete one while it is still a draft.
+	// Authors read and update their own papers, and delete one while it is still a draft.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { authorParticipant: { userId: id } } } : undefined;
@@ -38,19 +38,19 @@ export function registerPaperAbilities() {
 		return id ? { where: { authorParticipant: { userId: id }, status: 'DRAFT' } } : undefined;
 	});
 
-	// Reviewers and conference management see the conference's papers and may edit their text (the
-	// reviewer edit mode); verdicts go through reviews.
+	// The paper team (every team role but the plain member) reads and updates the conference's
+	// papers - the reviewer edit mode; verdicts go through reviews.
 	abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
 		const id = callerUserId(ctx);
-		return id ? { where: { conference: paperTeam(id) } } : undefined;
+		return id ? { where: { conference: paperTeamConference(id) } } : undefined;
 	});
 
-	// Only project management deletes somebody else's paper.
+	// Project management deletes any paper of its conference, drafts or not.
 	abilityBuilder.paper
 		.allow('delete')
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 
-	// Supervisors see the submitted papers of the delegations they supervise.
+	// Supervisors read the submitted (non-draft) papers of the delegations they supervise.
 	abilityBuilder.paper.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -63,14 +63,14 @@ export function registerPaperAbilities() {
 			: undefined;
 	});
 
-	// Delegates see the submitted papers of their own delegation - nobody else's.
+	// Delegates read the submitted (non-draft) papers of their own delegation - nobody else's.
 	abilityBuilder.paper.allow('read').when((ctx) => {
 		const delegation = isInOwnDelegation(ctx);
 		return delegation ? { where: { ...delegation, status: { ne: 'DRAFT' } } } : undefined;
 	});
 }
 
-/** Reviewers and conference management of the conference, or a system admin. */
+/** Refuses unless the caller is on the conference's paper team (`reviewPapers`) or an admin. */
 export function assertCanReviewPapers({
 	ctx,
 	conferenceId
@@ -81,12 +81,15 @@ export function assertCanReviewPapers({
 	return assertTeamPermission({ ctx, conferenceId, permission: 'reviewPapers' });
 }
 
-/** The non-throwing form of `assertCanReviewPapers`. */
+/** Whether the caller passes `assertCanReviewPapers`, without throwing. */
 export function canReviewPapers({ ctx, conferenceId }: { ctx: ApiContext; conferenceId: string }) {
 	return hasTeamPermission({ ctx, conferenceId, permission: 'reviewPapers' });
 }
 
-/** The reviewer check for the conference an agenda item belongs to. */
+/**
+ * `assertCanReviewPapers` for the conference the agenda item belongs to; NOT_FOUND for an unknown
+ * agenda item.
+ */
 export async function assertCanReviewAgendaItemPapers({
 	ctx,
 	agendaItemId
@@ -106,9 +109,9 @@ export async function assertCanReviewAgendaItemPapers({
 }
 
 /**
- * The reviewers and conference management of the conference, any of its participants (delegate,
- * single participant or supervisor), or an admin: who may list the conference's papers. Which
- * papers each of them sees is the read ability's business.
+ * Refuses unless the caller may list the conference's papers: its paper team, its participants
+ * (delegate, single participant or supervisor) or a system admin. Which papers each of them sees
+ * is the read ability's business.
  */
 export async function assertCanReadConferencePapers({
 	ctx,
@@ -144,14 +147,15 @@ async function assertParticipantOfConference({
 }
 
 /**
- * What a delegation member may write, by the role their delegation holds once the assignment is
- * released: a non-state actor sits in no committee, so writes on any agenda item of the conference
- * and may introduce itself across committees (an introduction paper, without an agenda item); a
- * nation writes on the agenda items of the member's own committee only. Before the release the
- * caller writes nothing: answering differently per agenda item or paper type would tell them the
- * committee and role their read rules still mask.
+ * Why a delegation member may not write the paper, or undefined when they may. It goes by the
+ * role their delegation holds once the assignment is released: a non-state actor sits in no
+ * committee, so writes on any agenda item of the conference and may introduce itself across
+ * committees (an introduction paper, without an agenda item); a nation writes on the agenda items
+ * of the member's own committee only. Before the release the caller writes nothing: answering
+ * differently per agenda item or paper type would tell them the committee and role their read
+ * rules still mask.
  */
-export function paperRefusal({
+export function paperWriteRefusal({
 	member,
 	paper
 }: {
@@ -214,13 +218,12 @@ function agendaItemPaperRefusal({
 }
 
 /**
- * A paper is written by the caller, for a delegation they are a member of in that conference, on
- * one of that conference's agenda items (or none, for an introduction paper). All of it arrives as
- * arguments, so all of it is checked: the author cannot be somebody else, the delegation and
- * agenda item cannot belong to another conference, and the agenda item and the paper type have to
- * fit the delegation's role (`paperRefusal`). Only checked here, not in the database: a member
- * moved to another committee later keeps the papers they wrote. Answers with the caller's
- * participant row, which the paper is written under.
+ * Refuses unless the caller writes the paper as its author, for a delegation they are a member of
+ * in that conference, on one of that conference's agenda items (or none, for an introduction
+ * paper), and the agenda item and paper type fit the delegation's role (`paperWriteRefusal`).
+ * Every one of these arrives as an argument, so every one is checked. Only checked here, not in
+ * the database: a member moved to another committee later keeps the papers they wrote. Returns
+ * the caller's participant row, which the paper is written under.
  */
 export async function assertCanCreatePaper({
 	ctx,
@@ -266,7 +269,7 @@ export async function assertCanCreatePaper({
 				})
 				.then(assertFindFirstExists)
 		: undefined;
-	const refusal = paperRefusal({
+	const refusal = paperWriteRefusal({
 		member: {
 			assignmentReleased: membership.delegation.conference.assignmentReleased,
 			roleKind: membership.delegation.assignedRole?.kind ?? null,
@@ -278,7 +281,10 @@ export async function assertCanCreatePaper({
 	return { authorParticipantId: membership.conferenceParticipantId };
 }
 
-/** Refuses unless the paper exists and the caller may update it (authors, reviewers, admins). */
+/**
+ * Refuses unless the paper exists and the caller may update it (the row's update ability: its
+ * author, the paper team, a system admin).
+ */
 export async function assertCanUpdatePaper({ ctx, paperId }: { ctx: ApiContext; paperId: string }) {
 	ctx.mustBeLoggedIn();
 	await db.query.paper

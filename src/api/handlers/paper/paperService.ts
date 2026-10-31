@@ -5,6 +5,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import type { InferSelectModel } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors';
+import { paperPubsub, paperVersionPubsub } from '#api/pubsub';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -84,12 +85,8 @@ export function newPaperRows({ args, now }: { args: NewPaper; now: Date }) {
 /** Writes a new paper together with its first version. */
 export async function createPaper(args: NewPaper) {
 	assertSavableStatus({ requested: args.status });
-	// REVISED answers a review, and a new paper has had none.
-	if (args.status === 'REVISED') {
-		throw apiError({ code: 'INVALID_INPUT', message: m.paperNewDraftOrSubmission() });
-	}
 
-	return db.transaction(async (tx) => {
+	const paper = await db.transaction(async (tx) => {
 		const conference = await tx.query.conference
 			.findFirst({ where: { id: args.conferenceId } })
 			.then(assertFindFirstExists);
@@ -109,6 +106,9 @@ export async function createPaper(args: NewPaper) {
 
 		return paper;
 	});
+	paperPubsub.created();
+	paperVersionPubsub.created();
+	return paper;
 }
 
 /**
@@ -151,6 +151,8 @@ export async function updatePaper(args: {
 			version: paper.versions.length + 1
 		});
 	});
+	paperPubsub.updated(args.paperId);
+	paperVersionPubsub.created();
 }
 
 type CommitteeRow = InferSelectModel<typeof schema.committee>;

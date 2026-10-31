@@ -2,7 +2,8 @@ import { abilityBuilder } from '#api/rumble';
 import { systemAdmin } from '#api/services/authHelper/rules';
 
 export function registerNationAbilities() {
-	// Everyone can see the nations in the system; they are reference data, never edited in the app.
+	// Everybody, signed in or not, reads the nations: global reference data, edited only by system
+	// admins.
 	abilityBuilder.nation.allow('read');
 	abilityBuilder.nation.allow(['update', 'delete']).when(systemAdmin);
 }

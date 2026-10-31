@@ -1,11 +1,22 @@
 import { db, schema } from '#api/db/db';
+import { searchHistoryPubsub } from '#api/pubsub';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors';
+import { z } from 'zod';
 
 /** How many searches a person keeps. The search only offers the newest five. */
 const KEPT_ENTRIES = 20;
 const MAX_LABEL_LENGTH = 200;
+
+/** A picked result: its id, and the label shown for it, trimmed and cut to length. */
+export const recordSearchSchemas = {
+	resultId: z.string().min(1, { error: () => m.searchHistoryNeedsIdAndLabel() }),
+	label: z
+		.string()
+		.trim()
+		.min(1, { error: () => m.searchHistoryNeedsIdAndLabel() })
+		.transform((label) => label.slice(0, MAX_LABEL_LENGTH))
+};
 
 /**
  * Records a result `userId` picked in the search. Picking the same result again moves it to the
@@ -18,9 +29,7 @@ export async function recordSearch({
 	userId: string;
 	args: { conferenceId: string; originId: string; resultId: string; label: string };
 }) {
-	const label = args.label.trim().slice(0, MAX_LABEL_LENGTH);
-	if (!label || !args.resultId)
-		throw apiError({ code: 'INVALID_INPUT', message: m.searchHistoryNeedsIdAndLabel() });
+	const { label } = args;
 
 	const { searchHistory } = schema;
 	await db.transaction(async (tx) => {
@@ -56,4 +65,5 @@ export async function recordSearch({
 			);
 		}
 	});
+	searchHistoryPubsub.created();
 }

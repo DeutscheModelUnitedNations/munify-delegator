@@ -13,17 +13,16 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 export function registerPaymentTransactionAbilities() {
-	// Ported from abilities/entities/paymentTransaction.ts
 	abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Only project management and participant care of the conference, as in the CASL rules.
+	// Participant care (project management and participant care) reads and updates the payments of
+	// its conference.
 	abilityBuilder.paymentTransaction
 		.allow(['read', 'update'])
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
-	// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
-	// its creator, whose reference is the whole point of the payment pages. The legacy resolver
-	// returned it without a read check, so this is what keeps that working through the ability layer.
+	// The payer reads their own payments: `createPaymentTransaction` hands the new row back to them,
+	// and its transfer reference is the whole point of the payment pages.
 	abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { payer: { userId: id } } } : undefined;
@@ -31,9 +30,11 @@ export function registerPaymentTransactionAbilities() {
 }
 
 /**
- * Refuses unless the caller may make a payment reference in `conferenceId`, paid by `userId`, for
- * the participants `paymentFor`. The payer has to take part in the conference too. Answers with
- * the participant rows of the payer and of everybody the payment covers (each once).
+ * Refuses unless the caller may make a payment in `conferenceId`, paid by `userId`, for the users
+ * `paymentFor`: participant care (`manageParticipants`) for anybody, everybody else only in their
+ * own name and for people they know in the conference (themselves, their delegation, the
+ * participants they supervise, the supervisors they share a student with). The payer and everybody
+ * covered have to take part in the conference. Returns their participant row ids.
  */
 export async function assertCanCreatePaymentTransaction({
 	ctx,
@@ -44,9 +45,6 @@ export async function assertCanCreatePaymentTransaction({
 }) {
 	const caller = ctx.mustBeLoggedIn().sub;
 
-	// A reference is made by its payer, for people that payer can see in the conference -
-	// themselves, their delegation, the participants they supervise and the supervisors they
-	// share a student with. Participant care may make one on anybody's behalf.
 	if (
 		!(await hasTeamPermission({
 			ctx,
@@ -98,7 +96,10 @@ export async function assertCanCreatePaymentTransaction({
 	};
 }
 
-/** The payment transaction `id` with whom it covers, if the caller may update it; an error otherwise. */
+/**
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the payment. Returns it with whom
+ * it covers.
+ */
 export async function assertCanUpdatePaymentTransaction({
 	ctx,
 	id

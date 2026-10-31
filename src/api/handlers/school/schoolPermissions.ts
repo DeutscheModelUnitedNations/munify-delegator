@@ -5,6 +5,7 @@ import {
 	assertTeamPermission,
 	isSystemAdmin,
 	isTeamMemberOf,
+	registeredParticipantIn,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { grantWhere } from '#api/services/authHelper/utils';
@@ -13,10 +14,9 @@ import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
 /**
- * Schools are shared by every conference. Anybody may read what names one - its name and where it
- * is - so applicants can pick it. The rest (address, contact, the team's notes) belongs to the
- * people who look after the participants: participant care and project management read and edit
- * every school a person taking part in their conference (or waiting for it) names as their own.
+ * The columns everybody reads of every school: its name and where it is, so applicants can pick
+ * it. Schools are shared by every conference; the rest (address, contact, the team's notes) is
+ * participant care's (`schoolOfCaredFor`).
  */
 const PUBLIC_COLUMNS = {
 	id: true,
@@ -28,22 +28,35 @@ const PUBLIC_COLUMNS = {
 	country: true
 };
 
-/** Schools named in a conference the caller looks after the participants of. */
-function managedSchool(ctx: Context) {
+/**
+ * Matches a School row that a registered participant (`registeredParticipantIn`) or waiting list
+ * entrant of a conference where the caller is participant care (project management and participant
+ * care) names as their own - the same people `isCaredForUser` reaches.
+ */
+function schoolOfCaredFor(ctx: Context) {
 	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 	if (!conference) return undefined;
 	return {
-		OR: [{ waitingListEntries: { conference } }, { participants: { conference } }]
+		OR: [
+			{ waitingListEntries: { conference } },
+			{ participants: registeredParticipantIn(conference) }
+		]
 	};
 }
 
 export function registerSchoolAbilities() {
+	// System admins read, update and delete every school.
 	abilityBuilder.school.allow(['read', 'update', 'delete']).when(systemAdmin);
+	// Everybody, signed in or not, reads every school's `PUBLIC_COLUMNS`.
 	abilityBuilder.school.allow('read').when(() => ({ columns: PUBLIC_COLUMNS }));
-	abilityBuilder.school.allow(['read', 'update']).when((ctx) => grantWhere(managedSchool(ctx)));
+	// Participant care reads in full and updates the schools of the people of its conferences.
+	abilityBuilder.school.allow(['read', 'update']).when((ctx) => grantWhere(schoolOfCaredFor(ctx)));
 }
 
-/** Refuses unless the caller may edit every school in `ids` (which includes reading them in full). */
+/**
+ * Refuses (NOT_FOUND) unless the caller may update every school in `ids`, which participant care
+ * may for the schools of its conferences' people (`schoolOfCaredFor`).
+ */
 export async function assertCanUpdateSchools({
 	ctx,
 	ids
@@ -63,9 +76,10 @@ export async function assertCanUpdateSchools({
 }
 
 /**
- * Refuses unless the caller may edit the school. Returns the conferences whose numbers of it they
- * may see: those they look after the participants of, or every one (`undefined`) for an admin.
- * Managing a school is no reason to learn about the conferences of other organizers.
+ * Refuses unless the caller may update the school (`assertCanUpdateSchools`). Returns the ids of
+ * the conferences whose numbers of it they may see: those where they are participant care, or
+ * every one (`undefined`) for a system admin. Managing a school is no reason to learn about the
+ * conferences of other organizers.
  */
 export async function assertCanReadSchoolMetrics({
 	ctx,
@@ -75,15 +89,18 @@ export async function assertCanReadSchoolMetrics({
 	schoolId: string;
 }) {
 	await assertCanUpdateSchools({ ctx, ids: [schoolId] });
-	if (isSystemAdmin(ctx)) return undefined;
+	if (isSystemAdmin(ctx)) return { conferenceIds: undefined };
 	const caredFor = await db.query.conference.findMany({
 		where: isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES }),
 		columns: { id: true }
 	});
-	return caredFor.map((conference) => conference.id);
+	return { conferenceIds: caredFor.map((conference) => conference.id) };
 }
 
-/** The schools of a conference, with their numbers, are participant care's. */
+/**
+ * Refuses unless the caller holds `manageParticipants` in the conference: its schools page, with
+ * every school's numbers.
+ */
 export async function assertCanReadConferenceSchools({
 	ctx,
 	conferenceId
