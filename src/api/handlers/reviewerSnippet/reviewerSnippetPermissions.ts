@@ -3,6 +3,7 @@ import { systemAdmin } from '#api/services/authHelper/rules';
 import { callerUserId, assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 
+/** The abilities of reviewer snippets, a reviewer's own text blocks. Anybody signed in creates them. */
 export function registerReviewerSnippetAbilities() {
 	abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when(systemAdmin);
 
