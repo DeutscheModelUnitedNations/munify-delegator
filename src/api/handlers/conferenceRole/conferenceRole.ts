@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
-import { seatCountSchema } from '#api/handlers/seatPlanning/seatPlanningService';
+import { seatCountSchema } from '#api/handlers/seatPlanning/seatRules';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	assertCanCreateConferenceRole,

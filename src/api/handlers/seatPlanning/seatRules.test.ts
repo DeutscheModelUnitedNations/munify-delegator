@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { lockedCommitteeSeats, seatCountSchema, totalSeats } from './seatPlanningService';
+import { lockedCommitteeSeats, seatCountSchema, totalSeats } from './seatRules';
 
 const member = (
 	assignedCommitteeId: string | null,

@@ -15,7 +15,7 @@ import {
 	setCommitteeRegionalBaseline,
 	updateCommittee
 } from './committeeService';
-import { seatCountSchema } from '#api/handlers/seatPlanning/seatPlanningService';
+import { seatCountSchema } from '#api/handlers/seatPlanning/seatRules';
 import { regionalBaselineArgsSchema } from './committeeRules';
 
 registerCommitteeAbilities();

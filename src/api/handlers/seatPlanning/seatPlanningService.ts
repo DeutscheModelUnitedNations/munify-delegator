@@ -1,68 +1,41 @@
-import { m } from '#lib/paraglide/messages';
-import formatNames from '#lib/helpers/formatNames';
-import { z } from 'zod';
+import { db } from '#api/db/db';
+import { lockedCommitteeSeats } from './seatRules';
 
 /**
- * The seat planning's rules shared by the committee, the role and the conference handlers, free of
- * database access so they are unit tested.
+ * What the seat planning has to work around: the committee seats members of assigned delegations
+ * sit in (`lockedCommitteeSeats`), and how many members the delegation assigned to each role has.
  */
-
-interface SeatCountCommittee {
-	numOfSeatsPerDelegation: number;
-	roles: unknown[];
-}
-
-/**
- * Every nation entry of a committee is worth `numOfSeatsPerDelegation` seats, every NSA its
- * `seatAmount`.
- */
-export function totalSeats({
-	committees,
-	nonStateActors
-}: {
-	committees: SeatCountCommittee[];
-	nonStateActors: { seatAmount: number | null }[];
-}) {
-	const committeeSeats = committees.reduce(
-		(sum, committee) => sum + committee.roles.length * committee.numOfSeatsPerDelegation,
-		0
-	);
-	const nsaSeats = nonStateActors.reduce((sum, nsa) => sum + (nsa.seatAmount ?? 0), 0);
-	return committeeSeats + nsaSeats;
-}
-
-/** How many seats a committee gives each delegation, or a non-state actor has: at least one. */
-export const seatCountSchema = z.number().min(1, { error: () => m.seatsPerDelegationAtLeastOne() });
-
-interface DelegationWithMembers {
-	/** Set when the delegation holds a nation. */
-	nationAlpha3Code: string | null;
-	members: {
-		assignedCommitteeId: string | null;
-		user: { givenName: string; familyName: string };
-	}[];
-}
-
-/**
- * Committee seats that cannot be removed because members of the delegation holding the nation are
- * assigned to that committee, with the names of those members.
- */
-export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
-	return delegations.flatMap(({ nationAlpha3Code, members }) => {
-		if (!nationAlpha3Code) return [];
-
-		const namesByCommittee = new Map<string, string[]>();
-		for (const { assignedCommitteeId, user } of members) {
-			if (!assignedCommitteeId) continue;
-			const names = namesByCommittee.get(assignedCommitteeId) ?? [];
-			names.push(formatNames({ givenName: user.givenName, familyName: user.familyName }));
-			namesByCommittee.set(assignedCommitteeId, names);
+export async function loadSeatPlanningAssignments(conferenceId: string) {
+	const delegations = await db.query.delegation.findMany({
+		where: { conferenceId, assignedRoleId: { isNotNull: true } },
+		columns: { assignedRoleId: true },
+		with: {
+			assignedRole: { columns: { nationAlpha3Code: true } },
+			members: {
+				columns: { assignedCommitteeId: true },
+				with: { user: { columns: { givenName: true, familyName: true } } }
+			}
 		}
-
-		return [...namesByCommittee].map(([committeeId, memberNames]) => ({
-			committeeId,
-			nationAlpha3Code,
-			memberNames
-		}));
 	});
+
+	const assigned = delegations.flatMap(({ assignedRoleId, assignedRole, members }) =>
+		assignedRoleId
+			? [
+					{
+						roleId: assignedRoleId,
+						nationAlpha3Code: assignedRole?.nationAlpha3Code ?? null,
+						members
+					}
+				]
+			: []
+	);
+
+	return {
+		committeeSeats: lockedCommitteeSeats(assigned),
+		roles: assigned.map(({ roleId, nationAlpha3Code, members }) => ({
+			roleId,
+			nationAlpha3Code,
+			memberCount: members.length
+		}))
+	};
 }

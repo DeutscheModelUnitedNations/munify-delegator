@@ -14,7 +14,7 @@ import {
 } from '#lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '#api/services/args';
-import { totalSeats } from '#api/handlers/seatPlanning/seatPlanningService';
+import { totalSeats } from '#api/handlers/seatPlanning/seatRules';
 import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
