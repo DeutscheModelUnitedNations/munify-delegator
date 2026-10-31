@@ -54,10 +54,15 @@ export type DeletableParticipation = {
 	conferenceParticipant: SQL | undefined;
 };
 
+/** A pre-authorized `where`; one that is missing matches nothing rather than every row. */
+const onlyWhere = (where: SQL | undefined) => where ?? sql`false`;
+
 /**
  * Removes every trace of a user's participation in one conference - delegation membership,
  * single participant entry, supervisor entry and participant status - while leaving the user
- * account itself alone. Only the rows `deletable` (pre-authorized) matches are removed.
+ * account itself alone. Only the rows `deletable` (pre-authorized) matches are removed. Refuses
+ * (NOT_FOUND) when the user takes no part in the conference, or none of their registrations is
+ * among the rows `deletable` matches.
  */
 export async function removeParticipation({
 	userId,
@@ -85,16 +90,30 @@ export async function removeParticipation({
 			throw apiError({ code: 'NOT_FOUND', message: m.userNotFound() });
 		}
 
-		await tx.delete(schema.delegationMember).where(deletable.delegationMember);
-		await tx.delete(schema.singleParticipant).where(deletable.singleParticipant);
-		await tx.delete(schema.conferenceSupervisor).where(deletable.conferenceSupervisor);
+		const registrations = [
+			await tx
+				.delete(schema.delegationMember)
+				.where(onlyWhere(deletable.delegationMember))
+				.returning({ id: schema.delegationMember.id }),
+			await tx
+				.delete(schema.singleParticipant)
+				.where(onlyWhere(deletable.singleParticipant))
+				.returning({ id: schema.singleParticipant.id }),
+			await tx
+				.delete(schema.conferenceSupervisor)
+				.where(onlyWhere(deletable.conferenceSupervisor))
+				.returning({ id: schema.conferenceSupervisor.id })
+		];
+		if (registrations.every((removed) => removed.length === 0)) {
+			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
+		}
 		// The person's row goes too, unless papers or payments still name them: those stay the
 		// conference's record, and the row with them (as it does after leaving a delegation).
 		await tx
 			.delete(schema.conferenceParticipant)
 			.where(
 				and(
-					deletable.conferenceParticipant,
+					onlyWhere(deletable.conferenceParticipant),
 					notExists(
 						tx
 							.select({ id: schema.paper.id })

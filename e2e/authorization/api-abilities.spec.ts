@@ -709,6 +709,20 @@ test('a profile is changed by its owner, not by the care team', async ({ page })
 	);
 });
 
+test('only who may delete a registration unregisters a participant', async ({ page }) => {
+	// A team coordinator may not delete registrations: the deletes match nothing, which used to
+	// pass as success.
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($c: ID!, $u: ID!) { unregisterParticipant(conferenceId: $c, userId: $u) { id } }`,
+			{ c: E2E_CONFERENCE_ID, u: E2E_PAPER_DELEGATE_USER_ID }
+		),
+		/not found, or you may not delete it/
+	);
+});
+
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
 	// Registering makes the caller a participant, which opens the conference's members-only
 	// details to them; the preparation conference has closed its registration.
