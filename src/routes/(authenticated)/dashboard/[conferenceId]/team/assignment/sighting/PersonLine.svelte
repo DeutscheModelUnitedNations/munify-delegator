@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { genderIcon, type delegationApplication } from '#lib/assignment/sighting';
+	import { genderIcon, type delegationApplication } from './sighting';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { getAgeAtConference } from '#lib/helpers/ageChecker';
 	import formatNames from '#lib/helpers/formatNames';

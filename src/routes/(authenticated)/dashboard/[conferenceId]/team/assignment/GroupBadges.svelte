@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BoardReviewRow } from '#lib/assignment/board';
+	import type { BoardReviewRow } from './boardState';
 	import type { AssignmentGroup } from '#lib/assignment/state';
 	import { m } from '#lib/paraglide/messages';
 

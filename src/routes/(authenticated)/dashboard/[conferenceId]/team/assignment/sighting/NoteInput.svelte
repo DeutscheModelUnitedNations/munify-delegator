@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SightingReview } from '#lib/assignment/sighting';
+	import type { SightingReview } from './sighting';
 	import { m } from '#lib/paraglide/messages';
 
 	/** The team's note on one application: always an input, saved when it loses focus. */

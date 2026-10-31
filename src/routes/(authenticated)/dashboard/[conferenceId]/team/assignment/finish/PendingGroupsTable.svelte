@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { wishStatus } from '#lib/assignment/board';
+	import { wishStatus } from '../boardState';
 	import { targetKey, type AssignmentGroup, type Target } from '#lib/assignment/state';
 	import Flag from '#lib/components/Flag.svelte';
 	import codenamize from '#lib/helpers/codenamize';

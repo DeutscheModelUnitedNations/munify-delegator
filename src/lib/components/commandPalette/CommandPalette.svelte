@@ -27,7 +27,6 @@
 	import QuickScan from '#lib/components/scanner/QuickScan.svelte';
 	import { acceptScannedCode } from '#lib/api/identityCodeCheck';
 	import { readAimIdentifier } from '#lib/components/scanner/aimIdentifier';
-	import { resolveScannedCode } from '#lib/components/scanner/userSearch';
 	import { looksLikeUserId } from '#lib/components/scanner/suggestions';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -183,7 +182,7 @@
 			toast.error(result.message);
 			return;
 		}
-		const userId = await resolveScannedCode({ conferenceId, code: result.code });
+		const userId = result.code;
 		if (!looksLikeUserId(userId)) {
 			toast.error(m.notFound());
 			return;

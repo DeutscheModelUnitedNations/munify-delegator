@@ -1,72 +1,65 @@
-/** A day as the track matrix sees it: its tracks, each with the entries that run on it. */
+/** A day as the track matrix sees it: the tracks that run on it, and its entries. */
 export interface MatrixDay {
 	id: string;
 	name: string;
 	date: Date;
 	sortOrder: number;
 	entries: { id: string }[];
-	tracks: {
-		id: string;
-		name: string;
-		description: string | null;
-		sortOrder: number;
-		entries: { id: string }[];
-	}[];
+	tracks: { id: string }[];
 }
 
-/** One matrix row: a track name that exists on at least one day. */
-export interface TrackRow {
+/** One matrix row: a track of the conference, with the entries on it on any day. */
+export interface MatrixTrack {
+	id: string;
 	name: string;
 	description: string | null;
+	sortOrder: number;
+	committees: { id: string }[];
+	conferenceRoles: { id: string }[];
+	entries: { id: string; calendarDayId: string }[];
+}
+
+/** Whether `track` runs on `day`. */
+export function runsOn({ track, day }: { track: { id: string }; day: MatrixDay }) {
+	return day.tracks.some((t) => t.id === track.id);
+}
+
+/** The entries taking a track off the given days would take off it (or delete). */
+export function entriesOnDays({
+	tracks,
+	dayIds
+}: {
+	tracks: readonly MatrixTrack[];
+	dayIds: readonly string[];
+}) {
+	const days = new Set(dayIds);
+	return new Set(
+		tracks.flatMap((track) =>
+			track.entries.filter((entry) => days.has(entry.calendarDayId)).map((entry) => entry.id)
+		)
+	);
 }
 
 /**
- * The rows of the matrix: every track name across the days, ordered by the lowest sort order the
- * name has anywhere (ties by first appearance). The description is the first one found.
- */
-export function trackRows(days: readonly MatrixDay[]): TrackRow[] {
-	const found = new Map<string, { description: string | null; order: number }>();
-	for (const track of days.flatMap((day) => day.tracks)) {
-		const known = found.get(track.name) ?? {
-			description: null,
-			order: track.sortOrder
-		};
-		known.order = Math.min(known.order, track.sortOrder);
-		known.description ??= track.description;
-		found.set(track.name, known);
-	}
-	return [...found.entries()]
-		.sort((a, b) => a[1].order - b[1].order)
-		.map(([name, { description }]) => ({ name, description }));
-}
-
-/**
- * The tracks whose sort order changes when the row `name` is dropped at row index `toIndex`.
- * Every track takes its row's index as sort order, which also repairs gaps and ties.
+ * The tracks whose sort order changes when `trackId` is dropped at row index `toIndex`. Every
+ * track takes its row's index as sort order, which also repairs gaps and ties.
  */
 export function rowOrderChanges({
-	days,
-	rows,
-	name,
+	tracks,
+	trackId,
 	toIndex
 }: {
-	days: readonly MatrixDay[];
-	rows: readonly TrackRow[];
-	name: string;
+	tracks: readonly MatrixTrack[];
+	trackId: string;
 	toIndex: number;
 }): { id: string; sortOrder: number }[] {
-	const order = rows.map((row) => row.name);
-	const from = order.indexOf(name);
+	const order = [...tracks].sort((a, b) => a.sortOrder - b.sortOrder);
+	const from = order.findIndex((track) => track.id === trackId);
 	if (from === -1 || toIndex < 0 || toIndex >= order.length || from === toIndex) return [];
-	order.splice(from, 1);
-	order.splice(toIndex, 0, name);
-	return days
-		.flatMap((day) => day.tracks)
-		.map((track) => ({
-			id: track.id,
-			sortOrder: order.indexOf(track.name),
-			before: track.sortOrder
-		}))
+	const [moved] = order.splice(from, 1);
+	order.splice(toIndex, 0, moved);
+	return order
+		.map((track, index) => ({ id: track.id, sortOrder: index, before: track.sortOrder }))
 		.filter((track) => track.sortOrder !== track.before)
 		.map(({ id, sortOrder }) => ({ id, sortOrder }));
 }

@@ -11,7 +11,15 @@ export function fetchCalendarDays(conferenceId: string) {
 		name: true,
 		date: true,
 		sortOrder: true,
-		tracks: { id: true, name: true, description: true, sortOrder: true },
+		tracks: {
+			id: true,
+			name: true,
+			description: true,
+			sortOrder: true,
+			// whose seats the track is for, which the dashboard's timeline follows
+			committees: { id: true },
+			conferenceRoles: { id: true }
+		},
 		entries: {
 			id: true,
 			startTime: true,

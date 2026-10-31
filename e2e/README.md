@@ -100,8 +100,10 @@ Rules worth keeping when adding fixtures:
 
 ## Deliberately not covered
 
-- **Attendance scanner** (`dashboard/[id]/team/attendance`) - a camera QR scanner. Covering it
-  honestly needs a simulated video device; a fake that bypasses the scanner would assert nothing.
+- **Scanning with the camera** (`dashboard/[id]/team/attendance`) - reading a QR code honestly
+  needs a simulated video device; a fake that bypasses the scanner would assert nothing. The
+  sessions around it are covered (`team/attendance-sessions.spec.ts`: starting, the unique names,
+  ending, reopening, the certificate switch), with the scans recorded through the API.
 
 ## Quarantined
 

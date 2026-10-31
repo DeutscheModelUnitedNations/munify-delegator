@@ -26,6 +26,8 @@ query({ table: 'reviewerSnippet' });
  */
 schemaBuilder.mutationFields((t) => ({
 	createReviewerSnippet: t.drizzleField({
+		description:
+			'Saves a text block the caller reuses in paper reviews. Names are unique per reviewer.',
 		type: ReviewerSnippetRef,
 		args: {
 			name: t.arg.string({ required: true }),
@@ -95,6 +97,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteReviewerSnippet: t.field({
+		description: "Deletes one of the caller's snippets.",
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

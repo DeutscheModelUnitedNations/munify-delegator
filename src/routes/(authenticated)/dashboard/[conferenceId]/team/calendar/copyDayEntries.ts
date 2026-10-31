@@ -2,11 +2,6 @@ import { moveToDay } from './calendarTime';
 
 type Maybe<T> = T | null | undefined;
 
-interface NamedTrack {
-	id: string;
-	name: string;
-}
-
 /** A calendar entry as the copy reads it from the source day. */
 export interface CopySourceEntry<Color> {
 	name: string;
@@ -22,42 +17,34 @@ export interface CopySourceEntry<Color> {
 }
 
 /**
- * The target day's tracks for an entry: those with the same name as the entry's tracks on the
- * source day. A track the target day lacks is left out; an entry that ends up without any
- * is skipped by the copy.
+ * The tracks of an entry that also run on the target day: a track is the conference's, so it
+ * keeps its id from day to day. A track the target day lacks is left out; an entry that ends up
+ * without any is skipped by the copy.
  */
 export function matchingTargetTrackIds({
 	trackIds,
-	sourceTracks,
 	targetTracks
 }: {
 	trackIds: readonly string[];
-	sourceTracks: readonly NamedTrack[];
-	targetTracks: readonly NamedTrack[];
+	targetTracks: readonly { id: string }[];
 }): string[] {
-	return trackIds.flatMap((trackId) => {
-		const sourceTrack = sourceTracks.find((t) => t.id === trackId);
-		const target = sourceTrack && targetTracks.find((t) => t.name === sourceTrack.name);
-		return target ? [target.id] : [];
-	});
+	const onTarget = new Set(targetTracks.map((track) => track.id));
+	return trackIds.filter((trackId) => onTarget.has(trackId));
 }
 
 /**
- * Where the tracks of a moved entry land on the target day: the matching ones, or, without a
- * match, the target day's first track.
+ * Where the tracks of a moved entry land on the target day: the same ones where it has them, or
+ * else the target day's first track.
  */
 export function retargetTrackRange({
 	range,
-	sourceTracks,
 	targetTracks
 }: {
 	range: { from: string | null; to: string | null };
-	sourceTracks: readonly NamedTrack[];
-	targetTracks: readonly NamedTrack[];
+	targetTracks: readonly { id: string }[];
 }): { from: string | null; to: string | null } {
 	const [from, to] = matchingTargetTrackIds({
 		trackIds: [range.from, range.to ?? range.from].filter((id) => id !== null),
-		sourceTracks,
 		targetTracks
 	});
 	const first = from ?? targetTracks[0]?.id ?? null;
@@ -72,14 +59,14 @@ export function copiedEntryArgs<Color>({
 }: {
 	entry: CopySourceEntry<Color>;
 	targetDay: { id: string; date: Date | string };
-	tracks: { source: readonly NamedTrack[]; target: readonly NamedTrack[] };
+	/** The tracks running on the target day */
+	tracks: readonly { id: string }[];
 }) {
 	return {
 		calendarDayId: targetDay.id,
 		calendarTrackIds: matchingTargetTrackIds({
 			trackIds: entry.tracks.map((track) => track.id),
-			sourceTracks: tracks.source,
-			targetTracks: tracks.target
+			targetTracks: tracks
 		}),
 		name: entry.name,
 		description: entry.description ?? null,

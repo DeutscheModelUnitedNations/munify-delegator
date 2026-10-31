@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BusyOverlay from '../BusyOverlay.svelte';
 	import DragGrip from '../DragGrip.svelte';
-	import { cardBorder, type BoardReviewRow } from '#lib/assignment/board';
+	import { cardBorder, type BoardReviewRow } from '../boardState';
 	import StarRating from '#lib/components/StarRating.svelte';
 	import formatNames from '#lib/helpers/formatNames';
 	import { m } from '#lib/paraglide/messages';

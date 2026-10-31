@@ -17,9 +17,9 @@
 		rolesWithSeats,
 		sizeOptions,
 		wishStatus
-	} from '#lib/assignment/board';
+	} from '../boardState';
 	import { seatedRoles } from '#lib/assignment/capacity';
-	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
+	import { createPendingMoves } from '../pendingMoves.svelte';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { memoizeLast } from '#lib/helpers/memoizeLast';
 	import { targetKey, type AssignmentGroup } from '#lib/assignment/state';
@@ -38,7 +38,7 @@
 		type BoardDelegation,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '../schoolSeats';
 	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { boardParams, withBoardParams } from '../boardParams';

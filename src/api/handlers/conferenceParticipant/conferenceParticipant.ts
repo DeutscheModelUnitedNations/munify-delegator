@@ -1,5 +1,4 @@
 import { db } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
@@ -11,6 +10,8 @@ import {
 	updateStatus
 } from './conferenceParticipantService';
 import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
+import { ScanIssueEnum } from '#api/handlers/scanLookup/scanLookup';
+import { participantCheckIssues } from '#api/handlers/scanLookup/scanLookupService';
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
@@ -33,6 +34,16 @@ const ConferenceParticipantRef = object({
 				'18 by the start of the conference, so no guardian has to consent; see `isOfAgeAtConference`.',
 			type: 'Boolean',
 			resolve: (participant) => isOfAgeAtConference(participant.id)
+		}),
+		checkIssues: t.field({
+			description:
+				'What the entrance check finds open for the person, without any scanner session: what their check-in page shows.',
+			type: [ScanIssueEnum],
+			resolve: (participant) =>
+				participantCheckIssues({
+					conferenceId: participant.conferenceId,
+					userId: participant.userId
+				})
 		})
 	})
 });
@@ -99,8 +110,6 @@ schemaBuilder.mutationFields((t) => ({
 				});
 			}
 
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
-
 			return db.query.conferenceParticipant
 				.findFirst(
 					query(
@@ -153,8 +162,6 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanSetAttendanceForAll({ ctx, conferenceId: args.conferenceId });
 			const changed = await setAttendanceForAll(args);
-
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return { changed };
 		}

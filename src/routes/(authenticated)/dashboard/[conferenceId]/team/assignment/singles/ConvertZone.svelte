@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CONVERT_CONTAINER } from '#lib/assignment/board';
+	import { CONVERT_CONTAINER } from '../boardState';
 	import formatNames from '#lib/helpers/formatNames';
 	import { m } from '#lib/paraglide/messages';
 	import { droppable, type DragDropState } from '@thisux/sveltednd';

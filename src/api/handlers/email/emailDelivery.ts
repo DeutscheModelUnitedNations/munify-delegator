@@ -6,7 +6,7 @@ import { getLocale, toLocale, type Locale } from '#lib/paraglide/runtime';
 import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
 import { emailLogPubsub } from '#api/pubsub';
 import { whereRows } from '#api/db/whereRows';
-import { emailFooterParagraphs } from '#lib/helpers/emailTemplates';
+import { emailFooterParagraphs } from './emailText';
 import type { DueEmail, EmailKind, EmailSnapshot } from './dueEmails';
 import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
 

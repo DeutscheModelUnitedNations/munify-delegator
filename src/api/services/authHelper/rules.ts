@@ -221,13 +221,21 @@ function conferencesOfCaller({ ctx, asParticipant }: { ctx: Context; asParticipa
 }
 
 /**
+ * `{ OR: filters }`, matching everything when one of them does: drizzle drops an empty filter from
+ * an `OR`, so a system admin's team way (`{}`) would otherwise match nothing.
+ */
+export function anyOf(filters: readonly object[]) {
+	return filters.some((filter) => Object.keys(filter).length === 0) ? {} : { OR: [...filters] };
+}
+
+/**
  * Matches a Conference row the caller has a part in, as participant or on the team; undefined for
  * an anonymous caller. `asParticipant` narrows what participants get to see, the team always
  * does: `hasPartIn({ ctx, asParticipant: { showCalendar: true } })` for the schedule.
  */
 export function hasPartIn({ ctx, asParticipant = {} }: { ctx: Context; asParticipant?: object }) {
 	const ways = conferencesOfCaller({ ctx, asParticipant });
-	return ways.length > 0 ? { OR: ways } : undefined;
+	return ways.length > 0 ? anyOf(ways) : undefined;
 }
 
 /**
@@ -236,7 +244,7 @@ export function hasPartIn({ ctx, asParticipant = {} }: { ctx: Context; asPartici
  * overview shows - follows it, so a conference in PRE or POST hides its set-up from strangers too.
  */
 export function readableConference(ctx: Context) {
-	return { OR: [publicConference, ...conferencesOfCaller({ ctx, asParticipant: {} })] };
+	return anyOf([publicConference, ...conferencesOfCaller({ ctx, asParticipant: {} })]);
 }
 
 /**

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { isOutsideSizeLimits, type Role } from '#lib/helpers/seatPlanning/hints';
+	import { isOutsideSizeLimits, type Role } from '../seatHints';
 	import type { SizeLimitsStore } from '../sizeLimits.svelte';
 
 	interface Props {

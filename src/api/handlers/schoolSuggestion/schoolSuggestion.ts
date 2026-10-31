@@ -31,6 +31,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	dismissSchoolSuggestion: t.field({
+		description:
+			'Marks a suggested group of similar school names as no duplicates, so it is not suggested again.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

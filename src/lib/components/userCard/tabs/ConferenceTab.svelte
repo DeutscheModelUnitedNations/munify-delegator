@@ -3,7 +3,11 @@
 	import StatusRow, { type StatusOption } from '../sections/StatusRow.svelte';
 	import AccessCardSection from '../AccessCardSection.svelte';
 	import AttendanceSection from '../AttendanceSection.svelte';
-	import { changeParticipantStatus, fetchParticipantStatus } from './participantStatus';
+	import {
+		changeParticipantStatus,
+		fetchParticipantStatus,
+		notifyBadgeFound
+	} from './participantStatus';
 
 	/** The conference itself: the access card, and whether and where the person was there. */
 	interface Props {
@@ -42,6 +46,7 @@
 				target: { id: statusId, conferenceId, userId },
 				input: { accessCardId }
 			})}
+		onNotifyFound={statusId ? () => notifyBadgeFound(statusId) : undefined}
 	/>
 	<AttendanceSection {userId} {conferenceId} />
 </div>

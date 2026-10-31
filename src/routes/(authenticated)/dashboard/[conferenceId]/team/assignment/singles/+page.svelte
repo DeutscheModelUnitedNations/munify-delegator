@@ -6,10 +6,10 @@
 		boardState,
 		roleContainer,
 		singleDropAction
-	} from '#lib/assignment/board';
+	} from '../boardState';
 	import { seatedRoles } from '#lib/assignment/capacity';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
-	import { createPendingMoves } from '#lib/assignment/pendingMoves.svelte.js';
+	import { createPendingMoves } from '../pendingMoves.svelte';
 	import { memoizeLast } from '#lib/helpers/memoizeLast';
 	import { m } from '#lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
@@ -32,7 +32,7 @@
 	import ConvertZone from './ConvertZone.svelte';
 	import SingleCard from './SingleCard.svelte';
 	import VirtualList from 'svelte-virtual-list';
-	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '#lib/assignment/schoolSeats';
+	import { schoolLookupsOf, schoolSeats, schoolsOfGroup } from '../schoolSeats';
 	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';

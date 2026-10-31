@@ -17,8 +17,9 @@ import {
  */
 
 export type EmailKind = (typeof schema.emailKind.enumValues)[number];
-/** The kinds that follow from state; the team invitation is sent where it happens. */
+/** The kinds that follow from state; the team invitation and the found badge are sent where they happen. */
 export type AutomaticEmailKind = Exclude<EmailKind, AlwaysSentKind>;
+
 type Status = (typeof schema.administrativeStatus.enumValues)[number];
 
 export interface SnapshotRole {

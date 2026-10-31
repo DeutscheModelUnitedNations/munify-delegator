@@ -3,15 +3,22 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import type { Snippet } from 'svelte';
 	import EditableIdentityField from './EditableIdentityField.svelte';
+	import SessionPeople from './SessionPeople.svelte';
+	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
+	import { slide } from 'svelte/transition';
 	import { modeIcons, modeLabels } from './sessionModes';
-	import { sessionRows, type OpenSession, type SessionRow } from './sessionRows';
+	import {
+		sessionRows,
+		type ListedSession,
+		type OpenSession,
+		type SessionRow
+	} from './sessionRows';
 
 	/**
 	 * Everything there is to scan in: the info mode, every running session to join, and every
-	 * occasion scanned before, each with its place on the participation certificates.
+	 * session scanned in before, each with its place on the participation certificates.
 	 */
 	interface Props {
 		conferenceId: string;
@@ -22,8 +29,10 @@
 		creating: boolean;
 		createForm: Snippet;
 		onJoin: (open: OpenSession) => void;
+		/** Opens an ended session again and joins it. */
+		onReopen: (session: OpenSession) => Promise<void>;
 		onStartInfo: () => void;
-		/** Renames one session, for a running one whose occasion is not listed yet. */
+		/** Renames a session; a name another session has is refused. */
 		onRenameSession: (id: string, name: string) => Promise<void>;
 	}
 
@@ -34,37 +43,34 @@
 		creating = $bindable(),
 		createForm,
 		onJoin,
+		onReopen,
 		onStartInfo,
 		onRenameSession
 	}: Props = $props();
 
-	// Not live (a computed list): it is fetched again after each change here, and whenever a
-	// session starts or ends. Only participant care may read it.
-	let revision = $state(0);
-	const openCount = $derived(openSessions.length);
-	const occasions = $derived(
+	// Only participant care sees the ended sessions; everybody else joins the running ones.
+	const listed: ListedSession[] = $derived(
 		canManage
-			? await client.query.certificateOccasions({
-					__args: { conferenceId, revision: revision + openCount },
-					name: true,
-					sessions: true,
-					entries: true,
-					firstStartedAt: true,
+			? await client.liveQuery.attendanceSessions({
+					__args: { where: { conferenceId: { eq: conferenceId } } },
+					id: true,
+					occasion: true,
+					startedAt: true,
+					endedAt: true,
+					mode: true,
+					entryCount: true,
 					showOnCertificate: true
 				})
 			: []
 	);
-	const rows = $derived(sessionRows({ occasions, openSessions }));
+	const rows = $derived(sessionRows({ listed, openSessions }));
 
 	let saving = $state<string>();
 
-	async function toggleCertificate({ occasion, show }: { occasion: string; show: boolean }) {
-		saving = occasion;
+	async function toggleCertificate({ id, show }: { id: string; show: boolean }) {
+		saving = id;
 		try {
-			await client.mutate.setAttendanceOccasionOnCertificate({
-				__args: { conferenceId, occasion, show }
-			});
-			revision++;
+			await client.mutate.setAttendanceSessionOnCertificate({ __args: { id, show } });
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : m.genericToastError());
 		} finally {
@@ -72,88 +78,120 @@
 		}
 	}
 
-	/** Renames every session of the occasion; a name another occasion has merges the two. */
-	async function rename({ row, name }: { row: SessionRow; name: string }) {
-		if (name.trim() === row.name) return;
-		if (!row.occasion && row.open) {
-			await onRenameSession(row.open.id, name);
-			return;
+	let reopening = $state<string>();
+
+	async function reopen(session: OpenSession) {
+		reopening = session.id;
+		try {
+			await onReopen(session);
+		} catch {
+			// The toast of `onReopen` reports it
+		} finally {
+			reopening = undefined;
 		}
-		const promise = Promise.resolve(
-			client.mutate.renameAttendanceOccasion({
-				__args: { conferenceId, occasion: row.name, newOccasion: name }
-			})
-		);
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		revision++;
 	}
+
+	/** The session whose people are unfolded, one at a time. */
+	let peopleOf = $state<string>();
 
 	const formatTime = (date: Date) =>
 		date.toLocaleString(getLocale(), { dateStyle: 'short', timeStyle: 'short' });
 </script>
 
-{#snippet sessionRow(row: SessionRow)}
-	<li class="flex items-center gap-3 px-3 py-2.5">
-		{#if row.open}
-			<div class="inline-grid shrink-0 *:[grid-area:1/1]">
-				<span class="status status-success"></span>
-				<span class="status status-success animate-ping"></span>
-			</div>
-		{:else}
-			<span class="status shrink-0"></span>
-		{/if}
-		<div class="flex min-w-0 flex-1 flex-col">
-			<EditableIdentityField
-				size="sm"
-				readonly={!canManage}
-				label={m.scanRenameSession({ occasion: row.name })}
-				initialValue={row.name}
-				onSave={(value) => rename({ row, name: value })}
-			>
-				<span class="truncate {row.open ? 'font-semibold' : ''}">{row.name}</span>
-			</EditableIdentityField>
-			<span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/60">
-				{#if row.open}
-					<i class="fa-sharp-duotone fa-solid {modeIcons[row.open.mode]}"></i>
-					{modeLabels[row.open.mode]()} · {m.scanRunningSince({
-						time: formatTime(row.open.startedAt)
-					})}
-				{:else if row.occasion}
-					{formatTime(row.occasion.firstStartedAt)}
-				{/if}
-				{#if row.occasion}
-					· {m.certificateOccasionsCounts({
-						sessions: row.occasion.sessions,
-						entries: row.occasion.entries
-					})}
-				{/if}
-			</span>
+{#snippet sessionInfo(row: SessionRow)}
+	{#if row.open}
+		<div class="inline-grid shrink-0 *:[grid-area:1/1]">
+			<span class="status status-success"></span>
+			<span class="status status-success animate-ping"></span>
 		</div>
-		{#if row.occasion && canManage}
-			<label class="label shrink-0 cursor-pointer gap-2 text-xs">
-				<span class="hidden md:inline">{m.certificateOccasionsShow()}</span>
-				<input
-					type="checkbox"
-					class="toggle toggle-success toggle-sm"
-					checked={row.occasion.showOnCertificate}
-					disabled={saving === row.name}
-					aria-label={m.certificateOccasionsShowFor({ occasion: row.name })}
-					onchange={(event) =>
-						toggleCertificate({ occasion: row.name, show: event.currentTarget.checked })}
-				/>
-			</label>
-		{/if}
-		{#if row.open}
-			{@const open = row.open}
-			<button
-				class="btn btn-primary btn-sm shrink-0"
-				onclick={() => onJoin(open)}
-				aria-label={m.scanJoinSession()}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
-				<span class="hidden sm:inline">{m.scanJoinSession()}</span>
-			</button>
+	{:else}
+		<span class="status shrink-0"></span>
+	{/if}
+	<div class="flex min-w-0 flex-1 flex-col">
+		<EditableIdentityField
+			size="sm"
+			readonly={!canManage}
+			label={m.scanRenameSession({ occasion: row.name })}
+			initialValue={row.name}
+			onSave={async (value) => {
+				if (value.trim() !== row.name) await onRenameSession(row.id, value);
+			}}
+		>
+			<span class="truncate {row.open ? 'font-semibold' : ''}">{row.name}</span>
+		</EditableIdentityField>
+		<span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/60">
+			{#if row.open}
+				<i class="fa-sharp-duotone fa-solid {modeIcons[row.open.mode]}"></i>
+				{modeLabels[row.open.mode]()} · {m.scanRunningSince({
+					time: formatTime(row.open.startedAt)
+				})}
+			{:else}
+				{formatTime(row.startedAt)}
+			{/if}
+			{#if row.listed}
+				· {m.certificateOccasionsCounts({ entries: row.listed.entryCount })}
+			{/if}
+		</span>
+	</div>
+{/snippet}
+
+{#snippet sessionActions(row: SessionRow)}
+	{#if row.listed && canManage}
+		<label class="label shrink-0 cursor-pointer gap-2 text-xs">
+			<span class="hidden md:inline">{m.certificateOccasionsShow()}</span>
+			<input
+				type="checkbox"
+				class="toggle toggle-success toggle-sm"
+				checked={row.listed.showOnCertificate}
+				disabled={saving === row.id}
+				aria-label={m.certificateOccasionsShowFor({ occasion: row.name })}
+				onchange={(event) => toggleCertificate({ id: row.id, show: event.currentTarget.checked })}
+			/>
+		</label>
+		<button
+			class="btn btn-ghost btn-sm btn-square shrink-0"
+			aria-expanded={peopleOf === row.id}
+			onclick={() => (peopleOf = peopleOf === row.id ? undefined : row.id)}
+			aria-label={peopleOf === row.id ? m.sessionPeopleHide() : m.sessionPeopleShow()}
+			title={peopleOf === row.id ? m.sessionPeopleHide() : m.sessionPeopleShow()}
+		>
+			<i class="fa-sharp-duotone fa-solid fa-users"></i>
+		</button>
+	{/if}
+	{#if row.open}
+		{@const open = row.open}
+		<button
+			class="btn btn-primary btn-sm shrink-0"
+			onclick={() => onJoin(open)}
+			aria-label={m.scanJoinSession()}
+		>
+			<i class="fa-sharp-duotone fa-solid fa-right-to-bracket"></i>
+			<span class="hidden sm:inline">{m.scanJoinSession()}</span>
+		</button>
+	{:else if row.listed && canManage}
+		{@const ended = row.listed}
+		<button
+			class="btn btn-soft btn-sm shrink-0"
+			disabled={reopening === row.id}
+			onclick={() => reopen(ended)}
+			aria-label={m.scanReopenSession()}
+		>
+			<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+			<span class="hidden sm:inline">{m.scanReopenSession()}</span>
+		</button>
+	{/if}
+{/snippet}
+
+{#snippet sessionRow(row: SessionRow)}
+	<li class="flex flex-col">
+		<div class="flex items-center gap-3 px-3 py-2.5">
+			{@render sessionInfo(row)}
+			{@render sessionActions(row)}
+		</div>
+		{#if peopleOf === row.id}
+			<div class="px-3 pb-3" transition:slide={{ duration: 200 }}>
+				<SessionPeople sessionId={row.id} onSelect={openUserCard} />
+			</div>
 		{/if}
 	</li>
 {/snippet}
@@ -200,7 +238,7 @@
 				<span class="hidden sm:inline">{m.scanStartInfo()}</span>
 			</button>
 		</li>
-		{#each rows as row (row.key)}
+		{#each rows as row (row.id)}
 			{@render sessionRow(row)}
 		{/each}
 	</ul>

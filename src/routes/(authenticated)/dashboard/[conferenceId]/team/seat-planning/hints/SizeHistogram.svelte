@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { sizeHistogram, type Role } from '#lib/helpers/seatPlanning/hints';
+	import { sizeHistogram, type Role } from '../seatHints';
 
 	interface Props {
 		roles: Role[];

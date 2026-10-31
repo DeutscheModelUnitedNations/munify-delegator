@@ -1,16 +1,24 @@
 import { describe, expect, test } from 'vitest';
-import { isManagedListName } from './listNames';
 import { planForUser, planRelease } from './subscriberDiff';
-import type { ComputedSubscriberState, ListAtSubscriber, ListmonkSubscriber } from './types';
+import type {
+	ComputedSubscriberState,
+	ListAtSubscriber,
+	ListKey,
+	ListmonkSubscriber,
+	ManagedLists
+} from './types';
 
-const TEAM = '[V1St-_] MUN-SH 2026 - TEAM';
-const NEWSLETTER = '[global] DMUN_NEWSLETTER';
+const TEAM: ListKey = 'V1St-_x:TEAM';
+const NEWSLETTER: ListKey = 'global:DMUN_NEWSLETTER';
 const FOREIGN = '[DMUN-Intern] Rundbrief';
+/** A list of another system that happens to be named like one of ours. */
+const LOOKALIKE = '[V1St-_] MUN-SH 2026 - TEAM';
 
-const listNameToId = new Map([
+const idOf = new Map<ListKey, number>([
 	[TEAM, 1],
 	[NEWSLETTER, 2]
 ]);
+const lists: ManagedLists = { idOf, ids: new Set(idOf.values()) };
 
 function list(id: number, name: string): ListAtSubscriber {
 	return {
@@ -40,52 +48,37 @@ function subscriber(overrides: Partial<ListmonkSubscriber> = {}): ListmonkSubscr
 	};
 }
 
-function state(listNames: string[]): ComputedSubscriberState {
+function state(listKeys: ListKey[]): ComputedSubscriberState {
 	return {
 		email: 'erika@example.org',
 		formattedName: 'Erika Mustermann',
-		listNames,
+		listKeys,
 		attribs: { userId: 'u1', conferences: [] }
 	};
 }
 
-describe('isManagedListName', () => {
-	test('claims global and conference lists, with nanoid prefixes', () => {
-		expect(isManagedListName(NEWSLETTER)).toBe(true);
-		expect(isManagedListName(TEAM)).toBe(true);
-		expect(isManagedListName('[abcdef] X - SUPERVISORS_REGISTRATION_NOT_COMPLETED')).toBe(true);
-	});
-
-	test('leaves lists of other systems alone', () => {
-		expect(isManagedListName(FOREIGN)).toBe(false);
-		expect(isManagedListName('[Alumni] Treffen')).toBe(false);
-		expect(isManagedListName('[global] SOMETHING_ELSE')).toBe(false);
-		expect(isManagedListName('[V1StGX] X - NOT_A_TYPE')).toBe(false);
-	});
-});
-
 describe('planForUser', () => {
 	test('creates a missing subscriber with all desired lists', () => {
-		expect(
-			planForUser({ state: state([TEAM, NEWSLETTER]), subscriber: undefined, listNameToId })
-		).toEqual({
-			kind: 'create',
-			userId: 'u1',
-			email: 'erika@example.org',
-			name: 'Erika Mustermann',
-			attribs: { userId: 'u1', conferences: [] },
-			listIds: [1, 2]
-		});
+		expect(planForUser({ state: state([TEAM, NEWSLETTER]), subscriber: undefined, lists })).toEqual(
+			{
+				kind: 'create',
+				userId: 'u1',
+				email: 'erika@example.org',
+				name: 'Erika Mustermann',
+				attribs: { userId: 'u1', conferences: [] },
+				listIds: [1, 2]
+			}
+		);
 	});
 
 	test('does nothing when our lists, name and attribs match', () => {
-		const sub = subscriber({ lists: [list(1, TEAM)] });
-		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
+		const sub = subscriber({ lists: [list(1, 'Team')] });
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, lists })).toBeUndefined();
 	});
 
 	test('adds and removes only the difference on our lists', () => {
-		const sub = subscriber({ lists: [list(2, NEWSLETTER)] });
-		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toMatchObject({
+		const sub = subscriber({ lists: [list(2, 'Newsletter')] });
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, lists })).toMatchObject({
 			kind: 'update',
 			addListIds: [1],
 			removeListIds: [2],
@@ -95,42 +88,54 @@ describe('planForUser', () => {
 
 	test('never removes foreign lists and ignores foreign attribs', () => {
 		const sub = subscriber({
-			lists: [list(1, TEAM), list(9, FOREIGN)],
+			lists: [list(1, 'Team'), list(9, FOREIGN)],
 			attribs: { userId: 'u1', conferences: [], mitgliedshub: { memberId: 'm1' } }
 		});
-		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, lists })).toBeUndefined();
 	});
 
 	test('keeps the name while another system shares the subscriber', () => {
 		const sub = subscriber({
 			name: 'Dr. Erika Mustermann',
-			lists: [list(1, TEAM), list(9, FOREIGN)]
+			lists: [list(1, 'Team'), list(9, FOREIGN)]
 		});
-		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, lists })).toBeUndefined();
 	});
 
 	test('updates the name of a subscriber that is ours alone', () => {
-		const sub = subscriber({ name: 'E. Mustermann', lists: [list(1, TEAM)] });
-		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toMatchObject({
+		const sub = subscriber({ name: 'E. Mustermann', lists: [list(1, 'Team')] });
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, lists })).toMatchObject({
 			patch: { name: 'Erika Mustermann', attribs: { userId: 'u1', conferences: [] } }
 		});
 	});
 
 	test('writes only our attrib keys', () => {
 		const sub = subscriber({
-			lists: [list(1, TEAM)],
+			lists: [list(1, 'Team')],
 			attribs: { userId: 'old', mitgliedshub: { memberId: 'm1' } }
 		});
-		const action = planForUser({ state: state([TEAM]), subscriber: sub, listNameToId });
+		const action = planForUser({ state: state([TEAM]), subscriber: sub, lists });
 		expect(action).toMatchObject({ patch: { attribs: { userId: 'u1', conferences: [] } } });
 		expect(action?.kind === 'update' && action.patch?.attribs).not.toHaveProperty('mitgliedshub');
+	});
+
+	test('treats a foreign list named like one of ours as foreign', () => {
+		const sub = subscriber({
+			name: 'Dr. Erika Mustermann',
+			lists: [list(1, 'Team'), list(9, LOOKALIKE)]
+		});
+		expect(planForUser({ state: state([NEWSLETTER]), subscriber: sub, lists })).toMatchObject({
+			addListIds: [2],
+			removeListIds: [1],
+			patch: undefined
+		});
 	});
 });
 
 describe('planRelease', () => {
 	test('takes back our lists and attribs, leaves foreign lists', () => {
-		const sub = subscriber({ lists: [list(1, TEAM), list(9, FOREIGN)] });
-		expect(planRelease(sub)).toEqual({
+		const sub = subscriber({ lists: [list(1, 'Team'), list(9, FOREIGN)] });
+		expect(planRelease({ subscriber: sub, managedIds: lists.ids })).toEqual({
 			kind: 'update',
 			subscriberId: 42,
 			addListIds: [],
@@ -141,14 +146,14 @@ describe('planRelease', () => {
 
 	test('does nothing for a subscriber that was never ours', () => {
 		const sub = subscriber({
-			lists: [list(9, FOREIGN)],
+			lists: [list(9, FOREIGN), list(10, LOOKALIKE)],
 			attribs: { mitgliedshub: { memberId: 'm1' } }
 		});
-		expect(planRelease(sub)).toBeUndefined();
+		expect(planRelease({ subscriber: sub, managedIds: lists.ids })).toBeUndefined();
 	});
 
 	test('does nothing for a subscriber that was already released', () => {
 		const sub = subscriber({ attribs: { userId: null, conferences: null } });
-		expect(planRelease(sub)).toBeUndefined();
+		expect(planRelease({ subscriber: sub, managedIds: lists.ids })).toBeUndefined();
 	});
 });

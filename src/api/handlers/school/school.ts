@@ -138,6 +138,8 @@ schemaBuilder.queryFields((t) => ({
 
 schemaBuilder.mutationFields((t) => ({
 	updateSchool: t.drizzleField({
+		description:
+			'Changes the given fields of a school; the others stay as they are, `null` clears all but the name.',
 		type: SchoolRef,
 		args: {
 			id: t.arg.id({ required: true }),

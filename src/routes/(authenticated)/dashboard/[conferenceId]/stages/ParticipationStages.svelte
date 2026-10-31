@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
 	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
-	import { watchSelectionInProgress } from '#lib/helpers/selectionInProgress.svelte.js';
+	import { watchSelectionInProgress } from './selectionInProgress.svelte';
 	import RegistrationLanding from '../../../registration/[conferenceId]/RegistrationLanding.svelte';
 	import DelegationStages from './Delegation/DelegationStages.svelte';
 	import SingleParticipantStages from './SingleParticipant/SingleParticipantStages.svelte';

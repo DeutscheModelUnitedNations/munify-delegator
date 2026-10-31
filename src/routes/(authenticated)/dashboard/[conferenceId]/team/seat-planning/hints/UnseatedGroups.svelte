@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { translateRegionalGroup } from '#lib/utils/enumTranslations';
-	import { seatedByGroup } from '#lib/helpers/seatPlanning/hints';
+	import { seatedByGroup } from '../seatHints';
 	import { unMembers, type RegionalGroup } from '#lib/helpers/seatPlanning/unMembers';
 
 	interface Props {

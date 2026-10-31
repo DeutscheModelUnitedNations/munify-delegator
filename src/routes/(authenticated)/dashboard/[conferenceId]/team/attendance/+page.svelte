@@ -9,32 +9,32 @@
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import BarcodeScanner from '#lib/components/scanner/BarcodeScanner.svelte';
-	import { resolveScannedCode } from '#lib/components/scanner/userSearch';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { canWriteAccessCards } from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
 	import ScanCheckResult from './ScanCheckResult.svelte';
 	import SessionTable from './SessionTable.svelte';
+	import SessionPeople from './SessionPeople.svelte';
+	import { sessionNamed } from './sessionRows';
 	import { modeIcons, modeLabels, type SessionMode } from './sessionModes';
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import SurveyOptionPicker from '#lib/components/survey/SurveyOptionPicker.svelte';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
-	import { isNetworkError, retryDelay, type QueueEntry } from './attendanceQueue';
-	import { scanIssues, type ScanIssue } from './scanCheck';
+	import { isNetworkError, requeueFailed, retryDelay, type QueueEntry } from './attendanceQueue';
 	import {
 		findLogged,
 		fullName,
 		hasScanOf,
 		hasUnsynced,
 		isAlreadyScanned,
+		isNameTaken,
 		queueFromEntries,
 		renameTargets,
 		scanErrorText,
 		scanIntake,
 		personShown,
 		scanStep,
-		mayRecordAnyway,
 		isShownPerson,
 		type ScanLogEntry,
 		type ScanSession,
@@ -80,8 +80,6 @@
 
 	/** What the active session does, fixed when it started; see `attendanceSessionMode`. */
 	let sessionMode = $state<SessionMode>('RECORD');
-	const badgeOn = $derived(sessionMode === 'BADGE');
-	// Handing out cards needs the person in front of you, so that mode checks as well
 	const checking = $derived(sessionMode !== 'RECORD');
 
 	/** The form's choice; every new session starts out on the check. */
@@ -133,6 +131,11 @@
 
 	function startSession() {
 		if (!occasion.trim()) return;
+		// Names are unique: a running session of that name is joined, not started again
+		if (sessionNamed({ sessions: openSessions, name: occasion })) {
+			toast.error(m.sessionNameTaken());
+			return;
+		}
 
 		const session: ScanSession = {
 			id: crypto.randomUUID(),
@@ -153,7 +156,21 @@
 		totalScansCounter = 0;
 		syncedScansCounter = 0;
 		// Offline this fails, and the first entry that is sent starts the session instead
-		ensureSessionStarted().catch(() => {});
+		ensureSessionStarted().catch((err) => {
+			if (isNameTaken(err)) refuseTakenName(session);
+		});
+	}
+
+	/**
+	 * Gives up a session the server refused for its name, back to the form to choose another. One
+	 * that holds scans already stays, to be renamed: its scans are sent once it is.
+	 */
+	function refuseTakenName(session: ScanSession) {
+		toast.error(m.sessionNameTaken());
+		if (sessionStore.current?.id !== session.id || session.entries.length > 0) return;
+		sessionStore.current = null;
+		sessionActive = false;
+		creating = true;
 	}
 
 	/** Starts looking people up: no session, nothing is stored here or sent. */
@@ -181,6 +198,21 @@
 		queue = [];
 		totalScansCounter = 0;
 		syncedScansCounter = 0;
+	}
+
+	/** Opens an ended session again and continues it here; its earlier scans stay. */
+	async function reopenSession(session: {
+		id: string;
+		occasion: string;
+		startedAt: Date;
+		mode: ServerMode;
+	}) {
+		const promise = Promise.resolve(
+			client.mutate.reopenAttendanceSession({ __args: { id: session.id } })
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+		joinSession(session);
 	}
 
 	/** Tells the server about the session, once; starting is safe to repeat. */
@@ -222,10 +254,26 @@
 		}
 		const targets = renameTargets({ local: activeSession(), id });
 		if (targets.server) await renameOnServer({ id, name: trimmed });
-		if (!targets.local) return;
-		targets.local.occasion = trimmed;
-		sessionStore.current = targets.local;
-		occasion = trimmed;
+		if (targets.local) renameLocal({ session: targets.local, name: trimmed, sent: targets.server });
+	}
+
+	/** Renames this device's session; one not started yet sends its failed scans under the new name. */
+	function renameLocal({
+		session,
+		name,
+		sent
+	}: {
+		session: ScanSession;
+		name: string;
+		sent: boolean;
+	}) {
+		session.occasion = name;
+		sessionStore.current = session;
+		occasion = name;
+		// The server may have refused starting it for its name, failing its scans
+		if (sent || !requeueFailed(queue)) return;
+		queue = [...queue];
+		processQueue();
 	}
 
 	async function renameOnServer({ id, name }: { id: string; name: string }) {
@@ -322,11 +370,21 @@
 		return session?.id;
 	}
 
-	/** The person a code leads to; `undefined` after a lookup that failed, which is reported. */
-	async function lookUp(code: string): Promise<FoundPerson | null | undefined> {
+	/**
+	 * The person a code leads to; `undefined` after a lookup that failed, which is reported. As a
+	 * scan (`asScan`), the server counts an earlier scan in the session as open.
+	 */
+	async function lookUp({
+		code,
+		asScan
+	}: {
+		code: string;
+		asScan: boolean;
+	}): Promise<FoundPerson | null | undefined> {
 		try {
 			// The server resolves an access card number as well as a user id
-			return await loadScannedPerson({ conferenceId, code, sessionId: await lookupSessionId() });
+			const sessionId = await lookupSessionId();
+			return await loadScannedPerson({ conferenceId, code, sessionId, asScan });
 		} catch (err) {
 			toast.error(
 				scanErrorText({ err, offlineText: m.scanCheckOffline(), fallback: m.genericToastError() })
@@ -352,14 +410,13 @@
 			return;
 		}
 		if (!checking) {
-			// Offline-safe: the code is only resolved if that can be had
-			enqueue({ userId: await resolveScannedCode({ conferenceId, code }), checkPassed: null });
+			enqueue({ userId: code, checkPassed: null });
 			release();
 			return;
 		}
 
 		shown = { state: 'loading', userId: code };
-		const person = await lookUp(code);
+		const person = await lookUp({ code, asScan: true });
 		if (person === undefined) {
 			shown = null;
 			release();
@@ -370,38 +427,23 @@
 		}
 	}
 
-	/** Whether the session held a scan of the person before; the info mode keeps none. */
-	const wasScanned = (userId: string) =>
-		sessionMode !== 'INFO' && hasScanOf({ entries: sessionStore.current?.entries, userId });
-
 	/** Shows a scanned person, logs the scan, and waits for what the mode needs next. */
 	function showScanned(person: FoundPerson) {
-		// Looking somebody up again is no problem
-		const alreadyScanned = wasScanned(person.user.id);
-		const issues = checkIssues({ person, alreadyScanned });
-		// The team is shown but never recorded, and gets no card
-		const awaiting = issues.includes('teamMember') ? 'ack' : recordScan({ person, issues });
-		shown = personShown({ person, issues, alreadyScanned, awaiting });
+		// The team is shown but never recorded
+		const awaiting = person.check.issues.includes('teamMember') ? 'ack' : recordScan(person);
+		shown = personShown({ person, awaiting });
 		if (awaiting === null) release();
 	}
 
 	/** Logs the scan of someone who is recorded, and returns what the mode waits for next. */
-	function recordScan({
-		person,
-		issues
-	}: {
-		person: FoundPerson;
-		issues: ReturnType<typeof checkIssues>;
-	}) {
+	function recordScan(person: FoundPerson) {
 		// The check records somebody with open points only when told to
 		const awaiting = scanStep({
-			badgeMode: badgeOn,
-			passed: issues.length === 0,
+			passed: person.check.passed,
 			decides: sessionMode === 'CHECK'
 		});
-		// With cards the scan is logged once the card is stored
-		if (awaiting === null || awaiting === 'ack') {
-			logScan({ userId: person.user.id, passed: issues.length === 0, label: personLabel(person) });
+		if (awaiting !== 'decide') {
+			logScan({ userId: person.user.id, passed: person.check.passed, label: personLabel(person) });
 		}
 		return awaiting;
 	}
@@ -409,8 +451,9 @@
 	/** Records a person despite their open points, as not having passed the check. */
 	function recordAnyway() {
 		const current = shown;
-		if (!isShownPerson(current) || !mayRecordAnyway(current.issues)) return;
-		logScan({ userId: current.person.user.id, passed: false, label: personLabel(current.person) });
+		if (!isShownPerson(current) || !current.person.check.mayRecordAnyway) return;
+		const { person } = current;
+		logScan({ userId: person.user.id, passed: person.check.passed, label: personLabel(person) });
 		shown = null;
 		release();
 	}
@@ -427,22 +470,6 @@
 		sessionMode === 'INFO'
 			? rememberInfoScan({ userId, checkPassed: passed, label })
 			: enqueue({ userId, checkPassed: passed, label });
-
-	const checkIssues = ({
-		person,
-		alreadyScanned
-	}: {
-		person: FoundPerson;
-		alreadyScanned: boolean;
-	}) =>
-		scanIssues({
-			inConference: person.inConference,
-			isTeamMember: person.roles.isTeamMember,
-			status: person.status,
-			birthday: person.user.birthday,
-			missingSurveyOptions: person.missingSurveyOptions,
-			alreadyScanned
-		});
 
 	const personLabel = (person: FoundPerson) => fullName(person.user) || person.user.id;
 
@@ -564,15 +591,9 @@
 		}
 
 		shown = { state: 'loading', userId };
-		const person = await lookUp(userId);
-		shown = person
-			? personShown({
-					person,
-					issues: checkIssues({ person, alreadyScanned: false }),
-					alreadyScanned: false,
-					awaiting: null
-				})
-			: null;
+		// Looking somebody up again is no scan, so an earlier one is no open point
+		const person = await lookUp({ code: userId, asScan: false });
+		shown = person ? personShown({ person, awaiting: null }) : null;
 	}
 
 	/** Reads the person again after something changed on the result. */
@@ -582,17 +603,15 @@
 		const person = await loadScannedPerson({
 			conferenceId,
 			code: current.person.user.id,
-			sessionId: await lookupSessionId()
+			sessionId: await lookupSessionId(),
+			// A repeated scan stays one; a first one has been logged by now and is no repeat
+			asScan: current.person.check.issues.includes('alreadyScanned')
 		});
 		if (!person || shown !== current) return;
-		shown = {
-			...current,
-			person,
-			issues: checkIssues({ person, alreadyScanned: current.alreadyScanned })
-		};
+		shown = { ...current, person };
 	}
 
-	/** Store the card and log, acknowledge the open points, or record despite them. */
+	/** Acknowledge the open points, or record despite them. */
 	async function confirmResult() {
 		const current = shown;
 		if (!isShownPerson(current) || current.awaiting === null) return;
@@ -600,89 +619,12 @@
 	}
 
 	const confirmations: Record<NonNullable<ShownPerson['awaiting']>, (c: ShownPerson) => unknown> = {
-		badge: storeBadge,
 		decide: recordAnyway,
 		ack: () => {
 			shown = null;
 			release();
 		}
 	};
-
-	/** The card and the scan are stored together, so a rejected card logs nothing. */
-	async function saveBadge({
-		current,
-		accessCardId
-	}: {
-		current: ShownPerson;
-		accessCardId: string;
-	}) {
-		const session = await ensureSessionStarted();
-		if (!session) throw new Error('No session is running');
-		const timestamp = new Date().toISOString();
-		const passed = current.issues.length === 0;
-		await client.mutate.createAttendanceEntry({
-			__args: {
-				userId: current.person.user.id,
-				conferenceId,
-				sessionId: session.id,
-				checkPassed: passed,
-				accessCardId
-			},
-			id: true
-		});
-		logSynced({
-			userId: current.person.user.id,
-			timestamp,
-			checkPassed: passed,
-			label: personLabel(current.person)
-		});
-	}
-
-	async function storeBadge(current: ShownPerson) {
-		const accessCardId = current.badgeInput.trim();
-		if (busy) return;
-		if (!accessCardId) {
-			toast.error(m.scanBadgeRequired());
-			return;
-		}
-		busy = true;
-		try {
-			await saveBadge({ current, accessCardId });
-		} catch (err) {
-			// Stays on the person, so the number can be corrected or tried again
-			toast.error(
-				scanErrorText({ err, offlineText: m.scanCheckOffline(), fallback: m.genericToastError() })
-			);
-			return;
-		} finally {
-			busy = false;
-		}
-
-		toast.success(m.scanBadgeSaved());
-		shown = null;
-		release();
-	}
-
-	/** Counts a scan that was stored right away, and keeps it in the local backup. */
-	function logSynced({
-		userId,
-		timestamp,
-		checkPassed,
-		label
-	}: {
-		userId: string;
-		timestamp: string;
-		checkPassed: boolean;
-		label: string;
-	}) {
-		totalScansCounter += 1;
-		syncedScansCounter += 1;
-		const session = sessionStore.current;
-		if (session) {
-			session.entries.push({ userId, timestamp, synced: true, checkPassed, label });
-			sessionStore.current = session;
-		}
-	}
 
 	// --- Queue processor ---
 
@@ -713,8 +655,7 @@
 			return;
 		}
 		try {
-			await sendEntry(entry);
-			markSynced(entry);
+			markSynced({ entry, checkPassed: await sendEntry(entry) });
 		} catch (err) {
 			markRejected({ entry, err });
 		}
@@ -729,15 +670,13 @@
 	async function sendEntry(entry: QueueEntry) {
 		const session = await ensureSessionStarted();
 		if (!session) throw new Error('No session is running');
-		await client.mutate.createAttendanceEntry({
-			__args: {
-				userId: entry.userId,
-				conferenceId,
-				sessionId: session.id,
-				checkPassed: entry.checkPassed
-			},
-			id: true
+		const created = await client.mutate.createAttendanceEntry({
+			__args: { userId: entry.userId, conferenceId, sessionId: session.id },
+			id: true,
+			checkPassed: true
 		});
+		// The server decides whether the check passed; the log shows what it stored
+		return created.checkPassed ?? null;
 	}
 
 	function markDuplicate(entry: QueueEntry) {
@@ -751,14 +690,15 @@
 		updateLogEntrySynced({ userId: entry.userId, timestamp: entry.timestamp });
 	}
 
-	function markSynced(entry: QueueEntry) {
+	function markSynced({ entry, checkPassed }: { entry: QueueEntry; checkPassed: boolean | null }) {
 		entry.status = 'success';
+		entry.checkPassed = checkPassed;
 		queue = [...queue];
 		syncedScansCounter += 1;
 		toast.success(m.attendanceRecorded());
 
 		// Update localStorage synced status
-		updateLogEntrySynced({ userId: entry.userId, timestamp: entry.timestamp });
+		updateLogEntrySynced({ userId: entry.userId, timestamp: entry.timestamp, checkPassed });
 
 		// Auto-remove success entries after 3s
 		scheduleRemoval(entry.localId);
@@ -790,7 +730,16 @@
 		}, retryDelay(entry.retryCount));
 	}
 
-	function updateLogEntrySynced({ userId, timestamp }: { userId: string; timestamp: string }) {
+	/** Marks a scan of the log as sent, with the check result the server stored for it. */
+	function updateLogEntrySynced({
+		userId,
+		timestamp,
+		checkPassed
+	}: {
+		userId: string;
+		timestamp: string;
+		checkPassed?: boolean | null;
+	}) {
 		const session = sessionStore.current;
 		if (!session) return;
 		const logEntry = session.entries.find(
@@ -798,6 +747,7 @@
 		);
 		if (logEntry) {
 			logEntry.synced = true;
+			if (checkPassed !== undefined) logEntry.checkPassed = checkPassed;
 			sessionStore.current = session;
 		}
 	}
@@ -816,6 +766,14 @@
 		session.entries = session.entries.filter(
 			(e) => !(e.userId === entry.userId && e.timestamp === entry.timestamp)
 		);
+		sessionStore.current = session;
+	}
+
+	/** Forgets this device's sent scans of someone whose scan was taken back, to scan them again. */
+	function forgetScansOf(userId: string) {
+		const session = sessionStore.current;
+		if (!session) return;
+		session.entries = session.entries.filter((e) => e.userId !== userId || !e.synced);
 		sessionStore.current = session;
 	}
 
@@ -890,6 +848,7 @@
 		bind:creating
 		createForm={setupForm}
 		onJoin={joinSession}
+		onReopen={reopenSession}
 		onStartInfo={startInfo}
 		onRenameSession={renameSession}
 	/>
@@ -898,8 +857,7 @@
 {#snippet setupForm()}
 	{@const modes = [
 		{ mode: 'CHECK', icon: 'fa-user-check', label: m.scanModeCheck(), hint: m.scanModeCheckHint() },
-		{ mode: 'RECORD', icon: 'fa-bolt', label: m.scanModeRecord(), hint: m.scanModeRecordHint() },
-		{ mode: 'BADGE', icon: 'fa-id-card', label: m.scanBadgeOption(), hint: m.scanBadgeHint() }
+		{ mode: 'RECORD', icon: 'fa-bolt', label: m.scanModeRecord(), hint: m.scanModeRecordHint() }
 	] as const}
 	<section
 		class="bg-base-200 flex flex-col gap-3 rounded-box p-3 md:p-4"
@@ -1060,9 +1018,7 @@
 		<ScanCheckResult
 			canEdit={maySetUpSessions}
 			person={shown.person}
-			issues={shown.issues}
 			awaiting={shown.awaiting}
-			bind:badgeInput={shown.badgeInput}
 			{busy}
 			onConfirm={confirmResult}
 			onRecordAnyway={recordAnyway}
@@ -1125,5 +1081,17 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- Everyone the session holds, from every device; participant care manages them -->
+		{#if maySetUpSessions && sessionMode !== 'INFO' && sessionStore.current}
+			<div class="flex flex-col gap-2">
+				<h3 class="text-lg font-bold">{m.sessionPeople()}</h3>
+				<SessionPeople
+					sessionId={sessionStore.current.id}
+					onSelect={reopen}
+					onRemoved={forgetScansOf}
+				/>
+			</div>
+		{/if}
 	{/if}
 </div>

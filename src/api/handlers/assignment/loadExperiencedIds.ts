@@ -12,45 +12,27 @@ export async function loadExperiencedIds(conferenceId: string) {
 		columns: { startConference: true }
 	});
 	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
-	const earlier = { id: { ne: conferenceId }, endConference: { lt: conference.startConference } };
-	const withUser = { participant: { columns: { userId: true } } } as const;
+	const seated = { applied: true, assignedRoleId: { isNotNull: true } } as const;
+	// an EXISTS per applicant, so the history of earlier conferences is never read into memory
+	const participant = {
+		conferenceId,
+		user: {
+			conferenceParticipants: {
+				conference: { id: { ne: conferenceId }, endConference: { lt: conference.startConference } },
+				OR: [{ delegationMember: { delegation: seated } }, { singleParticipant: seated }]
+			}
+		}
+	};
 
-	const [members, singles, earlierMembers, earlierSingles] = await Promise.all([
+	const [members, singles] = await Promise.all([
 		db.query.delegationMember.findMany({
-			where: { participant: { conferenceId }, delegation: { applied: true } },
-			columns: { id: true },
-			with: withUser
+			where: { participant, delegation: { applied: true } },
+			columns: { id: true }
 		}),
 		db.query.singleParticipant.findMany({
-			where: { participant: { conferenceId }, applied: true },
-			columns: { id: true },
-			with: withUser
-		}),
-		db.query.delegationMember.findMany({
-			where: {
-				participant: { conference: earlier },
-				delegation: { applied: true, assignedRoleId: { isNotNull: true } }
-			},
-			columns: { id: true },
-			with: withUser
-		}),
-		db.query.singleParticipant.findMany({
-			where: {
-				participant: { conference: earlier },
-				applied: true,
-				assignedRoleId: { isNotNull: true }
-			},
-			columns: { id: true },
-			with: withUser
+			where: { participant, applied: true },
+			columns: { id: true }
 		})
 	]);
-
-	const experiencedUserIds = new Set(
-		[...earlierMembers, ...earlierSingles].map(({ participant }) => participant.userId)
-	);
-	return new Set(
-		[...members, ...singles]
-			.filter(({ participant }) => experiencedUserIds.has(participant.userId))
-			.map(({ id }) => id)
-	);
+	return new Set([...members, ...singles].map(({ id }) => id));
 }

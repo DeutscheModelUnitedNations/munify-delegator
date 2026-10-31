@@ -27,7 +27,7 @@ import {
  * this file writes it into the live registrations in one transaction.
  */
 
-export type DbOrTx = Transaction | typeof db;
+type DbOrTx = Transaction | typeof db;
 
 /** Resolves a plan's delegation reference, including the ones created while applying. */
 type DelegationIdOf = (ref: DelegationRef) => string;
@@ -44,11 +44,6 @@ export function announceDraftChange() {
 	]) {
 		pubsub.created();
 	}
-}
-
-/** Announces a draft write made through `tx` right away, unless it is a transaction's. */
-export function announceDraftWrite(tx: DbOrTx) {
-	if (tx === db) announceDraftChange();
 }
 
 /** The conference's registrations, its draft and its roles, as `planApply` takes them. */

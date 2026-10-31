@@ -1,6 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { client } from '#lib/api/rumbleClient/client';
-import { reviewArgs, type SightingReview } from '#lib/assignment/sighting';
+import { reviewArgs, type SightingReview } from './sighting';
 import { toastError } from '../toastError';
 
 /**

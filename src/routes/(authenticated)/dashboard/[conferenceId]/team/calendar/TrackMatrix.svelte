@@ -9,140 +9,115 @@
 	import RowActionButton from './RowActionButton.svelte';
 	import TrackRowFormModal from './TrackRowFormModal.svelte';
 	import { exportCalendarDay } from './exportCalendarDay';
-	import { trackRows, rowOrderChanges, type MatrixDay, type TrackRow } from './trackMatrix';
+	import {
+		entriesOnDays,
+		rowOrderChanges,
+		runsOn,
+		type MatrixDay,
+		type MatrixTrack
+	} from './trackMatrix';
 
 	interface Props {
+		conferenceId: string;
 		days: MatrixDay[];
+		/** The conference's tracks, in their order */
+		tracks: MatrixTrack[];
 		onCopyEntries: (day: MatrixDay) => void;
 		onEdit: (day: MatrixDay) => void;
 		onDelete: (day: MatrixDay) => void;
 	}
 
-	let { days, onCopyEntries, onEdit, onDelete }: Props = $props();
+	let { conferenceId, days, tracks, onCopyEntries, onEdit, onDelete }: Props = $props();
 
-	const liveRows = $derived(trackRows(days));
-	/** Rows whose last track was unticked: they stay in the matrix so they can be ticked again */
-	let ghosts = $state<{ row: TrackRow; index: number }[]>([]);
-	const rows = $derived.by(() => {
-		const result = [...liveRows];
-		const names = new Set(result.map((row) => row.name));
-		for (const ghost of ghosts) {
-			if (names.has(ghost.row.name)) continue;
-			result.splice(Math.min(ghost.index, result.length), 0, ghost.row);
-		}
-		return result;
-	});
-
-	/** Remembers the rows that would vanish once `tracks` are removed. */
-	function keepRows(tracks: MatrixDay['tracks']) {
-		const removed = new Set(tracks.map((t) => t.id));
-		const gone = new Set(
-			rows
-				.map((row) => row.name)
-				.filter((name) =>
-					days.flatMap((d) => d.tracks).every((t) => t.name !== name || removed.has(t.id))
-				)
-		);
-		const kept = rows.flatMap((row, index) => (gone.has(row.name) ? [{ row, index }] : []));
-		ghosts = [...ghosts.filter((g) => !gone.has(g.row.name)), ...kept];
+	/** One track on one day */
+	interface Cell {
+		track: MatrixTrack;
+		day: MatrixDay;
 	}
 
-	/** The open row form: empty adds a track to every day, `row` edits that one */
-	let rowForm = $state<{ row?: TrackRow } | null>(null);
-	/** Tracks waiting for the confirmation to be removed */
-	let removal = $state<{ tracks: MatrixDay['tracks']; keep: boolean; entryCount: number } | null>(
-		null
-	);
-	/** Cells with a write in flight, as `rowName|dayId` */
+	/** The open row form: empty adds a track, `track` edits that one */
+	let rowForm = $state<{ track?: MatrixTrack } | null>(null);
+	/** What waits for the confirmation to be removed: cells, or a whole track */
+	let removal = $state<
+		| { kind: 'cells'; cells: Cell[]; entryCount: number }
+		| { kind: 'track'; track: MatrixTrack; entryCount: number }
+		| null
+	>(null);
+	/** Cells with a write in flight, as `trackId|dayId` */
 	const busy = new SvelteSet<string>();
 
 	const showError = (error: unknown) =>
 		toast.error(error instanceof Error ? error.message : m.genericToastError());
 
-	const cellKey = ({ row, day }: { row: TrackRow; day: MatrixDay }) => `${row.name}|${day.id}`;
+	const cellKey = ({ track, day }: Cell) => `${track.id}|${day.id}`;
 
-	async function create({ row, day, index }: { row: TrackRow; day: MatrixDay; index: number }) {
-		await client.mutate.createCalendarTrack({
-			__args: {
-				calendarDayId: day.id,
-				name: row.name,
-				description: row.description,
-				sortOrder: index
-			},
-			id: true
-		});
-	}
-
-	async function toggle({ row, day, index }: { row: TrackRow; day: MatrixDay; index: number }) {
-		const existing = day.tracks.filter((t) => t.name === row.name);
-		if (existing.length > 0) {
-			askRemoval({ tracks: existing });
-			return;
-		}
-		const key = cellKey({ row, day });
-		busy.add(key);
-		try {
-			await create({ row, day, index });
-		} catch (error) {
-			showError(error);
-		} finally {
-			busy.delete(key);
-		}
-	}
-
-	function askRemoval({ tracks, keep = true }: { tracks: MatrixDay['tracks']; keep?: boolean }) {
-		const entryIds = new Set(tracks.flatMap((t) => t.entries.map((e) => e.id)));
-		if (entryIds.size === 0) {
-			void remove({ tracks, keep });
-			return;
-		}
-		removal = { tracks, keep, entryCount: entryIds.size };
-	}
-
-	async function remove({ tracks, keep }: { tracks: MatrixDay['tracks']; keep: boolean }) {
-		if (keep) keepRows(tracks);
-		const ids = tracks.map((t) => t.id);
-		try {
-			await Promise.all(ids.map((id) => client.mutate.deleteCalendarTrack({ __args: { id } })));
-		} catch (error) {
-			showError(error);
-		}
-	}
-
-	async function confirmRemoval() {
-		if (!removal) return;
-		await remove({ tracks: removal.tracks, keep: removal.keep });
-		removal = null;
-	}
-
-	async function selectAll() {
+	async function setRuns({ cells, runs }: { cells: Cell[]; runs: boolean }) {
+		const keys = cells.map(cellKey);
+		for (const key of keys) busy.add(key);
 		try {
 			await Promise.all(
-				rows.flatMap((row, index) =>
-					days
-						.filter((day) => !day.tracks.some((t) => t.name === row.name))
-						.map((day) => create({ row, day, index }))
+				cells.map(({ track, day }) =>
+					client.mutate.setCalendarTrackOnDay({
+						__args: { id: track.id, calendarDayId: day.id, runs }
+					})
 				)
 			);
 		} catch (error) {
 			showError(error);
+		} finally {
+			for (const key of keys) busy.delete(key);
 		}
 	}
 
-	/** Takes a whole row out of the matrix, from every day. */
-	function deleteRow(row: TrackRow) {
-		ghosts = ghosts.filter((g) => g.row.name !== row.name);
-		askRemoval({
-			tracks: days.flatMap((day) => day.tracks.filter((t) => t.name === row.name)),
-			keep: false
-		});
+	/** Takes the cells' tracks off their days, asking first when entries would go with them. */
+	function askRemoval(cells: Cell[]) {
+		if (cells.length === 0) return;
+		const entryCount = new Set(
+			cells.flatMap(({ track, day }) => [...entriesOnDays({ tracks: [track], dayIds: [day.id] })])
+		).size;
+		if (entryCount === 0) {
+			void setRuns({ cells, runs: false });
+			return;
+		}
+		removal = { kind: 'cells', cells, entryCount };
+	}
+
+	function toggle(cell: Cell) {
+		if (runsOn(cell)) askRemoval([cell]);
+		else void setRuns({ cells: [cell], runs: true });
+	}
+
+	const allCells = $derived(tracks.flatMap((track) => days.map((day) => ({ track, day }))));
+
+	function selectAll() {
+		void setRuns({ cells: allCells.filter((cell) => !runsOn(cell)), runs: true });
 	}
 
 	function deselectAll() {
-		askRemoval({ tracks: days.flatMap((day) => day.tracks) });
+		askRemoval(allCells.filter(runsOn));
 	}
 
-	/** The row being dragged and the row index it would land on */
+	/** Deletes a track from the conference, from every day. */
+	function deleteTrack(track: MatrixTrack) {
+		removal = { kind: 'track', track, entryCount: track.entries.length };
+	}
+
+	async function confirmRemoval() {
+		if (!removal) return;
+		const pending = removal;
+		removal = null;
+		if (pending.kind === 'cells') {
+			await setRuns({ cells: pending.cells, runs: false });
+			return;
+		}
+		try {
+			await client.mutate.deleteCalendarTrack({ __args: { id: pending.track.id } });
+		} catch (error) {
+			showError(error);
+		}
+	}
+
+	/** The track being dragged and the row index it would land on */
 	let dragged = $state<string | null>(null);
 	let dropIndex = $state<number | null>(null);
 
@@ -152,13 +127,13 @@
 	}
 
 	async function dropRow(toIndex: number) {
-		const name = dragged;
+		const trackId = dragged;
 		endDrag();
-		if (name !== null) await moveRow({ name, toIndex });
+		if (trackId !== null) await moveRow({ trackId, toIndex });
 	}
 
-	async function moveRow({ name, toIndex }: { name: string; toIndex: number }) {
-		const changes = rowOrderChanges({ days, rows, name, toIndex });
+	async function moveRow({ trackId, toIndex }: { trackId: string; toIndex: number }) {
+		const changes = rowOrderChanges({ tracks, trackId, toIndex });
 		try {
 			await Promise.all(
 				changes.map((change) =>
@@ -176,11 +151,11 @@
 
 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
 	<div class="flex gap-1">
-		<button class="btn btn-ghost btn-sm" disabled={rows.length === 0} onclick={selectAll}>
+		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={selectAll}>
 			<i class="fas fa-square-check"></i>
 			{m.calendarSelectAllTracks()}
 		</button>
-		<button class="btn btn-ghost btn-sm" disabled={rows.length === 0} onclick={deselectAll}>
+		<button class="btn btn-ghost btn-sm" disabled={tracks.length === 0} onclick={deselectAll}>
 			<i class="fas fa-square"></i>
 			{m.calendarDeselectAllTracks()}
 		</button>
@@ -238,12 +213,12 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each rows as row, index (row.name)}
+			{#each tracks as track, index (track.id)}
 				<tr
-					class="hover:bg-base-200/50 {dragged === row.name ? 'opacity-40' : ''} {dropIndex ===
+					class="hover:bg-base-200/50 {dragged === track.id ? 'opacity-40' : ''} {dropIndex ===
 						index &&
 					dragged !== null &&
-					dragged !== row.name
+					dragged !== track.id
 						? 'outline-primary outline-2 -outline-offset-2'
 						: ''}"
 					ondragover={(event) => {
@@ -266,8 +241,8 @@
 								title={m.calendarDragTrack()}
 								draggable="true"
 								ondragstart={(event) => {
-									dragged = row.name;
-									event.dataTransfer?.setData('text/plain', row.name);
+									dragged = track.id;
+									event.dataTransfer?.setData('text/plain', track.name);
 									if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
 								}}
 								ondragend={endDrag}
@@ -275,10 +250,10 @@
 								<i class="fas fa-grip-vertical"></i>
 							</span>
 							<div class="min-w-0 grow">
-								<div class="font-medium">{row.name}</div>
-								{#if row.description}
+								<div class="font-medium">{track.name}</div>
+								{#if track.description}
 									<div class="text-base-content/60 max-w-64 truncate text-xs">
-										{row.description}
+										{track.description}
 									</div>
 								{/if}
 							</div>
@@ -286,7 +261,7 @@
 								class="btn btn-ghost btn-xs"
 								aria-label={m.calendarEditTrack()}
 								title={m.calendarEditTrack()}
-								onclick={() => (rowForm = { row })}
+								onclick={() => (rowForm = { track })}
 							>
 								<i class="fas fa-edit"></i>
 							</button>
@@ -294,7 +269,7 @@
 								class="btn btn-ghost btn-error btn-xs"
 								aria-label={m.calendarDeleteTrack()}
 								title={m.calendarDeleteTrack()}
-								onclick={() => deleteRow(row)}
+								onclick={() => deleteTrack(track)}
 							>
 								<i class="fas fa-trash"></i>
 							</button>
@@ -305,16 +280,16 @@
 							<input
 								type="checkbox"
 								class="checkbox checkbox-primary"
-								aria-label="{row.name} · {day.name}"
-								checked={day.tracks.some((t) => t.name === row.name)}
-								disabled={busy.has(cellKey({ row, day }))}
-								onchange={() => toggle({ row, day, index })}
+								aria-label="{track.name} · {day.name}"
+								checked={runsOn({ track, day })}
+								disabled={busy.has(cellKey({ track, day }))}
+								onchange={() => toggle({ track, day })}
 							/>
 						</td>
 					{/each}
 				</tr>
 			{/each}
-			{#if rows.length === 0}
+			{#if tracks.length === 0}
 				<tr>
 					<td colspan={days.length + 1} class="text-base-content/60 text-sm">
 						{m.calendarNoTracks()}
@@ -327,7 +302,13 @@
 
 {#if rowForm}
 	{#key rowForm}
-		<TrackRowFormModal {days} {rows} row={rowForm.row} onClose={() => (rowForm = null)} />
+		<TrackRowFormModal
+			{conferenceId}
+			{days}
+			{tracks}
+			track={rowForm.track}
+			onClose={() => (rowForm = null)}
+		/>
 	{/key}
 {/if}
 

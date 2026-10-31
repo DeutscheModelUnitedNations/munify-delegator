@@ -31,11 +31,13 @@ const OfflineUserRefresh = schemaBuilder.simpleObject('OfflineUserRefresh', {
 
 schemaBuilder.queryFields((t) => ({
 	myOIDCRoles: t.field({
+		description: 'The system roles the identity provider grants the caller; empty when signed out.',
 		type: [OIDCRolesEnum],
 		resolve: (_root, _args, ctx) => ctx.oidc.user?.OIDCRoleNames ?? []
 	}),
 
 	logoutUrl: t.string({
+		description: 'Where to send the browser to end the session at the identity provider.',
 		resolve: async (_root, _args, ctx) => (await OIDC.getLogoutUrl(ctx.event)).toString()
 	}),
 

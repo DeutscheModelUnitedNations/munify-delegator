@@ -1,4 +1,4 @@
-import { exceededBy, type SchoolSeatCount, type SchoolSeats } from '#lib/assignment/schoolSeats';
+import { exceededBy, type SchoolSeatCount, type SchoolSeats } from './schoolSeats';
 import { m } from '#lib/paraglide/messages';
 import { toast } from 'svelte-sonner';
 

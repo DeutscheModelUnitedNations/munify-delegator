@@ -17,6 +17,7 @@ import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertParticipant } from './participant';
 import { seatNations, upsertNationRole } from './conferenceRole';
 import { upsertTeamMember } from './teamMember';
+import { COMPLETE_PROFILE, upsertUsers } from './user';
 import { upsertCommittee, upsertConference } from './conference';
 
 export const E2E_SEATS_CONFERENCE_ID = 'e2e00000conference0000005';
@@ -82,17 +83,13 @@ export async function seedSeats(db: NodePgDatabase) {
 
 /** The participant care member and the delegates, with the school the French ones name. */
 async function seedSeatsPeople(db: NodePgDatabase, conferenceId: string) {
-	const users = [
+	await upsertUsers(db, [
 		{
 			...makeSeedUser(),
+			...COMPLETE_PROFILE,
 			id: E2E_SEATS_PARTICIPANT_CARE_ID,
 			givenName: 'E2E',
-			familyName: 'SeatsCare',
-			// the my-account form schema has to be satisfied, or every login lands on /my-account
-			// (see upsertActorUser in seed.ts)
-			country: 'DEU',
-			phone: '+4917612345678',
-			emergencyContacts: 'Emergency contact: +49 176 12345678'
+			familyName: 'SeatsCare'
 		},
 		...Object.values(E2E_SEATS_DELEGATES).map((x) => ({
 			...makeSeedUser(),
@@ -100,14 +97,7 @@ async function seedSeatsPeople(db: NodePgDatabase, conferenceId: string) {
 			givenName: x.given,
 			familyName: x.family
 		}))
-	];
-	for (const user of users) {
-		const row = { ...user, email: `${user.id}@e2e.test` };
-		await db
-			.insert(schema.user)
-			.values(row)
-			.onConflictDoUpdate({ target: schema.user.id, set: row });
-	}
+	]);
 	await upsertTeamMember(db, conferenceId, E2E_SEATS_PARTICIPANT_CARE_ID, 'PARTICIPANT_CARE');
 
 	const school = { id: PARIS_SCHOOL_ID, name: E2E_SEATS_PARIS_SCHOOL };

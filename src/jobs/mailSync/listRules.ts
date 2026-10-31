@@ -3,9 +3,10 @@ import type {
 	MailSyncUser,
 	ListAssignmentRule,
 	SubscriberAttribs,
-	ComputedSubscriberState
+	ComputedSubscriberState,
+	ListKey
 } from './types';
-import { createGlobalListName, createConferenceListName } from './listNames';
+import { globalListKey, conferenceListKey } from './listNames';
 import { withinRetention } from './window';
 import formatNames from '#lib/helpers/formatNames';
 
@@ -14,11 +15,11 @@ import formatNames from '#lib/helpers/formatNames';
 const globalNewsletterRule: ListAssignmentRule = {
 	description: 'Assigns users who opted into general information to DMUN_NEWSLETTER',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		if (user.wantsToReceiveGeneralInformation) {
-			listNames.push(createGlobalListName('DMUN_NEWSLETTER'));
+			listKeys.push(globalListKey('DMUN_NEWSLETTER'));
 		}
-		return { listNames, conferenceAttribs: [] };
+		return { listKeys, conferenceAttribs: [] };
 	}
 };
 
@@ -27,11 +28,11 @@ const globalNewsletterRule: ListAssignmentRule = {
 const globalTeamTendersRule: ListAssignmentRule = {
 	description: 'Assigns users who opted into team information to DMUN_TEAM_TENDERS',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		if (user.wantsJoinTeamInformation) {
-			listNames.push(createGlobalListName('DMUN_TEAM_TENDERS'));
+			listKeys.push(globalListKey('DMUN_TEAM_TENDERS'));
 		}
-		return { listNames, conferenceAttribs: [] };
+		return { listKeys, conferenceAttribs: [] };
 	}
 };
 
@@ -82,7 +83,7 @@ const delegationMemberRule: ListAssignmentRule = {
 	description:
 		'Assigns delegation members to NATIONS, NSA, HEAD_DELEGATES, REGISTRATION_*, REJECTED lists',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		const conferenceAttribs: SubscriberAttribs['conferences'] = [];
 
 		for (const dm of user.delegationMemberships) {
@@ -97,17 +98,11 @@ const delegationMemberRule: ListAssignmentRule = {
 			});
 
 			for (const type of delegationMemberListTypes(dm)) {
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: conference.title,
-						conferenceId: conference.id,
-						listType: type
-					})
-				);
+				listKeys.push(conferenceListKey({ conferenceId: conference.id, listType: type }));
 			}
 		}
 
-		return { listNames, conferenceAttribs };
+		return { listKeys, conferenceAttribs };
 	}
 };
 
@@ -116,7 +111,7 @@ const delegationMemberRule: ListAssignmentRule = {
 const singleParticipantRule: ListAssignmentRule = {
 	description: 'Assigns single participants to SINGLE_PARTICIPANTS, REGISTRATION_*, REJECTED lists',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		const conferenceAttribs: SubscriberAttribs['conferences'] = [];
 
 		for (const sp of user.singleParticipant) {
@@ -127,28 +122,22 @@ const singleParticipantRule: ListAssignmentRule = {
 			});
 
 			if (sp.applied) {
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: sp.conference.title,
-						conferenceId: sp.conference.id,
-						listType: 'REGISTRATION_COMPLETED'
-					})
+				listKeys.push(
+					conferenceListKey({ conferenceId: sp.conference.id, listType: 'REGISTRATION_COMPLETED' })
 				);
 
 				// Nobody hears whether they got a role before the team releases it.
 				if (sp.conference.assignmentReleased) {
-					listNames.push(
-						createConferenceListName({
-							conferenceTitle: sp.conference.title,
+					listKeys.push(
+						conferenceListKey({
 							conferenceId: sp.conference.id,
 							listType: sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
 						})
 					);
 				}
 			} else {
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: sp.conference.title,
+				listKeys.push(
+					conferenceListKey({
 						conferenceId: sp.conference.id,
 						listType: 'REGISTRATION_NOT_COMPLETED'
 					})
@@ -156,7 +145,7 @@ const singleParticipantRule: ListAssignmentRule = {
 			}
 		}
 
-		return { listNames, conferenceAttribs };
+		return { listKeys, conferenceAttribs };
 	}
 };
 
@@ -194,7 +183,7 @@ function supervisorListTypes(supervisor: Supervision): ConferenceListType[] {
 const supervisorRule: ListAssignmentRule = {
 	description: 'Assigns supervisors to SUPERVISORS and SUPERVISORS_REGISTRATION_NOT_COMPLETED',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		const conferenceAttribs: SubscriberAttribs['conferences'] = [];
 
 		for (const supervisor of user.conferenceSupervisor) {
@@ -205,17 +194,13 @@ const supervisorRule: ListAssignmentRule = {
 			});
 
 			for (const type of supervisorListTypes(supervisor)) {
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: supervisor.conference.title,
-						conferenceId: supervisor.conference.id,
-						listType: type
-					})
+				listKeys.push(
+					conferenceListKey({ conferenceId: supervisor.conference.id, listType: type })
 				);
 			}
 		}
 
-		return { listNames, conferenceAttribs };
+		return { listKeys, conferenceAttribs };
 	}
 };
 
@@ -224,7 +209,7 @@ const supervisorRule: ListAssignmentRule = {
 const teamMemberRule: ListAssignmentRule = {
 	description: 'Assigns team members to TEAM + extra lists for PM/PC roles',
 	evaluate(user) {
-		const listNames: string[] = [];
+		const listKeys: ListKey[] = [];
 		const conferenceAttribs: SubscriberAttribs['conferences'] = [];
 
 		for (const tm of user.teamMember) {
@@ -234,40 +219,25 @@ const teamMemberRule: ListAssignmentRule = {
 				title: tm.conference.title
 			});
 
-			listNames.push(
-				createConferenceListName({
-					conferenceTitle: tm.conference.title,
-					conferenceId: tm.conferenceId,
-					listType: 'TEAM'
-				})
-			);
+			listKeys.push(conferenceListKey({ conferenceId: tm.conferenceId, listType: 'TEAM' }));
 
 			if (tm.role === 'PARTICIPANT_CARE' || tm.role === 'PROJECT_MANAGEMENT') {
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: tm.conference.title,
-						conferenceId: tm.conferenceId,
-						listType: 'REGISTRATION_COMPLETED'
-					})
+				listKeys.push(
+					conferenceListKey({ conferenceId: tm.conferenceId, listType: 'REGISTRATION_COMPLETED' })
 				);
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: tm.conference.title,
+				listKeys.push(
+					conferenceListKey({
 						conferenceId: tm.conferenceId,
 						listType: 'REGISTRATION_NOT_COMPLETED'
 					})
 				);
-				listNames.push(
-					createConferenceListName({
-						conferenceTitle: tm.conference.title,
-						conferenceId: tm.conferenceId,
-						listType: 'SUPERVISORS'
-					})
+				listKeys.push(
+					conferenceListKey({ conferenceId: tm.conferenceId, listType: 'SUPERVISORS' })
 				);
 			}
 		}
 
-		return { listNames, conferenceAttribs };
+		return { listKeys, conferenceAttribs };
 	}
 };
 
@@ -294,13 +264,13 @@ export function computeSubscriberState({
 	user: MailSyncUser;
 	cutoff: Date;
 }): ComputedSubscriberState {
-	const allListNames: string[] = [];
+	const allListKeys: ListKey[] = [];
 	const allConferenceAttribs: SubscriberAttribs['conferences'] = [];
 	const recentUser = withinRetention({ user, cutoff });
 
 	for (const rule of ALL_RULES) {
-		const { listNames, conferenceAttribs } = rule.evaluate(recentUser);
-		allListNames.push(...listNames);
+		const { listKeys, conferenceAttribs } = rule.evaluate(recentUser);
+		allListKeys.push(...listKeys);
 		allConferenceAttribs.push(...conferenceAttribs);
 	}
 
@@ -313,7 +283,7 @@ export function computeSubscriberState({
 				familyNameUppercase: false
 			}
 		}),
-		listNames: [...new Set(allListNames)],
+		listKeys: [...new Set(allListKeys)],
 		attribs: {
 			userId: user.id,
 			conferences: allConferenceAttribs

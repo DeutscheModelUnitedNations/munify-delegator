@@ -170,7 +170,11 @@ bun run preview
     authorization building blocks every `*Permissions.ts` composes from (after chase);
     `services/README.md` indexes them. Like handler services, these never check permissions.
 
-- **`src/lib/`** - Shared frontend code
+- **`src/lib/`** - Code shared by several parts of the frontend, or by the frontend and the API.
+  What only the backend uses lives in `src/api/` (the matching, the mail text filling); what only
+  one page area uses lives beside it under `src/routes/` (`team/assignment/boardState.ts`,
+  `team/seat-planning/seatHints.ts`). When only part of a module is shared, split it
+  (`#lib/assignment/weights` and `#api/handlers/assignment/autoAssign`).
   - `api/client.ts` - The urql client and its exchanges
   - `api/rumbleClient/` - **Generated**, do not edit. Written by `clientCreator` whenever the dev
     server starts; the typed surface every query and mutation in the app goes through.
@@ -699,6 +703,10 @@ bun run preview
   constraint triggers (`assert_one_part`, in the `one_part_per_conference` migration) refuse it at
   commit, under an advisory lock so two concurrent registrations cannot both pass. A step swapping
   one part for another does both writes in one transaction. `e2e/authorization/one-part.spec.ts`.
+- **Calendar tracks are the conference's**: a track runs on the days `calendar_day_to_calendar_track`
+  links (`calendarDay.tracks`), and is for the committees and roles it names, which is how a
+  participant's dashboard finds their track. Rows reference tracks by id, never by name; deferred
+  triggers (`conference_calendar_tracks` migration) keep an entry on its day's tracks.
 - **Calendar entries can be for some survey choices only**: `calendarEntry.surveyOptions`
   (`calendar_entry_to_survey_option`) limits an entry to those who picked any one of them (and the
   conference's team); without any it is for everybody. An option an entry names cannot be deleted
@@ -711,6 +719,11 @@ bun run preview
   and `scanLookup`, given the session, answers the titles when the scanned person picked none of
   them; the scanner shows that as an open point (`surveyOptionMissing`). The titles come with the
   lookup because only participant care reads the survey itself.
+- **The entrance check is the server's.** `scanIssues` (`#api/handlers/scanLookup/scanCheck.ts`)
+  decides what is open; `scanLookup` answers it as `issues`, `checkPassed` and `mayRecordAnyway`
+  (with `asScan`, an earlier scan in the session is open too), `createAttendanceEntry` stores the
+  verdict it reaches itself (`null` in a session that only records), and the check-in page reads
+  `conferenceParticipant.checkIssues`. The scanner only shows and passes on what it is told.
 - Supervisor connection codes are unique across all conferences.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -732,13 +745,19 @@ bun run preview
   unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
   `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
 - **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
-  conference's scanner occasions the holder was scanned at (`certificateSessions`, merged by name)
-  and signs them into the optional `a` claim, so the PDF and `/validateCertificate` show the same
-  list. A certificate never mentions an occasion someone missed; claims of earlier certificates
-  that still list those (with 0) are read without them (`sessionsFromClaim`). Participant care takes an occasion off the
-  certificates on the scanner page (`attendanceSession.showOnCertificate`, set for every session of
-  the occasion by `setAttendanceOccasionOnCertificate`; a new session inherits its occasion's
-  setting).
+  conference's scanner sessions the holder was scanned at (`certificateSessions`) and signs them
+  into the optional `a` claim, so the PDF and `/validateCertificate` show the same list. A
+  certificate never mentions a session someone missed; claims of earlier certificates that still
+  list those (with 0) are read without them (`sessionsFromClaim`). Participant care takes a session
+  off the certificates on the scanner page (`attendanceSession.showOnCertificate`, set by
+  `setAttendanceSessionOnCertificate`).
+- **A scanner session's name is unique in its conference**, ignoring case
+  (`attendance_session_conference_id_occasion_key`): several devices scanning for the same occasion
+  join one session rather than starting their own. Starting or renaming to a taken name answers
+  `CONFLICT`; the scanner sends the first device back to the form, and a session started offline
+  under a taken name keeps its scans until it is renamed, then sends them. An ended session is
+  scanned in again by reopening it (`reopenAttendanceSession`, the "Reopen" button in the session
+  table), never by starting a new one of the same name; its earlier scans stay.
 
 #### 6. Assignment
 
@@ -760,10 +779,12 @@ bun run preview
   at, so withdrawn applications drop out on their own.
 - **One pure model, used on both sides.** `#lib/assignment/state.ts` turns live rows + draft into
   `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
-  dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
-  (only roles with _exactly_ as many free seats as the group has members). The board in
-  `team/assignment/` and `applyAssignment` (`src/api/handlers/assignment/applyDraft.ts`) both go
-  through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
+  dissolved delegations, the errors that block it), `weights.ts` what the weights make a seat
+  cost. The board in `team/assignment/` and `applyAssignment`
+  (`src/api/handlers/assignment/applyDraft.ts`) both go through them, so the preview is what gets
+  written. The Hungarian matching runs only on the server (`#api/handlers/assignment/autoAssign`,
+  only roles with _exactly_ as many free seats as the group has members; the singles' on a worker
+  thread, `matching.worker.ts`). Applying moves `delegationMember` rows instead
   of re-creating them and clears the draft (ratings and weights stay); supervision and statuses
   hang on the person's `conferenceParticipant`, so they survive either way.
 - **The tabs never read a whole conference, and the backend does the sorting.** A conference can
@@ -786,7 +807,7 @@ bun run preview
   (`autoAssign` / `autoAssignSingles`) seats it before everyone else whenever a role fits
   (`boostRequired`: a row bonus larger than the rest of the matrix can differ, so its choice of
   role still follows its wishes). The summary checks every required application of the conference,
-  not only those on the board (`requiredWithoutSeat`, `#lib/assignment/seatChecks.ts`), and warns
+  not only those on the board (`requiredWithoutSeat`, `team/assignment/finish/seatChecks.ts`), and warns
   on the page and in the apply dialog; it also warns when applying would leave no seat free
   (`seatOccupancy`), since a few free seats are what the waiting list fills later. Both only warn.
 - **The board keeps its size and filter out of SvelteKit's navigation.** `delegations/+page.svelte`
@@ -795,10 +816,9 @@ bun run preview
   "Batch has scheduled effects" invariant (5.57.1).
 - **Release is only visibility.** `conference.assignmentReleased` decides whether participants
   and supervisors see roles. `setAssignmentReleased` sets it, from the release card on the
-  assignment's finish tab (`ReleaseDialog.svelte`). Releasing with `sendEmails: true` switches the
-  result mails (`ASSIGNMENT_RESULT_KINDS`) on and sweeps; `false` marks those due right now as
-  skipped (computed as if released, before the flag is written, so no sweep sends them first);
-  either needs `assertCanManageEmails` too. Until then their read rules mask the delegation's and the single
+  assignment's finish tab (`ReleaseDialog.svelte`), and sends nothing: the page then offers the
+  result mails (`ASSIGNMENT_KINDS`) through `EmailPrompt`, as it does after applying a released
+  assignment. Until then their read rules mask the delegation's and the single
   participant's `assignedRoleId` and the member's `assignedCommitteeId`
   (`src/api/services/authHelper/rules.ts`, two rules per participant-side ability:
   `maskedUntilRelease` and `onceReleased`). Nothing but those rules is needed: rumble ≥ 0.26
@@ -903,6 +923,16 @@ bun run preview
   to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
   carries `person` or `teamMember`). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
   there; the e-mail page explains them in the same words.
+- **Nothing sends because something happened.** A mutation only changes what `dueEmails` owes;
+  the mails go out when the team sends them (`sendOpenEmails`, per kind, in the background) or, for
+  the kinds switched to automatic, when the `send-emails` job runs. A team action that makes mails
+  due offers them right after: `createEmailPrompt` + `EmailPrompt` (`#lib/components/email/`) ask
+  `openEmailCounts` for the kinds the action can make due (`ASSIGNMENT_KINDS` after releasing or
+  applying, `settingsEmailKinds` after saving the conference settings) and show "send now" or
+  "later" to whoever may manage the mails. Later is the e-mail page, where every kind shows what
+  it owes with "send now" and "skip" (`skipOpenEmails`, marks them `SKIPPED`). Changes to one
+  person (a status, a review, a supervisor link) prompt nothing: their mails wait on the e-mail
+  page, in the user card, or for the job.
 - **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
   by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
   rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
@@ -919,16 +949,16 @@ bun run preview
   (`isReminder`) any time before their date rather than only in their window, as long as what they
   remind of still holds. A mail sent by hand counts as sent for the sweep (`stillOpen`), except a
   reminder: sending one early leaves the automatic one due.
-- **Per conference and kind, off by default** (`conferenceEmailSetting`), on the "E-Mails" tab of
-  the conference settings (`team/configuration/emails/`, participant care: `canManageEmails`). The
-  switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
+- **Automatic per conference and kind, off by default** (`conferenceEmailSetting`, the "send
+  automatically" switch), on the "E-Mails" tab of the conference settings
+  (`team/configuration/emails/`, participant care: `canManageEmails`). The switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
   preview next to the form's fields; confirming saves them through their own mutations. Switching a kind on asks whether
-  the people it already applies to get it on saving (`notifyExisting`) or are marked `SKIPPED`.
+  the people it already applies to get it with the next run (`notifyExisting`) or are marked `SKIPPED`.
 - **The texts are the conference's to change** (`conferenceEmailText`, unique per conference, kind
   and locale, since a mail goes out in the recipient's language). A text is a subject, a heading
   and a body with `{placeholders}`; `#lib/helpers/emailTemplates.ts` holds the defaults (built
-  from the `emailAuto…` messages), which placeholders each kind offers, and `fillEmailText`, which
-  the API and the editor share. Only changed fields are stored: an empty one falls back to the
+  from the `emailAuto…` messages), which placeholders each kind offers; the API fills them in
+  (`fillEmailText`, `#api/handlers/email/emailText.ts`). Only changed fields are stored: an empty one falls back to the
   default, and a field saved unchanged is stored as none so it follows when the default improves.
   The greeting and the button stay fixed; `{list}` alone in a paragraph places a kind's list.
   `emailPreview` renders a draft (`draft: true`) in any locale, which is the editor's preview.
@@ -942,19 +972,22 @@ bun run preview
   and always goes out; the page lists it without a switch so its text can be changed like any other, and
   `setConferenceEmailEnabled` refuses it. `dueEmails` never owes it. It is logged like every mail
   sent by hand, without a `userId` (the invitee may have no account): the row holds the address,
-  the invitation's id as `subjectKey` and the inviter as `sentById`. Everything else, the team
-  welcome included, is an automatic mail.
-- **Two triggers, one path:** the mutations that change what is due (release, applying the draft,
-  conference settings, participant statuses, seating someone, a supervisor link, a paper review,
-  someone joining the team) call
-  `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
-  calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
-  and anything missed. The app renders the mails (one template, `NotificationEmail.svelte` on
+  the invitation's id as `subjectKey` and the inviter as `sentById`.
+- **A found badge is the other mail sent where it happens.** People lose their badges, which end up
+  at participant care; the "Badge found" button next to the access card number in the user card
+  (`notifyBadgeFound`, `#api/handlers/email/badgeFoundEmail.ts`) sends `BADGE_FOUND` right away.
+  Nothing about the badge is stored, so it is in `ALWAYS_SENT_KINDS` too: every press sends it
+  again, logged as sent by hand with the time as `subjectKey`. Everything else, the team welcome
+  included, is an automatic mail.
+- **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
+  time per conference, any kinds) and the `send-emails` job, which calls `/api/jobs/send-emails`
+  with `x-jobs-secret: JOBS_SECRET` every few minutes and sends the kinds switched to automatic,
+  reminders included; both go through `sendDueEmails`. The app renders the mails (one template, `NotificationEmail.svelte` on
   `#api/services/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
   reads its colours, radius and font from the corporate identity's CSS (`?raw`; vitest lets those
   files through with `test.css.include`); values per kind in
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
-  triggered the sweep.
+  started the sending.
 
 #### 10. Background Tasks and Jobs
 
@@ -969,8 +1002,9 @@ bun run preview
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
   - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
     `--dry-run`; needs the `S3_*` variables
-  - `send-emails` - every few minutes; asks the app to send the automatic mails that are due (it
-    renders them). Needs `APP_URL` and `JOBS_SECRET` (the same as the app's)
+  - `send-emails` - every few minutes; asks the app to send what is due of the kinds switched to
+    automatic (it renders them). Needs `APP_URL` and `JOBS_SECRET` (the same as the app's);
+    `APP_URL` has to be the public address, since the mails link to the origin the job calls
 
 ### Logging
 

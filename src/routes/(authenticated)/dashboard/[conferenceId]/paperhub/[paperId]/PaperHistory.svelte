@@ -14,7 +14,7 @@
 	} from '#lib/components/paper/editor/diffViewer/index';
 	import { translatePaperStatus } from '#lib/utils/enumTranslations';
 	import { getPaperStatusIcon } from '#lib/utils/enumIcons';
-	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers';
+	import { getStatusBadgeClass } from '../paperStatusHelpers';
 	import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {

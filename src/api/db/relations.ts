@@ -132,9 +132,10 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.calendarDay.id,
 			to: r.calendarEntry.calendarDayId
 		}),
+		/** The conference's tracks that run on this day */
 		tracks: r.many.calendarTrack({
-			from: r.calendarDay.id,
-			to: r.calendarTrack.calendarDayId
+			from: r.calendarDay.id.through(r.calendarDayToCalendarTrack.a),
+			to: r.calendarTrack.id.through(r.calendarDayToCalendarTrack.b)
 		})
 	},
 	calendarEntry: {
@@ -158,10 +159,24 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	calendarTrack: {
-		calendarDay: r.one.calendarDay({
-			from: r.calendarTrack.calendarDayId,
-			to: r.calendarDay.id,
+		conference: r.one.conference({
+			from: r.calendarTrack.conferenceId,
+			to: r.conference.id,
 			optional: false
+		}),
+		calendarDays: r.many.calendarDay({
+			from: r.calendarTrack.id.through(r.calendarDayToCalendarTrack.b),
+			to: r.calendarDay.id.through(r.calendarDayToCalendarTrack.a)
+		}),
+		/** The committees whose members the track is for */
+		committees: r.many.committee({
+			from: r.calendarTrack.id.through(r.calendarTrackToCommittee.a),
+			to: r.committee.id.through(r.calendarTrackToCommittee.b)
+		}),
+		/** The roles whose holders the track is for */
+		conferenceRoles: r.many.conferenceRole({
+			from: r.calendarTrack.id.through(r.calendarTrackToConferenceRole.a),
+			to: r.conferenceRole.id.through(r.calendarTrackToConferenceRole.b)
 		}),
 		entries: r.many.calendarEntry({
 			from: r.calendarTrack.id.through(r.calendarEntryToCalendarTrack.b),
@@ -169,6 +184,10 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	committee: {
+		calendarTracks: r.many.calendarTrack({
+			from: r.committee.id.through(r.calendarTrackToCommittee.b),
+			to: r.calendarTrack.id.through(r.calendarTrackToCommittee.a)
+		}),
 		agendaItems: r.many.committeeAgendaItem({
 			from: r.committee.id,
 			to: r.committeeAgendaItem.committeeId
@@ -243,6 +262,10 @@ export const relations = defineRelations(schema, (r) => ({
 		calendarDays: r.many.calendarDay({
 			from: r.conference.id,
 			to: r.calendarDay.conferenceId
+		}),
+		calendarTracks: r.many.calendarTrack({
+			from: r.conference.id,
+			to: r.calendarTrack.conferenceId
 		}),
 		committees: r.many.committee({
 			from: r.conference.id,
@@ -376,6 +399,10 @@ export const relations = defineRelations(schema, (r) => ({
 		})
 	},
 	conferenceRole: {
+		calendarTracks: r.many.calendarTrack({
+			from: r.conferenceRole.id.through(r.calendarTrackToConferenceRole.b),
+			to: r.calendarTrack.id.through(r.calendarTrackToConferenceRole.a)
+		}),
 		conference: r.one.conference({
 			from: r.conferenceRole.conferenceId,
 			to: r.conference.id,

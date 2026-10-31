@@ -7,7 +7,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '#lib/utils/enumIcons';
 	import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
-	import { getStatusBadgeClass } from '#lib/utils/paperStatusHelpers';
+	import { getStatusBadgeClass } from './paperStatusHelpers';
 	import { paperEntityName, paperTitle, type PaperIdentity } from './paperDisplay';
 
 	interface Props {

@@ -14,7 +14,11 @@ const isDev = env.NODE_ENV === 'development';
 
 const pinoLogger = pino({
 	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'info'),
-	transport: isDev ? { target: 'pino-pretty', options: { colorize: true } } : undefined
+	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
+	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
+	transport: isDev
+		? { target: import.meta.resolve('pino-pretty'), options: { colorize: true } }
+		: undefined
 });
 
 /**

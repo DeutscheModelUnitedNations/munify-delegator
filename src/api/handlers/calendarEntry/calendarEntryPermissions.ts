@@ -118,7 +118,7 @@ async function surveyOptionsOfConference({
 	return options.length === ids.length;
 }
 
-/** Whether every one of `trackIds` is a track of the day. */
+/** Whether every one of `trackIds` is a track running on the day. */
 async function tracksOfDay({
 	calendarDayId,
 	trackIds
@@ -128,7 +128,7 @@ async function tracksOfDay({
 }) {
 	if (trackIds.length === 0) return true;
 	const tracks = await db.query.calendarTrack.findMany({
-		where: { id: { in: trackIds }, calendarDayId },
+		where: { id: { in: trackIds }, calendarDays: { id: calendarDayId } },
 		columns: { id: true }
 	});
 	return tracks.length === trackIds.length;

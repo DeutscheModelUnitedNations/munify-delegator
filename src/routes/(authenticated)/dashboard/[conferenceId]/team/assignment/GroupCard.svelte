@@ -1,13 +1,7 @@
 <script lang="ts">
 	import BusyOverlay from './BusyOverlay.svelte';
 	import { delegationSchoolsLabel } from '#lib/helpers/delegationSchools';
-	import {
-		canSplit,
-		cardBorder,
-		wishList,
-		wishStatus,
-		type BoardReviewRow
-	} from '#lib/assignment/board';
+	import { canSplit, cardBorder, wishList, wishStatus, type BoardReviewRow } from './boardState';
 	import type { AssignmentGroup } from '#lib/assignment/state';
 	import StarRating from '#lib/components/StarRating.svelte';
 	import formatNames from '#lib/helpers/formatNames';

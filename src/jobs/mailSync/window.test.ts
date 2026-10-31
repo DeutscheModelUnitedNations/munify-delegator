@@ -102,7 +102,7 @@ describe('computeSubscriberState with the retention window', () => {
 			user: user({ teamMember: [teamMember('OLDabc1', '2025-03-01')] }),
 			cutoff: CUTOFF
 		});
-		expect(state.listNames).toEqual([]);
+		expect(state.listKeys).toEqual([]);
 		expect(state.attribs.conferences).toEqual([]);
 	});
 
@@ -113,7 +113,7 @@ describe('computeSubscriberState with the retention window', () => {
 			}),
 			cutoff: CUTOFF
 		});
-		expect(state.listNames).toEqual(['[RECab1] MUN RECab1 - TEAM', '[UPCab1] MUN UPCab1 - TEAM']);
+		expect(state.listKeys).toEqual(['RECab1:TEAM', 'UPCab1:TEAM']);
 		expect(state.attribs.conferences.map((c) => c.id)).toEqual(['RECab1', 'UPCab1']);
 	});
 
@@ -126,6 +126,6 @@ describe('computeSubscriberState with the retention window', () => {
 			}),
 			cutoff: CUTOFF
 		});
-		expect(state.listNames).toEqual(['[global] DMUN_NEWSLETTER', '[global] DMUN_TEAM_TENDERS']);
+		expect(state.listKeys).toEqual(['global:DMUN_NEWSLETTER', 'global:DMUN_TEAM_TENDERS']);
 	});
 });

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import type { Role } from '#lib/helpers/seatPlanning/hints';
+	import type { Role } from './seatHints';
 	import { useSeatPlanningParams } from './filters.svelte';
 	import CommitteeSizes from './hints/CommitteeSizes.svelte';
 	import RegionalBalanceHints from './hints/RegionalBalanceHints.svelte';

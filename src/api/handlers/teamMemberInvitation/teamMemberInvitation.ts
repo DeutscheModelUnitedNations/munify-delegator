@@ -7,13 +7,12 @@ import {
 	regenerateInvitation,
 	revokeInvitation
 } from './teamMemberInvitationService';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import {
-	assertCanGrantInvitationRole,
 	assertCanManageInvitations,
 	assertCanUpdateInvitation,
+	partitionGrantableInvitations,
 	registerTeamMemberInvitationAbilities
 } from './teamMemberInvitationPermissions';
 
@@ -97,25 +96,25 @@ schemaBuilder.mutationFields((t) => ({
 				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 			}
 			await assertCanManageInvitations({ ctx, conferenceId: args.conferenceId });
+			const { grantable, refused } = await partitionGrantableInvitations({
+				ctx,
+				conferenceId: args.conferenceId,
+				invitations: args.invitations
+			});
 
 			const result = await createInvitations({
 				callerId,
 				origin: ctx.requestUrl().origin,
 				conferenceId: args.conferenceId,
-				invitations: args.invitations,
-				assertMayGrant: (role) =>
-					assertCanGrantInvitationRole({ ctx, conferenceId: args.conferenceId, role })
+				invitations: grantable
 			});
 
-			// Someone with an account joins right away, and is owed the welcome
-			if (result.created.some((invitation) => invitation.addedDirectly))
-				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
-
-			return result;
+			return { created: result.created, errors: [...refused, ...result.errors] };
 		}
 	}),
 
 	revokeTeamMemberInvitation: t.field({
+		description: 'Makes an invitation unusable, unless it was used already.',
 		type: RevokeInvitationResult,
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -125,6 +124,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	regenerateTeamMemberInvitation: t.field({
+		description:
+			'Issues a fresh link for an invitation, with a new expiry; this also undoes a revocation. `sendEmail` mails the new link to the invitee.',
 		type: RegenerateInvitationResult,
 		args: {
 			invitationId: t.arg.id({ required: true }),

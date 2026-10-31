@@ -4,25 +4,25 @@ import type { MailSyncUser } from './mailSyncUsers';
 
 export type { MailSyncUser };
 
-// List type constants
+// List types live with the table that records the lists (`#api/db/schema/mailSync`).
+export {
+	GLOBAL_LIST_TYPES,
+	CONFERENCE_LIST_TYPES,
+	type GlobalListType,
+	type ConferenceListType
+} from '#api/db/schema/mailSync';
 
-export const GLOBAL_LIST_TYPES = ['DMUN_NEWSLETTER', 'DMUN_TEAM_TENDERS'] as const;
+/**
+ * Which list a rule means: built from ids (`listKey` in ./listNames), never from the list's name,
+ * which follows the conference title.
+ */
+export type ListKey = `${string}:${string}`;
 
-export const CONFERENCE_LIST_TYPES = [
-	'REGISTRATION_NOT_COMPLETED',
-	'REGISTRATION_COMPLETED',
-	'REJECTED_PARTICIPANTS',
-	'DELEGATION_MEMBERS_NATIONS',
-	'DELEGATION_MEMBERS_NSA',
-	'SINGLE_PARTICIPANTS',
-	'HEAD_DELEGATES',
-	'SUPERVISORS',
-	'SUPERVISORS_REGISTRATION_NOT_COMPLETED',
-	'TEAM'
-] as const;
-
-export type GlobalListType = (typeof GLOBAL_LIST_TYPES)[number];
-export type ConferenceListType = (typeof CONFERENCE_LIST_TYPES)[number];
+/** The lists the sync manages: the Listmonk id behind each key, and all of them as a set. */
+export interface ManagedLists {
+	idOf: Map<ListKey, number>;
+	ids: Set<number>;
+}
 
 // Listmonk subscriber as returned by the API
 
@@ -83,7 +83,7 @@ export type StoredAttribs = {
 export interface ComputedSubscriberState {
 	email: string;
 	formattedName: string;
-	listNames: string[];
+	listKeys: ListKey[];
 	attribs: SubscriberAttribs;
 }
 
@@ -131,7 +131,7 @@ export interface PlanExecutionResult {
 export interface ListAssignmentRule {
 	readonly description: string;
 	evaluate(user: MailSyncUser): {
-		listNames: string[];
+		listKeys: ListKey[];
 		conferenceAttribs: SubscriberAttribs['conferences'];
 	};
 }

@@ -8,54 +8,60 @@ export interface OpenSession {
 	mode: ServerMode;
 }
 
-/** An occasion as the certificates list it: its sessions merged by name. */
-export interface Occasion {
-	name: string;
-	sessions: number;
-	entries: number;
-	firstStartedAt: Date;
+/** A session as participant care lists it, running or ended, with its place on the certificates. */
+export interface ListedSession extends OpenSession {
+	endedAt: Date | null;
+	entryCount: number;
 	showOnCertificate: boolean;
 }
 
-/** One row of the sessions table: an occasion, a session still open under its name, or both. */
+/** One row of the sessions table: a session, open to join or not. */
 export interface SessionRow {
-	key: string;
+	id: string;
 	name: string;
-	occasion: Occasion | null;
+	startedAt: Date;
+	/** Set while it runs, to join. */
 	open: OpenSession | null;
+	/** Set for participant care, who see every session. */
+	listed: ListedSession | null;
 }
 
-/** The name sessions are merged by, as the server compares it. */
-const occasionKey = (name: string) => name.trim().toLowerCase();
-
-const startOf = (row: SessionRow) =>
-	(row.open?.startedAt ?? row.occasion?.firstStartedAt ?? new Date(0)).getTime();
-
 /**
- * The rows of the sessions table: every occasion with the latest session still open under its
- * name, and open sessions whose occasion is not listed (yet, or not for the caller). Running ones
- * come first, then the newest.
+ * The rows of the sessions table: every listed session, and open ones not listed (yet, or not for
+ * the caller). Running ones come first, then the newest.
  */
 export function sessionRows({
-	occasions,
+	listed,
 	openSessions
 }: {
-	occasions: Occasion[];
+	listed: ListedSession[];
 	openSessions: OpenSession[];
 }): SessionRow[] {
-	const latestOpen = new Map<string, OpenSession>();
+	const rows: SessionRow[] = listed.map((session) => ({
+		id: session.id,
+		name: session.occasion,
+		startedAt: session.startedAt,
+		open: session.endedAt === null ? session : null,
+		listed: session
+	}));
+	const known = new Set(rows.map((row) => row.id));
 	for (const open of openSessions) {
-		const key = occasionKey(open.occasion);
-		const known = latestOpen.get(key);
-		if (!known || known.startedAt < open.startedAt) latestOpen.set(key, open);
+		if (known.has(open.id)) continue;
+		rows.push({ id: open.id, name: open.occasion, startedAt: open.startedAt, open, listed: null });
 	}
-	const rows: SessionRow[] = occasions.map((occasion) => {
-		const key = occasionKey(occasion.name);
-		return { key, name: occasion.name, occasion, open: latestOpen.get(key) ?? null };
-	});
-	const listed = new Set(rows.map((row) => row.key));
-	for (const [key, open] of latestOpen) {
-		if (!listed.has(key)) rows.push({ key, name: open.occasion, occasion: null, open });
-	}
-	return rows.sort((a, b) => Number(!!b.open) - Number(!!a.open) || startOf(b) - startOf(a));
+	return rows.sort(
+		(a, b) => Number(!!b.open) - Number(!!a.open) || b.startedAt.getTime() - a.startedAt.getTime()
+	);
+}
+
+/** The session already holding a name, compared as the server does: ignoring case and spaces. */
+export function sessionNamed<S extends { occasion: string }>({
+	sessions,
+	name
+}: {
+	sessions: readonly S[];
+	name: string;
+}) {
+	const key = name.trim().toLowerCase();
+	return sessions.find((session) => session.occasion.trim().toLowerCase() === key);
 }

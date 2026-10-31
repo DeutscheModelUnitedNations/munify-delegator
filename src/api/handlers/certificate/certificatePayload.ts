@@ -18,11 +18,9 @@ export interface CertificateJWTPayload extends Record<string, unknown> {
 export type CertificateSession = { name: string; attended: boolean };
 
 /**
- * The occasions of a conference's check-in sessions the person was scanned at, in the order they
- * first took place, merged by name (several scanners running at once each have a session; one
- * scan in any of them counts). A certificate states only where someone was, never where they were
- * not, so the occasions they missed are left out, and so are those the team took off the
- * certificates (`showOnCertificate`; one session taken off takes the occasion off).
+ * The conference's check-in sessions the person was scanned at, in the order they started. A
+ * certificate states only where someone was, never where they were not, so the sessions they
+ * missed are left out, and so are those the team took off the certificates (`showOnCertificate`).
  */
 export function certificateSessions(
 	sessions: {
@@ -32,25 +30,10 @@ export function certificateSessions(
 		showOnCertificate: boolean;
 	}[]
 ): CertificateSession[] {
-	const byName = new Map<string, CertificateSession & { startedAt: number; shown: boolean }>();
-	for (const session of sessions) {
-		const name = session.occasion.trim();
-		if (!name) continue;
-		const key = name.toLocaleLowerCase();
-		const known = byName.get(key) ?? {
-			name,
-			attended: false,
-			startedAt: session.startedAt.getTime(),
-			shown: true
-		};
-		known.shown &&= session.showOnCertificate;
-		known.attended ||= session.attended;
-		known.startedAt = Math.min(known.startedAt, session.startedAt.getTime());
-		byName.set(key, known);
-	}
-	return [...byName.values()]
-		.filter((session) => session.shown && session.attended)
-		.sort((a, b) => a.startedAt - b.startedAt)
+	return sessions
+		.map((session) => ({ ...session, name: session.occasion.trim() }))
+		.filter((session) => session.name && session.attended && session.showOnCertificate)
+		.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
 		.map(({ name, attended }) => ({ name, attended }));
 }
 

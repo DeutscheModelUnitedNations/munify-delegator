@@ -6,7 +6,7 @@ import { assertCanManageEmails, registerEmailAbilities } from './emailPermission
 import {
 	countOpenEmails,
 	previewEmail,
-	scheduleEmailSweep,
+	sendOpenEmailsInBackground,
 	setEmailKindsEnabled,
 	skipOpenEmails
 } from './emailSweep';
@@ -18,6 +18,9 @@ import { isAlwaysSent } from '#lib/helpers/emailKinds';
 import { whereRows } from '#api/db/whereRows';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { personEmails, sendPersonEmail } from './personEmails';
+import type { EmailKind } from './dueEmails';
+import { sendBadgeFoundEmail } from './badgeFoundEmail';
+import { assertCanUpdateParticipantStatus } from '#api/handlers/conferenceParticipant/conferenceParticipantPermissions';
 
 registerEmailAbilities();
 
@@ -50,6 +53,18 @@ const EmailKindStats = schemaBuilder.simpleObject('EmailKindStats', {
 		skipped: t.int()
 	})
 });
+
+const OpenEmailCount = schemaBuilder.simpleObject('OpenEmailCount', {
+	description: 'How many mails of one kind a conference owes and has not sent.',
+	fields: (t) => ({
+		kind: t.field({ type: emailKindEnum }),
+		open: t.int()
+	})
+});
+
+/** The kinds among `kinds` (else all) that follow from state; the team invitation never does. */
+const owedKinds = (kinds?: readonly EmailKind[]) =>
+	(kinds ?? schema.emailKind.enumValues).filter((kind) => !isAlwaysSent(kind));
 
 const PersonEmail = schemaBuilder.simpleObject('PersonEmail', {
 	description: 'A mail one person is owed right now, which the team can send them by hand.',
@@ -102,17 +117,22 @@ schemaBuilder.queryFields((t) => ({
 		}
 	}),
 
-	openEmailCount: t.field({
+	openEmailCounts: t.field({
 		description:
-			'How many mails of `kind` the conference would send right away if it were switched on.',
-		type: 'Int',
+			'How many mails of each kind the conference owes right now and has not sent, skipped or given up on: what sending them by hand would send. All kinds when `kinds` is left out.',
+		type: [OpenEmailCount],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			kind: t.arg({ type: emailKindEnum, required: true })
+			kinds: t.arg({ type: [emailKindEnum] }),
+			/** Ignored; a new value makes the client ask again after a change. */
+			revision: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			return countOpenEmails({ conferenceId: args.conferenceId, kind: args.kind });
+			return countOpenEmails({
+				conferenceId: args.conferenceId,
+				kinds: owedKinds(args.kinds ?? undefined)
+			});
 		}
 	}),
 
@@ -192,6 +212,12 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
+/** A conference and some kinds of its mails. */
+const conferenceKindsArgs = schemaBuilder.args((t) => ({
+	conferenceId: t.id({ required: true }),
+	kinds: t.field({ type: [emailKindEnum], required: true })
+}));
+
 /** Empty or blank: the default text. */
 const ownText = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
 
@@ -220,6 +246,53 @@ schemaBuilder.mutationFields((t) => ({
 			});
 			if (error === undefined) throw apiError({ code: 'CONFLICT', message: m.emailSendNotOwed() });
 			return { sent: error === null, error };
+		}
+	}),
+
+	notifyBadgeFound: t.field({
+		description:
+			'Tells the person of a participant row by mail that the badge they lost was handed in to participant care (BADGE_FOUND). Sent right away and logged as sent by hand, by the caller; every call sends it again.',
+		type: SendPersonEmailResult,
+		args: {
+			/** The person's participant row. */
+			id: t.arg.id({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanUpdateParticipantStatus({ ctx, id: args.id });
+			const sentById = callerUserId(ctx);
+			if (!sentById) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
+			const error = await sendBadgeFoundEmail({ participantId: args.id, sentById });
+			if (error === undefined) throw apiError({ code: 'NOT_FOUND', message: m.notFound() });
+			return { sent: error === null, error };
+		}
+	}),
+
+	sendOpenEmails: t.field({
+		description:
+			'Sends everything of `kinds` the conference owes right now and has not sent, switched to automatic or not, in the background. Answers how many mails that is.',
+		type: 'Int',
+		args: conferenceKindsArgs,
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			const kinds = owedKinds(args.kinds);
+			const counts = await countOpenEmails({ conferenceId: args.conferenceId, kinds });
+			sendOpenEmailsInBackground({
+				conferenceId: args.conferenceId,
+				kinds,
+				origin: ctx.requestUrl().origin
+			});
+			return counts.reduce((sum, count) => sum + count.open, 0);
+		}
+	}),
+
+	skipOpenEmails: t.field({
+		description:
+			'Marks everything of `kinds` the conference owes right now as skipped, so it is never sent. Answers how many mails that was.',
+		type: 'Int',
+		args: conferenceKindsArgs,
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			return skipOpenEmails({ conferenceId: args.conferenceId, kinds: owedKinds(args.kinds) });
 		}
 	}),
 
@@ -308,7 +381,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	setConferenceEmailEnabled: t.field({
 		description:
-			'Switches one kind of automatic mail on or off for a conference. Switching it on with `notifyExisting: false` marks everybody it would reach right now as skipped, so only what happens from now on is sent.',
+			'Switches the automatic sending of one kind on or off for a conference: the `send-emails` job sends what is owed of the kinds switched on. Switching it on with `notifyExisting: false` marks everybody it would reach right now as skipped, so only what happens from now on is sent.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -329,8 +402,6 @@ schemaBuilder.mutationFields((t) => ({
 				kinds: [args.kind],
 				enabled: args.enabled
 			});
-			if (args.enabled)
-				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;
 		}
 	})

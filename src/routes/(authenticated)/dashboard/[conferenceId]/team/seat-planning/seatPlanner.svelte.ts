@@ -8,7 +8,7 @@ import {
 	seatsWithPending,
 	type PendingSeat,
 	type Role
-} from '#lib/helpers/seatPlanning/hints';
+} from './seatHints';
 import type { BaselineCommittee, RegionalBaseline } from '#lib/helpers/seatPlanning/baselines';
 import { SvelteMap } from 'svelte/reactivity';
 import { toast } from 'svelte-sonner';

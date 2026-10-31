@@ -77,10 +77,12 @@ const PossibleDuplicateRef = object({
 	table: 'possibleDuplicate',
 	adjust: (t) => ({
 		userAttendances: t.field({
+			description: "The conferences the pair's first account took part in, latest first.",
 			type: [AttendanceRef],
 			resolve: (pair) => attendancesOf(pair.userId)
 		}),
 		candidateAttendances: t.field({
+			description: "The conferences the pair's second account took part in, latest first.",
 			type: [AttendanceRef],
 			resolve: (pair) => attendancesOf(pair.candidateId)
 		})

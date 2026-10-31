@@ -1,10 +1,10 @@
 import deepEquals from '../helper/deepEquals';
 import { computeSubscriberState } from './listRules';
-import { isManagedListName } from './listNames';
 import type {
 	MailSyncUser,
 	ListmonkSubscriber,
 	ComputedSubscriberState,
+	ManagedLists,
 	SubscriberAction,
 	SubscriberPatch,
 	SyncPlan
@@ -17,7 +17,8 @@ import type {
  * person can be on lists of both. The plan therefore only ever touches what belongs to the
  * delegator:
  *
- * - **Lists** are added and removed one by one, and only lists matching `isManagedListName`.
+ * - **Lists** are added and removed one by one, and only lists the sync manages (`ManagedLists`,
+ *   known by id from `mailing_list`).
  *   Lists of other systems stay where they are, whatever the subscriber's other lists look like.
  * - **Attribs**: only our own keys (`userId`, `conferences`) are compared and written. Listmonk's
  *   PATCH merges keys, so keys of other systems survive.
@@ -52,12 +53,14 @@ function hasOwnAttribs(subscriber: ListmonkSubscriber) {
 /** The attribs and name to write, if either is out of date. */
 function patchFor({
 	subscriber,
-	state
+	state,
+	managedIds
 }: {
 	subscriber: ListmonkSubscriber;
 	state: ComputedSubscriberState;
+	managedIds: Set<number>;
 }): SubscriberPatch | undefined {
-	const hasForeignLists = subscriber.lists.some((l) => !isManagedListName(l.name));
+	const hasForeignLists = subscriber.lists.some((l) => !managedIds.has(l.id));
 	const nameOutdated = !hasForeignLists && subscriber.name !== state.formattedName;
 	if (!nameOutdated && ownAttribsMatch({ subscriber, state })) return undefined;
 
@@ -71,16 +74,14 @@ function patchFor({
 export function planForUser({
 	state,
 	subscriber,
-	listNameToId
+	lists
 }: {
 	state: ComputedSubscriberState;
 	subscriber: ListmonkSubscriber | undefined;
-	listNameToId: Map<string, number>;
+	lists: ManagedLists;
 }): SubscriberAction | undefined {
 	const desiredIds = new Set(
-		state.listNames
-			.map((name) => listNameToId.get(name))
-			.filter((id): id is number => id !== undefined)
+		state.listKeys.map((key) => lists.idOf.get(key)).filter((id): id is number => id !== undefined)
 	);
 
 	if (!subscriber) {
@@ -95,12 +96,10 @@ export function planForUser({
 		};
 	}
 
-	const managedIds = new Set(
-		subscriber.lists.filter((l) => isManagedListName(l.name)).map((l) => l.id)
-	);
-	const addListIds = [...desiredIds].filter((id) => !managedIds.has(id));
-	const removeListIds = [...managedIds].filter((id) => !desiredIds.has(id));
-	const patch = patchFor({ subscriber, state });
+	const currentIds = new Set(subscriber.lists.filter((l) => lists.ids.has(l.id)).map((l) => l.id));
+	const addListIds = [...desiredIds].filter((id) => !currentIds.has(id));
+	const removeListIds = [...currentIds].filter((id) => !desiredIds.has(id));
+	const patch = patchFor({ subscriber, state, managedIds: lists.ids });
 
 	if (addListIds.length === 0 && removeListIds.length === 0 && !patch) return undefined;
 
@@ -108,8 +107,14 @@ export function planForUser({
 }
 
 /** What to do with a subscriber no user claims anymore: take back what is ours, leave the rest. */
-export function planRelease(subscriber: ListmonkSubscriber): SubscriberAction | undefined {
-	const removeListIds = subscriber.lists.filter((l) => isManagedListName(l.name)).map((l) => l.id);
+export function planRelease({
+	subscriber,
+	managedIds
+}: {
+	subscriber: ListmonkSubscriber;
+	managedIds: Set<number>;
+}): SubscriberAction | undefined {
+	const removeListIds = subscriber.lists.filter((l) => managedIds.has(l.id)).map((l) => l.id);
 	const ownAttribs = hasOwnAttribs(subscriber);
 
 	if (removeListIds.length === 0 && !ownAttribs) return undefined;
@@ -130,13 +135,13 @@ export function planRelease(subscriber: ListmonkSubscriber): SubscriberAction | 
 export function planUserBatch({
 	users,
 	subscriberMap,
-	listNameToId,
+	lists,
 	plan,
 	cutoff
 }: {
 	users: MailSyncUser[];
 	subscriberMap: Map<string, ListmonkSubscriber>;
-	listNameToId: Map<string, number>;
+	lists: ManagedLists;
 	plan: SyncPlan;
 	cutoff: Date;
 }): void {
@@ -144,7 +149,7 @@ export function planUserBatch({
 		const state = computeSubscriberState({ user, cutoff });
 
 		// Users without lists stay in the map and are released below like any unclaimed subscriber.
-		if (state.listNames.length === 0) {
+		if (state.listKeys.length === 0) {
 			plan.skippedNoLists++;
 			continue;
 		}
@@ -153,7 +158,7 @@ export function planUserBatch({
 		const subscriber = subscriberMap.get(emailKey);
 		subscriberMap.delete(emailKey);
 
-		const action = planForUser({ state, subscriber, listNameToId });
+		const action = planForUser({ state, subscriber, lists });
 		if (action) {
 			plan.userActions.push(action);
 		} else {
@@ -165,13 +170,15 @@ export function planUserBatch({
 /** Releases every subscriber left in the map after all users have been planned. */
 export function planReleases({
 	subscriberMap,
+	lists,
 	plan
 }: {
 	subscriberMap: Map<string, ListmonkSubscriber>;
+	lists: ManagedLists;
 	plan: SyncPlan;
 }) {
 	for (const subscriber of subscriberMap.values()) {
-		const action = planRelease(subscriber);
+		const action = planRelease({ subscriber, managedIds: lists.ids });
 		if (action) plan.releases.push(action);
 	}
 }

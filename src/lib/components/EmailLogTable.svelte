@@ -25,9 +25,11 @@
 			sentBy?: { givenName: string; familyName: string } | null;
 		}[];
 		empty: string;
+		/** Extra classes for the table's scroll container, such as a height limit */
+		class?: string;
 	}
 
-	let { entries, empty }: Props = $props();
+	let { entries, empty, class: className = '' }: Props = $props();
 	type Entry = Props['entries'][number];
 
 	const nameOf = (person: { givenName: string; familyName: string }) =>
@@ -60,7 +62,7 @@
 {#if entries.length === 0}
 	<p class="text-base-content/60 text-sm italic">{empty}</p>
 {:else}
-	<div class="border-base-300 overflow-x-auto rounded-box border">
+	<div class="border-base-300 overflow-x-auto rounded-box border {className}">
 		<table class="table-sm table">
 			<tbody>
 				{#each entries as entry (entry.id)}

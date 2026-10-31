@@ -4,7 +4,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { uploadFile } from '#lib/api/uploadFile';
 	import { findResolutionUploadProblem, uploadEach } from '#lib/helpers/resolutionUpload';
-	import { resolutionUploadProblemMessages } from '#lib/helpers/resolutionUploadMessages';
+	import { resolutionUploadProblemMessages } from './resolutionUploadMessages';
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import Modal from '#lib/components/Modal.svelte';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';

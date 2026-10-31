@@ -9,7 +9,7 @@
 	import EditableIdentityField from './EditableIdentityField.svelte';
 	import ParticipantRoleSummary from './ParticipantRoleSummary.svelte';
 	import { identityUpdate } from './identityUpdate';
-	import type { ScanIssue } from './scanCheck';
+	import type { ScanIssue } from '#lib/api/rumbleClient/client';
 	import ScanResultActions from './ScanResultActions.svelte';
 	import type { FoundPerson } from './scanLoad';
 	import type { ShownPerson } from './attendanceSession';
@@ -18,10 +18,8 @@
 		person: FoundPerson;
 		/** Whether the name and birthday may be corrected here, which only participant care may. */
 		canEdit: boolean;
-		issues: ScanIssue[];
-		/** What the scanner waits for: an access card number, or the open points to be read. */
+		/** What the scanner waits for: the open points to be read, or a decision on them. */
 		awaiting: ShownPerson['awaiting'];
-		badgeInput: string;
 		busy: boolean;
 		onConfirm: () => void;
 		/** Records the person despite the open points (check mode). */
@@ -31,18 +29,8 @@
 		onChanged: () => Promise<void>;
 	}
 
-	let {
-		person,
-		canEdit,
-		issues,
-		awaiting,
-		badgeInput = $bindable(),
-		busy,
-		onConfirm,
-		onRecordAnyway,
-		onClose,
-		onChanged
-	}: Props = $props();
+	let { person, canEdit, awaiting, busy, onConfirm, onRecordAnyway, onClose, onChanged }: Props =
+		$props();
 
 	const issueMessages: Record<ScanIssue, () => string> = {
 		teamMember: m.scanTeamMemberNotRecorded,
@@ -59,12 +47,8 @@
 		alreadyScanned: m.duplicateScan
 	};
 
-	let badgeInputElem = $state<HTMLInputElement>();
-
-	// The card number is the next thing to type once the person is shown
-	$effect(() => {
-		if (awaiting === 'badge' && badgeInputElem) badgeInputElem.focus();
-	});
+	// The server checked the person; this only shows what it found
+	const issues = $derived(person.check.issues);
 
 	async function saveIdentityField({
 		field,
@@ -159,22 +143,14 @@
 		</div>
 	{/if}
 
-	{#if awaiting === 'badge'}
-		<label class="input input-lg w-full">
-			<span class="label">{m.accessCardId()}</span>
-			<input
-				bind:this={badgeInputElem}
-				bind:value={badgeInput}
-				type="text"
-				onkeydown={(e) => {
-					if (e.key === 'Enter') onConfirm();
-				}}
-			/>
-		</label>
-		<p class="text-sm text-base-content/60">{m.scanWaitsForBadge()}</p>
-	{/if}
-
 	{#if awaiting}
-		<ScanResultActions {awaiting} {issues} {busy} {onConfirm} {onRecordAnyway} {onClose} />
+		<ScanResultActions
+			{awaiting}
+			mayRecordAnyway={person.check.mayRecordAnyway}
+			{busy}
+			{onConfirm}
+			{onRecordAnyway}
+			{onClose}
+		/>
 	{/if}
 </section>

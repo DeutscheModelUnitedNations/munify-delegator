@@ -26,24 +26,9 @@ registerConferenceRoleAbilities();
 const ConferenceRoleRef = object({ table: 'conferenceRole' });
 query({ table: 'conferenceRole' });
 
-/**
- * Creates a role of the seat planning (a non-state actor, a custom role) and answers how to read
- * it back.
- */
-async function createRole<A extends { conferenceId: string }>({
-	ctx,
-	args,
-	create
-}: {
-	ctx: ApiContext;
-	args: A;
-	create: (args: A) => Promise<string>;
-}) {
-	await assertCanCreateConferenceRole({ ctx, conferenceId: args.conferenceId });
-	const createdId = await create(args);
-	return (await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id: createdId } })
-		.query.single;
-}
+/** The role as the caller may read it, for re-reading the row a mutation wrote. */
+const readableRole = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
+	(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query.single;
 
 schemaBuilder.mutationFields((t) => {
 	/** What every role the seat planning creates names: its conference, name, icon and seats. */
@@ -56,19 +41,26 @@ schemaBuilder.mutationFields((t) => {
 
 	return {
 		createNonStateActor: t.drizzleField({
+			description: 'Adds a non-state actor to the conference, with how many seats it has.',
 			type: ConferenceRoleRef,
 			args: {
 				...plannedRoleArgs(seatCountSchema),
 				abbreviation: t.arg.string({ required: true }),
 				description: t.arg.string({ required: true })
 			},
-			resolve: async (query, _root, args, ctx) =>
-				db.query.conferenceRole
-					.findFirst(query(await createRole({ ctx, args, create: createNonStateActor })))
-					.then(assertFindFirstExists)
+			resolve: async (query, _root, args, ctx) => {
+				await assertCanCreateConferenceRole({ ctx, conferenceId: args.conferenceId });
+				const createdId = await createNonStateActor(args);
+
+				return db.query.conferenceRole
+					.findFirst(query(await readableRole({ ctx, id: createdId })))
+					.then(assertFindFirstExists);
+			}
 		}),
 
 		updateNonStateActor: t.drizzleField({
+			description:
+				'Changes the given fields of a non-state actor. Lowering its seats drops the applications that no longer fit.',
 			type: ConferenceRoleRef,
 			args: {
 				id: t.arg.id({ required: true }),
@@ -88,17 +80,14 @@ schemaBuilder.mutationFields((t) => {
 				await updateNonStateActor({ before, data });
 
 				return db.query.conferenceRole
-					.findFirst(
-						query(
-							(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id: args.id } })
-								.query.single
-						)
-					)
+					.findFirst(query(await readableRole({ ctx, id: args.id })))
 					.then(assertFindFirstExists);
 			}
 		}),
 
 		deleteNonStateActor: t.field({
+			description:
+				'Deletes a non-state actor unless a delegation is assigned to it, together with the applications for it.',
 			type: 'Boolean',
 			args: { id: t.arg.id({ required: true }) },
 			resolve: async (_root, args, ctx) => {
@@ -114,13 +103,19 @@ schemaBuilder.mutationFields((t) => {
 				'A custom role for single participants, such as the press, with how many it seats.',
 			type: ConferenceRoleRef,
 			args: { ...plannedRoleArgs(customRoleSeatsSchema), description: t.arg.string() },
-			resolve: async (query, _root, args, ctx) =>
-				db.query.conferenceRole
-					.findFirst(query(await createRole({ ctx, args, create: createCustomRole })))
-					.then(assertFindFirstExists)
+			resolve: async (query, _root, args, ctx) => {
+				await assertCanCreateConferenceRole({ ctx, conferenceId: args.conferenceId });
+				const createdId = await createCustomRole(args);
+
+				return db.query.conferenceRole
+					.findFirst(query(await readableRole({ ctx, id: createdId })))
+					.then(assertFindFirstExists);
+			}
 		}),
 
 		updateCustomRole: t.drizzleField({
+			description:
+				'Changes the given fields of a custom role. Its seats may not drop below the people already holding it.',
 			type: ConferenceRoleRef,
 			args: {
 				id: t.arg.id({ required: true }),
@@ -134,17 +129,13 @@ schemaBuilder.mutationFields((t) => {
 				await updateCustomRole({ id, data });
 
 				return db.query.conferenceRole
-					.findFirst(
-						query(
-							(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query
-								.single
-						)
-					)
+					.findFirst(query(await readableRole({ ctx, id })))
 					.then(assertFindFirstExists);
 			}
 		}),
 
 		deleteCustomRole: t.field({
+			description: 'Deletes a custom role unless somebody holds it; the wishes for it go with it.',
 			type: 'Boolean',
 			args: { id: t.arg.id({ required: true }) },
 			resolve: async (_root, args, ctx) => {

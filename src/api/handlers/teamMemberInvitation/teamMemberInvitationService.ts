@@ -20,6 +20,9 @@ type Invitation = {
 	usedAt: Date | null;
 };
 
+/** An invited address as it is stored and looked up. */
+export const normalizeInvitationEmail = (email: string) => email.toLowerCase().trim();
+
 async function inviterDisplayName(callerId: string) {
 	const inviter = await db.query.user.findFirst({ where: { id: callerId } });
 	return inviter ? `${inviter.givenName} ${inviter.familyName}` : undefined;
@@ -200,22 +203,17 @@ async function inviteUnknownUser({
 /**
  * Invites several people at once. Each address is handled independently: one failure is
  * reported in `errors` and the rest still go through.
- *
- * `assertMayGrant` is the caller's permission check for one role; a role it refuses is reported
- * for that address like any other failure.
  */
 export async function createInvitations({
 	callerId,
 	origin,
 	conferenceId,
-	invitations,
-	assertMayGrant
+	invitations
 }: {
 	callerId: string;
 	origin: string;
 	conferenceId: string;
 	invitations: { email: string; role: TeamRole }[];
-	assertMayGrant: (role: TeamRole) => Promise<void>;
 }) {
 	const conference = await db.query.conference
 		.findFirst({ where: { id: conferenceId } })
@@ -232,9 +230,8 @@ export async function createInvitations({
 	const errors: { email: string; error: string }[] = [];
 
 	for (const invitation of invitations) {
-		const email = invitation.email.toLowerCase().trim();
+		const email = normalizeInvitationEmail(invitation.email);
 		try {
-			await assertMayGrant(invitation.role);
 			const { refusal, existingUser } = await invitationRefusal({ conferenceId, email });
 			if (refusal) {
 				errors.push({ email, error: refusal });
@@ -337,7 +334,7 @@ export async function checkInvitationEmails({
 	}[] = [];
 
 	for (const { email: raw } of emails) {
-		const email = raw.toLowerCase().trim();
+		const email = normalizeInvitationEmail(raw);
 
 		const teamMember = await db.query.teamMember.findFirst({
 			where: { conferenceId, user: { email } }

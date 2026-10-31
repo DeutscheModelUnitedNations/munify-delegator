@@ -51,71 +51,43 @@ describe('certificateContents', () => {
 
 describe('certificateSessions', () => {
 	const at = (hour: number) => new Date(Date.UTC(2026, 2, 1, hour));
+	const session = ({
+		occasion,
+		hour,
+		attended = true,
+		showOnCertificate = true
+	}: {
+		occasion: string;
+		hour: number;
+		attended?: boolean;
+		showOnCertificate?: boolean;
+	}) => ({ occasion, startedAt: at(hour), attended, showOnCertificate });
 
-	test('merges sessions of one name, in the order they first ran, and lists only those attended', () => {
+	test('lists the sessions attended, in the order they started', () => {
 		expect(
 			certificateSessions([
-				{
-					occasion: 'Abendveranstaltung',
-					startedAt: at(19),
-					attended: false,
-					showOnCertificate: true
-				},
-				{
-					occasion: 'Eröffnung',
-					startedAt: at(9),
-					attended: false,
-					showOnCertificate: true
-				},
-				{
-					occasion: ' eröffnung ',
-					startedAt: at(10),
-					attended: true,
-					showOnCertificate: true
-				}
+				session({ occasion: 'Abendveranstaltung', hour: 19 }),
+				session({ occasion: ' Eröffnung ', hour: 9 }),
+				session({ occasion: 'Mittag', hour: 12, attended: false })
+			])
+		).toEqual([
+			{ name: 'Eröffnung', attended: true },
+			{ name: 'Abendveranstaltung', attended: true }
+		]);
+	});
+
+	test('leaves out empty names', () => {
+		expect(certificateSessions([session({ occasion: '  ', hour: 9 })])).toEqual([]);
+	});
+
+	test('leaves out a session the team took off the certificates', () => {
+		expect(
+			certificateSessions([
+				session({ occasion: 'Probelauf', hour: 8, showOnCertificate: false }),
+				session({ occasion: 'Eröffnung', hour: 10 })
 			])
 		).toEqual([{ name: 'Eröffnung', attended: true }]);
 	});
-
-	test('leaves out occasions the holder was not scanned at and empty names', () => {
-		expect(
-			certificateSessions([
-				{
-					occasion: 'Test',
-					startedAt: at(8),
-					attended: false,
-					showOnCertificate: true
-				},
-				{ occasion: '  ', startedAt: at(9), attended: true, showOnCertificate: true }
-			])
-		).toEqual([]);
-	});
-});
-
-test('leaves out an occasion the team took off the certificates, even if one session still shows', () => {
-	const at = (hour: number) => new Date(Date.UTC(2026, 2, 1, hour));
-	expect(
-		certificateSessions([
-			{
-				occasion: 'Probelauf',
-				startedAt: at(8),
-				attended: true,
-				showOnCertificate: false
-			},
-			{
-				occasion: 'probelauf',
-				startedAt: at(9),
-				attended: true,
-				showOnCertificate: true
-			},
-			{
-				occasion: 'Eröffnung',
-				startedAt: at(10),
-				attended: true,
-				showOnCertificate: true
-			}
-		])
-	).toEqual([{ name: 'Eröffnung', attended: true }]);
 });
 
 describe('certificateContents with sessions', () => {

@@ -31,6 +31,7 @@ async function allowedCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 
 schemaBuilder.mutationFields((t) => ({
 	createCommittee: t.drizzleField({
+		description: 'Adds a committee to the conference.',
 		type: CommitteeRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -49,6 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCommittee: t.drizzleField({
+		description:
+			'Changes the given fields of a committee. Seats per delegation cannot drop below the members assigned to it; lowering them drops the applications for its nations that no longer fit.',
 		type: CommitteeRef,
 		args: {
 			id: t.arg.id({ required: true }),

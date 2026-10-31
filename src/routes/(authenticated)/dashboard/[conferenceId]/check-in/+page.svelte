@@ -8,7 +8,7 @@
 	import { describeParticipant } from '../registration-mode/participantInfo';
 	import IdentityCode from '#lib/components/IdentityCode.svelte';
 	import { m } from '#lib/paraglide/messages';
-	import { scanIssues, type ScanIssue } from '../team/attendance/scanCheck';
+	import type { ScanIssue } from '#lib/api/rumbleClient/client';
 	import { onMount } from 'svelte';
 	import type { PageProps } from './$types';
 
@@ -73,21 +73,18 @@
 		alreadyScanned: m.duplicateScan
 	};
 
-	// Only an unsettled person has to see participant care first; everyone else just needs a table
-	const issues = $derived.by(() => {
-		if (!participation) return [];
-		const inConference = !!(
-			participation.delegationMember ||
-			participation.singleParticipant ||
-			participation.supervisor
-		);
-		return scanIssues({
-			inConference,
-			status: participation.participantStatus,
-			birthday: participation.user.birthday,
-			alreadyScanned: false
-		});
-	});
+	// Only an unsettled person has to see participant care first; everyone else just needs a table.
+	// The server checks; a status change reaches the page through the live participant row.
+	const participantRows = $derived(
+		await client.liveQuery.conferenceParticipants({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } },
+				limit: 1
+			},
+			checkIssues: true
+		})
+	);
+	const issues = $derived(participantRows.at(0)?.checkIssues ?? []);
 
 	const range = $derived(
 		table?.fromLetter && table.toLetter

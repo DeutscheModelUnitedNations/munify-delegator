@@ -233,7 +233,7 @@ export async function createPaperReview({
 	};
 	reviewer: Reviewer;
 }) {
-	const { paper, versionId, result } = await db.transaction(async (tx) => {
+	const { versionId, result } = await db.transaction(async (tx) => {
 		const paper = await fetchPaperForReview({ tx, paperId: args.paperId });
 		const latestVersion = assertReviewable({ paper });
 		const wasFirstReviewForPiece = await isFirstReviewForPiece({ tx, paper });
@@ -262,7 +262,6 @@ export async function createPaperReview({
 		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece({ tx, paper }) : null;
 
 		return {
-			paper,
 			versionId: latestVersion.id,
 			result: {
 				reviewId: review.id,
@@ -275,5 +274,5 @@ export async function createPaperReview({
 	paperPubsub.updated(args.paperId);
 	paperVersionPubsub.updated(versionId);
 
-	return { result, conferenceId: paper.delegation.conferenceId };
+	return result;
 }

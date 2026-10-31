@@ -19,8 +19,8 @@ function authorized(header: string | null) {
 }
 
 /**
- * Sends the automatic mails that are due in every conference that sends any - the time-based
- * reminders, and whatever a mutation's own sweep did not get to. Called by the `send-emails` job
+ * Sends the mails that are due of the kinds switched to automatic, in every conference that has
+ * any; the team sends the others by hand from the e-mail page. Called by the `send-emails` job
  * with `JOBS_SECRET`; the links in the mails point at the origin it calls.
  */
 export const POST: RequestHandler = async ({ request, url }) => {

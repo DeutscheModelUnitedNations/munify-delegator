@@ -10,7 +10,7 @@ import { defineConfig } from 'tsdown';
  * anything beyond the `build/` directory.
  */
 export default defineConfig({
-	entry: { matching: 'src/lib/assignment/matching.worker.ts' },
+	entry: { matching: 'src/api/handlers/assignment/matching.worker.ts' },
 	outDir: 'build/compute',
 	format: 'esm',
 	platform: 'node',

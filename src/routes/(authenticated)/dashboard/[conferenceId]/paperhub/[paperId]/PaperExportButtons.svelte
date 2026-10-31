@@ -8,7 +8,7 @@
 		downloadResolutionTypst,
 		downloadPaperPdf,
 		downloadPaperTypst
-	} from '#lib/utils/resolutionExport';
+	} from './resolutionExport';
 	import { paperExportJob } from './paperExport';
 	import type { PaperDetail } from './paperDetail';
 

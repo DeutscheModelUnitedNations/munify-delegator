@@ -30,6 +30,7 @@ query({ table: 'surveyOption' });
 
 schemaBuilder.mutationFields((t) => ({
 	createSurveyOption: t.drizzleField({
+		description: 'Adds an option to a survey question, with how many may pick it.',
 		type: SurveyOptionRef,
 		args: {
 			questionId: t.arg.id({ required: true }),
@@ -66,6 +67,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateSurveyOption: t.drizzleField({
+		description: 'Changes the given fields of a survey option; the others stay as they are.',
 		type: SurveyOptionRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -99,6 +101,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteSurveyOption: t.field({
+		description:
+			'Deletes a survey option; refused while somebody has picked it or a schedule entry is limited to it.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

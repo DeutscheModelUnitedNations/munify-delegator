@@ -41,6 +41,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteTeamMember: t.field({
+		description: "Removes someone from the conference's team.",
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

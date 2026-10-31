@@ -15,7 +15,6 @@ import {
 	pendingInvitationCookieName
 } from '#api/handlers/teamMemberInvitation/invitationToken';
 import { logger } from '#lib/logger';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 
 type Claims = {
 	sub: string;
@@ -160,7 +159,6 @@ export async function claimPendingInvitation(userId: string) {
 		});
 		teamMemberPubsub.created();
 		teamMemberInvitationPubsub.updated(invitation.id);
-		scheduleEmailSweep({ conferenceId: invitation.conferenceId, origin: event.url.origin });
 	} catch (error) {
 		logger.error('Failed to process pending invitation', error);
 	} finally {

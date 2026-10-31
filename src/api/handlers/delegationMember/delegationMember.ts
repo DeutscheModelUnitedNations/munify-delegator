@@ -1,6 +1,5 @@
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import { db } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	assignCommittees,
@@ -67,7 +66,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	deleteDelegationMember: t.field({
 		description:
-			'Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is left, the delegation itself goes. Same ordering as the legacy resolver.',
+			'Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is left, the delegation itself goes.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -103,7 +102,6 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			const memberId = await placeUserInAssignedDelegation(args);
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember
 				.findFirst(
@@ -198,7 +196,6 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSwitchDelegationMemberSeats({ ctx, args });
 			const memberIds = await switchSeats(args);
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember.findMany(
 				query(

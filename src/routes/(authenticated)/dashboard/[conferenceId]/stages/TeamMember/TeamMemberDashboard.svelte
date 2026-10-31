@@ -16,7 +16,7 @@
 		getTeamEntryLink,
 		getTeamResourceLinks,
 		type TeamDashboardLinkContext
-	} from '#lib/data/teamDashboardLinks';
+	} from './teamDashboardLinks';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 

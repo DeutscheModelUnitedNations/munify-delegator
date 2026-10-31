@@ -14,7 +14,7 @@
 		newNsa,
 		newRole,
 		toSeedJson
-	} from '#lib/seeding/conferenceRequest';
+	} from './conferenceRequest';
 	import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 
 	const DRAFT_STORAGE_KEY = 'conference-request-draft';

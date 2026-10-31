@@ -5,7 +5,7 @@
 		type DeckStatus,
 		type SearchFieldKind,
 		type SightingEntry
-	} from '#lib/assignment/sighting';
+	} from './sighting';
 	import { m } from '#lib/paraglide/messages';
 
 	/** The best matches of a search; picking one leaves the search and shows that application. */

@@ -1,27 +1,33 @@
-import {
-	CONFERENCE_LIST_TYPES,
-	GLOBAL_LIST_TYPES,
-	type ConferenceListType,
-	type GlobalListType
-} from './types';
+import type { ConferenceListType, GlobalListType, ListKey } from './types';
 
 /**
- * List naming. The name is also how the sync tells its own lists apart from lists other systems
- * keep in the same Listmonk instance (e.g. the DMUN member hub with its "[DMUN-Intern]" lists):
- * everything matching {@link isManagedListName} belongs to the delegator, nothing else is ever
- * touched.
- *
- * The pattern is built from the list types rather than from the bracket prefix alone, so that a
- * foreign list that happens to start with six characters in brackets is not claimed. Conference
- * ids are nanoids, so the prefix may contain any of `A-Za-z0-9_-`.
+ * List keys and names. The key is how the sync knows a list: built from ids, so it survives a
+ * renamed conference. The name, description and tags are generated from the title and only ever
+ * written to Listmonk; the sync never matches them, apart from adopting lists once (`listManager`).
  */
-const MANAGED_LIST_PATTERN = new RegExp(
-	`^(?:\\[global\\] (?:${GLOBAL_LIST_TYPES.join('|')})` +
-		`|\\[[A-Za-z0-9_-]{6}\\] .* - (?:${CONFERENCE_LIST_TYPES.join('|')}))$`
-);
 
-export function isManagedListName(name: string) {
-	return MANAGED_LIST_PATTERN.test(name);
+export function listKey({
+	conferenceId,
+	listType
+}: {
+	conferenceId: string | null;
+	listType: GlobalListType | ConferenceListType;
+}): ListKey {
+	return `${conferenceId ?? 'global'}:${listType}`;
+}
+
+export function globalListKey(listType: GlobalListType) {
+	return listKey({ conferenceId: null, listType });
+}
+
+export function conferenceListKey({
+	conferenceId,
+	listType
+}: {
+	conferenceId: string;
+	listType: ConferenceListType;
+}) {
+	return listKey({ conferenceId, listType });
 }
 
 function shortenId(id: string) {

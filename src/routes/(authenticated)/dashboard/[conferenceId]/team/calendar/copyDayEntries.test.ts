@@ -1,31 +1,30 @@
 import { describe, expect, test } from 'vitest';
 import { copiedEntryArgs, matchingTargetTrackIds, retargetTrackRange } from './copyDayEntries';
 
-const sourceTracks = [
-	{ id: 's1', name: 'Main' },
-	{ id: 's2', name: 'Side' }
-];
-const targetTracks = [{ id: 't1', name: 'Main' }];
+// Tracks are the conference's: the target day runs `main`, not `side`.
+const targetTracks = [{ id: 'main' }];
 
 describe('matchingTargetTrackIds', () => {
-	test('finds the target tracks with the same names', () => {
-		expect(matchingTargetTrackIds({ trackIds: ['s1'], sourceTracks, targetTracks })).toEqual([
-			't1'
-		]);
+	test('keeps the tracks that run on the target day too', () => {
+		expect(matchingTargetTrackIds({ trackIds: ['main'], targetTracks })).toEqual(['main']);
 	});
 
-	test('leaves out unknown tracks and those without a namesake on the target day', () => {
-		expect(matchingTargetTrackIds({ trackIds: [], sourceTracks, targetTracks })).toEqual([]);
-		expect(matchingTargetTrackIds({ trackIds: ['gone'], sourceTracks, targetTracks })).toEqual([]);
-		expect(matchingTargetTrackIds({ trackIds: ['s2', 's1'], sourceTracks, targetTracks })).toEqual([
-			't1'
-		]);
+	test('leaves out the tracks the target day does not run', () => {
+		expect(matchingTargetTrackIds({ trackIds: [], targetTracks })).toEqual([]);
+		expect(matchingTargetTrackIds({ trackIds: ['gone'], targetTracks })).toEqual([]);
+		expect(matchingTargetTrackIds({ trackIds: ['side', 'main'], targetTracks })).toEqual(['main']);
+	});
+
+	test('does not match a track of the same name, which is another track', () => {
+		expect(
+			matchingTargetTrackIds({ trackIds: ['main'], targetTracks: [{ id: 'main-copy' }] })
+		).toEqual([]);
 	});
 });
 
 describe('copiedEntryArgs', () => {
 	const targetDay = { id: 'day2', date: '2026-03-14T00:00:00.000Z' };
-	const tracks = { source: sourceTracks, target: targetTracks };
+	const tracks = targetTracks;
 
 	test('moves the times to the target day and keeps everything else', () => {
 		expect(
@@ -40,14 +39,14 @@ describe('copiedEntryArgs', () => {
 					placeId: 'p1',
 					room: 'Aula',
 					surveyOptions: [{ id: 'o1' }, { id: 'o2' }],
-					tracks: [{ id: 's1' }]
+					tracks: [{ id: 'main' }]
 				},
 				targetDay,
 				tracks
 			})
 		).toEqual({
 			calendarDayId: 'day2',
-			calendarTrackIds: ['t1'],
+			calendarTrackIds: ['main'],
 			name: 'Opening',
 			description: 'Welcome',
 			startTime: new Date('2026-03-14T09:00:00Z'),
@@ -85,60 +84,26 @@ describe('copiedEntryArgs', () => {
 });
 
 describe('retargetTrackRange', () => {
-	const source = [
-		{ id: 's1', name: 'Plenary' },
-		{ id: 's2', name: 'Workshop' }
-	];
-	const target = [
-		{ id: 't0', name: 'Other' },
-		{ id: 't2', name: 'Workshop' },
-		{ id: 't1', name: 'Plenary' }
-	];
+	const target = [{ id: 'other' }, { id: 'workshop' }, { id: 'plenary' }];
 
-	test('maps both ends to the tracks of the same name', () => {
+	test('keeps both ends where the target day runs them', () => {
 		expect(
-			retargetTrackRange({
-				range: { from: 's1', to: 's2' },
-				sourceTracks: source,
-				targetTracks: target
-			})
-		).toEqual({
-			from: 't1',
-			to: 't2'
-		});
+			retargetTrackRange({ range: { from: 'plenary', to: 'workshop' }, targetTracks: target })
+		).toEqual({ from: 'plenary', to: 'workshop' });
 	});
 
 	test('a single track keeps both ends together', () => {
 		expect(
-			retargetTrackRange({
-				range: { from: 's1', to: null },
-				sourceTracks: source,
-				targetTracks: target
-			})
-		).toEqual({
-			from: 't1',
-			to: 't1'
-		});
+			retargetTrackRange({ range: { from: 'plenary', to: null }, targetTracks: target })
+		).toEqual({ from: 'plenary', to: 'plenary' });
 	});
 
 	test('falls back to the first track of the target day', () => {
-		expect(
-			retargetTrackRange({
-				range: { from: 'x', to: null },
-				sourceTracks: source,
-				targetTracks: target
-			})
-		).toEqual({
-			from: 't0',
-			to: 't0'
+		expect(retargetTrackRange({ range: { from: 'x', to: null }, targetTracks: target })).toEqual({
+			from: 'other',
+			to: 'other'
 		});
-		expect(
-			retargetTrackRange({
-				range: { from: null, to: null },
-				sourceTracks: source,
-				targetTracks: []
-			})
-		).toEqual({
+		expect(retargetTrackRange({ range: { from: null, to: null }, targetTracks: [] })).toEqual({
 			from: null,
 			to: null
 		});

@@ -1,7 +1,7 @@
 import { CombinedError } from '@urql/core';
 import { GraphQLError } from 'graphql';
 import { describe, expect, test } from 'vitest';
-import { isNetworkError, retryDelay } from './attendanceQueue';
+import { isNetworkError, requeueFailed, retryDelay, type QueueEntry } from './attendanceQueue';
 
 describe('isNetworkError', () => {
 	test('treats a TypeError (failed fetch) as a network error', () => {
@@ -43,5 +43,32 @@ describe('retryDelay', () => {
 		expect(retryDelay(5)).toBe(16000);
 		expect(retryDelay(6)).toBe(30000);
 		expect(retryDelay(20)).toBe(30000);
+	});
+});
+
+describe('requeueFailed', () => {
+	const entry = (over: Partial<QueueEntry>): QueueEntry => ({
+		localId: 'l',
+		userId: 'u',
+		timestamp: 't',
+		status: 'error',
+		retryCount: 0,
+		checkPassed: null,
+		...over
+	});
+
+	test('puts back only scans that failed for good', () => {
+		const queue = [
+			entry({ errorKind: 'unknown' }),
+			entry({ errorKind: 'network' }),
+			entry({ errorKind: 'duplicate' }),
+			entry({ status: 'success' })
+		];
+		expect(requeueFailed(queue)).toBe(true);
+		expect(queue.map((e) => e.status)).toEqual(['pending', 'error', 'error', 'success']);
+	});
+
+	test('says when there was nothing to put back', () => {
+		expect(requeueFailed([entry({ errorKind: 'network' })])).toBe(false);
 	});
 });

@@ -20,31 +20,51 @@ export const importDataSchema = jsonDocument({
 	invalid: (details) => m.calendarImportInvalid({ details })
 });
 
-/** Creates the day's tracks and maps each track name to its new id. */
+/**
+ * Lets the file's tracks run on the day and maps each track name to its id. An exported day
+ * comes from any conference, so its tracks can only name one by name: the conference's track of
+ * that name is reused (names are unique there), the others are created.
+ */
 async function importTracks({
 	tx,
+	conferenceId,
 	dayId,
 	tracks
 }: {
 	tx: Transaction;
+	conferenceId: string;
 	dayId: string;
 	tracks: CalendarDayExportData['tracks'];
 }) {
 	const trackIdByName = new Map<string, string>();
+	let created = false;
 	for (const track of tracks) {
-		const row = await tx
-			.insert(schema.calendarTrack)
-			.values({
-				calendarDayId: dayId,
-				name: track.name,
-				description: track.description,
-				sortOrder: track.sortOrder
-			})
-			.returning()
-			.then(assertFirstEntryExists);
-		trackIdByName.set(track.name, row.id);
+		const existing = await tx.query.calendarTrack.findFirst({
+			where: { conferenceId, name: track.name },
+			columns: { id: true }
+		});
+		const id =
+			existing?.id ??
+			(
+				await tx
+					.insert(schema.calendarTrack)
+					.values({
+						conferenceId,
+						name: track.name,
+						description: track.description,
+						sortOrder: track.sortOrder
+					})
+					.returning({ id: schema.calendarTrack.id })
+					.then(assertFirstEntryExists)
+			).id;
+		created ||= !existing;
+		await tx
+			.insert(schema.calendarDayToCalendarTrack)
+			.values({ a: dayId, b: id })
+			.onConflictDoNothing();
+		trackIdByName.set(track.name, id);
 	}
-	return trackIdByName;
+	return { trackIdByName, created };
 }
 
 /** The places the entries name, each once: the first entry naming a place describes it. */
@@ -125,7 +145,12 @@ export async function createImportedDay({
 			.returning()
 			.then(assertFirstEntryExists);
 
-		const trackIdByName = await importTracks({ tx, dayId: day.id, tracks: importData.tracks });
+		const { trackIdByName, created: tracksCreated } = await importTracks({
+			tx,
+			conferenceId: args.conferenceId,
+			dayId: day.id,
+			tracks: importData.tracks
+		});
 		const placeIdByName = await importPlaces({
 			tx,
 			conferenceId: args.conferenceId,
@@ -160,10 +185,10 @@ export async function createImportedDay({
 			}
 		}
 
-		return day;
+		return { ...day, tracksCreated };
 	});
 	calendarDayPubsub.created();
-	if (importData.tracks.length > 0) calendarTrackPubsub.created();
+	if (day.tracksCreated) calendarTrackPubsub.created();
 	if (importData.entries.length > 0) calendarEntryPubsub.created();
 	return day;
 }

@@ -1,6 +1,7 @@
 import { client, type Mutation } from '#lib/api/rumbleClient/client';
 import { genericPromiseToastMessages } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
+import { ensureSent } from '../sections/owedEmails';
 
 /**
  * The person's `conferenceParticipant` row: what the formalities and the conference tab show and
@@ -74,4 +75,14 @@ export async function changeParticipantStatus({
 	});
 	toast.promise(promise, genericPromiseToastMessages);
 	await promise;
+}
+
+/** Tells the person by mail that their lost badge waits at participant care; throws if it failed. */
+export async function notifyBadgeFound(participantId: string) {
+	const result = await client.mutate.notifyBadgeFound({
+		__args: { id: participantId },
+		sent: true,
+		error: true
+	});
+	ensureSent(result);
 }

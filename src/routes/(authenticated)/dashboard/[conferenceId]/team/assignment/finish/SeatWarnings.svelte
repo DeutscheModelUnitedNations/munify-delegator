@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { RequiredApplication } from '#lib/assignment/seatChecks';
+	import type { RequiredApplication } from './seatChecks';
 	import codenamize from '#lib/helpers/codenamize';
 	import { m } from '#lib/paraglide/messages';
 

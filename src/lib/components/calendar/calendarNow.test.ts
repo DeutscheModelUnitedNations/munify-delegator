@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { entriesForSeat, seatNamesOf, timelineOf, wallClockNow } from './calendarNow';
+import { entriesForSeat, seatOf, timelineOf, wallClockNow } from './calendarNow';
 
 const at = (iso: string) => new Date(`${iso}Z`);
 const entry = (name: string, start: string, end: string, tracks: string[] = []) => ({
@@ -24,52 +24,63 @@ describe('wallClockNow', () => {
 });
 
 describe('entriesForSeat', () => {
+	const track = ({
+		id,
+		committees = [],
+		roles = []
+	}: {
+		id: string;
+		committees?: string[];
+		roles?: string[];
+	}) => ({
+		id,
+		committees: committees.map((committee) => ({ id: committee })),
+		conferenceRoles: roles.map((role) => ({ id: role }))
+	});
+	const council = track({ id: 'sr', committees: ['committee-sr'] });
+	const press = track({ id: 'press', roles: ['role-press'] });
+	const imo = track({ id: 'imo', committees: ['committee-imo'] });
 	const days = [
 		{
-			tracks: [
-				{ id: 'sr-1', name: 'Sicherheitsrat' },
-				{ id: 'press-1', name: 'GV Presse' },
-				{ id: 'imo-1', name: 'IMO MRR' }
-			],
+			tracks: [council, press, imo],
 			entries: [
 				entry('For everyone', '2026-10-11T10:00', '2026-10-11T11:00'),
 				// Shared entries are stored linked to every track of the day
-				entry('On all tracks', '2026-10-11T10:30', '2026-10-11T11:00', [
-					'sr-1',
-					'press-1',
-					'imo-1'
-				]),
-				entry('Council', '2026-10-11T11:00', '2026-10-11T12:00', ['sr-1']),
-				entry('Press', '2026-10-11T11:00', '2026-10-11T12:00', ['press-1']),
-				entry('Both', '2026-10-11T12:00', '2026-10-11T13:00', ['sr-1', 'press-1'])
+				entry('On all tracks', '2026-10-11T10:30', '2026-10-11T11:00', ['sr', 'press', 'imo']),
+				entry('Council', '2026-10-11T11:00', '2026-10-11T12:00', ['sr']),
+				entry('Press', '2026-10-11T11:00', '2026-10-11T12:00', ['press']),
+				entry('Both', '2026-10-11T12:00', '2026-10-11T13:00', ['sr', 'press'])
 			]
 		},
 		{
-			// Tracks belong to a day: the same committee has another id the next day
-			tracks: [
-				{ id: 'sr-2', name: 'sicherheitsrat ' },
-				{ id: 'imo-2', name: 'IMO MRR' }
-			],
-			entries: [entry('Next day council', '2026-10-12T09:00', '2026-10-12T10:00', ['sr-2'])]
+			// A track runs on some days only
+			tracks: [council, imo],
+			entries: [entry('Next day council', '2026-10-12T09:00', '2026-10-12T10:00', ['sr'])]
 		}
 	];
+	const seat = (seat: Partial<Parameters<typeof entriesForSeat>[0]['seat']>) => ({
+		committeeIds: [],
+		roleIds: [],
+		...seat
+	});
 
-	test('keeps the entries for every track and those on the seat’s own track, on every day', () => {
-		const names = entriesForSeat({ days, seatNames: ['Sicherheitsrat', 'SR'] }).map((e) => e.name);
+	test('keeps the entries for every track and those on a track for the committee, on every day', () => {
+		const names = entriesForSeat({ days, seat: seat({ committeeIds: ['committee-sr'] }) }).map(
+			(e) => e.name
+		);
 		expect(names).toEqual(['For everyone', 'On all tracks', 'Council', 'Both', 'Next day council']);
 	});
 
-	test('matches the name without caring for case or spacing', () => {
-		expect(entriesForSeat({ days, seatNames: ['  gv   presse'] }).map((e) => e.name)).toEqual([
-			'For everyone',
-			'On all tracks',
-			'Press',
-			'Both'
-		]);
+	test('a track can be for a role', () => {
+		expect(
+			entriesForSeat({ days, seat: seat({ roleIds: ['role-press'] }) }).map((e) => e.name)
+		).toEqual(['For everyone', 'On all tracks', 'Press', 'Both']);
 	});
 
-	test('someone whose seat matches no track gets every entry once', () => {
-		const names = entriesForSeat({ days, seatNames: [] }).map((e) => e.name);
+	test('someone whose seat no track is for gets every entry once', () => {
+		const names = entriesForSeat({ days, seat: seat({ committeeIds: ['committee-gv'] }) }).map(
+			(e) => e.name
+		);
 		expect(names).toContain('Council');
 		expect(names).toContain('Press');
 		expect(new Set(names).size).toBe(names.length);
@@ -130,21 +141,22 @@ describe('timelineOf', () => {
 	});
 });
 
-describe('seatNamesOf', () => {
-	test('names the committee, non-state actor and role of a seat', () => {
+describe('seatOf', () => {
+	test('is the committee and the roles of a seat', () => {
 		expect(
-			seatNamesOf({
+			seatOf({
 				delegationMember: {
-					assignedCommittee: { name: 'Security Council', abbreviation: 'SC' },
-					delegation: { assignedRole: { name: 'Red Cross', abbreviation: null } }
+					assignedCommittee: { id: 'committee-sc' },
+					delegation: { assignedRole: { id: 'role-red-cross' } }
 				},
-				singleParticipant: { assignedRole: { name: 'Press' } }
+				singleParticipant: { assignedRole: { id: 'role-press' } }
 			})
-		).toEqual(['Security Council', 'SC', 'Red Cross', 'Press']);
+		).toEqual({ committeeIds: ['committee-sc'], roleIds: ['role-red-cross', 'role-press'] });
 	});
 
-	test('a visitor or an unassigned seat has no names', () => {
-		expect(seatNamesOf(undefined)).toEqual([]);
-		expect(seatNamesOf({ delegationMember: null, singleParticipant: null })).toEqual([]);
+	test('a visitor or an unassigned seat has none', () => {
+		const none = { committeeIds: [], roleIds: [] };
+		expect(seatOf(undefined)).toEqual(none);
+		expect(seatOf({ delegationMember: null, singleParticipant: null })).toEqual(none);
 	});
 });

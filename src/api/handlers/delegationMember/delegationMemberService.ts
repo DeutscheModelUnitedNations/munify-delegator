@@ -21,12 +21,8 @@ import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitin
 import type { CommitteeMove } from './delegationMemberPermissions';
 import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import {
-	headDelegateChanges,
-	isSameSeat,
-	type Seat,
-	type SeatSwitch
-} from '#lib/helpers/seatSwitch';
+import type { SeatSwitch } from '#lib/helpers/seatSwitch';
+import { headDelegateChanges, isSameSeat, type Seat } from './seatSwitch';
 
 /**
  * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it

@@ -8,7 +8,7 @@
 		singleApplication,
 		type SightingReview,
 		type SightingStatus
-	} from '#lib/assignment/sighting';
+	} from './sighting';
 	import { m } from '#lib/paraglide/messages';
 	import { fly } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
@@ -58,21 +58,21 @@
 	let view = $state({
 		application: params.application ?? null,
 		status: asStatus(params.status),
-		school: params.school ?? null
+		schoolId: params.school ?? null
 	});
 	const status = $derived(view.status);
-	const school = $derived(view.school);
+	const schoolId = $derived(view.schoolId);
 
 	function onPopstate() {
 		const url = new URL(location.href).searchParams;
 		const application = url.get('application');
 		view.application = application;
 		view.status = asStatus(url.get('status'));
-		view.school = url.get('school');
+		view.schoolId = url.get('school');
 		if (
 			application &&
 			sighting.filter.status === view.status &&
-			sighting.filter.school === view.school
+			sighting.filter.schoolId === view.schoolId
 		) {
 			void sighting.goTo(application);
 		}
@@ -86,7 +86,7 @@
 		await Promise.all([
 			loadSightingDeck({
 				conferenceId,
-				filter: { status, school },
+				filter: { status, schoolId },
 				currentId: untrack(() => view.application)
 			}),
 			fetchStartConference(conferenceId)
@@ -108,7 +108,7 @@
 	});
 	const hits = $derived(
 		searchTerm
-			? await searchApplications({ conferenceId, search: searchTerm, filter: { status, school } })
+			? await searchApplications({ conferenceId, search: searchTerm, filter: { status, schoolId } })
 			: undefined
 	);
 	const searchShown = $derived(
@@ -234,14 +234,14 @@
 		</label>
 		<FilterSelects
 			{status}
-			{school}
+			{schoolId}
 			{conferenceId}
 			onStatus={(value) => {
 				view.status = asStatus(value);
 				params.status = value;
 			}}
 			onSchool={(value) => {
-				view.school = value;
+				view.schoolId = value;
 				params.school = value;
 			}}
 		/>

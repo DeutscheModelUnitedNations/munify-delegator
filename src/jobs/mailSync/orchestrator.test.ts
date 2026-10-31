@@ -42,7 +42,7 @@ const TASK = 'Mail Service: Sync with Listmonk';
 
 describe('runMailSync', () => {
 	const conferences = [{ id: 'c1', title: 'MUN-SH' }];
-	const listIds = new Map([['[global] DMUN_NEWSLETTER', 1]]);
+	const lists = { idOf: new Map([['global:DMUN_NEWSLETTER', 1]]), ids: new Set([1]) };
 	const subscribers = new Map([['a@example.org', { id: 1 }]]);
 
 	beforeEach(() => {
@@ -50,7 +50,7 @@ describe('runMailSync', () => {
 		vi.spyOn(logger, 'error').mockImplementation(() => {});
 		mocks.config.LISTMONK_API_URL = 'http://listmonk';
 		mocks.findConferences.mockResolvedValue(conferences);
-		mocks.ensureListsExist.mockResolvedValue(listIds);
+		mocks.ensureListsExist.mockResolvedValue(lists);
 		mocks.fetchSubscriberMap.mockResolvedValue(subscribers);
 		mocks.processUsersInBatches.mockImplementation(async ({ callback }) => {
 			await callback([{ id: 'u1' }]);
@@ -76,7 +76,7 @@ describe('runMailSync', () => {
 		expect(mocks.planUserBatch).toHaveBeenCalledWith({
 			users: [{ id: 'u1' }],
 			subscriberMap: subscribers,
-			listNameToId: listIds,
+			lists,
 			plan: {
 				userActions: [{ kind: 'create' }, { kind: 'update' }],
 				releases: [],
@@ -87,6 +87,7 @@ describe('runMailSync', () => {
 		});
 		expect(mocks.planReleases).toHaveBeenCalledWith({
 			subscriberMap: subscribers,
+			lists,
 			plan: expect.anything()
 		});
 		expect(logger.info).toHaveBeenCalledWith(

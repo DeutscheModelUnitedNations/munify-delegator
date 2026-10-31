@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { pendingCount } from '#lib/assignment/board';
+	import { pendingCount } from './boardState';
 	import { m } from '#lib/paraglide/messages';
 	import { fetchAssignmentDraft, fetchSeatedApplications, seatedSnapshot } from './board';
 

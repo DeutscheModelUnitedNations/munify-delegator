@@ -16,8 +16,7 @@ vi.mock('#api/pubsub', () => {
 });
 
 const pubsub = await import('#api/pubsub');
-const { db } = await import('#api/db/db');
-const { announceAppliedPlan, announceDraftWrite } = await import('./applyDraft');
+const { announceAppliedPlan } = await import('./applyDraft');
 
 const emptyPlan: ApplyPlan = {
 	newDelegations: [],
@@ -56,20 +55,5 @@ describe('announceAppliedPlan', () => {
 		expect(pubsub.assignmentUnitPubsub.created).toHaveBeenCalledOnce();
 		expect(pubsub.assignmentSingleRolePubsub.created).toHaveBeenCalledOnce();
 		expect(pubsub.delegationPubsub.updated).not.toHaveBeenCalled();
-	});
-});
-
-describe('announceDraftWrite', () => {
-	it('announces a write outside a transaction', () => {
-		vi.clearAllMocks();
-		announceDraftWrite(db);
-		expect(pubsub.assignmentUnitPubsub.created).toHaveBeenCalledOnce();
-	});
-
-	it('leaves a write inside a transaction to whoever commits it', () => {
-		vi.clearAllMocks();
-		// Any other handle than `db` stands for a transaction.
-		announceDraftWrite(structuredClone(db));
-		expect(pubsub.assignmentUnitPubsub.created).not.toHaveBeenCalled();
 	});
 });

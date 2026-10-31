@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { clearsRatingKey, ratingForKey } from '#lib/assignment/deckKeys';
-	import type { SightingReview } from '#lib/assignment/sighting';
+	import { clearsRatingKey, ratingForKey } from './deckKeys';
+	import type { SightingReview } from './sighting';
 	import StarRating from '#lib/components/StarRating.svelte';
 	import { m } from '#lib/paraglide/messages';
 

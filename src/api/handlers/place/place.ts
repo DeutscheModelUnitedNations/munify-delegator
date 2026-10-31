@@ -35,6 +35,7 @@ const placeDetailArgs = (arg: ArgBuilder) => ({
 
 schemaBuilder.mutationFields((t) => ({
 	createPlace: t.drizzleField({
+		description: "Adds a place (a venue) the conference's schedule entries can name.",
 		type: PlaceRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -78,6 +79,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updatePlace: t.drizzleField({
+		description:
+			'Changes the given fields of a place; the others stay as they are, `null` clears all but the name.',
 		type: PlaceRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -118,6 +121,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deletePlace: t.field({
+		description: 'Deletes a place; schedule entries at it stay, without a place.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

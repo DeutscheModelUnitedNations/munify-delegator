@@ -1,9 +1,9 @@
-import { client } from '#lib/api/rumbleClient/client';
+import { client, type ScanIssue } from '#lib/api/rumbleClient/client';
 
 /**
- * A scanned person as the entrance scanner shows them. The code may be an access card number or a
- * user id; the server resolves it and answers with a fixed set of fields, so any team member can
- * check someone without being allowed to read their user or status rows.
+ * A scanned person as the entrance scanner shows them. The code is a user id; the server answers
+ * with a fixed set of fields, so any team member can check someone without being allowed to read
+ * their user or status rows.
  */
 export interface FoundPerson {
 	user: {
@@ -26,7 +26,6 @@ export interface FoundPerson {
 		singleRoleName: string | null;
 	};
 	status: {
-		accessCardId: string | null;
 		didAttend: boolean;
 		paymentStatus: 'DONE' | 'PROBLEM' | 'PENDING';
 		termsAndConditions: 'DONE' | 'PROBLEM' | 'PENDING';
@@ -34,25 +33,34 @@ export interface FoundPerson {
 	};
 	/** The titles of the survey options the session expects that the person picked none of. */
 	missingSurveyOptions: string[];
+	/** The server's check: what is open, whether it passed, and whether a scan may be recorded anyway. */
+	check: {
+		issues: ScanIssue[];
+		passed: boolean;
+		mayRecordAnyway: boolean;
+	};
 }
 
 const orNull = <T>(value: T | null | undefined): T | null => value ?? null;
 
 /**
  * The person a code leads to, or `null` when it leads to nobody. A plain query, read again after
- * changes. With a session, the survey options it expects are checked too.
+ * changes. With a session, the survey options it expects are checked too, and with `asScan` an
+ * earlier scan of the person in it.
  */
 export async function loadScannedPerson({
 	conferenceId,
 	code,
-	sessionId
+	sessionId,
+	asScan = false
 }: {
 	conferenceId: string;
 	code: string;
 	sessionId?: string;
+	asScan?: boolean;
 }): Promise<FoundPerson | null> {
 	const found = await client.query.scanLookup({
-		__args: { conferenceId, code, sessionId },
+		__args: { conferenceId, code, sessionId, asScan },
 		found: true,
 		userId: true,
 		givenName: true,
@@ -69,12 +77,14 @@ export async function loadScannedPerson({
 		nonStateActorIcon: true,
 		committeeAbbreviation: true,
 		singleRoleName: true,
-		accessCardId: true,
 		didAttend: true,
 		paymentStatus: true,
 		termsAndConditions: true,
 		guardianConsent: true,
-		missingSurveyOptions: true
+		missingSurveyOptions: true,
+		issues: true,
+		checkPassed: true,
+		mayRecordAnyway: true
 	});
 	if (!found.found || !found.userId) return null;
 	return {
@@ -98,12 +108,16 @@ export async function loadScannedPerson({
 			singleRoleName: orNull(found.singleRoleName)
 		},
 		status: {
-			accessCardId: orNull(found.accessCardId),
 			didAttend: found.didAttend,
 			paymentStatus: found.paymentStatus,
 			termsAndConditions: found.termsAndConditions,
 			guardianConsent: found.guardianConsent
 		},
-		missingSurveyOptions: [...found.missingSurveyOptions]
+		missingSurveyOptions: [...found.missingSurveyOptions],
+		check: {
+			issues: [...found.issues],
+			passed: found.checkPassed,
+			mayRecordAnyway: found.mayRecordAnyway
+		}
 	};
 }

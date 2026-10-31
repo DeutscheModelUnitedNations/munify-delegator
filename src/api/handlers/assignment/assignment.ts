@@ -1,8 +1,6 @@
 import { db } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { enum_, object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { applyAssignmentDraft } from './applyDraft';
-import { reviewArgsSchema } from './review';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { assertCustomRolesOf, assertOfferedIn } from '#api/services/authHelper/rules';
 import {
@@ -10,7 +8,6 @@ import {
 	assertCanAssignSingleParticipant,
 	assertCanAssignUnit,
 	assertCanPlanAssignment,
-	assertCanReleaseAssignment,
 	assertCanReviewApplication,
 	assertPartsAreOwnMembers,
 	registerAssignmentAbilities
@@ -25,6 +22,7 @@ import {
 	planSingleParticipantRole,
 	planUnitRole,
 	resetAssignmentSize,
+	reviewArgsSchema,
 	revertSingleParticipantConversion,
 	setAssignmentReleased,
 	splitDelegation,
@@ -32,8 +30,25 @@ import {
 	upsertAssignmentReview,
 	upsertAssignmentWeights
 } from './assignmentService';
+import { assignmentWeightsArgsSchema } from '#lib/schemata/assignmentWeights';
 
 registerAssignmentAbilities();
+
+/** A resolver making `change` to the draft of a single participant the caller may assign. */
+function changeSingleParticipant(
+	change: (
+		participant: Awaited<ReturnType<typeof assertCanAssignSingleParticipant>>
+	) => Promise<unknown>
+) {
+	return async (
+		_root: unknown,
+		{ singleParticipantId: id }: { singleParticipantId: string },
+		ctx: ApiContext
+	) => {
+		await change(await assertCanAssignSingleParticipant({ ctx, id }));
+		return true;
+	};
+}
 
 const AssignmentReviewRef = object({ table: 'assignmentReview' });
 query({ table: 'assignmentReview' });
@@ -52,22 +67,6 @@ const experienceEffectEnum = enum_({ tsName: 'assignmentExperienceEffect' });
 const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
 	fields: (t) => ({ memberIds: t.idList({ required: true }) })
 });
-
-/** Checks the caller may plan this single participant's assignment, then plans `change`. */
-async function onSingleParticipant({
-	ctx,
-	id,
-	change
-}: {
-	ctx: ApiContext;
-	id: string;
-	change: (
-		participant: Awaited<ReturnType<typeof assertCanAssignSingleParticipant>>
-	) => Promise<unknown>;
-}) {
-	await change(await assertCanAssignSingleParticipant({ ctx, id }));
-	return true;
-}
 
 schemaBuilder.mutationFields((t) => ({
 	upsertAssignmentReview: t.drizzleField({
@@ -118,6 +117,8 @@ schemaBuilder.mutationFields((t) => ({
 			experienceModifier: t.arg.float(),
 			experienceEffect: t.arg({ type: experienceEffectEnum })
 		},
+		// The weights form's limits, so they stay in one place.
+		validate: assignmentWeightsArgsSchema,
 		resolve: async (query, _root, { conferenceId, ...args }, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId });
 			// The weights are never null in the table: null leaves one as it is, like undefined.
@@ -195,6 +196,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	undoDelegationSplit: t.field({
+		description: 'Drops a planned split, so the delegation is planned as a whole again.',
 		type: 'Boolean',
 		args: { delegationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -208,19 +210,15 @@ schemaBuilder.mutationFields((t) => ({
 		description: 'Plans to turn a single participant into a delegation of their own.',
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: (_root, args, ctx) =>
-			onSingleParticipant({ ctx, id: args.singleParticipantId, change: convertSingleParticipant })
+		resolve: changeSingleParticipant(convertSingleParticipant)
 	}),
 
 	revertSingleParticipantConversion: t.field({
+		description:
+			'Drops the plan to turn a single participant into a delegation, with any role planned for it.',
 		type: 'Boolean',
 		args: { singleParticipantId: t.arg.id({ required: true }) },
-		resolve: (_root, args, ctx) =>
-			onSingleParticipant({
-				ctx,
-				id: args.singleParticipantId,
-				change: (participant) => revertSingleParticipantConversion(participant.id)
-			})
+		resolve: changeSingleParticipant(({ id }) => revertSingleParticipantConversion(id))
 	}),
 
 	assignSingleParticipantRole: t.field({
@@ -246,7 +244,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	autoAssignDelegations: t.field({
-		description: 'Returns how many delegations got a role.',
+		description:
+			'Plans roles for the unassigned delegations of `size` members, using only roles with exactly that many free seats. Returns how many got one.',
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }), size: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -260,7 +259,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	autoAssignSingleParticipants: t.field({
-		description: 'Returns how many single participants got a role.',
+		description:
+			'Plans a custom role for each single participant without one, among the roles they applied for; roles planned by hand stay. Returns how many got one.',
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -271,7 +271,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	resetAssignmentSize: t.field({
-		description: 'Unplans every role with `seats` seats.',
+		description: 'Unplans every role with `seats` seats, so they can be assigned anew.',
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }), seats: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -300,32 +300,21 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
 			await applyAssignmentDraft(args.conferenceId);
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;
 		}
 	}),
 
 	setAssignmentReleased: t.field({
 		description:
-			'Shows participants their roles, or hides them. See `setAssignmentReleased` for `sendEmails`.',
+			'Shows participants their roles, or hides them again. Sends nothing: the result mails are sent from the e-mail page, or by the job where they are switched to automatic.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			released: t.arg.boolean({ required: true }),
-			sendEmails: t.arg.boolean()
+			released: t.arg.boolean({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReleaseAssignment({
-				ctx,
-				conferenceId: args.conferenceId,
-				decidesEmails: args.sendEmails != null
-			});
-			await setAssignmentReleased({
-				conferenceId: args.conferenceId,
-				released: args.released,
-				sendEmails: args.sendEmails ?? undefined
-			});
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+			await setAssignmentReleased(args);
 			return true;
 		}
 	})

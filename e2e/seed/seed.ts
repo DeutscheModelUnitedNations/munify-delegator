@@ -33,6 +33,7 @@ import { upsertParticipant } from './participant';
 import { seatNations, upsertNationRole } from './conferenceRole';
 import { seedSeatPlanning } from './seatPlanning';
 import { seedSeats } from './seats';
+import { seedAttendance } from './attendance';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -91,6 +92,9 @@ export const E2E_SURVEY_OPTION_A_ID = 'e2e00000surveyoption000001';
 export const E2E_SURVEY_OPTION_A_TITLE = 'Seeded Option A';
 export const E2E_SURVEY_OPTION_B_ID = 'e2e00000surveyoption000002';
 export const E2E_SURVEY_OPTION_B_TITLE = 'Seeded Option B';
+// A hidden question beside it: participants must neither read nor answer it.
+export const E2E_HIDDEN_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0002';
+export const E2E_HIDDEN_SURVEY_OPTION_ID = 'e2e00000surveyoption000003';
 
 // Management: admin views/updates a pre-registered participant's status.
 export const E2E_MGMT_ADMIN_ID = 'e2e-mgmt-admin';
@@ -689,6 +693,31 @@ export default async function seed() {
 			.values(surveyOption)
 			.onConflictDoUpdate({ target: schema.surveyOption.id, set: surveyOption });
 	}
+	const hiddenSurveyQuestion = {
+		...surveyQuestion,
+		id: E2E_HIDDEN_SURVEY_QUESTION_ID,
+		title: 'E2E Hidden Survey',
+		hidden: true
+	};
+	await db
+		.insert(schema.surveyQuestion)
+		.values(hiddenSurveyQuestion)
+		.onConflictDoUpdate({ target: schema.surveyQuestion.id, set: hiddenSurveyQuestion });
+	const hiddenSurveyOption = {
+		id: E2E_HIDDEN_SURVEY_OPTION_ID,
+		title: 'Hidden Option',
+		questionId: hiddenSurveyQuestion.id,
+		description: 'Seeded option of a hidden question.',
+		upperLimit: 0
+	};
+	await db
+		.insert(schema.surveyOption)
+		.values(hiddenSurveyOption)
+		.onConflictDoUpdate({ target: schema.surveyOption.id, set: hiddenSurveyOption });
+	await db
+		.delete(schema.surveyAnswer)
+		.where(eq(schema.surveyAnswer.questionId, hiddenSurveyQuestion.id));
+
 	// Answers are unique per (questionId, conferenceParticipantId); clearing them keeps the "has not
 	// answered yet" precondition true on every run against a persistent database.
 	await db.delete(schema.surveyAnswer).where(eq(schema.surveyAnswer.questionId, surveyQuestion.id));
@@ -857,6 +886,7 @@ export default async function seed() {
 
 	await seedSeatPlanning(db);
 	await seedSeats(db);
+	await seedAttendance(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }

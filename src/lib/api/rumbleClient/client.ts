@@ -366,6 +366,7 @@ export type Attendancesession = {
     search?: String | null | undefined,
     where?: AttendanceentryWhereInputArgument | null | undefined
   }) => Attendanceentry[],
+  entryCount: Int,
   id: ID,
   mode: AttendancesessionmodeEnum,
   occasion: String,
@@ -415,7 +416,7 @@ export type AttendancesessionWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type AttendancesessionmodeEnum = "BADGE" | "CHECK" | "RECORD";
+export type AttendancesessionmodeEnum = "CHECK" | "RECORD";
 		
 export type BigInt = unknown;
 		
@@ -587,11 +588,32 @@ export type CalendarentryWhereInputArgument = {
 export type CalendarentrycolorEnum = "BREAK" | "CEREMONY" | "HIGHLIGHT" | "INFO" | "LOGISTICS" | "SESSION" | "SOCIAL" | "WORKSHOP";
 		
 export type Calendartrack = {
-  calendarDay: (p?: {
+  calendarDays: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
     orderBy?: CalendardayOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
     where?: CalendardayWhereInputArgument | null | undefined
-  }) => Calendarday,
-  calendarDayId: ID,
+  }) => Calendarday[],
+  committees: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee[],
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  conferenceRoles: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ConferenceroleOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: ConferenceroleWhereInputArgument | null | undefined
+  }) => Conferencerole[],
   createdAt: DateTime,
   description: String | null,
   entries: (p?: {
@@ -609,7 +631,7 @@ export type Calendartrack = {
 };
 		
 export type CalendartrackOrderInputArgument = {
-  calendarDayId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
@@ -622,8 +644,11 @@ export type CalendartrackWhereInputArgument = {
   AND?: CalendartrackWhereInputArgument[] | undefined,
   NOT?: CalendartrackWhereInputArgument | null | undefined,
   OR?: CalendartrackWhereInputArgument[] | undefined,
-  calendarDay?: CalendardayWhereInputArgument | null | undefined,
-  calendarDayId?: IDWhereInputArgument | null | undefined,
+  calendarDays?: CalendardayWhereInputArgument | null | undefined,
+  committees?: CommitteeWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  conferenceRoles?: ConferenceroleWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
   description?: StringWhereInputArgument | null | undefined,
   entries?: CalendarentryWhereInputArgument | null | undefined,
@@ -637,14 +662,6 @@ export type CertificateJWT = {
   fullName: String | null,
   jwt: String | null,
   sessions: () => CertificateSession[]    
-};
-		
-export type CertificateOccasion = {
-  entries: Int,
-  firstStartedAt: DateTime,
-  name: String,
-  sessions: Int,
-  showOnCertificate: Boolean    
 };
 		
 export type CertificateSession = {
@@ -665,6 +682,13 @@ export type Committee = {
     search?: String | null | undefined,
     where?: CommitteeagendaitemWhereInputArgument | null | undefined
   }) => Committeeagendaitem[],
+  calendarTracks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CalendartrackOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CalendartrackWhereInputArgument | null | undefined
+  }) => Calendartrack[],
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -731,6 +755,7 @@ export type CommitteeWhereInputArgument = {
   OR?: CommitteeWhereInputArgument[] | undefined,
   abbreviation?: StringWhereInputArgument | null | undefined,
   agendaItems?: CommitteeagendaitemWhereInputArgument | null | undefined,
+  calendarTracks?: CalendartrackWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
@@ -814,6 +839,13 @@ export type Conference = {
     search?: String | null | undefined,
     where?: CalendardayWhereInputArgument | null | undefined
   }) => Calendarday[],
+  calendarTracks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CalendartrackOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CalendartrackWhereInputArgument | null | undefined
+  }) => Calendartrack[],
   certificateFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -1086,6 +1118,7 @@ export type ConferenceWhereInputArgument = {
   bankName?: StringWhereInputArgument | null | undefined,
   bic?: StringWhereInputArgument | null | undefined,
   calendarDays?: CalendardayWhereInputArgument | null | undefined,
+  calendarTracks?: CalendartrackWhereInputArgument | null | undefined,
   certificateFile?: StoredfileWhereInputArgument | null | undefined,
   certificateFileId?: IDWhereInputArgument | null | undefined,
   committees?: CommitteeWhereInputArgument | null | undefined,
@@ -1280,6 +1313,7 @@ export type Conferenceparticipant = {
     search?: String | null | undefined,
     where?: AttendanceentryWhereInputArgument | null | undefined
   }) => Attendanceentry[],
+  checkIssues: ScanIssue[],
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -1395,6 +1429,13 @@ export type Conferencerole = {
     search?: String | null | undefined,
     where?: SingleparticipantWhereInputArgument | null | undefined
   }) => Singleparticipant[],
+  calendarTracks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: CalendartrackOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: CalendartrackWhereInputArgument | null | undefined
+  }) => Calendartrack[],
   committees: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1452,6 +1493,7 @@ export type ConferenceroleWhereInputArgument = {
   appliedSingleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   assignedDelegations?: DelegationWhereInputArgument | null | undefined,
   assignedSingleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
+  calendarTracks?: CalendartrackWhereInputArgument | null | undefined,
   committees?: CommitteeWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
@@ -1804,7 +1846,7 @@ export type EmailStatusResult = {
   userId: String | null    
 };
 		
-export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
+export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
 		
 export type Emaillog = {
   attempts: Int,
@@ -2139,8 +2181,6 @@ export type Mutation = {
     userId: ID
   }) => Singleparticipant,
   createAttendanceEntry: (p: {
-    accessCardId?: String | null | undefined,
-    checkPassed?: Boolean | null | undefined,
     conferenceId: ID,
     sessionId: ID,
     userId: ID
@@ -2165,7 +2205,10 @@ export type Mutation = {
     surveyOptionIds?: ID[] | null | undefined
   }) => Calendarentry,
   createCalendarTrack: (p: {
-    calendarDayId: ID,
+    calendarDayIds?: ID[] | null | undefined,
+    committeeIds?: ID[] | null | undefined,
+    conferenceId: ID,
+    conferenceRoleIds?: ID[] | null | undefined,
     description?: String | null | undefined,
     name: String,
     sortOrder: Int
@@ -2387,6 +2430,9 @@ export type Mutation = {
     sourceIds: ID[],
     targetId: ID
   }) => School,
+  notifyBadgeFound: (p: {
+    id: ID
+  }) => SendPersonEmailResult,
   recordSearch: (p: {
     conferenceId: ID,
     label: String,
@@ -2397,14 +2443,12 @@ export type Mutation = {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
   }) => RegenerateInvitationResult,
-  renameAttendanceOccasion: (p: {
-    conferenceId: ID,
-    newOccasion: String,
-    occasion: String
-  }) => Boolean,
   renameAttendanceSession: (p: {
     id: ID,
     occasion: String
+  }) => Boolean,
+  reopenAttendanceSession: (p: {
+    id: ID
   }) => Boolean,
   requestFileUpload: (p: {
     conferenceId: ID,
@@ -2433,6 +2477,10 @@ export type Mutation = {
   seedNewConference: (p: {
     data: JSON
   }) => Conference,
+  sendOpenEmails: (p: {
+    conferenceId: ID,
+    kinds: EmailkindEnum[]
+  }) => Int,
   sendPersonEmail: (p: {
     conferenceId: ID,
     kind: EmailkindEnum,
@@ -2445,13 +2493,16 @@ export type Mutation = {
   }) => Committeeagendaitem,
   setAssignmentReleased: (p: {
     conferenceId: ID,
-    released: Boolean,
-    sendEmails?: Boolean | null | undefined
+    released: Boolean
   }) => Boolean,
-  setAttendanceOccasionOnCertificate: (p: {
-    conferenceId: ID,
-    occasion: String,
+  setAttendanceSessionOnCertificate: (p: {
+    id: ID,
     show: Boolean
+  }) => Boolean,
+  setCalendarTrackOnDay: (p: {
+    calendarDayId: ID,
+    id: ID,
+    runs: Boolean
   }) => Boolean,
   setCommitteeNationSeat: (p: {
     committeeId: ID,
@@ -2485,6 +2536,10 @@ export type Mutation = {
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
   }) => Conferenceparticipant,
+  skipOpenEmails: (p: {
+    conferenceId: ID,
+    kinds: EmailkindEnum[]
+  }) => Int,
   splitDelegation: (p: {
     delegationId: ID,
     parts: AssignmentSplitPartInput[]
@@ -2528,24 +2583,6 @@ export type Mutation = {
     conferenceId: ID,
     didAttend?: Boolean | null | undefined
   }) => UpdateAllConferenceParticipantsResponse,
-  upsertAssignmentReview: (p?: {
-    delegationId?: ID | null | undefined,
-    disqualified?: Boolean | null | undefined,
-    evaluation?: Float | null | undefined,
-    flagged?: Boolean | null | undefined,
-    note?: String | null | undefined,
-    required?: Boolean | null | undefined,
-    singleParticipantId?: ID | null | undefined
-  }) => Assignmentreview,
-  upsertAssignmentWeights: (p: {
-    conferenceId: ID,
-    experienceEffect?: AssignmentexperienceeffectEnum | null | undefined,
-    experienceModifier?: Float | null | undefined,
-    markBonus?: Float | null | undefined,
-    markEffect?: AssignmentmarkeffectEnum | null | undefined,
-    nullRating?: Float | null | undefined,
-    ratingFactor?: Float | null | undefined
-  }) => Assignmentweights,
   updateCalendarDay: (p: {
     date?: DateTime | null | undefined,
     id: ID,
@@ -2567,6 +2604,8 @@ export type Mutation = {
     surveyOptionIds?: ID[] | null | undefined
   }) => Calendarentry,
   updateCalendarTrack: (p: {
+    committeeIds?: ID[] | null | undefined,
+    conferenceRoleIds?: ID[] | null | undefined,
     description?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
@@ -2625,29 +2664,6 @@ export type Mutation = {
     unlockPostals?: Boolean | null | undefined,
     website?: String | null | undefined
   }) => Conference,
-  upsertConferenceEmailText: (p: {
-    body?: String | null | undefined,
-    conferenceId: ID,
-    heading?: String | null | undefined,
-    kind: EmailkindEnum,
-    locale: String,
-    subject?: String | null | undefined
-  }) => Boolean,
-  upsertConferenceParticipant: (p: {
-    accessCardId?: String | null | undefined,
-    assignNextDocumentNumber?: Boolean | null | undefined,
-    assignedDocumentNumber?: Int | null | undefined,
-    conferenceId: ID,
-    didAttend?: Boolean | null | undefined,
-    guardianConsent?: AdministrativestatusEnum | null | undefined,
-    id?: ID | null | undefined,
-    mediaConsent?: AdministrativestatusEnum | null | undefined,
-    mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
-    paymentStatus?: AdministrativestatusEnum | null | undefined,
-    termsAndConditions?: AdministrativestatusEnum | null | undefined,
-    userEmail?: String | null | undefined,
-    userId?: ID | null | undefined
-  }) => Conferenceparticipant,
   updateConferenceSupervisor: (p: {
     id: ID,
     plansOwnAttendenceAtConference?: Boolean | null | undefined
@@ -2733,12 +2749,6 @@ export type Mutation = {
     motivation?: String | null | undefined,
     unApplyForRolesIdList?: ID[] | null | undefined
   }) => Singleparticipant,
-  upsertSurveyAnswer: (p: {
-    id?: ID | null | undefined,
-    optionId: ID,
-    questionId?: ID | null | undefined,
-    userId?: ID | null | undefined
-  }) => Surveyanswer,
   updateSurveyOption: (p: {
     description?: String | null | undefined,
     id: ID,
@@ -2797,7 +2807,54 @@ export type Mutation = {
     requests?: String | null | undefined,
     schoolId?: ID | null | undefined,
     schoolName?: String | null | undefined
-  }) => Waitinglistentry    
+  }) => Waitinglistentry,
+  upsertAssignmentReview: (p?: {
+    delegationId?: ID | null | undefined,
+    disqualified?: Boolean | null | undefined,
+    evaluation?: Float | null | undefined,
+    flagged?: Boolean | null | undefined,
+    note?: String | null | undefined,
+    required?: Boolean | null | undefined,
+    singleParticipantId?: ID | null | undefined
+  }) => Assignmentreview,
+  upsertAssignmentWeights: (p: {
+    conferenceId: ID,
+    experienceEffect?: AssignmentexperienceeffectEnum | null | undefined,
+    experienceModifier?: Float | null | undefined,
+    markBonus?: Float | null | undefined,
+    markEffect?: AssignmentmarkeffectEnum | null | undefined,
+    nullRating?: Float | null | undefined,
+    ratingFactor?: Float | null | undefined
+  }) => Assignmentweights,
+  upsertConferenceEmailText: (p: {
+    body?: String | null | undefined,
+    conferenceId: ID,
+    heading?: String | null | undefined,
+    kind: EmailkindEnum,
+    locale: String,
+    subject?: String | null | undefined
+  }) => Boolean,
+  upsertConferenceParticipant: (p: {
+    accessCardId?: String | null | undefined,
+    assignNextDocumentNumber?: Boolean | null | undefined,
+    assignedDocumentNumber?: Int | null | undefined,
+    conferenceId: ID,
+    didAttend?: Boolean | null | undefined,
+    guardianConsent?: AdministrativestatusEnum | null | undefined,
+    id?: ID | null | undefined,
+    mediaConsent?: AdministrativestatusEnum | null | undefined,
+    mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
+    paymentStatus?: AdministrativestatusEnum | null | undefined,
+    termsAndConditions?: AdministrativestatusEnum | null | undefined,
+    userEmail?: String | null | undefined,
+    userId?: ID | null | undefined
+  }) => Conferenceparticipant,
+  upsertSurveyAnswer: (p: {
+    id?: ID | null | undefined,
+    optionId: ID,
+    questionId?: ID | null | undefined,
+    userId?: ID | null | undefined
+  }) => Surveyanswer    
 };
 		
 export type MyReviewStats = {
@@ -2882,6 +2939,11 @@ export type OfflineUserRefresh = {
 export type OfflineUserSsoIdentity = {
   identityId: String,
   issuer: String    
+};
+		
+export type OpenEmailCount = {
+  kind: EmailkindEnum,
+  open: Int    
 };
 		
 export type OwnNametagTable = {
@@ -3394,10 +3456,6 @@ export type Query = {
   canImpersonateUser: (p: {
     targetUserId: ID
   }) => Boolean,
-  certificateOccasions: (p: {
-    conferenceId: ID,
-    revision?: Int | null | undefined
-  }) => CertificateOccasion[],
   checkTeamInvitationEmails: (p: {
     conferenceId: ID,
     emails: CheckEmailInput[]
@@ -3608,10 +3666,11 @@ export type Query = {
     where?: NationWhereInputArgument | null | undefined
   }) => Nation[],
   offlineUserRefresh: () => OfflineUserRefresh,
-  openEmailCount: (p: {
+  openEmailCounts: (p: {
     conferenceId: ID,
-    kind: EmailkindEnum
-  }) => Int,
+    kinds?: EmailkindEnum[] | null | undefined,
+    revision?: String | null | undefined
+  }) => OpenEmailCount[],
   ownNametagTable: (p: {
     conferenceId: ID
   }) => OwnNametagTable | null,
@@ -3713,6 +3772,7 @@ export type Query = {
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
   scanLookup: (p: {
+    asScan?: Boolean | null | undefined,
     code: String,
     conferenceId: ID,
     sessionId?: ID | null | undefined
@@ -3762,15 +3822,17 @@ export type Query = {
     currentId?: ID | null | undefined,
     index?: Int | null | undefined,
     revision?: Int | null | undefined,
-    school?: String | null | undefined,
+    schoolId?: ID | null | undefined,
     size?: Int | null | undefined,
-    status?: String | null | undefined
+    status?: String | null | undefined,
+    withoutSchool?: Boolean | null | undefined
   }) => SightingDeck,
   sightingEntries: (p: {
     conferenceId: ID,
     ids: ID[],
-    school?: String | null | undefined,
-    status?: String | null | undefined
+    schoolId?: ID | null | undefined,
+    status?: String | null | undefined,
+    withoutSchool?: Boolean | null | undefined
   }) => SightingDeckEntry[],
   sightingNameMatches: (p: {
     conferenceId: ID,
@@ -4018,9 +4080,11 @@ export type RoleapplicationWhereInputArgument = {
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
+export type ScanIssue = "alreadyScanned" | "guardianConsentOpen" | "notInConference" | "paymentOpen" | "surveyOptionMissing" | "teamMember" | "termsOpen";
+		
 export type ScanLookupResult = {
-  accessCardId: String | null,
   birthday: String | null,
+  checkPassed: Boolean,
   committeeAbbreviation: String | null,
   didAttend: Boolean,
   familyName: String | null,
@@ -4032,6 +4096,8 @@ export type ScanLookupResult = {
   isSupervisor: Boolean,
   isTeamMember: Boolean,
   isWaitingList: Boolean,
+  issues: ScanIssue[],
+  mayRecordAnyway: Boolean,
   missingSurveyOptions: String[],
   nationAlpha2Code: String | null,
   nationAlpha3Code: String | null,
@@ -4312,8 +4378,10 @@ export type SightingNameMatch = {
 		
 export type SightingSchool = {
   applications: Int,
+  city: String | null,
   people: Int,
-  school: String    
+  school: String,
+  schoolId: ID | null    
 };
 		
 export type Singleparticipant = {

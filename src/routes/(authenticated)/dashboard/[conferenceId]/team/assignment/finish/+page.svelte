@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { client } from '#lib/api/rumbleClient/client';
 	import { planApply, planIsEmpty } from '#lib/assignment/applyPlan';
-	import { boardState, describeRole, mergedRoles } from '#lib/assignment/board';
+	import { boardState, describeRole, mergedRoles } from '../boardState';
 	import { seatedRoles, seatsByKey } from '#lib/assignment/capacity';
 	import { targetKey, type Target } from '#lib/assignment/state';
 	import ActionModal from '#lib/components/ActionModal.svelte';
@@ -15,20 +15,19 @@
 		fetchSeatedApplications,
 		seatedSnapshot
 	} from '../board';
-	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '#lib/assignment/schoolSeats';
+	import { schoolLookupsOf, schoolSeats, schoolsOverLimit } from '../schoolSeats';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import { toastError } from '../toastError';
-	import {
-		requiredApplicationOf,
-		requiredWithoutSeat,
-		seatOccupancy
-	} from '#lib/assignment/seatChecks';
+	import { requiredApplicationOf, requiredWithoutSeat, seatOccupancy } from './seatChecks';
 	import ApplyProblems from './ApplyProblems.svelte';
 	import SeatWarnings from './SeatWarnings.svelte';
 	import PendingGroupsTable from './PendingGroupsTable.svelte';
 	import PendingSinglesTable from './PendingSinglesTable.svelte';
 	import PlanStats from './PlanStats.svelte';
 	import ReleaseCard from './ReleaseCard.svelte';
+	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
+	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte';
+	import { ASSIGNMENT_KINDS } from '#lib/helpers/emailKinds';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -112,6 +111,11 @@
 	let applying = $state(false);
 	let justApplied = $state(false);
 
+	/** Releasing or applying sends nothing; the result mails are offered right after. */
+	const emailPrompt = createEmailPrompt();
+	const offerEmails = () =>
+		emailPrompt.offer({ conferenceId: params.conferenceId, kinds: ASSIGNMENT_KINDS });
+
 	async function apply() {
 		applying = true;
 		const applied = await Promise.resolve(
@@ -122,6 +126,8 @@
 		toast.success(m.assignmentApplied());
 		justApplied = true;
 		confirmingApply = false;
+		// hidden, it owes nobody a result yet
+		if (conference.assignmentReleased) void offerEmails();
 	}
 
 	async function discard() {
@@ -216,8 +222,11 @@
 		conferenceId={params.conferenceId}
 		released={conference.assignmentReleased}
 		{justApplied}
+		onReleased={() => void offerEmails()}
 	/>
 </div>
+
+<EmailPrompt prompt={emailPrompt} />
 
 {#if confirmingApply}
 	<ActionModal

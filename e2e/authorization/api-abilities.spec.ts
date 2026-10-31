@@ -17,6 +17,8 @@ import {
 	E2E_SUPERVISOR_CONNECTION_CODE,
 	E2E_SUPERVISOR_FOR_CONNECT_USER_ID,
 	E2E_SURVEY_OPTION_A_ID,
+	E2E_HIDDEN_SURVEY_OPTION_ID,
+	E2E_HIDDEN_SURVEY_QUESTION_ID,
 	E2E_SURVEY_QUESTION_ID,
 	E2E_MGMT_ADMIN_ID,
 	E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
@@ -125,6 +127,20 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 			{ e: `${E2E_CONNECT_PARTICIPANT_ID}@e2e.test` }
 		),
 		/Only the account itself/
+	);
+});
+
+test('a participant cannot answer a hidden survey question', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_PREP_PARTICIPANT_USER_ID));
+
+	// The option id alone used to be enough: it was loaded past the read rules.
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($q: ID!, $o: ID!) { upsertSurveyAnswer(questionId: $q, optionId: $o) { id } }`,
+			{ q: E2E_HIDDEN_SURVEY_QUESTION_ID, o: E2E_HIDDEN_SURVEY_OPTION_ID }
+		),
+		/not found/i
 	);
 });
 

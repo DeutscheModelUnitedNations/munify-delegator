@@ -28,8 +28,7 @@ const preparation: Conference = {
 /** Registration is over, but the team has not released the assignment yet. */
 const unreleased: Conference = { ...preparation, assignmentReleased: false };
 
-const list = (conference: Conference, type: string) =>
-	`[${conference.id.slice(0, 6)}] ${conference.title} - ${type}`;
+const list = (conference: Conference, type: string) => `${conference.id}:${type}`;
 
 function user(overrides: Partial<MailSyncUser> = {}): MailSyncUser {
 	return {
@@ -71,7 +70,7 @@ describe('computeSubscriberState', () => {
 		expect(state).toEqual({
 			email: 'erika@example.org',
 			formattedName: 'Mustermann',
-			listNames: [],
+			listKeys: [],
 			attribs: { userId: 'u1', conferences: [] }
 		});
 		expect(stateOf(user()).formattedName).toBe('Erika Mustermann');
@@ -80,8 +79,8 @@ describe('computeSubscriberState', () => {
 	test('subscribes to the global lists the user opted into', () => {
 		expect(
 			stateOf(user({ wantsToReceiveGeneralInformation: true, wantsJoinTeamInformation: true }))
-				.listNames
-		).toEqual(['[global] DMUN_NEWSLETTER', '[global] DMUN_TEAM_TENDERS']);
+				.listKeys
+		).toEqual(['global:DMUN_NEWSLETTER', 'global:DMUN_TEAM_TENDERS']);
 		expect(stateOf(user({ wantsToReceiveGeneralInformation: true })).attribs.conferences).toEqual(
 			[]
 		);
@@ -93,7 +92,7 @@ describe('computeSubscriberState', () => {
 
 		test('put a nation head delegate on the nation, head delegate and completed lists', () => {
 			const state = listsOf(delegation(nation), true);
-			expect(state.listNames).toEqual([
+			expect(state.listKeys).toEqual([
 				list(preparation, 'DELEGATION_MEMBERS_NATIONS'),
 				list(preparation, 'HEAD_DELEGATES'),
 				list(preparation, 'REGISTRATION_COMPLETED')
@@ -105,7 +104,7 @@ describe('computeSubscriberState', () => {
 
 		test('put a non-state actor delegate on the NSA list', () => {
 			const state = listsOf(delegation(nonStateActor));
-			expect(state.listNames).toEqual([
+			expect(state.listKeys).toEqual([
 				list(preparation, 'DELEGATION_MEMBERS_NSA'),
 				list(preparation, 'REGISTRATION_COMPLETED')
 			]);
@@ -114,7 +113,7 @@ describe('computeSubscriberState', () => {
 
 		test('count an applied delegation without a role as rejected, head delegate or not', () => {
 			const state = listsOf(delegation(), true);
-			expect(state.listNames).toEqual([
+			expect(state.listKeys).toEqual([
 				list(preparation, 'REGISTRATION_COMPLETED'),
 				list(preparation, 'REJECTED_PARTICIPANTS')
 			]);
@@ -123,15 +122,15 @@ describe('computeSubscriberState', () => {
 
 		test('hold back every role list until the assignment is released', () => {
 			const state = listsOf(delegation({ ...nation, conference: unreleased }), true);
-			expect(state.listNames).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
+			expect(state.listKeys).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
 			expect(state.attribs.conferences[0].role).toBeUndefined();
-			expect(listsOf(delegation({ conference: unreleased })).listNames).toEqual([
+			expect(listsOf(delegation({ conference: unreleased })).listKeys).toEqual([
 				list(unreleased, 'REGISTRATION_COMPLETED')
 			]);
 		});
 
 		test('keep a delegation that has not applied on the not-completed list', () => {
-			expect(listsOf(delegation({ applied: false })).listNames).toEqual([
+			expect(listsOf(delegation({ applied: false })).listKeys).toEqual([
 				list(preparation, 'REGISTRATION_NOT_COMPLETED')
 			]);
 		});
@@ -150,7 +149,7 @@ describe('computeSubscriberState', () => {
 					singleParticipant: [single(true, 'press'), single(true, null), single(false, null)]
 				})
 			);
-			expect(state.listNames).toEqual([
+			expect(state.listKeys).toEqual([
 				list(preparation, 'REGISTRATION_COMPLETED'),
 				list(preparation, 'SINGLE_PARTICIPANTS'),
 				list(preparation, 'REJECTED_PARTICIPANTS'),
@@ -166,7 +165,7 @@ describe('computeSubscriberState', () => {
 
 		test('hold back whether they got a role until the assignment is released', () => {
 			const state = stateOf(user({ singleParticipant: [single(true, 'press', unreleased)] }));
-			expect(state.listNames).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
+			expect(state.listKeys).toEqual([list(unreleased, 'REGISTRATION_COMPLETED')]);
 		});
 	});
 
@@ -185,7 +184,7 @@ describe('computeSubscriberState', () => {
 			applied,
 			assignedRoleId
 		});
-		const listsOf = (s: Supervision) => stateOf(user({ conferenceSupervisor: [s] })).listNames;
+		const listsOf = (s: Supervision) => stateOf(user({ conferenceSupervisor: [s] })).listKeys;
 
 		test('during registration, follow whether their participants have applied', () => {
 			expect(listsOf(supervisor(registration, [supervised(true)], []))).toEqual([
@@ -245,14 +244,14 @@ describe('computeSubscriberState', () => {
 
 		test('put participant care and project management on the registration lists too', () => {
 			const state = stateOf(user({ teamMember: [member('PARTICIPANT_CARE'), member('MEMBER')] }));
-			expect(state.listNames).toEqual([
+			expect(state.listKeys).toEqual([
 				list(registration, 'TEAM'),
 				list(registration, 'REGISTRATION_COMPLETED'),
 				list(registration, 'REGISTRATION_NOT_COMPLETED'),
 				list(registration, 'SUPERVISORS')
 			]);
 			expect(state.attribs.conferences.map((c) => c.role)).toEqual(['PARTICIPANT_CARE', 'MEMBER']);
-			expect(stateOf(user({ teamMember: [member('PROJECT_MANAGEMENT')] })).listNames).toHaveLength(
+			expect(stateOf(user({ teamMember: [member('PROJECT_MANAGEMENT')] })).listKeys).toHaveLength(
 				4
 			);
 		});
@@ -261,7 +260,7 @@ describe('computeSubscriberState', () => {
 			'put %s on the team list only',
 			(role) => {
 				const state = stateOf(user({ teamMember: [member(role)] }));
-				expect(state.listNames).toEqual([list(registration, 'TEAM')]);
+				expect(state.listKeys).toEqual([list(registration, 'TEAM')]);
 				expect(state.attribs.conferences.map((c) => c.role)).toEqual([role]);
 			}
 		);
@@ -274,7 +273,7 @@ describe('computeSubscriberState', () => {
 				singleParticipant: [{ applied: true, assignedRoleId: 'press', conference: preparation }]
 			})
 		);
-		expect(state.listNames).toEqual([
+		expect(state.listKeys).toEqual([
 			list(preparation, 'REGISTRATION_COMPLETED'),
 			list(preparation, 'SINGLE_PARTICIPANTS'),
 			list(registration, 'TEAM')
@@ -295,7 +294,7 @@ describe('computeSubscriberState', () => {
 			})
 		);
 		expect(
-			state.listNames.filter((name) => name === list(registration, 'REGISTRATION_COMPLETED'))
+			state.listKeys.filter((name) => name === list(registration, 'REGISTRATION_COMPLETED'))
 		).toHaveLength(1);
 	});
 });

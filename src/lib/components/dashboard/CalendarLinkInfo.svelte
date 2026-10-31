@@ -9,7 +9,7 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { fetchCalendarDays } from '#lib/api/calendarDays';
 	import { fetchMyParticipation } from '#lib/api/myConferenceParticipation';
-	import { entriesForSeat, seatNamesOf, timelineOf } from '#lib/components/calendar/calendarNow';
+	import { entriesForSeat, seatOf, timelineOf } from '#lib/components/calendar/calendarNow';
 	import { formatClock } from '#lib/helpers/formatClock';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { m } from '#lib/paraglide/messages';
@@ -24,9 +24,9 @@
 		])
 	);
 
-	// What the schedule's tracks are named after: the person's committee, non-state actor or role.
-	// Read into plain strings once, so the timeline does not subscribe to every field it touches.
-	const seatNames = $derived(seatNamesOf(participation));
+	// Whom the schedule's tracks are for: the person's committee and role. Read into plain ids
+	// once, so the timeline does not subscribe to every field it touches.
+	const seat = $derived(seatOf(participation));
 
 	let now = $state(new Date());
 	$effect(() => {
@@ -36,7 +36,7 @@
 
 	const timeline = $derived(
 		timelineOf({
-			entries: entriesForSeat({ days, seatNames }),
+			entries: entriesForSeat({ days, seat }),
 			timezone: conference.timezone,
 			now,
 			count: 1

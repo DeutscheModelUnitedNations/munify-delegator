@@ -1,6 +1,5 @@
 import { hasErrorCode } from '#lib/api/errorCodes';
 import { isNetworkError, type QueueEntry } from './attendanceQueue';
-import type { ScanIssue } from './scanCheck';
 import type { FoundPerson } from './scanLoad';
 
 /** One scan in a session's local log. */
@@ -14,7 +13,7 @@ export interface ScanLogEntry {
 }
 
 /** What the backend knows as a session's mode. */
-export type ServerMode = 'CHECK' | 'RECORD' | 'BADGE';
+export type ServerMode = 'CHECK' | 'RECORD';
 
 export interface ScanSession {
 	id: string;
@@ -52,6 +51,11 @@ export function scanErrorText({
 /** Whether the server refused a scan because another device logged the person in this session. */
 export function isAlreadyScanned(err: unknown) {
 	return hasErrorCode({ err, code: 'ALREADY_SCANNED' });
+}
+
+/** Whether the server refused starting or renaming a session because another one has the name. */
+export function isNameTaken(err: unknown) {
+	return hasErrorCode({ err, code: 'CONFLICT' });
 }
 
 /**
@@ -137,12 +141,9 @@ export type Shown =
 	| { state: 'notFound'; userId: string }
 	| {
 			state: 'person';
+			/** The person as the server found them, with its check of them. */
 			person: FoundPerson;
-			issues: ScanIssue[];
-			/** Whether the session held a scan of the person before this one. */
-			alreadyScanned: boolean;
-			awaiting: 'badge' | 'ack' | 'decide' | null;
-			badgeInput: string;
+			awaiting: 'ack' | 'decide' | null;
 	  };
 
 export type ShownPerson = Extract<Shown, { state: 'person' }>;
@@ -151,49 +152,32 @@ export const isShownPerson = (value: Shown | null): value is ShownPerson =>
 	value?.state === 'person';
 
 /**
- * What a scanned person waits for: the card (badge mode), nothing when all is clear, and with open
- * points either an acknowledgement or, where the scan is recorded only on purpose (`decides`, the
- * check mode), the decision whether to record it anyway.
+ * What a scanned person waits for: nothing when all is clear, and with open points either an
+ * acknowledgement or, where the scan is recorded only on purpose (`decides`, the check mode), the
+ * decision whether to record it anyway.
  */
 export function scanStep({
-	badgeMode,
 	passed,
 	decides = false
 }: {
-	badgeMode: boolean;
 	passed: boolean;
 	decides?: boolean;
 }): ShownPerson['awaiting'] {
-	if (badgeMode) return 'badge';
 	if (passed) return null;
 	return decides ? 'decide' : 'ack';
-}
-
-/** Whether a person with these open points can be recorded anyway; the server would refuse these. */
-export function mayRecordAnyway(issues: readonly ScanIssue[]) {
-	return !issues.some(
-		(issue) => issue === 'alreadyScanned' || issue === 'notInConference' || issue === 'teamMember'
-	);
 }
 
 /** The result for a person who was looked up. */
 export function personShown({
 	person,
-	issues,
-	alreadyScanned,
 	awaiting
 }: {
 	person: FoundPerson;
-	issues: ScanIssue[];
-	alreadyScanned: boolean;
 	awaiting: ShownPerson['awaiting'];
 }): ShownPerson {
 	return {
 		state: 'person',
 		person,
-		issues,
-		alreadyScanned,
-		awaiting,
-		badgeInput: person.status.accessCardId ?? ''
+		awaiting
 	};
 }

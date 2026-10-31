@@ -72,6 +72,8 @@ const FlagCollectionDataRef = schemaBuilder
 
 schemaBuilder.queryFields((t) => ({
 	flagCollection: t.field({
+		description:
+			'Paper progress as a game for the reviewers: every nation and non-state actor is a flag of pieces, one per expected paper, unlocked when it is submitted and found once it is reviewed. Most progress first.',
 		type: FlagCollectionDataRef,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

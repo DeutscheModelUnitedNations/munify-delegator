@@ -20,6 +20,7 @@ const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
 
 schemaBuilder.mutationFields((t) => ({
 	createAgendaItem: t.drizzleField({
+		description: 'Adds an agenda item (a topic) to a committee.',
 		type: CommitteeAgendaItemRef,
 		args: {
 			committeeId: t.arg.id({ required: true }),
@@ -54,6 +55,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateAgendaItem: t.drizzleField({
+		description: 'Changes the given fields of an agenda item; the others stay as they are.',
 		type: CommitteeAgendaItemRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -82,6 +84,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteAgendaItem: t.field({
+		description: 'Deletes an agenda item; its papers stay, without an agenda item.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -93,6 +96,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	setAgendaItemReviewHelpStatus: t.drizzleField({
+		description:
+			"Marks whether an agenda item's papers need more reviewers. Paper reviewers may set it without being able to edit the agenda item otherwise.",
 		type: CommitteeAgendaItemRef,
 		args: {
 			agendaItemId: t.arg.id({ required: true }),

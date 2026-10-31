@@ -78,6 +78,7 @@ const readablePaper = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 
 schemaBuilder.mutationFields((t) => ({
 	createPaper: t.drizzleField({
+		description: 'Writes a new paper with its first version, as a draft or submitted.',
 		type: PaperRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -123,6 +124,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deletePaper: t.field({
+		description: 'Deletes a paper with all its versions and reviews.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

@@ -42,12 +42,11 @@
 		if (!targetDay) return;
 		isLoading = true;
 		try {
-			// One-shot reads: the full entries and both days' tracks are only needed for the copy.
-			const [source, targetTracks] = await Promise.all([
+			// One-shot reads: the full entries and the target day's tracks are only needed for the copy.
+			const [source, tracks] = await Promise.all([
 				client.query.calendarDay({
 					__args: { id: dayId },
 					id: true,
-					tracks: { id: true, name: true },
 					entries: {
 						id: true,
 						name: true,
@@ -63,12 +62,10 @@
 					}
 				}),
 				client.query.calendarTracks({
-					__args: { where: { calendarDayId: { eq: targetDay.id } } },
-					id: true,
-					name: true
+					__args: { where: { calendarDays: { id: { eq: targetDay.id } } } },
+					id: true
 				})
 			]);
-			const tracks = { source: source.tracks, target: targetTracks };
 			// An entry none of whose tracks the target day has would run nowhere, so it stays behind
 			const mutations = source.entries
 				.map((entry) => copiedEntryArgs({ entry, targetDay, tracks }))

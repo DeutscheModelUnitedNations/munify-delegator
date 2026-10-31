@@ -16,6 +16,8 @@ const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 
 schemaBuilder.mutationFields((t) => ({
 	createPaymentTransaction: t.drizzleField({
+		description:
+			"Creates a payment reference for the participants it covers, at the conference's fee per participant. Refused when one of them has paid already.",
 		type: PaymentTransactionRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -50,6 +52,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updatePaymentTransaction: t.drizzleField({
+		description:
+			"Sets a payment's status and carries it over to everybody the payment covers; `DONE` also records when the money arrived.",
 		type: PaymentTransactionRef,
 		args: {
 			id: t.arg.id({ required: true }),

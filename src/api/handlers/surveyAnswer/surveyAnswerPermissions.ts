@@ -11,6 +11,7 @@ import { callerUserId } from '#api/services/authHelper/utils';
 import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerSurveyAnswerAbilities() {
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -44,6 +45,21 @@ export function registerSurveyAnswerAbilities() {
 interface AnsweredOption {
 	questionId: string;
 	question: { conferenceId: string };
+}
+
+/**
+ * The option an answer picks, with its question, as far as the caller reads it: participants only
+ * those of published (non-draft, not hidden) questions, participant care every one of its
+ * conference. Refuses (NOT_FOUND) any other.
+ */
+async function readableOption({ ctx, optionId }: { ctx: ApiContext; optionId: string }) {
+	return db.query.surveyOption
+		.findFirst({
+			...(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: optionId } }).query
+				.single,
+			with: { question: true }
+		})
+		.then(assertFindFirstExists);
 }
 
 /**
@@ -113,20 +129,24 @@ async function answerSubject({
 }
 
 /**
- * Refuses unless the caller may give the answer `option` stands for, for themselves or, as
- * participant care, for someone else. Returns whom it is for (their
- * participant row in the question's conference), whether the option's limits apply to the caller,
- * and the caller's answer to replace, if there is one they may update.
+ * Refuses unless the caller reads the option (`readableOption`) and may give the answer it stands
+ * for, for themselves or, as participant care, for someone else. Returns the option, whom the
+ * answer is for (their participant row in the question's conference), whether the option's limits
+ * apply to the caller, and the caller's answer to replace, if there is one they may update.
  */
 export async function assertCanAnswerSurvey({
 	ctx,
-	option,
 	args
 }: {
 	ctx: ApiContext;
-	option: AnsweredOption;
-	args: { id?: string | null; questionId?: string | null; userId?: string | null };
+	args: {
+		id?: string | null;
+		questionId?: string | null;
+		userId?: string | null;
+		optionId: string;
+	};
 }) {
+	const option = await readableOption({ ctx, optionId: args.optionId });
 	const { subjectParticipantId, ignoresLimits } = await answerSubject({ ctx, option, args });
 
 	const subjectsAnswer = {
@@ -140,7 +160,10 @@ export async function assertCanAnswerSurvey({
 		columns: { id: true }
 	});
 
-	return { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id };
+	return {
+		option,
+		answer: { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id }
+	};
 }
 
 /**

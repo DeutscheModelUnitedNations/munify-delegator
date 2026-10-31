@@ -33,5 +33,5 @@
 <section class="flex flex-col gap-2">
 	<h3 class="text-lg font-bold">{m.emailSettingsLog()}</h3>
 	<p class="text-base-content/70 text-sm">{m.emailSettingsLogDescription()}</p>
-	<EmailLogTable {entries} empty={m.emailSettingsLogEmpty()} />
+	<EmailLogTable {entries} empty={m.emailSettingsLogEmpty()} class="max-h-96 overflow-y-auto" />
 </section>

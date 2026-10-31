@@ -1,5 +1,5 @@
 import { dev } from '$app/env';
-import type { AutoAssignSinglesInput, autoAssignSingles } from '#lib/assignment/autoAssign';
+import type { AutoAssignSinglesInput, autoAssignSingles } from './autoAssign';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
@@ -8,7 +8,14 @@ const TIMEOUT_MS = 30_000;
 
 // Development runs the source through tsx (a plain Node worker cannot resolve the aliases),
 // production the bundle `bun run build:compute` writes.
-const workerSource = join(process.cwd(), 'src', 'lib', 'assignment', 'matching.worker.ts');
+const workerSource = join(
+	process.cwd(),
+	'src',
+	'api',
+	'handlers',
+	'assignment',
+	'matching.worker.ts'
+);
 const workerBundle = join(process.cwd(), 'build', 'compute', 'matching.mjs');
 
 /** Runs `autoAssignSingles` on a worker thread, so a large conference does not block the event loop. */

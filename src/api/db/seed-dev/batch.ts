@@ -45,6 +45,9 @@ export interface SeedBatch {
 	place: (typeof schema.place.$inferInsert)[];
 	calendarDay: (typeof schema.calendarDay.$inferInsert)[];
 	calendarTrack: (typeof schema.calendarTrack.$inferInsert)[];
+	calendarDayToCalendarTrack: (typeof schema.calendarDayToCalendarTrack.$inferInsert)[];
+	calendarTrackToCommittee: (typeof schema.calendarTrackToCommittee.$inferInsert)[];
+	calendarTrackToConferenceRole: (typeof schema.calendarTrackToConferenceRole.$inferInsert)[];
 	calendarEntry: (typeof schema.calendarEntry.$inferInsert)[];
 	calendarEntryToCalendarTrack: (typeof schema.calendarEntryToCalendarTrack.$inferInsert)[];
 	assignmentReview: (typeof schema.assignmentReview.$inferInsert)[];
@@ -96,6 +99,9 @@ export function emptyBatch(): SeedBatch {
 		place: [],
 		calendarDay: [],
 		calendarTrack: [],
+		calendarDayToCalendarTrack: [],
+		calendarTrackToCommittee: [],
+		calendarTrackToConferenceRole: [],
 		calendarEntry: [],
 		calendarEntryToCalendarTrack: [],
 		assignmentReview: [],
@@ -289,6 +295,18 @@ export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: Se
 	await insertChunked({
 		rows: batch.calendarTrack,
 		insert: (rows) => db.insert(s.calendarTrack).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarDayToCalendarTrack,
+		insert: (rows) => db.insert(s.calendarDayToCalendarTrack).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarTrackToCommittee,
+		insert: (rows) => db.insert(s.calendarTrackToCommittee).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarTrackToConferenceRole,
+		insert: (rows) => db.insert(s.calendarTrackToConferenceRole).values(rows)
 	});
 	await insertChunked({
 		rows: batch.calendarEntry,

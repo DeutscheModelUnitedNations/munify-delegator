@@ -20,6 +20,8 @@ query({ table: 'delegation' });
 countQuery({ table: 'delegation' });
 schemaBuilder.mutationFields((t) => ({
 	createDelegation: t.drizzleField({
+		description:
+			'Creates a delegation with the caller as its head delegate, who names their own school.',
 		type: DelegationRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -40,6 +42,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateDelegation: t.drizzleField({
+		description:
+			'Changes a delegation in one go: applying (or withdrawing the application), a new entry code, handing on the head delegate, and the application texts. Anything refused leaves the delegation as it was.',
 		type: DelegationRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -65,6 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteDelegation: t.field({
+		description: 'Deletes a delegation together with its members, role applications and papers.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

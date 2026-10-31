@@ -4,12 +4,16 @@ import type { Context } from '#api/context';
 vi.mock('#api/db/db', () => ({ db: {} }));
 
 const {
+	anyOf,
+	hasPartIn,
 	isCaredForUser,
 	isOwnUser,
 	isParticipantOfConference,
 	isTeamMemberOf,
 	isTeamMemberOfConference,
 	participatesIn,
+	publicConference,
+	readableConference,
 	systemAdmin
 } = await import('./rules');
 const { grantWhere } = await import('./utils');
@@ -101,5 +105,35 @@ describe('grantWhere', () => {
 	test('wraps a filter for an ability rule, and grants nothing without one', () => {
 		expect(grantWhere({ id: 'x' })).toEqual({ where: { id: 'x' } });
 		expect(grantWhere(undefined)).toBeUndefined();
+	});
+});
+
+// drizzle drops an empty filter from an `OR`: a system admin's match-all way has to stand alone
+describe('conference filters of a system admin', () => {
+	const admin = contextFor('admin', ['admin']);
+
+	test('reads every conference, not only the public ones', () => {
+		expect(readableConference(admin)).toEqual({});
+	});
+
+	test('has a part in every conference', () => {
+		expect(hasPartIn({ ctx: admin })).toEqual({});
+	});
+
+	test('others keep their ways', () => {
+		expect(readableConference(user).OR?.[0]).toEqual(publicConference);
+		expect(readableConference(anonymous)).toEqual({ OR: [publicConference] });
+	});
+});
+
+describe('anyOf', () => {
+	test('matches everything when one filter does', () => {
+		expect(anyOf([{ state: 'POST' }, {}])).toEqual({});
+	});
+
+	test('ORs the filters otherwise', () => {
+		expect(anyOf([{ state: 'POST' }, { id: 'c' }])).toEqual({
+			OR: [{ state: 'POST' }, { id: 'c' }]
+		});
 	});
 });

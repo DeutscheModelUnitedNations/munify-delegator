@@ -1,6 +1,6 @@
 import { client } from '#lib/api/rumbleClient/client';
 import { confirmedLinkedAccounts } from '#lib/helpers/linkedNotes';
-import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow';
+import type { DeckWindowData, WindowEntry } from './deckPosition';
 import { containing } from '#lib/components/tanStackTable/serverQuery';
 import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 
@@ -66,7 +66,13 @@ const SEARCH_LIMIT = 20;
 
 export interface DeckFilter {
 	status: string;
-	school: string | null;
+	/** The school whose people's applications are shown, `''` for those without one, `null` for all */
+	schoolId: string | null;
+}
+
+/** The school filter as the API takes it. */
+function schoolArgs(schoolId: string | null) {
+	return schoolId === '' ? { withoutSchool: true } : { schoolId };
 }
 
 /** One card of the deck as the backend sends it. */
@@ -107,7 +113,7 @@ export async function fetchSightingDeck({
 		__args: {
 			conferenceId,
 			status: filter.status,
-			school: filter.school,
+			...schoolArgs(filter.schoolId),
 			currentId: position.currentId,
 			index: position.index ?? null,
 			size: DECK_WINDOW
@@ -194,7 +200,7 @@ export async function fetchReview({ kind, id }: { kind: 'delegation' | 'single';
 	return reviews.at(0);
 }
 
-/** The schools matching a search, for the school filter. */
+/** The schools matching a search, for the school filter, with no id for the people without one. */
 export async function searchSchools({
 	conferenceId,
 	search
@@ -204,7 +210,9 @@ export async function searchSchools({
 }) {
 	return client.query.sightingSchools({
 		__args: { conferenceId, search, limit: 20 },
+		schoolId: true,
 		school: true,
+		city: true,
 		applications: true,
 		people: true
 	});
@@ -324,7 +332,7 @@ export async function searchApplications({
 		])
 	];
 	const entries = await client.query.sightingEntries({
-		__args: { conferenceId, ids, status: filter.status, school: filter.school },
+		__args: { conferenceId, ids, status: filter.status, ...schoolArgs(filter.schoolId) },
 		kind: true,
 		id: true,
 		school: true,

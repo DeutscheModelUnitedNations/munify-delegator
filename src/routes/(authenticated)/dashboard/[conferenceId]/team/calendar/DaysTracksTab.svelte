@@ -13,19 +13,34 @@
 
 	let { conferenceId }: Props = $props();
 
-	const calendarDays = $derived(
-		await client.liveQuery.calendarDays({
-			__args: {
-				where: { conferenceId: { eq: conferenceId } },
-				orderBy: { sortOrder: 'asc' }
-			},
-			id: true,
-			name: true,
-			date: true,
-			sortOrder: true,
-			tracks: { id: true, name: true, description: true, sortOrder: true, entries: { id: true } },
-			entries: { id: true }
-		})
+	const [calendarDays, tracks] = $derived(
+		await Promise.all([
+			client.liveQuery.calendarDays({
+				__args: {
+					where: { conferenceId: { eq: conferenceId } },
+					orderBy: { sortOrder: 'asc' }
+				},
+				id: true,
+				name: true,
+				date: true,
+				sortOrder: true,
+				tracks: { id: true },
+				entries: { id: true }
+			}),
+			client.liveQuery.calendarTracks({
+				__args: {
+					where: { conferenceId: { eq: conferenceId } },
+					orderBy: { sortOrder: 'asc' }
+				},
+				id: true,
+				name: true,
+				description: true,
+				sortOrder: true,
+				committees: { id: true },
+				conferenceRoles: { id: true },
+				entries: { id: true, calendarDayId: true }
+			})
+		])
 	);
 
 	type Day = (typeof calendarDays)[number];
@@ -68,7 +83,9 @@
 
 {#if calendarDays.length > 0}
 	<TrackMatrix
+		{conferenceId}
 		days={calendarDays}
+		{tracks}
 		onCopyEntries={(day) => (dayToCopy = day)}
 		onEdit={(day) => (dayForm = { day })}
 		onDelete={(day) => (dayToDelete = day)}

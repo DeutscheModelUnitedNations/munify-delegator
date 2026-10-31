@@ -23,7 +23,7 @@ import {
 	resolveEmailText,
 	type EmailPlaceholderValues,
 	type EmailTextOverride
-} from '#lib/helpers/emailTemplates';
+} from './emailText';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the

@@ -482,6 +482,8 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 
 schemaBuilder.queryFields((t) => ({
 	getConferenceStatistics: t.field({
+		description:
+			'The statistics dashboard of a conference, narrowed to the registrations `filter` selects.',
 		type: StatisticsResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

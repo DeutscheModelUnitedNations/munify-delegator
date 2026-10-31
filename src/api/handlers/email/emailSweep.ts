@@ -14,8 +14,9 @@ import {
 	type SnapshotUser
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
-import type { EmailTextOverride } from '#lib/helpers/emailTemplates';
-import { isAlwaysSent, isReminder } from '#lib/helpers/emailKinds';
+import type { EmailTextOverride } from './emailText';
+import { isAlwaysSent, REMINDER_KINDS } from '#lib/helpers/emailKinds';
+import { renderBadgeFoundEmail } from './badgeFoundEmail';
 import { renderTeamInvitationEmail } from './teamInvitationEmail';
 import {
 	deliver,
@@ -28,9 +29,11 @@ import { getInvitationExpiryDate } from '#api/handlers/teamMemberInvitation/invi
 import { logger } from '#lib/logger';
 
 /**
- * Sends what `dueEmails` says a conference owes and nobody sent yet. Each mail is claimed by
- * writing its log row first (unique per conference, kind, person and subject), so two sweeps -
- * a mutation's and the job's, or two instances' - never send one mail twice. A failed mail is tried
+ * Sends what `dueEmails` says a conference owes and nobody sent yet: the kinds switched to automatic
+ * when the `send-emails` job asks, any kinds the team picks when it sends them by hand. Nothing else
+ * sends: a mutation only changes what is owed. Each mail is claimed by writing its log row first
+ * (unique per conference, kind, person and subject), so two sweeps - the team's and the job's, or
+ * two instances' - never send one mail twice. A failed mail is tried
  * again by later sweeps, up to `MAX_ATTEMPTS`; a claim left behind by a process that died is free
  * again after `STALE_CLAIM_MINUTES`. A mail the team sent by hand counts as sent, unless it was a
  * reminder: that still leaves the automatic one due.
@@ -93,6 +96,8 @@ type LogRow = LogState & {
 	subjectKey: string;
 	trigger: (typeof schema.emailTrigger.enumValues)[number];
 };
+
+const isReminder = (kind: EmailKind) => REMINDER_KINDS.some((reminder) => reminder === kind);
 
 /**
  * The mails of `kinds` among `due` that are still to be sent, after the log. A mail sent by hand
@@ -218,21 +223,23 @@ async function sendEach({
 }
 
 /**
- * Sends up to `limit` of the mails the conference owes. Answers how many went out, failed, and are
- * left for the next round.
+ * Sends up to `limit` of the mails the conference owes, of `kinds` (by hand), else of the kinds
+ * switched to automatic. Answers how many went out, failed, and are left for the next round.
  */
 export async function sendDueEmails({
 	conferenceId,
 	origin,
+	kinds: chosen,
 	limit = 200,
 	now = new Date()
 }: {
 	conferenceId: string;
 	origin: string;
+	kinds?: ReadonlySet<EmailKind>;
 	limit?: number;
 	now?: Date;
 }) {
-	const kinds = await enabledKinds(conferenceId);
+	const kinds = chosen ?? (await enabledKinds(conferenceId));
 	const snapshot = kinds.size > 0 ? await loadEmailSnapshot(conferenceId) : undefined;
 	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
 
@@ -252,17 +259,22 @@ export async function sendDueEmails({
 	return { ...counts, remaining: open.length - batch.length };
 }
 
-/** How many mails of `kind` the conference owes right now and has not sent. */
+/** How many mails of each of `kinds` the conference owes right now and has not sent. */
 export async function countOpenEmails({
 	conferenceId,
-	kind
+	kinds
 }: {
 	conferenceId: string;
-	kind: EmailKind;
+	kinds: readonly EmailKind[];
 }) {
 	const snapshot = await loadEmailSnapshot(conferenceId);
-	if (!snapshot) return 0;
-	return (await openEmails({ snapshot, kinds: new Set([kind]), now: new Date() })).length;
+	const open = snapshot
+		? await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() })
+		: [];
+	return kinds.map((kind) => ({
+		kind,
+		open: open.filter((email) => email.kind === kind).length
+	}));
 }
 
 /**
@@ -280,7 +292,7 @@ export async function skipOpenEmails({
 	asIf?: Partial<EmailSnapshot['conference']>;
 }) {
 	const loaded = await loadEmailSnapshot(conferenceId);
-	if (!loaded || kinds.length === 0) return;
+	if (!loaded || kinds.length === 0) return 0;
 	const snapshot = { ...loaded, conference: { ...loaded.conference, ...asIf } };
 	const open = await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() });
 	for (let start = 0; start < open.length; start += 500) {
@@ -299,6 +311,7 @@ export async function skipOpenEmails({
 			.onConflictDoNothing();
 	}
 	if (open.length > 0) emailLogPubsub.created();
+	return open.length;
 }
 
 /** Switches kinds of automatic mail on or off for a conference. */
@@ -334,34 +347,41 @@ export async function conferencesSendingEmails() {
 	return [...new Set(settings.map((setting) => setting.conferenceId))];
 }
 
-// The sweeps this process runs after a mutation, one per conference at a time; a request while one
-// runs makes it go again once it is done, so nothing that changed meanwhile waits for the job.
-const running = new Map<string, { again: boolean }>();
+// The sweeps the team started by hand, one per conference at a time; kinds asked for while one runs
+// are sent once it is done.
+const running = new Map<string, { kinds: Set<EmailKind> }>();
 
-/** Sends what the conference owes now, in the background; the caller does not wait. */
-export function scheduleEmailSweep({
+/**
+ * Sends everything of `kinds` the conference owes, in the background; the caller does not wait.
+ * Kinds that are not switched to automatic are sent too: this is the team sending them by hand.
+ */
+export function sendOpenEmailsInBackground({
 	conferenceId,
+	kinds,
 	origin
 }: {
 	conferenceId: string;
+	kinds: readonly EmailKind[];
 	origin: string;
 }) {
 	const current = running.get(conferenceId);
 	if (current) {
-		current.again = true;
+		for (const kind of kinds) current.kinds.add(kind);
 		return;
 	}
-	const state = { again: false };
+	const state = { kinds: new Set(kinds) };
 	running.set(conferenceId, state);
 	void (async () => {
 		try {
-			do {
-				state.again = false;
-				let result = await sendDueEmails({ conferenceId, origin });
-				while (result.remaining > 0) result = await sendDueEmails({ conferenceId, origin });
-			} while (state.again);
+			while (state.kinds.size > 0) {
+				const batch = new Set(state.kinds);
+				state.kinds.clear();
+				let result = await sendDueEmails({ conferenceId, origin, kinds: batch });
+				while (result.remaining > 0 && result.sent + result.failed > 0)
+					result = await sendDueEmails({ conferenceId, origin, kinds: batch });
+			}
 		} catch (error) {
-			logger.error('Sending automatic emails failed', { conferenceId, err: error });
+			logger.error('Sending emails failed', { conferenceId, err: error });
 		} finally {
 			running.delete(conferenceId);
 		}
@@ -392,6 +412,12 @@ export async function previewEmail({
 		texts: draft ? [{ kind, locale, ...draft }] : stored.texts,
 		footers: footerDraft === undefined ? stored.footers : [{ locale, text: footerDraft }]
 	};
+	if (kind === 'BADGE_FOUND')
+		return renderBadgeFoundEmail({
+			recipient: user,
+			conferenceTitle: snapshot.conference.title,
+			wording
+		});
 	if (isAlwaysSent(kind))
 		return previewInvitationEmail({ conference: snapshot.conference, user, origin, wording });
 	const sample = (person: Partial<SnapshotPerson> & { user: SnapshotUser }): SnapshotPerson => ({

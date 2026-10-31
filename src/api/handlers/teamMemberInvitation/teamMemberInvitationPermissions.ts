@@ -9,6 +9,8 @@ import {
 } from '#api/services/authHelper/rules';
 import { assertCanGrantTeamRole } from '#api/handlers/teamMember/teamMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
+import { m } from '#lib/paraglide/messages';
+import { normalizeInvitationEmail } from './teamMemberInvitationService';
 
 export function registerTeamMemberInvitationAbilities() {
 	// System admins read, update and delete every invitation.
@@ -47,17 +49,37 @@ export async function assertCanManageInvitations({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageTeam' });
 }
 
-/** Refuses unless the caller may hand out `role` on the conference's team (`assertCanGrantTeamRole`). */
-export async function assertCanGrantInvitationRole({
+/**
+ * Splits invitations into those whose role the caller may hand out on the conference's team
+ * (`assertCanGrantTeamRole`) and the refused addresses, each with the reason.
+ */
+export async function partitionGrantableInvitations({
 	ctx,
 	conferenceId,
-	role
+	invitations
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
-	role: TeamRole;
+	invitations: { email: string; role: TeamRole }[];
 }) {
-	await assertCanGrantTeamRole({ ctx, conferenceId, role });
+	const refusals = new Map<TeamRole, string | undefined>();
+	for (const role of new Set(invitations.map((invitation) => invitation.role))) {
+		refusals.set(
+			role,
+			await assertCanGrantTeamRole({ ctx, conferenceId, role }).then(
+				() => undefined,
+				(error: unknown) => (error instanceof Error ? error.message : m.unknownError())
+			)
+		);
+	}
+
+	return {
+		grantable: invitations.filter((invitation) => !refusals.get(invitation.role)),
+		refused: invitations.flatMap((invitation) => {
+			const error = refusals.get(invitation.role);
+			return error ? [{ email: normalizeInvitationEmail(invitation.email), error }] : [];
+		})
+	};
 }
 
 /** Refuses unless the caller may update the invitation (its update ability); returns it. */

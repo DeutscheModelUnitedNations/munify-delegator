@@ -1,5 +1,5 @@
 import { client } from '#lib/api/rumbleClient/client';
-import { assignmentMutation, roleArgs } from '#lib/assignment/board';
+import { assignmentMutation, roleArgs } from './boardState';
 import type { AssignmentGroup, Target } from '#lib/assignment/state';
 import { succeeded } from './toastError';
 

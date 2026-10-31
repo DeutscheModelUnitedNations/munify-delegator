@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { releaseNotice } from '#lib/assignment/board';
+	import { releaseNotice } from '../boardState';
 	import { m } from '#lib/paraglide/messages';
 	import ReleaseDialog from './ReleaseDialog.svelte';
 
@@ -11,9 +11,10 @@
 		conferenceId: string;
 		released: boolean;
 		justApplied: boolean;
+		onReleased: () => void;
 	}
 
-	let { conferenceId, released, justApplied }: Props = $props();
+	let { conferenceId, released, justApplied, onReleased }: Props = $props();
 
 	let confirming = $state(false);
 
@@ -56,5 +57,5 @@
 </section>
 
 {#if confirming}
-	<ReleaseDialog {conferenceId} {released} onClose={() => (confirming = false)} />
+	<ReleaseDialog {conferenceId} {released} {onReleased} onClose={() => (confirming = false)} />
 {/if}

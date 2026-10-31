@@ -12,6 +12,8 @@ import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
 import { conferenceRef } from './conference';
 import { fileRef } from './storedFile';
 import { surveyOption } from './surveys';
+import { committee } from './committees';
+import { conferenceRole } from './roles';
 
 /** A conference's calendar: days, tracks, entries and the places they happen at. */
 
@@ -68,6 +70,11 @@ export const calendarDay = snakeCase.table(
 	]
 );
 
+/**
+ * A parallel strand of the conference's programme (a committee's sessions, a workshop line). It is
+ * the conference's, not a day's: the days it runs on are `calendarDayToCalendarTrack`, and the
+ * seats it is for its committees and roles.
+ */
 export const calendarTrack = snakeCase.table(
 	'calendar_track',
 	{
@@ -75,18 +82,43 @@ export const calendarTrack = snakeCase.table(
 		name: text().notNull(),
 		description: text(),
 		sortOrder: integer().notNull(),
-		calendarDayId: text()
-			.notNull()
-			.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+		conferenceId: conferenceRef('cascade')
 	},
 	(table) => [
-		uniqueIndex('calendar_track_calendar_day_id_sort_order_key').using(
+		uniqueIndex('calendar_track_conference_id_name_key').using(
 			'btree',
-			table.calendarDayId.asc().nullsLast(),
-			table.sortOrder.asc().nullsLast()
+			table.conferenceId.asc().nullsLast(),
+			table.name.asc().nullsLast()
 		)
 	]
 );
+
+/** The days a track runs on (`a` the day, `b` the track); an entry runs only on its day's tracks. */
+export const calendarDayToCalendarTrack = implicitManyToMany({
+	name: 'calendar_day_to_calendar_track',
+	a: () => calendarDay.id,
+	b: () => calendarTrack.id
+});
+
+/**
+ * The committees whose members a track is for (`a` the track, `b` the committee): their dashboard
+ * shows what is next on it.
+ */
+export const calendarTrackToCommittee = implicitManyToMany({
+	name: 'calendar_track_to_committee',
+	a: () => calendarTrack.id,
+	b: () => committee.id
+});
+
+/**
+ * The roles whose holders a track is for (`a` the track, `b` the role): a non-state actor's
+ * delegation, a custom role's single participant.
+ */
+export const calendarTrackToConferenceRole = implicitManyToMany({
+	name: 'calendar_track_to_conference_role',
+	a: () => calendarTrack.id,
+	b: () => conferenceRole.id
+});
 
 export const calendarEntry = snakeCase.table('calendar_entry', {
 	...defaultIdAndTimestamps,

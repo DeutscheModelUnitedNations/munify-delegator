@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SchoolSeatCount } from '#lib/assignment/schoolSeats';
+	import type { SchoolSeatCount } from './schoolSeats';
 	import { m } from '#lib/paraglide/messages';
 
 	/**

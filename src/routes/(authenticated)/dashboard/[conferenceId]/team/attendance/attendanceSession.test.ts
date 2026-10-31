@@ -8,8 +8,8 @@ import {
 	hasUnsynced,
 	isShownPerson,
 	scanStep,
-	mayRecordAnyway,
 	isAlreadyScanned,
+	isNameTaken,
 	queueFromEntries,
 	renameTargets,
 	scanErrorText,
@@ -58,6 +58,16 @@ describe('attendanceSession', () => {
 		expect(isAlreadyScanned('ALREADY_SCANNED')).toBe(false);
 	});
 
+	test('isNameTaken reads the conflict code the server refuses a taken name with', () => {
+		const refused = (code: string) =>
+			new CombinedError({
+				graphQLErrors: [new GraphQLError('Name taken', { extensions: { code } })]
+			});
+		expect(isNameTaken(refused('CONFLICT'))).toBe(true);
+		expect(isNameTaken(refused('NOT_FOUND'))).toBe(false);
+		expect(isNameTaken(new Error('Name taken'))).toBe(false);
+	});
+
 	test('hasUnsynced', () => {
 		const session = (entries: ScanLogEntry[]): ScanSession => ({
 			id: 's',
@@ -104,17 +114,10 @@ describe('attendanceSession', () => {
 	});
 
 	test('scanStep', () => {
-		expect(scanStep({ badgeMode: true, passed: true })).toBe('badge');
-		expect(scanStep({ badgeMode: false, passed: true })).toBeNull();
-		expect(scanStep({ badgeMode: false, passed: false })).toBe('ack');
-		expect(scanStep({ badgeMode: false, passed: false, decides: true })).toBe('decide');
-		expect(scanStep({ badgeMode: false, passed: true, decides: true })).toBeNull();
-	});
-
-	test('mayRecordAnyway', () => {
-		expect(mayRecordAnyway(['paymentOpen', 'surveyOptionMissing'])).toBe(true);
-		expect(mayRecordAnyway(['paymentOpen', 'alreadyScanned'])).toBe(false);
-		expect(mayRecordAnyway(['notInConference'])).toBe(false);
+		expect(scanStep({ passed: true })).toBeNull();
+		expect(scanStep({ passed: false })).toBe('ack');
+		expect(scanStep({ passed: false, decides: true })).toBe('decide');
+		expect(scanStep({ passed: true, decides: true })).toBeNull();
 	});
 
 	test('isShownPerson', () => {

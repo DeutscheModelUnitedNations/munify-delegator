@@ -65,24 +65,6 @@ export const answerLookupSchema = z
 	});
 
 /**
- * The option an answer picks, with its question and the answers it holds. The answer has to be
- * addressed either by id or by question and user.
- */
-export async function loadAnswerOption(args: {
-	id?: string | null;
-	questionId?: string | null;
-	userId?: string | null;
-	optionId: string;
-}) {
-	return db.query.surveyOption
-		.findFirst({
-			where: { id: args.optionId },
-			with: { question: true }
-		})
-		.then(assertFindFirstExists);
-}
-
-/**
  * Stores the answer an option stands for, updating `updatableAnswerId` when given or creating it.
  * Returns the answer's id.
  */
@@ -90,7 +72,12 @@ export async function upsertSurveyAnswer({
 	option,
 	answer
 }: {
-	option: Awaited<ReturnType<typeof loadAnswerOption>>;
+	option: {
+		id: string;
+		questionId: string;
+		upperLimit: number;
+		question: { deadline: Date };
+	};
 	answer: {
 		subjectParticipantId: string;
 		ignoresLimits: boolean;

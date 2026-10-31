@@ -1,12 +1,8 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
-	import {
-		matchesSeatFilters,
-		searchSeatRows,
-		type SizeLimits
-	} from '#lib/helpers/seatPlanning/hints';
-	import { nextSortParams, sortSeatRows } from '#lib/helpers/seatPlanning/sortRows';
+	import { matchesSeatFilters, searchSeatRows, type SizeLimits } from './seatHints';
+	import { nextSortParams, sortSeatRows } from './sortRows';
 	import { unMembers } from '#lib/helpers/seatPlanning/unMembers';
 	import { DataTable } from '#lib/components/tanStackTable/ui/index';
 	import CountryInfoPopover from './CountryInfoPopover.svelte';

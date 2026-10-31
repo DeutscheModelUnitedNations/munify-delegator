@@ -9,7 +9,7 @@ import {
 	resolveEmailText,
 	type EmailPlaceholderValues,
 	type EmailTextOverride
-} from '#lib/helpers/emailTemplates';
+} from './emailText';
 import { runWithLocale } from '#api/services/requestLocale';
 import { loadWording, sendByHand, wordingIn } from './emailDelivery';
 

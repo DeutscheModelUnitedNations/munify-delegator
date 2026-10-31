@@ -19,6 +19,8 @@ query({ table: 'resolution' });
 
 schemaBuilder.mutationFields((t) => ({
 	createResolution: t.drizzleField({
+		description:
+			'Adds an adopted resolution, a PDF participants download after the conference, optionally tagged with its committee.',
 		type: ResolutionRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -62,6 +64,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateResolution: t.drizzleField({
+		description:
+			"Changes a resolution's title or committee; a blank title keeps the old one, `null` removes the committee.",
 		type: ResolutionRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -95,6 +99,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteResolution: t.field({
+		description: 'Deletes a resolution.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

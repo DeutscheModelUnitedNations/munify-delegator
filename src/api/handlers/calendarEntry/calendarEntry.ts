@@ -20,6 +20,8 @@ const calendarEntryColorEnum = enum_({ tsName: 'calendarEntryColor' });
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarEntry: t.drizzleField({
+		description:
+			'Adds an entry to a schedule day, on the given tracks; with `surveyOptionIds` only those who picked one of them (and the team) see it.',
 		type: CalendarEntryRef,
 		args: {
 			calendarDayId: t.arg.id({ required: true }),
@@ -66,6 +68,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCalendarEntry: t.drizzleField({
+		description:
+			'Changes the given fields of a schedule entry; the others stay as they are, `null` clears a nullable one. An empty `surveyOptionIds` shows the entry to everybody again.',
 		type: CalendarEntryRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -117,6 +121,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCalendarEntry: t.field({
+		description: 'Deletes a schedule entry.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

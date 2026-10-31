@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DeckWindowData, WindowEntry } from '#lib/assignment/deckWindow';
+import type { DeckWindowData, WindowEntry } from './deckPosition';
 
 const fetchSightingDeck = vi.fn();
 vi.mock('./applications', () => ({
@@ -34,7 +34,7 @@ function window(start: number, length: number, total: number, current: string): 
 	};
 }
 
-const filter = { status: 'all', school: null };
+const filter = { status: 'all', schoolId: null };
 const deckWindow = (deck: DeckWindowData) =>
 	createSightingDeckWindow({ conferenceId: 'conf', filter, deck });
 

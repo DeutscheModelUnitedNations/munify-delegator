@@ -55,21 +55,68 @@
 	);
 	const statsOf = (kind: EmailkindEnum) => stats.find((row) => row.kind === kind);
 
-	let busy = $state<EmailkindEnum>();
-	/** A kind waiting for the team to say whether those it already applies to get it. */
-	let confirming = $state<{ kind: EmailkindEnum; count: number }>();
+	// What is still owed is worked out from the state and the log: asked again whenever the newest
+	// log row changes (a mail sent or skipped, here or by the job), after a save, and after an action.
+	const newestLogs = $derived(
+		await client.liveQuery.emailLogs({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { updatedAt: 'desc' },
+				limit: 1
+			},
+			id: true,
+			updatedAt: true
+		})
+	);
+	const newestLog = $derived(newestLogs[0]);
+	const newestLogId = $derived(newestLog?.id);
+	const newestLogAt = $derived(newestLog?.updatedAt.toISOString());
+	let actions = $state(0);
+	const openRevision = $derived(`${revision}:${actions}:${newestLogId}:${newestLogAt}`);
+	const openCounts = $derived(
+		await client.query.openEmailCounts({
+			__args: { conferenceId, revision: openRevision },
+			kind: true,
+			open: true
+		})
+	);
+	const openOf = (kind: EmailkindEnum) => openCounts.find((row) => row.kind === kind)?.open ?? 0;
 
-	/** How many mails switching `kind` on would send right away; undefined when that failed. */
-	async function openCount(kind: EmailkindEnum) {
-		busy = kind;
+	/** A kind whose owed mails are being sent; the send runs on in the background. */
+	let sending = $state<EmailkindEnum>();
+	async function sendOpen(kind: EmailkindEnum) {
+		sending = kind;
 		try {
-			return Number(await client.query.openEmailCount({ __args: { conferenceId, kind } }));
+			const count = await client.mutate.sendOpenEmails({ __args: { conferenceId, kinds: [kind] } });
+			toast.success(m.emailSendingStarted({ count: Number(count) }));
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : m.genericToastError());
 		} finally {
-			busy = undefined;
+			sending = undefined;
+			actions++;
 		}
 	}
+
+	/** A kind whose owed mails the team is asked to confirm never sending. */
+	let skipping = $state<{ kind: EmailkindEnum; count: number }>();
+	async function skipOpen() {
+		const pending = skipping;
+		skipping = undefined;
+		if (!pending) return;
+		try {
+			const count = await client.mutate.skipOpenEmails({
+				__args: { conferenceId, kinds: [pending.kind] }
+			});
+			toast.success(m.emailSkippedToast({ count: Number(count) }));
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : m.genericToastError());
+		} finally {
+			actions++;
+		}
+	}
+
+	/** A kind waiting for the team to say whether those it already applies to get it. */
+	let confirming = $state<{ kind: EmailkindEnum; count: number }>();
 
 	function stage({
 		kind,
@@ -92,10 +139,9 @@
 	 * Switching on asks first whether those it already applies to get it once saved. Switching back
 	 * to what is stored needs no question.
 	 */
-	async function toggle({ kind, on }: { kind: EmailkindEnum; on: boolean }) {
+	function toggle({ kind, on }: { kind: EmailkindEnum; on: boolean }) {
 		if (!on || stored.has(kind)) return stage({ kind, enabled: on, notifyExisting: false });
-		const count = await openCount(kind);
-		if (count !== undefined) ask({ kind, count });
+		ask({ kind, count: openOf(kind) });
 	}
 
 	/** Nobody to ask about: it simply goes to whoever qualifies from now on. */
@@ -127,9 +173,12 @@
 					enabled={changes.enabledOf(kind, stored.has(kind))}
 					changed={changes.has(kind)}
 					customized={customized.has(kind)}
-					busy={busy === kind}
 					counts={statsOf(kind)}
+					open={openOf(kind)}
+					sending={sending === kind}
 					ontoggle={(on) => toggle({ kind, on })}
+					onsend={() => sendOpen(kind)}
+					onskip={() => (skipping = { kind, count: openOf(kind) })}
 					onedit={() => (editing = kind)}
 				/>
 			{/each}
@@ -150,6 +199,18 @@
 		<button class="btn btn-primary" onclick={() => confirm(true)}>
 			{m.emailSettingsEnableNotify({ count: confirming?.count ?? 0 })}
 		</button>
+	{/snippet}
+</Modal>
+
+<Modal
+	open={!!skipping}
+	title={skipping ? m.emailSkipOpenTitle({ count: skipping.count }) : ''}
+	onclose={() => (skipping = undefined)}
+>
+	<p>{m.emailSkipOpenText()}</p>
+	{#snippet action()}
+		<button class="btn" onclick={() => (skipping = undefined)}>{m.cancel()}</button>
+		<button class="btn btn-warning" onclick={skipOpen}>{m.emailSkipOpen()}</button>
 	{/snippet}
 </Modal>
 

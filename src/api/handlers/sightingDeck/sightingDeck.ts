@@ -6,6 +6,8 @@ import {
 	deckSql,
 	entriesSql,
 	sightingStatusSchema,
+	schoolFilterOf,
+	schoolFilterSchema,
 	schoolRowSchema,
 	schoolsSql
 } from './sightingDeckQuery';
@@ -57,7 +59,9 @@ const SightingDeck = schemaBuilder.simpleObject('SightingDeck', {
 
 const SightingSchool = schemaBuilder.simpleObject('SightingSchool', {
 	fields: (t) => ({
+		schoolId: t.id({ nullable: true, description: 'None for the people without a school' }),
 		school: t.string(),
+		city: t.string({ nullable: true }),
 		applications: t.int(),
 		people: t.int()
 	})
@@ -79,20 +83,24 @@ schemaBuilder.queryFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			status: t.arg.string().validate(sightingStatusSchema),
-			school: t.arg.string(),
+			schoolId: t.arg.id({ description: 'Only applications with someone from this school' }),
+			withoutSchool: t.arg.boolean({
+				description: 'Only applications with someone who named no school'
+			}),
 			currentId: t.arg.id(),
 			index: t.arg.int(),
 			size: t.arg.int(),
 			// Not used: a different value is a different request, which the client cache answers anew.
 			revision: t.arg.int()
 		},
+		validate: schoolFilterSchema,
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const result = await db.execute<{ result: unknown }>(
 				deckSql({
 					conferenceId: args.conferenceId,
 					status: args.status,
-					school: args.school ?? null,
+					school: schoolFilterOf(args),
 					currentId: args.currentId ?? null,
 					index: args.index ?? null,
 					size: Math.min(Math.max(args.size ?? 60, 1), MAX_WINDOW)
@@ -110,8 +118,10 @@ schemaBuilder.queryFields((t) => ({
 			conferenceId: t.arg.id({ required: true }),
 			ids: t.arg.idList({ required: true }),
 			status: t.arg.string().validate(sightingStatusSchema),
-			school: t.arg.string()
+			schoolId: t.arg.id(),
+			withoutSchool: t.arg.boolean()
 		},
+		validate: schoolFilterSchema,
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const ids = args.ids.slice(0, MAX_ENTRIES);
@@ -121,7 +131,7 @@ schemaBuilder.queryFields((t) => ({
 					conferenceId: args.conferenceId,
 					ids,
 					status: args.status,
-					school: args.school ?? null
+					school: schoolFilterOf(args)
 				})
 			);
 			return result.rows.map((row) => deckSchema.shape.current.unwrap().parse(row.result));

@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		distinctSupervisors,
-		memberSummary,
-		type delegationApplication
-	} from '#lib/assignment/sighting';
+	import { distinctSupervisors, memberSummary, type delegationApplication } from './sighting';
 	import Flag from '#lib/components/Flag.svelte';
 	import formatNames from '#lib/helpers/formatNames';
 	import { m } from '#lib/paraglide/messages';

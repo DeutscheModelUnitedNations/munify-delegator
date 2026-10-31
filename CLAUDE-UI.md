@@ -304,16 +304,26 @@ does not pick up existing entries, and deleting a track deletes the entries that
 moved entry keeps its width and is squeezed in where the target day has fewer tracks; the "Track …
 to …" selects in the entry form set the first and last track.
 
+**A track is the conference's, not a day's** (`calendarTrack.conferenceId`). The days it runs on are
+`calendarDayToCalendarTrack` (`calendarDay.tracks` reads through it), so a track keeps its id from
+day to day: copying or moving entries keeps the tracks the target day runs, by id, never by name.
+Taking a track off a day (`setCalendarTrackOnDay`) takes that day's entries off it and deletes those
+left on none; deferred triggers refuse an entry on a track its day does not run. A track names the
+committees and roles it is for (`calendarTrackToCommittee`, `calendarTrackToConferenceRole`): the
+dashboard's timeline (`entriesForSeat`, `seatOf`) follows the tracks for the person's committee and
+role. Only an imported day file names tracks by name (it may come from another conference): import
+reuses the conference's track of that name, which names are unique for.
+
 ### Structure
 
-| File                                                                                            | Role                                                                                                                                                                                                   |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `calendarGrid.ts`                                                                               | Pure geometry and drag maths: snapping, `dragSpan`, `createSpan`, the column grid, drop target, overlaps, lanes, `keyAction`                                                                           |
-| `calendarEditor.svelte.ts` (`CalendarEditor`)                                                   | State: the drag in progress, optimistic saves in a `SvelteMap` overlaid on the live data (like the seat planner), undo toast, rollback with the server's message                                       |
-| `CalendarEditor.svelte`                                                                         | Pointer handling (one `pointerdown` on the grid, the pointer stays captured so a card can change column mid-drag) and layout                                                                           |
-| `EditorEntryCard.svelte`                                                                        | One card and its resize edges                                                                                                                                                                          |
-| `EntryFormModal.svelte`                                                                         | Details of an entry: day, track, times and duration chips, colour, icon presets, place, room                                                                                                           |
-| `DaysTracksTab.svelte`, `TrackMatrix.svelte`, `DayFormModal.svelte`, `TrackRowFormModal.svelte` | Matrix: days as columns, track names as rows, a checkbox per cell creates or removes that day's track; select all, deselect all, plus button (adds a track to every day), drag a row's grip to reorder |
+| File                                                                                            | Role                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `calendarGrid.ts`                                                                               | Pure geometry and drag maths: snapping, `dragSpan`, `createSpan`, the column grid, drop target, overlaps, lanes, `keyAction`                                                                                                                         |
+| `calendarEditor.svelte.ts` (`CalendarEditor`)                                                   | State: the drag in progress, optimistic saves in a `SvelteMap` overlaid on the live data (like the seat planner), undo toast, rollback with the server's message                                                                                     |
+| `CalendarEditor.svelte`                                                                         | Pointer handling (one `pointerdown` on the grid, the pointer stays captured so a card can change column mid-drag) and layout                                                                                                                         |
+| `EditorEntryCard.svelte`                                                                        | One card and its resize edges                                                                                                                                                                                                                        |
+| `EntryFormModal.svelte`                                                                         | Details of an entry: day, track, times and duration chips, colour, icon presets, place, room                                                                                                                                                         |
+| `DaysTracksTab.svelte`, `TrackMatrix.svelte`, `DayFormModal.svelte`, `TrackRowFormModal.svelte` | Matrix: days as columns, the conference's tracks as rows, a checkbox per cell lets the track run on that day or not; select all, deselect all, plus button (a track on every day, for the committees and roles picked), drag a row's grip to reorder |
 
 ### Rules
 
@@ -576,6 +586,26 @@ hand-built `Modal`. Both are always open: render them inside an `{#if}` and clos
 
 `ConfirmDeleteModal` tracks its own loading state while `onConfirm` (async) runs. `ActionModal`
 also takes `subtitle` (snippet), `confirmClass`, `confirmDisabled`, `bodyClass` and `boxClass`.
+
+### EmailPrompt (offering mails after an action)
+
+No mutation sends mail. A team action that makes mails due (releasing the assignment, saving the
+conference settings) offers them right after with `#lib/components/email/`: `createEmailPrompt()`
+holds the state, `offer({ conferenceId, kinds })` asks what of those kinds is owed and opens the
+modal only when something is and the caller may manage the mails. "Later" leaves them on the e-mail
+page.
+
+```svelte
+<script lang="ts">
+	const emailPrompt = createEmailPrompt();
+	async function release() {
+		await client.mutate.setAssignmentReleased({ __args: { conferenceId, released: true } });
+		void emailPrompt.offer({ conferenceId, kinds: ASSIGNMENT_KINDS });
+	}
+</script>
+
+<EmailPrompt prompt={emailPrompt} />
+```
 
 ---
 
@@ -1017,7 +1047,7 @@ The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/tea
 
 ### Rules
 
-- **Logic lives in pure functions** in `src/lib/helpers/seatPlanning/` (`baselines.ts`, `hints.ts`, `sortRows.ts`, `unMembers.ts`) and is unit tested next to them. Components only render their results.
+- **Logic lives in pure functions**, unit tested next to them: what the API shares in `src/lib/helpers/seatPlanning/` (`baselines.ts`, `unMembers.ts`), the page's own beside it (`seatHints.ts`, `sortRows.ts`). Components only render their results.
 - **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the live query results. The mutation returns the changed committee with its nations, so the cache updates without a refetch, and the committee's publish reaches every other open matrix. On error the pending entry is dropped and the server's message is toasted.
 - **Set, don't toggle**: mutations take the target state (`enabled: true/false`) so concurrent clicks converge.
 - **Undo**: success toasts carry an action that sends the inverse mutation (`toast.success(msg, { action: { label: m.undo(), onClick } })`).
@@ -1079,7 +1109,7 @@ tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.sv
   end of registration and the release, in place of `ApplicationRejected`.
 - `SchoolSeatsPanel.svelte` lists the seats the plan gives each school against
   `conference.maxSeatsPerSchool` (sidebar of the delegations and singles boards, finish tab); the
-  counting is `#lib/assignment/schoolSeats.ts`. Dropping a group or single that takes its school
+  counting is `team/assignment/schoolSeats.ts`. Dropping a group or single that takes its school
   past the limit toasts a warning; nothing is blocked.
 
 ---

@@ -1,5 +1,4 @@
 import { db, schema } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { NationRef } from '#api/handlers/nation/nation';
@@ -67,6 +66,7 @@ const ConferenceRef = object({
 		}),
 
 		waitingListLength: t.field({
+			description: "How many entries the conference's waiting list holds, hidden ones included.",
 			type: 'Int',
 			resolve: (conference) =>
 				db.$count(
@@ -110,6 +110,8 @@ const conferenceStateEnum = enum_({ tsName: 'conferenceState' });
 
 schemaBuilder.mutationFields((t) => ({
 	updateConference: t.drizzleField({
+		description:
+			'Changes the given settings of a conference; the others stay as they are. Uploaded files (logo, templates) are passed by the id `requestFileUpload` returned.',
 		type: ConferenceRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -164,9 +166,6 @@ schemaBuilder.mutationFields((t) => ({
 			await assertCanClaimConferenceFiles({ ctx, args });
 			// Nothing matches when the conference is gone.
 			if (!(await updateConference(args))) throw conferenceUpdateRefused();
-
-			// unlocking postals or payments, or the state, may owe mails
-			scheduleEmailSweep({ conferenceId: args.id, origin: ctx.requestUrl().origin });
 
 			return db.query.conference
 				.findFirst(

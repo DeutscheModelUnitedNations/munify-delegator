@@ -1,4 +1,4 @@
-import { snakeCase, pgEnum, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { snakeCase, pgEnum, text, timestamp, boolean, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { defaultIdAndTimestamps, implicitManyToMany } from './helpers';
 import { userRef } from './users';
@@ -8,32 +8,35 @@ import { surveyOption } from './surveys';
 
 /** Scanner sessions and the attendance they record. */
 
-export const attendanceSessionMode = pgEnum('attendance_session_mode', [
-	'CHECK',
-	'RECORD',
-	'BADGE'
-]);
+export const attendanceSessionMode = pgEnum('attendance_session_mode', ['CHECK', 'RECORD']);
 
 /**
- * One run of the scanner: an occasion, started by a team member and ended by them. Its id is
- * made by the client, so starting it can wait in the offline queue and be repeated safely.
+ * One occasion of the scanner, started by a team member and ended by them; every device scanning
+ * for it joins the session. Its name is unique in the conference, ignoring case. Its id is made by
+ * the client, so starting it can wait in the offline queue and be repeated safely.
  */
-export const attendanceSession = snakeCase.table('attendance_session', {
-	...defaultIdAndTimestamps,
-	conferenceId: conferenceRef('cascade'),
-	occasion: text().notNull(),
-	startedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	endedAt: timestamp({ precision: 3 }),
-	createdById: userRef('restrict'),
-	mode: attendanceSessionMode().default('RECORD').notNull(),
-	/**
-	 * Whether the occasion is listed on the participation certificates. Kept alike for every
-	 * session of one occasion: certificates list occasions, not sessions.
-	 */
-	showOnCertificate: boolean().default(true).notNull()
-});
+export const attendanceSession = snakeCase.table(
+	'attendance_session',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		occasion: text().notNull(),
+		startedAt: timestamp({ precision: 3 })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		endedAt: timestamp({ precision: 3 }),
+		createdById: userRef('restrict'),
+		mode: attendanceSessionMode().default('RECORD').notNull(),
+		/** Whether the session is listed on the participation certificates. */
+		showOnCertificate: boolean().default(true).notNull()
+	},
+	(table) => [
+		uniqueIndex('attendance_session_conference_id_occasion_key').on(
+			table.conferenceId,
+			sql`lower(${table.occasion})`
+		)
+	]
+);
 
 export const attendanceEntry = snakeCase.table('attendance_entry', {
 	...defaultIdAndTimestamps,
@@ -49,8 +52,8 @@ export const attendanceEntry = snakeCase.table('attendance_entry', {
 		.notNull()
 		.references(() => attendanceSession.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 	/**
-	 * Whether the participant had no open issue when scanned in check mode, as it was at that
-	 * moment. Empty when nothing was checked (record mode, older entries).
+	 * Whether the participant had no open issue when the scan was written, decided by the server.
+	 * Empty when nothing was checked (record mode, older entries).
 	 */
 	checkPassed: boolean()
 });

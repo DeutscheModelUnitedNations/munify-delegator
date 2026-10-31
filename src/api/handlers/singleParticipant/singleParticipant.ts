@@ -1,6 +1,5 @@
 import { applicationFormSchema } from '#lib/schemata/applicationForm';
 import { db } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { applicationArgs } from '#api/handlers/delegation/applicationArgs';
 import {
@@ -26,7 +25,7 @@ query({ table: 'singleParticipant' });
 schemaBuilder.mutationFields((t) => ({
 	createSingleParticipant: t.drizzleField({
 		description:
-			'Registering as a single participant. If the user already has an entry for this conference the legacy resolver updated it instead of failing, so this does the same.',
+			'Registers the caller as a single participant; an existing registration in the conference is updated instead.',
 		type: SingleParticipantRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -52,6 +51,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateSingleParticipant: t.drizzleField({
+		description:
+			"Changes a single participant's application in one go: the texts, the roles applied for (added and removed) and whether it is handed in.",
 		type: SingleParticipantRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -81,6 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteSingleParticipant: t.field({
+		description: "Withdraws a single participant's registration.",
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -109,8 +111,6 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			const createdId = await createAssignedSingleParticipant(args);
-
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.singleParticipant
 				.findFirst(

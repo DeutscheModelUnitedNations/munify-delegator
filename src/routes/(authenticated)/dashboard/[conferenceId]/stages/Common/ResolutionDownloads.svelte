@@ -2,7 +2,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { downloadResolution } from '#lib/api/downloadResolution';
-	import { groupResolutionsByCommittee } from '#lib/helpers/resolutionGroups';
+	import { groupResolutionsByCommittee } from './resolutionGroups';
 	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();

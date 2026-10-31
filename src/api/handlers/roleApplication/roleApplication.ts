@@ -16,6 +16,7 @@ query({ table: 'roleApplication' });
 
 schemaBuilder.mutationFields((t) => ({
 	createRoleApplication: t.drizzleField({
+		description: "Adds a nation or non-state actor at the end of the delegation's wishes.",
 		type: RoleApplicationRef,
 		args: {
 			delegationId: t.arg.id({ required: true }),
@@ -42,6 +43,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteRoleApplication: t.field({
+		description: "Removes a wish from the delegation's ranking and closes the gap it leaves.",
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -53,6 +55,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	swapRoleApplicationRanks: t.drizzleField({
+		description: 'Swaps the ranks of two wishes of the same delegation, returning both.',
 		type: [RoleApplicationRef],
 		args: {
 			firstRoleApplicationId: t.arg.id({ required: true }),

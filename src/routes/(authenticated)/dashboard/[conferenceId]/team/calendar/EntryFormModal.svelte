@@ -194,17 +194,18 @@
 		entryEndTimeManuallySet = true;
 	}
 
-	/** Moves the entry to another day; its tracks go along if the day has ones of that name. */
+	/** Moves the entry to another day; its tracks go along where they run on that day too. */
 	async function changeDay(dayId: string) {
 		try {
 			const targetTracks = await client.query.calendarTracks({
-				__args: { where: { calendarDayId: { eq: dayId } } },
-				id: true,
-				name: true
+				__args: {
+					where: { calendarDays: { id: { eq: dayId } } },
+					orderBy: { sortOrder: 'asc' }
+				},
+				id: true
 			});
 			const moved = retargetTrackRange({
 				range: { from: entryTrackFrom, to: entryTrackTo },
-				sourceTracks: day.tracks,
 				targetTracks
 			});
 			entryTrackFrom = moved.from;

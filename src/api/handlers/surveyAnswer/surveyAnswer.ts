@@ -4,7 +4,6 @@ import { object, query, schemaBuilder } from '#api/rumble';
 import {
 	distributeUnansweredSurvey,
 	answerLookupSchema,
-	loadAnswerOption,
 	optionIdsOfQuestion,
 	upsertSurveyAnswer
 } from './surveyAnswerService';
@@ -28,6 +27,8 @@ query({ table: 'surveyAnswer' });
  */
 schemaBuilder.mutationFields((t) => ({
 	upsertSurveyAnswer: t.drizzleField({
+		description:
+			'Answers a survey question, or changes the answer. Participants are refused a full option and an answer after the deadline; the team is not.',
 		type: SurveyAnswerRef,
 		args: {
 			/** Either the answer's own id, or the question and user it belongs to. */
@@ -38,8 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		validate: answerLookupSchema,
 		resolve: async (query, _root, args, ctx) => {
-			const option = await loadAnswerOption(args);
-			const answer = await assertCanAnswerSurvey({ ctx, option, args });
+			const { option, answer } = await assertCanAnswerSurvey({ ctx, args });
 			const answerId = await upsertSurveyAnswer({ option, answer });
 
 			return db.query.surveyAnswer

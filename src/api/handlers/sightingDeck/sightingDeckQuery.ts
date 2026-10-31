@@ -31,10 +31,11 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
 
 /**
  * The schools of an application's people (`p` their `conference_participant`), each once, with ''
- * for anyone without one: a delegation keeps no school of its own.
+ * for anyone without one: a delegation keeps no school of its own. `names` lists their names,
+ * `ids` their ids, which is what the school filter matches.
  */
-const schoolsOfPeople = ({ from, where }: { from: SQL; where: SQL }) => sql`
-	coalesce((select array_agg(distinct coalesce(sc.name, '')) ${from}
+const schoolsOfPeople = ({ from, where, of }: { from: SQL; where: SQL; of: 'names' | 'ids' }) =>
+	sql`coalesce((select array_agg(distinct coalesce(${of === 'names' ? sql`sc.name` : sql`sc.id`}, '')) ${from}
 		left join school sc on sc.id = p.school_id where ${where}), '{}')`;
 
 /**
@@ -49,13 +50,20 @@ function applications(conferenceId: string): SQL {
 		from (${applicationRows(conferenceId)}) rows`;
 }
 
+const delegationPeople = {
+	from: sql`from delegation_member dm join conference_participant p on p.id = dm.conference_participant_id`,
+	where: sql`dm.delegation_id = d.id`
+};
+const singlePerson = {
+	from: sql`from conference_participant p`,
+	where: sql`p.id = s.conference_participant_id`
+};
+
 function applicationRows(conferenceId: string): SQL {
 	return sql`
 		select d.id, 'delegation'::text as kind, 0 as kind_rank,
-			${schoolsOfPeople({
-				from: sql`from delegation_member dm join conference_participant p on p.id = dm.conference_participant_id`,
-				where: sql`dm.delegation_id = d.id`
-			})} as schools,
+			${schoolsOfPeople({ ...delegationPeople, of: 'names' })} as schools,
+			${schoolsOfPeople({ ...delegationPeople, of: 'ids' })} as school_ids,
 			d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
 			coalesce(r.disqualified, false) as disqualified, coalesce(r.required, false) as required, r.note,
@@ -68,7 +76,8 @@ function applicationRows(conferenceId: string): SQL {
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
 		select s.id, 'single'::text, 1,
-			${schoolsOfPeople({ from: sql`from conference_participant p`, where: sql`p.id = s.conference_participant_id` })},
+			${schoolsOfPeople({ ...singlePerson, of: 'names' })},
+			${schoolsOfPeople({ ...singlePerson, of: 'ids' })},
 			1,
 			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false),
 			coalesce(r.required, false), r.note,
@@ -85,16 +94,31 @@ function applicationRows(conferenceId: string): SQL {
 /** The deck's order: delegations before singles, the largest first, ties by id. */
 const deckOrder = sql`a.kind_rank, a.size desc, a.id`;
 
-function passes({
-	status,
-	school
-}: {
-	status: SightingStatusFilter;
-	school: string | null | undefined;
-}): SQL {
-	return school === null || school === undefined
+/**
+ * The `schoolId` / `withoutSchool` arguments: applications with someone from that school, or with
+ * someone without one; every application when both are left out.
+ */
+export const schoolFilterSchema = z
+	.object({ schoolId: z.string().nullish(), withoutSchool: z.boolean().nullish() })
+	.refine((args) => !(args.schoolId && args.withoutSchool), {
+		error: () => m.sightingSchoolFilterConflict()
+	});
+
+/** Which applications the school filter lets through: with a person of that school id, `''` for none. */
+export type SchoolFilter = string | null;
+
+export function schoolFilterOf(args: {
+	schoolId?: string | null;
+	withoutSchool?: boolean | null;
+}): SchoolFilter {
+	if (args.withoutSchool) return '';
+	return args.schoolId ?? null;
+}
+
+function passes({ status, school }: { status: SightingStatusFilter; school: SchoolFilter }): SQL {
+	return school === null
 		? statusPredicates[status]
-		: sql`${statusPredicates[status]} and ${school} = any(a.schools)`;
+		: sql`${statusPredicates[status]} and ${school} = any(a.school_ids)`;
 }
 
 const entrySchema = z.object({
@@ -135,7 +159,7 @@ export const deckSchema = z.object({
 export function deckSql(options: {
 	conferenceId: string;
 	status: SightingStatusFilter;
-	school: string | null;
+	school: SchoolFilter;
 	currentId: string | null;
 	index: number | null;
 	size: number;
@@ -204,7 +228,7 @@ export function entriesSql({
 	conferenceId: string;
 	ids: readonly string[];
 	status: SightingStatusFilter;
-	school: string | null;
+	school: SchoolFilter;
 }): SQL {
 	return sql`
 		select json_build_object('kind', a.kind, 'id', a.id, 'school', a.school, 'size', a.size,
@@ -218,14 +242,16 @@ export function entriesSql({
 }
 
 export const schoolRowSchema = z.object({
+	schoolId: z.string().nullable(),
 	school: z.string(),
+	city: z.string().nullable(),
 	applications: z.number(),
 	people: z.number()
 });
 
 /**
- * The schools of the people in the conference's applications matching `search` ('' for those
- * without one), with how many applications they are in and how many people they send.
+ * The schools of the people in the conference's applications matching `search` (no id and ''
+ * for those without one), with how many applications they are in and how many people they send.
  */
 export function schoolsSql({
 	conferenceId,
@@ -238,24 +264,26 @@ export function schoolsSql({
 }): SQL {
 	return sql`
 		with people as (
-			select dm.delegation_id as application_id, coalesce(sc.name, '') as school
+			select dm.delegation_id as application_id, sc.id as school_id,
+				coalesce(sc.name, '') as school, sc.city
 			from delegation_member dm
 			join delegation d on d.id = dm.delegation_id
 			join conference_participant p on p.id = dm.conference_participant_id
 			left join school sc on sc.id = p.school_id
 			where d.conference_id = ${conferenceId} and d.applied
 			union all
-			select s.id, coalesce(sc.name, '')
+			select s.id, sc.id, coalesce(sc.name, ''), sc.city
 			from single_participant s
 			join conference_participant p on p.id = s.conference_participant_id
 			left join school sc on sc.id = p.school_id
 			where p.conference_id = ${conferenceId} and s.applied
 		)
-		select school, count(distinct application_id)::int as applications, count(*)::int as people
+		select school_id as "schoolId", school, city,
+			count(distinct application_id)::int as applications, count(*)::int as people
 		from people
 		where school ilike ${like}
-		group by school
-		order by 1
+		group by school_id, school, city
+		order by school, city nulls first, school_id
 		limit ${limit}`;
 }
 

@@ -1,46 +1,50 @@
 import { describe, expect, test } from 'vitest';
-import { sessionRows, type Occasion, type OpenSession } from './sessionRows';
+import { sessionNamed, sessionRows, type ListedSession, type OpenSession } from './sessionRows';
 
-const occasion = (name: string, day: number): Occasion => ({
-	name,
-	sessions: 1,
-	entries: 0,
-	firstStartedAt: new Date(2026, 9, day),
-	showOnCertificate: true
-});
 const open = (id: string, name: string, day: number): OpenSession => ({
 	id,
 	occasion: name,
 	startedAt: new Date(2026, 9, day),
 	mode: 'CHECK'
 });
+const listed = (id: string, name: string, day: number, ended = true): ListedSession => ({
+	...open(id, name, day),
+	endedAt: ended ? new Date(2026, 9, day, 12) : null,
+	entryCount: 0,
+	showOnCertificate: true
+});
 
 describe('sessionRows', () => {
-	test('puts running occasions first, then the newest', () => {
+	test('puts running sessions first, then the newest', () => {
 		const rows = sessionRows({
-			occasions: [occasion('Day 1', 1), occasion('Day 2', 2), occasion('Day 3', 3)],
-			openSessions: [open('s1', 'day 1 ', 1)]
+			listed: [listed('a', 'Day 1', 1, false), listed('b', 'Day 2', 2), listed('c', 'Day 3', 3)],
+			openSessions: [open('a', 'Day 1', 1)]
 		});
 		expect(rows.map((row) => [row.name, row.open?.id ?? null])).toEqual([
-			['Day 1', 's1'],
+			['Day 1', 'a'],
 			['Day 3', null],
 			['Day 2', null]
 		]);
 	});
 
-	test('an occasion with several open sessions joins the latest', () => {
-		const rows = sessionRows({
-			occasions: [occasion('Day 1', 1)],
-			openSessions: [open('a', 'Day 1', 1), open('b', 'Day 1', 2)]
-		});
-		expect(rows).toHaveLength(1);
-		expect(rows[0].open?.id).toBe('b');
-	});
-
-	test('lists open sessions whose occasion is not known', () => {
-		const rows = sessionRows({ occasions: [], openSessions: [open('s1', 'Rehearsal', 4)] });
+	test('lists open sessions not listed yet', () => {
+		const rows = sessionRows({ listed: [], openSessions: [open('s1', 'Rehearsal', 4)] });
 		expect(rows).toEqual([
-			{ key: 'rehearsal', name: 'Rehearsal', occasion: null, open: open('s1', 'Rehearsal', 4) }
+			{
+				id: 's1',
+				name: 'Rehearsal',
+				startedAt: open('s1', 'Rehearsal', 4).startedAt,
+				open: open('s1', 'Rehearsal', 4),
+				listed: null
+			}
 		]);
+	});
+});
+
+describe('sessionNamed', () => {
+	test('finds a name ignoring case and surrounding spaces', () => {
+		const sessions = [open('a', 'Opening', 1)];
+		expect(sessionNamed({ sessions, name: ' opening ' })?.id).toBe('a');
+		expect(sessionNamed({ sessions, name: 'Closing' })).toBeUndefined();
 	});
 });

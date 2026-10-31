@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { logger } from '#lib/logger';
 import type { MailSyncUser } from './types';
+import type { MailingListRow } from './mailingLists';
 
 /**
  * The whole mail sync (`runMailSync`) against an in-memory Listmonk and an in-memory user table.
@@ -9,7 +10,7 @@ import type { MailSyncUser } from './types';
  * with the DMUN member hub depends on it: one subscriber per address (409 on a duplicate), PATCH
  * merges attribs key by key, adding to a list confirms, and the garbage query only deletes
  * subscribers on no list that are not blocklisted. Foreign lists and attribs in these tests are
- * the member hub's (`[DMUN-Intern] …`, `mitgliedshub`).
+ * the member hub's (`[DMUN-Intern] …`, `mitgliedshub`). The `mailing_list` table is an array.
  */
 
 type Status = 'unconfirmed' | 'confirmed' | 'unsubscribed';
@@ -62,6 +63,7 @@ const h = vi.hoisted(() => ({
 	fail: undefined as ((method: string, path: string, init: Init) => unknown) | undefined,
 	conferences: [] as Conf[],
 	users: [] as MailSyncUser[],
+	mailingLists: [] as MailingListRow[],
 	userQueries: 0,
 	errors: [] as string[]
 }));
@@ -78,6 +80,20 @@ vi.mock('../logs', () => ({
 
 vi.mock('../db', () => ({
 	db: { query: { conference: { findMany: async () => h.conferences } } }
+}));
+
+vi.mock('./mailingLists', () => ({
+	loadMailingLists: async () => structuredClone(h.mailingLists),
+	saveMailingList: async (row: Omit<MailingListRow, 'id'>) => {
+		const existing = h.mailingLists.find(
+			(r) => r.conferenceId === row.conferenceId && r.listType === row.listType
+		);
+		if (existing) existing.listmonkListId = row.listmonkListId;
+		else h.mailingLists.push({ id: `row-${h.nextId++}`, ...row });
+	},
+	deleteMailingList: async (id: string) => {
+		h.mailingLists = h.mailingLists.filter((r) => r.id !== id);
+	}
 }));
 
 vi.mock('./mailSyncUsers', () => {
@@ -184,6 +200,13 @@ vi.mock('../apis/listmonk/listmonkClient', () => {
 			};
 			h.lists.push(list);
 			h.writes.push(`create list ${list.name} [${list.tags}]`);
+			return ok(list);
+		},
+		'PUT /lists/{list_id}': (init, body) => {
+			const list = h.lists.find((l) => l.id === init.params?.path?.list_id)!;
+			// Like Listmonk: name, description and tags are replaced as given.
+			Object.assign(list, { name: body.name, description: body.description, tags: body.tags });
+			h.writes.push(`update list ${list.id} ${list.name} [${list.tags}]`);
 			return ok(list);
 		},
 		'DELETE /lists/{list_id}': (init) => {
@@ -362,6 +385,7 @@ beforeEach(() => {
 	h.fail = undefined;
 	h.conferences = [RECENT, OLD];
 	h.users = [];
+	h.mailingLists = [];
 	h.userQueries = 0;
 	h.errors = [];
 	hubList = list(HUB, ['mitgliedshub']);
@@ -401,24 +425,82 @@ describe('runMailSync – lists', () => {
 		expect(h.writes.filter((w) => w.startsWith('create list'))).toEqual([]);
 	});
 
-	test('deletes its own lists of deleted conferences, never lists of other systems', async () => {
-		const orphan = list('[ZZZZZZ] MUN-SH 2019 - TEAM');
-		const lookalike = list('[global] SOMETHING_ELSE');
+	test('records every list it keeps by its Listmonk id', async () => {
+		await runMailSync();
+
+		expect(h.mailingLists).toHaveLength(
+			GLOBAL_LIST_TYPES.length + 2 * CONFERENCE_LIST_TYPES.length
+		);
+		expect(h.mailingLists).toContainEqual(
+			expect.objectContaining({
+				listmonkListId: listId(TEAM),
+				conferenceId: RECENT.id,
+				listType: 'TEAM'
+			})
+		);
+		expect(h.mailingLists).toContainEqual(
+			expect.objectContaining({ listmonkListId: listId(NEWSLETTER), conferenceId: null })
+		);
+	});
+
+	test('keeps the lists of a renamed conference, renamed, with their subscribers', async () => {
+		user('u1', 'a@x.org', { teamMember: team() });
+		await runMailSync();
+		const teamList = listId(TEAM);
+		h.conferences = [{ ...RECENT, title: 'MUN-SH 2026 Reloaded' }, OLD];
+		h.writes = [];
+		await runMailSync();
+
+		const renamed = h.lists.find((l) => l.id === teamList);
+		expect(renamed?.name).toBe('[RECab1] MUN-SH 2026 Reloaded - TEAM');
+		expect(renamed?.tags).toEqual(['RECab1-mun-sh_2026_reloaded', 'team']);
+		expect(h.writes.filter((w) => /^(create|delete) list/.test(w))).toEqual([]);
+		expect(h.writes.filter((w) => w.startsWith('update list'))).toHaveLength(
+			CONFERENCE_LIST_TYPES.length
+		);
+		expect(listsOf('a@x.org')).toEqual({ '[RECab1] MUN-SH 2026 Reloaded - TEAM': 'confirmed' });
+	});
+
+	test('adopts the lists of an earlier deployment by name, once', async () => {
+		const legacyTeam = list(TEAM);
+		subscriber('a@x.org', { [legacyTeam]: 'confirmed' }, { attribs: { userId: 'u1' } });
+		user('u1', 'a@x.org', { teamMember: team() });
+		await runMailSync();
+
+		expect(h.lists.filter((l) => l.name === TEAM).map((l) => l.id)).toEqual([legacyTeam]);
+		expect(h.mailingLists).toContainEqual(
+			expect.objectContaining({
+				listmonkListId: legacyTeam,
+				conferenceId: RECENT.id,
+				listType: 'TEAM'
+			})
+		);
+		expect(listsOf('a@x.org')).toEqual({ [TEAM]: 'confirmed' });
+	});
+
+	test('deletes the lists of a deleted conference and their rows, never lists of other systems', async () => {
+		const lookalike = list('[ZZZZZZ] MUN-SH 2019 - TEAM');
+		await runMailSync();
+		const oldTeam = listId(OLD_TEAM);
+		h.conferences = [RECENT];
 		await runMailSync();
 
 		const ids = h.lists.map((l) => l.id);
-		expect(ids).not.toContain(orphan);
-		expect(ids).toEqual(expect.arrayContaining([hubList, lookalike]));
+		expect(ids).not.toContain(oldTeam);
+		expect(ids).toEqual(expect.arrayContaining([hubList, lookalike, listId(TEAM)]));
+		expect(h.mailingLists.some((r) => r.conferenceId === OLD.id)).toBe(false);
 	});
 
-	test('carries on when an orphan list cannot be deleted', async () => {
-		list('[ZZZZZZ] MUN-SH 2019 - TEAM');
+	test('carries on when a list of a deleted conference cannot be deleted', async () => {
+		await runMailSync();
+		h.conferences = [RECENT];
 		user('u1', 'a@x.org', { teamMember: team() });
 		h.fail = (method, path) =>
 			method === 'DELETE' && path === '/lists/{list_id}' ? 'nope' : undefined;
 		await runMailSync();
 
 		expect(listsOf('a@x.org')).toEqual({ [TEAM]: 'confirmed' });
+		expect(h.mailingLists.some((r) => r.conferenceId === OLD.id)).toBe(true);
 	});
 
 	test('aborts without touching subscribers when the lists cannot be read', async () => {
@@ -488,6 +570,21 @@ describe('runMailSync – subscribers', () => {
 		expect(fetched).not.toContain(hubList);
 		expect(fetched).toHaveLength(h.lists.length - 1);
 		expect(sub('hubonly@x.org')?.lists.size).toBe(1);
+	});
+
+	test('leaves a foreign list named like one of its own alone', async () => {
+		const lookalike = list('[ZZZZZZ] MUN-SH 2019 - TEAM');
+		subscriber('a@x.org', { [lookalike]: 'confirmed' });
+		subscriber('b@x.org', { [lookalike]: 'confirmed' }, { attribs: { userId: 'gone' } });
+		user('u1', 'a@x.org', { teamMember: team() });
+		await runMailSync();
+
+		expect(listsOf('a@x.org')).toEqual({
+			'[ZZZZZZ] MUN-SH 2019 - TEAM': 'confirmed',
+			[TEAM]: 'confirmed'
+		});
+		expect(sub('a@x.org')?.name).toBe('Name from the hub');
+		expect(listsOf('b@x.org')).toEqual({ '[ZZZZZZ] MUN-SH 2019 - TEAM': 'confirmed' });
 	});
 
 	test('joins a subscriber the member hub created, keeping its lists, attribs and name', async () => {

@@ -39,6 +39,9 @@
 	import ResolutionManager from './ResolutionManager.svelte';
 	import EmailSettings from './emails/EmailSettings.svelte';
 	import { createEmailChanges, emailConfigChanges } from './emails/emailChanges.svelte';
+	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
+	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte';
+	import { settingsEmailKinds } from '#lib/helpers/emailKinds';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -90,6 +93,11 @@
 
 	/** The e-mail switches, held until the settings' save button like the form's fields. */
 	const emailChanges = createEmailChanges();
+
+	/** Unlocking the paperwork or ending the conference sends nothing; the mails are offered after. */
+	const emailPrompt = createEmailPrompt();
+	const offerEmailsFor = (changedFields: string[]) =>
+		emailPrompt.offer({ conferenceId, kinds: settingsEmailKinds(changedFields) });
 
 	/**
 	 * What the file backed fields hold on the server: previews for the images, "already uploaded"
@@ -164,6 +172,7 @@
 		},
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
+			const changedFields = pendingChanges.map((change) => change.key);
 
 			// The form carries uploads as `File`; each picked one goes to the storage first and the
 			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored.
@@ -232,6 +241,7 @@
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
 				savedSettings = { ...savedSettings, ...content };
+				void offerEmailsFor(changedFields);
 				return;
 			}
 
@@ -257,6 +267,7 @@
 			await promise;
 
 			savedSettings = { ...settings };
+			void offerEmailsFor(changedFields);
 		}
 	});
 	let formData = $derived(form.form);
@@ -515,3 +526,5 @@
 		</button>
 	{/snippet}
 </Modal>
+
+<EmailPrompt prompt={emailPrompt} />

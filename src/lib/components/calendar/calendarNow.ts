@@ -3,9 +3,22 @@ import type { CalendarEntry } from './calendarTypes';
 /** The part of an entry the "now and next" view needs */
 type TimedEntry = Pick<CalendarEntry, 'name' | 'startTime' | 'endTime' | 'tracks'>;
 
+/** A track with the committees and roles whose seats it is for. */
+interface SeatTrack {
+	id: string;
+	committees: readonly { id: string }[];
+	conferenceRoles: readonly { id: string }[];
+}
+
 interface DayWithTracks<E extends TimedEntry> {
-	tracks: { id: string; name: string }[];
+	tracks: readonly SeatTrack[];
 	entries: readonly E[];
+}
+
+/** Someone's seat as the tracks name it: their committee and role ids. */
+export interface Seat {
+	committeeIds: readonly string[];
+	roleIds: readonly string[];
 }
 
 export interface UpcomingEntry<E extends TimedEntry> {
@@ -48,28 +61,26 @@ export function wallClockNow({
 const DAY = 24 * 60 * 60 * 1000;
 const dayOf = (time: number) => Math.floor(time / DAY);
 
-/** Track names compare without case, accents' worth of spacing or punctuation noise */
-const normalize = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' ');
-
 /**
- * The entries that concern someone whose seat is called `seatNames` (their committee's name and
- * abbreviation, their role, ...): the ones for every track, and the ones on a track of that name.
- * An entry is for every track when it has none of its own or when it is on all of its day's
- * tracks, which is how shared entries are stored. Tracks belong to a day, so they are matched by
- * name, not by id. Someone whose seat matches no track (no seat, or a team member) gets every
- * entry of the schedule, parallel copies of one session counted once.
+ * The entries that concern someone in `seat`: the ones for every track, and the ones on a track
+ * meant for their committee or role. An entry is for every track when it has none of its own or
+ * when it is on all of its day's tracks, which is how shared entries are stored. Someone whose
+ * seat no track is for (no seat, or a team member) gets every entry of the schedule, parallel
+ * copies of one session counted once.
  */
 export function entriesForSeat<E extends TimedEntry>({
 	days,
-	seatNames
+	seat
 }: {
 	days: readonly DayWithTracks<E>[];
-	seatNames: readonly string[];
+	seat: Seat;
 }): E[] {
-	const seats = new Set(seatNames.map(normalize));
-	const hasOwnTrack = days.some((day) =>
-		day.tracks.some((track) => seats.has(normalize(track.name)))
-	);
+	const committees = new Set(seat.committeeIds);
+	const roles = new Set(seat.roleIds);
+	const isOwn = (track: SeatTrack) =>
+		track.committees.some((committee) => committees.has(committee.id)) ||
+		track.conferenceRoles.some((role) => roles.has(role.id));
+	const hasOwnTrack = days.some((day) => day.tracks.some(isOwn));
 	if (!hasOwnTrack) {
 		const seen = new Set<string>();
 		return days
@@ -82,12 +93,12 @@ export function entriesForSeat<E extends TimedEntry>({
 			});
 	}
 	return days.flatMap((day) => {
-		const trackNames = new Map(day.tracks.map((track) => [track.id, normalize(track.name)]));
+		const own = new Set(day.tracks.filter(isOwn).map((track) => track.id));
 		return day.entries.filter(
 			(entry) =>
 				entry.tracks.length === 0 ||
 				entry.tracks.length >= day.tracks.length ||
-				entry.tracks.some((track) => seats.has(trackNames.get(track.id) ?? ''))
+				entry.tracks.some((track) => own.has(track.id))
 		);
 	});
 }
@@ -128,38 +139,28 @@ export function timelineOf<E extends TimedEntry>({
 	return { current, upcoming };
 }
 
-interface Named {
-	name: string;
-	abbreviation?: string | null;
-}
-
 /**
- * What the schedule's tracks are named after for someone's seat: their committee, non-state
- * actor or role, by name and abbreviation. Plain strings, so a timeline built on them does not
- * subscribe to every field it touched.
+ * The seat the schedule's tracks are for: someone's committee, and their delegation's or own role.
+ * Plain ids, so a timeline built on them does not subscribe to every field it touched.
  */
-export function seatNamesOf(
+export function seatOf(
 	participation:
 		| {
 				delegationMember?: {
-					assignedCommittee?: Named | null;
-					delegation: {
-						assignedRole?: { name: string | null; abbreviation: string | null } | null;
-					};
+					assignedCommittee?: { id: string } | null;
+					delegation: { assignedRole?: { id: string } | null };
 				} | null;
-				singleParticipant?: { assignedRole?: { name: string | null } | null } | null;
+				singleParticipant?: { assignedRole?: { id: string } | null } | null;
 		  }
 		| undefined
-): string[] {
+): Seat {
 	const committee = participation?.delegationMember?.assignedCommittee;
-	// Only a non-state actor has a name of its own; a nation role's name and abbreviation are null.
-	const actor = participation?.delegationMember?.delegation.assignedRole;
-	const role = participation?.singleParticipant?.assignedRole;
-	return [
-		committee?.name,
-		committee?.abbreviation,
-		actor?.name,
-		actor?.abbreviation,
-		role?.name
-	].filter((name) => name !== undefined && name !== null);
+	const roles = [
+		participation?.delegationMember?.delegation.assignedRole,
+		participation?.singleParticipant?.assignedRole
+	];
+	return {
+		committeeIds: committee ? [committee.id] : [],
+		roleIds: roles.flatMap((role) => (role ? [role.id] : []))
+	};
 }

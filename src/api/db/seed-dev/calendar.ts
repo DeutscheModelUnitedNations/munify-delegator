@@ -14,7 +14,8 @@ const MINUTE_MS = 60 * 1000;
 
 /**
  * A three-day programme from the first conference day: shared ceremonies and breaks plus three
- * parallel committee tracks, which is what the calendar views need to be worth looking at.
+ * parallel committee tracks, which is what the calendar views need to be worth looking at. The
+ * tracks name their committees, so each committee's members see theirs on the dashboard.
  *
  * Calendar times are wall-clock times in the conference's timezone, stored as if they were UTC (the
  * views read them back in UTC), so they are built with `Date.UTC` and never with the seeding
@@ -58,13 +59,30 @@ export async function addCalendar(cs: ConferenceSeed) {
 	);
 	cs.batch.calendarDay.push(...days);
 
-	const trackNames = ['GV Presse', 'IMO MRR', 'Sicherheitsrat'];
-	const tracksPerDay = days.map((day) =>
-		trackNames.map((name, sortOrder) =>
-			makeSeedCalendarTrack({ calendarDayId: day.id, name, sortOrder })
-		)
+	// One track per committee of the first three, for their members; the first is also the
+	// non-state actors'. Every track runs on every day.
+	const FALLBACK_TRACKS = ['Plenum', 'Workshops', 'Presse'];
+	const tracks = FALLBACK_TRACKS.map((fallback, sortOrder) =>
+		makeSeedCalendarTrack({
+			conferenceId,
+			name: cs.committees[sortOrder]?.name ?? fallback,
+			sortOrder
+		})
 	);
-	cs.batch.calendarTrack.push(...tracksPerDay.flat());
+	cs.batch.calendarTrack.push(...tracks);
+	cs.batch.calendarDayToCalendarTrack.push(
+		...days.flatMap((day) => tracks.map((track) => ({ a: day.id, b: track.id })))
+	);
+	cs.batch.calendarTrackToCommittee.push(
+		...tracks.flatMap((track, index) => {
+			const committee = cs.committees[index];
+			return committee ? [{ a: track.id, b: committee.id }] : [];
+		})
+	);
+	cs.batch.calendarTrackToConferenceRole.push(
+		...cs.nonStateActorIds.map((roleId) => ({ a: tracks[0].id, b: roleId }))
+	);
+	const tracksPerDay = days.map(() => tracks);
 
 	/** A venue's floor plan, uploaded the way participant care would. */
 	const sitePlan = async ({ venue, rooms }: { venue: string; rooms: string[] }) =>

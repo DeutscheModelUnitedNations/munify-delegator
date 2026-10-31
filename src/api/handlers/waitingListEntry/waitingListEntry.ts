@@ -21,6 +21,8 @@ countQuery({ table: 'waitingListEntry' });
 
 schemaBuilder.mutationFields((t) => ({
 	createWaitingListEntry: t.drizzleField({
+		description:
+			"Puts the caller on the conference's waiting list; refused unless the waiting list is open to them.",
 		type: WaitingListEntryRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -66,6 +68,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateWaitingListEntry: t.drizzleField({
+		description:
+			"Changes the given fields of a waiting list entry; the others stay as they are. Hiding the entry or marking it seated is the team's.",
 		type: WaitingListEntryRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -118,6 +122,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteWaitingListEntry: t.field({
+		description: 'Takes an entry off the waiting list.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

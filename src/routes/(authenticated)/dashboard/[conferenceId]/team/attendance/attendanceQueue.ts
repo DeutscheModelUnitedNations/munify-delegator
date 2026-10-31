@@ -25,3 +25,13 @@ export function isNetworkError(err: unknown) {
 export function retryDelay(retryCount: number) {
 	return Math.min(1000 * Math.pow(2, retryCount - 1), 30000);
 }
+
+/**
+ * Puts the scans that failed for good (neither the network nor a duplicate) back to pending, for a
+ * session that can take them now. Says whether there were any.
+ */
+export function requeueFailed(queue: QueueEntry[]) {
+	const failed = queue.filter((entry) => entry.status === 'error' && entry.errorKind === 'unknown');
+	for (const entry of failed) entry.status = 'pending';
+	return failed.length > 0;
+}

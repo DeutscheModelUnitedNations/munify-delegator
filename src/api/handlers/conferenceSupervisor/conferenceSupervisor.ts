@@ -1,6 +1,5 @@
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import { db } from '#api/db/db';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import {
 	connectParticipantToSupervisor,
@@ -34,6 +33,8 @@ const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) 
 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({
+		description:
+			'Registers the caller as a supervisor of the conference, or, with `userId`, the team registers someone else.',
 		type: ConferenceSupervisorRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -68,6 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateConferenceSupervisor: t.drizzleField({
+		description: 'Changes whether the supervisor plans to attend the conference themselves.',
 		type: ConferenceSupervisorRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -125,7 +127,6 @@ schemaBuilder.mutationFields((t) => ({
 				subjectId
 			});
 			await connectParticipantToSupervisor({ supervisorId: supervisor.id, participation });
-			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.conferenceSupervisor
 				.findFirst(query(await readableSupervisor({ ctx, id: supervisor.id })))
@@ -156,6 +157,8 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	rotateSupervisorConnectionCode: t.drizzleField({
+		description:
+			'Gives the supervisor a new connection code; the old one stops working, people already connected stay so.',
 		type: ConferenceSupervisorRef,
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {

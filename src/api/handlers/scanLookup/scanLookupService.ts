@@ -1,5 +1,6 @@
 import { db } from '#api/db/db';
 import { splitRole } from '#lib/helpers/conferenceRole';
+import { mayRecordAnyway, scanIssues, type ScanIssue } from './scanCheck';
 
 const NOTHING_FOUND = {
 	found: false,
@@ -18,25 +19,23 @@ const NOTHING_FOUND = {
 	nonStateActorIcon: null,
 	committeeAbbreviation: null,
 	singleRoleName: null,
-	accessCardId: null,
 	didAttend: false,
 	paymentStatus: 'PENDING',
 	termsAndConditions: 'PENDING',
 	guardianConsent: 'PENDING',
-	missingSurveyOptions: []
+	missingSurveyOptions: [],
+	issues: [],
+	checkPassed: false,
+	mayRecordAnyway: false
 } as const;
 
 async function findScannedPerson({ conferenceId, code }: { conferenceId: string; code: string }) {
 	const inConference = { conferenceId };
 	// the registrations reach their conference through the person's part in it
 	const throughParticipant = { participant: inConference };
-	const byCard = await db.query.conferenceParticipant.findFirst({
-		where: { ...inConference, accessCardId: code },
-		columns: { userId: true }
-	});
 	return db.query.user.findFirst({
 		where: {
-			id: byCard?.userId ?? code,
+			id: code,
 			// Only somebody with a part in this conference: a user id from anywhere else (an
 			// identity code, a co-delegate, an author) must not hand any team member a stranger's
 			// name and birthday, which the user read rules withhold from them.
@@ -114,7 +113,6 @@ function describeSeat(person: ScannedPerson) {
 }
 
 const NO_STATUS = {
-	accessCardId: null,
 	didAttend: false,
 	paymentStatus: 'PENDING',
 	termsAndConditions: 'PENDING',
@@ -122,9 +120,8 @@ const NO_STATUS = {
 } as const;
 
 function describeStatus(status: ScannedStatus) {
-	const { accessCardId, didAttend, paymentStatus, termsAndConditions, guardianConsent } =
-		status ?? NO_STATUS;
-	return { accessCardId, didAttend, paymentStatus, termsAndConditions, guardianConsent };
+	const { didAttend, paymentStatus, termsAndConditions, guardianConsent } = status ?? NO_STATUS;
+	return { didAttend, paymentStatus, termsAndConditions, guardianConsent };
 }
 
 function describePerson({ person, status }: { person: ScannedPerson; status: ScannedStatus }) {
@@ -187,30 +184,102 @@ async function missingSurveyOptions({
 	return options.map((option) => option.title);
 }
 
+/** Whether the session holds a scan of the person already; without a participant row it cannot. */
+async function scannedInSession({
+	sessionId,
+	participantId
+}: {
+	sessionId: string;
+	participantId: string | undefined;
+}) {
+	if (!participantId) return false;
+	const entry = await db.query.attendanceEntry.findFirst({
+		where: { sessionId, conferenceParticipantId: participantId },
+		columns: { id: true }
+	});
+	return !!entry;
+}
+
+/** The verdict of the check on what was found: the open points and what they allow. */
+function checkResult(issues: ScanIssue[]) {
+	return { issues, checkPassed: issues.length === 0, mayRecordAnyway: mayRecordAnyway(issues) };
+}
+
 /**
- * Looks the code up and describes the person it belongs to, or answers that nothing was found.
- * With a session, it also names the survey options the session expects that the person lacks.
+ * Looks the code up and describes the person it belongs to, or answers that nothing was found,
+ * with what the check finds open. With a session, it also names the survey options the session
+ * expects that the person lacks, and with `asScan` an earlier scan in the session is open too.
  */
 export async function lookupScan({
 	conferenceId,
 	code,
-	sessionId
+	sessionId,
+	asScan = false
 }: {
 	conferenceId: string;
 	code: string;
 	sessionId?: string | null;
+	/** Whether the lookup is for a scan about to be recorded in the session. */
+	asScan?: boolean;
 }) {
 	const person = await findScannedPerson({ conferenceId, code });
 	if (!person) return NOTHING_FOUND;
 	const status = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: person.id }
 	});
-	return {
-		...describePerson({ person, status }),
-		missingSurveyOptions: await missingSurveyOptions({
-			conferenceId,
-			sessionId,
-			participantId: status?.id
-		})
-	};
+	const described = describePerson({ person, status });
+	const missing = await missingSurveyOptions({
+		conferenceId,
+		sessionId,
+		participantId: status?.id
+	});
+	const alreadyScanned =
+		asScan && !!sessionId && (await scannedInSession({ sessionId, participantId: status?.id }));
+	const issues = scanIssues({
+		inConference: described.inConference,
+		isTeamMember: described.isTeamMember,
+		status: status ?? null,
+		birthday: person.birthday,
+		missingSurveyOptions: missing,
+		alreadyScanned
+	});
+	return { ...described, missingSurveyOptions: missing, ...checkResult(issues) };
+}
+
+/**
+ * Whether the check passes for the person when their scan is recorded in the session: `null` for a
+ * session that only records, which checks nothing.
+ */
+export async function checkPassedForScan({
+	conferenceId,
+	sessionId,
+	userId
+}: {
+	conferenceId: string;
+	sessionId: string;
+	userId: string;
+}) {
+	const session = await db.query.attendanceSession.findFirst({
+		where: { id: sessionId, conferenceId },
+		columns: { mode: true }
+	});
+	if (!session || session.mode === 'RECORD') return null;
+	// The scan being recorded is no repeat: a repeated one is refused before it is written
+	const found = await lookupScan({ conferenceId, code: userId, sessionId });
+	return found.checkPassed;
+}
+
+/**
+ * What is open for the person before they enter, as their check-in page shows it: the check
+ * without any session. The team is not asked for anything here.
+ */
+export async function participantCheckIssues({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
+	const found = await lookupScan({ conferenceId, code: userId });
+	return found.issues.filter((issue) => issue !== 'teamMember');
 }

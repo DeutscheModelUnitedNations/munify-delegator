@@ -19,7 +19,7 @@ export function makeSeedCalendarDay(
 }
 
 export function makeSeedCalendarTrack(
-	options: Pick<typeof schema.calendarTrack.$inferInsert, 'calendarDayId' | 'name' | 'sortOrder'> &
+	options: Pick<typeof schema.calendarTrack.$inferInsert, 'conferenceId' | 'name' | 'sortOrder'> &
 		Partial<Pick<typeof schema.calendarTrack.$inferInsert, 'description'>>
 ): typeof schema.calendarTrack.$inferInsert & { id: string } {
 	return {
@@ -27,7 +27,7 @@ export function makeSeedCalendarTrack(
 		name: options.name,
 		description: options.description ?? null,
 		sortOrder: options.sortOrder,
-		calendarDayId: options.calendarDayId,
+		conferenceId: options.conferenceId,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()
 	};

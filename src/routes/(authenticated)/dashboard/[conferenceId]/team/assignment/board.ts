@@ -5,7 +5,7 @@ import {
 	type SingleparticipantWhereInputArgument
 } from '#lib/api/rumbleClient/client';
 import { liveSnapshot } from '#lib/api/liveSnapshot';
-import type { BoardReviewRow } from '#lib/assignment/board';
+import type { BoardReviewRow } from './boardState';
 import { containing } from '#lib/components/tanStackTable/serverQuery';
 import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 

@@ -1,7 +1,6 @@
 import { enum_, object, schemaBuilder } from '#api/rumble';
 import { createPaperReview, reviewVerdictSchema } from './paperReviewService';
 import { assertCanReviewPaper, registerPaperReviewAbilities } from './paperReviewPermissions';
-import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 
 registerPaperReviewAbilities();
 
@@ -49,12 +48,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
 			await assertCanReviewPaper({ ctx, paperId: args.paperId });
-			const { result, conferenceId } = await createPaperReview({ args, reviewer });
-
-			// After the commit, so a rollback never leaves the author a mail about it.
-			scheduleEmailSweep({ conferenceId, origin: ctx.requestUrl().origin });
-
-			return result;
+			return createPaperReview({ args, reviewer });
 		}
 	})
 }));

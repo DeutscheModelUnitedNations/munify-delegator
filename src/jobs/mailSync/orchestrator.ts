@@ -20,18 +20,18 @@ export async function runMailSync(): Promise<void> {
 			return;
 		}
 
-		// STEP 1: Ensure all required lists exist and get listName -> listId mapping
+		// STEP 1: Ensure all required lists exist and get their Listmonk ids
 		logger.info('Step 1: updating lists');
 
 		const conferences = await db.query.conference.findMany({ columns: { id: true, title: true } });
-		const listNameToId = await ensureListsExist(conferences);
-		if (!listNameToId) return;
+		const lists = await ensureListsExist(conferences);
+		if (!lists) return;
 
 		// STEP 2 (Pass 1 — Plan): compare every user with Listmonk, keep only the planned actions
 		logger.info('Step 2: planning changes');
 
 		let subscriberMap: Map<string, ListmonkSubscriber> | undefined = await fetchSubscriberMap([
-			...listNameToId.values()
+			...lists.ids
 		]);
 		if (!subscriberMap) {
 			taskError({
@@ -51,10 +51,10 @@ export async function runMailSync(): Promise<void> {
 		const totalUsers = await processUsersInBatches({
 			cutoff,
 			callback: (batch) => {
-				planUserBatch({ users: batch, subscriberMap: subscriberMap!, listNameToId, plan, cutoff });
+				planUserBatch({ users: batch, subscriberMap: subscriberMap!, lists, plan, cutoff });
 			}
 		});
-		planReleases({ subscriberMap, plan });
+		planReleases({ subscriberMap, lists, plan });
 
 		const creates = plan.userActions.filter((a) => a.kind === 'create').length;
 		logger.info('Plan summary', {

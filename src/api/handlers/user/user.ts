@@ -261,6 +261,7 @@ schemaBuilder.queryFields((t) => ({
 	}),
 
 	impersonationStatus: t.field({
+		description: 'Whether the caller is acting as somebody else, and if so who both are.',
 		type: ImpersonationStatus,
 		resolve: (_root, _args, ctx) => {
 			const { user, impersonator } = ctx.oidc;

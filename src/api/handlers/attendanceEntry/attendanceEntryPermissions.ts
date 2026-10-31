@@ -142,25 +142,8 @@ async function assertParticipantToScan({
 
 /**
  * Refuses unless the caller is on the conference's team (any role: the scanner is on every team
- * member's dashboard) and the scanned user takes part in it (`assertParticipantToScan`).
- */
-async function assertMayRecordAttendance({
-	ctx,
-	conferenceId,
-	subjectId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-	subjectId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'useTeamTools' });
-	await assertParticipantToScan({ conferenceId, subjectId });
-}
-
-/**
- * Refuses unless the caller is signed in and may record the user's attendance
- * (`assertMayRecordAttendance`) in a session of the same conference. Returns the caller's user id,
- * who is recorded as the scanner.
+ * member's dashboard), the scanned user takes part in it (`assertParticipantToScan`) and the
+ * session belongs to it. Returns the caller's user id, who is recorded as the scanner.
  */
 export async function assertCanCreateAttendanceEntry({
 	ctx,
@@ -169,12 +152,8 @@ export async function assertCanCreateAttendanceEntry({
 	ctx: ApiContext;
 	args: { userId: string; conferenceId: string; sessionId: string };
 }) {
-	const callerId = callerUserId(ctx);
-	if (!callerId) {
-		throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-	}
-
-	await assertMayRecordAttendance({ ctx, conferenceId: args.conferenceId, subjectId: args.userId });
+	await assertTeamPermission({ ctx, conferenceId: args.conferenceId, permission: 'useTeamTools' });
+	await assertParticipantToScan({ conferenceId: args.conferenceId, subjectId: args.userId });
 	await assertSessionOfConference({ sessionId: args.sessionId, conferenceId: args.conferenceId });
-	return { callerId };
+	return { callerId: ctx.mustBeLoggedIn().sub };
 }

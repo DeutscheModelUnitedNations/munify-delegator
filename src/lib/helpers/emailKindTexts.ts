@@ -124,6 +124,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		trigger: m.emailKindTeamWelcomeTrigger(),
 		recipients: m.emailKindTeamWelcomeRecipients(),
 		content: m.emailKindTeamWelcomeContent()
+	}),
+	BADGE_FOUND: () => ({
+		title: m.emailKindBadgeFoundTitle(),
+		trigger: m.emailKindBadgeFoundTrigger(),
+		recipients: m.emailKindBadgeFoundRecipients(),
+		content: m.emailKindBadgeFoundContent()
 	})
 };
 
@@ -136,6 +142,7 @@ export const emailGroupTitle: Record<EmailGroupId, () => string> = {
 	received: () => m.emailGroupReceived(),
 	reminders: () => m.emailGroupReminders(),
 	papers: () => m.emailGroupPapers(),
+	onSite: () => m.emailGroupOnSite(),
 	certificate: () => m.emailGroupCertificate(),
 	supervisors: () => m.emailGroupSupervisors(),
 	team: () => m.emailGroupTeam()

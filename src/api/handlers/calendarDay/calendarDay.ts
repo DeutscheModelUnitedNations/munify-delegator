@@ -32,6 +32,7 @@ const newDayArgs = (
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarDay: t.drizzleField({
+		description: "Adds an empty day to the conference's schedule.",
 		type: CalendarDayRef,
 		args: {
 			...newDayArgs(t.arg)
@@ -59,6 +60,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCalendarDay: t.drizzleField({
+		description: 'Changes the given fields of a schedule day; the others stay as they are.',
 		type: CalendarDayRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -87,6 +89,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCalendarDay: t.field({
+		description: 'Deletes a schedule day together with its tracks and entries.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -98,15 +101,10 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-/**
- * Imports a whole day - tracks, places and entries - from an exported JSON document.
- *
- * Places are matched by name within the conference and reused when they already exist, so
- * importing the same day twice does not duplicate venues. Entry times arrive as "HH:MM" and are
- * anchored to the target date in UTC.
- */
 schemaBuilder.mutationFields((t) => ({
 	importCalendarDay: t.drizzleField({
+		description:
+			'Imports a whole day - tracks, places and entries - from an exported JSON document. Places and tracks are matched by name within the conference and reused, so importing a day twice duplicates neither venues nor tracks; entry times ("HH:MM") are anchored to the date in UTC.',
 		type: CalendarDayRef,
 		args: {
 			...newDayArgs(t.arg),

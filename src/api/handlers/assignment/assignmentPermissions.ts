@@ -10,10 +10,9 @@ import {
 } from '#api/services/authHelper/rules';
 import { grantWhere } from '#api/services/authHelper/utils';
 import { apiError } from '#api/services/errors';
-import type { ReviewedApplication } from './review';
+import type { ReviewedApplication } from './assignmentService';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { assertCanManageEmails } from '#api/handlers/email/emailPermissions';
 
 /** The context an ability rule gets, which has no `abilities` yet. */
 type RuleContext = Parameters<typeof isTeamMemberOf>[0]['ctx'];
@@ -26,8 +25,8 @@ const participantCareDraft = (ctx: RuleContext) =>
 	grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES }));
 
 /**
- * `participantCareDraft` for planned single roles, which reach their conference only through their
- * single participant.
+ * Matches planned single roles in a conference where the caller is participant care. The table has
+ * no `conference` relation, so the filter goes through the single participant.
  */
 const participantCareSingleRoleDraft = (ctx: RuleContext) => {
 	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
@@ -59,23 +58,6 @@ export async function assertCanPlanAssignment({
 	conferenceId: string;
 }) {
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-}
-
-/**
- * Refuses unless the caller may plan the assignment (`assertCanPlanAssignment`) and, when the
- * release decides about the result mails, also manage the conference's mails.
- */
-export async function assertCanReleaseAssignment({
-	ctx,
-	conferenceId,
-	decidesEmails
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-	decidesEmails: boolean;
-}) {
-	await assertCanPlanAssignment({ ctx, conferenceId });
-	if (decidesEmails) await assertCanManageEmails({ ctx, conferenceId });
 }
 
 /**
@@ -145,9 +127,11 @@ export async function assertCanReviewApplication({
 
 /** Refuses (NOT_FOUND) unless the caller's update ability reaches the draft unit. Returns it. */
 export async function assertCanAssignUnit({ ctx, unitId }: { ctx: ApiContext; unitId: string }) {
-	const filter = await ctx.abilities.assignmentUnit.filter('update');
 	return db.query.assignmentUnit
-		.findFirst(filter.merge({ where: { id: unitId } }).query.single)
+		.findFirst(
+			(await ctx.abilities.assignmentUnit.filter('update')).merge({ where: { id: unitId } }).query
+				.single
+		)
 		.then(assertFindFirstExists);
 }
 

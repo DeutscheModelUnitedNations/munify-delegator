@@ -13,6 +13,9 @@ export {
 	place,
 	calendarDay,
 	calendarTrack,
+	calendarDayToCalendarTrack,
+	calendarTrackToCommittee,
+	calendarTrackToConferenceRole,
 	calendarEntry,
 	calendarEntryToCalendarTrack,
 	calendarEntryToSurveyOption
@@ -70,6 +73,7 @@ export {
 	resolution
 } from './papers';
 export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
+export { mailingList } from './mailSync';
 export {
 	statisticsPeople,
 	statisticsDelegations,
