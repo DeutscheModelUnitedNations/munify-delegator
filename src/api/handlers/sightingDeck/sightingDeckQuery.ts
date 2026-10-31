@@ -13,11 +13,13 @@ const SIGHTING_STATUS_FILTERS = [
 ] as const;
 export type SightingStatusFilter = (typeof SIGHTING_STATUS_FILTERS)[number];
 
-/** The `status` argument: one of the filters, all when left out. */
-export const sightingStatusSchema = z
-	.enum(SIGHTING_STATUS_FILTERS, { error: () => m.sightingStatusUnknown() })
-	.nullish()
-	.transform((status) => status ?? 'all');
+/**
+ * The `status` argument: one of the filters; left out means `all`. No transform supplies that
+ * default: the validation is skipped for an argument left out or null.
+ */
+export const sightingStatusSchema = z.enum(SIGHTING_STATUS_FILTERS, {
+	error: () => m.sightingStatusUnknown()
+});
 
 /** Mirrors the browser's old filter: a flagged application that is not rated counts as unrated. */
 const statusPredicates: Record<SightingStatusFilter, SQL> = {

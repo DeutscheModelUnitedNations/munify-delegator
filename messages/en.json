@@ -1450,6 +1450,7 @@
 	"httpMissingRequiredData": "Required data is missing. Please ensure all participant details (address, birthday) are complete.",
 	"iban": "IBAN",
 	"ibanMustBe22Characters": "IBAN must be 22 characters without spaces",
+	"idListTooLong": "At most {max} entries at once.",
 	"identityCheck": "Identity Check",
 	"impersonation": "Impersonation",
 	"impersonationActive": "Impersonation active",

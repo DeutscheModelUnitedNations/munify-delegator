@@ -3814,7 +3814,6 @@ export type Query = {
     conferenceId: ID,
     currentId?: ID | null | undefined,
     index?: Int | null | undefined,
-    revision?: Int | null | undefined,
     schoolId?: ID | null | undefined,
     size?: Int | null | undefined,
     status?: String | null | undefined,

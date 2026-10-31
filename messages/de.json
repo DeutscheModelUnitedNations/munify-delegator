@@ -1450,6 +1450,7 @@
 	"httpMissingRequiredData": "Erforderliche Daten fehlen. Bitte stellen Sie sicher, dass alle Teilnehmendendaten (Adresse, Geburtstag) vollständig sind.",
 	"iban": "IBAN",
 	"ibanMustBe22Characters": "IBAN muss 22 Zeichen ohne Leerzeichen haben",
+	"idListTooLong": "Höchstens {max} Einträge auf einmal.",
 	"identityCheck": "Identitätsprüfung",
 	"impersonation": "Stellvertretung",
 	"impersonationActive": "Stellvertretung aktiv",
