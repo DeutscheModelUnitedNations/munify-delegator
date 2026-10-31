@@ -221,17 +221,3 @@ export async function assertCanReadConference({
 		options: { message: m.conferenceNotFound }
 	});
 }
-
-/**
- * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
- * participant care) in the conference, whose tool the plausibility page is.
- */
-export async function assertCanReadPlausibility({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-}

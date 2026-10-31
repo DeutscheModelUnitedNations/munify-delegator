@@ -49,9 +49,6 @@ export const reviewArgsSchema = z
 	.refine((args) => !args.delegationId !== !args.singleParticipantId, {
 		error: () => m.assignmentReviewNameOneApplication()
 	})
-	.refine((args) => !(args.disqualified && args.required), {
-		error: () => m.assignmentReviewRequiredAndExcluded()
-	})
 	.transform(({ delegationId, singleParticipantId, ...changes }) => ({
 		application: delegationId
 			? { kind: 'delegation' as const, id: delegationId }

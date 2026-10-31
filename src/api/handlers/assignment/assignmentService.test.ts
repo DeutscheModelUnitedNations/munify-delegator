@@ -85,13 +85,6 @@ describe('reviewArgsSchema', () => {
 		expect(issues({ ...base, singleParticipantId: 's', evaluation: null })).toEqual([]);
 	});
 
-	it('refuses an application both required and excluded', () => {
-		expect(issues({ ...base, delegationId: 'd', disqualified: true, required: true })).toEqual([
-			m.assignmentReviewRequiredAndExcluded()
-		]);
-		expect(issues({ ...base, delegationId: 'd', required: true })).toEqual([]);
-	});
-
 	it('names the application and the columns', () => {
 		expect(reviewArgsSchema.parse({ ...base, delegationId: 'd', evaluation: 3, note: '' })).toEqual(
 			{

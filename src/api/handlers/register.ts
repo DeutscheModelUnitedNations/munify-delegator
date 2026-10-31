@@ -28,6 +28,7 @@ import './searchHistory/searchHistory';
 import './roleApplication/roleApplication';
 import './statistics/statistics';
 import './participantsPage/participantsPage';
+import './plausibility/plausibility';
 import './school/school';
 import './schoolSuggestion/schoolSuggestion';
 import './scanLookup/scanLookup';

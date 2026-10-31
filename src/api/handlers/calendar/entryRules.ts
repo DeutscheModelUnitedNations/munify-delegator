@@ -20,8 +20,8 @@ export const entryTrackIdsSchema = z
 	.min(1, { error: () => m.calendarEntryNeedsTrack() });
 
 /**
- * An entry's times, when both are given: it has to end after it starts. An update giving only one
- * is checked on the row as written (`updateCalendarEntry`).
+ * A new entry's times: it has to end after it starts. An update is checked on the row as written
+ * (`updateCalendarEntry`).
  */
 export const entryTimesSchema = z
 	.object({ startTime: z.date().nullish(), endTime: z.date().nullish() })

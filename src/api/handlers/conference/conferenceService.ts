@@ -1,28 +1,15 @@
 import { db, schema } from '#api/db/db';
 import { assertConferenceDatesInOrder } from './conferenceSettings';
-import type { ApiContext } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
-import { max, sql } from 'drizzle-orm';
+import { and, eq, inArray, max, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { whereRows } from '#api/db/whereRows';
-import type { InferSelectModel } from 'drizzle-orm';
-import {
-	PARTICIPANT_MAX_AGE,
-	PARTICIPANT_MIN_AGE,
-	SUPERVISOR_MIN_AGE,
-	yearsAgo
-} from '#lib/helpers/plausibilityRules';
-import { userFormSchema } from '#lib/schemata/userForm';
 import { nullToUndefined } from '#api/services/args';
-import { totalSeats } from '#api/handlers/seatPlanning/seatRules';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { apiError } from '#api/services/errors';
-import {
-	LAYOUT_DOCUMENTS,
-	documentLayoutSchema,
-	type LayoutDocument
-} from '#lib/helpers/documentLayout';
+import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout';
 import { jsonDocument } from '#api/services/argSchemas';
 import { z } from 'zod';
 import {
@@ -37,19 +24,40 @@ import {
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
 	const [members, participants] = await Promise.all([
-		db.query.delegationMember.findMany({
-			where: {
-				delegation: { conferenceId: conferenceId, assignedRoleId: { isNotNull: true } }
-			},
-			columns: { id: true }
-		}),
-		db.query.singleParticipant.findMany({
-			where: { participant: { conferenceId }, assignedRoleId: { isNotNull: true } },
-			columns: { id: true }
-		})
+		db.$count(
+			schema.delegationMember,
+			inArray(
+				schema.delegationMember.delegationId,
+				db
+					.select({ id: schema.delegation.id })
+					.from(schema.delegation)
+					.where(
+						whereRows({
+							table: schema.delegation,
+							filter: { conferenceId, assignedRoleId: { isNotNull: true } }
+						})
+					)
+			)
+		),
+		db.$count(
+			schema.singleParticipant,
+			and(
+				whereRows({
+					table: schema.singleParticipant,
+					filter: { assignedRoleId: { isNotNull: true } }
+				}),
+				inArray(
+					schema.singleParticipant.conferenceParticipantId,
+					db
+						.select({ id: schema.conferenceParticipant.id })
+						.from(schema.conferenceParticipant)
+						.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }))
+				)
+			)
+		)
 	]);
 
-	return members.length + participants.length;
+	return members + participants;
 }
 
 /** How many entries the conference's waiting list holds, hidden ones included. */
@@ -65,19 +73,26 @@ export function countWaitingList(conferenceId: string) {
  * non-state actor its `seatAmount`.
  */
 export async function countOfferedSeats(conferenceId: string) {
-	const [committees, nonStateActors] = await Promise.all([
-		db.query.committee.findMany({
-			where: { conferenceId },
-			columns: { numOfSeatsPerDelegation: true },
-			with: { roles: { columns: { id: true } } }
-		}),
-		db.query.conferenceRole.findMany({
-			where: { conferenceId: conferenceId, kind: 'NON_STATE_ACTOR' },
-			columns: { seatAmount: true }
-		})
+	const seatSum = (column: AnyPgColumn) => sql<number>`coalesce(sum(${column}), 0)`.mapWith(Number);
+
+	const [[committeeSeats], [nsaSeats]] = await Promise.all([
+		db
+			.select({ seats: seatSum(schema.committee.numOfSeatsPerDelegation) })
+			.from(schema.committeeToRole)
+			.innerJoin(schema.committee, eq(schema.committeeToRole.a, schema.committee.id))
+			.where(whereRows({ table: schema.committee, filter: { conferenceId } })),
+		db
+			.select({ seats: seatSum(schema.conferenceRole.seatAmount) })
+			.from(schema.conferenceRole)
+			.where(
+				whereRows({
+					table: schema.conferenceRole,
+					filter: { conferenceId, kind: 'NON_STATE_ACTOR' }
+				})
+			)
 	]);
 
-	return totalSeats({ committees, nonStateActors });
+	return committeeSeats.seats + nsaSeats.seats;
 }
 
 /** The document number to hand to the next participant who needs one: one above the highest. */
@@ -328,98 +343,3 @@ export async function seedConference(data: ConferenceSeedingData) {
 
 	return created.id;
 }
-
-export type PlausibilityUser = InferSelectModel<typeof schema.user>;
-
-/**
- * The registration form still names these two fields the way the OIDC claims do, so a database
- * row has to be renamed into that shape before the form's schema can judge it complete.
- */
-function toFormShape(user: PlausibilityUser) {
-	const { givenName, familyName, ...rest } = user;
-	return { ...rest, given_name: givenName, family_name: familyName };
-}
-
-/** The caller's `read` filter on users, which decides who the plausibility lists may show. */
-export type ReadableUsers = Awaited<ReturnType<ApiContext['abilities']['user']['filter']>>;
-
-/**
- * Flags participants whose age does not fit the role they registered for, plus those whose
- * account data no longer satisfies the registration form.
- */
-export async function findPlausibilityIssues({
-	conferenceId,
-	readableUsers
-}: {
-	conferenceId: string;
-	readableUsers: ReadableUsers;
-}) {
-	const participating = {
-		OR: [
-			{ singleParticipant: { participant: { conferenceId } } },
-			{ delegationMemberships: { participant: { conferenceId } } }
-		]
-	};
-	const supervising = { conferenceSupervisor: { participant: { conferenceId } } };
-
-	const [tooYoungUsers, tooOldUsers, shouldBeSupervisor, shouldNotBeSupervisor, candidates] =
-		await Promise.all([
-			db.query.user.findMany(
-				readableUsers.merge({
-					where: { ...participating, birthday: { gt: yearsAgo(PARTICIPANT_MIN_AGE) } }
-				}).query.many
-			),
-			db.query.user.findMany(
-				readableUsers.merge({
-					where: {
-						...participating,
-						birthday: { lt: yearsAgo(SUPERVISOR_MIN_AGE), gt: yearsAgo(PARTICIPANT_MAX_AGE) }
-					}
-				}).query.many
-			),
-			db.query.user.findMany(
-				readableUsers.merge({
-					where: { ...participating, birthday: { lt: yearsAgo(PARTICIPANT_MAX_AGE) } }
-				}).query.many
-			),
-			db.query.user.findMany(
-				readableUsers.merge({
-					where: { ...supervising, birthday: { gt: yearsAgo(SUPERVISOR_MIN_AGE) } }
-				}).query.many
-			),
-			db.query.user.findMany(
-				readableUsers.merge({
-					where: {
-						OR: [
-							{ singleParticipant: { participant: { conferenceId } } },
-							{ delegationMemberships: { participant: { conferenceId } } },
-							{ conferenceSupervisor: { participant: { conferenceId } } }
-						]
-					}
-				}).query.many
-			)
-		]);
-
-	return {
-		tooYoungUsers,
-		tooOldUsers,
-		shouldBeSupervisor,
-		shouldNotBeSupervisor,
-		dataMissing: candidates.filter((user) => !userFormSchema.safeParse(toFormShape(user)).success)
-	};
-}
-
-/** The arguments of `setDocumentLayout`: a layout has to fit its document; null clears it. */
-export const documentLayoutArgsSchema = z
-	.object({
-		conferenceId: z.string(),
-		document: z.enum(LAYOUT_DOCUMENTS),
-		layout: z.unknown()
-	})
-	.transform((args, ctx) => {
-		if (args.layout === null || args.layout === undefined) return { ...args, layout: null };
-		const parsed = documentLayoutSchema(args.document).safeParse(args.layout);
-		if (parsed.success) return { ...args, layout: parsed.data };
-		ctx.issues.push({ code: 'custom', input: args.layout, message: m.documentLayoutInvalid() });
-		return z.NEVER;
-	});

@@ -2694,9 +2694,9 @@ export type Mutation = {
   updateSchool: (p: {
     apartment?: String | null | undefined,
     city?: String | null | undefined,
-    contactEmail?: String | null | undefined,
-    contactName?: String | null | undefined,
-    contactPhone?: String | null | undefined,
+    contactEmail?: EmailAddress | null | undefined,
+    contactName?: PersonName | null | undefined,
+    contactPhone?: PhoneNumber | null | undefined,
     country?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
@@ -2810,7 +2810,7 @@ export type Mutation = {
     mediaConsentStatus?: MediaconsentstatusEnum | null | undefined,
     paymentStatus?: AdministrativestatusEnum | null | undefined,
     termsAndConditions?: AdministrativestatusEnum | null | undefined,
-    userEmail?: String | null | undefined,
+    userEmail?: EmailAddress | null | undefined,
     userId?: ID | null | undefined
   }) => Conferenceparticipant,
   upsertSurveyAnswer: (p: {

@@ -1816,7 +1816,6 @@
 	"participantStatus": "Teilnehmendenstatus",
 	"participantStatusDescription": "Umfassender Export mit allen Statusfeldern und berechneten Zusammenfassungen.",
 	"participantStatusExport": "Teilnehmendenstatus-Export",
-	"participantStatusNeedsLookup": "Geben Sie entweder eine ID, eine Nutzer-ID mit Konferenz-ID oder eine E-Mail-Adresse mit Konferenz-ID an.",
 	"participantStatusNeedsUser": "Zum Anlegen eines Status wird eine Nutzer-ID oder E-Mail-Adresse benötigt.",
 	"participantStatusTitle": "Teilnehmendenstatus",
 	"participants": "Teilnehmende",

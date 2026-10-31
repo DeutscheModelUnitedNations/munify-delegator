@@ -1816,7 +1816,6 @@
 	"participantStatus": "Participant Status",
 	"participantStatusDescription": "Comprehensive export with all status fields and calculated summaries.",
 	"participantStatusExport": "Participant Status Export",
-	"participantStatusNeedsLookup": "You must provide either an id, a userId and conferenceId or a userEmail and conferenceId.",
 	"participantStatusNeedsUser": "A user ID or email address is required to create a status.",
 	"participantStatusTitle": "Participant Status",
 	"participants": "Participants",

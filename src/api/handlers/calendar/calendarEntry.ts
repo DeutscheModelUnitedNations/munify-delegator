@@ -95,7 +95,6 @@ schemaBuilder.mutationFields((t) => ({
 				description: `${surveyOptionsDescription} Left out keeps them, an empty list shows the entry to everybody again.`
 			})
 		},
-		validate: entryTimesSchema,
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateCalendarEntry({ ctx, id: args.id });
 

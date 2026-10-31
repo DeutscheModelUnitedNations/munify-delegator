@@ -4,6 +4,7 @@ import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { z } from 'zod';
 import { conferenceDatesProblem } from '#lib/helpers/conferenceDates';
 import { apiError } from '#api/services/errors';
+import { LAYOUT_DOCUMENTS, documentLayoutSchema } from '#lib/helpers/documentLayout';
 
 /** The checks of the conference settings, kept apart from the database so they are unit tested. */
 
@@ -39,6 +40,21 @@ export const conferenceSettingSchemas = {
 		.length(3, { error: () => m.currencyMustBe3Characters() })
 		.nullish()
 };
+
+/** The arguments of `setDocumentLayout`: a layout has to fit its document; null clears it. */
+export const documentLayoutArgsSchema = z
+	.object({
+		conferenceId: z.string(),
+		document: z.enum(LAYOUT_DOCUMENTS),
+		layout: z.unknown()
+	})
+	.transform((args, ctx) => {
+		if (args.layout === null || args.layout === undefined) return { ...args, layout: null };
+		const parsed = documentLayoutSchema(args.document).safeParse(args.layout);
+		if (parsed.success) return { ...args, layout: parsed.data };
+		ctx.issues.push({ code: 'custom', input: args.layout, message: m.documentLayoutInvalid() });
+		return z.NEVER;
+	});
 
 /** Whether the runtime knows the IANA time zone (`Europe/Berlin`), which dates are shown in. */
 function isKnownTimeZone(timeZone: string) {

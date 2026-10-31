@@ -1,5 +1,6 @@
 import { object, query, schemaBuilder } from '#api/rumble';
-import { refreshSchoolSuggestions } from './schoolSuggestions';
+import { ConferenceRef } from '#api/handlers/conference/conference';
+import { loadSchoolRows, refreshSchoolSuggestions } from './schoolSuggestions';
 import {
 	assertCanAnalyzeSchoolSuggestions,
 	readableSchoolRegistrations,
@@ -13,6 +14,27 @@ registerSchoolSuggestionAbilities();
 object({ table: 'schoolSuggestion' });
 object({ table: 'schoolSuggestionVariant' });
 query({ table: 'schoolSuggestion' });
+
+const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
+	fields: (t) => ({
+		schoolId: t.id(),
+		school: t.string({ description: "The school's name" }),
+		delegationCount: t.int(),
+		delegationMembers: t.int(),
+		singleParticipants: t.int(),
+		sumParticipants: t.int()
+	})
+});
+
+schemaBuilder.objectField(ConferenceRef, 'schools', (t) =>
+	t.field({
+		description:
+			'The people of applied registrations grouped by their own school, which is how the organizers see which schools are sending how many people.',
+		type: [ConferenceSchools],
+		resolve: async (conference, _args, ctx) =>
+			loadSchoolRows(await readableSchoolRegistrations({ ctx, conferenceId: conference.id }))
+	})
+);
 
 schemaBuilder.mutationFields((t) => ({
 	analyzeSchoolSuggestions: t.field({

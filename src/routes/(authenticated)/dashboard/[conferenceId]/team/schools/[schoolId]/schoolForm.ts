@@ -1,4 +1,14 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import { isPersonName } from '#lib/helpers/personName';
+import { m } from '#lib/paraglide/messages';
+
+/** Empty, or what the API's scalar takes; empty fields are cleared. */
+const emptyOr = (check: (value: string) => boolean, message: () => string) =>
+	z
+		.string()
+		.refine((value) => !value.trim() || check(value.trim()), { error: message })
+		.optional();
 
 /** What the team edits of a school. Empty fields are cleared on save. */
 export const schoolFormSchema = z.object({
@@ -10,9 +20,9 @@ export const schoolFormSchema = z.object({
 	region: z.string().nullish(),
 	/** ISO 3166-1 alpha-3 */
 	country: z.string().nullish(),
-	contactName: z.string().optional(),
+	contactName: emptyOr(isPersonName, () => m.invalidPersonName()),
 	contactEmail: z.union([z.literal(''), z.email()]).optional(),
-	contactPhone: z.string().optional(),
+	contactPhone: emptyOr(isValidPhoneNumber, () => m.pleaseEnterAValidPhoneNumber()),
 	notes: z.string().optional()
 });
 

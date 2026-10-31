@@ -10,8 +10,6 @@ import {
 import { ScanIssueEnum } from '#api/handlers/scanLookup/scanLookup';
 import { participantCheckIssues } from '#api/handlers/scanLookup/scanLookupService';
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
-import { z } from 'zod';
-import { m } from '#lib/paraglide/messages';
 import {
 	assertCanSetAttendanceForAll,
 	assertCanSetParticipantSchool,
@@ -71,7 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 			id: t.arg.id(),
 			conferenceId: t.arg.id({ required: true }),
 			userId: t.arg.id(),
-			userEmail: t.arg.string(),
+			userEmail: t.arg({ type: 'EmailAddress' }),
 			termsAndConditions: t.arg({ type: administrativeStatusEnum }),
 			guardianConsent: t.arg({ type: administrativeStatusEnum }),
 			mediaConsent: t.arg({ type: administrativeStatusEnum }),
@@ -85,15 +83,6 @@ schemaBuilder.mutationFields((t) => ({
 			}),
 			accessCardId: t.arg.string()
 		},
-		validate: z
-			.object({
-				id: z.string().nullish(),
-				userId: z.string().nullish(),
-				userEmail: z.string().nullish()
-			})
-			.refine((args) => args.id || args.userId || args.userEmail, {
-				error: () => m.participantStatusNeedsLookup()
-			}),
 		resolve: async (query, _root, { id, conferenceId, userId, userEmail, ...status }, ctx) => {
 			const target = await assertCanUpsertParticipantStatus({
 				ctx,

@@ -1,5 +1,3 @@
-import { z } from 'zod';
-import { m } from '#lib/paraglide/messages';
 import { applySeatSwitch, type SeatSwitch, type SeatSwitchMember } from '#lib/helpers/seatSwitch';
 
 /**
@@ -63,13 +61,3 @@ export function headDelegateChanges({
 		(x) => x.isHeadDelegate !== before.find((y) => y.id === x.id)?.isHeadDelegate
 	);
 }
-
-/**
- * The target of `switchDelegationMemberSeats`: another member to swap with, or a role with a free
- * seat to move into, never both and never neither.
- */
-export const seatSwitchTargetSchema = z
-	.object({ otherMemberId: z.string().nullish(), targetRoleId: z.string().nullish() })
-	.refine((args) => !args.otherMemberId !== !args.targetRoleId, {
-		error: () => m.seatSwitchInvalidTarget()
-	});

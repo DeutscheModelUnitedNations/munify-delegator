@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { sql } from 'drizzle-orm';
 import { apiError } from '#api/services/errors';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
@@ -82,7 +83,11 @@ export async function assertCanUpdateParticipantStatus({
 
 /** The user a status is addressed to by email; NOT_FOUND for an address without an account. */
 async function userIdByEmail(email: string) {
-	const user = await db.query.user.findFirst({ where: { email }, columns: { id: true } });
+	// the scalar lowercases; addresses stored before it did may still carry capitals
+	const user = await db.query.user.findFirst({
+		where: { RAW: (user) => sql`lower(${user.email}) = ${email}` },
+		columns: { id: true }
+	});
 	if (!user) throw apiError({ code: 'NOT_FOUND', message: m.userNotFound() });
 	return user.id;
 }

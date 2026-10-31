@@ -1,6 +1,5 @@
 import { schemaBuilder } from '#api/rumble';
 import { assertCanReadParticipantsPage } from './participantsPagePermissions';
-import { participantColumnSchema } from './participantsQuery';
 import { loadParticipantsPage, pageLimitSchema, pageOffsetSchema } from './participantsPageService';
 
 const ParticipantFilterInput = schemaBuilder.inputType('ParticipantFilterInput', {
@@ -9,7 +8,6 @@ const ParticipantFilterInput = schemaBuilder.inputType('ParticipantFilterInput',
 	fields: (t) => ({
 		column: t.string({
 			required: true,
-			validate: participantColumnSchema,
 			description: 'The column filtered; one the table does not have is refused with INVALID_INPUT.'
 		}),
 		mode: t.string({

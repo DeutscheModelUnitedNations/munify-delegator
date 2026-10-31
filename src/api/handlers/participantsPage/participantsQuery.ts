@@ -1,6 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { apiError } from '#api/services/errors';
-import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 
 type Kind = 'text' | 'enum' | 'bool' | 'number';
@@ -216,7 +215,6 @@ function condition({
 	teamDetails: boolean;
 }): SQL | undefined {
 	const column = columnOf(filter.column);
-	// The argument's schema refuses unknown columns already; this keeps the SQL safe on its own.
 	if (!column) throw apiError({ code: 'INVALID_INPUT', message: m.participantColumnUnknown() });
 	const conditionOf = filter.column === 'nation' ? nationCondition : conditionByKind[column.kind];
 	return conditionOf(filter, columnExpr({ column, teamDetails }));
@@ -230,13 +228,6 @@ function searchConditions(search: string | null | undefined) {
 		sql`((u.given_name || ' ' || u.family_name) ilike ${like(term)} or u.email ilike ${like(term)})`
 	];
 }
-
-/** A column the participants table filters by. */
-export const participantColumnSchema = z
-	.string()
-	.refine((column) => Object.hasOwn(columns, column), {
-		error: () => m.participantColumnUnknown()
-	});
 
 /**
  * The order asked for; columns that do not exist are left out, since the table also sorts by

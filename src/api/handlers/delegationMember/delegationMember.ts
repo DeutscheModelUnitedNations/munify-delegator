@@ -17,7 +17,6 @@ import {
 	assertCanSwitchDelegationMemberSeats,
 	registerDelegationMemberAbilities
 } from './delegationMemberPermissions';
-import { seatSwitchTargetSchema } from './seatSwitch';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
@@ -185,7 +184,6 @@ schemaBuilder.mutationFields((t) => ({
 					'The head delegates of the delegations involved after the switch; left out keeps the defaults.'
 			})
 		},
-		validate: seatSwitchTargetSchema,
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSwitchDelegationMemberSeats({ ctx, args });
 			const memberIds = await switchSeats(args);

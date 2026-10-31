@@ -3,51 +3,33 @@ import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { NationRef } from '#api/handlers/nation/nation';
 import { enum_, type ApiContext } from '#api/rumble';
-import { UserRef } from '#api/handlers/user/user';
 import {
-	documentLayoutArgsSchema,
 	countOfferedSeats,
 	countSeatedParticipants,
 	countWaitingList,
-	findPlausibilityIssues,
 	nextDocumentNumber,
 	seedConference,
 	seedingDataSchema,
-	updateConference,
-	type PlausibilityUser
+	updateConference
 } from './conferenceService';
-import { conferenceSettingSchemas } from './conferenceSettings';
+import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conferenceSettings';
 import {
 	assertCanClaimConferenceFiles,
 	assertCanReadConference,
 	assertCanReadNextDocumentNumber,
-	assertCanReadPlausibility,
 	assertCanSeedConference,
 	assertCanSetDocumentLayout,
 	assertCanUpdateConference,
 	registerConferenceAbilities
 } from './conferencePermissions';
 import { LAYOUT_DOCUMENTS } from '#lib/helpers/documentLayout';
-import { loadSchoolRows } from '#api/handlers/schoolSuggestion/schoolSuggestions';
-import { readableSchoolRegistrations } from '#api/handlers/schoolSuggestion/schoolSuggestionPermissions';
 
 /** The documents whose templates the team lays out (`#lib/helpers/documentLayout.ts`). */
 const LayoutDocumentEnum = schemaBuilder.enumType('LayoutDocument', { values: LAYOUT_DOCUMENTS });
 
-const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
-	fields: (t) => ({
-		schoolId: t.id(),
-		school: t.string({ description: "The school's name" }),
-		delegationCount: t.int(),
-		delegationMembers: t.int(),
-		singleParticipants: t.int(),
-		sumParticipants: t.int()
-	})
-});
-
 registerConferenceAbilities();
 
-const ConferenceRef = object({
+export const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
 		totalParticipants: t.field({
@@ -78,14 +60,6 @@ const ConferenceRef = object({
 				await assertCanReadNextDocumentNumber({ ctx, conferenceId: conference.id });
 				return nextDocumentNumber(conference.id);
 			}
-		}),
-
-		schools: t.field({
-			description:
-				'The people of applied registrations grouped by their own school, which is how the organizers see which schools are sending how many people.',
-			type: [ConferenceSchools],
-			resolve: async (conference, _args, ctx) =>
-				loadSchoolRows(await readableSchoolRegistrations({ ctx, conferenceId: conference.id }))
 		})
 	})
 });
@@ -239,46 +213,6 @@ schemaBuilder.queryFields((t) => ({
 					where: { conferenceRoles: { conferenceId: args.conferenceId, committees: true } }
 				})
 			);
-		}
-	})
-}));
-
-const PlausibilityResult = schemaBuilder
-	.objectRef<{
-		tooYoungUsers: PlausibilityUser[];
-		tooOldUsers: PlausibilityUser[];
-		shouldBeSupervisor: PlausibilityUser[];
-		shouldNotBeSupervisor: PlausibilityUser[];
-		dataMissing: PlausibilityUser[];
-	}>('PlausibilityResult')
-	.implement({
-		fields: (t) => ({
-			tooYoungUsers: t.field({ type: [UserRef], resolve: (parent) => parent.tooYoungUsers }),
-			tooOldUsers: t.field({ type: [UserRef], resolve: (parent) => parent.tooOldUsers }),
-			shouldBeSupervisor: t.field({
-				type: [UserRef],
-				resolve: (parent) => parent.shouldBeSupervisor
-			}),
-			shouldNotBeSupervisor: t.field({
-				type: [UserRef],
-				resolve: (parent) => parent.shouldNotBeSupervisor
-			}),
-			dataMissing: t.field({ type: [UserRef], resolve: (parent) => parent.dataMissing })
-		})
-	});
-
-schemaBuilder.queryFields((t) => ({
-	conferencePlausibility: t.field({
-		description:
-			'Flags participants whose age does not fit the role they registered for, plus those whose account data no longer satisfies the registration form. Purely advisory - nothing here blocks a registration, it only gives the organizers a list to look at.',
-		type: PlausibilityResult,
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanReadPlausibility({ ctx, conferenceId: args.conferenceId });
-			return findPlausibilityIssues({
-				conferenceId: args.conferenceId,
-				readableUsers: await ctx.abilities.user.filter('read')
-			});
 		}
 	})
 }));

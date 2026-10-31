@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { conferenceSettingSchemas } from './conferenceSettings';
+import { defaultLayout } from '#lib/helpers/documentLayout';
+import { m } from '#lib/paraglide/messages';
+import { conferenceSettingSchemas, documentLayoutArgsSchema } from './conferenceSettings';
 
 const accepts = (schema: { safeParse: (value: unknown) => { success: boolean } }, value: unknown) =>
 	schema.safeParse(value).success;
@@ -32,5 +34,47 @@ describe('conferenceSettingSchemas', () => {
 			expect(accepts(schema, undefined)).toBe(true);
 			expect(accepts(schema, null)).toBe(true);
 		}
+	});
+});
+
+describe('documentLayoutArgsSchema', () => {
+	const args = (layout: unknown) => ({ conferenceId: 'c1', document: 'certificate', layout });
+
+	it('takes a layout that places every element of its document', () => {
+		const layout = defaultLayout('certificate');
+		const parsed = documentLayoutArgsSchema.safeParse(args(layout));
+		expect(parsed.success && parsed.data.layout).toEqual(layout);
+	});
+
+	it('clears the layout when it is left out or null', () => {
+		for (const layout of [undefined, null]) {
+			const parsed = documentLayoutArgsSchema.safeParse(args(layout));
+			expect(parsed.success && parsed.data.layout).toBeNull();
+		}
+	});
+
+	it('refuses a layout that misses an element or places one off the page', () => {
+		const { qr: _qr, ...withoutQr } = defaultLayout('certificate');
+		const offPage = { ...defaultLayout('certificate'), qr: { x: 2, y: 0, size: 0.1 } };
+		for (const layout of [withoutQr, offPage, 'not a layout']) {
+			const parsed = documentLayoutArgsSchema.safeParse(args(layout));
+			expect(parsed.error?.issues.map((issue) => issue.message)).toEqual([
+				m.documentLayoutInvalid()
+			]);
+		}
+	});
+
+	it("refuses another document's layout", () => {
+		const parsed = documentLayoutArgsSchema.safeParse(args(defaultLayout('guardianConsent')));
+		expect(parsed.success).toBe(false);
+	});
+
+	it('refuses a document that has no layout', () => {
+		const parsed = documentLayoutArgsSchema.safeParse({
+			conferenceId: 'c1',
+			document: 'invoice',
+			layout: null
+		});
+		expect(parsed.success).toBe(false);
 	});
 });

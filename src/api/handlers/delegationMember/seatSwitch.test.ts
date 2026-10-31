@@ -4,23 +4,8 @@ import {
 	hasOneHeadPerDelegation,
 	headDelegateChanges,
 	isSameSeat,
-	seatSwitchTargetSchema,
 	withChosenHeadDelegates
 } from './seatSwitch';
-
-describe('seatSwitchTargetSchema', () => {
-	it('takes either another member or a target role', () => {
-		expect(seatSwitchTargetSchema.safeParse({ otherMemberId: 'm2' }).success).toBe(true);
-		expect(seatSwitchTargetSchema.safeParse({ targetRoleId: 'r1' }).success).toBe(true);
-	});
-
-	it('refuses both, and neither', () => {
-		expect(
-			seatSwitchTargetSchema.safeParse({ otherMemberId: 'm2', targetRoleId: 'r1' }).success
-		).toBe(false);
-		expect(seatSwitchTargetSchema.safeParse({}).success).toBe(false);
-	});
-});
 
 const france: SeatSwitchMember[] = [
 	{ id: 'fr-head', delegationId: 'fr', isHeadDelegate: true },

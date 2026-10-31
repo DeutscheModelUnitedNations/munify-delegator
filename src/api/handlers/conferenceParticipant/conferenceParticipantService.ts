@@ -1,7 +1,7 @@
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import { type Transaction, db, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { max } from 'drizzle-orm';
+import { and, eq, inArray, max, or } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
@@ -136,6 +136,18 @@ async function assertAccessCardFree({
 	if (holder) throw apiError({ code: 'CONFLICT', message: m.accessCardTaken() });
 }
 
+/** The plain status fields to write; `null` keeps a field, like leaving it out. */
+function statusFields(args: StatusUpdateArgs) {
+	return {
+		termsAndConditions: args.termsAndConditions ?? undefined,
+		guardianConsent: args.guardianConsent ?? undefined,
+		mediaConsent: args.mediaConsent ?? undefined,
+		mediaConsentStatus: args.mediaConsentStatus ?? undefined,
+		paymentStatus: args.paymentStatus ?? undefined,
+		didAttend: args.didAttend ?? undefined
+	};
+}
+
 /**
  * Writes the given fields of a participant's status where `assertCanUpsertParticipantStatus`
  * pointed: the existing row, or a new one for the user. Left out and `null` both keep a field.
@@ -156,12 +168,7 @@ export async function upsertParticipantStatus({
 	if (accessCardId) await assertAccessCardFree({ conferenceId, accessCardId, ownId: existingId });
 
 	const values = {
-		termsAndConditions: args.termsAndConditions ?? undefined,
-		guardianConsent: args.guardianConsent ?? undefined,
-		mediaConsent: args.mediaConsent ?? undefined,
-		mediaConsentStatus: args.mediaConsentStatus ?? undefined,
-		paymentStatus: args.paymentStatus ?? undefined,
-		didAttend: args.didAttend ?? undefined,
+		...statusFields(args),
 		assignedDocumentNumber: await documentNumberOf({ conferenceId, ...args }),
 		accessCardId
 	};
@@ -185,46 +192,42 @@ export async function upsertParticipantStatus({
 }
 
 /**
- * Sets whether everybody registered in the conference attended, creating the participant rows
- * that are missing. Answers how many participants it touched.
+ * Sets whether everybody registered in the conference attended, in one statement. A registration
+ * points at its participant row, so everybody registered has one already. Answers how many
+ * participants it touched.
  */
 export async function setAttendanceForAll(args: {
 	conferenceId: string;
 	didAttend?: boolean | null;
 }) {
-	const participants = await db.query.user.findMany({
-		where: {
-			OR: [
-				{ conferenceSupervisor: { participant: { conferenceId: args.conferenceId } } },
-				{ singleParticipant: { participant: { conferenceId: args.conferenceId } } },
-				{ delegationMemberships: { participant: { conferenceId: args.conferenceId } } }
-			]
-		},
-		columns: { id: true }
-	});
+	const p = schema.conferenceParticipant;
+	const registered = or(
+		inArray(
+			p.id,
+			db
+				.select({ id: schema.delegationMember.conferenceParticipantId })
+				.from(schema.delegationMember)
+		),
+		inArray(
+			p.id,
+			db
+				.select({ id: schema.singleParticipant.conferenceParticipantId })
+				.from(schema.singleParticipant)
+		),
+		inArray(
+			p.id,
+			db
+				.select({ id: schema.conferenceSupervisor.conferenceParticipantId })
+				.from(schema.conferenceSupervisor)
+		)
+	);
 
-	const changed: string[] = [];
-	await db.transaction(async (tx) => {
-		for (const participant of participants) {
-			const row = await tx
-				.insert(schema.conferenceParticipant)
-				.values({
-					userId: participant.id,
-					conferenceId: args.conferenceId,
-					didAttend: args.didAttend ?? undefined
-				})
-				.onConflictDoUpdate({
-					target: [schema.conferenceParticipant.userId, schema.conferenceParticipant.conferenceId],
-					set: { didAttend: args.didAttend ?? undefined }
-				})
-				.returning({ id: schema.conferenceParticipant.id })
-				.then(assertFirstEntryExists);
-			changed.push(row.id);
-		}
-	});
-	// rows may be new, and the others changed
-	conferenceParticipantPubsub.created();
-	if (changed.length > 0) conferenceParticipantPubsub.updated(changed);
+	const changed = await db
+		.update(p)
+		.set({ didAttend: args.didAttend ?? undefined, updatedAt: new Date() })
+		.where(and(eq(p.conferenceId, args.conferenceId), registered))
+		.returning({ id: p.id });
+	if (changed.length > 0) conferenceParticipantPubsub.updated(changed.map((row) => row.id));
 
 	return changed.length;
 }

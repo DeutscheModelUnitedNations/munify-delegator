@@ -11,6 +11,33 @@ describe('schoolFormSchema', () => {
 	test('needs a name', () => {
 		expect(schoolFormSchema.safeParse({ name: '  ' }).success).toBe(false);
 	});
+
+	test('takes empty contact fields, which clear them', () => {
+		expect(
+			schoolFormSchema.safeParse({ name: 'Gymnasium Kiel', contactName: '', contactPhone: ' ' })
+				.success
+		).toBe(true);
+	});
+
+	test('refuses a contact name or phone the API scalars would refuse', () => {
+		expect(
+			schoolFormSchema.safeParse({ name: 'Gymnasium Kiel', contactName: 'Sekretariat (Raum 3)' })
+				.success
+		).toBe(false);
+		expect(
+			schoolFormSchema.safeParse({ name: 'Gymnasium Kiel', contactPhone: '12345' }).success
+		).toBe(false);
+	});
+
+	test('takes a contact the API scalars take', () => {
+		expect(
+			schoolFormSchema.safeParse({
+				name: 'Gymnasium Kiel',
+				contactName: 'Dr. Anna Müller-Lüdenscheidt',
+				contactPhone: '+49 431 123456'
+			}).success
+		).toBe(true);
+	});
 });
 
 describe('toUpdateSchoolArgs', () => {
