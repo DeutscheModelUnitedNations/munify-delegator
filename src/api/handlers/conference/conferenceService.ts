@@ -3,7 +3,7 @@ import type { ApiContext } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 import { m } from '#lib/paraglide/messages';
-import { sql } from 'drizzle-orm';
+import { max, sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import type { InferSelectModel } from 'drizzle-orm';
 import {
@@ -15,8 +15,6 @@ import {
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '#api/services/args';
 import { totalSeats } from '#api/handlers/seatPlanning/seatRules';
-import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
-import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
 import { apiError } from '#api/services/errors';
 import {
@@ -46,6 +44,14 @@ export async function countSeatedParticipants(conferenceId: string) {
 	return members.length + participants.length;
 }
 
+/** How many entries the conference's waiting list holds, hidden ones included. */
+export function countWaitingList(conferenceId: string) {
+	return db.$count(
+		schema.waitingListEntry,
+		whereRows({ table: schema.waitingListEntry, filter: { conferenceId } })
+	);
+}
+
 /**
  * Seats on offer: every nation of a committee is worth its `numOfSeatsPerDelegation`, every
  * non-state actor its `seatAmount`.
@@ -66,22 +72,14 @@ export async function countOfferedSeats(conferenceId: string) {
 	return totalSeats({ committees, nonStateActors });
 }
 
-/** The settings with a closed set of values; an omitted or cleared one is left to the column. */
-export const conferenceSettingSchemas = {
-	maxSeatsPerSchool: z
-		.number()
-		.min(1, { error: () => m.conferenceMaxSeatsPerSchoolRange() })
-		.nullish(),
-	nametagBinCount: z
-		.number()
-		.min(1, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
-		.max(MAX_NAMETAG_BINS, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
-		.nullish(),
-	language: z
-		.string()
-		.refine(isConferenceLanguage, { error: () => m.conferenceLanguageUnsupported() })
-		.nullish()
-};
+/** The document number to hand to the next participant who needs one: one above the highest. */
+export async function nextDocumentNumber(conferenceId: string) {
+	const [highest] = await db
+		.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
+		.from(schema.conferenceParticipant)
+		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
+	return (highest?.max ?? 0) + 1;
+}
 
 type ConferenceInsert = typeof schema.conference.$inferInsert;
 /** The arguments of `updateConference`: any column but the id, left out or cleared with null. */
@@ -90,9 +88,10 @@ export type ConferenceUpdateArgs = { id: string } & {
 };
 
 /**
- * Writes the conference's settings and answers whether there was a row to write. Who may send
- * which argument, and store which file, is checked before (`assertCanUpdateConference`,
- * `assertCanClaimConferenceFiles`), as are the settings (`assertValidConferenceSettings`).
+ * Writes the given settings of the conference; left out keeps a setting, `null` clears a nullable
+ * one. Who may send which argument, and store which file, is checked before
+ * (`assertCanUpdateConference`, `assertCanClaimConferenceFiles`), the values with the arguments
+ * (`conferenceSettingSchemas` in `conferenceSettings.ts`); an uploaded file has to have arrived in full.
  */
 export async function updateConference(args: ConferenceUpdateArgs) {
 	// An omitted file leaves the stored one untouched; only a supplied file replaces it.
@@ -107,7 +106,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 		certificateFileId: await ensureUploadComplete(args.certificateFileId)
 	};
 
-	const updated = await db
+	await db
 		.update(schema.conference)
 		// An omitted argument arrives as `undefined` and leaves the column alone; an
 		// explicit `null` clears it. Only the non-nullable columns coerce null away.
@@ -152,11 +151,8 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			postalCountry: args.postalCountry,
 			...files
 		})
-		.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
-		.returning({ id: schema.conference.id });
-	if (updated.length === 0) return false;
+		.where(whereRows({ table: schema.conference, filter: { id: args.id } }));
 	conferencePubsub.updated(args.id);
-	return true;
 }
 
 /** A seeding document, as JSON string or parsed. */
@@ -169,7 +165,8 @@ type ConferenceSeedingData = z.output<typeof seedingDataSchema>;
 
 /**
  * Creates a whole conference - committees, non-state actors and custom roles - from a seeding
- * document. Admin only.
+ * document. Refuses (INVALID_INPUT) a document naming nations there are no rows for, listing them
+ * all. Returns the conference's id.
  */
 export async function seedConference(data: ConferenceSeedingData) {
 	// Checked before the transaction so every offending code can be reported at once: a
@@ -196,7 +193,7 @@ export async function seedConference(data: ConferenceSeedingData) {
 		const conference = await tx
 			.insert(schema.conference)
 			.values(data.conference)
-			.returning()
+			.returning({ id: schema.conference.id })
 			.then(assertFirstEntryExists);
 
 		for (const nsa of data.nsa) {
@@ -255,7 +252,7 @@ export async function seedConference(data: ConferenceSeedingData) {
 	committeePubsub.created();
 	conferenceRolePubsub.created();
 
-	return created;
+	return created.id;
 }
 
 export type PlausibilityUser = InferSelectModel<typeof schema.user>;
@@ -355,7 +352,7 @@ export const documentLayoutArgsSchema = z
 
 /**
  * Stores where a document's generated parts go on its template; null goes back to the defaults.
- * The other documents' layouts stay as they are. Answers whether the conference exists.
+ * The other documents' layouts stay as they are.
  */
 export async function setDocumentLayout({
 	conferenceId,
@@ -371,12 +368,9 @@ export async function setDocumentLayout({
 		layout == null
 			? sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`
 			: sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(layout)}::jsonb)`;
-	const updated = await db
+	await db
 		.update(schema.conference)
 		.set({ documentLayouts: value })
-		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }))
-		.returning({ id: schema.conference.id });
-	if (updated.length === 0) return false;
+		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }));
 	conferencePubsub.updated(conferenceId);
-	return true;
 }

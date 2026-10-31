@@ -1,7 +1,7 @@
-import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
+	hasTeamPermission,
 	isParticipantOf,
 	isSystemAdmin,
 	isTeamMemberOf,
@@ -9,7 +9,7 @@ import {
 	publicConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import type { FileField } from '#api/handlers/storedFile/fileSources';
 import { m } from '#lib/paraglide/messages';
@@ -58,17 +58,17 @@ export function registerConferenceAbilities() {
 	// Every team member reads their conference in full.
 	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf({ ctx })));
 
-	// Project management updates and deletes its conference. Content roles edit a part of it through
-	// `assertCanUpdateConference`, not this ability.
+	// Project management updates and deletes its conference. `updateConference` checks the team
+	// permissions instead (`assertCanUpdateConference`), since content roles edit a part of it.
 	abilityBuilder.conference
 		.allow(['update', 'delete'])
 		.when((ctx) => grantWhere(isTeamMemberOf({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 }
 
 /**
- * Refuses unless the caller is participant care (project management and participant care) of the
- * conference, who hand out the document numbers on the postal page; the next number tells how many
- * were handed out so far.
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the conference, who hand out the document numbers on the postal page; the
+ * next number tells how many were handed out so far.
  */
 export async function assertCanReadNextDocumentNumber({
 	ctx,
@@ -112,9 +112,10 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
 ];
 
 /**
- * Refuses unless the caller may send these arguments to `updateConference`: anything if the
- * conference's update ability matches (project management), otherwise only `CONFERENCE_CONTENT_ARGS`
- * and only with `editConferenceContent`. Any other argument is refused, not ignored.
+ * Refuses (FORBIDDEN) unless the caller may send these arguments to `updateConference`: anything
+ * with `manageConference` (project management), otherwise only `CONFERENCE_CONTENT_ARGS` and only
+ * with `editConferenceContent` (project management, participant care, content lead). Any other
+ * argument is refused, not ignored.
  */
 export async function assertCanUpdateConference({
 	ctx,
@@ -123,14 +124,10 @@ export async function assertCanUpdateConference({
 	ctx: ApiContext;
 	args: ConferenceUpdateArgs;
 }) {
-	const updateFilter = (await ctx.abilities.conference.filter('update')).merge({
-		where: { id: args.id }
-	});
-	const mayEditAll = !!(await db.query.conference.findFirst({
-		where: updateFilter.query.single.where,
-		columns: { id: true }
-	}));
-	if (mayEditAll) return;
+	ctx.mustBeLoggedIn();
+	if (await hasTeamPermission({ ctx, conferenceId: args.id, permission: 'manageConference' })) {
+		return;
+	}
 
 	await assertTeamPermission({ ctx, conferenceId: args.id, permission: 'editConferenceContent' });
 	const forbidden = Object.entries(args).filter(
@@ -148,7 +145,7 @@ export async function assertCanUpdateConference({
 
 /**
  * Refuses unless the caller uploaded every file `updateConference` is asked to store, for that field
- * of this conference (`assertCanClaimFile`).
+ * of this conference (`assertCanClaimFile`, which says what it throws).
  */
 export async function assertCanClaimConferenceFiles({
 	ctx,
@@ -180,8 +177,9 @@ export async function assertCanClaimConferenceFiles({
 }
 
 /**
- * Refuses unless the caller holds `editConferenceContent` (project management, participant care,
- * content lead) in the conference: the layout goes with the templates it is placed on.
+ * Refuses (FORBIDDEN) unless the caller holds `editConferenceContent` (project management,
+ * participant care, content lead) in the conference: the layout goes with the templates it is
+ * placed on.
  */
 export async function assertCanSetDocumentLayout({
 	ctx,
@@ -193,21 +191,40 @@ export async function assertCanSetDocumentLayout({
 	await assertTeamPermission({ ctx, conferenceId, permission: 'editConferenceContent' });
 }
 
-/** The error `updateConference` answers when its write matched no row, i.e. the caller may not update it. */
-export function conferenceUpdateRefused() {
-	return apiError({ code: 'FORBIDDEN', message: m.accessDeniedProjectManagement() });
-}
-
-/** Refuses unless the caller is a system admin, the only one who creates a conference from a seeding document. */
+/**
+ * Refuses (FORBIDDEN) unless the caller is a system admin, the only one who creates a conference
+ * from a seeding document.
+ */
 export function assertCanSeedConference(ctx: ApiContext) {
+	ctx.mustBeLoggedIn();
 	if (!isSystemAdmin(ctx)) {
-		throw apiError({ code: 'FORBIDDEN', message: m.unauthorized({ error: 'User is not admin' }) });
+		throw apiError({ code: 'FORBIDDEN', message: m.accessDeniedSystemAdmin() });
 	}
 }
 
 /**
- * Refuses unless the caller is participant care (project management and participant care) of the
- * conference, whose tool the plausibility page is.
+ * Refuses (NOT_FOUND) unless the caller's read ability reaches the conference: a public one, or one
+ * they have a part in.
+ */
+export async function assertCanReadConference({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertAllowed({
+		ctx,
+		table: 'conference',
+		action: 'read',
+		id: conferenceId,
+		options: { message: m.conferenceNotFound }
+	});
+}
+
+/**
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the conference, whose tool the plausibility page is.
  */
 export async function assertCanReadPlausibility({
 	ctx,
