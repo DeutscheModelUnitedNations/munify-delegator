@@ -17,7 +17,7 @@ query({ table: 'schoolSuggestion' });
 schemaBuilder.mutationFields((t) => ({
 	analyzeSchoolSuggestions: t.field({
 		description:
-			'Looks for similar school names in the conference and fills the suggestion tables.',
+			"Looks for groups of similar school names among the people of the conference's applications (participant care) and brings the suggestions in line with them: a group found again keeps its decision, groups no longer found are removed.",
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -32,7 +32,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	dismissSchoolSuggestion: t.field({
 		description:
-			'Marks a suggested group of similar school names as no duplicates, so it is not suggested again.',
+			'Marks a suggested group of similar school names as no duplicates (participant care), so it is not suggested again.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {

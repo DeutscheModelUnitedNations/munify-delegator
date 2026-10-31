@@ -25,7 +25,7 @@ export function registerSchoolSuggestionAbilities() {
 
 /**
  * Refuses analysing a conference's schools for similar names unless the caller holds
- * `manageParticipants` in it.
+ * `manageParticipants` (project management and participant care) in it.
  */
 export async function assertCanAnalyzeSchoolSuggestions({
 	ctx,
