@@ -136,19 +136,22 @@ async function setApplied({
 	tx,
 	delegation,
 	args,
-	applied
+	applied,
+	withdrawAnyTime
 }: {
 	tx: Transaction;
 	delegation: UpdatableDelegation;
 	args: DelegationDetailArgs;
 	applied: boolean;
+	withdrawAnyTime: boolean;
 }) {
 	// Drop applications the delegation has outgrown before judging whether it may apply.
 	await tidyRoleApplications({ delegationId: delegation.id, tx });
 
-	// Taking an application back reopens it for changes, which only makes sense while the
-	// conference takes registrations; afterwards the assignment works with what was sent.
-	if (!applied && delegation.conference.state !== 'PARTICIPANT_REGISTRATION') {
+	// Taking an application back reopens it for changes, which for applicants only makes sense while
+	// the conference takes registrations; afterwards the assignment works with what was sent.
+	// Participant care may take one back at any stage (`withdrawAnyTime`), as for single participants.
+	if (!applied && !withdrawAnyTime && delegation.conference.state !== 'PARTICIPANT_REGISTRATION') {
 		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
 	}
 
@@ -172,20 +175,23 @@ async function setApplied({
 /**
  * Applies the changes of `updateDelegation` to a delegation the caller may update
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
- * leaves the delegation as it was.
+ * leaves the delegation as it was. `withdrawAnyTime` (`mayWithdrawAnyTime`) lifts the
+ * registration period from withdrawing.
  */
 export async function updateDelegationDetails({
 	delegation,
-	args
+	args,
+	withdrawAnyTime
 }: {
 	delegation: UpdatableDelegation;
 	args: DelegationDetailArgs;
+	withdrawAnyTime: boolean;
 }) {
 	const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
 	const newHeadDelegateUserId = args.newHeadDelegateUserId;
 	const changedMemberIds = await db.transaction(async (tx) => {
 		if (typeof args.applied === 'boolean')
-			await setApplied({ tx, delegation, args, applied: args.applied });
+			await setApplied({ tx, delegation, args, applied: args.applied, withdrawAnyTime });
 
 		if (Object.keys(changes).length > 0) {
 			await tx

@@ -11,6 +11,7 @@ import {
 import {
 	assertCanDeleteDelegation,
 	assertCanUpdateDelegation,
+	mayWithdrawAnyTime,
 	registerDelegationAbilities
 } from './delegationPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
@@ -47,7 +48,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateDelegation: t.drizzleField({
 		description:
-			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); withdrawing is only possible while the conference takes registrations.',
+			'Changes a delegation in one go; arguments left out stay as they are. Anything refused leaves the delegation as it was. Applying needs enough members, role applications and both texts (CONFLICT otherwise); applicants withdraw only while the conference takes registrations, participant care at any stage.',
 		type: DelegationRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -69,7 +70,11 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const delegation = await assertCanUpdateDelegation({ ctx, id: args.id });
-			await updateDelegationDetails({ delegation, args });
+			await updateDelegationDetails({
+				delegation,
+				args,
+				withdrawAnyTime: await mayWithdrawAnyTime({ ctx, delegation })
+			});
 
 			return db.query.delegation
 				.findFirst(query(await readableDelegation({ ctx, id: args.id })))
