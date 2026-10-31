@@ -3,19 +3,20 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError, isUniqueViolationOn } from '#api/services/errors';
-import { attendanceSessionPubsub, conferenceParticipantPubsub } from '#api/pubsub';
+import { assertFirstEntryExists } from '@m1212e/rumble';
+import {
+	attendanceEntryPubsub,
+	attendanceSessionPubsub,
+	conferenceParticipantPubsub
+} from '#api/pubsub';
+import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
+import { checkPassedForScan } from '#api/handlers/scanLookup/scanLookupService';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
  * session, so the session itself says who was scanned.
  */
-export async function scanInSession({
-	sessionId,
-	statusId
-}: {
-	sessionId: string;
-	statusId: string;
-}) {
+async function scanInSession({ sessionId, statusId }: { sessionId: string; statusId: string }) {
 	return db.query.attendanceEntry.findFirst({
 		where: { sessionId, conferenceParticipantId: statusId },
 		columns: { id: true }
@@ -142,4 +143,54 @@ export async function reopenSession(sessionId: string) {
 			})
 		);
 	attendanceSessionPubsub.updated(sessionId);
+}
+
+/** Ends a session for everybody working in it; ending it again changes nothing. */
+export async function endSession(sessionId: string) {
+	await db
+		.update(schema.attendanceSession)
+		.set({ endedAt: new Date() })
+		.where(
+			whereRows({
+				table: schema.attendanceSession,
+				filter: { id: sessionId, endedAt: { isNull: true } }
+			})
+		);
+	attendanceSessionPubsub.updated(sessionId);
+}
+
+/**
+ * Records the scan of a person in a session of their conference, creating their participant row
+ * when they have none yet. Refuses (ALREADY_SCANNED) a second scan in the session. Whether the
+ * check passed is decided here, as things stand when the scan is written. Returns the entry's id.
+ */
+export async function recordScan({
+	conferenceId,
+	sessionId,
+	userId,
+	recordedById
+}: {
+	conferenceId: string;
+	sessionId: string;
+	userId: string;
+	recordedById: string;
+}) {
+	const participantId = await ensureConferenceParticipant({ tx: db, conferenceId, userId });
+
+	if (await scanInSession({ sessionId, statusId: participantId })) {
+		throw apiError({ code: 'ALREADY_SCANNED', message: m.alreadyScannedInSession() });
+	}
+
+	const checkPassed = await checkPassedForScan({ conferenceId, sessionId, userId });
+	const created = await db
+		.insert(schema.attendanceEntry)
+		.values({ conferenceParticipantId: participantId, recordedById, sessionId, checkPassed })
+		.returning({ id: schema.attendanceEntry.id })
+		.then(assertFirstEntryExists);
+
+	attendanceEntryPubsub.created();
+	conferenceParticipantPubsub.updated(participantId);
+	// The session's entry count changed, which its readers show
+	attendanceSessionPubsub.updated(sessionId);
+	return created.id;
 }

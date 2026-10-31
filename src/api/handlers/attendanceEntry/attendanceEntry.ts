@@ -1,16 +1,15 @@
 import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import {
+	endSession,
+	recordScan,
 	renameSession,
 	reopenSession,
-	scanInSession,
 	setSessionOnCertificate,
 	startSession
 } from './attendanceEntryService';
-import { ensureConferenceParticipant } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
-import { checkPassedForScan } from '#api/handlers/scanLookup/scanLookupService';
 import {
 	assertCanCreateAttendanceEntry,
 	assertCanManageAttendanceSession,
@@ -18,12 +17,7 @@ import {
 	assertSessionOfConference,
 	registerAttendanceEntryAbilities
 } from './attendanceEntryPermissions';
-import {
-	attendanceEntryPubsub,
-	attendanceSessionPubsub,
-	conferenceParticipantPubsub
-} from '#api/pubsub';
-import { apiError } from '#api/services/errors';
+import { attendanceEntryPubsub, attendanceSessionPubsub } from '#api/pubsub';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
@@ -144,17 +138,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageAttendanceSession({ ctx, sessionId: args.id });
-
-			await db
-				.update(schema.attendanceSession)
-				.set({ endedAt: new Date() })
-				.where(
-					whereRows({
-						table: schema.attendanceSession,
-						filter: { id: args.id, endedAt: { isNull: true } }
-					})
-				);
-			attendanceSessionPubsub.updated(args.id);
+			await endSession(args.id);
 			return true;
 		}
 	}),
@@ -182,49 +166,21 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const { callerId } = await assertCanCreateAttendanceEntry({ ctx, args });
-
-			const participantId = await ensureConferenceParticipant({
-				tx: db,
-				conferenceId: args.conferenceId,
-				userId: args.userId
-			});
-
-			const readEntry = async (id: string) =>
-				db.query.attendanceEntry
-					.findFirst(
-						query(
-							(await ctx.abilities.attendanceEntry.filter('read')).merge({ where: { id } }).query
-								.single
-						)
-					)
-					.then(assertFindFirstExists);
-
-			const scanned = await scanInSession({ sessionId: args.sessionId, statusId: participantId });
-			if (scanned)
-				throw apiError({ code: 'ALREADY_SCANNED', message: m.alreadyScannedInSession() });
-
-			const checkPassed = await checkPassedForScan({
+			const entryId = await recordScan({
 				conferenceId: args.conferenceId,
 				sessionId: args.sessionId,
-				userId: args.userId
+				userId: args.userId,
+				recordedById: callerId
 			});
-			const created = await db
-				.insert(schema.attendanceEntry)
-				.values({
-					conferenceParticipantId: participantId,
-					recordedById: callerId,
-					sessionId: args.sessionId,
-					checkPassed
-				})
-				.returning()
-				.then(assertFirstEntryExists);
 
-			attendanceEntryPubsub.created();
-			conferenceParticipantPubsub.updated(participantId);
-			// The session's entry count changed, which its readers show
-			attendanceSessionPubsub.updated(args.sessionId);
-
-			return readEntry(created.id);
+			return db.query.attendanceEntry
+				.findFirst(
+					query(
+						(await ctx.abilities.attendanceEntry.filter('read')).merge({ where: { id: entryId } })
+							.query.single
+					)
+				)
+				.then(assertFindFirstExists);
 		}
 	}),
 
