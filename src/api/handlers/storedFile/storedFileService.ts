@@ -10,7 +10,7 @@ import { db, schema } from '#api/db/db';
 import { storedFilePubsub } from '#api/pubsub';
 import { nanoid } from '#lib/helpers/nanoid';
 import { m } from '#lib/paraglide/messages';
-import { formatMegabytes, type findFileSource } from './fileSources';
+import type { UploadRequest } from './fileSources';
 import { createStorage, objectKey, type Storage } from './storageClient';
 
 let instance: Storage | undefined;
@@ -35,58 +35,26 @@ export function downloadUrl(file: { key: string; fileName: string | null }) {
 	return storage().presignDownload({ key: file.key, fileName: file.fileName ?? undefined });
 }
 
-export interface UploadRequest {
-	conferenceId: string;
-	fileName: string;
-	mimeType: string;
-	size: number;
-}
-
-type FileSource = NonNullable<ReturnType<typeof findFileSource>>;
-
 /**
- * Prepares an upload of a file for `source`: checks that it is of an allowed type and size,
- * records it as uploaded by `uploaderId`, and returns its id. The browser then PUTs the bytes to
- * the file's `uploadUrl`. Nothing points at the file until a mutation claims it; one that never is
- * gets removed by the cleanup job.
- *
- * Whether the uploader may upload it is `assertCanUploadFile`'s business.
+ * Records an upload of a file for the field `source` of a row of the conference, as uploaded by
+ * `uploaderId`, and returns its id. The browser then PUTs the bytes to the file's `uploadUrl`.
+ * Nothing points at the file until a mutation claims it; one that never is gets removed by the
+ * cleanup job. Its type and size were checked against `source` already (`uploadArgsSchema`).
  */
 export async function requestUpload({
-	source,
-	uploaderId,
-	request
+	request: { conferenceId, source, file },
+	uploaderId
 }: {
-	source: FileSource;
-	uploaderId: string;
 	request: UploadRequest;
+	uploaderId: string;
 }) {
-	if (!source.mimeTypes.includes(request.mimeType)) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadTypeNotAllowed() });
-	}
-	if (!Number.isInteger(request.size) || request.size <= 0) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadEmpty() });
-	}
-	if (request.size > source.maxBytes) {
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: m.fileTooLarge({ max: formatMegabytes(source.maxBytes) })
-		});
-	}
-
 	const id = nanoid();
-	const key = objectKey({
-		conferenceId: request.conferenceId,
-		purpose: source.purpose,
-		uniqueId: id
-	});
+	const key = objectKey({ conferenceId, purpose: source.purpose, uniqueId: id });
 	await db.insert(schema.storedFile).values({
 		id,
 		key,
 		purpose: source.purpose,
-		mimeType: request.mimeType,
-		size: request.size,
-		fileName: request.fileName.trim() || null,
+		...file,
 		uploadedById: uploaderId
 	});
 	storedFilePubsub.created();

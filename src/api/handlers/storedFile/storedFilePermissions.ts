@@ -10,6 +10,7 @@ import {
 import { callerUserId } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { m } from '#lib/paraglide/messages';
+import type { TeamPermission } from '#lib/helpers/teamRoles';
 import { findFileSource, type FileField, type FileKind } from './fileSources';
 import { objectKey } from './storageClient';
 
@@ -90,26 +91,23 @@ export function registerStoredFileAbilities() {
 // is checked here.
 
 /**
- * Refuses unless the caller holds, in `conferenceId`, the team permission the field's entry in
- * `FILE_SOURCES` names for uploading the file `field` of a `kind` row; INVALID_INPUT for a field
- * that takes no file. Returns that entry.
+ * Refuses (FORBIDDEN) unless the caller holds, in the conference, the team permission the field's
+ * entry in `FILE_SOURCES` names for uploading it: `manageConference` (project management) for the
+ * conference's pictures, `editConferenceContent` (project management, participant care, content
+ * lead) for its templates and resolutions, `manageParticipants` (project management, participant
+ * care) for site plans. Returns the caller's id, the file's uploader.
  */
 export async function assertCanUploadFile({
 	ctx,
-	target
+	conferenceId,
+	source
 }: {
 	ctx: ApiContext;
-	target: { kind: string; field: string; conferenceId: string };
+	conferenceId: string;
+	source: { permission: TeamPermission };
 }) {
-	ctx.mustBeLoggedIn();
-	const source = findFileSource({ kind: target.kind, field: target.field });
-	if (!source) throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadUnknownPurpose() });
-	await assertTeamPermission({
-		ctx,
-		conferenceId: target.conferenceId,
-		permission: source.permission
-	});
-	return source;
+	await assertTeamPermission({ ctx, conferenceId, permission: source.permission });
+	return { uploaderId: ctx.mustBeLoggedIn().sub };
 }
 
 /**

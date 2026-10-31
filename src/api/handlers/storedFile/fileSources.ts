@@ -1,5 +1,7 @@
+import { z } from 'zod';
 import type { TeamPermission } from '#lib/helpers/teamRoles';
 import { MAX_RESOLUTION_FILE_SIZE } from '#lib/helpers/resolutionUpload';
+import { m } from '#lib/paraglide/messages';
 import { filePurpose } from './storageClient';
 
 /**
@@ -7,9 +9,10 @@ import { filePurpose } from './storageClient';
  *
  * The bytes live in the S3 bucket. A row holds the id of a `stored_file` (`column`). Uploads go
  * straight from the browser to the bucket through a presigned URL (`requestFileUpload`), and the
- * mutation saving the row then claims the file (`assertCanClaimFile`, then `ensureUploadComplete`). Downloads come straight
- * from the bucket too: the row's `*Url` field is a presigned URL (`fileUrl`), null for a reader
- * whose column mask hides the file.
+ * mutation saving the row then claims the file (`assertCanClaimFile`, then
+ * `ensureUploadComplete`). Downloads come straight from the bucket too: readers select the row's
+ * file relation (`conference.logoFile { url }`), whose `url` is a presigned URL; a reader whose
+ * column mask hides the file id gets no file.
  *
  * The team `permission` (`rolesWithTeamPermission`) uploads the file (a system admin always may),
  * `mimeTypes` and `maxBytes` limit what they upload.
@@ -82,6 +85,56 @@ export function findFileSource({ kind, field }: { kind: string; field: string })
 	const fields: Record<string, FileSource> = FILE_SOURCES[kind];
 	if (!Object.hasOwn(fields, field)) return undefined;
 	return { kind, field, purpose: filePurpose({ kind, field }), ...fields[field] };
+}
+
+/**
+ * The arguments of `requestFileUpload`, checked against the field's entry in `FILE_SOURCES` (a
+ * field that takes no file, a type it does not allow, an empty or too large file are refused) and
+ * turned into that entry and the file to record.
+ */
+export const uploadArgsSchema = z
+	.object({
+		conferenceId: z.string(),
+		kind: z.string(),
+		field: z.string(),
+		fileName: z.string(),
+		mimeType: z.string(),
+		size: z.number().int()
+	})
+	.transform(({ conferenceId, kind, field, fileName, mimeType, size }, ctx) => {
+		const source = findFileSource({ kind, field });
+		if (!source) {
+			ctx.addIssue({ code: 'custom', message: m.fileUploadUnknownPurpose() });
+			return z.NEVER;
+		}
+		const refusal = uploadRefusal({ source, mimeType, size });
+		if (refusal) {
+			ctx.addIssue({ code: 'custom', message: refusal });
+			return z.NEVER;
+		}
+		return {
+			conferenceId,
+			source,
+			file: { fileName: fileName.trim() || null, mimeType, size }
+		};
+	});
+
+export type UploadRequest = z.output<typeof uploadArgsSchema>;
+
+/** Why the field does not take a file of this type and size, or undefined when it does. */
+function uploadRefusal({
+	source,
+	mimeType,
+	size
+}: {
+	source: FileSource;
+	mimeType: string;
+	size: number;
+}) {
+	if (!source.mimeTypes.includes(mimeType)) return m.fileUploadTypeNotAllowed();
+	if (size <= 0) return m.fileUploadEmpty();
+	if (size > source.maxBytes) return m.fileTooLarge({ max: formatMegabytes(source.maxBytes) });
+	return undefined;
 }
 
 /** "10 MB", for the size limit in an error message. */

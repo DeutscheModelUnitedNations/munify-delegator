@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { findFileSource, formatMegabytes } from './fileSources';
+import { findFileSource, formatMegabytes, uploadArgsSchema } from './fileSources';
 import { rolesWithTeamPermission } from '#lib/helpers/teamRoles';
 
 describe('findFileSource', () => {
@@ -33,6 +33,40 @@ describe('findFileSource', () => {
 		expect(findFileSource({ kind: 'conference', field: 'iban' })).toBeUndefined();
 		expect(findFileSource({ kind: 'conference', field: 'constructor' })).toBeUndefined();
 		expect(findFileSource({ kind: 'constructor', field: 'logo' })).toBeUndefined();
+	});
+});
+
+describe('uploadArgsSchema', () => {
+	const contract = {
+		conferenceId: 'c1',
+		kind: 'conference',
+		field: 'contract',
+		fileName: ' contract.pdf ',
+		mimeType: 'application/pdf',
+		size: 1000
+	};
+
+	test('hands over the field and the file to record', () => {
+		const parsed = uploadArgsSchema.parse(contract);
+		expect(parsed.conferenceId).toBe('c1');
+		expect(parsed.source).toMatchObject({ purpose: 'conference/contract' });
+		expect(parsed.file).toEqual({
+			fileName: 'contract.pdf',
+			mimeType: 'application/pdf',
+			size: 1000
+		});
+		expect(uploadArgsSchema.parse({ ...contract, fileName: '  ' }).file.fileName).toBeNull();
+	});
+
+	test('refuses a field without files, a type it does not take, an empty or too large file', () => {
+		for (const args of [
+			{ ...contract, field: 'iban' },
+			{ ...contract, mimeType: 'image/png' },
+			{ ...contract, size: 0 },
+			{ ...contract, size: 10_000_001 }
+		]) {
+			expect(uploadArgsSchema.safeParse(args).success).toBe(false);
+		}
 	});
 });
 

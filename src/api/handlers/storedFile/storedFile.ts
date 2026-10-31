@@ -3,6 +3,7 @@ import { object, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { downloadUrl, pendingUploadUrl, requestUpload } from './storedFileService';
 import { assertCanUploadFile, registerStoredFileAbilities } from './storedFilePermissions';
+import { uploadArgsSchema } from './fileSources';
 
 registerStoredFileAbilities();
 
@@ -32,23 +33,29 @@ const StoredFileRef = object({
 schemaBuilder.mutationFields((t) => ({
 	requestFileUpload: t.drizzleField({
 		description:
-			'Records an upload of one file for the field `field` of a `kind` row of the conference (`conference`/`logo`, `place`/`sitePlan`, `resolution`/`content`, …) and answers with the file: its `id` goes into the mutation saving the row (`logoFileId`, …), its `uploadUrl` is where the bytes go. Only who may set that field may upload, and only an allowed type and size.',
+			'Records an upload of one file for the field `field` of a `kind` row of the conference (`conference`/`logo`, `place`/`sitePlan`, `resolution`/`content`, …) and answers with the file: its `id` goes into the mutation saving the row (`logoFileId`, …), its `uploadUrl` is where the bytes go. Only who may set that field may upload (FORBIDDEN otherwise), and only an allowed type and size (INVALID_INPUT otherwise, as for a field that takes no file).',
 		type: StoredFileRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			kind: t.arg.string({ required: true }),
-			field: t.arg.string({ required: true }),
-			fileName: t.arg.string({ required: true }),
-			mimeType: t.arg.string({ required: true }),
-			size: t.arg.int({ required: true })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			const source = await assertCanUploadFile({ ctx, target: args });
-			const id = await requestUpload({
-				source,
-				uploaderId: ctx.mustBeLoggedIn().sub,
-				request: args
+		args: t.validate(
+			{
+				conferenceId: t.arg.id({ required: true }),
+				kind: t.arg.string({ required: true }),
+				field: t.arg.string({ required: true }),
+				fileName: t.arg.string({
+					required: true,
+					description: 'The name downloads get; blank for none.'
+				}),
+				mimeType: t.arg.string({ required: true }),
+				size: t.arg.int({ required: true, description: 'In bytes; the upload has to match.' })
+			},
+			uploadArgsSchema
+		),
+		resolve: async (query, _root, request, ctx) => {
+			const { uploaderId } = await assertCanUploadFile({
+				ctx,
+				conferenceId: request.conferenceId,
+				source: request.source
 			});
+			const id = await requestUpload({ request, uploaderId });
 
 			return db.query.storedFile
 				.findFirst(
