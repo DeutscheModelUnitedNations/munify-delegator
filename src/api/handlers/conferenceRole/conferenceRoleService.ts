@@ -33,7 +33,7 @@ async function withUniqueNameCheck<T>(operation: Promise<T>) {
 }
 
 /** What deleting roles changed besides the roles, for `announceDeletedRoles`. */
-type DeletedRoles = Awaited<ReturnType<typeof deleteRoles>>;
+export type DeletedRoles = Awaited<ReturnType<typeof deleteRoles>>;
 
 /**
  * Deletes the roles inside `tx`, with what hangs on them: the applications for them go (closing
@@ -42,7 +42,7 @@ type DeletedRoles = Awaited<ReturnType<typeof deleteRoles>>;
  * meant for them are for them no longer. Returns the ids to announce once `tx` has committed
  * (`announceDeletedRoles`). Whether a role may go at all is the caller's to check.
  */
-async function deleteRoles({ tx, roleIds }: { tx: Transaction; roleIds: string[] }) {
+export async function deleteRoles({ tx, roleIds }: { tx: Transaction; roleIds: string[] }) {
 	const ids = [...new Set(roleIds)];
 	const none = {
 		roleIds: ids,
@@ -94,7 +94,7 @@ async function deleteRoles({ tx, roleIds }: { tx: Transaction; roleIds: string[]
 }
 
 /** Announces what `deleteRoles` changed, once its transaction has committed. */
-function announceDeletedRoles(deleted: DeletedRoles) {
+export function announceDeletedRoles(deleted: DeletedRoles) {
 	if (deleted.roleIds.length === 0) return;
 	conferenceRolePubsub.removed();
 	if (deleted.applicationsRemoved) roleApplicationPubsub.removed();

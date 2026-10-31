@@ -16,6 +16,7 @@ import {
 	updateCommittee
 } from './committeeService';
 import { seatCountSchema } from '#api/handlers/seatPlanning/seatPlanningService';
+import { regionalBaselineArgsSchema } from './committeeRules';
 
 registerCommitteeAbilities();
 
@@ -37,7 +38,9 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceId: t.arg.id({ required: true }),
 			name: t.arg.string({ required: true }),
 			abbreviation: t.arg.string({ required: true }),
-			numOfSeatsPerDelegation: t.arg.int({ required: true }).validate(seatCountSchema)
+			numOfSeatsPerDelegation: t.arg
+				.int({ required: true, description: 'How many seats each nation has in it; at least one.' })
+				.validate(seatCountSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCommittee({ ctx, conferenceId: args.conferenceId });
@@ -51,7 +54,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	updateCommittee: t.drizzleField({
 		description:
-			'Changes the given fields of a committee. Seats per delegation cannot drop below the members assigned to it; lowering them drops the applications for its nations that no longer fit.',
+			'Changes the given fields of a committee; left out or `null` keeps a field, `null` clears the resolution headline. Seats per delegation below the members of one delegation assigned to it are refused with CONFLICT; lowering them drops the applications for its nations that no longer fit.',
 		type: CommitteeRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -72,7 +75,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	deleteCommittee: t.field({
 		description:
-			'A committee can only go while nobody is assigned to it and none of its agenda items has papers; agenda items without papers are deleted with it.',
+			'Deletes a committee with its agenda items; its resolutions stay without it, and nations it seated alone stop being offered. Refused with CONFLICT while somebody is assigned to it or one of its agenda items has papers.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -85,11 +88,11 @@ schemaBuilder.mutationFields((t) => ({
 
 	setCommitteeNationSeat: t.drizzleField({
 		description:
-			'Sets (rather than toggles) whether a nation holds a seat in a committee, so that concurrent clicks of several people converge on the same state.',
+			"Sets (rather than toggles) whether a nation holds a seat in a committee, so that concurrent clicks of several people converge on the same state. The first seat makes the nation one of the conference's roles, the last one ends that unless a delegation holds it. Taking a seat away is refused with CONFLICT while members of the delegation holding the nation sit in the committee; an unknown nation is NOT_FOUND.",
 		type: CommitteeRef,
 		args: {
 			committeeId: t.arg.id({ required: true }),
-			nationAlpha3Code: t.arg.string({ required: true }),
+			nationAlpha3Code: t.arg.string({ required: true, description: 'Any case.' }),
 			enabled: t.arg.boolean({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
@@ -113,8 +116,12 @@ schemaBuilder.mutationFields((t) => ({
 		args: {
 			committeeId: t.arg.id({ required: true }),
 			baseline: t.arg({ type: regionalBaselineEnum, required: true }),
-			targets: t.arg.intList()
+			targets: t.arg.intList({
+				description:
+					'One target per regional group; a manual baseline needs at least one above zero. Left out keeps the stored targets, which then have to suit the baseline.'
+			})
 		},
+		validate: regionalBaselineArgsSchema,
 		resolve: async (query, _root, args, ctx) => {
 			const committee = await assertCanPlanCommitteeSeats({ ctx, committeeId: args.committeeId });
 			await setCommitteeRegionalBaseline({

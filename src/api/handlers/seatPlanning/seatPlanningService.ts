@@ -1,33 +1,11 @@
 import { m } from '#lib/paraglide/messages';
 import formatNames from '#lib/helpers/formatNames';
-import type * as schema from '#api/db/schema/index';
-import { isValidManualTargets } from '#lib/helpers/seatPlanning/baselines';
-import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers';
-import { apiError } from '#api/services/errors';
 import { z } from 'zod';
 
 /**
- * Guards for the seat planning tool. They are kept free of database access so the rules can be
- * unit tested; the resolvers feed them with what they queried.
+ * The seat planning's rules shared by the committee, the role and the conference handlers, free of
+ * database access so they are unit tested.
  */
-
-type RegionalBaseline = (typeof schema.regionalBaseline.enumValues)[number];
-
-interface AssignedMember {
-	delegationId: string;
-}
-
-/**
- * The lowest `numOfSeatsPerDelegation` a committee can be set to without unassigning anyone:
- * the highest number of members a single delegation has assigned to it.
- */
-function minSeatsPerDelegation(assignedMembers: AssignedMember[]) {
-	const perDelegation = new Map<string, number>();
-	for (const { delegationId } of assignedMembers) {
-		perDelegation.set(delegationId, (perDelegation.get(delegationId) ?? 0) + 1);
-	}
-	return Math.max(0, ...perDelegation.values());
-}
 
 interface SeatCountCommittee {
 	numOfSeatsPerDelegation: number;
@@ -55,25 +33,6 @@ export function totalSeats({
 
 /** How many seats a committee gives each delegation, or a non-state actor has: at least one. */
 export const seatCountSchema = z.number().min(1, { error: () => m.seatsPerDelegationAtLeastOne() });
-
-/**
- * Throws when `numOfSeatsPerDelegation` would leave a delegation with more members assigned to the
- * committee than it has seats there.
- */
-export function assertSeatsPerDelegationAllowed({
-	numOfSeatsPerDelegation,
-	assignedMembers
-}: {
-	numOfSeatsPerDelegation: number | null | undefined;
-	assignedMembers: AssignedMember[];
-}) {
-	// not part of the update
-	if (numOfSeatsPerDelegation == null) return;
-	const min = minSeatsPerDelegation(assignedMembers);
-	if (numOfSeatsPerDelegation < min) {
-		throw apiError({ code: 'CONFLICT', message: m.seatsPerDelegationBelowAssigned({ min }) });
-	}
-}
 
 interface DelegationWithMembers {
 	/** Set when the delegation holds a nation. */
@@ -106,67 +65,4 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 			memberNames
 		}));
 	});
-}
-
-interface CommitteeUpdateInput {
-	name?: string | null;
-	abbreviation?: string | null;
-	resolutionHeadline?: string | null;
-	numOfSeatsPerDelegation?: number | null;
-}
-
-/**
- * Maps the optional GraphQL update arguments of a committee to update data. The headline is passed
- * through as is, so sending null clears it rather than leaving it untouched.
- */
-export function committeeUpdateData(
-	data: CommitteeUpdateInput
-): Partial<typeof schema.committee.$inferInsert> {
-	return {
-		name: data.name ?? undefined,
-		abbreviation: data.abbreviation ?? undefined,
-		resolutionHeadline: data.resolutionHeadline,
-		numOfSeatsPerDelegation: data.numOfSeatsPerDelegation ?? undefined
-	};
-}
-
-/**
- * A committee can only be deleted while nobody is assigned to it and none of its agenda items has
- * papers, which would otherwise lose their topic. Agenda items without papers are deleted with it.
- */
-export function assertCommitteeDeletable({
-	assignedMembers,
-	papers
-}: {
-	assignedMembers: number;
-	papers: number;
-}) {
-	if (assignedMembers > 0) {
-		throw apiError({
-			code: 'CONFLICT',
-			message: m.committeeDeleteBlocked({ count: assignedMembers })
-		});
-	}
-	if (papers > 0) {
-		throw apiError({
-			code: 'CONFLICT',
-			message: m.committeeDeleteBlockedByPapers({ count: papers })
-		});
-	}
-}
-
-/** Manual baselines need usable targets; templates ignore them (they are kept for later) */
-export function assertRegionalBaselineTargets({
-	baseline,
-	targets
-}: {
-	baseline: RegionalBaseline;
-	targets: number[];
-}) {
-	if (baseline === 'MANUAL' && !isValidManualTargets(targets)) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.regionalBaselineTargetsInvalid() });
-	}
-	if (targets.length > 0 && targets.length !== regionalGroups.length) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.regionalBaselineTargetsInvalid() });
-	}
 }

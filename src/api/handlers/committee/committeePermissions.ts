@@ -31,7 +31,10 @@ export function registerCommitteeAbilities() {
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES })));
 }
 
-/** Refuses unless the caller holds `manageConference` (project management) in the conference. */
+/**
+ * Refuses (FORBIDDEN) unless the caller holds `manageConference` (project management) in the
+ * conference: creating and deleting committees is theirs, editing them seat planning's.
+ */
 export async function assertCanCreateCommittee({
 	ctx,
 	conferenceId
@@ -43,9 +46,9 @@ export async function assertCanCreateCommittee({
 }
 
 /**
- * Refuses unless the caller may update the committee (seat planning of its conference). Returns
- * what an update has to check against: its conference, seats per delegation, roles and the
- * delegations of its seated members.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the committee: `planSeats`
+ * (project management and content lead) in its conference. Returns what an update has to check
+ * against: its conference, seats per delegation, roles and the delegations of its seated members.
  */
 export async function assertCanUpdateCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const updateFilter = (await ctx.abilities.committee.filter('update')).merge({
@@ -63,14 +66,17 @@ export async function assertCanUpdateCommittee({ ctx, id }: { ctx: ApiContext; i
 		.then(assertFindFirstExists);
 }
 
-/** Refuses unless the caller may delete the committee (project management of its conference). */
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the committee: `manageConference`
+ * (project management) in its conference.
+ */
 export async function assertCanDeleteCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
 	await assertAllowed({ ctx, table: 'committee', action: 'delete', id });
 }
 
 /**
- * Refuses unless the caller holds `planSeats` (project management and content lead) in the
- * committee's conference. Returns the committee's conference and its regional baseline targets.
+ * Refuses (NOT_FOUND) unless the caller holds `planSeats` (project management and content lead) in
+ * the committee's conference. Returns the committee's conference and its regional baseline targets.
  */
 export async function assertCanPlanCommitteeSeats({
 	ctx,
@@ -79,11 +85,10 @@ export async function assertCanPlanCommitteeSeats({
 	ctx: ApiContext;
 	committeeId: string;
 }) {
-	const committee = await db.query.committee
+	return db.query.committee
 		.findFirst({
 			where: { id: committeeId, conference: teamConference({ ctx, permission: 'planSeats' }) },
 			columns: { conferenceId: true, regionalBaselineTargets: true }
 		})
 		.then(assertFindFirstExists);
-	return committee;
 }
