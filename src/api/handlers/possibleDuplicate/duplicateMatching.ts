@@ -318,8 +318,6 @@ export function createDuplicateIndex() {
 	};
 }
 
-type DuplicateIndex = ReturnType<typeof createDuplicateIndex>;
-
 /** `createDuplicateIndex` in one go, for inputs small enough not to need breaks. */
 export function findDuplicates({
 	scanned,

@@ -6,6 +6,7 @@ import {
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 
+/** The abilities of the rows saying whom a payment covers. */
 export function registerUserReferenceInPaymentTransactionAbilities() {
 	// Who a payment covers. Written only by `createPaymentTransaction`, never on its own, so besides
 	// the system admin every rule here is a read.

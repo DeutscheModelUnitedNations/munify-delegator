@@ -1,4 +1,7 @@
+import { z } from 'zod';
+import { randomInt } from 'node:crypto';
 import { type Transaction, db, schema } from '#api/db/db';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import {
 	conferenceParticipantPubsub,
@@ -10,6 +13,11 @@ import { apiError } from '#api/services/errors';
 
 type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
 
+/** Whom a new payment covers: somebody, or it would be a reference for nothing. */
+export const paymentForSchema = z
+	.array(z.string())
+	.min(1, { error: () => m.paymentCoversNobody() });
+
 /**
  * Payment reference ids are printed on transfer forms, so they avoid characters that are easy to
  * misread and are grouped in fours. Same alphabet and shape as the legacy generator.
@@ -19,7 +27,7 @@ function generateSEPASafeId() {
 	const length = 16;
 	let id = '';
 	for (let i = 0; i < length; i++) {
-		id += chars[Math.floor(Math.random() * chars.length)];
+		id += chars[randomInt(chars.length)];
 		if (i % 4 === 3 && i !== length - 1) {
 			id += '-';
 		}
@@ -58,36 +66,44 @@ async function assertNobodyPaid({
 }
 
 /**
+ * A reference id no payment has yet. With 22^16 possible ids a clash is all but impossible, so a
+ * few tries are plenty; running out of them is a fault, not something the caller did.
+ */
+async function freePaymentId() {
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const id = generateSEPASafeId();
+		const clash = await db.query.paymentTransaction.findFirst({
+			where: { id },
+			columns: { id: true }
+		});
+		if (!clash) return id;
+	}
+	throw new Error('No free payment reference id found');
+}
+
+/**
  * Records a payment reference paid by the participant `payerParticipantId` for the participants
- * `paymentFor` (participant row ids), at the conference's fee per participant. Returns the new
- * reference's id. Nobody involved may have paid already (`assertNobodyPaid`).
+ * `paymentFor` (participant row ids), at the conference's fee per participant. Refuses
+ * (INVALID_INPUT) while the conference has no fee, and (CONFLICT) when somebody involved has paid
+ * already (`assertNobodyPaid`). Returns the new reference's id.
  */
 export async function createPaymentTransaction({
-	conference,
+	conferenceId,
 	payerParticipantId,
 	paymentFor
 }: {
-	conference: { feeAmount: number | null };
+	conferenceId: string;
 	payerParticipantId: string;
 	paymentFor: readonly string[];
 }) {
-	// Captured in a const so the narrowing survives into the transaction closure below,
-	// rather than reaching for a non-null assertion there.
-	const feeAmount = conference.feeAmount;
+	const { feeAmount } = await db.query.conference
+		.findFirst({ where: { id: conferenceId }, columns: { feeAmount: true } })
+		.then(assertFindFirstExists);
 	if (!feeAmount) {
 		throw apiError({ code: 'INVALID_INPUT', message: m.paymentFeeNotSet() });
 	}
 
-	// The id is caller-generated rather than a nanoid, so retry until it is free.
-	let id = generateSEPASafeId();
-	for (let attempt = 0; attempt < 10_000; attempt++) {
-		const clash = await db.query.paymentTransaction.findFirst({ where: { id } });
-		if (!clash) break;
-		if (attempt === 9_999) {
-			throw apiError({ code: 'INVALID_INPUT', message: m.paymentIdGenerationFailed() });
-		}
-		id = generateSEPASafeId();
-	}
+	const id = await freePaymentId();
 
 	await db.transaction(async (tx) => {
 		await assertNobodyPaid({ tx, participantIds: [payerParticipantId, ...paymentFor] });

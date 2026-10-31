@@ -12,6 +12,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
+/** The abilities of payment references. Nobody but a system admin deletes one. */
 export function registerPaymentTransactionAbilities() {
 	abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -31,10 +32,12 @@ export function registerPaymentTransactionAbilities() {
 
 /**
  * Refuses unless the caller may make a payment in `conferenceId`, paid by `userId`, for the users
- * `paymentFor`: participant care (`manageParticipants`) for anybody, everybody else only in their
- * own name and for people they know in the conference (themselves, their delegation, the
- * participants they supervise, the supervisors they share a student with). The payer and everybody
- * covered have to take part in the conference. Returns their participant row ids.
+ * `paymentFor`: whoever holds `manageParticipants` (project management and participant care) for
+ * anybody, everybody else only in their own name (FORBIDDEN otherwise) and for people they know in
+ * the conference (themselves, their delegation, the participants they supervise, the supervisors
+ * they share a student with; FORBIDDEN otherwise). The payer has to have a participant row in the
+ * conference and everybody covered a registration there (INVALID_INPUT otherwise). Returns their
+ * participant row ids.
  */
 export async function assertCanCreatePaymentTransaction({
 	ctx,
@@ -97,8 +100,8 @@ export async function assertCanCreatePaymentTransaction({
 }
 
 /**
- * Refuses (NOT_FOUND) unless the caller's update ability reaches the payment. Returns it with whom
- * it covers.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the payment: participant care
+ * (project management and participant care) of its conference. Returns it with whom it covers.
  */
 export async function assertCanUpdatePaymentTransaction({
 	ctx,
