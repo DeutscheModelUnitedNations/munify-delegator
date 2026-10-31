@@ -5,8 +5,8 @@ import { paperStatus, paperType } from './papers';
 
 /**
  * The statistics dashboard's materialized views, created by hand in the
- * `statistics_materialized_views` migration (which documents each one) and refreshed by
- * `src/api/handlers/statistics/statistics.ts`. `.existing()` keeps drizzle-kit from managing them; a change
+ * `statistics_materialized_views` migration (which documents each one), refreshed by the
+ * `refresh-statistics` job and read by `src/api/handlers/statistics/`. `.existing()` keeps drizzle-kit from managing them; a change
  * goes into a new custom migration (`drizzle-kit generate --custom`).
  */
 export const statisticsPeople = snakeCase

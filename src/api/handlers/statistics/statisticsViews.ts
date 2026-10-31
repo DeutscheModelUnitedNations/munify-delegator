@@ -406,23 +406,11 @@ function paymentBucket(row: ParticipantStatusRow) {
 }
 
 /**
- * Only participants who actually got a seat (and supervisors who attend) are expected to complete
- * postal and payment, so the progress counts them; the plain status counts every status row.
+ * Postal and payment progress of the people expected to complete both: participants who got a
+ * seat and supervisors who attend, counted even when nothing is recorded for them yet.
  */
-export function participantStatusOf(statuses: ParticipantStatusRow[]) {
+export function postalPaymentProgressOf(statuses: ParticipantStatusRow[]) {
 	const withStatus = statuses.filter((row) => row.hasStatus);
-	const status = {
-		paymentStatus: {
-			done: sumWhere({ rows: withStatus, predicate: (row) => row.paymentStatus === 'DONE' }),
-			problem: sumWhere({ rows: withStatus, predicate: (row) => row.paymentStatus === 'PROBLEM' })
-		},
-		postalStatus: {
-			done: sumWhere({ rows: withStatus, predicate: (row) => row.postalDone }),
-			problem: sumWhere({ rows: withStatus, predicate: (row) => row.postalProblem })
-		},
-		didAttend: sumWhere({ rows: statuses, predicate: (row) => row.didAttend })
-	};
-
 	const maxParticipants = sumWhere({ rows: statuses, predicate: (row) => row.expected });
 	const counts = {
 		postalDone: 0,
@@ -447,24 +435,19 @@ export function participantStatusOf(statuses: ParticipantStatusRow[]) {
 	}
 
 	return {
-		status,
-		postalPaymentProgress: {
-			maxParticipants,
-			...counts,
-			postalPercentage: percentage({ part: counts.postalDone, whole: maxParticipants }),
-			paymentPercentage: percentage({ part: counts.paymentDone, whole: maxParticipants }),
-			// Participants with no status row at all fall in here too.
-			neitherComplete:
-				maxParticipants -
-				counts.bothComplete -
-				counts.postalOnlyComplete -
-				counts.paymentOnlyComplete
-		}
+		maxParticipants,
+		...counts,
+		postalPercentage: percentage({ part: counts.postalDone, whole: maxParticipants }),
+		paymentPercentage: percentage({ part: counts.paymentDone, whole: maxParticipants }),
+		// Participants with no status row at all fall in here too.
+		neitherComplete:
+			maxParticipants - counts.bothComplete - counts.postalOnlyComplete - counts.paymentOnlyComplete
 	};
 }
 
 // ── Addresses and nationalities (filtered) ──────────────────────────────────
 
+/** People per country and ZIP area (the first three digits). */
 export function addressesOf({
 	addresses,
 	filter
@@ -490,17 +473,10 @@ export function addressesOf({
 		group.count += row.count;
 	}
 
-	return [...groups.values()].map(({ country, zipPrefix, count }) => ({
-		country,
-		zipPrefix,
-		_count: {
-			_all: count,
-			zipPrefix: zipPrefix === null ? 0 : count,
-			country: country === null ? 0 : count
-		}
-	}));
+	return [...groups.values()];
 }
 
+/** People per country of their address; people without one are left out. */
 export function nationalityDistributionOf({
 	addresses,
 	filter
@@ -513,7 +489,7 @@ export function nationalityDistributionOf({
 		if (row.country === null || !matchesStatsFilter({ filter, row })) continue;
 		counts.set(row.country, (counts.get(row.country) ?? 0) + row.count);
 	}
-	return [...counts].map(([country, count]) => ({ country, countryCode: country, count }));
+	return [...counts].map(([country, count]) => ({ country, count }));
 }
 
 // ── Committee fill rates (unfiltered, applied delegations only) ─────────────

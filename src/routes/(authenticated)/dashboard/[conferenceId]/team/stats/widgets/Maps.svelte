@@ -17,7 +17,7 @@
 				zipPrefix: true,
 				lat: true,
 				lng: true,
-				_count: { zipPrefix: true }
+				count: true
 			}
 		})
 	);
@@ -30,7 +30,7 @@
 							country: a.country,
 							lat: a.lat,
 							lng: a.lng,
-							count: a._count.zipPrefix
+							count: a.count
 						}
 					]
 				: []

@@ -5,7 +5,7 @@ import {
 	ageStatisticsOf,
 	dietOf,
 	nationalityDistributionOf,
-	participantStatusOf,
+	postalPaymentProgressOf,
 	registrationStatisticsOf,
 	registrationTimelineOf,
 	roleBasedOf,
@@ -16,7 +16,7 @@ import { matchesStatsFilter } from './statisticsFilters';
 type PeopleRow = Parameters<typeof supervisorStatsOf>[0][number];
 type DelegationsRow = Parameters<typeof roleBasedOf>[0]['delegations'][number];
 type AgesRow = Parameters<typeof ageStatisticsOf>[0]['ages'][number];
-type StatusRow = Parameters<typeof participantStatusOf>[0][number];
+type StatusRow = Parameters<typeof postalPaymentProgressOf>[0][number];
 
 const person = (overrides: Partial<PeopleRow>): PeopleRow => ({
 	conferenceId: 'c',
@@ -239,7 +239,7 @@ describe('ageStatisticsOf', () => {
 	});
 });
 
-describe('participantStatusOf', () => {
+describe('postalPaymentProgressOf', () => {
 	const status = (overrides: Partial<StatusRow>): StatusRow => ({
 		conferenceId: 'c',
 		expected: true,
@@ -253,7 +253,7 @@ describe('participantStatusOf', () => {
 	});
 
 	test('measures progress against everyone expected, with or without a status row', () => {
-		const { status: counts, postalPaymentProgress } = participantStatusOf([
+		const postalPaymentProgress = postalPaymentProgressOf([
 			status({ paymentStatus: 'DONE', postalDone: true, count: 2 }),
 			status({ paymentStatus: 'DONE' }),
 			status({ postalProblem: true }),
@@ -261,11 +261,6 @@ describe('participantStatusOf', () => {
 			status({ expected: false, paymentStatus: 'DONE', didAttend: true })
 		]);
 
-		expect(counts).toEqual({
-			paymentStatus: { done: 4, problem: 0 },
-			postalStatus: { done: 2, problem: 1 },
-			didAttend: 1
-		});
 		expect(postalPaymentProgress).toEqual({
 			maxParticipants: 8,
 			postalDone: 2,
@@ -353,8 +348,8 @@ describe('addressesOf', () => {
 				filter: 'ALL'
 			})
 		).toEqual([
-			{ country: 'DEU', zipPrefix: '241', _count: { _all: 3, zipPrefix: 3, country: 3 } },
-			{ country: 'DEU', zipPrefix: null, _count: { _all: 4, zipPrefix: 0, country: 4 } }
+			{ country: 'DEU', zipPrefix: '241', count: 3 },
+			{ country: 'DEU', zipPrefix: null, count: 4 }
 		]);
 	});
 });
@@ -381,8 +376,8 @@ describe('nationalityDistributionOf', () => {
 				filter: 'ALL'
 			})
 		).toEqual([
-			{ country: 'DEU', countryCode: 'DEU', count: 3 },
-			{ country: 'AUT', countryCode: 'AUT', count: 4 }
+			{ country: 'DEU', count: 3 },
+			{ country: 'AUT', count: 4 }
 		]);
 	});
 
@@ -392,7 +387,7 @@ describe('nationalityDistributionOf', () => {
 				addresses: [address(true, 'DEU', 2), address(false, 'DEU', 1), address(false, 'AUT', 4)],
 				filter: 'APPLIED'
 			})
-		).toEqual([{ country: 'DEU', countryCode: 'DEU', count: 2 }]);
+		).toEqual([{ country: 'DEU', count: 2 }]);
 	});
 });
 

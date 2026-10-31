@@ -4477,23 +4477,16 @@ export type StatisticsResult = {
   registrationTimeline: () => StatisticsResultRegistrationTimeline[],
   roleBased: () => StatisticsResultRoleBased,
   schoolStats: () => StatisticsResultSchool[],
-  status: () => StatisticsResultRegisteredParticipantStatus,
   supervisorStats: () => StatisticsResultSupervisorStats,
   waitingList: () => StatisticsResultWaitingList    
 };
 		
 export type StatisticsResultAddresses = {
-  _count: () => StatisticsResultAddressesCount,
+  count: Int,
   country: String | null,
   lat: Float | null,
   lng: Float | null,
   zipPrefix: String | null    
-};
-		
-export type StatisticsResultAddressesCount = {
-  _all: Int,
-  country: Int,
-  zipPrefix: Int    
 };
 		
 export type StatisticsResultAge = {
@@ -4554,8 +4547,7 @@ export type StatisticsResultCountdowns = {
 		
 export type StatisticsResultNationality = {
   count: Int,
-  country: String,
-  countryCode: String    
+  country: String    
 };
 		
 export type StatisticsResultPaperStats = {
@@ -4650,22 +4642,6 @@ export type StatisticsResultRegisteredParticipantGenderVariations = {
   female: Int,
   male: Int,
   noStatement: Int    
-};
-		
-export type StatisticsResultRegisteredParticipantStatus = {
-  didAttend: Int,
-  paymentStatus: () => StatisticsResultRegisteredParticipantStatusPayment,
-  postalStatus: () => StatisticsResultRegisteredParticipantStatusPostalRegistration    
-};
-		
-export type StatisticsResultRegisteredParticipantStatusPayment = {
-  done: Int,
-  problem: Int    
-};
-		
-export type StatisticsResultRegisteredParticipantStatusPostalRegistration = {
-  done: Int,
-  problem: Int    
 };
 		
 export type StatisticsResultRegisteredSingleParticipants = {
