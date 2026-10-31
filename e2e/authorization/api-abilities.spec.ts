@@ -26,6 +26,7 @@ import {
 	E2E_UNRELEASED_FORMER_SCHOOL_ID,
 	E2E_UNSEATED_COMMITTEE_ID
 } from '../seed/seed';
+import { E2E_ATTENDANCE_ENDED_SESSION } from '../seed/attendance';
 
 // The route guards keep the UI honest; these keep the API honest. Each one sends the request a
 // curious participant could type into the browser console, and expects the API to refuse it - or,
@@ -614,6 +615,22 @@ test('the participants table does not reveal a teammate’s address to participa
 	expect(await teammateWithCountry(E2E_MGMT_ADMIN_ID)).toBe(0);
 	// Project management is a team admin and reads it.
 	expect(await teammateWithCountry(E2E_ASSIGNMENT_ADMIN_ID)).toBe(1);
+});
+
+test('the entrance scanner refuses a session of another conference', async ({ page }) => {
+	// The lookup checks survey options and earlier scans of the session it names, so the session
+	// has to be one of the conference the caller is on the team of.
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID));
+	expectRefused(
+		await gql(
+			page,
+			`query ($c: ID!, $s: ID!, $code: String!) {
+				scanLookup(conferenceId: $c, code: $code, sessionId: $s, asScan: true) { found }
+			}`,
+			{ c: E2E_CONFERENCE_ID, s: E2E_ATTENDANCE_ENDED_SESSION.id, code: E2E_TEAMMATE_USER_ID }
+		),
+		/does not belong to the conference/
+	);
 });
 
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
