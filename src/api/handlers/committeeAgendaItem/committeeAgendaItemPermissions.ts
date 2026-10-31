@@ -27,8 +27,9 @@ export function registerCommitteeAgendaItemAbilities() {
 }
 
 /**
- * Refuses unless the committee exists and the caller is a service user (the chase integration,
- * any conference) or holds `planSeats` (project management and content lead) in its conference.
+ * Refuses (NOT_FOUND) unless the committee exists and the caller is a service user (the chase
+ * integration, any conference: the OIDC `service_user` role, not a team role) or holds `planSeats`
+ * (project management and content lead) in its conference.
  */
 export async function assertCanCreateAgendaItem({
 	ctx,
@@ -50,14 +51,25 @@ export async function assertCanCreateAgendaItem({
 		.then(assertFindFirstExists);
 }
 
-/** Refuses unless the caller may update the agenda item (seat planning of its conference). */
+/**
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the agenda item: `planSeats`
+ * (project management and content lead) in its conference.
+ */
 export async function assertCanUpdateAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) {
 	await assertAllowed({ ctx, table: 'committeeAgendaItem', action: 'update', id });
 }
 
 /**
- * Refuses unless the caller holds `reviewPapers` (the team but plain members) in the agenda item's
- * conference. Reviewers set the review help status without otherwise being able to update agenda
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the agenda item: `planSeats`
+ * (project management and content lead) in its conference.
+ */
+export async function assertCanDeleteAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'committeeAgendaItem', action: 'delete', id });
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller holds `reviewPapers` (the team but plain members) in the
+ * agenda item's conference. Reviewers set the review help status without otherwise being able to update agenda
  * items.
  */
 export async function assertCanSetAgendaItemReviewHelpStatus({

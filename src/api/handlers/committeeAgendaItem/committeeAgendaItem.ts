@@ -1,15 +1,19 @@
-import { db, schema } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { whereRows } from '#api/db/whereRows';
-import { committeeAgendaItemPubsub } from '#api/pubsub';
+import { db } from '#api/db/db';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	assertCanCreateAgendaItem,
+	assertCanDeleteAgendaItem,
 	assertCanSetAgendaItemReviewHelpStatus,
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
-import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import {
+	createAgendaItem,
+	deleteAgendaItem,
+	setReviewHelpStatus,
+	updateAgendaItem
+} from './committeeAgendaItemService';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -18,9 +22,16 @@ query({ table: 'committeeAgendaItem' });
 
 const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
 
+/** The agenda item as the caller may read it, for re-reading the row a mutation wrote. */
+async function readableAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.committeeAgendaItem.filter('read')).merge({ where: { id } }).query
+		.single;
+}
+
 schemaBuilder.mutationFields((t) => ({
 	createAgendaItem: t.drizzleField({
-		description: 'Adds an agenda item (a topic) to a committee.',
+		description:
+			'Adds an agenda item (a topic) to a committee. Seat planning creates them, and so does a service user (the chase integration) in any conference.',
 		type: CommitteeAgendaItemRef,
 		args: {
 			committeeId: t.arg.id({ required: true }),
@@ -29,33 +40,16 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateAgendaItem({ ctx, committeeId: args.committeeId });
-
-			const created = await db
-				.insert(schema.committeeAgendaItem)
-				.values({
-					committeeId: args.committeeId,
-					title: args.title,
-					teaserText: args.teaserText ?? undefined
-				})
-				.returning()
-				.then(assertFirstEntryExists);
-
-			committeeAgendaItemPubsub.created();
+			const id = await createAgendaItem(args);
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableAgendaItem({ ctx, id })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	updateAgendaItem: t.drizzleField({
-		description: 'Changes the given fields of an agenda item; the others stay as they are.',
+		description: 'Changes the given fields of an agenda item; left out or `null` keeps a field.',
 		type: CommitteeAgendaItemRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -64,21 +58,10 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateAgendaItem({ ctx, id: args.id });
-			await db
-				.update(schema.committeeAgendaItem)
-				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
-				.where(whereRows({ table: schema.committeeAgendaItem, filter: { id: args.id } }));
-
-			committeeAgendaItemPubsub.updated(args.id);
+			await updateAgendaItem(args);
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: args.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableAgendaItem({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -88,9 +71,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed({ ctx, table: 'committeeAgendaItem', id: args.id });
-			committeeAgendaItemPubsub.removed();
-
+			await assertCanDeleteAgendaItem({ ctx, id: args.id });
+			await deleteAgendaItem(args.id);
 			return true;
 		}
 	}),
@@ -105,22 +87,10 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSetAgendaItemReviewHelpStatus({ ctx, agendaItemId: args.agendaItemId });
-
-			await db
-				.update(schema.committeeAgendaItem)
-				.set({ reviewHelpStatus: args.status })
-				.where(whereRows({ table: schema.committeeAgendaItem, filter: { id: args.agendaItemId } }));
-
-			committeeAgendaItemPubsub.updated(args.agendaItemId);
+			await setReviewHelpStatus({ id: args.agendaItemId, status: args.status });
 
 			return db.query.committeeAgendaItem
-				.findFirst(
-					query(
-						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
-							where: { id: args.agendaItemId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableAgendaItem({ ctx, id: args.agendaItemId })))
 				.then(assertFindFirstExists);
 		}
 	})
