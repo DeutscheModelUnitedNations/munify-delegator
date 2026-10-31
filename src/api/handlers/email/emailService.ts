@@ -38,6 +38,17 @@ export const localeSchema = z.string().transform((value, ctx) => {
 	return z.NEVER;
 });
 
+/** A text the team writes for its mails, at most `max` characters long. */
+function emailTextSchema(max: number) {
+	return z.string().max(max, { error: () => m.emailTextTooLong({ max }) });
+}
+
+/** A mail's subject or heading: one line. */
+export const emailLineSchema = emailTextSchema(200);
+
+/** A mail's body or footer: a few paragraphs, generously. */
+export const emailParagraphsSchema = emailTextSchema(10_000);
+
 /** A language the app speaks, or none (empty or left out). */
 export const optionalLocaleSchema = z
 	.union([z.literal('').transform(() => undefined), localeSchema])

@@ -5,7 +5,13 @@ vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 vi.mock('#api/pubsub', () => ({}));
 vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 
-const { localeSchema, optionalLocaleSchema, switchableKindSchema } = await import('./emailService');
+const {
+	emailLineSchema,
+	emailParagraphsSchema,
+	localeSchema,
+	optionalLocaleSchema,
+	switchableKindSchema
+} = await import('./emailService');
 
 describe('the email argument schemas', () => {
 	test('take the languages the app speaks and refuse others', () => {
@@ -17,6 +23,13 @@ describe('the email argument schemas', () => {
 		expect(optionalLocaleSchema.parse('')).toBeUndefined();
 		expect(optionalLocaleSchema.parse(null)).toBeNull();
 		expect(optionalLocaleSchema.parse('de')).toBe('de');
+	});
+
+	test('keep the texts the team writes within bounds', () => {
+		expect(emailLineSchema.safeParse('x'.repeat(200)).success).toBe(true);
+		expect(emailLineSchema.safeParse('x'.repeat(201)).success).toBe(false);
+		expect(emailParagraphsSchema.safeParse('x'.repeat(10_000)).success).toBe(true);
+		expect(emailParagraphsSchema.safeParse('x'.repeat(10_001)).success).toBe(false);
 	});
 
 	test('refuse switching a kind that is always sent', () => {

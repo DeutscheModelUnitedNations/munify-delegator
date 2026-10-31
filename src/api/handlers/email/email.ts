@@ -6,6 +6,8 @@ import {
 } from './emailPermissions';
 import {
 	emailStats,
+	emailLineSchema,
+	emailParagraphsSchema,
 	localeSchema,
 	notifyBadgeFound,
 	openEmailCounts,
@@ -146,9 +148,9 @@ schemaBuilder.queryFields((t) => ({
 			draft: t.arg.boolean({
 				description: 'Preview `subject`, `heading` and `body` instead of the stored text.'
 			}),
-			subject: t.arg.string(),
-			heading: t.arg.string(),
-			body: t.arg.string(),
+			subject: t.arg.string().validate(emailLineSchema),
+			heading: t.arg.string().validate(emailLineSchema),
+			body: t.arg.string().validate(emailParagraphsSchema),
 			footer: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
@@ -232,7 +234,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	upsertConferenceEmailText: t.field({
 		description:
-			"Changes a conference's own text for one kind and language. A field left out stays as it is; an empty one or `null` goes back to the default. Once all three are back, the row goes.",
+			"Changes a conference's own text for one kind and language. A field left out stays as it is; an empty one or `null` goes back to the default. Once all three are back, the row goes. A subject or heading over 200 characters, or a body over 10,000, is refused with INVALID_INPUT.",
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -251,12 +253,12 @@ schemaBuilder.mutationFields((t) => ({
 
 	setConferenceEmailFooter: t.field({
 		description:
-			'Writes the footer under every mail the conference sends, for one language. An empty one removes it: mails in that language go out without.',
+			'Writes the footer under every mail the conference sends, for one language. An empty one removes it: mails in that language go out without. Over 10,000 characters is refused with INVALID_INPUT.',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			locale: t.arg.string({ required: true }).validate(localeSchema),
-			text: t.arg.string({ required: true })
+			text: t.arg.string({ required: true }).validate(emailParagraphsSchema)
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });

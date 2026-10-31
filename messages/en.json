@@ -1314,6 +1314,7 @@
 	"emailTextPlaceholders": "Placeholders",
 	"emailTextRestoreDefault": "Default text",
 	"emailTextSubject": "Subject",
+	"emailTextTooLong": "At most {max} characters.",
 	"emailTextUnknownLanguage": "This language does not exist.",
 	"emergencyContactDescription": "Please give us at least one emergency contact (with name, phone and email), so that we are able to reach someone close to you.",
 	"emergencyContacts": "Emergency Contacts",
