@@ -1,12 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import {
 	assertCommitteeDeletable,
-	assertNonStateActorDeletable,
 	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
 	committeeUpdateData,
 	lockedCommitteeSeats,
-	nonStateActorUpdateData,
 	seatCountSchema,
 	totalSeats
 } from './seatPlanningService';
@@ -104,27 +102,6 @@ describe('totalSeats', () => {
 	});
 });
 
-describe('nonStateActorUpdateData', () => {
-	test('leaves omitted and null fields untouched', () => {
-		expect(nonStateActorUpdateData({ name: 'Greenpeace', abbreviation: null })).toEqual({
-			name: 'Greenpeace',
-			abbreviation: undefined,
-			description: undefined,
-			seatAmount: undefined,
-			fontAwesomeIcon: undefined
-		});
-	});
-
-	test('an empty icon clears it', () => {
-		expect(nonStateActorUpdateData({ fontAwesomeIcon: '' }).fontAwesomeIcon).toBeNull();
-		expect(nonStateActorUpdateData({ fontAwesomeIcon: 'fa-tree' }).fontAwesomeIcon).toBe('fa-tree');
-	});
-
-	test('passes the seat amount on', () => {
-		expect(nonStateActorUpdateData({ seatAmount: 3 }).seatAmount).toBe(3);
-	});
-});
-
 describe('committeeUpdateData', () => {
 	test('keeps a null resolution headline so it can be cleared', () => {
 		expect(committeeUpdateData({ resolutionHeadline: null, numOfSeatsPerDelegation: 2 })).toEqual({
@@ -141,13 +118,6 @@ describe('assertCommitteeDeletable', () => {
 		expect(() => assertCommitteeDeletable({ assignedMembers: 1, papers: 0 })).toThrow();
 		expect(() => assertCommitteeDeletable({ assignedMembers: 0, papers: 2 })).toThrow();
 		expect(() => assertCommitteeDeletable({ assignedMembers: 0, papers: 0 })).not.toThrow();
-	});
-});
-
-describe('assertNonStateActorDeletable', () => {
-	test('blocks while a delegation is assigned', () => {
-		expect(() => assertNonStateActorDeletable(1)).toThrow();
-		expect(() => assertNonStateActorDeletable(0)).not.toThrow();
 	});
 });
 

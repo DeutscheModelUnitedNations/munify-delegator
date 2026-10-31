@@ -108,30 +108,6 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 	});
 }
 
-interface NonStateActorUpdateInput {
-	name?: string | null;
-	abbreviation?: string | null;
-	description?: string | null;
-	fontAwesomeIcon?: string | null;
-	seatAmount?: number | null;
-}
-
-/**
- * Maps the optional GraphQL update arguments of a non state actor to update data: omitted fields
- * stay untouched and an empty icon clears the icon.
- */
-export function nonStateActorUpdateData(
-	data: NonStateActorUpdateInput
-): Partial<typeof schema.conferenceRole.$inferInsert> {
-	return {
-		name: data.name ?? undefined,
-		abbreviation: data.abbreviation ?? undefined,
-		description: data.description ?? undefined,
-		seatAmount: data.seatAmount ?? undefined,
-		fontAwesomeIcon: data.fontAwesomeIcon === undefined ? undefined : data.fontAwesomeIcon || null
-	};
-}
-
 interface CommitteeUpdateInput {
 	name?: string | null;
 	abbreviation?: string | null;
@@ -176,13 +152,6 @@ export function assertCommitteeDeletable({
 			code: 'CONFLICT',
 			message: m.committeeDeleteBlockedByPapers({ count: papers })
 		});
-	}
-}
-
-/** A non-state actor cannot be deleted while a delegation is assigned to it */
-export function assertNonStateActorDeletable(assignedDelegations: number) {
-	if (assignedDelegations > 0) {
-		throw apiError({ code: 'CONFLICT', message: m.nonStateActorDeleteBlocked() });
 	}
 }
 

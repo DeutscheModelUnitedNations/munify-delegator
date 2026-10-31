@@ -34,8 +34,8 @@ export function registerConferenceRoleAbilities() {
 type PlannedRoleKind = 'NON_STATE_ACTOR' | 'CUSTOM';
 
 /**
- * Refuses unless the caller holds `planSeats` (project management and content lead) in the
- * conference.
+ * Refuses (FORBIDDEN) unless the caller holds `planSeats` (project management and content lead) in
+ * the conference the non-state actor or custom role is created in.
  */
 export async function assertCanCreateConferenceRole({
 	ctx,
@@ -48,8 +48,9 @@ export async function assertCanCreateConferenceRole({
 }
 
 /**
- * Refuses (NOT_FOUND) unless the role is of `kind` and the caller's update ability reaches it.
- * Returns it with its conference and current seats.
+ * Refuses (NOT_FOUND) unless the role is of `kind` and the caller's update ability reaches it:
+ * seat planning (`planSeats`: project management and content lead) of its conference. Returns it
+ * with its conference and current seats.
  */
 export async function assertCanUpdateConferenceRole({
 	ctx,
@@ -71,7 +72,10 @@ export async function assertCanUpdateConferenceRole({
 		.then(assertFindFirstExists);
 }
 
-/** Refuses (NOT_FOUND) unless the role is of `kind` and the caller's delete ability reaches it. */
+/**
+ * Refuses (NOT_FOUND) unless the role is of `kind` and the caller's delete ability reaches it:
+ * seat planning (`planSeats`: project management and content lead) of its conference.
+ */
 export async function assertCanDeleteConferenceRole({
 	ctx,
 	id,
