@@ -1671,6 +1671,7 @@
 	"nonStateActorDeleteBlocked": "Der nichtstaatliche Akteur kann nicht gelöscht werden, solange ihm eine Delegation zugeteilt ist.",
 	"nonStateActorDiagram": "Nichtstaatliche&ast;r\nAkteur&ast;in",
 	"nonStateActorNotUnique": "Name und Kürzel eines nichtstaatlichen Akteurs müssen innerhalb der Konferenz eindeutig sein.",
+	"nonStateActorSeatsBelowAssigned": "Dieser Rolle ist bereits eine Delegation mit {assigned} Mitgliedern zugeteilt. Weniger Plätze sind nicht möglich.",
 	"nonStateActors": "Nichtstaatliche Akteure",
 	"notApplied": "Bewerbung ausstehend",
 	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",

@@ -16,6 +16,7 @@ import { whereRows } from '#api/db/whereRows';
 import {
 	assertCustomRoleDeletable,
 	assertCustomRoleSeatsAllowed,
+	assertNonStateActorSeatsAllowed,
 	assertNonStateActorDeletable,
 	nonStateActorUpdateData
 } from './plannedRoleRules';
@@ -112,6 +113,15 @@ function holdersOf({ tx, roleId }: { tx: Transaction; roleId: string }) {
 	);
 }
 
+/** How many members the delegations holding the role have, the most of any one of them. */
+async function assignedMembersOf({ tx, roleId }: { tx: Transaction; roleId: string }) {
+	const delegations = await tx.query.delegation.findMany({
+		where: { assignedRoleId: roleId },
+		columns: { memberCount: true }
+	});
+	return Math.max(0, ...delegations.map((delegation) => delegation.memberCount));
+}
+
 /** Creates a non-state actor and returns its id. */
 export async function createNonStateActor(data: {
 	conferenceId: string;
@@ -141,8 +151,9 @@ export async function createNonStateActor(data: {
 }
 
 /**
- * Changes the given fields of a non-state actor (`nonStateActorUpdateData`). Lowering the seats is
- * allowed, but the applications that no longer fit are dropped in the same transaction.
+ * Changes the given fields of a non-state actor (`nonStateActorUpdateData`). Lowering the seats
+ * below the members of the delegation assigned to it is refused (CONFLICT); the applications that
+ * no longer fit are dropped in the same transaction.
  */
 export async function updateNonStateActor({
 	before,
@@ -157,6 +168,12 @@ export async function updateNonStateActor({
 
 	await withUniqueNameCheck(
 		db.transaction(async (tx) => {
+			if (shrunk) {
+				assertNonStateActorSeatsAllowed({
+					seatAmount: data.seatAmount,
+					assignedMembers: await assignedMembersOf({ tx, roleId: before.id })
+				});
+			}
 			await tx
 				.update(schema.conferenceRole)
 				.set(data)

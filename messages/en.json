@@ -1671,6 +1671,7 @@
 	"nonStateActorDeleteBlocked": "The non-state actor cannot be deleted while a delegation is assigned to it.",
 	"nonStateActorDiagram": "Non-State Actor",
 	"nonStateActorNotUnique": "Name and abbreviation of a non-state actor must be unique within the conference.",
+	"nonStateActorSeatsBelowAssigned": "A delegation of {assigned} members is already assigned to this role. It cannot have fewer seats.",
 	"nonStateActors": "Non-State Actors",
 	"notApplied": "Application not yet submitted",
 	"notAssignedParticipants": "Not Yet Assigned Participants",

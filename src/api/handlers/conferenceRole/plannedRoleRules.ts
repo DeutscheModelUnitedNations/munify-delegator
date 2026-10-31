@@ -61,6 +61,26 @@ export function assertCustomRoleSeatsAllowed({
 	}
 }
 
+/**
+ * Refuses (CONFLICT) to give a non-state actor fewer seats than the delegation assigned to it has
+ * members, which would leave that delegation over-full. Applications that no longer fit are only
+ * wishes and are dropped instead (`tidyRoleApplicationsForRoles`). Left out passes.
+ */
+export function assertNonStateActorSeatsAllowed({
+	seatAmount,
+	assignedMembers
+}: {
+	seatAmount: number | null | undefined;
+	assignedMembers: number;
+}) {
+	if (seatAmount != null && seatAmount < assignedMembers) {
+		throw apiError({
+			code: 'CONFLICT',
+			message: m.nonStateActorSeatsBelowAssigned({ assigned: assignedMembers })
+		});
+	}
+}
+
 /** Refuses (CONFLICT) to delete a custom role somebody holds. */
 export function assertCustomRoleDeletable(holders: number) {
 	if (holders > 0) throw apiError({ code: 'CONFLICT', message: m.customRoleStillAssigned() });

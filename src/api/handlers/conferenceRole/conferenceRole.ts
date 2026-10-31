@@ -62,7 +62,7 @@ schemaBuilder.mutationFields((t) => {
 
 		updateNonStateActor: t.drizzleField({
 			description:
-				'Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `fontAwesomeIcon` clears the icon. Lowering its seats drops the applications that no longer fit. A name or abbreviation another role of the conference has is refused with CONFLICT.',
+				'Changes the given fields of a non-state actor; left out or `null` keeps a field, an empty `fontAwesomeIcon` clears the icon. Lowering its seats drops the applications that no longer fit; lowering them below the members of the delegation assigned to it is refused with CONFLICT. A name or abbreviation another role of the conference has is refused with CONFLICT.',
 			type: ConferenceRoleRef,
 			args: {
 				id: t.arg.id({ required: true }),

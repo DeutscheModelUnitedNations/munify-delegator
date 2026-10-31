@@ -3,6 +3,7 @@ import {
 	assertCustomRoleDeletable,
 	assertCustomRoleSeatsAllowed,
 	assertNonStateActorDeletable,
+	assertNonStateActorSeatsAllowed,
 	customRoleSeatsSchema,
 	nonStateActorUpdateData
 } from './plannedRoleRules';
@@ -54,5 +55,17 @@ describe('assertCustomRoleDeletable', () => {
 	test('blocks while somebody holds the role', () => {
 		expect(() => assertCustomRoleDeletable(1)).toThrow();
 		expect(() => assertCustomRoleDeletable(0)).not.toThrow();
+	});
+});
+
+describe('assertNonStateActorSeatsAllowed', () => {
+	test('refuses fewer seats than the assigned delegation has members', () => {
+		expect(() => assertNonStateActorSeatsAllowed({ seatAmount: 2, assignedMembers: 3 })).toThrow();
+		expect(() =>
+			assertNonStateActorSeatsAllowed({ seatAmount: 3, assignedMembers: 3 })
+		).not.toThrow();
+		expect(() =>
+			assertNonStateActorSeatsAllowed({ seatAmount: undefined, assignedMembers: 3 })
+		).not.toThrow();
 	});
 });
