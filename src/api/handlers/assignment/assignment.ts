@@ -69,7 +69,7 @@ const experienceEffectEnum = enum_({ tsName: 'assignmentExperienceEffect' });
  * Every draft table changed. A draft write creates, changes and deletes rows in one go, and the
  * board's lists only hear about rows coming and going, so all three are announced.
  */
-function publishDraft() {
+function triggerDraftPubsub() {
 	for (const pubsub of [
 		assignmentUnitPubsub,
 		assignmentUnitMemberPubsub,
@@ -88,7 +88,7 @@ const singleParticipantDraftChange =
 	) =>
 	async (_root: unknown, args: { singleParticipantId: string }, ctx: ApiContext) => {
 		await change(await assertCanAssignSingleParticipant({ ctx, id: args.singleParticipantId }));
-		publishDraft();
+		triggerDraftPubsub();
 		return true;
 	};
 
@@ -98,7 +98,7 @@ const conferenceDraftChange =
 	async (_root: unknown, args: { conferenceId: string }, ctx: ApiContext) => {
 		await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
 		await change({ conferenceId: args.conferenceId, ctx });
-		publishDraft();
+		triggerDraftPubsub();
 		return true;
 	};
 
@@ -187,7 +187,7 @@ schemaBuilder.mutationFields((t) => ({
 			const target = targetFrom(args);
 			await assertTargetOf({ conferenceId: delegation.conferenceId, target });
 			await draftDelegationTarget({ tx: db, delegation, target });
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),
@@ -204,7 +204,7 @@ schemaBuilder.mutationFields((t) => ({
 			const target = targetFrom(args);
 			await assertTargetOf({ conferenceId: unit.conferenceId, target });
 			await draftUnitTarget({ unitId: unit.id, target });
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),
@@ -221,7 +221,7 @@ schemaBuilder.mutationFields((t) => ({
 			const parts = splitParts({ parts: args.parts, memberCount: delegation.members.length });
 			assertSplitMembersOf({ delegation, parts });
 			await splitDelegation({ delegation, parts });
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),
@@ -233,7 +233,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
 			await undoDelegationSplit(delegation.id);
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),
@@ -268,7 +268,7 @@ schemaBuilder.mutationFields((t) => ({
 			const roleId = args.roleId || null;
 			await assertCustomRoleOf({ conferenceId: participant.conferenceId, roleId });
 			await planSingleParticipantRole({ participant, roleId });
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),
@@ -287,7 +287,7 @@ schemaBuilder.mutationFields((t) => ({
 				conferenceId: args.conferenceId,
 				size: args.size
 			});
-			publishDraft();
+			triggerDraftPubsub();
 			return assigned;
 		}
 	}),
@@ -303,7 +303,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
 			const assigned = await autoAssignSingleParticipants(args.conferenceId);
-			publishDraft();
+			triggerDraftPubsub();
 			return assigned;
 		}
 	}),
@@ -315,7 +315,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
 			await resetAssignmentSize({ conferenceId: args.conferenceId, seats: args.seats });
-			publishDraft();
+			triggerDraftPubsub();
 			return true;
 		}
 	}),

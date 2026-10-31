@@ -40,18 +40,19 @@ export function technicalRegistrationDeadline(conference: {
 /** Whether the API accepts an application to the conference right now. */
 export function acceptsApplications({
 	conference,
-	now = new Date()
+	now = Date.now()
 }: {
 	conference: {
 		state: ConferencestateEnum;
 		applicationDeadline: Date;
 		registrationDeadlineGracePeriodMinutes: number;
 	};
-	now?: Date;
+	/** A timestamp in milliseconds. */
+	now?: number;
 }) {
 	return (
 		conference.state === 'PARTICIPANT_REGISTRATION' &&
-		now.getTime() <= technicalRegistrationDeadline(conference).getTime()
+		now <= technicalRegistrationDeadline(conference).getTime()
 	);
 }
 
@@ -61,10 +62,11 @@ export function acceptsApplications({
  */
 export function selectionInProgress({
 	conference,
-	now = new Date()
+	now = Date.now()
 }: {
 	conference: Parameters<typeof acceptsApplications>[0]['conference'];
-	now?: Date;
+	/** A timestamp in milliseconds. */
+	now?: number;
 }) {
 	return (
 		conference.state === 'PARTICIPANT_REGISTRATION' && !acceptsApplications({ conference, now })
