@@ -15,6 +15,7 @@ import { m } from '#lib/paraglide/messages';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
+import { cleanSchoolName, type ConferenceSchoolSortColumn } from './schoolArgs';
 
 /**
  * The school a person names for themselves (when applying, as a supervisor, on the waiting list or
@@ -27,11 +28,6 @@ export type SchoolChoice = { schoolId?: string | null; schoolName?: string | nul
 /** `text` for an `ilike` pattern, its wildcards escaped. */
 function escapeLike(text: string) {
 	return text.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
-
-/** A typed school name as it is stored: trimmed, with runs of whitespace collapsed. */
-function cleanSchoolName(name: string) {
-	return name.replace(/\s+/g, ' ').trim();
 }
 
 type Db = Transaction | typeof db;
@@ -93,21 +89,25 @@ type EditableSchoolField =
 /** The fields of a school the team edits; an omitted field stays, `null` clears it (not the name). */
 export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null };
 
+/**
+ * Changes the given fields of a school the caller may update (`assertCanUpdateSchools`); an
+ * omitted field stays, `null` clears it (not the name, `schoolRenameSchema`).
+ */
 export async function updateSchool({ id, update }: { id: string; update: SchoolUpdate }) {
 	const name =
 		update.name === undefined || update.name === null ? undefined : cleanSchoolName(update.name);
-	if (name === '') throw apiError({ code: 'INVALID_INPUT', message: m.schoolNameRequired() });
 	await db
 		.update(schema.school)
-		.set({ ...update, name })
+		.set({ ...update, name, updatedAt: new Date() })
 		.where(whereRows({ table: schema.school, filter: { id } }));
 	schoolPubsub.updated(id);
 }
 
 /**
- * Folds `sourceIds` into `targetId`: everything naming a source names the target afterwards, the
- * target takes over details it has none of and the notes of all of them, and the sources are
- * deleted. Merging is how duplicates typed by applicants are cleaned up.
+ * Folds `sourceIds` into `targetId`, all of which the caller may update (`assertCanUpdateSchools`):
+ * everything naming a source names the target afterwards, across every conference, the target
+ * takes over details it has none of and the notes of all of them, and the sources are deleted.
+ * Merging is how duplicates typed by applicants are cleaned up.
  */
 export async function mergeSchools({
 	targetId,
@@ -320,18 +320,6 @@ export async function schoolMetrics({
 		.parse(result.rows)
 		.map((row) => row.result);
 }
-
-export const CONFERENCE_SCHOOL_SORT_COLUMNS = [
-	'name',
-	'city',
-	'delegations',
-	'participants',
-	'applied',
-	'seated',
-	'supervisors',
-	'waitingList'
-] as const;
-export type ConferenceSchoolSortColumn = (typeof CONFERENCE_SCHOOL_SORT_COLUMNS)[number];
 
 const conferenceSchoolRowSchema = z.object({
 	schoolId: z.string(),

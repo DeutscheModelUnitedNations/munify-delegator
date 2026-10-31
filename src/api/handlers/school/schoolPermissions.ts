@@ -54,8 +54,9 @@ export function registerSchoolAbilities() {
 }
 
 /**
- * Refuses (NOT_FOUND) unless the caller may update every school in `ids`, which participant care
- * may for the schools of its conferences' people (`schoolOfCaredFor`).
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches every school in `ids`:
+ * participant care (project management and participant care) reaches the schools the people of
+ * its conferences name as their own (`schoolOfCaredFor`).
  */
 export async function assertCanUpdateSchools({
 	ctx,
@@ -98,8 +99,8 @@ export async function assertCanReadSchoolMetrics({
 }
 
 /**
- * Refuses unless the caller holds `manageParticipants` in the conference: its schools page, with
- * every school's numbers.
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care)
+ * in the conference: its schools page, with every school's numbers.
  */
 export async function assertCanReadConferenceSchools({
 	ctx,
