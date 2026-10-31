@@ -1,7 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { localeOfUser } from '#api/services/requestLocale';
-import { m } from '#lib/paraglide/messages';
-import { conferenceEmailSettingPubsub, emailLogPubsub } from '#api/pubsub';
+import { emailLogPubsub } from '#api/pubsub';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import {
@@ -9,23 +7,17 @@ import {
 	emailKey,
 	type DueEmail,
 	type EmailKind,
-	type EmailSnapshot,
-	type SnapshotPerson,
-	type SnapshotUser
+	type EmailSnapshot
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
-import type { EmailTextOverride } from './emailText';
-import { isAlwaysSent, REMINDER_KINDS } from '#lib/helpers/emailKinds';
-import { renderBadgeFoundEmail } from './badgeFoundEmail';
-import { renderTeamInvitationEmail } from './teamInvitationEmail';
+import { REMINDER_KINDS } from '#lib/helpers/emailKinds';
 import {
 	deliver,
 	loadWording,
 	renderAutomaticEmail,
-	wordingIn,
 	type ConferenceWording
 } from './emailDelivery';
-import { getInvitationExpiryDate } from '#api/handlers/teamMemberInvitation/invitationToken';
+import { enabledKinds } from './emailSettings';
 import { logger } from '#lib/logger';
 
 /**
@@ -55,14 +47,6 @@ export function isOpen({ log, now }: { log: LogState | undefined; now: Date }) {
 	if (log.status === 'SENDING')
 		return now.getTime() - log.updatedAt.getTime() > STALE_CLAIM_MINUTES * 60_000;
 	return false;
-}
-
-export async function enabledKinds(conferenceId: string) {
-	const settings = await db.query.conferenceEmailSetting.findMany({
-		where: { conferenceId, enabled: true },
-		columns: { kind: true }
-	});
-	return new Set<EmailKind>(settings.map((setting) => setting.kind));
 }
 
 /** The mails of `kinds` the conference owes and has not sent, skipped or given up on. */
@@ -279,21 +263,17 @@ export async function countOpenEmails({
 
 /**
  * Marks what the conference owes of `kinds` right now as skipped, so switching a kind on only
- * reaches what happens from then on. `asIf` overrides conference fields, to skip what a change
- * about to be written will make due before any sweep can see it.
+ * reaches what happens from then on. Answers how many mails that was.
  */
 export async function skipOpenEmails({
 	conferenceId,
-	kinds,
-	asIf = {}
+	kinds
 }: {
 	conferenceId: string;
 	kinds: readonly EmailKind[];
-	asIf?: Partial<EmailSnapshot['conference']>;
 }) {
-	const loaded = await loadEmailSnapshot(conferenceId);
-	if (!loaded || kinds.length === 0) return 0;
-	const snapshot = { ...loaded, conference: { ...loaded.conference, ...asIf } };
+	const snapshot = await loadEmailSnapshot(conferenceId);
+	if (!snapshot || kinds.length === 0) return 0;
 	const open = await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() });
 	for (let start = 0; start < open.length; start += 500) {
 		await db
@@ -312,39 +292,6 @@ export async function skipOpenEmails({
 	}
 	if (open.length > 0) emailLogPubsub.created();
 	return open.length;
-}
-
-/** Switches kinds of automatic mail on or off for a conference. */
-export async function setEmailKindsEnabled({
-	conferenceId,
-	kinds,
-	enabled
-}: {
-	conferenceId: string;
-	kinds: readonly EmailKind[];
-	enabled: boolean;
-}) {
-	if (kinds.length === 0) return;
-	const rows = await db
-		.insert(schema.conferenceEmailSetting)
-		.values(kinds.map((kind) => ({ conferenceId, kind, enabled })))
-		.onConflictDoUpdate({
-			target: [schema.conferenceEmailSetting.conferenceId, schema.conferenceEmailSetting.kind],
-			set: { enabled, updatedAt: new Date() }
-		})
-		.returning({ id: schema.conferenceEmailSetting.id });
-	// an upsert: new rows for the lists, changed ones by id
-	conferenceEmailSettingPubsub.created();
-	conferenceEmailSettingPubsub.updated(rows.map((row) => row.id));
-}
-
-/** Every conference that sends any automatic mail. */
-export async function conferencesSendingEmails() {
-	const settings = await db.query.conferenceEmailSetting.findMany({
-		where: { enabled: true },
-		columns: { conferenceId: true }
-	});
-	return [...new Set(settings.map((setting) => setting.conferenceId))];
 }
 
 // The sweeps the team started by hand, one per conference at a time; kinds asked for while one runs
@@ -386,120 +333,4 @@ export function sendOpenEmailsInBackground({
 			running.delete(conferenceId);
 		}
 	})();
-}
-
-/** A mail of `kind` as the conference would send it, addressed to `user` with made-up details. */
-export async function previewEmail({
-	conferenceId,
-	kind,
-	user,
-	origin,
-	draft,
-	footerDraft
-}: {
-	conferenceId: string;
-	kind: EmailKind;
-	user: SnapshotUser;
-	origin: string;
-	draft?: EmailTextOverride;
-	footerDraft?: string;
-}) {
-	const snapshot = await loadEmailSnapshot(conferenceId);
-	if (!snapshot) return undefined;
-	const locale = localeOfUser(user.locale);
-	const stored = await loadWording(conferenceId);
-	const wording: ConferenceWording = {
-		texts: draft ? [{ kind, locale, ...draft }] : stored.texts,
-		footers: footerDraft === undefined ? stored.footers : [{ locale, text: footerDraft }]
-	};
-	if (kind === 'BADGE_FOUND')
-		return renderBadgeFoundEmail({
-			recipient: user,
-			conferenceTitle: snapshot.conference.title,
-			wording
-		});
-	if (isAlwaysSent(kind))
-		return previewInvitationEmail({ conference: snapshot.conference, user, origin, wording });
-	const sample = (person: Partial<SnapshotPerson> & { user: SnapshotUser }): SnapshotPerson => ({
-		participantId: person.user.id,
-		paymentStatus: 'PENDING',
-		termsAndConditions: 'PENDING',
-		guardianConsent: 'PENDING',
-		mediaConsent: 'PENDING',
-		didAttend: true,
-		delegation: {
-			applied: true,
-			role: { id: 'sample', kind: 'NATION', name: null, nationAlpha3Code: 'FRA' },
-			committee: 'GV'
-		},
-		single: null,
-		supervisor: null,
-		seatedFromWaitingList: null,
-		...person
-	});
-	const student = sample({
-		user: { ...user, id: 'sample-student', givenName: 'Alex', familyName: 'Beispiel' }
-	});
-	const rejectedStudent = sample({
-		user: { ...user, id: 'sample-student-2', givenName: 'Kim', familyName: 'Muster' },
-		delegation: { applied: true, role: null, committee: null }
-	});
-	const email: DueEmail = {
-		kind,
-		subjectKey: 'preview',
-		recipient: user,
-		person: sample({ user }),
-		teamMember: {
-			id: 'preview',
-			role: 'PARTICIPANT_CARE',
-			user,
-			inviterName: `${user.givenName} ${user.familyName}`
-		},
-		students: [student, rejectedStudent],
-		student,
-		field: 'termsAndConditions',
-		review: {
-			id: 'preview',
-			authorParticipantId: user.id,
-			paperId: 'preview',
-			paperType: 'POSITION_PAPER',
-			agendaItem: 'GV: Klimaschutz',
-			reviewer: { name: 'Robin Beispiel', email: 'reviewer@example.org' },
-			statusAfter: 'CHANGES_REQUESTED'
-		},
-		survey: {
-			id: 'preview',
-			title: m.emailPreviewSurveyTitle({}, { locale }),
-			deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-			answeredBy: []
-		}
-	};
-	return renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording });
-}
-
-/** The team invitation as the conference would send it, to `user` from themselves, with a made-up link. */
-function previewInvitationEmail({
-	conference,
-	user,
-	origin,
-	wording
-}: {
-	conference: EmailSnapshot['conference'];
-	user: SnapshotUser;
-	origin: string;
-	wording: ConferenceWording;
-}) {
-	const locale = localeOfUser(user.locale);
-	return renderTeamInvitationEmail({
-		values: {
-			recipientEmail: user.email,
-			conferenceTitle: conference.title,
-			role: 'PARTICIPANT_CARE',
-			inviterName: `${user.givenName} ${user.familyName}`,
-			inviteUrl: `${origin}/auth/accept-invitation?token=preview`,
-			expiresAt: getInvitationExpiryDate()
-		},
-		locale,
-		...wordingIn({ wording, kind: 'TEAM_INVITATION', locale })
-	});
 }

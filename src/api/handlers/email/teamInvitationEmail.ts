@@ -1,4 +1,4 @@
-import { renderEmail, TeamInvitationEmail } from '#api/services/email/templates/index';
+import { renderEmail, TeamInvitationEmail } from './templates/index';
 import type { TeamRole } from '#api/services/authHelper/rules';
 import { translateTeamRole } from '#lib/utils/enumTranslations';
 import { m } from '#lib/paraglide/messages';

@@ -1,26 +1,25 @@
-import { db, schema } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { conferenceEmailFooterPubsub, conferenceEmailTextPubsub } from '#api/pubsub';
-import { assertCanManageEmails, registerEmailAbilities } from './emailPermissions';
 import {
-	countOpenEmails,
-	previewEmail,
-	sendOpenEmailsInBackground,
-	setEmailKindsEnabled,
-	skipOpenEmails
-} from './emailSweep';
-import { apiError } from '#api/services/errors';
-import { m } from '#lib/paraglide/messages';
-import { toLocale } from '#lib/paraglide/runtime';
-import { z } from 'zod';
-import { isAlwaysSent } from '#lib/helpers/emailKinds';
-import { whereRows } from '#api/db/whereRows';
-import { callerUserId } from '#api/services/authHelper/utils';
-import { personEmails, sendPersonEmail } from './personEmails';
-import type { EmailKind } from './dueEmails';
-import { sendBadgeFoundEmail } from './badgeFoundEmail';
-import { assertCanUpdateParticipantStatus } from '#api/handlers/conferenceParticipant/conferenceParticipantPermissions';
+	assertCanManageEmails,
+	assertCanNotifyBadgeFound,
+	registerEmailAbilities
+} from './emailPermissions';
+import {
+	emailStats,
+	localeSchema,
+	notifyBadgeFound,
+	openEmailCounts,
+	optionalLocaleSchema,
+	personEmails,
+	previewEmailFor,
+	sendOpenEmails,
+	sendOwedEmail,
+	setEmailFooter,
+	setEmailText,
+	skipEmails,
+	switchableKindSchema,
+	switchEmailKind
+} from './emailService';
 
 registerEmailAbilities();
 
@@ -62,10 +61,6 @@ const OpenEmailCount = schemaBuilder.simpleObject('OpenEmailCount', {
 	})
 });
 
-/** The kinds among `kinds` (else all) that follow from state; the team invitation never does. */
-const owedKinds = (kinds?: readonly EmailKind[]) =>
-	(kinds ?? schema.emailKind.enumValues).filter((kind) => !isAlwaysSent(kind));
-
 const PersonEmail = schemaBuilder.simpleObject('PersonEmail', {
 	description: 'A mail one person is owed right now, which the team can send them by hand.',
 	fields: (t) => ({
@@ -92,24 +87,17 @@ const SendPersonEmailResult = schemaBuilder.simpleObject('SendPersonEmailResult'
 	})
 });
 
-/** A language the app speaks. */
-const localeSchema = z.string().transform((value, ctx) => {
-	const locale = toLocale(value);
-	if (locale) return locale;
-	ctx.issues.push({ code: 'custom', input: value, message: m.emailTextUnknownLanguage() });
-	return z.NEVER;
-});
+const REVISION_DESCRIPTION = 'Ignored; a new value makes the client ask again after a change.';
 
 schemaBuilder.queryFields((t) => ({
 	personEmails: t.field({
 		description:
-			'The mails a person is owed in the conference right now, switched on or not, with how each went so far. Reminders count any time before their date: they can be sent early by hand.',
+			'The mails a person is owed in the conference right now, switched on or not, with how each went so far. Reminders count any time before their date: they can be sent early by hand. For participant care of the conference; FORBIDDEN otherwise.',
 		type: [PersonEmail],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			userId: t.arg.id({ required: true }),
-			/** Ignored; a new value makes the client ask again after a change. */
-			revision: t.arg.string()
+			revision: t.arg.string({ description: REVISION_DESCRIPTION })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
@@ -119,46 +107,29 @@ schemaBuilder.queryFields((t) => ({
 
 	openEmailCounts: t.field({
 		description:
-			'How many mails of each kind the conference owes right now and has not sent, skipped or given up on: what sending them by hand would send. All kinds when `kinds` is left out.',
+			'How many mails of each kind the conference owes right now and has not sent, skipped or given up on: what sending them by hand would send. All kinds when `kinds` is left out; the team invitation, which never follows from state, is never counted.',
 		type: [OpenEmailCount],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			kinds: t.arg({ type: [emailKindEnum] }),
-			/** Ignored; a new value makes the client ask again after a change. */
-			revision: t.arg.string()
+			revision: t.arg.string({ description: REVISION_DESCRIPTION })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			return countOpenEmails({
-				conferenceId: args.conferenceId,
-				kinds: owedKinds(args.kinds ?? undefined)
-			});
+			return openEmailCounts({ conferenceId: args.conferenceId, kinds: args.kinds });
 		}
 	}),
 
 	emailStats: t.field({
-		description: 'Sent, failed and skipped mails per kind.',
+		description: "Sent, failed and skipped mails per kind, after the conference's log.",
 		type: [EmailKindStats],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			/** Ignored; a new value makes the client ask again after a change. */
-			revision: t.arg.int()
+			revision: t.arg.int({ description: REVISION_DESCRIPTION })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const rows = await db.query.emailLog.findMany({
-				where: { conferenceId: args.conferenceId },
-				columns: { kind: true, status: true }
-			});
-			return schema.emailKind.enumValues.map((kind) => {
-				const of = rows.filter((row) => row.kind === kind);
-				return {
-					kind,
-					sent: of.filter((row) => row.status === 'SENT').length,
-					failed: of.filter((row) => row.status === 'FAILED').length,
-					skipped: of.filter((row) => row.status === 'SKIPPED').length
-				};
-			});
+			return emailStats(args.conferenceId);
 		}
 	}),
 
@@ -169,45 +140,30 @@ schemaBuilder.queryFields((t) => ({
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			kind: t.arg({ type: emailKindEnum, required: true }),
-			/** Empty or left out: the caller's. */
 			locale: t.arg
-				.string()
-				.validate(z.union([z.literal('').transform(() => undefined), localeSchema]).nullish()),
-			draft: t.arg.boolean(),
+				.string({ description: "Empty or left out: the caller's." })
+				.validate(optionalLocaleSchema),
+			draft: t.arg.boolean({
+				description: 'Preview `subject`, `heading` and `body` instead of the stored text.'
+			}),
 			subject: t.arg.string(),
 			heading: t.arg.string(),
 			body: t.arg.string(),
 			footer: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
-			const callerId = ctx.mustBeLoggedIn().sub;
-			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const user = await db.query.user
-				.findFirst({
-					where: { id: callerId },
-					columns: {
-						id: true,
-						email: true,
-						givenName: true,
-						familyName: true,
-						locale: true,
-						birthday: true
-					}
-				})
-				.then(assertFindFirstExists);
-			const locale = args.locale ?? user.locale;
-			const preview = await previewEmail({
+			const { callerId } = await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			return previewEmailFor({
 				conferenceId: args.conferenceId,
+				callerId,
 				kind: args.kind,
-				user: { ...user, locale },
+				locale: args.locale ?? undefined,
 				origin: ctx.requestUrl().origin,
 				draft: args.draft
 					? { subject: args.subject, heading: args.heading, body: args.body }
 					: undefined,
 				footerDraft: args.footer ?? undefined
 			});
-			if (!preview) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
-			return { subject: preview.subject, html: preview.html };
 		}
 	})
 }));
@@ -218,13 +174,10 @@ const conferenceKindsArgs = schemaBuilder.args((t) => ({
 	kinds: t.field({ type: [emailKindEnum], required: true })
 }));
 
-/** Empty or blank: the default text. */
-const ownText = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
-
 schemaBuilder.mutationFields((t) => ({
 	sendPersonEmail: t.field({
 		description:
-			'Sends a person one mail they are owed right now, however often it went out before and whether or not its kind is switched on. Logged as sent by hand, by the caller.',
+			'Sends a person one mail they are owed right now, however often it went out before and whether or not its kind is switched on. Logged as sent by hand, by the caller. CONFLICT when they are not owed it (any more).',
 		type: SendPersonEmailResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
@@ -233,37 +186,21 @@ schemaBuilder.mutationFields((t) => ({
 			subjectKey: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const sentById = callerUserId(ctx);
-			if (!sentById) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-			const error = await sendPersonEmail({
-				conferenceId: args.conferenceId,
-				userId: args.userId,
-				kind: args.kind,
-				subjectKey: args.subjectKey,
-				sentById,
-				origin: ctx.requestUrl().origin
-			});
-			if (error === undefined) throw apiError({ code: 'CONFLICT', message: m.emailSendNotOwed() });
-			return { sent: error === null, error };
+			const { callerId } = await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			return sendOwedEmail({ ...args, sentById: callerId, origin: ctx.requestUrl().origin });
 		}
 	}),
 
 	notifyBadgeFound: t.field({
 		description:
-			'Tells the person of a participant row by mail that the badge they lost was handed in to participant care (BADGE_FOUND). Sent right away and logged as sent by hand, by the caller; every call sends it again.',
+			'Tells the person of a participant row by mail that the badge they lost was handed in to participant care (BADGE_FOUND). Sent right away and logged as sent by hand, by the caller; every call sends it again. NOT_FOUND for a row the caller may not update.',
 		type: SendPersonEmailResult,
 		args: {
-			/** The person's participant row. */
-			id: t.arg.id({ required: true })
+			id: t.arg.id({ required: true, description: "The person's participant row." })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanUpdateParticipantStatus({ ctx, id: args.id });
-			const sentById = callerUserId(ctx);
-			if (!sentById) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-			const error = await sendBadgeFoundEmail({ participantId: args.id, sentById });
-			if (error === undefined) throw apiError({ code: 'NOT_FOUND', message: m.notFound() });
-			return { sent: error === null, error };
+			const { callerId } = await assertCanNotifyBadgeFound({ ctx, participantId: args.id });
+			return notifyBadgeFound({ participantId: args.id, sentById: callerId });
 		}
 	}),
 
@@ -274,14 +211,11 @@ schemaBuilder.mutationFields((t) => ({
 		args: conferenceKindsArgs,
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const kinds = owedKinds(args.kinds);
-			const counts = await countOpenEmails({ conferenceId: args.conferenceId, kinds });
-			sendOpenEmailsInBackground({
+			return sendOpenEmails({
 				conferenceId: args.conferenceId,
-				kinds,
+				kinds: args.kinds,
 				origin: ctx.requestUrl().origin
 			});
-			return counts.reduce((sum, count) => sum + count.open, 0);
 		}
 	}),
 
@@ -292,7 +226,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: conferenceKindsArgs,
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			return skipOpenEmails({ conferenceId: args.conferenceId, kinds: owedKinds(args.kinds) });
+			return skipEmails(args);
 		}
 	}),
 
@@ -310,34 +244,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const { locale } = args;
-			const changes = {
-				subject: args.subject === undefined ? undefined : ownText(args.subject),
-				heading: args.heading === undefined ? undefined : ownText(args.heading),
-				body: args.body === undefined ? undefined : ownText(args.body)
-			};
-			const table = schema.conferenceEmailText;
-			const { id, deleted } = await db.transaction(async (tx) => {
-				const [row] = await tx
-					.insert(table)
-					.values({ conferenceId: args.conferenceId, kind: args.kind, locale, ...changes })
-					.onConflictDoUpdate({
-						target: [table.conferenceId, table.kind, table.locale],
-						set: { ...changes, updatedAt: new Date() }
-					})
-					.returning();
-				if (!row.subject && !row.heading && !row.body) {
-					await tx.delete(table).where(whereRows({ table, filter: { id: row.id } }));
-					return { id: row.id, deleted: true };
-				}
-				return { id: row.id, deleted: false };
-			});
-			if (deleted) conferenceEmailTextPubsub.removed();
-			else {
-				// an upsert: a new row for the lists, a changed one by id
-				conferenceEmailTextPubsub.created();
-				conferenceEmailTextPubsub.updated(id);
-			}
+			await setEmailText(args);
 			return true;
 		}
 	}),
@@ -353,55 +260,28 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			const { locale } = args;
-			const text = ownText(args.text);
-			const table = schema.conferenceEmailFooter;
-			if (!text) {
-				await db
-					.delete(table)
-					.where(whereRows({ table, filter: { conferenceId: args.conferenceId, locale } }));
-				conferenceEmailFooterPubsub.removed();
-			} else {
-				const row = await db
-					.insert(table)
-					.values({ conferenceId: args.conferenceId, locale, text })
-					.onConflictDoUpdate({
-						target: [table.conferenceId, table.locale],
-						set: { text, updatedAt: new Date() }
-					})
-					.returning({ id: table.id })
-					.then(assertFirstEntryExists);
-				// an upsert: a new row for the lists, a changed one by id
-				conferenceEmailFooterPubsub.created();
-				conferenceEmailFooterPubsub.updated(row.id);
-			}
+			await setEmailFooter(args);
 			return true;
 		}
 	}),
 
 	setConferenceEmailEnabled: t.field({
 		description:
-			'Switches the automatic sending of one kind on or off for a conference: the `send-emails` job sends what is owed of the kinds switched on. Switching it on with `notifyExisting: false` marks everybody it would reach right now as skipped, so only what happens from now on is sent.',
+			'Switches the automatic sending of one kind on or off for a conference: the `send-emails` job sends what is owed of the kinds switched on. The kinds always sent where they happen (the team invitation, the found badge) cannot be switched (INVALID_INPUT).',
 		type: 'Boolean',
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			kind: t.arg({ type: emailKindEnum, required: true }),
 			enabled: t.arg.boolean({ required: true }),
-			notifyExisting: t.arg.boolean()
+			notifyExisting: t.arg.boolean({
+				description:
+					'Switching on with `false` marks everybody the kind would reach right now as skipped, so only what happens from now on is sent.'
+			})
 		},
-		validate: z
-			.object({ kind: z.string() })
-			.refine(({ kind }) => !isAlwaysSent(kind), { error: () => m.emailKindAlwaysSent() }),
+		validate: switchableKindSchema,
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
-			if (args.enabled && args.notifyExisting === false) {
-				await skipOpenEmails({ conferenceId: args.conferenceId, kinds: [args.kind] });
-			}
-			await setEmailKindsEnabled({
-				conferenceId: args.conferenceId,
-				kinds: [args.kind],
-				enabled: args.enabled
-			});
+			await switchEmailKind(args);
 			return true;
 		}
 	})

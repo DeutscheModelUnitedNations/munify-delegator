@@ -2,7 +2,7 @@ import { db, schema } from '#api/db/db';
 import { dueEmails, type DueEmail, type EmailKind } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
 import { emailDetail } from './emailContent';
-import { enabledKinds } from './emailSweep';
+import { enabledKinds } from './emailSettings';
 import { loadWording, renderAutomaticEmail, sendByHand } from './emailDelivery';
 
 /**

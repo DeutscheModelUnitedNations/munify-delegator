@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
+import { renderEmail, NotificationEmail } from './templates/index';
 import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
 import type { Locale } from '#lib/paraglide/runtime';
 import type { SnapshotUser } from './dueEmails';

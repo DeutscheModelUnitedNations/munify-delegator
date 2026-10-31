@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
 import { JOBS_SECRET } from '$app/env/private';
-import { conferencesSendingEmails, sendDueEmails } from '#api/handlers/email/emailSweep';
+import { sendDueEmails } from '#api/handlers/email/emailSweep';
+import { conferencesSendingEmails } from '#api/handlers/email/emailSettings';
 import type { RequestHandler } from './$types';
 
 /** How many mails one call sends at most; the job calls again while some remain. */

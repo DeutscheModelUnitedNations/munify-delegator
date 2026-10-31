@@ -17,7 +17,7 @@ vi.mock('#api/db/db', () => ({
 	},
 	schema: {}
 }));
-vi.mock('#api/services/email/emailService', () => ({ emailService: {} }));
+vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
 vi.mock('#api/services/requestLocale', () => ({
 	localeOfUser: (locale: string | null) => locale ?? 'de',
@@ -28,7 +28,7 @@ vi.mock('./teamInvitationEmail', () => ({
 	renderTeamInvitationEmail: (...args: unknown[]) => ({ team: 'invitation', args })
 }));
 
-const { previewEmail } = await import('./emailSweep');
+const { previewEmail } = await import('./emailPreview');
 
 const conference: EmailSnapshot['conference'] = {
 	id: 'c1',

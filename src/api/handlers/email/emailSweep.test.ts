@@ -1,12 +1,12 @@
 import { describe, expect, test, vi } from 'vitest';
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
-vi.mock('#api/services/email/emailService', () => ({ emailService: {} }));
+vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 vi.mock('#api/pubsub', () => ({
 	emailLogPubsub: { updated: () => undefined },
 	conferenceEmailSettingPubsub: { updated: () => undefined }
 }));
-vi.mock('#api/services/email/templates/index', () => ({
+vi.mock('./templates/index', () => ({
 	renderEmail: () => undefined,
 	NotificationEmail: undefined
 }));

@@ -1,9 +1,9 @@
 import { db, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
-import { emailService } from '#api/services/email/emailService';
+import { mailTransport } from './mailTransport';
 import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
 import { getLocale, toLocale, type Locale } from '#lib/paraglide/runtime';
-import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
+import { renderEmail, NotificationEmail } from './templates/index';
 import { emailLogPubsub } from '#api/pubsub';
 import { whereRows } from '#api/db/whereRows';
 import { emailFooterParagraphs } from './emailText';
@@ -131,7 +131,7 @@ export async function deliver({
 }) {
 	try {
 		const { subject, html, text, replyTo } = await render();
-		const result = await emailService.sendEmail({ to, subject, html, text, replyTo });
+		const result = await mailTransport.sendEmail({ to, subject, html, text, replyTo });
 		return await settle({ logId, error: sendingError(result) });
 	} catch (error) {
 		return settle({ logId, error: errorText(error) });

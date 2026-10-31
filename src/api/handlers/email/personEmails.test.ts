@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import type { DueEmail } from './dueEmails';
 
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
-vi.mock('#api/services/email/emailService', () => ({ emailService: {} }));
+vi.mock('./mailTransport', () => ({ mailTransport: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
 
 const { personEmailsOf } = await import('./personEmails');

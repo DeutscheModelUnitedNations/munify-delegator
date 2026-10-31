@@ -913,6 +913,10 @@ bun run preview
 
 #### 9. Automatic emails
 
+- **Everything about mails lives in `#api/handlers/email/`**, sending (`mailTransport.ts`) and the
+  templates (`templates/`) included. The resolvers call `emailService.ts`, whose header lists the
+  focused modules beside it: the sweep, the settings (switches, texts, footers), the preview, a
+  person's mails, the mails sent where they happen, and rendering one mail.
 - **Every mail follows from state, not from an event.** `dueEmails` (`#api/handlers/email/`) is
   pure: given a conference snapshot (`loadEmailSnapshot`) and the time, it lists every mail the
   conference owes - acceptances and rejections once the assignment is released, seats from the
@@ -985,7 +989,7 @@ bun run preview
   time per conference, any kinds) and the `send-emails` job, which calls `/api/jobs/send-emails`
   with `x-jobs-secret: JOBS_SECRET` every few minutes and sends the kinds switched to automatic,
   reminders included; both go through `sendDueEmails`. The app renders the mails (one template, `NotificationEmail.svelte` on
-  `#api/services/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
+  `#api/handlers/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
   reads its colours, radius and font from the corporate identity's CSS (`?raw`; vitest lets those
   files through with `test.css.include`); values per kind in
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
