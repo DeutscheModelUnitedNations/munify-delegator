@@ -6,7 +6,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
@@ -85,8 +85,9 @@ async function assertReferencesInConference({
 }
 
 /**
- * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference, and the days, committees and roles the track names are the conference's.
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the conference, and (INVALID_INPUT) unless the days, committees and roles
+ * the track names are the conference's.
  */
 export async function assertCanCreateCalendarTrack({
 	ctx,
@@ -102,8 +103,9 @@ export async function assertCanCreateCalendarTrack({
 }
 
 /**
- * Refuses unless the caller may update the track (participant care of its conference), and the
- * days, committees and roles it is given are its conference's.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the track: `manageParticipants`
+ * (project management and participant care) in its conference; and (INVALID_INPUT) unless the
+ * days, committees and roles it is given are its conference's. Returns its conference id.
  */
 export async function assertCanUpdateCalendarTrack({
 	ctx,
@@ -121,4 +123,13 @@ export async function assertCanUpdateCalendarTrack({
 		})
 		.then(assertFindFirstExists);
 	await assertReferencesInConference({ conferenceId: track.conferenceId, refs });
+	return { conferenceId: track.conferenceId };
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the track: `manageParticipants`
+ * (project management and participant care) in its conference.
+ */
+export async function assertCanDeleteCalendarTrack({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'calendarTrack', action: 'delete', id });
 }

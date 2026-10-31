@@ -580,6 +580,7 @@
 	"calendarStartTime": "Startzeit",
 	"calendarTargetDay": "Zieltag",
 	"calendarTrack": "Track",
+	"calendarTrackNameTaken": "Die Konferenz hat schon einen Track mit diesem Namen.",
 	"calendarTrackOtherConference": "Die Tage, Gremien und Rollen eines Tracks müssen aus seiner Konferenz sein.",
 	"calendarTrackRoles": "Rollen",
 	"calendarTrackSeatsHint": "Für wen der Track ist: Wer in einem dieser Gremien sitzt oder eine dieser Rollen hat, sieht ihn auf dem Dashboard als seinen Track.",

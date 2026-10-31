@@ -580,6 +580,7 @@
 	"calendarStartTime": "Start time",
 	"calendarTargetDay": "Target day",
 	"calendarTrack": "Track",
+	"calendarTrackNameTaken": "The conference already has a track of this name.",
 	"calendarTrackOtherConference": "A track's days, committees and roles have to be its conference's.",
 	"calendarTrackRoles": "Roles",
 	"calendarTrackSeatsHint": "Whom the track is for: whoever sits in one of these committees or holds one of these roles sees it on their dashboard as their track.",

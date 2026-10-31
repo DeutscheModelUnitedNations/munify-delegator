@@ -2,6 +2,20 @@ import { db, type Transaction, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import { calendarDayPubsub, calendarEntryPubsub, calendarTrackPubsub } from '#api/pubsub';
+import { apiError, isUniqueViolationOn } from '#api/services/errors';
+import { m } from '#lib/paraglide/messages';
+
+/** Turns the unique index on the conference's track names into CONFLICT. */
+async function refusingTakenName<T>(write: Promise<T>) {
+	try {
+		return await write;
+	} catch (error) {
+		if (isUniqueViolationOn({ error, column: 'name' })) {
+			throw apiError({ code: 'CONFLICT', message: m.calendarTrackNameTaken() });
+		}
+		throw error;
+	}
+}
 
 /** Makes `ids` the rows `table` links the track (`a`) to. */
 async function setLinks({
@@ -28,6 +42,7 @@ interface Seats {
 	conferenceRoleIds?: readonly string[] | null;
 }
 
+/** Replaces whom the track is for: each given list, a left out one stays. */
 async function setSeats({
 	tx,
 	trackId,
@@ -55,7 +70,10 @@ async function setSeats({
 	}
 }
 
-/** Creates a track on the given days, for the given committees and roles. */
+/**
+ * Creates a track on the given days, for the given committees and roles; a name another track of
+ * the conference has is refused (CONFLICT). Returns its id.
+ */
 export async function createCalendarTrack({
 	values,
 	calendarDayIds,
@@ -66,26 +84,31 @@ export async function createCalendarTrack({
 	seats: Seats;
 }) {
 	const dayIds = [...new Set(calendarDayIds)];
-	const created = await db.transaction(async (tx) => {
-		const created = await tx
-			.insert(schema.calendarTrack)
-			.values(values)
-			.returning({ id: schema.calendarTrack.id })
-			.then(assertFirstEntryExists);
-		if (dayIds.length > 0) {
-			await tx
-				.insert(schema.calendarDayToCalendarTrack)
-				.values(dayIds.map((dayId) => ({ a: dayId, b: created.id })));
-		}
-		await setSeats({ tx, trackId: created.id, seats });
-		return created;
-	});
+	const created = await refusingTakenName(
+		db.transaction(async (tx) => {
+			const created = await tx
+				.insert(schema.calendarTrack)
+				.values(values)
+				.returning({ id: schema.calendarTrack.id })
+				.then(assertFirstEntryExists);
+			if (dayIds.length > 0) {
+				await tx
+					.insert(schema.calendarDayToCalendarTrack)
+					.values(dayIds.map((dayId) => ({ a: dayId, b: created.id })));
+			}
+			await setSeats({ tx, trackId: created.id, seats });
+			return created;
+		})
+	);
 	calendarTrackPubsub.created();
 	if (dayIds.length > 0) calendarDayPubsub.updated(dayIds);
-	return created;
+	return created.id;
 }
 
-/** Changes the given fields of a track and, when given, whom it is for. */
+/**
+ * Changes the given fields of a track and, when given, whom it is for; a name another track of the
+ * conference has is refused (CONFLICT).
+ */
 export async function updateCalendarTrack({
 	id,
 	values,
@@ -95,15 +118,17 @@ export async function updateCalendarTrack({
 	values: Partial<typeof schema.calendarTrack.$inferInsert>;
 	seats: Seats;
 }) {
-	await db.transaction(async (tx) => {
-		if (Object.values(values).some((value) => value !== undefined)) {
-			await tx
-				.update(schema.calendarTrack)
-				.set(values)
-				.where(whereRows({ table: schema.calendarTrack, filter: { id } }));
-		}
-		await setSeats({ tx, trackId: id, seats });
-	});
+	await refusingTakenName(
+		db.transaction(async (tx) => {
+			if (Object.values(values).some((value) => value !== undefined)) {
+				await tx
+					.update(schema.calendarTrack)
+					.set(values)
+					.where(whereRows({ table: schema.calendarTrack, filter: { id } }));
+			}
+			await setSeats({ tx, trackId: id, seats });
+		})
+	);
 	calendarTrackPubsub.updated(id);
 }
 
@@ -158,6 +183,7 @@ function entriesOnTrack({
 	});
 }
 
+/** Announces the entries `detachEntries` changed, once its transaction has committed. */
 function announceEntries({ keptIds, deletedIds }: { keptIds: string[]; deletedIds: string[] }) {
 	if (keptIds.length > 0) calendarEntryPubsub.updated(keptIds);
 	if (deletedIds.length > 0) calendarEntryPubsub.removed();
