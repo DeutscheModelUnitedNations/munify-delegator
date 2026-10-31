@@ -2176,7 +2176,7 @@ export type Mutation = {
   }) => Calendarday,
   createCalendarEntry: (p: {
     calendarDayId: ID,
-    calendarTrackIds?: ID[] | null | undefined,
+    calendarTrackIds: ID[],
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
     endTime: DateTime,

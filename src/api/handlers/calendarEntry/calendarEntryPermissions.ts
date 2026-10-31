@@ -55,8 +55,8 @@ export function registerCalendarEntryAbilities() {
 
 /**
  * Refuses (INVALID_INPUT) unless the day, place and survey options an entry names are the
- * conference's and the tracks are the day's, and a given track list is not empty. Otherwise a
- * conference's calendar could pull in another conference's venues, or move entries over to it.
+ * conference's and the tracks are the day's. Otherwise a conference's calendar could pull in
+ * another conference's venues, or move entries over to it.
  */
 async function assertReferencesInConference({
 	conferenceId,
@@ -71,9 +71,6 @@ async function assertReferencesInConference({
 	};
 }) {
 	const trackIds = [...new Set(refs.calendarTrackIds ?? [])];
-	if (refs.calendarTrackIds && trackIds.length === 0) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.calendarEntryNeedsTrack() });
-	}
 	const found = await Promise.all([
 		db.query.calendarDay
 			.findFirst({ where: { id: refs.calendarDayId, conferenceId }, columns: { id: true } })
@@ -136,7 +133,8 @@ async function tracksOfDay({
 
 /**
  * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the day's conference, and the tracks, place and survey options the entry names belong there.
+ * the day's conference (`assertCanManageCalendarDay`, NOT_FOUND), and the tracks, place and survey
+ * options the entry names belong there (INVALID_INPUT).
  */
 export async function assertCanCreateCalendarEntry({
 	ctx,
@@ -145,7 +143,7 @@ export async function assertCanCreateCalendarEntry({
 	ctx: ApiContext;
 	args: {
 		calendarDayId: string;
-		calendarTrackIds?: readonly string[] | null;
+		calendarTrackIds: readonly string[];
 		placeId?: string | null;
 		surveyOptionIds?: readonly string[] | null;
 	};
@@ -155,7 +153,7 @@ export async function assertCanCreateCalendarEntry({
 		conferenceId: day.conferenceId,
 		refs: {
 			calendarDayId: args.calendarDayId,
-			calendarTrackIds: args.calendarTrackIds ?? [],
+			calendarTrackIds: args.calendarTrackIds,
 			placeId: args.placeId,
 			surveyOptionIds: args.surveyOptionIds
 		}
@@ -163,8 +161,9 @@ export async function assertCanCreateCalendarEntry({
 }
 
 /**
- * Refuses unless the caller may update the entry (participant care of its conference), and the day,
- * tracks, place and survey options it is given belong to its conference.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the entry: `manageParticipants`
+ * (project management and participant care) in its conference. Refuses (INVALID_INPUT) a day,
+ * tracks, place or survey options that are not its conference's.
  */
 export async function assertCanUpdateCalendarEntry({
 	ctx,

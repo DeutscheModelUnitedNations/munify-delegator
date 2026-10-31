@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { nullToUndefined } from '#api/services/args';
 import { createCalendarEntry, updateCalendarEntry } from './calendarEntryService';
@@ -10,6 +10,7 @@ import {
 } from './calendarEntryPermissions';
 import { calendarEntryPubsub } from '#api/pubsub';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import { entryTimesSchema, entryTrackIdsSchema } from './entryRules';
 
 registerCalendarEntryAbilities();
 
@@ -18,10 +19,18 @@ query({ table: 'calendarEntry' });
 
 const calendarEntryColorEnum = enum_({ tsName: 'calendarEntryColor' });
 
+/** The entry as the caller may read it, for re-reading the row a mutation wrote. */
+async function readableEntry({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id } }).query.single;
+}
+
+const surveyOptionsDescription =
+	'Shows the entry only to those who picked one of these survey options of the conference (and to the team).';
+
 schemaBuilder.mutationFields((t) => ({
 	createCalendarEntry: t.drizzleField({
 		description:
-			'Adds an entry to a schedule day, on the given tracks; with `surveyOptionIds` only those who picked one of them (and the team) see it.',
+			"Adds an entry to a schedule day, on the given tracks of the day. An entry ending before it starts, without a track, or naming a track, place or survey option that is not the day's conference's is refused with INVALID_INPUT.",
 		type: CalendarEntryRef,
 		args: {
 			calendarDayId: t.arg.id({ required: true }),
@@ -32,15 +41,17 @@ schemaBuilder.mutationFields((t) => ({
 			fontAwesomeIcon: t.arg.string(),
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
-			calendarTrackIds: t.arg.idList(),
+			calendarTrackIds: t.arg
+				.idList({ required: true, description: 'Tracks of the day; at least one.' })
+				.validate(entryTrackIdsSchema),
 			placeId: t.arg.id(),
-			/** Shows the entry only to those who picked one of these survey options */
-			surveyOptionIds: t.arg.idList()
+			surveyOptionIds: t.arg.idList({ description: surveyOptionsDescription })
 		},
+		validate: entryTimesSchema,
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanCreateCalendarEntry({ ctx, args });
 
-			const created = await createCalendarEntry({
+			const createdId = await createCalendarEntry({
 				values: {
 					calendarDayId: args.calendarDayId,
 					name: args.name,
@@ -57,19 +68,14 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			return db.query.calendarEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableEntry({ ctx, id: createdId })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	updateCalendarEntry: t.drizzleField({
 		description:
-			'Changes the given fields of a schedule entry; the others stay as they are, `null` clears a nullable one. An empty `surveyOptionIds` shows the entry to everybody again.',
+			"Changes the given fields of a schedule entry; left out keeps a field, `null` clears a nullable one. An entry ending before it starts as written, an empty track list, or a day, track, place or survey option that is not the entry's conference's is refused with INVALID_INPUT; moving to another day keeps the tracks only if that day has them too.",
 		type: CalendarEntryRef,
 		args: {
 			id: t.arg.id({ required: true }),
@@ -81,11 +87,15 @@ schemaBuilder.mutationFields((t) => ({
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
 			calendarDayId: t.arg.id(),
-			calendarTrackIds: t.arg.idList(),
+			calendarTrackIds: t.arg
+				.idList({ description: 'Replaces the tracks; left out keeps them.' })
+				.validate(entryTrackIdsSchema.nullish()),
 			placeId: t.arg.id(),
-			/** Shows the entry only to those who picked one of these survey options */
-			surveyOptionIds: t.arg.idList()
+			surveyOptionIds: t.arg.idList({
+				description: `${surveyOptionsDescription} Left out keeps them, an empty list shows the entry to everybody again.`
+			})
 		},
+		validate: entryTimesSchema,
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanUpdateCalendarEntry({ ctx, args });
 
@@ -110,12 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 			});
 
 			return db.query.calendarEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableEntry({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),

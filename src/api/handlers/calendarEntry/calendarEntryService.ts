@@ -2,6 +2,9 @@ import { db, type Transaction, schema } from '#api/db/db';
 import { calendarEntryPubsub } from '#api/pubsub';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
+import { apiError } from '#api/services/errors';
+import { m } from '#lib/paraglide/messages';
+import { endsAfterStart } from './entryRules';
 
 /** Makes `trackIds` the tracks of an entry. */
 async function setTracks({
@@ -47,7 +50,7 @@ async function setSurveyOptions({
 
 /**
  * Creates an entry together with its tracks and survey options, so it never exists without them
- * (and is never shown to everybody in between).
+ * (and is never shown to everybody in between). Returns its id.
  */
 export async function createCalendarEntry({
 	values,
@@ -55,27 +58,28 @@ export async function createCalendarEntry({
 	surveyOptionIds
 }: {
 	values: typeof schema.calendarEntry.$inferInsert;
-	trackIds: readonly string[] | null | undefined;
+	trackIds: readonly string[];
 	surveyOptionIds: readonly string[] | null | undefined;
 }) {
 	const created = await db.transaction(async (tx) => {
 		const created = await tx
 			.insert(schema.calendarEntry)
 			.values(values)
-			.returning()
+			.returning({ id: schema.calendarEntry.id })
 			.then(assertFirstEntryExists);
-		if (trackIds?.length) await setTracks({ tx, entryId: created.id, trackIds });
+		await setTracks({ tx, entryId: created.id, trackIds });
 		if (surveyOptionIds?.length)
 			await setSurveyOptions({ tx, entryId: created.id, optionIds: surveyOptionIds });
 		return created;
 	});
 	calendarEntryPubsub.created();
-	return created;
+	return created.id;
 }
 
 /**
  * Changes an entry and, when `trackIds` or `surveyOptionIds` is given, replaces its tracks or
- * survey options in the same step.
+ * survey options in the same step. Refuses (INVALID_INPUT) an entry that ends before it starts as
+ * written, which an update giving only one of the times can cause.
  */
 export async function updateCalendarEntry({
 	id,
@@ -89,10 +93,17 @@ export async function updateCalendarEntry({
 	surveyOptionIds: readonly string[] | null | undefined;
 }) {
 	await db.transaction(async (tx) => {
-		await tx
+		const [written] = await tx
 			.update(schema.calendarEntry)
 			.set(values)
-			.where(whereRows({ table: schema.calendarEntry, filter: { id } }));
+			.where(whereRows({ table: schema.calendarEntry, filter: { id } }))
+			.returning({
+				startTime: schema.calendarEntry.startTime,
+				endTime: schema.calendarEntry.endTime
+			});
+		if (written && !endsAfterStart(written)) {
+			throw apiError({ code: 'INVALID_INPUT', message: m.calendarEntryEndBeforeStart() });
+		}
 		if (trackIds) await setTracks({ tx, entryId: id, trackIds });
 		if (surveyOptionIds) await setSurveyOptions({ tx, entryId: id, optionIds: surveyOptionIds });
 	});
