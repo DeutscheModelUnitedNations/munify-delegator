@@ -164,7 +164,7 @@ export async function waitForHydration(page: Page): Promise<void> {
 }
 
 /**
- * Fills the profile fields the app requires (see my-account/form-schema.ts), then saves.
+ * Fills the profile fields the app requires (see `#lib/schemata/userForm`), then saves.
  */
 async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Promise<void> {
 	// Input fired before hydration attaches the handlers is lost.

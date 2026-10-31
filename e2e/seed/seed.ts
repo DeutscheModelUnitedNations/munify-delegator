@@ -272,7 +272,7 @@ export default async function seed() {
 			...makeSeedUser(),
 			id,
 			email: `${id}@e2e.test`,
-			// `userFormSchema` (src/routes/(authenticated)/my-account/form-schema.ts) is what decides
+			// `userFormSchema` (`#lib/schemata/userForm`) is what decides
 			// whether a login redirects to /my-account - and `makeSeedUser()` never satisfies it:
 			// `country` is a full name (`faker.location.country()`), not the ISO-3166 alpha-3 code the
 			// schema validates, and `emergencyContacts` isn't set at all. Without this override every

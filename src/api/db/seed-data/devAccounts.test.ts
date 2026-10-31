@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { loadConfigFile } from 'oidc-mock';
 import { describe, expect, test } from 'vitest';
-import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userFormSchema } from '#lib/schemata/userForm';
 import { devAccountClaims, devAccounts } from './devAccounts';
 import { makeDevAccountUser } from './user';
 import { withGeneratedUsers } from './oidcMockUsers';

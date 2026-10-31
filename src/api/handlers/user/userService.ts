@@ -9,7 +9,7 @@ import {
 } from '#api/pubsub';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
-import { userUpdateSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userUpdateSchema } from '#lib/schemata/userForm';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { z } from 'zod';

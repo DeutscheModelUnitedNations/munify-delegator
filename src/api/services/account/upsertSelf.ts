@@ -3,7 +3,7 @@ import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
 import { userPubsub } from '#api/pubsub';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
-import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userFormSchema } from '#lib/schemata/userForm';
 import { isUniqueViolationOn } from '#api/services/errors';
 import { reportEmailConflict } from './emailConflict';
 import { claimPendingInvitation } from '#api/handlers/teamMemberInvitation/pendingInvitation';

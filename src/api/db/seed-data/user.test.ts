@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { faker } from '@faker-js/faker';
-import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userFormSchema } from '#lib/schemata/userForm';
 import { makeSeedUser } from './user';
 
 describe('makeSeedUser', () => {

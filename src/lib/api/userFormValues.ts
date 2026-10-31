@@ -7,10 +7,7 @@
  */
 
 import type { z } from 'zod';
-import type {
-	adminUserFormSchema,
-	userFormSchema
-} from '../../routes/(authenticated)/my-account/form-schema';
+import type { adminUserFormSchema, userFormSchema } from '#lib/schemata/userForm';
 import { alpha3ToAlpha2 } from '#lib/helpers/countryCodes';
 import { addressRules } from '#lib/helpers/addressRules';
 import { fromCalendarDay, toCalendarDay } from '#lib/helpers/calendarDay';

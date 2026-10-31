@@ -13,7 +13,7 @@ import {
 	SUPERVISOR_MIN_AGE,
 	yearsAgo
 } from '#lib/helpers/plausibilityRules';
-import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { userFormSchema } from '#lib/schemata/userForm';
 import { nullToUndefined } from '#api/services/args';
 import { totalSeats } from '#api/handlers/seatPlanning/seatRules';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';

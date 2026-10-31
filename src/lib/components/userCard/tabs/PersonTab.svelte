@@ -4,7 +4,7 @@
 	import { m } from '#lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { adminUserFormSchema } from '../../../../routes/(authenticated)/my-account/form-schema';
+	import { adminUserFormSchema } from '#lib/schemata/userForm';
 	import Form from '#lib/components/form/Form.svelte';
 	import FormTextInput from '#lib/components/form/FormTextInput.svelte';
 	import FormSelect from '#lib/components/form/FormSelect.svelte';
