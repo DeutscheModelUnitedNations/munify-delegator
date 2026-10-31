@@ -1,7 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-// The bin count's limit comes from the nametag handler, which reads the database.
-vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 import { conferenceSettingSchemas } from './conferenceSettings';
 
 const accepts = (schema: { safeParse: (value: unknown) => { success: boolean } }, value: unknown) =>

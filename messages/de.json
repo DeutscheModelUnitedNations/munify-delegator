@@ -1580,6 +1580,7 @@
 	"nametagBinCount": "Anzahl der Namensschild-Gruppen",
 	"nametagBinCountHint": "Das legt die Anzahl der Tische fest. Nicht mitgezählt: Presse, Einzelrollen, NSAs und Betreuende bekommen immer einen weiteren Tisch für sich.",
 	"nametagBinEmpty": "Nicht belegt",
+	"nametagBinIndexInvalid": "Die Nummer des Tisches ist ungültig.",
 	"nametagBinNations": "Nationen-Delegierte",
 	"nametagBinOthers": "Presse, Einzelrollen, NSAs & Betreuende",
 	"nametagBinParticipants": "Teilnehmende",

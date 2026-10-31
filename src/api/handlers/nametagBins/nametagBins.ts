@@ -1,9 +1,14 @@
 import { schemaBuilder } from '#api/rumble';
-import { assertCanReadNametagBins } from './nametagBinsPermissions';
-import { loadNametagBinGroups, loadNametagBins, loadOwnNametagTable } from './bins';
-import { normalizeConferenceLanguage } from '#lib/helpers/conferenceLanguage';
-import { db } from '#api/db/db';
-import { assertFindFirstExists } from '@m1212e/rumble';
+import { assertCanReadNametagBins, assertCanReadOwnNametagTable } from './nametagBinsPermissions';
+import {
+	loadNametagBinGroups,
+	loadNametagBins,
+	nametagConference,
+	ownNametagTableIn
+} from './nametagBinsService';
+import { binCountSchema } from './bins';
+import { z } from 'zod';
+import { m } from '#lib/paraglide/messages';
 
 const NametagBin = schemaBuilder.simpleObject('NametagBin', {
 	description:
@@ -40,31 +45,29 @@ const OwnNametagTable = schemaBuilder.simpleObject('OwnNametagTable', {
 	})
 });
 
-/** The bin count and language of a conference the caller may read the bins of. */
-async function binConference(conferenceId: string) {
-	const conference = await db.query.conference
-		.findFirst({
-			where: { id: conferenceId },
-			columns: { nametagBinCount: true, language: true }
-		})
-		.then(assertFindFirstExists);
-	return { ...conference, language: normalizeConferenceLanguage(conference.language) };
-}
+/** A bin's position in the split, from zero. */
+const binIndexSchema = z
+	.number()
+	.int({ error: () => m.nametagBinIndexInvalid() })
+	.min(0, { error: () => m.nametagBinIndexInvalid() });
 
 schemaBuilder.queryFields((t) => ({
 	nametagBins: t.field({
 		description:
-			"How the seated participants split into the conference's nametag bins. Computed on request: it only moves when the assignment does, and the team reads it while handing out nametags.",
+			"How the seated participants split into the conference's nametag bins. Computed on request: it only moves when the assignment does, and the team reads it while handing out nametags. Participant care only (FORBIDDEN otherwise).",
 		type: [NametagBin],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			/** Preview a count before it is saved; defaults to the conference's setting. */
-			binCount: t.arg.int()
+			binCount: t.arg
+				.int({
+					description:
+						"A count to preview before it is saved; left out uses the conference's setting."
+				})
+				.validate(binCountSchema.nullish())
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadNametagBins({ ctx, conferenceId: args.conferenceId });
-
-			const conference = await binConference(args.conferenceId);
+			const conference = await nametagConference(args.conferenceId);
 
 			const bins = await loadNametagBins({
 				conferenceId: args.conferenceId,
@@ -88,33 +91,27 @@ schemaBuilder.queryFields((t) => ({
 			conferenceId: t.arg.id({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const user = ctx.mustBeLoggedIn();
-			const conference = await db.query.conference.findFirst({
-				where: { id: args.conferenceId },
-				columns: { nametagBinCount: true, assignmentReleased: true, language: true }
-			});
-			if (!conference?.assignmentReleased) return null;
-			return loadOwnNametagTable({
-				conferenceId: args.conferenceId,
-				binCount: conference.nametagBinCount,
-				userId: user.sub,
-				language: normalizeConferenceLanguage(conference.language)
-			});
+			const { callerId } = assertCanReadOwnNametagTable(ctx);
+			return ownNametagTableIn({ conferenceId: args.conferenceId, userId: callerId });
 		}
 	}),
 
 	nametagBinGroups: t.field({
 		description:
-			"The nations (named in the conference's language), non-state actors and roles sent to one bin, read when the team opens it.",
+			"The nations (named in the conference's language), non-state actors and roles sent to one bin, read when the team opens it. Participant care only (FORBIDDEN otherwise).",
 		type: [NametagBinGroup],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			binCount: t.arg.int({ required: true }),
-			index: t.arg.int({ required: true })
+			binCount: t.arg
+				.int({ required: true, description: 'The count the bins were split into.' })
+				.validate(binCountSchema),
+			index: t.arg
+				.int({ required: true, description: 'The bin, from zero; one past the last has none.' })
+				.validate(binIndexSchema)
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanReadNametagBins({ ctx, conferenceId: args.conferenceId });
-			const conference = await binConference(args.conferenceId);
+			const conference = await nametagConference(args.conferenceId);
 			return loadNametagBinGroups({
 				conferenceId: args.conferenceId,
 				binCount: args.binCount,

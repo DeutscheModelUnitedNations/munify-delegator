@@ -1,5 +1,5 @@
 import { m } from '#lib/paraglide/messages';
-import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
+import { binCountSchema } from '#api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { z } from 'zod';
 
@@ -14,11 +14,7 @@ export const conferenceSettingSchemas = {
 		.number()
 		.min(1, { error: () => m.conferenceMaxSeatsPerSchoolRange() })
 		.nullish(),
-	nametagBinCount: z
-		.number()
-		.min(1, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
-		.max(MAX_NAMETAG_BINS, { error: () => m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }) })
-		.nullish(),
+	nametagBinCount: binCountSchema.nullish(),
 	language: z
 		.string()
 		.refine(isConferenceLanguage, { error: () => m.conferenceLanguageUnsupported() })

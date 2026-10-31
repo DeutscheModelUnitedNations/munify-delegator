@@ -1,6 +1,5 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 import {
 	nationInitial,
 	nonStateActorGroups,

@@ -1580,6 +1580,7 @@
 	"nametagBinCount": "Number of nametag bins",
 	"nametagBinCountHint": "This sets the number of tables. Press, individual roles, non-state actors and supervisors are not counted: they always get one more table of their own.",
 	"nametagBinEmpty": "Not used",
+	"nametagBinIndexInvalid": "The table number is not valid.",
 	"nametagBinNations": "Nation delegates",
 	"nametagBinOthers": "Press, individual roles, NSAs & supervisors",
 	"nametagBinParticipants": "Participants",
