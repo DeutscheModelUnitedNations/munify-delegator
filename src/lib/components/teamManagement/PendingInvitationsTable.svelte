@@ -31,11 +31,7 @@
 
 		await runInvitationAction({
 			mutation: () =>
-				client.mutate.revokeTeamMemberInvitation({
-					__args: { invitationId },
-					success: true,
-					message: true
-				}),
+				Promise.resolve(client.mutate.revokeTeamMemberInvitation({ __args: { invitationId } })),
 			onSuccess: () => {
 				toast.success(m.invitationRevoked());
 			},
@@ -48,14 +44,10 @@
 			mutation: () =>
 				client.mutate.regenerateTeamMemberInvitation({
 					__args: { invitationId, sendEmail: false },
-					success: true,
-					newToken: true,
-					newExpiresAt: true,
-					message: true
+					token: true
 				}),
 			onSuccess: async (result) => {
-				if (!result.newToken) return;
-				const inviteUrl = `${page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
+				const inviteUrl = `${page.url.origin}/auth/accept-invitation?token=${result.token}`;
 				await navigator.clipboard.writeText(inviteUrl);
 				toast.success(m.linkCopied());
 			},
@@ -68,8 +60,7 @@
 			mutation: () =>
 				client.mutate.regenerateTeamMemberInvitation({
 					__args: { invitationId, sendEmail: true },
-					success: true,
-					message: true
+					expiresAt: true
 				}),
 			onSuccess: () => {
 				toast.success(m.invitationResent());

@@ -6,6 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import { PUBLIC_TEAM_ORGANIZATION_DOMAIN } from '$app/env/public';
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
+	import type { TeamInvitationEmailStatus } from '#lib/api/rumbleClient/client';
 
 	interface Props {
 		open: boolean;
@@ -20,7 +21,7 @@
 	let isChecking = $state(false);
 	let isSending = $state(false);
 
-	type EmailStatusValue = 'exists' | 'new_user' | 'pending_invitation' | 'already_member';
+	type EmailStatusValue = TeamInvitationEmailStatus;
 	type TeamRoleValue =
 		| 'MEMBER'
 		| 'REVIEWER'
@@ -38,22 +39,9 @@
 		'PROJECT_MANAGEMENT'
 	];
 
-	const validEmailStatuses: EmailStatusValue[] = [
-		'exists',
-		'new_user',
-		'pending_invitation',
-		'already_member'
-	];
-
-	function isEmailStatusValue(value: string): value is EmailStatusValue {
-		return validEmailStatuses.includes(value as EmailStatusValue);
-	}
-
 	type EmailStatus = {
 		email: string;
 		status: EmailStatusValue;
-		userId: string | null;
-		pendingInvitationId: string | null;
 		selected: boolean;
 		role: TeamRoleValue;
 		isExternal: boolean;
@@ -64,17 +52,17 @@
 
 	/** Whether an address can still be invited: it is neither a member nor already invited. */
 	const isInvitable = (e: EmailStatus) =>
-		e.status !== 'already_member' && e.status !== 'pending_invitation';
+		e.status !== 'ALREADY_MEMBER' && e.status !== 'PENDING_INVITATION';
 
 	let canSend = $derived(!isSending && emailStatuses.some((e) => e.selected && isInvitable(e)));
 	let allSelected = $derived(
-		emailStatuses.every((e) => e.selected || e.status === 'already_member')
+		emailStatuses.every((e) => e.selected || e.status === 'ALREADY_MEMBER')
 	);
 
 	function selectAll(checked: boolean) {
 		emailStatuses = emailStatuses.map((es) => ({
 			...es,
-			selected: es.status === 'already_member' ? false : checked
+			selected: es.status === 'ALREADY_MEMBER' ? false : checked
 		}));
 	}
 
@@ -109,19 +97,15 @@
 		isChecking = true;
 		try {
 			const checked = await client.query.checkTeamInvitationEmails({
-				__args: { conferenceId, emails: emails.map((email) => ({ email })) },
+				__args: { conferenceId, emails },
 				email: true,
-				status: true,
-				userId: true,
-				pendingInvitationId: true
+				status: true
 			});
 
 			emailStatuses = checked.map((s) => ({
 				email: s.email,
-				status: isEmailStatusValue(s.status) ? s.status : 'new_user',
-				userId: s.userId,
-				pendingInvitationId: s.pendingInvitationId,
-				selected: s.status !== 'already_member',
+				status: s.status,
+				selected: s.status !== 'ALREADY_MEMBER',
 				role: 'MEMBER',
 				isExternal: isExternalEmail(s.email)
 			}));
@@ -194,10 +178,10 @@
 	}
 
 	const statusBadges: Record<EmailStatusValue, { class: string; text: () => string }> = {
-		exists: { class: 'badge-success', text: () => m.accountExists() },
-		new_user: { class: 'badge-info', text: () => m.newUser() },
-		pending_invitation: { class: 'badge-warning', text: () => m.pendingInvitation() },
-		already_member: { class: 'badge-ghost', text: () => m.alreadyMember() }
+		EXISTS: { class: 'badge-success', text: () => m.accountExists() },
+		NEW_USER: { class: 'badge-info', text: () => m.newUser() },
+		PENDING_INVITATION: { class: 'badge-warning', text: () => m.pendingInvitation() },
+		ALREADY_MEMBER: { class: 'badge-ghost', text: () => m.alreadyMember() }
 	};
 
 	function getStatusBadge(status: EmailStatus['status']): { class: string; text: string } {
@@ -207,7 +191,7 @@
 </script>
 
 {#snippet emailRow(emailStatus: EmailStatus, i: number)}
-	<tr class={emailStatus.status === 'already_member' ? 'opacity-50' : ''}>
+	<tr class={emailStatus.status === 'ALREADY_MEMBER' ? 'opacity-50' : ''}>
 		<td>
 			<input
 				type="checkbox"

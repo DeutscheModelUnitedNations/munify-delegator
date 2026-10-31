@@ -3,7 +3,7 @@ import {
 	hashToken,
 	pendingInvitationCookieName
 } from '#api/handlers/teamMemberInvitation/invitationToken';
-import { claimPendingInvitation } from '#api/services/account/upsertSelf';
+import { claimPendingInvitation } from '#api/handlers/teamMemberInvitation/pendingInvitation';
 import type { PageServerLoad } from './$types';
 import { assertInvitationUsable } from '#api/handlers/teamMemberInvitation/invitationValidity';
 import { error, redirect } from '@sveltejs/kit';

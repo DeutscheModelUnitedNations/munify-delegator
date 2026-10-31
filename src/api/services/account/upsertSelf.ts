@@ -1,20 +1,12 @@
 import { redirect } from '@sveltejs/kit';
-import { getRequestEvent } from '$app/server';
-import { whereRows } from '#api/db/whereRows';
 import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
-import { teamMemberInvitationPubsub, teamMemberPubsub, userPubsub } from '#api/pubsub';
+import { userPubsub } from '#api/pubsub';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { isUniqueViolationOn } from '#api/services/errors';
-import { isParticipantOrTeamMember } from '#api/services/registration/participation';
 import { reportEmailConflict } from './emailConflict';
-import {
-	hashToken,
-	isOpenInvitation,
-	pendingInvitationCookieName
-} from '#api/handlers/teamMemberInvitation/invitationToken';
-import { logger } from '#lib/logger';
+import { claimPendingInvitation } from '#api/handlers/teamMemberInvitation/pendingInvitation';
 
 type Claims = {
 	sub: string;
@@ -106,62 +98,5 @@ export async function upsertSelfFromClaims({
 
 	if (needsMoreInfo) {
 		redirect(302, `/my-account?redirect=${encodeURIComponent(returnTo)}`);
-	}
-}
-
-/**
- * Someone invited by email arrives with the invitation token in a cookie, set before they were
- * sent off to log in. Failing to redeem it must not block the login.
- */
-export async function claimPendingInvitation(userId: string) {
-	const event = getRequestEvent();
-	const token = event.cookies.get(pendingInvitationCookieName);
-	if (!token) return;
-
-	try {
-		const invitation = await db.query.teamMemberInvitation.findFirst({
-			where: { token: hashToken(token) }
-		});
-
-		if (!isOpenInvitation(invitation)) return;
-
-		const usedNow = { usedAt: new Date(), acceptedById: userId };
-		const invitationRow = whereRows({
-			table: schema.teamMemberInvitation,
-			filter: { id: invitation.id }
-		});
-		const existingMember = await db.query.teamMember.findFirst({
-			where: { conferenceId: invitation.conferenceId, userId }
-		});
-
-		if (existingMember) {
-			// Already a member, so the invitation just gets closed out.
-			await db.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
-			teamMemberInvitationPubsub.updated(invitation.id);
-			return;
-		}
-
-		// Someone taking part in the conference cannot join its team as well; the invitation stays
-		// open for the team to see that it was not taken up.
-		if (await isParticipantOrTeamMember({ conferenceId: invitation.conferenceId, userId })) {
-			logger.warn('Invitation not redeemed: the user already takes part', {
-				invitationId: invitation.id,
-				userId
-			});
-			return;
-		}
-
-		await db.transaction(async (tx) => {
-			await tx
-				.insert(schema.teamMember)
-				.values({ conferenceId: invitation.conferenceId, userId, role: invitation.role });
-			await tx.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
-		});
-		teamMemberPubsub.created();
-		teamMemberInvitationPubsub.updated(invitation.id);
-	} catch (error) {
-		logger.error('Failed to process pending invitation', error);
-	} finally {
-		event.cookies.delete(pendingInvitationCookieName, { path: '/' });
 	}
 }

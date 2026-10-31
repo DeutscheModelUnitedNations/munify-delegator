@@ -1,14 +1,14 @@
 import { db } from '#api/db/db';
 import { enum_, object, query, schemaBuilder } from '#api/rumble';
-import { callerUserId } from '#api/services/authHelper/utils';
 import {
 	checkInvitationEmails,
 	createInvitations,
+	INVITATION_EMAIL_STATUSES,
+	invitationEmailsSchema,
+	invitationsSchema,
 	regenerateInvitation,
 	revokeInvitation
 } from './teamMemberInvitationService';
-import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors';
 import {
 	assertCanManageInvitations,
 	assertCanUpdateInvitation,
@@ -45,15 +45,17 @@ const CreateInvitationInput = schemaBuilder.inputType('CreateInvitationInput', {
 
 const CreatedInvitation = schemaBuilder.simpleObject('CreatedInvitation', {
 	fields: (t) => ({
-		id: t.string(),
+		id: t.id({ description: "The invitation's id, also for someone added directly." }),
 		email: t.string(),
-		role: t.string(),
+		role: t.field({ type: teamRoleEnum }),
 		token: t.string({
 			description: 'Plaintext, for copy-to-clipboard. Null when the user was added directly.',
 			nullable: true
 		}),
 		expiresAt: t.field({ type: 'DateTime' }),
-		addedDirectly: t.boolean()
+		addedDirectly: t.boolean({
+			description: 'An existing account joined the team right away; nothing was mailed.'
+		})
 	})
 });
 
@@ -68,34 +70,29 @@ const CreateInvitationsResult = schemaBuilder.simpleObject('CreateInvitationsRes
 	})
 });
 
-const RevokeInvitationResult = schemaBuilder.simpleObject('RevokeInvitationResult', {
-	fields: (t) => ({ success: t.boolean(), message: t.string({ nullable: true }) })
-});
-
-const RegenerateInvitationResult = schemaBuilder.simpleObject('RegenerateInvitationResult', {
+const RegeneratedInvitation = schemaBuilder.simpleObject('RegeneratedInvitation', {
 	fields: (t) => ({
-		success: t.boolean(),
-		newToken: t.string({ nullable: true }),
-		newExpiresAt: t.field({ type: 'DateTime', nullable: true }),
-		message: t.string({ nullable: true })
+		token: t.string({ description: 'The new plaintext token, for copy-to-clipboard.' }),
+		expiresAt: t.field({ type: 'DateTime' })
 	})
 });
 
 schemaBuilder.mutationFields((t) => ({
 	createTeamMemberInvitations: t.field({
 		description:
-			'Invites several people at once. Each address is handled independently: one failure is reported in `errors` and the rest still go through, which is why this returns a result object rather than throwing.',
+			'Invites several people at once: an address with an account joins the team right away, any other gets a mailed link. Each address is handled independently: one failure (no valid address, already on the team or invited, taking part in the conference, a role the caller may not hand out) is reported in `errors` and the rest still go through, which is why this returns a result object rather than throwing. Project management invites to any role, team coordinators to any but project management.',
 		type: CreateInvitationsResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			invitations: t.arg({ type: [CreateInvitationInput], required: true })
+			invitations: t
+				.arg({ type: [CreateInvitationInput], required: true })
+				.validate(invitationsSchema)
 		},
 		resolve: async (_root, args, ctx) => {
-			const callerId = callerUserId(ctx);
-			if (!callerId) {
-				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-			}
-			await assertCanManageInvitations({ ctx, conferenceId: args.conferenceId });
+			const { callerId } = await assertCanManageInvitations({
+				ctx,
+				conferenceId: args.conferenceId
+			});
 			const { grantable, refused } = await partitionGrantableInvitations({
 				ctx,
 				conferenceId: args.conferenceId,
@@ -114,67 +111,62 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	revokeTeamMemberInvitation: t.field({
-		description: 'Makes an invitation unusable, unless it was used already.',
-		type: RevokeInvitationResult,
+		description:
+			'Makes an invitation unusable. CONFLICT when it was revoked or used already, NOT_FOUND for one the caller may not manage.',
+		type: 'Boolean',
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
-			return revokeInvitation(invitation);
+			await revokeInvitation(invitation);
+			return true;
 		}
 	}),
 
 	regenerateTeamMemberInvitation: t.field({
 		description:
-			'Issues a fresh link for an invitation, with a new expiry; this also undoes a revocation. `sendEmail` mails the new link to the invitee.',
-		type: RegenerateInvitationResult,
+			'Issues a fresh link for an invitation, with a new expiry; this also undoes a revocation. CONFLICT when it was used already, or the address has been invited again since it was revoked.',
+		type: RegeneratedInvitation,
 		args: {
 			invitationId: t.arg.id({ required: true }),
-			sendEmail: t.arg.boolean({ defaultValue: false })
+			sendEmail: t.arg.boolean({
+				defaultValue: false,
+				description: 'Mails the new link to the invitee.'
+			})
 		},
 		resolve: async (_root, args, ctx) => {
-			const callerId = callerUserId(ctx);
-			if (!callerId) {
-				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-			}
-
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
 			return regenerateInvitation({
 				invitation,
-				callerId,
+				callerId: ctx.mustBeLoggedIn().sub,
 				origin: ctx.requestUrl().origin,
-				sendEmail: args.sendEmail
+				sendEmail: args.sendEmail ?? false
 			});
 		}
 	})
 }));
 
-const CheckEmailInput = schemaBuilder.inputType('CheckEmailInput', {
-	fields: (t) => ({ email: t.string({ required: true }) })
+const TeamInvitationEmailStatus = schemaBuilder.enumType('TeamInvitationEmailStatus', {
+	values: INVITATION_EMAIL_STATUSES
 });
 
 const EmailStatusResult = schemaBuilder.simpleObject('EmailStatusResult', {
 	fields: (t) => ({
-		email: t.string(),
-		status: t.string({
-			description: 'One of: already_member, pending_invitation, exists, new_user.'
-		}),
-		userId: t.string({ nullable: true }),
-		pendingInvitationId: t.string({ nullable: true })
+		email: t.string({ description: 'The address, trimmed and lowercased.' }),
+		status: t.field({ type: TeamInvitationEmailStatus })
 	})
 });
 
 schemaBuilder.queryFields((t) => ({
 	checkTeamInvitationEmails: t.field({
 		description:
-			'Tells the invite form what will happen to each address before anything is sent: already on the team, already invited, a known user who would be added directly, or a genuinely new one.',
+			'Tells the invite form what will happen to each address before anything is sent: already on the team, already invited, a known account that would be added directly, or a new one. For whoever may invite to the conference (manageTeam).',
 		type: [EmailStatusResult],
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			emails: t.arg({ type: [CheckEmailInput], required: true })
+			emails: t.arg.stringList({ required: true }).validate(invitationEmailsSchema)
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageInvitations({ ctx, conferenceId: args.conferenceId });
-
 			return checkInvitationEmails({ conferenceId: args.conferenceId, emails: args.emails });
 		}
 	})

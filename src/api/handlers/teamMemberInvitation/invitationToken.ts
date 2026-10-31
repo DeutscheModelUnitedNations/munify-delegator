@@ -25,12 +25,3 @@ export function getInvitationExpiryDate(): Date {
 	expiresAt.setDate(expiresAt.getDate() + 7);
 	return expiresAt;
 }
-
-/** Whether an invitation can still be accepted: it exists, and is neither revoked, used nor expired. */
-export function isOpenInvitation<
-	T extends { revokedAt: Date | null; usedAt: Date | null; expiresAt: Date }
->(invitation: T | undefined): invitation is T {
-	return (
-		!!invitation && !invitation.revokedAt && !invitation.usedAt && invitation.expiresAt > new Date()
-	);
-}

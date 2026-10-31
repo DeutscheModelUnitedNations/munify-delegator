@@ -669,10 +669,6 @@ export type CertificateSession = {
   name: String    
 };
 		
-export type CheckEmailInput = {
-  email: String    
-};
-		
 export type Committee = {
   abbreviation: String,
   agendaItems: (p?: {
@@ -1609,8 +1605,8 @@ export type CreatedInvitation = {
   addedDirectly: Boolean,
   email: String,
   expiresAt: DateTime,
-  id: String,
-  role: String,
+  id: ID,
+  role: TeamroleEnum,
   token: String | null    
 };
 		
@@ -1841,9 +1837,7 @@ export type EmailPreview = {
 		
 export type EmailStatusResult = {
   email: String,
-  pendingInvitationId: String | null,
-  status: String,
-  userId: String | null    
+  status: TeamInvitationEmailStatus    
 };
 		
 export type EmailkindEnum = "APPLICATION_DEADLINE_REMINDER" | "ASSIGNMENT_ACCEPTED" | "ASSIGNMENT_REJECTED" | "BADGE_FOUND" | "CERTIFICATE_AVAILABLE" | "OPEN_ISSUES_REMINDER" | "PAPERWORK_PROBLEM" | "PAPER_REVIEWED" | "PAYMENT_RECEIVED" | "PAYMENT_UNLOCKED" | "PHONE_READY_REMINDER" | "POSTAL_RECEIVED" | "POSTAL_UNLOCKED" | "SUPERVISOR_ASSIGNMENT_SUMMARY" | "SUPERVISOR_STUDENT_LINKED" | "SURVEY_REMINDER" | "TEAM_INVITATION" | "TEAM_WELCOME" | "WAITING_LIST_SEATED";
@@ -2430,7 +2424,7 @@ export type Mutation = {
   regenerateTeamMemberInvitation: (p: {
     invitationId: ID,
     sendEmail?: Boolean | null | undefined
-  }) => RegenerateInvitationResult,
+  }) => RegeneratedInvitation,
   renameAttendanceSession: (p: {
     id: ID,
     occasion: String
@@ -2455,7 +2449,7 @@ export type Mutation = {
   }) => Boolean,
   revokeTeamMemberInvitation: (p: {
     invitationId: ID
-  }) => RevokeInvitationResult,
+  }) => Boolean,
   rotateSupervisorConnectionCode: (p: {
     id: ID
   }) => Conferencesupervisor,
@@ -3443,7 +3437,7 @@ export type Query = {
   }) => Boolean,
   checkTeamInvitationEmails: (p: {
     conferenceId: ID,
-    emails: CheckEmailInput[]
+    emails: String[]
   }) => EmailStatusResult[],
   committee: (p: {
     id: ID
@@ -3912,11 +3906,9 @@ export type Query = {
   }) => Waitinglistentry    
 };
 		
-export type RegenerateInvitationResult = {
-  message: String | null,
-  newExpiresAt: DateTime | null,
-  newToken: String | null,
-  success: Boolean    
+export type RegeneratedInvitation = {
+  expiresAt: DateTime,
+  token: String    
 };
 		
 export type RegionalbaselineEnum = "ECOSOC" | "HUMAN_RIGHTS_COUNCIL" | "MANUAL" | "SECURITY_COUNCIL" | "UN_MEMBERS";
@@ -4014,11 +4006,6 @@ export type ReviewersnippetWhereInputArgument = {
 };
 		
 export type ReviewhelpstatusEnum = "HELP_NEEDED" | "NO_HELP_WANTED" | "UNSPECIFIED";
-		
-export type RevokeInvitationResult = {
-  message: String | null,
-  success: Boolean    
-};
 		
 export type Roleapplication = {
   createdAt: DateTime,
@@ -5451,6 +5438,8 @@ export type SurveyquestionWhereInputArgument = {
   title?: StringWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
+		
+export type TeamInvitationEmailStatus = "ALREADY_MEMBER" | "EXISTS" | "NEW_USER" | "PENDING_INVITATION";
 		
 export type Teammember = {
   conference: (p?: {

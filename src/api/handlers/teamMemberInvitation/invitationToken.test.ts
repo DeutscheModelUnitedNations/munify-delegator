@@ -1,30 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getInvitationExpiryDate, hashToken, isOpenInvitation } from './invitationToken';
-
-const tomorrow = () => new Date(Date.now() + 86_400_000);
-const yesterday = () => new Date(Date.now() - 86_400_000);
-
-const invitation = (
-	overrides: Partial<{ revokedAt: Date | null; usedAt: Date | null; expiresAt: Date }> = {}
-) => ({
-	revokedAt: null,
-	usedAt: null,
-	expiresAt: tomorrow(),
-	...overrides
-});
-
-describe('isOpenInvitation', () => {
-	test('accepts an invitation that is neither revoked, used nor expired', () => {
-		expect(isOpenInvitation(invitation())).toBe(true);
-	});
-
-	test('rejects a missing, revoked, used or expired invitation', () => {
-		expect(isOpenInvitation(undefined)).toBe(false);
-		expect(isOpenInvitation(invitation({ revokedAt: yesterday() }))).toBe(false);
-		expect(isOpenInvitation(invitation({ usedAt: yesterday() }))).toBe(false);
-		expect(isOpenInvitation(invitation({ expiresAt: yesterday() }))).toBe(false);
-	});
-});
+import { getInvitationExpiryDate, hashToken } from './invitationToken';
 
 describe('invitation tokens', () => {
 	test('hash deterministically to hex', () => {

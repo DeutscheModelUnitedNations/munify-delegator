@@ -10,13 +10,11 @@ import {
 import { assertCanGrantTeamRole } from '#api/handlers/teamMember/teamMemberPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { normalizeInvitationEmail } from './teamMemberInvitationService';
 
 export function registerTeamMemberInvitationAbilities() {
-	// System admins read, update and delete every invitation.
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Masks the token: only its hash is stored, and nothing in the app needs even that back.
+	// Nobody reads the token: only its hash is stored, and nothing in the app needs even that back.
 	const WITHOUT_TOKEN = { token: false };
 
 	// Project management reads, updates and deletes every invitation of its conference.
@@ -36,8 +34,9 @@ export function registerTeamMemberInvitationAbilities() {
 }
 
 /**
- * Refuses unless the caller holds `manageTeam` (project management, team coordinators) in the
- * conference: may invite people to its team at all.
+ * Refuses (FORBIDDEN) unless the caller holds `manageTeam` (project management, team coordinators)
+ * in the conference: may invite people to its team at all. Which role they may hand out is checked
+ * on top (`partitionGrantableInvitations`). Returns the caller's id, who is recorded as the inviter.
  */
 export async function assertCanManageInvitations({
 	ctx,
@@ -47,11 +46,13 @@ export async function assertCanManageInvitations({
 	conferenceId: string;
 }) {
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageTeam' });
+	return { callerId: ctx.mustBeLoggedIn().sub };
 }
 
 /**
  * Splits invitations into those whose role the caller may hand out on the conference's team
- * (`assertCanGrantTeamRole`) and the refused addresses, each with the reason.
+ * (`assertCanGrantTeamRole`: project management only by project management) and the refused
+ * addresses, each with the reason.
  */
 export async function partitionGrantableInvitations({
 	ctx,
@@ -77,12 +78,16 @@ export async function partitionGrantableInvitations({
 		grantable: invitations.filter((invitation) => !refusals.get(invitation.role)),
 		refused: invitations.flatMap((invitation) => {
 			const error = refusals.get(invitation.role);
-			return error ? [{ email: normalizeInvitationEmail(invitation.email), error }] : [];
+			return error ? [{ email: invitation.email.trim(), error }] : [];
 		})
 	};
 }
 
-/** Refuses unless the caller may update the invitation (its update ability); returns it. */
+/**
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the invitation: project management
+ * for every invitation of its conference, team coordinators for those to any role but project
+ * management. Returns it.
+ */
 export async function assertCanUpdateInvitation({
 	ctx,
 	invitationId
@@ -91,10 +96,18 @@ export async function assertCanUpdateInvitation({
 	invitationId: string;
 }) {
 	return db.query.teamMemberInvitation
-		.findFirst(
-			(await ctx.abilities.teamMemberInvitation.filter('update')).merge({
+		.findFirst({
+			...(await ctx.abilities.teamMemberInvitation.filter('update')).merge({
 				where: { id: invitationId }
-			}).query.single
-		)
+			}).query.single,
+			columns: {
+				id: true,
+				conferenceId: true,
+				email: true,
+				role: true,
+				revokedAt: true,
+				usedAt: true
+			}
+		})
 		.then(assertFindFirstExists);
 }

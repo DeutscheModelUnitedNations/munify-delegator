@@ -247,6 +247,70 @@ test('a team coordinator cannot hand out project management', async ({ page }) =
 	expect(outcome.errors).toHaveLength(1);
 });
 
+test('an invitation link makes one person a team member, once', async ({ browser, page }) => {
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
+	const invitee = `authz-invite-once-${Date.now()}@e2e.test`;
+	const invited = await gql(
+		page,
+		`mutation ($c: ID!, $e: String!) {
+			createTeamMemberInvitations(conferenceId: $c, invitations: [{ email: $e, role: MEMBER }]) {
+				created { token }
+				errors { error }
+			}
+		}`,
+		{ c: E2E_CONFERENCE_ID, e: invitee }
+	);
+	const token = (
+		invited.data?.createTeamMemberInvitations as { created: { token: string | null }[] }
+	).created[0]?.token;
+	expect(token, JSON.stringify(invited)).toBeTruthy();
+
+	// Two people follow the same link; only the first joins the team.
+	const joined: boolean[] = [];
+	for (const prefix of ['authz-invite-first', 'authz-invite-second']) {
+		const visitor = await (await browser.newContext()).newPage();
+		const claims = makeTestUser(prefix);
+		await loginAs(visitor, claims);
+		await visitor.goto(`/auth/accept-invitation?token=${token}`);
+		const members = await gql(
+			page,
+			`query ($c: ID!, $e: String!) {
+				teamMembers(where: { conferenceId: { eq: $c }, user: { email: { eq: $e } } }) { id }
+			}`,
+			{ c: E2E_CONFERENCE_ID, e: claims.email }
+		);
+		joined.push(((members.data?.teamMembers as unknown[] | undefined) ?? []).length === 1);
+	}
+	expect(joined).toEqual([true, false]);
+});
+
+test('the invite form tells whether an address has an account, never whose', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
+	// The check used to answer with the account's user id.
+	expectRefused(
+		await gql(
+			page,
+			`query ($c: ID!) {
+				checkTeamInvitationEmails(conferenceId: $c, emails: ["${E2E_TEAMMATE_USER_ID}@e2e.test"]) {
+					status userId
+				}
+			}`,
+			{ c: E2E_CONFERENCE_ID }
+		),
+		/userId/
+	);
+	// And it looks at a bounded number of addresses at once.
+	const many = Array.from({ length: 101 }, (_, i) => `authz-many-${i}@e2e.test`);
+	expectRefused(
+		await gql(
+			page,
+			`query ($c: ID!, $e: [String!]!) { checkTeamInvitationEmails(conferenceId: $c, emails: $e) { status } }`,
+			{ c: E2E_CONFERENCE_ID, e: many }
+		),
+		/at most 100/i
+	);
+});
+
 test('payment details and documents are for people with a part in the conference', async ({
 	browser,
 	request

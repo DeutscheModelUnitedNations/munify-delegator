@@ -5,10 +5,17 @@ import { getInvitationExpiryDate, hashToken, makeInvitationToken } from './invit
 import { sendTeamInvitationEmail } from '#api/handlers/email/teamInvitationEmail';
 import { m } from '#lib/paraglide/messages';
 import { getLocale } from '#lib/paraglide/runtime';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import {
+	assertFindFirstExists,
+	assertFirstEntryExists,
+	normalizeEmailAddress
+} from '@m1212e/rumble';
+import { GraphQLError } from 'graphql';
 import { whereRows } from '#api/db/whereRows';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
+import { apiError, isUniqueViolationOn } from '#api/services/errors';
 import { logger } from '#lib/logger';
+import { z } from 'zod';
 
 /** An invitation as the service needs it, already authorized by the resolver. */
 type Invitation = {
@@ -20,45 +27,108 @@ type Invitation = {
 	usedAt: Date | null;
 };
 
-/** An invited address as it is stored and looked up. */
-export const normalizeInvitationEmail = (email: string) => email.toLowerCase().trim();
+/** How many addresses one call checks or invites. */
+const MAX_ADDRESSES_AT_ONCE = 100;
 
+/** A list of `item`s no longer than one call handles. */
+const batchOf = <T extends z.ZodType>(item: T) =>
+	z.array(item).max(MAX_ADDRESSES_AT_ONCE, {
+		error: () => m.invitationTooManyAddresses({ max: MAX_ADDRESSES_AT_ONCE })
+	});
+
+/** The addresses `checkTeamInvitationEmails` looks at. */
+export const invitationEmailsSchema = batchOf(z.string());
+
+/** The invitations `createTeamMemberInvitations` sends; each address is checked on its own. */
+export const invitationsSchema = batchOf(
+	z.object({ email: z.string(), role: z.enum(schema.teamRole.enumValues) })
+);
+
+/** What `checkInvitationEmails` says will happen to an address. */
+export const INVITATION_EMAIL_STATUSES = [
+	'ALREADY_MEMBER',
+	'PENDING_INVITATION',
+	'EXISTS',
+	'NEW_USER'
+] as const;
+type InvitationEmailStatus = (typeof INVITATION_EMAIL_STATUSES)[number];
+
+/**
+ * An invited address as it is stored and looked up: checked and lowercased like the `EmailAddress`
+ * scalar. Throws INVALID_INPUT for something that is no address.
+ */
+function normalizeInvitationEmail(email: string) {
+	try {
+		return normalizeEmailAddress(email.trim());
+	} catch {
+		throw apiError({ code: 'INVALID_INPUT', message: m.invitationInvalidEmail() });
+	}
+}
+
+/** The inviter's name as the invitation mail shows it. */
 async function inviterDisplayName(callerId: string) {
-	const inviter = await db.query.user.findFirst({ where: { id: callerId } });
+	const inviter = await db.query.user.findFirst({
+		where: { id: callerId },
+		columns: { givenName: true, familyName: true }
+	});
 	return inviter ? `${inviter.givenName} ${inviter.familyName}` : undefined;
 }
 
-/** Mails a regenerated invitation's new link. Sending happens in the background, best-effort. */
-async function resendInvitationEmail({
+/** What an invitation mail is sent in: the conference, who invites, and where the links point. */
+type InvitationContext = {
+	callerId: string;
+	origin: string;
+	conferenceId: string;
+	conferenceTitle: string;
+	inviterName: string | undefined;
+};
+
+/** Mails an invitation's link. Sending happens in the background, best-effort. */
+function mailInvitation({
+	context,
 	invitation,
-	callerId,
-	origin,
 	token,
 	expiresAt
 }: {
-	invitation: { id: string; conferenceId: string; email: string; role: TeamRole };
-	callerId: string;
-	origin: string;
+	context: InvitationContext;
+	invitation: { id: string; email: string; role: TeamRole };
 	token: string;
 	expiresAt: Date;
 }) {
-	const conference = await db.query.conference.findFirst({
-		where: { id: invitation.conferenceId }
-	});
-	if (!conference) return;
-
 	sendTeamInvitationEmail({
-		conferenceId: invitation.conferenceId,
+		conferenceId: context.conferenceId,
 		invitationId: invitation.id,
-		sentById: callerId,
+		sentById: context.callerId,
 		recipientEmail: invitation.email,
-		conferenceTitle: conference.title,
+		conferenceTitle: context.conferenceTitle,
 		role: invitation.role,
-		inviterName: await inviterDisplayName(callerId),
-		inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
+		inviterName: context.inviterName,
+		inviteUrl: `${context.origin}/auth/accept-invitation?token=${token}`,
 		expiresAt,
 		locale: getLocale()
 	}).catch((err: unknown) => logger.error('Failed to send invitation email', err));
+}
+
+/** The context of mails sent for the conference's invitations by `callerId`. */
+async function invitationContext({
+	callerId,
+	origin,
+	conferenceId
+}: {
+	callerId: string;
+	origin: string;
+	conferenceId: string;
+}): Promise<InvitationContext> {
+	const conference = await db.query.conference
+		.findFirst({ where: { id: conferenceId }, columns: { title: true } })
+		.then(assertFindFirstExists);
+	return {
+		callerId,
+		origin,
+		conferenceId,
+		conferenceTitle: conference.title,
+		inviterName: await inviterDisplayName(callerId)
+	};
 }
 
 /** An invitation that is still open: not used, not revoked, not expired. */
@@ -70,39 +140,45 @@ function findPendingInvitation({ conferenceId, email }: { conferenceId: string; 
 			usedAt: { isNull: true },
 			revokedAt: { isNull: true },
 			expiresAt: { gt: new Date() }
-		}
+		},
+		columns: { id: true }
 	});
+}
+
+/** Turns the unique index on open invitations, in a race the checks lost, into its error. */
+async function refusingSecondPending<T>(write: Promise<T>) {
+	try {
+		return await write;
+	} catch (error) {
+		if (isUniqueViolationOn({ error, column: 'email_pending' })) {
+			throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyPending() });
+		}
+		throw error;
+	}
 }
 
 type CreatedInvitation = {
 	id: string;
 	email: string;
-	role: string;
+	role: TeamRole;
 	token: string | null;
 	expiresAt: Date;
 	addedDirectly: boolean;
 };
 
-/** What one invitation is sent in: the conference, who invites, and where the links point. */
-type InvitationContext = {
-	callerId: string;
-	origin: string;
-	conferenceId: string;
-	conferenceTitle: string;
-	inviterName: string | undefined;
-};
-
-/** Why an address cannot be invited, or undefined when it can. */
+/** Why an address cannot be invited, or the account it already has. */
 async function invitationRefusal({ conferenceId, email }: { conferenceId: string; email: string }) {
 	const existingTeamMember = await db.query.teamMember.findFirst({
-		where: { conferenceId, user: { email } }
+		where: { conferenceId, user: { email } },
+		columns: { id: true }
 	});
 	if (existingTeamMember) return { refusal: m.invitationAlreadyTeamMember() };
 
-	const pending = await findPendingInvitation({ conferenceId, email });
-	if (pending) return { refusal: m.invitationAlreadyPending() };
+	if (await findPendingInvitation({ conferenceId, email })) {
+		return { refusal: m.invitationAlreadyPending() };
+	}
 
-	const existingUser = await db.query.user.findFirst({ where: { email } });
+	const existingUser = await db.query.user.findFirst({ where: { email }, columns: { id: true } });
 	if (
 		existingUser &&
 		(await isParticipantOrTeamMember({ conferenceId, userId: existingUser.id }))
@@ -131,33 +207,36 @@ async function addKnownUser({
 }): Promise<CreatedInvitation> {
 	const { conferenceId, callerId } = context;
 	const now = new Date();
-	const teamMember = await db.transaction(async (tx) => {
+	const { teamMemberId, invitationId } = await db.transaction(async (tx) => {
 		const member = await tx
 			.insert(schema.teamMember)
 			.values({ conferenceId, userId: user.id, role })
-			.returning()
+			.returning({ id: schema.teamMember.id })
 			.then(assertFirstEntryExists);
-
-		await tx.insert(schema.teamMemberInvitation).values({
-			email,
-			role,
-			token: hashToken(makeInvitationToken()),
-			expiresAt: now,
-			usedAt: now,
-			conferenceId,
-			invitedById: callerId,
-			acceptedById: user.id
-		});
-
-		return member;
+		const invitation = await tx
+			.insert(schema.teamMemberInvitation)
+			.values({
+				email,
+				role,
+				token: hashToken(makeInvitationToken()),
+				expiresAt: now,
+				usedAt: now,
+				conferenceId,
+				invitedById: callerId,
+				acceptedById: user.id
+			})
+			.returning({ id: schema.teamMemberInvitation.id })
+			.then(assertFirstEntryExists);
+		return { teamMemberId: member.id, invitationId: invitation.id };
 	});
 	teamMemberPubsub.created();
+	teamMemberPubsub.updated(teamMemberId);
 	teamMemberInvitationPubsub.created();
 
-	return { id: teamMember.id, email, role, token: null, expiresAt: now, addedDirectly: true };
+	return { id: invitationId, email, role, token: null, expiresAt: now, addedDirectly: true };
 }
 
-/** Unknown user: store only the hash, hand the plaintext token back to the caller. */
+/** Unknown user: store only the hash, mail the link and hand the plaintext token back. */
 async function inviteUnknownUser({
 	context,
 	email,
@@ -167,42 +246,40 @@ async function inviteUnknownUser({
 	email: string;
 	role: TeamRole;
 }): Promise<CreatedInvitation> {
-	const { conferenceId } = context;
 	const token = makeInvitationToken();
 	const expiresAt = getInvitationExpiryDate();
-	const record = await db
-		.insert(schema.teamMemberInvitation)
-		.values({
-			email,
-			role,
-			token: hashToken(token),
-			expiresAt,
-			conferenceId,
-			invitedById: context.callerId
-		})
-		.returning()
-		.then(assertFirstEntryExists);
+	const record = await refusingSecondPending(
+		db
+			.insert(schema.teamMemberInvitation)
+			.values({
+				email,
+				role,
+				token: hashToken(token),
+				expiresAt,
+				conferenceId: context.conferenceId,
+				invitedById: context.callerId
+			})
+			.returning({ id: schema.teamMemberInvitation.id })
+			.then(assertFirstEntryExists)
+	);
 	teamMemberInvitationPubsub.created();
 
-	sendTeamInvitationEmail({
-		conferenceId,
-		invitationId: record.id,
-		sentById: context.callerId,
-		recipientEmail: email,
-		conferenceTitle: context.conferenceTitle,
-		role,
-		inviterName: context.inviterName,
-		inviteUrl: `${context.origin}/auth/accept-invitation?token=${token}`,
-		expiresAt,
-		locale: getLocale()
-	}).catch((err: unknown) => logger.error('Failed to send invitation email', err));
+	mailInvitation({ context, invitation: { id: record.id, email, role }, token, expiresAt });
 
 	return { id: record.id, email, role, token, expiresAt, addedDirectly: false };
 }
 
+/** The message an address's failure is reported with: an API error's own, anything else logged. */
+function failureMessage(error: unknown) {
+	if (error instanceof GraphQLError) return error.message;
+	logger.error('Inviting an address failed', error);
+	return m.unknownError();
+}
+
 /**
- * Invites several people at once. Each address is handled independently: one failure is
- * reported in `errors` and the rest still go through.
+ * Invites several people at once: a known account joins the team right away, anybody else gets a
+ * mailed link. Each address is handled independently: one failure is reported in `errors` and the
+ * rest still go through.
  */
 export async function createInvitations({
 	callerId,
@@ -215,23 +292,13 @@ export async function createInvitations({
 	conferenceId: string;
 	invitations: { email: string; role: TeamRole }[];
 }) {
-	const conference = await db.query.conference
-		.findFirst({ where: { id: conferenceId } })
-		.then(assertFindFirstExists);
-	const context: InvitationContext = {
-		callerId,
-		origin,
-		conferenceId,
-		conferenceTitle: conference.title,
-		inviterName: await inviterDisplayName(callerId)
-	};
-
+	const context = await invitationContext({ callerId, origin, conferenceId });
 	const created: CreatedInvitation[] = [];
 	const errors: { email: string; error: string }[] = [];
 
 	for (const invitation of invitations) {
-		const email = normalizeInvitationEmail(invitation.email);
 		try {
+			const email = normalizeInvitationEmail(invitation.email);
 			const { refusal, existingUser } = await invitationRefusal({ conferenceId, email });
 			if (refusal) {
 				errors.push({ email, error: refusal });
@@ -243,35 +310,39 @@ export async function createInvitations({
 					: await inviteUnknownUser({ context, email, role: invitation.role })
 			);
 		} catch (error) {
-			errors.push({
-				email,
-				error: error instanceof Error ? error.message : m.unknownError()
-			});
+			errors.push({ email: invitation.email.trim(), error: failureMessage(error) });
 		}
 	}
 
 	return { created, errors };
 }
 
-/** Marks an invitation revoked, unless it already was or has been used. */
+/** Marks an invitation revoked. Refuses (CONFLICT) one already revoked or used. */
 export async function revokeInvitation(invitation: Invitation) {
 	if (invitation.revokedAt) {
-		return { success: false, message: m.invitationAlreadyRevoked() };
+		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyRevoked() });
 	}
 	if (invitation.usedAt) {
-		return { success: false, message: m.invitationAlreadyUsed() };
+		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyUsed() });
 	}
 
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ revokedAt: new Date() })
-		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
+		.where(
+			whereRows({
+				table: schema.teamMemberInvitation,
+				filter: { id: invitation.id, usedAt: { isNull: true } }
+			})
+		);
 	teamMemberInvitationPubsub.updated(invitation.id);
-
-	return { success: true, message: null };
 }
 
-/** Issues a fresh token for an invitation, optionally mailing it. */
+/**
+ * Issues a fresh token for an invitation with a new expiry, which also undoes a revocation, and
+ * mails the new link when `sendEmail` is set. Refuses (CONFLICT) one already used, or a revoked one
+ * whose address has been invited again since. Returns the plaintext token and the new expiry.
+ */
 export async function regenerateInvitation({
 	invitation,
 	callerId,
@@ -281,93 +352,136 @@ export async function regenerateInvitation({
 	invitation: Invitation;
 	callerId: string;
 	origin: string;
-	sendEmail: boolean | null | undefined;
+	sendEmail: boolean;
 }) {
 	if (invitation.usedAt) {
-		return {
-			success: false,
-			newToken: null,
-			newExpiresAt: null,
-			message: m.invitationAlreadyUsed()
-		};
+		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyUsed() });
 	}
 
-	const newToken = makeInvitationToken();
-	const newExpiresAt = getInvitationExpiryDate();
-
-	// Regenerating also un-revokes, matching the legacy resolver.
-	await db
-		.update(schema.teamMemberInvitation)
-		.set({ token: hashToken(newToken), expiresAt: newExpiresAt, revokedAt: null })
-		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
+	const token = makeInvitationToken();
+	const expiresAt = getInvitationExpiryDate();
+	await refusingSecondPending(
+		db
+			.update(schema.teamMemberInvitation)
+			.set({ token: hashToken(token), expiresAt, revokedAt: null })
+			.where(
+				whereRows({
+					table: schema.teamMemberInvitation,
+					filter: { id: invitation.id, usedAt: { isNull: true } }
+				})
+			)
+	);
 	teamMemberInvitationPubsub.updated(invitation.id);
 
 	if (sendEmail) {
-		await resendInvitationEmail({
-			invitation,
+		const context = await invitationContext({
 			callerId,
 			origin,
-			token: newToken,
-			expiresAt: newExpiresAt
+			conferenceId: invitation.conferenceId
 		});
+		mailInvitation({ context, invitation, token, expiresAt });
 	}
 
-	return { success: true, newToken, newExpiresAt, message: null };
+	return { token, expiresAt };
 }
 
 /**
  * What will happen to each address before anything is sent: already on the team, already
- * invited, a known user who would be added directly, or a genuinely new one.
+ * invited, a known account that would be added directly, or a new one. An address that is no
+ * address is reported as new: inviting it reports the error.
  */
 export async function checkInvitationEmails({
 	conferenceId,
 	emails
 }: {
 	conferenceId: string;
-	emails: { email: string }[];
+	emails: string[];
 }) {
-	const results: {
-		email: string;
-		status: string;
-		userId: string | null;
-		pendingInvitationId: string | null;
-	}[] = [];
+	const results: { email: string; status: InvitationEmailStatus }[] = [];
+	for (const raw of emails) {
+		const email = raw.trim().toLowerCase();
+		results.push({ email, status: await invitationEmailStatus({ conferenceId, email }) });
+	}
+	return results;
+}
 
-	for (const { email: raw } of emails) {
-		const email = normalizeInvitationEmail(raw);
+async function invitationEmailStatus({
+	conferenceId,
+	email
+}: {
+	conferenceId: string;
+	email: string;
+}): Promise<InvitationEmailStatus> {
+	const teamMember = await db.query.teamMember.findFirst({
+		where: { conferenceId, user: { email } },
+		columns: { id: true }
+	});
+	if (teamMember) return 'ALREADY_MEMBER';
+	if (await findPendingInvitation({ conferenceId, email })) return 'PENDING_INVITATION';
+	const existingUser = await db.query.user.findFirst({ where: { email }, columns: { id: true } });
+	return existingUser ? 'EXISTS' : 'NEW_USER';
+}
 
-		const teamMember = await db.query.teamMember.findFirst({
-			where: { conferenceId, user: { email } }
+/**
+ * Redeems the open invitation `token` names for `userId`: they join its conference's team in the
+ * invited role, or the invitation is just closed out when they are on it already. Someone taking
+ * part in the conference cannot join its team as well; the invitation then stays open for the team
+ * to see that it was not taken up. Marking it used is conditional, so one invitation is redeemed
+ * once even by two concurrent requests.
+ */
+export async function redeemInvitation({ token, userId }: { token: string; userId: string }) {
+	const invitation = await db.query.teamMemberInvitation.findFirst({
+		where: { token: hashToken(token) },
+		columns: { id: true, conferenceId: true, role: true }
+	});
+	if (!invitation) return;
+
+	const existingMember = await db.query.teamMember.findFirst({
+		where: { conferenceId: invitation.conferenceId, userId },
+		columns: { id: true }
+	});
+	if (
+		!existingMember &&
+		(await isParticipantOrTeamMember({ conferenceId: invitation.conferenceId, userId }))
+	) {
+		logger.warn('Invitation not redeemed: the user already takes part', {
+			invitationId: invitation.id,
+			userId
 		});
-		if (teamMember) {
-			results.push({
-				email,
-				status: 'already_member',
-				userId: teamMember.userId,
-				pendingInvitationId: null
-			});
-			continue;
-		}
-
-		const pending = await findPendingInvitation({ conferenceId, email });
-		if (pending) {
-			results.push({
-				email,
-				status: 'pending_invitation',
-				userId: null,
-				pendingInvitationId: pending.id
-			});
-			continue;
-		}
-
-		const existingUser = await db.query.user.findFirst({ where: { email } });
-		results.push({
-			email,
-			status: existingUser ? 'exists' : 'new_user',
-			userId: existingUser?.id ?? null,
-			pendingInvitationId: null
-		});
+		return;
 	}
 
-	return results;
+	const now = new Date();
+	const joined = await db.transaction(async (tx) => {
+		const [claimed] = await tx
+			.update(schema.teamMemberInvitation)
+			.set({ usedAt: now, acceptedById: userId })
+			.where(
+				whereRows({
+					table: schema.teamMemberInvitation,
+					filter: {
+						id: invitation.id,
+						usedAt: { isNull: true },
+						revokedAt: { isNull: true },
+						expiresAt: { gt: now }
+					}
+				})
+			)
+			.returning({ id: schema.teamMemberInvitation.id });
+		if (!claimed) return { claimed: false };
+		if (existingMember) return { claimed: true };
+		const member = await tx
+			.insert(schema.teamMember)
+			.values({ conferenceId: invitation.conferenceId, userId, role: invitation.role })
+			.returning({ id: schema.teamMember.id })
+			.then(assertFirstEntryExists);
+		return { claimed: true, memberId: member.id };
+	});
+	if (!joined.claimed) return;
+
+	teamMemberInvitationPubsub.updated(invitation.id);
+	if (joined.memberId) {
+		teamMemberPubsub.created();
+		teamMemberPubsub.updated(joined.memberId);
+	}
 }
