@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { conflictMessageOf } from '#lib/api/errorCodes';
+	import { toast } from 'svelte-sonner';
 	import { logger } from '#lib/logger';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
@@ -113,6 +115,13 @@
 			showDeleteOptionModal = false;
 			optionToDelete = null;
 		} catch (error) {
+			// Refused by what still hangs on it (options, answers, schedule entries): say so.
+			const conflict = conflictMessageOf(error);
+			if (conflict) {
+				toast.error(conflict);
+				return;
+			}
+			toast.error(m.genericToastError());
 			logger.error('Failed to delete option', error);
 		} finally {
 			isLoading = false;
