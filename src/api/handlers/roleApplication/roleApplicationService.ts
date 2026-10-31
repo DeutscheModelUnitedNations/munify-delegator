@@ -4,34 +4,56 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
+import { apiError, isUniqueViolationOn } from '#api/services/errors';
+import { m } from '#lib/paraglide/messages';
 
-/** Adds an application at the end of the delegation's ranking. Returns the new row. */
-export async function appendRoleApplication(args: { delegationId: string; roleId: string }) {
-	const created = await db.transaction(async (tx) => {
-		// Close any gap first, so "one past the count" cannot collide with an existing rank.
-		await normalizeRoleApplicationRanks({ delegationId: args.delegationId, tx });
-		const [existing] = await tx
-			.select({ value: count() })
-			.from(schema.roleApplication)
-			.where(
-				whereRows({ table: schema.roleApplication, filter: { delegationId: args.delegationId } })
-			);
-
-		return tx
-			.insert(schema.roleApplication)
-			.values({
-				delegationId: args.delegationId,
-				roleId: args.roleId,
-				rank: (existing?.value ?? 0) + 1
-			})
-			.returning()
-			.then(assertFirstEntryExists);
-	});
-	roleApplicationPubsub.created();
-	return created;
+/** Turns the unique index refusing a second wish for the same role into its error. */
+async function refusingRepeatedWish<T>(write: Promise<T>) {
+	try {
+		return await write;
+	} catch (error) {
+		if (isUniqueViolationOn({ error, column: 'role_id' })) {
+			throw apiError({ code: 'CONFLICT', message: m.roleApplicationAlreadyWished() });
+		}
+		throw error;
+	}
 }
 
-/** Deletes an application and closes the gap it leaves in the delegation's ranking. */
+/**
+ * Adds a wish at the end of the delegation's ranking; a role it already wishes for is refused
+ * (CONFLICT). Returns the new row's id.
+ */
+export async function appendRoleApplication({
+	delegationId,
+	roleId
+}: {
+	delegationId: string;
+	roleId: string;
+}) {
+	const created = await refusingRepeatedWish(
+		db.transaction(async (tx) => {
+			// Close any gap first, so "one past the count" cannot collide with an existing rank.
+			await normalizeRoleApplicationRanks({ delegationId, tx });
+			const [existing] = await tx
+				.select({ value: count() })
+				.from(schema.roleApplication)
+				.where(whereRows({ table: schema.roleApplication, filter: { delegationId } }));
+
+			return tx
+				.insert(schema.roleApplication)
+				.values({ delegationId, roleId, rank: (existing?.value ?? 0) + 1 })
+				.returning({ id: schema.roleApplication.id })
+				.then(assertFirstEntryExists);
+		})
+	);
+	roleApplicationPubsub.created();
+	return created.id;
+}
+
+/**
+ * Deletes a wish the caller may delete (`assertCanDeleteRoleApplication`) and closes the gap it
+ * leaves in the delegation's ranking.
+ */
 export async function removeRoleApplication(application: { id: string; delegationId: string }) {
 	await db.transaction(async (tx) => {
 		await tx
@@ -42,7 +64,7 @@ export async function removeRoleApplication(application: { id: string; delegatio
 	roleApplicationPubsub.removed();
 }
 
-/** Swaps the ranks of two applications. */
+/** Swaps the ranks of two wishes of one delegation (`assertCanSwapRoleApplicationRanks`). */
 export async function swapRanks({
 	first,
 	second

@@ -2190,6 +2190,7 @@
 	"revokeInvitation": "Einladung widerrufen",
 	"rights": "Rechte",
 	"role": "Rolle",
+	"roleApplicationAlreadyWished": "Die Delegation wünscht sich diese Rolle bereits.",
 	"roleApplications": "Rollenbewerbungen",
 	"roleApplicationsOfDifferentDelegations": "Nur die Rollenwünsche einer Delegation können die Plätze tauschen.",
 	"roleDescription": "Ihre zugewiesene Rolle und Aufgaben bei der Konferenz.",

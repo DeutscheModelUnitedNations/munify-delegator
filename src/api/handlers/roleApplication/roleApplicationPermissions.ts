@@ -15,7 +15,7 @@ import { apiError } from '#api/services/errors';
 export function registerRoleApplicationAbilities() {
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Delegates read their own delegation's role applications.
+	// Every delegate reads their own delegation's role applications.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => grantWhere(isInOwnDelegation(ctx)));
 
 	// The head delegate may update and delete their delegation's role applications until it has
@@ -38,7 +38,7 @@ export function registerRoleApplicationAbilities() {
 		return delegation ? { where: { delegation } } : undefined;
 	});
 
-	// Supervisors read the role applications of the delegations they supervise.
+	// Supervisors read those of the delegations they supervise.
 	abilityBuilder.roleApplication.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id
@@ -48,8 +48,10 @@ export function registerRoleApplicationAbilities() {
 }
 
 /**
- * Refuses unless the caller's update ability reaches the delegation (so the head delegate before
- * applying, or participant care) and the role is on offer in its conference.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation - its head delegate
+ * until it has applied, or `manageParticipants` (project management and participant care) in its
+ * conference - and (INVALID_INPUT) unless the role is a nation or non-state actor of that
+ * conference.
  */
 export async function assertCanCreateRoleApplication({
 	ctx,
@@ -71,8 +73,10 @@ export async function assertCanCreateRoleApplication({
 }
 
 /**
- * Refuses (NOT_FOUND) unless the caller's delete ability reaches the role application. Returns its
- * id and delegation, whose ranks close the gap afterwards.
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the role application: the head
+ * delegate until the delegation has applied, or `manageParticipants` (project management and
+ * participant care) in its conference. Returns its id and delegation, whose ranks close the gap
+ * afterwards.
  */
 export async function assertCanDeleteRoleApplication({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const deletable = await db.query.roleApplication.findFirst({
@@ -86,8 +90,8 @@ export async function assertCanDeleteRoleApplication({ ctx, id }: { ctx: ApiCont
 }
 
 /**
- * Refuses unless the caller's update ability reaches both role applications and they belong to one
- * delegation. Returns them.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches both role applications (as for
+ * deleting one), and (INVALID_INPUT) unless they belong to one delegation. Returns them.
  */
 export async function assertCanSwapRoleApplicationRanks({
 	ctx,

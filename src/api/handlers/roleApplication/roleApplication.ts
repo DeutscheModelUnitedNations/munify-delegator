@@ -16,26 +16,25 @@ query({ table: 'roleApplication' });
 
 schemaBuilder.mutationFields((t) => ({
 	createRoleApplication: t.drizzleField({
-		description: "Adds a nation or non-state actor at the end of the delegation's wishes.",
+		description:
+			"Adds a role at the end of the delegation's wishes: the head delegate until the delegation has applied, or participant care. A role the delegation already wishes for answers CONFLICT.",
 		type: RoleApplicationRef,
 		args: {
 			delegationId: t.arg.id({ required: true }),
-			/** A nation or non-state actor of the delegation's conference. */
-			roleId: t.arg.id({ required: true })
+			roleId: t.arg.id({
+				required: true,
+				description: "A nation or non-state actor of the delegation's conference."
+			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			// The caller must be allowed to update the delegation the application belongs to, and the
-			// role applied for must be on offer in that conference.
 			await assertCanCreateRoleApplication({ ctx, args });
-
-			const created = await appendRoleApplication(args);
+			const id = await appendRoleApplication(args);
 
 			return db.query.roleApplication
 				.findFirst(
 					query(
-						(await ctx.abilities.roleApplication.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
+						(await ctx.abilities.roleApplication.filter('read')).merge({ where: { id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -49,13 +48,12 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const application = await assertCanDeleteRoleApplication({ ctx, id: args.id });
 			await removeRoleApplication(application);
-
 			return true;
 		}
 	}),
 
 	swapRoleApplicationRanks: t.drizzleField({
-		description: 'Swaps the ranks of two wishes of the same delegation, returning both.',
+		description: 'Swaps the ranks of two wishes of the same delegation, answering with both.',
 		type: [RoleApplicationRef],
 		args: {
 			firstRoleApplicationId: t.arg.id({ required: true }),
@@ -72,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.roleApplication.findMany(
 				query(
 					(await ctx.abilities.roleApplication.filter('read')).merge({
-						where: { id: { in: [args.firstRoleApplicationId, args.secondRoleApplicationId] } }
+						where: { id: { in: [first.id, second.id] } }
 					}).query.many
 				)
 			);
