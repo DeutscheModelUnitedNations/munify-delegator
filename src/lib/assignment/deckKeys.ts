@@ -13,10 +13,13 @@ export function isTyping(target: EventTarget | null) {
 export const NEXT_UNREVIEWED_KEY = 'n';
 
 /** The card a key moves to: the arrows turn the cards, `n` skips to the next unreviewed one. */
-export function deckKeyTarget(
-	event: Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'target'>,
-	neighbours: { previousId?: string; nextId?: string; unreviewedId?: string }
-) {
+export function deckKeyTarget({
+	event,
+	neighbours
+}: {
+	event: Pick<KeyboardEvent, 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'target'>;
+	neighbours: { previousId?: string; nextId?: string; unreviewedId?: string };
+}) {
 	if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return undefined;
 	const targets: Record<string, string | undefined> = {
 		ArrowLeft: neighbours.previousId,

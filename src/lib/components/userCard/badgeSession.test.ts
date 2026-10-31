@@ -50,40 +50,46 @@ describe('requestBadgeSession', () => {
 
 	test('returns the session url', async () => {
 		respond(Response.json({ url: 'http://badges.test/s/1' }));
-		expect(await requestBadgeSession('http://gen.test', { id: 'u1' })).toBe(
+		expect(await requestBadgeSession({ baseUrl: 'http://gen.test', body: { id: 'u1' } })).toBe(
 			'https://badges.test/s/1'
 		);
 	});
 
 	test('throws on an error status', async () => {
 		respond(new Response('nope', { status: 500 }));
-		await expect(requestBadgeSession('http://gen.test', {})).rejects.toThrow('(500): nope');
+		await expect(requestBadgeSession({ baseUrl: 'http://gen.test', body: {} })).rejects.toThrow(
+			'(500): nope'
+		);
 	});
 
 	test('throws on a malformed response', async () => {
 		respond(Response.json({ other: 1 }));
-		await expect(requestBadgeSession('http://gen.test', {})).rejects.toThrow('invalid response');
+		await expect(requestBadgeSession({ baseUrl: 'http://gen.test', body: {} })).rejects.toThrow(
+			'invalid response'
+		);
 	});
 });
 
 describe('seatBadgeValues', () => {
 	test('names the nation and committee', () => {
 		expect(
-			seatBadgeValues(
-				{
+			seatBadgeValues({
+				member: {
 					delegation: { assignedRole: { nation: { alpha3Code: 'DEU', alpha2Code: 'DE' } } },
 					assignedCommittee: { abbreviation: 'GA' }
 				},
-				(code) => `name of ${code}`
-			)
+				countryName: (code) => `name of ${code}`
+			})
 		).toEqual({ countryName: 'name of DEU', countryAlpha2Code: 'DE', committee: 'GA' });
 	});
 
 	test('is empty without a seat', () => {
-		const values = seatBadgeValues({ delegation: {} }, () => 'unused');
+		const values = seatBadgeValues({ member: { delegation: {} }, countryName: () => 'unused' });
 		expect(values.countryName).toBeFalsy();
 		expect(values.committee).toBeUndefined();
-		expect(seatBadgeValues(undefined, () => 'unused').countryAlpha2Code).toBeUndefined();
+		expect(
+			seatBadgeValues({ member: undefined, countryName: () => 'unused' }).countryAlpha2Code
+		).toBeUndefined();
 	});
 });
 
@@ -96,32 +102,37 @@ describe('badgeSeatOf', () => {
 
 	test('shows a delegate by nation and committee, or by their non-state actor', () => {
 		expect(
-			badgeSeatOf(
-				{
+			badgeSeatOf({
+				roles: {
 					delegationMember: {
 						assignedCommittee: { abbreviation: 'GV' },
 						delegation: { assignedRole: { nation: { alpha2Code: 'de', alpha3Code: 'deu' } } }
 					}
 				},
 				labels
-			)
+			})
 		).toEqual({ kind: 'nation', alpha2Code: 'de', countryName: 'Deutschland', committee: 'GV' });
 		expect(
-			badgeSeatOf(
-				{ delegationMember: { delegation: { assignedRole: { name: 'Amnesty', nation: null } } } },
+			badgeSeatOf({
+				roles: {
+					delegationMember: { delegation: { assignedRole: { name: 'Amnesty', nation: null } } }
+				},
 				labels
-			)
+			})
 		).toEqual({ kind: 'label', label: 'Amnesty', committee: undefined });
 	});
 
 	test('falls back to the single role, the supervisor image, the team, else nothing', () => {
 		expect(
-			badgeSeatOf({ singleParticipant: { assignedRole: { name: 'Presse' } } }, labels)
+			badgeSeatOf({ roles: { singleParticipant: { assignedRole: { name: 'Presse' } } }, labels })
 		).toEqual({ kind: 'label', label: 'Presse' });
-		expect(badgeSeatOf({ conferenceSupervisor: {} }, labels)?.kind).toBe('image');
-		expect(badgeSeatOf({ teamMember: {} }, labels)).toEqual({ kind: 'label', label: 'Team' });
+		expect(badgeSeatOf({ roles: { conferenceSupervisor: {} }, labels })?.kind).toBe('image');
+		expect(badgeSeatOf({ roles: { teamMember: {} }, labels })).toEqual({
+			kind: 'label',
+			label: 'Team'
+		});
 		expect(
-			badgeSeatOf({ delegationMember: { delegation: { assignedRole: null } } }, labels)
+			badgeSeatOf({ roles: { delegationMember: { delegation: { assignedRole: null } } }, labels })
 		).toBeUndefined();
 	});
 });

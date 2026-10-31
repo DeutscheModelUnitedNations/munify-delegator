@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
@@ -40,7 +41,7 @@
 			await client.mutate.deletePlace({ __args: { id: placeToDelete.id } });
 			placeToDelete = null;
 		} catch (error) {
-			console.error('Failed to delete place:', error);
+			logger.error('Failed to delete place', error);
 		}
 	}
 

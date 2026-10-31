@@ -59,9 +59,9 @@
 	const showError = (error: unknown) =>
 		toast.error(error instanceof Error ? error.message : m.genericToastError());
 
-	const cellKey = (row: TrackRow, day: MatrixDay) => `${row.name}|${day.id}`;
+	const cellKey = ({ row, day }: { row: TrackRow; day: MatrixDay }) => `${row.name}|${day.id}`;
 
-	async function create(row: TrackRow, day: MatrixDay, index: number) {
+	async function create({ row, day, index }: { row: TrackRow; day: MatrixDay; index: number }) {
 		await client.mutate.createCalendarTrack({
 			__args: {
 				calendarDayId: day.id,
@@ -73,16 +73,16 @@
 		});
 	}
 
-	async function toggle(row: TrackRow, day: MatrixDay, index: number) {
+	async function toggle({ row, day, index }: { row: TrackRow; day: MatrixDay; index: number }) {
 		const existing = day.tracks.filter((t) => t.name === row.name);
 		if (existing.length > 0) {
-			askRemoval(existing);
+			askRemoval({ tracks: existing });
 			return;
 		}
-		const key = cellKey(row, day);
+		const key = cellKey({ row, day });
 		busy.add(key);
 		try {
-			await create(row, day, index);
+			await create({ row, day, index });
 		} catch (error) {
 			showError(error);
 		} finally {
@@ -90,16 +90,16 @@
 		}
 	}
 
-	function askRemoval(tracks: MatrixDay['tracks'], keep = true) {
+	function askRemoval({ tracks, keep = true }: { tracks: MatrixDay['tracks']; keep?: boolean }) {
 		const entryIds = new Set(tracks.flatMap((t) => t.entries.map((e) => e.id)));
 		if (entryIds.size === 0) {
-			void remove(tracks, keep);
+			void remove({ tracks, keep });
 			return;
 		}
 		removal = { tracks, keep, entryCount: entryIds.size };
 	}
 
-	async function remove(tracks: MatrixDay['tracks'], keep: boolean) {
+	async function remove({ tracks, keep }: { tracks: MatrixDay['tracks']; keep: boolean }) {
 		if (keep) keepRows(tracks);
 		const ids = tracks.map((t) => t.id);
 		try {
@@ -111,7 +111,7 @@
 
 	async function confirmRemoval() {
 		if (!removal) return;
-		await remove(removal.tracks, removal.keep);
+		await remove({ tracks: removal.tracks, keep: removal.keep });
 		removal = null;
 	}
 
@@ -121,7 +121,7 @@
 				rows.flatMap((row, index) =>
 					days
 						.filter((day) => !day.tracks.some((t) => t.name === row.name))
-						.map((day) => create(row, day, index))
+						.map((day) => create({ row, day, index }))
 				)
 			);
 		} catch (error) {
@@ -132,14 +132,14 @@
 	/** Takes a whole row out of the matrix, from every day. */
 	function deleteRow(row: TrackRow) {
 		ghosts = ghosts.filter((g) => g.row.name !== row.name);
-		askRemoval(
-			days.flatMap((day) => day.tracks.filter((t) => t.name === row.name)),
-			false
-		);
+		askRemoval({
+			tracks: days.flatMap((day) => day.tracks.filter((t) => t.name === row.name)),
+			keep: false
+		});
 	}
 
 	function deselectAll() {
-		askRemoval(days.flatMap((day) => day.tracks));
+		askRemoval({ tracks: days.flatMap((day) => day.tracks) });
 	}
 
 	/** The row being dragged and the row index it would land on */
@@ -154,11 +154,11 @@
 	async function dropRow(toIndex: number) {
 		const name = dragged;
 		endDrag();
-		if (name !== null) await moveRow(name, toIndex);
+		if (name !== null) await moveRow({ name, toIndex });
 	}
 
-	async function moveRow(name: string, toIndex: number) {
-		const changes = rowOrderChanges(days, rows, name, toIndex);
+	async function moveRow({ name, toIndex }: { name: string; toIndex: number }) {
+		const changes = rowOrderChanges({ days, rows, name, toIndex });
 		try {
 			await Promise.all(
 				changes.map((change) =>
@@ -307,8 +307,8 @@
 								class="checkbox checkbox-primary"
 								aria-label="{row.name} · {day.name}"
 								checked={day.tracks.some((t) => t.name === row.name)}
-								disabled={busy.has(cellKey(row, day))}
-								onchange={() => toggle(row, day, index)}
+								disabled={busy.has(cellKey({ row, day }))}
+								onchange={() => toggle({ row, day, index })}
 							/>
 						</td>
 					{/each}

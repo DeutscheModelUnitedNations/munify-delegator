@@ -86,11 +86,15 @@ function plainEntry(entry: WindowEntry): WindowEntry {
  * card asked for, where it is and the totals. A seek (`index`) wins over `currentId`. Copied out
  * of the query result, so holding it subscribes to nothing.
  */
-export async function fetchSightingDeck(
-	conferenceId: string,
-	filter: DeckFilter,
-	position: { currentId: string | null; index?: number }
-): Promise<DeckWindowData> {
+export async function fetchSightingDeck({
+	conferenceId,
+	filter,
+	position
+}: {
+	conferenceId: string;
+	filter: DeckFilter;
+	position: { currentId: string | null; index?: number };
+}): Promise<DeckWindowData> {
 	const entry = {
 		kind: true,
 		id: true,
@@ -144,15 +148,19 @@ export interface LoadedSightingDeck {
 }
 
 /** The first window of a deck: around `currentId`, or around the card taking its place. */
-export async function loadSightingDeck(
-	conferenceId: string,
-	filter: DeckFilter,
-	currentId: string | null
-): Promise<LoadedSightingDeck> {
+export async function loadSightingDeck({
+	conferenceId,
+	filter,
+	currentId
+}: {
+	conferenceId: string;
+	filter: DeckFilter;
+	currentId: string | null;
+}): Promise<LoadedSightingDeck> {
 	return {
 		conferenceId,
 		filter,
-		deck: await fetchSightingDeck(conferenceId, filter, { currentId })
+		deck: await fetchSightingDeck({ conferenceId, filter, position: { currentId } })
 	};
 }
 
@@ -170,7 +178,7 @@ export async function fetchStartConference(conferenceId: string) {
  * (live updates of it break Svelte's batching); what this browser saves since is in
  * `savedReviews`, which the page lays over it.
  */
-export async function fetchReview(kind: 'delegation' | 'single', id: string) {
+export async function fetchReview({ kind, id }: { kind: 'delegation' | 'single'; id: string }) {
 	const reviews = await client.query.assignmentReviews({
 		__args: {
 			where: kind === 'single' ? { singleParticipantId: { eq: id } } : { delegationId: { eq: id } },
@@ -187,7 +195,13 @@ export async function fetchReview(kind: 'delegation' | 'single', id: string) {
 }
 
 /** The schools matching a search, for the school filter. */
-export async function searchSchools(conferenceId: string, search: string) {
+export async function searchSchools({
+	conferenceId,
+	search
+}: {
+	conferenceId: string;
+	search: string;
+}) {
 	return client.query.sightingSchools({
 		__args: { conferenceId, search, limit: 20 },
 		school: true,
@@ -197,7 +211,13 @@ export async function searchSchools(conferenceId: string, search: string) {
 }
 
 /** One application with everything its card shows. */
-export async function fetchApplication(kind: 'delegation' | 'single', id: string) {
+export async function fetchApplication({
+	kind,
+	id
+}: {
+	kind: 'delegation' | 'single';
+	id: string;
+}) {
 	return kind === 'single'
 		? { kind, single: await client.liveQuery.singleParticipant({ __args: { id }, ...singleCard }) }
 		: {
@@ -239,7 +259,7 @@ async function warmNext() {
 		card.kind === 'single'
 			? client.query.singleParticipant({ __args: { id: card.id }, ...singleCard })
 			: client.query.delegation({ __args: { id: card.id }, ...delegationCard }),
-		fetchReview(card.kind, card.id)
+		fetchReview({ kind: card.kind, id: card.id })
 	]).catch(() => warmed.delete(`${card.kind}:${card.id}`));
 	await warmNext();
 }
@@ -249,7 +269,15 @@ async function warmNext() {
  * codename or id does, with what the card shows so the page can say what matched, and where they
  * stand in the sighting. Every filter of the sighting applies to them too.
  */
-export async function searchApplications(conferenceId: string, search: string, filter: DeckFilter) {
+export async function searchApplications({
+	conferenceId,
+	search,
+	filter
+}: {
+	conferenceId: string;
+	search: string;
+	filter: DeckFilter;
+}) {
 	const term = search.trim();
 	if (!term) return { delegations: [], singleParticipants: [], entries: [] };
 	const userIds = (await matchingUserIds(term)) ?? [];

@@ -36,10 +36,10 @@ schemaBuilder.mutationFields((t) => ({
 			surveyOptionIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarEntry(ctx, args);
+			await assertCanCreateCalendarEntry({ ctx, args });
 
-			const created = await createCalendarEntry(
-				{
+			const created = await createCalendarEntry({
+				values: {
 					calendarDayId: args.calendarDayId,
 					name: args.name,
 					startTime: args.startTime,
@@ -50,14 +50,16 @@ schemaBuilder.mutationFields((t) => ({
 					room: nullToUndefined(args.room),
 					placeId: nullToUndefined(args.placeId)
 				},
-				args.calendarTrackIds,
-				args.surveyOptionIds
-			);
+				trackIds: args.calendarTrackIds,
+				surveyOptionIds: args.surveyOptionIds
+			});
 
 			calendarEntryPubsub.created();
 
 			return db.query.calendarEntry
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarEntry, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.calendarEntry, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -80,13 +82,13 @@ schemaBuilder.mutationFields((t) => ({
 			surveyOptionIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateCalendarEntry(ctx, args);
+			await assertCanUpdateCalendarEntry({ ctx, args });
 
-			await updateCalendarEntry(
-				args.id,
+			await updateCalendarEntry({
+				id: args.id,
 				// An omitted argument arrives as `undefined` and leaves the column alone; an
 				// explicit `null` clears it. Only the non-nullable columns coerce null away.
-				{
+				values: {
 					name: nullToUndefined(args.name),
 					startTime: nullToUndefined(args.startTime),
 					endTime: nullToUndefined(args.endTime),
@@ -97,15 +99,15 @@ schemaBuilder.mutationFields((t) => ({
 					room: args.room,
 					placeId: args.placeId
 				},
-				args.calendarTrackIds,
+				trackIds: args.calendarTrackIds,
 				// Omitted keeps the options; an empty list shows the entry to everybody
-				args.surveyOptionIds
-			);
+				surveyOptionIds: args.surveyOptionIds
+			});
 
 			calendarEntryPubsub.updated(args.id);
 
 			return db.query.calendarEntry
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarEntry, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.calendarEntry, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -114,7 +116,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'calendarEntry', args.id);
+			await deleteIfAllowed({ ctx, table: 'calendarEntry', id: args.id });
 			calendarEntryPubsub.removed();
 
 			return true;

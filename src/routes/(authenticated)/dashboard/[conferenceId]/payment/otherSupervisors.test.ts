@@ -7,13 +7,13 @@ const ben = { id: 'ben-sup', user: { id: 'ben', givenName: 'Ben', familyName: 'B
 
 describe('findOtherSupervisors', () => {
 	test('is empty without a supervisor registration', () => {
-		expect(findOtherSupervisors(undefined, [anna])).toEqual([]);
+		expect(findOtherSupervisors({ me: undefined, candidates: [anna] })).toEqual([]);
 	});
 
 	test('names the other supervisors of my students once, delegation members first', () => {
 		expect(
-			findOtherSupervisors(
-				{
+			findOtherSupervisors({
+				me: {
 					user: me.user,
 					supervisedDelegationMembers: [
 						{ supervisors: [{ id: 'me-sup' }, { id: 'ben-sup' }] },
@@ -21,21 +21,21 @@ describe('findOtherSupervisors', () => {
 					],
 					supervisedSingleParticipants: [{ supervisors: [{ id: 'anna-sup' }, { id: 'me-sup' }] }]
 				},
-				[anna, ben, me]
-			)
+				candidates: [anna, ben, me]
+			})
 		).toEqual([ben.user, anna.user]);
 	});
 
 	test('leaves out supervisors whose user is not known', () => {
 		expect(
-			findOtherSupervisors(
-				{
+			findOtherSupervisors({
+				me: {
 					user: me.user,
 					supervisedDelegationMembers: [{ supervisors: [{ id: 'stranger' }] }],
 					supervisedSingleParticipants: []
 				},
-				[anna]
-			)
+				candidates: [anna]
+			})
 		).toEqual([]);
 	});
 });

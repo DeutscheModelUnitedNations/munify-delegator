@@ -19,7 +19,7 @@
 		const interval = setInterval(() => {
 			now = new Date();
 		}, 60000); // Update every minute
-		const status = maintenanceStatus(start, end, now);
+		const status = maintenanceStatus({ start, end, now });
 		visible = status !== 'none';
 		isUpcoming = status === 'upcoming';
 		return () => clearInterval(interval);

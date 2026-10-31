@@ -28,7 +28,7 @@
 	} as const;
 
 	/** Every other conference this person has been part of, in any role. */
-	async function fetchHistory(userId: string, conferenceId: string) {
+	async function fetchHistory({ userId, conferenceId }: { userId: string; conferenceId: string }) {
 		const forUser = {
 			where: { userId: { eq: userId }, conferenceId: { ne: conferenceId } }
 		};
@@ -76,7 +76,7 @@
 		return { delegationMembers, singleParticipants, supervisors, teamMembers };
 	}
 
-	const history = $derived(await fetchHistory(userId, conferenceId));
+	const history = $derived(await fetchHistory({ userId, conferenceId }));
 
 	const historyEntries = $derived(
 		[
@@ -87,7 +87,7 @@
 		].sort(compareByStartDateDesc)
 	);
 
-	const formatDateRange = (start: Date | null, end: Date | null) => {
+	const formatDateRange = ({ start, end }: { start: Date | null; end: Date | null }) => {
 		if (!start) return '';
 		const locale = getLocale();
 		if (!end) return start.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
@@ -139,7 +139,7 @@
 					</a>
 					<div class="flex shrink-0 items-center gap-1">
 						<span class="text-base-content/50 text-xs">
-							{formatDateRange(entry.startDate, entry.endDate)}
+							{formatDateRange({ start: entry.startDate, end: entry.endDate })}
 						</span>
 					</div>
 				</div>

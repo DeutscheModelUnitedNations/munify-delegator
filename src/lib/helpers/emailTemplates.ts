@@ -271,7 +271,13 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 };
 
 /** The text MUNify sends when the conference has not written its own. */
-export function defaultEmailText(kind: EmailkindEnum, locale: Locale): EmailText {
+export function defaultEmailText({
+	kind,
+	locale
+}: {
+	kind: EmailkindEnum;
+	locale: Locale;
+}): EmailText {
 	return TEMPLATES[kind].text(locale);
 }
 
@@ -282,12 +288,16 @@ export function placeholdersOf(kind: EmailkindEnum): EmailPlaceholder[] {
 }
 
 /** The text to send: the conference's own fields where it has them, the default elsewhere. */
-export function resolveEmailText(
-	kind: EmailkindEnum,
-	locale: Locale,
-	override?: EmailTextOverride | null
-): EmailText {
-	const fallback = defaultEmailText(kind, locale);
+export function resolveEmailText({
+	kind,
+	locale,
+	override
+}: {
+	kind: EmailkindEnum;
+	locale: Locale;
+	override?: EmailTextOverride | null;
+}): EmailText {
+	const fallback = defaultEmailText({ kind, locale });
 	const own = (value: string | null | undefined) => (value?.trim() ? value : undefined);
 	return {
 		subject: own(override?.subject) ?? fallback.subject,
@@ -311,11 +321,15 @@ export interface FilledEmailText {
  * preview rather than vanishing; a paragraph that comes out empty (`{delegationHint}` for someone
  * without a delegation) is dropped. Without `{list}` the list follows the body.
  */
-export function fillEmailText(
-	text: EmailText,
-	values: EmailPlaceholderValues,
-	items: readonly string[] = []
-): FilledEmailText {
+export function fillEmailText({
+	text,
+	values,
+	items = []
+}: {
+	text: EmailText;
+	values: EmailPlaceholderValues;
+	items?: readonly string[];
+}): FilledEmailText {
 	const known: Record<string, string | undefined> = values;
 	const fill = (value: string) =>
 		value.replace(/\{(\w+)\}/g, (placeholder, key: string) =>
@@ -340,10 +354,13 @@ export function fillEmailText(
  * A conference's footer for its mails (`conference_email_footer`), as the paragraphs under every
  * mail: blank lines separate them, `{conference}` is the conference's name. None for an empty one.
  */
-export function emailFooterParagraphs(
-	footer: string | null | undefined,
-	conferenceTitle: string
-): string[] {
+export function emailFooterParagraphs({
+	footer,
+	conferenceTitle
+}: {
+	footer: string | null | undefined;
+	conferenceTitle: string;
+}): string[] {
 	return (footer ?? '')
 		.split(/\n\s*\n/)
 		.map((block) => block.replaceAll('{conference}', conferenceTitle).trim())

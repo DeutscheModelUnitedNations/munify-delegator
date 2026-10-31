@@ -66,7 +66,7 @@
 		const next = { size: params.size, disqualified: params.disqualified };
 		const timer = setTimeout(() => {
 			// The browser's own URL: `page.url` does not follow shallow navigations.
-			const url = withBoardParams(new URL(location.href), next);
+			const url = withBoardParams({ url: new URL(location.href), params: next });
 			if (url.search !== location.search)
 				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with other query parameters
 				goto(url, { shallow: true, replace: true, state: page.state });
@@ -81,7 +81,10 @@
 			fetchAssignmentRoles(routeParams.conferenceId),
 			fetchAssignmentDraft(routeParams.conferenceId),
 			fetchSeatedApplications(routeParams.conferenceId),
-			fetchDelegationPoolSizes(routeParams.conferenceId, !!params.disqualified),
+			fetchDelegationPoolSizes({
+				conferenceId: routeParams.conferenceId,
+				showDisqualified: !!params.disqualified
+			}),
 			fetchSchoolSeatLimit(routeParams.conferenceId)
 		])
 	);
@@ -115,19 +118,22 @@
 	const fullBoard = memoizeLast(boardState);
 	// The size tabs and the roles need nothing but the seated applications; the size then decides
 	// which pool the backend is asked for.
-	const seatedRoleList = $derived(seatedRoles(plainRoles.committees, plainRoles.nonStateActors));
+	const seatedRoleList = $derived(
+		seatedRoles({ committees: plainRoles.committees, nonStateActors: plainRoles.nonStateActors })
+	);
 	const seatedView = $derived(seatedBoard(seatedRows, seatedRoleList));
 	// How many open groups of each size the pool holds: the backend's counts, less the delegations
 	// the draft touches, which the seated board counts itself.
 	const poolSizes = $derived(
-		poolCountsBesidesDraft(
-			poolCounts,
-			units.flatMap((unit) => unit.sourceDelegation ?? []),
-			(id) => !!seatedView.reviewOf({ delegationId: id, singleParticipantId: null })?.disqualified
-		)
+		poolCountsBesidesDraft({
+			counts: poolCounts,
+			touched: units.flatMap((unit) => unit.sourceDelegation ?? []),
+			disqualified: (id) =>
+				!!seatedView.reviewOf({ delegationId: id, singleParticipantId: null })?.disqualified
+		})
 	);
-	const options = $derived(sizeOptions(seatedView, poolSizes));
-	const size = $derived(pickSize(options, params.size ?? 0));
+	const options = $derived(sizeOptions({ view: seatedView, poolCounts: poolSizes }));
+	const size = $derived(pickSize({ options, asked: params.size ?? 0 }));
 	// Roles are shown by the same seat count as the group size.
 	const seats = $derived(size);
 
@@ -148,7 +154,7 @@
 		const filter = poolFilter;
 		return {
 			key: poolKey,
-			fetchPage: (page) => fetchDelegationPoolPage(conferenceId, filter, page)
+			fetchPage: (page) => fetchDelegationPoolPage({ conferenceId, filter, page })
 		};
 	});
 	const poolPages = $derived(poolLoader.pages);
@@ -165,12 +171,14 @@
 	const reviews = $derived([...poolPages.flatMap((page) => page.reviews), ...seatedReviewRows]);
 	const view = $derived(fullBoard({ ...seatedRows, delegations, reviews }, seatedRoleList));
 	// Pages stay in the order they were loaded, so the list does not reshuffle while it scrolls.
-	const openGroups = $derived(poolGroups(view, size, !!params.disqualified));
+	const openGroups = $derived(poolGroups({ view, size, showDisqualified: !!params.disqualified }));
 	const pool = $derived(
 		inPageOrder(
 			// a search's matches are what its pages hold; the groups the draft put back are not searched
-			search.term ? onPages(openGroups, poolPages) : openGroups,
-			poolPages.map((page) => page.rows)
+			{
+				groups: search.term ? onPages({ groups: openGroups, pages: poolPages }) : openGroups,
+				pages: poolPages.map((page) => page.rows)
+			}
 		)
 	);
 	/** The backend's count plus the groups the draft put back without a role. */
@@ -185,7 +193,7 @@
 		const term = search.term;
 		const showDisqualified = !!params.disqualified;
 		if (!term) return;
-		fetchDelegationPoolSizes(conferenceId, showDisqualified, term)
+		fetchDelegationPoolSizes({ conferenceId, showDisqualified, searchTerm: term })
 			.then((counts) => {
 				if (search.term !== term) return;
 				const sizes = [...counts].flatMap(([matchSize, count]) => (count > 0 ? [matchSize] : []));
@@ -199,10 +207,14 @@
 			: []
 	);
 	const shownRoles = $derived(
-		rolesWithSeats(seatedView, seats)
+		rolesWithSeats({ view: seatedView, seats })
 			.map((role) => ({
 				...role,
-				...describeRole(role.target, plainRoles, getFullTranslatedCountryNameFromISO3Code)
+				...describeRole({
+					target: role.target,
+					roles: plainRoles,
+					nationName: getFullTranslatedCountryNameFromISO3Code
+				})
 			}))
 			.sort((a, b) => a.title.localeCompare(b.title))
 	);
@@ -222,22 +234,22 @@
 
 	const delegationById = $derived(new Map(delegations.map((d) => [d.id, d])));
 	const singleById = $derived(new Map(seatedSingles.map((s) => [s.id, s])));
-	const schoolLookups = $derived(schoolLookupsOf(delegations, seatedSingles));
+	const schoolLookups = $derived(schoolLookupsOf({ delegations, singles: seatedSingles }));
 	// Every group holding a role is seated or touched by the draft, so the seated rows know them all.
-	const schoolCounts = $derived(schoolSeats(view, schoolLookups));
+	const schoolCounts = $derived(schoolSeats({ view, lookups: schoolLookups }));
 
 	/** Warns (never blocks) when a group taking a role takes its school past the limit. */
 	function warnAboutSchool(group: AssignmentGroup) {
-		const added = hasRole(group) ? [] : schoolsOfGroup(group, schoolLookups);
-		warnAboutSchoolSeats(schoolCounts, added, maxSeatsPerSchool);
+		const added = hasRole(group) ? [] : schoolsOfGroup({ group, lookups: schoolLookups });
+		warnAboutSchoolSeats({ counts: schoolCounts, added, limit: maxSeatsPerSchool });
 	}
 
 	/** A delegation with a role it did not wish for; converted singles have no wishes to miss. */
 	const isBadFit = (group: AssignmentGroup) => {
-		const wish = wishStatus(
-			delegationById.get(group.delegationId ?? '')?.appliedForRoles,
-			group.target
-		);
+		const wish = wishStatus({
+			wishes: delegationById.get(group.delegationId ?? '')?.appliedForRoles,
+			target: group.target
+		});
 		return !!wish && wish.rank === undefined;
 	};
 	/** The groups of a role, misfits first so they are seen at once. */
@@ -246,41 +258,55 @@
 
 	function onDrop(dropState: DragDropState<{ id: string }>) {
 		dragging = undefined;
-		const action = dropAction(
+		const action = dropAction({
 			view,
-			dropState.draggedItem.id,
-			dropState.sourceContainer,
-			dropState.targetContainer
-		);
+			groupKey: dropState.draggedItem.id,
+			source: dropState.sourceContainer,
+			container: dropState.targetContainer
+		});
 		if (!action) return;
 		if (action.type === 'full') toast.error(m.assignmentNotEnoughSeats());
 		else {
 			if (action.target) warnAboutSchool(action.group);
-			void moves.track(action.group.key, () => assignGroup(action.group, action.target));
+			void moves.track({
+				key: action.group.key,
+				change: () => assignGroup({ group: action.group, target: action.target })
+			});
 		}
 	}
 
-	async function run(kind: 'autoAssign' | 'reset', action: () => Promise<unknown>) {
+	async function run({
+		kind,
+		action
+	}: {
+		kind: 'autoAssign' | 'reset';
+		action: () => Promise<unknown>;
+	}) {
 		running = kind;
 		await action().catch(toastError);
 		running = undefined;
 	}
 
 	const autoAssign = () =>
-		run('autoAssign', async () => {
-			const assigned = await client.mutate.autoAssignDelegations({
-				__args: { conferenceId: routeParams.conferenceId, size }
-			});
-			toast.success(m.assignmentAutoAssigned({ count: assigned }));
+		run({
+			kind: 'autoAssign',
+			action: async () => {
+				const assigned = await client.mutate.autoAssignDelegations({
+					__args: { conferenceId: routeParams.conferenceId, size }
+				});
+				toast.success(m.assignmentAutoAssigned({ count: assigned }));
+			}
 		});
 	const resetSeats = () =>
-		run('reset', () =>
-			Promise.resolve(
-				client.mutate.resetAssignmentSize({
-					__args: { conferenceId: routeParams.conferenceId, seats }
-				})
-			)
-		);
+		run({
+			kind: 'reset',
+			action: () =>
+				Promise.resolve(
+					client.mutate.resetAssignmentSize({
+						__args: { conferenceId: routeParams.conferenceId, seats }
+					})
+				)
+		});
 
 	function openSplit(group: AssignmentGroup) {
 		splitting = delegationById.get(group.delegationId ?? '');
@@ -288,9 +314,10 @@
 
 	function undoSplit(group: AssignmentGroup) {
 		const delegationId = group.delegationId ?? '';
-		return moves.track(group.key, () =>
-			succeeded(client.mutate.undoDelegationSplit({ __args: { delegationId } }))
-		);
+		return moves.track({
+			key: group.key,
+			change: () => succeeded(client.mutate.undoDelegationSplit({ __args: { delegationId } }))
+		});
 	}
 </script>
 
@@ -379,7 +406,7 @@
 					icon={role.icon}
 					seats={role.seats}
 					taken={role.taken}
-					highlight={freeSeats(view, role) >= (dragging?.size ?? Infinity)}
+					highlight={freeSeats({ view, role }) >= (dragging?.size ?? Infinity)}
 					{onDrop}
 				>
 					{#each sortedGroups(role.groups) as group (group.key)}

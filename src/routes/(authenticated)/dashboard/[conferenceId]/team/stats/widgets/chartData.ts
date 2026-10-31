@@ -13,7 +13,13 @@ const categoryColors = new Map([
 const roleColors = ['#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
 
 /** A category's fixed color, or for a role the color at its index. */
-export function getCategoryColor(categoryId: string, index: number): string {
+export function getCategoryColor({
+	categoryId,
+	index
+}: {
+	categoryId: string;
+	index: number;
+}): string {
 	return categoryColors.get(categoryId) ?? roleColors[index % roleColors.length];
 }
 
@@ -25,7 +31,13 @@ const categoryNames = new Map<string, () => string>([
 ]);
 
 /** The translated name of a fixed category; roles keep their own name. */
-export function getCategoryDisplayName(categoryId: string, categoryName: string): string {
+export function getCategoryDisplayName({
+	categoryId,
+	categoryName
+}: {
+	categoryId: string;
+	categoryName: string;
+}): string {
 	return categoryNames.get(categoryId)?.() ?? categoryName;
 }
 
@@ -42,11 +54,14 @@ export function ageChartSeries(age: Maybe<AgeStats>) {
 	return (age?.byCategory ?? []).map((category) => {
 		const colorIndex = category.categoryType === 'singleParticipant' ? roleIndex++ : 0;
 		return {
-			name: getCategoryDisplayName(category.categoryId, category.categoryName),
+			name: getCategoryDisplayName({
+				categoryId: category.categoryId,
+				categoryName: category.categoryName
+			}),
 			data: distribution.map(
 				(d) => d.byCategory.find((c) => c.categoryId === category.categoryId)?.count ?? 0
 			),
-			color: getCategoryColor(category.categoryId, colorIndex)
+			color: getCategoryColor({ categoryId: category.categoryId, index: colorIndex })
 		};
 	});
 }
@@ -73,14 +88,17 @@ export function acceptanceChartData(
 	];
 }
 
-type FilteredValue = (
-	object: FilterableCount | undefined,
-	roleBasedData?: RoleCounts,
-	entityType?: EntityType
-) => number | undefined;
+type FilteredValue = (args: {
+	object: FilterableCount | undefined;
+	roleBasedData?: RoleCounts;
+	entityType?: EntityType;
+}) => number | undefined;
 
 /** Delegation members, single participants and supervisors under the current filter. */
-export function distributionChartData(
+export function distributionChartData({
+	stats,
+	filteredValue
+}: {
 	stats: Maybe<{
 		registered?: Maybe<{
 			delegationMembers: FilterableCount;
@@ -88,23 +106,23 @@ export function distributionChartData(
 			supervisors: number;
 		}>;
 		roleBased?: Maybe<RoleCounts>;
-	}>,
-	filteredValue: FilteredValue
-) {
+	}>;
+	filteredValue: FilteredValue;
+}) {
 	const registered = stats?.registered;
 	if (!registered) return [];
 	const roleBased = stats?.roleBased ?? undefined;
-	const count = (object: FilterableCount, entityType: EntityType) =>
-		filteredValue(object, roleBased, entityType) ?? 0;
+	const count = ({ object, entityType }: { object: FilterableCount; entityType: EntityType }) =>
+		filteredValue({ object, roleBasedData: roleBased, entityType }) ?? 0;
 	return [
 		{
 			name: m.delegationMembers(),
-			value: count(registered.delegationMembers, 'delegationMembers'),
+			value: count({ object: registered.delegationMembers, entityType: 'delegationMembers' }),
 			color: '#3b82f6' // blue/primary
 		},
 		{
 			name: m.singleParticipants(),
-			value: count(registered.singleParticipants, 'singleParticipants'),
+			value: count({ object: registered.singleParticipants, entityType: 'singleParticipants' }),
 			color: '#8b5cf6' // violet/secondary
 		},
 		{ name: m.supervisors(), value: registered.supervisors, color: '#f59e0b' } // amber/accent

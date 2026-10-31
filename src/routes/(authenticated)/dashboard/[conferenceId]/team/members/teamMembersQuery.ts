@@ -30,11 +30,15 @@ function isTeamRole(value: string): value is (typeof TEAM_ROLES)[number] {
 	return TEAM_ROLES.some((role) => role === value);
 }
 
-function whereOf(
-	conferenceId: string,
-	state: TableState,
-	userIds: string[] | undefined
-): TeammemberWhereInputArgument {
+function whereOf({
+	conferenceId,
+	state,
+	userIds
+}: {
+	conferenceId: string;
+	state: TableState;
+	userIds: string[] | undefined;
+}): TeammemberWhereInputArgument {
 	const roles = enumFilter(
 		state.columnFilters.find((filter) => filter.id === 'role')?.value
 	).filter(isTeamRole);
@@ -47,20 +51,25 @@ function whereOf(
 	};
 }
 
-function listTeamMembers(
-	conferenceId: string,
-	state: TableState,
-	userIds: string[] | undefined,
-	paging: { limit: number; offset: number }
-) {
+function listTeamMembers({
+	conferenceId,
+	state,
+	userIds,
+	paging
+}: {
+	conferenceId: string;
+	state: TableState;
+	userIds: string[] | undefined;
+	paging: { limit: number; offset: number };
+}) {
 	return client.liveQuery.teamMembers({
 		__args: {
-			where: whereOf(conferenceId, state, userIds),
-			orderBy: orderFrom<TeammemberOrderInputArgument>(
-				state.sorting,
-				{ role: (direction) => ({ role: direction }) },
-				{ createdAt: 'asc', id: 'asc' }
-			),
+			where: whereOf({ conferenceId, state, userIds }),
+			orderBy: orderFrom<TeammemberOrderInputArgument>({
+				sorting: state.sorting,
+				orders: { role: (direction) => ({ role: direction }) },
+				fallback: { createdAt: 'asc', id: 'asc' }
+			}),
 			...paging
 		},
 		id: true,
@@ -83,17 +92,31 @@ function listTeamMembers(
 }
 
 /** One page of a conference's team, searched, filtered and ordered by the backend. */
-export async function fetchTeamMembersPage(conferenceId: string, state: TableState) {
+export async function fetchTeamMembersPage({
+	conferenceId,
+	state
+}: {
+	conferenceId: string;
+	state: TableState;
+}) {
 	const userIds = await matchingUserIds(state.search);
 	const [members, total] = await Promise.all([
-		listTeamMembers(conferenceId, state, userIds, pageArgs(state)),
-		client.liveQuery.teamMembersCount({ __args: { where: whereOf(conferenceId, state, userIds) } })
+		listTeamMembers({ conferenceId, state, userIds, paging: pageArgs(state) }),
+		client.liveQuery.teamMembersCount({
+			__args: { where: whereOf({ conferenceId, state, userIds }) }
+		})
 	]);
-	return { ...pageOf(members, state), total: asCount(total) };
+	return { ...pageOf({ rows: members, state }), total: asCount(total) };
 }
 
 /** Every team member matching the table's search and filters, for the export. */
-export async function fetchAllTeamMembers(conferenceId: string, state: TableState) {
+export async function fetchAllTeamMembers({
+	conferenceId,
+	state
+}: {
+	conferenceId: string;
+	state: TableState;
+}) {
 	const userIds = await matchingUserIds(state.search);
-	return fetchEveryRow((paging) => listTeamMembers(conferenceId, state, userIds, paging));
+	return fetchEveryRow((paging) => listTeamMembers({ conferenceId, state, userIds, paging }));
 }

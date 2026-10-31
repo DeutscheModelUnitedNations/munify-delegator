@@ -140,7 +140,7 @@
 	// svelte-ignore state_referenced_locally
 	let ownVisibility = $state<ColumnVisibilityState>(defaultColumnVisibility(columns));
 	const columnVisibility = $derived<ColumnVisibilityState>(
-		params.columns ? visibilityFromShown(columns, params.columns) : ownVisibility
+		params.columns ? visibilityFromShown({ columns, shown: params.columns }) : ownVisibility
 	);
 	let filterDrawerOpen = $state(false);
 	let columnDrawerOpen = $state(false);
@@ -157,15 +157,18 @@
 
 	$effect(() => {
 		if (!storageKey) return;
-		const visibility = initialColumnVisibility(localStorage.getItem(storageKey), columns);
+		const visibility = initialColumnVisibility({
+			stored: localStorage.getItem(storageKey),
+			columns
+		});
 		if (visibility) ownVisibility = visibility;
 	});
 
 	function setColumnVisibility(state: ColumnVisibilityState) {
 		ownVisibility = state;
 		if (storageKey) localStorage.setItem(storageKey, JSON.stringify(state));
-		const shown = shownFromVisibility(columns, state);
-		const defaults = shownFromVisibility(columns, defaultColumnVisibility(columns));
+		const shown = shownFromVisibility({ columns, visibility: state });
+		const defaults = shownFromVisibility({ columns, visibility: defaultColumnVisibility(columns) });
 		params.columns = shown.join() === defaults.join() ? null : shown;
 	}
 
@@ -180,7 +183,10 @@
 	const searchRows = $derived(
 		serverMode
 			? undefined
-			: createFuzzySearch(rows, (row, index) => rowSearchText(searchedColumns, row, index))
+			: createFuzzySearch({
+					rows,
+					textOf: (row, index) => rowSearchText({ columns: searchedColumns, row, index })
+				})
 	);
 	/** The rows matching the search, best match first; every row without one. */
 	const searchedRows = $derived(searchRows ? searchRows(globalFilter) : rows);
@@ -248,21 +254,25 @@
 	/** What the export contains: the shown columns, for every row the filters let through. */
 	async function getExport() {
 		const shown = new Set(table.getVisibleLeafColumns().map((column) => column.id));
-		return tableExport(
-			columns.filter((column) => {
+		return tableExport({
+			columns: columns.filter((column) => {
 				const id = columnIdOf(column);
 				return id === undefined || shown.has(id);
 			}),
-			exportRows
+			rows: exportRows
 				? await exportRows()
 				: table.getPrePaginatedRowModel().rows.map((row) => row.original),
-			{ yes: m.yes(), no: m.no() }
-		);
+			labels: { yes: m.yes(), no: m.no() }
+		});
 	}
 
 	onMount(() => {
 		// a filter that narrows the table down to one row, as links from elsewhere do, opens that row
-		const row = soleFilteredRow(searchedRows, queryParamKey, page.url.searchParams);
+		const row = soleFilteredRow({
+			rows: searchedRows,
+			queryParamKey,
+			searchParams: page.url.searchParams
+		});
 		if (row) onRowClick?.(row);
 	});
 </script>

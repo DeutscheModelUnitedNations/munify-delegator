@@ -10,7 +10,7 @@
 <Modal bind:open={draft.showRecoveryModal} title={m.paperDraftRecoveryTitle()}>
 	<p class="mb-2">{m.paperDraftRecoveryMessage()}</p>
 	<p class="text-sm text-base-content/70">
-		{m.paperDraftSavedAgo({ time: formatRelativeTime(draft.savedDraft?.savedAt) })}
+		{m.paperDraftSavedAgo({ time: formatRelativeTime({ timestamp: draft.savedDraft?.savedAt }) })}
 	</p>
 	{#snippet action()}
 		<button class="btn" onclick={() => draft.startFresh()}>{m.paperStartFresh()}</button>

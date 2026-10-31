@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { locales } from '#lib/paraglide/runtime';
@@ -18,12 +19,15 @@
 
 	/** A crumb for a folder with no page of its own (`team`) has nowhere to go, so it is not a link */
 	const hasPage = (segment: PathSegmentType) =>
-		hasPageAt(new URL(segment.href).pathname.split('/').filter(Boolean), pageKeys);
+		hasPageAt({
+			urlSegments: new URL(segment.href).pathname.split('/').filter(Boolean),
+			globKeys: pageKeys
+		});
 
 	function getBreadcrumb(segment: PathSegmentType): LocalizedBreadcrumb {
 		const breadcrumb = breadcrumbs[segment.key];
 		if (!breadcrumb) {
-			console.warn(`Breadcrumb not found: ${segment.key}`);
+			logger.warn(`Breadcrumb not found: ${segment.key}`);
 			return {
 				translation: () => segment.key,
 				icon: 'question'

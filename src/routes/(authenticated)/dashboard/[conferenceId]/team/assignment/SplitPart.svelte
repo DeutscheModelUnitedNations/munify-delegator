@@ -60,7 +60,10 @@
 				: ''}"
 		>
 			<span class="truncate">
-				{formatNames(member.user.givenName ?? undefined, member.user.familyName ?? undefined)}
+				{formatNames({
+					givenName: member.user.givenName ?? undefined,
+					familyName: member.user.familyName ?? undefined
+				})}
 			</span>
 			{#if member.isHeadDelegate}
 				<i class="fa-sharp-duotone fa-solid fa-crown text-warning shrink-0" title={m.headDelegate()}

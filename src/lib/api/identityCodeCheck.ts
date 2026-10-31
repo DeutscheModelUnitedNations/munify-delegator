@@ -64,7 +64,7 @@ async function checkScannedQr(code: string): Promise<ScannedQr> {
 	} catch {
 		return { valid: false, reason: 'noKey' };
 	}
-	return verifyIdentityCode(code, key);
+	return verifyIdentityCode({ code, publicKey: key });
 }
 
 const rejectedMessages = {
@@ -83,10 +83,13 @@ export type AcceptedCode = { accepted: true; code: string } | { accepted: false;
  * stands for is what comes back. Anything else (a printed barcode, a typed or picked code) is taken
  * as it is: the team judges whether the nametag they hold is one we issued.
  */
-export async function acceptScannedCode(
-	code: string,
-	format: string | null
-): Promise<AcceptedCode> {
+export async function acceptScannedCode({
+	code,
+	format
+}: {
+	code: string;
+	format: string | null;
+}): Promise<AcceptedCode> {
 	if (format !== 'qr_code' && !looksLikeIdentityCode(code)) return { accepted: true, code };
 	const checked = await checkScannedQr(code);
 	if (checked.valid) return { accepted: true, code: checked.userId };

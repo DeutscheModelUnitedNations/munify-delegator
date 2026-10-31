@@ -48,7 +48,7 @@
 	const startConference = $derived(conference?.startConference);
 
 	const page = $derived(
-		await fetchWaitingListPage(conferenceId, tableState, toggles, startConference)
+		await fetchWaitingListPage({ conferenceId, state: tableState, toggles, startConference })
 	);
 	const waiting = $derived(await fetchWaitingListPositions(conferenceId));
 	// read the live list once into a plain copy, see `liveSnapshot`
@@ -56,17 +56,17 @@
 	const waitingCopy = $derived(snapshotWaiting(waiting));
 	const positions = $derived(waitingListPositions(waitingCopy));
 	const rows: WaitingListRow[] = $derived(
-		page.rows.map((entry) => toWaitingListRow(entry, startConference, positions))
+		page.rows.map((entry) => toWaitingListRow({ entry, startConference, positions }))
 	);
 
 	async function exportRows() {
-		const entries = await fetchAllWaitingListEntries(
+		const entries = await fetchAllWaitingListEntries({
 			conferenceId,
-			tableState,
+			state: tableState,
 			toggles,
 			startConference
-		);
-		return entries.map((entry) => toWaitingListRow(entry, startConference, positions));
+		});
+		return entries.map((entry) => toWaitingListRow({ entry, startConference, positions }));
 	}
 
 	const dateFormatter = new Intl.DateTimeFormat(getLocale(), {
@@ -79,11 +79,14 @@
 			id: 'actions',
 			header: '',
 			cell: ({ row }) =>
-				renderComponent(WaitingListActions, {
-					entryId: row.original.id,
-					userId: row.original.userId,
-					conferenceId: conferenceId,
-					hidden: row.original.hidden
+				renderComponent({
+					component: WaitingListActions,
+					props: {
+						entryId: row.original.id,
+						userId: row.original.userId,
+						conferenceId: conferenceId,
+						hidden: row.original.hidden
+					}
 				}),
 			enableSorting: false
 		},
@@ -192,8 +195,11 @@
 			accessorKey: 'hidden',
 			header: m.hidden(),
 			cell: ({ row }) =>
-				renderComponent(HiddenIcon, {
-					value: row.original.hidden
+				renderComponent({
+					component: HiddenIcon,
+					props: {
+						value: row.original.hidden
+					}
 				}),
 			filter: { type: 'boolean' },
 			enableSorting: true

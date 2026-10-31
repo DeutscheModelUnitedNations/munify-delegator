@@ -30,7 +30,7 @@
 	});
 
 	const visibleLinks = $derived(
-		getLinksForUserType('singleParticipant', linkContext).filter((link) =>
+		getLinksForUserType({ userType: 'singleParticipant', ctx: linkContext }).filter((link) =>
 			PUBLIC_LINKS.includes(link.id)
 		)
 	);

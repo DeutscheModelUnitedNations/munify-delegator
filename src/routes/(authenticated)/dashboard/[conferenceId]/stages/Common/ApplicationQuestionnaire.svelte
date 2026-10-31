@@ -25,11 +25,11 @@
 	let { initial, save, disabled, showSubmitButton, motivationLabel, experienceLabel }: Props =
 		$props();
 
-	const form = mutationForm(
-		makeApplicationForm(untrack(() => initial)),
-		zod4Client(applicationTextsSchema),
-		(answers) => save(answers)
-	);
+	const form = mutationForm({
+		initial: makeApplicationForm(untrack(() => initial)),
+		validators: zod4Client(applicationTextsSchema),
+		save: (answers) => save(answers)
+	});
 </script>
 
 <Form {form} {showSubmitButton}>

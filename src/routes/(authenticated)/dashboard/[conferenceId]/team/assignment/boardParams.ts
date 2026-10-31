@@ -14,7 +14,7 @@ export function boardParams(search: Pick<URLSearchParams, 'get'>): BoardParams {
 }
 
 /** `url` with the board's parameters in it; defaults are left out. */
-export function withBoardParams(url: URL, params: BoardParams) {
+export function withBoardParams({ url, params }: { url: URL; params: BoardParams }) {
 	const next = new URL(url);
 	if (params.size > 0) next.searchParams.set('size', String(params.size));
 	else next.searchParams.delete('size');

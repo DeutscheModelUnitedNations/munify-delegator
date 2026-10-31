@@ -27,9 +27,9 @@
 
 	// Search, filters, order and paging run in the backend; the table only holds this page.
 	const tableState = createTableState();
-	const fetched = $derived(await fetchTeamMembersPage(conferenceId, tableState));
+	const fetched = $derived(await fetchTeamMembersPage({ conferenceId, state: tableState }));
 	const teamMembers = $derived(fetched.rows);
-	const exportRows = () => fetchAllTeamMembers(conferenceId, tableState);
+	const exportRows = () => fetchAllTeamMembers({ conferenceId, state: tableState });
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
 
 	// Dedicated schema for profile completeness validation
@@ -118,15 +118,18 @@
 			accessorFn: (row) => translateTeamRole(row.role),
 			filter: { type: 'enum', label: translateTeamRole, options: TEAM_ROLES },
 			cell: ({ row }) =>
-				renderComponent(TeamRoleCell, {
-					role: row.original.role,
-					onChange: (role) =>
-						Promise.resolve(
-							client.mutate.updateTeamMemberRole({
-								__args: { id: row.original.id, role },
-								role: true
-							})
-						)
+				renderComponent({
+					component: TeamRoleCell,
+					props: {
+						role: row.original.role,
+						onChange: (role) =>
+							Promise.resolve(
+								client.mutate.updateTeamMemberRole({
+									__args: { id: row.original.id, role },
+									role: true
+								})
+							)
+					}
 				})
 		},
 		{
@@ -136,21 +139,30 @@
 			enableSorting: false,
 			cell: ({ row }) =>
 				isProfileComplete(row.original.user)
-					? renderComponent(BadgeCell, { label: m.complete(), variant: 'badge-success' })
-					: renderComponent(BadgeCell, {
-							label: m.incomplete(),
-							variant: 'badge-warning',
-							title: m.profileIncompleteHint()
+					? renderComponent({
+							component: BadgeCell,
+							props: { label: m.complete(), variant: 'badge-success' }
+						})
+					: renderComponent({
+							component: BadgeCell,
+							props: {
+								label: m.incomplete(),
+								variant: 'badge-warning',
+								title: m.profileIncompleteHint()
+							}
 						})
 		},
 		{
 			id: 'actions',
 			header: '',
 			cell: ({ row }) =>
-				renderComponent(TeamMemberActions, {
-					onOpenUserCard: () => openUserCard(row.original.user.id),
-					onImpersonate: isAdmin ? () => startImpersonation(row.original.user.id) : undefined,
-					onDelete: () => handleDelete(row.original.id)
+				renderComponent({
+					component: TeamMemberActions,
+					props: {
+						onOpenUserCard: () => openUserCard(row.original.user.id),
+						onImpersonate: isAdmin ? () => startImpersonation(row.original.user.id) : undefined,
+						onDelete: () => handleDelete(row.original.id)
+					}
 				}),
 			enableSorting: false
 		}

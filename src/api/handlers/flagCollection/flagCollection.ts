@@ -75,7 +75,7 @@ schemaBuilder.queryFields((t) => ({
 		type: FlagCollectionDataRef,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanReviewPapers(ctx, args.conferenceId);
+			await assertCanReviewPapers({ ctx, conferenceId: args.conferenceId });
 
 			return buildFlagCollection(args.conferenceId);
 		}

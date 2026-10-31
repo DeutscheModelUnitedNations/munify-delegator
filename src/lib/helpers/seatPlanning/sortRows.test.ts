@@ -23,28 +23,25 @@ const names = (sorted: typeof rows) => sorted.map((row) => row.name);
 
 describe('sortSeatRows', () => {
 	test('sorts by name with the locale (umlauts next to their base letter)', () => {
-		expect(names(sortSeatRows(rows, { key: 'name', descending: false }, seats))).toEqual([
+		expect(names(sortSeatRows({ rows, sort: { key: 'name', descending: false }, seats }))).toEqual([
 			'Ägypten',
 			'Angola',
 			'China',
 			'Frankreich'
 		]);
-		expect(names(sortSeatRows(rows, { key: 'name', descending: true }, seats))[0]).toBe(
+		expect(names(sortSeatRows({ rows, sort: { key: 'name', descending: true }, seats }))[0]).toBe(
 			'Frankreich'
 		);
 	});
 
 	test('sorts by regional group in the order of the former grouped view, then by name', () => {
-		expect(names(sortSeatRows(rows, { key: 'group', descending: false }, seats))).toEqual([
-			'Ägypten',
-			'Angola',
-			'China',
-			'Frankreich'
-		]);
+		expect(names(sortSeatRows({ rows, sort: { key: 'group', descending: false }, seats }))).toEqual(
+			['Ägypten', 'Angola', 'China', 'Frankreich']
+		);
 	});
 
 	test('sorts by delegation size, ties by name ascending even when descending', () => {
-		expect(names(sortSeatRows(rows, { key: 'size', descending: true }, seats))).toEqual([
+		expect(names(sortSeatRows({ rows, sort: { key: 'size', descending: true }, seats }))).toEqual([
 			'China',
 			'Frankreich',
 			'Ägypten',
@@ -53,7 +50,7 @@ describe('sortSeatRows', () => {
 	});
 
 	test('sorts by seat in a committee', () => {
-		expect(names(sortSeatRows(rows, { key: 'gv', descending: true }, seats))).toEqual([
+		expect(names(sortSeatRows({ rows, sort: { key: 'gv', descending: true }, seats }))).toEqual([
 			'Angola',
 			'Frankreich',
 			'Ägypten',
@@ -63,7 +60,7 @@ describe('sortSeatRows', () => {
 
 	test('does not mutate the input', () => {
 		const copy = [...rows];
-		sortSeatRows(rows, { key: 'size', descending: true }, seats);
+		sortSeatRows({ rows, sort: { key: 'size', descending: true }, seats });
 		expect(rows).toEqual(copy);
 	});
 });
@@ -79,20 +76,26 @@ describe('defaultDescending', () => {
 
 describe('nextSortParams', () => {
 	test('a new column starts with its default direction', () => {
-		expect(nextSortParams({ sort: null, desc: null }, 'size')).toEqual({
+		expect(nextSortParams({ current: { sort: null, desc: null }, clicked: 'size' })).toEqual({
 			sort: 'size',
 			desc: true
 		});
-		expect(nextSortParams({ sort: 'size', desc: true }, 'group')).toEqual({
+		expect(nextSortParams({ current: { sort: 'size', desc: true }, clicked: 'group' })).toEqual({
 			sort: 'group',
 			desc: null
 		});
 	});
 
 	test('the active column flips, defaults are left out of the URL', () => {
-		expect(nextSortParams({ sort: null, desc: null }, 'name')).toEqual({ sort: null, desc: true });
-		expect(nextSortParams({ sort: null, desc: true }, 'name')).toEqual({ sort: null, desc: null });
-		expect(nextSortParams({ sort: 'size', desc: true }, 'size')).toEqual({
+		expect(nextSortParams({ current: { sort: null, desc: null }, clicked: 'name' })).toEqual({
+			sort: null,
+			desc: true
+		});
+		expect(nextSortParams({ current: { sort: null, desc: true }, clicked: 'name' })).toEqual({
+			sort: null,
+			desc: null
+		});
+		expect(nextSortParams({ current: { sort: 'size', desc: true }, clicked: 'size' })).toEqual({
 			sort: 'size',
 			desc: null
 		});

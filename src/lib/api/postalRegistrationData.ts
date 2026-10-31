@@ -5,11 +5,21 @@ import type { ParticipantData, RecipientData } from '#lib/utils/pdfGenerator';
 type Text = string | null | undefined;
 
 /** The participant's name as the postal documents print it: given name first, all uppercase. */
-export function formatPostalParticipantName(givenName: Text, familyName: Text): string {
-	return formatNames(givenName ?? undefined, familyName ?? undefined, {
-		givenNameFirst: true,
-		familyNameUppercase: true,
-		givenNameUppercase: true
+export function formatPostalParticipantName({
+	givenName,
+	familyName
+}: {
+	givenName: Text;
+	familyName: Text;
+}): string {
+	return formatNames({
+		givenName: givenName ?? undefined,
+		familyName: familyName ?? undefined,
+		options: {
+			givenNameFirst: true,
+			familyNameUppercase: true,
+			givenNameUppercase: true
+		}
 	});
 }
 
@@ -53,10 +63,10 @@ export function postalParticipant(user: {
 		birthday,
 		participant: {
 			id: user.id,
-			name: formatPostalParticipantName(user.givenName, user.familyName),
+			name: formatPostalParticipantName({ givenName: user.givenName, familyName: user.familyName }),
 			address: `${street} ${user.apartment ? user.apartment : ''}, ${zip} ${city}, ${country}`,
 			birthday: birthday.toLocaleDateString(getLocale())
 		},
-		fileName: `${formatInitials(user.givenName ?? undefined, user.familyName ?? undefined)}_postal_registration.pdf`
+		fileName: `${formatInitials({ givenName: user.givenName ?? undefined, familyName: user.familyName ?? undefined })}_postal_registration.pdf`
 	};
 }

@@ -50,7 +50,7 @@ export function careTeamPostalParticipant(user: {
 		birthday,
 		participant: {
 			id: user.id,
-			name: formatPostalParticipantName(user.givenName, user.familyName),
+			name: formatPostalParticipantName({ givenName: user.givenName, familyName: user.familyName }),
 			address,
 			birthday: birthday.toLocaleDateString(getLocale())
 		}
@@ -58,13 +58,20 @@ export function careTeamPostalParticipant(user: {
 }
 
 /** A downloaded document's file name: the family name, then the given name, then what it is. */
-export function documentFileName(
-	user: { givenName: Text; familyName: Text },
-	document: 'postal_registration' | 'certificate'
-) {
-	const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-		givenNameFirst: false,
-		delimiter: '_'
+export function documentFileName({
+	user,
+	document
+}: {
+	user: { givenName: Text; familyName: Text };
+	document: 'postal_registration' | 'certificate';
+}) {
+	const name = formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined,
+		options: {
+			givenNameFirst: false,
+			delimiter: '_'
+		}
 	});
 	return `${name}_${document}.pdf`;
 }

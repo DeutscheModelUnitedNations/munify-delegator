@@ -53,7 +53,7 @@
 
 	/** Arrow keys turn the cards, unless somebody is typing. */
 	function onKeydown(event: KeyboardEvent) {
-		const id = deckKeyTarget(event, { previousId, nextId, unreviewedId });
+		const id = deckKeyTarget({ event, neighbours: { previousId, nextId, unreviewedId } });
 		if (id) onSelect(id);
 	}
 </script>

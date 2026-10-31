@@ -55,7 +55,7 @@
 				{#if startDate && endDate}
 					<div class="text-base-content/60 flex items-center gap-2 text-sm">
 						<i class="fa-sharp-duotone fa-solid fa-calendar-days"></i>
-						<span>{formatDateRange(startDate, endDate)}</span>
+						<span>{formatDateRange({ start: startDate, end: endDate })}</span>
 					</div>
 				{/if}
 			</div>

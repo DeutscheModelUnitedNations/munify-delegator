@@ -75,9 +75,13 @@ export function certificateContents(status: {
 	const { conference, user } = status;
 	if (!status.didAttend || !conference) return undefined;
 
-	const fullName = formatNames(user?.givenName, user?.familyName, {
-		familyNameUppercase: false,
-		givenNameUppercase: false
+	const fullName = formatNames({
+		givenName: user?.givenName,
+		familyName: user?.familyName,
+		options: {
+			familyNameUppercase: false,
+			givenNameUppercase: false
+		}
 	});
 
 	return {

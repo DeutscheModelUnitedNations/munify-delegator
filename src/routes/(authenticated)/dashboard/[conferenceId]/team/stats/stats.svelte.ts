@@ -43,7 +43,10 @@ export type { StatsFilterOption };
 const DEFAULT_FILTER: StatsFilterOption = 'all';
 
 // Persisted on the client; the server and a first visit start at the default
-const statsFilter = createPersistedState<StatsFilterOption>('statsFilter', DEFAULT_FILTER);
+const statsFilter = createPersistedState<StatsFilterOption>({
+	key: 'statsFilter',
+	initial: DEFAULT_FILTER
+});
 
 export function unifiedFilter() {
 	const setFilter = (newFilter: StatsFilterOption) => {
@@ -55,12 +58,16 @@ export function unifiedFilter() {
 	};
 
 	// Get filtered value for objects with total/applied/notApplied
-	const getFilteredValue = (
-		object: FilterableCount | undefined,
-		roleBasedData?: RoleCounts,
-		entityType?: EntityType
-	): number | undefined =>
-		filteredStatValue(statsFilter.current, object, roleBasedData, entityType);
+	const getFilteredValue = ({
+		object,
+		roleBasedData,
+		entityType
+	}: {
+		object: FilterableCount | undefined;
+		roleBasedData?: RoleCounts;
+		entityType?: EntityType;
+	}): number | undefined =>
+		filteredStatValue({ filter: statsFilter.current, object, roleBasedData, entityType });
 
 	// Check if current filter is role-based
 	const isRoleBasedFilter = () => {

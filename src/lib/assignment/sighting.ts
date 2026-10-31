@@ -72,7 +72,7 @@ export interface MatchReason {
 }
 
 /** The longest stretch of a field that fuse matched, if any. */
-function matchedRange(fuse: Fuse<SearchField>, term: string) {
+function matchedRange({ fuse, term }: { fuse: Fuse<SearchField>; term: string }) {
 	const hit = fuse.search(term)[0];
 	if (!hit) return undefined;
 	const indices = hit.matches?.flatMap((match) => match.indices) ?? [];
@@ -84,19 +84,25 @@ function matchedRange(fuse: Fuse<SearchField>, term: string) {
 }
 
 /** Why an entry matches: the field that fits the search best. */
-export function matchReasons(entry: SightingEntry, search: string): MatchReason[] {
+export function matchReasons({
+	entry,
+	search
+}: {
+	entry: SightingEntry;
+	search: string;
+}): MatchReason[] {
 	const fuse = new Fuse(fieldsOfEntry(entry), {
 		keys: ['value'],
 		threshold: 0.4,
 		ignoreLocation: true,
 		includeMatches: true
 	});
-	const found = matchedRange(fuse, search.trim());
+	const found = matchedRange({ fuse, term: search.trim() });
 	return found ? [{ ...found.field, start: found.start, end: found.end }] : [];
 }
 
 /** The match with some words around it, cut off with an ellipsis where the value goes on. */
-export function snippetOf(reason: MatchReason, context = 30) {
+export function snippetOf({ reason, context = 30 }: { reason: MatchReason; context?: number }) {
 	const from = Math.max(0, reason.start - context);
 	const to = Math.min(reason.value.length, reason.end + context * 2);
 	return {
@@ -167,19 +173,25 @@ interface Wish {
 	icon?: string;
 }
 
-const wishOf = (
-	wish: SightedDelegation['appliedForRoles'][number],
-	nationName: (code: string) => string
-): Wish =>
+const wishOf = ({
+	wish,
+	nationName
+}: {
+	wish: SightedDelegation['appliedForRoles'][number];
+	nationName: (code: string) => string;
+}): Wish =>
 	wish.role.nation
 		? { name: nationName(wish.role.nation.alpha3Code), alpha2Code: wish.role.nation.alpha2Code }
 		: { name: wish.role.name ?? '', icon: wish.role.fontAwesomeIcon ?? undefined };
 
 /** A delegation's application as the sighting shows it; wishes in the order they were ranked. */
-export function delegationApplication(
-	delegation: SightedDelegation,
-	nationName: (code: string) => string
-) {
+export function delegationApplication({
+	delegation,
+	nationName
+}: {
+	delegation: SightedDelegation;
+	nationName: (code: string) => string;
+}) {
 	return {
 		// the members' own schools: a delegation keeps none
 		school: delegationSchoolsLabel(delegation.members),
@@ -191,7 +203,7 @@ export function delegationApplication(
 		supervisors: delegation.members.flatMap((member) => member.supervisors),
 		wishes: delegation.appliedForRoles
 			.toSorted((a, b) => a.rank - b.rank)
-			.map((wish) => wishOf(wish, nationName))
+			.map((wish) => wishOf({ wish, nationName }))
 	};
 }
 
@@ -208,47 +220,70 @@ export function singleApplication(single: SightedSingleParticipant) {
 
 /** What a search looks through of an application: school, texts, members and supervisors with their emails. */
 export function searchFieldsOf(application: ReturnType<typeof singleApplication>): SearchField[] {
-	const named = (
-		kind: 'member' | 'supervisor',
-		person: { givenName: string; familyName: string }
-	) => ({ kind, value: `${person.givenName} ${person.familyName}` }) satisfies SearchField;
-	const email = (kind: 'memberEmail' | 'supervisorEmail', address: Nullable<string>) =>
-		({ kind, value: address ?? '' }) satisfies SearchField;
-	const text = (kind: SearchFieldKind, value: Nullable<string>): SearchField => ({
+	const named = ({
+		kind,
+		person
+	}: {
+		kind: 'member' | 'supervisor';
+		person: { givenName: string; familyName: string };
+	}) => ({ kind, value: `${person.givenName} ${person.familyName}` }) satisfies SearchField;
+	const email = ({
+		kind,
+		address
+	}: {
+		kind: 'memberEmail' | 'supervisorEmail';
+		address: Nullable<string>;
+	}) => ({ kind, value: address ?? '' }) satisfies SearchField;
+	const text = ({
+		kind,
+		value
+	}: {
+		kind: SearchFieldKind;
+		value: Nullable<string>;
+	}): SearchField => ({
 		kind,
 		value: value ?? ''
 	});
 	return [
-		text('school', application.school),
-		text('motivation', application.motivation),
-		text('experience', application.experience),
-		...application.people.flatMap((p) => [named('member', p), email('memberEmail', p.email)]),
+		text({ kind: 'school', value: application.school }),
+		text({ kind: 'motivation', value: application.motivation }),
+		text({ kind: 'experience', value: application.experience }),
+		...application.people.flatMap((p) => [
+			named({ kind: 'member', person: p }),
+			email({ kind: 'memberEmail', address: p.email })
+		]),
 		...application.supervisors.flatMap((s) => [
-			named('supervisor', s.user),
-			email('supervisorEmail', s.user.email)
+			named({ kind: 'supervisor', person: s.user }),
+			email({ kind: 'supervisorEmail', address: s.user.email })
 		])
 	].filter((field) => field.value);
 }
 
 /** The supervisors, each once: they appear once per member they supervise. */
-export function distinctSupervisors(
-	supervisors: readonly Supervisor[],
-	format: (givenName: string, familyName: string) => string
-) {
+export function distinctSupervisors({
+	supervisors,
+	format
+}: {
+	supervisors: readonly Supervisor[];
+	format: (name: { givenName: string; familyName: string }) => string;
+}) {
 	return [...new Map(supervisors.map((s) => [s.id, s])).values()].map((s) => ({
 		id: s.id,
 		userId: s.user.id,
-		name: format(s.user.givenName, s.user.familyName)
+		name: format({ givenName: s.user.givenName, familyName: s.user.familyName })
 	}));
 }
 
 /** The average age at the conference (of those whose birthday is known) and the earlier conferences of all. */
-export function memberSummary(
-	people: readonly Person[],
-	startConference: Date | string
-): { averageAge: number | undefined; participations: number } {
+export function memberSummary({
+	people,
+	startConference
+}: {
+	people: readonly Person[];
+	startConference: Date | string;
+}): { averageAge: number | undefined; participations: number } {
 	const ages = people.flatMap((p) =>
-		p.birthday ? [getAgeAtConference(p.birthday, startConference)] : []
+		p.birthday ? [getAgeAtConference({ birthday: p.birthday, startConference })] : []
 	);
 	const known = ages.filter((age) => age !== undefined);
 	return {
@@ -266,12 +301,17 @@ export const genderIcon = (gender: Nullable<string>) => GENDER_ICONS[gender ?? '
  * The arguments of `setAssignmentReview`, which takes the whole review: the current one with
  * `change` applied, for the delegation or single participant `id` names.
  */
-export function reviewArgs(
-	kind: SightingEntry['kind'],
-	id: string,
-	review: SightingReview | undefined,
-	change: Partial<SightingReview>
-) {
+export function reviewArgs({
+	kind,
+	id,
+	review,
+	change
+}: {
+	kind: SightingEntry['kind'];
+	id: string;
+	review: SightingReview | undefined;
+	change: Partial<SightingReview>;
+}) {
 	const next = { flagged: false, disqualified: false, ...review, ...change };
 	return {
 		delegationId: kind === 'delegation' ? id : undefined,
@@ -311,16 +351,20 @@ interface SearchHits {
  * What a search found, as entries carrying the fields it looked through; somebody typing a
  * codename wants that application first.
  */
-export function searchHitEntries(
-	hits: SearchHits | undefined,
-	search: string,
-	codenameOf: (id: string) => string
-): SightingEntry[] {
+export function searchHitEntries({
+	hits,
+	search,
+	codenameOf
+}: {
+	hits: SearchHits | undefined;
+	search: string;
+	codenameOf: (id: string) => string;
+}): SightingEntry[] {
 	if (!hits) return [];
 	const fields = new Map<string, SearchField[]>([
 		...hits.delegations.map((delegation): [string, SearchField[]] => [
 			delegation.id,
-			searchFieldsOf(delegationApplication(delegation, String))
+			searchFieldsOf(delegationApplication({ delegation, nationName: String }))
 		]),
 		...hits.singleParticipants.map((single): [string, SearchField[]] => [
 			single.id,

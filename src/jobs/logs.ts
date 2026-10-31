@@ -1,22 +1,31 @@
+import { logger } from '#lib/logger';
+
 export function logTaskStart(taskName: string) {
-	console.info(`Started Task: ${taskName}`);
-	console.info('----');
-	return new Date().getTime();
+	logger.info('Task started', { task: taskName });
+	return Date.now();
 }
 
-export function logTaskEnd(taskName: string, startTime?: number) {
-	console.info('----');
-	console.info(
-		`Finished Task: ${taskName} ${startTime ? `(in ${new Date().getTime() - startTime}ms)` : ''}`
-	);
+export function logTaskEnd({ taskName, startTime }: { taskName: string; startTime?: number }) {
+	logger.info('Task finished', {
+		task: taskName,
+		durationMs: startTime ? Date.now() - startTime : undefined
+	});
 }
 
-export function taskWarning(taskName: string, message: string) {
-	console.warn(`Warning in task "${taskName}" - ${message}`);
+export function taskWarning({ taskName, message }: { taskName: string; message: string }) {
+	logger.warn(message, { task: taskName });
 }
 
 /** Logs the failure and makes the process exit non-zero, so the scheduler running the job sees it. */
-export function taskError(taskName: string, message: string, error?: string | Error) {
+export function taskError({
+	taskName,
+	message,
+	error
+}: {
+	taskName: string;
+	message: string;
+	error?: string | Error;
+}) {
 	process.exitCode = 1;
-	console.error(`Error in task "${taskName}" - ${message}`, error ?? '');
+	logger.error(message, { task: taskName, err: error });
 }

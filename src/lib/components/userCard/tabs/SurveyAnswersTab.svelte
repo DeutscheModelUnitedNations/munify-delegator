@@ -11,7 +11,7 @@
 	let { conferenceId, userId }: Props = $props();
 
 	/** The conference's visible surveys and how this person answered them. */
-	async function fetchSurveys(conferenceId: string, userId: string) {
+	async function fetchSurveys({ conferenceId, userId }: { conferenceId: string; userId: string }) {
 		const [questions, answers] = await Promise.all([
 			client.liveQuery.surveyQuestions({
 				__args: { where: { conferenceId: { eq: conferenceId }, hidden: { eq: false } } },
@@ -34,7 +34,7 @@
 		return { questions, answers };
 	}
 
-	const surveys = $derived(await fetchSurveys(conferenceId, userId));
+	const surveys = $derived(await fetchSurveys({ conferenceId, userId }));
 </script>
 
 {#if surveys.questions.length === 0}

@@ -5,10 +5,16 @@ import { normalizeEmailAddress, normalizePersonName } from '@m1212e/rumble';
 import { db, schema } from '#api/db/db';
 import { PUBLIC_DEFAULT_LOCALE } from '$app/env/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation';
+import { isUniqueViolationOn } from '#api/services/errors';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
 import { reportEmailConflict } from './emailConflict';
-import { hashToken, isOpenInvitation, pendingInvitationCookieName } from './invitationToken';
+import {
+	hashToken,
+	isOpenInvitation,
+	pendingInvitationCookieName
+} from '#api/handlers/teamMemberInvitation/invitationToken';
+import { logger } from '#lib/logger';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 
 type Claims = {
 	sub: string;
@@ -33,12 +39,14 @@ function nameFromClaim(claim: string | undefined): string {
 }
 
 /** Answers an email conflict on login with the page explaining it. */
-async function redirectToEmailConflict(
-	userSubject: string,
-	email: string,
-	error: unknown
-): Promise<never> {
-	const conflict = await reportEmailConflict(userSubject, email, error);
+async function redirectToEmailConflict({
+	userSubject,
+	email
+}: {
+	userSubject: string;
+	email: string;
+}): Promise<never> {
+	const conflict = await reportEmailConflict({ userSubject, email });
 	redirect(302, conflict.redirectTo);
 }
 
@@ -51,9 +59,15 @@ async function redirectToEmailConflict(
  *
  * Redirects rather than returns, because both of its unusual outcomes are navigations: a taken
  * email address has its own explanatory page, and an account that is missing details has to fill
- * them in before it can do anything.
+ * them in before it can do anything (and then go on to `returnTo`, a same-site path).
  */
-export async function upsertSelfFromClaims(claims: Claims) {
+export async function upsertSelfFromClaims({
+	claims,
+	returnTo
+}: {
+	claims: Claims;
+	returnTo: string;
+}) {
 	if (!claims.email) {
 		throw new Error('OIDC result is missing required field: email');
 	}
@@ -76,8 +90,8 @@ export async function upsertSelfFromClaims(claims: Claims) {
 			.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
 			.returning();
 	} catch (error) {
-		if (!isUniqueViolationOn(error, 'email')) throw error;
-		return redirectToEmailConflict(claims.sub, email, error);
+		if (!isUniqueViolationOn({ error, column: 'email' })) throw error;
+		return redirectToEmailConflict({ userSubject: claims.sub, email });
 	}
 
 	await claimPendingInvitation(user.id);
@@ -89,34 +103,7 @@ export async function upsertSelfFromClaims(claims: Claims) {
 	}).success;
 
 	if (needsMoreInfo) {
-		redirect(302, `/my-account?redirect=${encodeURIComponent(intendedDestination())}`);
-	}
-}
-
-/**
- * Where the person was heading before they were sent off to log in.
- *
- * This runs inside the login callback, so the current URL is the callback route and useless as a
- * destination. The OIDC library round-trips the original URL through the `state` parameter, which
- * is still on the query string at this point, so read it from there and fall back to the start
- * page when it is missing or points somewhere else.
- */
-function intendedDestination(): string {
-	const event = getRequestEvent();
-	const state = event.url.searchParams.get('state');
-	if (!state) return '/';
-
-	try {
-		const parsed: unknown = JSON.parse(state);
-		if (parsed === null || typeof parsed !== 'object' || !('visitedUrl' in parsed)) return '/';
-		const visitedUrl = parsed.visitedUrl;
-		if (typeof visitedUrl !== 'string') return '/';
-
-		const target = new URL(visitedUrl, event.url.origin);
-		if (target.origin !== event.url.origin) return '/';
-		return `${target.pathname}${target.search}`;
-	} catch {
-		return '/';
+		redirect(302, `/my-account?redirect=${encodeURIComponent(returnTo)}`);
 	}
 }
 
@@ -137,7 +124,10 @@ export async function claimPendingInvitation(userId: string) {
 		if (!isOpenInvitation(invitation)) return;
 
 		const usedNow = { usedAt: new Date(), acceptedById: userId };
-		const invitationRow = whereRows(schema.teamMemberInvitation, { id: invitation.id });
+		const invitationRow = whereRows({
+			table: schema.teamMemberInvitation,
+			filter: { id: invitation.id }
+		});
 		const existingMember = await db.query.teamMember.findFirst({
 			where: { conferenceId: invitation.conferenceId, userId }
 		});
@@ -151,7 +141,10 @@ export async function claimPendingInvitation(userId: string) {
 		// Someone taking part in the conference cannot join its team as well; the invitation stays
 		// open for the team to see that it was not taken up.
 		if (await isParticipantOrTeamMember({ conferenceId: invitation.conferenceId, userId })) {
-			console.warn(`Invitation ${invitation.id} not redeemed: ${userId} already takes part`);
+			logger.warn('Invitation not redeemed: the user already takes part', {
+				invitationId: invitation.id,
+				userId
+			});
 			return;
 		}
 
@@ -161,8 +154,9 @@ export async function claimPendingInvitation(userId: string) {
 				.values({ conferenceId: invitation.conferenceId, userId, role: invitation.role });
 			await tx.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
 		});
+		scheduleEmailSweep({ conferenceId: invitation.conferenceId, origin: event.url.origin });
 	} catch (error) {
-		console.error('Failed to process pending invitation:', error);
+		logger.error('Failed to process pending invitation', error);
 	} finally {
 		event.cookies.delete(pendingInvitationCookieName, { path: '/' });
 	}

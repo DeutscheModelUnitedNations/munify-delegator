@@ -53,7 +53,7 @@
 				id: x.id,
 				delegationId: d.id,
 				isHeadDelegate: x.isHeadDelegate,
-				name: formatNames(x.user.givenName, x.user.familyName)
+				name: formatNames({ givenName: x.user.givenName, familyName: x.user.familyName })
 			}))
 		)
 	);
@@ -71,11 +71,13 @@
 
 	// head delegates as preselected for the delegations the switch touches
 	const after = $derived(
-		selected && target ? applySeatSwitch(allMembers, toSeatSwitch(selected, target)) : []
+		selected && target
+			? applySeatSwitch({ members: allMembers, change: toSeatSwitch({ selected, target }) })
+			: []
 	);
 
 	const headDelegateInvolved = $derived(
-		!!selected && !!target && isHeadDelegateInvolved(allMembers, selected, target)
+		!!selected && !!target && isHeadDelegateInvolved({ members: allMembers, selected, target })
 	);
 
 	// delegations that still have a choice to make after the switch
@@ -105,11 +107,15 @@
 	// heads are only sent when there was a choice to make
 	const headDelegateMemberIds = $derived(pickers.length > 0 ? Object.values(heads) : null);
 
-	const confirm = async (from: SwitchMember, to: SwitchSeat) => {
+	const confirm = async ({ from, to }: { from: SwitchMember; to: SwitchSeat }) => {
 		loading = true;
 		const promise = Promise.resolve(
 			client.mutate.switchDelegationMemberSeats({
-				__args: { conferenceId, ...seatSwitchVariables(from, to), headDelegateMemberIds },
+				__args: {
+					conferenceId,
+					...seatSwitchVariables({ selected: from, target: to }),
+					headDelegateMemberIds
+				},
 				id: true
 			})
 		);
@@ -166,7 +172,7 @@
 		</button>
 		<button
 			class="btn btn-primary"
-			onclick={() => selected && target && confirm(selected, target)}
+			onclick={() => selected && target && confirm({ from: selected, to: target })}
 			disabled={loading}
 		>
 			{#if loading}

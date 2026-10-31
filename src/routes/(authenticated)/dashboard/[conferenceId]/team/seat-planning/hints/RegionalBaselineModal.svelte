@@ -24,7 +24,15 @@
 
 	let { open = $bindable(), committees, plannerCommittees }: Props = $props();
 
-	async function setBaseline(committeeId: string, baseline: RegionalBaseline, targets?: number[]) {
+	async function setBaseline({
+		committeeId,
+		baseline,
+		targets
+	}: {
+		committeeId: string;
+		baseline: RegionalBaseline;
+		targets?: number[];
+	}) {
 		try {
 			await client.mutate.setCommitteeRegionalBaseline({
 				__args: { committeeId, baseline, targets },
@@ -61,7 +69,7 @@
 	};
 	/** the UN 193 distribution scaled to the committee, as a starting point for manual targets */
 	const unProportional = (seats: number) =>
-		proportionalTargets(baselineTemplates.UN_MEMBERS, seats);
+		proportionalTargets({ weights: baselineTemplates.UN_MEMBERS, seats });
 
 	function edit(row: (typeof rows)[number]) {
 		editing = row.id;
@@ -70,14 +78,24 @@
 			: unProportional(row.seats);
 	}
 
-	async function choose(row: (typeof rows)[number], baseline: RegionalBaseline) {
+	async function choose({
+		row,
+		baseline
+	}: {
+		row: (typeof rows)[number];
+		baseline: RegionalBaseline;
+	}) {
 		edit(row);
 		// switching to manual needs targets: the stored ones, else the UN proportions
-		await setBaseline(row.id, baseline, baseline === 'MANUAL' ? draft : undefined);
+		await setBaseline({
+			committeeId: row.id,
+			baseline,
+			targets: baseline === 'MANUAL' ? draft : undefined
+		});
 	}
 
 	async function applyTargets(committeeId: string) {
-		await setBaseline(committeeId, 'MANUAL', draft);
+		await setBaseline({ committeeId, baseline: 'MANUAL', targets: draft });
 	}
 </script>
 
@@ -103,7 +121,7 @@
 						value={row.regionalBaseline}
 						onchange={(e) => {
 							const value = regionalBaselines.find((b) => b === e.currentTarget.value);
-							if (value) choose(row, value);
+							if (value) choose({ row, baseline: value });
 						}}
 					>
 						{#each regionalBaselines as baseline (baseline)}
@@ -127,8 +145,8 @@
 				<div class="grid grid-cols-5 gap-2">
 					{#each regionalGroups as group, index (group)}
 						<label class="flex flex-col gap-1 text-xs">
-							<span class="truncate" title={translateRegionalGroup(group)}
-								>{translateRegionalGroup(group, true)}</span
+							<span class="truncate" title={translateRegionalGroup({ group })}
+								>{translateRegionalGroup({ group, short: true })}</span
 							>
 							<input
 								type="number"

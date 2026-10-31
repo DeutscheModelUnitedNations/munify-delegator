@@ -1,10 +1,14 @@
 export type WaitingListStatus = 'VACANCIES' | 'SHORT_LIST' | 'LONG_LIST';
 
-export const getWaitingListStatus = (
-	seats: number,
-	participants: number,
-	listEntries: number
-): WaitingListStatus => {
+export const getWaitingListStatus = ({
+	seats,
+	participants,
+	listEntries
+}: {
+	seats: number;
+	participants: number;
+	listEntries: number;
+}): WaitingListStatus => {
 	const freeSeats = Math.max(seats - participants, 0);
 
 	// If there are more seats then participants plus waiting list entries (minus a value accounting for people on the list who are not going to take their place)

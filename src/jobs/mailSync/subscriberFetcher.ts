@@ -28,7 +28,7 @@ export async function fetchSubscriberMap(
 	});
 
 	if (res.error || !res.data.data || !res.data.data.results) {
-		taskWarning(TASK_NAME, `Failed to fetch subscribers from Listmonk`);
+		taskWarning({ taskName: TASK_NAME, message: `Failed to fetch subscribers from Listmonk` });
 		return undefined;
 	}
 

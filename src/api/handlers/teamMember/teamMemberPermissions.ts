@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import type { TeamRole } from '#api/services/authHelper/rules';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
@@ -15,17 +15,19 @@ export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Team members can see each other.
-	abilityBuilder.teamMember.allow('read').when((ctx) => grantWhere(isTeamMemberOfConference(ctx)));
+	abilityBuilder.teamMember
+		.allow('read')
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx })));
 
 	// Project management removes anybody from the team, or gives them another role.
 	abilityBuilder.teamMember
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 
 	// Team coordinators remove anybody but project management. Who joins, with which role, goes
 	// through invitations (see `assertMayGrantRole`).
 	abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
+		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
 		return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
 	});
 }
@@ -34,13 +36,21 @@ export function registerTeamMemberAbilities() {
  * Refuses unless the caller may change team member `id` (the row's update ability) and hand out
  * `role` in its conference, the same as inviting somebody with it (`assertMayGrantRole`).
  */
-export async function assertCanChangeTeamRole(ctx: ApiContext, id: string, role: TeamRole) {
+export async function assertCanChangeTeamRole({
+	ctx,
+	id,
+	role
+}: {
+	ctx: ApiContext;
+	id: string;
+	role: TeamRole;
+}) {
 	const member = await db.query.teamMember.findFirst({
 		...(await ctx.abilities.teamMember.filter('update')).merge({ where: { id } }).query.single,
 		columns: { conferenceId: true }
 	});
-	if (!member) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
-	await assertMayGrantRole(ctx, member.conferenceId, role);
+	if (!member) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
+	await assertMayGrantRole({ ctx, conferenceId: member.conferenceId, role });
 }
 
 /**
@@ -48,10 +58,18 @@ export async function assertCanChangeTeamRole(ctx: ApiContext, id: string, role:
  * coordinators manage the team, but only project management (or an admin) makes somebody project
  * management - otherwise a coordinator could promote themselves.
  */
-export async function assertMayGrantRole(ctx: ApiContext, conferenceId: string, role: TeamRole) {
-	await assertTeamPermission(
+export async function assertMayGrantRole({
+	ctx,
+	conferenceId,
+	role
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	role: TeamRole;
+}) {
+	await assertTeamPermission({
 		ctx,
 		conferenceId,
-		role === 'PROJECT_MANAGEMENT' ? 'manageConference' : 'manageTeam'
-	);
+		permission: role === 'PROJECT_MANAGEMENT' ? 'manageConference' : 'manageTeam'
+	});
 }

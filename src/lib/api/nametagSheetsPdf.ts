@@ -44,20 +44,20 @@ const MARGIN = 44;
 const HEADER_HEIGHT = 56;
 const FOOTER_HEIGHT = 34;
 
-function isKnown(known: Set<number>, char: string): boolean {
+function isKnown({ known, char }: { known: Set<number>; char: string }): boolean {
 	return known.has(char.codePointAt(0) ?? -1);
 }
 
-function encodableChar(char: string, known: Set<number>): string {
-	if (isKnown(known, char)) return char;
+function encodableChar({ char, known }: { char: string; known: Set<number> }): string {
+	if (isKnown({ known, char })) return char;
 	const plain = char.normalize('NFD').replace(/[̀-ͯ]/g, '');
-	return plain && [...plain].every((c) => isKnown(known, c)) ? plain : '?';
+	return plain && [...plain].every((c) => isKnown({ known, char: c })) ? plain : '?';
 }
 
 /** Text the font has no glyph for loses its diacritics, or becomes a "?". */
-function encodable(font: PDFFont, text: string): string {
+function encodable({ font, text }: { font: PDFFont; text: string }): string {
 	const known = new Set(font.getCharacterSet());
-	return [...text].map((char) => encodableChar(char, known)).join('');
+	return [...text].map((char) => encodableChar({ char, known })).join('');
 }
 
 interface Row {
@@ -75,7 +75,17 @@ const LIST_SIZES = [28, 26, 24, 22, 20, 18, 16, 15, 14, 13];
 // the flag is 4:3 and as tall as the text is high
 const flagWidthAt = (size: number) => size * 1.5 * (4 / 3);
 
-function listLayout(size: number, columns: number, width: number, height: number) {
+function listLayout({
+	size,
+	columns,
+	width,
+	height
+}: {
+	size: number;
+	columns: number;
+	width: number;
+	height: number;
+}) {
 	const rowHeight = size * 1.4 + 6;
 	const perColumn = Math.max(1, Math.floor(height / rowHeight));
 	return {
@@ -92,7 +102,17 @@ function listLayout(size: number, columns: number, width: number, height: number
 
 type ListLayout = ReturnType<typeof listLayout>;
 
-function rowWidth(row: Row, size: number, regular: PDFFont, bold: PDFFont) {
+function rowWidth({
+	row,
+	size,
+	regular,
+	bold
+}: {
+	row: Row;
+	size: number;
+	regular: PDFFont;
+	bold: PDFFont;
+}) {
 	return row.heading
 		? bold.widthOfTextAtSize(row.text, size)
 		: flagWidthAt(size) + 12 + regular.widthOfTextAtSize(row.text, size);
@@ -103,26 +123,40 @@ function rowWidth(row: Row, size: number, regular: PDFFont, bold: PDFFont) {
  * smallest size does not hold them all, it keeps that size with as many columns as the names
  * allow, and `perPage` says how many rows one page takes.
  */
-function fitList(rows: Row[], regular: PDFFont, bold: PDFFont, width: number, height: number) {
+function fitList({
+	rows,
+	regular,
+	bold,
+	width,
+	height
+}: {
+	rows: Row[];
+	regular: PDFFont;
+	bold: PDFFont;
+	width: number;
+	height: number;
+}) {
 	const fitsWidth = (candidate: ListLayout) =>
-		rows.every((row) => rowWidth(row, candidate.size, regular, bold) <= candidate.columnWidth);
+		rows.every(
+			(row) => rowWidth({ row, size: candidate.size, regular, bold }) <= candidate.columnWidth
+		);
 	const columnCounts = Array.from({ length: MAX_COLUMNS }, (_, index) => index + 1);
 
 	const roomy = LIST_SIZES.flatMap((size) =>
-		columnCounts.map((columns) => listLayout(size, columns, width, height))
+		columnCounts.map((columns) => listLayout({ size, columns, width, height }))
 	).find((candidate) => candidate.perPage >= rows.length && fitsWidth(candidate));
 	if (roomy) return roomy;
 
 	const squeezed = columnCounts
 		.slice(1)
 		.reverse()
-		.map((columns) => listLayout(MIN_LIST_SIZE, columns, width, height))
+		.map((columns) => listLayout({ size: MIN_LIST_SIZE, columns, width, height }))
 		.find(fitsWidth);
-	return squeezed ?? listLayout(MIN_LIST_SIZE, 1, width, height);
+	return squeezed ?? listLayout({ size: MIN_LIST_SIZE, columns: 1, width, height });
 }
 
 /** Cuts the rows into pages, keeping a heading together with what follows it. */
-function paginate(rows: Row[], perPage: number): Row[][] {
+function paginate({ rows, perPage }: { rows: Row[]; perPage: number }): Row[][] {
 	const pages: Row[][] = [];
 	let rest = rows;
 	while (rest.length > perPage) {
@@ -135,7 +169,17 @@ function paginate(rows: Row[], perPage: number): Row[][] {
 	return pages;
 }
 
-function drawHeader(page: PDFPage, tableLabel: string, bold: PDFFont, logo: PDFImage | null) {
+function drawHeader({
+	page,
+	tableLabel,
+	bold,
+	logo
+}: {
+	page: PDFPage;
+	tableLabel: string;
+	bold: PDFFont;
+	logo: PDFImage | null;
+}) {
 	const top = PAGE_HEIGHT - MARGIN;
 
 	if (logo) {
@@ -150,17 +194,20 @@ function drawHeader(page: PDFPage, tableLabel: string, bold: PDFFont, logo: PDFI
 	}
 
 	// the table, as a pill on the right
-	const label = encodable(bold, tableLabel);
+	const label = encodable({ font: bold, text: tableLabel });
 	const size = 22;
 	const pillWidth = bold.widthOfTextAtSize(label, size) + 40;
 	const pillHeight = 40;
 	const pillX = PAGE_WIDTH - MARGIN - pillWidth;
 	const pillTop = top - (HEADER_HEIGHT - pillHeight) / 2 - 4;
-	page.drawSvgPath(roundedRectPath(pillWidth, pillHeight, pillHeight / 2), {
-		x: pillX,
-		y: pillTop,
-		color: PRIMARY
-	});
+	page.drawSvgPath(
+		roundedRectPath({ width: pillWidth, height: pillHeight, radius: pillHeight / 2 }),
+		{
+			x: pillX,
+			y: pillTop,
+			color: PRIMARY
+		}
+	);
 	page.drawText(label, {
 		x: pillX + 20,
 		y: pillTop - pillHeight / 2 - size * 0.34,
@@ -185,20 +232,29 @@ function imageEmbedder(pdf: PDFDocument): ImageEmbedder {
 	};
 }
 
-async function sheetRows(
-	sheet: NametagSheet,
-	regular: PDFFont,
-	bold: PDFFont,
-	embedImage: ImageEmbedder
-): Promise<Row[]> {
+async function sheetRows({
+	sheet,
+	regular,
+	bold,
+	embedImage
+}: {
+	sheet: NametagSheet;
+	regular: PDFFont;
+	bold: PDFFont;
+	embedImage: ImageEmbedder;
+}): Promise<Row[]> {
 	const rows: Row[] = [];
 	for (const section of sheet.sections) {
 		if (section.heading) {
-			rows.push({ text: encodable(bold, section.heading), image: null, heading: true });
+			rows.push({
+				text: encodable({ font: bold, text: section.heading }),
+				image: null,
+				heading: true
+			});
 		}
 		for (const entry of section.entries) {
 			rows.push({
-				text: encodable(regular, entry.label),
+				text: encodable({ font: regular, text: entry.label }),
 				image: await embedImage(entry.image),
 				heading: false
 			});
@@ -217,7 +273,7 @@ interface SheetFrame {
 }
 
 /** Where the big title, its bar and the list go on a sheet. */
-function sheetFrame(title: string, bold: PDFFont): SheetFrame {
+function sheetFrame({ title, bold }: { title: string; bold: PDFFont }): SheetFrame {
 	const contentWidth = PAGE_WIDTH - MARGIN * 2;
 	// as large as the page allows, but never shrunk for a long list: that runs onto more pages
 	const titleSize = Math.min(130, (contentWidth / bold.widthOfTextAtSize(title, 100)) * 100);
@@ -235,14 +291,21 @@ function sheetFrame(title: string, bold: PDFFont): SheetFrame {
 	};
 }
 
-function drawRow(
-	page: PDFPage,
-	row: Row,
-	index: number,
-	layout: ListLayout,
-	frame: SheetFrame,
-	fonts: { regular: PDFFont; bold: PDFFont }
-) {
+function drawRow({
+	page,
+	row,
+	index,
+	layout,
+	frame,
+	fonts
+}: {
+	page: PDFPage;
+	row: Row;
+	index: number;
+	layout: ListLayout;
+	frame: SheetFrame;
+	fonts: { regular: PDFFont; bold: PDFFont };
+}) {
 	const flagHeight = layout.size * 1.5;
 	const column = Math.floor(index / layout.perColumn);
 	const line = index % layout.perColumn;
@@ -277,14 +340,22 @@ function drawRow(
 	});
 }
 
-function drawFooter(page: PDFPage, conferenceTitle: string, regular: PDFFont) {
+function drawFooter({
+	page,
+	conferenceTitle,
+	regular
+}: {
+	page: PDFPage;
+	conferenceTitle: string;
+	regular: PDFFont;
+}) {
 	page.drawLine({
 		start: { x: MARGIN, y: MARGIN + FOOTER_HEIGHT - 8 },
 		end: { x: PAGE_WIDTH - MARGIN, y: MARGIN + FOOTER_HEIGHT - 8 },
 		thickness: 1,
 		color: MUTED
 	});
-	page.drawText(encodable(regular, conferenceTitle), {
+	page.drawText(encodable({ font: regular, text: conferenceTitle }), {
 		x: MARGIN,
 		y: MARGIN + 2,
 		size: 12,
@@ -306,10 +377,10 @@ export async function buildNametagSheetsPdf({
 	const contentWidth = PAGE_WIDTH - MARGIN * 2;
 
 	for (const sheet of sheets) {
-		const frame = sheetFrame(encodable(bold, sheet.title), bold);
-		const rows = await sheetRows(sheet, regular, bold, embedImage);
-		const layout = fitList(rows, regular, bold, contentWidth, frame.listHeight);
-		const pages = paginate(rows, layout.perPage);
+		const frame = sheetFrame({ title: encodable({ font: bold, text: sheet.title }), bold });
+		const rows = await sheetRows({ sheet, regular, bold, embedImage });
+		const layout = fitList({ rows, regular, bold, width: contentWidth, height: frame.listHeight });
+		const pages = paginate({ rows, perPage: layout.perPage });
 
 		pages.forEach((pageRows, pageIndex) => {
 			const page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
@@ -317,7 +388,7 @@ export async function buildNametagSheetsPdf({
 				pages.length > 1
 					? `${sheet.tableLabel} · ${pageIndex + 1}/${pages.length}`
 					: sheet.tableLabel;
-			drawHeader(page, tableLabel, bold, logo);
+			drawHeader({ page, tableLabel, bold, logo });
 			page.drawText(frame.title, {
 				x: MARGIN,
 				y: frame.titleBaseline,
@@ -326,8 +397,10 @@ export async function buildNametagSheetsPdf({
 				color: NEUTRAL
 			});
 			page.drawRectangle({ x: MARGIN, y: frame.barY, width: 96, height: 6, color: PRIMARY });
-			pageRows.forEach((row, index) => drawRow(page, row, index, layout, frame, { regular, bold }));
-			drawFooter(page, conferenceTitle, regular);
+			pageRows.forEach((row, index) =>
+				drawRow({ page, row, index, layout, frame, fonts: { regular, bold } })
+			);
+			drawFooter({ page, conferenceTitle, regular });
 		});
 	}
 
@@ -335,7 +408,7 @@ export async function buildNametagSheetsPdf({
 }
 
 /** Hands the PDF to the browser as a download. */
-export function downloadPdf(bytes: Uint8Array, filename: string) {
+export function downloadPdf({ bytes, filename }: { bytes: Uint8Array; filename: string }) {
 	// copied into a plain ArrayBuffer-backed array, which is what a Blob accepts
 	const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
 	const url = URL.createObjectURL(blob);

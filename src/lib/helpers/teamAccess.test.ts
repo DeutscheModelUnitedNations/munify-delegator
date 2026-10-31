@@ -17,14 +17,16 @@ const as = (...roles: TeamAccess['roles']): TeamAccess => ({ isAdmin: false, rol
 describe('isOnTeam / hasAnyRole', () => {
 	test('a system admin is on the team and holds every role without a team row', () => {
 		expect(isOnTeam(admin)).toBe(true);
-		expect(hasAnyRole(admin, ['PROJECT_MANAGEMENT'])).toBe(true);
+		expect(hasAnyRole({ access: admin, roles: ['PROJECT_MANAGEMENT'] })).toBe(true);
 	});
 
 	test('anyone else needs a role, and any role of those asked for is enough', () => {
 		expect(isOnTeam(NO_TEAM_ACCESS)).toBe(false);
 		expect(isOnTeam(as('MEMBER'))).toBe(true);
-		expect(hasAnyRole(as('REVIEWER'), ['PROJECT_MANAGEMENT'])).toBe(false);
-		expect(hasAnyRole(as('REVIEWER', 'PARTICIPANT_CARE'), ['PARTICIPANT_CARE'])).toBe(true);
+		expect(hasAnyRole({ access: as('REVIEWER'), roles: ['PROJECT_MANAGEMENT'] })).toBe(false);
+		expect(
+			hasAnyRole({ access: as('REVIEWER', 'PARTICIPANT_CARE'), roles: ['PARTICIPANT_CARE'] })
+		).toBe(true);
 	});
 });
 

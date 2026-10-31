@@ -1,9 +1,6 @@
 import { db, schema } from '#api/db/db';
-import { emailService } from '#api/services/email/emailService';
-import { localeOfUser, runWithLocale } from '#api/services/requestLocale';
-import { getLocale, toLocale } from '#lib/paraglide/runtime';
+import { localeOfUser } from '#api/services/requestLocale';
 import { m } from '#lib/paraglide/messages';
-import { renderEmail, NotificationEmail } from '#api/services/email/templates/index';
 import { emailLogPubsub } from '#api/pubsub';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
@@ -13,26 +10,30 @@ import {
 	type DueEmail,
 	type EmailKind,
 	type EmailSnapshot,
-	type SnapshotPerson
+	type SnapshotPerson,
+	type SnapshotUser
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
-import { emailContent, recipientName, type ConferenceEmailText } from './emailContent';
-import { emailFooterParagraphs } from '#lib/helpers/emailTemplates';
 import type { EmailTextOverride } from '#lib/helpers/emailTemplates';
-import { isAlwaysSent, type AlwaysSentKind } from '#lib/helpers/emailKinds';
+import { isAlwaysSent, isReminder } from '#lib/helpers/emailKinds';
+import { renderTeamInvitationEmail } from './teamInvitationEmail';
 import {
-	renderTeamInvitationEmail,
-	renderTeamWelcomeEmail,
-	type TeamInvitationEmailValues
-} from '#api/services/email/sendTeamInvitationEmail';
-import { getInvitationExpiryDate } from '#api/services/account/invitationToken';
+	deliver,
+	loadWording,
+	renderAutomaticEmail,
+	wordingIn,
+	type ConferenceWording
+} from './emailDelivery';
+import { getInvitationExpiryDate } from '#api/handlers/teamMemberInvitation/invitationToken';
+import { logger } from '#lib/logger';
 
 /**
  * Sends what `dueEmails` says a conference owes and nobody sent yet. Each mail is claimed by
  * writing its log row first (unique per conference, kind, person and subject), so two sweeps -
  * a mutation's and the job's, or two instances' - never send one mail twice. A failed mail is tried
  * again by later sweeps, up to `MAX_ATTEMPTS`; a claim left behind by a process that died is free
- * again after `STALE_CLAIM_MINUTES`.
+ * again after `STALE_CLAIM_MINUTES`. A mail the team sent by hand counts as sent, unless it was a
+ * reminder: that still leaves the automatic one due.
  */
 
 const MAX_ATTEMPTS = 3;
@@ -45,7 +46,7 @@ type LogState = {
 };
 
 /** Whether a mail with this log state (or none) is still to be sent. */
-export function isOpen(log: LogState | undefined, now: Date) {
+export function isOpen({ log, now }: { log: LogState | undefined; now: Date }) {
 	if (!log) return true;
 	if (log.status === 'FAILED') return log.attempts < MAX_ATTEMPTS;
 	if (log.status === 'SENDING')
@@ -62,39 +63,81 @@ export async function enabledKinds(conferenceId: string) {
 }
 
 /** The mails of `kinds` the conference owes and has not sent, skipped or given up on. */
-async function openEmails(snapshot: EmailSnapshot, kinds: ReadonlySet<EmailKind>, now: Date) {
+async function openEmails({
+	snapshot,
+	kinds,
+	now
+}: {
+	snapshot: EmailSnapshot;
+	kinds: ReadonlySet<EmailKind>;
+	now: Date;
+}) {
 	const logs = await db.query.emailLog.findMany({
 		where: { conferenceId: snapshot.conference.id },
 		columns: {
 			kind: true,
 			userId: true,
 			subjectKey: true,
+			trigger: true,
 			status: true,
 			attempts: true,
 			updatedAt: true
 		}
 	});
-	const logByKey = new Map(logs.map((log) => [emailKey(log), log]));
-	return dueEmails(snapshot, now).filter(
-		(email) =>
-			kinds.has(email.kind) &&
-			isOpen(logByKey.get(emailKey({ ...email, userId: email.person.user.id })), now)
+	return stillOpen({ due: dueEmails({ snapshot, now }), logs, kinds, now });
+}
+
+type LogRow = LogState & {
+	kind: EmailKind;
+	userId: string | null;
+	subjectKey: string;
+	trigger: (typeof schema.emailTrigger.enumValues)[number];
+};
+
+/**
+ * The mails of `kinds` among `due` that are still to be sent, after the log. A mail sent by hand
+ * counts as sent, except a reminder: that leaves the automatic one due.
+ */
+export function stillOpen({
+	due,
+	logs,
+	kinds,
+	now
+}: {
+	due: readonly DueEmail[];
+	logs: readonly LogRow[];
+	kinds: ReadonlySet<EmailKind>;
+	now: Date;
+}) {
+	const automatic = new Map(
+		logs.filter((log) => log.trigger === 'AUTOMATIC').map((log) => [emailKey(log), log])
 	);
+	const sentByHand = new Set(
+		logs
+			.filter((log) => log.trigger === 'MANUAL' && log.status === 'SENT' && !isReminder(log.kind))
+			.map(emailKey)
+	);
+	return due.filter((email) => {
+		const key = emailKey({ ...email, userId: email.recipient.id });
+		return (
+			kinds.has(email.kind) && !sentByHand.has(key) && isOpen({ log: automatic.get(key), now })
+		);
+	});
 }
 
 /** Claims the mail; `undefined` when another sweep holds or finished it. */
-async function claim(conferenceId: string, email: DueEmail) {
+async function claim({ conferenceId, email }: { conferenceId: string; email: DueEmail }) {
 	const now = new Date();
 	const [claimed] = await db
 		.insert(schema.emailLog)
 		.values({
 			conferenceId,
 			kind: email.kind,
-			userId: email.person.user.id,
+			userId: email.recipient.id,
 			subjectKey: email.subjectKey,
 			status: 'SENDING',
 			attempts: 1,
-			email: email.person.user.email
+			email: email.recipient.email
 		})
 		.onConflictDoUpdate({
 			target: [
@@ -103,138 +146,68 @@ async function claim(conferenceId: string, email: DueEmail) {
 				schema.emailLog.userId,
 				schema.emailLog.subjectKey
 			],
+			// the unique index covers the automatic rows only
+			targetWhere: sql`${schema.emailLog.trigger} = 'AUTOMATIC'`,
 			set: {
 				status: 'SENDING',
 				attempts: sql`${schema.emailLog.attempts} + 1`,
-				email: email.person.user.email,
+				email: email.recipient.email,
 				error: null,
 				updatedAt: now
 			},
-			setWhere: whereRows(schema.emailLog, {
-				OR: [
-					{ status: 'FAILED', attempts: { lt: MAX_ATTEMPTS } },
-					{
-						status: 'SENDING',
-						updatedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MINUTES * 60_000) }
-					}
-				]
+			setWhere: whereRows({
+				table: schema.emailLog,
+				filter: {
+					OR: [
+						{ status: 'FAILED', attempts: { lt: MAX_ATTEMPTS } },
+						{
+							status: 'SENDING',
+							updatedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MINUTES * 60_000) }
+						}
+					]
+				}
 			})
 		})
 		.returning({ id: schema.emailLog.id });
 	return claimed?.id;
 }
 
-/** What the conference wrote itself: its texts, every kind and language, and its footers. */
-interface ConferenceWording {
-	texts: readonly ConferenceEmailText[];
-	footers: readonly { locale: string; text: string }[];
-}
-
-async function loadWording(conferenceId: string): Promise<ConferenceWording> {
-	const [texts, footers] = await Promise.all([
-		db.query.conferenceEmailText.findMany({
-			where: { conferenceId },
-			columns: { kind: true, locale: true, subject: true, heading: true, body: true }
-		}),
-		db.query.conferenceEmailFooter.findMany({
-			where: { conferenceId },
-			columns: { locale: true, text: true }
-		})
-	]);
-	return { texts, footers };
-}
-
-/** The conference's footer in the locale being rendered, paragraph by paragraph. */
-const footerParagraphs = (wording: ConferenceWording, conferenceTitle: string) =>
-	emailFooterParagraphs(
-		wording.footers.find((footer) => toLocale(footer.locale) === getLocale())?.text,
-		conferenceTitle
-	);
-
-/** Renders one mail in the recipient's language, in the conference's own words where it has them. */
-function renderAutomaticEmail(
-	email: DueEmail,
-	conference: EmailSnapshot['conference'],
-	origin: string,
-	wording: ConferenceWording
-) {
-	return runWithLocale(localeOfUser(email.person.user.locale), async () => {
-		const content = emailContent(email, conference, origin, wording.texts);
-		const { html, text } = await renderEmail(NotificationEmail, {
-			heading: content.heading,
-			recipientName: recipientName(email.person),
-			paragraphs: content.paragraphs,
-			items: content.items,
-			closing: content.closing,
-			button: content.button,
-			conferenceTitle: conference.title,
-			conferenceFooter: footerParagraphs(wording, conference.title)
-		});
-		return { subject: content.subject, html, text, replyTo: content.replyTo };
+/** Sends one claimed mail; whatever goes wrong is written to its log row, never thrown. */
+async function send({
+	email,
+	snapshot,
+	origin,
+	wording,
+	logId
+}: {
+	email: DueEmail;
+	snapshot: EmailSnapshot;
+	origin: string;
+	wording: ConferenceWording;
+	logId: string;
+}) {
+	const error = await deliver({
+		logId,
+		to: email.recipient.email,
+		render: () => renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording })
 	});
-}
-
-/** Records how sending went: sent, or failed with why. */
-async function settle(logId: string, error: string | undefined) {
-	await db
-		.update(schema.emailLog)
-		.set(
-			error === undefined
-				? { status: 'SENT', sentAt: new Date(), error: null }
-				: { status: 'FAILED', error }
-		)
-		.where(whereRows(schema.emailLog, { id: logId }));
 	return error === undefined;
 }
 
-/** Why the mail service did not send a mail; `undefined` when it did. */
-export function sendingError(result: { success: boolean; error?: string }) {
-	return result.success ? undefined : (result.error ?? 'unknown error');
-}
-
-/** What the log says about something thrown while rendering or sending. */
-export function errorText(error: unknown) {
-	return error instanceof Error ? error.message : String(error);
-}
-
-/** Sends one claimed mail; whatever goes wrong is written to its log row, never thrown. */
-async function send(
-	email: DueEmail,
-	snapshot: EmailSnapshot,
-	origin: string,
-	wording: ConferenceWording,
-	logId: string
-) {
-	try {
-		const { subject, html, text, replyTo } = await renderAutomaticEmail(
-			email,
-			snapshot.conference,
-			origin,
-			wording
-		);
-		const result = await emailService.sendEmail({
-			to: email.person.user.email,
-			subject,
-			html,
-			text,
-			replyTo
-		});
-		return settle(logId, sendingError(result));
-	} catch (error) {
-		return settle(logId, errorText(error));
-	}
-}
-
 /** Claims and sends each mail in turn, counting what went out and what failed. */
-async function sendEach(
-	conferenceId: string,
-	batch: DueEmail[],
-	send: (email: DueEmail, logId: string) => Promise<boolean>
-) {
+async function sendEach({
+	conferenceId,
+	batch,
+	send
+}: {
+	conferenceId: string;
+	batch: DueEmail[];
+	send: (email: DueEmail, logId: string) => Promise<boolean>;
+}) {
 	let sent = 0;
 	let failed = 0;
 	for (const email of batch) {
-		const logId = await claim(conferenceId, email);
+		const logId = await claim({ conferenceId, email });
 		if (!logId) continue;
 		if (await send(email, logId)) sent++;
 		else failed++;
@@ -261,21 +234,29 @@ export async function sendDueEmails({
 	const snapshot = kinds.size > 0 ? await loadEmailSnapshot(conferenceId) : undefined;
 	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
 
-	const open = await openEmails(snapshot, kinds, now);
+	const open = await openEmails({ snapshot, kinds, now });
 	const batch = open.slice(0, limit);
 	const wording = await loadWording(conferenceId);
-	const counts = await sendEach(conferenceId, batch, (email, logId) =>
-		send(email, snapshot, origin, wording, logId)
-	);
+	const counts = await sendEach({
+		conferenceId,
+		batch,
+		send: (email, logId) => send({ email, snapshot, origin, wording, logId })
+	});
 	if (batch.length > 0) emailLogPubsub.updated();
 	return { ...counts, remaining: open.length - batch.length };
 }
 
 /** How many mails of `kind` the conference owes right now and has not sent. */
-export async function countOpenEmails(conferenceId: string, kind: EmailKind) {
+export async function countOpenEmails({
+	conferenceId,
+	kind
+}: {
+	conferenceId: string;
+	kind: EmailKind;
+}) {
 	const snapshot = await loadEmailSnapshot(conferenceId);
 	if (!snapshot) return 0;
-	return (await openEmails(snapshot, new Set([kind]), new Date())).length;
+	return (await openEmails({ snapshot, kinds: new Set([kind]), now: new Date() })).length;
 }
 
 /**
@@ -283,15 +264,19 @@ export async function countOpenEmails(conferenceId: string, kind: EmailKind) {
  * reaches what happens from then on. `asIf` overrides conference fields, to skip what a change
  * about to be written will make due before any sweep can see it.
  */
-export async function skipOpenEmails(
-	conferenceId: string,
-	kinds: readonly EmailKind[],
-	asIf: Partial<EmailSnapshot['conference']> = {}
-) {
+export async function skipOpenEmails({
+	conferenceId,
+	kinds,
+	asIf = {}
+}: {
+	conferenceId: string;
+	kinds: readonly EmailKind[];
+	asIf?: Partial<EmailSnapshot['conference']>;
+}) {
 	const loaded = await loadEmailSnapshot(conferenceId);
 	if (!loaded || kinds.length === 0) return;
 	const snapshot = { ...loaded, conference: { ...loaded.conference, ...asIf } };
-	const open = await openEmails(snapshot, new Set(kinds), new Date());
+	const open = await openEmails({ snapshot, kinds: new Set(kinds), now: new Date() });
 	for (let start = 0; start < open.length; start += 500) {
 		await db
 			.insert(schema.emailLog)
@@ -299,10 +284,10 @@ export async function skipOpenEmails(
 				open.slice(start, start + 500).map((email) => ({
 					conferenceId,
 					kind: email.kind,
-					userId: email.person.user.id,
+					userId: email.recipient.id,
 					subjectKey: email.subjectKey,
 					status: 'SKIPPED' as const,
-					email: email.person.user.email
+					email: email.recipient.email
 				}))
 			)
 			.onConflictDoNothing();
@@ -311,11 +296,15 @@ export async function skipOpenEmails(
 }
 
 /** Switches kinds of automatic mail on or off for a conference. */
-export async function setEmailKindsEnabled(
-	conferenceId: string,
-	kinds: readonly EmailKind[],
-	enabled: boolean
-) {
+export async function setEmailKindsEnabled({
+	conferenceId,
+	kinds,
+	enabled
+}: {
+	conferenceId: string;
+	kinds: readonly EmailKind[];
+	enabled: boolean;
+}) {
 	if (kinds.length === 0) return;
 	await db
 		.insert(schema.conferenceEmailSetting)
@@ -340,7 +329,13 @@ export async function conferencesSendingEmails() {
 const running = new Map<string, { again: boolean }>();
 
 /** Sends what the conference owes now, in the background; the caller does not wait. */
-export function scheduleEmailSweep(conferenceId: string, origin: string) {
+export function scheduleEmailSweep({
+	conferenceId,
+	origin
+}: {
+	conferenceId: string;
+	origin: string;
+}) {
 	const current = running.get(conferenceId);
 	if (current) {
 		current.again = true;
@@ -356,7 +351,7 @@ export function scheduleEmailSweep(conferenceId: string, origin: string) {
 				while (result.remaining > 0) result = await sendDueEmails({ conferenceId, origin });
 			} while (state.again);
 		} catch (error) {
-			console.error('Sending automatic emails failed', error);
+			logger.error('Sending automatic emails failed', { conferenceId, err: error });
 		} finally {
 			running.delete(conferenceId);
 		}
@@ -364,16 +359,21 @@ export function scheduleEmailSweep(conferenceId: string, origin: string) {
 }
 
 /** A mail of `kind` as the conference would send it, addressed to `user` with made-up details. */
-export async function previewEmail(
-	conferenceId: string,
-	kind: EmailKind,
-	user: SnapshotPerson['user'],
-	origin: string,
-	/** Text being edited, shown instead of what is stored (in `user.locale`). */
-	draft?: EmailTextOverride,
-	/** Footer being edited, shown instead of the stored one (in `user.locale`). */
-	footerDraft?: string
-) {
+export async function previewEmail({
+	conferenceId,
+	kind,
+	user,
+	origin,
+	draft,
+	footerDraft
+}: {
+	conferenceId: string;
+	kind: EmailKind;
+	user: SnapshotUser;
+	origin: string;
+	draft?: EmailTextOverride;
+	footerDraft?: string;
+}) {
 	const snapshot = await loadEmailSnapshot(conferenceId);
 	if (!snapshot) return undefined;
 	const locale = localeOfUser(user.locale);
@@ -382,10 +382,9 @@ export async function previewEmail(
 		texts: draft ? [{ kind, locale, ...draft }] : stored.texts,
 		footers: footerDraft === undefined ? stored.footers : [{ locale, text: footerDraft }]
 	};
-	if (isAlwaysSent(kind)) return previewTeamEmail(kind, snapshot.conference, user, origin, wording);
-	const sample = (
-		person: Partial<SnapshotPerson> & { user: SnapshotPerson['user'] }
-	): SnapshotPerson => ({
+	if (isAlwaysSent(kind))
+		return previewInvitationEmail({ conference: snapshot.conference, user, origin, wording });
+	const sample = (person: Partial<SnapshotPerson> & { user: SnapshotUser }): SnapshotPerson => ({
 		participantId: person.user.id,
 		paymentStatus: 'PENDING',
 		termsAndConditions: 'PENDING',
@@ -412,7 +411,14 @@ export async function previewEmail(
 	const email: DueEmail = {
 		kind,
 		subjectKey: 'preview',
+		recipient: user,
 		person: sample({ user }),
+		teamMember: {
+			id: 'preview',
+			role: 'PARTICIPANT_CARE',
+			user,
+			inviterName: `${user.givenName} ${user.familyName}`
+		},
 		students: [student, rejectedStudent],
 		student,
 		field: 'termsAndConditions',
@@ -432,45 +438,32 @@ export async function previewEmail(
 			answeredBy: []
 		}
 	};
-	return renderAutomaticEmail(email, snapshot.conference, origin, wording);
+	return renderAutomaticEmail({ email, conference: snapshot.conference, origin, wording });
 }
 
-/** A team mail as the conference would send it, to `user` from themselves, with a made-up link. */
-function previewTeamEmail(
-	kind: AlwaysSentKind,
-	conference: EmailSnapshot['conference'],
-	user: SnapshotPerson['user'],
-	origin: string,
-	wording: ConferenceWording
-) {
+/** The team invitation as the conference would send it, to `user` from themselves, with a made-up link. */
+function previewInvitationEmail({
+	conference,
+	user,
+	origin,
+	wording
+}: {
+	conference: EmailSnapshot['conference'];
+	user: SnapshotUser;
+	origin: string;
+	wording: ConferenceWording;
+}) {
 	const locale = localeOfUser(user.locale);
-	const own = wording.texts.find((text) => text.kind === kind && text.locale === locale);
-	const footer = wording.footers.find((candidate) => candidate.locale === locale)?.text;
-	const common: Omit<TeamInvitationEmailValues, 'inviteUrl' | 'expiresAt'> = {
-		recipientEmail: user.email,
-		conferenceTitle: conference.title,
-		role: 'PARTICIPANT_CARE',
-		inviterName: `${user.givenName} ${user.familyName}`
-	};
-	return kind === 'TEAM_INVITATION'
-		? renderTeamInvitationEmail(
-				{
-					...common,
-					inviteUrl: `${origin}/auth/accept-invitation?token=preview`,
-					expiresAt: getInvitationExpiryDate()
-				},
-				locale,
-				own,
-				footer
-			)
-		: renderTeamWelcomeEmail(
-				{
-					...common,
-					recipientName: `${user.givenName} ${user.familyName}`,
-					dashboardUrl: `${origin}/dashboard/${conference.id}`
-				},
-				locale,
-				own,
-				footer
-			);
+	return renderTeamInvitationEmail({
+		values: {
+			recipientEmail: user.email,
+			conferenceTitle: conference.title,
+			role: 'PARTICIPANT_CARE',
+			inviterName: `${user.givenName} ${user.familyName}`,
+			inviteUrl: `${origin}/auth/accept-invitation?token=preview`,
+			expiresAt: getInvitationExpiryDate()
+		},
+		locale,
+		...wordingIn({ wording, kind: 'TEAM_INVITATION', locale })
+	});
 }

@@ -1,7 +1,7 @@
 import { type Transaction, db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 type AdministrativeStatus = (typeof schema.administrativeStatus.enumValues)[number];
 
@@ -27,19 +27,28 @@ function generateSEPASafeId() {
  * makes no new references and is covered by nobody else's. Locks their status rows, so a payment
  * marked received at the same moment cannot slip past.
  */
-async function assertNobodyPaid(tx: Transaction, participantIds: readonly string[]) {
+async function assertNobodyPaid({
+	tx,
+	participantIds
+}: {
+	tx: Transaction;
+	participantIds: readonly string[];
+}) {
 	const paid = await tx
 		.select({ id: schema.conferenceParticipant.id })
 		.from(schema.conferenceParticipant)
 		.where(
-			whereRows(schema.conferenceParticipant, {
-				id: { in: [...new Set(participantIds)] },
-				paymentStatus: 'DONE'
+			whereRows({
+				table: schema.conferenceParticipant,
+				filter: {
+					id: { in: [...new Set(participantIds)] },
+					paymentStatus: 'DONE'
+				}
 			})
 		)
 		.for('update');
 	if (paid.length > 0) {
-		throw apiError('CONFLICT', m.paymentAlreadyPaid());
+		throw apiError({ code: 'CONFLICT', message: m.paymentAlreadyPaid() });
 	}
 }
 
@@ -48,16 +57,20 @@ async function assertNobodyPaid(tx: Transaction, participantIds: readonly string
  * `paymentFor` (participant row ids), at the conference's fee per participant. Returns the new
  * reference's id. Nobody involved may have paid already (`assertNobodyPaid`).
  */
-export async function createPaymentTransaction(
-	conference: { feeAmount: number | null },
-	payerParticipantId: string,
-	paymentFor: readonly string[]
-) {
+export async function createPaymentTransaction({
+	conference,
+	payerParticipantId,
+	paymentFor
+}: {
+	conference: { feeAmount: number | null };
+	payerParticipantId: string;
+	paymentFor: readonly string[];
+}) {
 	// Captured in a const so the narrowing survives into the transaction closure below,
 	// rather than reaching for a non-null assertion there.
 	const feeAmount = conference.feeAmount;
 	if (!feeAmount) {
-		throw apiError('INVALID_INPUT', m.paymentFeeNotSet());
+		throw apiError({ code: 'INVALID_INPUT', message: m.paymentFeeNotSet() });
 	}
 
 	// The id is caller-generated rather than a nanoid, so retry until it is free.
@@ -66,13 +79,13 @@ export async function createPaymentTransaction(
 		const clash = await db.query.paymentTransaction.findFirst({ where: { id } });
 		if (!clash) break;
 		if (attempt === 9_999) {
-			throw apiError('INVALID_INPUT', m.paymentIdGenerationFailed());
+			throw apiError({ code: 'INVALID_INPUT', message: m.paymentIdGenerationFailed() });
 		}
 		id = generateSEPASafeId();
 	}
 
 	await db.transaction(async (tx) => {
-		await assertNobodyPaid(tx, [payerParticipantId, ...paymentFor]);
+		await assertNobodyPaid({ tx, participantIds: [payerParticipantId, ...paymentFor] });
 		await tx.insert(schema.paymentTransaction).values({
 			id,
 			amount: paymentFor.length * feeAmount,
@@ -95,17 +108,21 @@ export async function createPaymentTransaction(
  * Sets the status of a payment transaction: marks it received when it is `DONE`, and carries the
  * status over to everybody it covers.
  */
-export async function applyPaymentStatus(
-	transaction: { id: string; paymentFor: { conferenceParticipantId: string }[] },
-	assignedStatus: AdministrativeStatus,
-	recievedAt: Date | null | undefined
-) {
+export async function applyPaymentStatus({
+	transaction,
+	assignedStatus,
+	recievedAt
+}: {
+	transaction: { id: string; paymentFor: { conferenceParticipantId: string }[] };
+	assignedStatus: AdministrativeStatus;
+	recievedAt: Date | null | undefined;
+}) {
 	await db.transaction(async (tx) => {
 		if (assignedStatus === 'DONE') {
 			await tx
 				.update(schema.paymentTransaction)
 				.set({ recievedAt: recievedAt ?? undefined })
-				.where(whereRows(schema.paymentTransaction, { id: transaction.id }));
+				.where(whereRows({ table: schema.paymentTransaction, filter: { id: transaction.id } }));
 		}
 
 		// The payment status is carried over to every participant the transaction covers.
@@ -114,7 +131,7 @@ export async function applyPaymentStatus(
 			await tx
 				.update(schema.conferenceParticipant)
 				.set({ paymentStatus: assignedStatus })
-				.where(whereRows(schema.conferenceParticipant, { id: { in: covered } }));
+				.where(whereRows({ table: schema.conferenceParticipant, filter: { id: { in: covered } } }));
 		}
 	});
 }

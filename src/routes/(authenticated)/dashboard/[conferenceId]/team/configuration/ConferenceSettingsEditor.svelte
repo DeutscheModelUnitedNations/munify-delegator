@@ -167,8 +167,8 @@
 
 			// The form carries uploads as `File`; each picked one goes to the storage first and the
 			// mutation takes its id. A field left untouched yields `undefined` and keeps what is stored.
-			const upload = (field: ConferenceFileField, file: File | undefined) =>
-				uploadFile(file, { kind: 'conference', field, conferenceId });
+			const upload = ({ field, file }: { field: ConferenceFileField; file: File | undefined }) =>
+				uploadFile({ file, target: { kind: 'conference', field, conferenceId } });
 			const {
 				image,
 				emblem,
@@ -180,6 +180,27 @@
 				certificateBasePDF,
 				...settings
 			} = validated.data;
+			// The document templates, which content roles may change too.
+			const uploadDocuments = async () => ({
+				contractFileId: await upload({ field: 'contract', file: contractBasePDF }),
+				guardianConsentFileId: await upload({
+					field: 'guardianConsent',
+					file: guardianConsentBasePDF
+				}),
+				mediaConsentFileId: await upload({ field: 'mediaConsent', file: mediaConsentBasePDF }),
+				termsAndConditionsFileId: await upload({
+					field: 'termsAndConditions',
+					file: termsAndConditionsBasePDF
+				}),
+				certificateFileId: await upload({ field: 'certificate', file: certificateBasePDF })
+			});
+			const documentFiles = {
+				certificateFile: { url: true },
+				termsAndConditionsFile: { url: true },
+				mediaConsentFile: { url: true },
+				guardianConsentFile: { url: true },
+				contractFile: { url: true }
+			} as const;
 
 			if (!canEdit) {
 				// The API only takes the content fields from anyone but project management.
@@ -203,18 +224,10 @@
 					__args: {
 						...content,
 						id: conferenceId,
-						contractFileId: await upload('contract', contractBasePDF),
-						guardianConsentFileId: await upload('guardianConsent', guardianConsentBasePDF),
-						mediaConsentFileId: await upload('mediaConsent', mediaConsentBasePDF),
-						termsAndConditionsFileId: await upload('termsAndConditions', termsAndConditionsBasePDF),
-						certificateFileId: await upload('certificate', certificateBasePDF)
+						...(await uploadDocuments())
 					},
 					id: true,
-					certificateFile: { url: true },
-					termsAndConditionsFile: { url: true },
-					mediaConsentFile: { url: true },
-					guardianConsentFile: { url: true },
-					contractFile: { url: true }
+					...documentFiles
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
@@ -229,24 +242,16 @@
 					// an emptied field lifts the limit rather than leaving it as it was
 					maxSeatsPerSchool: settings.maxSeatsPerSchool ?? null,
 					id: conferenceId,
-					imageFileId: await upload('image', image),
-					emblemFileId: await upload('emblem', emblem),
-					logoFileId: await upload('logo', logo),
-					contractFileId: await upload('contract', contractBasePDF),
-					guardianConsentFileId: await upload('guardianConsent', guardianConsentBasePDF),
-					mediaConsentFileId: await upload('mediaConsent', mediaConsentBasePDF),
-					termsAndConditionsFileId: await upload('termsAndConditions', termsAndConditionsBasePDF),
-					certificateFileId: await upload('certificate', certificateBasePDF)
+					imageFileId: await upload({ field: 'image', file: image }),
+					emblemFileId: await upload({ field: 'emblem', file: emblem }),
+					logoFileId: await upload({ field: 'logo', file: logo }),
+					...(await uploadDocuments())
 				},
 				id: true,
 				imageFile: { url: true },
 				emblemFile: { url: true },
 				logoFile: { url: true },
-				certificateFile: { url: true },
-				termsAndConditionsFile: { url: true },
-				mediaConsentFile: { url: true },
-				guardianConsentFile: { url: true },
-				contractFile: { url: true }
+				...documentFiles
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;

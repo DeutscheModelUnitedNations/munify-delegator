@@ -79,7 +79,13 @@
 			const prevVersion = sortedVersions[i - 1];
 			const currVersion = sortedVersions[i];
 			if (prevVersion.content && currVersion.content) {
-				statsMap.set(currVersion.id, computeDiffStats(prevVersion.content, currVersion.content));
+				statsMap.set(
+					currVersion.id,
+					computeDiffStats({
+						beforeContent: prevVersion.content,
+						afterContent: currVersion.content
+					})
+				);
 			}
 		}
 		return statsMap;

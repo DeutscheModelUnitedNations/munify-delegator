@@ -34,7 +34,7 @@
 	const showMenu = $derived(
 		sections.reduce((count, section) => count + section.routes.length, 0) > 1
 	);
-	const hasCarePages = $derived(hasAnyRole(access, PARTICIPANT_CARE_ROLES));
+	const hasCarePages = $derived(hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES }));
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-x-clip">

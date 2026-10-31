@@ -19,7 +19,7 @@
 	let { planner, row, committees, sizeLimits, onShowInfo, onHideInfo }: Props = $props();
 
 	const size = $derived(planner.seatCounts.get(row.alpha3Code) ?? 0);
-	const outsideLimits = $derived(isOutsideSizeLimits(size, sizeLimits));
+	const outsideLimits = $derived(isOutsideSizeLimits({ size, limits: sizeLimits }));
 </script>
 
 <tr class="hover:bg-base-300 {outsideLimits ? 'bg-error/10' : ''}">
@@ -35,8 +35,8 @@
 			<span class="max-w-36 truncate">{row.name}</span>
 		</button>
 	</th>
-	<td class="truncate" title={translateRegionalGroup(row.regionalGroup)}>
-		{translateRegionalGroup(row.regionalGroup, true)}
+	<td class="truncate" title={translateRegionalGroup({ group: row.regionalGroup })}>
+		{translateRegionalGroup({ group: row.regionalGroup, short: true })}
 	</td>
 	{#each committees as committee (committee.id)}
 		<SeatCell {planner} {committee} nation={row} />

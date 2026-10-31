@@ -45,11 +45,15 @@ function columnCount(sessions: number) {
  * `bottom`, everything is scaled down (to 60 %), and rows that still do not fit are left out.
  * Undefined without sessions.
  */
-export function layoutCertificateSessions(
-	sessions: readonly CertificateSessionMark[],
-	heading: string,
-	options: CertificateSessionLayoutOptions
-): CertificateSessionLayout | undefined {
+export function layoutCertificateSessions({
+	sessions,
+	heading,
+	options
+}: {
+	sessions: readonly CertificateSessionMark[];
+	heading: string;
+	options: CertificateSessionLayoutOptions;
+}): CertificateSessionLayout | undefined {
 	if (sessions.length === 0) return undefined;
 
 	const columns = columnCount(sessions.length);

@@ -24,11 +24,11 @@ export interface PlaceholderValidation {
 }
 
 /** Calls `visit` with the text of every text node in the document, depth first. */
-function forEachText(node: JSONContent, visit: (text: string) => void) {
+function forEachText({ node, visit }: { node: JSONContent; visit: (text: string) => void }) {
 	if (!node) return;
 	if (node.type === 'text' && node.text) visit(node.text);
 	if (node.content && Array.isArray(node.content)) {
-		for (const child of node.content) forEachText(child, visit);
+		for (const child of node.content) forEachText({ node: child, visit });
 	}
 }
 
@@ -50,11 +50,14 @@ function placeholderMatches(text: string): RegExpExecArray[] {
 export function extractPlaceholders(content: JSONContent): string[] {
 	const placeholders = new Set<string>();
 
-	forEachText(content, (text) => {
-		for (const match of placeholderMatches(text)) {
-			const placeholder = match[1].trim();
-			if (placeholder.length > 0) {
-				placeholders.add(placeholder);
+	forEachText({
+		node: content,
+		visit: (text) => {
+			for (const match of placeholderMatches(text)) {
+				const placeholder = match[1].trim();
+				if (placeholder.length > 0) {
+					placeholders.add(placeholder);
+				}
 			}
 		}
 	});
@@ -113,27 +116,30 @@ export function validatePlaceholders(content: JSONContent): PlaceholderValidatio
 	const validSet = new Set<string>();
 	const malformedSet = new Set<string>();
 
-	forEachText(content, (text) => {
-		// Check for empty placeholders "{{}}" which PLACEHOLDER_REGEX doesn't match
-		if (text.includes('{{}}')) {
-			result.empty.push('{{}}');
-		}
-
-		// Find all valid placeholders
-		for (const match of placeholderMatches(text)) {
-			const trimmed = match[1].trim();
-
-			if (trimmed.length === 0) {
-				result.empty.push(match[0]);
-			} else if (trimmed.length > MAX_PLACEHOLDER_LENGTH) {
-				result.tooLong.push(trimmed);
-			} else {
-				validSet.add(trimmed);
+	forEachText({
+		node: content,
+		visit: (text) => {
+			// Check for empty placeholders "{{}}" which PLACEHOLDER_REGEX doesn't match
+			if (text.includes('{{}}')) {
+				result.empty.push('{{}}');
 			}
-		}
 
-		// Then, check for malformed patterns
-		for (const fragment of malformedFragments(text)) malformedSet.add(fragment);
+			// Find all valid placeholders
+			for (const match of placeholderMatches(text)) {
+				const trimmed = match[1].trim();
+
+				if (trimmed.length === 0) {
+					result.empty.push(match[0]);
+				} else if (trimmed.length > MAX_PLACEHOLDER_LENGTH) {
+					result.tooLong.push(trimmed);
+				} else {
+					validSet.add(trimmed);
+				}
+			}
+
+			// Then, check for malformed patterns
+			for (const fragment of malformedFragments(text)) malformedSet.add(fragment);
+		}
 	});
 
 	result.valid = Array.from(validSet);
@@ -147,10 +153,13 @@ export function validatePlaceholders(content: JSONContent): PlaceholderValidatio
  * Returns a deep copy of the content with placeholders replaced.
  * Empty text nodes are removed as TipTap doesn't allow them.
  */
-export function replacePlaceholders(
-	content: JSONContent,
-	values: Record<string, string>
-): JSONContent {
+export function replacePlaceholders({
+	content,
+	values
+}: {
+	content: JSONContent;
+	values: Record<string, string>;
+}): JSONContent {
 	if (!content) return content;
 
 	// Deep clone to avoid mutating the original

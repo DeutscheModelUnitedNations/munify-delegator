@@ -22,7 +22,7 @@ export type SchoolFormValues = z.infer<typeof schoolFormSchema>;
 const orNull = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
 
 /** The form's values as the arguments of `updateSchool`. */
-export function toUpdateSchoolArgs(id: string, values: SchoolFormValues) {
+export function toUpdateSchoolArgs({ id, values }: { id: string; values: SchoolFormValues }) {
 	return {
 		id,
 		name: values.name.trim(),

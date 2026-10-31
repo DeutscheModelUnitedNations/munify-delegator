@@ -2,17 +2,19 @@ import { db, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
-import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks';
+import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /** Adds an application at the end of the delegation's ranking. Returns the new row. */
 export async function appendRoleApplication(args: { delegationId: string; roleId: string }) {
 	return db.transaction(async (tx) => {
 		// Close any gap first, so "one past the count" cannot collide with an existing rank.
-		await normalizeRoleApplicationRanks(args.delegationId, tx);
+		await normalizeRoleApplicationRanks({ delegationId: args.delegationId, tx });
 		const [existing] = await tx
 			.select({ value: count() })
 			.from(schema.roleApplication)
-			.where(whereRows(schema.roleApplication, { delegationId: args.delegationId }));
+			.where(
+				whereRows({ table: schema.roleApplication, filter: { delegationId: args.delegationId } })
+			);
 
 		return tx
 			.insert(schema.roleApplication)
@@ -31,30 +33,33 @@ export async function removeRoleApplication(application: { id: string; delegatio
 	await db.transaction(async (tx) => {
 		await tx
 			.delete(schema.roleApplication)
-			.where(whereRows(schema.roleApplication, { id: application.id }));
-		await normalizeRoleApplicationRanks(application.delegationId, tx);
+			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));
+		await normalizeRoleApplicationRanks({ delegationId: application.delegationId, tx });
 	});
 }
 
 /** Swaps the ranks of two applications. */
-export async function swapRanks(
-	first: { id: string; rank: number },
-	second: { id: string; rank: number }
-) {
+export async function swapRanks({
+	first,
+	second
+}: {
+	first: { id: string; rank: number };
+	second: { id: string; rank: number };
+}) {
 	await db.transaction(async (tx) => {
 		// (delegationId, rank) is unique, so the first row is parked on a sentinel rank
 		// before the two are swapped. The legacy resolver used -1 for the same reason.
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: -1 })
-			.where(whereRows(schema.roleApplication, { id: first.id }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: first.id } }));
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: first.rank })
-			.where(whereRows(schema.roleApplication, { id: second.id }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: second.id } }));
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: second.rank })
-			.where(whereRows(schema.roleApplication, { id: first.id }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: first.id } }));
 	});
 }

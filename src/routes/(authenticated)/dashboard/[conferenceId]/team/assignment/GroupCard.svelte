@@ -64,10 +64,12 @@
 					.map((member) => member.user)
 	);
 	const names = $derived(
-		people.map((user) => formatNames(user.givenName, user.familyName)).join(', ')
+		people
+			.map((user) => formatNames({ givenName: user.givenName, familyName: user.familyName }))
+			.join(', ')
 	);
 	// Only a delegation has wishes to compare its role with.
-	const wish = $derived(wishStatus(delegation?.appliedForRoles, group.target));
+	const wish = $derived(wishStatus({ wishes: delegation?.appliedForRoles, target: group.target }));
 	/** The buttons that apply to this group. */
 	const actions = $derived({
 		onSplit: canSplit(group) ? onSplit : undefined,
@@ -75,7 +77,11 @@
 	});
 	/** Every wish, the one matching the current role first, then by rank. */
 	const wishes = $derived(
-		wishList(delegation?.appliedForRoles, group.target, getFullTranslatedCountryNameFromISO3Code)
+		wishList({
+			wishes: delegation?.appliedForRoles,
+			target: group.target,
+			nationName: getFullTranslatedCountryNameFromISO3Code
+		})
 	);
 	/** Holds a role, but none of the wishes is it. */
 	const unwished = $derived(wish !== undefined && wish.rank === undefined);
@@ -87,7 +93,7 @@
 	);
 	const applicationId = $derived(group.singleParticipantId ?? group.delegationId);
 	const sightingLink = $derived(
-		applicationId ? sightingHref(conferenceId, applicationId) : undefined
+		applicationId ? sightingHref({ conferenceId, applicationId }) : undefined
 	);
 </script>
 
@@ -100,8 +106,7 @@
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
 		: 'w-44'} cursor-grab flex-col gap-1.5 rounded-box border p-2 text-xs shadow-sm pointer-coarse:touch-pan-y! {cardBorder(
-		review,
-		group.pending
+		{ review, pending: group.pending }
 	)}"
 	title={names}
 >

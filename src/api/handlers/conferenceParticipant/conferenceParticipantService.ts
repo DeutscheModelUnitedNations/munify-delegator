@@ -5,18 +5,22 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { max } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * The person's row in the conference, created the first time they register there (as delegate,
  * single participant or supervisor) and returned on every later call. The no-op `set` is how
  * Postgres returns the existing row on conflict. Returns its id.
  */
-export async function ensureConferenceParticipant(
-	tx: Transaction | typeof db,
-	conferenceId: string,
-	userId: string
-) {
+export async function ensureConferenceParticipant({
+	tx,
+	conferenceId,
+	userId
+}: {
+	tx: Transaction | typeof db;
+	conferenceId: string;
+	userId: string;
+}) {
 	const row = await tx
 		.insert(schema.conferenceParticipant)
 		.values({ userId, conferenceId })
@@ -34,16 +38,25 @@ export async function ensureConferenceParticipant(
  * taking part has): what they applied with, or a change. `undefined` leaves it as it is, `null`
  * removes it.
  */
-export async function setParticipantSchool(
-	tx: Transaction | typeof db,
-	participantIds: readonly string[],
-	schoolId: string | null | undefined
-) {
+export async function setParticipantSchool({
+	tx,
+	participantIds,
+	schoolId
+}: {
+	tx: Transaction | typeof db;
+	participantIds: readonly string[];
+	schoolId: string | null | undefined;
+}) {
 	if (schoolId === undefined || participantIds.length === 0) return;
 	await tx
 		.update(schema.conferenceParticipant)
 		.set({ schoolId })
-		.where(whereRows(schema.conferenceParticipant, { id: { in: [...participantIds] } }));
+		.where(
+			whereRows({
+				table: schema.conferenceParticipant,
+				filter: { id: { in: [...participantIds] } }
+			})
+		);
 }
 
 /** The user a status is addressed to, when it is addressed by user id or email. */
@@ -66,7 +79,12 @@ async function documentNumberOf(args: {
 	const [highest] = await db
 		.select({ value: max(schema.conferenceParticipant.assignedDocumentNumber) })
 		.from(schema.conferenceParticipant)
-		.where(whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId }));
+		.where(
+			whereRows({
+				table: schema.conferenceParticipant,
+				filter: { conferenceId: args.conferenceId }
+			})
+		);
 	return (highest?.value ?? 0) + 1;
 }
 
@@ -76,14 +94,14 @@ type StatusValues = Partial<typeof schema.conferenceParticipant.$inferInsert>;
  * Updates the status row `id`; whether the caller may is checked before
  * (`assertCanUpdateParticipantStatus`).
  */
-export async function updateStatus(id: string, values: StatusValues) {
+export async function updateStatus({ id, values }: { id: string; values: StatusValues }) {
 	const [updated] = await db
 		.update(schema.conferenceParticipant)
 		.set(values)
-		.where(whereRows(schema.conferenceParticipant, { id }))
+		.where(whereRows({ table: schema.conferenceParticipant, filter: { id } }))
 		.returning({ id: schema.conferenceParticipant.id });
 	if (!updated) {
-		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
 	return updated.id;
 }
@@ -92,7 +110,15 @@ export async function updateStatus(id: string, values: StatusValues) {
  * Creates a status row; whether the caller may, for this user, is checked before
  * (`assertCanCreateParticipantStatus`).
  */
-export async function createStatus(values: StatusValues, conferenceId: string, userId: string) {
+export async function createStatus({
+	values,
+	conferenceId,
+	userId
+}: {
+	values: StatusValues;
+	conferenceId: string;
+	userId: string;
+}) {
 	const created = await db
 		.insert(schema.conferenceParticipant)
 		.values({ ...values, userId, conferenceId })
@@ -118,16 +144,20 @@ export type StatusUpdateArgs = {
 };
 
 /** Refuses an access card another participant of the conference already carries. */
-async function assertAccessCardFree(
-	conferenceId: string,
-	accessCardId: string,
-	ownId: string | undefined
-) {
+async function assertAccessCardFree({
+	conferenceId,
+	accessCardId,
+	ownId
+}: {
+	conferenceId: string;
+	accessCardId: string;
+	ownId: string | undefined;
+}) {
 	const holder = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, accessCardId, ...(ownId ? { id: { ne: ownId } } : {}) },
 		columns: { id: true }
 	});
-	if (holder) throw apiError('CONFLICT', m.accessCardTaken());
+	if (holder) throw apiError({ code: 'CONFLICT', message: m.accessCardTaken() });
 }
 
 /**
@@ -143,7 +173,7 @@ export async function planParticipantStatusUpsert(
 	{ values: StatusValues } & ({ existingId: string } | { existingId?: undefined; userId: string })
 > {
 	if (!args.id && !args.userId && !args.userEmail) {
-		throw apiError('INVALID_INPUT', m.participantStatusNeedsLookup());
+		throw apiError({ code: 'INVALID_INPUT', message: m.participantStatusNeedsLookup() });
 	}
 
 	const targetUserId = await targetUserIdOf(args);
@@ -165,12 +195,16 @@ export async function planParticipantStatusUpsert(
 	});
 
 	if (values.accessCardId) {
-		await assertAccessCardFree(args.conferenceId, values.accessCardId, existing?.id);
+		await assertAccessCardFree({
+			conferenceId: args.conferenceId,
+			accessCardId: values.accessCardId,
+			ownId: existing?.id
+		});
 	}
 
 	if (existing) return { values, existingId: existing.id };
 	if (!targetUserId) {
-		throw apiError('INVALID_INPUT', m.participantStatusNeedsUser());
+		throw apiError({ code: 'INVALID_INPUT', message: m.participantStatusNeedsUser() });
 	}
 	return { values, userId: targetUserId };
 }
@@ -228,5 +262,8 @@ export async function isOfAgeAtConference(participantId: string) {
 			conference: { columns: { startConference: true } }
 		}
 	});
-	return ofAgeAtConference(participant?.conference.startConference, participant?.user.birthday);
+	return ofAgeAtConference({
+		startConference: participant?.conference.startConference,
+		dateOfBirth: participant?.user.birthday
+	});
 }

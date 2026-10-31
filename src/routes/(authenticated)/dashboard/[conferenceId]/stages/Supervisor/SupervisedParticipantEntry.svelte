@@ -38,7 +38,10 @@
 </script>
 
 <DelegationStatusTableEntry
-	name={formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
+	name={formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined
+	})}
 	pronouns={user.pronouns ?? ''}
 	{headDelegate}
 	email={user.email}
@@ -48,11 +51,14 @@
 	{withPaperCount}
 	{paperCount}
 	downloadPostalDocuments={conference.unlockPostals
-		? () => downloadPostalRegistration(user.id, conferenceId)
+		? () => downloadPostalRegistration({ userId: user.id, conferenceId })
 		: undefined}
-	postalSatus={getSimplifiedPostalStatus(
+	postalSatus={getSimplifiedPostalStatus({
 		participantStatus,
-		ofAgeAtConference(conference.startConference, user.birthday)
-	)}
+		ofAge: ofAgeAtConference({
+			startConference: conference.startConference,
+			dateOfBirth: user.birthday
+		})
+	})}
 	paymentStatus={participantStatus?.paymentStatus}
 />

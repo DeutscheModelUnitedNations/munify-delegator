@@ -1,7 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /** How many searches a person keeps. The search only offers the newest five. */
 const KEPT_ENTRIES = 20;
@@ -11,20 +11,27 @@ const MAX_LABEL_LENGTH = 200;
  * Records a result `userId` picked in the search. Picking the same result again moves it to the
  * top instead of listing it twice, and only the newest entries are kept.
  */
-export async function recordSearch(
-	userId: string,
-	args: { conferenceId: string; originId: string; resultId: string; label: string }
-) {
+export async function recordSearch({
+	userId,
+	args
+}: {
+	userId: string;
+	args: { conferenceId: string; originId: string; resultId: string; label: string };
+}) {
 	const label = args.label.trim().slice(0, MAX_LABEL_LENGTH);
-	if (!label || !args.resultId) throw apiError('INVALID_INPUT', m.searchHistoryNeedsIdAndLabel());
+	if (!label || !args.resultId)
+		throw apiError({ code: 'INVALID_INPUT', message: m.searchHistoryNeedsIdAndLabel() });
 
 	const { searchHistory } = schema;
 	await db.transaction(async (tx) => {
 		await tx.delete(searchHistory).where(
-			whereRows(searchHistory, {
-				userId,
-				conferenceId: args.conferenceId,
-				resultId: args.resultId
+			whereRows({
+				table: searchHistory,
+				filter: {
+					userId,
+					conferenceId: args.conferenceId,
+					resultId: args.resultId
+				}
 			})
 		);
 		await tx.insert(searchHistory).values({
@@ -41,9 +48,12 @@ export async function recordSearch(
 			offset: KEPT_ENTRIES
 		});
 		if (stale.length > 0) {
-			await tx
-				.delete(searchHistory)
-				.where(whereRows(searchHistory, { id: { in: stale.map((entry) => entry.id) } }));
+			await tx.delete(searchHistory).where(
+				whereRows({
+					table: searchHistory,
+					filter: { id: { in: stale.map((entry) => entry.id) } }
+				})
+			);
 		}
 	});
 }

@@ -62,11 +62,15 @@ const STAGE_TAB: Record<ConferenceState, UserCardTab> = {
  * when it is pointed at someone else), else the one the conference's state suggests, else the
  * first.
  */
-export function shownUserCardTab(
-	picked: UserCardTab | null,
-	visible: readonly UserCardTab[],
-	state: ConferenceState
-): UserCardTab {
+export function shownUserCardTab({
+	picked,
+	visible,
+	state
+}: {
+	picked: UserCardTab | null;
+	visible: readonly UserCardTab[];
+	state: ConferenceState;
+}): UserCardTab {
 	if (picked && visible.includes(picked)) return picked;
 	const suggested = STAGE_TAB[state];
 	return visible.includes(suggested) ? suggested : (visible[0] ?? 'person');

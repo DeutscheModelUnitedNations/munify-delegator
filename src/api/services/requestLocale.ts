@@ -23,7 +23,7 @@ export function localeOfRequest(request: Request): Locale | undefined {
  * every `m.…()` message. Paraglide keeps the locale of a request in an `AsyncLocalStorage`; this
  * opens a nested store with another locale instead of writing to the request's own.
  */
-export function runWithLocale<T>(locale: Locale, fn: () => T): T {
+export function runWithLocale<T>({ locale, fn }: { locale: Locale; fn: () => T }): T {
 	const storage = getServerAsyncLocalStorage();
 	if (!storage) return fn();
 	const store = storage.getStore();

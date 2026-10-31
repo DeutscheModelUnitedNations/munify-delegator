@@ -3,11 +3,19 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
 /** Makes `trackIds` the tracks of an entry. */
-async function setTracks(tx: Transaction, entryId: string, trackIds: readonly string[]) {
+async function setTracks({
+	tx,
+	entryId,
+	trackIds
+}: {
+	tx: Transaction;
+	entryId: string;
+	trackIds: readonly string[];
+}) {
 	const ids = [...new Set(trackIds)];
 	await tx
 		.delete(schema.calendarEntryToCalendarTrack)
-		.where(whereRows(schema.calendarEntryToCalendarTrack, { a: entryId }));
+		.where(whereRows({ table: schema.calendarEntryToCalendarTrack, filter: { a: entryId } }));
 	if (ids.length > 0) {
 		await tx
 			.insert(schema.calendarEntryToCalendarTrack)
@@ -16,11 +24,19 @@ async function setTracks(tx: Transaction, entryId: string, trackIds: readonly st
 }
 
 /** Makes `optionIds` the survey options an entry is limited to; none shows it to everybody. */
-async function setSurveyOptions(tx: Transaction, entryId: string, optionIds: readonly string[]) {
+async function setSurveyOptions({
+	tx,
+	entryId,
+	optionIds
+}: {
+	tx: Transaction;
+	entryId: string;
+	optionIds: readonly string[];
+}) {
 	const ids = [...new Set(optionIds)];
 	await tx
 		.delete(schema.calendarEntryToSurveyOption)
-		.where(whereRows(schema.calendarEntryToSurveyOption, { a: entryId }));
+		.where(whereRows({ table: schema.calendarEntryToSurveyOption, filter: { a: entryId } }));
 	if (ids.length > 0) {
 		await tx
 			.insert(schema.calendarEntryToSurveyOption)
@@ -32,19 +48,24 @@ async function setSurveyOptions(tx: Transaction, entryId: string, optionIds: rea
  * Creates an entry together with its tracks and survey options, so it never exists without them
  * (and is never shown to everybody in between).
  */
-export async function createCalendarEntry(
-	values: typeof schema.calendarEntry.$inferInsert,
-	trackIds: readonly string[] | null | undefined,
-	surveyOptionIds: readonly string[] | null | undefined
-) {
+export async function createCalendarEntry({
+	values,
+	trackIds,
+	surveyOptionIds
+}: {
+	values: typeof schema.calendarEntry.$inferInsert;
+	trackIds: readonly string[] | null | undefined;
+	surveyOptionIds: readonly string[] | null | undefined;
+}) {
 	return db.transaction(async (tx) => {
 		const created = await tx
 			.insert(schema.calendarEntry)
 			.values(values)
 			.returning()
 			.then(assertFirstEntryExists);
-		if (trackIds?.length) await setTracks(tx, created.id, trackIds);
-		if (surveyOptionIds?.length) await setSurveyOptions(tx, created.id, surveyOptionIds);
+		if (trackIds?.length) await setTracks({ tx, entryId: created.id, trackIds });
+		if (surveyOptionIds?.length)
+			await setSurveyOptions({ tx, entryId: created.id, optionIds: surveyOptionIds });
 		return created;
 	});
 }
@@ -53,18 +74,23 @@ export async function createCalendarEntry(
  * Changes an entry and, when `trackIds` or `surveyOptionIds` is given, replaces its tracks or
  * survey options in the same step.
  */
-export async function updateCalendarEntry(
-	id: string,
-	values: Partial<typeof schema.calendarEntry.$inferInsert>,
-	trackIds: readonly string[] | null | undefined,
-	surveyOptionIds: readonly string[] | null | undefined
-) {
+export async function updateCalendarEntry({
+	id,
+	values,
+	trackIds,
+	surveyOptionIds
+}: {
+	id: string;
+	values: Partial<typeof schema.calendarEntry.$inferInsert>;
+	trackIds: readonly string[] | null | undefined;
+	surveyOptionIds: readonly string[] | null | undefined;
+}) {
 	await db.transaction(async (tx) => {
 		await tx
 			.update(schema.calendarEntry)
 			.set(values)
-			.where(whereRows(schema.calendarEntry, { id }));
-		if (trackIds) await setTracks(tx, id, trackIds);
-		if (surveyOptionIds) await setSurveyOptions(tx, id, surveyOptionIds);
+			.where(whereRows({ table: schema.calendarEntry, filter: { id } }));
+		if (trackIds) await setTracks({ tx, entryId: id, trackIds });
+		if (surveyOptionIds) await setSurveyOptions({ tx, entryId: id, optionIds: surveyOptionIds });
 	});
 }

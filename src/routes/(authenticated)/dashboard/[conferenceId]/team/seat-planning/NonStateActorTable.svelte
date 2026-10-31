@@ -39,15 +39,22 @@
 	);
 
 	/** saves one field; a refused change puts the saved value back into the input */
-	const update = (
-		input: HTMLInputElement,
-		saved: string | number,
-		id: string,
-		data: Partial<Omit<NonStateActor, 'id'>>
-	) =>
-		saveField(input, saved, () =>
-			client.mutate.updateNonStateActor({ __args: { id, ...data }, seatAmount: true })
-		);
+	const update = ({
+		input,
+		saved,
+		id,
+		data
+	}: {
+		input: HTMLInputElement;
+		saved: string | number;
+		id: string;
+		data: Partial<Omit<NonStateActor, 'id'>>;
+	}) =>
+		saveField({
+			input,
+			saved,
+			save: () => client.mutate.updateNonStateActor({ __args: { id, ...data }, seatAmount: true })
+		});
 
 	async function create() {
 		if (!draftValid) return;
@@ -88,15 +95,20 @@
 		<tbody>
 			{#each nonStateActors as nsa (nsa.id)}
 				{@const members = planner.nonStateActorMemberCount(nsa.id)}
-				{@const outsideLimits = isOutsideSizeLimits(nsa.seatAmount, sizeLimits)}
+				{@const outsideLimits = isOutsideSizeLimits({ size: nsa.seatAmount, limits: sizeLimits })}
 				<tr class={outsideLimits ? 'bg-error/10' : ''}>
 					<td>
 						<RoleIconInput
 							class="min-w-24"
 							value={nsa.fontAwesomeIcon ?? ''}
 							onchange={(e) =>
-								update(e.currentTarget, nsa.fontAwesomeIcon ?? '', nsa.id, {
-									fontAwesomeIcon: e.currentTarget.value
+								update({
+									input: e.currentTarget,
+									saved: nsa.fontAwesomeIcon ?? '',
+									id: nsa.id,
+									data: {
+										fontAwesomeIcon: e.currentTarget.value
+									}
 								})}
 						/>
 					</td>
@@ -107,7 +119,12 @@
 							required
 							value={nsa.name}
 							onchange={(e) =>
-								update(e.currentTarget, nsa.name, nsa.id, { name: e.currentTarget.value })}
+								update({
+									input: e.currentTarget,
+									saved: nsa.name,
+									id: nsa.id,
+									data: { name: e.currentTarget.value }
+								})}
 						/>
 					</td>
 					<td>
@@ -117,8 +134,13 @@
 							required
 							value={nsa.abbreviation}
 							onchange={(e) =>
-								update(e.currentTarget, nsa.abbreviation, nsa.id, {
-									abbreviation: e.currentTarget.value
+								update({
+									input: e.currentTarget,
+									saved: nsa.abbreviation,
+									id: nsa.id,
+									data: {
+										abbreviation: e.currentTarget.value
+									}
 								})}
 						/>
 					</td>
@@ -129,8 +151,13 @@
 							required
 							value={nsa.description}
 							onchange={(e) =>
-								update(e.currentTarget, nsa.description, nsa.id, {
-									description: e.currentTarget.value
+								update({
+									input: e.currentTarget,
+									saved: nsa.description,
+									id: nsa.id,
+									data: {
+										description: e.currentTarget.value
+									}
 								})}
 						/>
 					</td>
@@ -140,8 +167,13 @@
 								class={outsideLimits ? 'input-error' : ''}
 								value={nsa.seatAmount}
 								onchange={(e) =>
-									update(e.currentTarget, nsa.seatAmount, nsa.id, {
-										seatAmount: Number(e.currentTarget.value)
+									update({
+										input: e.currentTarget,
+										saved: nsa.seatAmount,
+										id: nsa.id,
+										data: {
+											seatAmount: Number(e.currentTarget.value)
+										}
 									})}
 							/>
 							{#if members !== undefined && members > nsa.seatAmount}

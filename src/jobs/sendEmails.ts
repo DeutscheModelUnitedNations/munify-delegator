@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { sendEmailsConfig } from './config';
+import { logger } from '#lib/logger';
 
 const resultSchema = z.object({ sent: z.number(), failed: z.number(), remaining: z.number() });
 
@@ -28,7 +29,7 @@ export async function runSendEmails() {
 			throw new Error(`send-emails: the app answered ${response.status} ${await response.text()}`);
 		}
 		const { sent, failed, remaining } = resultSchema.parse(await response.json());
-		console.info(`send-emails round ${round}: ${sent} sent, ${failed} failed, ${remaining} left`);
+		logger.info('Sent due emails', { round, sent, failed, remaining });
 		if (finished({ sent, failed, remaining })) return;
 	}
 }

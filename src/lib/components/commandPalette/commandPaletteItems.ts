@@ -91,7 +91,13 @@ export type ResultTarget = { userId: string } | { href: ResolvedPathname };
 
 // An exhaustive switch over the result types: each case is one line of branching at most.
 // fallow-ignore-next-line complexity
-export function resultTarget(item: ResultItem, conferenceId: string): ResultTarget {
+export function resultTarget({
+	item,
+	conferenceId
+}: {
+	item: ResultItem;
+	conferenceId: string;
+}): ResultTarget {
 	switch (item.type) {
 		case 'page':
 			return { href: item.data.href };
@@ -142,7 +148,15 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
  * The index an arrow key moves the selection to, clamped to the list; `undefined` when there is
  * nothing to move through or the key is not an arrow.
  */
-export function steppedIndex(key: string, activeIndex: number, count: number) {
+export function steppedIndex({
+	key,
+	activeIndex,
+	count
+}: {
+	key: string;
+	activeIndex: number;
+	count: number;
+}) {
 	if (count === 0) return undefined;
 	if (key === 'ArrowDown') return Math.min(activeIndex + 1, count - 1);
 	if (key === 'ArrowUp') return Math.max(activeIndex - 1, 0);
@@ -244,7 +258,15 @@ export function describeItem(item: ResultItem): {
 }
 
 /** The note under the results: too short a term, or nothing found for a long enough one. */
-export function searchHint(searchTerm: string, resultCount: number, searchLoading: boolean) {
+export function searchHint({
+	searchTerm,
+	resultCount,
+	searchLoading
+}: {
+	searchTerm: string;
+	resultCount: number;
+	searchLoading: boolean;
+}) {
 	if (searchTerm.length === 1) return m.commandPaletteMinChars();
 	if (resultCount === 0 && searchTerm.length >= 2 && !searchLoading) {
 		return m.commandPaletteNoResults();

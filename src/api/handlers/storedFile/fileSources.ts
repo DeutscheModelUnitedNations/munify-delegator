@@ -77,11 +77,11 @@ function isFileKind(kind: string): kind is FileKind {
 }
 
 /** What a kind and field name, or `undefined` when they are not a stored file. */
-export function findFileSource(kind: string, field: string) {
+export function findFileSource({ kind, field }: { kind: string; field: string }) {
 	if (!isFileKind(kind)) return undefined;
 	const fields: Record<string, FileSource> = FILE_SOURCES[kind];
 	if (!Object.hasOwn(fields, field)) return undefined;
-	return { kind, field, purpose: filePurpose(kind, field), ...fields[field] };
+	return { kind, field, purpose: filePurpose({ kind, field }), ...fields[field] };
 }
 
 /** "10 MB", for the size limit in an error message. */

@@ -5,7 +5,7 @@ import { client } from '#lib/api/rumbleClient/client';
  * (team members), `registrationOfUser` for registrations, which reach the conference and the user
  * through their participant row.
  */
-function userInConference(userId: string, conferenceId: string) {
+function userInConference({ userId, conferenceId }: { userId: string; conferenceId: string }) {
 	return {
 		forUser: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 		registrationOfUser: {
@@ -21,8 +21,14 @@ function userInConference(userId: string, conferenceId: string) {
  * This is what the user card's header renders and what decides which tabs it offers. Every tab
  * fetches the rest of what it shows on its own, once it is opened.
  */
-export async function fetchUserCardRoles(userId: string, conferenceId: string) {
-	const { forUser, registrationOfUser } = userInConference(userId, conferenceId);
+export async function fetchUserCardRoles({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
+	const { forUser, registrationOfUser } = userInConference({ userId, conferenceId });
 
 	const [
 		users,

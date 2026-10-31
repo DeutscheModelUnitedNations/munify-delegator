@@ -23,10 +23,13 @@ interface RoleApplication {
  * A delegation's wishes in the order it ranked them: a nation by its translated name and flag, a
  * non-state actor by its name and icon.
  */
-export function delegationWishes(
-	applications: readonly RoleApplication[],
-	countryName: (alpha3Code: string) => string
-): Wish[] {
+export function delegationWishes({
+	applications,
+	countryName
+}: {
+	applications: readonly RoleApplication[];
+	countryName: (alpha3Code: string) => string;
+}): Wish[] {
 	return applications
 		.toSorted((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
 		.map((application) => {

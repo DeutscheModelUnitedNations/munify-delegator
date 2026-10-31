@@ -13,14 +13,19 @@ export function scannedUserWithStatus<U, S>(
  * "Confirm all": every postal document is in. The guardian's consent is only marked when the
  * person is still a minor at the conference; for adults it is left as it is.
  */
-export function confirmAllChange(
-	startConference: Date | string | null | undefined,
-	birthday: Date | string | null | undefined
-): StatusChange {
+export function confirmAllChange({
+	startConference,
+	birthday
+}: {
+	startConference: Date | string | null | undefined;
+	birthday: Date | string | null | undefined;
+}): StatusChange {
 	return {
 		termsAndConditions: 'DONE',
 		mediaConsent: 'DONE',
-		guardianConsent: ofAgeAtConference(startConference, birthday) ? undefined : 'DONE',
+		guardianConsent: ofAgeAtConference({ startConference, dateOfBirth: birthday })
+			? undefined
+			: 'DONE',
 		mediaConsentStatus: 'ALLOWED_ALL'
 	};
 }

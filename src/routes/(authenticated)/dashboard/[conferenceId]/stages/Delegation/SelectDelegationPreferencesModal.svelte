@@ -74,7 +74,9 @@
 		nations
 			.filter((nation) => !appliedRoleIds.has(nation.id))
 			.filter(
-				(nation) => roleSeats(nation, conference.committees) >= (delegation.members?.length ?? 0)
+				(nation) =>
+					roleSeats({ role: nation, committees: conference.committees }) >=
+					(delegation.members?.length ?? 0)
 			)
 	);
 
@@ -91,7 +93,7 @@
 			delegation.appliedForRoles.length === 0
 	);
 
-	const swapEntry = async (firstId: string, secondId: string) => {
+	const swapEntry = async ({ firstId, secondId }: { firstId: string; secondId: string }) => {
 		const promise = client.mutate.swapRoleApplicationRanks({
 			__args: { firstRoleApplicationId: firstId, secondRoleApplicationId: secondId },
 			id: true,
@@ -114,7 +116,7 @@
 	type Committee = (typeof conference)['committees'][number];
 
 	const seatsOf = (application: RoleApplication) =>
-		roleSeats(application.role, conference.committees);
+		roleSeats({ role: application.role, committees: conference.committees });
 
 	const deleteEntry = async (id: string) => {
 		const promise = Promise.resolve(client.mutate.deleteRoleApplication({ __args: { id } }));
@@ -179,7 +181,7 @@
 				icon="chevron-up"
 				onClick={async () => {
 					const previous = appliedForRoles[index - 1];
-					swapEntry(role.id, previous.id);
+					swapEntry({ firstId: role.id, secondId: previous.id });
 				}}
 			/>
 			<SquareButtonWithLoadingState
@@ -188,7 +190,7 @@
 				icon="chevron-down"
 				onClick={async () => {
 					const next = appliedForRoles[index + 1];
-					swapEntry(role.id, next.id);
+					swapEntry({ firstId: role.id, secondId: next.id });
 				}}
 			/>
 			<SquareButtonWithLoadingState

@@ -5,6 +5,7 @@ import {
 	downloadPostalRegistrationDocuments,
 	fetchPostalRegistrationSources
 } from './postalRegistrationSources';
+import { logger } from '#lib/logger';
 
 /**
  * Builds and downloads one person's postal registration documents for one conference.
@@ -14,12 +15,15 @@ import {
  *
  * Reports problems, including an incomplete address, as toasts rather than throwing.
  */
-export async function downloadPostalRegistration(
-	userId: string,
-	conferenceId: string
-): Promise<void> {
+export async function downloadPostalRegistration({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}): Promise<void> {
 	try {
-		const { user, conference } = await fetchPostalRegistrationSources(userId, conferenceId);
+		const { user, conference } = await fetchPostalRegistrationSources({ userId, conferenceId });
 
 		const participant = postalParticipant(user);
 		if (!participant) {
@@ -35,7 +39,7 @@ export async function downloadPostalRegistration(
 
 		toast.success(m.postalRegistrationPDFGenerated());
 	} catch (error) {
-		console.error('Error generating PDF:', error);
+		logger.error('Error generating PDF', error);
 		toast.error(m.errorGeneratingPostalRegistrationPDF());
 	}
 }

@@ -56,11 +56,17 @@ function delegationMemberListTypes(dm: DelegationMembership): ConferenceListType
 	if (kind === 'NATION') types.push('DELEGATION_MEMBERS_NATIONS');
 	else if (kind === 'NON_STATE_ACTOR') types.push('DELEGATION_MEMBERS_NSA');
 	if (dm.isHeadDelegate && hasRole) types.push('HEAD_DELEGATES');
-	return [...types, ...releasedRegistrationTypes(delegation.applied, hasRole)];
+	return [...types, ...releasedRegistrationTypes({ applied: delegation.applied, hasRole })];
 }
 
 /** Once assignments are out: who has registered, and who applied without getting a role. */
-function releasedRegistrationTypes(applied: boolean, hasRole: boolean): ConferenceListType[] {
+function releasedRegistrationTypes({
+	applied,
+	hasRole
+}: {
+	applied: boolean;
+	hasRole: boolean;
+}): ConferenceListType[] {
 	if (!applied) return ['REGISTRATION_NOT_COMPLETED'];
 	return hasRole ? ['REGISTRATION_COMPLETED'] : ['REGISTRATION_COMPLETED', 'REJECTED_PARTICIPANTS'];
 }
@@ -91,7 +97,13 @@ const delegationMemberRule: ListAssignmentRule = {
 			});
 
 			for (const type of delegationMemberListTypes(dm)) {
-				listNames.push(createConferenceListName(conference.title, conference.id, type));
+				listNames.push(
+					createConferenceListName({
+						conferenceTitle: conference.title,
+						conferenceId: conference.id,
+						listType: type
+					})
+				);
 			}
 		}
 
@@ -116,26 +128,30 @@ const singleParticipantRule: ListAssignmentRule = {
 
 			if (sp.applied) {
 				listNames.push(
-					createConferenceListName(sp.conference.title, sp.conference.id, 'REGISTRATION_COMPLETED')
+					createConferenceListName({
+						conferenceTitle: sp.conference.title,
+						conferenceId: sp.conference.id,
+						listType: 'REGISTRATION_COMPLETED'
+					})
 				);
 
 				// Nobody hears whether they got a role before the team releases it.
 				if (sp.conference.assignmentReleased) {
 					listNames.push(
-						createConferenceListName(
-							sp.conference.title,
-							sp.conference.id,
-							sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
-						)
+						createConferenceListName({
+							conferenceTitle: sp.conference.title,
+							conferenceId: sp.conference.id,
+							listType: sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
+						})
 					);
 				}
 			} else {
 				listNames.push(
-					createConferenceListName(
-						sp.conference.title,
-						sp.conference.id,
-						'REGISTRATION_NOT_COMPLETED'
-					)
+					createConferenceListName({
+						conferenceTitle: sp.conference.title,
+						conferenceId: sp.conference.id,
+						listType: 'REGISTRATION_NOT_COMPLETED'
+					})
 				);
 			}
 		}
@@ -190,7 +206,11 @@ const supervisorRule: ListAssignmentRule = {
 
 			for (const type of supervisorListTypes(supervisor)) {
 				listNames.push(
-					createConferenceListName(supervisor.conference.title, supervisor.conference.id, type)
+					createConferenceListName({
+						conferenceTitle: supervisor.conference.title,
+						conferenceId: supervisor.conference.id,
+						listType: type
+					})
 				);
 			}
 		}
@@ -214,21 +234,35 @@ const teamMemberRule: ListAssignmentRule = {
 				title: tm.conference.title
 			});
 
-			listNames.push(createConferenceListName(tm.conference.title, tm.conferenceId, 'TEAM'));
+			listNames.push(
+				createConferenceListName({
+					conferenceTitle: tm.conference.title,
+					conferenceId: tm.conferenceId,
+					listType: 'TEAM'
+				})
+			);
 
 			if (tm.role === 'PARTICIPANT_CARE' || tm.role === 'PROJECT_MANAGEMENT') {
 				listNames.push(
-					createConferenceListName(tm.conference.title, tm.conferenceId, 'REGISTRATION_COMPLETED')
+					createConferenceListName({
+						conferenceTitle: tm.conference.title,
+						conferenceId: tm.conferenceId,
+						listType: 'REGISTRATION_COMPLETED'
+					})
 				);
 				listNames.push(
-					createConferenceListName(
-						tm.conference.title,
-						tm.conferenceId,
-						'REGISTRATION_NOT_COMPLETED'
-					)
+					createConferenceListName({
+						conferenceTitle: tm.conference.title,
+						conferenceId: tm.conferenceId,
+						listType: 'REGISTRATION_NOT_COMPLETED'
+					})
 				);
 				listNames.push(
-					createConferenceListName(tm.conference.title, tm.conferenceId, 'SUPERVISORS')
+					createConferenceListName({
+						conferenceTitle: tm.conference.title,
+						conferenceId: tm.conferenceId,
+						listType: 'SUPERVISORS'
+					})
 				);
 			}
 		}
@@ -253,10 +287,16 @@ const ALL_RULES: readonly ListAssignmentRule[] = [
  * Each rule is evaluated exactly once per user. Conferences that ended before `cutoff` are left
  * out, so their participants drop off their lists (see `window.ts`).
  */
-export function computeSubscriberState(user: MailSyncUser, cutoff: Date): ComputedSubscriberState {
+export function computeSubscriberState({
+	user,
+	cutoff
+}: {
+	user: MailSyncUser;
+	cutoff: Date;
+}): ComputedSubscriberState {
 	const allListNames: string[] = [];
 	const allConferenceAttribs: SubscriberAttribs['conferences'] = [];
-	const recentUser = withinRetention(user, cutoff);
+	const recentUser = withinRetention({ user, cutoff });
 
 	for (const rule of ALL_RULES) {
 		const { listNames, conferenceAttribs } = rule.evaluate(recentUser);
@@ -266,8 +306,12 @@ export function computeSubscriberState(user: MailSyncUser, cutoff: Date): Comput
 
 	return {
 		email: user.email.trim(),
-		formattedName: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-			familyNameUppercase: false
+		formattedName: formatNames({
+			givenName: user.givenName ?? undefined,
+			familyName: user.familyName ?? undefined,
+			options: {
+				familyNameUppercase: false
+			}
 		}),
 		listNames: [...new Set(allListNames)],
 		attribs: {

@@ -26,10 +26,13 @@ export type CertificateDownload =
 			filename: string;
 	  };
 
-export function planCertificateDownload(
-	certificate: CertificateData | undefined,
-	userId: string
-): CertificateDownload {
+export function planCertificateDownload({
+	certificate,
+	userId
+}: {
+	certificate: CertificateData | undefined;
+	userId: string;
+}): CertificateDownload {
 	if (!certificate?.templateUrl || !userId) return { kind: 'unavailable' };
 	const { fullName, jwt, title, sessions } = certificate;
 	if (!fullName || !jwt) return { kind: 'incomplete' };

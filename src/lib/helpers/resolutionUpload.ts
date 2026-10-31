@@ -26,10 +26,13 @@ export function findResolutionUploadProblem(
  * Uploads the files one request at a time, so a failure keeps the files before and after it.
  * Returns the names of the ones that failed.
  */
-export async function uploadEach<F extends Pick<File, 'name'>>(
-	files: readonly F[],
-	upload: (file: F) => Promise<unknown>
-): Promise<string[]> {
+export async function uploadEach<F extends Pick<File, 'name'>>({
+	files,
+	upload
+}: {
+	files: readonly F[];
+	upload: (file: F) => Promise<unknown>;
+}): Promise<string[]> {
 	const failed: string[] = [];
 	for (const file of files) {
 		try {

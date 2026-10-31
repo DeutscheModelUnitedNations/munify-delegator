@@ -1,6 +1,6 @@
 import { db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
-import { object, query, schemaBuilder } from '#api/rumble';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '#api/rumble';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
@@ -27,11 +27,12 @@ import {
 	singleParticipantPubsub,
 	userPubsub
 } from '#api/pubsub';
-import { OIDC } from '#api/services/OIDC';
+import { OIDC } from '#api/services/oidc/OIDC';
 import { impersonationConfigured, impersonationTokens } from '#api/services/account/impersonation';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { whereAllowed, queryAllowed } from '#api/services/authHelper/utils';
+import { logger } from '#lib/logger';
 
 registerUserAbilities();
 
@@ -59,6 +60,11 @@ query({ table: 'user' });
  * Announces a changed profile. A completed or changed profile may now look like an account from
  * before, so it is compared with those again.
  */
+/** The user as the caller may read them, for re-reading the row a mutation wrote. */
+function allowedUser({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return queryAllowed({ ability: ctx.abilities.user, id });
+}
+
 function profileChanged(id: string) {
 	userPubsub.updated(id);
 	scanUserForDuplicatesInBackground(id);
@@ -78,11 +84,15 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await removeParticipation(
-				args.userId,
-				args.conferenceId,
-				await deletableParticipation(ctx, args.userId, args.conferenceId)
-			);
+			await removeParticipation({
+				userId: args.userId,
+				conferenceId: args.conferenceId,
+				deletable: await deletableParticipation({
+					ctx,
+					userId: args.userId,
+					conferenceId: args.conferenceId
+				})
+			});
 
 			delegationMemberPubsub.removed();
 			singleParticipantPubsub.removed();
@@ -90,7 +100,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceParticipantPubsub.removed();
 
 			return db.query.user
-				.findFirst(query(await queryAllowed(ctx.abilities.user, args.userId)))
+				.findFirst(query(await allowedUser({ ctx, id: args.userId })))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -120,12 +130,15 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateProfile(args, await whereAllowed(ctx, 'user', 'update', args.id));
+			await updateProfile({
+				args,
+				updatable: await whereAllowed({ ctx, table: 'user', action: 'update', id: args.id })
+			});
 
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
+				.findFirst(query(await allowedUser({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -144,7 +157,7 @@ schemaBuilder.mutationFields((t) => ({
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			assertCanUpdateNewsletterPreferences(ctx, args);
+			assertCanUpdateNewsletterPreferences({ ctx, args });
 			const updated = await updateNewsletterPreferences(args);
 
 			for (const id of updated) userPubsub.updated(id);
@@ -161,17 +174,17 @@ schemaBuilder.mutationFields((t) => ({
 			globalNotes: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanManageUser(ctx, args.id);
+			await assertCanManageUser({ ctx, id: args.id });
 
 			await db
 				.update(schema.user)
 				.set({ globalNotes: args.globalNotes })
-				.where(whereRows(schema.user, { id: args.id }));
+				.where(whereRows({ table: schema.user, filter: { id: args.id } }));
 
 			userPubsub.updated(args.id);
 
 			return db.query.user
-				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
+				.findFirst(query(await allowedUser({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -186,14 +199,14 @@ schemaBuilder.mutationFields((t) => ({
 			birthday: t.arg({ type: 'Date' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanManageUser(ctx, args.id);
+			await assertCanManageUser({ ctx, id: args.id });
 
-			await updateIdentity(args.id, args);
+			await updateIdentity({ id: args.id, args });
 
 			profileChanged(args.id);
 
 			return db.query.user
-				.findFirst(query(await queryAllowed(ctx.abilities.user, args.id)))
+				.findFirst(query(await allowedUser({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -205,36 +218,33 @@ schemaBuilder.mutationFields((t) => ({
 	 * The provider issues the target's tokens through a token exchange that names the caller as
 	 * their actor (`act`), and the OIDC library keeps them next to the caller's own session and
 	 * checks them against it on every request. Whether the caller may still impersonate the target
-	 * is checked on every request too (`impersonationHandle` in `hooks.server.ts`).
+	 * is checked on every request too (`impersonationHandle` in `userPermissions.ts`).
 	 */
 	startImpersonation: t.field({
 		type: 'Boolean',
 		args: { targetUserId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanImpersonate(ctx, args.targetUserId);
+			await assertCanImpersonate({ ctx, targetId: args.targetUserId });
 			const actor = ctx.mustBeLoggedIn();
 			if (!impersonationConfigured()) {
-				throw apiError('FORBIDDEN', m.impersonationNotConfigured());
+				throw apiError({ code: 'FORBIDDEN', message: m.impersonationNotConfigured() });
 			}
 			const actorAccessToken = ctx.event.locals.oidc?.tokens.accessToken;
-			if (!actorAccessToken) throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
+			if (!actorAccessToken)
+				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 
 			try {
-				const tokens = await impersonationTokens(actorAccessToken, args.targetUserId);
+				const tokens = await impersonationTokens({ actorAccessToken, userId: args.targetUserId });
 				await OIDC.startImpersonation(ctx.event, tokens);
 			} catch (error) {
-				console.warn({
-					event: 'impersonation_start',
-					outcome: 'failure',
+				logger.warn('Impersonation failed to start', {
 					actor: actor.sub,
 					subject: args.targetUserId,
 					reason: error instanceof Error ? error.message : String(error)
 				});
-				throw apiError('CONFLICT', m.impersonationFailed());
+				throw apiError({ code: 'CONFLICT', message: m.impersonationFailed() });
 			}
-			console.info({
-				event: 'impersonation_start',
-				outcome: 'success',
+			logger.info('Impersonation started', {
 				actor: actor.sub,
 				subject: args.targetUserId
 			});
@@ -249,8 +259,7 @@ schemaBuilder.mutationFields((t) => ({
 			const impersonator = ctx.oidc.impersonator;
 			OIDC.stopImpersonation(ctx.event);
 			if (impersonator) {
-				console.info({
-					event: 'impersonation_stop',
+				logger.info('Impersonation stopped', {
 					actor: impersonator.sub,
 					subject: ctx.oidc.user?.sub
 				});
@@ -278,7 +287,7 @@ schemaBuilder.queryFields((t) => ({
 		type: 'Boolean',
 		args: { targetUserId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) =>
-			impersonationConfigured() && (await canImpersonate(ctx, args.targetUserId))
+			impersonationConfigured() && (await canImpersonate({ ctx, targetId: args.targetUserId }))
 	}),
 
 	impersonationStatus: t.field({

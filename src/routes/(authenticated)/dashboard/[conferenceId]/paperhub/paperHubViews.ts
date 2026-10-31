@@ -19,16 +19,19 @@ export interface PaperHubAccess {
 	isParticipant: boolean;
 }
 
-export function paperHubAccess(
+export function paperHubAccess({
+	participation,
+	roles
+}: {
 	participation:
 		| {
 				delegationMember: object | null;
 				singleParticipant: object | null;
 				supervisor: object | null;
 		  }
-		| undefined,
-	roles: { isReviewer: boolean; supervisor: object | null; supervisedDelegationIds: string[] }
-): PaperHubAccess {
+		| undefined;
+	roles: { isReviewer: boolean; supervisor: object | null; supervisedDelegationIds: string[] };
+}): PaperHubAccess {
 	const isDelegationMember = !!participation?.delegationMember;
 	const isSingle = !!participation?.singleParticipant;
 	return {
@@ -54,10 +57,13 @@ export function availablePaperHubViews(access: PaperHubAccess): Record<PaperHubV
  * The view actually shown: the requested one if the caller may see it, otherwise their most
  * specific one. Single participants only ever see the global view.
  */
-export function effectivePaperHubView(
-	access: PaperHubAccess,
-	requested: PaperHubView
-): PaperHubView {
+export function effectivePaperHubView({
+	access,
+	requested
+}: {
+	access: PaperHubAccess;
+	requested: PaperHubView;
+}): PaperHubView {
 	if (access.isSingleParticipant && !access.isTeamMember && !access.isSupervisor) return 'global';
 	const available = availablePaperHubViews(access);
 	if (available[requested]) return requested;

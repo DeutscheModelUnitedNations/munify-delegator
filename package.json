@@ -1,13 +1,15 @@
 {
 	"dependencies": {
 		"@graphql-yoga/redis-event-target": "^3.0.4",
-		"@m1212e/sveltekit-oidc": "^0.2.1",
+		"@m1212e/sveltekit-oidc": "^0.3.0",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-orm": "1.0.0-rc.5-5935859",
 		"ioredis": "^6.0.0",
 		"nodemailer": "^10.2.0",
 		"pg": "^8.23.1",
+		"pino": "^10.4.0",
+		"rate-limiter-flexible": "^11.2.3",
 		"typst": "^0.10.0-8"
 	},
 	"devDependencies": {
@@ -131,6 +133,7 @@
 		"openapi-typescript": "^7.13.0",
 		"pdf-lib": "^1.17.1",
 		"pdfjs-dist": "^6.4.299",
+		"pino-pretty": "^13.2.0",
 		"postcss": "^8.5.31",
 		"prettier": "^3.9.10",
 		"prettier-plugin-sort-json": "^4.2.0",

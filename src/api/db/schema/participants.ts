@@ -119,8 +119,8 @@ export const conferenceSupervisor = snakeCase.table(
  * Who supervises whom (`a` the supervisor, `b` the supervised person's `conferenceParticipant`).
  * It links people, not seats, so it outlives whatever registration the student holds.
  */
-export const supervision = implicitManyToMany(
-	'supervision',
-	() => conferenceSupervisor.id,
-	() => conferenceParticipant.id
-);
+export const supervision = implicitManyToMany({
+	name: 'supervision',
+	a: () => conferenceSupervisor.id,
+	b: () => conferenceParticipant.id
+});

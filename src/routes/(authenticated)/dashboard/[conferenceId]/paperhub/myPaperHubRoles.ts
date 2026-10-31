@@ -63,5 +63,5 @@ export async function fetchCanOpenPaperHub(conferenceId: string) {
 		fetchMyParticipation(conferenceId),
 		fetchMyPaperHubRoles(conferenceId)
 	]);
-	return canOpenPaperHub(paperHubAccess(participation, roles));
+	return canOpenPaperHub(paperHubAccess({ participation, roles }));
 }

@@ -1,5 +1,5 @@
 import { db, schema, type Transaction } from '#api/db/db';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH } from '$app/env/public';
 import { sql } from 'drizzle-orm';
@@ -26,18 +26,18 @@ function cleanSchoolName(name: string) {
 
 type Db = Transaction | typeof db;
 
-async function existingSchool(id: string, tx: Db) {
+async function existingSchool({ id, tx }: { id: string; tx: Db }) {
 	const existing = await tx.query.school.findFirst({ where: { id }, columns: { id: true } });
-	if (!existing) throw apiError('NOT_FOUND', m.schoolNotFound());
+	if (!existing) throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
 	return existing.id;
 }
 
 /** The school of that name (ignoring case and spacing), created when there is none. */
-async function schoolNamed(typed: string, tx: Db) {
+async function schoolNamed({ typed, tx }: { typed: string; tx: Db }) {
 	const name = cleanSchoolName(typed);
 	if (!name) return null;
 	if (name.length > PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH) {
-		throw apiError('INVALID_INPUT', m.schoolNameTooLong());
+		throw apiError({ code: 'INVALID_INPUT', message: m.schoolNameTooLong() });
 	}
 	const [existing] = await tx
 		.select({ id: schema.school.id })
@@ -54,12 +54,15 @@ async function schoolNamed(typed: string, tx: Db) {
  * The school a choice names: the given one, an existing school of that name (ignoring case and
  * spacing), or a new one. `null` for no school, `undefined` when the choice leaves it unchanged.
  */
-export async function resolveSchoolChoice(
-	choice: SchoolChoice,
-	tx: Db = db
-): Promise<string | null | undefined> {
-	if (choice.schoolId) return existingSchool(choice.schoolId, tx);
-	if (typeof choice.schoolName === 'string') return schoolNamed(choice.schoolName, tx);
+export async function resolveSchoolChoice({
+	choice,
+	tx = db
+}: {
+	choice: SchoolChoice;
+	tx?: Db;
+}): Promise<string | null | undefined> {
+	if (choice.schoolId) return existingSchool({ id: choice.schoolId, tx });
+	if (typeof choice.schoolName === 'string') return schoolNamed({ typed: choice.schoolName, tx });
 	// both left out keeps the school; either one null removes it
 	return choice.schoolId === null || choice.schoolName === null ? null : undefined;
 }
@@ -82,14 +85,14 @@ type EditableSchoolField =
 /** The fields of a school the team edits; an omitted field stays, `null` clears it (not the name). */
 export type SchoolUpdate = { [K in EditableSchoolField]?: SchoolInsert[K] | null };
 
-export async function updateSchool(id: string, update: SchoolUpdate) {
+export async function updateSchool({ id, update }: { id: string; update: SchoolUpdate }) {
 	const name =
 		update.name === undefined || update.name === null ? undefined : cleanSchoolName(update.name);
-	if (name === '') throw apiError('INVALID_INPUT', m.schoolNameRequired());
+	if (name === '') throw apiError({ code: 'INVALID_INPUT', message: m.schoolNameRequired() });
 	await db
 		.update(schema.school)
 		.set({ ...update, name })
-		.where(whereRows(schema.school, { id }));
+		.where(whereRows({ table: schema.school, filter: { id } }));
 }
 
 /**
@@ -97,14 +100,22 @@ export async function updateSchool(id: string, update: SchoolUpdate) {
  * target takes over details it has none of and the notes of all of them, and the sources are
  * deleted. Merging is how duplicates typed by applicants are cleaned up.
  */
-export async function mergeSchools(targetId: string, sourceIds: readonly string[], name?: string) {
+export async function mergeSchools({
+	targetId,
+	sourceIds,
+	name
+}: {
+	targetId: string;
+	sourceIds: readonly string[];
+	name?: string;
+}) {
 	const sources = [...new Set(sourceIds)].filter((id) => id !== targetId);
 	if (sources.length === 0) return;
 
 	await db.transaction(async (tx) => {
 		const rows = await tx.query.school.findMany({ where: { id: { in: [targetId, ...sources] } } });
 		const target = rows.find((row) => row.id === targetId);
-		if (!target) throw apiError('NOT_FOUND', m.schoolNotFound());
+		if (!target) throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
 		const merged = rows.filter((row) => row.id !== targetId);
 
 		const fill = <K extends keyof typeof target>(key: K) =>
@@ -117,7 +128,7 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 			await tx
 				.update(table)
 				.set({ schoolId: targetId })
-				.where(whereRows(table, { schoolId: { in: sources } }));
+				.where(whereRows({ table, filter: { schoolId: { in: sources } } }));
 		}
 
 		await tx
@@ -136,11 +147,13 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
 				contactPhone: fill('contactPhone'),
 				notes: notes || null
 			})
-			.where(whereRows(schema.school, { id: targetId }));
+			.where(whereRows({ table: schema.school, filter: { id: targetId } }));
 
 		// The sources' variants cascade with them; a suggestion left with the target alone has
 		// nothing to suggest any more.
-		await tx.delete(schema.school).where(whereRows(schema.school, { id: { in: sources } }));
+		await tx
+			.delete(schema.school)
+			.where(whereRows({ table: schema.school, filter: { id: { in: sources } } }));
 		await tx.execute(sql`
 			delete from school_suggestion s
 			where s.id in (select suggestion_id from school_suggestion_variant where school_id = ${targetId})
@@ -153,7 +166,7 @@ export async function mergeSchools(targetId: string, sourceIds: readonly string[
  * Ids of schools matching `search`, best first: names starting with it, then names containing a
  * word starting with it, then by trigram similarity, the most used schools first among equals.
  */
-export async function searchSchoolIds(search: string, limit: number) {
+export async function searchSchoolIds({ search, limit }: { search: string; limit: number }) {
 	const term = cleanSchoolName(search);
 	if (!term) return [];
 	const escaped = escapeLike(term);
@@ -189,10 +202,13 @@ const schoolMetricsRowSchema = z.object({
  * Per conference, how many people from the school registered, applied, got a seat and came: in
  * `conferenceIds`, or in every conference when that is `undefined`.
  */
-export async function schoolMetrics(
-	schoolId: string,
-	conferenceIds: readonly string[] | undefined
-) {
+export async function schoolMetrics({
+	schoolId,
+	conferenceIds
+}: {
+	schoolId: string;
+	conferenceIds: readonly string[] | undefined;
+}) {
 	if (conferenceIds?.length === 0) return [];
 	const result = await db.execute<{ result: unknown }>(sql`
 		-- each person by their own school, whatever delegation the assignment put them in
@@ -345,12 +361,20 @@ export async function conferenceSchoolsPage(args: {
 		hasMore: rows.length > args.limit,
 		total:
 			rows[0]?.total ??
-			(args.offset > 0 ? await countConferenceSchools(args.conferenceId, term) : 0)
+			(args.offset > 0
+				? await countConferenceSchools({ conferenceId: args.conferenceId, term })
+				: 0)
 	};
 }
 
 /** How many schools a page past the end would have listed, for its total. */
-async function countConferenceSchools(conferenceId: string, term: string) {
+async function countConferenceSchools({
+	conferenceId,
+	term
+}: {
+	conferenceId: string;
+	term: string;
+}) {
 	const page = await conferenceSchoolsPage({
 		conferenceId,
 		search: term,

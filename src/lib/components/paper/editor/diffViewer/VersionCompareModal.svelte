@@ -21,12 +21,18 @@
 
 	let diffResult = $derived.by(() => {
 		if (!sortedVersions) return null;
-		return computeDiff(sortedVersions.before.content, sortedVersions.after.content);
+		return computeDiff({
+			beforeContent: sortedVersions.before.content,
+			afterContent: sortedVersions.after.content
+		});
 	});
 
 	let noChanges = $derived.by(() => {
 		if (!sortedVersions) return false;
-		return areContentsEqual(sortedVersions.before.content, sortedVersions.after.content);
+		return areContentsEqual({
+			content1: sortedVersions.before.content,
+			content2: sortedVersions.after.content
+		});
 	});
 </script>
 

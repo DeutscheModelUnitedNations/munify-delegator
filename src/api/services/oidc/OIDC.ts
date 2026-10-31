@@ -1,8 +1,12 @@
 import { building, dev } from '$app/env';
-import { makeCookieNames, makeOIDC } from '@m1212e/sveltekit-oidc';
-import { OIDC_CLIENT_SECRET, OIDC_SCOPES } from '$app/env/private';
+import { makeOIDC } from '@m1212e/sveltekit-oidc';
+import { isRedirect } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { OIDC_CLIENT_SECRET, OIDC_ROLE_CLAIM, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
-import { upsertSelfFromClaims } from './account/upsertSelf';
+import { providerClaims } from '../account/providerClaims';
+import { upsertSelfFromClaims } from '../account/upsertSelf';
+import { userInfoClaims } from './userInfoClaims';
 import { deLocalizeUrl } from '#lib/paraglide/runtime';
 
 /**
@@ -10,7 +14,7 @@ import { deLocalizeUrl } from '#lib/paraglide/runtime';
  * `/dashboard` itself: matched by prefix, so the trailing slash leaves it public. `/login` exists
  * to start the sign-in from there and send the visitor back.
  */
-const AUTHENTICATED_ROUTES = [
+const AUTHENTICATED_ROUTE_PREFIXES = [
 	'/dashboard/',
 	'/registration',
 	'/my-account',
@@ -18,23 +22,26 @@ const AUTHENTICATED_ROUTES = [
 	'/login'
 ];
 
+/** Pages under `/dashboard/` that need a login although they look like a conference id. */
+const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
+
+/** `/dashboard/<page>` or `/dashboard/<page>/seats`, capturing `<page>`. */
+const DASHBOARD_PAGE_PATH = /^\/dashboard\/([^/]+)(?:\/seats)?\/?$/;
+
 /**
  * The path SvelteKit routes a URL to: without the locale prefix Paraglide's `url` strategy puts on
  * non-default locales (`/en/dashboard/…`, rerouted by `src/hooks.ts`). `event.url` keeps the
  * prefix, so everything that decides by path has to look at this instead - otherwise an English
  * URL would never match a route guard written for the German one.
  */
-export function routePath(url: URL): string {
+function routePath(url: URL): string {
 	return deLocalizeUrl(url).pathname;
 }
 
 /** Whether a route path (see `routePath`) needs a session, before `isPublicRoute` is applied. */
-export function isAuthenticatedPath(pathname: string): boolean {
-	return AUTHENTICATED_ROUTES.some((route) => pathname.startsWith(route));
+function isAuthenticatedPath(path: string): boolean {
+	return AUTHENTICATED_ROUTE_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
-
-/** Pages under `/dashboard/` that need a login although they look like a conference id. */
-const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
 
 /**
  * A conference's own dashboard page and its seat overview are public: they show what is public
@@ -43,68 +50,17 @@ const LOGIN_ONLY_DASHBOARD_PAGES = ['seed', 'conference-request'];
  * session. The library only matches routes by prefix, so the hooks use this to let the visitor
  * through where the library would redirect. Takes a route path (see `routePath`).
  */
-export function isPublicRoute(pathname: string): boolean {
-	const match = /^\/dashboard\/([^/]+)(?:\/seats)?\/?$/.exec(pathname);
-	return !!match && !LOGIN_ONLY_DASHBOARD_PAGES.includes(match[1]);
-}
-
-/**
- * The session cookies' names, with the library's default prefix (we pass no `cookiePrefix`). Built
- * here rather than read off `OIDC.cookieNames` because `OIDC` does not exist during the build, and
- * a handle that runs before `OIDC.handle` has to tell a returning session from a fresh visitor.
- */
-export const oidcCookieNames = makeCookieNames();
-
-function asString(value: unknown): string | undefined {
-	return typeof value === 'string' ? value : undefined;
-}
-
-/**
- * Normalize OIDC claims from different providers into a consistent shape.
- *
- * TODO: make this part of the library
- *
- * Logto uses `username` instead of `preferred_username`, and a single `name` instead of
- * `given_name`/`family_name`.
- */
-function normalizeOIDCClaims(claims: Record<string, unknown>) {
-	const sub = asString(claims.sub);
-	if (!sub) {
-		throw new Error('OIDC claim "sub" is missing or invalid');
-	}
-
-	let givenName = asString(claims.given_name);
-	let familyName = asString(claims.family_name);
-	const name = asString(claims.name);
-
-	if ((!givenName || !familyName) && name) {
-		const parts = name.trim().split(/\s+/);
-		if (parts.length >= 2) {
-			givenName = parts.slice(0, -1).join(' ');
-			familyName = parts[parts.length - 1];
-		} else {
-			givenName = name;
-			familyName = name;
-		}
-	}
-
-	return {
-		sub,
-		email: asString(claims.email),
-		locale: asString(claims.locale),
-		preferred_username: asString(claims.preferred_username) ?? asString(claims.username),
-		given_name: givenName,
-		family_name: familyName,
-		phone: asString(claims.phone)
-	};
+function isPublicRoute(path: string): boolean {
+	const dashboardPage = DASHBOARD_PAGE_PATH.exec(path)?.[1];
+	return !!dashboardPage && !LOGIN_ONLY_DASHBOARD_PAGES.includes(dashboardPage);
 }
 
 /**
  * A provider on this machine (oidc-mock under `vite dev` or `vite preview`). Only it is trusted
  * over plain HTTP, which is what lets the e2e suite run against a production build.
  */
-function isLoopbackIssuer(authority: string): boolean {
-	const { protocol, hostname } = new URL(authority);
+function isLoopbackIssuer(issuer: string): boolean {
+	const { protocol, hostname } = new URL(issuer);
 	return protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(hostname);
 }
 
@@ -131,8 +87,53 @@ export const OIDC = !building
 			logoutPath: '/',
 			allowBearerToken: true,
 			logLevel: dev ? 'info' : 'warn',
-			userLoggedInSuccessfully: async ({ user }) => {
-				await upsertSelfFromClaims(normalizeOIDCClaims(user as Record<string, unknown>));
+			userLoggedInSuccessfully: async ({ user }, { returnTo }) => {
+				await upsertSelfFromClaims({ claims: providerClaims.parse(user), returnTo });
 			}
 		})
-	: ({} as Awaited<ReturnType<typeof makeOIDC>>);
+	: // TYPE-SAFETY-EXCEPTION: nothing may connect to the provider during `vite build`, and nothing
+		// uses `OIDC` there either
+		({} as Awaited<ReturnType<typeof makeOIDC>>);
+
+/**
+ * The OIDC handle, except that a public page (see `isPublicRoute`) is served without a session
+ * instead of redirecting to the provider. A visitor who is signed in still gets their session on
+ * `event.locals.oidc`.
+ */
+export const oidcHandle: Handle = async (input) => {
+	if (!isPublicRoute(routePath(input.event.url))) {
+		return OIDC.handle(input);
+	}
+	try {
+		return await OIDC.handle(input);
+	} catch (error) {
+		if (isRedirect(error)) {
+			return input.resolve(input.event);
+		}
+		throw error;
+	}
+};
+
+/**
+ * Asks the provider's userinfo endpoint for the roles claim when neither token carries it, for the
+ * session and, while impersonating, the impersonator's own (`rolesOfSession` reads both). Cached
+ * per access token, so this is one request per token, not per page.
+ */
+export const userInfoHandle: Handle = async ({ event, resolve }) => {
+	const claim = OIDC_ROLE_CLAIM;
+	const session = event.locals.oidc;
+	if (claim && session) {
+		const sessions = session.impersonator ? [session, session.impersonator] : [session];
+		await Promise.all(
+			sessions.map((s) =>
+				userInfoClaims.load({
+					session: s,
+					claim,
+					fetchUserInfo: (accessToken, sub) =>
+						OIDC.core.fetchUserInfoFromIssuer({ accessToken, expectedSubject: sub })
+				})
+			)
+		);
+	}
+	return resolve(event);
+};

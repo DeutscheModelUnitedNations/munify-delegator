@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 import fetchWBStat from './fetchWBStat';
 
 /** Answers every fetch with `body` as JSON, or with the given failing status. */
@@ -16,7 +17,7 @@ describe('fetchWBStat', () => {
 
 	test('asks the World Bank for the indicator of the country', async () => {
 		const fetchMock = respondWith([{}, [{ value: 1 }]]);
-		await fetchWBStat('DEU', 'SP.POP.TOTL');
+		await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' });
 		expect(fetchMock).toHaveBeenCalledWith(
 			'https://api.worldbank.org/v2/country/DEU/indicator/SP.POP.TOTL?format=json&per_page=10'
 		);
@@ -27,12 +28,17 @@ describe('fetchWBStat', () => {
 			{},
 			[null, 'x', { year: 2024 }, { value: null }, { value: 83_000_000 }, { value: 1 }]
 		]);
-		expect(await fetchWBStat('DEU', 'SP.POP.TOTL')).toBe(83_000_000);
+		expect(await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' })).toBe(83_000_000);
+	});
+
+	test('skips values that are not numbers', async () => {
+		respondWith([{}, [{ value: '83000000' }, { value: 1 }]]);
+		expect(await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' })).toBe(1);
 	});
 
 	test('returns null when no entry has a value', async () => {
 		respondWith([{}, [{ value: null }]]);
-		expect(await fetchWBStat('DEU', 'SP.POP.TOTL')).toBeNull();
+		expect(await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' })).toBeNull();
 	});
 
 	test.each([
@@ -41,24 +47,24 @@ describe('fetchWBStat', () => {
 		['no data array', [{ page: 1 }, null]]
 	])('returns null for a response that is %s', async (_label, body) => {
 		respondWith(body);
-		expect(await fetchWBStat('XXX', 'SP.POP.TOTL')).toBeNull();
+		expect(await fetchWBStat({ country: 'XXX', indicator: 'SP.POP.TOTL' })).toBeNull();
 	});
 
 	test('returns null when the API answers with an error status', async () => {
-		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.spyOn(logger, 'warn').mockImplementation(() => {});
 		respondWith({}, 502);
-		expect(await fetchWBStat('DEU', 'SP.POP.TOTL')).toBeNull();
-		expect(console.warn).toHaveBeenCalledWith('World Bank API returned 502 for DEU/SP.POP.TOTL');
+		expect(await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' })).toBeNull();
+		expect(logger.warn).toHaveBeenCalledWith('World Bank API returned 502 for DEU/SP.POP.TOTL');
 	});
 
 	test('returns null when the request fails', async () => {
-		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.spyOn(logger, 'warn').mockImplementation(() => {});
 		vi.stubGlobal(
 			'fetch',
 			vi.fn(async () => {
 				throw new TypeError('network down');
 			})
 		);
-		expect(await fetchWBStat('DEU', 'SP.POP.TOTL')).toBeNull();
+		expect(await fetchWBStat({ country: 'DEU', indicator: 'SP.POP.TOTL' })).toBeNull();
 	});
 });

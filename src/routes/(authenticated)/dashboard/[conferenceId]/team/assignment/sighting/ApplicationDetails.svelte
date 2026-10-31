@@ -20,9 +20,11 @@
 
 	let { application, startConference, kind }: Props = $props();
 
-	const supervisors = $derived(distinctSupervisors(application.supervisors, formatNames));
+	const supervisors = $derived(
+		distinctSupervisors({ supervisors: application.supervisors, format: formatNames })
+	);
 
-	const summary = $derived(memberSummary(application.people, startConference));
+	const summary = $derived(memberSummary({ people: application.people, startConference }));
 </script>
 
 <div class="grid gap-x-8 gap-y-6 {kind === 'delegation' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}">

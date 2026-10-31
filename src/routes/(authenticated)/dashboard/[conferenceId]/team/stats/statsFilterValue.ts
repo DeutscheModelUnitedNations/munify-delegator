@@ -44,11 +44,15 @@ function isRoleFilter(filter: StatsFilterOption): filter is RoleFilter {
 	return filter in roleCountKeys;
 }
 
-function roleBasedValue(
-	keys: RoleCountKeys,
-	roleBasedData: RoleCounts | undefined,
-	entityType: EntityType | undefined
-): number | undefined {
+function roleBasedValue({
+	keys,
+	roleBasedData,
+	entityType
+}: {
+	keys: RoleCountKeys;
+	roleBasedData: RoleCounts | undefined;
+	entityType: EntityType | undefined;
+}): number | undefined {
 	if (!roleBasedData) return undefined;
 	if (entityType === 'delegationMembers' || entityType === 'singleParticipants') {
 		return roleBasedData[keys[entityType]];
@@ -60,13 +64,19 @@ function roleBasedValue(
  * The number a widget shows under the given filter. Status filters pick from the count object,
  * role-based filters from the role counts, for one entity type or both combined.
  */
-export function filteredStatValue(
-	filter: StatsFilterOption,
-	object: FilterableCount | undefined,
-	roleBasedData?: RoleCounts,
-	entityType?: EntityType
-): number | undefined {
+export function filteredStatValue({
+	filter,
+	object,
+	roleBasedData,
+	entityType
+}: {
+	filter: StatsFilterOption;
+	object: FilterableCount | undefined;
+	roleBasedData?: RoleCounts;
+	entityType?: EntityType;
+}): number | undefined {
 	if (!object) return undefined;
-	if (isRoleFilter(filter)) return roleBasedValue(roleCountKeys[filter], roleBasedData, entityType);
+	if (isRoleFilter(filter))
+		return roleBasedValue({ keys: roleCountKeys[filter], roleBasedData, entityType });
 	return object[countKeys[filter]];
 }

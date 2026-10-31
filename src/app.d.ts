@@ -11,7 +11,7 @@ declare global {
 		interface Locals {
 			/**
 			 * Who the impersonated user is, from their row: set by `impersonationHandle` in
-			 * `hooks.server.ts` while `locals.oidc.impersonator` is, since the exchanged token may carry
+			 * `userPermissions.ts` while `locals.oidc.impersonator` is, since the exchanged token may carry
 			 * little more than their `sub`.
 			 */
 			impersonatedIdentity?: {

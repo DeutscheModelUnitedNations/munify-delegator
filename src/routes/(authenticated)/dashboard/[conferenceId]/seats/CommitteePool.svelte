@@ -44,9 +44,12 @@
 			header: m.agendaItems(),
 			accessorFn: (row) => row.agendaItems.map((item) => item.title).join(', '),
 			cell: ({ row }) =>
-				renderComponent(AgendaItemsCell, {
-					items: row.original.agendaItems,
-					onOpen: (id: string) => (openAgendaItemId = id)
+				renderComponent({
+					component: AgendaItemsCell,
+					props: {
+						items: row.original.agendaItems,
+						onOpen: (id: string) => (openAgendaItemId = id)
+					}
 				}),
 			enableSorting: false
 		}

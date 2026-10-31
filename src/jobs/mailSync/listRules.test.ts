@@ -9,7 +9,7 @@ type Delegation = MailSyncUser['delegationMemberships'][number]['delegation'];
 const CUTOFF = new Date('2026-01-01T00:00:00Z');
 const RECENT = new Date('2026-09-01T00:00:00Z');
 
-const stateOf = (u: MailSyncUser) => computeSubscriberState(u, CUTOFF);
+const stateOf = (u: MailSyncUser) => computeSubscriberState({ user: u, cutoff: CUTOFF });
 
 const registration: Conference = {
 	id: 'abcdef123',

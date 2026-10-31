@@ -144,7 +144,7 @@ const dashboardLinks: DashboardLink[] = [
 		getHref: (ctx) => ({
 			externalUrl:
 				ctx.user && ctx.linkToPaperInbox
-					? generatePaperInboxLinkWithParams(ctx.linkToPaperInbox, ctx.user)
+					? generatePaperInboxLinkWithParams({ baseLink: ctx.linkToPaperInbox, user: ctx.user })
 					: ''
 		}),
 		external: true,
@@ -184,9 +184,12 @@ const dashboardLinks: DashboardLink[] = [
 	}
 ];
 
-export function getLinksForUserType(
-	userType: UserType,
-	ctx: DashboardLinkContext
-): DashboardLink[] {
+export function getLinksForUserType({
+	userType,
+	ctx
+}: {
+	userType: UserType;
+	ctx: DashboardLinkContext;
+}): DashboardLink[] {
 	return dashboardLinks.filter((link) => link.showFor.includes(userType) && link.isVisible(ctx));
 }

@@ -61,7 +61,7 @@
 		async onUpdate({ form: validated }) {
 			if (!validated.valid) return;
 			const promise = client.mutate.updateSchool({
-				__args: toUpdateSchoolArgs(schoolId, validated.data),
+				__args: toUpdateSchoolArgs({ id: schoolId, values: validated.data }),
 				id: true,
 				name: true
 			});

@@ -4,7 +4,8 @@ import {
 	type EmailSnapshot,
 	type SnapshotPerson,
 	type SnapshotReview,
-	type SnapshotSurvey
+	type SnapshotSurvey,
+	type SnapshotTeamMember
 } from './dueEmails';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -41,7 +42,8 @@ function snapshot(
 	people: SnapshotPerson[],
 	conference: Partial<EmailSnapshot['conference']> = {},
 	reviews: SnapshotReview[] = [],
-	surveys: SnapshotSurvey[] = []
+	surveys: SnapshotSurvey[] = [],
+	team: SnapshotTeamMember[] = []
 ): EmailSnapshot {
 	return {
 		conference: {
@@ -58,13 +60,16 @@ function snapshot(
 			...conference
 		},
 		people,
+		team,
 		reviews,
 		surveys
 	};
 }
 
 const kindsOf = (snap: EmailSnapshot, at = now) =>
-	dueEmails(snap, at).map((email) => `${email.kind}:${email.person.user.id}:${email.subjectKey}`);
+	dueEmails({ snapshot: snap, now: at }).map(
+		(email) => `${email.kind}:${email.recipient.id}:${email.subjectKey}`
+	);
 
 const seated = () => person({ delegation: { applied: true, role: france, committee: 'GV' } });
 const rejected = () => person({ delegation: { applied: true, role: null, committee: null } });
@@ -99,7 +104,7 @@ describe('the assignment result', () => {
 		const supervisor = person({
 			supervisor: { plansOwnAttendance: false, studentIds: [a.participantId, b.participantId] }
 		});
-		const emails = dueEmails(snapshot([a, b, supervisor]), now).filter(
+		const emails = dueEmails({ snapshot: snapshot([a, b, supervisor]), now }).filter(
 			(email) => email.person === supervisor
 		);
 		expect(emails.map((email) => email.kind)).toEqual([
@@ -192,6 +197,33 @@ describe('reminders', () => {
 			kindsOf(snap, new Date(now.getTime() + 11 * DAY)).some((k) => k.includes('REMINDER'))
 		).toBe(false);
 	});
+
+	test('are owed any time before their date when sent by hand, while what they remind of holds', () => {
+		const open = seated();
+		const settled = seated();
+		settled.paymentStatus = 'DONE';
+		const deadline = new Date(now.getTime() + 30 * DAY);
+		const snap = snapshot(
+			[open, settled],
+			{ unlockPayments: true, startConference: new Date(now.getTime() + 60 * DAY) },
+			[],
+			[{ id: 's1', title: 'Workshops', deadline, answeredBy: [settled.participantId] }]
+		);
+		const byHand = (at: Date) =>
+			dueEmails({ snapshot: snap, now: at, anyTimeBefore: true })
+				.filter((email) => email.kind.endsWith('REMINDER'))
+				.map((email) => `${email.kind}:${email.recipient.id}`);
+
+		expect(kindsOf(snap).some((k) => k.includes('REMINDER'))).toBe(false);
+		expect(byHand(now)).toEqual([
+			`OPEN_ISSUES_REMINDER:${open.user.id}`,
+			`PHONE_READY_REMINDER:${open.user.id}`,
+			`SURVEY_REMINDER:${open.user.id}`,
+			`PHONE_READY_REMINDER:${settled.user.id}`
+		]);
+		// not once the date has passed
+		expect(byHand(new Date(now.getTime() + 61 * DAY))).toEqual([]);
+	});
 });
 
 describe('survey reminders', () => {
@@ -228,10 +260,10 @@ describe('survey reminders', () => {
 
 	test('carry the survey along', () => {
 		const open = seated();
-		const due = dueEmails(
-			snapshot([open], {}, [], [survey(new Date(now.getTime() + DAY))]),
+		const due = dueEmails({
+			snapshot: snapshot([open], {}, [], [survey(new Date(now.getTime() + DAY))]),
 			now
-		).find((email) => email.kind === 'SURVEY_REMINDER');
+		}).find((email) => email.kind === 'SURVEY_REMINDER');
 		expect(due?.survey?.title).toBe('Workshops');
 	});
 });
@@ -281,10 +313,41 @@ describe('paper reviews', () => {
 
 	test('carry the review along', () => {
 		const author = seated();
-		const [due] = dueEmails(
-			snapshot([author], { assignmentReleased: false }, [review('r1', author)]),
+		const [due] = dueEmails({
+			snapshot: snapshot([author], { assignmentReleased: false }, [review('r1', author)]),
 			now
-		);
+		});
 		expect(due?.review?.id).toBe('r1');
+	});
+});
+
+describe('the team welcome', () => {
+	const member = (id: string): SnapshotTeamMember => ({
+		id,
+		role: 'MEMBER',
+		user: { ...person().user },
+		inviterName: 'Ada Lovelace'
+	});
+
+	test('welcomes every member once per membership, whatever stage the conference is in', () => {
+		const a = member('tm1');
+		const b = member('tm2');
+		for (const conference of [
+			{ state: 'PRE' as const, assignmentReleased: false },
+			{ state: 'POST' as const }
+		]) {
+			expect(kindsOf(snapshot([], conference, [], [], [a, b]))).toEqual([
+				`TEAM_WELCOME:${a.user.id}:tm1`,
+				`TEAM_WELCOME:${b.user.id}:tm2`
+			]);
+		}
+	});
+
+	test('carries the membership along and is addressed to the member', () => {
+		const a = member('tm1');
+		const [due] = dueEmails({ snapshot: snapshot([], {}, [], [], [a]), now });
+		expect(due?.teamMember).toBe(a);
+		expect(due?.recipient).toBe(a.user);
+		expect(due?.person).toBeUndefined();
 	});
 });

@@ -63,7 +63,15 @@ async function scannedPersonName(userId: string) {
  * Writes a picked result to the history. Best effort: a failed entry must never get in the way of
  * opening the result.
  */
-export async function recordSearch(conferenceId: string, resultId: string, label: string) {
+export async function recordSearch({
+	conferenceId,
+	resultId,
+	label
+}: {
+	conferenceId: string;
+	resultId: string;
+	label: string;
+}) {
 	try {
 		await Promise.resolve(
 			client.mutate.recordSearch({
@@ -76,6 +84,12 @@ export async function recordSearch(conferenceId: string, resultId: string, label
 }
 
 /** A scan resolves to a person, who is recorded under their name. */
-export async function recordScan(conferenceId: string, userId: string) {
-	await recordSearch(conferenceId, userId, await scannedPersonName(userId));
+export async function recordScan({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
+	await recordSearch({ conferenceId, resultId: userId, label: await scannedPersonName(userId) });
 }

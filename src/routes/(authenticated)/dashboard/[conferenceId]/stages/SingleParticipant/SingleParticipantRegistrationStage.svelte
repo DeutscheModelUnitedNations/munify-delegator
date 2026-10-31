@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
@@ -47,7 +48,7 @@
 
 	const completeRegistration = async () => {
 		if (!singleParticipant) {
-			console.error('Error: singleParticipant not found');
+			logger.error('Error: singleParticipant not found');
 			return;
 		}
 		if (!(await confirmDialog({ text: m.completeSignupConfirmation() }))) return;
@@ -62,7 +63,7 @@
 
 	const deleteAllApplications = async () => {
 		if (!singleParticipant) {
-			console.error('Error: singleParticipant not found');
+			logger.error('Error: singleParticipant not found');
 			return;
 		}
 

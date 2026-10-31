@@ -72,7 +72,13 @@ function delegationSeatTitle(delegation: {
 	return role?.name ?? delegation.id;
 }
 
-async function searchSeats(conferenceId: string, term: string): Promise<SearchSeat[]> {
+async function searchSeats({
+	conferenceId,
+	term
+}: {
+	conferenceId: string;
+	term: string;
+}): Promise<SearchSeat[]> {
 	const nameLike = { ilike: `%${term}%` };
 	const nationCodes = matchingNationCodes(term);
 	const heldSeat = [
@@ -119,7 +125,13 @@ async function searchSeats(conferenceId: string, term: string): Promise<SearchSe
 	];
 }
 
-async function searchCommittees(conferenceId: string, term: string): Promise<SearchCommittee[]> {
+async function searchCommittees({
+	conferenceId,
+	term
+}: {
+	conferenceId: string;
+	term: string;
+}): Promise<SearchCommittee[]> {
 	const [committees, agendaItems] = await Promise.all([
 		client.query.committees({
 			__args: { search: term, where: { conferenceId: { eq: conferenceId } }, limit: RESULT_LIMIT },
@@ -175,10 +187,13 @@ export function participation(conferenceId: string) {
 	} as const;
 }
 
-export async function searchConference(
-	conferenceId: string,
-	searchTerm: string
-): Promise<SearchResults> {
+export async function searchConference({
+	conferenceId,
+	searchTerm
+}: {
+	conferenceId: string;
+	searchTerm: string;
+}): Promise<SearchResults> {
 	if (searchTerm.trim().length < MIN_SEARCH_LENGTH) {
 		return {
 			users: [],
@@ -256,8 +271,8 @@ export async function searchConference(
 				recievedAt: true,
 				conference: { currency: true }
 			}),
-			searchSeats(conferenceId, searchTerm.trim()),
-			searchCommittees(conferenceId, searchTerm.trim())
+			searchSeats({ conferenceId, term: searchTerm.trim() }),
+			searchCommittees({ conferenceId, term: searchTerm.trim() })
 		]);
 
 	return {

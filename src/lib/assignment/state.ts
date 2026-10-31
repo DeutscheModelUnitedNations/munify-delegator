@@ -77,7 +77,13 @@ interface IncompleteSplit {
 
 const targetOf = (row: Target): Target => ({ roleId: row.roleId });
 
-function groupsOfDelegation(delegation: LiveDelegation, units: DraftUnit[]) {
+function groupsOfDelegation({
+	delegation,
+	units
+}: {
+	delegation: LiveDelegation;
+	units: DraftUnit[];
+}) {
 	const liveTarget = targetOf(delegation);
 	const memberIds = delegation.members.map((member) => member.id);
 	const whole = (unit: DraftUnit | undefined): AssignmentGroup => {
@@ -127,11 +133,15 @@ function groupsOfDelegation(delegation: LiveDelegation, units: DraftUnit[]) {
 }
 
 /** The groups the draft assigns, and the splits it cannot apply as they stand. */
-export function assignmentGroups(
-	delegations: readonly LiveDelegation[],
-	singleParticipants: readonly LiveSingleParticipant[],
-	units: readonly DraftUnit[]
-) {
+export function assignmentGroups({
+	delegations,
+	singleParticipants,
+	units
+}: {
+	delegations: readonly LiveDelegation[];
+	singleParticipants: readonly LiveSingleParticipant[];
+	units: readonly DraftUnit[];
+}) {
 	const unitsBySource = Map.groupBy(
 		units.filter((unit) => unit.sourceDelegationId),
 		(unit) => unit.sourceDelegationId
@@ -140,7 +150,10 @@ export function assignmentGroups(
 	const incompleteSplits: IncompleteSplit[] = [];
 
 	for (const delegation of delegations) {
-		const result = groupsOfDelegation(delegation, unitsBySource.get(delegation.id) ?? []);
+		const result = groupsOfDelegation({
+			delegation,
+			units: unitsBySource.get(delegation.id) ?? []
+		});
 		groups.push(...result.groups);
 		if (result.incomplete) incompleteSplits.push(result.incomplete);
 	}
@@ -167,12 +180,16 @@ export function assignmentGroups(
 }
 
 /** The role each single participant ends up with, and whether the draft changes it. */
-export function singleRoles(
-	singleParticipants: readonly LiveSingleParticipant[],
-	draft: readonly DraftSingleRole[],
+export function singleRoles({
+	singleParticipants,
+	draft,
+	converted = new Set()
+}: {
+	singleParticipants: readonly LiveSingleParticipant[];
+	draft: readonly DraftSingleRole[];
 	/** Single participants the draft turns into delegations, who hold no role any more. */
-	converted: ReadonlySet<string> = new Set()
-) {
+	converted?: ReadonlySet<string>;
+}) {
 	const drafted = new Map(draft.map((entry) => [entry.singleParticipantId, entry.roleId]));
 	return singleParticipants
 		.filter((participant) => !converted.has(participant.id))

@@ -16,10 +16,13 @@ const located = (position: Position | null): Position | { error: PlusCodeError }
  * Where a plus code points: a full code is decoded directly, a short one ("9G8F+6X Zürich") is
  * recovered from the position of the city named after it, which `lookUpCity` finds.
  */
-export async function resolvePlusCode(
-	input: string,
-	lookUpCity: (city: string) => Promise<Position | undefined> = lookUpCityOnNominatim
-): Promise<Position | { error: PlusCodeError }> {
+export async function resolvePlusCode({
+	input,
+	lookUpCity = lookUpCityOnNominatim
+}: {
+	input: string;
+	lookUpCity?: (city: string) => Promise<Position | undefined>;
+}): Promise<Position | { error: PlusCodeError }> {
 	const codeMatch = input.match(PLUS_CODE);
 	if (!codeMatch) return { error: 'invalid' };
 	const code = codeMatch[1].toUpperCase();
@@ -30,7 +33,9 @@ export async function resolvePlusCode(
 	const reference = await lookUpCity(city);
 	if (!reference) return { error: 'cityNotFound' };
 	return located(
-		decodePlusCodeFull(recoverPlusCode(code, reference.latitude, reference.longitude))
+		decodePlusCodeFull(
+			recoverPlusCode({ shortCode: code, refLat: reference.latitude, refLng: reference.longitude })
+		)
 	);
 }
 
@@ -58,7 +63,13 @@ export interface PlaceFormValues {
 }
 
 /** The fields a place is saved with: empty inputs are stored as none, coordinates as numbers. */
-export function placeFields(values: PlaceFormValues, sitePlanFileId: string | undefined) {
+export function placeFields({
+	values,
+	sitePlanFileId
+}: {
+	values: PlaceFormValues;
+	sitePlanFileId: string | undefined;
+}) {
 	return {
 		name: values.name,
 		address: values.address || null,
@@ -72,11 +83,15 @@ export function placeFields(values: PlaceFormValues, sitePlanFileId: string | un
 }
 
 /** Updates the place, or creates one in the conference when there is none to update yet. */
-export async function savePlaceFields(
-	conferenceId: string,
-	placeId: string | undefined,
-	fields: ReturnType<typeof placeFields>
-) {
+export async function savePlaceFields({
+	conferenceId,
+	placeId,
+	fields
+}: {
+	conferenceId: string;
+	placeId: string | undefined;
+	fields: ReturnType<typeof placeFields>;
+}) {
 	if (placeId) {
 		await client.mutate.updatePlace({ __args: { id: placeId, ...fields }, id: true });
 	} else {

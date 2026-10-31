@@ -74,7 +74,7 @@
 			async onUpdate({ form: validated }) {
 				if (!validated.valid) return;
 				const promise = client.mutate.updateUser({
-					__args: toUpdateUserArgs(user.sub, validated.data),
+					__args: toUpdateUserArgs({ id: user.sub, values: validated.data }),
 					id: true
 				});
 				toast.promise(promise, genericPromiseToastMessages);

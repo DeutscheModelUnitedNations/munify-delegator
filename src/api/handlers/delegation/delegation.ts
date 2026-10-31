@@ -30,7 +30,7 @@ schemaBuilder.mutationFields((t) => ({
 			...applicationArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const createdId = await createDelegationWithHead(ctx.mustBeLoggedIn().sub, args);
+			const createdId = await createDelegationWithHead({ userId: ctx.mustBeLoggedIn().sub, args });
 
 			delegationPubsub.created();
 			delegationMemberPubsub.created();
@@ -38,7 +38,7 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegation
-				.findFirst(query(await queryAllowed(ctx.abilities.delegation, createdId)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.delegation, id: createdId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -54,8 +54,8 @@ schemaBuilder.mutationFields((t) => ({
 			motivation: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const delegation = await assertCanUpdateDelegation(ctx, args.id);
-			await updateDelegationDetails(delegation, args);
+			const delegation = await assertCanUpdateDelegation({ ctx, id: args.id });
+			await updateDelegationDetails({ delegation, args });
 
 			delegationPubsub.updated(args.id);
 			// A new head delegate flips the flag on two members.
@@ -64,7 +64,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.delegation
-				.findFirst(query(await queryAllowed(ctx.abilities.delegation, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.delegation, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,7 +73,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'delegation', args.id);
+			await deleteIfAllowed({ ctx, table: 'delegation', id: args.id });
 			delegationPubsub.removed();
 			delegationMemberPubsub.removed();
 
@@ -115,9 +115,14 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const caller = ctx.mustBeLoggedIn().sub;
 
-			return codeGuessLimiter.attempt(caller, () =>
-				previewDelegationByEntryCode(args.conferenceId, args.entryCode)
-			);
+			return codeGuessLimiter.attempt({
+				key: caller,
+				run: () =>
+					previewDelegationByEntryCode({
+						conferenceId: args.conferenceId,
+						entryCode: args.entryCode
+					})
+			});
 		}
 	})
 }));

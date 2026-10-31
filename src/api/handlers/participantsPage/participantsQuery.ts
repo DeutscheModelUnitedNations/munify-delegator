@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 type Kind = 'text' | 'enum' | 'bool' | 'number';
 
@@ -103,7 +103,7 @@ export interface ParticipantsPageQuery {
 	offset: number;
 }
 
-const inList = (expr: SQL, values: string[]) =>
+const inList = ({ expr, values }: { expr: SQL; values: string[] }) =>
 	sql`${expr} in (${sql.join(
 		values.map((v) => sql`${v}`),
 		sql`, `
@@ -114,7 +114,8 @@ type ConditionOf = (filter: ParticipantFilter, expr: SQL) => SQL | undefined;
 /** Picked codes match the nation, typed text the name of a non-state actor. */
 function nationMatches(filter: ParticipantFilter): SQL | undefined {
 	const parts: SQL[] = [];
-	if (filter.values?.length) parts.push(inList(sql`reg.nation_code`, filter.values));
+	if (filter.values?.length)
+		parts.push(inList({ expr: sql`reg.nation_code`, values: filter.values }));
 	if (filter.text) parts.push(sql`reg.nsa_name ilike ${like(filter.text)}`);
 	if (parts.length === 0) return filter.text || filter.values ? sql`false` : undefined;
 	return sql`(${sql.join(parts, sql` or `)})`;
@@ -146,7 +147,7 @@ const enumCondition: ConditionOf = (filter, expr) => {
 	if (values.length === 0) return undefined;
 	const real = values.filter((value) => value !== '—');
 	const parts: SQL[] = [];
-	if (real.length > 0) parts.push(inList(expr, real));
+	if (real.length > 0) parts.push(inList({ expr, values: real }));
 	if (real.length !== values.length) parts.push(sql`${expr} is null`);
 	return sql`(${sql.join(parts, sql` or `)})`;
 };
@@ -180,7 +181,11 @@ const conditionByKind: Record<Kind, ConditionOf> = {
 /** The condition one filter means, or `undefined` when it filters nothing. */
 function condition(filter: ParticipantFilter): SQL | undefined {
 	const column = Object.hasOwn(columns, filter.column) ? columns[filter.column] : undefined;
-	if (!column) throw apiError('INVALID_INPUT', `Unknown participant column: ${filter.column}`);
+	if (!column)
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: `Unknown participant column: ${filter.column}`
+		});
 	const conditionOf = filter.column === 'nation' ? nationCondition : conditionByKind[column.kind];
 	return conditionOf(filter, column.expr);
 }
@@ -309,7 +314,15 @@ function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 }
 
 /** The statement selecting one page of user ids (one more than `limit`, to tell if more follow). */
-export function participantsPageSql(args: ParticipantsPageQuery, limit: number, offset: number) {
+export function participantsPageSql({
+	args,
+	limit,
+	offset
+}: {
+	args: ParticipantsPageQuery;
+	limit: number;
+	offset: number;
+}) {
 	const { from, orders } = matching(args);
 	return sql`
 		select reg.user_id

@@ -31,7 +31,7 @@ describe('errorCodeOf', () => {
 
 describe('hasErrorCode', () => {
 	it('matches one code', () => {
-		expect(hasErrorCode(failed({ code: 'CONFLICT' }), 'CONFLICT')).toBe(true);
-		expect(hasErrorCode(failed({ code: 'CONFLICT' }), 'FORBIDDEN')).toBe(false);
+		expect(hasErrorCode({ err: failed({ code: 'CONFLICT' }), code: 'CONFLICT' })).toBe(true);
+		expect(hasErrorCode({ err: failed({ code: 'CONFLICT' }), code: 'FORBIDDEN' })).toBe(false);
 	});
 });

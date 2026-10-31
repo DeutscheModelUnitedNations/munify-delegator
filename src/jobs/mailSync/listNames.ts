@@ -32,14 +32,24 @@ export function createGlobalListName(listType: GlobalListType) {
 	return `[global] ${listType}`;
 }
 
-export function createConferenceListName(
-	conferenceTitle: string,
-	conferenceId: string,
-	listType: ConferenceListType
-) {
+export function createConferenceListName({
+	conferenceTitle,
+	conferenceId,
+	listType
+}: {
+	conferenceTitle: string;
+	conferenceId: string;
+	listType: ConferenceListType;
+}) {
 	return `[${shortenId(conferenceId)}] ${conferenceTitle} - ${listType}`;
 }
 
-export function createTagName(conferenceTitle: string, conferenceId: string) {
+export function createTagName({
+	conferenceTitle,
+	conferenceId
+}: {
+	conferenceTitle: string;
+	conferenceId: string;
+}) {
 	return `${shortenId(conferenceId)}-${conferenceTitle.replaceAll(' ', '_').toLowerCase()}`;
 }

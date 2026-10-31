@@ -42,7 +42,11 @@ schemaBuilder.mutationFields((t) => ({
 			...placeDetailArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreatePlace(ctx, args.conferenceId, args.sitePlanFileId);
+			await assertCanCreatePlace({
+				ctx,
+				conferenceId: args.conferenceId,
+				sitePlanFileId: args.sitePlanFileId
+			});
 
 			const created = await db
 				.insert(schema.place)
@@ -63,7 +67,7 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.place
-				.findFirst(query(await queryAllowed(ctx.abilities.place, created.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.place, id: created.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -76,7 +80,7 @@ schemaBuilder.mutationFields((t) => ({
 			...placeDetailArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdatePlace(ctx, args.id, args.sitePlanFileId);
+			await assertCanUpdatePlace({ ctx, id: args.id, sitePlanFileId: args.sitePlanFileId });
 			const sitePlanFileId = await ensureUploadComplete(args.sitePlanFileId);
 
 			await db
@@ -93,12 +97,12 @@ schemaBuilder.mutationFields((t) => ({
 					websiteUrl: args.websiteUrl,
 					sitePlanFileId
 				})
-				.where(whereRows(schema.place, { id: args.id }));
+				.where(whereRows({ table: schema.place, filter: { id: args.id } }));
 
 			placePubsub.updated(args.id);
 
 			return db.query.place
-				.findFirst(query(await queryAllowed(ctx.abilities.place, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.place, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -107,7 +111,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'place', args.id);
+			await deleteIfAllowed({ ctx, table: 'place', id: args.id });
 			placePubsub.removed();
 
 			return true;

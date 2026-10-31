@@ -74,23 +74,33 @@ schemaBuilder.mutationFields((t) => ({
 			accessCardId: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpsertParticipantStatus(ctx, args);
+			await assertCanUpsertParticipantStatus({ ctx, args });
 			const upsert = await planParticipantStatusUpsert(args);
 			let statusId: string;
 			if (upsert.existingId !== undefined) {
-				await assertCanUpdateParticipantStatus(ctx, upsert.existingId);
-				statusId = await updateStatus(upsert.existingId, upsert.values);
+				await assertCanUpdateParticipantStatus({ ctx, id: upsert.existingId });
+				statusId = await updateStatus({ id: upsert.existingId, values: upsert.values });
 			} else {
-				await assertCanCreateParticipantStatus(ctx, args.conferenceId, upsert.userId);
-				statusId = await createStatus(upsert.values, args.conferenceId, upsert.userId);
+				await assertCanCreateParticipantStatus({
+					ctx,
+					conferenceId: args.conferenceId,
+					userId: upsert.userId
+				});
+				statusId = await createStatus({
+					values: upsert.values,
+					conferenceId: args.conferenceId,
+					userId: upsert.userId
+				});
 			}
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
 			conferenceParticipantPubsub.updated(statusId);
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.conferenceParticipant
-				.findFirst(query(await queryAllowed(ctx.abilities.conferenceParticipant, statusId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.conferenceParticipant, id: statusId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -111,14 +121,18 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			schoolChoiceSchema.parse(args);
-			const id = await assertCanSetParticipantSchool(ctx, args);
-			await setParticipantSchool(db, [id], await resolveSchoolChoice(args));
+			const id = await assertCanSetParticipantSchool({ ctx, args });
+			await setParticipantSchool({
+				tx: db,
+				participantIds: [id],
+				schoolId: await resolveSchoolChoice({ choice: args })
+			});
 
 			conferenceParticipantPubsub.updated(id);
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceParticipant
-				.findFirst(query(await queryAllowed(ctx.abilities.conferenceParticipant, id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conferenceParticipant, id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -131,11 +145,11 @@ schemaBuilder.mutationFields((t) => ({
 			didAttend: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanSetAttendanceForAll(ctx, args.conferenceId);
+			await assertCanSetAttendanceForAll({ ctx, conferenceId: args.conferenceId });
 			const changed = await setAttendanceForAll(args);
 
 			conferenceParticipantPubsub.created();
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return { changed };
 		}

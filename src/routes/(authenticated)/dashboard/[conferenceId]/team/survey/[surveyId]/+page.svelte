@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -32,7 +33,7 @@
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle draft status:', error);
+			logger.error('Failed to toggle draft status', error);
 		}
 	};
 
@@ -44,7 +45,7 @@
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle hidden status:', error);
+			logger.error('Failed to toggle hidden status', error);
 		}
 	};
 </script>

@@ -1,7 +1,13 @@
 import { client } from '#lib/api/rumbleClient/client';
 
 /** The caller's delegation membership plus the committees they could be assigned to. */
-export async function fetchCommitteeAssignment(conferenceId: string, userId: string) {
+export async function fetchCommitteeAssignment({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
 	const [delegationMembers, committees] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {

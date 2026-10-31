@@ -73,7 +73,7 @@ jobs:
       S3_SECRET_ACCESS_KEY: delegator-secret
       # No NODE_ENV: the suite builds and serves the app with NODE_ENV=production itself
       # (playwright.config.ts). Signing in against the plain-HTTP oidc-mock still works, since
-      # src/api/services/OIDC.ts trusts a provider on the loopback address over HTTP.
+      # src/api/services/oidc/OIDC.ts trusts a provider on the loopback address over HTTP.
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun

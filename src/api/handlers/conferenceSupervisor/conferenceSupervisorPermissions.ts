@@ -10,7 +10,7 @@ import {
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is
@@ -25,7 +25,7 @@ export function registerConferenceSupervisorAbilities() {
 	// Participant care and project management manage their conference's supervisors.
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
 	// Supervised participants see their own supervisors.
 	abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
@@ -71,14 +71,18 @@ export function registerConferenceSupervisorAbilities() {
  * Registering yourself does not - which is why the check is gated on `subjectUserId` being
  * present.
  */
-export async function assertCanCreateConferenceSupervisor(
-	ctx: ApiContext,
-	conferenceId: string,
-	subjectUserId: string | null | undefined
-) {
+export async function assertCanCreateConferenceSupervisor({
+	ctx,
+	conferenceId,
+	subjectUserId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	subjectUserId: string | null | undefined;
+}) {
 	const callerId = ctx.mustBeLoggedIn().sub;
 	if (subjectUserId && subjectUserId !== callerId) {
-		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+		await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 	}
 }
 
@@ -86,13 +90,17 @@ export async function assertCanCreateConferenceSupervisor(
  * Connecting somebody else to a supervisor is participant care's job (the user card's supervisor
  * modal); the code alone only lets a participant attach themselves.
  */
-export async function assertCanConnectToConferenceSupervisor(
-	ctx: ApiContext,
-	conferenceId: string,
-	subjectId: string
-) {
+export async function assertCanConnectToConferenceSupervisor({
+	ctx,
+	conferenceId,
+	subjectId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	subjectId: string;
+}) {
 	if (subjectId !== ctx.mustBeLoggedIn().sub) {
-		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+		await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 	}
 }
 
@@ -101,21 +109,25 @@ export async function assertCanConnectToConferenceSupervisor(
  * care of the supervisor's conference. Returns the conference, which the service needs to find the
  * person's participant row.
  */
-export async function assertCanDisconnectFromConferenceSupervisor(
-	ctx: ApiContext,
-	supervisorId: string,
-	subjectId: string
-) {
+export async function assertCanDisconnectFromConferenceSupervisor({
+	ctx,
+	supervisorId,
+	subjectId
+}: {
+	ctx: ApiContext;
+	supervisorId: string;
+	subjectId: string;
+}) {
 	const supervisor = await db.query.conferenceSupervisor.findFirst({
 		where: { id: supervisorId },
 		columns: { id: true },
 		with: { participant: { columns: { conferenceId: true, userId: true } } }
 	});
-	if (!supervisor) throw apiError('NOT_FOUND', m.supervisorNotFound());
+	if (!supervisor) throw apiError({ code: 'NOT_FOUND', message: m.supervisorNotFound() });
 	const { conferenceId, userId: supervisorUserId } = supervisor.participant;
 	const caller = ctx.mustBeLoggedIn().sub;
 	if (caller !== subjectId && caller !== supervisorUserId) {
-		await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+		await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 	}
 	return conferenceId;
 }
@@ -125,17 +137,23 @@ export async function assertCanDisconnectFromConferenceSupervisor(
  * cannot, and somebody who does not take part as delegate or single participant has nothing to be
  * supervised in. Returns the subject's participations, which get the supervision link.
  */
-export async function assertCanBeSupervised(conferenceId: string, subjectId: string) {
+export async function assertCanBeSupervised({
+	conferenceId,
+	subjectId
+}: {
+	conferenceId: string;
+	subjectId: string;
+}) {
 	const participation = await fetchParticipationsAndTeamMembership({
 		conferenceId,
 		userId: subjectId
 	});
 
 	if (participation.foundSupervisor || participation.foundTeamMember) {
-		throw apiError('CONFLICT', m.supervisorAlreadySupervisorOrTeam());
+		throw apiError({ code: 'CONFLICT', message: m.supervisorAlreadySupervisorOrTeam() });
 	}
 	if (!participation.foundDelegationMember && !participation.foundSingleParticipant) {
-		throw apiError('FORBIDDEN', m.supervisorNotParticipant());
+		throw apiError({ code: 'FORBIDDEN', message: m.supervisorNotParticipant() });
 	}
 	return participation;
 }
@@ -144,14 +162,20 @@ export async function assertCanBeSupervised(conferenceId: string, subjectId: str
  * The supervisor themselves, participant care and project management, and admins: the row's
  * update ability. Returns the supervisor.
  */
-export async function assertCanRotateSupervisorConnectionCode(ctx: ApiContext, id: string) {
+export async function assertCanRotateSupervisorConnectionCode({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
 	const supervisor = await db.query.conferenceSupervisor.findFirst({
 		...(await ctx.abilities.conferenceSupervisor.filter('update')).merge({ where: { id } }).query
 			.single,
 		columns: { id: true }
 	});
 	if (!supervisor) {
-		throw apiError('FORBIDDEN', m.supervisorRotateForbidden());
+		throw apiError({ code: 'FORBIDDEN', message: m.supervisorRotateForbidden() });
 	}
 	return supervisor;
 }
@@ -160,7 +184,13 @@ export async function assertCanRotateSupervisorConnectionCode(ctx: ApiContext, i
  * Previewing a supervisor by connection code requires the caller to already take part in the
  * conference in some role, so an arbitrary logged-in user cannot probe codes.
  */
-export async function assertCanPreviewConferenceSupervisor(ctx: ApiContext, conferenceId: string) {
+export async function assertCanPreviewConferenceSupervisor({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
 	const participation = await fetchParticipationsAndTeamMembership({
 		conferenceId,
 		userId: ctx.mustBeLoggedIn().sub
@@ -172,6 +202,6 @@ export async function assertCanPreviewConferenceSupervisor(ctx: ApiContext, conf
 		!participation.foundTeamMember &&
 		!participation.foundSupervisor
 	) {
-		throw apiError('FORBIDDEN', m.notRegisteredForConference());
+		throw apiError({ code: 'FORBIDDEN', message: m.notRegisteredForConference() });
 	}
 }

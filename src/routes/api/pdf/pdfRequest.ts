@@ -1,6 +1,7 @@
 import { unEmblemSvg } from '@deutschemodelunitednations/munify-resolution-editor';
 import type { ResolutionHeaderData } from '@deutschemodelunitednations/munify-resolution-editor/schema';
 import { error } from '@sveltejs/kit';
+import { z } from 'zod';
 
 // Fast-fail limits — this endpoint shells out to a compiler, so reject
 // oversized inputs before any heavy processing.
@@ -8,9 +9,7 @@ const MAX_BODY_BYTES = 5_000_000; // 5 MB raw request body
 const MAX_TYPST_CHARS = 2_000_000; // ~2 MB of Typst source
 const MAX_SVG_BYTES = 2_000_000; // 2 MB decoded emblem SVG
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null;
-}
+const jsonObject = z.record(z.string(), z.unknown());
 
 /**
  * Refuses callers without a session and answers who the caller is. Compiling is expensive (a
@@ -45,32 +44,28 @@ export function createCompileSlots(max: number) {
 	};
 }
 
-const HEADER_STRING_KEYS = [
-	'conferenceName',
-	'conferenceTitle',
-	'committeeAbbreviation',
-	'committeeFullName',
-	'committeeResolutionHeadline',
-	'documentNumber',
-	'topic',
-	'authoringDelegation',
-	'lastEdited',
-	'conferenceEmblem'
-] as const;
+/** A header field: kept when it is a string, dropped otherwise. */
+const headerText = z.string().optional().catch(undefined);
 
-/** Build a typed ResolutionHeaderData from untrusted input without casts. */
+/** The resolution header from untrusted input: the known fields of the right type, nothing else. */
+const resolutionHeader = z
+	.object({
+		conferenceName: headerText,
+		conferenceTitle: headerText,
+		committeeAbbreviation: headerText,
+		committeeFullName: headerText,
+		committeeResolutionHeadline: headerText,
+		documentNumber: headerText,
+		topic: headerText,
+		authoringDelegation: headerText,
+		lastEdited: headerText,
+		conferenceEmblem: headerText,
+		sponsoringDelegations: z.array(z.string()).optional().catch(undefined)
+	})
+	.catch({});
+
 export function readHeader(value: unknown): ResolutionHeaderData {
-	const header: ResolutionHeaderData = {};
-	if (!isRecord(value)) return header;
-	for (const key of HEADER_STRING_KEYS) {
-		const v = value[key];
-		if (typeof v === 'string') header[key] = v;
-	}
-	const sponsoring = value.sponsoringDelegations;
-	if (Array.isArray(sponsoring) && sponsoring.every((s) => typeof s === 'string')) {
-		header.sponsoringDelegations = sponsoring;
-	}
-	return header;
+	return resolutionHeader.parse(value);
 }
 
 /**
@@ -128,14 +123,18 @@ export async function readBody(request: Request): Promise<Record<string, unknown
 	} catch {
 		throw error(400, 'Invalid JSON');
 	}
-	if (!isRecord(body)) throw error(400, 'Invalid request body');
-	return body;
+	const parsed = jsonObject.safeParse(body);
+	if (!parsed.success) throw error(400, 'Invalid request body');
+	return parsed.data;
 }
+
+/** What a failed child process left on stderr, as `execFile` rejects with it. */
+const compilerOutput = z.object({ stderr: z.union([z.string(), z.instanceof(Buffer)]) });
 
 /** The most useful diagnostic a failed compiler run left behind. */
 export function compileErrorDetail(e: unknown): string {
-	if (isRecord(e) && typeof e.stderr === 'string') return e.stderr;
-	if (isRecord(e) && e.stderr instanceof Buffer) return e.stderr.toString();
+	const output = compilerOutput.safeParse(e);
+	if (output.success) return output.data.stderr.toString();
 	if (e instanceof Error) return e.message;
 	return String(e);
 }
@@ -145,8 +144,9 @@ export function compileErrorDetail(e: unknown): string {
  * request carries a structured resolution instead.
  */
 export function readRawTypst(body: Record<string, unknown>): string | undefined {
-	const typst = body.typst;
-	if (typeof typst !== 'string' || typst.length === 0) return undefined;
+	const parsed = z.string().min(1).safeParse(body.typst);
+	if (!parsed.success) return undefined;
+	const typst = parsed.data;
 	if (typst.length > MAX_TYPST_CHARS) throw error(413, 'Typst source too large');
 	return typst;
 }

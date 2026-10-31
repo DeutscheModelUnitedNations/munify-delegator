@@ -97,7 +97,11 @@ describe('teamRouteForPath', () => {
 	});
 
 	test('the guard and the navigation agree', () => {
-		expect(mayOpenTeamRoute(route('seatPlanning'), as('PARTICIPANT_CARE'))).toBe(false);
-		expect(mayOpenTeamRoute(route('seatPlanning'), as('CONTENT_LEAD'))).toBe(true);
+		expect(mayOpenTeamRoute({ route: route('seatPlanning'), access: as('PARTICIPANT_CARE') })).toBe(
+			false
+		);
+		expect(mayOpenTeamRoute({ route: route('seatPlanning'), access: as('CONTENT_LEAD') })).toBe(
+			true
+		);
 	});
 });

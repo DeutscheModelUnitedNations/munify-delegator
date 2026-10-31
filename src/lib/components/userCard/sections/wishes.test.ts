@@ -16,15 +16,15 @@ const countryName = (alpha3Code: string) => `country ${alpha3Code}`;
 
 describe('delegationWishes', () => {
 	it('lists the wishes by their rank', () => {
-		const wishes = delegationWishes(
-			[nation('b', 2, 'FRA', 'fr'), nation('a', 1, 'DEU', 'de')],
+		const wishes = delegationWishes({
+			applications: [nation('b', 2, 'FRA', 'fr'), nation('a', 1, 'DEU', 'de')],
 			countryName
-		);
+		});
 		expect(wishes.map((wish) => wish.id)).toEqual(['a', 'b']);
 	});
 
 	it('names a nation by its country and shows its flag', () => {
-		expect(delegationWishes([nation('a', 1, 'DEU', 'de')], countryName)).toEqual([
+		expect(delegationWishes({ applications: [nation('a', 1, 'DEU', 'de')], countryName })).toEqual([
 			{ id: 'a', label: 'country DEU', alpha2Code: 'de' }
 		]);
 	});
@@ -40,7 +40,7 @@ describe('delegationWishes', () => {
 				nation: null
 			}
 		};
-		expect(delegationWishes([actor], countryName)).toEqual([
+		expect(delegationWishes({ applications: [actor], countryName })).toEqual([
 			{ id: 'n', label: 'Red Cross', icon: 'fa-cross' }
 		]);
 	});

@@ -65,11 +65,13 @@ describe('shownUserCardTab', () => {
 	const tabs = visibleUserCardTabs({ ...none, registered: true, holdsPart: true });
 
 	it('keeps the picked tab when the person has it', () => {
-		expect(shownUserCardTab('seat', tabs, 'ACTIVE')).toBe('seat');
+		expect(shownUserCardTab({ picked: 'seat', visible: tabs, state: 'ACTIVE' })).toBe('seat');
 	});
 
 	it('falls back when the picked tab is not offered for this person', () => {
-		expect(shownUserCardTab('papers', tabs, 'PARTICIPANT_REGISTRATION')).toBe('registration');
+		expect(
+			shownUserCardTab({ picked: 'papers', visible: tabs, state: 'PARTICIPANT_REGISTRATION' })
+		).toBe('registration');
 	});
 
 	it('suggests the tab of the conference state when nothing was picked', () => {
@@ -80,11 +82,15 @@ describe('shownUserCardTab', () => {
 			participant: true,
 			access: true
 		});
-		expect(shownUserCardTab(null, all, 'PREPARATION')).toBe('formalities');
-		expect(shownUserCardTab(null, all, 'ACTIVE')).toBe('conference');
+		expect(shownUserCardTab({ picked: null, visible: all, state: 'PREPARATION' })).toBe(
+			'formalities'
+		);
+		expect(shownUserCardTab({ picked: null, visible: all, state: 'ACTIVE' })).toBe('conference');
 	});
 
 	it('takes the first tab when the suggested one is not offered', () => {
-		expect(shownUserCardTab(null, ['person', 'history'], 'ACTIVE')).toBe('person');
+		expect(
+			shownUserCardTab({ picked: null, visible: ['person', 'history'], state: 'ACTIVE' })
+		).toBe('person');
 	});
 });

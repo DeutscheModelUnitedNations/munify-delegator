@@ -21,7 +21,13 @@ export function normalizeConferenceLanguage(value: string | null | undefined) {
 }
 
 /** The name of `language` in `inLocale`, falling back to the code itself. */
-export function conferenceLanguageName(language: string, inLocale: string) {
+export function conferenceLanguageName({
+	language,
+	inLocale
+}: {
+	language: string;
+	inLocale: string;
+}) {
 	try {
 		return new Intl.DisplayNames([inLocale], { type: 'language' }).of(language) ?? language;
 	} catch {

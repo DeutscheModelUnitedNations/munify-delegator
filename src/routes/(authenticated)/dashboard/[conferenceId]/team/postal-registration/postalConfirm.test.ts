@@ -16,7 +16,7 @@ describe('confirmAllChange', () => {
 	const start = new Date('2026-03-12T00:00:00Z');
 
 	test('marks every document done and allows all media use', () => {
-		expect(confirmAllChange(start, new Date('2010-01-01'))).toEqual({
+		expect(confirmAllChange({ startConference: start, birthday: new Date('2010-01-01') })).toEqual({
 			termsAndConditions: 'DONE',
 			mediaConsent: 'DONE',
 			guardianConsent: 'DONE',
@@ -25,6 +25,8 @@ describe('confirmAllChange', () => {
 	});
 
 	test('leaves the guardian consent alone for adults', () => {
-		expect(confirmAllChange(start, new Date('1990-01-01')).guardianConsent).toBeUndefined();
+		expect(
+			confirmAllChange({ startConference: start, birthday: new Date('1990-01-01') }).guardianConsent
+		).toBeUndefined();
 	});
 });

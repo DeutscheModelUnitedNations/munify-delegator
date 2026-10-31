@@ -1,5 +1,4 @@
 import { error } from '@sveltejs/kit';
-import { isTokenExpired } from './invitationToken';
 
 interface InvitationState {
 	revokedAt: Date | null;
@@ -26,7 +25,7 @@ export function assertInvitationUsable<I extends InvitationState>(
 		error(410, 'This invitation has already been used');
 	}
 
-	if (isTokenExpired(invitation.expiresAt)) {
+	if (invitation.expiresAt < new Date()) {
 		error(410, 'This invitation has expired');
 	}
 }

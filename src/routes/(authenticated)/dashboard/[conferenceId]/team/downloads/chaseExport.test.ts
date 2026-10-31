@@ -105,7 +105,7 @@ describe('buildChaseImport', () => {
 
 	const build = () => {
 		let counter = 0;
-		return buildChaseImport(data, nations, () => `id${++counter}`);
+		return buildChaseImport({ conferenceData: data, nations, newId: () => `id${++counter}` });
 	};
 
 	test('creates a representation per nation and per non-state actor', () => {

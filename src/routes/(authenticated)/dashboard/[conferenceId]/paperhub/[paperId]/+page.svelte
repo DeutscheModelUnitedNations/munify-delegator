@@ -70,14 +70,16 @@
 	$effect(() => {
 		const routePaperId = params.paperId;
 		if (paperData && paperData.id === routePaperId) {
-			loaded.loadIfNew(paperData, latestVersion?.content);
+			loaded.loadIfNew({ paper: paperData, latestContent: latestVersion?.content });
 		}
 	});
 
 	const conferenceInfo = $derived(await conferenceHeaderInfo(paperData?.conference));
 
 	let resolutionHeaderData = $derived(
-		paperData ? buildResolutionHeaderData(paperData, conferenceInfo) : undefined
+		paperData
+			? buildResolutionHeaderData({ paper: paperData, conference: conferenceInfo })
+			: undefined
 	);
 
 	// Get the current content from the correct store based on paper type
@@ -92,11 +94,12 @@
 
 	$effect(() => {
 		if (paperData && hasCurrentContent && !loaded.validationError) {
-			compareEditorContentHash(JSON.stringify(currentContent), latestContentHash).then(
-				(areEqual) => {
-					unsavedChanges = !areEqual;
-				}
-			);
+			compareEditorContentHash({
+				content: JSON.stringify(currentContent),
+				hash: latestContentHash
+			}).then((areEqual) => {
+				unsavedChanges = !areEqual;
+			});
 		}
 	});
 

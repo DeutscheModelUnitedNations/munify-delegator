@@ -45,9 +45,9 @@
 		const optionId = newAnswer;
 		if (!canSave || !optionId) return;
 		// The option may have filled up since the modal opened: the API refuses, and says so.
-		const saved = await saveWithToast(
-			(isLoading) => (loading = isLoading),
-			async () => {
+		const saved = await saveWithToast({
+			setLoading: (isLoading) => (loading = isLoading),
+			write: async () => {
 				await client.mutate.updateSurveyAnswer({
 					__args: { userId, questionId: question.id, optionId },
 					id: true,
@@ -55,19 +55,19 @@
 					option: { id: true, countSurveyAnswers: true }
 				});
 			}
-		);
+		});
 		open = !saved;
 	};
 
 	/** Takes the answer back, so the question is open again for the person. */
 	const withdrawAnswer = async () => {
 		if (!currentAnswerOptionId || questionLocked || loading) return;
-		const withdrawn = await saveWithToast(
-			(isLoading) => (loading = isLoading),
-			async () => {
+		const withdrawn = await saveWithToast({
+			setLoading: (isLoading) => (loading = isLoading),
+			write: async () => {
 				await client.mutate.deleteSurveyAnswer({ __args: { userId, questionId: question.id } });
 			}
-		);
+		});
 		open = !withdrawn;
 	};
 

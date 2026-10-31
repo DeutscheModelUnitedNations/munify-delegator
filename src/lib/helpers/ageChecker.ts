@@ -1,6 +1,12 @@
 import dayjs from 'dayjs';
 
-export function getAgeAtConference(birthday: Date | string, startConference: Date | string) {
+export function getAgeAtConference({
+	birthday,
+	startConference
+}: {
+	birthday: Date | string;
+	startConference: Date | string;
+}) {
 	const start = dayjs(startConference);
 	const birth = dayjs(birthday);
 
@@ -20,15 +26,18 @@ export function getAgeAtConference(birthday: Date | string, startConference: Dat
 	return years;
 }
 
-export function ofAgeAtConference(
-	startConference: Date | string | undefined | null,
-	dateOfBirth: Date | string | undefined | null
-): boolean {
+export function ofAgeAtConference({
+	startConference,
+	dateOfBirth
+}: {
+	startConference: Date | string | undefined | null;
+	dateOfBirth: Date | string | undefined | null;
+}): boolean {
 	if (!startConference || !dateOfBirth) {
 		return false;
 	}
 
-	const ageAtConference = getAgeAtConference(dateOfBirth, startConference);
+	const ageAtConference = getAgeAtConference({ birthday: dateOfBirth, startConference });
 	return ageAtConference ? ageAtConference >= 18 : false;
 }
 
@@ -37,10 +46,13 @@ export function ofAgeAtConference(
  * date filter: at least `gte` years old means born on or before that many years earlier, at most
  * `lte` means born after the day `lte + 1` years earlier.
  */
-export function birthdayBoundsForAge(
-	range: { gte?: number; lte?: number },
-	startConference: Date | string
-): { lte?: Date; gt?: Date } {
+export function birthdayBoundsForAge({
+	range,
+	startConference
+}: {
+	range: { gte?: number; lte?: number };
+	startConference: Date | string;
+}): { lte?: Date; gt?: Date } {
 	const start = dayjs(startConference);
 	return {
 		...(range.gte === undefined ? {} : { lte: start.subtract(range.gte, 'year').toDate() }),

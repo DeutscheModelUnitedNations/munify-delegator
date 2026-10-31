@@ -15,21 +15,28 @@ describe('split', () => {
 	});
 
 	it('splits into equally sized parts in member order', () => {
-		expect(quickSplit(ids, 3)).toEqual({ a: 0, b: 0, c: 1, d: 1, e: 2, f: 2 });
+		expect(quickSplit({ memberIds: ids, count: 3 })).toEqual({
+			a: 0,
+			b: 0,
+			c: 1,
+			d: 1,
+			e: 2,
+			f: 2
+		});
 	});
 
 	it('moves the members of a dropped part into the one before it', () => {
 		const partOf = { a: 0, b: 1, c: 2, d: 3 };
-		expect(withoutPart(partOf, 2)).toEqual({ a: 0, b: 1, c: 1, d: 2 });
+		expect(withoutPart({ partOf, removed: 2 })).toEqual({ a: 0, b: 1, c: 1, d: 2 });
 	});
 
 	it('moves the members of the dropped first part into the one after it', () => {
-		expect(withoutPart({ a: 0, b: 1, c: 2 }, 0)).toEqual({ a: 0, b: 0, c: 1 });
+		expect(withoutPart({ partOf: { a: 0, b: 1, c: 2 }, removed: 0 })).toEqual({ a: 0, b: 0, c: 1 });
 	});
 
 	it('lists the members of each part, empty parts included', () => {
 		const members = ids.slice(0, 3).map((id) => ({ id }));
-		expect(partsOf(members, { a: 2, b: 0, c: 2 }, 3)).toEqual([
+		expect(partsOf({ members, partOf: { a: 2, b: 0, c: 2 }, count: 3 })).toEqual([
 			[{ id: 'b' }],
 			[],
 			[{ id: 'a' }, { id: 'c' }]

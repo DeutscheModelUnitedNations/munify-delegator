@@ -11,7 +11,7 @@
 
 	let { plannerCommittees, committees, onSelectCommittee }: Props = $props();
 
-	const rows = $derived(committeeSeatTotals(plannerCommittees, committees));
+	const rows = $derived(committeeSeatTotals({ committees: plannerCommittees, info: committees }));
 	const maxSeats = $derived(Math.max(1, ...rows.map(({ seats }) => seats)));
 </script>
 

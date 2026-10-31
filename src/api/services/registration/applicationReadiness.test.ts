@@ -24,39 +24,76 @@ const ready = {
 
 describe('assertApplicationReady', () => {
 	test('lets a complete application through while registration is open', () => {
-		expect(() => assertApplicationReady(ready, {}, 3)).not.toThrow();
+		expect(() =>
+			assertApplicationReady({ applicant: ready, edits: {}, minRoleApplications: 3 })
+		).not.toThrow();
 	});
 
 	test.each(['PRE', 'PREPARATION', 'ACTIVE', 'POST'] as const)(
 		'refuses to send an application while the conference is in %s',
 		(state) => {
 			expect(() =>
-				assertApplicationReady({ ...ready, conference: { ...ready.conference, state } }, {}, 3)
+				assertApplicationReady({
+					applicant: { ...ready, conference: { ...ready.conference, state } },
+					edits: {},
+					minRoleApplications: 3
+				})
 			).toThrow();
 		}
 	);
 
 	test('refuses after the deadline, unless still within the grace period', () => {
 		const late = { ...ready.conference, applicationDeadline: yesterday };
-		expect(() => assertApplicationReady({ ...ready, conference: late }, {}, 3)).toThrow();
 		expect(() =>
-			assertApplicationReady(
-				{ ...ready, conference: { ...late, registrationDeadlineGracePeriodMinutes: 2 * 24 * 60 } },
-				{},
-				3
-			)
+			assertApplicationReady({
+				applicant: { ...ready, conference: late },
+				edits: {},
+				minRoleApplications: 3
+			})
+		).toThrow();
+		expect(() =>
+			assertApplicationReady({
+				applicant: {
+					...ready,
+					conference: { ...late, registrationDeadlineGracePeriodMinutes: 2 * 24 * 60 }
+				},
+				edits: {},
+				minRoleApplications: 3
+			})
 		).not.toThrow();
 	});
 
 	test('refuses too few role applications and missing texts', () => {
-		expect(() => assertApplicationReady({ ...ready, appliedForRoles: [1] }, {}, 3)).toThrow();
-		expect(() => assertApplicationReady({ ...ready, motivation: null }, {}, 3)).toThrow();
+		expect(() =>
+			assertApplicationReady({
+				applicant: { ...ready, appliedForRoles: [1] },
+				edits: {},
+				minRoleApplications: 3
+			})
+		).toThrow();
+		expect(() =>
+			assertApplicationReady({
+				applicant: { ...ready, motivation: null },
+				edits: {},
+				minRoleApplications: 3
+			})
+		).toThrow();
 	});
 
 	test('judges the texts with the edits of the same update applied', () => {
 		expect(() =>
-			assertApplicationReady({ ...ready, experience: null }, { experience: 'Two conferences' }, 3)
+			assertApplicationReady({
+				applicant: { ...ready, experience: null },
+				edits: { experience: 'Two conferences' },
+				minRoleApplications: 3
+			})
 		).not.toThrow();
-		expect(() => assertApplicationReady(ready, { motivation: null }, 3)).toThrow();
+		expect(() =>
+			assertApplicationReady({
+				applicant: ready,
+				edits: { motivation: null },
+				minRoleApplications: 3
+			})
+		).toThrow();
 	});
 });

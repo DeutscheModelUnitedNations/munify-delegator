@@ -3,9 +3,13 @@ import { contentDisposition, createStorage, filePurpose, objectKey } from './sto
 
 describe('objectKey', () => {
 	test('groups objects by conference and purpose', () => {
-		expect(objectKey('c1', filePurpose('conference', 'logo'), 'f1')).toBe(
-			'conferences/c1/conference/logo/f1'
-		);
+		expect(
+			objectKey({
+				conferenceId: 'c1',
+				purpose: filePurpose({ kind: 'conference', field: 'logo' }),
+				uniqueId: 'f1'
+			})
+		).toBe('conferences/c1/conference/logo/f1');
 	});
 });
 
@@ -37,16 +41,18 @@ describe('presignDownload', () => {
 
 	test('hands out the same URL for hours, so browsers can cache the file', async () => {
 		vi.useFakeTimers({ now: new Date('2026-10-14T10:00:00Z') });
-		const first = await storage.presignDownload('conferences/c1/conference/logo/f1');
+		const first = await storage.presignDownload({ key: 'conferences/c1/conference/logo/f1' });
 		vi.setSystemTime(new Date('2026-10-14T15:00:00Z'));
-		expect(await storage.presignDownload('conferences/c1/conference/logo/f1')).toBe(first);
+		expect(await storage.presignDownload({ key: 'conferences/c1/conference/logo/f1' })).toBe(first);
 
 		vi.setSystemTime(new Date('2026-10-14T16:00:01Z'));
-		expect(await storage.presignDownload('conferences/c1/conference/logo/f1')).not.toBe(first);
+		expect(await storage.presignDownload({ key: 'conferences/c1/conference/logo/f1' })).not.toBe(
+			first
+		);
 	});
 
 	test('names the file when asked', async () => {
-		const url = new URL(await storage.presignDownload('k', 'Résolution 1.pdf'));
+		const url = new URL(await storage.presignDownload({ key: 'k', fileName: 'Résolution 1.pdf' }));
 		expect(url.searchParams.get('response-content-disposition')).toBe(
 			contentDisposition('Résolution 1.pdf')
 		);

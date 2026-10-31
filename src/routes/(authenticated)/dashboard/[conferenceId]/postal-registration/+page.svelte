@@ -54,7 +54,10 @@
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			await downloadPostalRegistration(currentUser.sub, params.conferenceId);
+			await downloadPostalRegistration({
+				userId: currentUser.sub,
+				conferenceId: params.conferenceId
+			});
 		} finally {
 			loading = false;
 		}

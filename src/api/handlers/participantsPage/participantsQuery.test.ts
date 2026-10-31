@@ -31,7 +31,11 @@ function whereOf(...filters: ParticipantFilter[]) {
 
 const page = (args: Partial<ParticipantsPageQuery>) => {
 	const { sql, params } = dialect.sqlToQuery(
-		participantsPageSql({ conferenceId: 'c', limit: 10, offset: 0, ...args }, 10, 20)
+		participantsPageSql({
+			args: { conferenceId: 'c', limit: 10, offset: 0, ...args },
+			limit: 10,
+			offset: 20
+		})
 	);
 	return { sql: sql.replace(/\s+/g, ' '), params };
 };

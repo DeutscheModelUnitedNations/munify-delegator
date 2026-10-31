@@ -29,8 +29,8 @@ describe('localeOfUser', () => {
 
 describe('runWithLocale', () => {
 	it('still runs the callback when no request store exists', () => {
-		expect(runWithLocale('en', () => m.emailGreetingAnonymous({}, { locale: 'en' }))).toBe(
-			'Hello,'
-		);
+		expect(
+			runWithLocale({ locale: 'en', fn: () => m.emailGreetingAnonymous({}, { locale: 'en' }) })
+		).toBe('Hello,');
 	});
 });

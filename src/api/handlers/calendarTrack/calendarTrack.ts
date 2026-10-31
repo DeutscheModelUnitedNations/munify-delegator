@@ -8,7 +8,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import { calendarEntryPubsub, calendarTrackPubsub } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { queryAllowed, updateIfAllowed, whereAllowed } from '#api/services/authHelper/utils';
 
 registerCalendarTrackAbilities();
@@ -26,7 +26,7 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarTrack(ctx, args.calendarDayId);
+			await assertCanCreateCalendarTrack({ ctx, calendarDayId: args.calendarDayId });
 
 			const created = await db
 				.insert(schema.calendarTrack)
@@ -42,7 +42,9 @@ schemaBuilder.mutationFields((t) => ({
 			calendarTrackPubsub.created();
 
 			return db.query.calendarTrack
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarTrack, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.calendarTrack, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -57,16 +59,21 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			// `description` is nullable, so an explicit null clears it.
-			await updateIfAllowed(ctx, 'calendarTrack', args.id, {
-				name: args.name ?? undefined,
-				sortOrder: args.sortOrder ?? undefined,
-				description: args.description
+			await updateIfAllowed({
+				ctx,
+				table: 'calendarTrack',
+				id: args.id,
+				values: {
+					name: args.name ?? undefined,
+					sortOrder: args.sortOrder ?? undefined,
+					description: args.description
+				}
 			});
 
 			calendarTrackPubsub.updated(args.id);
 
 			return db.query.calendarTrack
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarTrack, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.calendarTrack, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -75,7 +82,12 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deleteFilter = await whereAllowed(ctx, 'calendarTrack', 'delete', args.id);
+			const deleteFilter = await whereAllowed({
+				ctx,
+				table: 'calendarTrack',
+				action: 'delete',
+				id: args.id
+			});
 
 			// Entries that run on this track alone would be left without one, so they go with it
 			const linked = await db.query.calendarEntry.findMany({
@@ -93,13 +105,13 @@ schemaBuilder.mutationFields((t) => ({
 				if (rows.length > 0 && orphanIds.length > 0) {
 					await tx
 						.delete(schema.calendarEntry)
-						.where(whereRows(schema.calendarEntry, { id: { in: orphanIds } }));
+						.where(whereRows({ table: schema.calendarEntry, filter: { id: { in: orphanIds } } }));
 				}
 				return rows;
 			});
 
 			if (deleted.length === 0) {
-				throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+				throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 			}
 			calendarTrackPubsub.removed();
 			if (orphanIds.length > 0) calendarEntryPubsub.removed();

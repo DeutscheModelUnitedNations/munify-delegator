@@ -26,10 +26,13 @@ export interface ConfigEntry {
  * The team pages the caller may open, as command palette entries. Read from the route registry,
  * so the palette offers exactly what the side navigation and the route guard allow.
  */
-export function getAllPages(
-	conferenceId: string,
-	access: TeamAccess & { canSeePaperHub?: boolean }
-): PageEntry[] {
+export function getAllPages({
+	conferenceId,
+	access
+}: {
+	conferenceId: string;
+	access: TeamAccess & { canSeePaperHub?: boolean };
+}): PageEntry[] {
 	return teamRoutesFor(access).map((route) => ({
 		id: route.id,
 		title: route.title,

@@ -27,14 +27,16 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			// The caller must be allowed to update the delegation the application belongs to, and the
 			// role applied for must be on offer in that conference.
-			await assertCanCreateRoleApplication(ctx, args);
+			await assertCanCreateRoleApplication({ ctx, args });
 
 			const created = await appendRoleApplication(args);
 
 			roleApplicationPubsub.created();
 
 			return db.query.roleApplication
-				.findFirst(query(await queryAllowed(ctx.abilities.roleApplication, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.roleApplication, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -43,7 +45,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const application = await assertCanDeleteRoleApplication(ctx, args.id);
+			const application = await assertCanDeleteRoleApplication({ ctx, id: args.id });
 			await removeRoleApplication(application);
 			roleApplicationPubsub.removed();
 			roleApplicationPubsub.updated();
@@ -59,12 +61,12 @@ schemaBuilder.mutationFields((t) => ({
 			secondRoleApplicationId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const [first, second] = await assertCanSwapRoleApplicationRanks(
+			const [first, second] = await assertCanSwapRoleApplicationRanks({
 				ctx,
-				args.firstRoleApplicationId,
-				args.secondRoleApplicationId
-			);
-			await swapRanks(first, second);
+				firstId: args.firstRoleApplicationId,
+				secondId: args.secondRoleApplicationId
+			});
+			await swapRanks({ first, second });
 
 			roleApplicationPubsub.updated([args.firstRoleApplicationId, args.secondRoleApplicationId]);
 

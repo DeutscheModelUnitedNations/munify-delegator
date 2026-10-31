@@ -259,8 +259,14 @@ export function pageSegments(globKey: string): string[] {
 const isParameter = (segment: string) => segment.startsWith('[') && segment.endsWith(']');
 
 /** Whether some page file answers exactly this URL path (`[param]` folders match any segment) */
-export function hasPageAt(urlSegments: readonly string[], globKeys: readonly string[]): boolean {
-	return matchPage(urlSegments, globKeys) !== undefined;
+export function hasPageAt({
+	urlSegments,
+	globKeys
+}: {
+	urlSegments: readonly string[];
+	globKeys: readonly string[];
+}): boolean {
+	return matchPage({ urlSegments, globKeys }) !== undefined;
 }
 
 /**
@@ -288,10 +294,13 @@ export function staticFirst<T extends string>(globKeys: readonly T[]): T[] {
  * The page file the breadcrumbs resolve a URL path to: the first one whose every segment is the
  * same or a `[param]`, the way sveltekit-breadcrumbs picks it. `undefined` for a URL with no page.
  */
-export function matchPage(
-	urlSegments: readonly string[],
-	globKeys: readonly string[]
-): string | undefined {
+export function matchPage({
+	urlSegments,
+	globKeys
+}: {
+	urlSegments: readonly string[];
+	globKeys: readonly string[];
+}): string | undefined {
 	return globKeys.find((key) => {
 		const segments = pageSegments(key);
 		return (

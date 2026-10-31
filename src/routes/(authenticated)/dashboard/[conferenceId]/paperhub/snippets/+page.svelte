@@ -120,7 +120,7 @@
 	}
 
 	/** Updates the snippet being edited, or creates it if it is new. */
-	function saveSnippet(name: string, content: JSONContent) {
+	function saveSnippet({ name, content }: { name: string; content: JSONContent }) {
 		return editingId
 			? client.mutate.updateReviewerSnippet({
 					__args: { id: editingId, name, content },
@@ -137,7 +137,7 @@
 	}
 
 	async function handleSave() {
-		const check = checkSnippet(editName, editContent);
+		const check = checkSnippet({ name: editName, content: editContent });
 		if (check.error) {
 			toast.error(check.error);
 			return;
@@ -149,7 +149,7 @@
 		}
 
 		try {
-			await saveSnippet(editName.trim(), editContent);
+			await saveSnippet({ name: editName.trim(), content: editContent });
 			toast.success(m.snippetSaved());
 			closeModal();
 		} catch (error: unknown) {

@@ -23,7 +23,7 @@
 
 	let { conferenceId, surveyId }: Props = $props();
 
-	const results = $derived(await fetchSurveyResults(conferenceId, surveyId));
+	const results = $derived(await fetchSurveyResults({ conferenceId, surveyId }));
 	const survey = $derived(results.survey);
 	const notAnsweredParticipants = $derived(results.usersNotAnswered);
 
@@ -41,15 +41,15 @@
 	let distributing = $state(false);
 
 	async function distribute() {
-		const done = await saveWithToast(
-			(loading) => (distributing = loading),
-			async () => {
+		const done = await saveWithToast({
+			setLoading: (loading) => (distributing = loading),
+			write: async () => {
 				const assigned = await client.mutate.distributeUnansweredSurvey({
 					__args: { questionId: surveyId }
 				});
 				toast.success(m.surveyDistributeDone({ count: assigned }));
 			}
-		);
+		});
 		if (done) distributeOpen = false;
 	}
 

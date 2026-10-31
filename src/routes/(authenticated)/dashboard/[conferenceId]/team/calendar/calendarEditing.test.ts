@@ -12,24 +12,26 @@ const day = (date: string, sortOrder: number) => ({ date: new Date(date), sortOr
 
 describe('daySortOrder', () => {
 	test('goes first without other days', () => {
-		expect(daySortOrder('2026-03-12', [])).toBe(0);
+		expect(daySortOrder({ date: '2026-03-12', others: [] })).toBe(0);
 	});
 
 	test('goes after the last earlier day', () => {
-		expect(daySortOrder('2026-03-14', [day('2026-03-12', 0), day('2026-03-13', 1)])).toBe(2);
+		expect(
+			daySortOrder({ date: '2026-03-14', others: [day('2026-03-12', 0), day('2026-03-13', 1)] })
+		).toBe(2);
 	});
 
 	test('goes before the first later day when none is earlier', () => {
-		expect(daySortOrder('2026-03-10', [day('2026-03-12', 5)])).toBe(4);
+		expect(daySortOrder({ date: '2026-03-10', others: [day('2026-03-12', 5)] })).toBe(4);
 	});
 
 	test('goes last when its place between two days is taken', () => {
 		const others = [day('2026-03-12', 0), day('2026-03-14', 1)];
-		expect(daySortOrder('2026-03-13', others)).toBe(2);
+		expect(daySortOrder({ date: '2026-03-13', others })).toBe(2);
 	});
 
 	test('two days on one date still get different orders', () => {
-		expect(daySortOrder('2026-03-12', [day('2026-03-12', 0)])).toBe(1);
+		expect(daySortOrder({ date: '2026-03-12', others: [day('2026-03-12', 0)] })).toBe(1);
 	});
 });
 
@@ -37,24 +39,36 @@ describe('dayFields', () => {
 	const others = [day('2026-03-12', 0), day('2026-03-13', 1)];
 
 	test('places a new day by its date', () => {
-		const fields = dayFields('Day 3', '2026-03-14', others);
+		const fields = dayFields({ name: 'Day 3', date: '2026-03-14', others });
 		expect(fields.date.toISOString()).toBe('2026-03-14T00:00:00.000Z');
 		expect(fields.sortOrder).toBe(2);
 	});
 
 	test('keeps the place of a day that keeps its date', () => {
-		expect(dayFields('Renamed', '2026-03-13', [others[0]], others[1]).sortOrder).toBe(1);
+		expect(
+			dayFields({ name: 'Renamed', date: '2026-03-13', others: [others[0]], current: others[1] })
+				.sortOrder
+		).toBe(1);
 	});
 
 	test('moves a day whose date changed', () => {
-		expect(dayFields('Day', '2026-03-20', [others[0]], others[1]).sortOrder).toBe(1);
+		expect(
+			dayFields({ name: 'Day', date: '2026-03-20', others: [others[0]], current: others[1] })
+				.sortOrder
+		).toBe(1);
 	});
 });
 
 describe('trackFields', () => {
 	test('stores an empty description as none', () => {
-		expect(trackFields('Main', '', 2)).toEqual({ name: 'Main', description: null, sortOrder: 2 });
-		expect(trackFields('Main', 'Hall A', 0).description).toBe('Hall A');
+		expect(trackFields({ name: 'Main', description: '', sortOrder: 2 })).toEqual({
+			name: 'Main',
+			description: null,
+			sortOrder: 2
+		});
+		expect(trackFields({ name: 'Main', description: 'Hall A', sortOrder: 0 }).description).toBe(
+			'Hall A'
+		);
 	});
 });
 
@@ -66,20 +80,20 @@ describe('trackOrderChanges', () => {
 	];
 
 	test('swaps a track with its neighbour', () => {
-		expect(trackOrderChanges(tracks, 'b', -1)).toEqual([
+		expect(trackOrderChanges({ tracks, trackId: 'b', direction: -1 })).toEqual([
 			{ id: 'b', sortOrder: 0 },
 			{ id: 'a', sortOrder: 1 }
 		]);
-		expect(trackOrderChanges(tracks, 'b', 1)).toEqual([
+		expect(trackOrderChanges({ tracks, trackId: 'b', direction: 1 })).toEqual([
 			{ id: 'c', sortOrder: 1 },
 			{ id: 'b', sortOrder: 2 }
 		]);
 	});
 
 	test('does nothing at the ends or for an unknown track', () => {
-		expect(trackOrderChanges(tracks, 'a', -1)).toEqual([]);
-		expect(trackOrderChanges(tracks, 'c', 1)).toEqual([]);
-		expect(trackOrderChanges(tracks, 'x', 1)).toEqual([]);
+		expect(trackOrderChanges({ tracks, trackId: 'a', direction: -1 })).toEqual([]);
+		expect(trackOrderChanges({ tracks, trackId: 'c', direction: 1 })).toEqual([]);
+		expect(trackOrderChanges({ tracks, trackId: 'x', direction: 1 })).toEqual([]);
 	});
 
 	test('renumbers tied or gapped sort orders', () => {
@@ -88,7 +102,7 @@ describe('trackOrderChanges', () => {
 			{ id: 'b', sortOrder: 5 },
 			{ id: 'c', sortOrder: 9 }
 		];
-		expect(trackOrderChanges(messy, 'c', -1)).toEqual([
+		expect(trackOrderChanges({ tracks: messy, trackId: 'c', direction: -1 })).toEqual([
 			{ id: 'a', sortOrder: 0 },
 			{ id: 'c', sortOrder: 1 },
 			{ id: 'b', sortOrder: 2 }
@@ -111,7 +125,7 @@ describe('entryFields', () => {
 	};
 
 	test('puts the times on the day, and stores empty text as none', () => {
-		const fields = entryFields(form, new Date('2026-03-12T00:00:00Z'));
+		const fields = entryFields({ form, dayDate: new Date('2026-03-12T00:00:00Z') });
 		expect(fields.startTime.toISOString()).toBe('2026-03-12T09:30:00.000Z');
 		expect(fields.endTime.toISOString()).toBe('2026-03-12T11:00:00.000Z');
 		expect(fields).toMatchObject({
@@ -125,8 +139,8 @@ describe('entryFields', () => {
 	});
 
 	test('keeps what was filled in', () => {
-		const fields = entryFields(
-			{
+		const fields = entryFields({
+			form: {
 				...form,
 				description: 'Opening',
 				icon: 'gavel',
@@ -135,8 +149,8 @@ describe('entryFields', () => {
 				surveyOptionIds: ['o', 'p'],
 				trackIds: ['t', 'u']
 			},
-			'2026-03-12T00:00:00Z'
-		);
+			dayDate: '2026-03-12T00:00:00Z'
+		});
 		expect(fields).toMatchObject({
 			description: 'Opening',
 			fontAwesomeIcon: 'gavel',

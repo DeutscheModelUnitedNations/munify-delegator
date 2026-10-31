@@ -18,12 +18,18 @@ export function registerCalendarTrackAbilities() {
 	abilityBuilder.calendarTrack.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
-		const calendarDay = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		const calendarDay = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return calendarDay ? { where: { calendarDay } } : undefined;
 	});
 }
 
 /** Refuses unless the caller may add tracks to the day. */
-export async function assertCanCreateCalendarTrack(ctx: ApiContext, calendarDayId: string) {
-	await assertTeamPermissionForCalendarDay(ctx, calendarDayId);
+export async function assertCanCreateCalendarTrack({
+	ctx,
+	calendarDayId
+}: {
+	ctx: ApiContext;
+	calendarDayId: string;
+}) {
+	await assertTeamPermissionForCalendarDay({ ctx, calendarDayId });
 }

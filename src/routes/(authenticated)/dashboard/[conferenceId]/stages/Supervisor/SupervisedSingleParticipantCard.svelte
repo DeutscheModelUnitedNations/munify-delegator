@@ -37,10 +37,10 @@
 </script>
 
 <SupervisorContentCard
-	title={formatNames(
-		singleParticipant.user.givenName ?? undefined,
-		singleParticipant.user.familyName ?? undefined
-	)}
+	title={formatNames({
+		givenName: singleParticipant.user.givenName ?? undefined,
+		familyName: singleParticipant.user.familyName ?? undefined
+	})}
 	{isStateParticipantRegistration}
 	applied={singleParticipant.applied}
 >

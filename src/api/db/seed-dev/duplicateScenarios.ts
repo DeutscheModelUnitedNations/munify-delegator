@@ -78,11 +78,21 @@ export interface Scenario {
 
 // --- building people --------------------------------------------------------------------------
 
-const bornOn = (year: number, month: number, day: number) =>
+const bornOn = ({ year, month, day }: { year: number; month: number; day: number }) =>
 	new Date(Date.UTC(year, month - 1, day));
 
 /** A person as they were entered back then; `n` keeps every scenario's data apart from the rest. */
-function person(n: number, givenName: string, familyName: string, birthday: Date): Person {
+function person({
+	n,
+	givenName,
+	familyName,
+	birthday
+}: {
+	n: number;
+	givenName: string;
+	familyName: string;
+	birthday: Date;
+}): Person {
 	return {
 		givenName,
 		familyName,
@@ -97,7 +107,15 @@ function person(n: number, givenName: string, familyName: string, birthday: Date
 }
 
 /** The same person with a fresh signup's contact details; `changes` sets what else differs. */
-function renewed(base: Person, n: number, changes: Partial<Person> = {}): Person {
+function renewed({
+	base,
+	n,
+	changes = {}
+}: {
+	base: Person;
+	n: number;
+	changes?: Partial<Person>;
+}): Person {
 	return {
 		...base,
 		email: `seed${n}.new@mail.example`,
@@ -113,10 +131,22 @@ function renewed(base: Person, n: number, changes: Partial<Person> = {}): Person
 const NOTE =
 	'Hat Absprachen mit dem Team mehrfach ignoriert. Vor einer Zulassung bitte Rücksprache.';
 
-const earlierAt = (at: Participation['at'], as: Participation['as'] = 'single') => [{ at, as }];
+const earlierAt = ({
+	at,
+	as = 'single'
+}: {
+	at: Participation['at'];
+	as?: Participation['as'];
+}) => [{ at, as }];
 const currentSingle: Participation[] = [{ at: 'registration', as: 'single' }];
 
-function devPerson(sub: DevAccountSub, changes: Partial<Person> = {}): Person {
+function devPerson({
+	sub,
+	changes = {}
+}: {
+	sub: DevAccountSub;
+	changes?: Partial<Person>;
+}): Person {
 	const account = devAccounts.find((candidate) => candidate.sub === sub);
 	const row = account && makeDevAccountUser(account);
 	if (!row?.birthday) throw new Error(`The dev account ${sub} needs a complete profile`);
@@ -137,30 +167,146 @@ function devPerson(sub: DevAccountSub, changes: Partial<Person> = {}): Person {
 // --- the scenarios ----------------------------------------------------------------------------
 
 const simon = 'dev-reg-single-applied';
-const jurgen = person(2, 'Jürgen', 'Müller', bornOn(2008, 3, 14));
-const lena = person(3, 'Lena', 'Schmidt', bornOn(2009, 5, 2));
-const anna = person(4, 'Anna Maria', 'Fischer', bornOn(2008, 9, 21));
-const matthias = person(5, 'Matthias', 'Hoffmann', bornOn(2007, 11, 30));
-const dmitry = person(6, 'Дмитрий', 'Иванов', bornOn(2008, 1, 9));
-const xiaolong = person(7, '小龙', '李', bornOn(2009, 7, 17));
-const sophie = person(8, 'Sophie', 'Wagner', bornOn(2008, 4, 25));
-const alexander = person(9, 'Alexander', 'Koch', bornOn(2007, 2, 11));
-const hannah = person(10, 'Hannah', 'Neumann', bornOn(2009, 10, 6));
-const julia = person(11, 'Julia', 'Brandt', bornOn(2008, 12, 1));
-const paul = person(12, 'Paul', 'Lange', bornOn(2009, 6, 28));
-const jonas = person(13, 'Jonas', 'Richter', bornOn(2008, 8, 8));
-const mia = { ...person(14, 'Mia', 'Richter', bornOn(2010, 3, 19)), ...pick(jonas) };
-const lea = person(15, 'Lea', 'Schulz', bornOn(2009, 1, 23));
-const lenaSchulz = { ...person(16, 'Lena', 'Schulz', lea.birthday), ...pick(lea) };
-const emilia = person(17, 'Emilia', 'Vogel', bornOn(2008, 2, 3));
-const felix = person(18, 'Felix', 'Zimmermann', bornOn(2007, 9, 12));
-const katrin = person(19, 'Katrin', 'Lehmann', bornOn(1985, 6, 15));
-const oskar = person(20, 'Oskar', 'Braun', bornOn(2008, 11, 4));
-const ida = person(21, 'Ida', 'Krause', bornOn(2009, 4, 27));
-const noah = person(22, 'Noah', 'Klein', bornOn(2008, 7, 7));
-const luca = person(23, 'Luca', 'Braun', noah.birthday);
-const schneiderA = person(24, 'Maximilian', 'Schneider', bornOn(2008, 5, 16));
-const schneiderB = person(25, 'Maximilian', 'Schneider', bornOn(2009, 12, 12));
+const jurgen = person({
+	n: 2,
+	givenName: 'Jürgen',
+	familyName: 'Müller',
+	birthday: bornOn({ year: 2008, month: 3, day: 14 })
+});
+const lena = person({
+	n: 3,
+	givenName: 'Lena',
+	familyName: 'Schmidt',
+	birthday: bornOn({ year: 2009, month: 5, day: 2 })
+});
+const anna = person({
+	n: 4,
+	givenName: 'Anna Maria',
+	familyName: 'Fischer',
+	birthday: bornOn({ year: 2008, month: 9, day: 21 })
+});
+const matthias = person({
+	n: 5,
+	givenName: 'Matthias',
+	familyName: 'Hoffmann',
+	birthday: bornOn({ year: 2007, month: 11, day: 30 })
+});
+const dmitry = person({
+	n: 6,
+	givenName: 'Дмитрий',
+	familyName: 'Иванов',
+	birthday: bornOn({ year: 2008, month: 1, day: 9 })
+});
+const xiaolong = person({
+	n: 7,
+	givenName: '小龙',
+	familyName: '李',
+	birthday: bornOn({ year: 2009, month: 7, day: 17 })
+});
+const sophie = person({
+	n: 8,
+	givenName: 'Sophie',
+	familyName: 'Wagner',
+	birthday: bornOn({ year: 2008, month: 4, day: 25 })
+});
+const alexander = person({
+	n: 9,
+	givenName: 'Alexander',
+	familyName: 'Koch',
+	birthday: bornOn({ year: 2007, month: 2, day: 11 })
+});
+const hannah = person({
+	n: 10,
+	givenName: 'Hannah',
+	familyName: 'Neumann',
+	birthday: bornOn({ year: 2009, month: 10, day: 6 })
+});
+const julia = person({
+	n: 11,
+	givenName: 'Julia',
+	familyName: 'Brandt',
+	birthday: bornOn({ year: 2008, month: 12, day: 1 })
+});
+const paul = person({
+	n: 12,
+	givenName: 'Paul',
+	familyName: 'Lange',
+	birthday: bornOn({ year: 2009, month: 6, day: 28 })
+});
+const jonas = person({
+	n: 13,
+	givenName: 'Jonas',
+	familyName: 'Richter',
+	birthday: bornOn({ year: 2008, month: 8, day: 8 })
+});
+const mia = {
+	...person({
+		n: 14,
+		givenName: 'Mia',
+		familyName: 'Richter',
+		birthday: bornOn({ year: 2010, month: 3, day: 19 })
+	}),
+	...pick(jonas)
+};
+const lea = person({
+	n: 15,
+	givenName: 'Lea',
+	familyName: 'Schulz',
+	birthday: bornOn({ year: 2009, month: 1, day: 23 })
+});
+const lenaSchulz = {
+	...person({ n: 16, givenName: 'Lena', familyName: 'Schulz', birthday: lea.birthday }),
+	...pick(lea)
+};
+const emilia = person({
+	n: 17,
+	givenName: 'Emilia',
+	familyName: 'Vogel',
+	birthday: bornOn({ year: 2008, month: 2, day: 3 })
+});
+const felix = person({
+	n: 18,
+	givenName: 'Felix',
+	familyName: 'Zimmermann',
+	birthday: bornOn({ year: 2007, month: 9, day: 12 })
+});
+const katrin = person({
+	n: 19,
+	givenName: 'Katrin',
+	familyName: 'Lehmann',
+	birthday: bornOn({ year: 1985, month: 6, day: 15 })
+});
+const oskar = person({
+	n: 20,
+	givenName: 'Oskar',
+	familyName: 'Braun',
+	birthday: bornOn({ year: 2008, month: 11, day: 4 })
+});
+const ida = person({
+	n: 21,
+	givenName: 'Ida',
+	familyName: 'Krause',
+	birthday: bornOn({ year: 2009, month: 4, day: 27 })
+});
+const noah = person({
+	n: 22,
+	givenName: 'Noah',
+	familyName: 'Klein',
+	birthday: bornOn({ year: 2008, month: 7, day: 7 })
+});
+const luca = person({ n: 23, givenName: 'Luca', familyName: 'Braun', birthday: noah.birthday });
+const schneiderA = person({
+	n: 24,
+	givenName: 'Maximilian',
+	familyName: 'Schneider',
+	birthday: bornOn({ year: 2008, month: 5, day: 16 })
+});
+const schneiderB = person({
+	n: 25,
+	givenName: 'Maximilian',
+	familyName: 'Schneider',
+	birthday: bornOn({ year: 2009, month: 12, day: 12 })
+});
 
 /** The household a pair of siblings or twins shares: the parents' number and the address. */
 function pick(of: Person): Pick<Person, 'emergencyContacts' | 'street' | 'zip' | 'city'> {
@@ -180,20 +326,29 @@ export const duplicateScenarios: Scenario[] = [
 		accounts: [
 			{
 				name: 'earlier',
-				person: devPerson(simon, {
-					givenName: 'Simón',
-					email: 'simon.b.2023@example.org',
-					phone: '+4917699887766',
-					emergencyContacts: 'Vater: +49 431 556677',
-					street: 'Am Alten Hafen 3',
-					zip: '24103',
-					city: 'Kiel'
+				person: devPerson({
+					sub: simon,
+					changes: {
+						givenName: 'Simón',
+						email: 'simon.b.2023@example.org',
+						phone: '+4917699887766',
+						emergencyContacts: 'Vater: +49 431 556677',
+						street: 'Am Alten Hafen 3',
+						zip: '24103',
+						city: 'Kiel'
+					}
 				}),
 				note: NOTE,
 				sinceDays: 700,
-				took: earlierAt('post')
+				took: earlierAt({ at: 'post' })
 			},
-			{ name: 'current', devAccount: simon, person: devPerson(simon), sinceDays: 20, took: [] }
+			{
+				name: 'current',
+				devAccount: simon,
+				person: devPerson({ sub: simon }),
+				sinceDays: 20,
+				took: []
+			}
 		],
 		expect: [{ a: 'earlier', b: 'current', reasons: ['birthday', 'name'] }]
 	},
@@ -201,10 +356,20 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'umlaut',
 		summary: 'Jürgen Müller -> Juergen Mueller: umlauts written out where a keyboard lacks them',
 		accounts: [
-			{ name: 'earlier', person: jurgen, note: NOTE, sinceDays: 800, took: earlierAt('post') },
+			{
+				name: 'earlier',
+				person: jurgen,
+				note: NOTE,
+				sinceDays: 800,
+				took: earlierAt({ at: 'post' })
+			},
 			{
 				name: 'current',
-				person: renewed(jurgen, 2, { givenName: 'Juergen', familyName: 'Mueller' }),
+				person: renewed({
+					base: jurgen,
+					n: 2,
+					changes: { givenName: 'Juergen', familyName: 'Mueller' }
+				}),
 				sinceDays: 10,
 				took: currentSingle
 			}
@@ -221,11 +386,15 @@ export const duplicateScenarios: Scenario[] = [
 				person: lena,
 				note: NOTE,
 				sinceDays: 400,
-				took: earlierAt('elsewhere', 'delegate')
+				took: earlierAt({ at: 'elsewhere', as: 'delegate' })
 			},
 			{
 				name: 'current',
-				person: renewed(lena, 3, { givenName: 'Schmidt', familyName: 'Lena' }),
+				person: renewed({
+					base: lena,
+					n: 3,
+					changes: { givenName: 'Schmidt', familyName: 'Lena' }
+				}),
 				sinceDays: 12,
 				took: currentSingle
 			}
@@ -236,10 +405,10 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'second-given-name',
 		summary: 'Anna Maria Fischer -> Anna Fischer: a second given name left out; no care note',
 		accounts: [
-			{ name: 'earlier', person: anna, sinceDays: 600, took: earlierAt('post') },
+			{ name: 'earlier', person: anna, sinceDays: 600, took: earlierAt({ at: 'post' }) },
 			{
 				name: 'current',
-				person: renewed(anna, 4, { givenName: 'Anna' }),
+				person: renewed({ base: anna, n: 4, changes: { givenName: 'Anna' } }),
 				sinceDays: 9,
 				took: currentSingle
 			}
@@ -256,11 +425,15 @@ export const duplicateScenarios: Scenario[] = [
 				person: matthias,
 				note: NOTE,
 				sinceDays: 420,
-				took: earlierAt('elsewhere')
+				took: earlierAt({ at: 'elsewhere' })
 			},
 			{
 				name: 'current',
-				person: renewed(matthias, 5, { givenName: 'Mathias', familyName: 'Hofmann' }),
+				person: renewed({
+					base: matthias,
+					n: 5,
+					changes: { givenName: 'Mathias', familyName: 'Hofmann' }
+				}),
 				sinceDays: 8,
 				took: currentSingle
 			}
@@ -271,10 +444,20 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'cyrillic',
 		summary: 'Дмитрий Иванов -> Dmitry Ivanov: another script, compared after transliteration',
 		accounts: [
-			{ name: 'earlier', person: dmitry, note: NOTE, sinceDays: 410, took: earlierAt('elsewhere') },
+			{
+				name: 'earlier',
+				person: dmitry,
+				note: NOTE,
+				sinceDays: 410,
+				took: earlierAt({ at: 'elsewhere' })
+			},
 			{
 				name: 'current',
-				person: renewed(dmitry, 6, { givenName: 'Dmitry', familyName: 'Ivanov' }),
+				person: renewed({
+					base: dmitry,
+					n: 6,
+					changes: { givenName: 'Dmitry', familyName: 'Ivanov' }
+				}),
 				sinceDays: 7,
 				took: currentSingle
 			}
@@ -285,10 +468,14 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'chinese',
 		summary: '小龙 李 -> Xiaolong Li: Chinese characters against pinyin',
 		accounts: [
-			{ name: 'earlier', person: xiaolong, sinceDays: 500, took: earlierAt('post') },
+			{ name: 'earlier', person: xiaolong, sinceDays: 500, took: earlierAt({ at: 'post' }) },
 			{
 				name: 'current',
-				person: renewed(xiaolong, 7, { givenName: 'Xiaolong', familyName: 'Li' }),
+				person: renewed({
+					base: xiaolong,
+					n: 7,
+					changes: { givenName: 'Xiaolong', familyName: 'Li' }
+				}),
 				sinceDays: 6,
 				took: currentSingle
 			}
@@ -305,13 +492,17 @@ export const duplicateScenarios: Scenario[] = [
 				person: { ...sophie, email: 'sophie.wagner@gmail.com' },
 				note: NOTE,
 				sinceDays: 650,
-				took: earlierAt('post')
+				took: earlierAt({ at: 'post' })
 			},
 			{
 				name: 'current',
-				person: renewed(sophie, 8, {
-					email: 'sophie.wagner+mun@gmail.com',
-					birthday: bornOn(2008, 4, 24)
+				person: renewed({
+					base: sophie,
+					n: 8,
+					changes: {
+						email: 'sophie.wagner+mun@gmail.com',
+						birthday: bornOn({ year: 2008, month: 4, day: 24 })
+					}
 				}),
 				sinceDays: 5,
 				took: currentSingle
@@ -328,14 +519,18 @@ export const duplicateScenarios: Scenario[] = [
 				name: 'earlier',
 				person: { ...alexander, phone: '+49 152 1234 5678' },
 				sinceDays: 380,
-				took: earlierAt('elsewhere')
+				took: earlierAt({ at: 'elsewhere' })
 			},
 			{
 				name: 'current',
-				person: renewed(alexander, 9, {
-					givenName: 'Alex',
-					birthday: bornOn(2007, 2, 12),
-					phone: '+4915212345678'
+				person: renewed({
+					base: alexander,
+					n: 9,
+					changes: {
+						givenName: 'Alex',
+						birthday: bornOn({ year: 2007, month: 2, day: 12 }),
+						phone: '+4915212345678'
+					}
 				}),
 				sinceDays: 4,
 				took: currentSingle
@@ -347,12 +542,22 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'parents-number',
 		summary: 'Hannah Neumann -> Hanna Neumann with the parents’ number kept',
 		accounts: [
-			{ name: 'earlier', person: hannah, note: NOTE, sinceDays: 550, took: earlierAt('post') },
+			{
+				name: 'earlier',
+				person: hannah,
+				note: NOTE,
+				sinceDays: 550,
+				took: earlierAt({ at: 'post' })
+			},
 			{
 				name: 'current',
-				person: renewed(hannah, 10, {
-					givenName: 'Hanna',
-					emergencyContacts: hannah.emergencyContacts
+				person: renewed({
+					base: hannah,
+					n: 10,
+					changes: {
+						givenName: 'Hanna',
+						emergencyContacts: hannah.emergencyContacts
+					}
 				}),
 				sinceDays: 3,
 				took: currentSingle
@@ -365,10 +570,16 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Julia Brandt -> Julia Berg: a different family name, found by birthday, parents’ number and address',
 		accounts: [
-			{ name: 'earlier', person: julia, note: NOTE, sinceDays: 520, took: earlierAt('post') },
+			{
+				name: 'earlier',
+				person: julia,
+				note: NOTE,
+				sinceDays: 520,
+				took: earlierAt({ at: 'post' })
+			},
 			{
 				name: 'current',
-				person: renewed(julia, 11, { familyName: 'Berg', ...pick(julia) }),
+				person: renewed({ base: julia, n: 11, changes: { familyName: 'Berg', ...pick(julia) } }),
 				sinceDays: 2,
 				took: currentSingle
 			}
@@ -380,14 +591,24 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Paul Lange -> Pablo Berger, other birthday, new address: only the parents’ number is the same. NOT found - the limit of the check',
 		accounts: [
-			{ name: 'earlier', person: paul, note: NOTE, sinceDays: 500, took: earlierAt('post') },
+			{
+				name: 'earlier',
+				person: paul,
+				note: NOTE,
+				sinceDays: 500,
+				took: earlierAt({ at: 'post' })
+			},
 			{
 				name: 'current',
-				person: renewed(paul, 12, {
-					givenName: 'Pablo',
-					familyName: 'Berger',
-					birthday: bornOn(2009, 6, 29),
-					emergencyContacts: paul.emergencyContacts
+				person: renewed({
+					base: paul,
+					n: 12,
+					changes: {
+						givenName: 'Pablo',
+						familyName: 'Berger',
+						birthday: bornOn({ year: 2009, month: 6, day: 29 }),
+						emergencyContacts: paul.emergencyContacts
+					}
 				}),
 				sinceDays: 2,
 				took: currentSingle
@@ -400,7 +621,13 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Jonas and Mia Richter: same family name, parents and address, other birthdays. Not flagged',
 		accounts: [
-			{ name: 'brother', person: jonas, note: NOTE, sinceDays: 450, took: earlierAt('post') },
+			{
+				name: 'brother',
+				person: jonas,
+				note: NOTE,
+				sinceDays: 450,
+				took: earlierAt({ at: 'post' })
+			},
 			{ name: 'sister', person: mia, sinceDays: 15, took: currentSingle }
 		],
 		expect: []
@@ -442,21 +669,25 @@ export const duplicateScenarios: Scenario[] = [
 				person: { ...emilia, givenName: 'Emilie' },
 				note: NOTE,
 				sinceDays: 900,
-				took: earlierAt('elsewhere')
+				took: earlierAt({ at: 'elsewhere' })
 			},
 			{
 				name: 'middle',
-				person: renewed(emilia, 17, {
-					familyName: 'Vogl',
-					email: 'emilia.vogl@mail.example',
-					phone: emilia.phone
+				person: renewed({
+					base: emilia,
+					n: 17,
+					changes: {
+						familyName: 'Vogl',
+						email: 'emilia.vogl@mail.example',
+						phone: emilia.phone
+					}
 				}),
 				sinceDays: 400,
-				took: earlierAt('post')
+				took: earlierAt({ at: 'post' })
 			},
 			{
 				name: 'current',
-				person: renewed(emilia, 117, { familyName: 'Vogl' }),
+				person: renewed({ base: emilia, n: 117, changes: { familyName: 'Vogl' } }),
 				sinceDays: 3,
 				took: currentSingle
 			}
@@ -477,11 +708,11 @@ export const duplicateScenarios: Scenario[] = [
 				person: felix,
 				note: NOTE,
 				sinceDays: 430,
-				took: earlierAt('elsewhere', 'waitingList')
+				took: earlierAt({ at: 'elsewhere', as: 'waitingList' })
 			},
 			{
 				name: 'current',
-				person: renewed(felix, 18, { familyName: 'Zimmerman' }),
+				person: renewed({ base: felix, n: 18, changes: { familyName: 'Zimmerman' } }),
 				sinceDays: 6,
 				took: currentSingle
 			}
@@ -494,9 +725,9 @@ export const duplicateScenarios: Scenario[] = [
 		accounts: [
 			{
 				name: 'earlier',
-				person: renewed(katrin, 19, { email: 'k.lehmann@schule-a.example' }),
+				person: renewed({ base: katrin, n: 19, changes: { email: 'k.lehmann@schule-a.example' } }),
 				sinceDays: 800,
-				took: earlierAt('post', 'supervisor')
+				took: earlierAt({ at: 'post', as: 'supervisor' })
 			},
 			{
 				name: 'current',
@@ -512,10 +743,20 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Oskar Braun: a pair that was found, then one profile was corrected and it no longer matches. Still open - a scan drops it',
 		accounts: [
-			{ name: 'earlier', person: oskar, note: NOTE, sinceDays: 460, took: earlierAt('post') },
+			{
+				name: 'earlier',
+				person: oskar,
+				note: NOTE,
+				sinceDays: 460,
+				took: earlierAt({ at: 'post' })
+			},
 			{
 				name: 'current',
-				person: renewed(oskar, 20, { givenName: 'Ole', birthday: bornOn(2008, 11, 5) }),
+				person: renewed({
+					base: oskar,
+					n: 20,
+					changes: { givenName: 'Ole', birthday: bornOn({ year: 2008, month: 11, day: 5 }) }
+				}),
 				sinceDays: 5,
 				took: currentSingle
 			}
@@ -527,10 +768,14 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Ida Krause: confirmed as one person, then a profile was corrected. A scan keeps a decided pair',
 		accounts: [
-			{ name: 'earlier', person: ida, note: NOTE, sinceDays: 470, took: earlierAt('post') },
+			{ name: 'earlier', person: ida, note: NOTE, sinceDays: 470, took: earlierAt({ at: 'post' }) },
 			{
 				name: 'current',
-				person: renewed(ida, 21, { givenName: 'Inga', birthday: bornOn(2009, 4, 28) }),
+				person: renewed({
+					base: ida,
+					n: 21,
+					changes: { givenName: 'Inga', birthday: bornOn({ year: 2009, month: 4, day: 28 }) }
+				}),
 				sinceDays: 5,
 				took: currentSingle
 			}
@@ -549,7 +794,7 @@ export const duplicateScenarios: Scenario[] = [
 		key: 'birthday-only',
 		summary: 'Noah Klein and Luca Braun share a birthday and nothing else. Not flagged',
 		accounts: [
-			{ name: 'noah', person: noah, sinceDays: 440, took: earlierAt('post') },
+			{ name: 'noah', person: noah, sinceDays: 440, took: earlierAt({ at: 'post' }) },
 			{ name: 'luca', person: luca, sinceDays: 11, took: currentSingle }
 		],
 		expect: []
@@ -559,7 +804,13 @@ export const duplicateScenarios: Scenario[] = [
 		summary:
 			'Two Maximilian Schneiders with other birthdays and contact details; one carries a note. Not flagged',
 		accounts: [
-			{ name: 'a', person: schneiderA, note: NOTE, sinceDays: 480, took: earlierAt('post') },
+			{
+				name: 'a',
+				person: schneiderA,
+				note: NOTE,
+				sinceDays: 480,
+				took: earlierAt({ at: 'post' })
+			},
 			{ name: 'b', person: schneiderB, sinceDays: 13, took: currentSingle }
 		],
 		expect: []
@@ -568,11 +819,17 @@ export const duplicateScenarios: Scenario[] = [
 
 // --- derived ----------------------------------------------------------------------------------
 
-export function accountId(scenario: Scenario, account: Account) {
+export function accountId({ scenario, account }: { scenario: Scenario; account: Account }) {
 	return account.devAccount ?? `seed-dup-${scenario.key}-${account.name}`;
 }
 
-export function profileOf(id: string, { person: p }: Account): MatchProfile {
+export function profileOf({
+	id,
+	account: { person: p }
+}: {
+	id: string;
+	account: Account;
+}): MatchProfile {
 	return {
 		id,
 		givenName: p.givenName,
@@ -593,7 +850,7 @@ export function scenarioUsers(): (typeof schema.user.$inferInsert & { id: string
 		scenario.accounts
 			.filter((account) => !account.devAccount)
 			.map((account) => {
-				const id = accountId(scenario, account);
+				const id = accountId({ scenario, account });
 				const since = new Date(Date.now() - account.sinceDays * DAY_MS);
 				return {
 					id,
@@ -625,15 +882,18 @@ export function scenarioUsers(): (typeof schema.user.$inferInsert & { id: string
  */
 export function scenarioPairs(): (typeof schema.possibleDuplicate.$inferInsert)[] {
 	const profiles = duplicateScenarios.flatMap((scenario) =>
-		scenario.accounts.map((account) => profileOf(accountId(scenario, account), account))
+		scenario.accounts.map((account) => profileOf({ id: accountId({ scenario, account }), account }))
 	);
 	const found = new Map(
-		findDuplicates(profiles, profiles).map((pair) => [`${pair.userId}|${pair.candidateId}`, pair])
+		findDuplicates({ scanned: profiles, pool: profiles }).map((pair) => [
+			`${pair.userId}|${pair.candidateId}`,
+			pair
+		])
 	);
 
 	return duplicateScenarios.flatMap((scenario) => {
 		const ids = new Map(
-			scenario.accounts.map((account) => [account.name, accountId(scenario, account)])
+			scenario.accounts.map((account) => [account.name, accountId({ scenario, account })])
 		);
 		return scenario.expect.map((expected) => {
 			const [a, b] = [ids.get(expected.a), ids.get(expected.b)];

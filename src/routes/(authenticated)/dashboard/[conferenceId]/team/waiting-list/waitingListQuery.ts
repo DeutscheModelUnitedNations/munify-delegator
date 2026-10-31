@@ -29,16 +29,22 @@ const userTextColumns = {
 } as const;
 
 /** The `hidden` condition: a filter on the hidden column wins over the toggle in the toolbar. */
-function hiddenWhere(hidden: boolean | undefined, hideHidden: boolean) {
+function hiddenWhere({ hidden, hideHidden }: { hidden: boolean | undefined; hideHidden: boolean }) {
 	if (hidden !== undefined) return { hidden: { eq: hidden } };
 	return hideHidden ? { hidden: { eq: false } } : {};
 }
 
 /** The birthdays that make someone the filtered age when the conference starts. */
-function birthdayWhere(filter: unknown, startConference: Date | string | null | undefined) {
+function birthdayWhere({
+	filter,
+	startConference
+}: {
+	filter: unknown;
+	startConference: Date | string | null | undefined;
+}) {
 	const age = rangeFilter(filter);
 	return age && startConference
-		? [{ user: { birthday: birthdayBoundsForAge(age, startConference) } }]
+		? [{ user: { birthday: birthdayBoundsForAge({ range: age, startConference }) } }]
 		: [];
 }
 
@@ -57,30 +63,47 @@ export interface WaitingListToggles {
 }
 
 /** The entries the table's search and filters leave, as a filter for the backend. */
-export function waitingListWhere(
-	conferenceId: string,
-	state: Pick<TableState, 'columnFilters' | 'search'>,
-	toggles: WaitingListToggles,
-	startConference: Date | string | null | undefined,
-	userIds: string[] | undefined
-): WaitinglistentryWhereInputArgument {
+export function waitingListWhere({
+	conferenceId,
+	state,
+	toggles,
+	startConference,
+	userIds
+}: {
+	conferenceId: string;
+	state: Pick<TableState, 'columnFilters' | 'search'>;
+	toggles: WaitingListToggles;
+	startConference: Date | string | null | undefined;
+	userIds: string[] | undefined;
+}): WaitinglistentryWhereInputArgument {
 	const filters = new Map(state.columnFilters.map((filter) => [filter.id, filter.value]));
 	const school = stringFilter(filters.get('school'));
 	return {
 		conferenceId: { eq: conferenceId },
 		...(toggles.showSeated ? {} : { assignedAt: { isNull: true } }),
-		...hiddenWhere(booleanFilter(filters.get('hidden')), toggles.hideHidden),
+		...hiddenWhere({
+			hidden: booleanFilter(filters.get('hidden')),
+			hideHidden: toggles.hideHidden
+		}),
 		...(school ? { school: { name: school } } : {}),
 		...allOf([
 			...userTextWhere(filters),
-			...birthdayWhere(filters.get('conferenceAge'), startConference),
-			...(state.search.trim() ? [searchMatches(state.search.trim(), userIds ?? [])] : [])
+			...birthdayWhere({ filter: filters.get('conferenceAge'), startConference }),
+			...(state.search.trim()
+				? [searchMatches({ text: state.search.trim(), userIds: userIds ?? [] })]
+				: [])
 		])
 	};
 }
 
 /** The text anywhere an entry shows it: the person (found by `userIds`), the school, the texts. */
-function searchMatches(text: string, userIds: string[]): WaitinglistentryWhereInputArgument {
+function searchMatches({
+	text,
+	userIds
+}: {
+	text: string;
+	userIds: string[];
+}): WaitinglistentryWhereInputArgument {
 	const like = containing(text);
 	return {
 		OR: [
@@ -93,20 +116,27 @@ function searchMatches(text: string, userIds: string[]): WaitinglistentryWhereIn
 	};
 }
 
-function listEntries(
-	conferenceId: string,
-	state: TableState,
-	toggles: WaitingListToggles,
-	startConference: Date | string | null | undefined,
-	userIds: string[] | undefined,
-	paging: { limit: number; offset: number }
-) {
+function listEntries({
+	conferenceId,
+	state,
+	toggles,
+	startConference,
+	userIds,
+	paging
+}: {
+	conferenceId: string;
+	state: TableState;
+	toggles: WaitingListToggles;
+	startConference: Date | string | null | undefined;
+	userIds: string[] | undefined;
+	paging: { limit: number; offset: number };
+}) {
 	return client.liveQuery.waitingListEntries({
 		__args: {
-			where: waitingListWhere(conferenceId, state, toggles, startConference, userIds),
-			orderBy: orderFrom<WaitinglistentryOrderInputArgument>(
-				state.sorting,
-				{
+			where: waitingListWhere({ conferenceId, state, toggles, startConference, userIds }),
+			orderBy: orderFrom<WaitinglistentryOrderInputArgument>({
+				sorting: state.sorting,
+				orders: {
 					// the signup time is the place on the list
 					createdAt: (direction) => ({ createdAt: direction }),
 					position: (direction) => ({ createdAt: direction }),
@@ -116,8 +146,8 @@ function listEntries(
 					school: (direction) => ({ schoolId: direction }),
 					hidden: (direction) => ({ hidden: direction })
 				},
-				{ id: 'asc' }
-			),
+				fallback: { id: 'asc' }
+			}),
 			...paging
 		},
 		id: true,
@@ -161,33 +191,50 @@ export async function fetchWaitingListPositions(conferenceId: string) {
 }
 
 /** One page of the entries (by default those still waiting), searched, filtered and ordered by the backend. */
-export async function fetchWaitingListPage(
-	conferenceId: string,
-	state: TableState,
-	toggles: WaitingListToggles,
-	startConference: Date | string | null | undefined
-) {
+export async function fetchWaitingListPage({
+	conferenceId,
+	state,
+	toggles,
+	startConference
+}: {
+	conferenceId: string;
+	state: TableState;
+	toggles: WaitingListToggles;
+	startConference: Date | string | null | undefined;
+}) {
 	const userIds = await matchingUserIds(state.search);
 	const [entries, total] = await Promise.all([
-		listEntries(conferenceId, state, toggles, startConference, userIds, pageArgs(state)),
+		listEntries({
+			conferenceId,
+			state,
+			toggles,
+			startConference,
+			userIds,
+			paging: pageArgs(state)
+		}),
 		client.liveQuery.waitingListEntriesCount({
 			__args: {
-				where: waitingListWhere(conferenceId, state, toggles, startConference, userIds)
+				where: waitingListWhere({ conferenceId, state, toggles, startConference, userIds })
 			}
 		})
 	]);
-	return { ...pageOf(entries, state), total: asCount(total) };
+	return { ...pageOf({ rows: entries, state }), total: asCount(total) };
 }
 
 /** Every entry matching the table's search and filters, for the export. */
-export async function fetchAllWaitingListEntries(
-	conferenceId: string,
-	state: TableState,
-	toggles: WaitingListToggles,
-	startConference: Date | string | null | undefined
-) {
+export async function fetchAllWaitingListEntries({
+	conferenceId,
+	state,
+	toggles,
+	startConference
+}: {
+	conferenceId: string;
+	state: TableState;
+	toggles: WaitingListToggles;
+	startConference: Date | string | null | undefined;
+}) {
 	const userIds = await matchingUserIds(state.search);
 	return fetchEveryRow((paging) =>
-		listEntries(conferenceId, state, toggles, startConference, userIds, paging)
+		listEntries({ conferenceId, state, toggles, startConference, userIds, paging })
 	);
 }

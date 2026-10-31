@@ -39,18 +39,22 @@ export function addTeam(cs: ConferenceSeed) {
 	}
 	for (let index = 0; index < cs.plan.crowd.team; index++) {
 		cs.batch.teamMember.push(
-			makeSeedTeamMember({ conferenceId: cs.id, userId: cs.world.crowdUser('team') })
+			makeSeedTeamMember({ conferenceId: cs.id, userId: cs.world.crowdUser({ kind: 'team' }) })
 		);
 	}
 
 	if (!cs.plan.with.invitations) return;
 
 	const now = Date.now();
-	const invitation = (
-		token: string,
-		email: string,
-		state: { expiresInDays: number; usedBy?: DevAccountSub; revoked?: boolean }
-	) => {
+	const invitation = ({
+		token,
+		email,
+		state
+	}: {
+		token: string;
+		email: string;
+		state: { expiresInDays: number; usedBy?: DevAccountSub; revoked?: boolean };
+	}) => {
 		const createdAt = new Date(now - 3 * DAY_MS);
 		cs.batch.teamMemberInvitation.push({
 			conferenceId: cs.id,
@@ -65,15 +69,31 @@ export function addTeam(cs: ConferenceSeed) {
 			invitedById: 'dev-team-pm'
 		});
 	};
-	invitation(invitationTokens.pending, devEmail('dev-team-invitee'), { expiresInDays: 4 });
-	invitation(invitationTokens.expired, 'expired-invitee@delegator.local', { expiresInDays: -1 });
-	invitation(invitationTokens.revoked, 'revoked-invitee@delegator.local', {
-		expiresInDays: 4,
-		revoked: true
+	invitation({
+		token: invitationTokens.pending,
+		email: devEmail('dev-team-invitee'),
+		state: { expiresInDays: 4 }
 	});
-	invitation(invitationTokens.used, devEmail('dev-team-member'), {
-		expiresInDays: 4,
-		usedBy: 'dev-team-member'
+	invitation({
+		token: invitationTokens.expired,
+		email: 'expired-invitee@delegator.local',
+		state: { expiresInDays: -1 }
+	});
+	invitation({
+		token: invitationTokens.revoked,
+		email: 'revoked-invitee@delegator.local',
+		state: {
+			expiresInDays: 4,
+			revoked: true
+		}
+	});
+	invitation({
+		token: invitationTokens.used,
+		email: devEmail('dev-team-member'),
+		state: {
+			expiresInDays: 4,
+			usedBy: 'dev-team-member'
+		}
 	});
 }
 

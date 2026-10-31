@@ -56,7 +56,7 @@
 		birthday: true
 	} as const;
 
-	const setLoading = (key: string, value: boolean) => {
+	const setLoading = ({ key, value }: { key: string; value: boolean }) => {
 		loadingStates = { ...loadingStates, [key]: value };
 	};
 
@@ -98,11 +98,11 @@
 			surveyAnswers: survey?.surveyAnswers ?? [],
 			delegationMembers,
 			singleParticipants,
-			userRoleMap: buildUserRoleMap(
+			userRoleMap: buildUserRoleMap({
 				delegationMembers,
 				singleParticipants,
-				getFullTranslatedCountryNameFromISO3Code
-			)
+				nationName: getFullTranslatedCountryNameFromISO3Code
+			})
 		};
 
 		return exportDataCache;
@@ -123,65 +123,70 @@
 
 	const downloadAllResults = async () => {
 		const key = 'all';
-		setLoading(key, true);
+		setLoading({ key, value: true });
 		try {
 			const exportData = await fetchExportData();
 			const header = [...getUserHeaders(), m.surveyOption()];
 			const data = exportData.surveyAnswers
 				.map((answer) => {
 					const option = options.find((o) => o.id === answer.option.id);
-					return buildUserRow(answer.user, roleInfoOf(exportData.userRoleMap, answer.user.id), [
-						option?.title ?? ''
-					]);
+					return buildUserRow({
+						user: answer.user,
+						roleInfo: roleInfoOf({ userRoleMap: exportData.userRoleMap, userId: answer.user.id }),
+						additionalColumns: [option?.title ?? '']
+					});
 				})
 				.sort(byFamilyName);
 
-			downloadCSV(header, data, `${surveyTitle}_results.csv`);
+			downloadCSV({ header, data, filename: `${surveyTitle}_results.csv` });
 		} finally {
-			setLoading(key, false);
+			setLoading({ key, value: false });
 		}
 	};
 
 	const downloadNotAnswered = async () => {
 		const key = 'not-answered';
-		setLoading(key, true);
+		setLoading({ key, value: true });
 		try {
 			const exportData = await fetchExportData();
 
 			const answeredUserIds = new Set(exportData.surveyAnswers.map((a) => a.user.id));
-			const notAnsweredUsers = collectNotAnswered(
+			const notAnsweredUsers = collectNotAnswered({
 				answeredUserIds,
-				[...exportData.delegationMembers, ...exportData.singleParticipants],
-				exportData.userRoleMap
-			);
+				participants: [...exportData.delegationMembers, ...exportData.singleParticipants],
+				userRoleMap: exportData.userRoleMap
+			});
 
 			const header = getUserHeaders();
 			const data = notAnsweredUsers
-				.map(({ user, roleInfo }) => buildUserRow(user, roleInfo))
+				.map(({ user, roleInfo }) => buildUserRow({ user, roleInfo }))
 				.sort(byFamilyName);
 
-			downloadCSV(header, data, `${surveyTitle}_not_answered.csv`);
+			downloadCSV({ header, data, filename: `${surveyTitle}_not_answered.csv` });
 		} finally {
-			setLoading(key, false);
+			setLoading({ key, value: false });
 		}
 	};
 
 	const downloadByOption = async (option: SurveyOption) => {
 		const key = `option-${option.id}`;
-		setLoading(key, true);
+		setLoading({ key, value: true });
 		try {
 			const exportData = await fetchExportData();
 			const header = getUserHeaders();
 			const data = exportData.surveyAnswers
 				.filter((answer) => answer.option.id === option.id)
 				.map((answer) =>
-					buildUserRow(answer.user, roleInfoOf(exportData.userRoleMap, answer.user.id))
+					buildUserRow({
+						user: answer.user,
+						roleInfo: roleInfoOf({ userRoleMap: exportData.userRoleMap, userId: answer.user.id })
+					})
 				)
 				.sort(byFamilyName);
 
-			downloadCSV(header, data, `${surveyTitle}_${option.title}.csv`);
+			downloadCSV({ header, data, filename: `${surveyTitle}_${option.title}.csv` });
 		} finally {
-			setLoading(key, false);
+			setLoading({ key, value: false });
 		}
 	};
 </script>

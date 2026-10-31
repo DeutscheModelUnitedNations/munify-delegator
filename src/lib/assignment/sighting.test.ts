@@ -34,8 +34,8 @@ describe('application details', () => {
 	const supervisor = { id: 'sv', user: { id: 'su', givenName: 'Max', familyName: 'Muster' } };
 
 	it('shapes a delegation with its wishes in rank order', () => {
-		const details = delegationApplication(
-			{
+		const details = delegationApplication({
+			delegation: {
 				members: [
 					{
 						isHeadDelegate: true,
@@ -56,8 +56,8 @@ describe('application details', () => {
 					{ rank: 3, role: {} }
 				]
 			},
-			(code) => `name of ${code}`
-		);
+			nationName: (code) => `name of ${code}`
+		});
 		expect(details.wishes).toEqual([
 			{ name: 'name of FRA', alpha2Code: 'FR' },
 			{ name: 'Amnesty', icon: undefined },
@@ -70,9 +70,12 @@ describe('application details', () => {
 			['2', false]
 		]);
 		expect(details.motivation).toBeNull();
-		expect(distinctSupervisors(details.supervisors, (g, f) => `${g} ${f}`)).toEqual([
-			{ id: 'sv', userId: 'su', name: 'Max Muster' }
-		]);
+		expect(
+			distinctSupervisors({
+				supervisors: details.supervisors,
+				format: ({ givenName, familyName }) => `${givenName} ${familyName}`
+			})
+		).toEqual([{ id: 'sv', userId: 'su', name: 'Max Muster' }]);
 	});
 
 	it('shapes a single participant the same way', () => {
@@ -97,9 +100,12 @@ describe('application details', () => {
 			conferenceParticipationsCount: count
 		});
 		expect(
-			memberSummary([born('2008-01-01', 1), born('2006-01-01', 2), born(null, 0)], '2024-06-01')
+			memberSummary({
+				people: [born('2008-01-01', 1), born('2006-01-01', 2), born(null, 0)],
+				startConference: '2024-06-01'
+			})
 		).toEqual({ averageAge: 17, participations: 3 });
-		expect(memberSummary([born(null, 0)], '2024-06-01')).toEqual({
+		expect(memberSummary({ people: [born(null, 0)], startConference: '2024-06-01' })).toEqual({
 			averageAge: undefined,
 			participations: 0
 		});
@@ -116,14 +122,16 @@ describe('application details', () => {
 			})
 		);
 		const found = entry({ id: 'f', fields });
-		expect(matchReasons(found, 'burning').map((r) => [r.kind, r.start, r.end])).toEqual([
-			['motivation', 7, 14]
+		expect(
+			matchReasons({ entry: found, search: 'burning' }).map((r) => [r.kind, r.start, r.end])
+		).toEqual([['motivation', 7, 14]]);
+		expect(
+			matchReasons({ entry: found, search: 'max@x' }).map((r) => [r.kind, r.start, r.end])
+		).toEqual([['supervisorEmail', 0, 5]]);
+		expect(matchReasons({ entry: found, search: 'muster' }).map((r) => r.kind)).toEqual([
+			'supervisor'
 		]);
-		expect(matchReasons(found, 'max@x').map((r) => [r.kind, r.start, r.end])).toEqual([
-			['supervisorEmail', 0, 5]
-		]);
-		expect(matchReasons(found, 'muster').map((r) => r.kind)).toEqual(['supervisor']);
-		expect(matchReasons(found, 'nothing')).toEqual([]);
+		expect(matchReasons({ entry: found, search: 'nothing' })).toEqual([]);
 	});
 
 	it('picks a gender icon', () => {
@@ -135,7 +143,9 @@ describe('application details', () => {
 
 describe('reviewArgs', () => {
 	it('sends the whole review with the change applied', () => {
-		expect(reviewArgs('delegation', 'd', undefined, { flagged: true })).toEqual({
+		expect(
+			reviewArgs({ kind: 'delegation', id: 'd', review: undefined, change: { flagged: true } })
+		).toEqual({
 			delegationId: 'd',
 			singleParticipantId: undefined,
 			evaluation: undefined,
@@ -145,12 +155,12 @@ describe('reviewArgs', () => {
 			note: undefined
 		});
 		expect(
-			reviewArgs(
-				'single',
-				's',
-				{ evaluation: 3, flagged: true, disqualified: false, required: true, note: 'x' },
-				{ evaluation: null }
-			)
+			reviewArgs({
+				kind: 'single',
+				id: 's',
+				review: { evaluation: 3, flagged: true, disqualified: false, required: true, note: 'x' },
+				change: { evaluation: null }
+			})
 		).toEqual({
 			delegationId: undefined,
 			singleParticipantId: 's',
@@ -204,11 +214,15 @@ describe('searchHitEntries', () => {
 	const codename = (id: string) => `code ${id}`;
 
 	it('finds nothing before the search has run', () => {
-		expect(searchHitEntries(undefined, 'x', codename)).toEqual([]);
+		expect(searchHitEntries({ hits: undefined, search: 'x', codenameOf: codename })).toEqual([]);
 	});
 
 	it('turns the hits into entries carrying what the search looked through', () => {
-		const [delegation, single, unloaded] = searchHitEntries(hits, 'erika', codename);
+		const [delegation, single, unloaded] = searchHitEntries({
+			hits,
+			search: 'erika',
+			codenameOf: codename
+		});
 		expect(delegation).toMatchObject({
 			kind: 'delegation',
 			id: 'd1',
@@ -223,15 +237,11 @@ describe('searchHitEntries', () => {
 	});
 
 	it('puts the applications whose codename or id was typed first', () => {
-		expect(searchHitEntries(hits, ' S1 ', codename).map((entry) => entry.id)).toEqual([
-			's1',
-			'd1',
-			'd2'
-		]);
-		expect(searchHitEntries(hits, 'd2', codename).map((entry) => entry.id)).toEqual([
-			'd2',
-			'd1',
-			's1'
-		]);
+		expect(
+			searchHitEntries({ hits, search: ' S1 ', codenameOf: codename }).map((entry) => entry.id)
+		).toEqual(['s1', 'd1', 'd2']);
+		expect(
+			searchHitEntries({ hits, search: 'd2', codenameOf: codename }).map((entry) => entry.id)
+		).toEqual(['d2', 'd1', 's1']);
 	});
 });

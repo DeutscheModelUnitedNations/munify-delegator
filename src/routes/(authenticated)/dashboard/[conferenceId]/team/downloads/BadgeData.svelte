@@ -114,10 +114,20 @@
 	}
 
 	/** The fields every badge takes from the person wearing it. */
-	function personOnBadge(user: BadgeUser, mediaConsentStatus: MediaconsentstatusEnum) {
+	function personOnBadge({
+		user,
+		mediaConsentStatus
+	}: {
+		user: BadgeUser;
+		mediaConsentStatus: MediaconsentstatusEnum;
+	}) {
 		return {
-			name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-				familyNameUppercase: false
+			name: formatNames({
+				givenName: user.givenName ?? undefined,
+				familyName: user.familyName ?? undefined,
+				options: {
+					familyNameUppercase: false
+				}
 			}),
 			pronouns: user.pronouns,
 			id: user.id,
@@ -151,11 +161,17 @@
 			getFullTranslatedCountryNameFromISO3Code(member.nation.alpha3Code);
 
 		return badgeData.sort(compareByLabelThenFamilyName(countryName)).map((member) =>
-			personBadge(personOnBadge(member.user, mediaConsentOf(member.user)), {
-				kind: 'nation',
-				alpha2Code: member.nation.alpha2Code,
-				countryName: countryName(member),
-				committee: resData.abbreviation
+			personBadge({
+				person: personOnBadge({
+					user: member.user,
+					mediaConsentStatus: mediaConsentOf(member.user)
+				}),
+				seat: {
+					kind: 'nation',
+					alpha2Code: member.nation.alpha2Code,
+					countryName: countryName(member),
+					committee: resData.abbreviation
+				}
 			})
 		);
 	};
@@ -165,9 +181,12 @@
 		rows: { user: BadgeUser & Parameters<typeof mediaConsentOf>[0]; label: string }[]
 	) {
 		return rows.sort(compareByLabelThenFamilyName((row) => row.label)).map((row) =>
-			personBadge(personOnBadge(row.user, mediaConsentOf(row.user)), {
-				kind: 'label',
-				label: row.label
+			personBadge({
+				person: personOnBadge({ user: row.user, mediaConsentStatus: mediaConsentOf(row.user) }),
+				seat: {
+					kind: 'label',
+					label: row.label
+				}
 			})
 		);
 	}
@@ -197,18 +216,27 @@
 			)
 			.sort(compareByFamilyName)
 			.map((supervisor) =>
-				personBadge(personOnBadge(supervisor.user, mediaConsentOf(supervisor.user)), {
-					kind: 'image',
-					label: m.supervisor(),
-					image: 'supervisor'
+				personBadge({
+					person: personOnBadge({
+						user: supervisor.user,
+						mediaConsentStatus: mediaConsentOf(supervisor.user)
+					}),
+					seat: {
+						kind: 'image',
+						label: m.supervisor(),
+						image: 'supervisor'
+					}
 				})
 			);
 
 	const getTeamMemberData = async () =>
 		(await fetchTeamMemberBadgeData()).sort(compareByFamilyName).map((member) =>
-			personBadge(personOnBadge(member.user, 'ALLOWED_ALL'), {
-				kind: 'label',
-				label: m.teamBadge()
+			personBadge({
+				person: personOnBadge({ user: member.user, mediaConsentStatus: 'ALLOWED_ALL' }),
+				seat: {
+					kind: 'label',
+					label: m.teamBadge()
+				}
 			})
 		);
 
@@ -238,11 +266,13 @@
 			)
 		}));
 		const seated = new Set(committees.flatMap((committee) => committee.nonStateActors));
-		return placardBadges(
+		return placardBadges({
 			committees,
-			nonStateActors.flatMap((role) => (role.name && !seated.has(role.name) ? [role.name] : [])),
-			getFullTranslatedCountryNameFromISO3Code
-		);
+			unseatedNonStateActors: nonStateActors.flatMap((role) =>
+				role.name && !seated.has(role.name) ? [role.name] : []
+			),
+			countryName: getFullTranslatedCountryNameFromISO3Code
+		});
 	};
 </script>
 

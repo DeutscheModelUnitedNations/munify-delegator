@@ -149,7 +149,13 @@ const regionalGroupShortLabels: Record<RegionalGroup, () => string> = {
 	'Western European and Others Group': m.regionalGroupWesternEuropeanShort
 };
 
-export function translateRegionalGroup(group: RegionalGroup, short = false) {
+export function translateRegionalGroup({
+	group,
+	short = false
+}: {
+	group: RegionalGroup;
+	short?: boolean;
+}) {
 	return (short ? regionalGroupShortLabels : regionalGroupLabels)[group]();
 }
 

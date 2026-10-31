@@ -132,7 +132,7 @@
 						class="text-base-content/40 absolute right-2 text-xs leading-none"
 						style="top: {(hour - timeRange.startHour) * hourHeight}px; transform: translateY(-50%);"
 					>
-						{formatClockMinutes(hour * 60)}
+						{formatClockMinutes({ minutes: hour * 60 })}
 					</div>
 				{/each}
 			</div>

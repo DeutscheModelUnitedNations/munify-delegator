@@ -13,7 +13,7 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	const statuses = $derived(await fetchParticipantStatus(userId, conferenceId));
+	const statuses = $derived(await fetchParticipantStatus({ userId, conferenceId }));
 	const status = $derived(statuses.at(0));
 	const statusId = $derived(status?.id);
 
@@ -30,12 +30,18 @@
 		active={status?.didAttend ?? false}
 		options={attendanceOptions}
 		change={(didAttend) =>
-			changeParticipantStatus({ id: statusId, conferenceId, userId }, { didAttend })}
+			changeParticipantStatus({
+				target: { id: statusId, conferenceId, userId },
+				input: { didAttend }
+			})}
 	/>
 	<AccessCardSection
 		accessCardId={status?.accessCardId}
 		onSave={(accessCardId) =>
-			changeParticipantStatus({ id: statusId, conferenceId, userId }, { accessCardId })}
+			changeParticipantStatus({
+				target: { id: statusId, conferenceId, userId },
+				input: { accessCardId }
+			})}
 	/>
 	<AttendanceSection {userId} {conferenceId} />
 </div>

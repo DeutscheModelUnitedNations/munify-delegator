@@ -4,7 +4,15 @@ import { client } from '#lib/api/rumbleClient/client';
  * `read()` once it stops changing for `delay` ms, so a preview follows the text once typing
  * pauses, not on every key. Call while a component initializes: it runs an effect.
  */
-export function debounced<T>(read: () => T, initial: T, delay = 400) {
+export function debounced<T>({
+	read,
+	initial,
+	delay = 400
+}: {
+	read: () => T;
+	initial: T;
+	delay?: number;
+}) {
 	let current = $state(initial);
 	$effect(() => {
 		const next = read();

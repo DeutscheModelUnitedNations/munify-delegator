@@ -12,7 +12,7 @@ const supervisor = (overrides: Partial<PreviewedSupervisor> = {}): PreviewedSupe
 
 describe('supervisorPreview', () => {
 	it("shows the name and the supervisor's own school", () => {
-		expect(supervisorPreview(supervisor(), 's1')).toEqual({
+		expect(supervisorPreview({ supervisor: supervisor(), callerSchoolId: 's1' })).toEqual({
 			given_name: 'Ada',
 			family_name: 'Lovelace',
 			school_name: 'Goethe-Gymnasium',
@@ -22,14 +22,22 @@ describe('supervisorPreview', () => {
 	});
 
 	it("warns when the school is another than the caller's", () => {
-		const preview = supervisorPreview(supervisor({ participant: { school: otherSchool } }), 's1');
+		const preview = supervisorPreview({
+			supervisor: supervisor({ participant: { school: otherSchool } }),
+			callerSchoolId: 's1'
+		});
 		expect(preview.school_name).toBe('Schiller-Schule');
 		expect(preview.school_city).toBeNull();
 		expect(preview.different_school).toBe(true);
 	});
 
 	it('shows nothing it does not know', () => {
-		expect(supervisorPreview(supervisor({ user: null, participant: null }), 's1')).toEqual({
+		expect(
+			supervisorPreview({
+				supervisor: supervisor({ user: null, participant: null }),
+				callerSchoolId: 's1'
+			})
+		).toEqual({
 			given_name: null,
 			family_name: null,
 			school_name: null,
@@ -39,7 +47,11 @@ describe('supervisorPreview', () => {
 	});
 
 	it('does not warn when the caller has no school', () => {
-		expect(supervisorPreview(supervisor(), null).different_school).toBe(false);
-		expect(supervisorPreview(supervisor(), undefined).different_school).toBe(false);
+		expect(
+			supervisorPreview({ supervisor: supervisor(), callerSchoolId: null }).different_school
+		).toBe(false);
+		expect(
+			supervisorPreview({ supervisor: supervisor(), callerSchoolId: undefined }).different_school
+		).toBe(false);
 	});
 });

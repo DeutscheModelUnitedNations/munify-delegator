@@ -9,7 +9,13 @@ const units: { per: number; format: (count: number) => string }[] = [
 ];
 
 /** How long ago `timestamp` was, in the largest whole unit below the next; empty without one. */
-export function formatRelativeTime(timestamp: number | undefined, now = Date.now()): string {
+export function formatRelativeTime({
+	timestamp,
+	now = Date.now()
+}: {
+	timestamp: number | undefined;
+	now?: number;
+}): string {
 	if (!timestamp) return '';
 	let count = Math.floor((now - timestamp) / 1000);
 	for (const unit of units) {

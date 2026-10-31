@@ -42,7 +42,9 @@
 
 	const config = $derived(getColorConfig(color));
 	const compact = $derived(end - start <= 30);
-	const timeLabel = $derived(`${formatClockMinutes(start)} – ${formatClockMinutes(end)}`);
+	const timeLabel = $derived(
+		`${formatClockMinutes({ minutes: start })} – ${formatClockMinutes({ minutes: end })}`
+	);
 	// "A, B or C": whoever picked any one of them sees the entry
 	const audience = $derived(
 		new Intl.ListFormat(getLocale(), { type: 'disjunction' }).format(surveyOptionTitles)

@@ -12,14 +12,14 @@ describe('orderFrom', () => {
 	type Order = { school?: 'asc' | 'desc'; id?: 'asc' | 'desc' };
 	const orders = { school: (direction: 'asc' | 'desc'): Order => ({ school: direction }) };
 	test('merges the sortable columns ahead of the fallback', () => {
-		const order = orderFrom(
-			[
+		const order = orderFrom({
+			sorting: [
 				{ id: 'school', desc: true },
 				{ id: 'unknown', desc: false }
 			],
 			orders,
-			{ id: 'asc' }
-		);
+			fallback: { id: 'asc' }
+		});
 		expect(order).toEqual({ school: 'desc', id: 'asc' });
 		expect(Object.keys(order)).toEqual(['school', 'id']);
 	});

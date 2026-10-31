@@ -440,7 +440,7 @@ the three it is. To change a school later, open `SchoolChangeForm`
 `SchoolLine` (`#lib/components/userCard/sections/`) is the list row with that button, and
 `stages/Common/MySchool.svelte` the caller's own school on the dashboard (`setParticipantSchool` without an `id`).
 
-**`mutationForm(initial, validators, save, { toastProgress })`** (`#lib/components/form/mutationForm.ts`)
+**`mutationForm({ initial, validators, save, toastProgress })`** (`#lib/components/form/mutationForm.ts`)
 builds the superforms SPA form every mutation-backed form uses (see "Forms" in CLAUDE.md): validated
 on input, never reset, errors as a toast, `save(data)` once valid, with the generic progress toast
 unless `toastProgress: false`. Prefer it over spelling the options out.
@@ -864,7 +864,8 @@ occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 			id: 'role',
 			header: 'Role',
 			accessorFn: (row) => row.role,
-			cell: ({ row }) => renderComponent(BadgeCell, { label: row.original.role })
+			cell: ({ row }) =>
+				renderComponent({ component: BadgeCell, props: { label: row.original.role } })
 		}
 	];
 </script>

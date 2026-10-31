@@ -7,6 +7,7 @@ import {
 	createTagName,
 	isManagedListName
 } from './listNames';
+import { logger } from '#lib/logger';
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
 
@@ -21,32 +22,47 @@ type ExistingList = { id?: number; name?: string };
  * Records the id of the list with the given name, creating it first when Listmonk does not have
  * it yet. Returns false when the creation failed, after logging `label` as what was attempted.
  */
-async function ensureList(
-	existingLists: ExistingList[] | undefined,
-	listNameToId: Map<string, number>,
-	list: { name: string; description: string; tags: string[] },
-	label: string
-) {
+async function ensureList({
+	existingLists,
+	listNameToId,
+	list,
+	label
+}: {
+	existingLists: ExistingList[] | undefined;
+	listNameToId: Map<string, number>;
+	list: { name: string; description: string; tags: string[] };
+	label: string;
+}) {
 	const existing = existingLists?.find((l) => l.name === list.name);
 	if (existing) {
 		listNameToId.set(existing.name!, existing.id!);
-		console.info(`  - List ${list.name} already exists`);
+		logger.debug('List already exists', { list: list.name });
 		return true;
 	}
 
 	const res = await listmonkClient.POST('/lists', { body: list });
 	if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
-		taskError(TASK_NAME, `Failed to create list ${label}. Aborting task.`, errorToString(res));
+		taskError({
+			taskName: TASK_NAME,
+			message: `Failed to create list ${label}. Aborting task.`,
+			error: errorToString(res)
+		});
 		return false;
 	}
 	listNameToId.set(res.data.data.name!, res.data.data.id!);
-	console.info(`  - Created list ${list.name}`);
+	logger.info('Created list', { list: list.name });
 	return true;
 }
 
 /** Deletes lists that follow our naming convention ([global] or [shortId]) but are not needed. */
-async function deleteOrphanLists(existingLists: ExistingList[] | undefined, validIds: Set<number>) {
-	console.info('Cleaning up orphan lists');
+async function deleteOrphanLists({
+	existingLists,
+	validIds
+}: {
+	existingLists: ExistingList[] | undefined;
+	validIds: Set<number>;
+}) {
+	logger.info('Cleaning up orphan lists');
 	const listsToDelete = existingLists?.filter(
 		(l) => l.id && !validIds.has(l.id) && l.name && isManagedListName(l.name)
 	);
@@ -59,12 +75,10 @@ async function deleteOrphanLists(existingLists: ExistingList[] | undefined, vali
 			}
 		});
 		if (res.error) {
-			console.info(
-				`  ! Failed to delete list ${list.name}: Listmonk API Error\n${errorToString(res)}`
-			);
+			logger.error('Failed to delete list', { list: list.name, error: errorToString(res) });
 			continue;
 		}
-		console.info(`  - Deleted list ${list.name}`);
+		logger.info('Deleted list', { list: list.name });
 	}
 }
 
@@ -85,49 +99,56 @@ export async function ensureListsExist(
 		}
 	});
 	if (listsResponse.error) {
-		taskError(
-			TASK_NAME,
-			`Failed to fetch lists from Listmonk. Aborting task.`,
-			errorToString(listsResponse)
-		);
+		taskError({
+			taskName: TASK_NAME,
+			message: `Failed to fetch lists from Listmonk. Aborting task.`,
+			error: errorToString(listsResponse)
+		});
 		return undefined;
 	}
 	const existingLists = listsResponse.data.data?.results;
 
 	// Ensure global lists
-	console.info(`Syncing Global Lists`);
+	logger.info('Syncing global lists');
 
 	for (const listType of GLOBAL_LIST_TYPES) {
 		const name = createGlobalListName(listType);
-		const ok = await ensureList(
+		const ok = await ensureList({
 			existingLists,
 			listNameToId,
-			{ name, description: `List for ${name} (global)`, tags: ['global'] },
-			`${name} (global)`
-		);
+			list: { name, description: `List for ${name} (global)`, tags: ['global'] },
+			label: `${name} (global)`
+		});
 		if (!ok) return undefined;
 	}
 
 	// Ensure per-conference lists
 	for (const conference of conferences) {
-		console.info(`Syncing Lists for conference ${conference.title}`);
+		logger.info('Syncing lists for conference', { conference: conference.title });
 
 		for (const listType of CONFERENCE_LIST_TYPES) {
-			const ok = await ensureList(
+			const ok = await ensureList({
 				existingLists,
 				listNameToId,
-				{
-					name: createConferenceListName(conference.title, conference.id, listType),
+				list: {
+					name: createConferenceListName({
+						conferenceTitle: conference.title,
+						conferenceId: conference.id,
+						listType
+					}),
 					description: `List for ${listType} of conference ${conference.title}`,
-					tags: [createTagName(conference.title, conference.id), listType.toLowerCase()]
+					tags: [
+						createTagName({ conferenceTitle: conference.title, conferenceId: conference.id }),
+						listType.toLowerCase()
+					]
 				},
-				`${listType} for conference ${conference.title}`
-			);
+				label: `${listType} for conference ${conference.title}`
+			});
 			if (!ok) return undefined;
 		}
 	}
 
-	await deleteOrphanLists(existingLists, new Set(listNameToId.values()));
+	await deleteOrphanLists({ existingLists, validIds: new Set(listNameToId.values()) });
 
 	return listNameToId;
 }

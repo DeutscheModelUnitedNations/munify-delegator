@@ -13,7 +13,10 @@ const defaultSettings: CsvSettings = {
 	encoding: 'utf-8'
 };
 
-export const csvSettings = createPersistedState<CsvSettings>('csvExportSettings', defaultSettings);
+export const csvSettings = createPersistedState<CsvSettings>({
+	key: 'csvExportSettings',
+	initial: defaultSettings
+});
 
 const delimiterLabels: Record<CsvDelimiter, string> = {
 	';': 'Semicolon (;)',

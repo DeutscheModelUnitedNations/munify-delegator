@@ -15,14 +15,12 @@ export const PHONE_READY_REMINDER_DAYS = 7;
 export const SURVEY_REMINDER_DAYS = 3;
 
 /**
- * Mails the team's own actions send - inviting someone, adding them to the team. They always go
- * out: only their text is the conference's to change, so the e-mail page lists them without a
- * switch, and `dueEmails` never owes them.
+ * The invitation into the team. It carries a token only the inviting request knows, so it is sent
+ * by hand there (and logged like any mail sent by hand) and always goes out: only its text is the
+ * conference's to change, so the e-mail page lists it without a switch, and `dueEmails` never owes
+ * it.
  */
-const ALWAYS_SENT_KINDS = [
-	'TEAM_INVITATION',
-	'TEAM_WELCOME'
-] as const satisfies readonly EmailkindEnum[];
+const ALWAYS_SENT_KINDS = ['TEAM_INVITATION'] as const satisfies readonly EmailkindEnum[];
 export type AlwaysSentKind = (typeof ALWAYS_SENT_KINDS)[number];
 
 export const isAlwaysSent = (kind: EmailkindEnum): kind is AlwaysSentKind =>
@@ -35,25 +33,31 @@ export const ASSIGNMENT_RESULT_KINDS = [
 	'SUPERVISOR_ASSIGNMENT_SUMMARY'
 ] as const satisfies readonly EmailkindEnum[];
 
+/**
+ * The reminders, each due in its last days before a date. The team can also send one to a person
+ * by hand any time before that date; a reminder sent by hand still leaves the automatic one due.
+ */
+const REMINDER_KINDS = [
+	'APPLICATION_DEADLINE_REMINDER',
+	'OPEN_ISSUES_REMINDER',
+	'PHONE_READY_REMINDER',
+	'SURVEY_REMINDER'
+] as const satisfies readonly EmailkindEnum[];
+
+export const isReminder = (kind: EmailkindEnum) =>
+	REMINDER_KINDS.some((reminder) => reminder === kind);
+
 /** How the e-mail page groups the mails, in this order. */
 export const EMAIL_GROUPS = [
 	{ id: 'assignment', kinds: ASSIGNMENT_RESULT_KINDS },
 	{ id: 'waitingList', kinds: ['WAITING_LIST_SEATED'] },
 	{ id: 'unlocked', kinds: ['POSTAL_UNLOCKED', 'PAYMENT_UNLOCKED'] },
 	{ id: 'received', kinds: ['POSTAL_RECEIVED', 'PAYMENT_RECEIVED', 'PAPERWORK_PROBLEM'] },
-	{
-		id: 'reminders',
-		kinds: [
-			'APPLICATION_DEADLINE_REMINDER',
-			'OPEN_ISSUES_REMINDER',
-			'PHONE_READY_REMINDER',
-			'SURVEY_REMINDER'
-		]
-	},
+	{ id: 'reminders', kinds: REMINDER_KINDS },
 	{ id: 'papers', kinds: ['PAPER_REVIEWED'] },
 	{ id: 'certificate', kinds: ['CERTIFICATE_AVAILABLE'] },
 	{ id: 'supervisors', kinds: ['SUPERVISOR_STUDENT_LINKED'] },
-	{ id: 'team', kinds: ALWAYS_SENT_KINDS }
+	{ id: 'team', kinds: ['TEAM_WELCOME', ...ALWAYS_SENT_KINDS] }
 ] as const satisfies readonly { id: string; kinds: readonly EmailkindEnum[] }[];
 
 export type EmailGroupId = (typeof EMAIL_GROUPS)[number]['id'];

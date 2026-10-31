@@ -16,13 +16,13 @@ describe('loginUrl', () => {
 
 describe('needsSignIn', () => {
 	it('asks for a sign-in when the API answers that nobody is signed in', () => {
-		expect(needsSignIn(failed('UNAUTHENTICATED'), '/dashboard')).toBe(true);
+		expect(needsSignIn({ error: failed('UNAUTHENTICATED'), pathname: '/dashboard' })).toBe(true);
 	});
 
 	it('leaves other answers and the sign-in page itself alone', () => {
-		expect(needsSignIn(failed('FORBIDDEN'), '/dashboard')).toBe(false);
-		expect(needsSignIn(undefined, '/dashboard')).toBe(false);
-		expect(needsSignIn(failed('UNAUTHENTICATED'), '/login')).toBe(false);
+		expect(needsSignIn({ error: failed('FORBIDDEN'), pathname: '/dashboard' })).toBe(false);
+		expect(needsSignIn({ error: undefined, pathname: '/dashboard' })).toBe(false);
+		expect(needsSignIn({ error: failed('UNAUTHENTICATED'), pathname: '/login' })).toBe(false);
 	});
 });
 
@@ -33,16 +33,16 @@ describe('redirectToLogin', () => {
 
 	it('sends the browser to the sign-in, coming back to where it was', () => {
 		const at = location();
-		redirectToLogin(at, 1_000_000);
+		redirectToLogin({ location: at, now: 1000000 });
 		expect(at.assign).toHaveBeenCalledWith('/login?next=%2Fdashboard');
 	});
 
 	it('does not send it again within the cooldown, so a refused session cannot loop', () => {
-		redirectToLogin(location(), 1_000_000);
+		redirectToLogin({ location: location(), now: 1000000 });
 		const again = location();
-		redirectToLogin(again, 1_005_000);
+		redirectToLogin({ location: again, now: 1005000 });
 		expect(again.assign).not.toHaveBeenCalled();
-		redirectToLogin(again, 1_011_000);
+		redirectToLogin({ location: again, now: 1011000 });
 		expect(again.assign).toHaveBeenCalledOnce();
 	});
 });

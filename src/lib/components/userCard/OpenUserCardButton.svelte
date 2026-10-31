@@ -12,8 +12,12 @@
 <button
 	class="btn btn-ghost btn-xs btn-square"
 	onclick={() => openUserCard(user.id)}
-	title={formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-		givenNameFirst: true
+	title={formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined,
+		options: {
+			givenNameFirst: true
+		}
 	})}
 >
 	<i class="fa-sharp-duotone fa-solid fa-id-card"></i>

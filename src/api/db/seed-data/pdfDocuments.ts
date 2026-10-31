@@ -43,17 +43,31 @@ async function createDocument(title: string) {
  * Draws text top-down on a page, wrapping at the margins. `y` is the baseline of the next line;
  * `flow.nextPage` continues on a new page when one is given and the page runs out.
  */
-function createWriter(
-	page: PDFPage,
-	fonts: Fonts,
-	flow: { y: number; bottom?: number; nextPage?: () => PDFPage }
-) {
+function createWriter({
+	page,
+	fonts,
+	flow
+}: {
+	page: PDFPage;
+	fonts: Fonts;
+	flow: { y: number; bottom?: number; nextPage?: () => PDFPage };
+}) {
 	let current = page;
 	let y = flow.y;
 	const bottom = flow.bottom ?? 90;
 	const right = () => current.getWidth() - MARGIN;
 
-	function lines(text: string, font: PDFFont, size: number, width: number) {
+	function lines({
+		text,
+		font,
+		size,
+		width
+	}: {
+		text: string;
+		font: PDFFont;
+		size: number;
+		width: number;
+	}) {
 		const result: string[] = [];
 		let line = '';
 		for (const word of text.split(' ')) {
@@ -80,21 +94,24 @@ function createWriter(
 			y -= points;
 		},
 		/** A wrapped paragraph; `hanging` text (a clause number) sits in the indent of its first line. */
-		paragraph(
-			text: string,
-			options: {
+		paragraph({
+			text,
+			options = {}
+		}: {
+			text: string;
+			options?: {
 				font?: PDFFont;
 				size?: number;
 				indent?: number;
 				hanging?: string;
 				gap?: number;
-			} = {}
-		) {
+			};
+		}) {
 			const font = options.font ?? fonts.regular;
 			const size = options.size ?? 10.5;
 			const indent = options.indent ?? 0;
 			const lineHeight = size * 1.4;
-			const wrapped = lines(text, font, size, right() - MARGIN - indent);
+			const wrapped = lines({ text, font, size, width: right() - MARGIN - indent });
 			wrapped.forEach((line, index) => {
 				if (y < bottom && flow.nextPage) {
 					current = flow.nextPage();
@@ -108,7 +125,7 @@ function createWriter(
 			});
 			y -= options.gap ?? size * 0.6;
 		},
-		heading(text: string, size = 13) {
+		heading({ text, size = 13 }: { text: string; size?: number }) {
 			if (y < bottom + 40 && flow.nextPage) {
 				current = flow.nextPage();
 				y = current.getHeight() - 80;
@@ -120,7 +137,17 @@ function createWriter(
 }
 
 /** The letterhead every template starts with: a band, the conference and the document's title. */
-function letterhead(page: PDFPage, fonts: Fonts, conference: string, title: string) {
+function letterhead({
+	page,
+	fonts,
+	conference,
+	title
+}: {
+	page: PDFPage;
+	fonts: Fonts;
+	conference: string;
+	title: string;
+}) {
 	const { width, height } = page.getSize();
 	page.drawRectangle({ x: 0, y: height - 14, width, height: 14, color: NAVY });
 	page.drawText(conference, { x: MARGIN, y: height - 42, size: 9, font: fonts.bold, color: GRAY });
@@ -131,7 +158,19 @@ function letterhead(page: PDFPage, fonts: Fonts, conference: string, title: stri
  * A labelled form line: the label sits above, the line just below the baseline the generator
  * writes on (`baseline`), so the filled-in value reads as written on the line.
  */
-function formLine(page: PDFPage, fonts: Fonts, label: string, baseline: number, width = 300) {
+function formLine({
+	page,
+	fonts,
+	label,
+	baseline,
+	width = 300
+}: {
+	page: PDFPage;
+	fonts: Fonts;
+	label: string;
+	baseline: number;
+	width?: number;
+}) {
 	page.drawText(label, { x: MARGIN, y: baseline + 20, size: 8, font: fonts.regular, color: GRAY });
 	page.drawLine({
 		start: { x: MARGIN, y: baseline - 4 },
@@ -142,7 +181,19 @@ function formLine(page: PDFPage, fonts: Fonts, label: string, baseline: number, 
 }
 
 /** Two signature lines with place/date and who signs. */
-function signatures(page: PDFPage, fonts: Fonts, y: number, left: string, right: string) {
+function signatures({
+	page,
+	fonts,
+	y,
+	left,
+	right
+}: {
+	page: PDFPage;
+	fonts: Fonts;
+	y: number;
+	left: string;
+	right: string;
+}) {
 	const half = (page.getWidth() - 2 * MARGIN - 30) / 2;
 	for (const [index, label] of [left, right].entries()) {
 		const x = MARGIN + index * (half + 30);
@@ -156,7 +207,7 @@ async function contract(conference: string) {
 	const { pdf, fonts } = await createDocument('Teilnahmevertrag');
 	const page = pdf.addPage(A4);
 	const { height } = page.getSize();
-	letterhead(page, fonts, conference, 'Teilnahmevertrag');
+	letterhead({ page, fonts, conference, title: 'Teilnahmevertrag' });
 
 	// DIN 5008 window: the sender line above the recipient, which the generator writes from 60 mm.
 	page.drawText(`${conference} · Musterstraße 1 · 30159 Hannover`, {
@@ -179,10 +230,15 @@ async function contract(conference: string) {
 		size: 10.5,
 		font: fonts.italic
 	});
-	formLine(page, fonts, 'Vor- und Nachname der teilnehmenden Person', height - 320);
-	formLine(page, fonts, 'Geburtsdatum', height - 380, 160);
+	formLine({
+		page,
+		fonts,
+		label: 'Vor- und Nachname der teilnehmenden Person',
+		baseline: height - 320
+	});
+	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 380, width: 160 });
 
-	const writer = createWriter(page, fonts, { y: height - 420 });
+	const writer = createWriter({ page, fonts, flow: { y: height - 420 } });
 	const clauses = [
 		'Die teilnehmende Person meldet sich verbindlich zur Konferenz an. Mit der Unterschrift erkennt sie die beigefügten Teilnahmebedingungen an.',
 		'Der Teilnahmebeitrag ist bis zum in der Anwendung genannten Datum zu überweisen. Erst mit Eingang von Zahlung und unterschriebener Postanmeldung ist die Anmeldung vollständig.',
@@ -191,10 +247,16 @@ async function contract(conference: string) {
 		'Die teilnehmende Person verpflichtet sich, die Verhaltensregeln der Konferenz einzuhalten. Bei groben Verstößen kann sie von der weiteren Teilnahme ausgeschlossen werden.'
 	];
 	clauses.forEach((clause, index) =>
-		writer.paragraph(clause, { hanging: `§ ${index + 1}`, indent: 28 })
+		writer.paragraph({ text: clause, options: { hanging: `§ ${index + 1}`, indent: 28 } })
 	);
 
-	signatures(page, fonts, 150, 'Ort, Datum', 'Unterschrift der teilnehmenden Person');
+	signatures({
+		page,
+		fonts,
+		y: 150,
+		left: 'Ort, Datum',
+		right: 'Unterschrift der teilnehmenden Person'
+	});
 	return pdf.save();
 }
 
@@ -203,7 +265,7 @@ async function guardianConsent(conference: string) {
 	const { pdf, fonts } = await createDocument('Einverständniserklärung der Erziehungsberechtigten');
 	const page = pdf.addPage(A4);
 	const { height } = page.getSize();
-	letterhead(page, fonts, conference, 'Einverständniserklärung');
+	letterhead({ page, fonts, conference, title: 'Einverständniserklärung' });
 	page.drawText('der Erziehungsberechtigten für minderjährige Teilnehmende', {
 		x: MARGIN,
 		y: height - 86,
@@ -216,13 +278,18 @@ async function guardianConsent(conference: string) {
 		size: 10.5,
 		font: fonts.regular
 	});
-	formLine(page, fonts, 'Vor- und Nachname der teilnehmenden Person', height - 180);
-	formLine(page, fonts, 'Geburtsdatum', height - 240, 160);
+	formLine({
+		page,
+		fonts,
+		label: 'Vor- und Nachname der teilnehmenden Person',
+		baseline: height - 180
+	});
+	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 240, width: 160 });
 
-	const writer = createWriter(page, fonts, { y: height - 285 });
-	writer.paragraph(
-		`die Teilnahme an der Konferenz ${conference} einschließlich des Rahmenprogramms und der Übernachtungen.`
-	);
+	const writer = createWriter({ page, fonts, flow: { y: height - 285 } });
+	writer.paragraph({
+		text: `die Teilnahme an der Konferenz ${conference} einschließlich des Rahmenprogramms und der Übernachtungen.`
+	});
 	writer.skip(8);
 	for (const item of [
 		'Die teilnehmende Person darf sich in den Pausen und abends in Kleingruppen ohne Aufsicht in der Stadt bewegen.',
@@ -230,10 +297,13 @@ async function guardianConsent(conference: string) {
 		'Allergien, Medikamente und Unverträglichkeiten haben wir im Profil der Anwendung angegeben.',
 		'Bei Verstößen gegen die Verhaltensregeln kann die teilnehmende Person auf unsere Kosten nach Hause geschickt werden.'
 	]) {
-		writer.paragraph(item, { hanging: '–', indent: 16 });
+		writer.paragraph({ text: item, options: { hanging: '–', indent: 16 } });
 	}
 	writer.skip(10);
-	writer.paragraph('Notfallkontakt während der Konferenz (Name, Telefonnummer):', { size: 9 });
+	writer.paragraph({
+		text: 'Notfallkontakt während der Konferenz (Name, Telefonnummer):',
+		options: { size: 9 }
+	});
 	page.drawLine({
 		start: { x: MARGIN, y: writer.y - 6 },
 		end: { x: page.getWidth() - MARGIN, y: writer.y - 6 },
@@ -241,7 +311,13 @@ async function guardianConsent(conference: string) {
 		color: GRAY
 	});
 
-	signatures(page, fonts, 150, 'Ort, Datum', 'Unterschrift aller Erziehungsberechtigten');
+	signatures({
+		page,
+		fonts,
+		y: 150,
+		left: 'Ort, Datum',
+		right: 'Unterschrift aller Erziehungsberechtigten'
+	});
 	return pdf.save();
 }
 
@@ -250,19 +326,28 @@ async function mediaConsent(conference: string) {
 	const { pdf, fonts } = await createDocument('Einwilligung zu Foto- und Filmaufnahmen');
 	const page = pdf.addPage(A4);
 	const { height } = page.getSize();
-	letterhead(page, fonts, conference, 'Einwilligung zu Foto- und Filmaufnahmen');
+	letterhead({ page, fonts, conference, title: 'Einwilligung zu Foto- und Filmaufnahmen' });
 
-	const intro = createWriter(page, fonts, { y: height - 110 });
-	intro.paragraph(
-		'Während der Konferenz entstehen Fotos und Videos, die wir für die Berichterstattung, unsere Website und soziale Medien nutzen möchten. Dafür brauchen wir die Einwilligung der abgebildeten Person.'
-	);
-	formLine(page, fonts, 'Vor- und Nachname', height - 225);
-	formLine(page, fonts, 'Geburtsdatum', height - 267, 160);
-	formLine(page, fonts, 'Anschrift', height - 309, page.getWidth() - 2 * MARGIN);
+	const intro = createWriter({ page, fonts, flow: { y: height - 110 } });
+	intro.paragraph({
+		text: 'Während der Konferenz entstehen Fotos und Videos, die wir für die Berichterstattung, unsere Website und soziale Medien nutzen möchten. Dafür brauchen wir die Einwilligung der abgebildeten Person.'
+	});
+	formLine({ page, fonts, label: 'Vor- und Nachname', baseline: height - 225 });
+	formLine({ page, fonts, label: 'Geburtsdatum', baseline: height - 267, width: 160 });
+	formLine({
+		page,
+		fonts,
+		label: 'Anschrift',
+		baseline: height - 309,
+		width: page.getWidth() - 2 * MARGIN
+	});
 
-	const writer = createWriter(page, fonts, { y: height - 350 });
-	writer.paragraph('Ich willige ein, dass Aufnahmen von mir veröffentlicht werden dürfen:', {
-		font: fonts.bold
+	const writer = createWriter({ page, fonts, flow: { y: height - 350 } });
+	writer.paragraph({
+		text: 'Ich willige ein, dass Aufnahmen von mir veröffentlicht werden dürfen:',
+		options: {
+			font: fonts.bold
+		}
 	});
 	for (const option of [
 		'in der Konferenzzeitung und im Abschlussbericht',
@@ -278,21 +363,21 @@ async function mediaConsent(conference: string) {
 			borderWidth: 0.8,
 			borderColor: BLACK
 		});
-		writer.paragraph(option, { indent: 18, gap: 4 });
+		writer.paragraph({ text: option, options: { indent: 18, gap: 4 } });
 	}
 	writer.skip(10);
-	writer.paragraph(
-		'Die Einwilligung ist freiwillig und kann jederzeit mit Wirkung für die Zukunft widerrufen werden. Bereits gedruckte Materialien können nicht zurückgerufen werden. Ohne Einwilligung entstehen keine Nachteile für die Teilnahme.',
-		{ size: 9 }
-	);
+	writer.paragraph({
+		text: 'Die Einwilligung ist freiwillig und kann jederzeit mit Wirkung für die Zukunft widerrufen werden. Bereits gedruckte Materialien können nicht zurückgerufen werden. Ohne Einwilligung entstehen keine Nachteile für die Teilnahme.',
+		options: { size: 9 }
+	});
 
-	signatures(
+	signatures({
 		page,
 		fonts,
-		150,
-		'Ort, Datum',
-		'Unterschrift (bei Minderjährigen zusätzlich der Erziehungsberechtigten)'
-	);
+		y: 150,
+		left: 'Ort, Datum',
+		right: 'Unterschrift (bei Minderjährigen zusätzlich der Erziehungsberechtigten)'
+	});
 	return pdf.save();
 }
 
@@ -355,17 +440,24 @@ const TERMS = [
 async function termsAndConditions(conference: string) {
 	const { pdf, fonts } = await createDocument('Teilnahmebedingungen');
 	const first = pdf.addPage(A4);
-	letterhead(first, fonts, conference, 'Teilnahmebedingungen');
-	const writer = createWriter(first, fonts, {
-		y: first.getHeight() - 110,
-		bottom: 110,
-		nextPage: () => pdf.addPage(A4)
+	letterhead({ page: first, fonts, conference, title: 'Teilnahmebedingungen' });
+	const writer = createWriter({
+		page: first,
+		fonts,
+		flow: {
+			y: first.getHeight() - 110,
+			bottom: 110,
+			nextPage: () => pdf.addPage(A4)
+		}
 	});
 	TERMS.forEach(([title, body], index) => {
-		writer.heading(`§ ${index + 1} ${title}`, 11.5);
-		writer.paragraph(body, { gap: 14 });
+		writer.heading({ text: `§ ${index + 1} ${title}`, size: 11.5 });
+		writer.paragraph({ text: body, options: { gap: 14 } });
 	});
-	writer.paragraph(`Stand: ${new Date().getFullYear()}`, { size: 8, font: fonts.italic });
+	writer.paragraph({
+		text: `Stand: ${new Date().getFullYear()}`,
+		options: { size: 8, font: fonts.italic }
+	});
 	return pdf.save();
 }
 
@@ -374,7 +466,19 @@ async function certificate(conference: string) {
 	const { pdf, fonts } = await createDocument('Teilnahmezertifikat');
 	const page = pdf.addPage(A4_LANDSCAPE);
 	const { width, height } = page.getSize();
-	const centred = (text: string, y: number, size: number, font: PDFFont, color = BLACK) =>
+	const centred = ({
+		text,
+		y,
+		size,
+		font,
+		color = BLACK
+	}: {
+		text: string;
+		y: number;
+		size: number;
+		font: PDFFont;
+		color?: import('pdf-lib').RGB;
+	}) =>
 		page.drawText(text, {
 			x: (width - font.widthOfTextAtSize(text, size)) / 2,
 			y,
@@ -399,17 +503,23 @@ async function certificate(conference: string) {
 		borderWidth: 0.8,
 		borderColor: NAVY
 	});
-	centred('TEILNAHMEZERTIFIKAT', height - 110, 30, fonts.bold, NAVY);
-	centred('Hiermit wird bestätigt, dass', height - 170, 13, fonts.italic);
+	centred({
+		text: 'TEILNAHMEZERTIFIKAT',
+		y: height - 110,
+		size: 30,
+		font: fonts.bold,
+		color: NAVY
+	});
+	centred({ text: 'Hiermit wird bestätigt, dass', y: height - 170, size: 13, font: fonts.italic });
 	page.drawLine({
 		start: { x: width / 2 - 180, y: height - 222 },
 		end: { x: width / 2 + 180, y: height - 222 },
 		thickness: 0.8,
 		color: GRAY
 	});
-	centred('erfolgreich an der Konferenz', height - 260, 13, fonts.italic);
-	centred(conference, height - 292, 18, fonts.bold, NAVY);
-	centred('teilgenommen hat.', height - 322, 11, fonts.regular);
+	centred({ text: 'erfolgreich an der Konferenz', y: height - 260, size: 13, font: fonts.italic });
+	centred({ text: conference, y: height - 292, size: 18, font: fonts.bold, color: NAVY });
+	centred({ text: 'teilgenommen hat.', y: height - 322, size: 11, font: fonts.regular });
 
 	for (const [index, label] of ['Generalsekretariat', 'Projektleitung'].entries()) {
 		const x = 150 + index * 330;
@@ -437,7 +547,7 @@ export async function conferenceTemplatePdfs(conference: string) {
 }
 
 /** A venue's floor plan, landscape: rooms, the entrance and a legend. */
-export async function sitePlanPdf(venue: string, rooms: string[]) {
+export async function sitePlanPdf({ venue, rooms }: { venue: string; rooms: string[] }) {
 	const { pdf, fonts } = await createDocument(`Lageplan ${venue}`);
 	const page = pdf.addPage(A4_LANDSCAPE);
 	const { width, height } = page.getSize();
@@ -456,7 +566,21 @@ export async function sitePlanPdf(venue: string, rooms: string[]) {
 		color: GRAY
 	});
 
-	const room = (label: string, x: number, y: number, w: number, h: number, fill = LIGHT) => {
+	const room = ({
+		label,
+		x,
+		y,
+		w,
+		h,
+		fill = LIGHT
+	}: {
+		label: string;
+		x: number;
+		y: number;
+		w: number;
+		h: number;
+		fill?: import('pdf-lib').RGB;
+	}) => {
 		page.drawRectangle({
 			x,
 			y,
@@ -479,18 +603,46 @@ export async function sitePlanPdf(venue: string, rooms: string[]) {
 	const left = 50;
 	const top = height - 110;
 	const plenary = rooms[0] ?? 'Plenarsaal';
-	room(plenary, left, top - 220, 300, 220, rgb(0.78, 0.83, 0.93));
-	room('Foyer', left + 300, top - 220, 160, 220, rgb(0.95, 0.95, 0.95));
+	room({ label: plenary, x: left, y: top - 220, w: 300, h: 220, fill: rgb(0.78, 0.83, 0.93) });
+	room({
+		label: 'Foyer',
+		x: left + 300,
+		y: top - 220,
+		w: 160,
+		h: 220,
+		fill: rgb(0.95, 0.95, 0.95)
+	});
 	const side = rooms.slice(1);
 	const roomWidth = (width - 100 - 460) / Math.max(side.length, 1);
 	side.forEach((label, index) =>
-		room(label, left + 460 + index * roomWidth, top - 140, roomWidth, 140)
+		room({ label, x: left + 460 + index * roomWidth, y: top - 140, w: roomWidth, h: 140 })
 	);
-	room('Garderobe', left + 460, top - 220, 120, 80, rgb(0.95, 0.95, 0.95));
-	room('WC', left + 580, top - 220, width - 100 - 580, 80, rgb(0.95, 0.95, 0.95));
-	room('Pressebüro', left, top - 330, 150, 110);
-	room('Konferenzbüro', left + 150, top - 330, 150, 110);
-	room('Cafeteria', left + 300, top - 330, width - 100 - 300, 110, rgb(0.93, 0.96, 0.9));
+	room({
+		label: 'Garderobe',
+		x: left + 460,
+		y: top - 220,
+		w: 120,
+		h: 80,
+		fill: rgb(0.95, 0.95, 0.95)
+	});
+	room({
+		label: 'WC',
+		x: left + 580,
+		y: top - 220,
+		w: width - 100 - 580,
+		h: 80,
+		fill: rgb(0.95, 0.95, 0.95)
+	});
+	room({ label: 'Pressebüro', x: left, y: top - 330, w: 150, h: 110 });
+	room({ label: 'Konferenzbüro', x: left + 150, y: top - 330, w: 150, h: 110 });
+	room({
+		label: 'Cafeteria',
+		x: left + 300,
+		y: top - 330,
+		w: width - 100 - 300,
+		h: 110,
+		fill: rgb(0.93, 0.96, 0.9)
+	});
 
 	// The entrance: an arrow into the foyer from below.
 	const entranceX = left + 380;
@@ -557,16 +709,23 @@ export async function resolutionPdf(options: {
 		color: GRAY
 	});
 
-	const writer = createWriter(first, fonts, {
-		y: height - 95,
-		bottom: 70,
-		nextPage: () => pdf.addPage(A4)
+	const writer = createWriter({
+		page: first,
+		fonts,
+		flow: {
+			y: height - 95,
+			bottom: 70,
+			nextPage: () => pdf.addPage(A4)
+		}
 	});
-	writer.paragraph(options.headline, { font: fonts.bold, size: 14 });
-	writer.paragraph(options.topic, { font: fonts.bold, size: 12, gap: 18 });
-	writer.paragraph(`${options.committee ?? 'Die Generalversammlung'},`, {
-		font: fonts.italic,
-		gap: 12
+	writer.paragraph({ text: options.headline, options: { font: fonts.bold, size: 14 } });
+	writer.paragraph({ text: options.topic, options: { font: fonts.bold, size: 12, gap: 18 } });
+	writer.paragraph({
+		text: `${options.committee ?? 'Die Generalversammlung'},`,
+		options: {
+			font: fonts.italic,
+			gap: 12
+		}
 	});
 
 	const preamble = [
@@ -582,7 +741,7 @@ export async function resolutionPdf(options: {
 		]
 	];
 	for (const [opening, rest] of preamble) {
-		writer.paragraph(`${opening} ${rest}`, { indent: 24, gap: 8 });
+		writer.paragraph({ text: `${opening} ${rest}`, options: { indent: 24, gap: 8 } });
 	}
 	writer.skip(6);
 
@@ -594,16 +753,16 @@ export async function resolutionPdf(options: {
 		'beschließt, mit der Angelegenheit aktiv befasst zu bleiben.'
 	];
 	operative.forEach((clause, index) =>
-		writer.paragraph(clause, { hanging: `${index + 1}.`, indent: 24, gap: 8 })
+		writer.paragraph({ text: clause, options: { hanging: `${index + 1}.`, indent: 24, gap: 8 } })
 	);
 
 	writer.skip(12);
-	writer.paragraph(
-		`Angenommen mit ${20 + options.topic.length} Ja-Stimmen, 4 Nein-Stimmen und 3 Enthaltungen.`,
-		{
+	writer.paragraph({
+		text: `Angenommen mit ${20 + options.topic.length} Ja-Stimmen, 4 Nein-Stimmen und 3 Enthaltungen.`,
+		options: {
 			font: fonts.italic,
 			size: 9
 		}
-	);
+	});
 	return pdf.save();
 }

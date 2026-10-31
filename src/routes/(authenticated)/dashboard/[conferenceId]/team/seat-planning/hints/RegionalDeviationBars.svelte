@@ -36,9 +36,9 @@
 	{#each groups as { group, actual, target, deviation } (group)}
 		<span
 			class="truncate"
-			title="{translateRegionalGroup(group)}: {actual} / {target.toLocaleString(getLocale(), {
+			title="{translateRegionalGroup({ group })}: {actual} / {target.toLocaleString(getLocale(), {
 				maximumFractionDigits: 1
-			})}">{translateRegionalGroup(group, true)}</span
+			})}">{translateRegionalGroup({ group, short: true })}</span
 		>
 		<span class="flex h-2.5 justify-end">
 			{#if deviation < 0}

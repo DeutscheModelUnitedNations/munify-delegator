@@ -1,7 +1,11 @@
 import { m } from '#lib/paraglide/messages';
 import { getLocale, toLocale } from '#lib/paraglide/runtime';
 import formatNames from '#lib/helpers/formatNames';
-import { translatePaperStatus, translatePaperType } from '#lib/utils/enumTranslations';
+import {
+	translatePaperStatus,
+	translatePaperType,
+	translateTeamRole
+} from '#lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import type {
 	DueEmail,
@@ -10,7 +14,8 @@ import type {
 	PaperworkField,
 	SnapshotPerson,
 	SnapshotReview,
-	SnapshotRole
+	SnapshotRole,
+	SnapshotUser
 } from './dueEmails';
 import { seatOf } from './dueEmails';
 import {
@@ -38,15 +43,19 @@ export interface EmailContent {
 
 type Conference = EmailSnapshot['conference'];
 
-const fullName = (person: SnapshotPerson) =>
-	formatNames(person.user.givenName, person.user.familyName, {
-		givenNameUppercase: false,
-		familyNameUppercase: false
+const fullName = (user: SnapshotUser) =>
+	formatNames({
+		givenName: user.givenName,
+		familyName: user.familyName,
+		options: {
+			givenNameUppercase: false,
+			familyNameUppercase: false
+		}
 	});
 
 const day = (date: Date) => date.toLocaleDateString(getLocale(), { dateStyle: 'long' });
 /** A deadline down to the minute, in the conference's time zone: a survey closes at its time. */
-const dateTime = (date: Date, timeZone: string) =>
+const dateTime = ({ date, timeZone }: { date: Date; timeZone: string }) =>
 	date.toLocaleString(getLocale(), {
 		dateStyle: 'long',
 		timeStyle: 'short',
@@ -97,17 +106,17 @@ type ContentBuilder = (ctx: ContentContext) => KindContent;
 
 const withDashboard: ContentBuilder = ({ dashboard }) => ({ button: dashboard });
 const seated: ContentBuilder = ({ email, dashboard }) => ({
-	values: { seat: seatDescription(email.person) },
+	values: { seat: email.person ? seatDescription(email.person) : '' },
 	button: dashboard
 });
 
 const supervisorSummaryItem = (student: SnapshotPerson) =>
 	seatOf(student)
 		? m.emailAutoSupervisorSummarySeated({
-				name: fullName(student),
+				name: fullName(student.user),
 				seat: seatDescription(student)
 			})
-		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student) });
+		: m.emailAutoSupervisorSummaryNoSeat({ name: fullName(student.user) });
 
 /** What the author reads about a review: the paper, who reviewed it, the paper's new status. */
 const reviewValues = (review: SnapshotReview) => ({
@@ -143,7 +152,7 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 	APPLICATION_DEADLINE_REMINDER: ({ email, conference, dashboard }) => ({
 		values: {
 			date: day(conference.applicationDeadline),
-			delegationHint: email.person.delegation ? m.emailAutoApplicationReminderDelegation() : ''
+			delegationHint: email.person?.delegation ? m.emailAutoApplicationReminderDelegation() : ''
 		},
 		button: dashboard
 	}),
@@ -167,13 +176,13 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 		values: email.survey
 			? {
 					survey: email.survey.title,
-					date: dateTime(email.survey.deadline, conference.timezone)
+					date: dateTime({ date: email.survey.deadline, timeZone: conference.timezone })
 				}
 			: {},
 		button: dashboard
 	}),
 	SUPERVISOR_STUDENT_LINKED: ({ email, dashboard }) => ({
-		values: { student: email.student ? fullName(email.student) : '' },
+		values: { student: email.student ? fullName(email.student.user) : '' },
 		button: dashboard
 	}),
 	PAPER_REVIEWED: ({ email, conference, origin, dashboard }) =>
@@ -186,7 +195,16 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 					},
 					replyTo: email.review.reviewer?.email
 				}
-			: { button: dashboard }
+			: { button: dashboard },
+	TEAM_WELCOME: ({ email, dashboard }) => ({
+		values: email.teamMember
+			? {
+					role: translateTeamRole(email.teamMember.role),
+					inviter: email.teamMember.inviterName ?? m.emailTeamInvitationUnknownInviter()
+				}
+			: {},
+		button: dashboard
+	})
 };
 
 /** A conference's own text for one kind and language (`conference_email_text`). */
@@ -195,12 +213,17 @@ export interface ConferenceEmailText extends EmailTextOverride {
 	locale: string;
 }
 
-export function emailContent(
-	email: DueEmail,
-	conference: Conference,
-	origin: string,
-	texts: readonly ConferenceEmailText[] = []
-): EmailContent {
+export function emailContent({
+	email,
+	conference,
+	origin,
+	texts = []
+}: {
+	email: DueEmail;
+	conference: Conference;
+	origin: string;
+	texts?: readonly ConferenceEmailText[];
+}): EmailContent {
 	const locale = getLocale();
 	const own = texts.find((text) => text.kind === email.kind && toLocale(text.locale) === locale);
 	const kind = CONTENT[email.kind]({
@@ -209,16 +232,37 @@ export function emailContent(
 		origin,
 		dashboard: { label: m.emailAutoToDashboard(), url: `${origin}/dashboard/${conference.id}` }
 	});
-	const filled = fillEmailText(
-		resolveEmailText(email.kind, locale, own),
-		{ name: fullName(email.person), conference: conference.title, ...kind.values },
-		kind.items
-	);
+	const filled = fillEmailText({
+		text: resolveEmailText({ kind: email.kind, locale, override: own }),
+		values: { name: fullName(email.recipient), conference: conference.title, ...kind.values },
+		items: kind.items
+	});
 	return {
 		...filled,
 		...(kind.button ? { button: kind.button } : {}),
 		...(kind.replyTo ? { replyTo: kind.replyTo } : {})
 	};
+}
+
+/** The paperwork as the user card names it. */
+const paperworkTitle: Record<PaperworkField, () => string> = {
+	paymentStatus: () => m.payment(),
+	termsAndConditions: () => m.userAgreement(),
+	guardianConsent: () => m.guardianAgreement(),
+	mediaConsent: () => m.mediaAgreement()
+};
+
+/**
+ * What tells a person's mails of one kind apart, for the team: the paperwork, the survey, the
+ * paper, the student or the team role it is about. `undefined` for a kind a person gets once.
+ */
+export function emailDetail(email: DueEmail): string | undefined {
+	if (email.field) return paperworkTitle[email.field]();
+	if (email.survey) return email.survey.title;
+	if (email.review) return reviewValues(email.review).paper;
+	if (email.student) return fullName(email.student.user);
+	if (email.teamMember) return translateTeamRole(email.teamMember.role);
+	return undefined;
 }
 
 export { fullName as recipientName };

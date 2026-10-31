@@ -1,6 +1,7 @@
 import type { SortingState } from '@tanstack/svelte-table';
 import type { TableState } from './tableState.svelte';
-import type { TextFilterValue } from './filters';
+import { enumFilterInput, rangeFilterInput, textFilterInput } from './filters';
+import { z } from 'zod';
 
 /** Escapes the characters `like` gives a meaning to, so a search text is matched literally. */
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, '\\$&');
@@ -18,7 +19,10 @@ export function pageArgs(state: TableState) {
 }
 
 /** The rows of the page, and whether the extra row `pageArgs` asked for came back. */
-export function pageOf<T>(rows: readonly T[], state: TableState): { rows: T[]; hasMore: boolean } {
+export function pageOf<T>({ rows, state }: { rows: readonly T[]; state: TableState }): {
+	rows: T[];
+	hasMore: boolean;
+} {
 	const { pageSize } = state.pagination;
 	return { rows: rows.slice(0, pageSize), hasMore: rows.length > pageSize };
 }
@@ -31,27 +35,20 @@ export type SortDirection = 'asc' | 'desc';
  * are left out; such a column should set `enableSorting: false`. `fallback` orders whatever the
  * sorting does not decide, so that paging through ties stays stable.
  */
-export function orderFrom<Order extends object>(
-	sorting: SortingState,
-	orders: Record<string, (direction: SortDirection) => Order>,
-	fallback: Order
-): Order {
+export function orderFrom<Order extends object>({
+	sorting,
+	orders,
+	fallback
+}: {
+	sorting: SortingState;
+	orders: Record<string, (direction: SortDirection) => Order>;
+	fallback: Order;
+}): Order {
 	const chosen = sorting.flatMap(({ id, desc }) => {
 		const order = orders[id];
 		return order ? [order(desc ? 'desc' : 'asc')] : [];
 	});
 	return Object.assign({}, ...chosen, fallback);
-}
-
-function isTextFilter(value: unknown): value is TextFilterValue {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		'mode' in value &&
-		typeof value.mode === 'string' &&
-		'value' in value &&
-		typeof value.value === 'string'
-	);
 }
 
 type StringFilter = {
@@ -74,8 +71,9 @@ const stringFilterModes: Record<string, (value: string, like: string) => StringF
 
 /** A string column's text filter from the filter drawer, as a rumble string filter. */
 export function stringFilter(filter: unknown): StringFilter | undefined {
-	if (!isTextFilter(filter)) return undefined;
-	const { mode, value } = filter;
+	const parsed = textFilterInput.safeParse(filter);
+	if (!parsed.success) return undefined;
+	const { mode, value } = parsed.data;
 	if (mode === 'isEmpty') return { isNull: true };
 	if (mode === 'isNotEmpty') return { isNotNull: true };
 	if (!value) return undefined;
@@ -85,23 +83,24 @@ export function stringFilter(filter: unknown): StringFilter | undefined {
 
 /** A boolean column's filter (`true`, `false`; anything else is no filter). */
 export function booleanFilter(filter: unknown): boolean | undefined {
-	return typeof filter === 'boolean' ? filter : undefined;
+	const parsed = z.boolean().safeParse(filter);
+	return parsed.success ? parsed.data : undefined;
 }
 
 /** The selected values of an enum filter (`—` stands for an empty value and is not a value). */
 export function enumFilter(filter: unknown): string[] {
-	return Array.isArray(filter)
-		? filter.filter((value): value is string => typeof value === 'string')
-		: [];
+	const parsed = enumFilterInput.safeParse(filter);
+	return parsed.success ? parsed.data : [];
 }
 
 /** The bounds of a range filter. */
 export function rangeFilter(filter: unknown): { gte?: number; lte?: number } | undefined {
-	if (!Array.isArray(filter) || filter.length !== 2) return undefined;
-	const [min, max] = filter;
+	const parsed = rangeFilterInput.safeParse(filter);
+	if (!parsed.success) return undefined;
+	const { min, max } = parsed.data;
 	const range = {
-		...(typeof min === 'number' ? { gte: min } : {}),
-		...(typeof max === 'number' ? { lte: max } : {})
+		...(min !== undefined ? { gte: min } : {}),
+		...(max !== undefined ? { lte: max } : {})
 	};
 	return Object.keys(range).length > 0 ? range : undefined;
 }

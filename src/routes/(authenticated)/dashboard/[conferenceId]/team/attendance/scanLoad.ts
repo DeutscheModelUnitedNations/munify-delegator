@@ -42,11 +42,15 @@ const orNull = <T>(value: T | null | undefined): T | null => value ?? null;
  * The person a code leads to, or `null` when it leads to nobody. A plain query, read again after
  * changes. With a session, the survey options it expects are checked too.
  */
-export async function loadScannedPerson(
-	conferenceId: string,
-	code: string,
-	sessionId?: string
-): Promise<FoundPerson | null> {
+export async function loadScannedPerson({
+	conferenceId,
+	code,
+	sessionId
+}: {
+	conferenceId: string;
+	code: string;
+	sessionId?: string;
+}): Promise<FoundPerson | null> {
 	const found = await client.query.scanLookup({
 		__args: { conferenceId, code, sessionId },
 		found: true,

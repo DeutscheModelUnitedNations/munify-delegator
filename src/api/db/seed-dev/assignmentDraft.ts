@@ -9,11 +9,11 @@ import { nationSeats } from './conference';
  */
 export function addAssignmentDraft(cs: ConferenceSeed) {
 	const [largest, ...rest] = appliedDelegationIds(cs).toSorted(
-		(a, b) => membersOf(cs, b).length - membersOf(cs, a).length
+		(a, b) => membersOf({ cs, delegationId: b }).length - membersOf({ cs, delegationId: a }).length
 	);
-	addReviews(cs, appliedDelegationIds(cs));
-	if (largest) addSplit(cs, largest);
-	addPlannedNations(cs, rest.slice(0, 6));
+	addReviews({ cs, delegationIds: appliedDelegationIds(cs) });
+	if (largest) addSplit({ cs, delegationId: largest });
+	addPlannedNations({ cs, delegationIds: rest.slice(0, 6) });
 	addPlannedSingleRoles(cs);
 	cs.batch.assignmentWeights.push({ conferenceId: cs.id });
 }
@@ -24,7 +24,7 @@ function appliedDelegationIds(cs: ConferenceSeed) {
 	);
 }
 
-function membersOf(cs: ConferenceSeed, delegationId: string) {
+function membersOf({ cs, delegationId }: { cs: ConferenceSeed; delegationId: string }) {
 	return cs.batch.delegationMember.flatMap((member) =>
 		member.delegationId === delegationId && member.id ? [member.id] : []
 	);
@@ -34,7 +34,7 @@ function membersOf(cs: ConferenceSeed, delegationId: string) {
  * Two in three applications rated; some flagged, some with a note, one disqualified, and two that
  * must get a seat (the summary warns while the draft leaves them without one).
  */
-function addReviews(cs: ConferenceSeed, delegationIds: string[]) {
+function addReviews({ cs, delegationIds }: { cs: ConferenceSeed; delegationIds: string[] }) {
 	delegationIds.forEach((delegationId, index) => {
 		if (index % 3 === 2) return;
 		cs.batch.assignmentReview.push({
@@ -50,8 +50,8 @@ function addReviews(cs: ConferenceSeed, delegationIds: string[]) {
 }
 
 /** The delegation split into two halves, if it is large enough to be worth splitting. */
-function addSplit(cs: ConferenceSeed, delegationId: string) {
-	const memberIds = membersOf(cs, delegationId);
+function addSplit({ cs, delegationId }: { cs: ConferenceSeed; delegationId: string }) {
+	const memberIds = membersOf({ cs, delegationId });
 	if (memberIds.length < 4) return;
 	const half = Math.ceil(memberIds.length / 2);
 	[memberIds.slice(0, half), memberIds.slice(half)].forEach((part, index) => {
@@ -68,12 +68,14 @@ function addSplit(cs: ConferenceSeed, delegationId: string) {
 }
 
 /** Two of the delegations get a nation that fits them exactly. */
-function addPlannedNations(cs: ConferenceSeed, delegationIds: string[]) {
+function addPlannedNations({ cs, delegationIds }: { cs: ConferenceSeed; delegationIds: string[] }) {
 	const nations = [...new Set(cs.committees.flatMap((committee) => committee.nations))];
 	const taken = new Set<string>();
 	for (const delegationId of delegationIds) {
-		const size = membersOf(cs, delegationId).length;
-		const nation = nations.find((code) => !taken.has(code) && nationSeats(cs, code) === size);
+		const size = membersOf({ cs, delegationId }).length;
+		const nation = nations.find(
+			(code) => !taken.has(code) && nationSeats({ cs, nation: code }) === size
+		);
 		if (!nation || taken.size >= 2) continue;
 		taken.add(nation);
 		cs.batch.assignmentUnit.push({

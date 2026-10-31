@@ -59,7 +59,12 @@ describe('paperTypstMeta', () => {
 describe('paperExportJob', () => {
 	test('exports working papers as a resolution under the editor header', () => {
 		const header = { documentNumber: 'WP/2026/abcdef', conferenceName: 'MUN-SH' };
-		expect(paperExportJob({ ...positionPaper, type: 'WORKING_PAPER' }, header)).toEqual({
+		expect(
+			paperExportJob({
+				paper: { ...positionPaper, type: 'WORKING_PAPER' },
+				resolutionHeaderData: header
+			})
+		).toEqual({
 			kind: 'resolution',
 			header,
 			docNumber: 'WP/2026/abcdef'
@@ -67,7 +72,12 @@ describe('paperExportJob', () => {
 	});
 
 	test('exports a working paper without a header with an empty one', () => {
-		expect(paperExportJob({ ...positionPaper, type: 'WORKING_PAPER' }, undefined)).toEqual({
+		expect(
+			paperExportJob({
+				paper: { ...positionPaper, type: 'WORKING_PAPER' },
+				resolutionHeaderData: undefined
+			})
+		).toEqual({
 			kind: 'resolution',
 			header: {},
 			docNumber: undefined
@@ -75,7 +85,7 @@ describe('paperExportJob', () => {
 	});
 
 	test('exports other papers as a text document named by type, year and id', () => {
-		expect(paperExportJob(positionPaper, undefined)).toEqual({
+		expect(paperExportJob({ paper: positionPaper, resolutionHeaderData: undefined })).toEqual({
 			kind: 'paper',
 			meta: paperTypstMeta(positionPaper),
 			docNumber: `POSITION_PAPER/${year}/abcdef`

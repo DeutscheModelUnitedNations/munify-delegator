@@ -22,7 +22,7 @@ export function createPendingMoves(placeOf: (key: string) => string) {
 		},
 
 		/** Marks `key` as moving while `change` runs; a change that fails (false) frees it at once. */
-		async track(key: string, change: () => Promise<boolean>) {
+		async track({ key, change }: { key: string; change: () => Promise<boolean> }) {
 			from.set(key, placeOf(key));
 			if (await change()) setTimeout(() => from.delete(key), SETTLE_TIMEOUT);
 			else from.delete(key);

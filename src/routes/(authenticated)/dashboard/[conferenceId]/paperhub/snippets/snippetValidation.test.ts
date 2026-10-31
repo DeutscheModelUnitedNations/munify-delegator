@@ -10,33 +10,39 @@ const doc = (text: string): JSONContent => ({
 
 describe('checkSnippet', () => {
 	test('requires a name', () => {
-		expect(checkSnippet('  ', doc('Text'))).toEqual({
+		expect(checkSnippet({ name: '  ', content: doc('Text') })).toEqual({
 			error: m.snippetNameRequired(),
 			hasPlaceholders: false
 		});
 	});
 
 	test('requires text content', () => {
-		expect(checkSnippet('Greeting', { type: 'doc', content: [{ type: 'paragraph' }] })).toEqual({
+		expect(
+			checkSnippet({ name: 'Greeting', content: { type: 'doc', content: [{ type: 'paragraph' }] } })
+		).toEqual({
 			error: m.snippetContentRequired(),
 			hasPlaceholders: false
 		});
 	});
 
 	test('rejects malformed, empty and overlong placeholders', () => {
-		expect(checkSnippet('Greeting', doc('Dear {{name')).error).toBe(m.malformedPlaceholders());
-		expect(checkSnippet('Greeting', doc('Dear {{}}')).error).toBe(m.emptyPlaceholders());
-		expect(checkSnippet('Greeting', doc(`Dear {{${'x'.repeat(51)}}}`)).error).toBe(
-			m.placeholderTooLong()
+		expect(checkSnippet({ name: 'Greeting', content: doc('Dear {{name') }).error).toBe(
+			m.malformedPlaceholders()
 		);
+		expect(checkSnippet({ name: 'Greeting', content: doc('Dear {{}}') }).error).toBe(
+			m.emptyPlaceholders()
+		);
+		expect(
+			checkSnippet({ name: 'Greeting', content: doc(`Dear {{${'x'.repeat(51)}}}`) }).error
+		).toBe(m.placeholderTooLong());
 	});
 
 	test('accepts a snippet and reports whether it has placeholders', () => {
-		expect(checkSnippet('Greeting', doc('Dear {{name}}'))).toEqual({
+		expect(checkSnippet({ name: 'Greeting', content: doc('Dear {{name}}') })).toEqual({
 			error: null,
 			hasPlaceholders: true
 		});
-		expect(checkSnippet('Greeting', doc('Dear delegate'))).toEqual({
+		expect(checkSnippet({ name: 'Greeting', content: doc('Dear delegate') })).toEqual({
 			error: null,
 			hasPlaceholders: false
 		});

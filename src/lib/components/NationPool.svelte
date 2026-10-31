@@ -63,8 +63,8 @@
 			name: m.byDelegationSize(),
 			icon: 'hashtag',
 			sorting: (a: Nation, b: Nation) =>
-				`${roleSeats(a, committees)}${getFullTranslatedCountryNameFromISO3Code(a.nation.alpha3Code)}`.localeCompare(
-					`${roleSeats(b, committees)}${getFullTranslatedCountryNameFromISO3Code(b.nation.alpha3Code)}`
+				`${roleSeats({ role: a, committees })}${getFullTranslatedCountryNameFromISO3Code(a.nation.alpha3Code)}`.localeCompare(
+					`${roleSeats({ role: b, committees })}${getFullTranslatedCountryNameFromISO3Code(b.nation.alpha3Code)}`
 				)
 		}
 	];
@@ -107,7 +107,7 @@
 {/snippet}
 
 {#snippet seatTotal(nation: Nation)}
-	{@const seats = roleSeats(nation, committees)}
+	{@const seats = roleSeats({ role: nation, committees })}
 	{seats}
 	{#if delegationSize && delegationSize < seats}
 		<div

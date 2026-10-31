@@ -14,7 +14,7 @@
 	let now = $state(new Date());
 
 	/** The hour of the day in the conference's timezone, as a fraction: 9:30 is 9.5. */
-	const getCurrentHour = (date: Date) => utcHourOf(new Date(wallClockNow(timezone, date)));
+	const getCurrentHour = (date: Date) => utcHourOf(new Date(wallClockNow({ timezone, now: date })));
 
 	let visible = $derived.by(() => {
 		const currentHour = getCurrentHour(now);

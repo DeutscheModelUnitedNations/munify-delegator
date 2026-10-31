@@ -12,7 +12,7 @@ import { m } from '#lib/paraglide/messages';
 import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 import { eq, inArray } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 type Reader = Transaction | typeof db;
 
@@ -20,7 +20,7 @@ type Reader = Transaction | typeof db;
  * The ids of a conference's single participants, as a subquery: a planned single role reaches its
  * conference only through the participant.
  */
-function singleParticipantIdsOf(tx: Reader, conferenceId: string) {
+function singleParticipantIdsOf({ tx, conferenceId }: { tx: Reader; conferenceId: string }) {
 	return tx
 		.select({ id: schema.singleParticipant.id })
 		.from(schema.singleParticipant)
@@ -28,11 +28,17 @@ function singleParticipantIdsOf(tx: Reader, conferenceId: string) {
 			schema.conferenceParticipant,
 			eq(schema.conferenceParticipant.id, schema.singleParticipant.conferenceParticipantId)
 		)
-		.where(whereRows(schema.conferenceParticipant, { conferenceId }));
+		.where(whereRows({ table: schema.conferenceParticipant, filter: { conferenceId } }));
 }
 
 /** The registrations of a conference and the draft on top of them, as `planApply` takes them. */
-export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
+export async function loadAssignmentInput({
+	tx,
+	conferenceId
+}: {
+	tx: Reader;
+	conferenceId: string;
+}) {
 	const [delegations, singleParticipants, units, draftSingleRoles, conference] = await Promise.all([
 		tx.query.delegation.findMany({
 			where: { conferenceId, applied: true },
@@ -69,13 +75,13 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
 			}
 		})
 	]);
-	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
+	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 
 	const roles = conference.roles;
-	const seated = seatedRoles(
-		conference.committees,
-		roles.filter((role) => role.kind === 'NON_STATE_ACTOR')
-	);
+	const seated = seatedRoles({
+		committees: conference.committees,
+		nonStateActors: roles.filter((role) => role.kind === 'NON_STATE_ACTOR')
+	});
 	return {
 		roles: seated,
 		roleNames: new Map(
@@ -117,22 +123,28 @@ export async function loadAssignmentInput(tx: Reader, conferenceId: string) {
  * Plans for a whole delegation to end up with `target`: a unit when that differs from what it
  * holds, none when it does not. A split delegation is assigned through its parts instead.
  */
-export async function draftDelegationTarget(
-	tx: Reader,
-	delegation: { id: string; conferenceId: string; liveTarget: Target },
-	target: Target
-) {
+export async function draftDelegationTarget({
+	tx,
+	delegation,
+	target
+}: {
+	tx: Reader;
+	delegation: { id: string; conferenceId: string; liveTarget: Target };
+	target: Target;
+}) {
 	const units = await tx.query.assignmentUnit.findMany({
 		where: { sourceDelegationId: delegation.id },
 		with: { members: { columns: { id: true }, limit: 1 } }
 	});
 	if (units.some((unit) => unit.members.length > 0)) {
-		throw apiError('CONFLICT', m.assignmentDelegationIsSplit());
+		throw apiError({ code: 'CONFLICT', message: m.assignmentDelegationIsSplit() });
 	}
 	if (sameTarget(target, delegation.liveTarget)) {
 		await tx
 			.delete(schema.assignmentUnit)
-			.where(whereRows(schema.assignmentUnit, { sourceDelegationId: delegation.id }));
+			.where(
+				whereRows({ table: schema.assignmentUnit, filter: { sourceDelegationId: delegation.id } })
+			);
 		return;
 	}
 	const values = { roleId: target.roleId };
@@ -141,7 +153,7 @@ export async function draftDelegationTarget(
 		await tx
 			.update(schema.assignmentUnit)
 			.set(values)
-			.where(whereRows(schema.assignmentUnit, { id: existing.id }));
+			.where(whereRows({ table: schema.assignmentUnit, filter: { id: existing.id } }));
 	} else {
 		await tx.insert(schema.assignmentUnit).values({
 			conferenceId: delegation.conferenceId,
@@ -152,7 +164,13 @@ export async function draftDelegationTarget(
 }
 
 /** One readable line per problem, for the error the team sees when applying is refused. */
-function describeApplyErrors(errors: ApplyError[], roleNames: ReadonlyMap<string, string>) {
+function describeApplyErrors({
+	errors,
+	roleNames
+}: {
+	errors: ApplyError[];
+	roleNames: ReadonlyMap<string, string>;
+}) {
 	return errors
 		.map((error) => {
 			switch (error.type) {
@@ -171,7 +189,15 @@ function describeApplyErrors(errors: ApplyError[], roleNames: ReadonlyMap<string
 		.join('\n');
 }
 
-async function createDelegations(tx: Transaction, conferenceId: string, plan: ApplyPlan) {
+async function createDelegations({
+	tx,
+	conferenceId,
+	plan
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	plan: ApplyPlan;
+}) {
 	const created: string[] = [];
 	for (const { copyFrom } of plan.newDelegations) {
 		const source =
@@ -203,12 +229,17 @@ async function createDelegations(tx: Transaction, conferenceId: string, plan: Ap
  * Single participants become members and stop being singles. Their supervisors stay: supervision
  * hangs on the person (`conferenceParticipant`), not on the registration.
  */
-async function convertSingles(
-	tx: Transaction,
-	conferenceId: string,
-	plan: ApplyPlan,
-	idOf: (ref: DelegationRef) => string
-) {
+async function convertSingles({
+	tx,
+	conferenceId,
+	plan,
+	idOf
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	plan: ApplyPlan;
+	idOf: (ref: DelegationRef) => string;
+}) {
 	for (const conversion of plan.convertSingles) {
 		const participant = await tx.query.singleParticipant.findFirst({
 			where: { id: conversion.singleParticipantId, participant: { conferenceId } },
@@ -216,9 +247,12 @@ async function convertSingles(
 		});
 		if (!participant) continue;
 		// The single row goes first: a person holds one registration per conference.
-		await tx
-			.delete(schema.singleParticipant)
-			.where(whereRows(schema.singleParticipant, { id: conversion.singleParticipantId }));
+		await tx.delete(schema.singleParticipant).where(
+			whereRows({
+				table: schema.singleParticipant,
+				filter: { id: conversion.singleParticipantId }
+			})
+		);
 		await tx.insert(schema.delegationMember).values({
 			delegationId: idOf(conversion.to),
 			conferenceParticipantId: participant.conferenceParticipantId,
@@ -227,47 +261,67 @@ async function convertSingles(
 	}
 }
 
-async function setTargets(tx: Transaction, plan: ApplyPlan, idOf: (ref: DelegationRef) => string) {
+async function setTargets({
+	tx,
+	plan,
+	idOf
+}: {
+	tx: Transaction;
+	plan: ApplyPlan;
+	idOf: (ref: DelegationRef) => string;
+}) {
 	// Every role belongs to one delegation per conference, so the roles moving away are cleared
 	// before any is handed out again.
 	if (plan.clearTargets.length > 0) {
 		await tx
 			.update(schema.delegation)
 			.set({ assignedRoleId: null })
-			.where(whereRows(schema.delegation, { id: { in: plan.clearTargets } }));
+			.where(whereRows({ table: schema.delegation, filter: { id: { in: plan.clearTargets } } }));
 	}
 	for (const { delegation, target } of plan.setTargets) {
 		await tx
 			.update(schema.delegation)
 			.set({ assignedRoleId: target.roleId })
-			.where(whereRows(schema.delegation, { id: idOf(delegation) }));
+			.where(whereRows({ table: schema.delegation, filter: { id: idOf(delegation) } }));
 	}
 }
 
-async function moveMembers(tx: Transaction, plan: ApplyPlan, idOf: (ref: DelegationRef) => string) {
+async function moveMembers({
+	tx,
+	plan,
+	idOf
+}: {
+	tx: Transaction;
+	plan: ApplyPlan;
+	idOf: (ref: DelegationRef) => string;
+}) {
 	for (const move of plan.moveMembers) {
 		await tx
 			.update(schema.delegationMember)
 			.set({ delegationId: idOf(move.to), isHeadDelegate: move.isHeadDelegate })
-			.where(whereRows(schema.delegationMember, { id: move.memberId }));
+			.where(whereRows({ table: schema.delegationMember, filter: { id: move.memberId } }));
 	}
 	if (plan.resetCommittees.length > 0) {
 		await tx
 			.update(schema.delegationMember)
 			.set({ assignedCommitteeId: null })
-			.where(whereRows(schema.delegationMember, { id: { in: plan.resetCommittees } }));
+			.where(
+				whereRows({ table: schema.delegationMember, filter: { id: { in: plan.resetCommittees } } })
+			);
 	}
 }
 
 /** Removes the conference's planned changes: its units (with their members) and single roles. */
-export async function clearDraft(tx: Transaction, conferenceId: string) {
-	await tx.delete(schema.assignmentUnit).where(whereRows(schema.assignmentUnit, { conferenceId }));
+export async function clearDraft({ tx, conferenceId }: { tx: Transaction; conferenceId: string }) {
+	await tx
+		.delete(schema.assignmentUnit)
+		.where(whereRows({ table: schema.assignmentUnit, filter: { conferenceId } }));
 	await tx
 		.delete(schema.assignmentSingleRole)
 		.where(
 			inArray(
 				schema.assignmentSingleRole.singleParticipantId,
-				singleParticipantIdsOf(tx, conferenceId)
+				singleParticipantIdsOf({ tx, conferenceId })
 			)
 		);
 }
@@ -278,20 +332,24 @@ export async function clearDraft(tx: Transaction, conferenceId: string) {
  */
 export async function applyAssignmentDraft(conferenceId: string) {
 	return db.transaction(async (tx) => {
-		const { input, roleNames } = await loadAssignmentInput(tx, conferenceId);
+		const { input, roleNames } = await loadAssignmentInput({ tx, conferenceId });
 		const { plan, errors } = planApply(input);
-		if (errors.length > 0) throw apiError('CONFLICT', describeApplyErrors(errors, roleNames));
+		if (errors.length > 0)
+			throw apiError({ code: 'CONFLICT', message: describeApplyErrors({ errors, roleNames }) });
 
-		const idOf = await createDelegations(tx, conferenceId, plan);
-		await setTargets(tx, plan, idOf);
-		await moveMembers(tx, plan, idOf);
-		await convertSingles(tx, conferenceId, plan, idOf);
+		const idOf = await createDelegations({ tx, conferenceId, plan });
+		await setTargets({ tx, plan, idOf });
+		await moveMembers({ tx, plan, idOf });
+		await convertSingles({ tx, conferenceId, plan, idOf });
 
 		if (plan.deleteDelegations.length > 0) {
 			await tx.delete(schema.delegation).where(
-				whereRows(schema.delegation, {
-					conferenceId,
-					id: { in: plan.deleteDelegations }
+				whereRows({
+					table: schema.delegation,
+					filter: {
+						conferenceId,
+						id: { in: plan.deleteDelegations }
+					}
 				})
 			);
 		}
@@ -299,10 +357,10 @@ export async function applyAssignmentDraft(conferenceId: string) {
 			await tx
 				.update(schema.singleParticipant)
 				.set({ assignedRoleId: roleId })
-				.where(whereRows(schema.singleParticipant, { id: singleParticipantId }));
+				.where(whereRows({ table: schema.singleParticipant, filter: { id: singleParticipantId } }));
 		}
 
-		await clearDraft(tx, conferenceId);
+		await clearDraft({ tx, conferenceId });
 
 		return plan;
 	});

@@ -12,7 +12,7 @@ import {
 } from '#lib/helpers/teamRoles';
 import { m } from '#lib/paraglide/messages';
 import { translateTeamRole } from '#lib/utils/enumTranslations';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { callerUserId } from './utils';
 
 export type TeamRole = (typeof teamRole.enumValues)[number];
@@ -36,7 +36,7 @@ export function isSystemAdmin(ctx: Context) {
 	return ctx.hasRole('admin');
 }
 /** Matches a Conference row whose team includes the user, optionally with one of `roles`. */
-export function isTeamMemberOf(ctx: Context, roles?: readonly TeamRole[]) {
+export function isTeamMemberOf({ ctx, roles }: { ctx: Context; roles?: readonly TeamRole[] }) {
 	if (isSystemAdmin(ctx)) return {};
 	const id = callerUserId(ctx);
 	if (!id) return undefined;
@@ -46,14 +46,20 @@ export function isTeamMemberOf(ctx: Context, roles?: readonly TeamRole[]) {
 }
 
 /** Matches a row whose `conference` has the user on its team, optionally with one of `roles`. */
-export function isTeamMemberOfConference(ctx: Context, roles?: readonly TeamRole[]) {
-	const conference = isTeamMemberOf(ctx, roles);
+export function isTeamMemberOfConference({
+	ctx,
+	roles
+}: {
+	ctx: Context;
+	roles?: readonly TeamRole[];
+}) {
+	const conference = isTeamMemberOf({ ctx, roles });
 	return conference === undefined ? undefined : { conference };
 }
 
 /** Matches a Conference row in which the user holds the team `permission` (`rolesWithTeamPermission`). */
-function isTeamPermittedIn(ctx: Context, permission: TeamPermission) {
-	return isTeamMemberOf(ctx, rolesWithTeamPermission(permission));
+function isTeamPermittedIn({ ctx, permission }: { ctx: Context; permission: TeamPermission }) {
+	return isTeamMemberOf({ ctx, roles: rolesWithTeamPermission(permission) });
 }
 
 /** A filter matching no row, for a query `where` that must not be left without one. */
@@ -65,9 +71,9 @@ const NOTHING = { RAW: sql`false` };
  * without it. Unlike `isTeamPermittedIn` it never returns undefined (which would match every row);
  * it throws for an anonymous caller instead.
  */
-export function teamConference(ctx: Context, permission: TeamPermission) {
+export function teamConference({ ctx, permission }: { ctx: Context; permission: TeamPermission }) {
 	ctx.mustBeLoggedIn();
-	return isTeamPermittedIn(ctx, permission) ?? NOTHING;
+	return isTeamPermittedIn({ ctx, permission }) ?? NOTHING;
 }
 
 /**
@@ -76,13 +82,18 @@ export function teamConference(ctx: Context, permission: TeamPermission) {
  *
  * ATTENTION: This actively performs a query
  */
-export async function hasTeamPermission(
-	ctx: Context,
-	conferenceId: string,
-	permission: TeamPermission,
-	tx: Transaction | typeof db = db
-) {
-	const team = isTeamPermittedIn(ctx, permission);
+export async function hasTeamPermission({
+	ctx,
+	conferenceId,
+	permission,
+	tx = db
+}: {
+	ctx: Context;
+	conferenceId: string;
+	permission: TeamPermission;
+	tx?: Transaction | typeof db;
+}) {
+	const team = isTeamPermittedIn({ ctx, permission });
 	if (!team) return false;
 	const conference = await tx.query.conference.findFirst({
 		where: { id: conferenceId, ...team },
@@ -97,21 +108,26 @@ export async function hasTeamPermission(
  * This is how a create is authorized: there is no row of its own to run an ability against yet, so
  * the conference it goes into is checked for the permission.
  */
-export async function assertTeamPermission(
-	ctx: ApiContext,
-	conferenceId: string,
-	permission: TeamPermission,
-	tx: Transaction | typeof db = db
-) {
+export async function assertTeamPermission({
+	ctx,
+	conferenceId,
+	permission,
+	tx = db
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	permission: TeamPermission;
+	tx?: Transaction | typeof db;
+}) {
 	ctx.mustBeLoggedIn();
-	if (!(await hasTeamPermission(ctx, conferenceId, permission, tx))) {
+	if (!(await hasTeamPermission({ ctx, conferenceId, permission, tx }))) {
 		const roles = rolesWithTeamPermission(permission);
-		throw apiError(
-			'FORBIDDEN',
-			roles
+		throw apiError({
+			code: 'FORBIDDEN',
+			message: roles
 				? m.accessDeniedTeamRoles({ roles: roles.map(translateTeamRole).join(', ') })
 				: m.accessDeniedTeamMember()
-		);
+		});
 	}
 }
 
@@ -163,7 +179,7 @@ export function participatesIn(conference: { id: string } | object) {
  */
 export function isCaredForUser(ctx: Context) {
 	if (isSystemAdmin(ctx)) return {};
-	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 	if (!conference) return undefined;
 	return { OR: [participatesIn(conference), { waitingListEntry: { conference } }] };
 }
@@ -184,9 +200,9 @@ export const publicConference = {
  * anonymous caller; a system admin's team filter matches every conference. `asParticipant`
  * narrows the participant way only.
  */
-function conferencesOfCaller(ctx: Context, asParticipant: object) {
+function conferencesOfCaller({ ctx, asParticipant }: { ctx: Context; asParticipant: object }) {
 	const participant = isParticipantOf(ctx);
-	const team = isTeamMemberOf(ctx);
+	const team = isTeamMemberOf({ ctx });
 	return [...(participant ? [{ ...participant, ...asParticipant }] : []), ...(team ? [team] : [])];
 }
 
@@ -195,8 +211,8 @@ function conferencesOfCaller(ctx: Context, asParticipant: object) {
  * an anonymous caller. `asParticipant` narrows what participants get to see, the team always
  * does: `hasPartIn(ctx, { showCalendar: true })` for the schedule.
  */
-export function hasPartIn(ctx: Context, asParticipant: object = {}) {
-	const ways = conferencesOfCaller(ctx, asParticipant);
+export function hasPartIn({ ctx, asParticipant = {} }: { ctx: Context; asParticipant?: object }) {
+	const ways = conferencesOfCaller({ ctx, asParticipant });
 	return ways.length > 0 ? { OR: ways } : undefined;
 }
 
@@ -206,7 +222,7 @@ export function hasPartIn(ctx: Context, asParticipant: object = {}) {
  * overview shows - follows it, so a conference in PRE or POST hides its set-up from strangers too.
  */
 export function readableConference(ctx: Context) {
-	return { OR: [publicConference, ...conferencesOfCaller(ctx, {})] };
+	return { OR: [publicConference, ...conferencesOfCaller({ ctx, asParticipant: {} })] };
 }
 
 /**
@@ -214,11 +230,15 @@ export function readableConference(ctx: Context) {
  * one of them takes part in it (delegate, single participant or supervisor), so writes that name
  * other people by id can use it as their guard and get the rows to point at in one go.
  */
-export async function participantIdsOf(
-	conferenceId: string,
-	userIds: readonly string[],
-	tx: Transaction | typeof db = db
-): Promise<Map<string, string>> {
+export async function participantIdsOf({
+	conferenceId,
+	userIds,
+	tx = db
+}: {
+	conferenceId: string;
+	userIds: readonly string[];
+	tx?: Transaction | typeof db;
+}): Promise<Map<string, string>> {
 	const unique = [...new Set(userIds)];
 	if (unique.length === 0) return new Map();
 	const found = await tx.query.conferenceParticipant.findMany({
@@ -226,7 +246,7 @@ export async function participantIdsOf(
 		columns: { id: true, userId: true }
 	});
 	if (found.length !== unique.length) {
-		throw apiError('INVALID_INPUT', m.usersNotInConference());
+		throw apiError({ code: 'INVALID_INPUT', message: m.usersNotInConference() });
 	}
 	return new Map(found.map((row) => [row.userId, row.id]));
 }
@@ -236,12 +256,17 @@ export async function participantIdsOf(
  * of `roleKinds` (a delegation's by default); an absent one passes. A nation is the conference's
  * while one of its committees seats it, which `setCommitteeNationSeat` keeps its role row for.
  */
-export async function offeredIn(
-	conferenceId: string,
-	ref: { roleId?: string | null; committeeId?: string | null },
-	roleKinds: readonly ConferenceRoleKind[] = DELEGATION_ROLE_KINDS,
-	tx: Transaction | typeof db = db
-) {
+export async function offeredIn({
+	conferenceId,
+	ref,
+	roleKinds = DELEGATION_ROLE_KINDS,
+	tx = db
+}: {
+	conferenceId: string;
+	ref: { roleId?: string | null; committeeId?: string | null };
+	roleKinds?: readonly ConferenceRoleKind[];
+	tx?: Transaction | typeof db;
+}) {
 	const [role, committee] = await Promise.all([
 		ref.roleId
 			? tx.query.conferenceRole.findFirst({
@@ -260,23 +285,32 @@ export async function offeredIn(
 }
 
 /** Refuses a role or committee that the conference does not have. */
-export async function assertOfferedIn(
-	conferenceId: string,
-	ref: Parameters<typeof offeredIn>[1],
-	roleKinds?: readonly ConferenceRoleKind[],
-	tx: Transaction | typeof db = db
-) {
-	if (!(await offeredIn(conferenceId, ref, roleKinds, tx))) {
-		throw apiError('INVALID_INPUT', m.roleNotOnOffer());
+export async function assertOfferedIn({
+	conferenceId,
+	ref,
+	roleKinds,
+	tx = db
+}: {
+	conferenceId: string;
+	ref: Parameters<typeof offeredIn>[0]['ref'];
+	roleKinds?: readonly ConferenceRoleKind[];
+	tx?: Transaction | typeof db;
+}) {
+	if (!(await offeredIn({ conferenceId, ref, roleKinds, tx }))) {
+		throw apiError({ code: 'INVALID_INPUT', message: m.roleNotOnOffer() });
 	}
 }
 
 /** Refuses role ids that are not custom roles of the given conference. */
-export async function assertCustomRolesOf(
-	conferenceId: string,
-	roleIds: readonly string[],
-	tx: Transaction | typeof db = db
-) {
+export async function assertCustomRolesOf({
+	conferenceId,
+	roleIds,
+	tx = db
+}: {
+	conferenceId: string;
+	roleIds: readonly string[];
+	tx?: Transaction | typeof db;
+}) {
 	const unique = [...new Set(roleIds)];
 	if (unique.length === 0) return;
 	const roles = await tx.query.conferenceRole.findMany({
@@ -284,7 +318,7 @@ export async function assertCustomRolesOf(
 		columns: { id: true }
 	});
 	if (roles.length !== unique.length) {
-		throw apiError('INVALID_INPUT', m.rolesNotInConference());
+		throw apiError({ code: 'INVALID_INPUT', message: m.rolesNotInConference() });
 	}
 }
 
@@ -298,10 +332,13 @@ export async function assertCustomRolesOf(
  */
 
 /** A participant-side rule that reads the row but not its assignment (`assignmentColumns`). */
-export function maskedUntilRelease<W extends object, C extends object>(
-	filter: W | undefined,
-	assignmentColumns: C
-) {
+export function maskedUntilRelease<W extends object, C extends object>({
+	filter,
+	assignmentColumns
+}: {
+	filter: W | undefined;
+	assignmentColumns: C;
+}) {
 	return filter ? { where: filter, columns: assignmentColumns } : undefined;
 }
 

@@ -56,16 +56,22 @@ describe('manual targets', () => {
 	});
 
 	test('fall back to the UN members when unusable', () => {
-		expect(baselineWeights('MANUAL', [3, 3, 2, 3, 4])).toEqual([3, 3, 2, 3, 4]);
-		expect(baselineWeights('MANUAL', [])).toEqual(baselineTemplates.UN_MEMBERS);
-		expect(baselineWeights('ECOSOC', [1, 1, 1, 1, 1])).toEqual(baselineTemplates.ECOSOC);
+		expect(baselineWeights({ baseline: 'MANUAL', manualTargets: [3, 3, 2, 3, 4] })).toEqual([
+			3, 3, 2, 3, 4
+		]);
+		expect(baselineWeights({ baseline: 'MANUAL', manualTargets: [] })).toEqual(
+			baselineTemplates.UN_MEMBERS
+		);
+		expect(baselineWeights({ baseline: 'ECOSOC', manualTargets: [1, 1, 1, 1, 1] })).toEqual(
+			baselineTemplates.ECOSOC
+		);
 	});
 });
 
 describe('regionalDeviations', () => {
 	test('measures seats against the committee baseline and suggests the smallest delegations', () => {
-		const [result] = regionalDeviations(
-			[
+		const [result] = regionalDeviations({
+			committees: [
 				{
 					id: 'sr',
 					numOfSeatsPerDelegation: 1,
@@ -76,12 +82,12 @@ describe('regionalDeviations', () => {
 				}
 			],
 			members,
-			new Map([
+			seatCounts: new Map([
 				['af1', 1],
 				['af2', 3],
 				['af3', 1]
 			])
-		);
+		});
 
 		expect(result.seats).toBe(5);
 		expect(result.groups.map((g) => g.deviation)).toEqual([-1, -1, 0, 1, 1]);
@@ -91,8 +97,8 @@ describe('regionalDeviations', () => {
 	});
 
 	test('counts seats per delegation and is balanced when it matches the baseline', () => {
-		const [result] = regionalDeviations(
-			[
+		const [result] = regionalDeviations({
+			committees: [
 				{
 					id: 'sr',
 					numOfSeatsPerDelegation: 2,
@@ -102,8 +108,8 @@ describe('regionalDeviations', () => {
 				}
 			],
 			members,
-			new Map()
-		);
+			seatCounts: new Map()
+		});
 		expect(result.seats).toBe(4);
 		expect(result.groups[0]).toMatchObject({ actual: 2, target: 2, deviation: 0 });
 		expect(result.seatsToMove).toBe(0);
@@ -120,16 +126,16 @@ describe('balancing never aims for one-person delegations', () => {
 	});
 
 	test('a seat is only taken where at least two remain', () => {
-		expect(canGiveUpSeat(1, 1)).toBe(false);
-		expect(canGiveUpSeat(2, 1)).toBe(false);
-		expect(canGiveUpSeat(3, 1)).toBe(true);
-		expect(canGiveUpSeat(3, 2)).toBe(false);
-		expect(canGiveUpSeat(4, 2)).toBe(true);
+		expect(canGiveUpSeat({ delegationSize: 1, seatsPerDelegation: 1 })).toBe(false);
+		expect(canGiveUpSeat({ delegationSize: 2, seatsPerDelegation: 1 })).toBe(false);
+		expect(canGiveUpSeat({ delegationSize: 3, seatsPerDelegation: 1 })).toBe(true);
+		expect(canGiveUpSeat({ delegationSize: 3, seatsPerDelegation: 2 })).toBe(false);
+		expect(canGiveUpSeat({ delegationSize: 4, seatsPerDelegation: 2 })).toBe(true);
 	});
 
 	test('filters the suggested states of a committee', () => {
-		const [result] = regionalDeviations(
-			[
+		const [result] = regionalDeviations({
+			committees: [
 				{
 					id: 'gv',
 					numOfSeatsPerDelegation: 1,
@@ -140,12 +146,12 @@ describe('balancing never aims for one-person delegations', () => {
 				}
 			],
 			members,
-			new Map([
+			seatCounts: new Map([
 				['we1', 2],
 				['we2', 3],
 				['af1', 1]
 			])
-		);
+		});
 		expect(result.recommendation?.from.group).toBe('Western European and Others Group');
 		// we1 would be left alone
 		expect(result.removals).toEqual(['we2']);
@@ -160,19 +166,19 @@ describe('proportionalTargets', () => {
 
 	test('always adds up to the committee size', () => {
 		for (const seats of [1, 2, 7, 15, 30, 97]) {
-			const targets = proportionalTargets(un, seats);
+			const targets = proportionalTargets({ weights: un, seats });
 			expect(sum(targets)).toBe(seats);
 			expect(isValidManualTargets(targets)).toBe(true);
 		}
 	});
 
 	test('gives the remaining seats to the largest remainders', () => {
-		expect(proportionalTargets(un, 15)).toEqual([4, 4, 2, 3, 2]);
-		expect(proportionalTargets(un, 1)).toEqual([1, 0, 0, 0, 0]);
+		expect(proportionalTargets({ weights: un, seats: 15 })).toEqual([4, 4, 2, 3, 2]);
+		expect(proportionalTargets({ weights: un, seats: 1 })).toEqual([1, 0, 0, 0, 0]);
 	});
 
 	test('falls back to the weights for an empty committee', () => {
-		expect(proportionalTargets(un, 0)).toEqual(un);
+		expect(proportionalTargets({ weights: un, seats: 0 })).toEqual(un);
 	});
 });
 
@@ -192,13 +198,13 @@ describe('transferRecommendation', () => {
 			{ ...group(-1.6), group: 'Latin American and Caribbean Group' as const },
 			{ ...group(8.4), group: 'Western European and Others Group' as const }
 		];
-		const recommendation = transferRecommendation(groups, 1);
+		const recommendation = transferRecommendation({ groups, seatsPerDelegation: 1 });
 		expect(recommendation?.from.group).toBe('Western European and Others Group');
 		expect(recommendation?.to.group).toBe('African Group');
 		expect(recommendation?.seats).toBe(5);
 		// WEOG +3.4 left: 2 seats to Latin America, 1 to Asia-Pacific, then nothing improves
 		expect(recommendation?.seatsToMoveAfter).toBe(3);
-		expect(balancingSeats(groups, 1)).toBe(8);
+		expect(balancingSeats({ groups, seatsPerDelegation: 1 })).toBe(8);
 	});
 
 	test('moves whole delegations only', () => {
@@ -206,9 +212,9 @@ describe('transferRecommendation', () => {
 			{ ...group(-3), group: 'African Group' as const },
 			{ ...group(3), group: 'Western European and Others Group' as const }
 		];
-		expect(transferRecommendation(groups, 2)?.seats).toBe(4);
-		expect(transferRecommendation(groups, 4)?.seats).toBe(4);
-		expect(transferRecommendation(groups, 8)).toBeUndefined();
+		expect(transferRecommendation({ groups, seatsPerDelegation: 2 })?.seats).toBe(4);
+		expect(transferRecommendation({ groups, seatsPerDelegation: 4 })?.seats).toBe(4);
+		expect(transferRecommendation({ groups, seatsPerDelegation: 8 })).toBeUndefined();
 	});
 
 	test('recommends nothing for a balanced committee', () => {
@@ -216,7 +222,7 @@ describe('transferRecommendation', () => {
 			{ ...group(-0.4), group: 'African Group' as const },
 			{ ...group(0.4), group: 'Western European and Others Group' as const }
 		];
-		expect(transferRecommendation(groups, 1)).toBeUndefined();
+		expect(transferRecommendation({ groups, seatsPerDelegation: 1 })).toBeUndefined();
 	});
 
 	test('is balanced when no transfer brings it noticeably closer to its baseline', () => {
@@ -229,8 +235,8 @@ describe('transferRecommendation', () => {
 			{ ...group(-0.42), group: 'Latin American and Caribbean Group' as const },
 			{ ...group(0.58), group: 'Western European and Others Group' as const }
 		];
-		expect(transferRecommendation(balanced, 1)).toBeUndefined();
-		expect(balancingSeats(balanced, 1)).toBe(0);
+		expect(transferRecommendation({ groups: balanced, seatsPerDelegation: 1 })).toBeUndefined();
+		expect(balancingSeats({ groups: balanced, seatsPerDelegation: 1 })).toBe(0);
 	});
 
 	test('recommends a single seat when it helps, even below one seat each', () => {
@@ -240,6 +246,9 @@ describe('transferRecommendation', () => {
 			{ ...group(-0.5), group: 'Eastern European Group' as const }
 		];
 		// 1.8 seats off before, 1.0 after
-		expect(transferRecommendation(groups, 1)).toMatchObject({ seats: 1, seatsToMoveAfter: 0 });
+		expect(transferRecommendation({ groups, seatsPerDelegation: 1 })).toMatchObject({
+			seats: 1,
+			seatsToMoveAfter: 0
+		});
 	});
 });

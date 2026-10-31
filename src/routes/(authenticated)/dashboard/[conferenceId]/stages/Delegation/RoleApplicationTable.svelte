@@ -69,7 +69,7 @@
 							</span>
 						{/if}
 					</td>
-					<td class="text-center">{roleSeats(application.role, committees)}</td>
+					<td class="text-center">{roleSeats({ role: application.role, committees })}</td>
 				{:else if nonStateActor}
 					<td class="text-center"><Flag nsa size="xs" icon={nonStateActor.fontAwesomeIcon} /></td>
 					<td class="w-full">{nonStateActor.name}</td>

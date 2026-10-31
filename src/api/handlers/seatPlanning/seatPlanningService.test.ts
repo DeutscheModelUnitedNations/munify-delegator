@@ -7,9 +7,8 @@ import {
 	committeeUpdateData,
 	lockedCommitteeSeats,
 	nonStateActorUpdateData,
-	seatRemovalBlockersWhere,
 	totalSeats
-} from './seatPlanning';
+} from './seatPlanningService';
 
 const member = (
 	assignedCommitteeId: string | null,
@@ -18,15 +17,6 @@ const member = (
 ) => ({
 	assignedCommitteeId,
 	user: { givenName, familyName }
-});
-
-describe('seatRemovalBlockersWhere', () => {
-	test('only matches members of the nation assigned to exactly that committee', () => {
-		expect(seatRemovalBlockersWhere('gv', 'nation-deu')).toEqual({
-			assignedCommitteeId: 'gv',
-			delegation: { assignedRoleId: 'nation-deu' }
-		});
-	});
 });
 
 describe('lockedCommitteeSeats', () => {
@@ -61,19 +51,34 @@ describe('lockedCommitteeSeats', () => {
 
 describe('assertSeatsPerDelegationAllowed', () => {
 	test('accepts a value that is not part of the update', () => {
-		expect(() => assertSeatsPerDelegationAllowed(null, [{ delegationId: 'a' }])).not.toThrow();
-		expect(() => assertSeatsPerDelegationAllowed(undefined, [])).not.toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({
+				numOfSeatsPerDelegation: null,
+				assignedMembers: [{ delegationId: 'a' }]
+			})
+		).not.toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: undefined, assignedMembers: [] })
+		).not.toThrow();
 	});
 
 	test('rejects fewer than one seat', () => {
-		expect(() => assertSeatsPerDelegationAllowed(0, [])).toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: 0, assignedMembers: [] })
+		).toThrow();
 	});
 
 	test('rejects values below the biggest delegation assigned to the committee', () => {
 		const assigned = [{ delegationId: 'a' }, { delegationId: 'a' }, { delegationId: 'b' }];
-		expect(() => assertSeatsPerDelegationAllowed(1, assigned)).toThrow();
-		expect(() => assertSeatsPerDelegationAllowed(2, assigned)).not.toThrow();
-		expect(() => assertSeatsPerDelegationAllowed(3, assigned)).not.toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: 1, assignedMembers: assigned })
+		).toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: 2, assignedMembers: assigned })
+		).not.toThrow();
+		expect(() =>
+			assertSeatsPerDelegationAllowed({ numOfSeatsPerDelegation: 3, assignedMembers: assigned })
+		).not.toThrow();
 	});
 });
 
@@ -87,11 +92,13 @@ describe('totalSeats', () => {
 			{ numOfSeatsPerDelegation: 2, roles: [{ id: 'nation-deu' }, { id: 'nation-chn' }] },
 			{ numOfSeatsPerDelegation: 3, roles: [] }
 		];
-		expect(totalSeats(committees, [{ seatAmount: 5 }, { seatAmount: 1 }])).toBe(3 + 4 + 6);
+		expect(totalSeats({ committees, nonStateActors: [{ seatAmount: 5 }, { seatAmount: 1 }] })).toBe(
+			3 + 4 + 6
+		);
 	});
 
 	test('is zero for a conference without seats', () => {
-		expect(totalSeats([], [])).toBe(0);
+		expect(totalSeats({ committees: [], nonStateActors: [] })).toBe(0);
 	});
 });
 
@@ -130,9 +137,9 @@ describe('committeeUpdateData', () => {
 
 describe('assertCommitteeDeletable', () => {
 	test('blocks while delegates are assigned or papers are attached', () => {
-		expect(() => assertCommitteeDeletable(1, 0)).toThrow();
-		expect(() => assertCommitteeDeletable(0, 2)).toThrow();
-		expect(() => assertCommitteeDeletable(0, 0)).not.toThrow();
+		expect(() => assertCommitteeDeletable({ assignedMembers: 1, papers: 0 })).toThrow();
+		expect(() => assertCommitteeDeletable({ assignedMembers: 0, papers: 2 })).toThrow();
+		expect(() => assertCommitteeDeletable({ assignedMembers: 0, papers: 0 })).not.toThrow();
 	});
 });
 
@@ -145,14 +152,20 @@ describe('assertNonStateActorDeletable', () => {
 
 describe('assertRegionalBaselineTargets', () => {
 	test('a manual baseline needs usable targets', () => {
-		expect(() => assertRegionalBaselineTargets('MANUAL', [3, 3, 2, 3, 4])).not.toThrow();
-		expect(() => assertRegionalBaselineTargets('MANUAL', [])).toThrow();
-		expect(() => assertRegionalBaselineTargets('MANUAL', [0, 0, 0, 0, 0])).toThrow();
+		expect(() =>
+			assertRegionalBaselineTargets({ baseline: 'MANUAL', targets: [3, 3, 2, 3, 4] })
+		).not.toThrow();
+		expect(() => assertRegionalBaselineTargets({ baseline: 'MANUAL', targets: [] })).toThrow();
+		expect(() =>
+			assertRegionalBaselineTargets({ baseline: 'MANUAL', targets: [0, 0, 0, 0, 0] })
+		).toThrow();
 	});
 
 	test('templates keep stored targets but reject malformed ones', () => {
-		expect(() => assertRegionalBaselineTargets('ECOSOC', [])).not.toThrow();
-		expect(() => assertRegionalBaselineTargets('ECOSOC', [3, 3, 2, 3, 4])).not.toThrow();
-		expect(() => assertRegionalBaselineTargets('ECOSOC', [1, 2])).toThrow();
+		expect(() => assertRegionalBaselineTargets({ baseline: 'ECOSOC', targets: [] })).not.toThrow();
+		expect(() =>
+			assertRegionalBaselineTargets({ baseline: 'ECOSOC', targets: [3, 3, 2, 3, 4] })
+		).not.toThrow();
+		expect(() => assertRegionalBaselineTargets({ baseline: 'ECOSOC', targets: [1, 2] })).toThrow();
 	});
 });

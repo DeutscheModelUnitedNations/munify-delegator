@@ -11,30 +11,78 @@ const roles: RoleCounts = {
 
 describe('filteredStatValue', () => {
 	test('has no value without a count object', () => {
-		expect(filteredStatValue('all', undefined, roles)).toBeUndefined();
-		expect(filteredStatValue('appliedWithRole', undefined, roles)).toBeUndefined();
+		expect(
+			filteredStatValue({ filter: 'all', object: undefined, roleBasedData: roles })
+		).toBeUndefined();
+		expect(
+			filteredStatValue({ filter: 'appliedWithRole', object: undefined, roleBasedData: roles })
+		).toBeUndefined();
 	});
 
 	test('status filters pick from the count object', () => {
-		expect(filteredStatValue('all', counts)).toBe(10);
-		expect(filteredStatValue('applied', counts)).toBe(6);
-		expect(filteredStatValue('notApplied', counts)).toBe(4);
+		expect(filteredStatValue({ filter: 'all', object: counts })).toBe(10);
+		expect(filteredStatValue({ filter: 'applied', object: counts })).toBe(6);
+		expect(filteredStatValue({ filter: 'notApplied', object: counts })).toBe(4);
 	});
 
 	test('role filters have no value without role counts', () => {
-		expect(filteredStatValue('appliedWithRole', counts)).toBeUndefined();
-		expect(filteredStatValue('appliedWithoutRole', counts, undefined, 'delegationMembers')).toBe(
-			undefined
-		);
+		expect(filteredStatValue({ filter: 'appliedWithRole', object: counts })).toBeUndefined();
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithoutRole',
+				object: counts,
+				roleBasedData: undefined,
+				entityType: 'delegationMembers'
+			})
+		).toBe(undefined);
 	});
 
 	test('role filters pick the entity type or sum both', () => {
-		expect(filteredStatValue('appliedWithRole', counts, roles, 'delegationMembers')).toBe(3);
-		expect(filteredStatValue('appliedWithRole', counts, roles, 'singleParticipants')).toBe(2);
-		expect(filteredStatValue('appliedWithRole', counts, roles, 'total')).toBe(5);
-		expect(filteredStatValue('appliedWithRole', counts, roles)).toBe(5);
-		expect(filteredStatValue('appliedWithoutRole', counts, roles, 'delegationMembers')).toBe(1);
-		expect(filteredStatValue('appliedWithoutRole', counts, roles, 'singleParticipants')).toBe(5);
-		expect(filteredStatValue('appliedWithoutRole', counts, roles)).toBe(6);
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithRole',
+				object: counts,
+				roleBasedData: roles,
+				entityType: 'delegationMembers'
+			})
+		).toBe(3);
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithRole',
+				object: counts,
+				roleBasedData: roles,
+				entityType: 'singleParticipants'
+			})
+		).toBe(2);
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithRole',
+				object: counts,
+				roleBasedData: roles,
+				entityType: 'total'
+			})
+		).toBe(5);
+		expect(
+			filteredStatValue({ filter: 'appliedWithRole', object: counts, roleBasedData: roles })
+		).toBe(5);
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithoutRole',
+				object: counts,
+				roleBasedData: roles,
+				entityType: 'delegationMembers'
+			})
+		).toBe(1);
+		expect(
+			filteredStatValue({
+				filter: 'appliedWithoutRole',
+				object: counts,
+				roleBasedData: roles,
+				entityType: 'singleParticipants'
+			})
+		).toBe(5);
+		expect(
+			filteredStatValue({ filter: 'appliedWithoutRole', object: counts, roleBasedData: roles })
+		).toBe(6);
 	});
 });

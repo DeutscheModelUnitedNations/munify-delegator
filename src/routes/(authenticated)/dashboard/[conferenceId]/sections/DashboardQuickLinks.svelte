@@ -51,12 +51,15 @@
 		showCalendar: conference.showCalendar,
 		linkToPaperInbox: conference.linkToPaperInbox,
 		paymentStatus: status?.paymentStatus,
-		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
+		postalRegistrationStatus: getSimplifiedPostalStatus({
+			participantStatus: status,
+			ofAge: ofAgeAtConference
+		}),
 		user,
 		...extraContext
 	});
 
-	const visibleLinks = $derived(getLinksForUserType(userType, linkContext));
+	const visibleLinks = $derived(getLinksForUserType({ userType, ctx: linkContext }));
 </script>
 
 <PhoneReadyHint {conferenceId} conferenceState={conference.state} />

@@ -2,7 +2,13 @@
 export const DEFAULT_RETENTION_DAYS = 30;
 
 /** Invitations that expired before this moment are past their retention. */
-export function retentionCutoff(now: Date, retentionDays: number): Date {
+export function retentionCutoff({
+	now,
+	retentionDays
+}: {
+	now: Date;
+	retentionDays: number;
+}): Date {
 	const cutoff = new Date(now);
 	cutoff.setDate(cutoff.getDate() - retentionDays);
 	return cutoff;

@@ -30,7 +30,7 @@ export interface ScanCheckInput {
 }
 
 /** Whether the person is under 18 on `now`; an unknown birthday counts as of age. */
-export function isMinor(birthday: Date | null | undefined, now: Date) {
+export function isMinor({ birthday, now }: { birthday: Date | null | undefined; now: Date }) {
 	if (!birthday) return false;
 	const eighteenth = new Date(birthday);
 	eighteenth.setFullYear(eighteenth.getFullYear() + 18);
@@ -50,7 +50,7 @@ export function scanIssues(input: ScanCheckInput): ScanIssue[] {
 	if (input.isTeamMember && !input.inConference) return ['teamMember'];
 	const status = input.status ?? NO_STATUS;
 	// Only people under 18 need a guardian's consent
-	const needsConsent = isMinor(input.birthday, input.now ?? new Date());
+	const needsConsent = isMinor({ birthday: input.birthday, now: input.now ?? new Date() });
 	const open: [boolean, ScanIssue][] = [
 		[!input.inConference, 'notInConference'],
 		[status.paymentStatus !== 'DONE', 'paymentOpen'],

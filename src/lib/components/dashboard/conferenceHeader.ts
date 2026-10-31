@@ -7,7 +7,13 @@ const longDate: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', ye
 const formatDate = (date: Date) => new Date(date).toLocaleDateString(getLocale(), longDate);
 
 /** A conference's dates; within one month the first date is only its day ("3. – 5. May 2026"). */
-export function formatDateRange(start: Date | null | undefined, end: Date | null | undefined) {
+export function formatDateRange({
+	start,
+	end
+}: {
+	start: Date | null | undefined;
+	end: Date | null | undefined;
+}) {
 	if (!start || !end) return '';
 	const startD = new Date(start);
 	const endD = new Date(end);

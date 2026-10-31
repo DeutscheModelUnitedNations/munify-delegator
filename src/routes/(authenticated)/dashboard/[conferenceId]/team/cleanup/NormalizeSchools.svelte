@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
@@ -139,7 +140,7 @@
 			return true;
 		} catch (error) {
 			toast.error(m.cleanupNormalizeSchoolsFailed());
-			console.error(error);
+			logger.error('Normalizing schools failed', error);
 			return false;
 		} finally {
 			normalizing = false;

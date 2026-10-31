@@ -33,7 +33,13 @@ const PaperRef = object({ table: 'paper' });
 query({ table: 'paper' });
 
 /** The submitted introduction papers (those without an agenda item) the caller may read. */
-const readableIntroductionPapers = async (ctx: ApiContext, conferenceId: string) =>
+const readableIntroductionPapers = async ({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) =>
 	(await ctx.abilities.paper.filter('read')).merge({
 		where: {
 			delegation: { conferenceId },
@@ -43,7 +49,13 @@ const readableIntroductionPapers = async (ctx: ApiContext, conferenceId: string)
 	}).query.many;
 
 /** The submitted papers of a conference the caller may read, by committee and agenda item. */
-async function readablePapersGroupedByCommittee(ctx: ApiContext, conferenceId: string) {
+async function readablePapersGroupedByCommittee({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
 	return groupPapersByCommittee(
 		await db.query.paper.findMany({
 			...(await ctx.abilities.paper.filter('read')).merge({
@@ -71,14 +83,14 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const { authorParticipantId } = await assertCanCreatePaper(ctx, args);
+			const { authorParticipantId } = await assertCanCreatePaper({ ctx, args });
 			const created = await createPaper({ ...args, authorParticipantId });
 
 			paperPubsub.created();
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await queryAllowed(ctx.abilities.paper, created.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: created.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -92,14 +104,14 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdatePaper(ctx, args.paperId);
+			await assertCanUpdatePaper({ ctx, paperId: args.paperId });
 			await updatePaper(args);
 
 			paperPubsub.updated(args.paperId);
 			paperVersionPubsub.created();
 
 			return db.query.paper
-				.findFirst(query(await queryAllowed(ctx.abilities.paper, args.paperId)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: args.paperId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -108,7 +120,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'paper', args.id);
+			await deleteIfAllowed({ ctx, table: 'paper', id: args.id });
 			paperPubsub.removed();
 
 			return true;
@@ -126,10 +138,10 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanReadConferencePapers(ctx, args.conferenceId);
+			await assertCanReadConferencePapers({ ctx, conferenceId: args.conferenceId });
 
 			return db.query.paper.findMany(
-				query(await readableIntroductionPapers(ctx, args.conferenceId))
+				query(await readableIntroductionPapers({ ctx, conferenceId: args.conferenceId }))
 			);
 		}
 	}),
@@ -141,7 +153,10 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
 
-			const delegationIds = await supervisedDelegationIds(args.conferenceId, callerId);
+			const delegationIds = await supervisedDelegationIds({
+				conferenceId: args.conferenceId,
+				supervisorId: callerId
+			});
 			if (delegationIds.length === 0) return [];
 
 			return db.query.paper.findMany(
@@ -170,7 +185,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(query(await queryAllowed(ctx.abilities.paper, args.paperId)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paper, id: args.paperId })))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -208,8 +223,8 @@ schemaBuilder.queryFields((t) => ({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadConferencePapers(ctx, args.conferenceId);
-			return readablePapersGroupedByCommittee(ctx, args.conferenceId);
+			await assertCanReadConferencePapers({ ctx, conferenceId: args.conferenceId });
+			return readablePapersGroupedByCommittee({ ctx, conferenceId: args.conferenceId });
 		}
 	})
 }));
@@ -238,9 +253,9 @@ schemaBuilder.queryFields((t) => ({
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const callerId = callerUserId(ctx);
-			await assertCanReviewPapers(ctx, args.conferenceId);
+			await assertCanReviewPapers({ ctx, conferenceId: args.conferenceId });
 
-			return reviewerLeaderboard(args.conferenceId, callerId);
+			return reviewerLeaderboard({ conferenceId: args.conferenceId, callerId });
 		}
 	}),
 
@@ -253,9 +268,9 @@ schemaBuilder.queryFields((t) => ({
 			const callerId = callerUserId(ctx);
 			if (!callerId) return null;
 
-			if (!(await canReviewPapers(ctx, args.conferenceId))) return null;
+			if (!(await canReviewPapers({ ctx, conferenceId: args.conferenceId }))) return null;
 
-			return reviewStatsOf(args.conferenceId, callerId);
+			return reviewStatsOf({ conferenceId: args.conferenceId, callerId });
 		}
 	})
 }));
@@ -269,7 +284,7 @@ schemaBuilder.queryFields((t) => ({
 		type: PaperRef,
 		args: { agendaItemId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanReviewAgendaItemPapers(ctx, args.agendaItemId);
+			await assertCanReviewAgendaItemPapers({ ctx, agendaItemId: args.agendaItemId });
 			return findNextPaperToReview(args.agendaItemId);
 		}
 	})

@@ -97,14 +97,20 @@
 		URL.revokeObjectURL(url);
 	};
 
-	const addNation = (committeeKey: string, event: Event & { currentTarget: HTMLSelectElement }) => {
+	const addNation = ({
+		committeeKey,
+		event
+	}: {
+		committeeKey: string;
+		event: Event & { currentTarget: HTMLSelectElement };
+	}) => {
 		const code = event.currentTarget.value;
 		event.currentTarget.value = '';
 		const committee = form.committees.find((c) => c.key === committeeKey);
 		if (committee && code && !committee.nations.includes(code)) committee.nations.push(code);
 	};
 
-	const removeAt = (list: { key: string }[], key: string) => {
+	const removeAt = ({ list, key }: { list: { key: string }[]; key: string }) => {
 		const index = list.findIndex((item) => item.key === key);
 		if (index >= 0) list.splice(index, 1);
 	};
@@ -210,7 +216,7 @@
 									type="button"
 									class="btn btn-ghost btn-square text-error"
 									aria-label={m.delete()}
-									onclick={() => removeAt(form.committees, committee.key)}
+									onclick={() => removeAt({ list: form.committees, key: committee.key })}
 								>
 									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>
@@ -237,7 +243,7 @@
 									<select
 										class="select select-sm w-full max-w-xs"
 										aria-label={m.addNation()}
-										onchange={(event) => addNation(committee.key, event)}
+										onchange={(event) => addNation({ committeeKey: committee.key, event })}
 									>
 										<option value="">{m.addNation()}</option>
 										{#each nationOptions.filter((nation) => !committee.nations.includes(nation.code)) as nation (nation.code)}
@@ -284,7 +290,7 @@
 									type="button"
 									class="btn btn-ghost btn-square text-error"
 									aria-label={m.delete()}
-									onclick={() => removeAt(form.nsa, nsa.key)}
+									onclick={() => removeAt({ list: form.nsa, key: nsa.key })}
 								>
 									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>
@@ -334,7 +340,7 @@
 									type="button"
 									class="btn btn-ghost btn-square text-error"
 									aria-label={m.delete()}
-									onclick={() => removeAt(form.customConferenceRole, role.key)}
+									onclick={() => removeAt({ list: form.customConferenceRole, key: role.key })}
 								>
 									<i class="fa-sharp-duotone fa-solid fa-trash"></i>
 								</button>

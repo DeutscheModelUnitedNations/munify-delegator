@@ -15,10 +15,13 @@ type NamedSchool = { id: string; name: string } | null;
  * A delegation counts for every school one of its members comes from. People without a school are
  * left out.
  */
-export function schoolRows(
-	members: { delegationId: string; school: NamedSchool }[],
-	singleParticipants: { school: NamedSchool }[]
-): SchoolRow[] {
+export function schoolRows({
+	members,
+	singleParticipants
+}: {
+	members: { delegationId: string; school: NamedSchool }[];
+	singleParticipants: { school: NamedSchool }[];
+}): SchoolRow[] {
 	const bySchool = new Map<string, SchoolRow>();
 	const entryFor = (school: { id: string; name: string }) => {
 		const existing = bySchool.get(school.id) ?? {

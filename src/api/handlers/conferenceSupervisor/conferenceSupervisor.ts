@@ -47,7 +47,11 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
-			await assertCanCreateConferenceSupervisor(ctx, args.conferenceId, args.userId);
+			await assertCanCreateConferenceSupervisor({
+				ctx,
+				conferenceId: args.conferenceId,
+				subjectUserId: args.userId
+			});
 
 			const createdId = await registerSupervisor({
 				conferenceId: args.conferenceId,
@@ -63,7 +67,9 @@ schemaBuilder.mutationFields((t) => ({
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, createdId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.conferenceSupervisor, id: createdId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -76,17 +82,24 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			if (typeof args.plansOwnAttendenceAtConference === 'boolean') {
-				await updateIfAllowed(ctx, 'conferenceSupervisor', args.id, {
-					plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
+				await updateIfAllowed({
+					ctx,
+					table: 'conferenceSupervisor',
+					id: args.id,
+					values: {
+						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
+					}
 				});
 			} else {
-				await assertAllowed(ctx, 'conferenceSupervisor', 'update', args.id);
+				await assertAllowed({ ctx, table: 'conferenceSupervisor', action: 'update', id: args.id });
 			}
 
 			conferenceSupervisorPubsub.updated(args.id);
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.conferenceSupervisor, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -101,13 +114,28 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
-			await assertCanConnectToConferenceSupervisor(ctx, args.conferenceId, subjectId);
+			await assertCanConnectToConferenceSupervisor({
+				ctx,
+				conferenceId: args.conferenceId,
+				subjectId
+			});
 
-			const supervisor = await codeGuessLimiter.attempt(ctx.mustBeLoggedIn().sub, () =>
-				findSupervisorByConnectionCode(args.conferenceId, args.connectionCode)
-			);
-			const participation = await assertCanBeSupervised(args.conferenceId, subjectId);
-			const linked = await connectParticipantToSupervisor(supervisor.id, participation);
+			const supervisor = await codeGuessLimiter.attempt({
+				key: ctx.mustBeLoggedIn().sub,
+				run: () =>
+					findSupervisorByConnectionCode({
+						conferenceId: args.conferenceId,
+						connectionCode: args.connectionCode
+					})
+			});
+			const participation = await assertCanBeSupervised({
+				conferenceId: args.conferenceId,
+				subjectId
+			});
+			const linked = await connectParticipantToSupervisor({
+				supervisorId: supervisor.id,
+				participation
+			});
 
 			// Nothing on the supervisor row itself changed, but who it supervises did.
 			conferenceSupervisorPubsub.updated(linked.supervisorId);
@@ -117,11 +145,16 @@ schemaBuilder.mutationFields((t) => ({
 			if (linked.singleParticipantId) {
 				singleParticipantPubsub.updated(linked.singleParticipantId);
 			}
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.conferenceSupervisor
 				.findFirst(
-					query(await queryAllowed(ctx.abilities.conferenceSupervisor, linked.supervisorId))
+					query(
+						await queryAllowed({
+							ability: ctx.abilities.conferenceSupervisor,
+							id: linked.supervisorId
+						})
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -135,16 +168,16 @@ schemaBuilder.mutationFields((t) => ({
 			userId: t.arg.id({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const conferenceId = await assertCanDisconnectFromConferenceSupervisor(
+			const conferenceId = await assertCanDisconnectFromConferenceSupervisor({
 				ctx,
-				args.supervisorId,
-				args.userId
-			);
-			const unlinked = await disconnectParticipantFromSupervisor(
-				args.supervisorId,
+				supervisorId: args.supervisorId,
+				subjectId: args.userId
+			});
+			const unlinked = await disconnectParticipantFromSupervisor({
+				supervisorId: args.supervisorId,
 				conferenceId,
-				args.userId
-			);
+				subjectId: args.userId
+			});
 
 			conferenceSupervisorPubsub.updated(args.supervisorId);
 			if (unlinked) {
@@ -164,13 +197,17 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceSupervisorRef,
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const supervisor = await assertCanRotateSupervisorConnectionCode(ctx, args.id);
+			const supervisor = await assertCanRotateSupervisorConnectionCode({ ctx, id: args.id });
 			await rotateConnectionCode(supervisor.id);
 
 			conferenceSupervisorPubsub.updated(supervisor.id);
 
 			return db.query.conferenceSupervisor
-				.findFirst(query(await queryAllowed(ctx.abilities.conferenceSupervisor, supervisor.id)))
+				.findFirst(
+					query(
+						await queryAllowed({ ability: ctx.abilities.conferenceSupervisor, id: supervisor.id })
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})
@@ -202,12 +239,18 @@ schemaBuilder.queryFields((t) => ({
 			connectionCode: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanPreviewConferenceSupervisor(ctx, args.conferenceId);
+			await assertCanPreviewConferenceSupervisor({ ctx, conferenceId: args.conferenceId });
 			const caller = ctx.mustBeLoggedIn();
 
-			return codeGuessLimiter.attempt(caller.sub, () =>
-				previewSupervisorByCode(args.conferenceId, args.connectionCode, caller.sub)
-			);
+			return codeGuessLimiter.attempt({
+				key: caller.sub,
+				run: () =>
+					previewSupervisorByCode({
+						conferenceId: args.conferenceId,
+						connectionCode: args.connectionCode,
+						callerId: caller.sub
+					})
+			});
 		}
 	})
 }));

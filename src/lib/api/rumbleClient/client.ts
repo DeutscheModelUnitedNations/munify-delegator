@@ -1820,14 +1820,20 @@ export type Emaillog = {
   kind: EmailkindEnum,
   search_distance: Float | null,
   sentAt: DateTime | null,
+  sentBy: (p?: {
+    orderBy?: UserOrderInputArgument | null | undefined,
+    where?: UserWhereInputArgument | null | undefined
+  }) => User | null,
+  sentById: ID | null,
   status: EmailstatusEnum,
   subjectKey: String,
+  trigger: EmailtriggerEnum,
   updatedAt: DateTime,
   user: (p?: {
     orderBy?: UserOrderInputArgument | null | undefined,
     where?: UserWhereInputArgument | null | undefined
-  }) => User,
-  userId: ID    
+  }) => User | null,
+  userId: ID | null    
 };
 		
 export type EmaillogOrderInputArgument = {
@@ -1839,8 +1845,10 @@ export type EmaillogOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   kind?: SortingParameter | null | undefined,
   sentAt?: SortingParameter | null | undefined,
+  sentById?: SortingParameter | null | undefined,
   status?: SortingParameter | null | undefined,
   subjectKey?: SortingParameter | null | undefined,
+  trigger?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   userId?: SortingParameter | null | undefined    
 };
@@ -1858,14 +1866,19 @@ export type EmaillogWhereInputArgument = {
   id?: IDWhereInputArgument | null | undefined,
   kind?: EmailkindEnum | null | undefined,
   sentAt?: DateTimeWhereInputArgument | null | undefined,
+  sentBy?: UserWhereInputArgument | null | undefined,
+  sentById?: IDWhereInputArgument | null | undefined,
   status?: EmailstatusEnum | null | undefined,
   subjectKey?: StringWhereInputArgument | null | undefined,
+  trigger?: EmailtriggerEnum | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined,
   user?: UserWhereInputArgument | null | undefined,
   userId?: IDWhereInputArgument | null | undefined    
 };
 		
 export type EmailstatusEnum = "FAILED" | "SENDING" | "SENT" | "SKIPPED";
+		
+export type EmailtriggerEnum = "AUTOMATIC" | "MANUAL";
 		
 export type FlagCollectionData = {
   flags: () => FlagProgress[],
@@ -2420,6 +2433,12 @@ export type Mutation = {
   seedNewConference: (p: {
     data: JSON
   }) => Conference,
+  sendPersonEmail: (p: {
+    conferenceId: ID,
+    kind: EmailkindEnum,
+    subjectKey: String,
+    userId: ID
+  }) => SendPersonEmailResult,
   setAgendaItemReviewHelpStatus: (p: {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
@@ -3113,6 +3132,15 @@ export type PaymenttransactionWhereInputArgument = {
   user?: UserWhereInputArgument | null | undefined    
 };
 		
+export type PersonEmail = {
+  automatic: Boolean,
+  detail: String | null,
+  kind: EmailkindEnum,
+  lastAt: Date | null,
+  lastStatus: EmailstatusEnum | null,
+  subjectKey: String    
+};
+		
 export type PersonName = string;
 		
 export type PhoneNumber = string;
@@ -3618,6 +3646,11 @@ export type Query = {
     search?: String | null | undefined,
     where?: PaymenttransactionWhereInputArgument | null | undefined
   }) => Paymenttransaction[],
+  personEmails: (p: {
+    conferenceId: ID,
+    revision?: String | null | undefined,
+    userId: ID
+  }) => PersonEmail[],
   place: (p: {
     id: ID
   }) => Place,
@@ -4238,6 +4271,11 @@ export type SeatPlanningCommitteeSeat = {
   committeeId: ID,
   memberNames: String[],
   nationAlpha3Code: String    
+};
+		
+export type SendPersonEmailResult = {
+  error: String | null,
+  sent: Boolean    
 };
 		
 export type SightingDeck = {

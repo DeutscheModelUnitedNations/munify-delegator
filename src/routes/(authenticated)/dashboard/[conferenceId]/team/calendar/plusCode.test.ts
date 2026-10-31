@@ -32,29 +32,47 @@ describe('decodePlusCodeFull', () => {
 
 describe('recoverPlusCode', () => {
 	test('completes a short code from a nearby reference', () => {
-		expect(recoverPlusCode('9G8F+6X', 47.4, 8.6)).toBe('8FVC9G8F+6X');
-		expect(recoverPlusCode('CJ+2V', 47.36, 8.52)).toBe('8FVC9GCJ+2V');
+		expect(recoverPlusCode({ shortCode: '9G8F+6X', refLat: 47.4, refLng: 8.6 })).toBe(
+			'8FVC9G8F+6X'
+		);
+		expect(recoverPlusCode({ shortCode: 'CJ+2V', refLat: 47.36, refLng: 8.52 })).toBe(
+			'8FVC9GCJ+2V'
+		);
 	});
 
 	test('moves north when the reference sits low in its cell', () => {
-		expect(recoverPlusCode('9G8F+6X', 46.9, 8.6)).toBe('8FVC9G8F+6X');
+		expect(recoverPlusCode({ shortCode: '9G8F+6X', refLat: 46.9, refLng: 8.6 })).toBe(
+			'8FVC9G8F+6X'
+		);
 	});
 
 	test('moves south when the reference sits high in its cell', () => {
-		expect(recoverPlusCode('X2X2+XX', 48.1, 8.6)).toBe('8FVFX2X2+XX');
+		expect(recoverPlusCode({ shortCode: 'X2X2+XX', refLat: 48.1, refLng: 8.6 })).toBe(
+			'8FVFX2X2+XX'
+		);
 	});
 
 	test('moves west and east to the cell closest to the reference', () => {
-		expect(recoverPlusCode('2X2X+XX', 47.4, 8.1)).toBe('8FV92X2X+XX');
-		expect(recoverPlusCode('2222+22', 47.4, 8.9)).toBe('8FVF2222+22');
+		expect(recoverPlusCode({ shortCode: '2X2X+XX', refLat: 47.4, refLng: 8.1 })).toBe(
+			'8FV92X2X+XX'
+		);
+		expect(recoverPlusCode({ shortCode: '2222+22', refLat: 47.4, refLng: 8.9 })).toBe(
+			'8FVF2222+22'
+		);
 	});
 
 	test('never moves past the poles', () => {
-		expect(recoverPlusCode('X2X2+XX', -89.9, 8.6)).toBe('2F2FX2X2+XX');
-		expect(recoverPlusCode('2222+22', 89.9, 8.6)).toBe('CFXF2222+22');
+		expect(recoverPlusCode({ shortCode: 'X2X2+XX', refLat: -89.9, refLng: 8.6 })).toBe(
+			'2F2FX2X2+XX'
+		);
+		expect(recoverPlusCode({ shortCode: '2222+22', refLat: 89.9, refLng: 8.6 })).toBe(
+			'CFXF2222+22'
+		);
 	});
 
 	test('returns the unresolvable candidate as is', () => {
-		expect(recoverPlusCode('9G8A+6X', 47.4, 8.6)).toBe('8FVC9G8A+6X');
+		expect(recoverPlusCode({ shortCode: '9G8A+6X', refLat: 47.4, refLng: 8.6 })).toBe(
+			'8FVC9G8A+6X'
+		);
 	});
 });

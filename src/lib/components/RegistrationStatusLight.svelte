@@ -12,4 +12,4 @@
 	let { registrationStatus, waitingListStatus, size }: Props = $props();
 </script>
 
-<StatusLight {size} {...registrationStatusLight(registrationStatus, waitingListStatus)} />
+<StatusLight {size} {...registrationStatusLight({ registrationStatus, waitingListStatus })} />

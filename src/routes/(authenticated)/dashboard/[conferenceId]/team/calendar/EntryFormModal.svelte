@@ -159,10 +159,10 @@
 	const entryTrackIds = $derived(
 		trackFromIndex === -1 || trackToIndex < trackFromIndex
 			? []
-			: normalizeTrackIds(
-					dayTracks.map((t) => t.id),
-					dayTracks.slice(trackFromIndex, trackToIndex + 1).map((t) => t.id)
-				)
+			: normalizeTrackIds({
+					dayTrackIds: dayTracks.map((t) => t.id),
+					trackIds: dayTracks.slice(trackFromIndex, trackToIndex + 1).map((t) => t.id)
+				})
 	);
 
 	function setTrackFrom(id: string) {
@@ -202,11 +202,11 @@
 				id: true,
 				name: true
 			});
-			const moved = retargetTrackRange(
-				{ from: entryTrackFrom, to: entryTrackTo },
-				day.tracks,
+			const moved = retargetTrackRange({
+				range: { from: entryTrackFrom, to: entryTrackTo },
+				sourceTracks: day.tracks,
 				targetTracks
-			);
+			});
 			entryTrackFrom = moved.from;
 			entryTrackTo = moved.to;
 			selectedDayId = dayId;
@@ -216,8 +216,8 @@
 	}
 
 	async function writeEntry() {
-		const fields = entryFields(
-			{
+		const fields = entryFields({
+			form: {
 				name: entryName,
 				description: entryDescription,
 				startTime: entryStartTime,
@@ -229,8 +229,8 @@
 				surveyOptionIds: entrySurveyOptionIds,
 				trackIds: entryTrackIds
 			},
-			day.date
-		);
+			dayDate: day.date
+		});
 		if (isEdit && sourceEntryId) {
 			await client.mutate.updateCalendarEntry({
 				__args: { id: sourceEntryId, calendarDayId: selectedDayId, ...fields },
@@ -250,7 +250,8 @@
 
 	async function saveEntry() {
 		if (!complete) return;
-		if (await saveWithToast((loading) => (isLoading = loading), writeEntry)) onClose();
+		if (await saveWithToast({ setLoading: (loading) => (isLoading = loading), write: writeEntry }))
+			onClose();
 	}
 </script>
 

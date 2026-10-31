@@ -34,8 +34,8 @@ export const school = snakeCase.table(
 		notes: text()
 	},
 	(table) => [
-		trigramIndex('school_name_trgm', table.name),
-		trigramIndex('school_city_trgm', table.city)
+		trigramIndex({ name: 'school_name_trgm', column: table.name }),
+		trigramIndex({ name: 'school_city_trgm', column: table.city })
 	]
 );
 

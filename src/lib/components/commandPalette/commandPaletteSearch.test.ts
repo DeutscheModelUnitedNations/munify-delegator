@@ -48,7 +48,7 @@ beforeEach(() => {
 
 describe('searchConference', () => {
 	test('a term that is too short asks nothing', async () => {
-		const results = await searchConference(conferenceId, ' a ');
+		const results = await searchConference({ conferenceId, searchTerm: ' a ' });
 		expect(results).toEqual({
 			users: [],
 			delegations: [],
@@ -62,7 +62,7 @@ describe('searchConference', () => {
 
 	describe('people', () => {
 		test('the term is passed to the search as typed, not split into words', async () => {
-			await searchConference(conferenceId, '  anna   schmidt ');
+			await searchConference({ conferenceId, searchTerm: '  anna   schmidt ' });
 
 			expect(mocks.users.mock.calls.map(([call]) => call.__args.search)).toEqual([
 				'anna   schmidt',
@@ -71,13 +71,13 @@ describe('searchConference', () => {
 		});
 
 		test('there is one query per group', async () => {
-			await searchConference(conferenceId, 'anna');
+			await searchConference({ conferenceId, searchTerm: 'anna' });
 			expect(mocks.users).toHaveBeenCalledTimes(2);
 			expect(argsOf(mocks.users, 0).limit).toBe(10);
 		});
 
 		test('members are anyone with a part in the conference, waiting list included', async () => {
-			await searchConference(conferenceId, 'anna');
+			await searchConference({ conferenceId, searchTerm: 'anna' });
 
 			const { OR } = argsOf(mocks.users, 0).where;
 			expect(OR).toEqual([
@@ -90,7 +90,7 @@ describe('searchConference', () => {
 		});
 
 		test('foreign users are the ones without any part', async () => {
-			await searchConference(conferenceId, 'anna');
+			await searchConference({ conferenceId, searchTerm: 'anna' });
 
 			const participates = argsOf(mocks.users, 0).where;
 			expect(argsOf(mocks.users, 1).where).toEqual({ NOT: participates });
@@ -108,7 +108,7 @@ describe('searchConference', () => {
 			mocks.conferenceParticipants.mockResolvedValue([{ user: owner }]);
 			mocks.users.mockResolvedValueOnce([owner]);
 
-			const { users } = await searchConference(conferenceId, 'CARD-0007');
+			const { users } = await searchConference({ conferenceId, searchTerm: 'CARD-0007' });
 
 			expect(argsOf(mocks.conferenceParticipants).where).toEqual({
 				...inConference,
@@ -133,7 +133,7 @@ describe('searchConference', () => {
 				{ id: 'u3', givenName: 'E', familyName: 'F', email: 'e@f.g' }
 			]);
 
-			const { users, foreignUsers } = await searchConference(conferenceId, 'anna');
+			const { users, foreignUsers } = await searchConference({ conferenceId, searchTerm: 'anna' });
 
 			expect(users.map((user) => [user.id, user.participationType])).toEqual([
 				['u1', 'team'],
@@ -145,7 +145,10 @@ describe('searchConference', () => {
 
 	describe('seats', () => {
 		test('a nation is found by its translated name and searched by code', async () => {
-			await searchConference(conferenceId, getFullTranslatedCountryNameFromISO3Code('FRA'));
+			await searchConference({
+				conferenceId,
+				searchTerm: getFullTranslatedCountryNameFromISO3Code('FRA')
+			});
 
 			const { where } = argsOf(mocks.delegations, 1);
 			expect(where.conferenceId).toEqual(inConference.conferenceId);
@@ -153,7 +156,7 @@ describe('searchConference', () => {
 		});
 
 		test('non-state actors are matched by name or abbreviation', async () => {
-			await searchConference(conferenceId, 'zzzzqqq');
+			await searchConference({ conferenceId, searchTerm: 'zzzzqqq' });
 
 			const { where } = argsOf(mocks.delegations, 1);
 			// No nation resembles the term, so the nation condition is left out entirely
@@ -167,7 +170,7 @@ describe('searchConference', () => {
 		});
 
 		test('roles are matched by name among the single participants', async () => {
-			await searchConference(conferenceId, 'press');
+			await searchConference({ conferenceId, searchTerm: 'press' });
 
 			expect(argsOf(mocks.singleParticipants).where).toEqual({
 				...registeredIn,
@@ -187,7 +190,7 @@ describe('searchConference', () => {
 				}
 			]);
 
-			const { seats } = await searchConference(conferenceId, 'frankreich');
+			const { seats } = await searchConference({ conferenceId, searchTerm: 'frankreich' });
 
 			expect(seats).toEqual([
 				{
@@ -206,7 +209,7 @@ describe('searchConference', () => {
 				{ ...base, id: 'd2', assignedRole: null }
 			]);
 
-			const { seats } = await searchConference(conferenceId, 'cross');
+			const { seats } = await searchConference({ conferenceId, searchTerm: 'cross' });
 
 			expect(seats.map((seat) => [seat.title, seat.holderUserId])).toEqual([
 				['Red Cross', null],
@@ -223,7 +226,7 @@ describe('searchConference', () => {
 				}
 			]);
 
-			const { seats } = await searchConference(conferenceId, 'press');
+			const { seats } = await searchConference({ conferenceId, searchTerm: 'press' });
 
 			expect(seats).toEqual([
 				{ id: 's1', title: 'Press', subtitle: 'Ada Lovelace', holderUserId: 'u7' }
@@ -240,7 +243,7 @@ describe('searchConference', () => {
 				{ id: 'a1', title: 'Sanctions', committee: { abbreviation: 'SC' } }
 			]);
 
-			const { committees } = await searchConference(conferenceId, 'sec');
+			const { committees } = await searchConference({ conferenceId, searchTerm: 'sec' });
 
 			expect(argsOf(mocks.committees).search).toBe('sec');
 			expect(argsOf(mocks.committeeAgendaItems).where).toEqual({ committee: inConference });
@@ -259,7 +262,7 @@ describe('searchConference', () => {
 				{ id: 't2', amount: 5, recievedAt: null, conference: { currency: null } }
 			]);
 
-			const { transactions } = await searchConference(conferenceId, 'ref');
+			const { transactions } = await searchConference({ conferenceId, searchTerm: 'ref' });
 
 			expect(transactions).toEqual([
 				{ id: 't1', amount: 10, currency: 'USD', recievedAt: received.toISOString() },
@@ -279,7 +282,7 @@ describe('searchConference', () => {
 				}
 			]);
 
-			const { delegations } = await searchConference(conferenceId, 'gym');
+			const { delegations } = await searchConference({ conferenceId, searchTerm: 'gym' });
 
 			expect(delegations).toEqual([
 				{ id: 'd1', school: 'Gym, Lyzeum', memberCount: 2, headDelegateUserId: 'u1' }

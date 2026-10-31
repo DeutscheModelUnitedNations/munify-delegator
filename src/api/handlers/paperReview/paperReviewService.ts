@@ -4,7 +4,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { translatePaperStatus } from '#lib/utils/enumTranslations';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { splitRole } from '#lib/helpers/conferenceRole';
 
 /** The flag piece a first review uncovered; mirrors the `UnlockedPieceData` GraphQL object. */
@@ -31,7 +31,7 @@ const reviewedPaperWhere = (delegationId: string) => ({
 	versions: { reviews: {} }
 });
 
-function fetchPaperForReview(tx: Transaction, paperId: string) {
+function fetchPaperForReview({ tx, paperId }: { tx: Transaction; paperId: string }) {
 	return tx.query.paper
 		.findFirst({
 			where: { id: paperId },
@@ -52,20 +52,23 @@ type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
  * Rejects the review unless the paper and verdict allow it. Whether the caller may review at all
  * is `assertCanReviewPaper`'s business.
  */
-function assertReviewable(paper: PaperForReview, newStatus: string) {
+function assertReviewable({ paper, newStatus }: { paper: PaperForReview; newStatus: string }) {
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
-		throw apiError(
-			'CONFLICT',
-			m.reviewStatusNotReviewable({ status: translatePaperStatus(paper.status) })
-		);
+		throw apiError({
+			code: 'CONFLICT',
+			message: m.reviewStatusNotReviewable({ status: translatePaperStatus(paper.status) })
+		});
 	}
 	if (!ALLOWED_NEW_STATUSES.includes(newStatus)) {
-		throw apiError('INVALID_INPUT', m.reviewInvalidStatus({ status: newStatus }));
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.reviewInvalidStatus({ status: newStatus })
+		});
 	}
 
 	const latestVersion = paper.versions[0];
 	if (!latestVersion) {
-		throw apiError('CONFLICT', m.reviewNoVersions());
+		throw apiError({ code: 'CONFLICT', message: m.reviewNoVersions() });
 	}
 	return latestVersion;
 }
@@ -78,11 +81,15 @@ function agendaItemLabel(paper: PaperForReview) {
 }
 
 /** Nation delegations: one piece per agenda item, found when it has no review yet. */
-async function isFirstNationPieceReview(
-	tx: Transaction,
-	paper: PaperForReview,
-	agendaItemId: string
-) {
+async function isFirstNationPieceReview({
+	tx,
+	paper,
+	agendaItemId
+}: {
+	tx: Transaction;
+	paper: PaperForReview;
+	agendaItemId: string;
+}) {
 	const existing = await tx.query.paperReview.findFirst({
 		where: {
 			paperVersion: { paper: { delegationId: paper.delegationId, agendaItemId } }
@@ -96,7 +103,7 @@ async function isFirstNationPieceReview(
  * Non-state actors: the introduction paper is its own piece, and the first two other papers to
  * be reviewed count one more piece each.
  */
-async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
+async function isFirstNsaPieceReview({ tx, paper }: { tx: Transaction; paper: PaperForReview }) {
 	const reviewedOfKind = await tx.query.paper.findMany({
 		where: {
 			...reviewedPaperWhere(paper.delegationId),
@@ -116,23 +123,28 @@ async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
 }
 
 /** Whether this review, written before it is inserted, finds a new piece of the flag. */
-function isFirstReviewForPiece(tx: Transaction, paper: PaperForReview) {
+function isFirstReviewForPiece({ tx, paper }: { tx: Transaction; paper: PaperForReview }) {
 	const kind = paper.delegation?.assignedRole?.kind;
 	if (kind === 'NATION' && paper.agendaItemId) {
-		return isFirstNationPieceReview(tx, paper, paper.agendaItemId);
+		return isFirstNationPieceReview({ tx, paper, agendaItemId: paper.agendaItemId });
 	}
 	if (kind === 'NON_STATE_ACTOR') {
-		return isFirstNsaPieceReview(tx, paper);
+		return isFirstNsaPieceReview({ tx, paper });
 	}
 	return false;
 }
 
-async function nationPiece(
-	tx: Transaction,
-	paper: PaperForReview,
-	roleId: string,
-	nation: { alpha2Code: string; alpha3Code: string }
-): Promise<UnlockedPiece> {
+async function nationPiece({
+	tx,
+	paper,
+	roleId,
+	nation
+}: {
+	tx: Transaction;
+	paper: PaperForReview;
+	roleId: string;
+	nation: { alpha2Code: string; alpha3Code: string };
+}): Promise<UnlockedPiece> {
 	const committees = await tx.query.committee.findMany({
 		where: { conferenceId: paper.delegation.conferenceId, roles: { id: roleId } },
 		with: { agendaItems: { columns: { id: true } } }
@@ -162,11 +174,15 @@ async function nationPiece(
 
 const NSA_PIECE_COUNT = 3;
 
-async function nsaPiece(
-	tx: Transaction,
-	paper: PaperForReview,
-	nsa: { id: string; name: string | null; fontAwesomeIcon: string | null }
-): Promise<UnlockedPiece> {
+async function nsaPiece({
+	tx,
+	paper,
+	nsa
+}: {
+	tx: Transaction;
+	paper: PaperForReview;
+	nsa: { id: string; name: string | null; fontAwesomeIcon: string | null };
+}): Promise<UnlockedPiece> {
 	const found = await tx.query.paper.findMany({
 		where: reviewedPaperWhere(paper.delegationId),
 		columns: { id: true }
@@ -189,11 +205,11 @@ async function nsaPiece(
 }
 
 /** The flag piece a first review just uncovered, counted after the review was written. */
-async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
+async function unlockedPiece({ tx, paper }: { tx: Transaction; paper: PaperForReview }) {
 	const role = paper.delegation?.assignedRole;
 	const { nation, nonStateActor } = splitRole(role);
-	if (role && nation) return nationPiece(tx, paper, role.id, nation);
-	if (nonStateActor) return nsaPiece(tx, paper, nonStateActor);
+	if (role && nation) return nationPiece({ tx, paper, roleId: role.id, nation });
+	if (nonStateActor) return nsaPiece({ tx, paper, nsa: nonStateActor });
 	return null;
 }
 
@@ -207,18 +223,21 @@ type Reviewer = Pick<ReturnType<Context['mustBeLoggedIn']>, 'sub'>;
  * piece per agenda item, a non-state actor's introduction paper is its own piece, and its
  * other papers count up to two more.
  */
-export async function createPaperReview(
+export async function createPaperReview({
+	args,
+	reviewer
+}: {
 	args: {
 		paperId: string;
 		comments?: (typeof schema.paperReview.$inferInsert)['comments'];
 		newStatus: (typeof schema.paper.$inferSelect)['status'];
-	},
-	reviewer: Reviewer
-) {
+	};
+	reviewer: Reviewer;
+}) {
 	const { paper, result } = await db.transaction(async (tx) => {
-		const paper = await fetchPaperForReview(tx, args.paperId);
-		const latestVersion = assertReviewable(paper, args.newStatus);
-		const wasFirstReviewForPiece = await isFirstReviewForPiece(tx, paper);
+		const paper = await fetchPaperForReview({ tx, paperId: args.paperId });
+		const latestVersion = assertReviewable({ paper, newStatus: args.newStatus });
+		const wasFirstReviewForPiece = await isFirstReviewForPiece({ tx, paper });
 
 		const review = await tx
 			.insert(schema.paperReview)
@@ -235,13 +254,13 @@ export async function createPaperReview(
 		await tx
 			.update(schema.paper)
 			.set({ status: args.newStatus })
-			.where(whereRows(schema.paper, { id: args.paperId }));
+			.where(whereRows({ table: schema.paper, filter: { id: args.paperId } }));
 		await tx
 			.update(schema.paperVersion)
 			.set({ status: args.newStatus })
-			.where(whereRows(schema.paperVersion, { id: latestVersion.id }));
+			.where(whereRows({ table: schema.paperVersion, filter: { id: latestVersion.id } }));
 
-		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece(tx, paper) : null;
+		const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece({ tx, paper }) : null;
 
 		return {
 			paper,

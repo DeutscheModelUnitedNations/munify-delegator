@@ -21,12 +21,18 @@ export function registerSurveyOptionAbilities() {
 
 	// Scoped through the question, which carries the conference.
 	abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
-		const question = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		const question = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return question ? { where: { question } } : undefined;
 	});
 }
 
 /** Refuses unless the caller may add options to the question. */
-export async function assertCanCreateSurveyOption(ctx: ApiContext, questionId: string) {
-	await assertTeamPermissionForSurveyQuestion(ctx, questionId);
+export async function assertCanCreateSurveyOption({
+	ctx,
+	questionId
+}: {
+	ctx: ApiContext;
+	questionId: string;
+}) {
+	await assertTeamPermissionForSurveyQuestion({ ctx, questionId });
 }

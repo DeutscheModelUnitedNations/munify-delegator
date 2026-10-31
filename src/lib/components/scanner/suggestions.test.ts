@@ -36,26 +36,39 @@ describe('takesPart', () => {
 
 describe('navigateSuggestions', () => {
 	test('arrows wrap around', () => {
-		expect(navigateSuggestions('ArrowDown', 1, 2)).toEqual({ highlighted: 0 });
-		expect(navigateSuggestions('ArrowUp', 0, 2)).toEqual({ highlighted: 1 });
-		expect(navigateSuggestions('ArrowDown', -1, 2)).toEqual({ highlighted: 0 });
+		expect(navigateSuggestions({ key: 'ArrowDown', highlighted: 1, count: 2 })).toEqual({
+			highlighted: 0
+		});
+		expect(navigateSuggestions({ key: 'ArrowUp', highlighted: 0, count: 2 })).toEqual({
+			highlighted: 1
+		});
+		expect(navigateSuggestions({ key: 'ArrowDown', highlighted: -1, count: 2 })).toEqual({
+			highlighted: 0
+		});
 	});
 	test('escape closes', () => {
-		expect(navigateSuggestions('Escape', 1, 2)).toEqual({ highlighted: -1, close: true });
+		expect(navigateSuggestions({ key: 'Escape', highlighted: 1, count: 2 })).toEqual({
+			highlighted: -1,
+			close: true
+		});
 	});
 	test('an empty list or another key is left alone', () => {
-		expect(navigateSuggestions('ArrowDown', -1, 0)).toBeUndefined();
-		expect(navigateSuggestions('a', 0, 2)).toBeUndefined();
+		expect(navigateSuggestions({ key: 'ArrowDown', highlighted: -1, count: 0 })).toBeUndefined();
+		expect(navigateSuggestions({ key: 'a', highlighted: 0, count: 2 })).toBeUndefined();
 	});
 });
 
 describe('codeToSubmit', () => {
-	test('blank input submits nothing', () => expect(codeToSubmit('  ', people, 0)).toBeUndefined());
-	test('the highlighted person wins', () => expect(codeToSubmit('ma', people, 1)).toBe('b'));
+	test('blank input submits nothing', () =>
+		expect(codeToSubmit({ text: '  ', suggestions: people, highlighted: 0 })).toBeUndefined());
+	test('the highlighted person wins', () =>
+		expect(codeToSubmit({ text: 'ma', suggestions: people, highlighted: 1 })).toBe('b'));
 	test('an id is submitted as typed', () => {
 		const id = 'x'.repeat(24);
-		expect(codeToSubmit(id, people, -1)).toBe(id);
+		expect(codeToSubmit({ text: id, suggestions: people, highlighted: -1 })).toBe(id);
 	});
-	test('else the best match', () => expect(codeToSubmit('ma', people, -1)).toBe('a'));
-	test('no match falls back to the text', () => expect(codeToSubmit('ma', [], -1)).toBe('ma'));
+	test('else the best match', () =>
+		expect(codeToSubmit({ text: 'ma', suggestions: people, highlighted: -1 })).toBe('a'));
+	test('no match falls back to the text', () =>
+		expect(codeToSubmit({ text: 'ma', suggestions: [], highlighted: -1 })).toBe('ma'));
 });

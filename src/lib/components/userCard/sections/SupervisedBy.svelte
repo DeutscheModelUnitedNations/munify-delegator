@@ -22,7 +22,13 @@
 	} as const;
 
 	/** Supervisors reach a participant through either kind of registration, so both are asked. */
-	async function fetchSupervisors(userId: string, conferenceId: string) {
+	async function fetchSupervisors({
+		userId,
+		conferenceId
+	}: {
+		userId: string;
+		conferenceId: string;
+	}) {
 		const forUser = {
 			where: { conference: { id: { eq: conferenceId } }, user: { id: { eq: userId } } }
 		};
@@ -47,7 +53,7 @@
 		return { student, delegationMembers, singleParticipants };
 	}
 
-	const registrations = $derived(await fetchSupervisors(userId, conferenceId));
+	const registrations = $derived(await fetchSupervisors({ userId, conferenceId }));
 
 	const supervisors = $derived(
 		uniqueSupervisorsByFamilyName(
@@ -105,7 +111,8 @@
 									<OpenUserCardButton user={sup.user} />
 									<button
 										class="btn btn-ghost btn-xs btn-square text-error"
-										onclick={() => removeSupervision(sup, registrations.student)}
+										onclick={() =>
+											removeSupervision({ supervisor: sup, student: registrations.student })}
 										aria-label={m.removeSupervision()}
 										title={m.removeSupervision()}
 									>

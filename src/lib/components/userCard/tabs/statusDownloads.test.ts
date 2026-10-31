@@ -58,8 +58,10 @@ describe('careTeamPostalParticipant', () => {
 
 describe('documentFileName', () => {
 	test('names the file after the person, family name first', () => {
-		expect(documentFileName(user, 'certificate')).toBe('Mustermann_Erika_certificate.pdf');
-		expect(documentFileName(user, 'postal_registration')).toBe(
+		expect(documentFileName({ user, document: 'certificate' })).toBe(
+			'Mustermann_Erika_certificate.pdf'
+		);
+		expect(documentFileName({ user, document: 'postal_registration' })).toBe(
 			'Mustermann_Erika_postal_registration.pdf'
 		);
 	});

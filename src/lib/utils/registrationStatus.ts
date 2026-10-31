@@ -9,10 +9,13 @@ export type RegistrationStatus = 'OPEN' | 'CLOSED' | 'WAITING_LIST' | 'NOT_YET_O
  * (`applicationDeadline`) on purpose: the API keeps taking applications for the grace period after it
  * (`acceptsApplications` in `#lib/helpers/applicationReadiness`), as a buffer nobody is told about.
  */
-export const getRegistrationStatus = (
-	conferenceState: ConferencestateEnum,
-	applicationDeadline: Date
-): RegistrationStatus => {
+export const getRegistrationStatus = ({
+	conferenceState,
+	applicationDeadline
+}: {
+	conferenceState: ConferencestateEnum;
+	applicationDeadline: Date;
+}): RegistrationStatus => {
 	if (conferenceState === 'PRE') {
 		return 'NOT_YET_OPEN';
 	}
@@ -46,10 +49,13 @@ export interface StatusLightConfig {
 }
 
 /** How the status light shows a registration status; the waiting list tells how long it is. */
-export function registrationStatusLight(
-	registrationStatus: RegistrationStatus,
-	waitingListStatus: WaitingListStatus
-): StatusLightConfig {
+export function registrationStatusLight({
+	registrationStatus,
+	waitingListStatus
+}: {
+	registrationStatus: RegistrationStatus;
+	waitingListStatus: WaitingListStatus;
+}): StatusLightConfig {
 	if (registrationStatus === 'OPEN') return { color: 'success', blink: true };
 	if (registrationStatus !== 'WAITING_LIST') {
 		return { color: 'error', blink: false, tooltip: m.registrationClosed() };

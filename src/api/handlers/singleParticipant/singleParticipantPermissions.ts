@@ -29,15 +29,18 @@ export function registerSingleParticipantAbilities() {
 
 	// Users see their own entry - the role they were given only once the team has released the
 	// assignment.
-	abilityBuilder.singleParticipant
-		.allow('read')
-		.when((ctx) => maskedUntilRelease(isOwnUser(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
+	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
+		maskedUntilRelease({
+			filter: isOwnUser(ctx),
+			assignmentColumns: SINGLE_PARTICIPANT_ASSIGNMENT
+		})
+	);
 	abilityBuilder.singleParticipant.allow('read').when((ctx) => onceReleased(isOwnUser(ctx)));
 
 	// Participant care and project management see and manage their conference's participants.
 	abilityBuilder.singleParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
 	// Users may change their own entry only until they have applied.
 	abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
@@ -46,9 +49,12 @@ export function registerSingleParticipantAbilities() {
 	});
 
 	// Supervisors see the participants they supervise, with their role once it is released.
-	abilityBuilder.singleParticipant
-		.allow('read')
-		.when((ctx) => maskedUntilRelease(supervisedParticipant(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
+	abilityBuilder.singleParticipant.allow('read').when((ctx) =>
+		maskedUntilRelease({
+			filter: supervisedParticipant(ctx),
+			assignmentColumns: SINGLE_PARTICIPANT_ASSIGNMENT
+		})
+	);
 	abilityBuilder.singleParticipant
 		.allow('read')
 		.when((ctx) => onceReleased(supervisedParticipant(ctx)));
@@ -58,11 +64,15 @@ export function registerSingleParticipantAbilities() {
  * Refuses unless the caller may update the single participant (the row's update ability) and
  * every role it is to apply for is one of its conference's.
  */
-export async function assertCanUpdateSingleParticipant(
-	ctx: ApiContext,
-	id: string,
-	applyForRolesIdList: readonly string[]
-) {
+export async function assertCanUpdateSingleParticipant({
+	ctx,
+	id,
+	applyForRolesIdList
+}: {
+	ctx: ApiContext;
+	id: string;
+	applyForRolesIdList: readonly string[];
+}) {
 	// Checked up front: the role changes go to the join table directly, so an update that matched
 	// no row would otherwise not stop them.
 	const target = await db.query.singleParticipant
@@ -73,7 +83,10 @@ export async function assertCanUpdateSingleParticipant(
 			with: { participant: { columns: { conferenceId: true } } }
 		})
 		.then(assertFindFirstExists);
-	await assertCustomRolesOf(target.participant.conferenceId, applyForRolesIdList);
+	await assertCustomRolesOf({
+		conferenceId: target.participant.conferenceId,
+		roleIds: applyForRolesIdList
+	});
 }
 
 /** The roles a single participant applies for have to be the conference's. */
@@ -83,11 +96,15 @@ export { assertCustomRolesOf };
  * Assigning a user directly as a single participant is participant care's, and the role has to be
  * one of the conference's.
  */
-export async function assertCanCreateAppliedSingleParticipant(
-	ctx: ApiContext,
-	conferenceId: string,
-	roleId: string
-) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
-	await assertCustomRolesOf(conferenceId, [roleId]);
+export async function assertCanCreateAppliedSingleParticipant({
+	ctx,
+	conferenceId,
+	roleId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	roleId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	await assertCustomRolesOf({ conferenceId, roleIds: [roleId] });
 }

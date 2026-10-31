@@ -56,7 +56,10 @@
 					<div>
 						{m.assigningUser()}
 						<span class="font-bold">
-							{formatNames(assignUser.givenName ?? undefined, assignUser.familyName ?? undefined)}
+							{formatNames({
+								givenName: assignUser.givenName ?? undefined,
+								familyName: assignUser.familyName ?? undefined
+							})}
 						</span>
 						({assignUser.id})
 					</div>

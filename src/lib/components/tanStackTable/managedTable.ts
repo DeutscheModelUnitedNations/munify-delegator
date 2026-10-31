@@ -106,7 +106,7 @@ const exportDateFormat = new Intl.DateTimeFormat(getLocale(), {
 	timeStyle: 'short'
 });
 
-function exportText(value: unknown, yes: string, no: string): string {
+function exportText({ value, yes, no }: { value: unknown; yes: string; no: string }): string {
 	if (value === null || value === undefined) return '';
 	if (typeof value === 'boolean') return value ? yes : no;
 	if (value instanceof Date) return exportDateFormat.format(value);
@@ -118,11 +118,15 @@ function exportText(value: unknown, yes: string, no: string): string {
  * table shows where it can be told, so an export reads like the screen rather than like the
  * row objects behind it.
  */
-export function tableExport<TData extends object>(
-	columns: readonly ManagedColumn<TData>[],
-	rows: readonly TData[],
-	labels: { yes: string; no: string }
-): TableExport {
+export function tableExport<TData extends object>({
+	columns,
+	rows,
+	labels
+}: {
+	columns: readonly ManagedColumn<TData>[];
+	rows: readonly TData[];
+	labels: { yes: string; no: string };
+}): TableExport {
 	const exported = columns.flatMap((column) => {
 		const header = typeof column.header === 'string' ? column.header : (column.id ?? '');
 		let value: ((row: TData, index: number) => string) | undefined;
@@ -131,10 +135,11 @@ export function tableExport<TData extends object>(
 			value = (row) => exportValue(row);
 		} else if ('accessorFn' in column && column.accessorFn) {
 			const accessorFn = column.accessorFn;
-			value = (row, index) => exportText(accessorFn(row, index), labels.yes, labels.no);
+			value = (row, index) =>
+				exportText({ value: accessorFn(row, index), yes: labels.yes, no: labels.no });
 		} else if ('accessorKey' in column && typeof column.accessorKey === 'string') {
 			const key = column.accessorKey;
-			value = (row) => exportText(Reflect.get(row, key), labels.yes, labels.no);
+			value = (row) => exportText({ value: Reflect.get(row, key), yes: labels.yes, no: labels.no });
 		}
 		return value ? [{ header, value }] : [];
 	});
@@ -148,11 +153,15 @@ export function tableExport<TData extends object>(
  * The one row a filter from the URL narrowed the table down to, which the table then selects on
  * its own; `undefined` unless the filter is set and matched exactly one row.
  */
-export function soleFilteredRow<R>(
-	rows: readonly R[],
-	queryParamKey: string | undefined,
-	searchParams: Pick<URLSearchParams, 'get'>
-): R | undefined {
+export function soleFilteredRow<R>({
+	rows,
+	queryParamKey,
+	searchParams
+}: {
+	rows: readonly R[];
+	queryParamKey: string | undefined;
+	searchParams: Pick<URLSearchParams, 'get'>;
+}): R | undefined {
 	if (rows.length !== 1 || !queryParamKey) return undefined;
 	return searchParams.get(queryParamKey) ? rows[0] : undefined;
 }
@@ -183,10 +192,13 @@ export function defaultColumnVisibility<TData extends object>(
  * The column visibility to start with: what was stored, else the defaults. A stored value that
  * cannot be read yields `undefined`, which leaves the current visibility alone.
  */
-export function initialColumnVisibility<TData extends object>(
-	stored: string | null,
-	columns: readonly ManagedColumn<TData>[]
-): ColumnVisibilityState | undefined {
+export function initialColumnVisibility<TData extends object>({
+	stored,
+	columns
+}: {
+	stored: string | null;
+	columns: readonly ManagedColumn<TData>[];
+}): ColumnVisibilityState | undefined {
 	if (!stored) return defaultColumnVisibility(columns);
 	try {
 		return JSON.parse(stored);
@@ -236,10 +248,13 @@ export const shownColumnsParam: UrlCodec<string[]> = {
 };
 
 /** The visibility a list of shown columns means: those listed show, every other column hides. */
-export function visibilityFromShown<TData extends object>(
-	columns: readonly ManagedColumn<TData>[],
-	shown: readonly string[]
-): ColumnVisibilityState {
+export function visibilityFromShown<TData extends object>({
+	columns,
+	shown
+}: {
+	columns: readonly ManagedColumn<TData>[];
+	shown: readonly string[];
+}): ColumnVisibilityState {
 	const visibility: ColumnVisibilityState = {};
 	for (const column of columns) {
 		const id = columnIdOf(column);
@@ -249,10 +264,13 @@ export function visibilityFromShown<TData extends object>(
 }
 
 /** The ids of the shown columns, in column order; columns not mentioned in the state show. */
-export function shownFromVisibility<TData extends object>(
-	columns: readonly ManagedColumn<TData>[],
-	visibility: ColumnVisibilityState
-): string[] {
+export function shownFromVisibility<TData extends object>({
+	columns,
+	visibility
+}: {
+	columns: readonly ManagedColumn<TData>[];
+	visibility: ColumnVisibilityState;
+}): string[] {
 	return columns.flatMap((column) => {
 		const id = columnIdOf(column);
 		return id !== undefined && visibility[id] !== false ? [id] : [];

@@ -22,7 +22,7 @@
 		const timer = setTimeout(() => (query = next), 250);
 		return () => clearTimeout(timer);
 	});
-	const schools = $derived(await searchSchools(conferenceId, query));
+	const schools = $derived(await searchSchools({ conferenceId, search: query }));
 	const listId = $props.id();
 
 	function choose(value: string) {

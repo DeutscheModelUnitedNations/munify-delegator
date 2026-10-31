@@ -120,13 +120,15 @@ function reviewLookup<R extends BoardReviewRow>(reviews: readonly R[]) {
  * with their seats (`seatedRoles`), which change far less often than the rows: work them out once
  * per change of the roles rather than once per call.
  */
+// Positional on purpose: `memoizeLast` compares each argument one level deep, which an object
+// wrapping `rows` would hide from it.
 export function boardState<R extends BoardRows>(rows: R, seated: readonly SeatedRole[]) {
 	const live = liveState(rows);
-	const { groups, incompleteSplits } = assignmentGroups(
-		live.delegations,
-		live.singleParticipants,
-		live.units
-	);
+	const { groups, incompleteSplits } = assignmentGroups({
+		delegations: live.delegations,
+		singleParticipants: live.singleParticipants,
+		units: live.units
+	});
 	const converted = new Set(groups.flatMap((group) => group.singleParticipantId ?? []));
 	return {
 		live,
@@ -134,7 +136,11 @@ export function boardState<R extends BoardRows>(rows: R, seated: readonly Seated
 		incompleteSplits,
 		seated,
 		taken: occupancy(groups),
-		singles: singleRoles(live.singleParticipants, live.draftSingleRoles, converted),
+		singles: singleRoles({
+			singleParticipants: live.singleParticipants,
+			draft: live.draftSingleRoles,
+			converted
+		}),
 		reviewOf: reviewLookup<R['reviews'][number]>(rows.reviews)
 	};
 }
@@ -144,28 +150,47 @@ export type BoardState = ReturnType<typeof boardState>;
 /** How many groups and single participants applying the draft would change. */
 export function pendingCount(rows: Omit<BoardRows, 'reviews'>) {
 	const live = liveState(rows);
-	const { groups } = assignmentGroups(live.delegations, live.singleParticipants, live.units);
+	const { groups } = assignmentGroups({
+		delegations: live.delegations,
+		singleParticipants: live.singleParticipants,
+		units: live.units
+	});
 	const converted = new Set(groups.flatMap((group) => group.singleParticipantId ?? []));
-	const singles = singleRoles(live.singleParticipants, live.draftSingleRoles, converted);
+	const singles = singleRoles({
+		singleParticipants: live.singleParticipants,
+		draft: live.draftSingleRoles,
+		converted
+	});
 	return [...groups, ...singles].filter((entry) => entry.pending).length;
 }
 
 /** Free seats of a role on the board. */
-export const freeSeats = (view: BoardState, role: { key: string; seats: number }) =>
-	role.seats - (view.taken.get(role.key) ?? 0);
+export const freeSeats = ({
+	view,
+	role
+}: {
+	view: BoardState;
+	role: { key: string; seats: number };
+}) => role.seats - (view.taken.get(role.key) ?? 0);
 
 /** Whether a group (if any) is planned to hold a role. */
 export const hasRole = (group: AssignmentGroup | undefined) => !!group && !!targetKey(group.target);
 
 /** A group still waiting for a role that the automatic assignment would consider. */
-const isOpen = (view: BoardState, group: AssignmentGroup) =>
+const isOpen = ({ view, group }: { view: BoardState; group: AssignmentGroup }) =>
 	!targetKey(group.target) && !view.reviewOf(group)?.disqualified;
 
 /**
  * Every size a group or a role comes in, with how many groups are open and roles not yet full.
  * `poolCounts` adds the open groups the board has not loaded, as the backend counted them per size.
  */
-export function sizeOptions(view: BoardState, poolCounts: ReadonlyMap<number, number> = new Map()) {
+export function sizeOptions({
+	view,
+	poolCounts = new Map()
+}: {
+	view: BoardState;
+	poolCounts?: ReadonlyMap<number, number>;
+}) {
 	const options = new Map<number, { size: number; openGroups: number; unfilledRoles: number }>();
 	const option = (size: number) => {
 		let entry = options.get(size);
@@ -174,11 +199,11 @@ export function sizeOptions(view: BoardState, poolCounts: ReadonlyMap<number, nu
 	};
 	for (const group of view.groups) {
 		const entry = option(group.size);
-		if (isOpen(view, group)) entry.openGroups++;
+		if (isOpen({ view, group })) entry.openGroups++;
 	}
 	for (const role of view.seated) {
 		const entry = option(role.seats);
-		if (freeSeats(view, role) > 0) entry.unfilledRoles++;
+		if (freeSeats({ view, role }) > 0) entry.unfilledRoles++;
 	}
 	for (const [size, count] of poolCounts) {
 		if (count > 0) option(size).openGroups += count;
@@ -191,15 +216,19 @@ export function sizeOptions(view: BoardState, poolCounts: ReadonlyMap<number, nu
  * delegations the draft touches: those reach the board as groups of their own and are counted
  * there (`sizeOptions`), so the counts need not be asked for again on every move.
  */
-export function poolCountsBesidesDraft(
-	counts: ReadonlyMap<number, number>,
+export function poolCountsBesidesDraft({
+	counts,
+	touched,
+	disqualified
+}: {
+	counts: ReadonlyMap<number, number>;
 	touched: readonly {
 		id: string;
 		assignedRoleId?: Nullable<string>;
 		members: readonly unknown[];
-	}[],
-	disqualified: (delegationId: string) => boolean
-) {
+	}[];
+	disqualified: (delegationId: string) => boolean;
+}) {
 	const result = new Map(counts);
 	for (const delegation of touched) {
 		if (delegation.assignedRoleId) continue;
@@ -212,7 +241,13 @@ export function poolCountsBesidesDraft(
 }
 
 /** The size asked for, else the first with open groups, else the smallest. */
-export function pickSize(options: readonly { size: number; openGroups: number }[], asked: number) {
+export function pickSize({
+	options,
+	asked
+}: {
+	options: readonly { size: number; openGroups: number }[];
+	asked: number;
+}) {
 	if (asked) return asked;
 	const open = options.find((option) => option.openGroups > 0);
 	return (open ?? options[0])?.size ?? 0;
@@ -222,7 +257,15 @@ export function pickSize(options: readonly { size: number; openGroups: number }[
  * The groups of one size without a role, in the order they are given: the backend delivers the
  * pool ordered (best rated first), so nothing is sorted here.
  */
-export function poolGroups(view: BoardState, size: number, showDisqualified: boolean) {
+export function poolGroups({
+	view,
+	size,
+	showDisqualified
+}: {
+	view: BoardState;
+	size: number;
+	showDisqualified: boolean;
+}) {
 	return view.groups.filter(
 		(group) =>
 			group.size === size &&
@@ -236,10 +279,13 @@ export function poolGroups(view: BoardState, size: number, showDisqualified: boo
  * a page, so a pool read page by page does not reshuffle as it grows. Groups whose application is on
  * no page (the draft moved them back from a role) come first.
  */
-export function inPageOrder(
-	groups: readonly AssignmentGroup[],
-	pages: readonly (readonly { id: string }[])[]
-) {
+export function inPageOrder({
+	groups,
+	pages
+}: {
+	groups: readonly AssignmentGroup[];
+	pages: readonly (readonly { id: string }[])[];
+}) {
 	const pageOf = new Map(
 		pages.flatMap((page, index) => page.map((row) => [row.id, index] as const))
 	);
@@ -249,7 +295,7 @@ export function inPageOrder(
 }
 
 /** The roles with `seats` seats, with the groups planned onto each. */
-export function rolesWithSeats(view: BoardState, seats: number) {
+export function rolesWithSeats({ view, seats }: { view: BoardState; seats: number }) {
 	return view.seated
 		.filter((role) => role.seats === seats)
 		.map((role) => ({
@@ -266,18 +312,23 @@ export type DropAction =
 	{ type: 'assign'; group: AssignmentGroup; target: Target | null } | { type: 'full' };
 
 /** What dropping the group `groupKey` into `container` does, if anything. */
-export function dropAction(
-	view: BoardState,
-	groupKey: string,
-	source: string,
-	container: string | null
-): DropAction | undefined {
+export function dropAction({
+	view,
+	groupKey,
+	source,
+	container
+}: {
+	view: BoardState;
+	groupKey: string;
+	source: string;
+	container: string | null;
+}): DropAction | undefined {
 	const group = view.groups.find((candidate) => candidate.key === groupKey);
 	if (!group || !container || container === source) return undefined;
 	if (container === POOL_CONTAINER) return { type: 'assign', group, target: null };
 	const role = view.seated.find((candidate) => roleContainer(candidate.key) === container);
 	if (!role) return undefined;
-	if (freeSeats(view, role) < group.size) return { type: 'full' };
+	if (freeSeats({ view, role }) < group.size) return { type: 'full' };
 	return { type: 'assign', group, target: role.target };
 }
 
@@ -300,11 +351,15 @@ export const canSplit = (group: AssignmentGroup) =>
 export const roleArgs = (target: Target | null) => ({ roleId: target?.roleId ?? undefined });
 
 /** How a role is shown: its name, where its seats are, and the flag or icon it goes by. */
-export function describeRole(
-	target: Target,
-	roles: BoardRoles,
-	nationName: (code: string) => string
-) {
+export function describeRole({
+	target,
+	roles,
+	nationName
+}: {
+	target: Target;
+	roles: BoardRoles;
+	nationName: (code: string) => string;
+}) {
 	const committees = roles.committees.filter((committee) =>
 		committee.roles.some((role) => role.id === target.roleId)
 	);
@@ -339,20 +394,38 @@ const wishTarget = (wish: Wish): Target => ({ roleId: wish.roleId });
  * How a planned role relates to the wishes: undefined without a role or without wishes to compare
  * with (a converted single participant), else the rank it was given (undefined: not wished).
  */
-export function wishStatus(wishes: readonly Wish[] | undefined, target: Target) {
+export function wishStatus({
+	wishes,
+	target
+}: {
+	wishes: readonly Wish[] | undefined;
+	target: Target;
+}) {
 	if (!targetKey(target) || !wishes) return undefined;
-	return { rank: wishRank(wishes, target) };
+	return { rank: wishRank({ wishes, target }) };
 }
 
 /** The border of a card on the board: excluded, flagged, planned to change, or plain. */
-export function cardBorder(review: BoardReviewRow | undefined, pending: boolean) {
+export function cardBorder({
+	review,
+	pending
+}: {
+	review: BoardReviewRow | undefined;
+	pending: boolean;
+}) {
 	if (review?.disqualified) return 'border-error';
 	if (review?.flagged) return 'border-warning';
 	return pending ? 'border-primary border-dashed' : 'border-base-300';
 }
 
 /** The rank a delegation gave a role among its wishes, if it wished for it at all. */
-export function wishRank(wishes: readonly Wish[] | undefined, target: Target) {
+export function wishRank({
+	wishes,
+	target
+}: {
+	wishes: readonly Wish[] | undefined;
+	target: Target;
+}) {
 	const key = targetKey(target);
 	if (!key || !wishes) return undefined;
 	return wishes.find((wish) => targetKey(wishTarget(wish)) === key)?.rank;
@@ -366,16 +439,20 @@ interface ListedWish extends Wish {
 }
 
 /** Whether a wish is the role a group holds; never, while it holds none. */
-function wishMatches(wish: ListedWish, target: Target) {
+function wishMatches({ wish, target }: { wish: ListedWish; target: Target }) {
 	return !!targetKey(target) && wish.roleId === target.roleId;
 }
 
 /** Every wish of a delegation as a card lists it: the one matching its role first, then by rank. */
-export function wishList(
-	wishes: readonly ListedWish[] | undefined,
-	target: Target,
-	nationName: (code: string) => string
-) {
+export function wishList({
+	wishes,
+	target,
+	nationName
+}: {
+	wishes: readonly ListedWish[] | undefined;
+	target: Target;
+	nationName: (code: string) => string;
+}) {
 	return (wishes ?? [])
 		.map((wish) => ({
 			key: wish.roleId,
@@ -383,7 +460,7 @@ export function wishList(
 			name: wish.role.nation
 				? nationName(wish.role.nation.alpha3Code)
 				: (wish.role.abbreviation ?? ''),
-			matches: wishMatches(wish, target)
+			matches: wishMatches({ wish, target })
 		}))
 		.toSorted((a, b) => Number(b.matches) - Number(a.matches) || a.rank - b.rank);
 }
@@ -396,10 +473,13 @@ export type SingleDropAction = { type: 'convert' } | { type: 'role'; roleId: str
  * What dropping a single participant into `container` does: turn them into a delegation, give
  * them the custom role of a role zone, or (the pool) take theirs away.
  */
-export function singleDropAction(
-	source: string,
-	container: string | null
-): SingleDropAction | undefined {
+export function singleDropAction({
+	source,
+	container
+}: {
+	source: string;
+	container: string | null;
+}): SingleDropAction | undefined {
 	if (!container || container === source) return undefined;
 	if (container === CONVERT_CONTAINER) return { type: 'convert' };
 	if (container === POOL_CONTAINER) return { type: 'role', roleId: undefined };
@@ -417,7 +497,13 @@ export function mergedRoles(groups: readonly AssignmentGroup[]) {
 }
 
 /** Which notice the finish tab shows about the release. */
-export function releaseNotice(released: boolean, justApplied: boolean) {
+export function releaseNotice({
+	released,
+	justApplied
+}: {
+	released: boolean;
+	justApplied: boolean;
+}) {
 	if (released) return 'released' as const;
 	return justApplied ? ('reminder' as const) : ('hidden' as const);
 }

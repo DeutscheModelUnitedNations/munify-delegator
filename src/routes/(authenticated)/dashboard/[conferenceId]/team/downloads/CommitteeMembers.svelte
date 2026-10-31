@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
 	import {
-		downloadSemicolonCsv,
+		downloadSortedCsv,
 		fetchConferenceTitle,
 		fileNamePrefix
 	} from '../seats/downloads/seatDownloads';
-	import { compareByText } from '../seats/downloads/sortRows';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {
@@ -36,30 +34,22 @@
 			fetchConferenceTitle(conferenceId)
 		]);
 
-		if (members.length === 0) {
-			toast.error(m.noDataFound());
-			return;
-		}
-
-		downloadSemicolonCsv(
-			[
-				[m.alpha3Code(), m.nation(), m.firstName(), m.lastName(), m.email()],
-				...[...members]
-					.map((member) => ({
-						alpha3Code: member.delegation.assignedRole?.nation?.alpha3Code,
-						user: member.user
-					}))
-					.sort(compareByText((member) => member.alpha3Code))
-					.map(({ alpha3Code, user }) => [
-						alpha3Code?.toUpperCase(),
-						alpha3Code ? getFullTranslatedCountryNameFromISO3Code(alpha3Code) : '',
-						user.givenName,
-						user.familyName,
-						user.email
-					])
+		downloadSortedCsv({
+			items: members.map((member) => ({
+				alpha3Code: member.delegation.assignedRole?.nation?.alpha3Code,
+				user: member.user
+			})),
+			header: [m.alpha3Code(), m.nation(), m.firstName(), m.lastName(), m.email()],
+			sortKey: (member) => member.alpha3Code,
+			row: ({ alpha3Code, user }) => [
+				alpha3Code?.toUpperCase(),
+				alpha3Code ? getFullTranslatedCountryNameFromISO3Code(alpha3Code) : '',
+				user.givenName,
+				user.familyName,
+				user.email
 			],
-			`${fileNamePrefix(title)}_${committee.abbreviation}_delegation_members.csv`
-		);
+			filename: `${fileNamePrefix(title)}_${committee.abbreviation}_delegation_members.csv`
+		});
 	}
 </script>
 

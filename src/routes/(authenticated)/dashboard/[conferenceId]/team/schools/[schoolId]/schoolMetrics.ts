@@ -8,7 +8,8 @@ export interface ConferenceMetrics {
 }
 
 /** The share `part` of `whole`, or undefined where there is nothing to divide. */
-const share = (part: number, whole: number) => (whole > 0 ? part / whole : undefined);
+const share = ({ part, whole }: { part: number; whole: number }) =>
+	whole > 0 ? part / whole : undefined;
 
 /**
  * A school's history at a glance: in how many conferences people from it took part, how many
@@ -24,11 +25,8 @@ export function schoolSummary(conferences: readonly ConferenceMetrics[]) {
 		participants: sum((row) => row.participants),
 		applied,
 		seated,
-		acceptanceRate: share(seated, applied),
-		attendanceRate: share(
-			sum((row) => row.attended),
-			seated
-		),
+		acceptanceRate: share({ part: seated, whole: applied }),
+		attendanceRate: share({ part: sum((row) => row.attended), whole: seated }),
 		fromWaitingList: sum((row) => row.fromWaitingList)
 	};
 }

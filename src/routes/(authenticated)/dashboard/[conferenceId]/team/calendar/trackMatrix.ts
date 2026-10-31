@@ -44,12 +44,17 @@ export function trackRows(days: readonly MatrixDay[]): TrackRow[] {
  * The tracks whose sort order changes when the row `name` is dropped at row index `toIndex`.
  * Every track takes its row's index as sort order, which also repairs gaps and ties.
  */
-export function rowOrderChanges(
-	days: readonly MatrixDay[],
-	rows: readonly TrackRow[],
-	name: string,
-	toIndex: number
-): { id: string; sortOrder: number }[] {
+export function rowOrderChanges({
+	days,
+	rows,
+	name,
+	toIndex
+}: {
+	days: readonly MatrixDay[];
+	rows: readonly TrackRow[];
+	name: string;
+	toIndex: number;
+}): { id: string; sortOrder: number }[] {
 	const order = rows.map((row) => row.name);
 	const from = order.indexOf(name);
 	if (from === -1 || toIndex < 0 || toIndex >= order.length || from === toIndex) return [];

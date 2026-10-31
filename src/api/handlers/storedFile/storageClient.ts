@@ -54,7 +54,7 @@ export function createStorage(config: StorageConfig) {
 		 * A URL the browser PUTs the file to. Type and length are signed, so the storage refuses
 		 * anything but the file that was announced.
 		 */
-		presignUpload(key: string, file: { mimeType: string; size: number }) {
+		presignUpload({ key, file }: { key: string; file: { mimeType: string; size: number } }) {
 			return external.getPresignedUrl(
 				'PUT',
 				key,
@@ -72,7 +72,7 @@ export function createStorage(config: StorageConfig) {
 		 * was signed with. Objects never change (a new upload gets a new key), so the browser may
 		 * keep them as long as the URL is handed out.
 		 */
-		async presignDownload(key: string, fileName?: string) {
+		async presignDownload({ key, fileName }: { key: string; fileName?: string }) {
 			const now = Date.now();
 			const rememberedAs = `${key}\n${fileName ?? ''}`;
 			const remembered = downloads.get(rememberedAs);
@@ -95,7 +95,7 @@ export function createStorage(config: StorageConfig) {
 			return internal.getContentLength(key);
 		},
 
-		async put(key: string, bytes: Uint8Array, mimeType: string) {
+		async put({ key, bytes, mimeType }: { key: string; bytes: Uint8Array; mimeType: string }) {
 			await internal.putObject(key, bytes, mimeType);
 		},
 
@@ -139,7 +139,7 @@ export function contentDisposition(fileName: string) {
 }
 
 /** What a `stored_file` row records as its purpose (`conference/logo`), see `FILE_SOURCES`. */
-export function filePurpose(kind: string, field: string) {
+export function filePurpose({ kind, field }: { kind: string; field: string }) {
 	return `${kind}/${field}`;
 }
 
@@ -147,6 +147,14 @@ export function filePurpose(kind: string, field: string) {
  * Where an upload goes: grouped by conference and purpose, so the bucket stays browsable, and
  * ending in a fresh id, so a new upload never overwrites an object a link still points at.
  */
-export function objectKey(conferenceId: string, purpose: string, uniqueId: string) {
+export function objectKey({
+	conferenceId,
+	purpose,
+	uniqueId
+}: {
+	conferenceId: string;
+	purpose: string;
+	uniqueId: string;
+}) {
 	return `conferences/${conferenceId}/${purpose}/${uniqueId}`;
 }

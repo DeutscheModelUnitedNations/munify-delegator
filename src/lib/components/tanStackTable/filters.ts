@@ -1,5 +1,6 @@
 import type { FilterFn, RowData } from '@tanstack/svelte-table';
 import type { ManagedTableFeatures } from './managedTable';
+import { z } from 'zod';
 
 export type TextFilterMode =
 	| 'contains'
@@ -14,6 +15,26 @@ export type TextFilterMode =
 type ManagedFilterFn<TData extends RowData> = FilterFn<ManagedTableFeatures, TData>;
 
 export type TextFilterValue = { mode: TextFilterMode; value: string };
+
+/*
+ * The filter drawer's values as the table state holds them (`unknown`), for building backend
+ * queries. Whatever does not fit is no filter.
+ */
+
+/** A text filter; the mode stays a string, since unknown modes behave like `contains`. */
+export const textFilterInput = z.object({ mode: z.string(), value: z.string() });
+
+/** An enum filter's selected values; entries that are not strings are dropped. */
+export const enumFilterInput = z
+	.array(z.string().optional().catch(undefined))
+	.transform((values) => values.filter((value) => value !== undefined));
+
+const rangeBound = z.number().optional().catch(undefined);
+
+/** A range filter's `[min, max]`; a bound that is not a number is open. */
+export const rangeFilterInput = z
+	.array(z.unknown())
+	.transform(([min, max]) => ({ min: rangeBound.parse(min), max: rangeBound.parse(max) }));
 
 /** Compares a lower-cased cell value against a lower-cased, non-empty search value. */
 type TextComparison = (cellValue: string, search: string) => boolean;
@@ -33,7 +54,13 @@ function isEmptyValue(rawValue: unknown) {
 }
 
 /** Whether a cell value passes a text filter. Unknown modes behave like `contains`. */
-export function matchesTextFilter(rawValue: unknown, filterValue: TextFilterValue | undefined) {
+export function matchesTextFilter({
+	rawValue,
+	filterValue
+}: {
+	rawValue: unknown;
+	filterValue: TextFilterValue | undefined;
+}) {
 	if (!filterValue) return true;
 	const { mode, value } = filterValue;
 	if (mode === 'isEmpty') return isEmptyValue(rawValue);
@@ -44,17 +71,26 @@ export function matchesTextFilter(rawValue: unknown, filterValue: TextFilterValu
 }
 
 /** Whether a cell value is one of the selected enum values; empty cells match `—`. */
-export function matchesEnumFilter(rawValue: unknown, filterValue: string[] | undefined) {
+export function matchesEnumFilter({
+	rawValue,
+	filterValue
+}: {
+	rawValue: unknown;
+	filterValue: string[] | undefined;
+}) {
 	if (!filterValue || filterValue.length === 0) return true;
 	const value = isEmptyValue(rawValue) ? '—' : String(rawValue);
 	return filterValue.includes(value);
 }
 
 /** Whether a numeric cell value lies within an inclusive range with optional bounds. */
-export function matchesRangeFilter(
-	value: number | null | undefined,
-	filterValue: [number | null, number | null] | undefined
-) {
+export function matchesRangeFilter({
+	value,
+	filterValue
+}: {
+	value: number | null | undefined;
+	filterValue: [number | null, number | null] | undefined;
+}) {
 	if (!filterValue) return true;
 	if (value == null) return false;
 	const [min, max] = filterValue;
@@ -64,12 +100,12 @@ export function matchesRangeFilter(
 const textFilterFn =
 	<TData extends RowData>(): ManagedFilterFn<TData> =>
 	(row, columnId, filterValue: TextFilterValue | undefined) =>
-		matchesTextFilter(row.getValue(columnId), filterValue);
+		matchesTextFilter({ rawValue: row.getValue(columnId), filterValue });
 
 const enumFilterFn =
 	<TData extends RowData>(): ManagedFilterFn<TData> =>
 	(row, columnId, filterValue: string[]) =>
-		matchesEnumFilter(row.getValue(columnId), filterValue);
+		matchesEnumFilter({ rawValue: row.getValue(columnId), filterValue });
 
 const booleanFilterFn =
 	<TData extends RowData>(): ManagedFilterFn<TData> =>
@@ -83,15 +119,18 @@ const booleanFilterFn =
 const rangeFilterFn =
 	<TData extends RowData>(): ManagedFilterFn<TData> =>
 	(row, columnId, filterValue: [number | null, number | null]) =>
-		matchesRangeFilter(row.getValue<number>(columnId), filterValue);
+		matchesRangeFilter({ value: row.getValue<number>(columnId), filterValue });
 
 type RangeFilterValue = [number | null, number | null];
 
 /** The enum filter after clicking `value`: added if missing, removed if present; empty clears it. */
-export function toggledEnumFilter(
-	current: string[] | undefined,
-	value: string
-): string[] | undefined {
+export function toggledEnumFilter({
+	current,
+	value
+}: {
+	current: string[] | undefined;
+	value: string;
+}): string[] | undefined {
 	const selected = current ?? [];
 	if (!selected.includes(value)) return [...selected, value];
 	const next = selected.filter((v) => v !== value);
@@ -99,11 +138,15 @@ export function toggledEnumFilter(
 }
 
 /** The range filter after editing one bound; an empty input clears it, no bounds clear the filter. */
-export function updatedRangeFilter(
-	current: RangeFilterValue | undefined,
-	index: 0 | 1,
-	value: string
-): RangeFilterValue | undefined {
+export function updatedRangeFilter({
+	current,
+	index,
+	value
+}: {
+	current: RangeFilterValue | undefined;
+	index: 0 | 1;
+	value: string;
+}): RangeFilterValue | undefined {
 	const next: RangeFilterValue = current ? [...current] : [null, null];
 	next[index] = value === '' ? null : Number(value);
 	return next[0] === null && next[1] === null ? undefined : next;

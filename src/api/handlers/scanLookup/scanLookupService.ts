@@ -26,7 +26,7 @@ const NOTHING_FOUND = {
 	missingSurveyOptions: []
 } as const;
 
-async function findScannedPerson(conferenceId: string, code: string) {
+async function findScannedPerson({ conferenceId, code }: { conferenceId: string; code: string }) {
 	const inConference = { conferenceId };
 	// the registrations reach their conference through the person's part in it
 	const throughParticipant = { participant: inConference };
@@ -127,7 +127,7 @@ function describeStatus(status: ScannedStatus) {
 	return { accessCardId, didAttend, paymentStatus, termsAndConditions, guardianConsent };
 }
 
-function describePerson(person: ScannedPerson, status: ScannedStatus) {
+function describePerson({ person, status }: { person: ScannedPerson; status: ScannedStatus }) {
 	const isSupervisor = person.conferenceSupervisor.length > 0;
 	const isTeamMember = person.teamMember.length > 0;
 	const isWaitingList = person.waitingListEntry.length > 0;
@@ -156,11 +156,15 @@ function describePerson(person: ScannedPerson, status: ScannedStatus) {
  * The titles of the survey options the session expects, when the person picked none of them;
  * empty when they did, or when the session expects none.
  */
-async function missingSurveyOptions(
-	conferenceId: string,
-	sessionId: string | null | undefined,
-	participantId: string | undefined
-) {
+async function missingSurveyOptions({
+	conferenceId,
+	sessionId,
+	participantId
+}: {
+	conferenceId: string;
+	sessionId: string | null | undefined;
+	participantId: string | undefined;
+}) {
 	if (!sessionId) return [];
 	const session = await db.query.attendanceSession.findFirst({
 		where: { id: sessionId, conferenceId },
@@ -187,14 +191,26 @@ async function missingSurveyOptions(
  * Looks the code up and describes the person it belongs to, or answers that nothing was found.
  * With a session, it also names the survey options the session expects that the person lacks.
  */
-export async function lookupScan(conferenceId: string, code: string, sessionId?: string | null) {
-	const person = await findScannedPerson(conferenceId, code);
+export async function lookupScan({
+	conferenceId,
+	code,
+	sessionId
+}: {
+	conferenceId: string;
+	code: string;
+	sessionId?: string | null;
+}) {
+	const person = await findScannedPerson({ conferenceId, code });
 	if (!person) return NOTHING_FOUND;
 	const status = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: person.id }
 	});
 	return {
-		...describePerson(person, status),
-		missingSurveyOptions: await missingSurveyOptions(conferenceId, sessionId, status?.id)
+		...describePerson({ person, status }),
+		missingSurveyOptions: await missingSurveyOptions({
+			conferenceId,
+			sessionId,
+			participantId: status?.id
+		})
 	};
 }

@@ -8,7 +8,15 @@ export const MUTED = rgb(109 / 255, 147 / 255, 146 / 255);
 export const WHITE = rgb(1, 1, 1);
 
 /** A rectangle with rounded corners, which pdf-lib can only draw as a path. */
-export function roundedRectPath(width: number, height: number, radius: number) {
+export function roundedRectPath({
+	width,
+	height,
+	radius
+}: {
+	width: number;
+	height: number;
+	radius: number;
+}) {
 	return [
 		`M ${radius} 0`,
 		`L ${width - radius} 0`,

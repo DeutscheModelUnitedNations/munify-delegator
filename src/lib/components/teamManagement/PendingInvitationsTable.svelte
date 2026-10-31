@@ -29,23 +29,23 @@
 	async function handleRevoke(invitationId: string) {
 		if (!(await confirmDialog({ text: m.confirmRevokeInvitation(), danger: true }))) return;
 
-		await runInvitationAction(
-			() =>
+		await runInvitationAction({
+			mutation: () =>
 				client.mutate.revokeTeamMemberInvitation({
 					__args: { invitationId },
 					success: true,
 					message: true
 				}),
-			() => {
+			onSuccess: () => {
 				toast.success(m.invitationRevoked());
 			},
-			'Failed to revoke invitation:'
-		);
+			failureLog: 'Failed to revoke invitation'
+		});
 	}
 
 	async function handleRegenerateAndCopy(invitationId: string) {
-		await runInvitationAction(
-			() =>
+		await runInvitationAction({
+			mutation: () =>
 				client.mutate.regenerateTeamMemberInvitation({
 					__args: { invitationId, sendEmail: false },
 					success: true,
@@ -53,29 +53,29 @@
 					newExpiresAt: true,
 					message: true
 				}),
-			async (result) => {
+			onSuccess: async (result) => {
 				if (!result.newToken) return;
 				const inviteUrl = `${page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
 				await navigator.clipboard.writeText(inviteUrl);
 				toast.success(m.linkCopied());
 			},
-			'Failed to regenerate invitation:'
-		);
+			failureLog: 'Failed to regenerate invitation'
+		});
 	}
 
 	async function handleResendEmail(invitationId: string) {
-		await runInvitationAction(
-			() =>
+		await runInvitationAction({
+			mutation: () =>
 				client.mutate.regenerateTeamMemberInvitation({
 					__args: { invitationId, sendEmail: true },
 					success: true,
 					message: true
 				}),
-			() => {
+			onSuccess: () => {
 				toast.success(m.invitationResent());
 			},
-			'Failed to resend invitation:'
-		);
+			failureLog: 'Failed to resend invitation'
+		});
 	}
 
 	function formatDate(date: Date | string): string {

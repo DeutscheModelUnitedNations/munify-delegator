@@ -95,7 +95,10 @@
 
 	// One saved session per conference, so the store follows the conference in the URL.
 	const sessionStore = $derived(
-		createPersistedState<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
+		createPersistedState<ScanSession | null>({
+			key: `attendanceSession-${params.conferenceId}`,
+			initial: null
+		})
 	);
 
 	// --- Queue ---
@@ -217,15 +220,15 @@
 			toast.error(m.attendanceOccasionEmpty());
 			throw new Error(m.attendanceOccasionEmpty());
 		}
-		const targets = renameTargets(activeSession(), id);
-		if (targets.server) await renameOnServer(id, trimmed);
+		const targets = renameTargets({ local: activeSession(), id });
+		if (targets.server) await renameOnServer({ id, name: trimmed });
 		if (!targets.local) return;
 		targets.local.occasion = trimmed;
 		sessionStore.current = targets.local;
 		occasion = trimmed;
 	}
 
-	async function renameOnServer(id: string, name: string) {
+	async function renameOnServer({ id, name }: { id: string; name: string }) {
 		const promise = Promise.resolve(
 			client.mutate.renameAttendanceSession({ __args: { id, occasion: name } })
 		);
@@ -299,12 +302,12 @@
 		if (!code) return;
 
 		untrack(() => {
-			const intake = scanIntake(code, heldCode, sessionActive);
+			const intake = scanIntake({ code, held: heldCode, active: sessionActive });
 			// A code typed while another is being worked on is not taken
 			if (intake.action === 'hold') scannedCode = intake.held;
 			if (intake.action === 'take') {
 				heldCode = code;
-				void handleScan(intake.trimmed, scannedFormat);
+				void handleScan({ scanned: intake.trimmed, format: scannedFormat });
 			}
 		});
 	});
@@ -323,16 +326,18 @@
 	async function lookUp(code: string): Promise<FoundPerson | null | undefined> {
 		try {
 			// The server resolves an access card number as well as a user id
-			return await loadScannedPerson(conferenceId, code, await lookupSessionId());
+			return await loadScannedPerson({ conferenceId, code, sessionId: await lookupSessionId() });
 		} catch (err) {
-			toast.error(scanErrorText(err, m.scanCheckOffline(), m.genericToastError()));
+			toast.error(
+				scanErrorText({ err, offlineText: m.scanCheckOffline(), fallback: m.genericToastError() })
+			);
 			return undefined;
 		}
 	}
 
 	/** The code to work with, or `null` when it is refused, which is reported. */
-	async function acceptedCode(code: string, format: string | null) {
-		const result = await acceptScannedCode(code, format);
+	async function acceptedCode({ code, format }: { code: string; format: string | null }) {
+		const result = await acceptScannedCode({ code, format });
 		if (result.accepted) return result.code;
 		toast.error(result.message);
 		return null;
@@ -340,15 +345,15 @@
 
 	/** What a scan does: log it at once (record), or show the person first (check). */
 	// fallow-ignore-next-line complexity
-	async function handleScan(scanned: string, format: string | null) {
-		const code = await acceptedCode(scanned, format);
+	async function handleScan({ scanned, format }: { scanned: string; format: string | null }) {
+		const code = await acceptedCode({ code: scanned, format });
 		if (code === null) {
 			release();
 			return;
 		}
 		if (!checking) {
 			// Offline-safe: the code is only resolved if that can be had
-			enqueue(await resolveScannedCode(conferenceId, code), null);
+			enqueue({ userId: await resolveScannedCode({ conferenceId, code }), checkPassed: null });
 			release();
 			return;
 		}
@@ -367,26 +372,36 @@
 
 	/** Whether the session held a scan of the person before; the info mode keeps none. */
 	const wasScanned = (userId: string) =>
-		sessionMode !== 'INFO' && hasScanOf(sessionStore.current?.entries, userId);
+		sessionMode !== 'INFO' && hasScanOf({ entries: sessionStore.current?.entries, userId });
 
 	/** Shows a scanned person, logs the scan, and waits for what the mode needs next. */
 	function showScanned(person: FoundPerson) {
 		// Looking somebody up again is no problem
 		const alreadyScanned = wasScanned(person.user.id);
-		const issues = checkIssues(person, alreadyScanned);
+		const issues = checkIssues({ person, alreadyScanned });
 		// The team is shown but never recorded, and gets no card
-		const awaiting = issues.includes('teamMember') ? 'ack' : recordScan(person, issues);
-		shown = personShown(person, issues, alreadyScanned, awaiting);
+		const awaiting = issues.includes('teamMember') ? 'ack' : recordScan({ person, issues });
+		shown = personShown({ person, issues, alreadyScanned, awaiting });
 		if (awaiting === null) release();
 	}
 
 	/** Logs the scan of someone who is recorded, and returns what the mode waits for next. */
-	function recordScan(person: FoundPerson, issues: ReturnType<typeof checkIssues>) {
+	function recordScan({
+		person,
+		issues
+	}: {
+		person: FoundPerson;
+		issues: ReturnType<typeof checkIssues>;
+	}) {
 		// The check records somebody with open points only when told to
-		const awaiting = scanStep(badgeOn, issues.length === 0, sessionMode === 'CHECK');
+		const awaiting = scanStep({
+			badgeMode: badgeOn,
+			passed: issues.length === 0,
+			decides: sessionMode === 'CHECK'
+		});
 		// With cards the scan is logged once the card is stored
 		if (awaiting === null || awaiting === 'ack') {
-			logScan(person.user.id, issues.length === 0, personLabel(person));
+			logScan({ userId: person.user.id, passed: issues.length === 0, label: personLabel(person) });
 		}
 		return awaiting;
 	}
@@ -395,17 +410,31 @@
 	function recordAnyway() {
 		const current = shown;
 		if (!isShownPerson(current) || !mayRecordAnyway(current.issues)) return;
-		logScan(current.person.user.id, false, personLabel(current.person));
+		logScan({ userId: current.person.user.id, passed: false, label: personLabel(current.person) });
 		shown = null;
 		release();
 	}
 
-	const logScan = (userId: string, passed: boolean, label: string) =>
+	const logScan = ({
+		userId,
+		passed,
+		label
+	}: {
+		userId: string;
+		passed: boolean;
+		label: string;
+	}) =>
 		sessionMode === 'INFO'
-			? rememberInfoScan(userId, passed, label)
-			: enqueue(userId, passed, label);
+			? rememberInfoScan({ userId, checkPassed: passed, label })
+			: enqueue({ userId, checkPassed: passed, label });
 
-	const checkIssues = (person: FoundPerson, alreadyScanned: boolean) =>
+	const checkIssues = ({
+		person,
+		alreadyScanned
+	}: {
+		person: FoundPerson;
+		alreadyScanned: boolean;
+	}) =>
 		scanIssues({
 			inConference: person.inConference,
 			isTeamMember: person.roles.isTeamMember,
@@ -418,7 +447,15 @@
 	const personLabel = (person: FoundPerson) => fullName(person.user) || person.user.id;
 
 	/** Keeps an info scan for the list of recent scans. */
-	function rememberInfoScan(userId: string, checkPassed: boolean, label: string) {
+	function rememberInfoScan({
+		userId,
+		checkPassed,
+		label
+	}: {
+		userId: string;
+		checkPassed: boolean;
+		label: string;
+	}) {
 		infoScans.push({
 			userId,
 			timestamp: new Date().toISOString(),
@@ -429,7 +466,15 @@
 	}
 
 	/** Puts a scan in the queue and the local backup, and starts sending. */
-	function enqueue(userId: string, checkPassed: boolean | null, label?: string) {
+	function enqueue({
+		userId,
+		checkPassed,
+		label
+	}: {
+		userId: string;
+		checkPassed: boolean | null;
+		label?: string;
+	}) {
 		const now = new Date().toISOString();
 		const entry: QueueEntry = {
 			localId: crypto.randomUUID(),
@@ -450,7 +495,7 @@
 		}
 
 		processQueue();
-		if (!label) void loadLabel(entry.localId, userId, now);
+		if (!label) void loadLabel({ localId: entry.localId, userId, timestamp: now });
 	}
 
 	/** The name of a user, or empty when it cannot be had (offline). */
@@ -468,17 +513,33 @@
 	}
 
 	/** Names a queued scan for the log; the log shows the id when this cannot be had. */
-	async function loadLabel(localId: string, userId: string, timestamp: string) {
+	async function loadLabel({
+		localId,
+		userId,
+		timestamp
+	}: {
+		localId: string;
+		userId: string;
+		timestamp: string;
+	}) {
 		const name = await fetchName(userId);
 		if (!name) return;
 		const queued = queue.find((e) => e.localId === localId);
 		if (queued) queued.label = name;
-		labelLogged(userId, timestamp, name);
+		labelLogged({ userId, timestamp, label: name });
 	}
 
-	function labelLogged(userId: string, timestamp: string, label: string) {
+	function labelLogged({
+		userId,
+		timestamp,
+		label
+	}: {
+		userId: string;
+		timestamp: string;
+		label: string;
+	}) {
 		const session = sessionStore.current;
-		const logged = findLogged(session?.entries, userId, timestamp);
+		const logged = findLogged({ entries: session?.entries, userId, timestamp });
 		if (!session || !logged) return;
 		logged.label = label;
 		sessionStore.current = session;
@@ -504,23 +565,30 @@
 
 		shown = { state: 'loading', userId };
 		const person = await lookUp(userId);
-		shown = person ? personShown(person, checkIssues(person, false), false, null) : null;
+		shown = person
+			? personShown({
+					person,
+					issues: checkIssues({ person, alreadyScanned: false }),
+					alreadyScanned: false,
+					awaiting: null
+				})
+			: null;
 	}
 
 	/** Reads the person again after something changed on the result. */
 	async function reloadShown() {
 		const current = shown;
 		if (!isShownPerson(current)) return;
-		const person = await loadScannedPerson(
+		const person = await loadScannedPerson({
 			conferenceId,
-			current.person.user.id,
-			await lookupSessionId()
-		);
+			code: current.person.user.id,
+			sessionId: await lookupSessionId()
+		});
 		if (!person || shown !== current) return;
 		shown = {
 			...current,
 			person,
-			issues: checkIssues(person, current.alreadyScanned)
+			issues: checkIssues({ person, alreadyScanned: current.alreadyScanned })
 		};
 	}
 
@@ -541,7 +609,13 @@
 	};
 
 	/** The card and the scan are stored together, so a rejected card logs nothing. */
-	async function saveBadge(current: ShownPerson, accessCardId: string) {
+	async function saveBadge({
+		current,
+		accessCardId
+	}: {
+		current: ShownPerson;
+		accessCardId: string;
+	}) {
 		const session = await ensureSessionStarted();
 		if (!session) throw new Error('No session is running');
 		const timestamp = new Date().toISOString();
@@ -556,7 +630,12 @@
 			},
 			id: true
 		});
-		logSynced(current.person.user.id, timestamp, passed, personLabel(current.person));
+		logSynced({
+			userId: current.person.user.id,
+			timestamp,
+			checkPassed: passed,
+			label: personLabel(current.person)
+		});
 	}
 
 	async function storeBadge(current: ShownPerson) {
@@ -568,10 +647,12 @@
 		}
 		busy = true;
 		try {
-			await saveBadge(current, accessCardId);
+			await saveBadge({ current, accessCardId });
 		} catch (err) {
 			// Stays on the person, so the number can be corrected or tried again
-			toast.error(scanErrorText(err, m.scanCheckOffline(), m.genericToastError()));
+			toast.error(
+				scanErrorText({ err, offlineText: m.scanCheckOffline(), fallback: m.genericToastError() })
+			);
 			return;
 		} finally {
 			busy = false;
@@ -583,7 +664,17 @@
 	}
 
 	/** Counts a scan that was stored right away, and keeps it in the local backup. */
-	function logSynced(userId: string, timestamp: string, checkPassed: boolean, label: string) {
+	function logSynced({
+		userId,
+		timestamp,
+		checkPassed,
+		label
+	}: {
+		userId: string;
+		timestamp: string;
+		checkPassed: boolean;
+		label: string;
+	}) {
 		totalScansCounter += 1;
 		syncedScansCounter += 1;
 		const session = sessionStore.current;
@@ -615,7 +706,9 @@
 	/** Records one scan's attendance, unless the session already holds it. */
 	async function syncEntry(entry: QueueEntry) {
 		// Duplicate check against full session history
-		if (hasScanOf(sessionStore.current?.entries, entry.userId, true)) {
+		if (
+			hasScanOf({ entries: sessionStore.current?.entries, userId: entry.userId, syncedOnly: true })
+		) {
 			markDuplicate(entry);
 			return;
 		}
@@ -623,14 +716,14 @@
 			await sendEntry(entry);
 			markSynced(entry);
 		} catch (err) {
-			markRejected(entry, err);
+			markRejected({ entry, err });
 		}
 	}
 
-	function markRejected(entry: QueueEntry, err: unknown) {
+	function markRejected({ entry, err }: { entry: QueueEntry; err: unknown }) {
 		// Another device scanned the person in this session first
 		if (isAlreadyScanned(err)) markDuplicate(entry);
-		else markFailed(entry, err);
+		else markFailed({ entry, err });
 	}
 
 	async function sendEntry(entry: QueueEntry) {
@@ -655,7 +748,7 @@
 		toast.warning(m.duplicateScan());
 
 		// Mark session entry as synced so it won't be restored as pending on reload
-		updateLogEntrySynced(entry.userId, entry.timestamp);
+		updateLogEntrySynced({ userId: entry.userId, timestamp: entry.timestamp });
 	}
 
 	function markSynced(entry: QueueEntry) {
@@ -665,13 +758,13 @@
 		toast.success(m.attendanceRecorded());
 
 		// Update localStorage synced status
-		updateLogEntrySynced(entry.userId, entry.timestamp);
+		updateLogEntrySynced({ userId: entry.userId, timestamp: entry.timestamp });
 
 		// Auto-remove success entries after 3s
 		scheduleRemoval(entry.localId);
 	}
 
-	function markFailed(entry: QueueEntry, err: unknown) {
+	function markFailed({ entry, err }: { entry: QueueEntry; err: unknown }) {
 		entry.status = 'error';
 		if (!isNetworkError(err)) {
 			entry.errorKind = 'unknown';
@@ -697,7 +790,7 @@
 		}, retryDelay(entry.retryCount));
 	}
 
-	function updateLogEntrySynced(userId: string, timestamp: string) {
+	function updateLogEntrySynced({ userId, timestamp }: { userId: string; timestamp: string }) {
 		const session = sessionStore.current;
 		if (!session) return;
 		const logEntry = session.entries.find(

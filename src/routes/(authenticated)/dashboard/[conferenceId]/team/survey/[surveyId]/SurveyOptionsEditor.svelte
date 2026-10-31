@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -65,7 +66,7 @@
 			});
 			showCreateOptionModal = false;
 		} catch (error) {
-			console.error('Failed to create option:', error);
+			logger.error('Failed to create option', error);
 		} finally {
 			isLoading = false;
 		}
@@ -93,7 +94,7 @@
 			});
 			editingOption = null;
 		} catch (error) {
-			console.error('Failed to update option:', error);
+			logger.error('Failed to update option', error);
 		} finally {
 			isLoading = false;
 		}
@@ -112,7 +113,7 @@
 			showDeleteOptionModal = false;
 			optionToDelete = null;
 		} catch (error) {
-			console.error('Failed to delete option:', error);
+			logger.error('Failed to delete option', error);
 		} finally {
 			isLoading = false;
 		}

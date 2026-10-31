@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import TargetDayField from './TargetDayField.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -70,17 +71,17 @@
 			const tracks = { source: source.tracks, target: targetTracks };
 			// An entry none of whose tracks the target day has would run nowhere, so it stays behind
 			const mutations = source.entries
-				.map((entry) => copiedEntryArgs(entry, targetDay, tracks))
+				.map((entry) => copiedEntryArgs({ entry, targetDay, tracks }))
 				.filter((args) => args.calendarTrackIds.length > 0)
 				.map((args) => client.mutate.createCalendarEntry({ __args: args, id: true }));
 			const results = await Promise.allSettled(mutations);
 			const failures = results.filter((r) => r.status === 'rejected');
 			if (failures.length > 0) {
-				console.error(`Failed to copy ${failures.length} entries:`, failures);
+				logger.error(`Failed to copy ${failures.length} entries`, failures);
 			}
 			onClose();
 		} catch (error) {
-			console.error('Failed to copy entries:', error);
+			logger.error('Failed to copy entries', error);
 		} finally {
 			isLoading = false;
 		}

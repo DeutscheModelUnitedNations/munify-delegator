@@ -36,11 +36,15 @@ function schoolsOrder(state: Pick<TableState, 'sorting'>) {
 		: { sortColumn: 'participants' as const, sortDesc: true };
 }
 
-function fetchSchools(
-	conferenceId: string,
-	state: Pick<TableState, 'search' | 'sorting'>,
-	paging: { limit: number; offset: number }
-) {
+function fetchSchools({
+	conferenceId,
+	state,
+	paging
+}: {
+	conferenceId: string;
+	state: Pick<TableState, 'search' | 'sorting'>;
+	paging: { limit: number; offset: number };
+}) {
 	return client.query.conferenceSchools({
 		__args: { conferenceId, search: state.search || undefined, ...schoolsOrder(state), ...paging },
 		rows: rowFields,
@@ -50,19 +54,35 @@ function fetchSchools(
 }
 
 /** One page of the conference's schools, as the table's search, sorting and paging ask. */
-export function fetchSchoolsPage(conferenceId: string, state: TableState) {
+export function fetchSchoolsPage({
+	conferenceId,
+	state
+}: {
+	conferenceId: string;
+	state: TableState;
+}) {
 	const { pageIndex, pageSize } = state.pagination;
-	return fetchSchools(conferenceId, state, { limit: pageSize, offset: pageIndex * pageSize });
+	return fetchSchools({
+		conferenceId,
+		state,
+		paging: { limit: pageSize, offset: pageIndex * pageSize }
+	});
 }
 
 export type SchoolRow = Awaited<ReturnType<typeof fetchSchoolsPage>>['rows'][number];
 
 /** Every school the search matches, a backend page at a time (for the export). */
-export async function fetchAllSchools(conferenceId: string, state: TableState) {
+export async function fetchAllSchools({
+	conferenceId,
+	state
+}: {
+	conferenceId: string;
+	state: TableState;
+}) {
 	const all: SchoolRow[] = [];
 	const limit = 500;
 	for (let offset = 0; ; offset += limit) {
-		const page = await fetchSchools(conferenceId, state, { limit, offset });
+		const page = await fetchSchools({ conferenceId, state, paging: { limit, offset } });
 		all.push(...page.rows);
 		if (!page.hasMore) return all;
 	}

@@ -15,7 +15,13 @@ const timeOf = (day: OrderedDay) => new Date(day.date).getTime();
  * number. It goes right after the last earlier day, or before the first later one; days are
  * unique by sort order, so when that place is taken it goes last.
  */
-export function daySortOrder(date: Date | string, others: readonly OrderedDay[]) {
+export function daySortOrder({
+	date,
+	others
+}: {
+	date: Date | string;
+	others: readonly OrderedDay[];
+}) {
 	const time = new Date(date).getTime();
 	const taken = new Set(others.map((d) => d.sortOrder));
 	const byDate = [...others].sort((a, b) => timeOf(a) - timeOf(b) || a.sortOrder - b.sortOrder);
@@ -30,19 +36,36 @@ export function daySortOrder(date: Date | string, others: readonly OrderedDay[])
  * The fields a day form writes. A day that keeps its date keeps its place; otherwise it is
  * placed by its date among the `others`.
  */
-export function dayFields(
-	name: string,
-	date: string,
-	others: readonly OrderedDay[],
-	current?: OrderedDay
-) {
+export function dayFields({
+	name,
+	date,
+	others,
+	current
+}: {
+	name: string;
+	date: string;
+	others: readonly OrderedDay[];
+	current?: OrderedDay;
+}) {
 	const day = new Date(date);
 	const keeps = current && timeOf(current) === day.getTime();
-	return { name, date: day, sortOrder: keeps ? current.sortOrder : daySortOrder(day, others) };
+	return {
+		name,
+		date: day,
+		sortOrder: keeps ? current.sortOrder : daySortOrder({ date: day, others })
+	};
 }
 
 /** The fields a track form writes; an empty description is stored as none. */
-export function trackFields(name: string, description: string, sortOrder: number) {
+export function trackFields({
+	name,
+	description,
+	sortOrder
+}: {
+	name: string;
+	description: string;
+	sortOrder: number;
+}) {
 	return { name, description: description || null, sortOrder };
 }
 
@@ -50,11 +73,15 @@ export function trackFields(name: string, description: string, sortOrder: number
  * The tracks whose sort order changes when `trackId` moves one place (-1 earlier, +1 later). The
  * order is renumbered 0, 1, 2, … so gaps and ties in old data are repaired on the way.
  */
-export function trackOrderChanges(
-	tracks: readonly { id: string; sortOrder: number }[],
-	trackId: string,
-	direction: -1 | 1
-): { id: string; sortOrder: number }[] {
+export function trackOrderChanges({
+	tracks,
+	trackId,
+	direction
+}: {
+	tracks: readonly { id: string; sortOrder: number }[];
+	trackId: string;
+	direction: -1 | 1;
+}): { id: string; sortOrder: number }[] {
 	const ordered = [...tracks].sort((a, b) => a.sortOrder - b.sortOrder);
 	const from = ordered.findIndex((t) => t.id === trackId);
 	const to = from + direction;
@@ -88,12 +115,18 @@ const minutesOf = (time: string) => {
 };
 
 /** The fields an entry form writes for an entry on the day dated `dayDate`. */
-export function entryFields<Color>(form: EntryFormValues<Color>, dayDate: Date | string) {
+export function entryFields<Color>({
+	form,
+	dayDate
+}: {
+	form: EntryFormValues<Color>;
+	dayDate: Date | string;
+}) {
 	return {
 		name: form.name,
 		description: form.description || null,
-		startTime: dateAtMinutes(dayDate, minutesOf(form.startTime)),
-		endTime: dateAtMinutes(dayDate, minutesOf(form.endTime)),
+		startTime: dateAtMinutes({ dayDate, minutes: minutesOf(form.startTime) }),
+		endTime: dateAtMinutes({ dayDate, minutes: minutesOf(form.endTime) }),
 		fontAwesomeIcon: form.icon || null,
 		color: form.color,
 		placeId: form.placeId || null,

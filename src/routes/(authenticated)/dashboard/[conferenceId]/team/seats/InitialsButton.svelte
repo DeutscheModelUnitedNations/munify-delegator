@@ -17,7 +17,7 @@
 
 	const seatSwitch = getSeatSwitch();
 
-	const name = $derived(formatNames(given_name, family_name));
+	const name = $derived(formatNames({ givenName: given_name, familyName: family_name }));
 	const switching = $derived(seatSwitch.enabled && !!switchSeat);
 	const isSelected = $derived(switching && seatSwitch.selected?.memberId === switchSeat?.memberId);
 	const tooltip = $derived(
@@ -39,6 +39,6 @@
 			}
 		}}
 	>
-		{formatInitials(given_name, family_name)}
+		{formatInitials({ givenName: given_name, familyName: family_name })}
 	</button>
 </div>

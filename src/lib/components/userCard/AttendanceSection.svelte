@@ -65,11 +65,11 @@
 									timeStyle: 'short'
 								})}
 								·
-								{formatNames(
-									entry.recordedBy.givenName ?? undefined,
-									entry.recordedBy.familyName ?? undefined,
-									{ givenNameFirst: true }
-								)}
+								{formatNames({
+									givenName: entry.recordedBy.givenName ?? undefined,
+									familyName: entry.recordedBy.familyName ?? undefined,
+									options: { givenNameFirst: true }
+								})}
 							</span>
 						</div>
 						<button

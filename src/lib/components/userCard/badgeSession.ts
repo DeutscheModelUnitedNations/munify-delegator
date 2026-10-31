@@ -1,4 +1,5 @@
 import type { BadgeSeat } from '#lib/helpers/badgeCsv';
+import { z } from 'zod';
 
 /** What the badge generator is told about a person; every field is left out when unknown. */
 export interface BadgeSessionBody {
@@ -30,16 +31,22 @@ export function badgeSessionBody(values: {
 	return Object.fromEntries(entries);
 }
 
+const badgeSessionResponse = z.object({ url: z.string().trim().min(1) });
+
 /** The session url out of the generator's response, upgraded to https; undefined if malformed. */
 export function badgeSessionUrl(data: unknown): string | undefined {
-	if (typeof data !== 'object' || data === null || !('url' in data)) return undefined;
-	const { url } = data;
-	if (typeof url !== 'string' || url.trim() === '') return undefined;
-	return url.replace('http://', 'https://');
+	const parsed = badgeSessionResponse.safeParse(data);
+	return parsed.success ? parsed.data.url.replace('http://', 'https://') : undefined;
 }
 
 /** Asks the badge generator for a session and returns its url; throws when it cannot be had. */
-export async function requestBadgeSession(baseUrl: string | undefined, body: BadgeSessionBody) {
+export async function requestBadgeSession({
+	baseUrl,
+	body
+}: {
+	baseUrl: string | undefined;
+	body: BadgeSessionBody;
+}) {
 	const res = await fetch(`${baseUrl}/api/session/create`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -53,7 +60,10 @@ export async function requestBadgeSession(baseUrl: string | undefined, body: Bad
 }
 
 /** The nation and committee a delegation member sits in, as the badge shows them. */
-export function seatBadgeValues(
+export function seatBadgeValues({
+	member,
+	countryName
+}: {
 	member:
 		| {
 				delegation: {
@@ -61,9 +71,9 @@ export function seatBadgeValues(
 				};
 				assignedCommittee?: { abbreviation: string } | null;
 		  }
-		| undefined,
-	countryName: (alpha3Code: string) => string
-) {
+		| undefined;
+	countryName: (alpha3Code: string) => string;
+}) {
 	// Only a nation role has a nation; a non-state actor shows no country on the badge.
 	const nation = member?.delegation.assignedRole?.nation;
 	return {
@@ -78,7 +88,10 @@ export function seatBadgeValues(
  * (or their non-state actor), a single participant's role, a supervisor's image, the team label.
  * Undefined while they hold nothing a badge could show.
  */
-export function badgeSeatOf(
+export function badgeSeatOf({
+	roles,
+	labels
+}: {
 	roles: {
 		delegationMember?:
 			| {
@@ -94,9 +107,9 @@ export function badgeSeatOf(
 		singleParticipant?: { assignedRole?: { name?: string | null } | null } | undefined;
 		conferenceSupervisor?: object | undefined;
 		teamMember?: object | undefined;
-	},
-	labels: { countryName: (alpha3Code: string) => string; supervisor: string; team: string }
-): BadgeSeat | undefined {
+	};
+	labels: { countryName: (alpha3Code: string) => string; supervisor: string; team: string };
+}): BadgeSeat | undefined {
 	const role = roles.delegationMember?.delegation.assignedRole;
 	const committee = roles.delegationMember?.assignedCommittee?.abbreviation;
 	if (role?.nation) {

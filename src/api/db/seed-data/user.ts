@@ -75,7 +75,7 @@ export function makeSeedUser(
  * Seven digits of their own for each dev account, so the accounts do not share phone numbers -
  * which the duplicate check would rightly take for one person.
  */
-function accountDigits(sub: string, salt: number) {
+function accountDigits({ sub, salt }: { sub: string; salt: number }) {
 	let hash = salt;
 	for (const char of sub) hash = (hash * 31 + char.charCodeAt(0)) % 10_000_000;
 	return String(hash).padStart(7, '0');
@@ -101,7 +101,7 @@ export function makeDevAccountUser(
 		preferredUsername: account.sub,
 		locale: 'de',
 		birthday: complete ? birthday : null,
-		phone: complete ? `+49151${accountDigits(account.sub, 1)}` : null,
+		phone: complete ? `+49151${accountDigits({ sub: account.sub, salt: 1 })}` : null,
 		street: complete ? 'Platz der Vereinten Nationen 1' : null,
 		apartment: null,
 		zip: complete ? '53113' : null,
@@ -111,7 +111,7 @@ export function makeDevAccountUser(
 		foodPreference: complete ? 'VEGETARIAN' : null,
 		pronouns: null,
 		emergencyContacts: complete
-			? `Erika Mustermann (Mutter): +49 160 ${accountDigits(account.sub, 2)}`
+			? `Erika Mustermann (Mutter): +49 160 ${accountDigits({ sub: account.sub, salt: 2 })}`
 			: null,
 		wantsToReceiveGeneralInformation: false,
 		wantsJoinTeamInformation: false

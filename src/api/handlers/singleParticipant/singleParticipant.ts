@@ -41,15 +41,17 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const id = ctx.mustBeLoggedIn().sub;
 
-			const existing = await ownRegistrationToEdit(id, args);
-			await assertCustomRolesOf(args.conferenceId, [args.roleId]);
-			const rowId = await registerSingleParticipant(id, args, existing);
+			const existing = await ownRegistrationToEdit({ userId: id, args });
+			await assertCustomRolesOf({ conferenceId: args.conferenceId, roleIds: [args.roleId] });
+			const rowId = await registerSingleParticipant({ userId: id, args, existing });
 
 			singleParticipantPubsub.created();
 			conferenceParticipantPubsub.updated();
 
 			return db.query.singleParticipant
-				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, rowId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.singleParticipant, id: rowId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -65,13 +67,19 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateSingleParticipant(ctx, args.id, args.applyForRolesIdList ?? []);
+			await assertCanUpdateSingleParticipant({
+				ctx,
+				id: args.id,
+				applyForRolesIdList: args.applyForRolesIdList ?? []
+			});
 			await updateSingleParticipantApplication(args);
 
 			singleParticipantPubsub.updated(args.id);
 
 			return db.query.singleParticipant
-				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.singleParticipant, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -80,7 +88,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'singleParticipant', args.id);
+			await deleteIfAllowed({ ctx, table: 'singleParticipant', id: args.id });
 			singleParticipantPubsub.removed();
 
 			return true;
@@ -98,17 +106,23 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateAppliedSingleParticipant(ctx, args.conferenceId, args.roleId);
+			await assertCanCreateAppliedSingleParticipant({
+				ctx,
+				conferenceId: args.conferenceId,
+				roleId: args.roleId
+			});
 
 			const createdId = await createAssignedSingleParticipant(args);
 
 			singleParticipantPubsub.created();
 			waitingListEntryPubsub.updated();
 			conferenceParticipantPubsub.updated();
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.singleParticipant
-				.findFirst(query(await queryAllowed(ctx.abilities.singleParticipant, createdId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.singleParticipant, id: createdId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})

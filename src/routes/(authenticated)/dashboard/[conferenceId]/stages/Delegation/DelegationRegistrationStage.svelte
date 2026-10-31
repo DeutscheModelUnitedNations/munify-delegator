@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
@@ -75,7 +76,7 @@
 
 	const leaveDelegation = async () => {
 		if (!delegationMember.delegation) {
-			console.error('Error: Delegation Data not found');
+			logger.error('Error: Delegation Data not found');
 			return;
 		}
 
@@ -92,7 +93,7 @@
 
 	const deleteDelegation = async () => {
 		if (!delegationMember.delegation) {
-			console.error('Error: Delegation Data not found');
+			logger.error('Error: Delegation Data not found');
 			return;
 		}
 
@@ -112,7 +113,7 @@
 
 	const completeRegistration = async () => {
 		if (!delegationMember.delegation) {
-			console.error('Error: Delegation Data not found');
+			logger.error('Error: Delegation Data not found');
 			return;
 		}
 

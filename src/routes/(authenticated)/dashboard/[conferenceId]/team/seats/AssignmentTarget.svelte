@@ -26,7 +26,10 @@
 			</div>
 		{/if}
 		<div class="badge badge-success">
-			{formatNames(user.given_name ?? undefined, user.family_name ?? undefined)} ({user.email})
+			{formatNames({
+				givenName: user.given_name ?? undefined,
+				familyName: user.family_name ?? undefined
+			})} ({user.email})
 		</div>
 	{:else}
 		<div class="badge badge-error">{m.userNotFound()}</div>

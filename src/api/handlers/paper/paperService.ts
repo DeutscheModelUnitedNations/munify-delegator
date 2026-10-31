@@ -4,7 +4,7 @@ import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import type { InferSelectModel } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
@@ -16,11 +16,15 @@ type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
  * asking for REVISED directly is normalised to SUBMITTED first, so this rule is the only thing
  * that can produce REVISED. The first update that is not a draft marks the paper as submitted.
  */
-export function paperSubmissionChanges(
-	paper: { firstSubmittedAt: Date | null; versions: { reviews: unknown[] }[] },
-	requestedStatus: PaperStatus | null | undefined,
-	now: Date
-): { status: PaperStatus | undefined; firstSubmittedAt: Date | undefined } {
+export function paperSubmissionChanges({
+	paper,
+	requestedStatus,
+	now
+}: {
+	paper: { firstSubmittedAt: Date | null; versions: { reviews: unknown[] }[] };
+	requestedStatus: PaperStatus | null | undefined;
+	now: Date;
+}): { status: PaperStatus | undefined; firstSubmittedAt: Date | undefined } {
 	const hasAnyReviews = paper.versions.some((version) => version.reviews.length > 0);
 	const normalised = requestedStatus === 'REVISED' ? 'SUBMITTED' : requestedStatus;
 	const status = normalised === 'SUBMITTED' && hasAnyReviews ? 'REVISED' : normalised;
@@ -39,9 +43,15 @@ const AUTHOR_STATUSES: readonly PaperStatus[] = ['DRAFT', 'SUBMITTED', 'REVISED'
  * Refuses a status a save may not set. Authors move between draft and submitted; a reviewer
  * editing the text keeps whatever verdict the paper already has. Neither may hand out a verdict.
  */
-function assertSavableStatus(requested: PaperStatus | null | undefined, current?: PaperStatus) {
+function assertSavableStatus({
+	requested,
+	current
+}: {
+	requested: PaperStatus | null | undefined;
+	current?: PaperStatus;
+}) {
 	if (!requested || requested === current || AUTHOR_STATUSES.includes(requested)) return;
-	throw apiError('CONFLICT', m.paperStatusOnlyThroughReview());
+	throw apiError({ code: 'CONFLICT', message: m.paperStatusOnlyThroughReview() });
 }
 
 type NewPaper = {
@@ -56,7 +66,7 @@ type NewPaper = {
 };
 
 /** The rows of a new paper: the paper (stamped as submitted if it goes straight out) and its first version. */
-export function newPaperRows(args: NewPaper, now: Date) {
+export function newPaperRows({ args, now }: { args: NewPaper; now: Date }) {
 	return {
 		paper: {
 			authorParticipantId: args.authorParticipantId,
@@ -73,10 +83,10 @@ export function newPaperRows(args: NewPaper, now: Date) {
 
 /** Writes a new paper together with its first version. */
 export async function createPaper(args: NewPaper) {
-	assertSavableStatus(args.status);
+	assertSavableStatus({ requested: args.status });
 	// REVISED answers a review, and a new paper has had none.
 	if (args.status === 'REVISED') {
-		throw apiError('INVALID_INPUT', m.paperNewDraftOrSubmission());
+		throw apiError({ code: 'INVALID_INPUT', message: m.paperNewDraftOrSubmission() });
 	}
 
 	return db.transaction(async (tx) => {
@@ -85,10 +95,10 @@ export async function createPaper(args: NewPaper) {
 			.then(assertFindFirstExists);
 
 		if (!conference.isOpenPaperSubmission) {
-			throw apiError('CONFLICT', m.paperSubmissionClosed());
+			throw apiError({ code: 'CONFLICT', message: m.paperSubmissionClosed() });
 		}
 
-		const rows = newPaperRows(args, new Date());
+		const rows = newPaperRows({ args, now: new Date() });
 		const paper = await tx
 			.insert(schema.paper)
 			.values(rows.paper)
@@ -119,16 +129,20 @@ export async function updatePaper(args: {
 			.then(assertFindFirstExists);
 
 		if (!paper.conference?.isOpenPaperSubmission) {
-			throw apiError('CONFLICT', m.paperSubmissionClosed());
+			throw apiError({ code: 'CONFLICT', message: m.paperSubmissionClosed() });
 		}
-		assertSavableStatus(args.status, paper.status);
+		assertSavableStatus({ requested: args.status, current: paper.status });
 
-		const { status, firstSubmittedAt } = paperSubmissionChanges(paper, args.status, new Date());
+		const { status, firstSubmittedAt } = paperSubmissionChanges({
+			paper,
+			requestedStatus: args.status,
+			now: new Date()
+		});
 
 		await tx
 			.update(schema.paper)
 			.set({ status, firstSubmittedAt, updatedAt: new Date() })
-			.where(whereRows(schema.paper, { id: args.paperId }));
+			.where(whereRows({ table: schema.paper, filter: { id: args.paperId } }));
 
 		await tx.insert(schema.paperVersion).values({
 			paperId: args.paperId,
@@ -205,7 +219,13 @@ async function fetchConferenceReviews(conferenceId: string) {
 }
 
 /** Top ten reviewers of a conference, ranked by how often they got to a paper first. */
-export async function reviewerLeaderboard(conferenceId: string, callerId: string | undefined) {
+export async function reviewerLeaderboard({
+	conferenceId,
+	callerId
+}: {
+	conferenceId: string;
+	callerId: string | undefined;
+}) {
 	const reviews = await fetchConferenceReviews(conferenceId);
 
 	const paperFirstReviewer = new Map<string, string>();
@@ -240,10 +260,13 @@ export async function reviewerLeaderboard(conferenceId: string, callerId: string
  * A reviewer's counts over a conference's reviews (in the order they were written): how many
  * papers they reviewed first, and how many of their reviews followed someone else's.
  */
-export function reviewStatsFrom(
-	reviews: readonly { reviewerId: string; paperVersion: { paperId: string } }[],
-	callerId: string
-) {
+export function reviewStatsFrom({
+	reviews,
+	callerId
+}: {
+	reviews: readonly { reviewerId: string; paperVersion: { paperId: string } }[];
+	callerId: string;
+}) {
 	const paperFirstReviewer = new Map<string, string>();
 	for (const review of reviews) {
 		const paperId = review.paperVersion.paperId;
@@ -261,8 +284,14 @@ export function reviewStatsFrom(
 }
 
 /** The caller's own review counts within a conference. */
-export async function reviewStatsOf(conferenceId: string, callerId: string) {
-	return reviewStatsFrom(await fetchConferenceReviews(conferenceId), callerId);
+export async function reviewStatsOf({
+	conferenceId,
+	callerId
+}: {
+	conferenceId: string;
+	callerId: string;
+}) {
+	return reviewStatsFrom({ reviews: await fetchConferenceReviews(conferenceId), callerId });
 }
 
 /**
@@ -276,14 +305,20 @@ export async function findNextPaperToReview(agendaItemId: string) {
 	});
 
 	if (papers.length === 0) {
-		throw apiError('NOT_FOUND', m.paperNoneForAgendaItem());
+		throw apiError({ code: 'NOT_FOUND', message: m.paperNoneForAgendaItem() });
 	}
 
 	return papers.find((paper) => paper.status === 'SUBMITTED') ?? papers[0];
 }
 
 /** The delegations of the conference with a member the user supervises. */
-export async function supervisedDelegationIds(conferenceId: string, supervisorId: string) {
+export async function supervisedDelegationIds({
+	conferenceId,
+	supervisorId
+}: {
+	conferenceId: string;
+	supervisorId: string;
+}) {
 	const supervised = await db.query.delegationMember.findMany({
 		where: {
 			participant: { conferenceId },

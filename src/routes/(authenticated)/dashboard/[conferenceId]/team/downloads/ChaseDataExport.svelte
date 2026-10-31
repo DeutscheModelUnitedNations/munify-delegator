@@ -97,8 +97,15 @@
 				return;
 			}
 
-			const transformedData = buildChaseImport(conferenceData, nations, () => nanoid(30));
-			downloadJSON(transformedData, `chase_import_${conferenceData.title}.json`);
+			const transformedData = buildChaseImport({
+				conferenceData,
+				nations,
+				newId: () => nanoid(30)
+			});
+			downloadJSON({
+				data: transformedData,
+				filename: `chase_import_${conferenceData.title}.json`
+			});
 		} finally {
 			loading = false;
 		}

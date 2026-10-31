@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -42,7 +43,7 @@
 	type Draft = { document: LayoutDocument; layout: unknown };
 
 	/** The stored layouts with the draft in its document's place. */
-	function withDraft(stored: unknown, draft: Draft | undefined): unknown {
+	function withDraft({ stored, draft }: { stored: unknown; draft: Draft | undefined }): unknown {
 		if (!draft) return stored;
 		const others = typeof stored === 'object' && stored !== null ? stored : {};
 		return { ...others, [draft.document]: draft.layout };
@@ -59,19 +60,19 @@
 			documentLayouts: true
 		});
 		// a minor's, so the guardian consent is part of it
-		await downloadCompletePostalRegistrationPDF(
-			false,
-			testPrintParticipant(),
-			testPrintRecipient($formData),
-			{
+		await downloadCompletePostalRegistrationPDF({
+			isOfAge: false,
+			participant: testPrintParticipant(),
+			recipient: testPrintRecipient($formData),
+			templates: {
 				contractFile: templates.contractFile,
 				guardianConsentFile: templates.guardianConsentFile,
 				mediaConsentFile: templates.mediaConsentFile,
 				termsAndConditionsFile: templates.termsAndConditionsFile,
-				documentLayouts: withDraft(templates.documentLayouts, draft)
+				documentLayouts: withDraft({ stored: templates.documentLayouts, draft })
 			},
-			'test_postal_registration.pdf'
-		);
+			fileName: 'test_postal_registration.pdf'
+		});
 	}
 
 	async function printCertificate(draft?: Draft) {
@@ -82,14 +83,19 @@
 		});
 		await downloadCompleteCertificate(
 			// sample check-in sessions, so the layout shows in the test print
-			testPrintCertificate([
-				m.certificateSampleSessionOpening(),
-				m.certificateSampleSessionCommittees(),
-				m.certificateSampleSessionClosing()
-			]),
-			templateOrDefault(templates.certificateFile?.url),
-			'test_certificate.pdf',
-			resolveDocumentLayout('certificate', withDraft(templates.documentLayouts, draft))
+			{
+				data: testPrintCertificate([
+					m.certificateSampleSessionOpening(),
+					m.certificateSampleSessionCommittees(),
+					m.certificateSampleSessionClosing()
+				]),
+				certificate: templateOrDefault(templates.certificateFile?.url),
+				fileName: 'test_certificate.pdf',
+				layout: resolveDocumentLayout({
+					document: 'certificate',
+					stored: withDraft({ stored: templates.documentLayouts, draft })
+				})
+			}
 		);
 	}
 
@@ -99,7 +105,7 @@
 		try {
 			await print();
 		} catch (error) {
-			console.error('Error generating PDF:', error);
+			logger.error('Error generating PDF', error);
 		} finally {
 			loading = false;
 		}

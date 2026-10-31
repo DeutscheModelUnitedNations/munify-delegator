@@ -42,8 +42,8 @@ const admin = contextFor('a1', ['admin']);
 
 describe('filters grant nothing to anonymous requests', () => {
 	test.each([
-		['isTeamMemberOf', () => isTeamMemberOf(anonymous)],
-		['isTeamMemberOfConference', () => isTeamMemberOfConference(anonymous)],
+		['isTeamMemberOf', () => isTeamMemberOf({ ctx: anonymous })],
+		['isTeamMemberOfConference', () => isTeamMemberOfConference({ ctx: anonymous })],
 		['isOwnUser', () => isOwnUser(anonymous)],
 		['isParticipantOfConference', () => isParticipantOfConference(anonymous)],
 		['isCaredForUser', () => isCaredForUser(anonymous)]
@@ -60,18 +60,18 @@ describe('filters grant nothing to anonymous requests', () => {
 
 describe('team filters', () => {
 	test('match the caller on the team, with or without a role restriction', () => {
-		expect(isTeamMemberOf(user)).toEqual({ teamMembers: { user: { id: 'u1' } } });
-		expect(isTeamMemberOf(user, ['REVIEWER'])).toEqual({
+		expect(isTeamMemberOf({ ctx: user })).toEqual({ teamMembers: { user: { id: 'u1' } } });
+		expect(isTeamMemberOf({ ctx: user, roles: ['REVIEWER'] })).toEqual({
 			teamMembers: { user: { id: 'u1' }, role: { in: ['REVIEWER'] } }
 		});
-		expect(isTeamMemberOfConference(user, ['REVIEWER'])).toEqual({
+		expect(isTeamMemberOfConference({ ctx: user, roles: ['REVIEWER'] })).toEqual({
 			conference: { teamMembers: { user: { id: 'u1' }, role: { in: ['REVIEWER'] } } }
 		});
 	});
 
 	test('let a system admin through every team, on or off it', () => {
-		expect(isTeamMemberOf(admin, ['PROJECT_MANAGEMENT'])).toEqual({});
-		expect(isTeamMemberOfConference(admin)).toEqual({ conference: {} });
+		expect(isTeamMemberOf({ ctx: admin, roles: ['PROJECT_MANAGEMENT'] })).toEqual({});
+		expect(isTeamMemberOfConference({ ctx: admin })).toEqual({ conference: {} });
 		expect(isCaredForUser(admin)).toEqual({});
 	});
 });

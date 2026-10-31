@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import Modal from '#lib/components/Modal.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -77,7 +78,7 @@
 		}));
 	}
 
-	function setRole(index: number, value: string) {
+	function setRole({ index, value }: { index: number; value: string }) {
 		const role = teamRoles.find((r) => r === value);
 		if (role) emailStatuses[index].role = role;
 	}
@@ -127,7 +128,7 @@
 			step = 'review';
 		} catch (error) {
 			toast.error(m.httpGenericError());
-			console.error('Failed to check emails:', error);
+			logger.error('Failed to check emails', error);
 		} finally {
 			isChecking = false;
 		}
@@ -145,10 +146,13 @@
 			.join(' ');
 	}
 
-	function announceInvitations(
-		created: { addedDirectly: boolean }[],
-		errors: { email: string; error: string }[]
-	) {
+	function announceInvitations({
+		created,
+		errors
+	}: {
+		created: { addedDirectly: boolean }[];
+		errors: { email: string; error: string }[];
+	}) {
 		if (created.length > 0) toast.success(invitationMessage(created));
 		for (const err of errors) toast.error(`${err.email}: ${err.error}`);
 	}
@@ -172,11 +176,11 @@
 				errors: { email: true, error: true }
 			});
 
-			announceInvitations(created, errors);
+			announceInvitations({ created, errors });
 			handleClose();
 		} catch (error) {
 			toast.error(m.httpGenericError());
-			console.error('Failed to send invitations:', error);
+			logger.error('Failed to send invitations', error);
 		} finally {
 			isSending = false;
 		}
@@ -233,7 +237,7 @@
 				<select
 					class="select select-bordered select-sm"
 					value={emailStatus.role}
-					onchange={(e) => setRole(i, e.currentTarget.value)}
+					onchange={(e) => setRole({ index: i, value: e.currentTarget.value })}
 				>
 					{#each teamRoles as role (role)}
 						<option value={role}>{translateTeamRole(role)}</option>

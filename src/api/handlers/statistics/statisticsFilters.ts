@@ -13,7 +13,13 @@ export interface FilterDimensions {
 }
 
 /** Whether a row of a statistics view belongs to the registrations the filter selects. */
-export function matchesStatsFilter(filter: StatsFilterType, row: FilterDimensions) {
+export function matchesStatsFilter({
+	filter,
+	row
+}: {
+	filter: StatsFilterType;
+	row: FilterDimensions;
+}) {
 	switch (filter) {
 		case 'ALL':
 			return true;

@@ -51,15 +51,15 @@ describe('parsePresenceExport', () => {
 
 describe('scoreDelegates', () => {
 	test('scores the share of present records and leaves out delegates without any', () => {
-		const scored = scoreDelegates(
-			[
+		const scored = scoreDelegates({
+			participants: [
 				participant('DELEGATE', 'often@example.org', [true, true, true, false]),
 				participant('DELEGATE', 'rarely@example.org', [true, false, false, false, false]),
 				participant('DELEGATE', 'never-called@example.org', []),
 				participant('NSA', 'nsa@example.org', [true])
 			],
-			50
-		);
+			thresholdPercent: 50
+		});
 		expect(scored.map((d) => [d.email, d.attendancePercentage, d.attended])).toEqual([
 			['often@example.org', 75, true],
 			['rarely@example.org', 20, false]
@@ -69,14 +69,14 @@ describe('scoreDelegates', () => {
 
 describe('scoreNsas', () => {
 	test('counts check-ins only, so check-outs neither help nor hurt', () => {
-		const scored = scoreNsas(
-			[
+		const scored = scoreNsas({
+			participants: [
 				participant('NSA', 'stays@example.org', [true, true, true]),
 				participant('NSA', 'wanders@example.org', [true, false, true, false]),
 				participant('DELEGATE', 'delegate@example.org', [true, true, true])
 			],
-			3
-		);
+			minCheckIns: 3
+		});
 		expect(scored.map((n) => [n.email, n.checkIns, n.attended])).toEqual([
 			['stays@example.org', 3, true],
 			['wanders@example.org', 2, false]
@@ -84,7 +84,9 @@ describe('scoreNsas', () => {
 	});
 
 	test('marks an NSA who was never scanned in as absent instead of skipping them', () => {
-		expect(scoreNsas([participant('NSA', 'unseen@example.org', [])], 1)).toEqual([
+		expect(
+			scoreNsas({ participants: [participant('NSA', 'unseen@example.org', [])], minCheckIns: 1 })
+		).toEqual([
 			{ email: 'unseen@example.org', representation: null, checkIns: 0, attended: false }
 		]);
 	});

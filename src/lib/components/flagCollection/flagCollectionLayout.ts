@@ -76,9 +76,12 @@ export function compareFlagsByProgress(
 }
 
 /** The flags `keep` accepts, sorted by progress; no flags at all yields an empty list. */
-export function filterAndSortFlags<F extends { foundPieces: number; name: string }>(
-	flags: readonly F[] | undefined,
-	keep: (flag: F) => boolean = () => true
-) {
+export function filterAndSortFlags<F extends { foundPieces: number; name: string }>({
+	flags,
+	keep = () => true
+}: {
+	flags: readonly F[] | undefined;
+	keep?: (flag: F) => boolean;
+}) {
 	return (flags ?? []).filter(keep).sort(compareFlagsByProgress);
 }

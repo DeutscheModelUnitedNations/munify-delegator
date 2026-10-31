@@ -12,7 +12,13 @@ import { newResolutionSchema } from './form-schema';
  * `defaults` rather than `superValidate`: the resolution is created by a GraphQL mutation in SPA
  * mode, so there is no action to validate against.
  */
-export async function fetchNewResolutionContext(conferenceId: string, userId: string) {
+export async function fetchNewResolutionContext({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
 	const [delegationMembers, conference] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {

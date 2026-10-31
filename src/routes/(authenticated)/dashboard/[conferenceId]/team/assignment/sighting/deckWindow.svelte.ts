@@ -26,7 +26,7 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 	const { conferenceId, filter } = loaded;
 	let deck = $state.raw(loaded.deck);
 	let currentId = $state(loaded.deck.current?.id ?? null);
-	const position: DeckPosition = $derived(deckPosition(deck, currentId));
+	const position: DeckPosition = $derived(deckPosition({ deck, id: currentId }));
 	/** A card outside the window that was turned to, until the window around it has arrived */
 	let target: string | null = null;
 	let requests = 0;
@@ -38,7 +38,7 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 		index?: number;
 	}): Promise<string | null> {
 		const request = ++requests;
-		const fetched = await fetchSightingDeck(conferenceId, filter, at)
+		const fetched = await fetchSightingDeck({ conferenceId, filter, position: at })
 			.catch((error: unknown) => {
 				if (request === requests) toastError(error);
 				return undefined;
@@ -48,7 +48,7 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 			});
 		if (!fetched || request !== requests) return currentId;
 
-		const next = arrival(fetched, at, target ?? currentId);
+		const next = arrival({ deck: fetched, asked: at, wanted: target ?? currentId });
 		if (!next.take) return fetchWindow({ currentId: next.askFor });
 		target = null;
 		deck = fetched;
@@ -70,8 +70,8 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 		},
 
 		/** The cards likely to be opened next, nearest first. */
-		upcoming(ahead: number, behind: number) {
-			return upcomingEntries(deck, currentId, ahead, behind);
+		upcoming({ ahead, behind }: { ahead: number; behind: number }) {
+			return upcomingEntries({ deck, id: currentId, ahead, behind });
 		},
 
 		/**
@@ -98,8 +98,8 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 		},
 
 		/** Recolours a reviewed card right away, before the backend has the review. */
-		recolour(id: string, review: SightingReview) {
-			deck = withReview(deck, id, review);
+		recolour({ id, review }: { id: string; review: SightingReview }) {
+			deck = withReview({ deck, id, review });
 		},
 
 		/** Asks for the window as the backend has it now: after a review, for its colours and counts. */

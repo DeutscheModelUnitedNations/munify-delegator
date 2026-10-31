@@ -7,8 +7,8 @@ const flensburg = { id: 's3', name: 'Realschule Flensburg' };
 
 describe('schoolRows', () => {
 	test('counts people by their own school, and the delegations they are in', () => {
-		const rows = schoolRows(
-			[
+		const rows = schoolRows({
+			members: [
 				{ delegationId: 'd1', school: kiel },
 				{ delegationId: 'd1', school: kiel },
 				{ delegationId: 'd2', school: kiel },
@@ -16,8 +16,8 @@ describe('schoolRows', () => {
 				{ delegationId: 'd2', school: luebeck },
 				{ delegationId: 'd3', school: null }
 			],
-			[{ school: luebeck }, { school: flensburg }, { school: null }]
-		);
+			singleParticipants: [{ school: luebeck }, { school: flensburg }, { school: null }]
+		});
 
 		expect(rows).toEqual([
 			{
@@ -48,15 +48,16 @@ describe('schoolRows', () => {
 	});
 
 	test('is empty without registrations', () => {
-		expect(schoolRows([], [])).toEqual([]);
+		expect(schoolRows({ members: [], singleParticipants: [] })).toEqual([]);
 	});
 
 	test('keeps two schools of the same name apart', () => {
 		const other = { id: 's4', name: 'Gymnasium Kiel' };
 		expect(
-			schoolRows([{ delegationId: 'd1', school: kiel }], [{ school: other }]).map(
-				(row) => row.schoolId
-			)
+			schoolRows({
+				members: [{ delegationId: 'd1', school: kiel }],
+				singleParticipants: [{ school: other }]
+			}).map((row) => row.schoolId)
 		).toEqual(['s1', 's4']);
 	});
 });

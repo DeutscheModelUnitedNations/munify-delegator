@@ -9,11 +9,13 @@ const sessions = (count: number) =>
 
 describe('layoutCertificateSessions', () => {
 	test('draws nothing without sessions', () => {
-		expect(layoutCertificateSessions([], 'Heading', options)).toBeUndefined();
+		expect(
+			layoutCertificateSessions({ sessions: [], heading: 'Heading', options })
+		).toBeUndefined();
 	});
 
 	test('puts a few sessions in one centered column below the heading', () => {
-		const layout = layoutCertificateSessions(sessions(3), 'Head', options);
+		const layout = layoutCertificateSessions({ sessions: sessions(3), heading: 'Head', options });
 		expect(layout).toBeDefined();
 		if (!layout) return;
 		expect(new Set(layout.rows.map((row) => row.x)).size).toBe(1);
@@ -24,7 +26,7 @@ describe('layoutCertificateSessions', () => {
 	});
 
 	test('splits many sessions into columns, filled top to bottom', () => {
-		const layout = layoutCertificateSessions(sessions(10), 'Head', options);
+		const layout = layoutCertificateSessions({ sessions: sessions(10), heading: 'Head', options });
 		expect(layout?.rows).toHaveLength(10);
 		const xs = [...new Set(layout?.rows.map((row) => row.x))];
 		expect(xs).toHaveLength(2);
@@ -33,7 +35,11 @@ describe('layoutCertificateSessions', () => {
 
 	test('shrinks to fit above the bottom, and never draws below it', () => {
 		const tight = { ...options, top: 160, bottom: 100 };
-		const layout = layoutCertificateSessions(sessions(6), 'Head', tight);
+		const layout = layoutCertificateSessions({
+			sessions: sessions(6),
+			heading: 'Head',
+			options: tight
+		});
 		expect(layout?.size).toBeLessThan(9);
 		expect(layout?.rows.every((row) => row.y >= 100)).toBe(true);
 	});

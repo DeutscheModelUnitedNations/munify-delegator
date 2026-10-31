@@ -60,11 +60,15 @@ const TIE_BREAK = 1e-6;
  * What a group's review adds to every role it could get: a flag and a good rating make it cheaper
  * to seat at all, which decides who is left out when there are more groups than roles.
  */
-function reviewCost(
-	weights: AssignmentWeights,
-	review: GroupReview | undefined,
-	experience: number
-) {
+function reviewCost({
+	weights,
+	review,
+	experience
+}: {
+	weights: AssignmentWeights;
+	review: GroupReview | undefined;
+	experience: number;
+}) {
 	let cost = weights.experienceModifier * experience;
 	if (review?.flagged) cost -= weights.markBonus;
 	if (review?.evaluation != null) {
@@ -79,12 +83,17 @@ function reviewCost(
  * not just small). A good rating makes the group's wishes weigh more, so it wins contested roles.
  * `experience` is the share (0 to 1) of the group's members seated at an earlier conference.
  */
-export function assignmentCost(
-	weights: AssignmentWeights,
-	review: GroupReview | undefined,
-	wishRank: number,
+export function assignmentCost({
+	weights,
+	review,
+	wishRank,
 	experience = 0
-) {
+}: {
+	weights: AssignmentWeights;
+	review: GroupReview | undefined;
+	wishRank: number;
+	experience?: number;
+}) {
 	const rating = review?.evaluation;
 	let priority =
 		rating == null ? 1 : 1 + (rating - weights.nullRating) * weights.ratingFactor * RATING_PRIORITY;
@@ -95,7 +104,8 @@ export function assignmentCost(
 		priority -= weights.experienceModifier * experience * RATING_PRIORITY;
 	}
 	return (
-		wishRank * wishRank * Math.max(MIN_PRIORITY, priority) + reviewCost(weights, review, experience)
+		wishRank * wishRank * Math.max(MIN_PRIORITY, priority) +
+		reviewCost({ weights, review, experience })
 	);
 }
 
@@ -105,7 +115,15 @@ export function assignmentCost(
  * same across the row, so which role a required candidate gets still follows its costs. Cells at
  * or above `ceiling` (forbidden ones) keep their cost.
  */
-function boostRequired(matrix: number[][], required: readonly boolean[], ceiling = Infinity) {
+function boostRequired({
+	matrix,
+	required,
+	ceiling = Infinity
+}: {
+	matrix: number[][];
+	required: readonly boolean[];
+	ceiling?: number;
+}) {
 	if (!required.some(Boolean)) return matrix;
 	const allowed = matrix.flat().filter((cost) => cost < ceiling);
 	const bonus =
@@ -175,8 +193,8 @@ export function autoAssign(input: AutoAssignInput) {
 				wished: wishRank !== undefined,
 				cost:
 					(wishRank === undefined
-						? reviewCost(input.weights, review, experience)
-						: assignmentCost(input.weights, review, wishRank, experience)) +
+						? reviewCost({ weights: input.weights, review, experience })
+						: assignmentCost({ weights: input.weights, review, wishRank, experience })) +
 					hash01(`${seed}|${group.key}|${role.key}`) * TIE_BREAK
 			};
 		})
@@ -185,10 +203,12 @@ export function autoAssign(input: AutoAssignInput) {
 	const all = costs.flat().map(({ cost }) => cost);
 	const span = Math.max(...all) - Math.min(...all);
 	const unwishedPenalty = (span + 1) * Math.min(candidates.length, roles.length);
-	const matrix = boostRequired(
-		costs.map((row) => row.map(({ wished, cost }) => (wished ? cost : cost + unwishedPenalty))),
-		candidates.map((group) => !!input.reviewOf(group)?.required)
-	);
+	const matrix = boostRequired({
+		matrix: costs.map((row) =>
+			row.map(({ wished, cost }) => (wished ? cost : cost + unwishedPenalty))
+		),
+		required: candidates.map((group) => !!input.reviewOf(group)?.required)
+	});
 
 	const { assignments } = minWeightAssign(matrix);
 	return assignments.flatMap((column, row) =>
@@ -230,18 +250,22 @@ export function autoAssignSingles(input: AutoAssignSinglesInput) {
 	if (candidates.length === 0 || slots.length === 0) return [];
 	const seed = input.seed ?? '';
 
-	const matrix = boostRequired(
-		candidates.map((candidate) =>
+	const matrix = boostRequired({
+		matrix: candidates.map((candidate) =>
 			slots.map((slot) =>
 				candidate.wishedRoleIds.has(slot.roleId)
-					? reviewCost(input.weights, candidate.review, candidate.experience) +
+					? reviewCost({
+							weights: input.weights,
+							review: candidate.review,
+							experience: candidate.experience
+						}) +
 						hash01(`${seed}|${candidate.id}|${slot.roleId}|${slot.index}`) * TIE_BREAK
 					: FORBIDDEN
 			)
 		),
-		candidates.map((candidate) => !!candidate.review?.required),
-		FORBIDDEN
-	);
+		required: candidates.map((candidate) => !!candidate.review?.required),
+		ceiling: FORBIDDEN
+	});
 	const { assignments } = minWeightAssign(matrix);
 	return assignments.flatMap((column, row) =>
 		column == null || matrix[row][column] >= FORBIDDEN

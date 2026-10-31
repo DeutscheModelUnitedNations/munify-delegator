@@ -42,10 +42,13 @@ const checkInsOf = (p: ChasePresenceParticipant) => p.events.filter((e) => e.pre
  * Delegates sit in one committee and are marked present or absent at every roll call, so the
  * share of present records says how much they were there; anyone without a record is left out.
  */
-export function scoreDelegates(
-	participants: ChasePresenceParticipant[],
-	thresholdPercent: number
-): ScoredDelegate[] {
+export function scoreDelegates({
+	participants,
+	thresholdPercent
+}: {
+	participants: ChasePresenceParticipant[];
+	thresholdPercent: number;
+}): ScoredDelegate[] {
 	return participants
 		.filter((p) => p.kind === 'DELEGATE' && p.events.length > 0)
 		.map((p) => {
@@ -65,10 +68,13 @@ export function scoreDelegates(
  * records says nothing (it is always all of them). They count as attended after enough check-ins.
  * Every NSA of the export is scored, so one never scanned in is marked absent rather than skipped.
  */
-export function scoreNsas(
-	participants: ChasePresenceParticipant[],
-	minCheckIns: number
-): ScoredNsa[] {
+export function scoreNsas({
+	participants,
+	minCheckIns
+}: {
+	participants: ChasePresenceParticipant[];
+	minCheckIns: number;
+}): ScoredNsa[] {
 	return participants
 		.filter((p) => p.kind === 'NSA')
 		.map((p) => {

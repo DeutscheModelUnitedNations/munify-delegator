@@ -104,7 +104,7 @@ function optionalText(value: string | null | undefined): string | undefined {
  * card. The address goes as rumble's `AddressInput`, which speaks alpha-2 country codes, and the
  * birthday as the calendar day that was picked.
  */
-export function toUpdateUserArgs(id: string, values: UserFormData) {
+export function toUpdateUserArgs({ id, values }: { id: string; values: UserFormData }) {
 	const { given_name, family_name, birthday, street, zip, city, region, country, ...rest } = values;
 	// a field the country does not use may still hold what was typed before switching country
 	const uses = addressRules(country);

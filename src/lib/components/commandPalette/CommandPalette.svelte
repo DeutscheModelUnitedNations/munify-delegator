@@ -59,7 +59,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Page search (client-side with Fuse.js)
-	const pages = $derived(getAllPages(conferenceId, access));
+	const pages = $derived(getAllPages({ conferenceId, access }));
 	const fuse = $derived(
 		new Fuse(pages, {
 			keys: [
@@ -136,7 +136,7 @@
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
 			try {
-				const result = await searchConference(conferenceId, term);
+				const result = await searchConference({ conferenceId, searchTerm: term });
 				userResults = result.users;
 				delegationResults = result.delegations;
 				foreignUserResults = result.foreignUsers;
@@ -178,17 +178,17 @@
 	async function handleScan(scan: { rawValue: string; format: string }) {
 		scanning = false;
 		const read = readAimIdentifier(scan.rawValue.trim());
-		const result = await acceptScannedCode(read.code, read.format ?? scan.format);
+		const result = await acceptScannedCode({ code: read.code, format: read.format ?? scan.format });
 		if (!result.accepted) {
 			toast.error(result.message);
 			return;
 		}
-		const userId = await resolveScannedCode(conferenceId, result.code);
+		const userId = await resolveScannedCode({ conferenceId, code: result.code });
 		if (!looksLikeUserId(userId)) {
 			toast.error(m.notFound());
 			return;
 		}
-		void recordScan(conferenceId, userId);
+		void recordScan({ conferenceId, userId });
 		closeCommandPalette();
 		openUserCard(userId);
 	}
@@ -217,9 +217,9 @@
 	);
 
 	function selectItem(item: ResultItem) {
-		void recordSearch(conferenceId, item.data.id, describeItem(item).primary);
+		void recordSearch({ conferenceId, resultId: item.data.id, label: describeItem(item).primary });
 		closeCommandPalette();
-		const target = resultTarget(item, conferenceId);
+		const target = resultTarget({ item, conferenceId });
 		if ('userId' in target) {
 			openUserCard(target.userId);
 		} else goto(target.href);
@@ -243,7 +243,7 @@
 		e.preventDefault();
 		if (e.key === 'Escape') closeCommandPalette();
 		else if (e.key === 'Enter') selectActive();
-		else moveActive(steppedIndex(e.key, activeIndex, flatList.length));
+		else moveActive(steppedIndex({ key: e.key, activeIndex, count: flatList.length }));
 	}
 
 	function scrollActiveIntoView() {
@@ -289,7 +289,7 @@
 	const searchTerm = $derived(searchInput.trim());
 
 	/** The note under the results: too short a term, or nothing found for a long enough one. */
-	const hint = $derived(searchHint(searchTerm, flatList.length, searchLoading));
+	const hint = $derived(searchHint({ searchTerm, resultCount: flatList.length, searchLoading }));
 
 	// Global Ctrl+K / Cmd+K shortcut via native listener for reliability
 	function handleGlobalKeydown(e: KeyboardEvent) {

@@ -11,8 +11,9 @@ const nsa = {
 	assignedCommitteeId: null
 };
 
-const refusalOf = (...args: Parameters<typeof paperRefusal>) =>
-	paperRefusal(...args)?.extensions.code;
+type RefusalArgs = Parameters<typeof paperRefusal>[0];
+const refusalOf = (member: RefusalArgs['member'], paper: RefusalArgs['paper']) =>
+	paperRefusal({ member, paper })?.extensions.code;
 
 describe('paperRefusal', () => {
 	test('a nation writes on the agenda items of its own committee only', () => {

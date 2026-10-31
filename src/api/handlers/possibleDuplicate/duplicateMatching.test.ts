@@ -139,7 +139,7 @@ describe('findDuplicates', () => {
 		const a = profile({ id: 'b-account' });
 		const b = profile({ id: 'a-account' });
 		const unrelated = profile({ givenName: 'Tom', familyName: 'Berg', birthday: null });
-		const pairs = findDuplicates([a, b], [a, b, unrelated]);
+		const pairs = findDuplicates({ scanned: [a, b], pool: [a, b, unrelated] });
 		expect(pairs).toEqual([
 			{ userId: 'a-account', candidateId: 'b-account', score: 0.7, reasons: ['birthday', 'name'] }
 		]);
@@ -148,6 +148,6 @@ describe('findDuplicates', () => {
 	it('only compares accounts that share something', () => {
 		const a = profile({ birthday: new Date('2000-01-01') });
 		const b = profile({ birthday: new Date('2000-01-02') });
-		expect(findDuplicates([a], [b])).toEqual([]);
+		expect(findDuplicates({ scanned: [a], pool: [b] })).toEqual([]);
 	});
 });

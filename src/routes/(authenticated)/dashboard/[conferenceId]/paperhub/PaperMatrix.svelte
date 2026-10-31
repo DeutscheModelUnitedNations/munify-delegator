@@ -31,7 +31,7 @@
 
 	const nameOf = ({ delegation }: Paper) => paperEntityName(delegation) ?? '';
 
-	const rows = $derived(matrixRows<Paper['delegation'], Paper>(columns, nameOf));
+	const rows = $derived(matrixRows<Paper['delegation'], Paper>({ columns, nameOf }));
 </script>
 
 <div class="overflow-x-auto">

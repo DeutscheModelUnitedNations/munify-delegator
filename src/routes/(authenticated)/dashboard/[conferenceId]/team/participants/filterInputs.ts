@@ -1,52 +1,52 @@
 import type { ParticipantFilterInput } from '#lib/api/rumbleClient/client';
 import type { ColumnFiltersState } from '#lib/components/tanStackTable/index';
+import {
+	enumFilterInput,
+	rangeFilterInput,
+	textFilterInput
+} from '#lib/components/tanStackTable/filters';
+import { z } from 'zod';
 import { nationCodesMatching } from '#lib/utils/nationTranslationHelper.svelte.js';
 
 /** The kind of filter a column has, which decides how its value is read. */
 export type FilterKind = 'text' | 'enum' | 'boolean' | 'range';
 
-function isTextValue(value: unknown): value is { mode: string; value: string } {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		'mode' in value &&
-		typeof value.mode === 'string' &&
-		'value' in value &&
-		typeof value.value === 'string'
-	);
-}
-
 type ToInputs = (column: string, value: unknown) => ParticipantFilterInput[];
 
 const textInputs: ToInputs = (column, value) => {
-	if (!isTextValue(value)) return [];
+	const parsed = textFilterInput.safeParse(value);
+	if (!parsed.success) return [];
+	const { mode, value: text } = parsed.data;
 	return [
 		{
 			column,
-			mode: value.mode,
-			text: value.value,
+			mode,
+			text,
 			// nation names are only translated here, so the backend gets the codes that matched
-			...(column === 'nation' && value.value ? { values: nationCodesMatching(value.value) } : {})
+			...(column === 'nation' && text ? { values: nationCodesMatching(text) } : {})
 		}
 	];
 };
 
-const enumInputs: ToInputs = (column, value) =>
-	Array.isArray(value)
-		? [{ column, values: value.filter((entry): entry is string => typeof entry === 'string') }]
-		: [];
+const enumInputs: ToInputs = (column, value) => {
+	const parsed = enumFilterInput.safeParse(value);
+	return parsed.success ? [{ column, values: parsed.data }] : [];
+};
 
-const booleanInputs: ToInputs = (column, value) =>
-	typeof value === 'boolean' ? [{ column, bool: value }] : [];
+const booleanInputs: ToInputs = (column, value) => {
+	const parsed = z.boolean().safeParse(value);
+	return parsed.success ? [{ column, bool: parsed.data }] : [];
+};
 
 const rangeInputs: ToInputs = (column, value) => {
-	if (!Array.isArray(value)) return [];
-	const [min, max] = value;
+	const parsed = rangeFilterInput.safeParse(value);
+	if (!parsed.success) return [];
+	const { min, max } = parsed.data;
 	return [
 		{
 			column,
-			...(typeof min === 'number' ? { min } : {}),
-			...(typeof max === 'number' ? { max } : {})
+			...(min !== undefined ? { min } : {}),
+			...(max !== undefined ? { max } : {})
 		}
 	];
 };
@@ -59,10 +59,13 @@ const inputsByKind: Record<FilterKind, ToInputs> = {
 };
 
 /** The table's filters in the shape of the backend's `participantsPage` query. */
-export function toFilterInputs(
-	filters: ColumnFiltersState,
-	kinds: ReadonlyMap<string, FilterKind>
-): ParticipantFilterInput[] {
+export function toFilterInputs({
+	filters,
+	kinds
+}: {
+	filters: ColumnFiltersState;
+	kinds: ReadonlyMap<string, FilterKind>;
+}): ParticipantFilterInput[] {
 	return filters.flatMap(({ id, value }) => {
 		const kind = kinds.get(id);
 		return kind ? inputsByKind[kind](id, value) : [];

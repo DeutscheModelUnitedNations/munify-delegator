@@ -33,7 +33,12 @@
 		{#each converted as { singleParticipantId, single } (singleParticipantId)}
 			<li class="flex items-center justify-between gap-2 text-sm">
 				{#if single}
-					<span>{formatNames(single.user.givenName, single.user.familyName)}</span>
+					<span
+						>{formatNames({
+							givenName: single.user.givenName,
+							familyName: single.user.familyName
+						})}</span
+					>
 				{/if}
 				<button
 					class="btn btn-ghost btn-xs"

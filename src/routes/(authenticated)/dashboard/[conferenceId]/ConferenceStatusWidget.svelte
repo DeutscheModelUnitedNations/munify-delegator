@@ -58,8 +58,13 @@
 	const unlockPostals = $derived(conference.unlockPostals);
 
 	/** A step that cannot be taken before the conference unlocks it, and is pending until it is. */
-	const stepStatus = (unlocked: boolean, value: ChecklistStatus | undefined): ChecklistStatus =>
-		unlocked ? (value ?? 'PENDING') : 'NOT_YET_POSSIBLE';
+	const stepStatus = ({
+		unlocked,
+		value
+	}: {
+		unlocked: boolean;
+		value: ChecklistStatus | undefined;
+	}): ChecklistStatus => (unlocked ? (value ?? 'PENDING') : 'NOT_YET_POSSIBLE');
 
 	const answeredIds = $derived(new Set(answers.map((answer) => answer.question.id)));
 	const now = new Date();
@@ -85,11 +90,11 @@
 		{ task: m.registration(), status: 'DONE' as const },
 		{
 			task: m.payment(),
-			status: stepStatus(unlockPayment, status?.paymentStatus)
+			status: stepStatus({ unlocked: unlockPayment, value: status?.paymentStatus })
 		},
 		{
 			task: m.userAgreement(),
-			status: stepStatus(unlockPostals, status?.termsAndConditions)
+			status: stepStatus({ unlocked: unlockPostals, value: status?.termsAndConditions })
 		},
 		// Only minors need their guardian's consent
 		...(ofAgeAtConference
@@ -97,12 +102,12 @@
 			: [
 					{
 						task: m.guardianAgreement(),
-						status: stepStatus(unlockPostals, status?.guardianConsent)
+						status: stepStatus({ unlocked: unlockPostals, value: status?.guardianConsent })
 					}
 				]),
 		{
 			task: m.mediaAgreement(),
-			status: stepStatus(unlockPostals, status?.mediaConsent)
+			status: stepStatus({ unlocked: unlockPostals, value: status?.mediaConsent })
 		},
 		...surveySteps
 	]);

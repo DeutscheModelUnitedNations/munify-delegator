@@ -69,22 +69,32 @@ describe('agendaItemOptions', () => {
 
 describe('newPaperAgendaItemId', () => {
 	test('drops the agenda item of introduction papers', () => {
-		expect(newPaperAgendaItemId('INTRODUCTION_PAPER', 'INTRODUCTION_PAPER')).toBeUndefined();
-		expect(newPaperAgendaItemId('POSITION_PAPER', 'a')).toBe('a');
+		expect(
+			newPaperAgendaItemId({ type: 'INTRODUCTION_PAPER', agendaItemId: 'INTRODUCTION_PAPER' })
+		).toBeUndefined();
+		expect(newPaperAgendaItemId({ type: 'POSITION_PAPER', agendaItemId: 'a' })).toBe('a');
 	});
 });
 
 describe('newPaperSaveError', () => {
 	test('requires an agenda item except for introduction papers', () => {
-		expect(newPaperSaveError('POSITION_PAPER', '', {})).toBe(m.paperAgendaItemRequired());
-		expect(newPaperSaveError('INTRODUCTION_PAPER', '', {})).toBeNull();
+		expect(newPaperSaveError({ type: 'POSITION_PAPER', agendaItemId: '', content: {} })).toBe(
+			m.paperAgendaItemRequired()
+		);
+		expect(
+			newPaperSaveError({ type: 'INTRODUCTION_PAPER', agendaItemId: '', content: {} })
+		).toBeNull();
 	});
 
 	test('requires content', () => {
-		expect(newPaperSaveError('POSITION_PAPER', 'a', undefined)).toBe(m.paperContentRequired());
+		expect(
+			newPaperSaveError({ type: 'POSITION_PAPER', agendaItemId: 'a', content: undefined })
+		).toBe(m.paperContentRequired());
 	});
 
 	test('accepts a complete paper', () => {
-		expect(newPaperSaveError('POSITION_PAPER', 'a', { type: 'doc' })).toBeNull();
+		expect(
+			newPaperSaveError({ type: 'POSITION_PAPER', agendaItemId: 'a', content: { type: 'doc' } })
+		).toBeNull();
 	});
 });

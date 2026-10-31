@@ -6,7 +6,13 @@ import { toast } from 'svelte-sonner';
  * The person's `conferenceParticipant` row: what the formalities and the conference tab show and
  * change. Both tabs read it on their own; they share the cache record.
  */
-export function fetchParticipantStatus(userId: string, conferenceId: string) {
+export function fetchParticipantStatus({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
 	return client.liveQuery.conferenceParticipants({
 		__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
 		id: true,
@@ -25,9 +31,15 @@ export function fetchParticipantStatus(userId: string, conferenceId: string) {
  * The status row plus the two dates that decide whether a guardian has to consent: the person's
  * birthday and the conference's start.
  */
-export async function fetchStatusWithAge(userId: string, conferenceId: string) {
+export async function fetchStatusWithAge({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
 	const [statuses, user, conference] = await Promise.all([
-		fetchParticipantStatus(userId, conferenceId),
+		fetchParticipantStatus({ userId, conferenceId }),
 		client.liveQuery.user({ __args: { id: userId }, id: true, birthday: true }),
 		client.liveQuery.conference({ __args: { id: conferenceId }, id: true, startConference: true })
 	]);
@@ -41,10 +53,13 @@ export type StatusChange = Omit<
 >;
 
 /** Changes one or more of the person's statuses, creating the row if there is none yet. */
-export async function changeParticipantStatus(
-	target: { id: string | undefined; conferenceId: string; userId: string },
-	input: StatusChange
-) {
+export async function changeParticipantStatus({
+	target,
+	input
+}: {
+	target: { id: string | undefined; conferenceId: string; userId: string };
+	input: StatusChange;
+}) {
 	const promise = client.mutate.updateConferenceParticipant({
 		__args: { ...input, ...target },
 		id: true,

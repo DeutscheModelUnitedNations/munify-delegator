@@ -58,7 +58,9 @@
 	];
 
 	// Merge theme colors with options
-	const themedOptions = $derived(themedChartOptions(options, getThemeColors(), colorPalette));
+	const themedOptions = $derived(
+		themedChartOptions({ options, theme: getThemeColors(), palette: colorPalette })
+	);
 
 	onMount(() => {
 		if (!chartContainer) return;
@@ -78,9 +80,12 @@
 			// The theme is fixed at init, so a theme change builds the chart anew
 			chartInstance?.dispose();
 			chartInstance = echarts.init(chartContainer, chartTheme(getThemeColors()));
-			chartInstance.setOption(themedChartOptions(options, getThemeColors(), colorPalette), {
-				notMerge: true
-			});
+			chartInstance.setOption(
+				themedChartOptions({ options, theme: getThemeColors(), palette: colorPalette }),
+				{
+					notMerge: true
+				}
+			);
 		};
 		mediaQuery.addEventListener('change', handleThemeChange);
 

@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 import { createUserInfoClaims } from './userInfoClaims';
 
@@ -18,12 +19,12 @@ describe('userInfoClaims', () => {
 		const fetchUserInfo = vi.fn(async () => ({ sub: 'a', groups: ['admin'] }));
 
 		const withClaim = session({ groups: ['member'] });
-		await claims.load(withClaim, 'groups', fetchUserInfo);
+		await claims.load({ session: withClaim, claim: 'groups', fetchUserInfo });
 		expect(fetchUserInfo).not.toHaveBeenCalled();
 		expect(claims.of(withClaim)).toBeUndefined();
 
 		const without = session({});
-		await claims.load(without, 'groups', fetchUserInfo);
+		await claims.load({ session: without, claim: 'groups', fetchUserInfo });
 		expect(fetchUserInfo).toHaveBeenCalledWith('token', 'a');
 		expect(claims.of(without)).toEqual({ sub: 'a', groups: ['admin'] });
 	});
@@ -34,18 +35,26 @@ describe('userInfoClaims', () => {
 		const fetchUserInfo = vi.fn(async () => ({ sub: 'a' }));
 
 		await Promise.all([
-			claims.load(session({}), 'groups', fetchUserInfo),
-			claims.load(session({}), 'groups', fetchUserInfo)
+			claims.load({ session: session({}), claim: 'groups', fetchUserInfo }),
+			claims.load({ session: session({}), claim: 'groups', fetchUserInfo })
 		]);
 		expect(fetchUserInfo).toHaveBeenCalledTimes(1);
 
 		time = 5 * 60 * 1000;
-		await claims.load(session({}), 'groups', fetchUserInfo);
+		await claims.load({ session: session({}), claim: 'groups', fetchUserInfo });
 		expect(fetchUserInfo).toHaveBeenCalledTimes(2);
 
-		await claims.load(session({ exp: 5 * 60 + 10 }, 'short'), 'groups', fetchUserInfo);
+		await claims.load({
+			session: session({ exp: 5 * 60 + 10 }, 'short'),
+			claim: 'groups',
+			fetchUserInfo
+		});
 		time += 10 * 1000;
-		await claims.load(session({ exp: 5 * 60 + 10 }, 'short'), 'groups', fetchUserInfo);
+		await claims.load({
+			session: session({ exp: 5 * 60 + 10 }, 'short'),
+			claim: 'groups',
+			fetchUserInfo
+		});
 		expect(fetchUserInfo).toHaveBeenCalledTimes(4);
 	});
 
@@ -55,16 +64,16 @@ describe('userInfoClaims', () => {
 		const fetchUserInfo = vi.fn(async () => {
 			throw new Error('down');
 		});
-		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
 		const s = session({});
-		await claims.load(s, 'groups', fetchUserInfo);
-		await claims.load(s, 'groups', fetchUserInfo);
+		await claims.load({ session: s, claim: 'groups', fetchUserInfo });
+		await claims.load({ session: s, claim: 'groups', fetchUserInfo });
 		expect(fetchUserInfo).toHaveBeenCalledTimes(1);
 		expect(claims.of(s)).toBeUndefined();
 
 		time = 60 * 1000;
-		await claims.load(s, 'groups', fetchUserInfo);
+		await claims.load({ session: s, claim: 'groups', fetchUserInfo });
 		expect(fetchUserInfo).toHaveBeenCalledTimes(2);
 	});
 });

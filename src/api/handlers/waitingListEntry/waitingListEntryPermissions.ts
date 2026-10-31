@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
@@ -26,22 +26,26 @@ export function registerWaitingListEntryAbilities() {
 	// Participant care and project management manage their conference's waiting list.
 	abilityBuilder.waitingListEntry
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
 /**
  * Refuses unless the caller may hide the entry or record a seat for it, which is participant
  * care's alone: the entrant edits their own texts and school, never these.
  */
-export async function assertCanSetWaitingListFlags(
-	ctx: ApiContext,
-	id: string,
-	args: { hidden?: boolean | null; assigned?: boolean | null }
-) {
+export async function assertCanSetWaitingListFlags({
+	ctx,
+	id,
+	args
+}: {
+	ctx: ApiContext;
+	id: string;
+	args: { hidden?: boolean | null; assigned?: boolean | null };
+}) {
 	if (args.hidden == null && args.assigned == null) return;
 	const entry = await db.query.waitingListEntry.findFirst({
-		where: { id, conference: teamConference(ctx, 'manageParticipants') },
+		where: { id, conference: teamConference({ ctx, permission: 'manageParticipants' }) },
 		columns: { id: true }
 	});
-	if (!entry) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+	if (!entry) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 }

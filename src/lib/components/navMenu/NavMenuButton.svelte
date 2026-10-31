@@ -27,12 +27,22 @@
 		attention = false,
 		attentionLabel
 	}: Props = $props();
-	function isActivePath(pathname: string, target: string, withSubpages: boolean) {
+	function isActivePath({
+		pathname,
+		target,
+		withSubpages
+	}: {
+		pathname: string;
+		target: string;
+		withSubpages: boolean;
+	}) {
 		return pathname.endsWith(target) || (withSubpages && pathname.includes(`${target}/`));
 	}
 
 	let showAsActive = $derived(
-		active ?? (browser && isActivePath(page.url.pathname, href, includeSubpages))
+		active ??
+			(browser &&
+				isActivePath({ pathname: page.url.pathname, target: href, withSubpages: includeSubpages }))
 	);
 </script>
 

@@ -7,8 +7,8 @@ const ago = (seconds: number) => now - seconds * 1000;
 
 describe('formatRelativeTime', () => {
 	test('no timestamp', () => {
-		expect(formatRelativeTime(undefined, now)).toBe('');
-		expect(formatRelativeTime(0, now)).toBe('');
+		expect(formatRelativeTime({ timestamp: undefined, now })).toBe('');
+		expect(formatRelativeTime({ timestamp: 0, now })).toBe('');
 	});
 	test.each([
 		[59, m.timeAgoSeconds({ count: 59 })],
@@ -19,9 +19,9 @@ describe('formatRelativeTime', () => {
 		[24 * 3600, m.timeAgoDays({ count: 1 })],
 		[50 * 24 * 3600, m.timeAgoDays({ count: 50 })]
 	])('%i seconds ago', (seconds, expected) => {
-		expect(formatRelativeTime(ago(seconds), now)).toBe(expected);
+		expect(formatRelativeTime({ timestamp: ago(seconds), now })).toBe(expected);
 	});
 	test('defaults to now', () => {
-		expect(formatRelativeTime(Date.now())).toBe(m.timeAgoSeconds({ count: 0 }));
+		expect(formatRelativeTime({ timestamp: Date.now() })).toBe(m.timeAgoSeconds({ count: 0 }));
 	});
 });

@@ -73,7 +73,7 @@ const ConferenceRef = object({
 			resolve: (conference) =>
 				db.$count(
 					schema.waitingListEntry,
-					whereRows(schema.waitingListEntry, { conferenceId: conference.id })
+					whereRows({ table: schema.waitingListEntry, filter: { conferenceId: conference.id } })
 				)
 		}),
 
@@ -81,11 +81,16 @@ const ConferenceRef = object({
 		nextDocumentNumber: t.field({
 			type: 'Int',
 			resolve: async (conference, _args, ctx) => {
-				await assertCanReadNextDocumentNumber(ctx, conference.id);
+				await assertCanReadNextDocumentNumber({ ctx, conferenceId: conference.id });
 				const [highest] = await db
 					.select({ max: max(schema.conferenceParticipant.assignedDocumentNumber) })
 					.from(schema.conferenceParticipant)
-					.where(whereRows(schema.conferenceParticipant, { conferenceId: conference.id }));
+					.where(
+						whereRows({
+							table: schema.conferenceParticipant,
+							filter: { conferenceId: conference.id }
+						})
+					);
 
 				return (highest?.max ?? 0) + 1;
 			}
@@ -98,7 +103,7 @@ const ConferenceRef = object({
 		schools: t.field({
 			type: [ConferenceSchools],
 			resolve: async (conference, _args, ctx) =>
-				loadSchoolRows(await readableSchoolRegistrations(ctx, conference.id))
+				loadSchoolRows(await readableSchoolRegistrations({ ctx, conferenceId: conference.id }))
 		})
 	})
 });
@@ -159,18 +164,18 @@ schemaBuilder.mutationFields((t) => ({
 			certificateFileId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateConference(ctx, args);
+			await assertCanUpdateConference({ ctx, args });
 			assertValidConferenceSettings(args);
-			await assertCanClaimConferenceFiles(ctx, args);
+			await assertCanClaimConferenceFiles({ ctx, args });
 			// Nothing matches when the conference is gone.
 			if (!(await updateConference(args))) throw conferenceUpdateRefused();
 
 			conferencePubsub.updated(args.id);
 			// unlocking postals or payments, or the state, may owe mails
-			scheduleEmailSweep(args.id, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.id, origin: ctx.requestUrl().origin });
 
 			return db.query.conference
-				.findFirst(query(await queryAllowed(ctx.abilities.conference, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conference, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -188,13 +193,21 @@ schemaBuilder.mutationFields((t) => ({
 			layout: t.arg({ type: 'JSON' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanSetDocumentLayout(ctx, args.conferenceId);
-			if (!(await setDocumentLayout(args.conferenceId, args.document, args.layout))) {
+			await assertCanSetDocumentLayout({ ctx, conferenceId: args.conferenceId });
+			if (
+				!(await setDocumentLayout({
+					conferenceId: args.conferenceId,
+					document: args.document,
+					layout: args.layout
+				}))
+			) {
 				throw conferenceUpdateRefused();
 			}
 			conferencePubsub.updated(args.conferenceId);
 			return db.query.conference
-				.findFirst(query(await queryAllowed(ctx.abilities.conference, args.conferenceId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.conference, id: args.conferenceId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -215,7 +228,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRolePubsub.created();
 
 			return db.query.conference
-				.findFirst(query(await queryAllowed(ctx.abilities.conference, created.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.conference, id: created.id })))
 				.then(assertFindFirstExists);
 		}
 	})
@@ -229,7 +242,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await db.query.conference
 				.findFirst({
-					...(await queryAllowed(ctx.abilities.conference, args.conferenceId)),
+					...(await queryAllowed({ ability: ctx.abilities.conference, id: args.conferenceId })),
 					columns: { id: true }
 				})
 				.then(assertFindFirstExists);
@@ -277,8 +290,11 @@ schemaBuilder.queryFields((t) => ({
 		type: PlausibilityResult,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadPlausibility(ctx, args.conferenceId);
-			return findPlausibilityIssues(args.conferenceId, await ctx.abilities.user.filter('read'));
+			await assertCanReadPlausibility({ ctx, conferenceId: args.conferenceId });
+			return findPlausibilityIssues({
+				conferenceId: args.conferenceId,
+				readableUsers: await ctx.abilities.user.filter('read')
+			});
 		}
 	})
 }));

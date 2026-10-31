@@ -2,6 +2,7 @@ import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { db, schema } from './db';
 import { DEFAULT_RETENTION_DAYS, retentionCutoff } from './retention';
+import { logger } from '#lib/logger';
 
 /**
  * Deletes team member invitations that expired more than `retentionDays` ago. Every invitation
@@ -14,8 +15,11 @@ export async function runInvitationCleanup(
 	options: { retentionDays?: number; dryRun?: boolean; now?: Date } = {}
 ): Promise<number> {
 	const { retentionDays = DEFAULT_RETENTION_DAYS, dryRun = false, now = new Date() } = options;
-	const expired = whereRows(schema.teamMemberInvitation, {
-		expiresAt: { lt: retentionCutoff(now, retentionDays) }
+	const expired = whereRows({
+		table: schema.teamMemberInvitation,
+		filter: {
+			expiresAt: { lt: retentionCutoff({ now, retentionDays }) }
+		}
 	});
 
 	if (dryRun) {
@@ -23,7 +27,7 @@ export async function runInvitationCleanup(
 			.select({ total: count() })
 			.from(schema.teamMemberInvitation)
 			.where(expired);
-		console.info(`${total} expired invitations would be deleted (dry run)`);
+		logger.info('Would delete expired invitations (dry run)', { count: total });
 		return total;
 	}
 
@@ -31,6 +35,6 @@ export async function runInvitationCleanup(
 		.delete(schema.teamMemberInvitation)
 		.where(expired)
 		.returning({ id: schema.teamMemberInvitation.id });
-	console.info(`${deleted.length} expired invitations deleted`);
+	logger.info('Deleted expired invitations', { count: deleted.length });
 	return deleted.length;
 }

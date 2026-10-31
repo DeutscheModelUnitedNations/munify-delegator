@@ -4,6 +4,7 @@ import { db, schema } from '#api/db/db';
 import { participatesIn } from '#api/services/authHelper/rules';
 import { createDuplicateIndex, type DuplicatePair, type MatchProfile } from './duplicateMatching';
 import { possibleDuplicatePubsub } from '#api/pubsub';
+import { logger } from '#lib/logger';
 
 /*
  * Looks for accounts that may belong to the same person, so a care note survives a fresh signup.
@@ -72,12 +73,17 @@ function batches<T>(items: T[]) {
  * could have found it, i.e. its other account is in the pool; otherwise it came from scanning that
  * other account, and stays.
  */
-async function store(
-	scannedWhere: UserFilter,
-	scannedIds: Set<string>,
-	poolIds: Set<string>,
-	pairs: DuplicatePair[]
-) {
+async function store({
+	scannedWhere,
+	scannedIds,
+	poolIds,
+	pairs
+}: {
+	scannedWhere: UserFilter;
+	scannedIds: Set<string>;
+	poolIds: Set<string>;
+	pairs: DuplicatePair[];
+}) {
 	const found = new Set(pairs.map((pair) => `${pair.userId}|${pair.candidateId}`));
 
 	await db.transaction(async (tx) => {
@@ -91,9 +97,12 @@ async function store(
 			return poolIds.has(other);
 		});
 		for (const batch of batches(stale)) {
-			await tx
-				.delete(schema.possibleDuplicate)
-				.where(whereRows(schema.possibleDuplicate, { id: { in: batch.map((row) => row.id) } }));
+			await tx.delete(schema.possibleDuplicate).where(
+				whereRows({
+					table: schema.possibleDuplicate,
+					filter: { id: { in: batch.map((row) => row.id) } }
+				})
+			);
 		}
 
 		for (const batch of batches(pairs)) {
@@ -119,7 +128,7 @@ async function store(
 const CHUNK = 2000;
 
 /** Runs `work` over `items` a chunk at a time, letting other requests through in between. */
-async function inChunks<T>(items: T[], work: (chunk: T[]) => void) {
+async function inChunks<T>({ items, work }: { items: T[]; work: (chunk: T[]) => void }) {
 	for (let i = 0; i < items.length; i += CHUNK) {
 		work(items.slice(i, i + CHUNK));
 		await new Promise((resolve) => setImmediate(resolve));
@@ -132,14 +141,14 @@ async function scan(scannedWhere: UserFilter) {
 		loadPool()
 	]);
 	const index = createDuplicateIndex();
-	await inChunks<MatchProfile>(pool, (chunk) => index.add(chunk));
-	await inChunks<MatchProfile>(scanned, (chunk) => index.match(chunk));
-	return store(
+	await inChunks<MatchProfile>({ items: pool, work: (chunk) => index.add(chunk) });
+	await inChunks<MatchProfile>({ items: scanned, work: (chunk) => index.match(chunk) });
+	return store({
 		scannedWhere,
-		new Set(scanned.map((user) => user.id)),
-		new Set(pool.map((user) => user.id)),
-		index.found()
-	);
+		scannedIds: new Set(scanned.map((user) => user.id)),
+		poolIds: new Set(pool.map((user) => user.id)),
+		pairs: index.found()
+	});
 }
 
 /** Compares everyone taking part in the conference with the pool; answers how many pairs it holds. */
@@ -153,7 +162,7 @@ export function scanConferenceForDuplicates(conferenceId: string) {
  */
 export function scanUserForDuplicatesInBackground(userId: string) {
 	scan({ id: userId }).catch((error: unknown) => {
-		console.error('Scanning an account for possible duplicates failed:', error);
+		logger.error('Scanning an account for possible duplicates failed', { userId, err: error });
 	});
 }
 
@@ -161,11 +170,15 @@ export function scanUserForDuplicatesInBackground(userId: string) {
  * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`, which
  * forgets who decided and when.
  */
-export async function decidePossibleDuplicate(
-	id: string,
-	status: (typeof schema.possibleDuplicate.$inferSelect)['status'],
-	decidedById: string | null
-) {
+export async function decidePossibleDuplicate({
+	id,
+	status,
+	decidedById
+}: {
+	id: string;
+	status: (typeof schema.possibleDuplicate.$inferSelect)['status'];
+	decidedById: string | null;
+}) {
 	const decided = status !== 'OPEN';
 	await db
 		.update(schema.possibleDuplicate)
@@ -174,5 +187,5 @@ export async function decidePossibleDuplicate(
 			decidedById: decided ? decidedById : null,
 			decidedAt: decided ? new Date() : null
 		})
-		.where(whereRows(schema.possibleDuplicate, { id }));
+		.where(whereRows({ table: schema.possibleDuplicate, filter: { id } }));
 }

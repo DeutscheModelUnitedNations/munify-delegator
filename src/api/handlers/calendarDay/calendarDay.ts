@@ -39,7 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 			...newDayArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarDay(ctx, args.conferenceId);
+			await assertCanCreateCalendarDay({ ctx, conferenceId: args.conferenceId });
 
 			const created = await db
 				.insert(schema.calendarDay)
@@ -55,7 +55,9 @@ schemaBuilder.mutationFields((t) => ({
 			calendarDayPubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.calendarDay, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -69,16 +71,21 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateIfAllowed(ctx, 'calendarDay', args.id, {
-				name: args.name ?? undefined,
-				date: args.date ?? undefined,
-				sortOrder: args.sortOrder ?? undefined
+			await updateIfAllowed({
+				ctx,
+				table: 'calendarDay',
+				id: args.id,
+				values: {
+					name: args.name ?? undefined,
+					date: args.date ?? undefined,
+					sortOrder: args.sortOrder ?? undefined
+				}
 			});
 
 			calendarDayPubsub.updated(args.id);
 
 			return db.query.calendarDay
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.calendarDay, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -87,7 +94,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'calendarDay', args.id);
+			await deleteIfAllowed({ ctx, table: 'calendarDay', id: args.id });
 			calendarDayPubsub.removed();
 
 			return true;
@@ -110,11 +117,11 @@ schemaBuilder.mutationFields((t) => ({
 			importData: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarDay(ctx, args.conferenceId);
+			await assertCanCreateCalendarDay({ ctx, conferenceId: args.conferenceId });
 
 			const importData = parseImportData(args.importData);
 
-			const created = await createImportedDay(args, importData);
+			const created = await createImportedDay({ args, importData });
 
 			calendarDayPubsub.created();
 			calendarTrackPubsub.created();
@@ -122,7 +129,9 @@ schemaBuilder.mutationFields((t) => ({
 			placePubsub.created();
 
 			return db.query.calendarDay
-				.findFirst(query(await queryAllowed(ctx.abilities.calendarDay, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.calendarDay, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})

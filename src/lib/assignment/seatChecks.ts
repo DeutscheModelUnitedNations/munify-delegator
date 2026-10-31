@@ -40,10 +40,13 @@ interface SeatedState {
  * all of it is: a split part left without a role leaves its delegation short. A single participant
  * is seated by a custom role, or by the role of the delegation the draft turns them into.
  */
-export function requiredWithoutSeat(
-	required: readonly RequiredApplication[],
-	state: SeatedState
-): RequiredApplication[] {
+export function requiredWithoutSeat({
+	required,
+	state
+}: {
+	required: readonly RequiredApplication[];
+	state: SeatedState;
+}): RequiredApplication[] {
 	const delegationSeated = new Map<string, boolean>();
 	const seatedSingles = new Set(
 		state.singles.filter((single) => single.roleId).map((single) => single.singleParticipantId)
@@ -70,11 +73,15 @@ export function requiredWithoutSeat(
  * nations and non-state actors (`seats`, by role key) for the groups, custom roles (`roleSeats`, by
  * role id) for the single participants.
  */
-export function seatOccupancy(
-	state: SeatedState,
-	seats: ReadonlyMap<string, number>,
-	roleSeats: ReadonlyMap<string, number>
-) {
+export function seatOccupancy({
+	state,
+	seats,
+	roleSeats
+}: {
+	state: SeatedState;
+	seats: ReadonlyMap<string, number>;
+	roleSeats: ReadonlyMap<string, number>;
+}) {
 	const total = sum(seats.values()) + sum(roleSeats.values());
 	const taken =
 		sum(state.groups.filter((group) => targetKey(group.target)).map((group) => group.size)) +

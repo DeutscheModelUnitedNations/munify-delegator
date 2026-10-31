@@ -38,15 +38,15 @@
 
 	function splitEvenly(count: number) {
 		partCount = count;
-		partOf = quickSplit(memberIds, count);
+		partOf = quickSplit({ memberIds, count });
 	}
 
 	function removePart(removed: number) {
-		partOf = withoutPart(partOf, removed);
+		partOf = withoutPart({ partOf, removed });
 		partCount--;
 	}
 
-	const parts = $derived(partsOf(members, partOf, partCount));
+	const parts = $derived(partsOf({ members, partOf, count: partCount }));
 	const filledParts = $derived(parts.filter((part) => part.length > 0));
 	const valid = $derived(filledParts.length >= 2);
 

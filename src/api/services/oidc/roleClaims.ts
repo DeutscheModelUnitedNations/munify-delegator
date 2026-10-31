@@ -9,7 +9,7 @@ export type RoleMap = Partial<Record<OidcRole, readonly string[]>>;
 
 const claimObject = z.record(z.string(), z.unknown());
 
-function propertyOf(value: unknown, key: string): unknown {
+function propertyOf({ value, key }: { value: unknown; key: string }): unknown {
 	const parsed = claimObject.safeParse(value);
 	return parsed.success ? parsed.data[key] : undefined;
 }
@@ -19,10 +19,10 @@ function propertyOf(value: unknown, key: string): unknown {
  * (Zitadel's `urn:zitadel:iam:org:project:roles`, Auth0's `https://example.com/roles`), else the
  * path's dot-separated steps into nested objects (Keycloak's `realm_access.roles`).
  */
-export function claimAt(claims: unknown, path: string): unknown {
-	const literal = propertyOf(claims, path);
+export function claimAt({ claims, path }: { claims: unknown; path: string }): unknown {
+	const literal = propertyOf({ value: claims, key: path });
 	if (literal !== undefined) return literal;
-	return path.split('.').reduce<unknown>((value, key) => propertyOf(value, key), claims);
+	return path.split('.').reduce<unknown>((value, key) => propertyOf({ value, key }), claims);
 }
 
 /** A role named by itself (Logto, Authentik, Keycloak, …) or by an object carrying its `name`. */
@@ -55,15 +55,27 @@ const roleNames = z.union([
  * access token, the ID token, then what the userinfo endpoint answered. A value of no known shape
  * grants nothing.
  */
-export function roleNamesInClaims(sources: readonly unknown[], path: string): string[] {
+export function roleNamesInClaims({
+	sources,
+	path
+}: {
+	sources: readonly unknown[];
+	path: string;
+}): string[] {
 	const value = sources
-		.map((claims) => claimAt(claims, path))
+		.map((claims) => claimAt({ claims, path }))
 		.find((value) => value !== undefined && value !== null);
 	const parsed = roleNames.safeParse(value);
 	return parsed.success ? parsed.data : [];
 }
 
 /** The app roles a provider's role names grant, through `roleMap`. */
-export function appRolesOf(names: readonly string[], roleMap: RoleMap = {}): OidcRole[] {
+export function appRolesOf({
+	names,
+	roleMap = {}
+}: {
+	names: readonly string[];
+	roleMap?: RoleMap;
+}): OidcRole[] {
 	return oidcRoles.filter((role) => (roleMap[role] ?? [role]).some((name) => names.includes(name)));
 }

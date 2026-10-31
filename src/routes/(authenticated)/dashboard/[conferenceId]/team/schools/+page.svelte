@@ -24,7 +24,7 @@
 		await client.liveQuery.conference({ __args: { id: conferenceId }, maxSeatsPerSchool: true })
 	);
 	const limit = $derived(conference.maxSeatsPerSchool ?? null);
-	const page = $derived(await fetchSchoolsPage(conferenceId, tableState));
+	const page = $derived(await fetchSchoolsPage({ conferenceId, state: tableState }));
 
 	const count = (value: unknown) => (typeof value === 'number' && value > 0 ? String(value) : '—');
 
@@ -105,7 +105,7 @@
 		{tableState}
 		hasMore={page.hasMore}
 		rowCount={page.total}
-		exportRows={() => fetchAllSchools(conferenceId, tableState)}
+		exportRows={() => fetchAllSchools({ conferenceId, state: tableState })}
 		storageKey="schools-columns-{conferenceId}"
 		onRowClick={(row) => goto(resolve(`dashboard/${conferenceId}/team/schools/${row.schoolId}`))}
 	/>

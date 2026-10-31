@@ -19,11 +19,14 @@ function setup(content: { value: string | undefined }, withReset = true) {
 	const resetEditor = vi.fn();
 	let draft!: ReturnType<typeof createDraftAutosave<Draft, string>>;
 	const cleanup = $effect.root(() => {
-		draft = createDraftAutosave<Draft, string>(KEY, {
-			readContent: () => content.value,
-			toDraft: (text, savedAt) => ({ text, savedAt }),
-			applyDraft: (d) => applied.push(d),
-			resetEditor: withReset ? resetEditor : undefined
+		draft = createDraftAutosave<Draft, string>({
+			storageKey: KEY,
+			options: {
+				readContent: () => content.value,
+				toDraft: (text, savedAt) => ({ text, savedAt }),
+				applyDraft: (d) => applied.push(d),
+				resetEditor: withReset ? resetEditor : undefined
+			}
 		});
 	});
 	return { draft, applied, resetEditor, cleanup };
@@ -131,10 +134,13 @@ describe('DraftAutosave', () => {
 		cyclic.self = cyclic;
 		let draft!: ReturnType<typeof createDraftAutosave<{ savedAt: number }, unknown>>;
 		const cleanup = $effect.root(() => {
-			draft = createDraftAutosave<{ savedAt: number }, unknown>(KEY, {
-				readContent: () => cyclic,
-				toDraft: (_content, savedAt) => ({ savedAt }),
-				applyDraft: () => {}
+			draft = createDraftAutosave<{ savedAt: number }, unknown>({
+				storageKey: KEY,
+				options: {
+					readContent: () => cyclic,
+					toDraft: (_content, savedAt) => ({ savedAt }),
+					applyDraft: () => {}
+				}
 			});
 		});
 		draft.save();

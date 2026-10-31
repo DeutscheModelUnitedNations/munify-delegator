@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
 	import { onDestroy, onMount, tick, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -62,10 +63,7 @@
 	let streaming = $state(false);
 	let starting = $state(false);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
-	let cameraWanted = createPersistedState(
-		untrack(() => persistKey),
-		false
-	);
+	let cameraWanted = createPersistedState({ key: untrack(() => persistKey), initial: false });
 	let manualInputElem = $state<HTMLInputElement>();
 	let query = $state('');
 	let suggestions = $state<UserSuggestion[]>([]);
@@ -135,7 +133,7 @@
 			stopVideo();
 			await openCamera(videoElem);
 		} catch (error) {
-			console.error('Error accessing camera:', error);
+			logger.error('Error accessing camera', error);
 			toast.error(cameraErrorMessage(error));
 			// Do not retry on every visit when the camera is denied or missing
 			cameraWanted.current = false;
@@ -220,12 +218,12 @@
 		const typed = query.trim();
 		const code = readAimIdentifier(typed).format
 			? typed
-			: codeToSubmit(query, suggestions, highlighted);
+			: codeToSubmit({ text: query, suggestions, highlighted });
 		if (code) submitCode(code);
 	}
 
 	function onInputKeydown(event: KeyboardEvent) {
-		const move = navigateSuggestions(event.key, highlighted, suggestions.length);
+		const move = navigateSuggestions({ key: event.key, highlighted, count: suggestions.length });
 		if (!move) return;
 		event.preventDefault();
 		highlighted = move.highlighted;
@@ -257,12 +255,12 @@
 		searching = true;
 		const timeoutId = setTimeout(async () => {
 			try {
-				const found = await searchUsers(conferenceId, text);
+				const found = await searchUsers({ conferenceId, term: text });
 				if (sequence !== searchSequence) return;
 				suggestions = found;
 				highlighted = -1;
 			} catch (error) {
-				console.error('User search failed:', error);
+				logger.error('User search failed', error);
 			} finally {
 				if (sequence === searchSequence) searching = false;
 			}

@@ -1,7 +1,7 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 import { building } from '$app/env';
 import { z } from 'zod';
-import { oidcRoles } from '#api/services/oidcRoles';
+import { oidcRoles } from '#api/services/oidc/oidcRoles';
 
 /** An unset or empty variable counts as not given. */
 const unlessEmpty = <T extends z.ZodType<unknown, string | undefined>>(schema: T) =>
@@ -23,10 +23,13 @@ const numberOr = (fallback: number) =>
  * A variable that must be set when the app runs, but not while SvelteKit analyses it during
  * `vite build`, which happens without the deployment's environment.
  */
-const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>(
-	schema: T,
-	placeholder: string
-) =>
+const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>({
+	schema,
+	placeholder
+}: {
+	schema: T;
+	placeholder: string;
+}) =>
 	z
 		.string()
 		.optional()
@@ -40,22 +43,22 @@ const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>(
  */
 export const variables = defineEnvVars({
 	// --- Private ---
-	DATABASE_URL: { schema: requiredAtRuntime(z.string(), '') },
+	DATABASE_URL: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 	NODE_ENV: {
-		schema: requiredAtRuntime(
-			z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
-			'production'
-		)
+		schema: requiredAtRuntime({
+			schema: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
+			placeholder: 'production'
+		})
 	},
 	// Unread since the OIDC flow moved to @m1212e/sveltekit-oidc, which manages its own cookies.
 	// Kept required so a deployment does not silently lose it before something needs it again.
-	SECRET: { schema: requiredAtRuntime(z.string(), '') },
-	CERTIFICATE_SECRET: { schema: requiredAtRuntime(z.string(), '') },
+	SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
+	CERTIFICATE_SECRET: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 
-	OIDC_SCOPES: { schema: requiredAtRuntime(z.string(), '') },
+	OIDC_SCOPES: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 	OIDC_CLIENT_SECRET: { schema: z.string().optional() },
 	// Where the provider puts its role or group names: a claim name, or a dot path into nested
-	// claims (`realm_access.roles`). See `#api/services/roleClaims.ts`.
+	// claims (`realm_access.roles`). See `#api/services/oidc/roleClaims.ts`.
 	OIDC_ROLE_CLAIM: { schema: z.string().optional() },
 	// JSON: which of those names grant an app role, e.g. {"admin":["delegator-admins"]}. A role it
 	// leaves out is granted by a name equal to its own.
@@ -116,10 +119,12 @@ export const variables = defineEnvVars({
 	// bucket, path style (`https://s3.example.org/delegator`) or virtual-hosted
 	// (`https://delegator.s3.example.org`). Browsers upload to and download from presigned URLs,
 	// so they must reach `S3_PUBLIC_ENDPOINT` (by default the same) and the bucket must allow CORS.
-	S3_ENDPOINT: { schema: requiredAtRuntime(z.string().url(), 'http://localhost/bucket') },
+	S3_ENDPOINT: {
+		schema: requiredAtRuntime({ schema: z.string().url(), placeholder: 'http://localhost/bucket' })
+	},
 	S3_PUBLIC_ENDPOINT: { schema: unlessEmpty(z.string().url().optional()) },
-	S3_ACCESS_KEY_ID: { schema: requiredAtRuntime(z.string(), '') },
-	S3_SECRET_ACCESS_KEY: { schema: requiredAtRuntime(z.string(), '') },
+	S3_ACCESS_KEY_ID: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
+	S3_SECRET_ACCESS_KEY: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
 	S3_REGION: { schema: z.string().default('us-east-1') },
 
 	// Distributed pubsub for GraphQL subscriptions. Without it rumble falls back to an in-memory
@@ -133,8 +138,14 @@ export const variables = defineEnvVars({
 	// --- Public ---
 	PUBLIC_VERSION: { public: true, schema: z.string().optional() },
 	PUBLIC_SHA: { public: true, schema: z.string().optional() },
-	PUBLIC_OIDC_AUTHORITY: { public: true, schema: requiredAtRuntime(z.string(), '') },
-	PUBLIC_OIDC_CLIENT_ID: { public: true, schema: requiredAtRuntime(z.string(), '') },
+	PUBLIC_OIDC_AUTHORITY: {
+		public: true,
+		schema: requiredAtRuntime({ schema: z.string(), placeholder: '' })
+	},
+	PUBLIC_OIDC_CLIENT_ID: {
+		public: true,
+		schema: requiredAtRuntime({ schema: z.string(), placeholder: '' })
+	},
 	PUBLIC_DEFAULT_LOCALE: { public: true, schema: z.string().default('de') },
 	PUBLIC_OIDC_ACCOUNT_URL: { public: true, schema: unlessEmpty(z.string().url().optional()) },
 	PUBLIC_FEEDBACK_URL: { public: true, schema: z.string().optional() },
@@ -165,12 +176,6 @@ export const variables = defineEnvVars({
 					'https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/sharp-duotone-solid.min.css'
 				)
 		)
-	},
-
-	// --- TEMPORARY: Migration notice (remove after migration period) ---
-	PUBLIC_OIDC_MIGRATION_NOTICE: {
-		public: true,
-		schema: unlessEmpty(z.stringbool().default(false))
 	},
 
 	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: { public: true, schema: numberOr(1200) },

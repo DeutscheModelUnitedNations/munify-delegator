@@ -22,7 +22,8 @@ export interface Span {
 /** The first four change the time, the last two the tracks an entry spans. */
 export type DragMode = 'move' | 'resize-start' | 'resize-end' | 'resize-left' | 'resize-right';
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = ({ value, min, max }: { value: number; min: number; max: number }) =>
+	Math.min(Math.max(value, min), max);
 
 export function snap(minutes: number) {
 	return Math.round(minutes / SNAP_MINUTES) * SNAP_MINUTES;
@@ -35,7 +36,7 @@ export function minutesOfDay(time: Date | string) {
 }
 
 /** A day's date with a wall-clock time set on it, in UTC. */
-export function dateAtMinutes(dayDate: Date | string, minutes: number) {
+export function dateAtMinutes({ dayDate, minutes }: { dayDate: Date | string; minutes: number }) {
 	const date = new Date(dayDate);
 	date.setUTCHours(0, minutes, 0, 0);
 	return date;
@@ -51,22 +52,42 @@ export function formatMinutes(minutes: number) {
  * Where an entry ends up when a drag has moved the pointer `deltaMinutes` from where it grabbed
  * the entry. Moving keeps the duration; resizing moves one edge and stops short of the other.
  */
-export function dragSpan(origin: Span, mode: DragMode, deltaMinutes: number): Span {
+export function dragSpan({
+	origin,
+	mode,
+	deltaMinutes
+}: {
+	origin: Span;
+	mode: DragMode;
+	deltaMinutes: number;
+}): Span {
 	if (mode === 'move') {
 		const duration = origin.end - origin.start;
-		const start = clamp(snap(origin.start + deltaMinutes), 0, LATEST_END - duration);
+		const start = clamp({
+			value: snap(origin.start + deltaMinutes),
+			min: 0,
+			max: LATEST_END - duration
+		});
 		return { start, end: start + duration };
 	}
 	if (mode === 'resize-start') {
 		return {
-			start: clamp(snap(origin.start + deltaMinutes), 0, origin.end - MIN_DURATION),
+			start: clamp({
+				value: snap(origin.start + deltaMinutes),
+				min: 0,
+				max: origin.end - MIN_DURATION
+			}),
 			end: origin.end
 		};
 	}
 	if (mode === 'resize-end') {
 		return {
 			start: origin.start,
-			end: clamp(snap(origin.end + deltaMinutes), origin.start + MIN_DURATION, LATEST_END)
+			end: clamp({
+				value: snap(origin.end + deltaMinutes),
+				min: origin.start + MIN_DURATION,
+				max: LATEST_END
+			})
 		};
 	}
 	// Stretching sideways leaves the time alone
@@ -77,36 +98,58 @@ export function dragSpan(origin: Span, mode: DragMode, deltaMinutes: number): Sp
  * The range a drag on an empty slot selects. A plain click (`dragged` false) selects an hour
  * from the slot it landed on.
  */
-export function createSpan(anchorMinutes: number, currentMinutes: number, dragged: boolean): Span {
+export function createSpan({
+	anchorMinutes,
+	currentMinutes,
+	dragged
+}: {
+	anchorMinutes: number;
+	currentMinutes: number;
+	dragged: boolean;
+}): Span {
 	const first = Math.min(anchorMinutes, currentMinutes);
 	const last = Math.max(anchorMinutes, currentMinutes);
-	const start = clamp(
-		Math.floor(first / SNAP_MINUTES) * SNAP_MINUTES,
-		0,
-		LATEST_END - MIN_DURATION
-	);
+	const start = clamp({
+		value: Math.floor(first / SNAP_MINUTES) * SNAP_MINUTES,
+		min: 0,
+		max: LATEST_END - MIN_DURATION
+	});
 	const end = dragged ? Math.ceil(last / SNAP_MINUTES) * SNAP_MINUTES : start + 60;
-	return { start, end: clamp(end, start + MIN_DURATION, LATEST_END) };
+	return { start, end: clamp({ value: end, min: start + MIN_DURATION, max: LATEST_END }) };
 }
 
 /**
  * The whole hours the editor shows: at least 08:00 to 18:00, one spare hour around the entries
  * so there is room to drag past the first or last one, or the whole day.
  */
-export function editorHourRange(spans: readonly Span[], wholeDay: boolean) {
+export function editorHourRange({
+	spans,
+	wholeDay
+}: {
+	spans: readonly Span[];
+	wholeDay: boolean;
+}) {
 	if (wholeDay) return { startHour: 0, endHour: 24 };
 	if (spans.length === 0) return { startHour: 8, endHour: 18 };
 	const earliest = Math.min(...spans.map((s) => s.start));
 	const latest = Math.max(...spans.map((s) => s.end));
 	return {
-		startHour: clamp(Math.min(8, Math.floor(earliest / 60) - 1), 0, 23),
-		endHour: clamp(Math.max(18, Math.ceil(latest / 60) + 1), 1, 24)
+		startHour: clamp({ value: Math.min(8, Math.floor(earliest / 60) - 1), min: 0, max: 23 }),
+		endHour: clamp({ value: Math.max(18, Math.ceil(latest / 60) + 1), min: 1, max: 24 })
 	};
 }
 
 /** The minutes at a vertical distance from the top of the grid. */
-export function minutesAtOffset(offsetPx: number, hourHeight: number, startHour: number) {
-	return clamp(startHour * 60 + (offsetPx / hourHeight) * 60, 0, 24 * 60);
+export function minutesAtOffset({
+	offsetPx,
+	hourHeight,
+	startHour
+}: {
+	offsetPx: number;
+	hourHeight: number;
+	startHour: number;
+}) {
+	return clamp({ value: startHour * 60 + (offsetPx / hourHeight) * 60, min: 0, max: 24 * 60 });
 }
 
 // === Columns ===
@@ -153,12 +196,16 @@ export function buildGrid(
 }
 
 /** The column under a horizontal position (in units); the gap between days belongs to a neighbour. */
-export function columnAt(grid: Grid, unit: number): GridColumn | undefined {
+export function columnAt({ grid, unit }: { grid: Grid; unit: number }): GridColumn | undefined {
 	const block =
 		grid.days.find((d) => unit < d.start + d.width + DAY_GAP / 2) ??
 		grid.days[grid.days.length - 1];
 	if (!block) return undefined;
-	const index = clamp(Math.floor(unit - block.start), 0, block.columns.length - 1);
+	const index = clamp({
+		value: Math.floor(unit - block.start),
+		min: 0,
+		max: block.columns.length - 1
+	});
 	return block.columns[index];
 }
 
@@ -169,10 +216,13 @@ const columnTrackIds = (block: GridDayBlock) => block.columns.map((c) => c.track
  * The tracks an entry runs on, as stored: in the day's order and without ids the day does not
  * have.
  */
-export function normalizeTrackIds(
-	dayTrackIds: readonly string[],
-	trackIds: readonly string[]
-): string[] {
+export function normalizeTrackIds({
+	dayTrackIds,
+	trackIds
+}: {
+	dayTrackIds: readonly string[];
+	trackIds: readonly string[];
+}): string[] {
 	return dayTrackIds.filter((id) => trackIds.includes(id));
 }
 
@@ -187,7 +237,13 @@ export interface ColumnRange {
  * between are covered too, so a stored set with a gap still draws as one block). An entry with no
  * track of the day (storage rules that out) is drawn across the whole day.
  */
-function rangeOfTracks(block: GridDayBlock, trackIds: readonly string[]): ColumnRange {
+function rangeOfTracks({
+	block,
+	trackIds
+}: {
+	block: GridDayBlock;
+	trackIds: readonly string[];
+}): ColumnRange {
 	const indexes = block.columns
 		.map((column, index) => (column.trackId && trackIds.includes(column.trackId) ? index : -1))
 		.filter((index) => index !== -1);
@@ -196,36 +252,45 @@ function rangeOfTracks(block: GridDayBlock, trackIds: readonly string[]): Column
 }
 
 /** The track ids of a column range, in the stored form. */
-export function tracksOfRange(block: GridDayBlock, range: ColumnRange): string[] {
+export function tracksOfRange({
+	block,
+	range
+}: {
+	block: GridDayBlock;
+	range: ColumnRange;
+}): string[] {
 	const ids = columnTrackIds(block).filter((id): id is string => id !== null);
-	return normalizeTrackIds(
-		ids,
-		ids.filter((_, index) => index >= range.first && index <= range.last)
-	);
+	return normalizeTrackIds({
+		dayTrackIds: ids,
+		trackIds: ids.filter((_, index) => index >= range.first && index <= range.last)
+	});
 }
 
 /** The horizontal extent of an entry: the columns of its tracks, or the whole day when it has none. */
-export function entryExtent(
-	grid: Grid,
-	placement: { dayId: string; trackIds: readonly string[] }
-): { start: number; width: number } | undefined {
+export function entryExtent({
+	grid,
+	placement
+}: {
+	grid: Grid;
+	placement: { dayId: string; trackIds: readonly string[] };
+}): { start: number; width: number } | undefined {
 	const block = grid.days.find((d) => d.dayId === placement.dayId);
 	if (!block) return undefined;
-	const { first, last } = rangeOfTracks(block, placement.trackIds);
+	const { first, last } = rangeOfTracks({ block, trackIds: placement.trackIds });
 	return { start: block.start + first, width: last - first + 1 };
 }
 
 /** The index, within its day, of the column under a horizontal position (in units). */
-export function columnIndexAt(grid: Grid, unit: number) {
-	const column = columnAt(grid, unit);
+export function columnIndexAt({ grid, unit }: { grid: Grid; unit: number }) {
+	const column = columnAt({ grid, unit });
 	const block = column && grid.days.find((d) => d.dayId === column.dayId);
 	if (!column || !block) return undefined;
 	return { block, index: block.columns.indexOf(column) };
 }
 
 /** The column of `block` under a horizontal position, which is clamped into the block. */
-export function clampedIndex(block: GridDayBlock, unit: number) {
-	return clamp(Math.floor(unit - block.start), 0, block.columns.length - 1);
+export function clampedIndex({ block, unit }: { block: GridDayBlock; unit: number }) {
+	return clamp({ value: Math.floor(unit - block.start), min: 0, max: block.columns.length - 1 });
 }
 
 /**
@@ -233,75 +298,103 @@ export function clampedIndex(block: GridDayBlock, unit: number) {
  * keeps its width and the part of it that was grabbed stays under the pointer, squeezed in where
  * the day has fewer tracks.
  */
-export function dropPlacement(
-	grid: Grid,
-	unit: number,
-	origin: { dayId: string; trackIds: readonly string[]; unit: number }
-): { dayId: string; trackIds: string[] } | undefined {
-	const hit = columnIndexAt(grid, unit);
+export function dropPlacement({
+	grid,
+	unit,
+	origin
+}: {
+	grid: Grid;
+	unit: number;
+	origin: { dayId: string; trackIds: readonly string[]; unit: number };
+}): { dayId: string; trackIds: string[] } | undefined {
+	const hit = columnIndexAt({ grid, unit });
 	const originBlock = grid.days.find((d) => d.dayId === origin.dayId);
 	if (!hit || !originBlock) return undefined;
 	const { block, index } = hit;
-	const from = rangeOfTracks(originBlock, origin.trackIds);
+	const from = rangeOfTracks({ block: originBlock, trackIds: origin.trackIds });
 	const width = from.last - from.first + 1;
 
-	const grabbed = clampedIndex(originBlock, origin.unit) - from.first;
+	const grabbed = clampedIndex({ block: originBlock, unit: origin.unit }) - from.first;
 	const fitted = Math.min(width, block.columns.length);
-	const first = clamp(index - Math.min(grabbed, fitted - 1), 0, block.columns.length - fitted);
+	const first = clamp({
+		value: index - Math.min(grabbed, fitted - 1),
+		min: 0,
+		max: block.columns.length - fitted
+	});
 	return {
 		dayId: block.dayId,
-		trackIds: tracksOfRange(block, { first, last: first + fitted - 1 })
+		trackIds: tracksOfRange({ block, range: { first, last: first + fitted - 1 } })
 	};
 }
 
 /** The day block an entry sits in and the columns it spans there; both undefined for an unknown day. */
-function originRange(grid: Grid, origin: { dayId: string; trackIds: readonly string[] }) {
+function originRange({
+	grid,
+	origin
+}: {
+	grid: Grid;
+	origin: { dayId: string; trackIds: readonly string[] };
+}) {
 	const block = grid.days.find((d) => d.dayId === origin.dayId);
-	return { block, range: block && rangeOfTracks(block, origin.trackIds) };
+	return { block, range: block && rangeOfTracks({ block, trackIds: origin.trackIds }) };
 }
 
 /**
  * Stretches the columns of an entry by pulling its left or right edge to the pointer, within its
  * day. The entry keeps at least one column.
  */
-export function stretchTracks(
-	grid: Grid,
-	origin: { dayId: string; trackIds: readonly string[] },
-	mode: 'resize-left' | 'resize-right',
-	unit: number
-): string[] {
-	const { block, range } = originRange(grid, origin);
+export function stretchTracks({
+	grid,
+	origin,
+	mode,
+	unit
+}: {
+	grid: Grid;
+	origin: { dayId: string; trackIds: readonly string[] };
+	mode: 'resize-left' | 'resize-right';
+	unit: number;
+}): string[] {
+	const { block, range } = originRange({ grid, origin });
 	if (!block || !range) return [...origin.trackIds];
-	const index = clampedIndex(block, unit);
-	return tracksOfRange(
+	const index = clampedIndex({ block, unit });
+	return tracksOfRange({
 		block,
-		mode === 'resize-left'
-			? { first: Math.min(index, range.last), last: range.last }
-			: { first: range.first, last: Math.max(index, range.first) }
-	);
+		range:
+			mode === 'resize-left'
+				? { first: Math.min(index, range.last), last: range.last }
+				: { first: range.first, last: Math.max(index, range.first) }
+	});
 }
 
 /**
  * The tracks of an entry nudged one column, for the keyboard: moved, or with `resize-right` its
  * right edge stretched. Stays as it is where the day has no room.
  */
-export function nudgeTracks(
-	grid: Grid,
-	origin: { dayId: string; trackIds: readonly string[] },
-	mode: 'move' | 'resize-right',
-	direction: 1 | -1
-): string[] {
-	const { block, range } = originRange(grid, origin);
+export function nudgeTracks({
+	grid,
+	origin,
+	mode,
+	direction
+}: {
+	grid: Grid;
+	origin: { dayId: string; trackIds: readonly string[] };
+	mode: 'move' | 'resize-right';
+	direction: 1 | -1;
+}): string[] {
+	const { block, range } = originRange({ grid, origin });
 	if (!block || !range) return [...origin.trackIds];
 	const last = block.columns.length - 1;
 	if (mode === 'resize-right') {
-		return tracksOfRange(block, {
-			first: range.first,
-			last: clamp(range.last + direction, range.first, last)
+		return tracksOfRange({
+			block,
+			range: {
+				first: range.first,
+				last: clamp({ value: range.last + direction, min: range.first, max: last })
+			}
 		});
 	}
-	const shift = clamp(direction, -range.first, last - range.last);
-	return tracksOfRange(block, { first: range.first + shift, last: range.last + shift });
+	const shift = clamp({ value: direction, min: -range.first, max: last - range.last });
+	return tracksOfRange({ block, range: { first: range.first + shift, last: range.last + shift } });
 }
 
 // === Overlaps and lanes ===
@@ -394,7 +487,7 @@ const KEY_TYPES: Record<string, KeyAction> = {
  * hour and left and right by a track (with Shift they stretch its end, or its right edge,
  * instead), Delete asks to delete it.
  */
-export function keyAction(key: string, shift: boolean): KeyAction | undefined {
+export function keyAction({ key, shift }: { key: string; shift: boolean }): KeyAction | undefined {
 	const nudge = NUDGES[key];
 	if (nudge) return { type: 'nudge', mode: shift ? 'resize' : 'move', ...nudge };
 	return KEY_TYPES[key];

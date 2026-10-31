@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 
 const mocks = vi.hoisted(() => ({ GET: vi.fn(), taskWarning: vi.fn() }));
 
@@ -11,7 +12,7 @@ const subscriber = (id: number, email: string) => ({ id, email, name: `S${id}`, 
 
 describe('fetchSubscriberMap', () => {
 	beforeEach(() => {
-		vi.spyOn(console, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'info').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
@@ -56,9 +57,9 @@ describe('fetchSubscriberMap', () => {
 	])('gives up when the request returns %s', async (_label, response) => {
 		mocks.GET.mockResolvedValueOnce(response);
 		expect(await fetchSubscriberMap([3])).toBeUndefined();
-		expect(mocks.taskWarning).toHaveBeenCalledWith(
-			'Mail Service: Sync with Listmonk',
-			'Failed to fetch subscribers from Listmonk'
-		);
+		expect(mocks.taskWarning).toHaveBeenCalledWith({
+			taskName: 'Mail Service: Sync with Listmonk',
+			message: 'Failed to fetch subscribers from Listmonk'
+		});
 	});
 });

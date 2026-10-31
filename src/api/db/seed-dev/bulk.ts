@@ -23,7 +23,7 @@ if (!Number.isFinite(scale) || scale < 0) throw new Error('SEED_BULK_SCALE must 
 function nationsBySeats(cs: ConferenceSeed) {
 	return [...new Set(cs.committees.flatMap((committee) => committee.nations))]
 		.filter((nation) => nation !== PERSONA_NATION)
-		.map((nation) => ({ nation, seats: nationSeats(cs, nation) }))
+		.map((nation) => ({ nation, seats: nationSeats({ cs, nation }) }))
 		.sort((a, b) => b.seats - a.seats || a.nation.localeCompare(b.nation));
 }
 
@@ -32,34 +32,45 @@ export function addBulk(cs: ConferenceSeed) {
 	if (!bulk) return;
 	const appliedShare = cs.plan.key === 'registration' ? 0.5 : 0.85;
 
-	const delegationMemberIds = addBulkDelegations(
+	const delegationMemberIds = addBulkDelegations({
 		cs,
-		Math.round(bulk.delegations * scale),
+		count: Math.round(bulk.delegations * scale),
 		appliedShare
-	);
+	});
 
 	const singleIds: string[] = [];
 	for (let index = 0; index < Math.round(bulk.singles * scale); index++) {
 		singleIds.push(
-			addSingle(cs, {
-				userId: cs.world.crowdUser('participant'),
-				applied: faker.datatype.boolean(appliedShare),
-				preferences: faker.helpers.arrayElements(cs.customRoleIds, { min: 1, max: 3 })
+			addSingle({
+				cs,
+				plan: {
+					userId: cs.world.crowdUser({ kind: 'participant' }),
+					applied: faker.datatype.boolean(appliedShare),
+					preferences: faker.helpers.arrayElements(cs.customRoleIds, { min: 1, max: 3 })
+				}
 			})
 		);
 	}
 
-	addBulkSupervisors(
+	addBulkSupervisors({
 		cs,
-		Math.round((bulk.supervisors ?? 0) * scale),
+		count: Math.round((bulk.supervisors ?? 0) * scale),
 		delegationMemberIds,
 		singleIds
-	);
-	addBulkWaitingList(cs, Math.round((bulk.waitingList ?? 0) * scale));
+	});
+	addBulkWaitingList({ cs, count: Math.round((bulk.waitingList ?? 0) * scale) });
 }
 
 /** Returns each delegation's member row ids, for the supervisors. */
-function addBulkDelegations(cs: ConferenceSeed, count: number, appliedShare: number) {
+function addBulkDelegations({
+	cs,
+	count,
+	appliedShare
+}: {
+	cs: ConferenceSeed;
+	count: number;
+	appliedShare: number;
+}) {
 	const nations = nationsBySeats(cs);
 	const roomiest = nations[0]?.seats ?? 0;
 	// The server drops preferences with fewer seats than members, so only offer roomy nations.
@@ -79,12 +90,15 @@ function addBulkDelegations(cs: ConferenceSeed, count: number, appliedShare: num
 		if (size <= 3 && cs.nonStateActorIds[0] && preferences.length > 0 && faker.datatype.boolean()) {
 			preferences[preferences.length - 1] = { nonStateActorId: cs.nonStateActorIds[0] };
 		}
-		const { memberIds } = addDelegation(cs, {
-			applied: faker.datatype.boolean(appliedShare),
-			members: Array.from({ length: size }, () => ({
-				userId: cs.world.crowdUser('participant')
-			})),
-			preferences
+		const { memberIds } = addDelegation({
+			cs,
+			plan: {
+				applied: faker.datatype.boolean(appliedShare),
+				members: Array.from({ length: size }, () => ({
+					userId: cs.world.crowdUser({ kind: 'participant' })
+				})),
+				preferences
+			}
 		});
 		delegationMemberIds.push([...memberIds.values()]);
 	}
@@ -96,12 +110,17 @@ function addBulkDelegations(cs: ConferenceSeed, count: number, appliedShare: num
  * registered but nobody has linked to them yet; once the delegations run out, the rest only have
  * singles or nobody.
  */
-function addBulkSupervisors(
-	cs: ConferenceSeed,
-	count: number,
-	delegationMemberIds: string[][],
-	singleIds: string[]
-) {
+function addBulkSupervisors({
+	cs,
+	count,
+	delegationMemberIds,
+	singleIds
+}: {
+	cs: ConferenceSeed;
+	count: number;
+	delegationMemberIds: string[][];
+	singleIds: string[];
+}) {
 	const delegations = faker.helpers.shuffle(delegationMemberIds);
 	const singles = faker.helpers.shuffle(singleIds);
 	let nextDelegation = 0;
@@ -116,11 +135,14 @@ function addBulkSupervisors(
 		nextDelegation += delegationCount;
 		nextSingle += singleCount;
 
-		addSupervisor(cs, {
-			userId: cs.world.crowdUser('supervisor'),
-			attends: faker.datatype.boolean(0.7),
-			memberIds: students.flat(),
-			singleIds: ownSingles
+		addSupervisor({
+			cs,
+			plan: {
+				userId: cs.world.crowdUser({ kind: 'supervisor' }),
+				attends: faker.datatype.boolean(0.7),
+				memberIds: students.flat(),
+				singleIds: ownSingles
+			}
 		});
 	}
 }
@@ -129,16 +151,20 @@ function addBulkSupervisors(
  * People who signed up for the waiting list since registration closed, oldest first. A few were
  * hidden by the team as duplicates or no-shows.
  */
-function addBulkWaitingList(cs: ConferenceSeed, count: number) {
+function addBulkWaitingList({ cs, count }: { cs: ConferenceSeed; count: number }) {
 	if (count === 0) return;
 	const from = new Date(cs.conference.applicationDeadline);
 	const to = new Date(Math.min(Date.now(), cs.startConference.getTime()));
 	const signedUpAt = faker.date.betweens({ from, to, count });
 
 	for (const createdAt of signedUpAt) {
-		addWaitingListEntry(cs, cs.world.crowdUser('participant'), {
-			createdAt,
-			hidden: faker.datatype.boolean(0.03)
+		addWaitingListEntry({
+			cs,
+			userId: cs.world.crowdUser({ kind: 'participant' }),
+			plan: {
+				createdAt,
+				hidden: faker.datatype.boolean(0.03)
+			}
 		});
 	}
 }

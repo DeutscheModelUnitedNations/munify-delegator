@@ -5,7 +5,10 @@ import {
 	OIDC_M2M_RESOURCE,
 	OIDC_RESOURCE
 } from '$app/env/private';
-import { OIDC } from '#api/services/OIDC';
+import { OIDC } from '#api/services/oidc/OIDC';
+
+// TODO: Logto-only. Make the subject token step an adapter per provider (Logto, Zitadel), picked
+// from the discovery document's endpoint paths, with an optional `OIDC_IMPERSONATION` override.
 
 const REQUEST_TIMEOUT = 10_000;
 
@@ -19,7 +22,7 @@ function managementApiUrl(issuer: string) {
 	return `${issuer.replace(/\/oidc\/?$/, '')}/api`;
 }
 
-async function responseError(what: string, response: Response) {
+async function responseError({ what, response }: { what: string; response: Response }) {
 	// The body is the provider's own error description; tokens are never echoed back in it.
 	return new Error(`${what} failed: ${response.status} ${(await response.text()).slice(0, 500)}`);
 }
@@ -43,7 +46,8 @@ async function managementApiToken(): Promise<string> {
 		}),
 		signal: AbortSignal.timeout(REQUEST_TIMEOUT)
 	});
-	if (!response.ok) throw await responseError('the Management API token request', response);
+	if (!response.ok)
+		throw await responseError({ what: 'the Management API token request', response });
 	const { access_token } = await response.json();
 	if (typeof access_token !== 'string') throw new Error('the M2M token response has no token');
 	return access_token;
@@ -61,7 +65,7 @@ async function subjectTokenFor(userId: string): Promise<string> {
 		body: JSON.stringify({ userId }),
 		signal: AbortSignal.timeout(REQUEST_TIMEOUT)
 	});
-	if (!response.ok) throw await responseError('the subject token request', response);
+	if (!response.ok) throw await responseError({ what: 'the subject token request', response });
 	const { subjectToken } = await response.json();
 	if (typeof subjectToken !== 'string') throw new Error('the subject token response has no token');
 	return subjectToken;
@@ -73,10 +77,13 @@ async function subjectTokenFor(userId: string): Promise<string> {
  * access token, so the issued token names the actor in its `act` claim. Checks no permissions;
  * `assertCanImpersonate` comes first.
  */
-export async function impersonationTokens(
-	actorAccessToken: string,
-	userId: string
-): Promise<ImpersonationTokens> {
+export async function impersonationTokens({
+	actorAccessToken,
+	userId
+}: {
+	actorAccessToken: string;
+	userId: string;
+}): Promise<ImpersonationTokens> {
 	const tokens = await OIDC.core.exchangeToken({
 		subjectToken: await subjectTokenFor(userId),
 		actorToken: actorAccessToken,

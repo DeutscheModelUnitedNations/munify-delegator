@@ -7,16 +7,19 @@ interface Student {
  * members first), so a group payment can name the ones it covers. Only the supervisors in
  * `candidates` are known by user; the caller is left out.
  */
-export function findOtherSupervisors<U extends { id: string }>(
+export function findOtherSupervisors<U extends { id: string }>({
+	me,
+	candidates
+}: {
 	me:
 		| {
 				user: { id: string };
 				supervisedDelegationMembers: Student[];
 				supervisedSingleParticipants: Student[];
 		  }
-		| undefined,
-	candidates: { id: string; user: U }[]
-): U[] {
+		| undefined;
+	candidates: { id: string; user: U }[];
+}): U[] {
 	if (!me) return [];
 	const students = [...me.supervisedDelegationMembers, ...me.supervisedSingleParticipants];
 	const presentSupervisorIds = new Set(

@@ -15,7 +15,7 @@ export const paymentTransaction = snakeCase.table(
 		payerParticipantId: participantRef()
 	},
 	(table) => [
-		trigramIndex('payment_transaction_id_trgm', table.id),
+		trigramIndex({ name: 'payment_transaction_id_trgm', column: table.id }),
 		index('payment_transaction_payer_participant_id_idx').using(
 			'btree',
 			table.payerParticipantId.asc().nullsLast()

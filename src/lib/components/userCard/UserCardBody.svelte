@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { fetchUserCardRoles, hasConferenceAccess, participationStage } from './userCardRoles';
 	import UserCardHeader from './UserCardHeader.svelte';
@@ -25,7 +26,7 @@
 
 	let { userId, conferenceId, mode, activeTab = $bindable() }: Props = $props();
 
-	const roles = $derived(await fetchUserCardRoles(userId, conferenceId));
+	const roles = $derived(await fetchUserCardRoles({ userId, conferenceId }));
 
 	const user = $derived(roles.users.at(0));
 	const delegationMember = $derived(roles.delegationMembers.at(0));
@@ -63,7 +64,9 @@
 			delegate: !!delegationMember
 		})
 	);
-	const shownTab = $derived(shownUserCardTab(activeTab, tabs, conferenceState));
+	const shownTab = $derived(
+		shownUserCardTab({ picked: activeTab, visible: tabs, state: conferenceState })
+	);
 
 	const delegationId = $derived(delegationMember?.delegation.id);
 	const singleParticipantId = $derived(singleParticipant?.id);
@@ -132,7 +135,7 @@
 		<div class="flex-1 overflow-y-auto p-3 sm:p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
 			<!-- Keyed so every tab fetches what it shows when it is opened, behind its own skeleton. -->
 			{#key shownTab}
-				<svelte:boundary onerror={(error) => console.error('Failed to load user card tab:', error)}>
+				<svelte:boundary onerror={(error) => logger.error('Failed to load user card tab', error)}>
 					{@render tabContent(shownTab)}
 
 					{#snippet pending()}

@@ -31,7 +31,7 @@
 				getNationRegionalGroup(nation.alpha3Code) ?? ''
 			]);
 
-			downloadCSV(header, data, `all_nations_${conferenceId}.csv`);
+			downloadCSV({ header, data, filename: `all_nations_${conferenceId}.csv` });
 		} finally {
 			loading = false;
 		}

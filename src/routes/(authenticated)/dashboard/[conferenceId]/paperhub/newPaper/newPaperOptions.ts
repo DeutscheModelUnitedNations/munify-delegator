@@ -48,16 +48,26 @@ export function agendaItemOptions({
 }
 
 /** Introduction papers span committees, so they are saved without an agenda item. */
-export function newPaperAgendaItemId(type: PapertypeEnum, agendaItemId: string | undefined) {
+export function newPaperAgendaItemId({
+	type,
+	agendaItemId
+}: {
+	type: PapertypeEnum;
+	agendaItemId: string | undefined;
+}) {
 	return type === 'INTRODUCTION_PAPER' ? undefined : agendaItemId;
 }
 
 /** Why a new paper cannot be saved yet, or null if it can. */
-export function newPaperSaveError(
-	type: PapertypeEnum,
-	agendaItemId: string | undefined,
-	content: unknown
-): string | null {
+export function newPaperSaveError({
+	type,
+	agendaItemId,
+	content
+}: {
+	type: PapertypeEnum;
+	agendaItemId: string | undefined;
+	content: unknown;
+}): string | null {
 	if (!agendaItemId && type !== 'INTRODUCTION_PAPER') return m.paperAgendaItemRequired();
 	if (content === undefined) return m.paperContentRequired();
 	return null;

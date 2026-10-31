@@ -3,7 +3,7 @@ import formatNames from '#lib/helpers/formatNames';
 import type * as schema from '#api/db/schema/index';
 import { isValidManualTargets } from '#lib/helpers/seatPlanning/baselines';
 import { regionalGroups } from '#lib/helpers/seatPlanning/unMembers';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
@@ -11,17 +11,6 @@ import { apiError } from '#api/services/errors/apiError';
  */
 
 type RegionalBaseline = (typeof schema.regionalBaseline.enumValues)[number];
-
-/**
- * Delegation members that block removing the nation role `roleId` from `committeeId`: members of
- * the delegation holding that role who are assigned to exactly that committee.
- */
-export function seatRemovalBlockersWhere(committeeId: string, roleId: string) {
-	return {
-		assignedCommitteeId: committeeId,
-		delegation: { assignedRoleId: roleId }
-	};
-}
 
 interface AssignedMember {
 	delegationId: string;
@@ -48,10 +37,13 @@ interface SeatCountCommittee {
  * Every nation entry of a committee is worth `numOfSeatsPerDelegation` seats, every NSA its
  * `seatAmount`.
  */
-export function totalSeats(
-	committees: SeatCountCommittee[],
-	nonStateActors: { seatAmount: number | null }[]
-) {
+export function totalSeats({
+	committees,
+	nonStateActors
+}: {
+	committees: SeatCountCommittee[];
+	nonStateActors: { seatAmount: number | null }[];
+}) {
 	const committeeSeats = committees.reduce(
 		(sum, committee) => sum + committee.roles.length * committee.numOfSeatsPerDelegation,
 		0
@@ -64,18 +56,21 @@ export function totalSeats(
  * Throws when `numOfSeatsPerDelegation` would leave a delegation with more members assigned to the
  * committee than it has seats there.
  */
-export function assertSeatsPerDelegationAllowed(
-	numOfSeatsPerDelegation: number | null | undefined,
-	assignedMembers: AssignedMember[]
-) {
+export function assertSeatsPerDelegationAllowed({
+	numOfSeatsPerDelegation,
+	assignedMembers
+}: {
+	numOfSeatsPerDelegation: number | null | undefined;
+	assignedMembers: AssignedMember[];
+}) {
 	// not part of the update
 	if (numOfSeatsPerDelegation == null) return;
 	if (numOfSeatsPerDelegation < 1) {
-		throw apiError('INVALID_INPUT', m.seatsPerDelegationAtLeastOne());
+		throw apiError({ code: 'INVALID_INPUT', message: m.seatsPerDelegationAtLeastOne() });
 	}
 	const min = minSeatsPerDelegation(assignedMembers);
 	if (numOfSeatsPerDelegation < min) {
-		throw apiError('CONFLICT', m.seatsPerDelegationBelowAssigned({ min }));
+		throw apiError({ code: 'CONFLICT', message: m.seatsPerDelegationBelowAssigned({ min }) });
 	}
 }
 
@@ -100,7 +95,7 @@ export function lockedCommitteeSeats(delegations: DelegationWithMembers[]) {
 		for (const { assignedCommitteeId, user } of members) {
 			if (!assignedCommitteeId) continue;
 			const names = namesByCommittee.get(assignedCommitteeId) ?? [];
-			names.push(formatNames(user.givenName, user.familyName));
+			names.push(formatNames({ givenName: user.givenName, familyName: user.familyName }));
 			namesByCommittee.set(assignedCommitteeId, names);
 		}
 
@@ -127,7 +122,10 @@ interface NonStateActorUpdateInput {
 export function nonStateActorUpdateData(
 	data: NonStateActorUpdateInput
 ): Partial<typeof schema.conferenceRole.$inferInsert> {
-	assertSeatsPerDelegationAllowed(data.seatAmount, []);
+	assertSeatsPerDelegationAllowed({
+		numOfSeatsPerDelegation: data.seatAmount,
+		assignedMembers: []
+	});
 
 	return {
 		name: data.name ?? undefined,
@@ -164,28 +162,46 @@ export function committeeUpdateData(
  * A committee can only be deleted while nobody is assigned to it and none of its agenda items has
  * papers, which would otherwise lose their topic. Agenda items without papers are deleted with it.
  */
-export function assertCommitteeDeletable(assignedMembers: number, papers: number) {
+export function assertCommitteeDeletable({
+	assignedMembers,
+	papers
+}: {
+	assignedMembers: number;
+	papers: number;
+}) {
 	if (assignedMembers > 0) {
-		throw apiError('CONFLICT', m.committeeDeleteBlocked({ count: assignedMembers }));
+		throw apiError({
+			code: 'CONFLICT',
+			message: m.committeeDeleteBlocked({ count: assignedMembers })
+		});
 	}
 	if (papers > 0) {
-		throw apiError('CONFLICT', m.committeeDeleteBlockedByPapers({ count: papers }));
+		throw apiError({
+			code: 'CONFLICT',
+			message: m.committeeDeleteBlockedByPapers({ count: papers })
+		});
 	}
 }
 
 /** A non-state actor cannot be deleted while a delegation is assigned to it */
 export function assertNonStateActorDeletable(assignedDelegations: number) {
 	if (assignedDelegations > 0) {
-		throw apiError('CONFLICT', m.nonStateActorDeleteBlocked());
+		throw apiError({ code: 'CONFLICT', message: m.nonStateActorDeleteBlocked() });
 	}
 }
 
 /** Manual baselines need usable targets; templates ignore them (they are kept for later) */
-export function assertRegionalBaselineTargets(baseline: RegionalBaseline, targets: number[]) {
+export function assertRegionalBaselineTargets({
+	baseline,
+	targets
+}: {
+	baseline: RegionalBaseline;
+	targets: number[];
+}) {
 	if (baseline === 'MANUAL' && !isValidManualTargets(targets)) {
-		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
+		throw apiError({ code: 'INVALID_INPUT', message: m.regionalBaselineTargetsInvalid() });
 	}
 	if (targets.length > 0 && targets.length !== regionalGroups.length) {
-		throw apiError('INVALID_INPUT', m.regionalBaselineTargetsInvalid());
+		throw apiError({ code: 'INVALID_INPUT', message: m.regionalBaselineTargetsInvalid() });
 	}
 }

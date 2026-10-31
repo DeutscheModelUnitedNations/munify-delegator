@@ -51,10 +51,13 @@ export type PaperExportJob =
 	| { kind: 'resolution'; header: ResolutionHeaderData; docNumber: string | undefined }
 	| { kind: 'paper'; meta: PaperTypstMeta; docNumber: string };
 
-export function paperExportJob(
-	paper: ExportablePaper,
-	resolutionHeaderData: ResolutionHeaderData | undefined
-): PaperExportJob {
+export function paperExportJob({
+	paper,
+	resolutionHeaderData
+}: {
+	paper: ExportablePaper;
+	resolutionHeaderData: ResolutionHeaderData | undefined;
+}): PaperExportJob {
 	if (paper.type === 'WORKING_PAPER') {
 		return {
 			kind: 'resolution',

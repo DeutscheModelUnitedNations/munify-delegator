@@ -9,13 +9,17 @@ const targetTracks = [{ id: 't1', name: 'Main' }];
 
 describe('matchingTargetTrackIds', () => {
 	test('finds the target tracks with the same names', () => {
-		expect(matchingTargetTrackIds(['s1'], sourceTracks, targetTracks)).toEqual(['t1']);
+		expect(matchingTargetTrackIds({ trackIds: ['s1'], sourceTracks, targetTracks })).toEqual([
+			't1'
+		]);
 	});
 
 	test('leaves out unknown tracks and those without a namesake on the target day', () => {
-		expect(matchingTargetTrackIds([], sourceTracks, targetTracks)).toEqual([]);
-		expect(matchingTargetTrackIds(['gone'], sourceTracks, targetTracks)).toEqual([]);
-		expect(matchingTargetTrackIds(['s2', 's1'], sourceTracks, targetTracks)).toEqual(['t1']);
+		expect(matchingTargetTrackIds({ trackIds: [], sourceTracks, targetTracks })).toEqual([]);
+		expect(matchingTargetTrackIds({ trackIds: ['gone'], sourceTracks, targetTracks })).toEqual([]);
+		expect(matchingTargetTrackIds({ trackIds: ['s2', 's1'], sourceTracks, targetTracks })).toEqual([
+			't1'
+		]);
 	});
 });
 
@@ -25,8 +29,8 @@ describe('copiedEntryArgs', () => {
 
 	test('moves the times to the target day and keeps everything else', () => {
 		expect(
-			copiedEntryArgs(
-				{
+			copiedEntryArgs({
+				entry: {
 					name: 'Opening',
 					description: 'Welcome',
 					startTime: new Date('2026-03-12T09:00:00Z'),
@@ -40,7 +44,7 @@ describe('copiedEntryArgs', () => {
 				},
 				targetDay,
 				tracks
-			)
+			})
 		).toEqual({
 			calendarDayId: 'day2',
 			calendarTrackIds: ['t1'],
@@ -58,8 +62,8 @@ describe('copiedEntryArgs', () => {
 
 	test('passes missing optional fields as null, and no survey options as everybody', () => {
 		expect(
-			copiedEntryArgs(
-				{
+			copiedEntryArgs({
+				entry: {
 					name: 'Break',
 					startTime: '2026-03-12T15:00:00Z',
 					endTime: '2026-03-12T15:15:00Z',
@@ -68,7 +72,7 @@ describe('copiedEntryArgs', () => {
 				},
 				targetDay,
 				tracks
-			)
+			})
 		).toMatchObject({
 			calendarTrackIds: [],
 			description: null,
@@ -92,25 +96,49 @@ describe('retargetTrackRange', () => {
 	];
 
 	test('maps both ends to the tracks of the same name', () => {
-		expect(retargetTrackRange({ from: 's1', to: 's2' }, source, target)).toEqual({
+		expect(
+			retargetTrackRange({
+				range: { from: 's1', to: 's2' },
+				sourceTracks: source,
+				targetTracks: target
+			})
+		).toEqual({
 			from: 't1',
 			to: 't2'
 		});
 	});
 
 	test('a single track keeps both ends together', () => {
-		expect(retargetTrackRange({ from: 's1', to: null }, source, target)).toEqual({
+		expect(
+			retargetTrackRange({
+				range: { from: 's1', to: null },
+				sourceTracks: source,
+				targetTracks: target
+			})
+		).toEqual({
 			from: 't1',
 			to: 't1'
 		});
 	});
 
 	test('falls back to the first track of the target day', () => {
-		expect(retargetTrackRange({ from: 'x', to: null }, source, target)).toEqual({
+		expect(
+			retargetTrackRange({
+				range: { from: 'x', to: null },
+				sourceTracks: source,
+				targetTracks: target
+			})
+		).toEqual({
 			from: 't0',
 			to: 't0'
 		});
-		expect(retargetTrackRange({ from: null, to: null }, source, [])).toEqual({
+		expect(
+			retargetTrackRange({
+				range: { from: null, to: null },
+				sourceTracks: source,
+				targetTracks: []
+			})
+		).toEqual({
 			from: null,
 			to: null
 		});

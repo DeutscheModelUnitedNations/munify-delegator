@@ -7,7 +7,7 @@ const UTF8_BOM = '\uFEFF';
 /**
  * Encodes CSV content with the specified encoding
  */
-const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
+const encodeContent = ({ content, encoding }: { content: string; encoding: CsvEncoding }): Blob => {
 	switch (encoding) {
 		case 'utf-8-bom':
 			return new Blob([UTF8_BOM + content], { type: 'text/csv;charset=utf-8' });
@@ -31,48 +31,66 @@ const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
  * Downloads data as a CSV file using the stored settings, unless the file's reader dictates its
  * delimiter or encoding (the badge generator reads comma-separated UTF-8 only).
  */
-export const downloadCSV = (
-	header: string[],
-	data: string[][],
-	filename: string,
-	overrideDelimiter?: CsvDelimiter,
-	overrideEncoding?: CsvEncoding
-): void => {
+export const downloadCSV = ({
+	header,
+	data,
+	filename,
+	overrideDelimiter,
+	overrideEncoding
+}: {
+	header: string[];
+	data: string[][];
+	filename: string;
+	overrideDelimiter?: CsvDelimiter;
+	overrideEncoding?: CsvEncoding;
+}): void => {
 	const settings = csvSettings.current;
 	const delimiter = overrideDelimiter ?? settings.delimiter;
 
 	const csv = [header, ...data];
 	const csvContent = stringify(csv, { delimiter });
-	const blob = encodeContent(csvContent, overrideEncoding ?? settings.encoding);
-	triggerDownload(blob, filename);
+	const blob = encodeContent({
+		content: csvContent,
+		encoding: overrideEncoding ?? settings.encoding
+	});
+	triggerDownload({ blob, filename });
 };
 
 /**
  * Downloads data as a JSON file
  */
-export const downloadJSON = (data: object, filename: string): void => {
+export const downloadJSON = ({ data, filename }: { data: object; filename: string }): void => {
 	const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-	triggerDownload(blob, filename);
+	triggerDownload({ blob, filename });
 };
 
 /**
  * Downloads generated PDF bytes as a file
  */
-export const downloadPDF = (bytes: Uint8Array, filename: string): void => {
-	triggerDownload(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }), filename);
+export const downloadPDF = ({ bytes, filename }: { bytes: Uint8Array; filename: string }): void => {
+	triggerDownload({
+		blob: new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
+		filename
+	});
 };
 
 /**
  * Downloads a stored document, from its URL, under the given file name
  */
-export const downloadFromURL = async (url: string, filename: string): Promise<void> => {
-	triggerDownload(await (await fetch(url)).blob(), filename);
+export const downloadFromURL = async ({
+	url,
+	filename
+}: {
+	url: string;
+	filename: string;
+}): Promise<void> => {
+	triggerDownload({ blob: await (await fetch(url)).blob(), filename });
 };
 
 /**
  * Triggers a browser download for a blob
  */
-const triggerDownload = (blob: Blob, filename: string): void => {
+const triggerDownload = ({ blob, filename }: { blob: Blob; filename: string }): void => {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;

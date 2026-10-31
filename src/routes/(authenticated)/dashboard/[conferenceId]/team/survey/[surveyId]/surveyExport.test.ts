@@ -48,11 +48,11 @@ const unassignedMember: ExportDelegationMember = {
 const single: ExportSingleParticipant = { user: user('sp1'), assignedRole: { name: 'Press' } };
 const singleWithoutRole: ExportSingleParticipant = { user: user('sp2'), assignedRole: null };
 
-const roleMap = buildUserRoleMap(
-	[nationMember, nationMemberWithoutCommittee, nsaMember, unassignedMember],
-	[single, singleWithoutRole],
+const roleMap = buildUserRoleMap({
+	delegationMembers: [nationMember, nationMemberWithoutCommittee, nsaMember, unassignedMember],
+	singleParticipants: [single, singleWithoutRole],
 	nationName
-);
+});
 
 describe('buildUserRoleMap', () => {
 	test('maps every assigned participant to their seat', () => {
@@ -65,19 +65,23 @@ describe('buildUserRoleMap', () => {
 	});
 
 	test('lets a single participant role win over a delegation seat', () => {
-		const map = buildUserRoleMap(
-			[nationMember],
-			[{ user: nationMember.user, assignedRole: { name: 'Press' } }],
+		const map = buildUserRoleMap({
+			delegationMembers: [nationMember],
+			singleParticipants: [{ user: nationMember.user, assignedRole: { name: 'Press' } }],
 			nationName
-		);
+		});
 		expect(map.get('dm1')?.roleType).toBe('SingleParticipant');
 	});
 });
 
 describe('roleInfoOf', () => {
 	test('returns empty columns for users without a seat', () => {
-		expect(roleInfoOf(roleMap, 'dm1').roleName).toBe('Nation deu');
-		expect(roleInfoOf(roleMap, 'nobody')).toEqual({ roleType: '', roleName: '', committee: '' });
+		expect(roleInfoOf({ userRoleMap: roleMap, userId: 'dm1' }).roleName).toBe('Nation deu');
+		expect(roleInfoOf({ userRoleMap: roleMap, userId: 'nobody' })).toEqual({
+			roleType: '',
+			roleName: '',
+			committee: ''
+		});
 	});
 });
 
@@ -90,24 +94,32 @@ describe('formatBirthday', () => {
 
 describe('buildUserRow', () => {
 	test('fills every column, empty for missing values, plus extra columns', () => {
-		const row = buildUserRow(
-			{ ...user('u'), familyName: null, givenName: null, email: null, pronouns: 'they/them' },
-			{ roleType: 'NSA', roleName: 'Greenpeace', committee: '' },
-			['Option A']
-		);
+		const row = buildUserRow({
+			user: { ...user('u'), familyName: null, givenName: null, email: null, pronouns: 'they/them' },
+			roleInfo: { roleType: 'NSA', roleName: 'Greenpeace', committee: '' },
+			additionalColumns: ['Option A']
+		});
 		expect(row).toEqual(['u', '', '', '', 'they/them', '', 'NSA', 'Greenpeace', '', 'Option A']);
 	});
 
 	test('has no extra columns by default', () => {
-		expect(buildUserRow(user('u'), roleInfoOf(roleMap, 'u'))).toHaveLength(9);
+		expect(
+			buildUserRow({ user: user('u'), roleInfo: roleInfoOf({ userRoleMap: roleMap, userId: 'u' }) })
+		).toHaveLength(9);
 	});
 });
 
 describe('byFamilyName', () => {
 	test('sorts rows by their family name column', () => {
 		const rows = [
-			buildUserRow(user('b', 'Zeta'), roleInfoOf(roleMap, 'b')),
-			buildUserRow(user('a', 'Alpha'), roleInfoOf(roleMap, 'a'))
+			buildUserRow({
+				user: user('b', 'Zeta'),
+				roleInfo: roleInfoOf({ userRoleMap: roleMap, userId: 'b' })
+			}),
+			buildUserRow({
+				user: user('a', 'Alpha'),
+				roleInfo: roleInfoOf({ userRoleMap: roleMap, userId: 'a' })
+			})
 		];
 		expect(rows.sort(byFamilyName).map((r) => r[0])).toEqual(['a', 'b']);
 	});
@@ -115,9 +127,9 @@ describe('byFamilyName', () => {
 
 describe('collectNotAnswered', () => {
 	test('lists seated participants who did not answer, each once', () => {
-		const result = collectNotAnswered(
-			new Set(['dm2']),
-			[
+		const result = collectNotAnswered({
+			answeredUserIds: new Set(['dm2']),
+			participants: [
 				nationMember,
 				nationMemberWithoutCommittee,
 				nsaMember,
@@ -125,8 +137,8 @@ describe('collectNotAnswered', () => {
 				single,
 				nationMember
 			],
-			roleMap
-		);
+			userRoleMap: roleMap
+		});
 		expect(result.map((r) => r.user.id)).toEqual(['dm1', 'dm3', 'sp1']);
 		expect(result[0].roleInfo.committee).toBe('GA');
 	});

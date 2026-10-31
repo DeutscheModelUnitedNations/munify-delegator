@@ -24,7 +24,13 @@
 
 	let { delegationId, conferenceId }: Props = $props();
 
-	async function fetchApplication(delegationId: string, conferenceId: string) {
+	async function fetchApplication({
+		delegationId,
+		conferenceId
+	}: {
+		delegationId: string;
+		conferenceId: string;
+	}) {
 		const [delegation, conference] = await Promise.all([
 			client.liveQuery.delegation({
 				__args: { id: delegationId },
@@ -50,11 +56,14 @@
 		return { delegation, conference };
 	}
 
-	const data = $derived(await fetchApplication(delegationId, conferenceId));
+	const data = $derived(await fetchApplication({ delegationId, conferenceId }));
 	const delegation = $derived(data.delegation);
 	const conferenceState = $derived(data.conference.state);
 	const wishes = $derived(
-		delegationWishes(delegation.appliedForRoles, getFullTranslatedCountryNameFromISO3Code)
+		delegationWishes({
+			applications: delegation.appliedForRoles,
+			countryName: getFullTranslatedCountryNameFromISO3Code
+		})
 	);
 
 	/** Saves another school for the delegation: a known one, a new name, or none. */

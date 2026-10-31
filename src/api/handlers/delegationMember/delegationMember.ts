@@ -47,19 +47,28 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const caller = ctx.mustBeLoggedIn().sub;
-			const createdId = await codeGuessLimiter.attempt(caller, () =>
-				joinDelegationByEntryCode(caller, args.conferenceId, args.entryCode, {
-					schoolId: args.schoolId,
-					schoolName: args.schoolName
-				})
-			);
+			const createdId = await codeGuessLimiter.attempt({
+				key: caller,
+				run: () =>
+					joinDelegationByEntryCode({
+						userId: caller,
+						conferenceId: args.conferenceId,
+						entryCode: args.entryCode,
+						school: {
+							schoolId: args.schoolId,
+							schoolName: args.schoolName
+						}
+					})
+			});
 
 			delegationMemberPubsub.created();
 			conferenceParticipantPubsub.updated();
 			if (args.schoolName) schoolPubsub.created();
 
 			return db.query.delegationMember
-				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, createdId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: createdId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -72,7 +81,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteDelegationMember(ctx, args.id);
+			await assertCanDeleteDelegationMember({ ctx, id: args.id });
 			const delegationId = await removeDelegationMember(args.id);
 
 			delegationMemberPubsub.removed();
@@ -104,11 +113,14 @@ schemaBuilder.mutationFields((t) => ({
 			assignedCommitteeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateAppliedDelegationMember(ctx, args.conferenceId);
+			await assertCanCreateAppliedDelegationMember({ ctx, conferenceId: args.conferenceId });
 
-			await assertOfferedIn(args.conferenceId, {
-				roleId: args.assignedRoleId,
-				committeeId: args.assignedCommitteeId
+			await assertOfferedIn({
+				conferenceId: args.conferenceId,
+				ref: {
+					roleId: args.assignedRoleId,
+					committeeId: args.assignedCommitteeId
+				}
 			});
 
 			const memberId = await placeUserInAssignedDelegation(args);
@@ -119,10 +131,12 @@ schemaBuilder.mutationFields((t) => ({
 			waitingListEntryPubsub.updated();
 			// An existing single registration for the same person is cleared out of the way.
 			singleParticipantPubsub.removed();
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember
-				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, memberId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: memberId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})
@@ -142,13 +156,19 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await moveMemberToCommittee(
-				await assertCanMoveDelegationMemberToCommittee(ctx, args.id, args.assignedCommitteeId)
+				await assertCanMoveDelegationMemberToCommittee({
+					ctx,
+					id: args.id,
+					assignedCommitteeId: args.assignedCommitteeId
+				})
 			);
 
 			delegationMemberPubsub.updated(args.id);
 
 			return db.query.delegationMember
-				.findFirst(query(await queryAllowed(ctx.abilities.delegationMember, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.delegationMember, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})
@@ -179,7 +199,11 @@ schemaBuilder.mutationFields((t) => ({
 			assignments: t.arg({ type: [CommitteeAssignmentInput], required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanAssignCommittees(ctx, args.conferenceId, args.assignments);
+			await assertCanAssignCommittees({
+				ctx,
+				conferenceId: args.conferenceId,
+				assignments: args.assignments
+			});
 			await assignCommittees(args.assignments);
 
 			delegationMemberPubsub.updated();
@@ -212,7 +236,7 @@ schemaBuilder.mutationFields((t) => ({
 			headDelegateMemberIds: t.arg.idList()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanSwitchDelegationMemberSeats(ctx, args);
+			await assertCanSwitchDelegationMemberSeats({ ctx, args });
 			const { memberIds, delegationIds, createdDelegation } = await switchSeats(args);
 
 			for (const id of memberIds) delegationMemberPubsub.updated(id);
@@ -220,7 +244,7 @@ schemaBuilder.mutationFields((t) => ({
 			delegationMemberPubsub.updated();
 			for (const id of delegationIds) delegationPubsub.updated(id);
 			if (createdDelegation) delegationPubsub.created();
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return db.query.delegationMember.findMany(
 				query(

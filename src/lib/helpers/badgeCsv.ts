@@ -49,10 +49,13 @@ export type BadgeSeat =
 	| { kind: 'image'; label: string; image: string };
 
 /** One person's nametag. */
-export function personBadge(
-	person: { name: string; pronouns?: string | null; id: string; mediaConsentStatus?: string },
-	seat: BadgeSeat
-): Badge {
+export function personBadge({
+	person,
+	seat
+}: {
+	person: { name: string; pronouns?: string | null; id: string; mediaConsentStatus?: string };
+	seat: BadgeSeat;
+}): Badge {
 	const shared = {
 		name: person.name,
 		pronouns: person.pronouns,
@@ -94,11 +97,15 @@ export interface PlacardCommittee {
  * represents get one placard each, named by `unseatedNonStateActors`. Sorted by committee, then
  * by name.
  */
-export function placardBadges(
-	committees: readonly PlacardCommittee[],
-	unseatedNonStateActors: readonly string[],
-	countryName: (alpha3Code: string) => string
-): Badge[] {
+export function placardBadges({
+	committees,
+	unseatedNonStateActors,
+	countryName
+}: {
+	committees: readonly PlacardCommittee[];
+	unseatedNonStateActors: readonly string[];
+	countryName: (alpha3Code: string) => string;
+}): Badge[] {
 	const byName = (a: Badge, b: Badge) => a.countryName.localeCompare(b.countryName);
 	const seated = committees
 		.toSorted((a, b) => a.abbreviation.localeCompare(b.abbreviation))

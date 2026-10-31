@@ -38,7 +38,7 @@ export interface DelegationPlan {
 /** Entry codes use the app's alphabet, so a seeded one looks like one the app generated. */
 const entryCode = () => faker.string.fromCharacters('6789BCDFGHJKLMNPQRTW', 6);
 
-export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
+export function addDelegation({ cs, plan }: { cs: ConferenceSeed; plan: DelegationPlan }) {
 	const delegationId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
 	const fixedCode = plan.entryCode;
 	cs.batch.delegation.push({
@@ -108,7 +108,7 @@ export interface SinglePlan {
 	withoutTexts?: boolean;
 }
 
-export function addSingle(cs: ConferenceSeed, plan: SinglePlan) {
+export function addSingle({ cs, plan }: { cs: ConferenceSeed; plan: SinglePlan }) {
 	const singleId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
 	const participant = cs.participant(plan.userId);
 	const participantId = participant.id;
@@ -138,7 +138,7 @@ export interface SupervisorPlan {
 	singleIds?: string[];
 }
 
-export function addSupervisor(cs: ConferenceSeed, plan: SupervisorPlan) {
+export function addSupervisor({ cs, plan }: { cs: ConferenceSeed; plan: SupervisorPlan }) {
 	const supervisorId = plan.id ? cs.rowId(plan.id) : faker.database.mongodbObjectId();
 	const fixedCode = plan.code;
 	const participant = cs.participant(plan.userId);
@@ -173,7 +173,15 @@ export type StatusPlan = Partial<
 > & { withDocumentNumber?: boolean; withAccessCard?: boolean };
 
 /** Fills in the person's status in the conference; returns their `conferenceParticipant` id. */
-export function addStatus(cs: ConferenceSeed, userId: string, plan: StatusPlan) {
+export function addStatus({
+	cs,
+	userId,
+	plan
+}: {
+	cs: ConferenceSeed;
+	userId: string;
+	plan: StatusPlan;
+}) {
 	const { withDocumentNumber, withAccessCard, ...status } = plan;
 	const row = cs.participant(userId);
 	Object.assign(row, {
@@ -198,12 +206,17 @@ export const allDone: StatusPlan = {
 const paymentReference = () =>
 	faker.string.fromCharacters('ACDEFHJKMNPRTUVWXY3479', 16).replace(/(.{4})(?=.)/g, '$1-');
 
-export function addPayment(
-	cs: ConferenceSeed,
-	payerId: string,
-	forUserIds: string[],
-	received: boolean
-) {
+export function addPayment({
+	cs,
+	payerId,
+	forUserIds,
+	received
+}: {
+	cs: ConferenceSeed;
+	payerId: string;
+	forUserIds: string[];
+	received: boolean;
+}) {
 	// The reference is the row's primary key, unique across conferences.
 	const id = cs.world.uniqueCode(paymentReference);
 	const createdAt = faker.date.recent({ days: 20 });
@@ -226,12 +239,17 @@ export function addPayment(
 /** Occasions the team took off the certificates: a scan there is recorded, never certified. */
 const HIDDEN_FROM_CERTIFICATES = new Set(['Scanner-Test']);
 
-export function addAttendance(
-	cs: ConferenceSeed,
-	statusId: string,
-	recordedById: string,
-	occasions: string[]
-) {
+export function addAttendance({
+	cs,
+	statusId,
+	recordedById,
+	occasions
+}: {
+	cs: ConferenceSeed;
+	statusId: string;
+	recordedById: string;
+	occasions: string[];
+}) {
 	occasions.forEach((occasion, day) => {
 		const timestamp = new Date(cs.startConference);
 		timestamp.setDate(timestamp.getDate() + day);

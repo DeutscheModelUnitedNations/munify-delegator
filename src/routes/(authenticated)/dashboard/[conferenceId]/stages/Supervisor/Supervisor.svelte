@@ -240,10 +240,10 @@
 						{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
 							<tr>
 								<td>
-									{formatNames(
-										rejectedParticipant.givenName ?? undefined,
-										rejectedParticipant.familyName ?? undefined
-									)}
+									{formatNames({
+										givenName: rejectedParticipant.givenName ?? undefined,
+										familyName: rejectedParticipant.familyName ?? undefined
+									})}
 								</td>
 							</tr>
 						{/each}

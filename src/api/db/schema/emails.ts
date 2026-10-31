@@ -8,11 +8,12 @@ import {
 	uniqueIndex,
 	index
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { defaultIdAndTimestamps } from './helpers';
 import { conferenceRef } from './conference';
-import { userRef } from './users';
+import { user } from './users';
 
-/** The automatic mails to participants and supervisors, what each conference sends, and what was sent. */
+/** The mails to participants, supervisors and the team, what each conference sends, and what was sent. */
 
 /** Every kind of automatic mail; `#lib/helpers/emailKinds.ts` describes them. */
 export const emailKind = pgEnum('email_kind', [
@@ -41,6 +42,12 @@ export const emailKind = pgEnum('email_kind', [
  * team chose not to send when it switched a kind on (`notifyExisting: false`).
  */
 export const emailStatus = pgEnum('email_status', ['SENDING', 'SENT', 'FAILED', 'SKIPPED']);
+
+/**
+ * `AUTOMATIC` for what the sweep sends, `MANUAL` for what the team sends by hand: a mail sent again
+ * from the user card, or a team invitation.
+ */
+export const emailTrigger = pgEnum('email_trigger', ['AUTOMATIC', 'MANUAL']);
 
 /** Which automatic mails a conference sends. A kind without a row is off. */
 export const conferenceEmailSetting = snakeCase.table(
@@ -112,9 +119,10 @@ export const conferenceEmailFooter = snakeCase.table(
 );
 
 /**
- * One automatic mail to one person. The row is written before the mail goes out and is unique per
+ * One mail to one person. An automatic row is written before the mail goes out and is unique per
  * conference, kind, person and `subjectKey` (what the mail is about: a role, a status, a student),
- * so a mail is sent once however often the sweep runs, on however many instances.
+ * so a mail is sent once however often the sweep runs, on however many instances. A manual row is
+ * one more send of its own, and a mail sent by hand counts as sent for the sweep (reminders aside).
  */
 export const emailLog = snakeCase.table(
 	'email_log',
@@ -122,8 +130,12 @@ export const emailLog = snakeCase.table(
 		...defaultIdAndTimestamps,
 		conferenceId: conferenceRef('cascade'),
 		kind: emailKind().notNull(),
-		userId: userRef('cascade'),
+		/** None for a team invitation, which goes to an address; its `subjectKey` is the invitation. */
+		userId: text().references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		subjectKey: text().notNull(),
+		trigger: emailTrigger().default('AUTOMATIC').notNull(),
+		/** Who sent a manual mail. */
+		sentById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
 		status: emailStatus().default('SENDING').notNull(),
 		/** The address the mail went to, as it was then. */
 		email: text(),
@@ -132,13 +144,15 @@ export const emailLog = snakeCase.table(
 		sentAt: timestamp({ precision: 3 })
 	},
 	(table) => [
-		uniqueIndex('email_log_conference_id_kind_user_id_subject_key_key').using(
-			'btree',
-			table.conferenceId.asc().nullsLast(),
-			table.kind.asc().nullsLast(),
-			table.userId.asc().nullsLast(),
-			table.subjectKey.asc().nullsLast()
-		),
+		uniqueIndex('email_log_conference_id_kind_user_id_subject_key_key')
+			.using(
+				'btree',
+				table.conferenceId.asc().nullsLast(),
+				table.kind.asc().nullsLast(),
+				table.userId.asc().nullsLast(),
+				table.subjectKey.asc().nullsLast()
+			)
+			.where(sql`${table.trigger} = 'AUTOMATIC'`),
 		index('email_log_conference_id_created_at_idx').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),

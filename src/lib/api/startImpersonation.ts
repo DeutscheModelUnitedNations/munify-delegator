@@ -4,6 +4,7 @@ import { client } from '#lib/api/rumbleClient/client';
 import { m } from '#lib/paraglide/messages';
 import { genericPromiseToastMessages } from '#lib/utils/toast';
 import { toast } from 'svelte-sonner';
+import { logger } from '#lib/logger';
 
 /**
  * Starts impersonating `targetUserId` and reloads into their dashboard. Failures are reported
@@ -17,7 +18,7 @@ export async function startImpersonation(targetUserId: string) {
 		await goto(resolve('dashboard'));
 		window.location.reload();
 	} catch (error) {
-		console.error('Failed to start impersonation:', error);
+		logger.error('Failed to start impersonation', error);
 		toast.error(m.impersonationFailed());
 	}
 }

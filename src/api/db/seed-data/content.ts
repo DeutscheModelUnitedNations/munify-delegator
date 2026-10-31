@@ -14,33 +14,36 @@ type TipTapNode = {
 	content?: TipTapNode[];
 };
 
-const text = (value: string, marks: string[] = []): TipTapNode =>
+const text = ({ value, marks = [] }: { value: string; marks?: string[] }): TipTapNode =>
 	marks.length > 0
 		? { type: 'text', text: value, marks: marks.map((type) => ({ type })) }
 		: { type: 'text', text: value };
 const paragraph = (...content: TipTapNode[]): TipTapNode => ({ type: 'paragraph', content });
 const bulletList = (...items: string[]): TipTapNode => ({
 	type: 'bulletList',
-	content: items.map((item) => ({ type: 'listItem', content: [paragraph(text(item))] }))
+	content: items.map((item) => ({ type: 'listItem', content: [paragraph(text({ value: item }))] }))
 });
 
 /** A paper in the paper editor's format: a title, a few paragraphs and a list. */
-export function paperDocument(title: string, version = 1) {
+export function paperDocument({ title, version = 1 }: { title: string; version?: number }) {
 	return {
 		type: 'doc',
 		content: [
-			paragraph(text(title, ['bold'])),
+			paragraph(text({ value: title, marks: ['bold'] })),
 			paragraph(
-				text('Die Delegation bekräftigt ihr Bekenntnis zur Charta der Vereinten Nationen und '),
-				text('fordert', ['italic']),
-				text(' ein entschlossenes, gemeinsames Handeln der Staatengemeinschaft.')
+				text({
+					value: 'Die Delegation bekräftigt ihr Bekenntnis zur Charta der Vereinten Nationen und '
+				}),
+				text({ value: 'fordert', marks: ['italic'] }),
+				text({ value: ' ein entschlossenes, gemeinsames Handeln der Staatengemeinschaft.' })
 			),
 			paragraph(
-				text(
-					version > 1
-						? `Überarbeitete Fassung (Version ${version}): Quellen ergänzt, Forderungen präzisiert.`
-						: 'Erste Fassung, Quellen folgen.'
-				)
+				text({
+					value:
+						version > 1
+							? `Überarbeitete Fassung (Version ${version}): Quellen ergänzt, Forderungen präzisiert.`
+							: 'Erste Fassung, Quellen folgen.'
+				})
 			),
 			bulletList(
 				'Ausbau der internationalen Zusammenarbeit',
@@ -107,17 +110,18 @@ export function reviewComments(verdict: 'CHANGES_REQUESTED' | 'ACCEPTED') {
 	return {
 		type: 'doc',
 		content: [
-			{ type: 'heading', attrs: { level: 3 }, content: [text('Rückmeldung')] },
+			{ type: 'heading', attrs: { level: 3 }, content: [text({ value: 'Rückmeldung' })] },
 			{
 				type: 'blockquote',
-				content: [paragraph(text('Finanzierung über freiwillige Beiträge'))]
+				content: [paragraph(text({ value: 'Finanzierung über freiwillige Beiträge' }))]
 			},
 			paragraph(
-				text(
-					verdict === 'ACCEPTED'
-						? 'Sehr gut überarbeitet - das Papier ist angenommen.'
-						: 'Bitte die Finanzierung konkretisieren und Quellen angeben.'
-				)
+				text({
+					value:
+						verdict === 'ACCEPTED'
+							? 'Sehr gut überarbeitet - das Papier ist angenommen.'
+							: 'Bitte die Finanzierung konkretisieren und Quellen angeben.'
+				})
 			)
 		]
 	};
@@ -125,5 +129,5 @@ export function reviewComments(verdict: 'CHANGES_REQUESTED' | 'ACCEPTED') {
 
 /** A reviewer snippet; `{{…}}` marks a placeholder the reviewer fills in on insertion. */
 export function snippetDocument(body: string) {
-	return { type: 'doc', content: [paragraph(text(body))] };
+	return { type: 'doc', content: [paragraph(text({ value: body }))] };
 }

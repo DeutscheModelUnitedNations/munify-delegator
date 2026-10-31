@@ -189,7 +189,7 @@
 		<OpenUserCardButton user={student} />
 		<button
 			class="btn btn-ghost btn-xs btn-square text-error"
-			onclick={() => removeSupervision(conferenceSupervisor, student)}
+			onclick={() => removeSupervision({ supervisor: conferenceSupervisor, student })}
 			aria-label={m.removeSupervision()}
 			title={m.removeSupervision()}
 		>

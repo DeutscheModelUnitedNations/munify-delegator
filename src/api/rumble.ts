@@ -9,6 +9,7 @@ import {
 	OTEL_SERVICE_VERSION,
 	REDIS_URL
 } from '$app/env/private';
+import { graphqlLogger } from '#lib/logger';
 import { db, schema } from './db/db';
 import { context } from './context';
 
@@ -43,6 +44,7 @@ export const {
 		tracer: trace.getTracer(OTEL_SERVICE_NAME, OTEL_SERVICE_VERSION),
 		includeVariables: false
 	},
+	logger: { enabled: true, logger: graphqlLogger, includeVariables: false },
 	pothosConfig: {
 		plugins: [SimpleObjectsPlugin]
 	}

@@ -76,8 +76,8 @@ describe('CalendarEditor', () => {
 
 	test('a drag shows the entry where it would land, and saves it on release', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'move', { minutes: 550, unit: 0.5 });
-		editor.moveDrag({ minutes: 610, unit: 1.5 }, 20);
+		editor.beginEntryDrag({ entryId: 'e1', mode: 'move', pointer: { minutes: 550, unit: 0.5 } });
+		editor.moveDrag({ pointer: { minutes: 610, unit: 1.5 }, travelled: 20 });
 		expect(editor.entries[0]).toMatchObject({ trackIds: ['b'], start: 600, end: 660 });
 
 		expect(editor.finishDrag()).toEqual({ type: 'none' });
@@ -95,8 +95,8 @@ describe('CalendarEditor', () => {
 
 	test('a drag onto another day moves the entry there', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'move', { minutes: 550, unit: 0.5 });
-		editor.moveDrag({ minutes: 550, unit: 2.4 }, 40);
+		editor.beginEntryDrag({ entryId: 'e1', mode: 'move', pointer: { minutes: 550, unit: 0.5 } });
+		editor.moveDrag({ pointer: { minutes: 550, unit: 2.4 }, travelled: 40 });
 		editor.finishDrag();
 		expect(updateCalendarEntry).toHaveBeenCalledWith({
 			__args: expect.objectContaining({
@@ -110,14 +110,21 @@ describe('CalendarEditor', () => {
 
 	test('an entry cannot be placed on no track', async () => {
 		const editor = setup();
-		await editor.place('e1', { dayId: 'd1', trackIds: [], start: 540, end: 600 });
+		await editor.place({
+			entryId: 'e1',
+			placement: { dayId: 'd1', trackIds: [], start: 540, end: 600 }
+		});
 		expect(updateCalendarEntry).not.toHaveBeenCalled();
 	});
 
 	test('resizing moves only the grabbed edge', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'resize-end', { minutes: 600, unit: 0.5 });
-		editor.moveDrag({ minutes: 630, unit: 0.5 }, 20);
+		editor.beginEntryDrag({
+			entryId: 'e1',
+			mode: 'resize-end',
+			pointer: { minutes: 600, unit: 0.5 }
+		});
+		editor.moveDrag({ pointer: { minutes: 630, unit: 0.5 }, travelled: 20 });
 		editor.finishDrag();
 		expect(updateCalendarEntry).toHaveBeenCalledWith({
 			__args: expect.objectContaining({
@@ -130,20 +137,20 @@ describe('CalendarEditor', () => {
 
 	test('a press that does not travel is a click and saves nothing', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'move', { minutes: 550, unit: 0.5 });
-		editor.moveDrag({ minutes: 560, unit: 0.5 }, 2);
+		editor.beginEntryDrag({ entryId: 'e1', mode: 'move', pointer: { minutes: 550, unit: 0.5 } });
+		editor.moveDrag({ pointer: { minutes: 560, unit: 0.5 }, travelled: 2 });
 		expect(editor.finishDrag()).toEqual({ type: 'click', entryId: 'e1' });
 		expect(updateCalendarEntry).not.toHaveBeenCalled();
 	});
 
 	test('a drag back to where it started saves nothing, and so does cancelling', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'move', { minutes: 550, unit: 0.5 });
-		editor.moveDrag({ minutes: 551, unit: 0.5 }, 20);
+		editor.beginEntryDrag({ entryId: 'e1', mode: 'move', pointer: { minutes: 550, unit: 0.5 } });
+		editor.moveDrag({ pointer: { minutes: 551, unit: 0.5 }, travelled: 20 });
 		expect(editor.finishDrag()).toEqual({ type: 'none' });
 
-		editor.beginEntryDrag('e1', 'move', { minutes: 550, unit: 0.5 });
-		editor.moveDrag({ minutes: 700, unit: 0.5 }, 20);
+		editor.beginEntryDrag({ entryId: 'e1', mode: 'move', pointer: { minutes: 550, unit: 0.5 } });
+		editor.moveDrag({ pointer: { minutes: 700, unit: 0.5 }, travelled: 20 });
 		editor.cancelDrag();
 		expect(editor.drag).toBeNull();
 		expect(editor.entries[0]).toMatchObject({ start: 540 });
@@ -152,8 +159,8 @@ describe('CalendarEditor', () => {
 
 	test('a drag on an empty slot selects the range to create', () => {
 		const editor = setup();
-		editor.beginCreate('d1', 1, 700);
-		editor.moveDrag({ minutes: 770, unit: 1.5 }, 30);
+		editor.beginCreate({ dayId: 'd1', column: 1, minutes: 700 });
+		editor.moveDrag({ pointer: { minutes: 770, unit: 1.5 }, travelled: 30 });
 		expect(editor.creating).toEqual({
 			dayId: 'd1',
 			trackIds: ['b'],
@@ -166,13 +173,16 @@ describe('CalendarEditor', () => {
 			span: { start: 690, end: 780 }
 		});
 
-		editor.beginCreate('d1', 0, 700);
+		editor.beginCreate({ dayId: 'd1', column: 0, minutes: 700 });
 		expect(editor.finishDrag()).toMatchObject({ span: { start: 690, end: 750 } });
 	});
 
 	test('offers to undo a move', async () => {
 		const editor = setup();
-		await editor.place('e1', { dayId: 'd1', trackIds: ['b'], start: 600, end: 660 });
+		await editor.place({
+			entryId: 'e1',
+			placement: { dayId: 'd1', trackIds: ['b'], start: 600, end: 660 }
+		});
 		const [, options] = toastSuccess.mock.calls[0];
 		await options.action.onClick();
 		expect(updateCalendarEntry).toHaveBeenLastCalledWith({
@@ -188,19 +198,22 @@ describe('CalendarEditor', () => {
 	test('a failed save says why and offers no undo', async () => {
 		updateCalendarEntry.mockRejectedValue(new Error('not allowed'));
 		const editor = setup();
-		await editor.place('e1', { dayId: 'd1', trackIds: ['b'], start: 600, end: 660 });
+		await editor.place({
+			entryId: 'e1',
+			placement: { dayId: 'd1', trackIds: ['b'], start: 600, end: 660 }
+		});
 		expect(toastError).toHaveBeenCalledWith('not allowed');
 		expect(toastSuccess).not.toHaveBeenCalled();
 	});
 
 	test('the keyboard nudges by a quarter hour, stopping at the limits', () => {
 		const editor = setup();
-		editor.nudge('e1', 'move', 'time', 1);
+		editor.nudge({ entryId: 'e1', mode: 'move', axis: 'time', direction: 1 });
 		expect(updateCalendarEntry).toHaveBeenLastCalledWith({
 			__args: expect.objectContaining({ startTime: at('2026-03-12', '09:15') }),
 			id: true
 		});
-		editor.nudge('e1', 'resize', 'time', -1);
+		editor.nudge({ entryId: 'e1', mode: 'resize', axis: 'time', direction: -1 });
 		expect(updateCalendarEntry).toHaveBeenLastCalledWith({
 			__args: expect.objectContaining({ endTime: at('2026-03-12', '09:45') }),
 			id: true
@@ -209,8 +222,12 @@ describe('CalendarEditor', () => {
 
 	test('dragging a side edge stretches the entry over more tracks', () => {
 		const editor = setup();
-		editor.beginEntryDrag('e1', 'resize-right', { minutes: 570, unit: 0.9 });
-		editor.moveDrag({ minutes: 570, unit: 1.5 }, 20);
+		editor.beginEntryDrag({
+			entryId: 'e1',
+			mode: 'resize-right',
+			pointer: { minutes: 570, unit: 0.9 }
+		});
+		editor.moveDrag({ pointer: { minutes: 570, unit: 1.5 }, travelled: 20 });
 		expect(editor.entries[0]).toMatchObject({ trackIds: ['a', 'b'], start: 540, end: 600 });
 		editor.finishDrag();
 		expect(updateCalendarEntry).toHaveBeenCalledWith({
@@ -225,16 +242,16 @@ describe('CalendarEditor', () => {
 
 	test('dragging across tracks of an empty slot selects them for a new entry', () => {
 		const editor = setup();
-		editor.beginCreate('d1', 0, 700);
-		editor.moveDrag({ minutes: 760, unit: 0.6 }, 30);
+		editor.beginCreate({ dayId: 'd1', column: 0, minutes: 700 });
+		editor.moveDrag({ pointer: { minutes: 760, unit: 0.6 }, travelled: 30 });
 		expect(editor.creating).toMatchObject({ trackIds: ['a'] });
-		editor.moveDrag({ minutes: 760, unit: 1.6 }, 30);
+		editor.moveDrag({ pointer: { minutes: 760, unit: 1.6 }, travelled: 30 });
 		expect(editor.creating).toMatchObject({ trackIds: ['a', 'b'] });
 	});
 
 	test('the keyboard moves an entry to the next track', () => {
 		const editor = setup();
-		editor.nudge('e1', 'move', 'tracks', 1);
+		editor.nudge({ entryId: 'e1', mode: 'move', axis: 'tracks', direction: 1 });
 		expect(updateCalendarEntry).toHaveBeenLastCalledWith({
 			__args: expect.objectContaining({ calendarTrackIds: ['b'] }),
 			id: true

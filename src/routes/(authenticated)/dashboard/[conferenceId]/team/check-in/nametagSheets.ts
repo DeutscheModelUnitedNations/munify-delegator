@@ -102,17 +102,29 @@ async function otherEntry(group: Group, images: Images): Promise<SortedEntry | n
 	};
 }
 
-async function sortedEntries(
-	groups: Group[],
-	entryOf: (group: Group, images: Images) => Promise<SortedEntry | null>,
-	images: Images
-) {
+async function sortedEntries({
+	groups,
+	entryOf,
+	images
+}: {
+	groups: Group[];
+	entryOf: (group: Group, images: Images) => Promise<SortedEntry | null>;
+	images: Images;
+}) {
 	const entries = await Promise.all(groups.map((group) => entryOf(group, images)));
 	return entries.filter((entry) => entry !== null).sort(bySortName);
 }
 
 /** One table's sign: the letters big, the nations below and, if there are any, the others. */
-function sheetOf(bin: Bin, nations: NametagSheetEntry[], others: NametagSheetEntry[]) {
+function sheetOf({
+	bin,
+	nations,
+	others
+}: {
+	bin: Bin;
+	nations: NametagSheetEntry[];
+	others: NametagSheetEntry[];
+}) {
 	const range = letterRange(bin);
 	const sheet: NametagSheet = {
 		tableLabel: `${m.nametagBinTable()} ${bin.index + 1}`,
@@ -126,7 +138,15 @@ function sheetOf(bin: Bin, nations: NametagSheetEntry[], others: NametagSheetEnt
 }
 
 /** One sign per table that holds anybody. */
-export async function buildSheets(conferenceId: string, binCount: number, bins: Bin[]) {
+export async function buildSheets({
+	conferenceId,
+	binCount,
+	bins
+}: {
+	conferenceId: string;
+	binCount: number;
+	bins: Bin[];
+}) {
 	const images = imageCache();
 	const sheets: NametagSheet[] = [];
 	for (const bin of bins.filter((bin) => bin.participants > 0)) {
@@ -138,9 +158,9 @@ export async function buildSheets(conferenceId: string, binCount: number, bins: 
 			sortName: true,
 			fontAwesomeIcon: true
 		});
-		const nations = await sortedEntries(groups, nationEntry, images);
-		const others = await sortedEntries(groups, otherEntry, images);
-		sheets.push(sheetOf(bin, nations, others));
+		const nations = await sortedEntries({ groups, entryOf: nationEntry, images });
+		const others = await sortedEntries({ groups, entryOf: otherEntry, images });
+		sheets.push(sheetOf({ bin, nations, others }));
 	}
 	return sheets;
 }

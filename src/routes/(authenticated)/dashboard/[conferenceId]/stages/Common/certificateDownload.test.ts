@@ -11,24 +11,32 @@ const certificate: CertificateData = {
 
 describe('planCertificateDownload', () => {
 	test('has nothing to download before the certificate is loaded or configured', () => {
-		expect(planCertificateDownload(undefined, 'u')).toEqual({ kind: 'unavailable' });
-		expect(planCertificateDownload({ ...certificate, templateUrl: null }, 'u')).toEqual({
+		expect(planCertificateDownload({ certificate: undefined, userId: 'u' })).toEqual({
 			kind: 'unavailable'
 		});
-		expect(planCertificateDownload(certificate, '')).toEqual({ kind: 'unavailable' });
+		expect(
+			planCertificateDownload({ certificate: { ...certificate, templateUrl: null }, userId: 'u' })
+		).toEqual({
+			kind: 'unavailable'
+		});
+		expect(planCertificateDownload({ certificate, userId: '' })).toEqual({ kind: 'unavailable' });
 	});
 
 	test('is incomplete without the signed name', () => {
-		expect(planCertificateDownload({ ...certificate, fullName: null }, 'u')).toEqual({
+		expect(
+			planCertificateDownload({ certificate: { ...certificate, fullName: null }, userId: 'u' })
+		).toEqual({
 			kind: 'incomplete'
 		});
-		expect(planCertificateDownload({ ...certificate, jwt: null }, 'u')).toEqual({
+		expect(
+			planCertificateDownload({ certificate: { ...certificate, jwt: null }, userId: 'u' })
+		).toEqual({
 			kind: 'incomplete'
 		});
 	});
 
 	test('names the file after the participant and the conference', () => {
-		expect(planCertificateDownload(certificate, 'u')).toEqual({
+		expect(planCertificateDownload({ certificate, userId: 'u' })).toEqual({
 			kind: 'ready',
 			holder: {
 				fullName: 'Ada Lovelace',

@@ -1,5 +1,6 @@
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 import { claimAt } from './roleClaims';
+import { logger } from '#lib/logger';
 
 type Claims = Record<string, unknown>;
 
@@ -29,7 +30,15 @@ export function createUserInfoClaims(now: () => number = Date.now) {
 		}
 	}
 
-	function request(session: OIDCSession, accessToken: string, fetchUserInfo: FetchUserInfo) {
+	function request({
+		session,
+		accessToken,
+		fetchUserInfo
+	}: {
+		session: OIDCSession;
+		accessToken: string;
+		fetchUserInfo: FetchUserInfo;
+	}) {
 		const time = now();
 		const cached = cache.get(accessToken);
 		if (cached && cached.until > time) return cached.claims;
@@ -40,7 +49,7 @@ export function createUserInfoClaims(now: () => number = Date.now) {
 		const entry = {
 			until,
 			claims: fetchUserInfo(accessToken, session.user.sub).catch((error: unknown) => {
-				console.warn({ event: 'userinfo_failed', sub: session.user.sub, error });
+				logger.warn('Fetching userinfo failed', { sub: session.user.sub, err: error });
 				entry.until = Math.min(until, now() + FAILURE_AGE_MS);
 				return undefined;
 			})
@@ -51,13 +60,21 @@ export function createUserInfoClaims(now: () => number = Date.now) {
 
 	return {
 		/** Asks the userinfo endpoint for `session` unless its tokens already hold `claim`. */
-		async load(session: OIDCSession, claim: string, fetchUserInfo: FetchUserInfo) {
+		async load({
+			session,
+			claim,
+			fetchUserInfo
+		}: {
+			session: OIDCSession;
+			claim: string;
+			fetchUserInfo: FetchUserInfo;
+		}) {
 			const accessToken = session.tokens.accessToken;
 			const inTokens = [session.accessTokenClaims, session.idTokenClaims].some(
-				(claims) => claimAt(claims, claim) != null
+				(claims) => claimAt({ claims, path: claim }) != null
 			);
 			if (inTokens || !accessToken) return;
-			const claims = await request(session, accessToken, fetchUserInfo);
+			const claims = await request({ session, accessToken, fetchUserInfo });
 			if (claims) ofSession.set(session, claims);
 		},
 		/** What `load` found for this session, if it asked. */

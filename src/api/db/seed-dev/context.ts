@@ -18,7 +18,10 @@ export interface SeedWorld {
 	/** Alpha-3 codes of every nation, lower case as the table stores them. */
 	nations: string[];
 	/** A new anonymous user of plausible age for the kind of role they will take. */
-	crowdUser(kind: CrowdKind, options?: { incomplete?: boolean; ages?: [number, number] }): string;
+	crowdUser(args: {
+		kind: CrowdKind;
+		options?: { incomplete?: boolean; ages?: [number, number] };
+	}): string;
 	/**
 	 * Draws from `make` until the value is new across every conference: supervisor connection
 	 * codes and payment references are unique world-wide.
@@ -81,12 +84,17 @@ export interface ConferenceSeed {
 	uniqueCode(make: () => string): string;
 }
 
-export function createConferenceSeed(
-	world: SeedWorld,
-	plan: ConferencePlan,
-	conference: typeof schema.conference.$inferInsert & { id: string },
-	startConference: Date
-): ConferenceSeed {
+export function createConferenceSeed({
+	world,
+	plan,
+	conference,
+	startConference
+}: {
+	world: SeedWorld;
+	plan: ConferencePlan;
+	conference: typeof schema.conference.$inferInsert & { id: string };
+	startConference: Date;
+}): ConferenceSeed {
 	const nationRoles = new Map<string, string>();
 	const participants = new Map<
 		string,

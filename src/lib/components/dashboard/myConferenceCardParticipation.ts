@@ -54,25 +54,36 @@ export interface SupervisedStudentsInput {
  * Where an application stands: accepted once assigned, pending until submitted, and after that
  * applied while registration is open and rejected once it has closed without an assignment.
  */
-export function applicationStatus(
-	assigned: boolean,
-	applied: boolean,
-	conferenceState: string
-): ApplicationStatus {
+export function applicationStatus({
+	assigned,
+	applied,
+	conferenceState
+}: {
+	assigned: boolean;
+	applied: boolean;
+	conferenceState: string;
+}): ApplicationStatus {
 	if (assigned) return 'accepted';
 	if (!applied) return 'pending';
 	return conferenceState === 'PARTICIPANT_REGISTRATION' ? 'applied' : 'rejected';
 }
 
-function delegationParticipation(
-	delegationMember: NonNullable<ParticipationInput['delegationMember']>,
-	conferenceState: string
-) {
+function delegationParticipation({
+	delegationMember,
+	conferenceState
+}: {
+	delegationMember: NonNullable<ParticipationInput['delegationMember']>;
+	conferenceState: string;
+}) {
 	const delegation = delegationMember.delegation;
 	const { nation, nonStateActor } = splitRole(delegation.assignedRole);
 	return {
 		type: 'delegation' as const,
-		status: applicationStatus(!!delegation.assignedRole, delegation.applied, conferenceState),
+		status: applicationStatus({
+			assigned: !!delegation.assignedRole,
+			applied: delegation.applied,
+			conferenceState
+		}),
 		country: nation,
 		nonStateActor,
 		committee: delegationMember.assignedCommittee,
@@ -81,10 +92,13 @@ function delegationParticipation(
 }
 
 /** A supervisor is accepted once any student is, pending during registration, rejected after. */
-export function supervisorParticipation(
-	supervisor: SupervisedStudentsInput,
-	conferenceState: string
-) {
+export function supervisorParticipation({
+	supervisor,
+	conferenceState
+}: {
+	supervisor: SupervisedStudentsInput;
+	conferenceState: string;
+}) {
 	const delegationMembers = supervisor.supervisedDelegationMembers ?? [];
 	const singleParticipants = supervisor.supervisedSingleParticipants ?? [];
 	const acceptedStudentCount =
@@ -107,11 +121,15 @@ export function supervisorParticipation(
  * The role the caller holds in a conference, in order of precedence: team member, delegation
  * member, single participant, supervisor.
  */
-export function participationOf(
-	myParticipation: ParticipationInput | undefined,
-	supervisedStudents: SupervisedStudentsInput | undefined,
-	conferenceState: string
-) {
+export function participationOf({
+	myParticipation,
+	supervisedStudents,
+	conferenceState
+}: {
+	myParticipation: ParticipationInput | undefined;
+	supervisedStudents: SupervisedStudentsInput | undefined;
+	conferenceState: string;
+}) {
 	const { teamMember, delegationMember, singleParticipant } = myParticipation ?? {
 		teamMember: null,
 		delegationMember: null,
@@ -125,21 +143,22 @@ export function participationOf(
 		};
 	}
 
-	if (delegationMember) return delegationParticipation(delegationMember, conferenceState);
+	if (delegationMember) return delegationParticipation({ delegationMember, conferenceState });
 
 	if (singleParticipant) {
 		return {
 			type: 'singleParticipant' as const,
-			status: applicationStatus(
-				!!singleParticipant.assignedRole,
-				singleParticipant.applied,
+			status: applicationStatus({
+				assigned: !!singleParticipant.assignedRole,
+				applied: singleParticipant.applied,
 				conferenceState
-			),
+			}),
 			customRole: singleParticipant.assignedRole
 		};
 	}
 
-	if (supervisedStudents) return supervisorParticipation(supervisedStudents, conferenceState);
+	if (supervisedStudents)
+		return supervisorParticipation({ supervisor: supervisedStudents, conferenceState });
 
 	return { type: 'unknown' as const, status: 'pending' as const };
 }

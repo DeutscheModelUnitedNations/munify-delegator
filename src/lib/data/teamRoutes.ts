@@ -320,19 +320,22 @@ export const publicSeatsPath = 'seats';
 export const publicCalendarPath = 'calendar';
 
 /** Whether the caller may open one page */
-export function mayOpenTeamRoute(
-	route: TeamRoute,
-	access: TeamAccess & { canSeePaperHub?: boolean }
-): boolean {
+export function mayOpenTeamRoute({
+	route,
+	access
+}: {
+	route: TeamRoute;
+	access: TeamAccess & { canSeePaperHub?: boolean };
+}): boolean {
 	if (access.isAdmin) return true;
 	if (route.extraAccess) return route.extraAccess(access);
-	if (route.roles) return hasAnyRole(access, route.roles);
+	if (route.roles) return hasAnyRole({ access, roles: route.roles });
 	return isOnTeam(access);
 }
 
 /** The pages the caller may open, in navigation order */
 export function teamRoutesFor(access: TeamAccess & { canSeePaperHub?: boolean }): TeamRoute[] {
-	return teamRoutes.filter((route) => mayOpenTeamRoute(route, access));
+	return teamRoutes.filter((route) => mayOpenTeamRoute({ route, access }));
 }
 
 /** The visible pages grouped into the navigation's sections, empty sections left out */

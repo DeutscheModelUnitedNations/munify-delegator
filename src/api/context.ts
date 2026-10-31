@@ -1,21 +1,24 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 import { OIDC_ROLE_CLAIM, OIDC_ROLE_MAP } from '$app/env/private';
-import type { OidcRole } from './services/oidcRoles';
-import { appRolesOf, roleNamesInClaims } from './services/roleClaims';
-import { userInfoClaims } from './services/userInfoClaims';
+import type { OidcRole } from './services/oidc/oidcRoles';
+import { appRolesOf, roleNamesInClaims } from './services/oidc/roleClaims';
+import { userInfoClaims } from './services/oidc/userInfoClaims';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * The system roles a session grants: the role names in the claim `OIDC_ROLE_CLAIM` names, in the
- * access token, the ID token or the userinfo answer (`userInfoHandle` in `hooks.server.ts`), mapped
+ * access token, the ID token or the userinfo answer (`userInfoHandle` in `#api/services/oidc/OIDC`), mapped
  * through `OIDC_ROLE_MAP`.
  */
 export function rolesOfSession(session: OIDCSession | undefined): OidcRole[] {
 	if (!OIDC_ROLE_CLAIM || !session) return [];
 	const sources = [session.accessTokenClaims, session.idTokenClaims, userInfoClaims.of(session)];
-	return appRolesOf(roleNamesInClaims(sources, OIDC_ROLE_CLAIM), OIDC_ROLE_MAP);
+	return appRolesOf({
+		names: roleNamesInClaims({ sources, path: OIDC_ROLE_CLAIM }),
+		roleMap: OIDC_ROLE_MAP
+	});
 }
 
 /**
@@ -35,7 +38,13 @@ export function effectiveRoles(session: OIDCSession | undefined): OidcRole[] {
  * `sub`; the identity the app shows comes from the impersonated user's row, which the
  * impersonation handle loaded into `locals.impersonatedIdentity`.
  */
-export function sessionUser(locals: RequestEvent['locals'], OIDCRoleNames: OidcRole[]) {
+export function sessionUser({
+	locals,
+	OIDCRoleNames
+}: {
+	locals: RequestEvent['locals'];
+	OIDCRoleNames: OidcRole[];
+}) {
 	const session = locals.oidc;
 	if (!session) return undefined;
 	const identity = session.impersonator ? locals.impersonatedIdentity : undefined;
@@ -52,15 +61,15 @@ export function sessionUser(locals: RequestEvent['locals'], OIDCRoleNames: OidcR
 /** The tokens' claims, which carry provider-specific ones the library's parsed user does not model. */
 export function sessionClaims(session: OIDCSession | undefined): Record<string, unknown> {
 	return {
-		...((session?.idTokenClaims as Record<string, unknown> | undefined) ?? {}),
-		...((session?.accessTokenClaims as Record<string, unknown> | undefined) ?? {})
+		...session?.idTokenClaims,
+		...session?.accessTokenClaims
 	};
 }
 
 export function context(req: RequestEvent) {
 	const session = req.locals.oidc;
 	const OIDCRoleNames = effectiveRoles(session);
-	const user = sessionUser(req.locals, OIDCRoleNames);
+	const user = sessionUser({ locals: req.locals, OIDCRoleNames });
 	const claims = sessionClaims(session);
 
 	return {
@@ -81,7 +90,7 @@ export function context(req: RequestEvent) {
 		event: req,
 		mustBeLoggedIn: () => {
 			if (!user) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
+				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 			}
 			return user;
 		},

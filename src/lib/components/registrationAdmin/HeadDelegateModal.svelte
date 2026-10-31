@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { untrack } from 'svelte';
@@ -43,7 +44,7 @@
 				members: { id: true, isHeadDelegate: true }
 			});
 		} catch (error) {
-			console.error('Failed to update head delegate:', error);
+			logger.error('Failed to update head delegate', error);
 		} finally {
 			isUpdating = false;
 			close();

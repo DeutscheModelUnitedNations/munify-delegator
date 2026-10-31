@@ -8,7 +8,7 @@
 
 	type Trend = 'up' | 'down' | 'same';
 
-	const trendOf = (current: number, historic: number): Trend =>
+	const trendOf = ({ current, historic }: { current: number; historic: number }): Trend =>
 		current > historic ? 'up' : current < historic ? 'down' : 'same';
 
 	const trendStyles: Record<Trend, { fontClass: string; icon: string }> = {
@@ -22,7 +22,7 @@
 	{#if historicValue === undefined || currentValue === undefined}
 		<span>–</span>
 	{:else}
-		{@const trend = trendStyles[trendOf(currentValue, historicValue)]}
+		{@const trend = trendStyles[trendOf({ current: currentValue, historic: historicValue })]}
 		<span class={trend.fontClass}>
 			<i class="fa-sharp-duotone fa-solid {trend.icon}"></i>
 			{historicValue}

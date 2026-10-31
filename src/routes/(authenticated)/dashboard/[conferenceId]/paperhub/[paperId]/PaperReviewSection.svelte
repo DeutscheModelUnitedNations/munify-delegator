@@ -62,9 +62,9 @@
 	let showConfirmModal = $state(false);
 
 	// The page re-creates this component per paper, so the draft key is fixed for its lifetime.
-	const draft = createDraftAutosave<ReviewDraft, JSONContent>(
-		`reviewDraft_${untrack(() => paperId)}`,
-		{
+	const draft = createDraftAutosave<ReviewDraft, JSONContent>({
+		storageKey: `reviewDraft_${untrack(() => paperId)}`,
+		options: {
 			// Skip if content is empty
 			readContent: () => {
 				const comments = get(reviewComments);
@@ -76,7 +76,7 @@
 				selectedStatus = saved.selectedStatus;
 			}
 		}
-	);
+	});
 
 	// Piece found modal state
 	let showPieceFoundModal = $state(false);

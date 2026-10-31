@@ -56,15 +56,15 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
-			await assertCanReviewPaper(ctx, args.paperId);
-			const { result, conferenceId } = await createPaperReview(args, reviewer);
+			await assertCanReviewPaper({ ctx, paperId: args.paperId });
+			const { result, conferenceId } = await createPaperReview({ args, reviewer });
 
 			// After the commit, so subscribers refetch the review rather than the state before it,
 			// and a rollback never leaves the author a mail about it.
 			paperReviewPubsub.created();
 			paperPubsub.updated(args.paperId);
 			paperVersionPubsub.updated();
-			scheduleEmailSweep(conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId, origin: ctx.requestUrl().origin });
 
 			return result;
 		}

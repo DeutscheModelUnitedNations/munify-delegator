@@ -1,5 +1,6 @@
 import { listmonkClient } from '../apis/listmonk/listmonkClient';
 import type { PlanExecutionResult, SubscriberAction, SubscriberPatch } from './types';
+import { logger } from '#lib/logger';
 
 /**
  * Pass 2 of the sync: carry out the planned actions against the Listmonk API.
@@ -36,11 +37,15 @@ async function findSubscriberIdByEmail(email: string): Promise<number | undefine
 	return res.data?.data?.results?.[0]?.id;
 }
 
-async function changeLists(
-	subscriberId: number,
-	action: 'add' | 'remove',
-	listIds: number[]
-): Promise<string | undefined> {
+async function changeLists({
+	subscriberId,
+	action,
+	listIds
+}: {
+	subscriberId: number;
+	action: 'add' | 'remove';
+	listIds: number[];
+}): Promise<string | undefined> {
 	if (listIds.length === 0) return undefined;
 	const res = await listmonkClient.PUT('/subscribers/lists', {
 		body: {
@@ -53,10 +58,13 @@ async function changeLists(
 	return res.error ? `${action} lists: ${errorToString(res)}` : undefined;
 }
 
-async function patchSubscriber(
-	subscriberId: number,
-	patch: SubscriberPatch | undefined
-): Promise<string | undefined> {
+async function patchSubscriber({
+	subscriberId,
+	patch
+}: {
+	subscriberId: number;
+	patch: SubscriberPatch | undefined;
+}): Promise<string | undefined> {
 	if (!patch) return undefined;
 	const res = await listmonkClient.PATCH('/subscribers/{id}', {
 		params: { path: { id: subscriberId } },
@@ -65,23 +73,33 @@ async function patchSubscriber(
 	return res.error ? `patch: ${errorToString(res)}` : undefined;
 }
 
-async function runUpdate(
-	subscriberId: number,
-	addListIds: number[],
-	removeListIds: number[],
-	patch: SubscriberPatch | undefined
-): Promise<string[]> {
+async function runUpdate({
+	subscriberId,
+	addListIds,
+	removeListIds,
+	patch
+}: {
+	subscriberId: number;
+	addListIds: number[];
+	removeListIds: number[];
+	patch: SubscriberPatch | undefined;
+}): Promise<string[]> {
 	const errors = [
-		await changeLists(subscriberId, 'add', addListIds),
-		await changeLists(subscriberId, 'remove', removeListIds),
-		await patchSubscriber(subscriberId, patch)
+		await changeLists({ subscriberId, action: 'add', listIds: addListIds }),
+		await changeLists({ subscriberId, action: 'remove', listIds: removeListIds }),
+		await patchSubscriber({ subscriberId, patch })
 	];
 	return errors.filter((e): e is string => e !== undefined);
 }
 
 async function runAction(action: SubscriberAction): Promise<string[]> {
 	if (action.kind === 'update') {
-		return runUpdate(action.subscriberId, action.addListIds, action.removeListIds, action.patch);
+		return runUpdate({
+			subscriberId: action.subscriberId,
+			addListIds: action.addListIds,
+			removeListIds: action.removeListIds,
+			patch: action.patch
+		});
 	}
 
 	const res = await listmonkClient.POST('/subscribers', {
@@ -100,36 +118,43 @@ async function runAction(action: SubscriberAction): Promise<string[]> {
 	// failing; the name stays theirs, like for any subscriber that is on foreign lists.
 	const existingId = await findSubscriberIdByEmail(action.email);
 	if (existingId === undefined) return [`create: ${errorToString(res)}`];
-	return runUpdate(existingId, action.listIds, [], {
-		attribs: { userId: action.attribs.userId, conferences: action.attribs.conferences }
+	return runUpdate({
+		subscriberId: existingId,
+		addListIds: action.listIds,
+		removeListIds: [],
+		patch: {
+			attribs: { userId: action.attribs.userId, conferences: action.attribs.conferences }
+		}
 	});
 }
 
-export async function executeActions(
-	label: string,
-	actions: SubscriberAction[]
-): Promise<PlanExecutionResult> {
+export async function executeActions({
+	label,
+	actions
+}: {
+	label: string;
+	actions: SubscriberAction[];
+}): Promise<PlanExecutionResult> {
 	const result: PlanExecutionResult = { succeeded: 0, failed: 0 };
 	if (actions.length === 0) return result;
 
-	console.info(`\nExecuting ${label}: 0/${actions.length}`);
+	logger.info(`Executing ${label}`, { total: actions.length });
 	for (const action of actions) {
 		const target =
 			action.kind === 'create' ? `user ${action.userId}` : `subscriber ${action.subscriberId}`;
 		const errors = await runAction(action);
 		if (errors.length > 0) {
 			result.failed++;
-			console.error(
-				`  ! Failed to ${action.kind} ${target}: Listmonk API Error\n${errors.join('\n')}`
-			);
+			logger.error(`Failed to ${action.kind} ${target}`, { errors });
 		} else {
 			result.succeeded++;
-			console.info(
-				`  - ${action.kind === 'create' ? 'Created' : 'Updated'} ${target} [${result.succeeded + result.failed}/${actions.length}]`
-			);
+			logger.debug(`${action.kind === 'create' ? 'Created' : 'Updated'} ${target}`, {
+				done: result.succeeded + result.failed,
+				total: actions.length
+			});
 		}
 	}
-	console.info(`${label} finished: ${result.succeeded} succeeded, ${result.failed} failed`);
+	logger.info(`Finished ${label}`, { succeeded: result.succeeded, failed: result.failed });
 	return result;
 }
 
@@ -153,8 +178,8 @@ export async function collectGarbage(): Promise<void> {
 		body: { query: GARBAGE_QUERY }
 	});
 	if (res.error) {
-		console.error(`  ! Failed to delete subscribers without lists: ${errorToString(res)}`);
+		logger.error('Failed to delete subscribers without lists', { error: errorToString(res) });
 	} else {
-		console.info('  - Deleted subscribers without lists');
+		logger.info('Deleted subscribers without lists');
 	}
 }

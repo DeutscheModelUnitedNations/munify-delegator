@@ -15,7 +15,9 @@
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const assignment = $derived(await fetchCommitteeAssignment(params.conferenceId, currentUser.sub));
+	const assignment = $derived(
+		await fetchCommitteeAssignment({ conferenceId: params.conferenceId, userId: currentUser.sub })
+	);
 	const delegationMember = $derived(assignment.delegationMember);
 	let members = $derived(delegationMember?.delegation.members);
 	let delegation = $derived(delegationMember?.delegation);
@@ -56,22 +58,28 @@
 	);
 
 	/** Seats of `committee` taken or picked, leaving out `memberId`'s own pick. */
-	const seatsTaken = (committee: Committee, memberId?: string) =>
+	const seatsTaken = ({ committee, memberId }: { committee: Committee; memberId?: string }) =>
 		membersWithCommittees.filter(
 			(x) => x.committeeId === committee.id && x.delegationMemberId !== memberId
 		).length;
 
 	/** Whether every seat of `committee` is taken by someone else, so `memberId` cannot pick it. */
-	const isCommitteeFull = (committee: Committee, memberId: string) =>
-		seatsTaken(committee, memberId) >= committee.numOfSeatsPerDelegation;
+	const isCommitteeFull = ({ committee, memberId }: { committee: Committee; memberId: string }) =>
+		seatsTaken({ committee, memberId }) >= committee.numOfSeatsPerDelegation;
 
-	const pick = (memberWithCommittee: MemberWithCommittee, committeeId: string) => {
+	const pick = ({
+		memberWithCommittee,
+		committeeId
+	}: {
+		memberWithCommittee: MemberWithCommittee;
+		committeeId: string;
+	}) => {
 		// Clicking the picked committee again takes the pick back.
 		memberWithCommittee.committeeId =
 			memberWithCommittee.committeeId === committeeId ? null : committeeId;
 	};
 
-	const initials = (givenName?: string, familyName?: string) =>
+	const initials = ({ givenName, familyName }: { givenName?: string; familyName?: string } = {}) =>
 		`${givenName?.at(0) ?? ''}${familyName?.at(0) ?? ''}`.toUpperCase();
 
 	let saving = $state(false);
@@ -104,7 +112,7 @@
 </script>
 
 {#snippet committeeCard(committee: Committee)}
-	{@const taken = seatsTaken(committee)}
+	{@const taken = seatsTaken({ committee })}
 	{@const full = taken >= committee.numOfSeatsPerDelegation}
 	<div
 		class="flex flex-col gap-3 rounded-box border bg-base-200 p-4 transition-colors duration-300 {full
@@ -147,11 +155,11 @@
 					? 'bg-primary text-primary-content'
 					: 'bg-base-300'}"
 			>
-				{initials(member?.user.givenName, member?.user.familyName)}
+				{initials({ givenName: member?.user.givenName, familyName: member?.user.familyName })}
 			</div>
 			<div class="flex flex-col">
 				<span class="font-bold">
-					{formatNames(member?.user.givenName, member?.user.familyName)}
+					{formatNames({ givenName: member?.user.givenName, familyName: member?.user.familyName })}
 				</span>
 				{#if member?.isHeadDelegate}
 					<span class="flex items-center gap-1 text-xs text-base-content/60">
@@ -181,8 +189,8 @@
 							? 'btn-primary'
 							: 'btn-outline'}"
 						disabled={!selected &&
-							isCommitteeFull(committee, memberWithCommittee.delegationMemberId)}
-						onclick={() => pick(memberWithCommittee, committee.id)}
+							isCommitteeFull({ committee, memberId: memberWithCommittee.delegationMemberId })}
+						onclick={() => pick({ memberWithCommittee, committeeId: committee.id })}
 					>
 						{#if selected}<i class="fa-sharp-duotone fa-solid fa-check"></i>{/if}
 						{committee.abbreviation}

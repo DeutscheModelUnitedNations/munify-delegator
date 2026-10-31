@@ -5,7 +5,7 @@ import {
 	S3_REGION,
 	S3_SECRET_ACCESS_KEY
 } from '$app/env/private';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { db, schema } from '#api/db/db';
 import { nanoid } from '#lib/helpers/nanoid';
 import { m } from '#lib/paraglide/messages';
@@ -31,7 +31,7 @@ function storage(): Storage {
  * it is decided before: the `storedFile` read rules, which follow the row holding the file.
  */
 export function downloadUrl(file: { key: string; fileName: string | null }) {
-	return storage().presignDownload(file.key, file.fileName ?? undefined);
+	return storage().presignDownload({ key: file.key, fileName: file.fileName ?? undefined });
 }
 
 export interface UploadRequest {
@@ -51,23 +51,34 @@ type FileSource = NonNullable<ReturnType<typeof findFileSource>>;
  *
  * Whether the uploader may upload it is `assertCanUploadFile`'s business.
  */
-export async function requestUpload(
-	source: FileSource,
-	uploaderId: string,
-	request: UploadRequest
-) {
+export async function requestUpload({
+	source,
+	uploaderId,
+	request
+}: {
+	source: FileSource;
+	uploaderId: string;
+	request: UploadRequest;
+}) {
 	if (!source.mimeTypes.includes(request.mimeType)) {
-		throw apiError('INVALID_INPUT', m.fileUploadTypeNotAllowed());
+		throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadTypeNotAllowed() });
 	}
 	if (!Number.isInteger(request.size) || request.size <= 0) {
-		throw apiError('INVALID_INPUT', m.fileUploadEmpty());
+		throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadEmpty() });
 	}
 	if (request.size > source.maxBytes) {
-		throw apiError('INVALID_INPUT', m.fileTooLarge({ max: formatMegabytes(source.maxBytes) }));
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.fileTooLarge({ max: formatMegabytes(source.maxBytes) })
+		});
 	}
 
 	const id = nanoid();
-	const key = objectKey(request.conferenceId, source.purpose, id);
+	const key = objectKey({
+		conferenceId: request.conferenceId,
+		purpose: source.purpose,
+		uniqueId: id
+	});
 	await db.insert(schema.storedFile).values({
 		id,
 		key,
@@ -88,7 +99,7 @@ export async function requestUpload(
  */
 export async function pendingUploadUrl(file: { key: string; mimeType: string; size: number }) {
 	if ((await storage().sizeOf(file.key)) !== undefined) return null;
-	return storage().presignUpload(file.key, file);
+	return storage().presignUpload({ key: file.key, file });
 }
 
 /**
@@ -106,9 +117,9 @@ export async function ensureUploadComplete<V extends string | null | undefined>(
 		where: { id: fileId },
 		columns: { key: true, size: true }
 	});
-	if (!file) throw apiError('INVALID_INPUT', m.fileUploadNotUsable());
+	if (!file) throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadNotUsable() });
 	if ((await storage().sizeOf(file.key)) !== file.size) {
-		throw apiError('CONFLICT', m.fileUploadIncomplete());
+		throw apiError({ code: 'CONFLICT', message: m.fileUploadIncomplete() });
 	}
 	return fileId;
 }

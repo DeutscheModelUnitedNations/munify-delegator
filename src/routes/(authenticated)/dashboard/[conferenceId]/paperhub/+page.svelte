@@ -25,7 +25,7 @@
 		])
 	);
 
-	let access = $derived(paperHubAccess(participation, myRoles));
+	let access = $derived(paperHubAccess({ participation, roles: myRoles }));
 	let isTeamMember = $derived(access.isTeamMember);
 	let isSupervisor = $derived(access.isSupervisor);
 	let isParticipant = $derived(access.isParticipant);
@@ -38,7 +38,7 @@
 	);
 
 	// Effective view based on user roles
-	let currentView = $derived(effectivePaperHubView(access, viewToggle));
+	let currentView = $derived(effectivePaperHubView({ access, requested: viewToggle }));
 
 	// Single participants only see the global view; everyone else gets tabs for their views
 	let showViewToggle = $derived(showPaperHubViewToggle(access));

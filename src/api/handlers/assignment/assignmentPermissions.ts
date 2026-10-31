@@ -11,7 +11,7 @@ import {
 	teamConference
 } from '#api/services/authHelper/rules';
 import { grantWhere } from '#api/services/authHelper/utils';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import type { reviewRow } from './review';
 import type { Target } from '#lib/assignment/state';
 import { m } from '#lib/paraglide/messages';
@@ -22,12 +22,12 @@ import { assertCanManageEmails } from '#api/handlers/email/emailPermissions';
  * The assignment draft is the team's working copy: project management and participant care plan
  * who gets which role here, and nobody else sees any of it.
  */
-const assignmentTeam = (ctx: Parameters<typeof isTeamMemberOfConference>[0]) =>
-	grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES));
+const assignmentTeam = (ctx: Parameters<typeof isTeamMemberOfConference>[0]['ctx']) =>
+	grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES }));
 
 /** The same for a planned single role, which reaches its conference through the participant. */
-const singleRoleAssignmentTeam = (ctx: Parameters<typeof isTeamMemberOf>[0]) => {
-	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+const singleRoleAssignmentTeam = (ctx: Parameters<typeof isTeamMemberOf>[0]['ctx']) => {
+	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 	return conference === undefined ? undefined : { where: { singleParticipant: { conference } } };
 };
 
@@ -47,25 +47,39 @@ export function registerAssignmentAbilities() {
 }
 
 /** Refuses unless the caller does the assignments of the conference. */
-export async function assertCanPlanAssignment(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanPlanAssignment({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /** Releasing (or hiding) the assignment; deciding about the result mails on the way is managing mails. */
-export async function assertCanReleaseAssignment(
-	ctx: ApiContext,
-	conferenceId: string,
-	decidesEmails: boolean
-) {
-	await assertCanPlanAssignment(ctx, conferenceId);
-	if (decidesEmails) await assertCanManageEmails(ctx, conferenceId);
+export async function assertCanReleaseAssignment({
+	ctx,
+	conferenceId,
+	decidesEmails
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	decidesEmails: boolean;
+}) {
+	await assertCanPlanAssignment({ ctx, conferenceId });
+	if (decidesEmails) await assertCanManageEmails({ ctx, conferenceId });
 }
 
 /** An applied delegation of a conference the caller does assignments in. */
-export async function assertCanAssignDelegation(ctx: ApiContext, id: string) {
+export async function assertCanAssignDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const delegation = await db.query.delegation
 		.findFirst({
-			where: { id, applied: true, conference: teamConference(ctx, 'manageParticipants') },
+			where: {
+				id,
+				applied: true,
+				conference: teamConference({ ctx, permission: 'manageParticipants' })
+			},
 			columns: { id: true, conferenceId: true, assignedRoleId: true },
 			with: { members: { columns: { id: true } } }
 		})
@@ -77,13 +91,19 @@ export async function assertCanAssignDelegation(ctx: ApiContext, id: string) {
 }
 
 /** An applied single participant of a conference the caller does assignments in. */
-export async function assertCanAssignSingleParticipant(ctx: ApiContext, id: string) {
+export async function assertCanAssignSingleParticipant({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
 	const participant = await db.query.singleParticipant
 		.findFirst({
 			where: {
 				id,
 				applied: true,
-				participant: { conference: teamConference(ctx, 'manageParticipants') }
+				participant: { conference: teamConference({ ctx, permission: 'manageParticipants' }) }
 			},
 			columns: { id: true, assignedRoleId: true },
 			with: { participant: { columns: { conferenceId: true } } }
@@ -94,19 +114,22 @@ export async function assertCanAssignSingleParticipant(ctx: ApiContext, id: stri
 }
 
 /** The conference of the application a review is about, once the caller may assign there. */
-export async function assertCanReviewApplication(
-	ctx: ApiContext,
-	application: ReturnType<typeof reviewRow>['application']
-) {
+export async function assertCanReviewApplication({
+	ctx,
+	application
+}: {
+	ctx: ApiContext;
+	application: ReturnType<typeof reviewRow>['application'];
+}) {
 	const row =
 		application.kind === 'delegation'
-			? await assertCanAssignDelegation(ctx, application.id)
-			: await assertCanAssignSingleParticipant(ctx, application.id);
+			? await assertCanAssignDelegation({ ctx, id: application.id })
+			: await assertCanAssignSingleParticipant({ ctx, id: application.id });
 	return row.conferenceId;
 }
 
 /** A unit of the draft, loaded through the caller's update ability. */
-export async function assertCanAssignUnit(ctx: ApiContext, unitId: string) {
+export async function assertCanAssignUnit({ ctx, unitId }: { ctx: ApiContext; unitId: string }) {
 	return db.query.assignmentUnit
 		.findFirst(
 			(await ctx.abilities.assignmentUnit.filter('update')).merge({
@@ -117,19 +140,37 @@ export async function assertCanAssignUnit(ctx: ApiContext, unitId: string) {
 }
 
 /** Refuses a nation or non-state actor the conference does not offer; no role passes. */
-export async function assertTargetOf(conferenceId: string, target: Target) {
-	if (target.roleId) await assertOfferedIn(conferenceId, { roleId: target.roleId });
+export async function assertTargetOf({
+	conferenceId,
+	target
+}: {
+	conferenceId: string;
+	target: Target;
+}) {
+	if (target.roleId) await assertOfferedIn({ conferenceId, ref: { roleId: target.roleId } });
 }
 
 /** Refuses a custom role of another conference; `null` (no role) passes. */
-export function assertCustomRoleOf(conferenceId: string, roleId: string | null) {
-	return assertCustomRolesOf(conferenceId, roleId ? [roleId] : []);
+export function assertCustomRoleOf({
+	conferenceId,
+	roleId
+}: {
+	conferenceId: string;
+	roleId: string | null;
+}) {
+	return assertCustomRolesOf({ conferenceId, roleIds: roleId ? [roleId] : [] });
 }
 
 /** Refuses parts of a split that name members of another delegation. */
-export function assertSplitMembersOf(delegation: { members: { id: string }[] }, parts: string[][]) {
+export function assertSplitMembersOf({
+	delegation,
+	parts
+}: {
+	delegation: { members: { id: string }[] };
+	parts: string[][];
+}) {
 	const memberIds = new Set(delegation.members.map((member) => member.id));
 	if (parts.flat().some((id) => !memberIds.has(id))) {
-		throw apiError('INVALID_INPUT', m.assignmentSplitOnlyOwnMembers());
+		throw apiError({ code: 'INVALID_INPUT', message: m.assignmentSplitOnlyOwnMembers() });
 	}
 }

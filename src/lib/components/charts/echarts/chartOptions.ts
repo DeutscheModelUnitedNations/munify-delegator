@@ -35,11 +35,15 @@ export function chartTitle(title: string | undefined) {
 }
 
 /** Fills in the palette, background and text color a chart's own options leave unset. */
-export function themedChartOptions(
-	options: EChartsOption,
-	theme: ThemeColors,
-	palette: string[]
-): EChartsOption {
+export function themedChartOptions({
+	options,
+	theme,
+	palette
+}: {
+	options: EChartsOption;
+	theme: ThemeColors;
+	palette: string[];
+}): EChartsOption {
 	return {
 		...options,
 		color: options.color || palette,
@@ -325,7 +329,7 @@ export function pieChartOptions(p: PieChartParams): EChartsOption {
 }
 
 /** `part` as a rounded percentage of `total`, or 0 when there is no total. */
-export function percentOf(part: number, total: number) {
+export function percentOf({ part, total }: { part: number; total: number }) {
 	return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
@@ -333,8 +337,14 @@ export function percentOf(part: number, total: number) {
  * The stacked bar's tooltip. Every bar is its own series with a single numeric value, and the
  * tooltip triggers per item, so the callback is handed one data point.
  */
-export function stackedBarTooltip(params: TooltipComponentFormatterCallbackParams, total: number) {
+export function stackedBarTooltip({
+	params,
+	total
+}: {
+	params: TooltipComponentFormatterCallbackParams;
+	total: number;
+}) {
 	const point = Array.isArray(params) ? params[0] : params;
 	const value = typeof point?.value === 'number' ? point.value : 0;
-	return `${point?.seriesName}: ${value} (${percentOf(value, total)}%)`;
+	return `${point?.seriesName}: ${value} (${percentOf({ part: value, total })}%)`;
 }

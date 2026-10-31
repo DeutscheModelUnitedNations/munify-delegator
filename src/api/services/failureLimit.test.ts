@@ -1,25 +1,25 @@
-import { describe, expect, it } from 'vitest';
-import {
-	createAttemptLimiter,
-	createFailureLimiter,
-	createMemoryFailureStore,
-	createRedisFailureStore,
-	type RedisCommands
-} from './failureLimit';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Redis } from 'ioredis';
+import { createAttemptLimiter, createCounter, createFailureLimiter } from './failureLimit';
 
 class Miss extends Error {}
 class Refused extends Error {}
 
-function limiterAt(clock: { now: number }) {
-	const store = createMemoryFailureStore(() => clock.now);
-	const limiter = createFailureLimiter({
-		store,
-		limit: 3,
-		windowMs: 1000,
+beforeEach(() => {
+	vi.useFakeTimers();
+});
+afterEach(() => {
+	vi.useRealTimers();
+});
+
+const counterOf = (limit: number) => createCounter({ prefix: 'test', limit, windowSeconds: 1 });
+
+function failureLimiter() {
+	return createFailureLimiter({
+		counter: counterOf(3),
 		isFailure: (error) => error instanceof Miss,
 		refused: () => new Refused()
 	});
-	return { store, limiter };
 }
 
 const miss = () => Promise.reject(new Miss());
@@ -27,73 +27,38 @@ const hit = () => Promise.resolve('found');
 
 describe('createFailureLimiter', () => {
 	it('refuses after the limit of failures, and only the caller who failed', async () => {
-		const { limiter } = limiterAt({ now: 0 });
-		for (let i = 0; i < 3; i++) await expect(limiter.attempt('a', miss)).rejects.toThrow(Miss);
-		await expect(limiter.attempt('a', hit)).rejects.toThrow(Refused);
-		await expect(limiter.attempt('b', hit)).resolves.toBe('found');
+		const limiter = failureLimiter();
+		for (let i = 0; i < 3; i++)
+			await expect(limiter.attempt({ key: 'a', run: miss })).rejects.toThrow(Miss);
+		await expect(limiter.attempt({ key: 'a', run: hit })).rejects.toThrow(Refused);
+		await expect(limiter.attempt({ key: 'b', run: hit })).resolves.toBe('found');
 	});
 
 	it('counts neither successes nor other errors', async () => {
-		const { limiter } = limiterAt({ now: 0 });
+		const limiter = failureLimiter();
 		const other = () => Promise.reject(new Error('conflict'));
 		for (let i = 0; i < 5; i++) {
-			await limiter.attempt('a', hit);
-			await expect(limiter.attempt('a', other)).rejects.toThrow('conflict');
+			await limiter.attempt({ key: 'a', run: hit });
+			await expect(limiter.attempt({ key: 'a', run: other })).rejects.toThrow('conflict');
 		}
-		await expect(limiter.attempt('a', hit)).resolves.toBe('found');
+		await expect(limiter.attempt({ key: 'a', run: hit })).resolves.toBe('found');
 	});
 
 	it('lets the caller try again once the window has passed', async () => {
-		const clock = { now: 0 };
-		const { limiter } = limiterAt(clock);
-		for (let i = 0; i < 3; i++) await expect(limiter.attempt('a', miss)).rejects.toThrow(Miss);
-		clock.now = 1000;
-		await expect(limiter.attempt('a', hit)).resolves.toBe('found');
-	});
-});
-
-describe('createMemoryFailureStore', () => {
-	it('drops expired entries instead of keeping every key it ever saw', async () => {
-		const clock = { now: 0 };
-		const store = createMemoryFailureStore(() => clock.now);
-		for (let i = 0; i < 50; i++) await store.add(`key${i}`, 1000);
-		expect(store.size).toBe(50);
-		clock.now = 120_000;
-		await store.add('fresh', 1000);
-		expect(store.size).toBe(1);
-	});
-});
-
-describe('createRedisFailureStore', () => {
-	it('creates the key with its expiry before counting, in one transaction', async () => {
-		const calls: unknown[][] = [];
-		const redis: RedisCommands = {
-			get: async () => '2',
-			multi: () => ({
-				set: (...args) => calls.push(['set', ...args]),
-				incr: (...args) => calls.push(['incr', ...args]),
-				exec: async () => calls.push(['exec'])
-			})
-		};
-		const store = createRedisFailureStore(redis, 'p:');
-		await store.add('a', 600_000);
-		expect(calls).toEqual([['set', 'p:a', '0', 'PX', 600_000, 'NX'], ['incr', 'p:a'], ['exec']]);
-		expect(await store.count('a')).toBe(2);
+		const limiter = failureLimiter();
+		for (let i = 0; i < 3; i++)
+			await expect(limiter.attempt({ key: 'a', run: miss })).rejects.toThrow(Miss);
+		vi.advanceTimersByTime(1000);
+		await expect(limiter.attempt({ key: 'a', run: hit })).resolves.toBe('found');
 	});
 });
 
 describe('createAttemptLimiter', () => {
-	function attemptLimiterAt(clock: { now: number }) {
-		return createAttemptLimiter({
-			store: createMemoryFailureStore(() => clock.now),
-			limit: 2,
-			windowMs: 1000,
-			refused: () => new Refused()
-		});
-	}
+	const attemptLimiter = () =>
+		createAttemptLimiter({ counter: counterOf(2), refused: () => new Refused() });
 
 	it('counts every attempt and refuses past the limit, per caller', async () => {
-		const limiter = attemptLimiterAt({ now: 0 });
+		const limiter = attemptLimiter();
 		await limiter.take('a');
 		await limiter.take('a');
 		await expect(limiter.take('a')).rejects.toThrow(Refused);
@@ -101,11 +66,29 @@ describe('createAttemptLimiter', () => {
 	});
 
 	it('lets the caller in again once the window has passed', async () => {
-		const clock = { now: 0 };
-		const limiter = attemptLimiterAt(clock);
+		const limiter = attemptLimiter();
 		await limiter.take('a');
 		await limiter.take('a');
-		clock.now = 1000;
+		vi.advanceTimersByTime(1000);
 		await expect(limiter.take('a')).resolves.toBeUndefined();
+	});
+});
+
+describe('createCounter', () => {
+	it('counts in memory while Redis cannot be reached', async () => {
+		vi.useRealTimers();
+		// Nothing listens on port 1, and without retries every command fails at once.
+		const redis = new Redis('redis://127.0.0.1:1', {
+			lazyConnect: true,
+			maxRetriesPerRequest: 0,
+			retryStrategy: () => null
+		});
+		const limiter = createAttemptLimiter({
+			counter: createCounter({ redis, prefix: 'test', limit: 1, windowSeconds: 60 }),
+			refused: () => new Refused()
+		});
+		await expect(limiter.take('a')).resolves.toBeUndefined();
+		await expect(limiter.take('a')).rejects.toThrow(Refused);
+		redis.disconnect();
 	});
 });

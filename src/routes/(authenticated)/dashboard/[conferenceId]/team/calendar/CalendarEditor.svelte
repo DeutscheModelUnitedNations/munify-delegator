@@ -77,7 +77,7 @@
 	const percent = (units: number) => `${(units / grid.totalUnits) * 100}%`;
 
 	function entryStyle(entry: (typeof editor.entries)[number]) {
-		const extent = entryExtent(grid, entry);
+		const extent = entryExtent({ grid, placement: entry });
 		if (!extent) return 'display: none;';
 		const { lane, lanes } = editor.laneOf(entry.id);
 		const laneWidth = extent.width / lanes;
@@ -87,7 +87,7 @@
 	}
 
 	function creatingStyle(creating: NonNullable<typeof editor.creating>) {
-		const extent = entryExtent(grid, creating);
+		const extent = entryExtent({ grid, placement: creating });
 		if (!extent) return 'display: none;';
 		const top = ((creating.span.start - editor.range.startHour * 60) / 60) * HOUR_HEIGHT;
 		const height = ((creating.span.end - creating.span.start) / 60) * HOUR_HEIGHT;
@@ -104,7 +104,11 @@
 		if (!layer) return { minutes: 0, unit: 0 };
 		const rect = layer.getBoundingClientRect();
 		return {
-			minutes: minutesAtOffset(event.clientY - rect.top, HOUR_HEIGHT, editor.range.startHour),
+			minutes: minutesAtOffset({
+				offsetPx: event.clientY - rect.top,
+				hourHeight: HOUR_HEIGHT,
+				startHour: editor.range.startHour
+			}),
 			unit: ((event.clientX - rect.left) / rect.width) * grid.totalUnits
 		};
 	}
@@ -122,16 +126,24 @@
 	}
 
 	/** Starts a gesture on the card under the pointer, or on the empty slot there. */
-	function beginGesture(target: Element, position: PointerPosition) {
+	function beginGesture({ target, position }: { target: Element; position: PointerPosition }) {
 		const card = target.closest<HTMLElement>('[data-entry-id]');
 		if (card?.dataset.entryId) {
-			editor.beginEntryDrag(card.dataset.entryId, resizeMode(target), position);
+			editor.beginEntryDrag({
+				entryId: card.dataset.entryId,
+				mode: resizeMode(target),
+				pointer: position
+			});
 			card.focus();
 			return true;
 		}
-		const column = columnIndexAt(grid, position.unit);
+		const column = columnIndexAt({ grid, unit: position.unit });
 		if (!column) return false;
-		editor.beginCreate(column.block.dayId, column.index, position.minutes);
+		editor.beginCreate({
+			dayId: column.block.dayId,
+			column: column.index,
+			minutes: position.minutes
+		});
 		return true;
 	}
 
@@ -142,7 +154,7 @@
 
 	function onPointerDown(event: PointerEvent) {
 		const target = pressTarget(event);
-		if (!target || !layer || !beginGesture(target, pointerPosition(event))) return;
+		if (!target || !layer || !beginGesture({ target, position: pointerPosition(event) })) return;
 		press = { x: event.clientX, y: event.clientY };
 		// All later events of the gesture come to the layer, wherever the card is drawn meanwhile
 		layer.setPointerCapture(event.pointerId);
@@ -150,10 +162,10 @@
 
 	function onPointerMove(event: PointerEvent) {
 		if (!editor.drag || !press) return;
-		editor.moveDrag(
-			pointerPosition(event),
-			Math.hypot(event.clientX - press.x, event.clientY - press.y)
-		);
+		editor.moveDrag({
+			pointer: pointerPosition(event),
+			travelled: Math.hypot(event.clientX - press.x, event.clientY - press.y)
+		});
 	}
 
 	function onPointerUp() {
@@ -179,19 +191,26 @@
 		editor.cancelDrag();
 	}
 
-	function runKeyAction(entryId: string, action: NonNullable<ReturnType<typeof keyAction>>) {
+	function runKeyAction({
+		entryId,
+		action
+	}: {
+		entryId: string;
+		action: NonNullable<ReturnType<typeof keyAction>>;
+	}) {
 		if (action.type === 'open') entryModal = { entryId };
 		else if (action.type === 'delete') entryToDelete = entryId;
-		else editor.nudge(entryId, action.mode, action.axis, action.direction);
+		else
+			editor.nudge({ entryId, mode: action.mode, axis: action.axis, direction: action.direction });
 	}
 
 	function onKeyDown(event: KeyboardEvent) {
 		const target = event.target;
 		const entryId = target instanceof HTMLElement ? target.dataset.entryId : undefined;
-		const action = keyAction(event.key, event.shiftKey);
+		const action = keyAction({ key: event.key, shift: event.shiftKey });
 		if (entryId === undefined || !action) return;
 		event.preventDefault();
-		runKeyAction(entryId, action);
+		runKeyAction({ entryId, action });
 	}
 
 	// === Forms ===
@@ -301,7 +320,7 @@
 							style="top: {(hour - editor.range.startHour) *
 								HOUR_HEIGHT}px; transform: translateY(-50%);"
 						>
-							{formatClockMinutes(hour * 60)}
+							{formatClockMinutes({ minutes: hour * 60 })}
 						</div>
 					{/each}
 				</div>
@@ -351,9 +370,9 @@
 							class="bg-primary/20 border-primary pointer-events-none absolute z-20 rounded-field border-2 border-dashed px-2 py-0.5 text-xs font-medium"
 							style={creatingStyle(editor.creating)}
 						>
-							{formatClockMinutes(editor.creating.span.start)} – {formatClockMinutes(
-								editor.creating.span.end
-							)}
+							{formatClockMinutes({ minutes: editor.creating.span.start })} – {formatClockMinutes({
+								minutes: editor.creating.span.end
+							})}
 						</div>
 					{/if}
 

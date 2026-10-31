@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client, type AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -32,7 +33,13 @@
 
 	// --- Data queries ---
 
-	function fetchPaymentReference(reference: string, conferenceId: string) {
+	function fetchPaymentReference({
+		reference,
+		conferenceId
+	}: {
+		reference: string;
+		conferenceId: string;
+	}) {
 		return Promise.all([
 			client.query.paymentTransactions({
 				__args: { where: { id: { eq: reference }, conference: { id: { eq: conferenceId } } } },
@@ -89,7 +96,10 @@
 	async function loadReference(searchValue: string) {
 		referenceFetching = true;
 		try {
-			reference = await fetchPaymentReference(searchValue, routeParams.conferenceId);
+			reference = await fetchPaymentReference({
+				reference: searchValue,
+				conferenceId: routeParams.conferenceId
+			});
 		} finally {
 			referenceFetching = false;
 		}
@@ -117,7 +127,11 @@
 
 	/** Whether the transaction searched for has loaded and nothing is pending. */
 	const resultReady = $derived(
-		transactionReadyFor(params.searchValue, paymentTransaction?.id, referenceFetching)
+		transactionReadyFor({
+			searchValue: params.searchValue,
+			transactionId: paymentTransaction?.id,
+			fetching: referenceFetching
+		})
 	);
 
 	// Remember the transactions that were found, the latest first, each once
@@ -129,7 +143,12 @@
 		users: readonly { givenName?: string | null; familyName?: string | null }[]
 	) =>
 		users
-			.map((user) => formatNames(user.givenName ?? undefined, user.familyName ?? undefined))
+			.map((user) =>
+				formatNames({
+					givenName: user.givenName ?? undefined,
+					familyName: user.familyName ?? undefined
+				})
+			)
 			.join(', ');
 
 	const payers = $derived(payerNames(referencedUsers ?? []));
@@ -151,9 +170,13 @@
 	// --- Actions ---
 
 	const changeTransactionStatus = async (status: AdministrativestatusEnum) => {
-		const update = transactionStatusUpdate(paymentTransaction?.id, status, recieveDate);
+		const update = transactionStatusUpdate({
+			transactionId: paymentTransaction?.id,
+			status,
+			recieveDate
+		});
 		if ('error' in update) {
-			console.error(update.error);
+			logger.error('Updating the payment status failed', update.error);
 			return;
 		}
 
@@ -208,7 +231,13 @@
 	});
 
 	/** The icon telling where a referenced person's payment stands. */
-	function paymentStatusIcon(userId: string, transactionReceived: boolean) {
+	function paymentStatusIcon({
+		userId,
+		transactionReceived
+	}: {
+		userId: string;
+		transactionReceived: boolean;
+	}) {
 		const status = getPaymentStatus(userId);
 		if (status === 'DONE') {
 			return transactionReceived ? 'fa-check' : 'fa-circle-exclamation-check fa-beat-fade';
@@ -227,7 +256,13 @@
 		});
 
 		hotkeys('alt+a', () => {
-			if (canMarkReceived(params.searchValue, paymentTransaction, hotkeyDebounce)) {
+			if (
+				canMarkReceived({
+					searchValue: params.searchValue,
+					transaction: paymentTransaction,
+					busy: hotkeyDebounce
+				})
+			) {
 				markReceivedAndNext();
 			}
 		});
@@ -337,9 +372,17 @@
 </div>
 
 {#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
-	{@const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
+	{@const name = formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined
+	})}
 	<div class="bg-base-200 flex w-full items-center gap-2 rounded-field px-3 py-2 sm:gap-4 sm:px-4">
-		<i class="fa-sharp-duotone fa-solid {paymentStatusIcon(user.id, received)} text-2xl"></i>
+		<i
+			class="fa-sharp-duotone fa-solid {paymentStatusIcon({
+				userId: user.id,
+				transactionReceived: received
+			})} text-2xl"
+		></i>
 		<div class="min-w-0 text-lg font-bold break-words">
 			{name}
 		</div>

@@ -5,7 +5,7 @@ import {
 	calendarDayExportSchema
 } from '#lib/schemata/calendarDayExport';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /** The import document arrives either as a JSON string or already parsed. */
 export function parseImportData(importData: unknown) {
@@ -14,23 +14,30 @@ export function parseImportData(importData: unknown) {
 		try {
 			raw = JSON.parse(importData);
 		} catch {
-			throw apiError('INVALID_INPUT', m.calendarImportMalformed());
+			throw apiError({ code: 'INVALID_INPUT', message: m.calendarImportMalformed() });
 		}
 	}
 
 	const parsed = calendarDayExportSchema.safeParse(raw);
 	if (!parsed.success) {
-		throw apiError('INVALID_INPUT', m.calendarImportInvalid({ details: parsed.error.message }));
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.calendarImportInvalid({ details: parsed.error.message })
+		});
 	}
 	return parsed.data;
 }
 
 /** Creates the day's tracks and maps each track name to its new id. */
-async function importTracks(
-	tx: Transaction,
-	dayId: string,
-	tracks: CalendarDayExportData['tracks']
-) {
+async function importTracks({
+	tx,
+	dayId,
+	tracks
+}: {
+	tx: Transaction;
+	dayId: string;
+	tracks: CalendarDayExportData['tracks'];
+}) {
 	const trackIdByName = new Map<string, string>();
 	for (const track of tracks) {
 		const row = await tx
@@ -58,11 +65,15 @@ function distinctPlaces(entries: CalendarDayExportData['entries']) {
 }
 
 /** Maps each place the entries name to its id, reusing a place the conference already has. */
-async function importPlaces(
-	tx: Transaction,
-	conferenceId: string,
-	entries: CalendarDayExportData['entries']
-) {
+async function importPlaces({
+	tx,
+	conferenceId,
+	entries
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	entries: CalendarDayExportData['entries'];
+}) {
 	const placeIdByName = new Map<string, string>();
 	for (const place of distinctPlaces(entries)) {
 		const existing = await tx.query.place.findFirst({
@@ -93,17 +104,20 @@ async function importPlaces(
 }
 
 /** An "HH:MM" time anchored to the given date in UTC. */
-function timeOnDay(date: Date, time: string) {
+function timeOnDay({ date, time }: { date: Date; time: string }) {
 	const [hour, minute] = time.split(':').map(Number);
 	const result = new Date(date);
 	result.setUTCHours(hour ?? 0, minute ?? 0, 0, 0);
 	return result;
 }
 
-export async function createImportedDay(
-	args: { conferenceId: string; name: string; date: Date; sortOrder: number },
-	importData: CalendarDayExportData
-) {
+export async function createImportedDay({
+	args,
+	importData
+}: {
+	args: { conferenceId: string; name: string; date: Date; sortOrder: number };
+	importData: CalendarDayExportData;
+}) {
 	return db.transaction(async (tx) => {
 		const day = await tx
 			.insert(schema.calendarDay)
@@ -116,8 +130,12 @@ export async function createImportedDay(
 			.returning()
 			.then(assertFirstEntryExists);
 
-		const trackIdByName = await importTracks(tx, day.id, importData.tracks);
-		const placeIdByName = await importPlaces(tx, args.conferenceId, importData.entries);
+		const trackIdByName = await importTracks({ tx, dayId: day.id, tracks: importData.tracks });
+		const placeIdByName = await importPlaces({
+			tx,
+			conferenceId: args.conferenceId,
+			entries: importData.entries
+		});
 
 		for (const entry of importData.entries) {
 			const created = await tx
@@ -126,8 +144,8 @@ export async function createImportedDay(
 					calendarDayId: day.id,
 					name: entry.name,
 					description: entry.description,
-					startTime: timeOnDay(args.date, entry.startTime),
-					endTime: timeOnDay(args.date, entry.endTime),
+					startTime: timeOnDay({ date: args.date, time: entry.startTime }),
+					endTime: timeOnDay({ date: args.date, time: entry.endTime }),
 					fontAwesomeIcon: entry.fontAwesomeIcon,
 					color: entry.color,
 					room: entry.room,

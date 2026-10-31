@@ -9,7 +9,7 @@ import {
 } from '#api/services/authHelper/rules';
 import { grantWhere } from '#api/services/authHelper/utils';
 import type { Context } from '#api/context';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
 /**
@@ -30,7 +30,7 @@ const PUBLIC_COLUMNS = {
 
 /** Schools named in a conference the caller looks after the participants of. */
 function managedSchool(ctx: Context) {
-	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+	const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 	if (!conference) return undefined;
 	return {
 		OR: [{ waitingListEntries: { conference } }, { participants: { conference } }]
@@ -44,7 +44,13 @@ export function registerSchoolAbilities() {
 }
 
 /** Refuses unless the caller may edit every school in `ids` (which includes reading them in full). */
-export async function assertCanUpdateSchools(ctx: ApiContext, ids: readonly string[]) {
+export async function assertCanUpdateSchools({
+	ctx,
+	ids
+}: {
+	ctx: ApiContext;
+	ids: readonly string[];
+}) {
 	const unique = [...new Set(ids)];
 	const allowed = await db.query.school.findMany({
 		...(await ctx.abilities.school.filter('update')).merge({ where: { id: { in: unique } } }).query
@@ -52,7 +58,7 @@ export async function assertCanUpdateSchools(ctx: ApiContext, ids: readonly stri
 		columns: { id: true }
 	});
 	if (allowed.length !== unique.length) {
-		throw apiError('NOT_FOUND', m.schoolNotFound());
+		throw apiError({ code: 'NOT_FOUND', message: m.schoolNotFound() });
 	}
 }
 
@@ -61,17 +67,29 @@ export async function assertCanUpdateSchools(ctx: ApiContext, ids: readonly stri
  * may see: those they look after the participants of, or every one (`undefined`) for an admin.
  * Managing a school is no reason to learn about the conferences of other organizers.
  */
-export async function assertCanReadSchoolMetrics(ctx: ApiContext, schoolId: string) {
-	await assertCanUpdateSchools(ctx, [schoolId]);
+export async function assertCanReadSchoolMetrics({
+	ctx,
+	schoolId
+}: {
+	ctx: ApiContext;
+	schoolId: string;
+}) {
+	await assertCanUpdateSchools({ ctx, ids: [schoolId] });
 	if (isSystemAdmin(ctx)) return undefined;
 	const caredFor = await db.query.conference.findMany({
-		where: isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES),
+		where: isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES }),
 		columns: { id: true }
 	});
 	return caredFor.map((conference) => conference.id);
 }
 
 /** The schools of a conference, with their numbers, are participant care's. */
-export async function assertCanReadConferenceSchools(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanReadConferenceSchools({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

@@ -55,17 +55,23 @@
 
 	// --- Actions ---
 
-	const changeAdministrativestatusEnum = (
-		statusId: string | undefined,
-		userId: string | undefined,
-		change: StatusChange
-	) =>
-		flow.changeStatus(userId, (userId) =>
-			client.mutate.updateConferenceParticipant({
-				__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
-				...postalStatusFields
-			})
-		);
+	const changeAdministrativestatusEnum = ({
+		statusId,
+		userId,
+		change
+	}: {
+		statusId: string | undefined;
+		userId: string | undefined;
+		change: StatusChange;
+	}) =>
+		flow.changeStatus({
+			userId,
+			write: (userId) =>
+				client.mutate.updateConferenceParticipant({
+					__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
+					...postalStatusFields
+				})
+		});
 
 	const confirmAllStatuses = () =>
 		flow.runExclusive(async () => {
@@ -75,11 +81,14 @@
 				return;
 			}
 
-			await changeAdministrativestatusEnum(
-				scanned.status.id,
-				scanned.user.id,
-				confirmAllChange(conference?.startConference, scanned.user.birthday)
-			);
+			await changeAdministrativestatusEnum({
+				statusId: scanned.status.id,
+				userId: scanned.user.id,
+				change: confirmAllChange({
+					startConference: conference?.startConference,
+					birthday: scanned.user.birthday
+				})
+			});
 		});
 </script>
 
@@ -108,14 +117,21 @@
 
 	{#snippet children(userDetails, postalRegistrationDetails)}
 		{@const change = (statusChange: StatusChange) =>
-			changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, statusChange)}
+			changeAdministrativestatusEnum({
+				statusId: postalRegistrationDetails?.id,
+				userId: userDetails.id,
+				change: statusChange
+			})}
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
 			<i class="fa-sharp-duotone fa-solid fa-user text-2xl"></i>
 			<div class="grow">
 				<h3 class="text-xl font-bold">
-					{formatNames(userDetails.givenName ?? undefined, userDetails.familyName ?? undefined)}
+					{formatNames({
+						givenName: userDetails.givenName ?? undefined,
+						familyName: userDetails.familyName ?? undefined
+					})}
 				</h3>
 				<p class="text-sm opacity-60">
 					{userDetails.birthday ? userDetails.birthday.toLocaleDateString(getLocale()) : ''}
@@ -137,7 +153,7 @@
 				changeStatus={async (newStatus: AdministrativestatusEnum) =>
 					await change({ termsAndConditions: newStatus })}
 			/>
-			{#if !ofAgeAtConference(conference?.startConference, userDetails.birthday)}
+			{#if !ofAgeAtConference( { startConference: conference?.startConference, dateOfBirth: userDetails.birthday } )}
 				<StatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-user-shield"

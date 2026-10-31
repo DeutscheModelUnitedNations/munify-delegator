@@ -8,15 +8,17 @@ describe('todayIndex', () => {
 	];
 
 	test('finds the day matching today in the timezone', () => {
-		expect(todayIndex(days, 'UTC', new Date('2026-03-02T10:00:00Z'))).toBe(1);
+		expect(todayIndex({ days, timezone: 'UTC', now: new Date('2026-03-02T10:00:00Z') })).toBe(1);
 	});
 
 	test('judges today in the given timezone', () => {
-		expect(todayIndex(days, 'Asia/Tokyo', new Date('2026-03-01T20:00:00Z'))).toBe(1);
+		expect(
+			todayIndex({ days, timezone: 'Asia/Tokyo', now: new Date('2026-03-01T20:00:00Z') })
+		).toBe(1);
 	});
 
 	test('falls back to the first day', () => {
-		expect(todayIndex(days, 'UTC', new Date('2030-01-01T00:00:00Z'))).toBe(0);
+		expect(todayIndex({ days, timezone: 'UTC', now: new Date('2030-01-01T00:00:00Z') })).toBe(0);
 	});
 });
 
@@ -29,16 +31,16 @@ describe('entryTrackSummary', () => {
 	};
 
 	test('is null without a selection', () => {
-		expect(entryTrackSummary(null, null)).toBeNull();
-		expect(entryTrackSummary(day, { tracks: [] })).toBeNull();
+		expect(entryTrackSummary({ day: null, entry: null })).toBeNull();
+		expect(entryTrackSummary({ day, entry: { tracks: [] } })).toBeNull();
 	});
 
 	test('is the single track of the entry', () => {
-		expect(entryTrackSummary(day, { tracks: [{ id: 'b' }] })).toEqual(day.tracks[1]);
+		expect(entryTrackSummary({ day, entry: { tracks: [{ id: 'b' }] } })).toEqual(day.tracks[1]);
 	});
 
 	test('joins several track names', () => {
-		expect(entryTrackSummary(day, { tracks: [{ id: 'a' }, { id: 'b' }] })).toEqual({
+		expect(entryTrackSummary({ day, entry: { tracks: [{ id: 'a' }, { id: 'b' }] } })).toEqual({
 			name: 'A, B',
 			description: null
 		});

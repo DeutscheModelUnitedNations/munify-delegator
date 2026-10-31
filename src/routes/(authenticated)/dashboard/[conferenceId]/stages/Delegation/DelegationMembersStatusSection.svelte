@@ -52,16 +52,16 @@
 				(x) => x.conference.id === conferenceId
 			)}
 			<DelegationStatusTableEntry
-				name={formatNames(member.user.givenName, member.user.familyName)}
+				name={formatNames({ givenName: member.user.givenName, familyName: member.user.familyName })}
 				pronouns={member.user.pronouns ?? ''}
 				headDelegate={member.isHeadDelegate}
 				committee={member.assignedCommittee?.abbreviation ?? ''}
 				withPaymentStatus
 				withPostalStatus
-				postalSatus={getSimplifiedPostalStatus(
+				postalSatus={getSimplifiedPostalStatus({
 					participantStatus,
-					participantStatus?.ofAgeAtConference ?? false
-				)}
+					ofAge: participantStatus?.ofAgeAtConference ?? false
+				})}
 				paymentStatus={participantStatus?.paymentStatus}
 			/>
 		{/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import type {
 		AdministrativestatusEnum,
@@ -35,11 +36,26 @@
 
 	let { userId, conferenceId, isConferenceSupervisor }: Props = $props();
 
-	const data = $derived(await fetchStatusWithAge(userId, conferenceId));
+	const data = $derived(await fetchStatusWithAge({ userId, conferenceId }));
 	const status = $derived(data.statuses.at(0));
 	const statusId = $derived(status?.id);
+	/** What decides which mails the person is owed, as one value. */
+	const statusRevision = $derived(
+		[
+			status?.paymentStatus,
+			status?.termsAndConditions,
+			status?.guardianConsent,
+			status?.mediaConsent,
+			status?.didAttend
+		].join()
+	);
 
-	const isAdult = $derived(ofAgeAtConference(data.conference.startConference, data.user.birthday));
+	const isAdult = $derived(
+		ofAgeAtConference({
+			startConference: data.conference.startConference,
+			dateOfBirth: data.user.birthday
+		})
+	);
 
 	const administrativeOptions: StatusOption<AdministrativestatusEnum>[] = [
 		{ value: 'PENDING', label: m.statusPending(), faIcon: 'hourglass-half', tone: 'warning' },
@@ -75,12 +91,12 @@
 	];
 
 	const change = (input: StatusChange) =>
-		changeParticipantStatus({ id: statusId, conferenceId, userId }, input);
+		changeParticipantStatus({ target: { id: statusId, conferenceId, userId }, input });
 
 	/** Everything the postal documents need is read when they are asked for, not kept live. */
 	const downloadPostalDocs = async () => {
 		try {
-			const { user, conference } = await fetchPostalRegistrationSources(userId, conferenceId);
+			const { user, conference } = await fetchPostalRegistrationSources({ userId, conferenceId });
 			if (!hasPostalAddress(conference)) {
 				toast.error(m.httpGenericError());
 				return;
@@ -95,10 +111,10 @@
 				birthday: postal.birthday,
 				participant: postal.participant,
 				recipient: postalRecipient(conference),
-				fileName: documentFileName(user, 'postal_registration')
+				fileName: documentFileName({ user, document: 'postal_registration' })
 			});
 		} catch (error) {
-			console.error('Error generating PDF:', error);
+			logger.error('Error generating PDF', error);
 			toast.error(m.httpGenericError());
 		}
 	};
@@ -186,5 +202,5 @@
 
 	<CertificateSection {userId} {conferenceId} />
 
-	<EmailLogSection {userId} {conferenceId} />
+	<EmailLogSection {userId} {conferenceId} {statusRevision} />
 </div>

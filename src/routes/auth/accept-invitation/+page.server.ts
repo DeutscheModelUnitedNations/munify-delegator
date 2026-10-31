@@ -1,8 +1,11 @@
 import { db } from '#api/db/db';
-import { hashToken, pendingInvitationCookieName } from '#api/services/account/invitationToken';
+import {
+	hashToken,
+	pendingInvitationCookieName
+} from '#api/handlers/teamMemberInvitation/invitationToken';
 import { claimPendingInvitation } from '#api/services/account/upsertSelf';
 import type { PageServerLoad } from './$types';
-import { assertInvitationUsable } from '#api/services/account/invitationValidity';
+import { assertInvitationUsable } from '#api/handlers/teamMemberInvitation/invitationValidity';
 import { error, redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
 

@@ -22,15 +22,15 @@ schemaBuilder.mutationFields((t) => ({
 			role: t.arg({ type: teamRoleEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanChangeTeamRole(ctx, args.id, args.role);
+			await assertCanChangeTeamRole({ ctx, id: args.id, role: args.role });
 			await db
 				.update(schema.teamMember)
 				.set({ role: args.role })
-				.where(whereRows(schema.teamMember, { id: args.id }));
+				.where(whereRows({ table: schema.teamMember, filter: { id: args.id } }));
 			teamMemberPubsub.updated(args.id);
 
 			return db.query.teamMember
-				.findFirst(query(await queryAllowed(ctx.abilities.teamMember, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.teamMember, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -39,7 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'teamMember', args.id);
+			await deleteIfAllowed({ ctx, table: 'teamMember', id: args.id });
 			teamMemberPubsub.removed();
 
 			return true;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
@@ -36,14 +37,17 @@
 				toast.error(m.certificateDownloadError());
 				return;
 			}
-			await downloadCompleteCertificate(
-				certificate,
-				conferenceData.certificateFile?.url,
-				documentFileName(user, 'certificate'),
-				resolveDocumentLayout('certificate', conferenceData.documentLayouts)
-			);
+			await downloadCompleteCertificate({
+				data: certificate,
+				certificate: conferenceData.certificateFile?.url,
+				fileName: documentFileName({ user, document: 'certificate' }),
+				layout: resolveDocumentLayout({
+					document: 'certificate',
+					stored: conferenceData.documentLayouts
+				})
+			});
 		} catch (error) {
-			console.error('Error generating PDF:', error);
+			logger.error('Error generating PDF', error);
 			toast.error(m.certificateDownloadError());
 		}
 	};

@@ -5,7 +5,7 @@ const SESSION_COOKIE = 'auth_oidc_';
 
 /**
  * Claims the oidc-mock login page (oidc-mock.yaml, served by `vite dev`) signs into the tokens,
- * normalized by src/api/services/OIDC.ts into an OIDCUser.
+ * normalized by src/api/services/oidc/OIDC.ts into an OIDCUser.
  */
 export interface TestUserClaims {
 	email: string;

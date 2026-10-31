@@ -32,7 +32,13 @@ export function mailSyncUserWhere(cutoff: Date) {
 }
 
 /** The user with every participation in a conference that ended before `cutoff` left out. */
-export function withinRetention(user: MailSyncUser, cutoff: Date): MailSyncUser {
+export function withinRetention({
+	user,
+	cutoff
+}: {
+	user: MailSyncUser;
+	cutoff: Date;
+}): MailSyncUser {
 	const recent = (conference: { endConference: Date }) => conference.endConference >= cutoff;
 	return {
 		...user,

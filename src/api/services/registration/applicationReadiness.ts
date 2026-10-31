@@ -1,7 +1,7 @@
 import { m } from '#lib/paraglide/messages';
 import { db } from '#api/db/db';
 import type * as schema from '#api/db/schema/index';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { acceptsApplications, applicationTextsComplete } from '#lib/helpers/applicationReadiness';
 
 /** The application texts an update may change alongside applying. */
@@ -11,7 +11,8 @@ export type ApplicationTextEdits = {
 };
 
 /** A text as it is once the update is written: an edit replaces it, `null` included. */
-const edited = <T>(edit: T | undefined, stored: T) => (edit === undefined ? stored : edit);
+const edited = <T>({ edit, stored }: { edit: T | undefined; stored: T }) =>
+	edit === undefined ? stored : edit;
 
 /**
  * Refuses registering yourself (as head delegate, single participant or supervisor) or joining a
@@ -29,8 +30,8 @@ export async function assertRegistrationOpen(conferenceId: string) {
 			registrationDeadlineGracePeriodMinutes: true
 		}
 	});
-	if (!conference || !acceptsApplications(conference)) {
-		throw apiError('CONFLICT', m.applicationTimeframeClosed());
+	if (!conference || !acceptsApplications({ conference })) {
+		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
 	}
 }
 
@@ -41,7 +42,11 @@ export async function assertRegistrationOpen(conferenceId: string) {
  * (`assertRegistrationOpen`); editing a registration is open in any stage. The rules themselves live in
  * `#lib/helpers/applicationReadiness`, which the registration stages show as todos.
  */
-export function assertApplicationReady(
+export function assertApplicationReady({
+	applicant,
+	edits,
+	minRoleApplications
+}: {
 	applicant: {
 		experience: string | null;
 		motivation: string | null;
@@ -51,24 +56,24 @@ export function assertApplicationReady(
 			applicationDeadline: Date;
 			registrationDeadlineGracePeriodMinutes: number;
 		} | null;
-	},
-	edits: ApplicationTextEdits,
-	minRoleApplications: number
-) {
+	};
+	edits: ApplicationTextEdits;
+	minRoleApplications: number;
+}) {
 	if (applicant.appliedForRoles.length < minRoleApplications) {
-		throw apiError('CONFLICT', m.notEnoughRoleApplications());
+		throw apiError({ code: 'CONFLICT', message: m.notEnoughRoleApplications() });
 	}
 	if (
 		!applicationTextsComplete({
-			motivation: edited(edits.motivation, applicant.motivation),
-			experience: edited(edits.experience, applicant.experience)
+			motivation: edited({ edit: edits.motivation, stored: applicant.motivation }),
+			experience: edited({ edit: edits.experience, stored: applicant.experience })
 		})
 	) {
-		throw apiError('CONFLICT', m.missingInformation());
+		throw apiError({ code: 'CONFLICT', message: m.missingInformation() });
 	}
 	// `conference` is a required FK, but the relational type is nullable, so this is narrowed
 	// rather than asserted.
-	if (applicant.conference && !acceptsApplications(applicant.conference)) {
-		throw apiError('CONFLICT', m.applicationTimeframeClosed());
+	if (applicant.conference && !acceptsApplications({ conference: applicant.conference })) {
+		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
 	}
 }

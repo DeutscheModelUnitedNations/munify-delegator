@@ -3,7 +3,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import { PAPER_ROLES, systemAdmin, teamConference } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 export function registerPaperReviewAbilities() {
 	// Ported from abilities/entities/paper/paperReview.ts
@@ -36,10 +36,13 @@ export function registerPaperReviewAbilities() {
  * Rejects the review unless the paper exists in a conference whose papers the caller reviews.
  * Reviewing is a reviewer's action; reading the paper is not enough.
  */
-export async function assertCanReviewPaper(ctx: ApiContext, paperId: string) {
+export async function assertCanReviewPaper({ ctx, paperId }: { ctx: ApiContext; paperId: string }) {
 	const paper = await db.query.paper.findFirst({
-		where: { id: paperId, delegation: { conference: teamConference(ctx, 'reviewPapers') } },
+		where: {
+			id: paperId,
+			delegation: { conference: teamConference({ ctx, permission: 'reviewPapers' }) }
+		},
 		columns: { id: true }
 	});
-	if (!paper) throw apiError('NOT_FOUND', m.reviewOnlyReviewers());
+	if (!paper) throw apiError({ code: 'NOT_FOUND', message: m.reviewOnlyReviewers() });
 }

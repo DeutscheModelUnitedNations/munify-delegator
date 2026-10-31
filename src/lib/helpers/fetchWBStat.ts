@@ -1,7 +1,12 @@
-export default async function fetchWBStat(
-	country: string,
-	indicator: string
-): Promise<number | null> {
+import { z } from 'zod';
+import { logger } from '#lib/logger';
+export default async function fetchWBStat({
+	country,
+	indicator
+}: {
+	country: string;
+	indicator: string;
+}): Promise<number | null> {
 	try {
 		const url = new URL(
 			'https://api.worldbank.org/v2/country/' +
@@ -14,7 +19,7 @@ export default async function fetchWBStat(
 
 		const response = await fetch(url.toString());
 		if (!response.ok) {
-			console.warn(`World Bank API returned ${response.status} for ${country}/${indicator}`);
+			logger.warn(`World Bank API returned ${response.status} for ${country}/${indicator}`);
 			return null;
 		}
 
@@ -22,20 +27,20 @@ export default async function fetchWBStat(
 		return extractValue(data);
 	} catch (error) {
 		// Network errors, CORS issues, etc.
-		console.warn(`Failed to fetch World Bank data for ${country}/${indicator}:`, error);
+		logger.warn(`Failed to fetch World Bank data for ${country}/${indicator}`, error);
 		return null;
 	}
 }
 
-function extractValue(data: unknown): number | null {
-	if (!Array.isArray(data) || data.length < 2 || !Array.isArray(data[1])) {
-		return null;
-	}
+/** An entry of the data page; anything that is not one carrying a number counts as no value. */
+const indicatorEntry = z.object({ value: z.number() }).nullable().catch(null);
 
-	for (const item of data[1]) {
-		if (item && typeof item === 'object' && 'value' in item && item.value !== null) {
-			return item.value;
-		}
-	}
-	return null;
+/** The API answers `[paging, entries]`, the most recent entry first. */
+const indicatorResponse = z.tuple([z.unknown(), z.array(indicatorEntry)], z.unknown());
+
+function extractValue(data: unknown): number | null {
+	const parsed = indicatorResponse.safeParse(data);
+	if (!parsed.success) return null;
+	const [, entries] = parsed.data;
+	return entries.find((entry) => entry !== null)?.value ?? null;
 }

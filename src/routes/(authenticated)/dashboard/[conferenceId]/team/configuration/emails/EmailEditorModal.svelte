@@ -29,7 +29,7 @@
 					class="tab {locale === option ? 'tab-active' : ''}"
 					onclick={() => (locale = option)}
 				>
-					{conferenceLanguageName(option, getLocale())}
+					{conferenceLanguageName({ language: option, inLocale: getLocale() })}
 				</button>
 			{/each}
 		</div>

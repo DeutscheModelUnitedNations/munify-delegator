@@ -14,12 +14,12 @@ import {
 /** What the matcher finds among one scenario's accounts, in the scenario's own terms. */
 function found(scenario: Scenario) {
 	const profiles = scenario.accounts.map((account) =>
-		profileOf(accountId(scenario, account), account)
+		profileOf({ id: accountId({ scenario, account }), account })
 	);
 	const names = new Map<string, string>(
-		scenario.accounts.map((a) => [accountId(scenario, a), a.name])
+		scenario.accounts.map((a) => [accountId({ scenario, account: a }), a.name])
 	);
-	return findDuplicates(profiles, profiles)
+	return findDuplicates({ scanned: profiles, pool: profiles })
 		.map((pair) => ({
 			pair: [names.get(pair.userId), names.get(pair.candidateId)].sort().join('|'),
 			reasons: pair.reasons
@@ -40,10 +40,14 @@ describe('the duplicate scenarios', () => {
 
 	test('no scenario pairs with another one, nor with a dev account', () => {
 		const accounts = duplicateScenarios.flatMap((scenario) =>
-			scenario.accounts.map((account) => profileOf(accountId(scenario, account), account))
+			scenario.accounts.map((account) =>
+				profileOf({ id: accountId({ scenario, account }), account })
+			)
 		);
 		const expected = scenarioPairs().map((row) => `${row.userId}|${row.candidateId}`);
-		const all = findDuplicates(accounts, accounts).map((p) => `${p.userId}|${p.candidateId}`);
+		const all = findDuplicates({ scanned: accounts, pool: accounts }).map(
+			(p) => `${p.userId}|${p.candidateId}`
+		);
 		// every pair found anywhere belongs to a scenario (stale ones are stored, not found)
 		for (const pair of all) expect(expected).toContain(pair);
 	});
@@ -57,7 +61,9 @@ describe('the duplicate scenarios', () => {
 
 	test('every stored pair names accounts of its scenario and carries a decision only when decided', () => {
 		const ids = new Set<string>(
-			duplicateScenarios.flatMap((s) => s.accounts.map((a) => accountId(s, a)))
+			duplicateScenarios.flatMap((s) =>
+				s.accounts.map((a) => accountId({ scenario: s, account: a }))
+			)
 		);
 		for (const row of scenarioPairs()) {
 			expect(ids.has(row.userId)).toBe(true);

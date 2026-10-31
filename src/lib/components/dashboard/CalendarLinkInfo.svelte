@@ -35,7 +35,12 @@
 	});
 
 	const timeline = $derived(
-		timelineOf(entriesForSeat(days, seatNames), conference.timezone, now, 1)
+		timelineOf({
+			entries: entriesForSeat({ days, seatNames }),
+			timezone: conference.timezone,
+			now,
+			count: 1
+		})
 	);
 
 	// Calendar times are UTC wall-clock times, so the day is read in UTC as well
@@ -68,7 +73,7 @@
 				<span class="min-w-0 truncate">
 					<span class="font-medium">{timeline.current.name}</span>
 					<span class="text-base-content/60">
-						· {m.calendarUntil({ time: formatClock(timeline.current.endTime) })}
+						· {m.calendarUntil({ time: formatClock({ time: timeline.current.endTime }) })}
 					</span>
 				</span>
 			{:else}
@@ -92,7 +97,7 @@
 				<span class="min-w-0 truncate">
 					<span class="font-medium">{entry.name}</span>
 					<span class="text-base-content/60">
-						· {formatClock(entry.startTime)} – {formatClock(entry.endTime)}
+						· {formatClock({ time: entry.startTime })} – {formatClock({ time: entry.endTime })}
 					</span>
 				</span>
 			</li>

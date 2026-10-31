@@ -14,9 +14,12 @@ type AnyComponent = Component<any>;
  * Unlike the adapter's own `renderComponent`, `props` is required, so a column
  * cannot forget a prop the component needs.
  */
-export function renderComponent<TComponent extends AnyComponent>(
-	component: TComponent,
-	props: ComponentProps<TComponent>
-) {
+export function renderComponent<TComponent extends AnyComponent>({
+	component,
+	props
+}: {
+	component: TComponent;
+	props: ComponentProps<TComponent>;
+}) {
 	return tanStackRenderComponent(component, props);
 }

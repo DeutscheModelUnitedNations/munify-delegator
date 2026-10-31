@@ -42,7 +42,7 @@ interface Cost {
  * table whatever their own interface language is. It is what the letters and the sort order of a
  * sign follow. A language without translations reads the English names.
  */
-function nationName(alpha3Code: string, language: string): string {
+function nationName({ alpha3Code, language }: { alpha3Code: string; language: string }): string {
 	const nation = allNations.find((candidate) => candidate.cca3 === alpha3Code.toUpperCase());
 	if (!nation) return alpha3Code;
 	return nation.translations[language]?.common ?? nation.name.common;
@@ -53,8 +53,14 @@ function nationName(alpha3Code: string, language: string): string {
  * English. Diacritics are dropped (Ägypten → A). Codes the nation list does not know fall back to
  * their own first letter.
  */
-export function nationInitial(alpha3Code: string, language: string): string {
-	const letter = nationName(alpha3Code, language)
+export function nationInitial({
+	alpha3Code,
+	language
+}: {
+	alpha3Code: string;
+	language: string;
+}): string {
+	const letter = nationName({ alpha3Code, language })
 		.normalize('NFD')
 		.replace(/[^A-Za-z]/g, '')
 		.charAt(0)
@@ -73,19 +79,34 @@ export function nationInitial(alpha3Code: string, language: string): string {
 type Cut = { cost: Cost; cuts: number[] };
 
 /** Whether `cost` beats `current` by the measure `minimize` picks. */
-function isBetter(cost: Cost, current: Cut | null, minimize: 'max' | 'squares'): boolean {
+function isBetter({
+	cost,
+	current,
+	minimize
+}: {
+	cost: Cost;
+	current: Cut | null;
+	minimize: 'max' | 'squares';
+}): boolean {
 	if (!current) return true;
 	return minimize === 'max' ? cost.max < current.cost.max : cost.squares < current.cost.squares;
 }
 
-function bestCut(
-	loads: number[],
-	binCount: number,
-	specialBin: number,
-	extra: number,
-	limit: number,
-	minimize: 'max' | 'squares'
-): Cut | null {
+function bestCut({
+	loads,
+	binCount,
+	specialBin,
+	extra,
+	limit,
+	minimize
+}: {
+	loads: number[];
+	binCount: number;
+	specialBin: number;
+	extra: number;
+	limit: number;
+	minimize: 'max' | 'squares';
+}): Cut | null {
 	const n = loads.length;
 	const prefix = [0];
 	for (const load of loads) prefix.push(prefix[prefix.length - 1] + load);
@@ -97,7 +118,7 @@ function bestCut(
 	best[0][0] = { cost: { max: 0, squares: 0 }, cuts: [] };
 
 	/** Extends the cut of the first `from` letters over `j - 1` bins by the bin `from..i`. */
-	const extend = (j: number, i: number, from: number) => {
+	const extend = ({ j, i, from }: { j: number; i: number; from: number }) => {
 		const before = best[j - 1][from];
 		if (!before) return;
 		const size = prefix[i] - prefix[from] + (j - 1 === specialBin ? extra : 0);
@@ -106,12 +127,13 @@ function bestCut(
 			max: Math.max(before.cost.max, size),
 			squares: before.cost.squares + size * size
 		};
-		if (isBetter(cost, best[j][i], minimize)) best[j][i] = { cost, cuts: [...before.cuts, i] };
+		if (isBetter({ cost, current: best[j][i], minimize }))
+			best[j][i] = { cost, cuts: [...before.cuts, i] };
 	};
 
 	for (let j = 1; j <= binCount; j++) {
 		for (let i = 0; i <= n; i++) {
-			for (let from = 0; from <= i; from++) extend(j, i, from);
+			for (let from = 0; from <= i; from++) extend({ j, i, from });
 		}
 	}
 
@@ -122,11 +144,15 @@ function bestCut(
  * Splits participants into `binCount` bins of consecutive letters that are as equal in size as
  * possible. `others` (no nation) are not part of that: they get one more bin of their own.
  */
-export function splitIntoNametagBins(
-	letterCounts: LetterCount[],
-	others: number,
-	binCount: number
-): NametagBin[] {
+export function splitIntoNametagBins({
+	letterCounts,
+	others,
+	binCount
+}: {
+	letterCounts: LetterCount[];
+	others: number;
+	binCount: number;
+}): NametagBin[] {
 	const bins = Math.max(1, Math.min(MAX_NAMETAG_BINS, Math.floor(binCount)));
 
 	const perLetter = new Map<string, number>();
@@ -137,8 +163,24 @@ export function splitIntoNametagBins(
 	const loads = letters.map((letter) => perLetter.get(letter) ?? 0);
 
 	// First the smallest possible fullest bin, then among the cuts reaching it the most even spread.
-	const smallest = bestCut(loads, bins, -1, 0, Infinity, 'max');
-	const chosen = smallest && bestCut(loads, bins, -1, 0, smallest.cost.max, 'squares');
+	const smallest = bestCut({
+		loads,
+		binCount: bins,
+		specialBin: -1,
+		extra: 0,
+		limit: Infinity,
+		minimize: 'max'
+	});
+	const chosen =
+		smallest &&
+		bestCut({
+			loads,
+			binCount: bins,
+			specialBin: -1,
+			extra: 0,
+			limit: smallest.cost.max,
+			minimize: 'squares'
+		});
 	// `smallest` is reachable by construction, so a cut always exists.
 	if (!chosen) throw new Error('No nametag split found');
 
@@ -220,7 +262,15 @@ async function nationDelegationsOf(conferenceId: string) {
 }
 
 /** The bins of a conference's seated participants. Everyone who holds a seat gets a nametag. */
-export async function loadNametagBins(conferenceId: string, binCount: number, language: string) {
+export async function loadNametagBins({
+	conferenceId,
+	binCount,
+	language
+}: {
+	conferenceId: string;
+	binCount: number;
+	language: string;
+}) {
 	const [nationDelegations, nonStateActorDelegations, pressAndIndividuals, supervisors] =
 		await Promise.all([
 			nationDelegationsOf(conferenceId),
@@ -246,7 +296,12 @@ export async function loadNametagBins(conferenceId: string, binCount: number, la
 
 	const letterCounts = nationDelegations.flatMap((delegation) =>
 		delegation.code
-			? [{ letter: nationInitial(delegation.code, language), count: delegation.memberCount }]
+			? [
+					{
+						letter: nationInitial({ alpha3Code: delegation.code, language }),
+						count: delegation.memberCount
+					}
+				]
 			: []
 	);
 	const others =
@@ -254,7 +309,7 @@ export async function loadNametagBins(conferenceId: string, binCount: number, la
 		supervisors +
 		nonStateActorDelegations.reduce((sum, delegation) => sum + delegation.memberCount, 0);
 
-	return splitIntoNametagBins(letterCounts, others, binCount);
+	return splitIntoNametagBins({ letterCounts, others, binCount });
 }
 
 export interface NametagBinGroup {
@@ -271,20 +326,24 @@ export interface NametagBinGroup {
 	participants: number;
 }
 
-async function nationGroups(
-	conferenceId: string,
-	letters: string[],
-	language: string
-): Promise<NametagBinGroup[]> {
+async function nationGroups({
+	conferenceId,
+	letters,
+	language
+}: {
+	conferenceId: string;
+	letters: string[];
+	language: string;
+}): Promise<NametagBinGroup[]> {
 	const delegations = await nationDelegationsOf(conferenceId);
 	return delegations.flatMap((delegation) => {
 		const code = delegation.code;
-		if (!code || !letters.includes(nationInitial(code, language))) return [];
+		if (!code || !letters.includes(nationInitial({ alpha3Code: code, language }))) return [];
 		return [
 			{
 				nationAlpha3Code: code,
 				roleName: null,
-				sortName: nationName(code, language),
+				sortName: nationName({ alpha3Code: code, language }),
 				nationAlpha2Code:
 					allNations.find((nation) => nation.cca3 === code.toUpperCase())?.cca2.toLowerCase() ??
 					null,
@@ -295,7 +354,15 @@ async function nationGroups(
 	});
 }
 
-function roleGroup(name: string, icon: string | null, participants: number): NametagBinGroup {
+function roleGroup({
+	name,
+	icon,
+	participants
+}: {
+	name: string;
+	icon: string | null;
+	participants: number;
+}): NametagBinGroup {
 	return {
 		nationAlpha3Code: null,
 		sortName: name,
@@ -314,16 +381,24 @@ export function nonStateActorGroups(
 	}[]
 ): NametagBinGroup[] {
 	return delegations.map(({ assignedRole, memberCount }) =>
-		roleGroup(assignedRole?.name ?? '', assignedRole?.fontAwesomeIcon ?? null, memberCount)
+		roleGroup({
+			name: assignedRole?.name ?? '',
+			icon: assignedRole?.fontAwesomeIcon ?? null,
+			participants: memberCount
+		})
 	);
 }
 
 /** Every single participant holds a role of their own; the supervisors form one group. */
-export function singleRoleGroups(
-	singles: { assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null }[],
-	supervisors: number,
-	language: string
-) {
+export function singleRoleGroups({
+	singles,
+	supervisors,
+	language
+}: {
+	singles: { assignedRole: { name: string | null; fontAwesomeIcon: string | null } | null }[];
+	supervisors: number;
+	language: string;
+}) {
 	const perRole = new Map<string, { icon: string | null; participants: number }>();
 	for (const single of singles) {
 		const name = single.assignedRole?.name ?? '';
@@ -338,10 +413,18 @@ export function singleRoleGroups(
 		const name = language === 'deu' ? 'Betreuende' : 'Supervisors';
 		perRole.set(name, { icon: 'chalkboard-user', participants: supervisors });
 	}
-	return [...perRole].map(([name, { icon, participants }]) => roleGroup(name, icon, participants));
+	return [...perRole].map(([name, { icon, participants }]) =>
+		roleGroup({ name, icon, participants })
+	);
 }
 
-async function otherGroups(conferenceId: string, language: string): Promise<NametagBinGroup[]> {
+async function otherGroups({
+	conferenceId,
+	language
+}: {
+	conferenceId: string;
+	language: string;
+}): Promise<NametagBinGroup[]> {
 	const [nonStateActors, singles, supervisors] = await Promise.all([
 		db.query.delegation.findMany({
 			where: { conferenceId, assignedRole: { kind: 'NON_STATE_ACTOR' } },
@@ -358,23 +441,30 @@ async function otherGroups(conferenceId: string, language: string): Promise<Name
 
 	return [
 		...nonStateActorGroups(nonStateActors),
-		...singleRoleGroups(singles, supervisors, language)
+		...singleRoleGroups({ singles, supervisors, language })
 	];
 }
 
 /** The nations, non-state actors and roles sent to bin `index` of the split `loadNametagBins` makes. */
-export async function loadNametagBinGroups(
-	conferenceId: string,
-	binCount: number,
-	index: number,
-	language: string
-): Promise<NametagBinGroup[]> {
-	const bin = (await loadNametagBins(conferenceId, binCount, language))[index];
+export async function loadNametagBinGroups({
+	conferenceId,
+	binCount,
+	index,
+	language
+}: {
+	conferenceId: string;
+	binCount: number;
+	index: number;
+	language: string;
+}): Promise<NametagBinGroup[]> {
+	const bin = (await loadNametagBins({ conferenceId, binCount, language }))[index];
 	if (!bin) return [];
 
 	const nations =
-		bin.letters.length > 0 ? await nationGroups(conferenceId, bin.letters, language) : [];
-	const others = bin.otherParticipants > 0 ? await otherGroups(conferenceId, language) : [];
+		bin.letters.length > 0
+			? await nationGroups({ conferenceId, letters: bin.letters, language })
+			: [];
+	const others = bin.otherParticipants > 0 ? await otherGroups({ conferenceId, language }) : [];
 	return [...nations, ...others];
 }
 
@@ -390,7 +480,11 @@ export interface OwnNametagTable {
  * Whether someone has a seat (a role for their delegation or themselves, or a supervisor's place),
  * and the nation it is for; `null` without one.
  */
-export function ownSeat(
+export function ownSeat({
+	member,
+	single,
+	supervisor
+}: {
 	member:
 		| {
 				delegation: {
@@ -398,10 +492,10 @@ export function ownSeat(
 					assignedRole: { nationAlpha3Code: string | null } | null;
 				};
 		  }
-		| undefined,
-	single: { assignedRoleId: string | null } | undefined,
-	supervisor: boolean
-): { nation: string | null } | null {
+		| undefined;
+	single: { assignedRoleId: string | null } | undefined;
+	supervisor: boolean;
+}): { nation: string | null } | null {
 	const seated = supervisor || !!member?.delegation.assignedRoleId || !!single?.assignedRoleId;
 	return seated ? { nation: member?.delegation.assignedRole?.nationAlpha3Code ?? null } : null;
 }
@@ -410,12 +504,16 @@ export function ownSeat(
  * The table of `bins` a seat is sent to: the one holding its nation's letter, or the one of
  * everyone without a nation. `null` when no table serves it.
  */
-export function ownNametagTable(
-	bins: NametagBin[],
-	seat: { nation: string | null },
-	language: string
-): OwnNametagTable | null {
-	const initial = seat.nation ? nationInitial(seat.nation, language) : null;
+export function ownNametagTable({
+	bins,
+	seat,
+	language
+}: {
+	bins: NametagBin[];
+	seat: { nation: string | null };
+	language: string;
+}): OwnNametagTable | null {
+	const initial = seat.nation ? nationInitial({ alpha3Code: seat.nation, language }) : null;
 	const index = bins.findIndex((bin) =>
 		initial ? bin.letters.includes(initial) : bin.otherParticipants > 0
 	);
@@ -430,12 +528,17 @@ export function ownNametagTable(
  * part of the conference). Everyone with a nation goes by its first letter, everyone else to the
  * table that serves press, roles and non-state actors.
  */
-export async function loadOwnNametagTable(
-	conferenceId: string,
-	binCount: number,
-	userId: string,
-	language: string
-): Promise<OwnNametagTable | null> {
+export async function loadOwnNametagTable({
+	conferenceId,
+	binCount,
+	userId,
+	language
+}: {
+	conferenceId: string;
+	binCount: number;
+	userId: string;
+	language: string;
+}): Promise<OwnNametagTable | null> {
 	const [member, single, supervisor] = await Promise.all([
 		db.query.delegationMember.findFirst({
 			where: { participant: { conferenceId, userId } },
@@ -454,7 +557,11 @@ export async function loadOwnNametagTable(
 		seatedSupervisorUserIds(conferenceId).then((ids) => ids.includes(userId))
 	]);
 
-	const seat = ownSeat(member, single, supervisor);
+	const seat = ownSeat({ member, single, supervisor });
 	if (!seat) return null;
-	return ownNametagTable(await loadNametagBins(conferenceId, binCount, language), seat, language);
+	return ownNametagTable({
+		bins: await loadNametagBins({ conferenceId, binCount, language }),
+		seat,
+		language
+	});
 }

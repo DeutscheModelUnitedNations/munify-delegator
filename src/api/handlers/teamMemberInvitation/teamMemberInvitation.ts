@@ -8,8 +8,9 @@ import {
 	revokeInvitation
 } from './teamMemberInvitationService';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub';
+import { scheduleEmailSweep } from '#api/handlers/email/emailSweep';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import {
 	assertCanGrantInvitationRole,
 	assertCanManageInvitations,
@@ -94,20 +95,24 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const callerId = callerUserId(ctx);
 			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
+				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 			}
-			await assertCanManageInvitations(ctx, args.conferenceId);
+			await assertCanManageInvitations({ ctx, conferenceId: args.conferenceId });
 
-			const result = await createInvitations(
+			const result = await createInvitations({
 				callerId,
-				ctx.requestUrl().origin,
-				args.conferenceId,
-				args.invitations,
-				(role) => assertCanGrantInvitationRole(ctx, args.conferenceId, role)
-			);
+				origin: ctx.requestUrl().origin,
+				conferenceId: args.conferenceId,
+				invitations: args.invitations,
+				assertMayGrant: (role) =>
+					assertCanGrantInvitationRole({ ctx, conferenceId: args.conferenceId, role })
+			});
 
 			teamMemberInvitationPubsub.created();
 			teamMemberPubsub.created();
+			// Someone with an account joins right away, and is owed the welcome
+			if (result.created.some((invitation) => invitation.addedDirectly))
+				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 
 			return result;
 		}
@@ -117,7 +122,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: RevokeInvitationResult,
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const invitation = await assertCanUpdateInvitation(ctx, args.invitationId);
+			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
 			const result = await revokeInvitation(invitation);
 			if (!result.success) return result;
 
@@ -136,16 +141,16 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const callerId = callerUserId(ctx);
 			if (!callerId) {
-				throw apiError('UNAUTHENTICATED', m.mustBeLoggedIn());
+				throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
 			}
 
-			const invitation = await assertCanUpdateInvitation(ctx, args.invitationId);
-			const result = await regenerateInvitation(
+			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
+			const result = await regenerateInvitation({
 				invitation,
 				callerId,
-				ctx.requestUrl().origin,
-				args.sendEmail
-			);
+				origin: ctx.requestUrl().origin,
+				sendEmail: args.sendEmail
+			});
 			if (result.success) teamMemberInvitationPubsub.updated(args.invitationId);
 
 			return result;
@@ -179,9 +184,9 @@ schemaBuilder.queryFields((t) => ({
 			emails: t.arg({ type: [CheckEmailInput], required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageInvitations(ctx, args.conferenceId);
+			await assertCanManageInvitations({ ctx, conferenceId: args.conferenceId });
 
-			return checkInvitationEmails(args.conferenceId, args.emails);
+			return checkInvitationEmails({ conferenceId: args.conferenceId, emails: args.emails });
 		}
 	})
 }));

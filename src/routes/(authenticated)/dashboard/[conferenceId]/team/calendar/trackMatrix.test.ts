@@ -45,7 +45,7 @@ describe('rowOrderChanges', () => {
 	const rows = trackRows(days);
 
 	test('renumbers the tracks of the rows that moved', () => {
-		const changes = rowOrderChanges(days, rows, 'C', 0);
+		const changes = rowOrderChanges({ days, rows, name: 'C', toIndex: 0 });
 		expect(changes).toEqual([
 			{ id: 'a1', sortOrder: 1 },
 			{ id: 'b1', sortOrder: 2 },
@@ -55,9 +55,9 @@ describe('rowOrderChanges', () => {
 	});
 
 	test('changes nothing for an unknown row, a no-op or an out-of-range drop', () => {
-		expect(rowOrderChanges(days, rows, 'X', 0)).toEqual([]);
-		expect(rowOrderChanges(days, rows, 'A', 0)).toEqual([]);
-		expect(rowOrderChanges(days, rows, 'A', -1)).toEqual([]);
-		expect(rowOrderChanges(days, rows, 'A', 3)).toEqual([]);
+		expect(rowOrderChanges({ days, rows, name: 'X', toIndex: 0 })).toEqual([]);
+		expect(rowOrderChanges({ days, rows, name: 'A', toIndex: 0 })).toEqual([]);
+		expect(rowOrderChanges({ days, rows, name: 'A', toIndex: -1 })).toEqual([]);
+		expect(rowOrderChanges({ days, rows, name: 'A', toIndex: 3 })).toEqual([]);
 	});
 });

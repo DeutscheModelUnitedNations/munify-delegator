@@ -59,12 +59,24 @@ function escapeString(value: string): string {
 	return value.replace(/[\\"]/g, (c) => `\\${c}`);
 }
 
-function attrString(attrs: Record<string, unknown> | undefined, key: string): string | undefined {
+function attrString({
+	attrs,
+	key
+}: {
+	attrs: Record<string, unknown> | undefined;
+	key: string;
+}): string | undefined {
 	const v = attrs?.[key];
 	return typeof v === 'string' ? v : undefined;
 }
 
-function attrNumber(attrs: Record<string, unknown> | undefined, key: string): number | undefined {
+function attrNumber({
+	attrs,
+	key
+}: {
+	attrs: Record<string, unknown> | undefined;
+	key: string;
+}): number | undefined {
 	const v = attrs?.[key];
 	return typeof v === 'number' ? v : undefined;
 }
@@ -78,12 +90,19 @@ const MARK_WRAPPERS = new Map<string, (content: string, mark: TipTapMark) => str
 	['subscript', (content) => `#sub[${content}]`],
 	[
 		'link',
-		(content, mark) => `#link("${escapeString(attrString(mark.attrs, 'href') ?? '')}")[${content}]`
+		(content, mark) =>
+			`#link("${escapeString(attrString({ attrs: mark.attrs, key: 'href' }) ?? '')}")[${content}]`
 	]
 ]);
 
 /** Wraps the content in its marks, in order; unknown marks are left out. */
-function applyMarks(content: string, marks: TipTapMark[] | undefined): string {
+function applyMarks({
+	content,
+	marks
+}: {
+	content: string;
+	marks: TipTapMark[] | undefined;
+}): string {
 	return (marks ?? []).reduce(
 		(out, mark) => MARK_WRAPPERS.get(mark.type)?.(out, mark) ?? out,
 		content
@@ -99,7 +118,7 @@ function renderInlineNode(node: TipTapNode): string {
 	if (node.type === 'hardBreak') return '#linebreak()';
 	// Unexpected inline child — fall back to its own inline content.
 	if (!isTextNode(node)) return renderInline(node.content);
-	return applyMarks(escapeText(node.text ?? ''), node.marks);
+	return applyMarks({ content: escapeText(node.text ?? ''), marks: node.marks });
 }
 
 /** Render an array of inline nodes (text + hardBreak) into Typst content. */
@@ -113,7 +132,7 @@ function childrenOf(node: TipTapNode): TipTapNode[] {
 }
 
 /** Render a node's block children, leaving out the ones that render to nothing. */
-function renderBlocks(nodes: TipTapNode[], separator: string): string {
+function renderBlocks({ nodes, separator }: { nodes: TipTapNode[]; separator: string }): string {
 	return nodes
 		.map((child) => renderBlock(child))
 		.filter((s) => s.length > 0)
@@ -122,7 +141,7 @@ function renderBlocks(nodes: TipTapNode[], separator: string): string {
 
 /** Render the inline content of a list item (its block children, flattened). */
 function renderListItem(item: TipTapNode): string {
-	return renderBlocks(childrenOf(item), '\n');
+	return renderBlocks({ nodes: childrenOf(item), separator: '\n' });
 }
 
 function renderListItems(list: TipTapNode): string {
@@ -137,7 +156,7 @@ const BLOCK_RENDERERS = new Map<string, (node: TipTapNode) => string>([
 	[
 		'heading',
 		(node) =>
-			`#heading(level: ${attrNumber(node.attrs, 'level') ?? 2})[${renderInline(node.content)}]`
+			`#heading(level: ${attrNumber({ attrs: node.attrs, key: 'level' }) ?? 2})[${renderInline(node.content)}]`
 	],
 	['bulletList', (node) => `#list(${renderListItems(node)})`],
 	['orderedList', (node) => `#enum(${renderListItems(node)})`],
@@ -155,12 +174,18 @@ const BLOCK_RENDERERS = new Map<string, (node: TipTapNode) => string>([
 function renderBlock(node: TipTapNode): string {
 	const render = BLOCK_RENDERERS.get(node.type ?? '');
 	// doc / unknown container — render children as blocks.
-	return render ? render(node) : renderBlocks(childrenOf(node), '\n\n');
+	return render ? render(node) : renderBlocks({ nodes: childrenOf(node), separator: '\n\n' });
 }
 
 /** Serialize TipTap document JSON + metadata into a full Typst source string. */
-export function paperToTypst(content: TipTapNode | null | undefined, meta: PaperTypstMeta): string {
-	const body = renderBlocks(childrenOf(content ?? {}), '\n\n');
+export function paperToTypst({
+	content,
+	meta
+}: {
+	content: TipTapNode | null | undefined;
+	meta: PaperTypstMeta;
+}): string {
+	const body = renderBlocks({ nodes: childrenOf(content ?? {}), separator: '\n\n' });
 
 	const headerLines: string[] = [];
 	if (meta.entityName) headerLines.push(`#strong[${escapeText(meta.entityName)}]`);

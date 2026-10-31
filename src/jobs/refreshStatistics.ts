@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { STATISTICS_VIEWS } from '#api/db/statisticsViews';
 import { db } from './db';
+import { logger } from '#lib/logger';
 
 const LOCK_NAME = 'refresh_statistics';
 
@@ -15,14 +16,14 @@ export async function runRefreshStatistics(): Promise<boolean> {
 			sql`select pg_try_advisory_xact_lock(hashtext(${LOCK_NAME})) as acquired`
 		);
 		if (!rows[0]?.acquired) {
-			console.info('Another refresh is running, skipping');
+			logger.info('Another refresh is running, skipping');
 			return false;
 		}
 
 		for (const viewName of STATISTICS_VIEWS) {
 			await tx.execute(sql.raw(`REFRESH MATERIALIZED VIEW CONCURRENTLY "${viewName}"`));
 		}
-		console.info(`${STATISTICS_VIEWS.length} statistics views refreshed`);
+		logger.info('Statistics views refreshed', { views: STATISTICS_VIEWS.length });
 		return true;
 	});
 }

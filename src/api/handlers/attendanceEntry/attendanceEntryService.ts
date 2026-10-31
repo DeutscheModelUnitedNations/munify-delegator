@@ -3,13 +3,19 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * The entry that already logged the person in the session. Several devices may work in one
  * session, so the session itself says who was scanned.
  */
-export async function scanInSession(sessionId: string, statusId: string) {
+export async function scanInSession({
+	sessionId,
+	statusId
+}: {
+	sessionId: string;
+	statusId: string;
+}) {
 	return db.query.attendanceEntry.findFirst({
 		where: { sessionId, conferenceParticipantId: statusId },
 		columns: { id: true }
@@ -21,40 +27,48 @@ export async function scanInSession(sessionId: string, statusId: string) {
  * out cards may do this, which is what the session was set up for by participant care; outside such
  * a session cards are written through the status update, for participant care only.
  */
-export async function storeSessionCard(
-	sessionId: string,
-	conferenceId: string,
-	statusId: string,
-	accessCardId: string
-) {
+export async function storeSessionCard({
+	sessionId,
+	conferenceId,
+	statusId,
+	accessCardId
+}: {
+	sessionId: string;
+	conferenceId: string;
+	statusId: string;
+	accessCardId: string;
+}) {
 	const session = await db.query.attendanceSession.findFirst({
 		where: { id: sessionId, conferenceId },
 		columns: { mode: true }
 	});
 	if (session?.mode !== 'BADGE') {
-		throw apiError('INVALID_INPUT', m.sessionNoAccessCards());
+		throw apiError({ code: 'INVALID_INPUT', message: m.sessionNoAccessCards() });
 	}
 	const holder = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, accessCardId, id: { ne: statusId } },
 		columns: { id: true }
 	});
 	if (holder) {
-		throw apiError('CONFLICT', m.accessCardTaken());
+		throw apiError({ code: 'CONFLICT', message: m.accessCardTaken() });
 	}
 	await db
 		.update(schema.conferenceParticipant)
 		.set({ accessCardId })
-		.where(whereRows(schema.conferenceParticipant, { id: statusId }));
+		.where(whereRows({ table: schema.conferenceParticipant, filter: { id: statusId } }));
 }
 
 /**
  * Starts a session with the survey options it expects, so it never runs without them; starting
  * it again changes nothing.
  */
-export async function startSession(
-	values: typeof schema.attendanceSession.$inferInsert & { id: string },
-	surveyOptionIds: readonly string[]
-) {
+export async function startSession({
+	values,
+	surveyOptionIds
+}: {
+	values: typeof schema.attendanceSession.$inferInsert & { id: string };
+	surveyOptionIds: readonly string[];
+}) {
 	await db.transaction(async (tx) => {
 		const [started] = await tx
 			.insert(schema.attendanceSession)
@@ -73,40 +87,61 @@ export async function startSession(
  * Gives one session another occasion. Joining an occasion that ran before takes over its place on
  * the certificates; a new one keeps the session's.
  */
-export async function renameSession(sessionId: string, conferenceId: string, occasion: string) {
+export async function renameSession({
+	sessionId,
+	conferenceId,
+	occasion
+}: {
+	sessionId: string;
+	conferenceId: string;
+	occasion: string;
+}) {
 	const session = await db.query.attendanceSession.findFirst({
 		where: { id: sessionId },
 		columns: { showOnCertificate: true }
 	});
-	const showOnCertificate = await certificateFlagOf(
+	const showOnCertificate = await certificateFlagOf({
 		conferenceId,
 		occasion,
-		session?.showOnCertificate
-	);
+		fallback: session?.showOnCertificate
+	});
 	await db
 		.update(schema.attendanceSession)
 		.set({ occasion, showOnCertificate })
-		.where(whereRows(schema.attendanceSession, { id: sessionId }));
+		.where(whereRows({ table: schema.attendanceSession, filter: { id: sessionId } }));
 }
 
 /**
  * Renames every session of an occasion. Renaming it to another occasion's name merges the two, and
  * the merged occasion keeps the other one's place on the certificates.
  */
-export async function renameOccasion(conferenceId: string, from: string, to: string) {
-	const showOnCertificate = await certificateFlagOf(
+export async function renameOccasion({
+	conferenceId,
+	from,
+	to
+}: {
+	conferenceId: string;
+	from: string;
+	to: string;
+}) {
+	const showOnCertificate = await certificateFlagOf({
 		conferenceId,
-		to,
-		await certificateFlagOf(conferenceId, from)
-	);
+		occasion: to,
+		fallback: await certificateFlagOf({ conferenceId, occasion: from })
+	});
 	await db
 		.update(schema.attendanceSession)
 		.set({ occasion: to, showOnCertificate })
-		.where(whereRows(schema.attendanceSession, sameOccasion(conferenceId, from)));
+		.where(
+			whereRows({
+				table: schema.attendanceSession,
+				filter: sameOccasion({ conferenceId, occasion: from })
+			})
+		);
 }
 
 /** Sessions of the conference with this occasion, ignoring case and surrounding spaces. */
-function sameOccasion(conferenceId: string, occasion: string) {
+function sameOccasion({ conferenceId, occasion }: { conferenceId: string; occasion: string }) {
 	return {
 		conferenceId,
 		RAW: (session: typeof schema.attendanceSession) =>
@@ -118,24 +153,41 @@ function sameOccasion(conferenceId: string, occasion: string) {
  * Whether a new session of `occasion` goes on the certificates: as the occasion's earlier sessions
  * do, so all sessions of one occasion agree; a new occasion goes by `fallback`.
  */
-export async function certificateFlagOf(conferenceId: string, occasion: string, fallback = true) {
+export async function certificateFlagOf({
+	conferenceId,
+	occasion,
+	fallback = true
+}: {
+	conferenceId: string;
+	occasion: string;
+	fallback?: boolean;
+}) {
 	const earlier = await db.query.attendanceSession.findFirst({
-		where: sameOccasion(conferenceId, occasion),
+		where: sameOccasion({ conferenceId, occasion }),
 		columns: { showOnCertificate: true }
 	});
 	return earlier?.showOnCertificate ?? fallback;
 }
 
 /** Lists every session of the occasion on the certificates, or none of them. */
-export async function setOccasionOnCertificate(
-	conferenceId: string,
-	occasion: string,
-	show: boolean
-) {
+export async function setOccasionOnCertificate({
+	conferenceId,
+	occasion,
+	show
+}: {
+	conferenceId: string;
+	occasion: string;
+	show: boolean;
+}) {
 	await db
 		.update(schema.attendanceSession)
 		.set({ showOnCertificate: show })
-		.where(whereRows(schema.attendanceSession, sameOccasion(conferenceId, occasion)));
+		.where(
+			whereRows({
+				table: schema.attendanceSession,
+				filter: sameOccasion({ conferenceId, occasion })
+			})
+		);
 }
 
 const occasionRowSchema = z.object({

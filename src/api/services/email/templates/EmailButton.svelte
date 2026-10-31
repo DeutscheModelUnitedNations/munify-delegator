@@ -13,12 +13,12 @@
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 32px auto;">
 	<tbody>
 		<tr>
-			<td style="background-color: {brand.primary}; border-radius: 2px;">
+			<td style="background-color: {brand.primary}; border-radius: {brand.radius};">
 				<Button
 					{href}
 					pX={28}
 					pY={14}
-					style="background-color: {brand.primary}; font-family: {brand.font}; font-size: 16px; font-weight: 700; color: #ffffff; border-radius: 2px;"
+					style="background-color: {brand.primary}; font-family: {brand.font}; font-size: 16px; font-weight: 700; color: {brand.primaryContent}; border-radius: {brand.radius};"
 				>
 					{label}
 				</Button>

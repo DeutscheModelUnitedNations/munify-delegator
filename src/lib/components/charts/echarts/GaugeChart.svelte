@@ -29,7 +29,7 @@
 		color
 	}: Props = $props();
 
-	const getGaugeColor = (val: number): string => color ?? gaugeColor(val, min, max);
+	const getGaugeColor = (val: number): string => color ?? gaugeColor({ value: val, min, max });
 
 	const options = $derived.by<EChartsOption>(() => ({
 		title: title

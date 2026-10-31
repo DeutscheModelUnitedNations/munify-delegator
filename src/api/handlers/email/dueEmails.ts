@@ -17,7 +17,7 @@ import {
  */
 
 export type EmailKind = (typeof schema.emailKind.enumValues)[number];
-/** The kinds that follow from state; the team's own mails are sent where they happen. */
+/** The kinds that follow from state; the team invitation is sent where it happens. */
 export type AutomaticEmailKind = Exclude<EmailKind, AlwaysSentKind>;
 type Status = (typeof schema.administrativeStatus.enumValues)[number];
 
@@ -28,16 +28,19 @@ export interface SnapshotRole {
 	nationAlpha3Code: string | null;
 }
 
+/** Who a mail goes to. */
+export interface SnapshotUser {
+	id: string;
+	email: string;
+	givenName: string;
+	familyName: string;
+	locale: string | null;
+	birthday: Date | null;
+}
+
 export interface SnapshotPerson {
 	participantId: string;
-	user: {
-		id: string;
-		email: string;
-		givenName: string;
-		familyName: string;
-		locale: string | null;
-		birthday: Date | null;
-	};
+	user: SnapshotUser;
 	paymentStatus: Status;
 	termsAndConditions: Status;
 	guardianConsent: Status;
@@ -62,6 +65,15 @@ export interface SnapshotReview {
 	agendaItem: string | null;
 	reviewer: { name: string; email: string } | null;
 	statusAfter: (typeof schema.paperStatus.enumValues)[number] | null;
+}
+
+/** A member of the conference's team. */
+export interface SnapshotTeamMember {
+	id: string;
+	role: (typeof schema.teamRole.enumValues)[number];
+	user: SnapshotUser;
+	/** Who invited them onto the team; `null` when nobody did or the account is gone. */
+	inviterName: string | null;
 }
 
 /** A published survey, owed an answer by everybody holding a seat. */
@@ -89,6 +101,7 @@ export interface EmailSnapshot {
 		certificateAvailable: boolean;
 	};
 	people: SnapshotPerson[];
+	team: SnapshotTeamMember[];
 	reviews: SnapshotReview[];
 	surveys: SnapshotSurvey[];
 }
@@ -98,9 +111,13 @@ export type PaperworkField =
 
 export interface DueEmail {
 	kind: AutomaticEmailKind;
-	/** What the mail is about; with kind and person it identifies the mail in the log. */
+	/** What the mail is about; with kind and recipient it identifies the mail in the log. */
 	subjectKey: string;
-	person: SnapshotPerson;
+	recipient: SnapshotUser;
+	/** For a mail to a participant: the participant. */
+	person?: SnapshotPerson;
+	/** For a mail to a team member: the membership. */
+	teamMember?: SnapshotTeamMember;
 	/** For a supervisor's summary: the students who applied. */
 	students?: SnapshotPerson[];
 	/** For a supervisor: the student who was linked. */
@@ -132,13 +149,14 @@ const hasUnsentApplication = (person: SnapshotPerson) =>
 	(!!person.single && !person.single.applied);
 
 /** Within `days` days before `date`, the date itself excluded. */
-const inWindowBefore = (now: Date, date: Date, days: number) =>
+const inWindowBefore = ({ now, date, days }: { now: Date; date: Date; days: number }) =>
 	now.getTime() >= date.getTime() - days * DAY && now.getTime() < date.getTime();
 
 /** What the rules below ask about a person, worked out once per snapshot. */
 interface RuleContext {
 	conference: EmailSnapshot['conference'];
-	now: Date;
+	/** Whether a reminder for `date` is due: in its window, or any time before for one sent by hand. */
+	remindBefore: (args: { date: Date; days: number }) => boolean;
 	studentsOf: (person: SnapshotPerson) => SnapshotPerson[];
 	reviewsOf: (person: SnapshotPerson) => SnapshotReview[];
 	surveys: { survey: SnapshotSurvey; answeredBy: ReadonlySet<string> }[];
@@ -150,26 +168,43 @@ interface RuleContext {
 
 type Rule = (ctx: RuleContext, person: SnapshotPerson) => DueEmail[];
 
-const email = (
-	kind: AutomaticEmailKind,
-	person: SnapshotPerson,
-	subjectKey: string,
-	extra: Partial<DueEmail> = {}
-): DueEmail => ({ kind, person, subjectKey, ...extra });
+const email = ({
+	kind,
+	person,
+	subjectKey,
+	extra = {}
+}: {
+	kind: AutomaticEmailKind;
+	person: SnapshotPerson;
+	subjectKey: string;
+	extra?: Partial<DueEmail>;
+}): DueEmail => ({ kind, recipient: person.user, person, subjectKey, ...extra });
 
 const paid = (person: SnapshotPerson) => person.paymentStatus === 'DONE';
 
-function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
+function ruleContext({
+	snapshot,
+	now,
+	anyTimeBefore
+}: {
+	snapshot: EmailSnapshot;
+	now: Date;
+	anyTimeBefore: boolean;
+}): RuleContext {
 	const { conference, people, reviews, surveys } = snapshot;
 	const byParticipant = new Map(people.map((person) => [person.participantId, person]));
 	const reviewsByAuthor = Map.groupBy(reviews, (review) => review.authorParticipantId);
 	const studentsOf = (person: SnapshotPerson) =>
 		(person.supervisor?.studentIds ?? []).flatMap((id) => byParticipant.get(id) ?? []);
 	const ofAge = (person: SnapshotPerson) =>
-		ofAgeAtConference(conference.startConference, person.user.birthday);
+		ofAgeAtConference({
+			startConference: conference.startConference,
+			dateOfBirth: person.user.birthday
+		});
 	return {
 		conference,
-		now,
+		remindBefore: ({ date, days }) =>
+			inWindowBefore({ now, date, days: anyTimeBefore ? Infinity : days }),
 		studentsOf,
 		reviewsOf: (person) => reviewsByAuthor.get(person.participantId) ?? [],
 		surveys: surveys.map((survey) => ({ survey, answeredBy: new Set(survey.answeredBy) })),
@@ -178,14 +213,14 @@ function ruleContext(snapshot: EmailSnapshot, now: Date): RuleContext {
 			!!seatOf(person) ||
 			(!!person.supervisor?.plansOwnAttendance && studentsOf(person).some((s) => !!seatOf(s))),
 		postalDone: (person) =>
-			getSimplifiedPostalStatus(
-				{
+			getSimplifiedPostalStatus({
+				participantStatus: {
 					termsAndConditions: person.termsAndConditions,
 					guardianConsent: person.guardianConsent,
 					mediaConsent: person.mediaConsent
 				},
-				ofAge(person)
-			) === 'DONE'
+				ofAge: ofAge(person)
+			}) === 'DONE'
 	};
 }
 
@@ -198,12 +233,12 @@ const assignmentResult: Rule = ({ conference }, person) => {
 	if (seat)
 		due.push(
 			fromWaitingList
-				? email('WAITING_LIST_SEATED', person, fromWaitingList.entryId)
-				: email('ASSIGNMENT_ACCEPTED', person, seat.id)
+				? email({ kind: 'WAITING_LIST_SEATED', person, subjectKey: fromWaitingList.entryId })
+				: email({ kind: 'ASSIGNMENT_ACCEPTED', person, subjectKey: seat.id })
 		);
 	// Independent of the seat: a seated single can also have applied in a delegation that got none
 	if (appliedWithoutSeat(person) && !fromWaitingList)
-		due.push(email('ASSIGNMENT_REJECTED', person, 'rejected'));
+		due.push(email({ kind: 'ASSIGNMENT_REJECTED', person, subjectKey: 'rejected' }));
 	return due;
 };
 
@@ -211,7 +246,14 @@ const supervisorSummary: Rule = ({ conference, studentsOf }, person) => {
 	if (!conference.assignmentReleased || !person.supervisor) return [];
 	const students = studentsOf(person).filter(hasApplied);
 	return students.length > 0
-		? [email('SUPERVISOR_ASSIGNMENT_SUMMARY', person, 'summary', { students })]
+		? [
+				email({
+					kind: 'SUPERVISOR_ASSIGNMENT_SUMMARY',
+					person,
+					subjectKey: 'summary',
+					extra: { students }
+				})
+			]
 		: [];
 };
 
@@ -219,12 +261,14 @@ const supervisorSummary: Rule = ({ conference, studentsOf }, person) => {
 const paperworkSteps: Rule = ({ conference, postalDone }, person) => {
 	const postal = postalDone(person);
 	return [
-		...(conference.unlockPostals && !postal ? [email('POSTAL_UNLOCKED', person, 'postal')] : []),
-		...(conference.unlockPayments && !paid(person)
-			? [email('PAYMENT_UNLOCKED', person, 'payment')]
+		...(conference.unlockPostals && !postal
+			? [email({ kind: 'POSTAL_UNLOCKED', person, subjectKey: 'postal' })]
 			: []),
-		...(postal ? [email('POSTAL_RECEIVED', person, 'postal')] : []),
-		...(paid(person) ? [email('PAYMENT_RECEIVED', person, 'payment')] : [])
+		...(conference.unlockPayments && !paid(person)
+			? [email({ kind: 'PAYMENT_UNLOCKED', person, subjectKey: 'payment' })]
+			: []),
+		...(postal ? [email({ kind: 'POSTAL_RECEIVED', person, subjectKey: 'postal' })] : []),
+		...(paid(person) ? [email({ kind: 'PAYMENT_RECEIVED', person, subjectKey: 'payment' })] : [])
 	];
 };
 
@@ -233,20 +277,24 @@ const paperworkProblems: Rule = ({ ofAge }, person) => {
 	if (!ofAge(person)) fields.push('guardianConsent');
 	return fields
 		.filter((field) => person[field] === 'PROBLEM')
-		.map((field) => email('PAPERWORK_PROBLEM', person, field, { field }));
+		.map((field) =>
+			email({ kind: 'PAPERWORK_PROBLEM', person, subjectKey: field, extra: { field } })
+		);
 };
 
 /** The reminders before the conference: open tasks, then the phone. */
-const conferenceReminders: Rule = ({ conference, now, postalDone }, person) => {
+const conferenceReminders: Rule = ({ conference, remindBefore, postalDone }, person) => {
 	const openIssues =
 		(conference.unlockPostals && !postalDone(person)) ||
 		(conference.unlockPayments && !paid(person));
-	const within = (days: number) => inWindowBefore(now, conference.startConference, days);
+	const within = (days: number) => remindBefore({ date: conference.startConference, days });
 	return [
 		...(openIssues && within(OPEN_ISSUES_REMINDER_DAYS)
-			? [email('OPEN_ISSUES_REMINDER', person, 'open-issues')]
+			? [email({ kind: 'OPEN_ISSUES_REMINDER', person, subjectKey: 'open-issues' })]
 			: []),
-		...(within(PHONE_READY_REMINDER_DAYS) ? [email('PHONE_READY_REMINDER', person, 'phone')] : [])
+		...(within(PHONE_READY_REMINDER_DAYS)
+			? [email({ kind: 'PHONE_READY_REMINDER', person, subjectKey: 'phone' })]
+			: [])
 	];
 };
 
@@ -254,22 +302,22 @@ const conferenceReminders: Rule = ({ conference, now, postalDone }, person) => {
  * Every survey the person has not answered, in the last days before its deadline. Only those
  * holding a seat owe an answer - the same people the results page lists as not having answered.
  */
-const surveyReminders: Rule = ({ conference, now, surveys }, person) =>
+const surveyReminders: Rule = ({ conference, remindBefore, surveys }, person) =>
 	conference.assignmentReleased && seatOf(person)
 		? surveys
 				.filter(
 					({ survey, answeredBy }) =>
 						!answeredBy.has(person.participantId) &&
-						inWindowBefore(now, survey.deadline, SURVEY_REMINDER_DAYS)
+						remindBefore({ date: survey.deadline, days: SURVEY_REMINDER_DAYS })
 				)
 				// keyed by the deadline: a deadline moved later gets its own reminder
 				.map(({ survey }) =>
-					email(
-						'SURVEY_REMINDER',
+					email({
+						kind: 'SURVEY_REMINDER',
 						person,
-						`${survey.id}:${survey.deadline.toISOString().slice(0, 10)}`,
-						{ survey }
-					)
+						subjectKey: `${survey.id}:${survey.deadline.toISOString().slice(0, 10)}`,
+						extra: { survey }
+					})
 				)
 		: [];
 
@@ -279,33 +327,40 @@ const acceptedEmails: Rule = (ctx, person) =>
 		? [paperworkSteps, paperworkProblems, conferenceReminders].flatMap((rule) => rule(ctx, person))
 		: [];
 
-const applicationReminder: Rule = ({ conference, now }, person) =>
+const applicationReminder: Rule = ({ conference, remindBefore }, person) =>
 	conference.state === 'PARTICIPANT_REGISTRATION' &&
 	hasUnsentApplication(person) &&
-	inWindowBefore(now, conference.applicationDeadline, APPLICATION_REMINDER_DAYS)
+	remindBefore({ date: conference.applicationDeadline, days: APPLICATION_REMINDER_DAYS })
 		? // keyed by the deadline: a deadline moved later gets its own reminder
 			[
-				email(
-					'APPLICATION_DEADLINE_REMINDER',
+				email({
+					kind: 'APPLICATION_DEADLINE_REMINDER',
 					person,
-					conference.applicationDeadline.toISOString().slice(0, 10)
-				)
+					subjectKey: conference.applicationDeadline.toISOString().slice(0, 10)
+				})
 			]
 		: [];
 
 const certificate: Rule = ({ conference }, person) =>
 	conference.state === 'POST' && conference.certificateAvailable && person.didAttend
-		? [email('CERTIFICATE_AVAILABLE', person, 'certificate')]
+		? [email({ kind: 'CERTIFICATE_AVAILABLE', person, subjectKey: 'certificate' })]
 		: [];
 
 const studentsLinked: Rule = ({ studentsOf }, person) =>
 	studentsOf(person).map((student) =>
-		email('SUPERVISOR_STUDENT_LINKED', person, student.participantId, { student })
+		email({
+			kind: 'SUPERVISOR_STUDENT_LINKED',
+			person,
+			subjectKey: student.participantId,
+			extra: { student }
+		})
 	);
 
 /** Every review of a paper the person wrote, whenever it is written. */
 const paperReviewed: Rule = ({ reviewsOf }, person) =>
-	reviewsOf(person).map((review) => email('PAPER_REVIEWED', person, review.id, { review }));
+	reviewsOf(person).map((review) =>
+		email({ kind: 'PAPER_REVIEWED', person, subjectKey: review.id, extra: { review } })
+	);
 
 /** In the order a person's mails are listed. */
 const RULES: Rule[] = [
@@ -319,12 +374,35 @@ const RULES: Rule[] = [
 	paperReviewed
 ];
 
-/** Every mail the conference owes right now, whether or not it was sent already. */
-export function dueEmails(snapshot: EmailSnapshot, now: Date): DueEmail[] {
-	const ctx = ruleContext(snapshot, now);
-	return snapshot.people.flatMap((person) => RULES.flatMap((rule) => rule(ctx, person)));
+/** Everybody on the team, once per membership: someone who leaves and comes back is welcomed again. */
+const teamWelcome = (member: SnapshotTeamMember): DueEmail => ({
+	kind: 'TEAM_WELCOME',
+	subjectKey: member.id,
+	recipient: member.user,
+	teamMember: member
+});
+
+/**
+ * Every mail the conference owes right now, whether or not it was sent already. `anyTimeBefore`
+ * owes each reminder any time before its date rather than only in its last days: what the team
+ * may send by hand.
+ */
+export function dueEmails({
+	snapshot,
+	now,
+	anyTimeBefore = false
+}: {
+	snapshot: EmailSnapshot;
+	now: Date;
+	anyTimeBefore?: boolean;
+}): DueEmail[] {
+	const ctx = ruleContext({ snapshot, now, anyTimeBefore });
+	return [
+		...snapshot.people.flatMap((person) => RULES.flatMap((rule) => rule(ctx, person))),
+		...snapshot.team.map(teamWelcome)
+	];
 }
 
 /** The log key of a mail: unique per conference, kind, person and subject. */
-export const emailKey = (email: { kind: EmailKind; userId: string; subjectKey: string }) =>
+export const emailKey = (email: { kind: EmailKind; userId: string | null; subjectKey: string }) =>
 	`${email.kind}:${email.userId}:${email.subjectKey}`;

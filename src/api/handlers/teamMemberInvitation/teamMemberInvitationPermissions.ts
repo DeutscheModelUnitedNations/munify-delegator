@@ -18,13 +18,13 @@ export function registerTeamMemberInvitationAbilities() {
 
 	// Project management manages every invitation of its conference.
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES);
+		const team = isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES });
 		return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
 	});
 
 	// Team coordinators manage the invitations they may hand out - everything but project management.
 	abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
+		const team = isTeamMemberOfConference({ ctx, roles: ['TEAM_COORDINATOR'] });
 		return team
 			? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } }, columns: WITHOUT_TOKEN }
 			: undefined;
@@ -32,21 +32,37 @@ export function registerTeamMemberInvitationAbilities() {
 }
 
 /** Refuses unless the caller may invite people to the team of `conferenceId` at all. */
-export async function assertCanManageInvitations(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageTeam');
+export async function assertCanManageInvitations({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageTeam' });
 }
 
 /** Refuses unless the caller may hand out `role` on the team of `conferenceId`. */
-export async function assertCanGrantInvitationRole(
-	ctx: ApiContext,
-	conferenceId: string,
-	role: TeamRole
-) {
-	await assertMayGrantRole(ctx, conferenceId, role);
+export async function assertCanGrantInvitationRole({
+	ctx,
+	conferenceId,
+	role
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	role: TeamRole;
+}) {
+	await assertMayGrantRole({ ctx, conferenceId, role });
 }
 
 /** An invitation the caller may change, or an error. */
-export async function assertCanUpdateInvitation(ctx: ApiContext, invitationId: string) {
+export async function assertCanUpdateInvitation({
+	ctx,
+	invitationId
+}: {
+	ctx: ApiContext;
+	invitationId: string;
+}) {
 	return db.query.teamMemberInvitation
 		.findFirst(
 			(await ctx.abilities.teamMemberInvitation.filter('update')).merge({

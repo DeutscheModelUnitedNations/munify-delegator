@@ -68,7 +68,15 @@ export interface RoleColumns {
 }
 
 /** One person's row: who they are, what they are, and where their paperwork stands. */
-export function exportRow(user: ExportedUser, role: RoleColumns, status: StatusData): string[] {
+export function exportRow({
+	user,
+	role,
+	status
+}: {
+	user: ExportedUser;
+	role: RoleColumns;
+	status: StatusData;
+}): string[] {
 	return [
 		user.id,
 		user.email ?? '',

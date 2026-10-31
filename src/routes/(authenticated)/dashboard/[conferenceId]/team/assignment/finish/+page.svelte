@@ -62,8 +62,7 @@
 	const view = $derived(
 		boardState(
 			{ ...rows, reviews: [] },
-
-			seatedRoles(roles.committees, roles.nonStateActors)
+			seatedRoles({ committees: roles.committees, nonStateActors: roles.nonStateActors })
 		)
 	);
 	const roleSeats = $derived(
@@ -71,15 +70,17 @@
 	);
 	const preview = $derived(planApply({ ...view.live, seats: seatsByKey(view.seated), roleSeats }));
 	const missingRequired = $derived(
-		requiredWithoutSeat(requiredReviews.flatMap(requiredApplicationOf), view)
+		requiredWithoutSeat({ required: requiredReviews.flatMap(requiredApplicationOf), state: view })
 	);
-	const occupancy = $derived(seatOccupancy(view, seatsByKey(view.seated), roleSeats));
+	const occupancy = $derived(
+		seatOccupancy({ state: view, seats: seatsByKey(view.seated), roleSeats })
+	);
 	const empty = $derived(planIsEmpty(preview.plan));
 
 	/** A role as the tables show it, with its flag; undefined for no role. */
 	const describeTarget = (target: Target) =>
 		targetKey(target)
-			? describeRole(target, roles, getFullTranslatedCountryNameFromISO3Code)
+			? describeRole({ target, roles, nationName: getFullTranslatedCountryNameFromISO3Code })
 			: undefined;
 	const roleName = (target: Target) => describeTarget(target)?.title ?? m.assignmentNoRole();
 	const customRoleName = (roleId: string | null) =>
@@ -90,9 +91,14 @@
 	const delegationById = $derived(new Map(rows.delegations.map((d) => [d.id, d])));
 	const maxSeatsPerSchool = $derived(conference.maxSeatsPerSchool ?? null);
 	const schoolCounts = $derived(
-		schoolSeats(view, schoolLookupsOf(rows.delegations, rows.singleParticipants))
+		schoolSeats({
+			view,
+			lookups: schoolLookupsOf({ delegations: rows.delegations, singles: rows.singleParticipants })
+		})
 	);
-	const schoolsOver = $derived(schoolsOverLimit(schoolCounts, maxSeatsPerSchool));
+	const schoolsOver = $derived(
+		schoolsOverLimit({ counts: schoolCounts, limit: maxSeatsPerSchool })
+	);
 	const pendingGroups = $derived(
 		view.groups
 			.filter((group) => group.pending)

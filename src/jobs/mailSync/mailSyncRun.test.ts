@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 import type { MailSyncUser } from './types';
 
 /**
@@ -69,8 +70,10 @@ vi.mock('../config', () => ({ config: h.config }));
 vi.mock('../logs', () => ({
 	logTaskStart: () => 0,
 	logTaskEnd: () => {},
-	taskWarning: (_task: string, message: string) => h.errors.push(`warning: ${message}`),
-	taskError: (_task: string, message: string) => h.errors.push(`error: ${message}`)
+	taskWarning: ({ message }: { taskName: string; message: string }) =>
+		h.errors.push(`warning: ${message}`),
+	taskError: ({ message }: { taskName: string; message: string }) =>
+		h.errors.push(`error: ${message}`)
 }));
 
 vi.mock('../db', () => ({
@@ -362,8 +365,8 @@ beforeEach(() => {
 	h.userQueries = 0;
 	h.errors = [];
 	hubList = list(HUB, ['mitgliedshub']);
-	vi.spyOn(console, 'info').mockImplementation(() => {});
-	vi.spyOn(console, 'error').mockImplementation(() => {});
+	vi.spyOn(logger, 'info').mockImplementation(() => {});
+	vi.spyOn(logger, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -519,7 +522,7 @@ describe('runMailSync – subscribers', () => {
 
 		expect(sub('a@x.org')).toBeUndefined();
 		expect(listsOf('b@x.org')).toEqual({ [TEAM]: 'confirmed' });
-		expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Failed to create user u1'));
+		expect(logger.error).toHaveBeenCalledWith('Failed to create user u1', expect.anything());
 	});
 
 	test('adds and removes only its own lists, adding before removing', async () => {

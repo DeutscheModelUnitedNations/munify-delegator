@@ -32,7 +32,7 @@ function readParams(search: Pick<URLSearchParams, 'get' | 'has'>): SeatPlanningP
 }
 
 /** `href` with the parameters in it; empty ones are left out. */
-function withParams(href: string, params: SeatPlanningParams) {
+function withParams({ href, params }: { href: string; params: SeatPlanningParams }) {
 	const url = new URL(href);
 	for (const [key, value] of Object.entries(params)) {
 		if (value === null || value === '') url.searchParams.delete(key);
@@ -55,7 +55,7 @@ export function provideSeatPlanningParams() {
 		const next = { ...params };
 		const timer = setTimeout(() => {
 			// The browser's own URL: `page.url` does not follow shallow navigations.
-			const url = withParams(location.href, next);
+			const url = withParams({ href: location.href, params: next });
 			if (url.search !== location.search)
 				// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with other query parameters
 				goto(url, { shallow: true, replace: true, state: page.state });

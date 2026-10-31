@@ -6,6 +6,7 @@ import {
 } from '#api/handlers/certificateConfig/certificateConfig';
 import type { CertificateJWTPayload } from '#api/handlers/certificate/certificate';
 import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout';
+import { logger } from '#lib/logger';
 
 /** What the page shows for a certificate that did not verify. */
 const INVALID = {
@@ -63,7 +64,7 @@ export async function verifyCertificate(jwt: string) {
 		});
 		return certificateFacts(verified.payload);
 	} catch (error) {
-		console.error('JWT verification failed:', error);
+		logger.warn('Certificate JWT verification failed', error);
 		return INVALID;
 	}
 }

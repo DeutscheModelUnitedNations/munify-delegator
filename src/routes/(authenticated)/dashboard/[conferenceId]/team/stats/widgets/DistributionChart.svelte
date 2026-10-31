@@ -26,7 +26,7 @@
 
 	let { getFilteredValue } = unifiedFilter();
 
-	const chartData = $derived(distributionChartData(stats, getFilteredValue));
+	const chartData = $derived(distributionChartData({ stats, filteredValue: getFilteredValue }));
 
 	const total = $derived(chartData.reduce((sum, item) => sum + item.value, 0));
 </script>

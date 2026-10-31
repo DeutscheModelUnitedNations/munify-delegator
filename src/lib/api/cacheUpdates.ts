@@ -3,7 +3,13 @@ import type { IntrospectionQuery } from 'graphql';
 
 type IntrospectionType = IntrospectionQuery['__schema']['types'][number];
 
-function fieldNamesOf(schema: IntrospectionQuery, typeName: string | undefined): string[] {
+function fieldNamesOf({
+	schema,
+	typeName
+}: {
+	schema: IntrospectionQuery;
+	typeName: string | undefined;
+}): string[] {
 	const type: IntrospectionType | undefined = schema.__schema.types.find(
 		(candidate) => candidate.name === typeName
 	);
@@ -44,9 +50,9 @@ export function liveQueryUpdates(schema: IntrospectionQuery): UpdatesConfig {
 	const subscriptionType = schema.__schema.subscriptionType?.name;
 	if (!queryType || !subscriptionType) return {};
 
-	const queryFields = new Set(fieldNamesOf(schema, queryType));
+	const queryFields = new Set(fieldNamesOf({ schema, typeName: queryType }));
 	const updaters: NonNullable<UpdatesConfig['Subscription']> = {};
-	for (const fieldName of fieldNamesOf(schema, subscriptionType)) {
+	for (const fieldName of fieldNamesOf({ schema, typeName: subscriptionType })) {
 		if (!queryFields.has(fieldName)) continue;
 		updaters[fieldName] = (result, args, cache) => {
 			const link = toLink(result[fieldName]);

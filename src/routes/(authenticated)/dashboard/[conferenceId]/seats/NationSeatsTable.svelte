@@ -40,7 +40,7 @@
 						: 0
 				])
 			),
-			total: roleSeats(role, committees)
+			total: roleSeats({ role, committees })
 		}))
 	);
 
@@ -50,9 +50,12 @@
 			header: m.nation(),
 			accessorFn: (row) => row.name,
 			cell: ({ row }) =>
-				renderComponent(FlagNameCell, {
-					name: row.original.name,
-					alpha2Code: row.original.alpha2Code
+				renderComponent({
+					component: FlagNameCell,
+					props: {
+						name: row.original.name,
+						alpha2Code: row.original.alpha2Code
+					}
 				})
 		},
 		{
@@ -68,8 +71,11 @@
 			group: m.committees(),
 			accessorFn: (row) => row.seatsByCommittee[committee.id] ?? 0,
 			cell: ({ row }) =>
-				renderComponent(SeatsCell, {
-					seats: row.original.seatsByCommittee[committee.id] ?? 0
+				renderComponent({
+					component: SeatsCell,
+					props: {
+						seats: row.original.seatsByCommittee[committee.id] ?? 0
+					}
 				}),
 			exportValue: (row) => String(row.seatsByCommittee[committee.id] ?? 0),
 			filter: { type: 'range' }

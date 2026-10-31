@@ -45,10 +45,13 @@ export interface DeckPosition<E extends WindowEntry = WindowEntry> {
 export const WINDOW_MARGIN = 15;
 
 /** Where `id` lies in the window, and the cards to step to from there. */
-export function deckPosition<E extends WindowEntry>(
-	deck: DeckWindowData<E>,
-	id: string | null
-): DeckPosition<E> {
+export function deckPosition<E extends WindowEntry>({
+	deck,
+	id
+}: {
+	deck: DeckWindowData<E>;
+	id: string | null;
+}): DeckPosition<E> {
 	const offset = id === null ? -1 : deck.entries.findIndex((entry) => entry.id === id);
 	if (offset < 0) {
 		return {
@@ -92,11 +95,15 @@ const countsAsRated = (status: DeckStatus) => status === 'rated' || status === '
  * until the backend's answer replaces them. Whether the card still passes the filters is the
  * backend's to say.
  */
-export function withReview<E extends WindowEntry>(
-	deck: DeckWindowData<E>,
-	id: string,
-	review: SightingReview
-): DeckWindowData<E> {
+export function withReview<E extends WindowEntry>({
+	deck,
+	id,
+	review
+}: {
+	deck: DeckWindowData<E>;
+	id: string;
+	review: SightingReview;
+}): DeckWindowData<E> {
 	const entry = deck.entries.find((candidate) => candidate.id === id);
 	if (!entry) return deck;
 	const before = entryStatus(entry.status);
@@ -121,12 +128,17 @@ export function withReview<E extends WindowEntry>(
  * The cards likely to be opened next, nearest first: `ahead` after the card on top, interleaved
  * with `behind` before it.
  */
-export function upcomingEntries<E extends WindowEntry>(
-	deck: DeckWindowData<E>,
-	id: string | null,
-	ahead: number,
-	behind: number
-): E[] {
+export function upcomingEntries<E extends WindowEntry>({
+	deck,
+	id,
+	ahead,
+	behind
+}: {
+	deck: DeckWindowData<E>;
+	id: string | null;
+	ahead: number;
+	behind: number;
+}): E[] {
 	const offset = id === null ? -1 : deck.entries.findIndex((entry) => entry.id === id);
 	if (offset < 0) return [];
 	const cards: E[] = [];
@@ -149,11 +161,15 @@ export type Arrival = { take: true; currentId: string | null } | { take: false; 
  * taking its place goes on top) or turned to while the window was on its way, which asks for the
  * window around it instead.
  */
-export function arrival(
-	deck: DeckWindowData,
-	asked: { currentId: string | null; index?: number },
-	wanted: string | null
-): Arrival {
+export function arrival({
+	deck,
+	asked,
+	wanted
+}: {
+	deck: DeckWindowData;
+	asked: { currentId: string | null; index?: number };
+	wanted: string | null;
+}): Arrival {
 	const replacement = { take: true, currentId: deck.current?.id ?? null } as const;
 	if (asked.index !== undefined || wanted === null) return replacement;
 	if (deck.entries.some((entry) => entry.id === wanted)) return { take: true, currentId: wanted };

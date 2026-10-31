@@ -37,16 +37,19 @@ function snapshot(rawContent: unknown): string | undefined {
  * recovery modal (`DraftRecoveryModal`) before the editor mounts. Must be called during component
  * initialisation: it registers the autosave effect.
  */
-export function createDraftAutosave<D extends { savedAt: number }, C>(
-	storageKey: string,
-	options: DraftAutosaveOptions<D, C>
-) {
+export function createDraftAutosave<D extends { savedAt: number }, C>({
+	storageKey,
+	options
+}: {
+	storageKey: string;
+	options: DraftAutosaveOptions<D, C>;
+}) {
 	let showRecoveryModal = $state(false);
 	let savedDraft: D | null = $state(null);
 	/** Bumped to remount the editor (`{#key}`) when its content is replaced from outside. */
 	let editorKey = $state(0);
 
-	const store = browser ? createPersistedState<D | null>(storageKey, null) : null;
+	const store = browser ? createPersistedState<D | null>({ key: storageKey, initial: null }) : null;
 	let lastSavedContent: string | null = null;
 
 	/** Forgets the stored draft, e.g. once the paper or review it held has been saved for real. */

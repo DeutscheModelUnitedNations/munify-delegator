@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-	getInvitationExpiryDate,
-	hashToken,
-	isOpenInvitation,
-	isTokenExpired
-} from './invitationToken';
+import { getInvitationExpiryDate, hashToken, isOpenInvitation } from './invitationToken';
 
 const tomorrow = () => new Date(Date.now() + 86_400_000);
 const yesterday = () => new Date(Date.now() - 86_400_000);
@@ -40,8 +35,6 @@ describe('invitation tokens', () => {
 
 	test('expire a week from now', () => {
 		const expiry = getInvitationExpiryDate();
-		expect(isTokenExpired(expiry)).toBe(false);
 		expect(Math.round((expiry.getTime() - Date.now()) / 86_400_000)).toBe(7);
-		expect(isTokenExpired(yesterday())).toBe(true);
 	});
 });

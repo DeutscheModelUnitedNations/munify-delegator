@@ -3,10 +3,10 @@
  * describing the conflict without writing whole addresses into logs, reporting it, and answering
  * with an `EMAIL_CONFLICT` error (or, on the login callback, the page that explains it).
  */
-import * as Sentry from '@sentry/sveltekit';
 import { db } from '#api/db/db';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
+import { logger } from '#lib/logger';
 
 /** Enough of an address to recognise it in a log without writing the whole thing down. */
 export function maskEmail(email: string): string {
@@ -21,11 +21,15 @@ export function maskEmail(email: string): string {
  * taken (`existing` is undefined), or an existing account changing to a taken one. The frontend
  * shows a different page for each, so the description says which it is.
  */
-export function describeEmailConflict(
-	userSubject: string,
-	email: string,
-	existing: { email: string | null } | undefined
-) {
+export function describeEmailConflict({
+	userSubject,
+	email,
+	existing
+}: {
+	userSubject: string;
+	email: string;
+	existing: { email: string | null } | undefined;
+}) {
 	const isNewUser = existing === undefined;
 	const maskedConflictingEmail = maskEmail(email);
 	const maskedExistingEmail = existing?.email ? maskEmail(existing.email) : undefined;
@@ -45,9 +49,9 @@ export function describeEmailConflict(
 		refId,
 		/** For the log line. */
 		label: isNewUser ? 'New user' : 'Email change',
-		/** For the error tracker's tags. */
+		/** For the log line's fields. */
 		scenario: isNewUser ? 'new_user' : 'email_change',
-		/** What the log and the error tracker record about it. */
+		/** What the log records about it. */
 		details: {
 			userSubject,
 			conflictingEmail: maskedConflictingEmail,
@@ -61,26 +65,27 @@ export function describeEmailConflict(
 
 /**
  * Someone else already holds this address. Two ways to get here: a brand new account whose address
- * is taken, or an existing account changing to a taken one. Looks up which it is, logs it and
- * reports it to Sentry, and hands the description back for the caller to answer with - the login
+ * is taken, or an existing account changing to a taken one. Looks up which it is, logs it (which
+ * makes it a Sentry issue), and hands the description back for the caller to answer with - the login
  * flow redirects, the mutation throws - since the frontend shows a different page for each.
  */
-export async function reportEmailConflict(userSubject: string, email: string, error: unknown) {
+export async function reportEmailConflict({
+	userSubject,
+	email
+}: {
+	userSubject: string;
+	email: string;
+}) {
 	const existing = await db.query.user.findFirst({
 		where: { id: userSubject },
 		columns: { email: true }
 	});
-	const conflict = describeEmailConflict(userSubject, email, existing);
+	const conflict = describeEmailConflict({ userSubject, email, existing });
 
-	console.error(`[EMAIL_CONFLICT] ${conflict.label} conflict:`, {
+	// Without the database's error: its detail names the whole address.
+	logger.error(`Email conflict: ${conflict.label}`, {
 		...conflict.details,
-		timestamp: new Date().toISOString()
-	});
-
-	Sentry.captureException(error, {
-		level: 'warning',
-		tags: { error_type: 'email_conflict', scenario: conflict.scenario },
-		extra: conflict.details
+		scenario: conflict.scenario
 	});
 
 	return conflict;
@@ -93,11 +98,15 @@ export type EmailConflict = ReturnType<typeof describeEmailConflict>;
  * (`redirectTo` included, so a client only has to follow it).
  */
 export function emailConflictError(conflict: EmailConflict) {
-	return apiError('EMAIL_CONFLICT', m.userEmailInUse(), {
-		isNewUser: conflict.isNewUser,
-		maskedConflictingEmail: conflict.maskedConflictingEmail,
-		maskedExistingEmail: conflict.maskedExistingEmail,
-		refId: conflict.refId,
-		redirectTo: conflict.redirectTo
+	return apiError({
+		code: 'EMAIL_CONFLICT',
+		message: m.userEmailInUse(),
+		extensions: {
+			isNewUser: conflict.isNewUser,
+			maskedConflictingEmail: conflict.maskedConflictingEmail,
+			maskedExistingEmail: conflict.maskedExistingEmail,
+			refId: conflict.refId,
+			redirectTo: conflict.redirectTo
+		}
 	});
 }

@@ -60,8 +60,8 @@ export const attendanceEntry = snakeCase.table('attendance_entry', {
  * who picked none of them is shown that as an open point. A session without any checks no choice;
  * a session that only records never has any. Deleting an option drops the expectation.
  */
-export const attendanceSessionToSurveyOption = implicitManyToMany(
-	'attendance_session_to_survey_option',
-	() => attendanceSession.id,
-	() => surveyOption.id
-);
+export const attendanceSessionToSurveyOption = implicitManyToMany({
+	name: 'attendance_session_to_survey_option',
+	a: () => attendanceSession.id,
+	b: () => surveyOption.id
+});

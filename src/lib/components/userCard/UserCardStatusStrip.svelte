@@ -20,12 +20,15 @@
 	type AdministrativeStatus = 'DONE' | 'PROBLEM' | 'PENDING';
 
 	// The same row the formalities tab reads, so both share one cache record.
-	const strip = $derived(await fetchStatusWithAge(userId, conferenceId));
+	const strip = $derived(await fetchStatusWithAge({ userId, conferenceId }));
 	const status = $derived(strip.statuses.at(0));
 	// Supervisors and adults sign for themselves
 	const needsGuardian = $derived(
 		!isConferenceSupervisor &&
-			!ofAgeAtConference(strip.conference.startConference, strip.user.birthday)
+			!ofAgeAtConference({
+				startConference: strip.conference.startConference,
+				dateOfBirth: strip.user.birthday
+			})
 	);
 
 	type Tone = AdministrativeStatus | 'NONE';

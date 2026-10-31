@@ -17,7 +17,7 @@ export function registerUserReferenceInPaymentTransactionAbilities() {
 
 	// Participant care sees who the conference's payments cover.
 	abilityBuilder.userReferenceInPaymentTransaction.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+		const conference = isTeamMemberOf({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return conference ? { where: { paymentTransaction: { conference } } } : undefined;
 	});
 

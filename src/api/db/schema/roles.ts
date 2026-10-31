@@ -81,8 +81,8 @@ export const conferenceRole = snakeCase.table(
 );
 
 /** The nation roles a committee seats. Only `NATION` rows belong here. */
-export const committeeToRole = implicitManyToMany(
-	'committee_to_role',
-	() => committee.id,
-	() => conferenceRole.id
-);
+export const committeeToRole = implicitManyToMany({
+	name: 'committee_to_role',
+	a: () => committee.id,
+	b: () => conferenceRole.id
+});

@@ -1,4 +1,4 @@
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
@@ -49,7 +49,7 @@ export function registerStoredFileAbilities() {
 	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = hasPartIn(ctx);
+		const conference = hasPartIn({ ctx });
 		return conference
 			? {
 					where: {
@@ -74,7 +74,7 @@ export function registerStoredFileAbilities() {
 	});
 
 	abilityBuilder.storedFile.allow('read').when((ctx) => {
-		const conference = hasPartIn(ctx);
+		const conference = hasPartIn({ ctx });
 		return conference
 			? { where: { resolutionOf: { conference } }, columns: WITHOUT_UPLOADER }
 			: undefined;
@@ -88,14 +88,21 @@ export function registerStoredFileAbilities() {
  * Refuses unless the caller may upload the file `field` of a `kind` row of `conferenceId`, which
  * the field's entry in `FILE_SOURCES` decides. Returns that entry.
  */
-export async function assertCanUploadFile(
-	ctx: ApiContext,
-	target: { kind: string; field: string; conferenceId: string }
-) {
+export async function assertCanUploadFile({
+	ctx,
+	target
+}: {
+	ctx: ApiContext;
+	target: { kind: string; field: string; conferenceId: string };
+}) {
 	ctx.mustBeLoggedIn();
-	const source = findFileSource(target.kind, target.field);
-	if (!source) throw apiError('INVALID_INPUT', m.fileUploadUnknownPurpose());
-	await assertTeamPermission(ctx, target.conferenceId, source.permission);
+	const source = findFileSource({ kind: target.kind, field: target.field });
+	if (!source) throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadUnknownPurpose() });
+	await assertTeamPermission({
+		ctx,
+		conferenceId: target.conferenceId,
+		permission: source.permission
+	});
 	return source;
 }
 
@@ -108,14 +115,18 @@ export async function assertCanUploadFile(
  * The caller's right to write the row itself is the mutation's business, as for any other column;
  * that the file arrived in full is `ensureUploadComplete`'s.
  */
-export async function assertCanClaimFile<K extends FileKind>(
-	ctx: ApiContext,
-	fileId: string | null | undefined,
-	target: { kind: K; field: FileField<K>; conferenceId: string }
-) {
+export async function assertCanClaimFile<K extends FileKind>({
+	ctx,
+	fileId,
+	target
+}: {
+	ctx: ApiContext;
+	fileId: string | null | undefined;
+	target: { kind: K; field: FileField<K>; conferenceId: string };
+}) {
 	if (fileId === null || fileId === undefined) return;
 	const user = ctx.mustBeLoggedIn();
-	const source = findFileSource(target.kind, target.field);
+	const source = findFileSource({ kind: target.kind, field: target.field });
 
 	const file = await db.query.storedFile.findFirst({
 		where: { id: fileId },
@@ -126,8 +137,10 @@ export async function assertCanClaimFile<K extends FileKind>(
 		!file ||
 		file.purpose !== source.purpose ||
 		file.uploadedById !== user.sub ||
-		!file.key.startsWith(objectKey(target.conferenceId, source.purpose, ''))
+		!file.key.startsWith(
+			objectKey({ conferenceId: target.conferenceId, purpose: source.purpose, uniqueId: '' })
+		)
 	) {
-		throw apiError('INVALID_INPUT', m.fileUploadNotUsable());
+		throw apiError({ code: 'INVALID_INPUT', message: m.fileUploadNotUsable() });
 	}
 }

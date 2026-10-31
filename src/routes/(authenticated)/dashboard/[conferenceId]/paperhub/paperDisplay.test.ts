@@ -71,13 +71,13 @@ describe('paperEntityName', () => {
 
 describe('buildResolutionHeaderData', () => {
 	test('has no header for papers other than working papers', () => {
-		expect(buildResolutionHeaderData(workingPaper({ type: 'POSITION_PAPER' }), conference)).toBe(
-			undefined
-		);
+		expect(
+			buildResolutionHeaderData({ paper: workingPaper({ type: 'POSITION_PAPER' }), conference })
+		).toBe(undefined);
 	});
 
 	test('fills the header from the paper and the conference', () => {
-		expect(buildResolutionHeaderData(workingPaper(), conference)).toEqual({
+		expect(buildResolutionHeaderData({ paper: workingPaper(), conference })).toEqual({
 			conferenceName: 'MUN-SH',
 			conferenceTitle: 'Model United Nations Schleswig-Holstein',
 			committeeAbbreviation: 'GA',
@@ -91,18 +91,21 @@ describe('buildResolutionHeaderData', () => {
 	});
 
 	test('falls back to the short title when there is no long one', () => {
-		const header = buildResolutionHeaderData(workingPaper(), {
-			title: 'MUN-SH',
-			longTitle: null,
-			emblemDataURL: null
+		const header = buildResolutionHeaderData({
+			paper: workingPaper(),
+			conference: {
+				title: 'MUN-SH',
+				longTitle: null,
+				emblemDataURL: null
+			}
 		});
 		expect(header?.conferenceTitle).toBe('MUN-SH');
 		expect(header?.conferenceEmblem).toBeUndefined();
 	});
 
 	test('uses generic names without a conference or agenda item', () => {
-		const header = buildResolutionHeaderData(
-			workingPaper({
+		const header = buildResolutionHeaderData({
+			paper: workingPaper({
 				agendaItem: null,
 				delegation: {
 					assignedRole: {
@@ -113,8 +116,8 @@ describe('buildResolutionHeaderData', () => {
 					}
 				}
 			}),
-			undefined
-		);
+			conference: undefined
+		});
 		expect(header).toEqual({
 			conferenceName: 'Model UN',
 			conferenceTitle: 'Model United Nations',
@@ -129,15 +132,15 @@ describe('buildResolutionHeaderData', () => {
 	});
 
 	test('leaves out a missing resolution headline', () => {
-		const header = buildResolutionHeaderData(
-			workingPaper({
+		const header = buildResolutionHeaderData({
+			paper: workingPaper({
 				agendaItem: {
 					title: 'Water',
 					committee: { abbreviation: 'SC', name: 'Security Council', resolutionHeadline: null }
 				}
 			}),
-			null
-		);
+			conference: null
+		});
 		expect(header?.committeeResolutionHeadline).toBeUndefined();
 		expect(header?.conferenceName).toBe('Model UN');
 	});
@@ -146,7 +149,8 @@ describe('buildResolutionHeaderData', () => {
 describe('resolutionHeader', () => {
 	test('prints a draft header without a committee or authoring delegation', () => {
 		expect(
-			resolutionHeader(conference, {
+			resolutionHeader({
+				conference,
 				committee: undefined,
 				topic: undefined,
 				authoringDelegation: undefined,
@@ -168,7 +172,7 @@ describe('resolutionHeader', () => {
 
 describe('loadPaperIntoEditor', () => {
 	test('starts a working paper without content from an empty resolution', () => {
-		expect(loadPaperIntoEditor(workingPaper(), undefined)).toEqual({
+		expect(loadPaperIntoEditor({ paper: workingPaper(), latestContent: undefined })).toEqual({
 			validationError: null,
 			invalidRawContent: null
 		});
@@ -179,7 +183,9 @@ describe('loadPaperIntoEditor', () => {
 
 	test('loads a valid resolution into the resolution editor', () => {
 		const resolution = createEmptyResolution('Security Council');
-		expect(loadPaperIntoEditor(workingPaper({ agendaItem: null }), resolution)).toEqual({
+		expect(
+			loadPaperIntoEditor({ paper: workingPaper({ agendaItem: null }), latestContent: resolution })
+		).toEqual({
 			validationError: null,
 			invalidRawContent: null
 		});
@@ -188,7 +194,10 @@ describe('loadPaperIntoEditor', () => {
 
 	test('hands back a working paper whose content is not a resolution', () => {
 		const content = { committeeName: 'General Assembly', preamble: 'not a list' };
-		const { validationError, invalidRawContent } = loadPaperIntoEditor(workingPaper(), content);
+		const { validationError, invalidRawContent } = loadPaperIntoEditor({
+			paper: workingPaper(),
+			latestContent: content
+		});
 		expect(validationError).toEqual(expect.any(String));
 		expect(invalidRawContent).toBe(content);
 		expect(currentEditorContent('WORKING_PAPER')).toEqual(
@@ -199,12 +208,12 @@ describe('loadPaperIntoEditor', () => {
 	test('loads other papers into the text editor', () => {
 		const content = { type: 'doc', content: [] };
 		const paper = workingPaper({ type: 'POSITION_PAPER' });
-		expect(loadPaperIntoEditor(paper, content)).toEqual({
+		expect(loadPaperIntoEditor({ paper, latestContent: content })).toEqual({
 			validationError: null,
 			invalidRawContent: null
 		});
 		expect(currentEditorContent('POSITION_PAPER')).toBe(content);
-		loadPaperIntoEditor(paper, undefined);
+		loadPaperIntoEditor({ paper, latestContent: undefined });
 		expect(get(editorContentStore)).toBe('');
 		expect(resolutionStore.snapshot).toBeDefined();
 	});

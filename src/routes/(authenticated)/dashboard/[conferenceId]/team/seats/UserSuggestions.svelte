@@ -24,7 +24,10 @@
 					onclick={() => onSelect(suggestion)}
 				>
 					<span class="font-semibold">
-						{formatNames(suggestion.given_name ?? undefined, suggestion.family_name ?? undefined)}
+						{formatNames({
+							givenName: suggestion.given_name ?? undefined,
+							familyName: suggestion.family_name ?? undefined
+						})}
 					</span>
 					<span class="text-base-content/60 text-xs">{suggestion.email}</span>
 					{#if inConference.has(suggestion.id)}

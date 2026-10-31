@@ -35,7 +35,7 @@ export function decodePlusCodeFull(code: string): { latitude: number; longitude:
 }
 
 /** Encode lat/lng to a 10-digit full Plus Code. */
-function encodePlusCode(lat: number, lng: number): string {
+function encodePlusCode({ lat, lng }: { lat: number; lng: number }): string {
 	lat = Math.min(90, Math.max(-90, lat));
 	lng = (((lng % 360) + 540) % 360) - 180;
 	let adjLat = Math.min(lat + 90, 180 - 1e-10);
@@ -54,13 +54,21 @@ function encodePlusCode(lat: number, lng: number): string {
 }
 
 /** Recover a full Plus Code from a short code + reference coordinates. */
-export function recoverPlusCode(shortCode: string, refLat: number, refLng: number): string {
+export function recoverPlusCode({
+	shortCode,
+	refLat,
+	refLng
+}: {
+	shortCode: string;
+	refLat: number;
+	refLng: number;
+}): string {
 	const sepIdx = shortCode.indexOf('+');
 	const paddingLen = 8 - sepIdx;
 	const resolution = Math.pow(20, 2 - sepIdx / 2);
 	const halfRes = resolution / 2;
 
-	const refCode = encodePlusCode(refLat, refLng);
+	const refCode = encodePlusCode({ lat: refLat, lng: refLng });
 	const candidate = refCode.substring(0, paddingLen) + shortCode;
 
 	const decoded = decodePlusCodeFull(candidate);
@@ -72,5 +80,5 @@ export function recoverPlusCode(shortCode: string, refLat: number, refLng: numbe
 	if (refLng + halfRes < cLng) cLng -= resolution;
 	else if (refLng - halfRes > cLng) cLng += resolution;
 
-	return encodePlusCode(cLat, cLng);
+	return encodePlusCode({ lat: cLat, lng: cLng });
 }

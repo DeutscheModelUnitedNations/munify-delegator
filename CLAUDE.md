@@ -214,8 +214,14 @@ bun run preview
   	abilityBuilder.committee.allow('read');
   	abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
   }
-  export function assertCanCreateCommittee(ctx: ApiContext, conferenceId: string) {
-  	return assertTeamPermission(ctx, conferenceId, 'planSeats');
+  export function assertCanCreateCommittee({
+  	ctx,
+  	conferenceId
+  }: {
+  	ctx: ApiContext;
+  	conferenceId: string;
+  }) {
+  	return assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' });
   }
   ```
 
@@ -269,7 +275,7 @@ bun run preview
 
   `services/authHelper/` is the one place authorization is built from. Rules of thumb, all of them enforced by `e2e/authorization/`:
 
-  - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
+  - **Rules compose from the helpers** (`isTeamMemberOfConference({ ctx, roles })`, `isOwnUser`,
     `isParticipantOfConference`, `isCaredForUser`, …), wrapped with `grantWhere(...)`. A helper returns
     `undefined` for "grants nothing" and never throws. Every table also gets
     `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
@@ -278,11 +284,11 @@ bun run preview
 { id } })`). Load the row through it first when the resolver needs the row anyway.
   - **Team checks are team permissions** (`TEAM_PERMISSIONS` in `#lib/helpers/teamRoles.ts`,
     shared with the team pages: `manageParticipants`, `planSeats`, `reviewPapers`, …, each
-    granted to the roles `rolesWithTeamPermission` names). `teamConference(ctx, permission)` is the
+    granted to the roles `rolesWithTeamPermission` names). `teamConference({ ctx, permission })` is the
     filter on the conference: put it into the query that loads the row anyway
-    (`{ id, conference: teamConference(ctx, 'manageParticipants') }`), so a caller who may not
+    (`{ id, conference: teamConference({ ctx, permission: 'manageParticipants' }) }`), so a caller who may not
     finds nothing. A create with no row to load checks the parent conference with
-    `assertTeamPermission(ctx, conferenceId, permission)` (`hasTeamPermission` is the
+    `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` is the
     non-throwing form; both take a `tx`). A system admin always passes. Never compare a
     caller's roles by hand: a new kind of check is a new team permission.
   - **Every id an argument names is checked to belong where the row goes**: a track to its day, a
@@ -535,11 +541,11 @@ bun run preview
 #### 3. Authentication & Authorization
 
 - **OIDC flow** via [`@m1212e/sveltekit-oidc`](https://github.com/m1212e/sveltekit-oidc), the same
-  library chase uses. `src/api/services/OIDC.ts` builds the instance; its `handle` hook (wired up in
+  library chase uses. `src/api/services/oidc/OIDC.ts` builds the instance; its `handle` hook (wired up in
   `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
   `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
   session on `event.locals.oidc`. There is no auth code in route loads. Every guard that decides
-  by path (`authenticatedRoutes`, `isPublicRoute`, the migration notice) looks at
+  by path (`authenticatedRoutes`, `isPublicRoute`) looks at
   `routePath(event.url)`: Paraglide prefixes non-default locales (`/en/…`) and `event.url` keeps
   the prefix, so matching `event.url.pathname` would miss every English URL. A redirect target
   that comes from the request (`/login?next=`) goes through `sameSitePath`
@@ -576,7 +582,7 @@ bun run preview
   accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
   on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
   themselves, participant care and project management the participants of their conferences, never
-  anybody on a team. `impersonationHandle` (`hooks.server.ts`) checks it again on every request and
+  anybody on a team. `impersonationHandle` (`userPermissions.ts`, run from `hooks.server.ts`) checks it again on every request and
   loads the target's identity from their row, since the exchanged token may carry only `sub`. While
   impersonating, `ctx.oidc.user` is the target, `ctx.oidc.impersonator` the caller, and the system
   roles are only those both hold. `e2e/authorization/impersonation.spec.ts` pins it down.
@@ -607,7 +613,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
-- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`#api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError(code, m.…())` (`#api/services/errors/apiError.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode(err, code)` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
+- **The API speaks the locale of whoever asked.** `/api/graphql` has no locale in its path, so the browser client sends it in the `x-locale` header (`#lib/api/localeHeader.ts`) and `hooks.server.ts` runs the request in that locale (`#api/services/requestLocale.ts`). Every user-facing message a resolver builds (`GraphQLError`, mail text) is an `m.…()` message; never a literal. Mails are written in the recipient's stored `user.locale` (`localeOfUser`), rendered inside `runWithLocale`, so labels from `$lib/utils/enumTranslations` follow along; pass enums to the mail, not translated labels. Dates and numbers are formatted with `getLocale()`, never the browser's default. **Errors the client has to recognise carry a code**: throw them with `apiError({ code, message: m.…() })` (`#api/services/errors.ts`), never a bare `GraphQLError`, and read them with `hasErrorCode({ err, code })` / `errorCodeOf(err)` (`$lib/api/errorCodes.ts`, which holds the closed `ERROR_CODES` list). Never branch on an error's message: it is translated text. `isNetworkError` likewise looks at urql's `networkError`, not at message words. `UNAUTHENTICATED` is handled once, for every operation, by `loginRedirectExchange` (`$lib/api/loginRedirect.ts`): it sends the browser to `/login?next=…` and back, so a resolver that needs a session just calls `mustBeLoggedIn()`.
 - **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
@@ -858,12 +864,26 @@ bun run preview
   published survey before its deadline (`SURVEY_REMINDER`, keyed by survey and deadline, so a
   moved deadline reminds again), certificates, students linked to a supervisor, and
   each review of a paper to its author (`PAPER_REVIEWED`, keyed by the review, replies to the
-  reviewer). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
+  reviewer), and a welcome to everyone who joins the team (`TEAM_WELCOME`, keyed by the membership,
+  to a `team` member rather than a participant: a `DueEmail` is addressed to its `recipient`, and
+  carries `person` or `teamMember`). The rules (who gets what, the reminder windows in `#lib/helpers/emailKinds.ts`) are unit tested
   there; the e-mail page explains them in the same words.
-- **`emailLog` makes each mail happen once.** The sweep (`emailSweep.ts`) claims a mail by writing
-  its row, unique per conference, kind, person and `subjectKey`, before sending, so concurrent
-  sweeps and instances never double-send; failures are retried three times, a claim left by a dead
-  process frees up after 15 minutes. Every row (sent, failed, skipped) is shown in the log.
+- **`emailLog` makes each automatic mail happen once.** The sweep (`emailSweep.ts`) claims a mail
+  by writing its row, unique per conference, kind, person and `subjectKey` among the `AUTOMATIC`
+  rows (a partial index; the claim's `targetWhere` names it), before sending, so concurrent sweeps
+  and instances never double-send; failures are retried three times, a claim left by a dead
+  process frees up after 15 minutes. Every row (sent, failed, skipped, by hand) is shown in the log.
+- **Every mail goes out one way** (`emailDelivery.ts`): rendered in the recipient's language and
+  the conference's words (`loadWording`, `wordingIn`), its log row written first and settled by
+  `deliver`. A mail the team sends by hand (`sendByHand`) is a `MANUAL` row of its own with
+  `sentById`, so it can be sent any number of times.
+- **The team sends a person's mails by hand from the user card** (`OwedEmails.svelte` in the
+  formalities tab, participant care): `personEmails` lists what `dueEmails` says the person is owed
+  right now, switched on or not, with the latest try; `sendPersonEmail` sends one of them, and
+  refuses anything the person is not owed. With `anyTimeBefore`, `dueEmails` owes the reminders
+  (`isReminder`) any time before their date rather than only in their window, as long as what they
+  remind of still holds. A mail sent by hand counts as sent for the sweep (`stillOpen`), except a
+  reminder: sending one early leaves the automatic one due.
 - **Per conference and kind, off by default** (`conferenceEmailSetting`), on the "E-Mails" tab of
   the conference settings (`team/configuration/emails/`, participant care: `canManageEmails`). The
   switches wait for the settings' save button (`emailChanges.svelte.ts`) and show up in its change
@@ -881,17 +901,23 @@ bun run preview
   `setConferenceEmailFooter`): paragraphs with `{conference}` (`emailFooterParagraphs`), drawn by
   `EmailLayout` above the fixed small print in the automatic and the team mails alike. A language
   without one gets none; `emailPreview` takes a draft `footer`, which is the footer editor's preview.
-- **The team's own mails share the texts, not the switches.** The invitation into the team and the
-  welcome for an existing account (`TEAM_INVITATION`, `TEAM_WELCOME`, `ALWAYS_SENT_KINDS` in
-  `#lib/helpers/emailKinds.ts`) are sent where they happen (`sendTeamInvitationEmail.ts`) and always
-  go out; the page lists them without a switch so their text can be changed like any other, and
-  `setConferenceEmailEnabled` refuses them. `dueEmails` never owes them, nor are they logged.
+- **The team invitation shares the texts, not the switch.** Its link carries a token only the
+  inviting request knows (the database keeps the hash), so `TEAM_INVITATION` (`ALWAYS_SENT_KINDS` in
+  `#lib/helpers/emailKinds.ts`) is sent by hand where it happens (`#api/handlers/email/teamInvitationEmail.ts`)
+  and always goes out; the page lists it without a switch so its text can be changed like any other, and
+  `setConferenceEmailEnabled` refuses it. `dueEmails` never owes it. It is logged like every mail
+  sent by hand, without a `userId` (the invitee may have no account): the row holds the address,
+  the invitation's id as `subjectKey` and the inviter as `sentById`. Everything else, the team
+  welcome included, is an automatic mail.
 - **Two triggers, one path:** the mutations that change what is due (release, applying the draft,
-  conference settings, participant statuses, seating someone, a supervisor link, a paper review) call
+  conference settings, participant statuses, seating someone, a supervisor link, a paper review,
+  someone joining the team) call
   `scheduleEmailSweep` (in the background, one at a time per conference); the `send-emails` job
   calls `/api/jobs/send-emails` with `x-jobs-secret: JOBS_SECRET` every few minutes for the reminders
   and anything missed. The app renders the mails (one template, `NotificationEmail.svelte` on
-  `#api/services/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`; values per kind in
+  `#api/services/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
+  reads its colours, radius and font from the corporate identity's CSS (`?raw`; vitest lets those
+  files through with `test.css.include`); values per kind in
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
   triggered the sweep.
 
@@ -910,6 +936,26 @@ bun run preview
     `--dry-run`; needs the `S3_*` variables
   - `send-emails` - every few minutes; asks the app to send the automatic mails that are due (it
     renders them). Needs `APP_URL` and `JOBS_SECRET` (the same as the app's)
+
+### Logging
+
+- **Log through `logger` (`#lib/logger`), never `console`** - server, jobs and browser alike (after
+  avv). It is pino: JSON lines on the server, pretty ones in development (`pino-pretty`), plain
+  `console` in the browser. Call it as `logger.error('Sending the mail failed', error)` - a fixed
+  message, then one value (an error, or an object of fields); put ids into the fields rather than
+  the message. Each line is also added to the active OpenTelemetry span as an event, and an
+  `error` marks the span failed.
+- **`logger.error` is a Sentry issue**, on the server through `pinoIntegration` (`hooks.server.ts`),
+  in the browser through `forwardErrors` (`hooks.client.ts`: the error the line carries is captured
+  as an exception, its other fields go along as extra; a line without one is a message), so
+  use it for failures someone has to look at; expected outcomes are `warn` or `info`. rumble logs
+  every GraphQL operation through `graphqlLogger`, which is kept out of Sentry because an operation
+  answering with an expected error (not found, invalid input) logs at `error` too.
+- **Never report to Sentry by hand.** Only the hooks (and `sentryDataCollection.ts`) may import
+  `@sentry/sveltekit`; ESLint refuses it anywhere else in `src/`. What an issue should carry goes
+  into the log line's fields - masked where it is personal data, since it ends up in Sentry.
+- In tests, spy on the logger (`vi.spyOn(logger, 'error')`), not on `console`.
+- `console` is left only for output meant to be read as text: `scripts/` and the seed's overview.
 
 ### Path Aliases
 
@@ -1015,12 +1061,14 @@ Required variables (see `.env.example`):
 - `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
 - `OIDC_SCOPES` - OAuth scopes (must include `openid`)
 - `OIDC_ROLE_CLAIM` - claim name or dot path of the provider's role/group names (any provider's shape;
-  `#api/services/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
+  `#api/services/oidc/roleClaims.ts`, falling back to the userinfo endpoint), `OIDC_ROLE_MAP` (JSON) maps
   them onto `admin` / `member` / `service_user`
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` - The file bucket (the endpoint names
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
+- `LOG_LEVEL` (optional): `debug` / `info` / `warn` / `error` / `silent`; defaults to `debug` in
+  development, `info` otherwise, `silent` under vitest
 
 ## Common Workflows
 
@@ -1095,8 +1143,10 @@ The pre-commit fallow step is a gate: it fails the commit when the commit introd
   connection code are the only check on `previewDelegation`, `createDelegationMember`,
   `previewConferenceSupervisor` and `connectToConferenceSupervisor`, so each wraps its lookup in
   `codeGuessLimiter.attempt` (`#api/services/codeGuessLimit.ts`): a lookup throws `codeNotFound()`
-  for a wrong code, and ten of those in ten minutes answer `TOO_MANY_ATTEMPTS`. The counters live
-  in Redis keys that expire (or a pruned in-memory map), never in the database. New codes are 8
+  for a wrong code, and ten of those in ten minutes answer `TOO_MANY_ATTEMPTS`. The counting is
+  `rate-limiter-flexible`'s (`#api/services/failureLimit.ts` only adds counting misses alone):
+  Redis keys that expire, falling back to process memory while Redis is unreachable, never the
+  database. New codes are 8
   letters (`#lib/helpers/entryCode.ts`); older 6-letter codes still work, and code fields use
   `createEntryCodeInput` so a 6-letter prefix of a new code is not looked up mid-typing.
 
@@ -1143,6 +1193,15 @@ This codebase has no classes, except error classes. State and behavior live in f
 `createX(...)` factory returning an object of methods and getters, with private state in the
 closure (`$state` works inside a factory in a `.svelte.ts` file). Export the type as
 `ReturnType<typeof createX>` and share behavior by composition, not inheritance.
+
+**Two or more parameters take one object**, so every call names its arguments:
+`assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' })`, declared as
+`function f({ a, b = 1 }: { a: A; b?: number })`. A single parameter stays positional. The
+exceptions are signatures something else fixes: callbacks a library calls (comparators,
+resolvers, Svelte actions, zod refinements), symmetric `(a, b)` comparisons, type predicates
+(they cannot narrow a destructured parameter), tables of interchangeable functions sharing one
+call shape (the `dueEmails` rules, the participant filter conditions and inputs), and
+`boardState`, whose arguments `memoizeLast` compares one level deep.
 
 ## MCP Servers
 

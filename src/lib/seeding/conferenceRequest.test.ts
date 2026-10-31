@@ -13,21 +13,21 @@ import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
 describe('conferenceRequest', () => {
 	describe('localToIso', () => {
 		it('uses the winter offset outside daylight saving time', () => {
-			expect(localToIso('2027-01-10T09:00')).toBe('2027-01-10T09:00:00+01:00');
+			expect(localToIso({ value: '2027-01-10T09:00' })).toBe('2027-01-10T09:00:00+01:00');
 		});
 
 		it('uses the summer offset during daylight saving time', () => {
-			expect(localToIso('2027-07-10T09:00')).toBe('2027-07-10T09:00:00+02:00');
+			expect(localToIso({ value: '2027-07-10T09:00' })).toBe('2027-07-10T09:00:00+02:00');
 		});
 
 		it('returns an empty string for incomplete input', () => {
-			expect(localToIso('')).toBe('');
-			expect(localToIso('2027-07-10')).toBe('');
+			expect(localToIso({ value: '' })).toBe('');
+			expect(localToIso({ value: '2027-07-10' })).toBe('');
 		});
 	});
 
 	it('round-trips dates between the input format and ISO', () => {
-		expect(isoToLocal(localToIso('2027-03-10T09:00'))).toBe('2027-03-10T09:00');
+		expect(isoToLocal(localToIso({ value: '2027-03-10T09:00' }))).toBe('2027-03-10T09:00');
 		expect(isoToLocal('2027-03-10T08:00:00Z')).toBe('2027-03-10T09:00');
 	});
 
@@ -60,7 +60,7 @@ describe('conferenceRequest', () => {
 
 	describe('daylight saving time edge cases', () => {
 		it('treats a time skipped by the spring clock change as nonexistent', () => {
-			expect(localToIso('2027-03-28T02:30')).toBe('');
+			expect(localToIso({ value: '2027-03-28T02:30' })).toBe('');
 			expect(isNonexistentLocalTime('2027-03-28T02:30')).toBe(true);
 			expect(isNonexistentLocalTime('2027-03-28T03:30')).toBe(false);
 			expect(isNonexistentLocalTime('')).toBe(false);

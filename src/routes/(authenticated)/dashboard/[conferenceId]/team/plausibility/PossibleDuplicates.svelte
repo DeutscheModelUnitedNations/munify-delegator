@@ -69,7 +69,7 @@
 		}
 	}
 
-	function decide(id: string, status: 'OPEN' | 'CONFIRMED' | 'DISMISSED') {
+	function decide({ id, status }: { id: string; status: 'OPEN' | 'CONFIRMED' | 'DISMISSED' }) {
 		const promise = client.mutate.decidePossibleDuplicate({ __args: { id, status }, status: true });
 		toast.promise(promise, genericPromiseToastMessages);
 	}
@@ -119,16 +119,22 @@
 			</DuplicateComparison>
 			<div class="card-actions justify-end">
 				{#if pair.status === 'OPEN'}
-					<button class="btn btn-xs" onclick={() => decide(pair.id, 'DISMISSED')}>
+					<button class="btn btn-xs" onclick={() => decide({ id: pair.id, status: 'DISMISSED' })}>
 						<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
 						{m.possibleDuplicateDifferentPeople()}
 					</button>
-					<button class="btn btn-xs btn-warning" onclick={() => decide(pair.id, 'CONFIRMED')}>
+					<button
+						class="btn btn-xs btn-warning"
+						onclick={() => decide({ id: pair.id, status: 'CONFIRMED' })}
+					>
 						<i class="fa-sharp-duotone fa-solid fa-link"></i>
 						{m.possibleDuplicateSamePerson()}
 					</button>
 				{:else}
-					<button class="btn btn-xs btn-ghost" onclick={() => decide(pair.id, 'OPEN')}>
+					<button
+						class="btn btn-xs btn-ghost"
+						onclick={() => decide({ id: pair.id, status: 'OPEN' })}
+					>
 						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 						{m.possibleDuplicateReopen()}
 					</button>

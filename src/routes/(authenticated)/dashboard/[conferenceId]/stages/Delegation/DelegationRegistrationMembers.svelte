@@ -97,10 +97,10 @@
 		<DelegationStatusTableWrapper>
 			{#each delegation.members as member (member.id)}
 				<DelegationStatusTableEntry
-					name={formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined
-					)}
+					name={formatNames({
+						givenName: member.user.givenName ?? undefined,
+						familyName: member.user.familyName ?? undefined
+					})}
 					pronouns={member.user.pronouns ?? ''}
 					headDelegate={member.isHeadDelegate}
 				>

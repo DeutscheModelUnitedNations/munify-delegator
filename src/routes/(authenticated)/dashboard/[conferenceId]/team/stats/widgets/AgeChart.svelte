@@ -47,12 +47,15 @@
 		const categories = stats?.age?.byCategory ?? [];
 		const delegationMemberCategories = categories
 			.filter((c) => c.categoryType === 'delegationMember')
-			.map((category) => ({ category, color: getCategoryColor(category.categoryId, 0) }));
+			.map((category) => ({
+				category,
+				color: getCategoryColor({ categoryId: category.categoryId, index: 0 })
+			}));
 		const singleParticipantCategories = categories
 			.filter((c) => c.categoryType === 'singleParticipant')
 			.map((category, index) => ({
 				category,
-				color: getCategoryColor(category.categoryId, index)
+				color: getCategoryColor({ categoryId: category.categoryId, index })
 			}));
 		return [...delegationMemberCategories, ...singleParticipantCategories].flatMap(
 			({ category, color }) =>
@@ -60,7 +63,10 @@
 					? [
 							{
 								id: category.categoryId,
-								label: getCategoryDisplayName(category.categoryId, category.categoryName),
+								label: getCategoryDisplayName({
+									categoryId: category.categoryId,
+									categoryName: category.categoryName
+								}),
 								average: category.average,
 								count: category.count,
 								color

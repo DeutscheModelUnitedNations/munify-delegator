@@ -80,16 +80,20 @@ function toTitleCaseNamePart(namePart: string): string {
  *
  * @returns A formatted string of the names according to the provided options.
  */
-export default function formatNames(
-	givenName: string | undefined,
-	familyName: string | undefined,
+export default function formatNames({
+	givenName,
+	familyName,
+	options
+}: {
+	givenName: string | undefined;
+	familyName: string | undefined;
 	options?: {
 		givenNameFirst?: boolean;
 		givenNameUppercase?: boolean;
 		familyNameUppercase?: boolean;
 		delimiter?: string;
-	}
-): string {
+	};
+}): string {
 	const defaultOptions = {
 		givenNameFirst: true, // Default to given name first
 		givenNameUppercase: false,
@@ -98,8 +102,14 @@ export default function formatNames(
 	};
 	const effectiveOptions = { ...defaultOptions, ...options };
 
-	const formattedGivenName = formatNamePart(givenName, effectiveOptions.givenNameUppercase);
-	const formattedFamilyName = formatNamePart(familyName, effectiveOptions.familyNameUppercase);
+	const formattedGivenName = formatNamePart({
+		name: givenName,
+		uppercase: effectiveOptions.givenNameUppercase
+	});
+	const formattedFamilyName = formatNamePart({
+		name: familyName,
+		uppercase: effectiveOptions.familyNameUppercase
+	});
 
 	// A missing name leaves the other one standing alone, without a delimiter.
 	const ordered = effectiveOptions.givenNameFirst
@@ -113,7 +123,13 @@ export default function formatNames(
  * One trimmed name part, in title case (with the usual lowercase particles) or, when asked to,
  * fully uppercased from the original spelling.
  */
-function formatNamePart(name: string | undefined, uppercase: boolean): string {
+function formatNamePart({
+	name,
+	uppercase
+}: {
+	name: string | undefined;
+	uppercase: boolean;
+}): string {
 	const normalized = name ? name.trim() : '';
 	return uppercase ? normalized.toUpperCase() : toTitleCaseNamePart(normalized);
 }
@@ -130,10 +146,13 @@ function formatNamePart(name: string | undefined, uppercase: boolean): string {
  * @param familyName - The family name of the individual. Can be undefined.
  * @returns The formatted initials derived from the input names.
  */
-export function formatInitials(
-	givenName: string | undefined,
-	familyName: string | undefined
-): string {
+export function formatInitials({
+	givenName,
+	familyName
+}: {
+	givenName: string | undefined;
+	familyName: string | undefined;
+}): string {
 	if (!givenName) return familyName?.toUpperCase() || '--';
 	if (!familyName) return givenName.charAt(0).toUpperCase();
 	return `${givenName.charAt(0).toUpperCase()}${familyName.charAt(0).toUpperCase()}`;
@@ -145,11 +164,19 @@ type NameObject = {
 };
 
 export function sortByNames(a: NameObject, b: NameObject): number {
-	const aName = formatNames(a.givenName ?? undefined, a.familyName ?? undefined, {
-		givenNameFirst: false
+	const aName = formatNames({
+		givenName: a.givenName ?? undefined,
+		familyName: a.familyName ?? undefined,
+		options: {
+			givenNameFirst: false
+		}
 	});
-	const bName = formatNames(b.givenName ?? undefined, b.familyName ?? undefined, {
-		givenNameFirst: false
+	const bName = formatNames({
+		givenName: b.givenName ?? undefined,
+		familyName: b.familyName ?? undefined,
+		options: {
+			givenNameFirst: false
+		}
 	});
 	return aName.localeCompare(bName);
 }

@@ -37,7 +37,7 @@
 			hint: m.assignmentNotReleasedHint()
 		}
 	};
-	const notice = $derived(notices[releaseNotice(released, justApplied)]);
+	const notice = $derived(notices[releaseNotice({ released, justApplied })]);
 </script>
 
 <section class="alert {notice.tone} alert-soft items-start">

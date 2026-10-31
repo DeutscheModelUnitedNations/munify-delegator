@@ -110,22 +110,22 @@ export const user = snakeCase.table(
 	},
 	(table) => [
 		uniqueIndex('user_email_key').using('btree', table.email.asc().nullsLast()),
-		trigramIndex('user_id_trgm', table.id),
-		trigramIndex('user_email_trgm', table.email),
-		trigramIndex('user_given_name_trgm', table.givenName),
-		trigramIndex('user_family_name_trgm', table.familyName),
-		trigramIndex('user_preferred_username_trgm', table.preferredUsername),
-		trigramIndex('user_locale_trgm', table.locale),
-		trigramIndex('user_pronouns_trgm', table.pronouns),
-		trigramIndex('user_street_trgm', table.street),
-		trigramIndex('user_apartment_trgm', table.apartment),
-		trigramIndex('user_zip_trgm', table.zip),
-		trigramIndex('user_city_trgm', table.city),
-		trigramIndex('user_region_trgm', table.region),
-		trigramIndex('user_country_trgm', table.country),
-		trigramIndex('user_phone_trgm', table.phone),
-		trigramIndex('user_emergency_contacts_trgm', table.emergencyContacts),
-		trigramIndex('user_global_notes_trgm', table.globalNotes)
+		trigramIndex({ name: 'user_id_trgm', column: table.id }),
+		trigramIndex({ name: 'user_email_trgm', column: table.email }),
+		trigramIndex({ name: 'user_given_name_trgm', column: table.givenName }),
+		trigramIndex({ name: 'user_family_name_trgm', column: table.familyName }),
+		trigramIndex({ name: 'user_preferred_username_trgm', column: table.preferredUsername }),
+		trigramIndex({ name: 'user_locale_trgm', column: table.locale }),
+		trigramIndex({ name: 'user_pronouns_trgm', column: table.pronouns }),
+		trigramIndex({ name: 'user_street_trgm', column: table.street }),
+		trigramIndex({ name: 'user_apartment_trgm', column: table.apartment }),
+		trigramIndex({ name: 'user_zip_trgm', column: table.zip }),
+		trigramIndex({ name: 'user_city_trgm', column: table.city }),
+		trigramIndex({ name: 'user_region_trgm', column: table.region }),
+		trigramIndex({ name: 'user_country_trgm', column: table.country }),
+		trigramIndex({ name: 'user_phone_trgm', column: table.phone }),
+		trigramIndex({ name: 'user_emergency_contacts_trgm', column: table.emergencyContacts }),
+		trigramIndex({ name: 'user_global_notes_trgm', column: table.globalNotes })
 	]
 );
 

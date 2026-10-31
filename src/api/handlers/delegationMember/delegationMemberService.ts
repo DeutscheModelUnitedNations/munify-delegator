@@ -10,17 +10,15 @@ import {
 } from '#api/services/registration/participation';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import { nullToUndefined } from '#api/services/args';
-import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications';
+import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
-import { apiError } from '#api/services/errors/apiError';
-import { codeNotFound } from '#api/services/errors/codeNotFound';
+import { apiError, codeNotFound, isSerializationFailure } from '#api/services/errors';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 import type { CommitteeMove } from './delegationMemberPermissions';
 import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole';
-import { isSerializationFailure } from '#api/services/errors/serializationFailure';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	headDelegateChanges,
@@ -33,18 +31,23 @@ import {
  * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it
  * out keeps one they already have). Returns the id of the new member.
  */
-export async function joinDelegationByEntryCode(
-	userId: string,
-	conferenceId: string,
-	entryCode: string,
-	school: SchoolChoice
-) {
+export async function joinDelegationByEntryCode({
+	userId,
+	conferenceId,
+	entryCode,
+	school
+}: {
+	userId: string;
+	conferenceId: string;
+	entryCode: string;
+	school: SchoolChoice;
+}) {
 	await assertRegistrationOpen(conferenceId);
 	const delegation = await db.query.delegation.findFirst({ where: { conferenceId, entryCode } });
 	if (!delegation) throw codeNotFound();
 
 	if (delegation.applied) {
-		throw apiError('CONFLICT', m.delegationHasAlreadyApplied());
+		throw apiError({ code: 'CONFLICT', message: m.delegationHasAlreadyApplied() });
 	}
 
 	await fetchParticipationsAndTeamMembership({
@@ -55,7 +58,11 @@ export async function joinDelegationByEntryCode(
 
 	// The person's row and the membership go in together, so a refused insert leaves neither.
 	const created = await db.transaction(async (tx) => {
-		const participantId = await ensureConferenceParticipant(tx, delegation.conferenceId, userId);
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: delegation.conferenceId,
+			userId
+		});
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({
@@ -65,10 +72,14 @@ export async function joinDelegationByEntryCode(
 			})
 			.returning()
 			.then(assertFirstEntryExists);
-		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(school, tx));
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: await resolveSchoolChoice({ choice: school, tx })
+		});
 
 		// The delegation just grew, so applications it can no longer seat are dropped.
-		await tidyRoleApplications(delegation.id, tx);
+		await tidyRoleApplications({ delegationId: delegation.id, tx });
 
 		return member;
 	});
@@ -86,7 +97,7 @@ export async function removeDelegationMember(id: string) {
 	const delegationId = await db.transaction(async (tx) => {
 		const [deleted] = await tx
 			.delete(schema.delegationMember)
-			.where(whereRows(schema.delegationMember, { id }))
+			.where(whereRows({ table: schema.delegationMember, filter: { id } }))
 			.returning({
 				id: schema.delegationMember.id,
 				delegationId: schema.delegationMember.delegationId,
@@ -94,7 +105,7 @@ export async function removeDelegationMember(id: string) {
 			});
 
 		if (!deleted) {
-			throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 		}
 
 		if (deleted.isHeadDelegate) {
@@ -105,18 +116,18 @@ export async function removeDelegationMember(id: string) {
 			if (!successor) {
 				await tx
 					.delete(schema.delegation)
-					.where(whereRows(schema.delegation, { id: deleted.delegationId }));
+					.where(whereRows({ table: schema.delegation, filter: { id: deleted.delegationId } }));
 				return undefined;
 			}
 
 			await tx
 				.update(schema.delegationMember)
 				.set({ isHeadDelegate: true })
-				.where(whereRows(schema.delegationMember, { id: successor.id }));
+				.where(whereRows({ table: schema.delegationMember, filter: { id: successor.id } }));
 		}
 
 		// Only meaningful while the delegation still exists.
-		await tidyRoleApplications(deleted.delegationId, tx);
+		await tidyRoleApplications({ delegationId: deleted.delegationId, tx });
 
 		return deleted.delegationId;
 	});
@@ -132,7 +143,15 @@ const ASSIGNED_DELEGATION_INFOS = {
 };
 
 /** Removes the user's delegation membership or single registration in the conference, if any. */
-async function clearParticipation(tx: Transaction, conferenceId: string, userId: string) {
+async function clearParticipation({
+	tx,
+	conferenceId,
+	userId
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	userId: string;
+}) {
 	if (!(await isParticipantOrTeamMember({ userId, conferenceId }))) return;
 
 	const participant = await tx.query.conferenceParticipant.findFirst({
@@ -141,21 +160,31 @@ async function clearParticipation(tx: Transaction, conferenceId: string, userId:
 	});
 	// Registered, but only on the team: nothing to clear, and nothing to move either.
 	if (!participant) {
-		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
+		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
 	}
 
 	const removedMember = await tx
 		.delete(schema.delegationMember)
-		.where(whereRows(schema.delegationMember, { conferenceParticipantId: participant.id }))
+		.where(
+			whereRows({
+				table: schema.delegationMember,
+				filter: { conferenceParticipantId: participant.id }
+			})
+		)
 		.returning({ id: schema.delegationMember.id });
 	if (removedMember.length > 0) return;
 
 	const removedSingle = await tx
 		.delete(schema.singleParticipant)
-		.where(whereRows(schema.singleParticipant, { conferenceParticipantId: participant.id }))
+		.where(
+			whereRows({
+				table: schema.singleParticipant,
+				filter: { conferenceParticipantId: participant.id }
+			})
+		)
 		.returning({ id: schema.singleParticipant.id });
 	if (removedSingle.length === 0) {
-		throw apiError('CONFLICT', m.delegationMemberUserAlreadyInConference());
+		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
 	}
 }
 
@@ -168,12 +197,17 @@ type AssignedDelegation = {
  * The delegation that carries the role: the existing one, or a new one created for it. An
  * existing delegation without members gets the placeholder details.
  */
-async function prepareAssignedDelegation(
-	tx: Transaction,
-	conferenceId: string,
-	assignedRoleId: string,
-	existing: AssignedDelegation | undefined
-): Promise<AssignedDelegation> {
+async function prepareAssignedDelegation({
+	tx,
+	conferenceId,
+	assignedRoleId,
+	existing
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	assignedRoleId: string;
+	existing: AssignedDelegation | undefined;
+}): Promise<AssignedDelegation> {
 	if (!existing) {
 		const created = await tx
 			.insert(schema.delegation)
@@ -192,7 +226,7 @@ async function prepareAssignedDelegation(
 		await tx
 			.update(schema.delegation)
 			.set(ASSIGNED_DELEGATION_INFOS)
-			.where(whereRows(schema.delegation, { id: existing.id }));
+			.where(whereRows({ table: schema.delegation, filter: { id: existing.id } }));
 	}
 	return existing;
 }
@@ -215,19 +249,31 @@ export async function placeUserInAssignedDelegation(args: {
 		});
 
 		// Existing participation is cleared first, so the user can be moved.
-		await clearParticipation(tx, args.conferenceId, args.userId);
+		await clearParticipation({ tx, conferenceId: args.conferenceId, userId: args.userId });
 
-		const waiting = await markSeatedFromWaitingList(tx, args.conferenceId, args.userId);
-		const delegation = await prepareAssignedDelegation(
+		const waiting = await markSeatedFromWaitingList({
 			tx,
-			args.conferenceId,
-			args.assignedRoleId,
+			conferenceId: args.conferenceId,
+			userId: args.userId
+		});
+		const delegation = await prepareAssignedDelegation({
+			tx,
+			conferenceId: args.conferenceId,
+			assignedRoleId: args.assignedRoleId,
 			existing
-		);
+		});
 
-		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.userId);
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: args.conferenceId,
+			userId: args.userId
+		});
 		// Their own school: the one they waited with, else the one they had.
-		await setParticipantSchool(tx, [participantId], waiting?.schoolId ?? undefined);
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: waiting?.schoolId ?? undefined
+		});
 		const member = await tx
 			.insert(schema.delegationMember)
 			.values({
@@ -262,19 +308,19 @@ export async function moveMemberToCommittee({ member, committee }: CommitteeMove
 				await tx
 					.update(schema.delegationMember)
 					.set({ assignedCommitteeId: member.assignedCommitteeId ?? null })
-					.where(whereRows(schema.delegationMember, { id: displaced.id }));
+					.where(whereRows({ table: schema.delegationMember, filter: { id: displaced.id } }));
 			}
 		}
 
 		await tx
 			.update(schema.delegationMember)
 			.set({ assignedCommitteeId: committee.id })
-			.where(whereRows(schema.delegationMember, { id: member.id }));
+			.where(whereRows({ table: schema.delegationMember, filter: { id: member.id } }));
 	});
 }
 
 /** Refuses when a delegation of the given members now fills a committee beyond its seats. */
-async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
+async function assertSeatLimits({ tx, memberIds }: { tx: Transaction; memberIds: string[] }) {
 	if (memberIds.length === 0) return;
 	const delegations = await tx.query.delegation.findMany({
 		where: { members: { id: { in: memberIds } } },
@@ -300,7 +346,7 @@ async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
 		);
 		for (const [committeeId, members] of taken) {
 			if (members.length > (seats.get(committeeId) ?? 0)) {
-				throw apiError('CONFLICT', m.committeeSeatsExceeded());
+				throw apiError({ code: 'CONFLICT', message: m.committeeSeatsExceeded() });
 			}
 		}
 	}
@@ -319,15 +365,20 @@ export async function assignCommittees(
 			await tx
 				.update(schema.delegationMember)
 				.set({ assignedCommitteeId: assignment.committeeId ?? null })
-				.where(whereRows(schema.delegationMember, { id: assignment.delegationMemberId }));
+				.where(
+					whereRows({
+						table: schema.delegationMember,
+						filter: { id: assignment.delegationMemberId }
+					})
+				);
 		}
 
 		// Each committee seats a fixed number of every delegation; the assignment page checks
 		// this too, but only the server can make it hold.
-		await assertSeatLimits(
+		await assertSeatLimits({
 			tx,
-			assignments.map((assignment) => assignment.delegationMemberId)
-		);
+			memberIds: assignments.map((assignment) => assignment.delegationMemberId)
+		});
 	});
 }
 
@@ -340,7 +391,7 @@ interface SeatSwitchPlan {
 	createdDelegation: boolean;
 }
 
-function loadSeat(tx: Transaction, id: string): Promise<SeatOf> {
+function loadSeat({ tx, id }: { tx: Transaction; id: string }): Promise<SeatOf> {
 	return tx.query.delegationMember
 		.findFirst({
 			where: { id },
@@ -350,13 +401,18 @@ function loadSeat(tx: Transaction, id: string): Promise<SeatOf> {
 }
 
 /** Both members take over each other's seat. */
-async function swapSeats(
-	tx: Transaction,
-	member: SeatOf,
-	otherMemberId: string
-): Promise<SeatSwitchPlan> {
-	const other = await loadSeat(tx, otherMemberId);
-	if (isSameSeat(member, other)) throw apiError('CONFLICT', m.seatSwitchSameSeat());
+async function swapSeats({
+	tx,
+	member,
+	otherMemberId
+}: {
+	tx: Transaction;
+	member: SeatOf;
+	otherMemberId: string;
+}): Promise<SeatSwitchPlan> {
+	const other = await loadSeat({ tx, id: otherMemberId });
+	if (isSameSeat(member, other))
+		throw apiError({ code: 'CONFLICT', message: m.seatSwitchSameSeat() });
 	return {
 		seats: new Map([
 			[
@@ -377,39 +433,51 @@ async function swapSeats(
  * How many people one seat of the role takes: a nation's seat is per committee (one that seats
  * it), a non-state actor's has no committee and counts the role's seats in total.
  */
-async function seatCapacity(
-	tx: Transaction,
-	role: { id: string; kind: ConferenceRoleKind; seatAmount: number | null },
-	committeeId: string | null
-) {
+async function seatCapacity({
+	tx,
+	role,
+	committeeId
+}: {
+	tx: Transaction;
+	role: { id: string; kind: ConferenceRoleKind; seatAmount: number | null };
+	committeeId: string | null;
+}) {
 	if (role.kind !== 'NATION') {
-		if (committeeId) throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+		if (committeeId)
+			throw apiError({ code: 'INVALID_INPUT', message: m.seatSwitchInvalidTarget() });
 		return role.seatAmount ?? 0;
 	}
-	if (!committeeId) throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+	if (!committeeId) throw apiError({ code: 'INVALID_INPUT', message: m.seatSwitchInvalidTarget() });
 	const committee = await tx.query.committee.findFirst({
 		where: { id: committeeId, roles: { id: role.id } },
 		columns: { numOfSeatsPerDelegation: true }
 	});
-	if (!committee) throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
+	if (!committee)
+		throw apiError({ code: 'INVALID_INPUT', message: m.committeeDoesNotBelongToConferenceError() });
 	return committee.numOfSeatsPerDelegation;
 }
 
 /** The member takes a free seat of a role, whose delegation is created if it has none yet. */
-async function moveToFreeSeat(
-	tx: Transaction,
-	member: SeatOf,
-	conferenceId: string,
-	roleId: string,
-	committeeId: string | null
-): Promise<SeatSwitchPlan> {
+async function moveToFreeSeat({
+	tx,
+	member,
+	conferenceId,
+	roleId,
+	committeeId
+}: {
+	tx: Transaction;
+	member: SeatOf;
+	conferenceId: string;
+	roleId: string;
+	committeeId: string | null;
+}): Promise<SeatSwitchPlan> {
 	const role = await tx.query.conferenceRole
 		.findFirst({
 			where: { id: roleId, conferenceId },
 			columns: { id: true, kind: true, seatAmount: true }
 		})
 		.then(assertFindFirstExists);
-	const capacity = await seatCapacity(tx, role, committeeId);
+	const capacity = await seatCapacity({ tx, role, committeeId });
 	const existing = await tx.query.delegation.findFirst({
 		where: { conferenceId, assignedRoleId: roleId },
 		columns: { id: true },
@@ -419,15 +487,21 @@ async function moveToFreeSeat(
 		existing &&
 		isSameSeat(member, { delegationId: existing.id, assignedCommitteeId: committeeId })
 	) {
-		throw apiError('CONFLICT', m.seatSwitchSameSeat());
+		throw apiError({ code: 'CONFLICT', message: m.seatSwitchSameSeat() });
 	}
 
 	const occupied = (existing?.members ?? []).filter(
 		(x) => x.id !== member.id && (role.kind !== 'NATION' || x.assignedCommitteeId === committeeId)
 	);
-	if (occupied.length >= capacity) throw apiError('CONFLICT', m.seatSwitchSeatTaken());
+	if (occupied.length >= capacity)
+		throw apiError({ code: 'CONFLICT', message: m.seatSwitchSeatTaken() });
 
-	const delegation = await prepareAssignedDelegation(tx, conferenceId, roleId, existing);
+	const delegation = await prepareAssignedDelegation({
+		tx,
+		conferenceId,
+		assignedRoleId: roleId,
+		existing
+	});
 	return {
 		seats: new Map([
 			[member.id, { delegationId: delegation.id, assignedCommitteeId: committeeId }]
@@ -438,19 +512,27 @@ async function moveToFreeSeat(
 }
 
 /** A switch names either another member or a free seat, never both. */
-function planSeatSwitch(tx: Transaction, member: SeatOf, args: SeatSwitchArgs) {
+function planSeatSwitch({
+	tx,
+	member,
+	args
+}: {
+	tx: Transaction;
+	member: SeatOf;
+	args: SeatSwitchArgs;
+}) {
 	const { otherMemberId, targetRoleId } = args;
-	if (otherMemberId && !targetRoleId) return swapSeats(tx, member, otherMemberId);
+	if (otherMemberId && !targetRoleId) return swapSeats({ tx, member, otherMemberId });
 	if (targetRoleId && !otherMemberId) {
-		return moveToFreeSeat(
+		return moveToFreeSeat({
 			tx,
 			member,
-			args.conferenceId,
-			targetRoleId,
-			args.targetCommitteeId ?? null
-		);
+			conferenceId: args.conferenceId,
+			roleId: targetRoleId,
+			committeeId: args.targetCommitteeId ?? null
+		});
 	}
-	throw apiError('INVALID_INPUT', m.seatSwitchInvalidTarget());
+	throw apiError({ code: 'INVALID_INPUT', message: m.seatSwitchInvalidTarget() });
 }
 
 /**
@@ -458,12 +540,17 @@ function planSeatSwitch(tx: Transaction, member: SeatOf, args: SeatSwitchArgs) {
  * the mover's own and the ones it lands in (which, for a swap, include the other member's).
  * Returns the ids of those delegations.
  */
-async function writeSeatSwitch(
-	tx: Transaction,
-	plan: SeatSwitchPlan,
-	fromDelegationId: string,
-	chosenHeadDelegateIds: readonly string[] | null | undefined
-) {
+async function writeSeatSwitch({
+	tx,
+	plan,
+	fromDelegationId,
+	chosenHeadDelegateIds
+}: {
+	tx: Transaction;
+	plan: SeatSwitchPlan;
+	fromDelegationId: string;
+	chosenHeadDelegateIds: readonly string[] | null | undefined;
+}) {
 	const delegationIds = [
 		...new Set([fromDelegationId, ...[...plan.seats.values()].map((x) => x.delegationId)])
 	];
@@ -471,20 +558,25 @@ async function writeSeatSwitch(
 		where: { delegationId: { in: delegationIds } },
 		columns: { id: true, delegationId: true, isHeadDelegate: true }
 	});
-	const headChanges = headDelegateChanges(members, plan.change, chosenHeadDelegateIds);
-	if (!headChanges) throw apiError('INVALID_INPUT', m.seatSwitchHeadDelegatesInvalid());
+	const headChanges = headDelegateChanges({
+		before: members,
+		change: plan.change,
+		chosenHeadDelegateIds
+	});
+	if (!headChanges)
+		throw apiError({ code: 'INVALID_INPUT', message: m.seatSwitchHeadDelegatesInvalid() });
 
 	for (const [id, seat] of plan.seats) {
 		await tx
 			.update(schema.delegationMember)
 			.set(seat)
-			.where(whereRows(schema.delegationMember, { id }));
+			.where(whereRows({ table: schema.delegationMember, filter: { id } }));
 	}
 	for (const { id, isHeadDelegate } of headChanges) {
 		await tx
 			.update(schema.delegationMember)
 			.set({ isHeadDelegate })
-			.where(whereRows(schema.delegationMember, { id }));
+			.where(whereRows({ table: schema.delegationMember, filter: { id } }));
 	}
 	return delegationIds;
 }
@@ -512,14 +604,14 @@ export async function switchSeats(args: SeatSwitchArgs) {
 	try {
 		return await db.transaction(
 			async (tx) => {
-				const member = await loadSeat(tx, args.memberId);
-				const plan = await planSeatSwitch(tx, member, args);
-				const delegationIds = await writeSeatSwitch(
+				const member = await loadSeat({ tx, id: args.memberId });
+				const plan = await planSeatSwitch({ tx, member, args });
+				const delegationIds = await writeSeatSwitch({
 					tx,
 					plan,
-					member.delegationId,
-					args.headDelegateMemberIds
-				);
+					fromDelegationId: member.delegationId,
+					chosenHeadDelegateIds: args.headDelegateMemberIds
+				});
 				return {
 					memberIds: [...plan.seats.keys()],
 					delegationIds,
@@ -529,7 +621,8 @@ export async function switchSeats(args: SeatSwitchArgs) {
 			{ isolationLevel: 'serializable' }
 		);
 	} catch (error) {
-		if (isSerializationFailure(error)) throw apiError('CONFLICT', m.seatSwitchConflict());
+		if (isSerializationFailure(error))
+			throw apiError({ code: 'CONFLICT', message: m.seatSwitchConflict() });
 		throw error;
 	}
 }

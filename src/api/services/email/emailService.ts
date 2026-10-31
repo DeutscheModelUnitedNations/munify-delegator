@@ -10,6 +10,7 @@ import {
 	SMTP_USER
 } from '$app/env/private';
 import type { EmailOptions, SendEmailResult } from './types';
+import { logger } from '#lib/logger';
 
 /**
  * Email service for sending transactional emails via SMTP
@@ -58,7 +59,7 @@ function createEmailService() {
 					messageId: result.messageId
 				};
 			} catch (error) {
-				console.error('Failed to send email:', error);
+				logger.error('Failed to send email', error);
 				return {
 					success: false,
 					error: error instanceof Error ? error.message : 'Unknown error'
@@ -76,7 +77,7 @@ function createEmailService() {
 				await getTransporter().verify();
 				return true;
 			} catch (error) {
-				console.error('SMTP connection verification failed:', error);
+				logger.error('SMTP connection verification failed', error);
 				return false;
 			}
 		}

@@ -49,20 +49,29 @@ function delegationMember(assignedRole: DelegationRole = null, applied = true): 
 }
 
 describe('applicationStatus', () => {
-	test('assigned wins', () => expect(applicationStatus(true, false, PREP)).toBe('accepted'));
+	test('assigned wins', () =>
+		expect(applicationStatus({ assigned: true, applied: false, conferenceState: PREP })).toBe(
+			'accepted'
+		));
 	test('not applied is pending', () =>
-		expect(applicationStatus(false, false, PREP)).toBe('pending'));
+		expect(applicationStatus({ assigned: false, applied: false, conferenceState: PREP })).toBe(
+			'pending'
+		));
 	test('applied during registration', () =>
-		expect(applicationStatus(false, true, REG)).toBe('applied'));
+		expect(applicationStatus({ assigned: false, applied: true, conferenceState: REG })).toBe(
+			'applied'
+		));
 	test('applied after registration', () =>
-		expect(applicationStatus(false, true, PREP)).toBe('rejected'));
+		expect(applicationStatus({ assigned: false, applied: true, conferenceState: PREP })).toBe(
+			'rejected'
+		));
 });
 
 describe('supervisorParticipation', () => {
 	test('counts students and accepts once one is assigned', () => {
 		expect(
-			supervisorParticipation(
-				{
+			supervisorParticipation({
+				supervisor: {
 					supervisedDelegationMembers: [
 						{ delegation: { assignedRole: {} } },
 						{ delegation: { assignedRole: {} } },
@@ -70,17 +79,20 @@ describe('supervisorParticipation', () => {
 					],
 					supervisedSingleParticipants: [{ assignedRole: {} }, { assignedRole: null }]
 				},
-				PREP
-			)
+				conferenceState: PREP
+			})
 		).toEqual({ type: 'supervisor', status: 'accepted', studentCount: 5, acceptedStudentCount: 3 });
 	});
 	test('pending during registration, rejected afterwards; missing lists count as empty', () => {
-		expect(supervisorParticipation({}, REG)).toMatchObject({ status: 'pending', studentCount: 0 });
+		expect(supervisorParticipation({ supervisor: {}, conferenceState: REG })).toMatchObject({
+			status: 'pending',
+			studentCount: 0
+		});
 		expect(
-			supervisorParticipation(
-				{ supervisedDelegationMembers: null, supervisedSingleParticipants: null },
-				PREP
-			)
+			supervisorParticipation({
+				supervisor: { supervisedDelegationMembers: null, supervisedSingleParticipants: null },
+				conferenceState: PREP
+			})
 		).toMatchObject({ status: 'rejected' });
 	});
 });
@@ -88,12 +100,22 @@ describe('supervisorParticipation', () => {
 describe('participationOf', () => {
 	test('a team member takes precedence', () => {
 		expect(
-			participationOf({ ...delegationMember(), teamMember: { role: 'ADMIN' } }, {}, PREP)
+			participationOf({
+				myParticipation: { ...delegationMember(), teamMember: { role: 'ADMIN' } },
+				supervisedStudents: {},
+				conferenceState: PREP
+			})
 		).toEqual({ type: 'teamMember', status: 'accepted', teamRole: 'ADMIN' });
 	});
 
 	test('a delegation member', () => {
-		expect(participationOf(delegationMember(nationRole), undefined, PREP)).toEqual({
+		expect(
+			participationOf({
+				myParticipation: delegationMember(nationRole),
+				supervisedStudents: undefined,
+				conferenceState: PREP
+			})
+		).toEqual({
 			type: 'delegation',
 			status: 'accepted',
 			country: nation,
@@ -101,123 +123,213 @@ describe('participationOf', () => {
 			committee: { name: 'Security Council', abbreviation: 'SC' },
 			isHeadDelegate: true
 		});
-		expect(participationOf(delegationMember(nsa), undefined, PREP).status).toBe('accepted');
-		expect(participationOf(delegationMember(null, true), undefined, REG).status).toBe('applied');
+		expect(
+			participationOf({
+				myParticipation: delegationMember(nsa),
+				supervisedStudents: undefined,
+				conferenceState: PREP
+			}).status
+		).toBe('accepted');
+		expect(
+			participationOf({
+				myParticipation: delegationMember(null, true),
+				supervisedStudents: undefined,
+				conferenceState: REG
+			}).status
+		).toBe('applied');
 	});
 
 	test('a single participant', () => {
 		const role = { name: 'Press', fontAwesomeIcon: 'fa-camera' };
 		expect(
-			participationOf(
-				{ ...none, singleParticipant: { applied: false, assignedRole: role } },
-				undefined,
-				PREP
-			)
+			participationOf({
+				myParticipation: { ...none, singleParticipant: { applied: false, assignedRole: role } },
+				supervisedStudents: undefined,
+				conferenceState: PREP
+			})
 		).toEqual({ type: 'singleParticipant', status: 'accepted', customRole: role });
 		expect(
-			participationOf(
-				{ ...none, singleParticipant: { applied: false, assignedRole: null } },
-				undefined,
-				PREP
-			).status
+			participationOf({
+				myParticipation: { ...none, singleParticipant: { applied: false, assignedRole: null } },
+				supervisedStudents: undefined,
+				conferenceState: PREP
+			}).status
 		).toBe('pending');
 	});
 
 	test('a supervisor', () => {
-		expect(participationOf(none, {}, REG).type).toBe('supervisor');
+		expect(
+			participationOf({ myParticipation: none, supervisedStudents: {}, conferenceState: REG }).type
+		).toBe('supervisor');
 	});
 
 	test('nothing known', () => {
 		const unknown = { type: 'unknown', status: 'pending' };
-		expect(participationOf(none, undefined, REG)).toEqual(unknown);
-		expect(participationOf(undefined, undefined, REG)).toEqual(unknown);
+		expect(
+			participationOf({
+				myParticipation: none,
+				supervisedStudents: undefined,
+				conferenceState: REG
+			})
+		).toEqual(unknown);
+		expect(
+			participationOf({
+				myParticipation: undefined,
+				supervisedStudents: undefined,
+				conferenceState: REG
+			})
+		).toEqual(unknown);
 	});
 });
 
 describe('roleIcon', () => {
 	test('per role', () => {
-		expect(roleIcon(participationOf(delegationMember(), undefined, REG))).toBe('fa-users');
-		expect(roleIcon(participationOf(none, {}, REG))).toBe('fa-chalkboard-teacher');
 		expect(
-			roleIcon(participationOf({ ...none, teamMember: { role: 'MEMBER' } }, undefined, REG))
+			roleIcon(
+				participationOf({
+					myParticipation: delegationMember(),
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBe('fa-users');
+		expect(
+			roleIcon(
+				participationOf({ myParticipation: none, supervisedStudents: {}, conferenceState: REG })
+			)
+		).toBe('fa-chalkboard-teacher');
+		expect(
+			roleIcon(
+				participationOf({
+					myParticipation: { ...none, teamMember: { role: 'MEMBER' } },
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
 		).toBe('fa-users-gear');
-		expect(roleIcon(participationOf(none, undefined, REG))).toBeUndefined();
+		expect(
+			roleIcon(
+				participationOf({
+					myParticipation: none,
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBeUndefined();
 	});
 
 	test('a single participant shows their role icon without a doubled prefix, or a user', () => {
-		const withIcon = participationOf(
-			{
+		const withIcon = participationOf({
+			myParticipation: {
 				...none,
 				singleParticipant: {
 					applied: true,
 					assignedRole: { name: 'P', fontAwesomeIcon: 'fa-camera' }
 				}
 			},
-			undefined,
-			REG
-		);
+			supervisedStudents: undefined,
+			conferenceState: REG
+		});
 		expect(roleIcon(withIcon)).toBe('fa-camera');
-		const noIcon = participationOf(
-			{
+		const noIcon = participationOf({
+			myParticipation: {
 				...none,
 				singleParticipant: { applied: true, assignedRole: { name: 'P', fontAwesomeIcon: null } }
 			},
-			undefined,
-			REG
-		);
+			supervisedStudents: undefined,
+			conferenceState: REG
+		});
 		expect(roleIcon(noIcon)).toBe('fa-user');
-		const noRole = participationOf(
-			{ ...none, singleParticipant: { applied: true, assignedRole: null } },
-			undefined,
-			REG
-		);
+		const noRole = participationOf({
+			myParticipation: { ...none, singleParticipant: { applied: true, assignedRole: null } },
+			supervisedStudents: undefined,
+			conferenceState: REG
+		});
 		expect(roleIcon(noRole)).toBe('fa-user');
 	});
 });
 
 describe('roleText', () => {
 	test('delegation: nation, NSA or neither', () => {
-		expect(roleText(participationOf(delegationMember(nationRole), undefined, REG))).toBe(
-			m.delegateFor({ country: getFullTranslatedCountryNameFromISO3Code('FRA') })
-		);
-		expect(roleText(participationOf(delegationMember(nsa), undefined, REG))).toBe(
-			m.delegateFor({ country: 'Greenpeace' })
-		);
-		expect(roleText(participationOf(delegationMember(), undefined, REG))).toBe(m.delegation());
+		expect(
+			roleText(
+				participationOf({
+					myParticipation: delegationMember(nationRole),
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBe(m.delegateFor({ country: getFullTranslatedCountryNameFromISO3Code('FRA') }));
+		expect(
+			roleText(
+				participationOf({
+					myParticipation: delegationMember(nsa),
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBe(m.delegateFor({ country: 'Greenpeace' }));
+		expect(
+			roleText(
+				participationOf({
+					myParticipation: delegationMember(),
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBe(m.delegation());
 	});
 
 	test('single participant: role name or generic', () => {
 		expect(
 			roleText(
-				participationOf(
-					{
+				participationOf({
+					myParticipation: {
 						...none,
 						singleParticipant: {
 							applied: true,
 							assignedRole: { name: 'Press', fontAwesomeIcon: null }
 						}
 					},
-					undefined,
-					REG
-				)
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
 			)
 		).toBe('Press');
 		expect(
 			roleText(
-				participationOf(
-					{ ...none, singleParticipant: { applied: true, assignedRole: null } },
-					undefined,
-					REG
-				)
+				participationOf({
+					myParticipation: { ...none, singleParticipant: { applied: true, assignedRole: null } },
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
 			)
 		).toBe(m.singleParticipant());
 	});
 
 	test('supervisor, team member and unknown', () => {
-		expect(roleText(participationOf(none, {}, REG))).toBe(m.supervisorWithStudents({ count: 0 }));
 		expect(
-			roleText(participationOf({ ...none, teamMember: { role: 'ADMIN' } }, undefined, REG))
+			roleText(
+				participationOf({ myParticipation: none, supervisedStudents: {}, conferenceState: REG })
+			)
+		).toBe(m.supervisorWithStudents({ count: 0 }));
+		expect(
+			roleText(
+				participationOf({
+					myParticipation: { ...none, teamMember: { role: 'ADMIN' } },
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
 		).toBe(m.teamMemberWithRole({ role: translateTeamRole('ADMIN') }));
-		expect(roleText(participationOf(none, undefined, REG))).toBe('');
+		expect(
+			roleText(
+				participationOf({
+					myParticipation: none,
+					supervisedStudents: undefined,
+					conferenceState: REG
+				})
+			)
+		).toBe('');
 	});
 });

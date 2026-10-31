@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '#lib/components/ConfirmDeleteModal.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -59,7 +60,12 @@
 
 	// Actions
 	const createSurvey = async () => {
-		const fields = surveyFields(createTitle, createDescription, createDeadline, conferenceTimezone);
+		const fields = surveyFields({
+			title: createTitle,
+			description: createDescription,
+			deadline: createDeadline,
+			timezone: conferenceTimezone
+		});
 		if (!fields) return;
 		isLoading = true;
 		try {
@@ -72,7 +78,7 @@
 			createDescription = '';
 			createDeadline = '';
 		} catch (error) {
-			console.error('Failed to create survey:', error);
+			logger.error('Failed to create survey', error);
 			toast.error(error instanceof Error ? error.message : String(error));
 		} finally {
 			isLoading = false;
@@ -87,7 +93,7 @@
 			showDeleteModal = false;
 			surveyToDelete = null;
 		} catch (error) {
-			console.error('Failed to delete survey:', error);
+			logger.error('Failed to delete survey', error);
 		} finally {
 			isLoading = false;
 		}

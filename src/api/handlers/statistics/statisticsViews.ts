@@ -27,16 +27,22 @@ type WaitingListRow = (typeof schema.statisticsWaitingList)['$inferSelect'];
 type PapersRow = (typeof schema.statisticsPapers)['$inferSelect'];
 
 /** The summed `count` of the rows the predicate selects. */
-function sumWhere<R extends { count: number }>(rows: R[], predicate: (row: R) => boolean) {
+function sumWhere<R extends { count: number }>({
+	rows,
+	predicate
+}: {
+	rows: R[];
+	predicate: (row: R) => boolean;
+}) {
 	return rows.reduce((sum, row) => (predicate(row) ? sum + row.count : sum), 0);
 }
 
-function percentage(part: number, whole: number) {
+function percentage({ part, whole }: { part: number; whole: number }) {
 	return whole > 0 ? Math.round((part / whole) * 100) : 0;
 }
 
 /** Adds `count` to the entry under `key`, creating it with `create` on first sight. */
-function accumulate<K, V>(map: Map<K, V>, key: K, create: () => V) {
+function accumulate<K, V>({ map, key, create }: { map: Map<K, V>; key: K; create: () => V }) {
 	const existing = map.get(key);
 	if (existing) return existing;
 	const entry = create();
@@ -48,10 +54,13 @@ function accumulate<K, V>(map: Map<K, V>, key: K, create: () => V) {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-export function countdownsOf(
-	conference: { startConference: Date; applicationDeadline: Date },
+export function countdownsOf({
+	conference,
 	now = new Date()
-) {
+}: {
+	conference: { startConference: Date; applicationDeadline: Date };
+	now?: Date;
+}) {
 	return {
 		daysUntilConference: Math.floor(
 			(conference.startConference.getTime() - now.getTime()) / MS_PER_DAY
@@ -64,18 +73,28 @@ export function countdownsOf(
 
 // ── Registration totals (unfiltered, but for the supervisor count) ─────────
 
-function appliedSplit(total: number, applied: number) {
+function appliedSplit({ total, applied }: { total: number; applied: number }) {
 	return { total, applied, notApplied: total - applied };
 }
 
-export function registrationStatisticsOf(
-	people: PeopleRow[],
-	delegations: DelegationsRow[],
-	roleApplications: RoleApplicationsRow[],
-	filter: StatsFilterType
-) {
-	const ofKind = (kind: PeopleRow['kind'], predicate: (row: PeopleRow) => boolean = () => true) =>
-		sumWhere(people, (row) => row.kind === kind && predicate(row));
+export function registrationStatisticsOf({
+	people,
+	delegations,
+	roleApplications,
+	filter
+}: {
+	people: PeopleRow[];
+	delegations: DelegationsRow[];
+	roleApplications: RoleApplicationsRow[];
+	filter: StatsFilterType;
+}) {
+	const ofKind = ({
+		kind,
+		predicate = () => true
+	}: {
+		kind: PeopleRow['kind'];
+		predicate?: (row: PeopleRow) => boolean;
+	}) => sumWhere({ rows: people, predicate: (row) => row.kind === kind && predicate(row) });
 	const isApplied = (row: { applied: boolean }) => row.applied;
 
 	const delegationsTotal = delegations.reduce((sum, row) => sum + row.delegations, 0);
@@ -83,21 +102,21 @@ export function registrationStatisticsOf(
 		(sum, row) => (row.applied ? sum + row.delegations : sum),
 		0
 	);
-	const delegationMembers = appliedSplit(
-		ofKind('DELEGATION_MEMBER'),
-		ofKind('DELEGATION_MEMBER', isApplied)
-	);
-	const singleParticipants = appliedSplit(
-		ofKind('SINGLE_PARTICIPANT'),
-		ofKind('SINGLE_PARTICIPANT', isApplied)
-	);
+	const delegationMembers = appliedSplit({
+		total: ofKind({ kind: 'DELEGATION_MEMBER' }),
+		applied: ofKind({ kind: 'DELEGATION_MEMBER', predicate: isApplied })
+	});
+	const singleParticipants = appliedSplit({
+		total: ofKind({ kind: 'SINGLE_PARTICIPANT' }),
+		applied: ofKind({ kind: 'SINGLE_PARTICIPANT', predicate: isApplied })
+	});
 
 	return {
-		...appliedSplit(
-			delegationMembers.total + singleParticipants.total,
-			delegationMembers.applied + singleParticipants.applied
-		),
-		delegations: appliedSplit(delegationsTotal, delegationsApplied),
+		...appliedSplit({
+			total: delegationMembers.total + singleParticipants.total,
+			applied: delegationMembers.applied + singleParticipants.applied
+		}),
+		delegations: appliedSplit({ total: delegationsTotal, applied: delegationsApplied }),
 		delegationMembers,
 		singleParticipants: {
 			...singleParticipants,
@@ -106,10 +125,13 @@ export function registrationStatisticsOf(
 				.map((role) => ({
 					role: role.name,
 					fontAwesomeIcon: role.fontAwesomeIcon ?? undefined,
-					...appliedSplit(role.total, role.applied)
+					...appliedSplit({ total: role.total, applied: role.applied })
 				}))
 		},
-		supervisors: ofKind('SUPERVISOR', (row) => matchesStatsFilter(filter, row))
+		supervisors: ofKind({
+			kind: 'SUPERVISOR',
+			predicate: (row) => matchesStatsFilter({ filter, row })
+		})
 	};
 }
 
@@ -118,7 +140,8 @@ export function registrationStatisticsOf(
 /** "Accepted" means at least one of their participants got a role. */
 export function supervisorStatsOf(people: PeopleRow[]) {
 	const supervisors = people.filter((row) => row.kind === 'SUPERVISOR');
-	const count = (predicate: (row: PeopleRow) => boolean) => sumWhere(supervisors, predicate);
+	const count = (predicate: (row: PeopleRow) => boolean) =>
+		sumWhere({ rows: supervisors, predicate });
 
 	return {
 		total: count(() => true),
@@ -136,20 +159,31 @@ export function supervisorStatsOf(people: PeopleRow[]) {
 // ── Diet and gender (filtered; supervisors only when they attend) ───────────
 
 /** The people of each column of the diet and gender matrices. */
-function matrixGroups(people: PeopleRow[], filter: StatsFilterType) {
-	const of = (kind: PeopleRow['kind'], predicate: (row: PeopleRow) => boolean) =>
-		people.filter((row) => row.kind === kind && predicate(row));
-	const filtered = (row: PeopleRow) => matchesStatsFilter(filter, row);
+function matrixGroups({ people, filter }: { people: PeopleRow[]; filter: StatsFilterType }) {
+	const of = ({
+		kind,
+		predicate
+	}: {
+		kind: PeopleRow['kind'];
+		predicate: (row: PeopleRow) => boolean;
+	}) => people.filter((row) => row.kind === kind && predicate(row));
+	const filtered = (row: PeopleRow) => matchesStatsFilter({ filter, row });
 
 	return {
-		singleParticipants: of('SINGLE_PARTICIPANT', filtered),
-		delegationMembers: of('DELEGATION_MEMBER', filtered),
-		supervisors: of('SUPERVISOR', (row) => row.attends && filtered(row)),
-		teamMembers: of('TEAM_MEMBER', () => true)
+		singleParticipants: of({ kind: 'SINGLE_PARTICIPANT', predicate: filtered }),
+		delegationMembers: of({ kind: 'DELEGATION_MEMBER', predicate: filtered }),
+		supervisors: of({ kind: 'SUPERVISOR', predicate: (row) => row.attends && filtered(row) }),
+		teamMembers: of({ kind: 'TEAM_MEMBER', predicate: () => true })
 	};
 }
 
-function mapGroups<T>(groups: ReturnType<typeof matrixGroups>, of: (rows: PeopleRow[]) => T) {
+function mapGroups<T>({
+	groups,
+	of
+}: {
+	groups: ReturnType<typeof matrixGroups>;
+	of: (rows: PeopleRow[]) => T;
+}) {
 	return {
 		singleParticipants: of(groups.singleParticipants),
 		delegationMembers: of(groups.delegationMembers),
@@ -158,30 +192,40 @@ function mapGroups<T>(groups: ReturnType<typeof matrixGroups>, of: (rows: People
 	};
 }
 
-export function dietOf(people: PeopleRow[], filter: StatsFilterType) {
-	return mapGroups(matrixGroups(people, filter), (rows) => ({
-		omnivore: sumWhere(rows, (row) => row.foodPreference === 'OMNIVORE'),
-		vegetarian: sumWhere(rows, (row) => row.foodPreference === 'VEGETARIAN'),
-		vegan: sumWhere(rows, (row) => row.foodPreference === 'VEGAN')
-	}));
+export function dietOf({ people, filter }: { people: PeopleRow[]; filter: StatsFilterType }) {
+	return mapGroups({
+		groups: matrixGroups({ people, filter }),
+		of: (rows) => ({
+			omnivore: sumWhere({ rows, predicate: (row) => row.foodPreference === 'OMNIVORE' }),
+			vegetarian: sumWhere({ rows, predicate: (row) => row.foodPreference === 'VEGETARIAN' }),
+			vegan: sumWhere({ rows, predicate: (row) => row.foodPreference === 'VEGAN' })
+		})
+	});
 }
 
-export function genderOf(people: PeopleRow[], filter: StatsFilterType) {
-	return mapGroups(matrixGroups(people, filter), (rows) => ({
-		male: sumWhere(rows, (row) => row.gender === 'MALE'),
-		female: sumWhere(rows, (row) => row.gender === 'FEMALE'),
-		diverse: sumWhere(rows, (row) => row.gender === 'DIVERSE'),
-		noStatement: sumWhere(rows, (row) => row.gender === 'NO_STATEMENT')
-	}));
+export function genderOf({ people, filter }: { people: PeopleRow[]; filter: StatsFilterType }) {
+	return mapGroups({
+		groups: matrixGroups({ people, filter }),
+		of: (rows) => ({
+			male: sumWhere({ rows, predicate: (row) => row.gender === 'MALE' }),
+			female: sumWhere({ rows, predicate: (row) => row.gender === 'FEMALE' }),
+			diverse: sumWhere({ rows, predicate: (row) => row.gender === 'DIVERSE' }),
+			noStatement: sumWhere({ rows, predicate: (row) => row.gender === 'NO_STATEMENT' })
+		})
+	});
 }
 
 // ── Role assignment breakdown (filtered) ────────────────────────────────────
 
-export function roleBasedOf(
-	people: PeopleRow[],
-	delegations: DelegationsRow[],
-	filter: StatsFilterType
-) {
+export function roleBasedOf({
+	people,
+	delegations,
+	filter
+}: {
+	people: PeopleRow[];
+	delegations: DelegationsRow[];
+	filter: StatsFilterType;
+}) {
 	// A filter that already selects one side of the split makes the other side meaningless, so
 	// it stays at zero rather than showing a number the filter contradicts.
 	const showWithRole = filter !== 'NOT_APPLIED' && filter !== 'APPLIED_WITHOUT_ROLE';
@@ -190,10 +234,16 @@ export function roleBasedOf(
 	const side = (withRole: boolean) => {
 		const shown = withRole ? showWithRole : showWithoutRole;
 		const selected = (row: { applied: boolean; hasRole: boolean }) =>
-			shown && row.hasRole === withRole && matchesStatsFilter(filter, row);
+			shown && row.hasRole === withRole && matchesStatsFilter({ filter, row });
 		return {
-			members: sumWhere(people, (row) => row.kind === 'DELEGATION_MEMBER' && selected(row)),
-			singles: sumWhere(people, (row) => row.kind === 'SINGLE_PARTICIPANT' && selected(row)),
+			members: sumWhere({
+				rows: people,
+				predicate: (row) => row.kind === 'DELEGATION_MEMBER' && selected(row)
+			}),
+			singles: sumWhere({
+				rows: people,
+				predicate: (row) => row.kind === 'SINGLE_PARTICIPANT' && selected(row)
+			}),
 			delegations: delegations.reduce(
 				(sum, row) => (selected(row) ? sum + row.delegations : sum),
 				0
@@ -205,14 +255,14 @@ export function roleBasedOf(
 
 	// Committee seats only exist for nations, so non-state actors are left out here.
 	const committeeSeated = (hasCommittee: boolean) =>
-		sumWhere(
-			people,
-			(row) =>
+		sumWhere({
+			rows: people,
+			predicate: (row) =>
 				row.kind === 'DELEGATION_MEMBER' &&
 				row.applied &&
 				row.hasNation &&
 				row.hasCommittee === hasCommittee
-		);
+		});
 
 	return {
 		delegationMembersWithRole: withRole.members,
@@ -253,11 +303,11 @@ const averageOf = (group: AgeGroup) => (group.count > 0 ? group.ageSum / group.c
  * Participants without a birthday are counted separately rather than dropped silently, so the
  * dashboard can show how complete the data is.
  */
-export function ageStatisticsOf(ages: AgesRow[], filter: StatsFilterType) {
-	const rows = ages.filter((row) => matchesStatsFilter(filter, row));
+export function ageStatisticsOf({ ages, filter }: { ages: AgesRow[]; filter: StatsFilterType }) {
+	const rows = ages.filter((row) => matchesStatsFilter({ filter, row }));
 	const known = rows.filter((row): row is AgesRow & { age: number } => row.age !== null);
 	const newGroup = (): AgeGroup => ({ count: 0, ageSum: 0 });
-	const add = (group: AgeGroup, row: { age: number; count: number }) => {
+	const add = ({ group, row }: { group: AgeGroup; row: { age: number; count: number } }) => {
 		group.count += row.count;
 		group.ageSum += row.age * row.count;
 	};
@@ -268,26 +318,34 @@ export function ageStatisticsOf(ages: AgesRow[], filter: StatsFilterType) {
 	const byAge = new Map<number, Map<string, number>>();
 
 	for (const row of known) {
-		add(overall, row);
-		add(
-			accumulate(categories, row.categoryId, () => ({
-				...newGroup(),
-				name: row.roleName ?? AGE_CATEGORY_NAMES[row.categoryId] ?? row.categoryId,
-				type: row.categoryType
-			})),
-			row
-		);
-		if (row.committeeId) {
-			add(
-				accumulate(committees, row.committeeId, () => ({
+		add({ group: overall, row });
+		add({
+			group: accumulate({
+				map: categories,
+				key: row.categoryId,
+				create: () => ({
 					...newGroup(),
-					name: row.committeeName ?? '',
-					abbreviation: row.committeeAbbreviation ?? ''
-				})),
+					name: row.roleName ?? AGE_CATEGORY_NAMES[row.categoryId] ?? row.categoryId,
+					type: row.categoryType
+				})
+			}),
+			row
+		});
+		if (row.committeeId) {
+			add({
+				group: accumulate({
+					map: committees,
+					key: row.committeeId,
+					create: () => ({
+						...newGroup(),
+						name: row.committeeName ?? '',
+						abbreviation: row.committeeAbbreviation ?? ''
+					})
+				}),
 				row
-			);
+			});
 		}
-		const atAge = accumulate(byAge, row.age, () => new Map<string, number>());
+		const atAge = accumulate({ map: byAge, key: row.age, create: () => new Map<string, number>() });
 		atAge.set(row.categoryId, (atAge.get(row.categoryId) ?? 0) + row.count);
 	}
 
@@ -295,7 +353,7 @@ export function ageStatisticsOf(ages: AgesRow[], filter: StatsFilterType) {
 		overall: {
 			average: averageOf(overall),
 			total: overall.count,
-			missingBirthdays: sumWhere(rows, (row) => row.age === null)
+			missingBirthdays: sumWhere({ rows, predicate: (row) => row.age === null })
 		},
 		distribution: [...byAge]
 			.toSorted(([a], [b]) => a - b)
@@ -330,7 +388,7 @@ export function ageStatisticsOf(ages: AgesRow[], filter: StatsFilterType) {
 // ── Postal and payment status (unfiltered) ──────────────────────────────────
 
 /** Which of postal and payment are complete; neither is not counted, it is the remainder. */
-function completionBucket(postal: boolean, payment: boolean) {
+function completionBucket({ postal, payment }: { postal: boolean; payment: boolean }) {
 	if (postal && payment) return 'bothComplete';
 	if (postal) return 'postalOnlyComplete';
 	if (payment) return 'paymentOnlyComplete';
@@ -355,17 +413,17 @@ export function participantStatusOf(statuses: ParticipantStatusRow[]) {
 	const withStatus = statuses.filter((row) => row.hasStatus);
 	const status = {
 		paymentStatus: {
-			done: sumWhere(withStatus, (row) => row.paymentStatus === 'DONE'),
-			problem: sumWhere(withStatus, (row) => row.paymentStatus === 'PROBLEM')
+			done: sumWhere({ rows: withStatus, predicate: (row) => row.paymentStatus === 'DONE' }),
+			problem: sumWhere({ rows: withStatus, predicate: (row) => row.paymentStatus === 'PROBLEM' })
 		},
 		postalStatus: {
-			done: sumWhere(withStatus, (row) => row.postalDone),
-			problem: sumWhere(withStatus, (row) => row.postalProblem)
+			done: sumWhere({ rows: withStatus, predicate: (row) => row.postalDone }),
+			problem: sumWhere({ rows: withStatus, predicate: (row) => row.postalProblem })
 		},
-		didAttend: sumWhere(statuses, (row) => row.didAttend)
+		didAttend: sumWhere({ rows: statuses, predicate: (row) => row.didAttend })
 	};
 
-	const maxParticipants = sumWhere(statuses, (row) => row.expected);
+	const maxParticipants = sumWhere({ rows: statuses, predicate: (row) => row.expected });
 	const counts = {
 		postalDone: 0,
 		postalPending: 0,
@@ -381,7 +439,10 @@ export function participantStatusOf(statuses: ParticipantStatusRow[]) {
 		if (!row.expected) continue;
 		counts[postalBucket(row)] += row.count;
 		counts[paymentBucket(row)] += row.count;
-		const completion = completionBucket(row.postalDone, row.paymentStatus === 'DONE');
+		const completion = completionBucket({
+			postal: row.postalDone,
+			payment: row.paymentStatus === 'DONE'
+		});
 		if (completion) counts[completion] += row.count;
 	}
 
@@ -390,8 +451,8 @@ export function participantStatusOf(statuses: ParticipantStatusRow[]) {
 		postalPaymentProgress: {
 			maxParticipants,
 			...counts,
-			postalPercentage: percentage(counts.postalDone, maxParticipants),
-			paymentPercentage: percentage(counts.paymentDone, maxParticipants),
+			postalPercentage: percentage({ part: counts.postalDone, whole: maxParticipants }),
+			paymentPercentage: percentage({ part: counts.paymentDone, whole: maxParticipants }),
 			// Participants with no status row at all fall in here too.
 			neitherComplete:
 				maxParticipants -
@@ -404,18 +465,28 @@ export function participantStatusOf(statuses: ParticipantStatusRow[]) {
 
 // ── Addresses and nationalities (filtered) ──────────────────────────────────
 
-export function addressesOf(addresses: AddressesRow[], filter: StatsFilterType) {
+export function addressesOf({
+	addresses,
+	filter
+}: {
+	addresses: AddressesRow[];
+	filter: StatsFilterType;
+}) {
 	const groups = new Map<
 		string,
 		{ country: string | null; zipPrefix: string | null; count: number }
 	>();
 	for (const row of addresses) {
-		if (!matchesStatsFilter(filter, row)) continue;
-		const group = accumulate(groups, `${row.country ?? ''}:${row.zipPrefix ?? ''}`, () => ({
-			country: row.country,
-			zipPrefix: row.zipPrefix,
-			count: 0
-		}));
+		if (!matchesStatsFilter({ filter, row })) continue;
+		const group = accumulate({
+			map: groups,
+			key: `${row.country ?? ''}:${row.zipPrefix ?? ''}`,
+			create: () => ({
+				country: row.country,
+				zipPrefix: row.zipPrefix,
+				count: 0
+			})
+		});
 		group.count += row.count;
 	}
 
@@ -430,10 +501,16 @@ export function addressesOf(addresses: AddressesRow[], filter: StatsFilterType) 
 	}));
 }
 
-export function nationalityDistributionOf(addresses: AddressesRow[], filter: StatsFilterType) {
+export function nationalityDistributionOf({
+	addresses,
+	filter
+}: {
+	addresses: AddressesRow[];
+	filter: StatsFilterType;
+}) {
 	const counts = new Map<string, number>();
 	for (const row of addresses) {
-		if (row.country === null || !matchesStatsFilter(filter, row)) continue;
+		if (row.country === null || !matchesStatsFilter({ filter, row })) continue;
 		counts.set(row.country, (counts.get(row.country) ?? 0) + row.count);
 	}
 	return [...counts].map(([country, count]) => ({ country, countryCode: country, count }));
@@ -450,7 +527,7 @@ export function committeeFillRatesOf(committees: CommitteeFillRow[]) {
 			abbreviation: committee.abbreviation,
 			totalSeats: committee.totalSeats,
 			assignedSeats: committee.assignedSeats,
-			fillPercentage: percentage(committee.assignedSeats, committee.totalSeats)
+			fillPercentage: percentage({ part: committee.assignedSeats, whole: committee.totalSeats })
 		}));
 }
 
@@ -463,8 +540,14 @@ const DAY_COUNTERS = {
 } as const;
 
 /** Running totals per day; days without registrations are filled in so the x axis stays linear. */
-export function registrationTimelineOf(days: RegistrationDayRow[], filter: StatsFilterType) {
-	const matching = days.filter((row) => matchesStatsFilter(filter, row));
+export function registrationTimelineOf({
+	days,
+	filter
+}: {
+	days: RegistrationDayRow[];
+	filter: StatsFilterType;
+}) {
+	const matching = days.filter((row) => matchesStatsFilter({ filter, row }));
 	if (matching.length === 0) return [];
 
 	const sorted = matching.toSorted((a, b) => a.day.localeCompare(b.day));
@@ -492,10 +575,16 @@ export function registrationTimelineOf(days: RegistrationDayRow[], filter: Stats
 }
 
 /** Delegation members and single participants per school, each by their own school. */
-export function schoolStatsOf(schools: SchoolsRow[], filter: StatsFilterType) {
+export function schoolStatsOf({
+	schools,
+	filter
+}: {
+	schools: SchoolsRow[];
+	filter: StatsFilterType;
+}) {
 	const people = new Map<string, number>();
 	for (const row of schools) {
-		if (!matchesStatsFilter(filter, row)) continue;
+		if (!matchesStatsFilter({ filter, row })) continue;
 		const key = row.school || 'Unknown';
 		people.set(key, (people.get(key) ?? 0) + row.people);
 	}
@@ -507,27 +596,31 @@ export function schoolStatsOf(schools: SchoolsRow[], filter: StatsFilterType) {
 // ── Waiting list (unfiltered) ───────────────────────────────────────────────
 
 export function waitingListOf(entries: WaitingListRow[]) {
-	const total = sumWhere(entries, () => true);
-	const visible = sumWhere(entries, (row) => !row.hidden);
-	const assigned = sumWhere(entries, (row) => row.assigned);
+	const total = sumWhere({ rows: entries, predicate: () => true });
+	const visible = sumWhere({ rows: entries, predicate: (row) => !row.hidden });
+	const assigned = sumWhere({ rows: entries, predicate: (row) => row.assigned });
 	return { total, visible, hidden: total - visible, assigned, unassigned: total - assigned };
 }
 
 // ── Papers (unfiltered) ─────────────────────────────────────────────────────
 
 export function paperStatsOf(papers: PapersRow[]) {
-	const count = (predicate: (row: PapersRow) => boolean) => sumWhere(papers, predicate);
+	const count = (predicate: (row: PapersRow) => boolean) => sumWhere({ rows: papers, predicate });
 	const total = count(() => true);
 	const withReviews = count((row) => row.hasReview);
 
 	const committees = new Map<string, { name: string; abbreviation: string; count: number }>();
 	for (const row of papers) {
 		if (!row.committeeId) continue;
-		accumulate(committees, row.committeeId, () => ({
-			name: row.committeeName ?? '',
-			abbreviation: row.committeeAbbreviation ?? '',
-			count: 0
-		})).count += row.count;
+		accumulate({
+			map: committees,
+			key: row.committeeId,
+			create: () => ({
+				name: row.committeeName ?? '',
+				abbreviation: row.committeeAbbreviation ?? '',
+				count: 0
+			})
+		}).count += row.count;
 	}
 
 	return {

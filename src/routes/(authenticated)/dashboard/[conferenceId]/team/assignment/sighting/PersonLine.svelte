@@ -21,7 +21,7 @@
 	const note = $derived(careNotesOf(person));
 
 	const age = $derived(
-		person.birthday ? getAgeAtConference(person.birthday, startConference) : undefined
+		person.birthday ? getAgeAtConference({ birthday: person.birthday, startConference }) : undefined
 	);
 </script>
 
@@ -32,7 +32,7 @@
 			class="link link-hover cursor-pointer"
 			onclick={() => openUserCard(person.id)}
 		>
-			{formatNames(person.givenName, person.familyName)}
+			{formatNames({ givenName: person.givenName, familyName: person.familyName })}
 		</button>
 		{#if note}
 			<i

@@ -44,7 +44,7 @@ describe('toUpdateUserArgs', () => {
 	});
 
 	it('sends the address as an AddressInput with an alpha-2 country and the picked day', () => {
-		const args = toUpdateUserArgs('user-1', form());
+		const args = toUpdateUserArgs({ id: 'user-1', values: form() });
 		expect(args).toMatchObject({
 			id: 'user-1',
 			givenName: 'Lena',
@@ -64,13 +64,13 @@ describe('toUpdateUserArgs', () => {
 	});
 
 	it('leaves out what the country does not use, even if it was typed before switching', () => {
-		const german = toUpdateUserArgs('user-1', form({ region: 'CA' }));
+		const german = toUpdateUserArgs({ id: 'user-1', values: form({ region: 'CA' }) });
 		expect(german.address.region).toBeUndefined();
 
-		const american = toUpdateUserArgs(
-			'user-1',
-			form({ country: 'USA', region: 'CA', zip: '94103' })
-		);
+		const american = toUpdateUserArgs({
+			id: 'user-1',
+			values: form({ country: 'USA', region: 'CA', zip: '94103' })
+		});
 		expect(american.address).toMatchObject({
 			countryCode: 'US',
 			region: 'CA',

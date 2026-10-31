@@ -10,7 +10,7 @@ import {
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 export function registerRoleApplicationAbilities() {
 	// Ported from abilities/entities/roleApplication.ts
@@ -36,7 +36,7 @@ export function registerRoleApplicationAbilities() {
 	// even after the delegation applied, like the delegation itself (`createRoleApplication` checks
 	// the delegation's update ability).
 	abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when((ctx) => {
-		const delegation = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		const delegation = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return delegation ? { where: { delegation } } : undefined;
 	});
 
@@ -53,10 +53,13 @@ export function registerRoleApplicationAbilities() {
  * Refuses unless the caller may update the delegation the application belongs to, and the role
  * applied for is on offer in that delegation's conference.
  */
-export async function assertCanCreateRoleApplication(
-	ctx: ApiContext,
-	args: { delegationId: string; roleId: string }
-) {
+export async function assertCanCreateRoleApplication({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { delegationId: string; roleId: string };
+}) {
 	const delegation = await db.query.delegation
 		.findFirst({
 			...(await ctx.abilities.delegation.filter('update')).merge({
@@ -66,20 +69,20 @@ export async function assertCanCreateRoleApplication(
 		})
 		.then(assertFindFirstExists);
 
-	await assertOfferedIn(delegation.conferenceId, { roleId: args.roleId });
+	await assertOfferedIn({ conferenceId: delegation.conferenceId, ref: { roleId: args.roleId } });
 }
 
 /**
  * Refuses unless the caller may delete the application (the row's delete ability). Returns it,
  * with the delegation whose ranks close the gap afterwards.
  */
-export async function assertCanDeleteRoleApplication(ctx: ApiContext, id: string) {
+export async function assertCanDeleteRoleApplication({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const deletable = await db.query.roleApplication.findFirst({
 		...(await ctx.abilities.roleApplication.filter('delete')).merge({ where: { id } }).query.single,
 		columns: { id: true, delegationId: true }
 	});
 	if (!deletable) {
-		throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+		throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 	}
 	return deletable;
 }
@@ -88,11 +91,15 @@ export async function assertCanDeleteRoleApplication(ctx: ApiContext, id: string
  * Refuses unless the caller may update both applications and they rank within one delegation.
  * Returns them.
  */
-export async function assertCanSwapRoleApplicationRanks(
-	ctx: ApiContext,
-	firstId: string,
-	secondId: string
-) {
+export async function assertCanSwapRoleApplicationRanks({
+	ctx,
+	firstId,
+	secondId
+}: {
+	ctx: ApiContext;
+	firstId: string;
+	secondId: string;
+}) {
 	const updatable = await ctx.abilities.roleApplication.filter('update');
 	const [first, second] = await Promise.all([
 		db.query.roleApplication
@@ -103,7 +110,7 @@ export async function assertCanSwapRoleApplicationRanks(
 			.then(assertFindFirstExists)
 	]);
 	if (first.delegationId !== second.delegationId) {
-		throw apiError('INVALID_INPUT', m.roleApplicationsOfDifferentDelegations());
+		throw apiError({ code: 'INVALID_INPUT', message: m.roleApplicationsOfDifferentDelegations() });
 	}
 	return [first, second];
 }

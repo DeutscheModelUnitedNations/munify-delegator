@@ -174,10 +174,7 @@
 					type: 'shadow'
 				},
 				formatter: (params: TooltipComponentFormatterCallbackParams) =>
-					committeeTooltip(
-						params,
-						types.map((type) => typeLabels[type])
-					)
+					committeeTooltip({ params, typeLabels: types.map((type) => typeLabels[type]) })
 			},
 			legend: {
 				bottom: 0,

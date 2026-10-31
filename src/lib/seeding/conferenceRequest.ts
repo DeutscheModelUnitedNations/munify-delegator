@@ -139,7 +139,13 @@ const formatOffset = (offsetMinutes: number) => {
 const LOCAL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
 /** `2027-03-10T09:00` (Berlin wall clock) → `2027-03-10T09:00:00+01:00`; empty if incomplete */
-export const localToIso = (value: string, preferredOffset?: string): string => {
+export const localToIso = ({
+	value,
+	preferredOffset
+}: {
+	value: string;
+	preferredOffset?: string;
+}): string => {
 	const match = LOCAL_PATTERN.exec(value);
 	if (!match) return '';
 	const [, year, month, day, hour, minute] = match;
@@ -170,7 +176,7 @@ export const isoToLocal = (value: string): string => {
 
 /** A complete input that names a time which does not exist in Europe/Berlin (clocks jump forward) */
 export const isNonexistentLocalTime = (value: string): boolean =>
-	LOCAL_PATTERN.test(value) && localToIso(value) === '';
+	LOCAL_PATTERN.test(value) && localToIso({ value }) === '';
 
 const isoOffset = (value: string): string | undefined => {
 	if (Number.isNaN(Date.parse(value))) return undefined;
@@ -187,12 +193,18 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 		location: state.location.trim(),
 		website: state.website.trim(),
 		language: state.language.trim(),
-		applicationDeadline: localToIso(
-			state.applicationDeadline,
-			state.offsetHints.applicationDeadline
-		),
-		startConference: localToIso(state.startConference, state.offsetHints.startConference),
-		endConference: localToIso(state.endConference, state.offsetHints.endConference)
+		applicationDeadline: localToIso({
+			value: state.applicationDeadline,
+			preferredOffset: state.offsetHints.applicationDeadline
+		}),
+		startConference: localToIso({
+			value: state.startConference,
+			preferredOffset: state.offsetHints.startConference
+		}),
+		endConference: localToIso({
+			value: state.endConference,
+			preferredOffset: state.offsetHints.endConference
+		})
 	},
 	nsa: state.nsa.map((nsa) => ({
 		name: nsa.name.trim(),

@@ -28,24 +28,32 @@
 	);
 
 	// What to export: a resolution for working papers, a text document otherwise
-	let job = $derived(paperExportJob(paper, resolutionHeaderData));
+	let job = $derived(paperExportJob({ paper, resolutionHeaderData }));
 
 	let isExportingPdf = $state(false);
 
 	function exportTypst() {
 		if (!exportContent) return;
 		if (job.kind === 'resolution') {
-			downloadResolutionTypst(exportContent, job.header, job.docNumber);
+			downloadResolutionTypst({
+				resolution: exportContent,
+				header: job.header,
+				documentNumber: job.docNumber
+			});
 		} else {
-			downloadPaperTypst(exportContent, job.meta, job.docNumber);
+			downloadPaperTypst({ content: exportContent, meta: job.meta, documentNumber: job.docNumber });
 		}
 	}
 
 	/** Downloads the PDF matching the paper's type. */
 	function downloadPdf(content: NonNullable<typeof exportContent>) {
 		return job.kind === 'resolution'
-			? downloadResolutionPdf(content, job.header, job.docNumber)
-			: downloadPaperPdf(content, job.meta, job.docNumber);
+			? downloadResolutionPdf({
+					resolution: content,
+					header: job.header,
+					documentNumber: job.docNumber
+				})
+			: downloadPaperPdf({ content, meta: job.meta, documentNumber: job.docNumber });
 	}
 
 	async function exportPdf() {

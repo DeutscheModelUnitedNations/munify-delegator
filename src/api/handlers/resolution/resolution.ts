@@ -29,7 +29,7 @@ schemaBuilder.mutationFields((t) => ({
 			fileId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateResolution(ctx, args);
+			await assertCanCreateResolution({ ctx, args });
 			// Its type and size were checked when the upload was handed out.
 			const fileId = await ensureUploadComplete(args.fileId);
 			const file = await db.query.storedFile.findFirst({
@@ -51,7 +51,7 @@ schemaBuilder.mutationFields((t) => ({
 			resolutionPubsub.created();
 
 			return db.query.resolution
-				.findFirst(query(await queryAllowed(ctx.abilities.resolution, created.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.resolution, id: created.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -65,7 +65,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateResolution(ctx, args.id, args.committeeId);
+			await assertCanUpdateResolution({ ctx, id: args.id, committeeId: args.committeeId });
 
 			await db
 				.update(schema.resolution)
@@ -74,12 +74,12 @@ schemaBuilder.mutationFields((t) => ({
 					title: args.title?.trim() || undefined,
 					committeeId: args.committeeId
 				})
-				.where(whereRows(schema.resolution, { id: args.id }));
+				.where(whereRows({ table: schema.resolution, filter: { id: args.id } }));
 
 			resolutionPubsub.updated(args.id);
 
 			return db.query.resolution
-				.findFirst(query(await queryAllowed(ctx.abilities.resolution, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.resolution, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -88,7 +88,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'resolution', args.id);
+			await deleteIfAllowed({ ctx, table: 'resolution', id: args.id });
 			resolutionPubsub.removed();
 			return true;
 		}

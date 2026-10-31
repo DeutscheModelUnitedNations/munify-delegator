@@ -43,7 +43,7 @@
 		open = false;
 	}
 
-	function handleKeydown(event: KeyboardEvent, index: number) {
+	function handleKeydown({ event, index }: { event: KeyboardEvent; index: number }) {
 		if (event.key === 'Enter' && !event.shiftKey) {
 			event.preventDefault();
 			if (index < placeholders.length - 1) {
@@ -71,7 +71,7 @@
 					bind:this={inputRefs[index]}
 					bind:value={values[placeholder]}
 					{placeholder}
-					onkeydown={(e) => handleKeydown(e, index)}
+					onkeydown={(e) => handleKeydown({ event: e, index })}
 					use:focusOnMount={index === 0}
 				/>
 			</fieldset>

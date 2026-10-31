@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import type { ResolvedPathname } from '$app/types';
@@ -51,7 +52,7 @@
 					if (btn.onClick) {
 						btn.onClick();
 					} else {
-						console.warn('No onClick handler provided');
+						logger.warn('No onClick handler provided');
 					}
 				}}
 			>

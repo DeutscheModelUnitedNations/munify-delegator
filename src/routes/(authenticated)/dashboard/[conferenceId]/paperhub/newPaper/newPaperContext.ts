@@ -12,11 +12,15 @@ const VALID_TYPES = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
  * with both. `defaults` rather than `superValidate`: the paper is created by a GraphQL mutation in
  * SPA mode, so there is no action to validate against.
  */
-export async function fetchNewPaperContext(
-	conferenceId: string,
-	userId: string,
-	typeParam: string | null
-) {
+export async function fetchNewPaperContext({
+	conferenceId,
+	userId,
+	typeParam
+}: {
+	conferenceId: string;
+	userId: string;
+	typeParam: string | null;
+}) {
 	const [delegationMembers, conferenceAgendaItems] = await Promise.all([
 		client.liveQuery.delegationMembers({
 			__args: {

@@ -1,12 +1,11 @@
 import { db, schema } from '#api/db/db';
-import { isUniqueViolationOn } from '#api/services/errors/uniqueViolation';
-import { normalizeRoleApplicationRanks } from '#api/services/registration/normalizeRoleApplicationRanks';
-import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications';
+import { apiError, isUniqueViolationOn } from '#api/services/errors';
+import { normalizeRoleApplicationRanks } from '#api/handlers/roleApplication/normalizeRoleApplicationRanks';
+import { tidyRoleApplicationsForRoles } from '#api/handlers/roleApplication/tidyRoleApplications';
 import {
 	assertNonStateActorDeletable,
 	assertSeatsPerDelegationAllowed
-} from '#api/services/seatPlanning';
-import { apiError } from '#api/services/errors/apiError';
+} from '#api/handlers/seatPlanning/seatPlanningService';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
@@ -16,8 +15,8 @@ async function withUniqueNameCheck<T>(operation: Promise<T>) {
 	try {
 		return await operation;
 	} catch (error) {
-		if (isUniqueViolationOn(error, 'conference_role_conference_id')) {
-			throw apiError('CONFLICT', m.nonStateActorNotUnique());
+		if (isUniqueViolationOn({ error, column: 'conference_role_conference_id' })) {
+			throw apiError({ code: 'CONFLICT', message: m.nonStateActorNotUnique() });
 		}
 		throw error;
 	}
@@ -32,7 +31,10 @@ export async function createNonStateActor(data: {
 	fontAwesomeIcon?: string | null;
 	seatAmount: number;
 }) {
-	assertSeatsPerDelegationAllowed(data.seatAmount, []);
+	assertSeatsPerDelegationAllowed({
+		numOfSeatsPerDelegation: data.seatAmount,
+		assignedMembers: []
+	});
 
 	const created = await withUniqueNameCheck(
 		db
@@ -57,10 +59,13 @@ export async function createNonStateActor(data: {
  * allowed, but the applications that no longer fit are dropped in the same transaction. Returns
  * whether that happened.
  */
-export async function updateNonStateActor(
-	before: { id: string; conferenceId: string; seatAmount: number | null },
-	data: Partial<typeof schema.conferenceRole.$inferInsert>
-) {
+export async function updateNonStateActor({
+	before,
+	data
+}: {
+	before: { id: string; conferenceId: string; seatAmount: number | null };
+	data: Partial<typeof schema.conferenceRole.$inferInsert>;
+}) {
 	const seatsBefore = before.seatAmount ?? 0;
 	const shrunk = (data.seatAmount ?? seatsBefore) < seatsBefore;
 
@@ -69,9 +74,14 @@ export async function updateNonStateActor(
 			tx
 				.update(schema.conferenceRole)
 				.set(data)
-				.where(whereRows(schema.conferenceRole, { id: before.id }))
+				.where(whereRows({ table: schema.conferenceRole, filter: { id: before.id } }))
 		);
-		if (shrunk) await tidyRoleApplicationsForRoles(before.conferenceId, [before.id], tx);
+		if (shrunk)
+			await tidyRoleApplicationsForRoles({
+				conferenceId: before.conferenceId,
+				roleIds: [before.id],
+				tx
+			});
 	});
 	return { applicationsTidied: shrunk };
 }
@@ -88,7 +98,7 @@ export async function deleteNonStateActor(id: string) {
 			with: { assignedDelegations: { columns: { id: true } } }
 		});
 		if (!existing) {
-			throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 		}
 
 		assertNonStateActorDeletable(existing.assignedDelegations.length);
@@ -96,15 +106,15 @@ export async function deleteNonStateActor(id: string) {
 		// applications for it go with it, closing the gaps they leave in the rankings
 		const applications = await tx
 			.delete(schema.roleApplication)
-			.where(whereRows(schema.roleApplication, { roleId: existing.id }))
+			.where(whereRows({ table: schema.roleApplication, filter: { roleId: existing.id } }))
 			.returning({ delegationId: schema.roleApplication.delegationId });
 		for (const delegationId of new Set(applications.map((a) => a.delegationId))) {
-			await normalizeRoleApplicationRanks(delegationId, tx);
+			await normalizeRoleApplicationRanks({ delegationId, tx });
 		}
 
 		await tx
 			.delete(schema.conferenceRole)
-			.where(whereRows(schema.conferenceRole, { id: existing.id }));
+			.where(whereRows({ table: schema.conferenceRole, filter: { id: existing.id } }));
 	});
 }
 
@@ -116,7 +126,8 @@ export async function createCustomRole(data: {
 	fontAwesomeIcon?: string | null;
 	seatAmount: number;
 }) {
-	if (data.seatAmount < 1) throw apiError('INVALID_INPUT', m.customRoleSeatsRange());
+	if (data.seatAmount < 1)
+		throw apiError({ code: 'INVALID_INPUT', message: m.customRoleSeatsRange() });
 	const created = await withUniqueNameCheck(
 		db
 			.insert(schema.conferenceRole)
@@ -138,23 +149,30 @@ export async function createCustomRole(data: {
  * Updates a custom role. Its seats may not drop below the people already holding it: unlike a
  * non-state actor's applications, an assignment is not something to drop quietly.
  */
-export async function updateCustomRole(
-	id: string,
+export async function updateCustomRole({
+	id,
+	data
+}: {
+	id: string;
 	data: {
 		name?: string | null;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		seatAmount?: number | null;
-	}
-) {
+	};
+}) {
 	if (data.seatAmount !== undefined && data.seatAmount !== null) {
-		if (data.seatAmount < 1) throw apiError('INVALID_INPUT', m.customRoleSeatsRange());
+		if (data.seatAmount < 1)
+			throw apiError({ code: 'INVALID_INPUT', message: m.customRoleSeatsRange() });
 		const holders = await db.$count(
 			schema.singleParticipant,
-			whereRows(schema.singleParticipant, { assignedRoleId: id })
+			whereRows({ table: schema.singleParticipant, filter: { assignedRoleId: id } })
 		);
 		if (data.seatAmount < holders) {
-			throw apiError('CONFLICT', m.customRoleSeatsBelowAssigned({ assigned: holders }));
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.customRoleSeatsBelowAssigned({ assigned: holders })
+			});
 		}
 	}
 	await withUniqueNameCheck(
@@ -166,7 +184,7 @@ export async function updateCustomRole(
 				fontAwesomeIcon: data.fontAwesomeIcon,
 				seatAmount: data.seatAmount ?? undefined
 			})
-			.where(whereRows(schema.conferenceRole, { id }))
+			.where(whereRows({ table: schema.conferenceRole, filter: { id } }))
 	);
 }
 
@@ -174,8 +192,10 @@ export async function updateCustomRole(
 export async function deleteCustomRole(id: string) {
 	const holders = await db.$count(
 		schema.singleParticipant,
-		whereRows(schema.singleParticipant, { assignedRoleId: id })
+		whereRows({ table: schema.singleParticipant, filter: { assignedRoleId: id } })
 	);
-	if (holders > 0) throw apiError('CONFLICT', m.customRoleStillAssigned());
-	await db.delete(schema.conferenceRole).where(whereRows(schema.conferenceRole, { id }));
+	if (holders > 0) throw apiError({ code: 'CONFLICT', message: m.customRoleStillAssigned() });
+	await db
+		.delete(schema.conferenceRole)
+		.where(whereRows({ table: schema.conferenceRole, filter: { id } }));
 }

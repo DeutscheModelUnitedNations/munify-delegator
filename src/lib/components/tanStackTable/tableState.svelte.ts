@@ -20,11 +20,15 @@ export interface TableStateOptions {
 }
 
 /** The table's pagination from the `page` (1-based) and `size` parameters. */
-function paginationOf(
-	page: number | null | undefined,
-	size: number | null | undefined,
-	pageSize: number
-): PaginationState {
+function paginationOf({
+	page,
+	size,
+	pageSize
+}: {
+	page: number | null | undefined;
+	size: number | null | undefined;
+	pageSize: number;
+}): PaginationState {
 	return { pageIndex: Math.max((page ?? 1) - 1, 0), pageSize: size ?? pageSize };
 }
 
@@ -89,7 +93,7 @@ export function createTableState({
 	// Searching shows the best match first, so it replaces the sorting until one is chosen again
 	const defaultSorting = $derived(typedSearch.trim() ? [] : initialSorting);
 	const sorting = $derived<SortingState>(sortInUrl() ?? defaultSorting);
-	const pagination = $derived(paginationOf(pageInUrl(), sizeInUrl(), pageSize));
+	const pagination = $derived(paginationOf({ page: pageInUrl(), size: sizeInUrl(), pageSize }));
 	const columnFilters = $derived<ColumnFiltersState>(
 		filtersInUrl() ?? defaultFiltersOf(defaultFilters)
 	);

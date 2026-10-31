@@ -64,7 +64,11 @@ describe('SightingDeckWindow', () => {
 		const sighting = deckWindow(window(0, 60, 200, 'c30'));
 		const answer = pending();
 		expect(await sighting.goTo('c50')).toBe('c50');
-		expect(fetchSightingDeck).toHaveBeenCalledWith('conf', filter, { currentId: 'c50' });
+		expect(fetchSightingDeck).toHaveBeenCalledWith({
+			conferenceId: 'conf',
+			filter,
+			position: { currentId: 'c50' }
+		});
 		// a second turn near the edge does not ask again while the first window is on its way
 		await sighting.goTo('c51');
 		expect(fetchSightingDeck).toHaveBeenCalledTimes(1);
@@ -84,7 +88,11 @@ describe('SightingDeckWindow', () => {
 		const sighting = deckWindow(window(0, 60, 200, 'c0'));
 		fetchSightingDeck.mockResolvedValueOnce(window(90, 60, 200, 'c120'));
 		expect(await sighting.seek(120)).toBe('c120');
-		expect(fetchSightingDeck).toHaveBeenCalledWith('conf', filter, { currentId: null, index: 120 });
+		expect(fetchSightingDeck).toHaveBeenCalledWith({
+			conferenceId: 'conf',
+			filter,
+			position: { currentId: null, index: 120 }
+		});
 	});
 
 	it('only takes the latest answer', async () => {
@@ -101,7 +109,7 @@ describe('SightingDeckWindow', () => {
 
 	it('recolours a reviewed card at once', () => {
 		const sighting = deckWindow(window(0, 3, 3, 'c0'));
-		sighting.recolour('c1', { evaluation: 5, flagged: false, disqualified: false });
+		sighting.recolour({ id: 'c1', review: { evaluation: 5, flagged: false, disqualified: false } });
 		expect(sighting.deck.entries[1].status).toBe('rated');
 		expect(sighting.deck.counts.rated).toBe(1);
 	});
@@ -115,6 +123,6 @@ describe('SightingDeckWindow', () => {
 
 	it('lists the cards to read ahead', () => {
 		const sighting = deckWindow(window(0, 10, 10, 'c4'));
-		expect(sighting.upcoming(2, 1).map((e) => e.id)).toEqual(['c5', 'c3', 'c6']);
+		expect(sighting.upcoming({ ahead: 2, behind: 1 }).map((e) => e.id)).toEqual(['c5', 'c3', 'c6']);
 	});
 });

@@ -56,10 +56,10 @@
 		nonStateActors: liveSnapshot<(typeof roles.nonStateActors)[number]>()
 	};
 	const seatedRoleList = $derived(
-		seatedRoles(
-			roleSnapshot.committees(roles.committees),
-			roleSnapshot.nonStateActors(roles.nonStateActors)
-		)
+		seatedRoles({
+			committees: roleSnapshot.committees(roles.committees),
+			nonStateActors: roleSnapshot.nonStateActors(roles.nonStateActors)
+		})
 	);
 	// Everyone who holds a role or whom the draft touches: the roles and their holders.
 	const plain = seatedSnapshot();
@@ -75,7 +75,10 @@
 	const poolLoader = createPool<BoardSingleParticipant>(() => {
 		const { conferenceId } = params;
 		const term = search.term;
-		return { key: poolKey, fetchPage: (page) => fetchSinglePoolPage(conferenceId, term, page) };
+		return {
+			key: poolKey,
+			fetchPage: (page) => fetchSinglePoolPage({ conferenceId, searchTerm: term, page })
+		};
 	});
 	const poolPages = $derived(poolLoader.pages);
 	const poolLoading = $derived(poolLoader.loading);
@@ -125,8 +128,10 @@
 	$effect(() => moves.settle());
 
 	const singleById = $derived(new Map(singleParticipants.map((s) => [s.id, s])));
-	const schoolLookups = $derived(schoolLookupsOf(seatedSet.delegations, singleParticipants));
-	const schoolCounts = $derived(schoolSeats(view, schoolLookups));
+	const schoolLookups = $derived(
+		schoolLookupsOf({ delegations: seatedSet.delegations, singles: singleParticipants })
+	);
+	const schoolCounts = $derived(schoolSeats({ view, lookups: schoolLookups }));
 
 	/** Warns (never blocks) when a single participant taking a role takes their school past the limit. */
 	const holdsRole = (singleParticipantId: string) =>
@@ -136,12 +141,16 @@
 
 	function warnAboutSchool(singleParticipantId: string) {
 		const single = { delegationId: null, singleParticipantId, memberIds: [] };
-		const added = holdsRole(singleParticipantId) ? [] : schoolsOfGroup(single, schoolLookups);
-		warnAboutSchoolSeats(schoolCounts, added, maxSeatsPerSchool);
+		const added = holdsRole(singleParticipantId)
+			? []
+			: schoolsOfGroup({ group: single, lookups: schoolLookups });
+		warnAboutSchoolSeats({ counts: schoolCounts, added, limit: maxSeatsPerSchool });
 	}
 	const openSingles = $derived(view.singles.filter((single) => !single.roleId));
 	// a search's matches are what its pages hold
-	const pool = $derived(search.term ? onPages(openSingles, poolPages) : openSingles);
+	const pool = $derived(
+		search.term ? onPages({ groups: openSingles, pages: poolPages }) : openSingles
+	);
 
 	const loadMore = () => poolLoader.loadMore();
 	const converted = $derived(
@@ -157,41 +166,53 @@
 		)
 	);
 	/** None of the applicant's wishes is the role they hold, as `SingleCard` flags it. */
-	const isBadFit = (singleParticipantId: string, roleId: string) =>
-		!singleById.get(singleParticipantId)?.appliedForRoles.some((role) => role.id === roleId);
+	const isBadFit = ({
+		singleParticipantId,
+		roleId
+	}: {
+		singleParticipantId: string;
+		roleId: string;
+	}) => !singleById.get(singleParticipantId)?.appliedForRoles.some((role) => role.id === roleId);
 	/** The holders of a role, those that did not wish for it first so misfits are seen at once. */
 	const holdersOf = (roleId: string) =>
 		view.singles
 			.filter((single) => single.roleId === roleId)
 			.toSorted(
 				(a, b) =>
-					Number(isBadFit(b.singleParticipantId, roleId)) -
-					Number(isBadFit(a.singleParticipantId, roleId))
+					Number(isBadFit({ singleParticipantId: b.singleParticipantId, roleId })) -
+					Number(isBadFit({ singleParticipantId: a.singleParticipantId, roleId }))
 			);
 
 	function onDrop(dropState: DragDropState<{ id: string }>) {
 		dragging = false;
 		const singleParticipantId = dropState.draggedItem.id;
-		const action = singleDropAction(dropState.sourceContainer, dropState.targetContainer);
+		const action = singleDropAction({
+			source: dropState.sourceContainer,
+			container: dropState.targetContainer
+		});
 		if (!action) return;
 		if (action.type === 'role' && action.roleId) warnAboutSchool(singleParticipantId);
-		void moves.track(singleParticipantId, () =>
-			succeeded(
-				action.type === 'convert'
-					? client.mutate.convertSingleParticipant({ __args: { singleParticipantId } })
-					: client.mutate.assignSingleParticipantRole({
-							__args: { singleParticipantId, roleId: action.roleId }
-						})
-			)
-		);
+		void moves.track({
+			key: singleParticipantId,
+			change: () =>
+				succeeded(
+					action.type === 'convert'
+						? client.mutate.convertSingleParticipant({ __args: { singleParticipantId } })
+						: client.mutate.assignSingleParticipantRole({
+								__args: { singleParticipantId, roleId: action.roleId }
+							})
+				)
+		});
 	}
 
 	const revert = (singleParticipantId: string) =>
-		moves.track(singleParticipantId, () =>
-			succeeded(
-				client.mutate.revertSingleParticipantConversion({ __args: { singleParticipantId } })
-			)
-		);
+		moves.track({
+			key: singleParticipantId,
+			change: () =>
+				succeeded(
+					client.mutate.revertSingleParticipantConversion({ __args: { singleParticipantId } })
+				)
+		});
 </script>
 
 {#snippet singleCard(single: (typeof view.singles)[number], container: string, fluid = false)}

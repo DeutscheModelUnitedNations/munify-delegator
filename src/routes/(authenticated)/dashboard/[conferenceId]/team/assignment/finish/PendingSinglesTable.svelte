@@ -42,7 +42,7 @@
 						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved in sightingHref -->
 						<a
 							class="link link-hover"
-							href={sightingHref(conferenceId, single.singleParticipantId)}
+							href={sightingHref({ conferenceId, applicationId: single.singleParticipantId })}
 							title={m.assignmentCardSighting()}
 						>
 							{codenamize(single.singleParticipantId)}

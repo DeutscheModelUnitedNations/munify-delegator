@@ -28,10 +28,14 @@ describe('requiredWithoutSeat', () => {
 			singles: []
 		};
 		expect(
-			requiredWithoutSeat(
-				[{ delegationId: 'seated' }, { delegationId: 'left' }, { delegationId: 'untouched' }],
+			requiredWithoutSeat({
+				required: [
+					{ delegationId: 'seated' },
+					{ delegationId: 'left' },
+					{ delegationId: 'untouched' }
+				],
 				state
-			)
+			})
 		).toEqual([{ delegationId: 'left' }, { delegationId: 'untouched' }]);
 	});
 
@@ -41,7 +45,10 @@ describe('requiredWithoutSeat', () => {
 			singles: []
 		};
 		expect(
-			requiredWithoutSeat([{ delegationId: 'split' }, { delegationId: 'whole' }], state)
+			requiredWithoutSeat({
+				required: [{ delegationId: 'split' }, { delegationId: 'whole' }],
+				state
+			})
 		).toEqual([{ delegationId: 'split' }]);
 	});
 
@@ -54,14 +61,14 @@ describe('requiredWithoutSeat', () => {
 			]
 		};
 		expect(
-			requiredWithoutSeat(
-				[
+			requiredWithoutSeat({
+				required: [
 					{ singleParticipantId: 'press' },
 					{ singleParticipantId: 'converted' },
 					{ singleParticipantId: 'waiting' }
 				],
 				state
-			)
+			})
 		).toEqual([{ singleParticipantId: 'waiting' }]);
 	});
 });
@@ -76,24 +83,24 @@ describe('seatOccupancy', () => {
 			]
 		};
 		expect(
-			seatOccupancy(
+			seatOccupancy({
 				state,
-				new Map([
+				seats: new Map([
 					['fra', 2],
 					['gbr', 2]
 				]),
-				new Map([['press', 2]])
-			)
+				roleSeats: new Map([['press', 2]])
+			})
 		).toEqual({ total: 6, taken: 5, free: 1 });
 	});
 
 	test('never counts fewer than no free seats', () => {
 		expect(
-			seatOccupancy(
-				{ groups: [group('a', 'fra', 3)], singles: [] },
-				new Map([['fra', 2]]),
-				new Map()
-			)
+			seatOccupancy({
+				state: { groups: [group('a', 'fra', 3)], singles: [] },
+				seats: new Map([['fra', 2]]),
+				roleSeats: new Map()
+			})
 		).toEqual({ total: 2, taken: 3, free: 0 });
 	});
 });

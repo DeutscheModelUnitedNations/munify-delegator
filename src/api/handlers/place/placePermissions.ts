@@ -21,34 +21,50 @@ export function registerPlaceAbilities() {
 
 	abilityBuilder.place
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
 /** Refuses unless the caller may add places to the conference and store the site plan given. */
-export async function assertCanCreatePlace(
-	ctx: ApiContext,
-	conferenceId: string,
-	sitePlanFileId: string | null | undefined
-) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
-	await assertCanClaimFile(ctx, sitePlanFileId, { kind: 'place', field: 'sitePlan', conferenceId });
+export async function assertCanCreatePlace({
+	ctx,
+	conferenceId,
+	sitePlanFileId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	sitePlanFileId: string | null | undefined;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	await assertCanClaimFile({
+		ctx,
+		fileId: sitePlanFileId,
+		target: { kind: 'place', field: 'sitePlan', conferenceId }
+	});
 }
 
 /** Refuses unless the caller may update the place and store the site plan given in it. */
-export async function assertCanUpdatePlace(
-	ctx: ApiContext,
-	id: string,
-	sitePlanFileId: string | null | undefined
-) {
+export async function assertCanUpdatePlace({
+	ctx,
+	id,
+	sitePlanFileId
+}: {
+	ctx: ApiContext;
+	id: string;
+	sitePlanFileId: string | null | undefined;
+}) {
 	const place = await db.query.place
 		.findFirst({
 			...(await ctx.abilities.place.filter('update')).merge({ where: { id } }).query.single,
 			columns: { conferenceId: true }
 		})
 		.then(assertFindFirstExists);
-	await assertCanClaimFile(ctx, sitePlanFileId, {
-		kind: 'place',
-		field: 'sitePlan',
-		conferenceId: place.conferenceId
+	await assertCanClaimFile({
+		ctx,
+		fileId: sitePlanFileId,
+		target: {
+			kind: 'place',
+			field: 'sitePlan',
+			conferenceId: place.conferenceId
+		}
 	});
 }

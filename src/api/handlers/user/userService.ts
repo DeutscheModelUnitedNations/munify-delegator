@@ -3,7 +3,7 @@ import { whereRows } from '#api/db/whereRows';
 import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
 /**
@@ -50,11 +50,15 @@ export type DeletableParticipation = {
  * single participant entry, supervisor entry and participant status - while leaving the user
  * account itself alone. Only the rows `deletable` (pre-authorized) matches are removed.
  */
-export async function removeParticipation(
-	userId: string,
-	conferenceId: string,
-	deletable: DeletableParticipation
-) {
+export async function removeParticipation({
+	userId,
+	conferenceId,
+	deletable
+}: {
+	userId: string;
+	conferenceId: string;
+	deletable: DeletableParticipation;
+}) {
 	await db.transaction(async (tx) => {
 		const participant = await tx.query.user.findFirst({
 			where: {
@@ -69,7 +73,7 @@ export async function removeParticipation(
 		});
 
 		if (!participant) {
-			throw apiError('NOT_FOUND', m.userNotFound());
+			throw apiError({ code: 'NOT_FOUND', message: m.userNotFound() });
 		}
 
 		await tx.delete(schema.delegationMember).where(deletable.delegationMember);
@@ -129,10 +133,19 @@ export type ProfileUpdate = {
  * zod schema the form uses then judges the rest. Writes only the row `updatable` (pre-authorized)
  * matches.
  */
-export async function updateProfile(args: ProfileUpdate, updatable: SQL | undefined) {
+export async function updateProfile({
+	args,
+	updatable
+}: {
+	args: ProfileUpdate;
+	updatable: SQL | undefined;
+}) {
 	const country = alpha2ToAlpha3(args.address.countryCode);
 	if (!country)
-		throw apiError('INVALID_INPUT', m.userUnknownCountry({ country: args.address.countryCode }));
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.userUnknownCountry({ country: args.address.countryCode })
+		});
 	const address = {
 		street: args.address.streetAddress,
 		zip: args.address.postalCode ?? null,
@@ -177,10 +190,13 @@ export async function updateProfile(args: ProfileUpdate, updatable: SQL | undefi
 }
 
 /** Name and birthday corrections by management; an absent field is left as it is. */
-export async function updateIdentity(
-	id: string,
-	args: { givenName?: string | null; familyName?: string | null; birthday?: Date | null }
-) {
+export async function updateIdentity({
+	id,
+	args
+}: {
+	id: string;
+	args: { givenName?: string | null; familyName?: string | null; birthday?: Date | null };
+}) {
 	await db
 		.update(schema.user)
 		.set({
@@ -188,7 +204,7 @@ export async function updateIdentity(
 			familyName: args.familyName ?? undefined,
 			birthday: args.birthday ?? undefined
 		})
-		.where(whereRows(schema.user, { id }));
+		.where(whereRows({ table: schema.user, filter: { id } }));
 }
 
 /**

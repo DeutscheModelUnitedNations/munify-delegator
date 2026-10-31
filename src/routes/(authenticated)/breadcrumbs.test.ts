@@ -42,13 +42,13 @@ describe('breadcrumbs of every authenticated page', () => {
 			const url = pageSegments(key).map((segment, index) =>
 				isParameter(segment) ? `value-${index}` : segment
 			);
-			const matched = matchPage(url, keys);
+			const matched = matchPage({ urlSegments: url, globKeys: keys });
 			if (matched !== key) wrong.push(`${url.join('/')} -> ${matched} (expected ${key})`);
 		}
 		expect(wrong).toEqual([]);
 	});
 
 	test('a URL with no page matches nothing', () => {
-		expect(matchPage(['dashboard', 'x', 'team'], keys)).toBeUndefined();
+		expect(matchPage({ urlSegments: ['dashboard', 'x', 'team'], globKeys: keys })).toBeUndefined();
 	});
 });

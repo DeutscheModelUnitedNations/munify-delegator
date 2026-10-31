@@ -13,10 +13,13 @@ export type SeatSwitch =
  * between delegations the flag stays with the seat, within a delegation it stays with the person,
  * and every delegation that still has members ends up with exactly one head delegate.
  */
-export function applySeatSwitch(
-	members: SeatSwitchMember[],
-	change: SeatSwitch
-): SeatSwitchMember[] {
+export function applySeatSwitch({
+	members,
+	change
+}: {
+	members: SeatSwitchMember[];
+	change: SeatSwitch;
+}): SeatSwitchMember[] {
 	const mover = members.find((x) => x.id === change.memberId);
 	if (!mover) return members;
 
@@ -63,10 +66,13 @@ function ensureOneHeadPerDelegation(members: SeatSwitchMember[]): SeatSwitchMemb
 }
 
 /** Overrides the head delegates of every delegation that has a chosen member in `headDelegateIds` */
-export function withChosenHeadDelegates(
-	members: SeatSwitchMember[],
-	headDelegateIds: readonly string[]
-): SeatSwitchMember[] {
+export function withChosenHeadDelegates({
+	members,
+	headDelegateIds
+}: {
+	members: SeatSwitchMember[];
+	headDelegateIds: readonly string[];
+}): SeatSwitchMember[] {
 	const chosen = new Set(headDelegateIds);
 	const delegationsWithChoice = new Set(
 		members.filter((x) => chosen.has(x.id)).map((x) => x.delegationId)
@@ -111,10 +117,13 @@ export type SwitchSeat = SwitchMember | SwitchEmptySeat;
 const NEW_DELEGATION_ID = 'new';
 
 /** First click selects a member, a click on the same member deselects it, any other click picks the target */
-export function nextSwitchSelection(
-	selected: SwitchMember | undefined,
-	seat: SwitchSeat
-): { selected?: SwitchMember; target?: SwitchSeat } {
+export function nextSwitchSelection({
+	selected,
+	seat
+}: {
+	selected: SwitchMember | undefined;
+	seat: SwitchSeat;
+}): { selected?: SwitchMember; target?: SwitchSeat } {
 	if (!selected) return { selected: seat.kind === 'member' ? seat : undefined };
 	if (seat.kind === 'member' && seat.memberId === selected.memberId) return {};
 	return { selected, target: seat };
@@ -124,7 +133,13 @@ function switchTargetDelegationId(target: SwitchSeat): string {
 	return target.delegationId ?? NEW_DELEGATION_ID;
 }
 
-export function toSeatSwitch(selected: SwitchMember, target: SwitchSeat): SeatSwitch {
+export function toSeatSwitch({
+	selected,
+	target
+}: {
+	selected: SwitchMember;
+	target: SwitchSeat;
+}): SeatSwitch {
 	return target.kind === 'member'
 		? { kind: 'swap', memberId: selected.memberId, otherMemberId: target.memberId }
 		: {
@@ -135,18 +150,28 @@ export function toSeatSwitch(selected: SwitchMember, target: SwitchSeat): SeatSw
 }
 
 /** Head delegates only need a decision when one of them changes delegation */
-export function isHeadDelegateInvolved(
-	members: SeatSwitchMember[],
-	selected: SwitchMember,
-	target: SwitchSeat
-): boolean {
+export function isHeadDelegateInvolved({
+	members,
+	selected,
+	target
+}: {
+	members: SeatSwitchMember[];
+	selected: SwitchMember;
+	target: SwitchSeat;
+}): boolean {
 	if (selected.delegationId === switchTargetDelegationId(target)) return false;
 	const moving = [selected.memberId, target.kind === 'member' ? target.memberId : undefined];
 	return members.some((x) => x.isHeadDelegate && moving.includes(x.id));
 }
 
 /** Arguments of the `switchDelegationMemberSeats` mutation */
-export function seatSwitchVariables(selected: SwitchMember, target: SwitchSeat) {
+export function seatSwitchVariables({
+	selected,
+	target
+}: {
+	selected: SwitchMember;
+	target: SwitchSeat;
+}) {
 	if (target.kind === 'member') {
 		return { memberId: selected.memberId, otherMemberId: target.memberId };
 	}
@@ -170,15 +195,19 @@ export function isSameSeat(a: Seat, b: Seat): boolean {
  * The head delegate flags that change with the switch, or undefined when the chosen head
  * delegates would leave a delegation with none or several
  */
-export function headDelegateChanges(
-	before: SeatSwitchMember[],
-	change: SeatSwitch,
-	chosenHeadDelegateIds?: readonly string[] | null
-): SeatSwitchMember[] | undefined {
-	const after = withChosenHeadDelegates(
-		applySeatSwitch(before, change),
-		chosenHeadDelegateIds ?? []
-	);
+export function headDelegateChanges({
+	before,
+	change,
+	chosenHeadDelegateIds
+}: {
+	before: SeatSwitchMember[];
+	change: SeatSwitch;
+	chosenHeadDelegateIds?: readonly string[] | null;
+}): SeatSwitchMember[] | undefined {
+	const after = withChosenHeadDelegates({
+		members: applySeatSwitch({ members: before, change }),
+		headDelegateIds: chosenHeadDelegateIds ?? []
+	});
 	if (!hasOneHeadPerDelegation(after)) return undefined;
 	return after.filter(
 		(x) => x.isHeadDelegate !== before.find((y) => y.id === x.id)?.isHeadDelegate

@@ -45,7 +45,13 @@ const SORT_VALUES: Record<PaperSortKey, (paper: SortablePaper) => string | numbe
 const compareValues = (a: string | number, b: string | number) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** A sorted copy of `papers`; without a config the original order is kept. */
-export function sortPapers<P extends SortablePaper>(papers: P[], config: SortConfig | null): P[] {
+export function sortPapers<P extends SortablePaper>({
+	papers,
+	config
+}: {
+	papers: P[];
+	config: SortConfig | null;
+}): P[] {
 	const result = [...papers];
 	if (!config) return result;
 	const sortValue = SORT_VALUES[config.key];
@@ -69,7 +75,7 @@ export function createPaperSortState() {
 			return configs.get(groupId) ?? null;
 		},
 
-		toggle(groupId: string, key: PaperSortKey) {
+		toggle({ groupId, key }: { groupId: string; key: PaperSortKey }) {
 			const current = configs.get(groupId);
 			configs.set(groupId, {
 				key,

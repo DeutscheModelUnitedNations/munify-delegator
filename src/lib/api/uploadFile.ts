@@ -24,10 +24,13 @@ export type ConferenceFileField =
  * Returning `undefined` for "no file" matters: the mutations treat `null` as "remove the file", so
  * a form submitted without touching an upload field has to leave the stored file alone.
  */
-export async function uploadFile(
-	file: File | undefined | null,
-	target: UploadTarget
-): Promise<string | undefined> {
+export async function uploadFile({
+	file,
+	target
+}: {
+	file: File | undefined | null;
+	target: UploadTarget;
+}): Promise<string | undefined> {
 	if (!file || file.size === 0) return undefined;
 	const mimeType = file.type || 'application/octet-stream';
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -56,13 +57,19 @@
 	}: Props = $props();
 
 	let displayName = $derived(
-		formatNames(givenName ?? undefined, familyName ?? undefined, {
-			givenNameFirst: false,
-			delimiter: ', '
+		formatNames({
+			givenName: givenName ?? undefined,
+			familyName: familyName ?? undefined,
+			options: {
+				givenNameFirst: false,
+				delimiter: ', '
+			}
 		})
 	);
 
-	let confirmDisplayName = $derived(formatNames(givenName ?? undefined, familyName ?? undefined));
+	let confirmDisplayName = $derived(
+		formatNames({ givenName: givenName ?? undefined, familyName: familyName ?? undefined })
+	);
 
 	let fullPageUrl = $derived(
 		resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
@@ -142,32 +149,42 @@
 			const body = badgeSessionBody({
 				givenName,
 				familyName,
-				...seatBadgeValues(delegationMember, getFullTranslatedCountryNameFromISO3Code),
+				...seatBadgeValues({
+					member: delegationMember,
+					countryName: getFullTranslatedCountryNameFromISO3Code
+				}),
 				pronouns,
 				id: userId,
 				mediaConsentStatus: status?.mediaConsentStatus
 			});
-			window.open(await requestBadgeSession(PUBLIC_BADGE_GENERATOR_URL, body), '_blank');
+			window.open(
+				await requestBadgeSession({ baseUrl: PUBLIC_BADGE_GENERATOR_URL, body }),
+				'_blank'
+			);
 		} catch (e) {
-			console.error('Failed to open badge generator', e);
+			logger.error('Failed to open badge generator', e);
 			toast.error(m.genericToastError());
 		}
 	};
 
 	// What the person's badge shows, if they hold anything a badge could show.
 	const badgeSeat = $derived(
-		badgeSeatOf(
-			{ delegationMember, singleParticipant, conferenceSupervisor, teamMember },
-			{
+		badgeSeatOf({
+			roles: { delegationMember, singleParticipant, conferenceSupervisor, teamMember },
+			labels: {
 				countryName: getFullTranslatedCountryNameFromISO3Code,
 				supervisor: m.supervisor(),
 				team: m.teamBadge()
 			}
-		)
+		})
 	);
 
 	const badgeName = $derived(
-		formatNames(givenName ?? undefined, familyName ?? undefined, { familyNameUppercase: false })
+		formatNames({
+			givenName: givenName ?? undefined,
+			familyName: familyName ?? undefined,
+			options: { familyNameUppercase: false }
+		})
 	);
 
 	/** The person's nametag as the one row of a badge CSV. */
@@ -180,7 +197,12 @@
 		});
 		// The team is photographed anyway; a participant's own consent decides for them
 		const mediaConsentStatus = teamMember ? 'ALLOWED_ALL' : status?.mediaConsentStatus;
-		return [personBadge({ name: badgeName, pronouns, id: userId, mediaConsentStatus }, badgeSeat)];
+		return [
+			personBadge({
+				person: { name: badgeName, pronouns, id: userId, mediaConsentStatus },
+				seat: badgeSeat
+			})
+		];
 	};
 
 	let careNoteOpen = $state(false);
@@ -369,9 +391,13 @@
 		{/if}
 		<BadgeGeneratorLinks
 			badges={badgeRows}
-			filename="badge_{formatNames(givenName ?? undefined, familyName ?? undefined, {
-				givenNameFirst: false,
-				delimiter: '_'
+			filename="badge_{formatNames({
+				givenName: givenName ?? undefined,
+				familyName: familyName ?? undefined,
+				options: {
+					givenNameFirst: false,
+					delimiter: '_'
+				}
 			})}"
 			label={m.badgeCsvDownload()}
 			showHint

@@ -56,12 +56,12 @@ schemaBuilder.queryFields((t) => ({
 			offset: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadParticipantsPage(ctx, args.conferenceId);
+			await assertCanReadParticipantsPage({ ctx, conferenceId: args.conferenceId });
 			const limit = Math.min(Math.max(args.limit, 1), 1000);
 			const offset = Math.max(args.offset, 0);
 
 			const [result, count] = await Promise.all([
-				db.execute<{ user_id: string }>(participantsPageSql(args, limit, offset)),
+				db.execute<{ user_id: string }>(participantsPageSql({ args, limit, offset })),
 				db.execute<{ total: number }>(participantsCountSql(args))
 			]);
 

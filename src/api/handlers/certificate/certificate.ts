@@ -13,7 +13,7 @@ import { assertCanGetCertificate } from './certificatePermissions';
  * calling back into this app. The key pair is derived deterministically from a single secret so
  * it survives redeploys - rotating `CERTIFICATE_SECRET` invalidates every certificate issued.
  */
-const keyPair = generateSeededRsa(CERTIFICATE_SECRET, { bits: 2048 });
+const keyPair = generateSeededRsa({ seed: CERTIFICATE_SECRET, opts: { bits: 2048 } });
 
 const jwkPublicKey = exportJWK((await keyPair).publicKey).then((key) => {
 	key.alg = certificateAlg;
@@ -70,7 +70,7 @@ schemaBuilder.queryFields((t) => ({
 			userId: t.arg.id({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanGetCertificate(ctx, args.conferenceId, args.userId);
+			await assertCanGetCertificate({ ctx, conferenceId: args.conferenceId, userId: args.userId });
 
 			const status = await db.query.conferenceParticipant
 				.findFirst({

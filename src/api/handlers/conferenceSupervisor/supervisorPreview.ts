@@ -20,10 +20,13 @@ const placeOf = (school: PreviewSchool | null) => ({
  * Whose supervision a participant is about to accept, as the connect form shows it. `callerSchoolId`
  * is the school of the person looking, if they have one.
  */
-export function supervisorPreview(
-	supervisor: PreviewedSupervisor,
-	callerSchoolId: string | null | undefined
-) {
+export function supervisorPreview({
+	supervisor,
+	callerSchoolId
+}: {
+	supervisor: PreviewedSupervisor;
+	callerSchoolId: string | null | undefined;
+}) {
 	// The supervisor's own school.
 	const school = supervisor.participant?.school ?? null;
 	return {

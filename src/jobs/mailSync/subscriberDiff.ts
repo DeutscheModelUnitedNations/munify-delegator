@@ -32,10 +32,16 @@ import type {
  * Everything in this file is pure, the API calls live in `subscriberActions.ts`.
  */
 
-function ownAttribsMatch(subscriber: ListmonkSubscriber, state: ComputedSubscriberState) {
+function ownAttribsMatch({
+	subscriber,
+	state
+}: {
+	subscriber: ListmonkSubscriber;
+	state: ComputedSubscriberState;
+}) {
 	return (
-		deepEquals(subscriber.attribs?.userId, state.attribs.userId) &&
-		deepEquals(subscriber.attribs?.conferences, state.attribs.conferences)
+		deepEquals({ a: subscriber.attribs?.userId, b: state.attribs.userId }) &&
+		deepEquals({ a: subscriber.attribs?.conferences, b: state.attribs.conferences })
 	);
 }
 
@@ -44,13 +50,16 @@ function hasOwnAttribs(subscriber: ListmonkSubscriber) {
 }
 
 /** The attribs and name to write, if either is out of date. */
-function patchFor(
-	subscriber: ListmonkSubscriber,
-	state: ComputedSubscriberState
-): SubscriberPatch | undefined {
+function patchFor({
+	subscriber,
+	state
+}: {
+	subscriber: ListmonkSubscriber;
+	state: ComputedSubscriberState;
+}): SubscriberPatch | undefined {
 	const hasForeignLists = subscriber.lists.some((l) => !isManagedListName(l.name));
 	const nameOutdated = !hasForeignLists && subscriber.name !== state.formattedName;
-	if (!nameOutdated && ownAttribsMatch(subscriber, state)) return undefined;
+	if (!nameOutdated && ownAttribsMatch({ subscriber, state })) return undefined;
 
 	return {
 		...(nameOutdated && { name: state.formattedName }),
@@ -59,11 +68,15 @@ function patchFor(
 }
 
 /** What to do for a user who should be on at least one list. */
-export function planForUser(
-	state: ComputedSubscriberState,
-	subscriber: ListmonkSubscriber | undefined,
-	listNameToId: Map<string, number>
-): SubscriberAction | undefined {
+export function planForUser({
+	state,
+	subscriber,
+	listNameToId
+}: {
+	state: ComputedSubscriberState;
+	subscriber: ListmonkSubscriber | undefined;
+	listNameToId: Map<string, number>;
+}): SubscriberAction | undefined {
 	const desiredIds = new Set(
 		state.listNames
 			.map((name) => listNameToId.get(name))
@@ -87,7 +100,7 @@ export function planForUser(
 	);
 	const addListIds = [...desiredIds].filter((id) => !managedIds.has(id));
 	const removeListIds = [...managedIds].filter((id) => !desiredIds.has(id));
-	const patch = patchFor(subscriber, state);
+	const patch = patchFor({ subscriber, state });
 
 	if (addListIds.length === 0 && removeListIds.length === 0 && !patch) return undefined;
 
@@ -114,15 +127,21 @@ export function planRelease(subscriber: ListmonkSubscriber): SubscriberAction | 
  * Plans a batch of users. Every subscriber that is matched to a user is taken out of the map, so
  * that after the last batch the map holds exactly the subscribers no user claims.
  */
-export function planUserBatch(
-	users: MailSyncUser[],
-	subscriberMap: Map<string, ListmonkSubscriber>,
-	listNameToId: Map<string, number>,
-	plan: SyncPlan,
-	cutoff: Date
-): void {
+export function planUserBatch({
+	users,
+	subscriberMap,
+	listNameToId,
+	plan,
+	cutoff
+}: {
+	users: MailSyncUser[];
+	subscriberMap: Map<string, ListmonkSubscriber>;
+	listNameToId: Map<string, number>;
+	plan: SyncPlan;
+	cutoff: Date;
+}): void {
 	for (const user of users) {
-		const state = computeSubscriberState(user, cutoff);
+		const state = computeSubscriberState({ user, cutoff });
 
 		// Users without lists stay in the map and are released below like any unclaimed subscriber.
 		if (state.listNames.length === 0) {
@@ -134,7 +153,7 @@ export function planUserBatch(
 		const subscriber = subscriberMap.get(emailKey);
 		subscriberMap.delete(emailKey);
 
-		const action = planForUser(state, subscriber, listNameToId);
+		const action = planForUser({ state, subscriber, listNameToId });
 		if (action) {
 			plan.userActions.push(action);
 		} else {
@@ -144,7 +163,13 @@ export function planUserBatch(
 }
 
 /** Releases every subscriber left in the map after all users have been planned. */
-export function planReleases(subscriberMap: Map<string, ListmonkSubscriber>, plan: SyncPlan) {
+export function planReleases({
+	subscriberMap,
+	plan
+}: {
+	subscriberMap: Map<string, ListmonkSubscriber>;
+	plan: SyncPlan;
+}) {
 	for (const subscriber of subscriberMap.values()) {
 		const action = planRelease(subscriber);
 		if (action) plan.releases.push(action);

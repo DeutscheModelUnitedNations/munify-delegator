@@ -40,7 +40,13 @@
 		])
 	);
 
-	const participation = $derived(participationOf(myParticipation, undefined, conference.state));
+	const participation = $derived(
+		participationOf({
+			myParticipation,
+			supervisedStudents: undefined,
+			conferenceState: conference.state
+		})
+	);
 
 	/** What the caller is here, if anything. A supervisor's students are not worth a query on a card. */
 	const roleLabel = $derived(
@@ -55,7 +61,10 @@
 		!takesPart &&
 			!currentUser?.isAdmin &&
 			['OPEN', 'WAITING_LIST'].includes(
-				getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
+				getRegistrationStatus({
+					conferenceState: conference.state,
+					applicationDeadline: new Date(conference.applicationDeadline)
+				})
 			)
 	);
 

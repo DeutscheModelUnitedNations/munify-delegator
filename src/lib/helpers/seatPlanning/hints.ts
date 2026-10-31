@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { createFuzzySearch } from '#lib/components/tanStackTable/search';
 import { regionalGroups, type RegionalGroup, type UnMember } from './unMembers';
 
@@ -38,7 +39,13 @@ export function nationSeatCounts(committees: PlanningCommittee[]) {
 	return counts;
 }
 
-export function rolesOf(seatCounts: Map<string, number>, nonStateActors: PlanningNonStateActor[]) {
+export function rolesOf({
+	seatCounts,
+	nonStateActors
+}: {
+	seatCounts: Map<string, number>;
+	nonStateActors: PlanningNonStateActor[];
+}) {
 	const nations: Role[] = [...seatCounts]
 		.filter(([, size]) => size > 0)
 		.map(([id, size]) => ({ kind: 'nation', id, size }));
@@ -60,10 +67,13 @@ export function sizeHistogram(roles: Role[]) {
 }
 
 /** Seats per committee in the given order, with the committee's name and abbreviation */
-export function committeeSeatTotals(
-	committees: PlanningCommittee[],
-	info: { id: string; name: string; abbreviation: string }[]
-) {
+export function committeeSeatTotals({
+	committees,
+	info
+}: {
+	committees: PlanningCommittee[];
+	info: { id: string; name: string; abbreviation: string }[];
+}) {
 	const infoById = new Map(info.map((committee) => [committee.id, committee]));
 	return committees.map(({ id, nations, numOfSeatsPerDelegation }) => ({
 		id,
@@ -79,7 +89,7 @@ export function committeeSeatTotals(
  * Every delegation should be able to choose between at least `minRoles` roles of exactly its size.
  * Warns about every occurring size with fewer roles and suggests nations one seat away from it.
  */
-export function exactSizeWarnings(roles: Role[], minRoles = 3) {
+export function exactSizeWarnings({ roles, minRoles = 3 }: { roles: Role[]; minRoles?: number }) {
 	return sizeHistogram(roles)
 		.filter(({ count }) => count < minRoles)
 		.map(({ size, count }) => ({
@@ -100,13 +110,25 @@ export interface SizeLimits {
 }
 
 /** Whether a role of this size violates the limits; unseated nations (size 0) never do */
-export function isOutsideSizeLimits(size: number, { min, max }: SizeLimits) {
+export function isOutsideSizeLimits({
+	size,
+	limits: { min, max }
+}: {
+	size: number;
+	limits: SizeLimits;
+}) {
 	if (size === 0) return false;
 	return (min !== null && size < min) || (max !== null && size > max);
 }
 
 /** Per regional group: how many of its members hold at least one seat */
-export function seatedByGroup(members: UnMember[], seatCounts: Map<string, number>) {
+export function seatedByGroup({
+	members,
+	seatCounts
+}: {
+	members: UnMember[];
+	seatCounts: Map<string, number>;
+}) {
 	return regionalGroups.map((group) => {
 		const groupMembers = members.filter((member) => member.regionalGroup === group);
 		const seated = groupMembers.filter((member) => (seatCounts.get(member.alpha3Code) ?? 0) > 0);
@@ -119,16 +141,13 @@ export function seatedByGroup(members: UnMember[], seatCounts: Map<string, numbe
 	});
 }
 
-const parseLimit = (value: unknown) =>
-	typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+const sizeLimit = z.number().int().positive().nullable().catch(null);
+
+const sizeLimits = z.object({ min: sizeLimit, max: sizeLimit }).catch({ min: null, max: null });
 
 /** Size limits from untrusted input (browser storage, form fields); invalid values mean no limit */
 export function parseSizeLimits(value: unknown): SizeLimits {
-	if (!value || typeof value !== 'object') return { min: null, max: null };
-	return {
-		min: parseLimit('min' in value ? value.min : null),
-		max: parseLimit('max' in value ? value.max : null)
-	};
+	return sizeLimits.parse(value);
 }
 
 export interface SeatFilters {
@@ -146,15 +165,29 @@ interface FilterableRow {
 }
 
 /** The rows matching the search by name or ISO code, best match first; without one, all of them. */
-export function searchSeatRows<T extends FilterableRow>(rows: readonly T[], q: string | null) {
-	return createFuzzySearch(
+export function searchSeatRows<T extends FilterableRow>({
+	rows,
+	q
+}: {
+	rows: readonly T[];
+	q: string | null;
+}) {
+	return createFuzzySearch({
 		rows,
-		(row) => `${row.name} ${row.alpha2Code} ${row.alpha3Code}`
-	)(q ?? '');
+		textOf: (row) => `${row.name} ${row.alpha2Code} ${row.alpha3Code}`
+	})(q ?? '');
 }
 
 /** Whether a row of the states matrix passes the filters besides the search (`searchSeatRows`); `size` is its current seat count */
-export function matchesSeatFilters(row: FilterableRow, size: number, filters: SeatFilters) {
+export function matchesSeatFilters({
+	row,
+	size,
+	filters
+}: {
+	row: FilterableRow;
+	size: number;
+	filters: SeatFilters;
+}) {
 	return (
 		(!filters.group || row.regionalGroup === filters.group) &&
 		(!filters.noSeat || size === 0) &&
@@ -186,10 +219,13 @@ export interface PendingSeat {
 }
 
 /** Nations per committee as saved, with the not yet confirmed changes applied on top */
-export function seatsWithPending(
-	committees: { id: string; nations: { alpha3Code: string }[] }[],
-	pending: PendingSeat[]
-) {
+export function seatsWithPending({
+	committees,
+	pending
+}: {
+	committees: { id: string; nations: { alpha3Code: string }[] }[];
+	pending: PendingSeat[];
+}) {
 	const seats = new Map(
 		committees.map((committee) => [
 			committee.id,

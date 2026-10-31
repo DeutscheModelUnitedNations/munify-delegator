@@ -8,5 +8,8 @@ import type { RequestHandler } from './$types';
  * they are sent on to `next` - a path on this site, never another origin.
  */
 export const GET: RequestHandler = ({ url }) => {
-	redirect(302, sameSitePath(url.searchParams.get('next'), url.origin, '/dashboard'));
+	redirect(
+		302,
+		sameSitePath({ path: url.searchParams.get('next'), origin: url.origin, fallback: '/dashboard' })
+	);
 };

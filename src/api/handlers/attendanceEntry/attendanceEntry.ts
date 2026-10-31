@@ -25,7 +25,7 @@ import {
 	attendanceSessionPubsub,
 	conferenceParticipantPubsub
 } from '#api/pubsub';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
@@ -38,7 +38,7 @@ const AttendanceSessionRef = object({ table: 'attendanceSession' });
 /** The occasion as stored, trimmed; an empty one is refused. */
 function checkedOccasion(occasion: string) {
 	const trimmed = occasion.trim();
-	if (!trimmed) throw apiError('INVALID_INPUT', m.attendanceOccasionEmpty());
+	if (!trimmed) throw apiError({ code: 'INVALID_INPUT', message: m.attendanceOccasionEmpty() });
 	return trimmed;
 }
 query({ table: 'attendanceEntry' });
@@ -63,27 +63,33 @@ schemaBuilder.mutationFields((t) => ({
 			const occasion = checkedOccasion(args.occasion);
 			const surveyOptionIds = args.surveyOptionIds ?? [];
 			if (args.mode === 'RECORD' && surveyOptionIds.length > 0) {
-				throw apiError('INVALID_INPUT', m.sessionSurveyOptionsNeedCheck());
+				throw apiError({ code: 'INVALID_INPUT', message: m.sessionSurveyOptionsNeedCheck() });
 			}
-			await assertCanStartAttendanceSession(ctx, args.conferenceId, surveyOptionIds);
+			await assertCanStartAttendanceSession({
+				ctx,
+				conferenceId: args.conferenceId,
+				surveyOptionIds
+			});
 
-			await startSession(
-				{
+			await startSession({
+				values: {
 					id: args.id,
 					conferenceId: args.conferenceId,
 					occasion,
 					mode: args.mode,
 					createdById: callerId,
-					showOnCertificate: await certificateFlagOf(args.conferenceId, occasion)
+					showOnCertificate: await certificateFlagOf({ conferenceId: args.conferenceId, occasion })
 				},
 				surveyOptionIds
-			);
+			});
 			// A repeated start must find the session where it was made, not in another conference
-			await assertSessionOfConference(args.id, args.conferenceId);
+			await assertSessionOfConference({ sessionId: args.id, conferenceId: args.conferenceId });
 			attendanceSessionPubsub.created();
 
 			return db.query.attendanceSession
-				.findFirst(query(await queryAllowed(ctx.abilities.attendanceSession, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.attendanceSession, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -100,8 +106,12 @@ schemaBuilder.mutationFields((t) => ({
 			show: t.arg.boolean({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanStartAttendanceSession(ctx, args.conferenceId);
-			await setOccasionOnCertificate(args.conferenceId, args.occasion, args.show);
+			await assertCanStartAttendanceSession({ ctx, conferenceId: args.conferenceId });
+			await setOccasionOnCertificate({
+				conferenceId: args.conferenceId,
+				occasion: args.occasion,
+				show: args.show
+			});
 			attendanceSessionPubsub.updated();
 			return true;
 		}
@@ -116,8 +126,8 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const occasion = checkedOccasion(args.occasion);
-			const conferenceId = await assertCanEndAttendanceSession(ctx, args.id);
-			await renameSession(args.id, conferenceId, occasion);
+			const conferenceId = await assertCanEndAttendanceSession({ ctx, sessionId: args.id });
+			await renameSession({ sessionId: args.id, conferenceId, occasion });
 			attendanceSessionPubsub.updated(args.id);
 			return true;
 		}
@@ -136,8 +146,12 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const newOccasion = checkedOccasion(args.newOccasion);
-			await assertCanStartAttendanceSession(ctx, args.conferenceId);
-			await renameOccasion(args.conferenceId, args.occasion, newOccasion);
+			await assertCanStartAttendanceSession({ ctx, conferenceId: args.conferenceId });
+			await renameOccasion({
+				conferenceId: args.conferenceId,
+				from: args.occasion,
+				to: newOccasion
+			});
 			attendanceSessionPubsub.updated();
 			return true;
 		}
@@ -148,12 +162,17 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanEndAttendanceSession(ctx, args.id);
+			await assertCanEndAttendanceSession({ ctx, sessionId: args.id });
 
 			await db
 				.update(schema.attendanceSession)
 				.set({ endedAt: new Date() })
-				.where(whereRows(schema.attendanceSession, { id: args.id, endedAt: { isNull: true } }));
+				.where(
+					whereRows({
+						table: schema.attendanceSession,
+						filter: { id: args.id, endedAt: { isNull: true } }
+					})
+				);
 			attendanceSessionPubsub.updated(args.id);
 			return true;
 		}
@@ -170,25 +189,35 @@ schemaBuilder.mutationFields((t) => ({
 			accessCardId: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = await assertCanCreateAttendanceEntry(ctx, args);
+			const callerId = await assertCanCreateAttendanceEntry({ ctx, args });
 
-			const participantId = await ensureConferenceParticipant(db, args.conferenceId, args.userId);
+			const participantId = await ensureConferenceParticipant({
+				tx: db,
+				conferenceId: args.conferenceId,
+				userId: args.userId
+			});
 
 			const readEntry = async (id: string) =>
 				db.query.attendanceEntry
-					.findFirst(query(await queryAllowed(ctx.abilities.attendanceEntry, id)))
+					.findFirst(query(await queryAllowed({ ability: ctx.abilities.attendanceEntry, id })))
 					.then(assertFindFirstExists);
 
 			const accessCardId = args.accessCardId?.trim();
 			if (accessCardId) {
-				await storeSessionCard(args.sessionId, args.conferenceId, participantId, accessCardId);
+				await storeSessionCard({
+					sessionId: args.sessionId,
+					conferenceId: args.conferenceId,
+					statusId: participantId,
+					accessCardId
+				});
 				conferenceParticipantPubsub.updated(participantId);
 			}
 
 			// A repeated scan that brought a card has done its work by storing it
-			const scanned = await scanInSession(args.sessionId, participantId);
+			const scanned = await scanInSession({ sessionId: args.sessionId, statusId: participantId });
 			if (scanned && accessCardId) return readEntry(scanned.id);
-			if (scanned) throw apiError('ALREADY_SCANNED', m.alreadyScannedInSession());
+			if (scanned)
+				throw apiError({ code: 'ALREADY_SCANNED', message: m.alreadyScannedInSession() });
 
 			const created = await db
 				.insert(schema.attendanceEntry)
@@ -214,7 +243,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'attendanceEntry', args.id);
+			await deleteIfAllowed({ ctx, table: 'attendanceEntry', id: args.id });
 			attendanceEntryPubsub.removed();
 
 			return true;
@@ -244,7 +273,7 @@ schemaBuilder.queryFields((t) => ({
 			revision: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanStartAttendanceSession(ctx, args.conferenceId);
+			await assertCanStartAttendanceSession({ ctx, conferenceId: args.conferenceId });
 			return certificateOccasions(args.conferenceId);
 		}
 	})

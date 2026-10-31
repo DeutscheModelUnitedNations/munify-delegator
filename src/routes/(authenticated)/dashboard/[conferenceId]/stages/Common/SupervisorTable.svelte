@@ -94,7 +94,10 @@
 			</div>
 			<div class="flex min-w-0 flex-col">
 				<span class="text-lg font-bold">
-					{formatNames(preview.given_name ?? '', preview.family_name ?? '')}
+					{formatNames({
+						givenName: preview.given_name ?? '',
+						familyName: preview.family_name ?? ''
+					})}
 				</span>
 				{#if preview.school_name}
 					<span class="flex items-center gap-2 text-sm text-base-content/70">
@@ -128,7 +131,10 @@
 		<DelegationStatusTableWrapper withEmail>
 			{#each supervisors as supervisor (supervisor.id)}
 				<DelegationStatusTableEntry
-					name={formatNames(supervisor.user.givenName, supervisor.user.familyName)}
+					name={formatNames({
+						givenName: supervisor.user.givenName,
+						familyName: supervisor.user.familyName
+					})}
 					pronouns={supervisor.user.pronouns}
 					email={supervisor.user.email}
 				/>

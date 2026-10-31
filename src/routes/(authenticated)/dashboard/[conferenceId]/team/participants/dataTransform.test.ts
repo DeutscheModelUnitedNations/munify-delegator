@@ -50,8 +50,8 @@ const end = new Date('2026-03-15T18:00:00Z');
 
 describe('transformParticipants', () => {
 	test('maps a delegation member with a nation and committee', () => {
-		const [row] = transformParticipants(
-			{
+		const [row] = transformParticipants({
+			queryData: {
 				...empty,
 				delegationMembers: [
 					{
@@ -70,9 +70,9 @@ describe('transformParticipants', () => {
 					}
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(row).toMatchObject({
 			userId: 'a',
 			role: 'DELEGATION_MEMBER',
@@ -96,8 +96,8 @@ describe('transformParticipants', () => {
 	});
 
 	test('maps a delegation member with a non-state actor and without a committee', () => {
-		const [row] = transformParticipants(
-			{
+		const [row] = transformParticipants({
+			queryData: {
 				...empty,
 				delegationMembers: [
 					{
@@ -116,9 +116,9 @@ describe('transformParticipants', () => {
 					}
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(row).toMatchObject({
 			nationAlpha2Code: null,
 			nsaName: 'Greenpeace',
@@ -131,8 +131,8 @@ describe('transformParticipants', () => {
 	});
 
 	test('a delegation member without an assignment is not accepted', () => {
-		const [row] = transformParticipants(
-			{
+		const [row] = transformParticipants({
+			queryData: {
 				...empty,
 				delegationMembers: [
 					{
@@ -144,9 +144,9 @@ describe('transformParticipants', () => {
 					}
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(row.accepted).toBe(false);
 	});
 
@@ -155,8 +155,8 @@ describe('transformParticipants', () => {
 			delegations: QueryData['conferenceSupervisors'][number]['supervisedDelegationMembers'],
 			singles: QueryData['conferenceSupervisors'][number]['supervisedSingleParticipants']
 		) =>
-			transformParticipants(
-				{
+			transformParticipants({
+				queryData: {
 					...empty,
 					conferenceSupervisors: [
 						{
@@ -168,9 +168,9 @@ describe('transformParticipants', () => {
 						}
 					]
 				},
-				start,
-				end
-			)[0];
+				startConference: start,
+				endConference: end
+			})[0];
 
 		expect(supervisor([], [])).toMatchObject({
 			role: 'SUPERVISOR',
@@ -184,8 +184,8 @@ describe('transformParticipants', () => {
 	});
 
 	test('maps single participants with and without an assigned role', () => {
-		const rows = transformParticipants(
-			{
+		const rows = transformParticipants({
+			queryData: {
 				...empty,
 				singleParticipants: [
 					{
@@ -197,9 +197,9 @@ describe('transformParticipants', () => {
 					{ applied: true, school: null, assignedRole: null, user: user('p2') }
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(rows[0]).toMatchObject({
 			role: 'SINGLE_PARTICIPANT',
 			school: 'School',
@@ -216,8 +216,8 @@ describe('transformParticipants', () => {
 	});
 
 	test('people waiting without a registration are rows of their own, others carry the dates', () => {
-		const rows = transformParticipants(
-			{
+		const rows = transformParticipants({
+			queryData: {
 				...empty,
 				delegationMembers: [
 					{
@@ -249,9 +249,9 @@ describe('transformParticipants', () => {
 					}
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(rows.map((row) => [row.userId, row.role])).toEqual([
 			['rejected', 'DELEGATION_MEMBER'],
 			['waiting', 'WAITING_LIST']
@@ -270,8 +270,8 @@ describe('transformParticipants', () => {
 	});
 
 	test('someone seated from the waiting list keeps the date', () => {
-		const [row] = transformParticipants(
-			{
+		const [row] = transformParticipants({
+			queryData: {
 				...empty,
 				singleParticipants: [{ applied: true, school: null, assignedRole: null, user: user('p') }],
 				waitingListEntries: [
@@ -283,9 +283,9 @@ describe('transformParticipants', () => {
 					}
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(row).toMatchObject({
 			onWaitingList: false,
 			seatedFromWaitingListAt: new Date('2026-02-10T10:00:00Z')
@@ -293,11 +293,11 @@ describe('transformParticipants', () => {
 	});
 
 	test('team members are always accepted and keep their team role', () => {
-		const [row] = transformParticipants(
-			{ ...empty, teamMembers: [{ role: 'PROJECT_MANAGEMENT', user: user('t') }] },
-			start,
-			end
-		);
+		const [row] = transformParticipants({
+			queryData: { ...empty, teamMembers: [{ role: 'PROJECT_MANAGEMENT', user: user('t') }] },
+			startConference: start,
+			endConference: end
+		});
 		expect(row).toMatchObject({
 			role: 'TEAM_MEMBER',
 			teamRole: 'PROJECT_MANAGEMENT',
@@ -309,8 +309,8 @@ describe('transformParticipants', () => {
 		const adult = user('adult', { birthday: new Date('1990-01-01') });
 		const minor = user('minor', { birthday: new Date('2015-01-01') });
 		const problem = user('problem');
-		const rows = transformParticipants(
-			{
+		const rows = transformParticipants({
+			queryData: {
 				...empty,
 				teamMembers: [
 					{ role: 'MEMBER', user: adult },
@@ -330,9 +330,9 @@ describe('transformParticipants', () => {
 					status('problem', { mediaConsent: 'PROBLEM' })
 				]
 			},
-			start,
-			end
-		);
+			startConference: start,
+			endConference: end
+		});
 		expect(rows[0]).toMatchObject({
 			paymentStatus: 'DONE',
 			postalRegistrationStatus: 'DONE',
@@ -346,30 +346,30 @@ describe('transformParticipants', () => {
 	});
 
 	test('flags birthdays that fall within the conference', () => {
-		const rows = transformParticipants(
-			{
+		const rows = transformParticipants({
+			queryData: {
 				...empty,
 				teamMembers: [
 					{ role: 'MEMBER', user: user('during', { birthday: new Date(2000, 2, 13) }) },
 					{ role: 'MEMBER', user: user('outside', { birthday: new Date(2000, 5, 1) }) }
 				]
 			},
-			start.toISOString(),
-			end.toISOString()
-		);
+			startConference: start.toISOString(),
+			endConference: end.toISOString()
+		});
 		expect(rows[0].hasBirthdayDuringConference).toBe(true);
 		expect(rows[1].hasBirthdayDuringConference).toBe(false);
 	});
 
 	test('without conference dates there is no age and no birthday flag', () => {
-		const [row] = transformParticipants(
-			{
+		const [row] = transformParticipants({
+			queryData: {
 				...empty,
 				teamMembers: [{ role: 'MEMBER', user: user('x', { birthday: new Date(2000, 2, 13) }) }]
 			},
-			undefined,
-			undefined
-		);
+			startConference: undefined,
+			endConference: undefined
+		});
 		expect(row.ageAtConference).toBeNull();
 		expect(row.hasBirthdayDuringConference).toBe(false);
 	});

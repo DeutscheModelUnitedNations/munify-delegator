@@ -110,6 +110,8 @@ export default defineConfig({
 		// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
 		// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
 		include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+		// vitest blanks CSS, `?raw` imports included; the mails read their colours from the CI's
+		css: { include: [/corporate-identity\/dist\/.*\.css/] },
 		coverage: {
 			provider: 'v8',
 			// Its own directory: vitest empties it on every run, and coverage/ also holds the e2e

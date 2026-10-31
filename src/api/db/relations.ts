@@ -949,7 +949,12 @@ export const relations = defineRelations(schema, (r) => ({
 		user: r.one.user({
 			from: r.emailLog.userId,
 			to: r.user.id,
-			optional: false
+			alias: 'emailLogUser'
+		}),
+		sentBy: r.one.user({
+			from: r.emailLog.sentById,
+			to: r.user.id,
+			alias: 'emailLogSentBy'
 		})
 	},
 	waitingListEntry: {

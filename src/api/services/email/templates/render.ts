@@ -8,10 +8,13 @@ import type { Component } from 'svelte';
  * @param props - Props to pass to the component
  * @returns Object containing rendered HTML and plain text versions
  */
-export async function renderEmail<Props extends Record<string, unknown>>(
-	component: Component<Props>,
-	props: Props
-): Promise<{ html: string; text: string }> {
+export async function renderEmail<Props extends Record<string, unknown>>({
+	component,
+	props
+}: {
+	component: Component<Props>;
+	props: Props;
+}): Promise<{ html: string; text: string }> {
 	const { render } = new Renderer();
 	const html = await render(component, { props });
 	const text = toPlainText(html);

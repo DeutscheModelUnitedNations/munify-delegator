@@ -3,15 +3,15 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { distributeToOptions } from './surveyDistribution';
 
 /** Locks the options, so answers given at the same time cannot both take an option's last seat. */
-async function lockOptions(tx: Transaction, optionIds: string[]) {
+async function lockOptions({ tx, optionIds }: { tx: Transaction; optionIds: string[] }) {
 	await tx
 		.select({ id: schema.surveyOption.id })
 		.from(schema.surveyOption)
-		.where(whereRows(schema.surveyOption, { id: { in: optionIds } }))
+		.where(whereRows({ table: schema.surveyOption, filter: { id: { in: optionIds } } }))
 		.for('update');
 }
 
@@ -19,28 +19,35 @@ async function lockOptions(tx: Transaction, optionIds: string[]) {
  * Organizers may overfill an option and answer past the deadline; participants may not. The
  * person's own answer does not count against the option, so picking it again is never refused.
  */
-async function assertOptionOpen(
-	tx: Transaction,
-	option: { id: string; upperLimit: number; question: { deadline: Date } },
-	participantId: string
-) {
+async function assertOptionOpen({
+	tx,
+	option,
+	participantId
+}: {
+	tx: Transaction;
+	option: { id: string; upperLimit: number; question: { deadline: Date } };
+	participantId: string;
+}) {
 	if (option.question.deadline < new Date()) {
-		throw apiError('CONFLICT', m.questionDeadlinePassed());
+		throw apiError({ code: 'CONFLICT', message: m.questionDeadlinePassed() });
 	}
 	// 0 stands for no limit
 	if (!option.upperLimit) return;
-	await lockOptions(tx, [option.id]);
+	await lockOptions({ tx, optionIds: [option.id] });
 	const [{ taken }] = await tx
 		.select({ taken: count() })
 		.from(schema.surveyAnswer)
 		.where(
-			whereRows(schema.surveyAnswer, {
-				optionId: option.id,
-				conferenceParticipantId: { ne: participantId }
+			whereRows({
+				table: schema.surveyAnswer,
+				filter: {
+					optionId: option.id,
+					conferenceParticipantId: { ne: participantId }
+				}
 			})
 		);
 	if (taken >= option.upperLimit) {
-		throw apiError('CONFLICT', m.optionUpperLimitReached(option.upperLimit));
+		throw apiError({ code: 'CONFLICT', message: m.optionUpperLimitReached(option.upperLimit) });
 	}
 }
 
@@ -55,7 +62,7 @@ export async function loadAnswerOption(args: {
 	optionId: string;
 }) {
 	if (!args.id && (!args.questionId || !args.userId)) {
-		throw apiError('INVALID_INPUT', m.surveyAnswerNeedsLookup());
+		throw apiError({ code: 'INVALID_INPUT', message: m.surveyAnswerNeedsLookup() });
 	}
 
 	return db.query.surveyOption
@@ -70,17 +77,20 @@ export async function loadAnswerOption(args: {
  * Stores the answer an option stands for, updating `updatableAnswerId` when given or creating it.
  * Reports whether a row existed, which decides what the caller publishes.
  */
-export async function saveSurveyAnswer(
-	option: Awaited<ReturnType<typeof loadAnswerOption>>,
+export async function saveSurveyAnswer({
+	option,
+	answer
+}: {
+	option: Awaited<ReturnType<typeof loadAnswerOption>>;
 	answer: {
 		subjectParticipantId: string;
 		ignoresLimits: boolean;
 		updatableAnswerId: string | undefined;
-	}
-) {
+	};
+}) {
 	return db.transaction(async (tx) => {
 		if (!answer.ignoresLimits) {
-			await assertOptionOpen(tx, option, answer.subjectParticipantId);
+			await assertOptionOpen({ tx, option, participantId: answer.subjectParticipantId });
 		}
 
 		const answerId = answer.updatableAnswerId
@@ -88,7 +98,9 @@ export async function saveSurveyAnswer(
 					await tx
 						.update(schema.surveyAnswer)
 						.set({ optionId: option.id })
-						.where(whereRows(schema.surveyAnswer, { id: answer.updatableAnswerId }))
+						.where(
+							whereRows({ table: schema.surveyAnswer, filter: { id: answer.updatableAnswerId } })
+						)
 						.returning({ id: schema.surveyAnswer.id })
 				)[0].id
 			: (
@@ -138,16 +150,13 @@ export async function distributeUnansweredSurvey(questionId: string) {
 			columns: { id: true, upperLimit: true }
 		});
 		if (options.length === 0) return { optionIds: [], assigned: 0 };
-		await lockOptions(
-			tx,
-			options.map((option) => option.id)
-		);
+		await lockOptions({ tx, optionIds: options.map((option) => option.id) });
 
 		const [taken, unanswered] = await Promise.all([
 			tx
 				.select({ optionId: schema.surveyAnswer.optionId, taken: count() })
 				.from(schema.surveyAnswer)
-				.where(whereRows(schema.surveyAnswer, { questionId }))
+				.where(whereRows({ table: schema.surveyAnswer, filter: { questionId } }))
 				.groupBy(schema.surveyAnswer.optionId),
 			// The same people the results page lists as not having answered: those holding a seat.
 			tx.query.conferenceParticipant.findMany({
@@ -163,14 +172,14 @@ export async function distributeUnansweredSurvey(questionId: string) {
 			})
 		]);
 
-		const plan = distributeToOptions(
-			shuffled(unanswered.map((participant) => participant.id)),
-			options.map((option) => ({
+		const plan = distributeToOptions({
+			participantIds: shuffled(unanswered.map((participant) => participant.id)),
+			options: options.map((option) => ({
 				id: option.id,
 				upperLimit: option.upperLimit,
 				taken: taken.find((row) => row.optionId === option.id)?.taken ?? 0
 			}))
-		);
+		});
 		if (plan.length === 0) return { optionIds: options.map((o) => o.id), assigned: 0 };
 
 		const inserted = await tx

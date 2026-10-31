@@ -1,6 +1,7 @@
 import { config } from '../config';
 import { findMailSyncUsers, type MailSyncUser } from './mailSyncUsers';
 import { mailSyncUserWhere } from './window';
+import { logger } from '#lib/logger';
 
 /**
  * Processes all eligible users in batches using cursor-based pagination.
@@ -10,11 +11,15 @@ import { mailSyncUserWhere } from './window';
  * Eligible are users with a global opt-in or a participation in a conference that ended after
  * `cutoff` (see `window.ts`).
  */
-export async function processUsersInBatches(
-	cutoff: Date,
-	callback: (users: MailSyncUser[]) => void | Promise<void>,
-	batchSize: number = config.MAIL_SYNC_BATCH_SIZE
-): Promise<number> {
+export async function processUsersInBatches({
+	cutoff,
+	callback,
+	batchSize = config.MAIL_SYNC_BATCH_SIZE
+}: {
+	cutoff: Date;
+	callback: (users: MailSyncUser[]) => void | Promise<void>;
+	batchSize?: number;
+}): Promise<number> {
 	const eligible = mailSyncUserWhere(cutoff);
 	let totalProcessed = 0;
 	let lastId: string | undefined;
@@ -30,7 +35,7 @@ export async function processUsersInBatches(
 		await callback(batch);
 		totalProcessed += batch.length;
 		lastId = batch[batch.length - 1].id;
-		console.info(`  Processed user batch: ${totalProcessed} users so far`);
+		logger.debug('Processed user batch', { totalProcessed });
 
 		if (batch.length < batchSize) break;
 	}

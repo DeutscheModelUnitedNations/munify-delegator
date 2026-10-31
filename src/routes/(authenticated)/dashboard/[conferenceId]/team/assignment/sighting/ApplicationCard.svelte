@@ -30,7 +30,9 @@
 	/** A single participant is one person: their name and facts head the card instead of a table. */
 	const person = $derived(kind === 'single' ? application.people[0] : undefined);
 	const age = $derived(
-		person?.birthday ? getAgeAtConference(person.birthday, startConference) : undefined
+		person?.birthday
+			? getAgeAtConference({ birthday: person.birthday, startConference })
+			: undefined
 	);
 	const border = $derived(
 		review?.disqualified
@@ -55,7 +57,7 @@
 							class="link link-hover cursor-pointer"
 							onclick={() => openUserCard(person.id)}
 						>
-							{formatNames(person.givenName, person.familyName)}
+							{formatNames({ givenName: person.givenName, familyName: person.familyName })}
 						</button>
 						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
 							<span title={m.assignmentAge()}>{age ?? '?'}</span>

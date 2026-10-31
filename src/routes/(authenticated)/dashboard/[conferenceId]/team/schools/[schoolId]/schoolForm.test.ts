@@ -16,11 +16,14 @@ describe('schoolFormSchema', () => {
 describe('toUpdateSchoolArgs', () => {
 	test('clears empty fields and trims the rest', () => {
 		expect(
-			toUpdateSchoolArgs('s1', {
-				name: ' Gymnasium Kiel ',
-				country: null,
-				notes: ' kommt jedes Jahr ',
-				city: ''
+			toUpdateSchoolArgs({
+				id: 's1',
+				values: {
+					name: ' Gymnasium Kiel ',
+					country: null,
+					notes: ' kommt jedes Jahr ',
+					city: ''
+				}
 			})
 		).toMatchObject({
 			id: 's1',

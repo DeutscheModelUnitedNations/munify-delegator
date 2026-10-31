@@ -33,7 +33,7 @@ export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
 			.where(readable.singleParticipants)
 	]);
 
-	return schoolRows(members, singleParticipants);
+	return schoolRows({ members, singleParticipants });
 }
 
 /**
@@ -41,10 +41,13 @@ export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
  * line with them. A group found again keeps its row, and so the team's decision; groups that no
  * longer exist (merged, renamed, withdrawn) are removed.
  */
-export async function refreshSchoolSuggestions(
-	conferenceId: string,
-	readable: ReadableSchoolRegistrations
-) {
+export async function refreshSchoolSuggestions({
+	conferenceId,
+	readable
+}: {
+	conferenceId: string;
+	readable: ReadableSchoolRegistrations;
+}) {
 	const found = findSimilarSchools(await loadSchoolRows(readable)).map((suggestion) => ({
 		...suggestion,
 		key: suggestionKey(suggestion.variants.map((variant) => variant.schoolId))
@@ -61,7 +64,7 @@ export async function refreshSchoolSuggestions(
 		if (stale.length > 0) {
 			await tx
 				.delete(schema.schoolSuggestion)
-				.where(whereRows(schema.schoolSuggestion, { id: { in: stale } }));
+				.where(whereRows({ table: schema.schoolSuggestion, filter: { id: { in: stale } } }));
 		}
 
 		const idByKey = new Map(existing.map((row) => [row.key, row.id]));
@@ -84,15 +87,23 @@ export async function refreshSchoolSuggestions(
 			await tx
 				.update(schema.schoolSuggestion)
 				.set({ similarity: suggestion.similarity })
-				.where(whereRows(schema.schoolSuggestion, { id: idByKey.get(suggestion.key) ?? '' }));
+				.where(
+					whereRows({
+						table: schema.schoolSuggestion,
+						filter: { id: idByKey.get(suggestion.key) ?? '' }
+					})
+				);
 		}
 
 		// The counts change whenever registrations do, so every group's variants are rewritten.
 		const ids = [...idByKey.entries()].filter(([key]) => foundKeys.has(key)).map(([, id]) => id);
 		if (ids.length > 0) {
-			await tx
-				.delete(schema.schoolSuggestionVariant)
-				.where(whereRows(schema.schoolSuggestionVariant, { suggestionId: { in: ids } }));
+			await tx.delete(schema.schoolSuggestionVariant).where(
+				whereRows({
+					table: schema.schoolSuggestionVariant,
+					filter: { suggestionId: { in: ids } }
+				})
+			);
 			await tx.insert(schema.schoolSuggestionVariant).values(
 				found.flatMap((suggestion) =>
 					suggestion.variants.map((variant) => ({

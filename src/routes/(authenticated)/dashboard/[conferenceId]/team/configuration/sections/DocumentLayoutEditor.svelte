@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -57,7 +58,9 @@
 	const elements = elementsOf(kind);
 	const isLayoutElement = (id: string): id is LayoutElement => Object.hasOwn(elementLabel, id);
 
-	let layout = $state<Layout>(resolveDocumentLayout(kind, stored.documentLayouts));
+	let layout = $state<Layout>(
+		resolveDocumentLayout({ document: kind, stored: stored.documentLayouts })
+	);
 	let open = $state(true);
 	let canvas = $state<HTMLCanvasElement>();
 	let frame = $state<HTMLDivElement>();
@@ -75,10 +78,10 @@
 		const width = frameWidth;
 		if (!target || !templateUrl || width === 0) return;
 		rendering = true;
-		renderFirstPage(templateUrl, target, width)
+		renderFirstPage({ url: templateUrl, canvas: target, cssWidth: width })
 			.then((size) => (page = size))
 			.catch((error) => {
-				console.error('Could not draw the template:', error);
+				logger.error('Could not draw the template', error);
 				toast.error(m.certificateLayoutTemplateError());
 			})
 			.finally(() => (rendering = false));
@@ -94,7 +97,15 @@
 		start: Placement;
 	} | null = null;
 
-	function begin(event: PointerEvent, id: string, resize = false) {
+	function begin({
+		event,
+		id,
+		resize = false
+	}: {
+		event: PointerEvent;
+		id: string;
+		resize?: boolean;
+	}) {
 		const shape = elements.find((element) => element.id === id)?.spec.shape;
 		if (!shape) return;
 		event.preventDefault();
@@ -104,12 +115,27 @@
 		drag = { id, shape, resize, x: event.clientX, y: event.clientY, start };
 	}
 
+	/** Moving and resizing, for the elements that can be resized. */
+	function dragHandlers(id: string) {
+		return {
+			onmove: (event: PointerEvent) => begin({ event, id }),
+			onresize: (event: PointerEvent) => begin({ event, id, resize: true })
+		};
+	}
+
 	function follow(event: PointerEvent) {
 		if (!drag || !frame) return;
 		const rect = frame.getBoundingClientRect();
 		const dx = (event.clientX - drag.x) / rect.width;
 		const dy = (event.clientY - drag.y) / rect.height;
-		layout[drag.id] = dragPlacement(drag.shape, drag.start, drag.resize, dx, dy, aspect);
+		layout[drag.id] = dragPlacement({
+			shape: drag.shape,
+			start: drag.start,
+			resize: drag.resize,
+			dx,
+			dy,
+			aspect
+		});
 	}
 
 	function end(event: PointerEvent) {
@@ -119,7 +145,7 @@
 
 	function resizeFont(id: string, step: number) {
 		const placement = layout[id];
-		if ('size' in placement) layout[id] = resizeText(placement, step);
+		if ('size' in placement) layout[id] = resizeText({ start: placement, step });
 	}
 
 	let printing = $state(false);
@@ -128,7 +154,7 @@
 		try {
 			await testPrint($state.snapshot(layout));
 		} catch (error) {
-			console.error('Test print failed:', error);
+			logger.error('Test print failed', error);
 		} finally {
 			printing = false;
 		}
@@ -205,7 +231,7 @@
 					{align}
 					lines={sample(id)}
 					{scale}
-					onmove={(event) => begin(event, id)}
+					onmove={(event) => begin({ event, id })}
 				/>
 			{/each}
 			{#each boxes as { id, placement } (id)}
@@ -214,8 +240,7 @@
 					{placement}
 					lines={sample(id)}
 					{scale}
-					onmove={(event) => begin(event, id)}
-					onresize={(event) => begin(event, id, true)}
+					{...dragHandlers(id)}
 				/>
 			{/each}
 			{#each squares as { id, placement } (id)}
@@ -224,8 +249,7 @@
 					{placement}
 					captions={sample(id)}
 					{scale}
-					onmove={(event) => begin(event, id)}
-					onresize={(event) => begin(event, id, true)}
+					{...dragHandlers(id)}
 				/>
 			{/each}
 		</div>

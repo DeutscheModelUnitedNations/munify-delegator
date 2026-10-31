@@ -72,10 +72,15 @@ export interface ResolutionHeaderParts {
  * The header printed above a resolution, with generic conference names where the conference is
  * not known.
  */
-export function resolutionHeader(
-	conference: PaperConferenceInfo | null | undefined,
-	{ committee, topic, authoringDelegation, documentNumber }: ResolutionHeaderParts
-): ResolutionHeaderData {
+export function resolutionHeader({
+	conference,
+	committee,
+	topic,
+	authoringDelegation,
+	documentNumber
+}: ResolutionHeaderParts & {
+	conference: PaperConferenceInfo | null | undefined;
+}): ResolutionHeaderData {
 	return {
 		conferenceName: conference?.title ?? 'Model UN',
 		conferenceTitle: conference?.longTitle ?? conference?.title ?? 'Model United Nations',
@@ -90,12 +95,16 @@ export function resolutionHeader(
 }
 
 /** The header the resolution editor and the resolution export print above a working paper. */
-export function buildResolutionHeaderData(
-	paper: PaperIdentity,
-	conference: PaperConferenceInfo | null | undefined
-): ResolutionHeaderData | undefined {
+export function buildResolutionHeaderData({
+	paper,
+	conference
+}: {
+	paper: PaperIdentity;
+	conference: PaperConferenceInfo | null | undefined;
+}): ResolutionHeaderData | undefined {
 	if (paper.type !== 'WORKING_PAPER') return undefined;
-	return resolutionHeader(conference, {
+	return resolutionHeader({
+		conference,
 		committee: paper.agendaItem?.committee,
 		topic: paper.agendaItem?.title,
 		authoringDelegation: paperEntityName(paper.delegation),
@@ -122,10 +131,13 @@ function safelyValidateResolution(content: unknown): ReturnType<typeof validateR
  * Working papers are validated first; content that does not parse as a resolution leaves an empty
  * resolution in the editor and is handed back so the page can offer it as a download.
  */
-export function loadPaperIntoEditor(
-	paper: PaperIdentity,
-	latestContent: unknown
-): { validationError: string | null; invalidRawContent: unknown } {
+export function loadPaperIntoEditor({
+	paper,
+	latestContent
+}: {
+	paper: PaperIdentity;
+	latestContent: unknown;
+}): { validationError: string | null; invalidRawContent: unknown } {
 	const committeeName = paper.agendaItem?.committee.name ?? '';
 	if (paper.type === 'WORKING_PAPER') {
 		if (latestContent === undefined) {

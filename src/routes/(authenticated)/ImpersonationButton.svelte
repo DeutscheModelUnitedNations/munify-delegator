@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -38,7 +39,7 @@
 			await goto(resolve('dashboard'));
 			window.location.reload();
 		} catch (error) {
-			console.error('Failed to stop impersonation:', error);
+			logger.error('Failed to stop impersonation', error);
 		} finally {
 			isStoppingImpersonation = false;
 		}

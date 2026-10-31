@@ -3,7 +3,7 @@ import { offlineUserOf } from './offlineUser';
 
 describe('offlineUserOf', () => {
 	test('fills the missing parts of the parsed user with null, and the email with an empty string', () => {
-		expect(offlineUserOf({ sub: 'u1' }, {})).toEqual({
+		expect(offlineUserOf({ user: { sub: 'u1' }, claims: {} })).toEqual({
 			sub: 'u1',
 			email: '',
 			preferred_username: null,
@@ -28,16 +28,21 @@ describe('offlineUserOf', () => {
 			locale: 'de',
 			phone: '+49123'
 		};
-		expect(offlineUserOf(user, {})).toMatchObject(user);
+		expect(offlineUserOf({ user, claims: {} })).toMatchObject(user);
 	});
 
 	test('reads the provider claims that have the expected shape', () => {
 		const sso = [{ issuer: 'https://idp', identityId: 'x' }];
 		expect(
-			offlineUserOf(
-				{ sub: 'u1' },
-				{ password: true, mfa: ['totp'], sso_identities: sso, social_identities: ['github'] }
-			)
+			offlineUserOf({
+				user: { sub: 'u1' },
+				claims: {
+					password: true,
+					mfa: ['totp'],
+					sso_identities: sso,
+					social_identities: ['github']
+				}
+			})
 		).toMatchObject({
 			hasPassword: true,
 			mfaVerificationFactors: ['totp'],
@@ -48,15 +53,15 @@ describe('offlineUserOf', () => {
 
 	test('yields null for claims a provider reshapes', () => {
 		expect(
-			offlineUserOf(
-				{ sub: 'u1' },
-				{
+			offlineUserOf({
+				user: { sub: 'u1' },
+				claims: {
 					password: 'yes',
 					mfa: ['totp', 1],
 					sso_identities: [{ issuer: 'https://idp' }, null],
 					social_identities: 'github'
 				}
-			)
+			})
 		).toMatchObject({
 			hasPassword: null,
 			mfaVerificationFactors: null,

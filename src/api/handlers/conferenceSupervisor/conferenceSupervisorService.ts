@@ -10,8 +10,7 @@ import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
-import { codeNotFound } from '#api/services/errors/codeNotFound';
+import { apiError, codeNotFound } from '#api/services/errors';
 import { whereRows } from '#api/db/whereRows';
 import { supervisorPreview } from './supervisorPreview';
 
@@ -47,15 +46,23 @@ export async function registerSupervisor(
 	if (
 		await isParticipantOrTeamMember({ userId: args.subjectId, conferenceId: args.conferenceId })
 	) {
-		throw apiError('CONFLICT', m.supervisorUserHasOtherRole());
+		throw apiError({ code: 'CONFLICT', message: m.supervisorUserHasOtherRole() });
 	}
 
 	const connectionCode = await unusedConnectionCode();
 	// The person's row and the supervisor entry go in together, so a refused insert leaves neither.
 	const created = await db.transaction(async (tx) => {
-		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.subjectId);
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: args.conferenceId,
+			userId: args.subjectId
+		});
 		// The school they name is their own; the registration keeps none.
-		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: await resolveSchoolChoice({ choice: args, tx })
+		});
 		return tx
 			.insert(schema.conferenceSupervisor)
 			.values({
@@ -74,7 +81,13 @@ export async function registerSupervisor(
  * The supervisor holding the connection code. A code is unique across conferences; the conference
  * is still checked, so a code from another conference is not found.
  */
-export async function findSupervisorByConnectionCode(conferenceId: string, connectionCode: string) {
+export async function findSupervisorByConnectionCode({
+	conferenceId,
+	connectionCode
+}: {
+	conferenceId: string;
+	connectionCode: string;
+}) {
 	const supervisor = await db.query.conferenceSupervisor.findFirst({
 		where: {
 			connectionCode: normalizeEntryCode(connectionCode),
@@ -91,13 +104,16 @@ export async function findSupervisorByConnectionCode(conferenceId: string, conne
  * Returns the supervisor and the registration that is now supervised, so the caller can announce
  * them.
  */
-export async function connectParticipantToSupervisor(
-	supervisorId: string,
+export async function connectParticipantToSupervisor({
+	supervisorId,
+	participation
+}: {
+	supervisorId: string;
 	participation: {
 		foundDelegationMember?: { id: string; conferenceParticipantId: string } | null;
 		foundSingleParticipant?: { id: string; conferenceParticipantId: string } | null;
-	}
-) {
+	};
+}) {
 	const participantId =
 		participation.foundDelegationMember?.conferenceParticipantId ??
 		participation.foundSingleParticipant?.conferenceParticipantId;
@@ -120,11 +136,15 @@ export async function connectParticipantToSupervisor(
  * the person holds in the conference, so the caller can announce them; nothing when there was no
  * such person.
  */
-export async function disconnectParticipantFromSupervisor(
-	supervisorId: string,
-	conferenceId: string,
-	subjectId: string
-) {
+export async function disconnectParticipantFromSupervisor({
+	supervisorId,
+	conferenceId,
+	subjectId
+}: {
+	supervisorId: string;
+	conferenceId: string;
+	subjectId: string;
+}) {
 	const participant = await db.query.conferenceParticipant.findFirst({
 		where: { conferenceId, userId: subjectId },
 		columns: { id: true },
@@ -137,7 +157,9 @@ export async function disconnectParticipantFromSupervisor(
 
 	await db
 		.delete(schema.supervision)
-		.where(whereRows(schema.supervision, { a: supervisorId, b: participant.id }));
+		.where(
+			whereRows({ table: schema.supervision, filter: { a: supervisorId, b: participant.id } })
+		);
 
 	return {
 		participantId: participant.id,
@@ -150,11 +172,15 @@ export async function disconnectParticipantFromSupervisor(
  * Shows whose supervision a participant is about to accept, before they connect. The caller
  * checks first that they may look (`assertCanPreviewConferenceSupervisor`).
  */
-export async function previewSupervisorByCode(
-	conferenceId: string,
-	connectionCode: string,
-	callerId: string
-) {
+export async function previewSupervisorByCode({
+	conferenceId,
+	connectionCode,
+	callerId
+}: {
+	conferenceId: string;
+	connectionCode: string;
+	callerId: string;
+}) {
 	const supervisor = await db.query.conferenceSupervisor.findFirst({
 		where: {
 			connectionCode: normalizeEntryCode(connectionCode),
@@ -170,7 +196,7 @@ export async function previewSupervisorByCode(
 		where: { conferenceId, userId: callerId },
 		columns: { schoolId: true }
 	});
-	return supervisorPreview(supervisor, caller?.schoolId);
+	return supervisorPreview({ supervisor, callerSchoolId: caller?.schoolId });
 }
 
 /** Hands the supervisor a new connection code; the old one stops working. */
@@ -178,5 +204,5 @@ export async function rotateConnectionCode(supervisorId: string) {
 	await db
 		.update(schema.conferenceSupervisor)
 		.set({ connectionCode: await unusedConnectionCode() })
-		.where(whereRows(schema.conferenceSupervisor, { id: supervisorId }));
+		.where(whereRows({ table: schema.conferenceSupervisor, filter: { id: supervisorId } }));
 }

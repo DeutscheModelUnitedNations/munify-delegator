@@ -22,8 +22,8 @@
 			return;
 		}
 
-		downloadSemicolonCsv(
-			[
+		downloadSemicolonCsv({
+			rows: [
 				[m.firstName(), m.lastName(), m.email()],
 				...[...supervisors]
 					.sort((a, b) => (a.user.familyName ?? '').localeCompare(b.user.familyName ?? ''))
@@ -33,8 +33,8 @@
 						supervisor.user.email
 					])
 			],
-			`${fileNamePrefix(title)}_supervisors.csv`
-		);
+			filename: `${fileNamePrefix(title)}_supervisors.csv`
+		});
 	};
 </script>
 

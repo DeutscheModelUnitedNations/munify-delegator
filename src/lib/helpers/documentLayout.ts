@@ -41,7 +41,7 @@ const portrait = { x: (pt: number) => pt / A4.short, y: (pt: number) => pt / A4.
 const landscape = { x: (pt: number) => pt / A4.long, y: (pt: number) => pt / A4.short };
 
 /** A participant's name and birthday, the birthday `gap` points below, in the custom font. */
-const nameAndBirthday = (top: number, gap: number) =>
+const nameAndBirthday = ({ top, gap }: { top: number; gap: number }) =>
 	({
 		name: {
 			shape: 'text',
@@ -90,11 +90,11 @@ export const DOCUMENT_ELEMENTS = {
 			shape: 'square',
 			default: { x: portrait.x(A4.short - 40 - 44), y: portrait.y(100), size: portrait.x(44) }
 		},
-		...nameAndBirthday(320, 60)
+		...nameAndBirthday({ top: 320, gap: 60 })
 	},
-	guardianConsent: nameAndBirthday(180, 60),
+	guardianConsent: nameAndBirthday({ top: 180, gap: 60 }),
 	mediaConsent: {
-		...nameAndBirthday(225, 42),
+		...nameAndBirthday({ top: 225, gap: 42 }),
 		address: {
 			shape: 'text',
 			align: 'left',
@@ -149,17 +149,20 @@ export const elementsOf = <D extends LayoutDocument>(document: D) =>
 
 /** The default layout of a document. */
 export function defaultLayout<D extends LayoutDocument>(document: D): DocumentLayout<D> {
-	return resolveDocumentLayout(document, undefined);
+	return resolveDocumentLayout({ document, stored: undefined });
 }
 
 /**
  * A document's layout from what `conference.documentLayouts` holds: each element where the team
  * placed it, or its default when it was never placed or does not parse.
  */
-export function resolveDocumentLayout<D extends LayoutDocument>(
-	document: D,
-	stored: unknown
-): DocumentLayout<D> {
+export function resolveDocumentLayout<D extends LayoutDocument>({
+	document,
+	stored
+}: {
+	document: D;
+	stored: unknown;
+}): DocumentLayout<D> {
 	const ofDocument = z.record(z.string(), z.unknown()).safeParse(stored);
 	const placed = ofDocument.success
 		? z.record(z.string(), z.unknown()).safeParse(ofDocument.data[document])
@@ -169,49 +172,72 @@ export function resolveDocumentLayout<D extends LayoutDocument>(
 		const parsed = placementSchema[spec.shape].safeParse(placed?.success ? placed.data[id] : null);
 		layout[id] = parsed.success ? parsed.data : spec.default;
 	}
-	return toLayout(document, layout);
+	return toLayout({ document, layout });
 }
 
 /**
  * The resolved record as the document's layout type: built from the document's own specs above, so
  * it holds every element in the right shape.
  */
-function toLayout<D extends LayoutDocument>(_document: D, layout: object): DocumentLayout<D> {
+function toLayout<D extends LayoutDocument>({
+	layout
+}: {
+	/** Only fixes `D`. */
+	document: D;
+	layout: object;
+}): DocumentLayout<D> {
 	// TYPE-SAFETY-EXCEPTION: TypeScript cannot follow a record built by iterating a document's specs
 	// back to the mapped type; resolveDocumentLayout fills every element from its own spec's schema.
 	return layout as DocumentLayout<D>;
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = ({ value, min, max }: { value: number; min: number; max: number }) =>
+	Math.min(Math.max(value, min), max);
 /** Keeps a box of `size` inside the page when it is moved to `position`. */
-const clampToPage = (position: number, size: number) => clamp(position, 0, Math.max(0, 1 - size));
+const clampToPage = ({ position, size }: { position: number; size: number }) =>
+	clamp({ value: position, min: 0, max: Math.max(0, 1 - size) });
+
+type AnyPlacement = TextPlacement | BoxPlacement | SquarePlacement;
+
+/** A drag of `start` by `dx`/`dy`; `aspect` is the page's width over its height. */
+type PlacementDrag<P extends AnyPlacement> = {
+	shape: ElementSpec['shape'];
+	start: P;
+	dx: number;
+	dy: number;
+	aspect: number;
+};
 
 /**
  * Moves one placement by `dx`/`dy` (fractions of the page), kept on the page. `aspect` is the
  * page's width over its height, which a square's height depends on.
  */
-export function movePlacement<P extends TextPlacement | BoxPlacement | SquarePlacement>(
-	shape: ElementSpec['shape'],
-	start: P,
-	dx: number,
-	dy: number,
-	aspect: number
-): P {
+export function movePlacement<P extends AnyPlacement>({
+	shape,
+	start,
+	dx,
+	dy,
+	aspect
+}: PlacementDrag<P>): P {
 	if (shape === 'box' && 'width' in start) {
 		return {
 			...start,
-			x: clampToPage(start.x + dx, start.width),
-			y: clampToPage(start.y + dy, start.height)
+			x: clampToPage({ position: start.x + dx, size: start.width }),
+			y: clampToPage({ position: start.y + dy, size: start.height })
 		};
 	}
 	if (shape === 'square' && 'size' in start) {
 		return {
 			...start,
-			x: clampToPage(start.x + dx, start.size),
-			y: clampToPage(start.y + dy, start.size * aspect)
+			x: clampToPage({ position: start.x + dx, size: start.size }),
+			y: clampToPage({ position: start.y + dy, size: start.size * aspect })
 		};
 	}
-	return { ...start, x: clamp(start.x + dx, 0, 1), y: clamp(start.y + dy, 0, 1) };
+	return {
+		...start,
+		x: clamp({ value: start.x + dx, min: 0, max: 1 }),
+		y: clamp({ value: start.y + dy, min: 0, max: 1 })
+	};
 }
 
 /** Smallest box and square the editor lets an element shrink to. */
@@ -222,63 +248,100 @@ const MIN_BOX = 0.04;
  * bottom right corner by `dx`/`dy`, never past the page's edge. A text keeps its placement: its
  * size is its font's (`resizeText`).
  */
-export function resizePlacement<P extends TextPlacement | BoxPlacement | SquarePlacement>(
-	shape: ElementSpec['shape'],
-	start: P,
-	dx: number,
-	dy: number,
-	aspect: number
-): P {
+export function resizePlacement<P extends AnyPlacement>({
+	shape,
+	start,
+	dx,
+	dy,
+	aspect
+}: PlacementDrag<P>): P {
 	if (shape === 'box' && 'width' in start) {
 		return {
 			...start,
-			width: clamp(start.width + dx, MIN_BOX, 1 - start.x),
-			height: clamp(start.height + dy, MIN_BOX, 1 - start.y)
+			width: clamp({ value: start.width + dx, min: MIN_BOX, max: 1 - start.x }),
+			height: clamp({ value: start.height + dy, min: MIN_BOX, max: 1 - start.y })
 		};
 	}
 	if (shape === 'square' && 'size' in start) {
 		const grow = Math.max(dx, dy / aspect);
 		const fits = Math.min(1 - start.x, (1 - start.y) / aspect);
-		return { ...start, size: clamp(start.size + grow, MIN_BOX, fits) };
+		return { ...start, size: clamp({ value: start.size + grow, min: MIN_BOX, max: fits }) };
 	}
 	return start;
 }
 
 /** Where an element is while it is dragged (or resized from its corner) by `dx`/`dy`. */
-export function dragPlacement<P extends TextPlacement | BoxPlacement | SquarePlacement>(
-	shape: ElementSpec['shape'],
-	start: P,
-	resize: boolean,
-	dx: number,
-	dy: number,
-	aspect: number
-): P {
+export function dragPlacement<P extends TextPlacement | BoxPlacement | SquarePlacement>({
+	shape,
+	start,
+	resize,
+	dx,
+	dy,
+	aspect
+}: {
+	shape: ElementSpec['shape'];
+	start: P;
+	resize: boolean;
+	dx: number;
+	dy: number;
+	aspect: number;
+}): P {
 	return resize
-		? resizePlacement(shape, start, dx, dy, aspect)
-		: movePlacement(shape, start, dx, dy, aspect);
+		? resizePlacement({ shape, start, dx, dy, aspect })
+		: movePlacement({ shape, start, dx, dy, aspect });
 }
 
 /** A text's font size, a step at a time, within what a layout allows. */
-export const resizeText = (start: TextPlacement, step: number): TextPlacement => ({
+export const resizeText = ({
+	start,
+	step
+}: {
+	start: TextPlacement;
+	step: number;
+}): TextPlacement => ({
 	...start,
-	size: clamp(start.size + step, 5, 72)
+	size: clamp({ value: start.size + step, min: 5, max: 72 })
 });
 
 /** In a page's points, with `y` measured from the bottom as PDFs count. */
-export const textInPoints = (placement: TextPlacement, width: number, height: number) => ({
+export const textInPoints = ({
+	placement,
+	width,
+	height
+}: {
+	placement: TextPlacement;
+	width: number;
+	height: number;
+}) => ({
 	x: placement.x * width,
 	baseline: height - placement.y * height,
 	size: placement.size
 });
 
-export const boxInPoints = (placement: BoxPlacement, width: number, height: number) => ({
+export const boxInPoints = ({
+	placement,
+	width,
+	height
+}: {
+	placement: BoxPlacement;
+	width: number;
+	height: number;
+}) => ({
 	left: placement.x * width,
 	width: placement.width * width,
 	top: height - placement.y * height,
 	bottom: height - (placement.y + placement.height) * height
 });
 
-export function squareInPoints(placement: SquarePlacement, width: number, height: number) {
+export function squareInPoints({
+	placement,
+	width,
+	height
+}: {
+	placement: SquarePlacement;
+	width: number;
+	height: number;
+}) {
 	const side = placement.size * width;
 	return { left: placement.x * width, bottom: height - placement.y * height - side, side };
 }

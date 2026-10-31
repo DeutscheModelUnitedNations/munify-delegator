@@ -36,8 +36,11 @@
 		return {
 			get: (userId: string) => statuses.get(userId),
 			// a person without a status row was never counted as of age, so this keeps that
-			ofAge: (userId: string, birthday: Parameters<typeof ofAgeAtConference>[1]) =>
-				ofAgeAtConference(statuses.has(userId) ? startConference : undefined, birthday)
+			ofAge: (userId: string, birthday: Parameters<typeof ofAgeAtConference>[0]['dateOfBirth']) =>
+				ofAgeAtConference({
+					startConference: statuses.has(userId) ? startConference : undefined,
+					dateOfBirth: birthday
+				})
 		};
 	}
 
@@ -99,14 +102,17 @@
 	type ParticipantStatusData = Awaited<ReturnType<typeof fetchParticipantStatuses>>;
 
 	/** The payment and paperwork columns, and whether the person is of age. */
-	function statusColumns(
-		participantStatusData: ParticipantStatusData,
-		user: { id: string; birthday: Parameters<typeof ofAgeAtConference>[1] }
-	) {
-		return registrationStatusColumns(
-			participantStatusData.get(user.id),
-			participantStatusData.ofAge(user.id, user.birthday)
-		);
+	function statusColumns({
+		participantStatusData,
+		user
+	}: {
+		participantStatusData: ParticipantStatusData;
+		user: { id: string; birthday: Parameters<typeof ofAgeAtConference>[0]['dateOfBirth'] };
+	}) {
+		return registrationStatusColumns({
+			status: participantStatusData.get(user.id),
+			ofAge: participantStatusData.ofAge(user.id, user.birthday)
+		});
 	}
 
 	/** The header of `participantColumns`. */
@@ -121,19 +127,22 @@
 	];
 
 	/** One person's row after the leading columns: name, then `statusColumns`. */
-	function participantColumns(
-		participantStatusData: ParticipantStatusData,
+	function participantColumns({
+		participantStatusData,
+		user
+	}: {
+		participantStatusData: ParticipantStatusData;
 		user: {
 			id: string;
 			givenName: string | null;
 			familyName: string | null;
-			birthday: Parameters<typeof ofAgeAtConference>[1];
-		}
-	) {
+			birthday: Parameters<typeof ofAgeAtConference>[0]['dateOfBirth'];
+		};
+	}) {
 		return [
 			user.familyName ?? '',
 			user.givenName ?? '',
-			...statusColumns(participantStatusData, user)
+			...statusColumns({ participantStatusData, user })
 		];
 	}
 
@@ -156,11 +165,11 @@
 					.map((member) => [
 						nationName(delegation),
 						member.assignedCommittee?.abbreviation ?? '',
-						...participantColumns(participantStatusData, member.user)
+						...participantColumns({ participantStatusData, user: member.user })
 					])
 			);
 
-		downloadCSV(header, data, `RegistrationData_Delegation_${conferenceId}.csv`);
+		downloadCSV({ header, data, filename: `RegistrationData_Delegation_${conferenceId}.csv` });
 	};
 
 	const getConferenceRegistrationListNSAData = async () => {
@@ -178,11 +187,11 @@
 					.sort(compareByName)
 					.map((member) => [
 						nonStateActorName(nsa),
-						...participantColumns(participantStatusData, member.user)
+						...participantColumns({ participantStatusData, user: member.user })
 					])
 			);
 
-		downloadCSV(header, data, `RegistrationData_NSA_${conferenceId}.csv`);
+		downloadCSV({ header, data, filename: `RegistrationData_NSA_${conferenceId}.csv` });
 	};
 
 	const getConferenceRegistrationListSingleParticipantData = async () => {
@@ -200,10 +209,14 @@
 			.sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
 			.map((singleParticipant) => [
 				singleParticipant.assignedRole?.name ?? '',
-				...participantColumns(participantStatusData, singleParticipant.user)
+				...participantColumns({ participantStatusData, user: singleParticipant.user })
 			]);
 
-		downloadCSV(header, data, `RegistrationData_SingleParticipant_${conferenceId}.csv`);
+		downloadCSV({
+			header,
+			data,
+			filename: `RegistrationData_SingleParticipant_${conferenceId}.csv`
+		});
 	};
 
 	const getConferenceRegistrationListSupervisorsData = async () => {
@@ -224,10 +237,10 @@
 		const data = supervisors
 			.sort(compareByName)
 			.map((supervisor) =>
-				supervisorRow(supervisor, participantStatusData.get(supervisor.user.id))
+				supervisorRow({ supervisor, status: participantStatusData.get(supervisor.user.id) })
 			);
 
-		downloadCSV(header, data, `RegistrationData_Supervisors_${conferenceId}.csv`);
+		downloadCSV({ header, data, filename: `RegistrationData_Supervisors_${conferenceId}.csv` });
 	};
 </script>
 

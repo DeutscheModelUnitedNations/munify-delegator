@@ -17,45 +17,63 @@ const reviewed = { firstSubmittedAt: earlier, versions: [{ reviews: [] }, { revi
 
 describe('paperSubmissionChanges', () => {
 	test('marks the first submission', () => {
-		expect(paperSubmissionChanges(unreviewed, 'SUBMITTED', now)).toEqual({
+		expect(
+			paperSubmissionChanges({ paper: unreviewed, requestedStatus: 'SUBMITTED', now })
+		).toEqual({
 			status: 'SUBMITTED',
 			firstSubmittedAt: now
 		});
 	});
 
 	test('does not mark a draft as submitted', () => {
-		expect(paperSubmissionChanges(unreviewed, 'DRAFT', now)).toEqual({
+		expect(paperSubmissionChanges({ paper: unreviewed, requestedStatus: 'DRAFT', now })).toEqual({
 			status: 'DRAFT',
 			firstSubmittedAt: undefined
 		});
 	});
 
 	test('treats an update without a status as a submission, leaving the status alone', () => {
-		expect(paperSubmissionChanges(unreviewed, null, now)).toEqual({
+		expect(paperSubmissionChanges({ paper: unreviewed, requestedStatus: null, now })).toEqual({
 			status: undefined,
 			firstSubmittedAt: now
 		});
-		expect(paperSubmissionChanges(unreviewed, undefined, now).status).toBeUndefined();
+		expect(
+			paperSubmissionChanges({ paper: unreviewed, requestedStatus: undefined, now }).status
+		).toBeUndefined();
 	});
 
 	test('keeps the date of an earlier first submission', () => {
 		expect(
-			paperSubmissionChanges({ ...unreviewed, firstSubmittedAt: earlier }, 'SUBMITTED', now)
+			paperSubmissionChanges({
+				paper: { ...unreviewed, firstSubmittedAt: earlier },
+				requestedStatus: 'SUBMITTED',
+				now
+			})
 		).toEqual({ status: 'SUBMITTED', firstSubmittedAt: undefined });
 	});
 
 	test('counts a resubmission of a reviewed paper as revised', () => {
-		expect(paperSubmissionChanges(reviewed, 'SUBMITTED', now).status).toBe('REVISED');
-		expect(paperSubmissionChanges(reviewed, 'REVISED', now).status).toBe('REVISED');
+		expect(
+			paperSubmissionChanges({ paper: reviewed, requestedStatus: 'SUBMITTED', now }).status
+		).toBe('REVISED');
+		expect(
+			paperSubmissionChanges({ paper: reviewed, requestedStatus: 'REVISED', now }).status
+		).toBe('REVISED');
 	});
 
 	test('never lets a client claim a revision of an unreviewed paper', () => {
-		expect(paperSubmissionChanges(unreviewed, 'REVISED', now).status).toBe('SUBMITTED');
+		expect(
+			paperSubmissionChanges({ paper: unreviewed, requestedStatus: 'REVISED', now }).status
+		).toBe('SUBMITTED');
 	});
 
 	test('passes other statuses through', () => {
-		expect(paperSubmissionChanges(reviewed, 'ACCEPTED', now).status).toBe('ACCEPTED');
-		expect(paperSubmissionChanges(reviewed, 'DRAFT', now).status).toBe('DRAFT');
+		expect(
+			paperSubmissionChanges({ paper: reviewed, requestedStatus: 'ACCEPTED', now }).status
+		).toBe('ACCEPTED');
+		expect(paperSubmissionChanges({ paper: reviewed, requestedStatus: 'DRAFT', now }).status).toBe(
+			'DRAFT'
+		);
 	});
 });
 
@@ -68,7 +86,10 @@ describe('newPaperRows', () => {
 	};
 
 	test('stamps a paper that goes straight out as submitted', () => {
-		const rows = newPaperRows({ ...base, status: 'SUBMITTED', content: { text: 'x' } }, now);
+		const rows = newPaperRows({
+			args: { ...base, status: 'SUBMITTED', content: { text: 'x' } },
+			now
+		});
 		expect(rows.paper).toEqual({
 			authorParticipantId: 'author',
 			delegationId: 'del',
@@ -81,14 +102,16 @@ describe('newPaperRows', () => {
 	});
 
 	test('leaves a draft unstamped and unset fields to their defaults', () => {
-		const rows = newPaperRows({ ...base, status: null, agendaItemId: null }, now);
+		const rows = newPaperRows({ args: { ...base, status: null, agendaItemId: null }, now });
 		expect(rows.paper).toMatchObject({
 			agendaItemId: undefined,
 			status: undefined,
 			firstSubmittedAt: undefined
 		});
 		expect(rows.version).toEqual({ content: undefined, status: undefined, version: 1 });
-		expect(newPaperRows({ ...base, status: 'DRAFT', agendaItemId: 'a' }, now).paper).toMatchObject({
+		expect(
+			newPaperRows({ args: { ...base, status: 'DRAFT', agendaItemId: 'a' }, now }).paper
+		).toMatchObject({
 			agendaItemId: 'a',
 			status: 'DRAFT',
 			firstSubmittedAt: undefined
@@ -110,12 +133,12 @@ describe('reviewStatsFrom', () => {
 			review('me', 'p1'),
 			review('other', 'p3')
 		];
-		expect(reviewStatsFrom(reviews, 'me')).toEqual({
+		expect(reviewStatsFrom({ reviews, callerId: 'me' })).toEqual({
 			firstReviews: 1,
 			followUpReviews: 2,
 			totalReviews: 3
 		});
-		expect(reviewStatsFrom(reviews, 'other')).toEqual({
+		expect(reviewStatsFrom({ reviews, callerId: 'other' })).toEqual({
 			firstReviews: 2,
 			followUpReviews: 0,
 			totalReviews: 2
@@ -123,7 +146,7 @@ describe('reviewStatsFrom', () => {
 	});
 
 	test('has nothing for someone who never reviewed', () => {
-		expect(reviewStatsFrom([review('other', 'p1')], 'me')).toEqual({
+		expect(reviewStatsFrom({ reviews: [review('other', 'p1')], callerId: 'me' })).toEqual({
 			firstReviews: 0,
 			followUpReviews: 0,
 			totalReviews: 0

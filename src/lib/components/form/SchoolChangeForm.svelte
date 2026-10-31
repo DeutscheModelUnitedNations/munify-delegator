@@ -22,17 +22,17 @@
 	let { current, label, save, onSaved, requireTaintedToSubmit = false }: Props = $props();
 
 	const initial = untrack(() => current);
-	const form = mutationForm(
-		defaults(
+	const form = mutationForm({
+		initial: defaults(
 			{ schoolId: initial?.id ?? null, schoolName: initial?.name ?? '' },
 			zod4Client(schoolChoiceSchema)
 		),
-		zod4Client(schoolChoiceSchema),
-		async (choice) => {
+		validators: zod4Client(schoolChoiceSchema),
+		save: async (choice) => {
 			await save(choice);
 			onSaved?.();
 		}
-	);
+	});
 </script>
 
 <Form {form} {requireTaintedToSubmit}>

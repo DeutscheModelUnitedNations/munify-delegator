@@ -24,20 +24,20 @@
 	let { conferenceId, entryCode, headDelegateSchool }: Props = $props();
 
 	const initial = untrack(() => headDelegateSchool);
-	const form = mutationForm(
-		defaults(
+	const form = mutationForm({
+		initial: defaults(
 			{ schoolId: initial?.id ?? null, schoolName: initial?.name ?? '' },
 			zod4Client(schoolChoiceSchema)
 		),
-		zod4Client(schoolChoiceSchema),
-		async (school) => {
+		validators: zod4Client(schoolChoiceSchema),
+		save: async (school) => {
 			await client.mutate.createDelegationMember({
 				__args: { entryCode, conferenceId, ...school },
 				id: true
 			});
 			await goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 		}
-	);
+	});
 	const { submitting } = form;
 </script>
 

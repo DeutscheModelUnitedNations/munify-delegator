@@ -26,7 +26,7 @@ export const defaultTimestamps = {
  * these when all of those columns are indexed - index the whole set a table is searched by.
  * The `pg_trgm` extension has to exist before the migration creates one.
  */
-export function trigramIndex(name: string, column: AnyPgColumn) {
+export function trigramIndex({ name, column }: { name: string; column: AnyPgColumn }) {
 	return index(name).using('gin', sql`${column} gin_trgm_ops`);
 }
 
@@ -50,12 +50,17 @@ export const defaultIdAndCreatedAt = {
  * (cascading both ways unless `bOnDelete` says otherwise), unique on the pair and indexed on `b`.
  * The index names derive from the table name, as Prisma generated them.
  */
-export function implicitManyToMany<TName extends string>(
-	name: TName,
-	a: () => AnyPgColumn,
-	b: () => AnyPgColumn,
-	{ bOnDelete = 'cascade' }: { bOnDelete?: 'cascade' | 'restrict' } = {}
-) {
+export function implicitManyToMany<TName extends string>({
+	name,
+	a,
+	b,
+	bOnDelete = 'cascade'
+}: {
+	name: TName;
+	a: () => AnyPgColumn;
+	b: () => AnyPgColumn;
+	bOnDelete?: 'cascade' | 'restrict';
+}) {
 	return snakeCase.table(
 		name,
 		{

@@ -54,13 +54,25 @@ function exportPlace(place: SourcePlace): ExportPlace {
 	};
 }
 
-function trackNamesOf(entry: SourceEntry, tracks: readonly SourceTrack[]): string[] {
+function trackNamesOf({
+	entry,
+	tracks
+}: {
+	entry: SourceEntry;
+	tracks: readonly SourceTrack[];
+}): string[] {
 	return entry.tracks.flatMap(
 		(entryTrack) => tracks.find((t) => t.id === entryTrack.id)?.name ?? []
 	);
 }
 
-function exportEntry(entry: SourceEntry, tracks: readonly SourceTrack[]): ExportEntry {
+function exportEntry({
+	entry,
+	tracks
+}: {
+	entry: SourceEntry;
+	tracks: readonly SourceTrack[];
+}): ExportEntry {
 	return {
 		name: entry.name,
 		description: entry.description ?? null,
@@ -69,7 +81,7 @@ function exportEntry(entry: SourceEntry, tracks: readonly SourceTrack[]): Export
 		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
 		color: entry.color,
 		room: entry.room ?? null,
-		trackNames: trackNamesOf(entry, tracks),
+		trackNames: trackNamesOf({ entry, tracks }),
 		place: entry.place ? exportPlace(entry.place) : null
 	};
 }
@@ -86,6 +98,6 @@ export function toCalendarDayExport(day: CalendarDayExportSource): CalendarDayEx
 			description: t.description ?? null,
 			sortOrder: t.sortOrder
 		})),
-		entries: day.entries.map((e) => exportEntry(e, day.tracks))
+		entries: day.entries.map((e) => exportEntry({ entry: e, tracks: day.tracks }))
 	};
 }

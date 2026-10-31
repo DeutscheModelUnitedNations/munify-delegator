@@ -4,27 +4,27 @@ import { createEmailChanges, emailConfigChanges } from './emailChanges.svelte';
 describe('createEmailChanges', () => {
 	test('holds a switch until saved, and drops it when switched back', () => {
 		const changes = createEmailChanges();
-		changes.stage(
-			{ kind: 'POSTAL_RECEIVED', enabled: true, notifyExisting: true, openCount: 0 },
-			false
-		);
+		changes.stage({
+			change: { kind: 'POSTAL_RECEIVED', enabled: true, notifyExisting: true, openCount: 0 },
+			stored: false
+		});
 		expect(changes.enabledOf('POSTAL_RECEIVED', false)).toBe(true);
 		expect(changes.has('POSTAL_RECEIVED')).toBe(true);
 
-		changes.stage(
-			{ kind: 'POSTAL_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
-			false
-		);
+		changes.stage({
+			change: { kind: 'POSTAL_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
+			stored: false
+		});
 		expect(changes.has('POSTAL_RECEIVED')).toBe(false);
 		expect(changes.enabledOf('POSTAL_RECEIVED', false)).toBe(false);
 	});
 
 	test('saving clears the switches and counts the save', () => {
 		const changes = createEmailChanges();
-		changes.stage(
-			{ kind: 'PAYMENT_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
-			true
-		);
+		changes.stage({
+			change: { kind: 'PAYMENT_RECEIVED', enabled: false, notifyExisting: false, openCount: 0 },
+			stored: true
+		});
 		changes.saved();
 		expect(changes.list).toEqual([]);
 		expect(changes.revision).toBe(1);

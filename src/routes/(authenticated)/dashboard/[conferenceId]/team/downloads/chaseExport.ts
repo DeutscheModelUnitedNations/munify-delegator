@@ -88,11 +88,15 @@ function committeeMemberKey(dm: ExportDelegationMember) {
  * The chase import for a conference. Every nation becomes a representation with a fresh id from
  * `newId`, and delegates of the same nation in the same committee share one committee member.
  */
-export function buildChaseImport(
-	conferenceData: ChaseConferenceData,
-	nations: readonly ExportNation[],
-	newId: () => string
-) {
+export function buildChaseImport({
+	conferenceData,
+	nations,
+	newId
+}: {
+	conferenceData: ChaseConferenceData;
+	nations: readonly ExportNation[];
+	newId: () => string;
+}) {
 	// Build representation ID map first (needed by committeeMembers)
 	const representationAlpha3CodeToIdMap = new Map<string, string>();
 	const representations = [

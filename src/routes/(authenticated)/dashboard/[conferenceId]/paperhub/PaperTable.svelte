@@ -80,7 +80,7 @@
 		}
 	};
 
-	const handleRowClick = (e: MouseEvent, paperId: string) => {
+	const handleRowClick = ({ e, paperId }: { e: MouseEvent; paperId: string }) => {
 		if (e.ctrlKey || e.metaKey) {
 			open(paperHref(paperId), '_blank');
 		} else {
@@ -88,14 +88,14 @@
 		}
 	};
 
-	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
+	const handleRowAuxclick = ({ e, paperId }: { e: MouseEvent; paperId: string }) => {
 		if (e.button === 1) {
 			e.preventDefault();
 			open(paperHref(paperId), '_blank', 'noopener,noreferrer');
 		}
 	};
 
-	const handleRowKeypress = (e: KeyboardEvent, paperId: string) => {
+	const handleRowKeypress = ({ e, paperId }: { e: KeyboardEvent; paperId: string }) => {
 		if (e.key === 'Enter') {
 			goto(paperHref(paperId));
 		}
@@ -161,11 +161,11 @@
 			{#each papers as paper (paper.id)}
 				<tr
 					class="hover:bg-base-200/50 cursor-pointer"
-					onclick={(e) => handleRowClick(e, paper.id)}
-					onmousedown={(e) => handleRowAuxclick(e, paper.id)}
+					onclick={(e) => handleRowClick({ e, paperId: paper.id })}
+					onmousedown={(e) => handleRowAuxclick({ e, paperId: paper.id })}
 					role="link"
 					tabindex="0"
-					onkeypress={(e) => handleRowKeypress(e, paper.id)}
+					onkeypress={(e) => handleRowKeypress({ e, paperId: paper.id })}
 				>
 					<td>
 						{@render delegationCell(paper.delegation)}

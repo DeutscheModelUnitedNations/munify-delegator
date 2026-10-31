@@ -20,23 +20,33 @@ const roleBased = {
 
 describe('getCategoryColor', () => {
 	test('uses fixed colors for known categories and cycles role colors by index', () => {
-		expect(getCategoryColor('nationDelegates', 5)).toBe('#3b82f6');
-		expect(getCategoryColor('nsaParticipants', 0)).toBe('#8b5cf6');
-		expect(getCategoryColor('unassignedDelegationMembers', 0)).toBe('#6b7280');
-		expect(getCategoryColor('role-1', 0)).toBe('#10b981');
-		expect(getCategoryColor('role-7', 7)).toBe(getCategoryColor('role-1', 1));
+		expect(getCategoryColor({ categoryId: 'nationDelegates', index: 5 })).toBe('#3b82f6');
+		expect(getCategoryColor({ categoryId: 'nsaParticipants', index: 0 })).toBe('#8b5cf6');
+		expect(getCategoryColor({ categoryId: 'unassignedDelegationMembers', index: 0 })).toBe(
+			'#6b7280'
+		);
+		expect(getCategoryColor({ categoryId: 'role-1', index: 0 })).toBe('#10b981');
+		expect(getCategoryColor({ categoryId: 'role-7', index: 7 })).toBe(
+			getCategoryColor({ categoryId: 'role-1', index: 1 })
+		);
 	});
 });
 
 describe('getCategoryDisplayName', () => {
 	test('translates fixed categories and keeps role names', () => {
-		expect(getCategoryDisplayName('nationDelegates', 'x')).toBe(m.statsNationDelegates());
-		expect(getCategoryDisplayName('nsaParticipants', 'x')).toBe(m.statsNSAParticipants());
-		expect(getCategoryDisplayName('unassignedDelegationMembers', 'x')).toBe(
-			m.statsUnassignedDelegationMembers()
+		expect(getCategoryDisplayName({ categoryId: 'nationDelegates', categoryName: 'x' })).toBe(
+			m.statsNationDelegates()
 		);
-		expect(getCategoryDisplayName('unassigned', 'x')).toBe(m.statsUnassigned());
-		expect(getCategoryDisplayName('role-1', 'Press')).toBe('Press');
+		expect(getCategoryDisplayName({ categoryId: 'nsaParticipants', categoryName: 'x' })).toBe(
+			m.statsNSAParticipants()
+		);
+		expect(
+			getCategoryDisplayName({ categoryId: 'unassignedDelegationMembers', categoryName: 'x' })
+		).toBe(m.statsUnassignedDelegationMembers());
+		expect(getCategoryDisplayName({ categoryId: 'unassigned', categoryName: 'x' })).toBe(
+			m.statsUnassigned()
+		);
+		expect(getCategoryDisplayName({ categoryId: 'role-1', categoryName: 'Press' })).toBe('Press');
 	});
 });
 
@@ -105,25 +115,43 @@ describe('distributionChartData', () => {
 	};
 
 	test('needs registrations', () => {
-		expect(distributionChartData(undefined, () => 1)).toEqual([]);
-		expect(distributionChartData({ registered: null }, () => 1)).toEqual([]);
+		expect(distributionChartData({ stats: undefined, filteredValue: () => 1 })).toEqual([]);
+		expect(distributionChartData({ stats: { registered: null }, filteredValue: () => 1 })).toEqual(
+			[]
+		);
 	});
 
 	test('counts each group under the filter', () => {
-		const applied = distributionChartData({ registered, roleBased }, (object, roles, entity) =>
-			filteredStatValue('applied', object, roles, entity)
-		);
+		const applied = distributionChartData({
+			stats: { registered, roleBased },
+			filteredValue: ({ object, roleBasedData, entityType }) =>
+				filteredStatValue({ filter: 'applied', object, roleBasedData, entityType })
+		});
 		expect(applied.map((d) => d.value)).toEqual([6, 2, 2]);
-		const withRole = distributionChartData({ registered, roleBased }, (object, roles, entity) =>
-			filteredStatValue('appliedWithRole', object, roles, entity)
-		);
+		const withRole = distributionChartData({
+			stats: { registered, roleBased },
+			filteredValue: ({ object, roleBasedData, entityType }) =>
+				filteredStatValue({
+					filter: 'appliedWithRole',
+					object,
+					roleBasedData,
+					entityType
+				})
+		});
 		expect(withRole.map((d) => d.value)).toEqual([3, 2, 2]);
 	});
 
 	test('counts a missing value as zero', () => {
-		const result = distributionChartData({ registered, roleBased: null }, (object, roles, entity) =>
-			filteredStatValue('appliedWithRole', object, roles, entity)
-		);
+		const result = distributionChartData({
+			stats: { registered, roleBased: null },
+			filteredValue: ({ object, roleBasedData, entityType }) =>
+				filteredStatValue({
+					filter: 'appliedWithRole',
+					object,
+					roleBasedData,
+					entityType
+				})
+		});
 		expect(result.map((d) => d.value)).toEqual([0, 0, 2]);
 	});
 });

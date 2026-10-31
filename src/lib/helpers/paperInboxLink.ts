@@ -13,13 +13,16 @@
  * @param user.email - The email address of the user.
  * @returns A string representing the URL with appended and encoded user parameters.
  */
-export default function generatePaperInboxLinkWithParams(
-	baseLink: string,
+export default function generatePaperInboxLinkWithParams({
+	baseLink,
+	user
+}: {
+	baseLink: string;
 	user: {
 		sub: string;
 		email: string;
-	}
-) {
+	};
+}) {
 	const extensions = `userId=${encodeURIComponent(user.sub)}&email=${encodeURIComponent(user.email)}`;
 	return `${baseLink}?${extensions}`;
 }

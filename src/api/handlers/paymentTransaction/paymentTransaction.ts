@@ -35,21 +35,20 @@ schemaBuilder.mutationFields((t) => ({
 				.findFirst({ where: { id: args.conferenceId } })
 				.then(assertFindFirstExists);
 			const { payerParticipantId, coveredParticipantIds } = await assertCanCreatePaymentTransaction(
-				ctx,
-				args
+				{ ctx, args }
 			);
 
-			const id = await createPaymentTransaction(
+			const id = await createPaymentTransaction({
 				conference,
 				payerParticipantId,
-				coveredParticipantIds
-			);
+				paymentFor: coveredParticipantIds
+			});
 
 			paymentTransactionPubsub.created();
 			userReferenceInPaymentTransactionPubsub.created();
 
 			return db.query.paymentTransaction
-				.findFirst(query(await queryAllowed(ctx.abilities.paymentTransaction, id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.paymentTransaction, id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -62,15 +61,21 @@ schemaBuilder.mutationFields((t) => ({
 			recievedAt: t.arg({ type: 'DateTime' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const transaction = await assertCanUpdatePaymentTransaction(ctx, args.id);
+			const transaction = await assertCanUpdatePaymentTransaction({ ctx, id: args.id });
 
-			await applyPaymentStatus(transaction, args.assignedStatus, args.recievedAt);
+			await applyPaymentStatus({
+				transaction,
+				assignedStatus: args.assignedStatus,
+				recievedAt: args.recievedAt
+			});
 
 			paymentTransactionPubsub.updated(args.id);
 			conferenceParticipantPubsub.updated();
 
 			return db.query.paymentTransaction
-				.findFirst(query(await queryAllowed(ctx.abilities.paymentTransaction, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.paymentTransaction, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})

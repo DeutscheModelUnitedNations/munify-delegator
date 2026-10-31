@@ -33,7 +33,13 @@ export function isValidManualTargets(targets: number[]) {
 }
 
 /** The weights a committee is compared to; unusable manual targets fall back to the UN members */
-export function baselineWeights(baseline: RegionalBaseline, manualTargets: number[]) {
+export function baselineWeights({
+	baseline,
+	manualTargets
+}: {
+	baseline: RegionalBaseline;
+	manualTargets: number[];
+}) {
 	if (baseline !== 'MANUAL') return baselineTemplates[baseline];
 	return isValidManualTargets(manualTargets) ? manualTargets : baselineTemplates.UN_MEMBERS;
 }
@@ -54,8 +60,13 @@ const MIN_DELEGATION_SIZE = 2;
 export const canGainSeat = (delegationSize: number) => delegationSize >= MIN_DELEGATION_SIZE - 1;
 
 /** A seat may only be taken where the delegation keeps at least `MIN_DELEGATION_SIZE` seats */
-export const canGiveUpSeat = (delegationSize: number, seatsPerDelegation: number) =>
-	delegationSize - seatsPerDelegation >= MIN_DELEGATION_SIZE;
+export const canGiveUpSeat = ({
+	delegationSize,
+	seatsPerDelegation
+}: {
+	delegationSize: number;
+	seatsPerDelegation: number;
+}) => delegationSize - seatsPerDelegation >= MIN_DELEGATION_SIZE;
 
 export interface GroupDeviation {
 	group: RegionalGroup;
@@ -72,17 +83,24 @@ export interface GroupDeviation {
  * for, how many seats would have to move to match it, and which states could take part in the
  * recommended transfer (see `canGainSeat` and `canGiveUpSeat`).
  */
-export function regionalDeviations(
-	committees: BaselineCommittee[],
-	members: UnMember[],
-	seatCounts: Map<string, number>
-) {
+export function regionalDeviations({
+	committees,
+	members,
+	seatCounts
+}: {
+	committees: BaselineCommittee[];
+	members: UnMember[];
+	seatCounts: Map<string, number>;
+}) {
 	const groupOf = new Map(members.map((member) => [member.alpha3Code, member.regionalGroup]));
 
 	return committees.map((committee) => {
 		const nations = committee.nations.filter((nation) => groupOf.has(nation));
 		const seats = nations.length * committee.numOfSeatsPerDelegation;
-		const weights = baselineWeights(committee.regionalBaseline, committee.regionalBaselineTargets);
+		const weights = baselineWeights({
+			baseline: committee.regionalBaseline,
+			manualTargets: committee.regionalBaselineTargets
+		});
 		const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
 
 		const groups: GroupDeviation[] = regionalGroups.map((group, index) => {
@@ -93,7 +111,10 @@ export function regionalDeviations(
 			return { group, actual, target, deviation: actual - target };
 		});
 
-		const seatsToMove = balancingSeats(groups, committee.numOfSeatsPerDelegation);
+		const seatsToMove = balancingSeats({
+			groups,
+			seatsPerDelegation: committee.numOfSeatsPerDelegation
+		});
 		const mostMissing = groups.reduce((worst, group) =>
 			group.deviation < worst.deviation ? group : worst
 		);
@@ -113,14 +134,20 @@ export function regionalDeviations(
 						.sort((a, b) => sizeOf(a) - sizeOf(b))
 				: [];
 
-		const recommendation = transferRecommendation(groups, committee.numOfSeatsPerDelegation);
+		const recommendation = transferRecommendation({
+			groups,
+			seatsPerDelegation: committee.numOfSeatsPerDelegation
+		});
 		// the giving group's seated states, largest delegations first: losing a seat hurts them least
 		const removals = recommendation
 			? nations
 					.filter(
 						(nation) =>
 							groupOf.get(nation) === recommendation.from.group &&
-							canGiveUpSeat(sizeOf(nation), committee.numOfSeatsPerDelegation)
+							canGiveUpSeat({
+								delegationSize: sizeOf(nation),
+								seatsPerDelegation: committee.numOfSeatsPerDelegation
+							})
 					)
 					.sort((a, b) => sizeOf(b) - sizeOf(a))
 			: [];
@@ -144,7 +171,7 @@ export function regionalDeviations(
  * `seats` (largest remainder). Without seats the weights themselves are returned, so the result
  * is always usable as manual targets.
  */
-export function proportionalTargets(weights: number[], seats: number) {
+export function proportionalTargets({ weights, seats }: { weights: number[]; seats: number }) {
 	if (seats <= 0) return [...weights];
 	const total = weights.reduce((sum, weight) => sum + weight, 0);
 	const exact = weights.map((weight) => (weight / total) * seats);
@@ -185,7 +212,13 @@ const MIN_IMPROVEMENT = 0.5;
  * least one). Only recommended if it brings the committee as a whole noticeably closer to its
  * baseline (`MIN_IMPROVEMENT`).
  */
-function bestTransfer(groups: GroupDeviation[], seatsPerDelegation: number) {
+function bestTransfer({
+	groups,
+	seatsPerDelegation
+}: {
+	groups: GroupDeviation[];
+	seatsPerDelegation: number;
+}) {
 	const from = groups.reduce((max, group) => (group.deviation > max.deviation ? group : max));
 	const to = groups.reduce((min, group) => (group.deviation < min.deviation ? group : min));
 	const delegations = Math.max(
@@ -206,12 +239,18 @@ function bestTransfer(groups: GroupDeviation[], seatsPerDelegation: number) {
  * Seats that following the recommendations one after another would move until no transfer of
  * whole delegations brings the committee closer to its baseline. 0 means balanced.
  */
-export function balancingSeats(groups: GroupDeviation[], seatsPerDelegation: number) {
+export function balancingSeats({
+	groups,
+	seatsPerDelegation
+}: {
+	groups: GroupDeviation[];
+	seatsPerDelegation: number;
+}) {
 	let seats = 0;
 	let current = groups;
 	// every transfer strictly lowers the total deviation; the cap only guards against surprises
 	for (let step = 0; step < 100; step++) {
-		const transfer = bestTransfer(current, seatsPerDelegation);
+		const transfer = bestTransfer({ groups: current, seatsPerDelegation });
 		if (!transfer) break;
 		seats += transfer.seats;
 		current = transfer.after;
@@ -219,16 +258,19 @@ export function balancingSeats(groups: GroupDeviation[], seatsPerDelegation: num
 	return seats;
 }
 
-export function transferRecommendation(
-	groups: GroupDeviation[],
-	seatsPerDelegation: number
-): TransferRecommendation | undefined {
-	const transfer = bestTransfer(groups, seatsPerDelegation);
+export function transferRecommendation({
+	groups,
+	seatsPerDelegation
+}: {
+	groups: GroupDeviation[];
+	seatsPerDelegation: number;
+}): TransferRecommendation | undefined {
+	const transfer = bestTransfer({ groups, seatsPerDelegation });
 	if (!transfer) return undefined;
 	return {
 		from: transfer.from,
 		to: transfer.to,
 		seats: transfer.seats,
-		seatsToMoveAfter: balancingSeats(transfer.after, seatsPerDelegation)
+		seatsToMoveAfter: balancingSeats({ groups: transfer.after, seatsPerDelegation })
 	};
 }

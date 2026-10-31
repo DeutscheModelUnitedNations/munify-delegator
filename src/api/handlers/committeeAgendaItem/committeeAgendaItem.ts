@@ -27,7 +27,7 @@ schemaBuilder.mutationFields((t) => ({
 			teaserText: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateAgendaItem(ctx, args.committeeId);
+			await assertCanCreateAgendaItem({ ctx, committeeId: args.committeeId });
 
 			const created = await db
 				.insert(schema.committeeAgendaItem)
@@ -42,7 +42,9 @@ schemaBuilder.mutationFields((t) => ({
 			committeeAgendaItemPubsub.created();
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.committeeAgendaItem, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -55,16 +57,18 @@ schemaBuilder.mutationFields((t) => ({
 			teaserText: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateAgendaItem(ctx, args.id);
+			await assertCanUpdateAgendaItem({ ctx, id: args.id });
 			await db
 				.update(schema.committeeAgendaItem)
 				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
-				.where(whereRows(schema.committeeAgendaItem, { id: args.id }));
+				.where(whereRows({ table: schema.committeeAgendaItem, filter: { id: args.id } }));
 
 			committeeAgendaItemPubsub.updated(args.id);
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.committeeAgendaItem, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -73,7 +77,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'committeeAgendaItem', args.id);
+			await deleteIfAllowed({ ctx, table: 'committeeAgendaItem', id: args.id });
 			committeeAgendaItemPubsub.removed();
 
 			return true;
@@ -87,17 +91,24 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: reviewHelpStatusEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanSetAgendaItemReviewHelpStatus(ctx, args.agendaItemId);
+			await assertCanSetAgendaItemReviewHelpStatus({ ctx, agendaItemId: args.agendaItemId });
 
 			await db
 				.update(schema.committeeAgendaItem)
 				.set({ reviewHelpStatus: args.status })
-				.where(whereRows(schema.committeeAgendaItem, { id: args.agendaItemId }));
+				.where(whereRows({ table: schema.committeeAgendaItem, filter: { id: args.agendaItemId } }));
 
 			committeeAgendaItemPubsub.updated(args.agendaItemId);
 
 			return db.query.committeeAgendaItem
-				.findFirst(query(await queryAllowed(ctx.abilities.committeeAgendaItem, args.agendaItemId)))
+				.findFirst(
+					query(
+						await queryAllowed({
+							ability: ctx.abilities.committeeAgendaItem,
+							id: args.agendaItemId
+						})
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})

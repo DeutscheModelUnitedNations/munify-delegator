@@ -34,37 +34,51 @@ describe('isPaperHubView', () => {
 
 describe('paperHubAccess', () => {
 	test('nobody without a participation or roles', () => {
-		expect(paperHubAccess(undefined, noRoles)).toEqual(none);
+		expect(paperHubAccess({ participation: undefined, roles: noRoles })).toEqual(none);
 	});
 
 	test('a delegation member is a paper author', () => {
-		expect(paperHubAccess({ ...noParticipation, delegationMember: {} }, noRoles)).toEqual(author);
+		expect(
+			paperHubAccess({
+				participation: { ...noParticipation, delegationMember: {} },
+				roles: noRoles
+			})
+		).toEqual(author);
 	});
 
 	test('a single participant is not one when also a delegation member', () => {
-		expect(paperHubAccess({ ...noParticipation, singleParticipant: {} }, noRoles)).toEqual(single);
 		expect(
-			paperHubAccess({ ...noParticipation, singleParticipant: {}, delegationMember: {} }, noRoles)
-				.isSingleParticipant
+			paperHubAccess({
+				participation: { ...noParticipation, singleParticipant: {} },
+				roles: noRoles
+			})
+		).toEqual(single);
+		expect(
+			paperHubAccess({
+				participation: { ...noParticipation, singleParticipant: {}, delegationMember: {} },
+				roles: noRoles
+			}).isSingleParticipant
 		).toBe(false);
 	});
 
 	test('a supervisor needs supervised delegations to get the supervisor view', () => {
-		const access = paperHubAccess(
-			{ ...noParticipation, supervisor: {} },
-			{ ...noRoles, supervisor: {} }
-		);
+		const access = paperHubAccess({
+			participation: { ...noParticipation, supervisor: {} },
+			roles: { ...noRoles, supervisor: {} }
+		});
 		expect(access).toEqual({ ...none, isParticipant: true });
 		expect(
-			paperHubAccess(
-				{ ...noParticipation, supervisor: {} },
-				{ ...noRoles, supervisor: {}, supervisedDelegationIds: ['d'] }
-			)
+			paperHubAccess({
+				participation: { ...noParticipation, supervisor: {} },
+				roles: { ...noRoles, supervisor: {}, supervisedDelegationIds: ['d'] }
+			})
 		).toEqual(supervisor);
 	});
 
 	test('a reviewer is a team member', () => {
-		expect(paperHubAccess(noParticipation, { ...noRoles, isReviewer: true })).toEqual(team);
+		expect(
+			paperHubAccess({ participation: noParticipation, roles: { ...noRoles, isReviewer: true } })
+		).toEqual(team);
 	});
 });
 
@@ -81,26 +95,34 @@ describe('availablePaperHubViews', () => {
 
 describe('effectivePaperHubView', () => {
 	test('single participants only see the global view', () => {
-		expect(effectivePaperHubView(single, 'participant')).toBe('global');
-		expect(effectivePaperHubView(single, 'team')).toBe('global');
+		expect(effectivePaperHubView({ access: single, requested: 'participant' })).toBe('global');
+		expect(effectivePaperHubView({ access: single, requested: 'team' })).toBe('global');
 	});
 
 	test('a single participant who also reviews may switch', () => {
-		expect(effectivePaperHubView({ ...single, isTeamMember: true }, 'team')).toBe('team');
+		expect(
+			effectivePaperHubView({ access: { ...single, isTeamMember: true }, requested: 'team' })
+		).toBe('team');
 	});
 
 	test('the requested view is kept when available', () => {
-		expect(effectivePaperHubView({ ...author, isTeamMember: true }, 'team')).toBe('team');
-		expect(effectivePaperHubView(author, 'global')).toBe('global');
-		expect(effectivePaperHubView(supervisor, 'supervisor')).toBe('supervisor');
-		expect(effectivePaperHubView(author, 'participant')).toBe('participant');
+		expect(
+			effectivePaperHubView({ access: { ...author, isTeamMember: true }, requested: 'team' })
+		).toBe('team');
+		expect(effectivePaperHubView({ access: author, requested: 'global' })).toBe('global');
+		expect(effectivePaperHubView({ access: supervisor, requested: 'supervisor' })).toBe(
+			'supervisor'
+		);
+		expect(effectivePaperHubView({ access: author, requested: 'participant' })).toBe('participant');
 	});
 
 	test('falls back to the most specific available view', () => {
-		expect(effectivePaperHubView(author, 'team')).toBe('participant');
-		expect(effectivePaperHubView(supervisor, 'participant')).toBe('supervisor');
-		expect(effectivePaperHubView(team, 'participant')).toBe('team');
-		expect(effectivePaperHubView(none, 'team')).toBe('global');
+		expect(effectivePaperHubView({ access: author, requested: 'team' })).toBe('participant');
+		expect(effectivePaperHubView({ access: supervisor, requested: 'participant' })).toBe(
+			'supervisor'
+		);
+		expect(effectivePaperHubView({ access: team, requested: 'participant' })).toBe('team');
+		expect(effectivePaperHubView({ access: none, requested: 'team' })).toBe('global');
 	});
 });
 

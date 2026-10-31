@@ -16,13 +16,17 @@
 	let { selection, user, label, paid = false }: Props = $props();
 
 	let name = $derived(
-		label ?? formatNames(user.givenName ?? undefined, user.familyName ?? undefined)
+		label ??
+			formatNames({
+				givenName: user.givenName ?? undefined,
+				familyName: user.familyName ?? undefined
+			})
 	);
 </script>
 
 <Selection.Item
 	label={paid ? m.paymentPaidName({ name }) : name}
 	selected={selection.isSelected(user.id)}
-	changeSelection={(selected) => selection.setSelected(user, selected)}
+	changeSelection={(selected) => selection.setSelected({ user, isSelectedNow: selected })}
 	disabled={paid || selection.isReferenceCreated}
 />

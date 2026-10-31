@@ -25,7 +25,7 @@ describe('resolveScannedCode', () => {
 	test('a card number leads to its owner', async () => {
 		mocks.conferenceParticipants.mockResolvedValue([{ userId: 'u1' }]);
 
-		expect(await resolveScannedCode('conf', 'CARD-0003')).toBe('u1');
+		expect(await resolveScannedCode({ conferenceId: 'conf', code: 'CARD-0003' })).toBe('u1');
 		expect(mocks.conferenceParticipants.mock.calls[0][0].__args.where).toEqual({
 			conferenceId: { eq: 'conf' },
 			accessCardId: { eq: 'CARD-0003' }
@@ -33,18 +33,18 @@ describe('resolveScannedCode', () => {
 	});
 
 	test('a code that is no card stays as it is', async () => {
-		expect(await resolveScannedCode('conf', 'short')).toBe('short');
+		expect(await resolveScannedCode({ conferenceId: 'conf', code: 'short' })).toBe('short');
 	});
 
 	test('a user id is never looked up', async () => {
 		const id = 'abcdefghijklmnopqrstu';
-		expect(await resolveScannedCode('conf', id)).toBe(id);
+		expect(await resolveScannedCode({ conferenceId: 'conf', code: id })).toBe(id);
 		expect(mocks.conferenceParticipants).not.toHaveBeenCalled();
 	});
 
 	test('a lookup that fails, e.g. offline, leaves the code as it is', async () => {
 		mocks.conferenceParticipants.mockRejectedValue(new TypeError('Failed to fetch'));
-		expect(await resolveScannedCode('conf', 'CARD-0003')).toBe('CARD-0003');
+		expect(await resolveScannedCode({ conferenceId: 'conf', code: 'CARD-0003' })).toBe('CARD-0003');
 	});
 });
 
@@ -55,7 +55,7 @@ describe('searchUsers', () => {
 		mocks.conferenceParticipants.mockResolvedValue([{ user: owner }]);
 		mocks.users.mockResolvedValue([other, owner]);
 
-		const found = await searchUsers('conf', 'CARD-0003');
+		const found = await searchUsers({ conferenceId: 'conf', term: 'CARD-0003' });
 
 		expect(found.map((user) => user.id)).toEqual(['u1', 'u2']);
 		expect(mocks.conferenceParticipants.mock.calls[0][0].__args.where.accessCardId).toEqual({
@@ -64,7 +64,7 @@ describe('searchUsers', () => {
 	});
 
 	test('a term that is too short asks nothing', async () => {
-		expect(await searchUsers('conf', ' a ')).toEqual([]);
+		expect(await searchUsers({ conferenceId: 'conf', term: ' a ' })).toEqual([]);
 		expect(mocks.users).not.toHaveBeenCalled();
 	});
 });

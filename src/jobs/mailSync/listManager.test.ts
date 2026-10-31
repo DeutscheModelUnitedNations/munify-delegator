@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 
 const mocks = vi.hoisted(() => ({
 	client: { GET: vi.fn(), POST: vi.fn(), DELETE: vi.fn() },
@@ -34,7 +35,8 @@ function createSucceeds() {
 
 describe('ensureListsExist', () => {
 	beforeEach(() => {
-		vi.spyOn(console, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'error').mockImplementation(() => {});
 		mocks.client.DELETE.mockResolvedValue({});
 	});
 
@@ -46,11 +48,11 @@ describe('ensureListsExist', () => {
 	test('aborts when the lists cannot be fetched', async () => {
 		mocks.client.GET.mockResolvedValue({ error: 'unauthorized' });
 		expect(await ensureListsExist([conference])).toBeUndefined();
-		expect(mocks.taskError).toHaveBeenCalledWith(
-			'Mail Service: Sync with Listmonk',
-			'Failed to fetch lists from Listmonk. Aborting task.',
-			'unauthorized'
-		);
+		expect(mocks.taskError).toHaveBeenCalledWith({
+			taskName: 'Mail Service: Sync with Listmonk',
+			message: 'Failed to fetch lists from Listmonk. Aborting task.',
+			error: 'unauthorized'
+		});
 		expect(mocks.client.POST).not.toHaveBeenCalled();
 	});
 
@@ -99,22 +101,22 @@ describe('ensureListsExist', () => {
 		existingLists([]);
 		mocks.client.POST.mockResolvedValue(response);
 		expect(await ensureListsExist([conference])).toBeUndefined();
-		expect(mocks.taskError).toHaveBeenCalledWith(
-			'Mail Service: Sync with Listmonk',
-			`Failed to create list ${globalNames[0]} (global). Aborting task.`,
+		expect(mocks.taskError).toHaveBeenCalledWith({
+			taskName: 'Mail Service: Sync with Listmonk',
+			message: `Failed to create list ${globalNames[0]} (global). Aborting task.`,
 			error
-		);
+		});
 	});
 
 	test('aborts when creating a conference list fails', async () => {
 		existingLists(globalNames);
 		mocks.client.POST.mockResolvedValue({ error: 'nope' });
 		expect(await ensureListsExist([conference])).toBeUndefined();
-		expect(mocks.taskError).toHaveBeenCalledWith(
-			'Mail Service: Sync with Listmonk',
-			`Failed to create list ${CONFERENCE_LIST_TYPES[0]} for conference MUN SH. Aborting task.`,
-			'nope'
-		);
+		expect(mocks.taskError).toHaveBeenCalledWith({
+			taskName: 'Mail Service: Sync with Listmonk',
+			message: `Failed to create list ${CONFERENCE_LIST_TYPES[0]} for conference MUN SH. Aborting task.`,
+			error: 'nope'
+		});
 	});
 
 	test('deletes managed lists nothing needs anymore, and leaves foreign lists alone', async () => {
@@ -134,14 +136,17 @@ describe('ensureListsExist', () => {
 		expect(mocks.client.DELETE).toHaveBeenCalledWith('/lists/{list_id}', {
 			params: { path: { list_id: 2 + CONFERENCE_LIST_TYPES.length + 1 } }
 		});
-		expect(console.info).toHaveBeenCalledWith(
-			'  ! Failed to delete list [zzzzzz] Alte Konferenz - TEAM: Listmonk API Error\nlocked'
-		);
+		expect(logger.error).toHaveBeenCalledWith('Failed to delete list', {
+			list: '[zzzzzz] Alte Konferenz - TEAM',
+			error: 'locked'
+		});
 	});
 
 	test('reports each deleted list', async () => {
 		existingLists([...globalNames, ...conferenceNames, '[zzzzzz] Alte Konferenz - TEAM']);
 		await ensureListsExist([conference]);
-		expect(console.info).toHaveBeenCalledWith('  - Deleted list [zzzzzz] Alte Konferenz - TEAM');
+		expect(logger.info).toHaveBeenCalledWith('Deleted list', {
+			list: '[zzzzzz] Alte Konferenz - TEAM'
+		});
 	});
 });

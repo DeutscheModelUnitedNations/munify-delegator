@@ -38,17 +38,20 @@ export function technicalRegistrationDeadline(conference: {
 }
 
 /** Whether the API accepts an application to the conference right now. */
-export function acceptsApplications(
+export function acceptsApplications({
+	conference,
+	now = new Date()
+}: {
 	conference: {
 		state: ConferencestateEnum;
 		applicationDeadline: Date;
 		registrationDeadlineGracePeriodMinutes: number;
-	},
-	now: Date | number = Date.now()
-) {
+	};
+	now?: Date;
+}) {
 	return (
 		conference.state === 'PARTICIPANT_REGISTRATION' &&
-		Number(now) <= technicalRegistrationDeadline(conference).getTime()
+		now.getTime() <= technicalRegistrationDeadline(conference).getTime()
 	);
 }
 
@@ -56,9 +59,14 @@ export function acceptsApplications(
  * Whether the selection is running: the conference still takes registrations, but its technical
  * deadline has passed, so nobody can apply any more and the team is sighting the applications.
  */
-export function selectionInProgress(
-	conference: Parameters<typeof acceptsApplications>[0],
-	now: Date | number = Date.now()
-) {
-	return conference.state === 'PARTICIPANT_REGISTRATION' && !acceptsApplications(conference, now);
+export function selectionInProgress({
+	conference,
+	now = new Date()
+}: {
+	conference: Parameters<typeof acceptsApplications>[0]['conference'];
+	now?: Date;
+}) {
+	return (
+		conference.state === 'PARTICIPANT_REGISTRATION' && !acceptsApplications({ conference, now })
+	);
 }

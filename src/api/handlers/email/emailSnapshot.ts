@@ -4,10 +4,21 @@ import type {
 	SnapshotPerson,
 	SnapshotReview,
 	SnapshotRole,
-	SnapshotSurvey
+	SnapshotSurvey,
+	SnapshotTeamMember
 } from './dueEmails';
 
 const ROLE = { columns: { id: true, kind: true, name: true, nationAlpha3Code: true } } as const;
+const USER = {
+	columns: {
+		id: true,
+		email: true,
+		givenName: true,
+		familyName: true,
+		locale: true,
+		birthday: true
+	}
+} as const;
 
 /** Everything `dueEmails` decides from, for one conference; `undefined` if it does not exist. */
 export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnapshot | undefined> {
@@ -28,82 +39,94 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 	});
 	if (!conference) return undefined;
 
-	const [participants, seatedEntries, reviews, surveys] = await Promise.all([
-		db.query.conferenceParticipant.findMany({
-			where: { conferenceId },
-			columns: {
-				id: true,
-				paymentStatus: true,
-				termsAndConditions: true,
-				guardianConsent: true,
-				mediaConsent: true,
-				didAttend: true
-			},
-			with: {
-				user: {
-					columns: {
-						id: true,
-						email: true,
-						givenName: true,
-						familyName: true,
-						locale: true,
-						birthday: true
+	const [participants, seatedEntries, reviews, surveys, teamMembers, acceptedInvitations] =
+		await Promise.all([
+			db.query.conferenceParticipant.findMany({
+				where: { conferenceId },
+				columns: {
+					id: true,
+					paymentStatus: true,
+					termsAndConditions: true,
+					guardianConsent: true,
+					mediaConsent: true,
+					didAttend: true
+				},
+				with: {
+					user: USER,
+					delegationMember: {
+						columns: { id: true },
+						with: {
+							delegation: {
+								columns: { applied: true },
+								with: { assignedRole: ROLE }
+							},
+							assignedCommittee: { columns: { abbreviation: true } }
+						}
+					},
+					singleParticipant: {
+						columns: { applied: true },
+						with: { assignedRole: ROLE }
+					},
+					conferenceSupervisor: {
+						columns: { plansOwnAttendenceAtConference: true },
+						with: { supervised: { columns: { id: true } } }
 					}
-				},
-				delegationMember: {
-					columns: { id: true },
-					with: {
-						delegation: {
-							columns: { applied: true },
-							with: { assignedRole: ROLE }
-						},
-						assignedCommittee: { columns: { abbreviation: true } }
-					}
-				},
-				singleParticipant: {
-					columns: { applied: true },
-					with: { assignedRole: ROLE }
-				},
-				conferenceSupervisor: {
-					columns: { plansOwnAttendenceAtConference: true },
-					with: { supervised: { columns: { id: true } } }
 				}
-			}
-		}),
-		db.query.waitingListEntry.findMany({
-			where: { conferenceId, assignedAt: { isNotNull: true } },
-			columns: { id: true, userId: true }
-		}),
-		db.query.paperReview.findMany({
-			where: { paperVersion: { paper: { delegation: { conferenceId } } } },
-			columns: { id: true, statusAfter: true },
-			with: {
-				reviewer: { columns: { givenName: true, familyName: true, email: true } },
-				paperVersion: {
-					columns: { id: true },
-					with: {
-						paper: {
-							columns: { id: true, type: true, authorParticipantId: true },
-							with: {
-								agendaItem: {
-									columns: { title: true },
-									with: { committee: { columns: { abbreviation: true } } }
+			}),
+			db.query.waitingListEntry.findMany({
+				where: { conferenceId, assignedAt: { isNotNull: true } },
+				columns: { id: true, userId: true }
+			}),
+			db.query.paperReview.findMany({
+				where: { paperVersion: { paper: { delegation: { conferenceId } } } },
+				columns: { id: true, statusAfter: true },
+				with: {
+					reviewer: { columns: { givenName: true, familyName: true, email: true } },
+					paperVersion: {
+						columns: { id: true },
+						with: {
+							paper: {
+								columns: { id: true, type: true, authorParticipantId: true },
+								with: {
+									agendaItem: {
+										columns: { title: true },
+										with: { committee: { columns: { abbreviation: true } } }
+									}
 								}
 							}
 						}
 					}
 				}
-			}
-		}),
-		// What participants see: neither drafts nor the questions the team hid
-		db.query.surveyQuestion.findMany({
-			where: { conferenceId, draft: false, hidden: false },
-			columns: { id: true, title: true, deadline: true },
-			with: { surveyAnswers: { columns: { conferenceParticipantId: true } } }
-		})
-	]);
+			}),
+			// What participants see: neither drafts nor the questions the team hid
+			db.query.surveyQuestion.findMany({
+				where: { conferenceId, draft: false, hidden: false },
+				columns: { id: true, title: true, deadline: true },
+				with: { surveyAnswers: { columns: { conferenceParticipantId: true } } }
+			}),
+			db.query.teamMember.findMany({
+				where: { conferenceId },
+				columns: { id: true, role: true },
+				with: { user: USER }
+			}),
+			// Oldest first, so the latest invitation a member accepted names their inviter
+			db.query.teamMemberInvitation.findMany({
+				where: { conferenceId, acceptedById: { isNotNull: true } },
+				columns: { acceptedById: true },
+				with: { invitedBy: { columns: { givenName: true, familyName: true } } },
+				orderBy: { createdAt: 'asc' }
+			})
+		]);
 
 	const seatedFrom = new Map(seatedEntries.map((entry) => [entry.userId, entry.id]));
+	const inviterOf = new Map(
+		acceptedInvitations.map((invitation) => [
+			invitation.acceptedById,
+			invitation.invitedBy
+				? `${invitation.invitedBy.givenName} ${invitation.invitedBy.familyName}`
+				: null
+		])
+	);
 
 	const people = participants.flatMap((participant): SnapshotPerson[] => {
 		const user = participant.user;
@@ -140,6 +163,18 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			certificateAvailable: !!conference.certificateFileId
 		},
 		people,
+		team: teamMembers.flatMap((member): SnapshotTeamMember[] =>
+			member.user
+				? [
+						{
+							id: member.id,
+							role: member.role,
+							user: member.user,
+							inviterName: inviterOf.get(member.user.id) ?? null
+						}
+					]
+				: []
+		),
 		reviews: reviews.flatMap(reviewPart),
 		surveys: surveys.map((survey): SnapshotSurvey => ({
 			id: survey.id,

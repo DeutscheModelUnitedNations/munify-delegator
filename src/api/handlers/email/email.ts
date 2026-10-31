@@ -14,16 +14,19 @@ import {
 	setEmailKindsEnabled,
 	skipOpenEmails
 } from './emailSweep';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { toLocale } from '#lib/paraglide/runtime';
 import { isAlwaysSent } from '#lib/helpers/emailKinds';
 import { whereRows } from '#api/db/whereRows';
+import { callerUserId } from '#api/services/authHelper/utils';
+import { personEmails, sendPersonEmail } from './personEmails';
 
 registerEmailAbilities();
 
 const emailKindEnum = enum_({ tsName: 'emailKind' });
-enum_({ tsName: 'emailStatus' });
+const emailStatusEnum = enum_({ tsName: 'emailStatus' });
+enum_({ tsName: 'emailTrigger' });
 
 object({ table: 'conferenceEmailSetting' });
 query({ table: 'conferenceEmailSetting' });
@@ -51,7 +54,49 @@ const EmailKindStats = schemaBuilder.simpleObject('EmailKindStats', {
 	})
 });
 
+const PersonEmail = schemaBuilder.simpleObject('PersonEmail', {
+	description: 'A mail one person is owed right now, which the team can send them by hand.',
+	fields: (t) => ({
+		kind: t.field({ type: emailKindEnum }),
+		/** With kind and person, which mail it is. */
+		subjectKey: t.string(),
+		/** What tells it apart from the person's other mails of its kind. */
+		detail: t.string({ nullable: true }),
+		/** The conference sends it on its own. */
+		automatic: t.boolean(),
+		/** How the last try went; none if it was never sent. */
+		lastStatus: t.field({ type: emailStatusEnum, nullable: true }),
+		lastAt: t.field({ type: 'Date', nullable: true })
+	})
+});
+
+const SendPersonEmailResult = schemaBuilder.simpleObject('SendPersonEmailResult', {
+	fields: (t) => ({
+		sent: t.boolean(),
+		/** Why the mail service did not send it. */
+		error: t.string({ nullable: true })
+	})
+});
+
 schemaBuilder.queryFields((t) => ({
+	/**
+	 * The mails a person is owed in the conference right now, switched on or not, with how each went
+	 * so far. Reminders count any time before their date: they can be sent early by hand.
+	 */
+	personEmails: t.field({
+		type: [PersonEmail],
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			userId: t.arg.id({ required: true }),
+			/** Ignored; a new value makes the client ask again after a change. */
+			revision: t.arg.string()
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			return personEmails({ conferenceId: args.conferenceId, userId: args.userId });
+		}
+	}),
+
 	/** How many mails of `kind` the conference would send right away if it were switched on. */
 	openEmailCount: t.field({
 		type: 'Int',
@@ -60,8 +105,8 @@ schemaBuilder.queryFields((t) => ({
 			kind: t.arg({ type: emailKindEnum, required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails(ctx, args.conferenceId);
-			return countOpenEmails(args.conferenceId, args.kind);
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			return countOpenEmails({ conferenceId: args.conferenceId, kind: args.kind });
 		}
 	}),
 
@@ -74,7 +119,7 @@ schemaBuilder.queryFields((t) => ({
 			revision: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails(ctx, args.conferenceId);
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
 			const rows = await db.query.emailLog.findMany({
 				where: { conferenceId: args.conferenceId },
 				columns: { kind: true, status: true }
@@ -110,7 +155,7 @@ schemaBuilder.queryFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
-			await assertCanManageEmails(ctx, args.conferenceId);
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
 			const user = await db.query.user
 				.findFirst({
 					where: { id: callerId },
@@ -125,15 +170,17 @@ schemaBuilder.queryFields((t) => ({
 				})
 				.then(assertFindFirstExists);
 			const locale = args.locale ? assertLocale(args.locale) : user.locale;
-			const preview = await previewEmail(
-				args.conferenceId,
-				args.kind,
-				{ ...user, locale },
-				ctx.requestUrl().origin,
-				args.draft ? { subject: args.subject, heading: args.heading, body: args.body } : undefined,
-				args.footer ?? undefined
-			);
-			if (!preview) throw apiError('NOT_FOUND', m.conferenceNotFound());
+			const preview = await previewEmail({
+				conferenceId: args.conferenceId,
+				kind: args.kind,
+				user: { ...user, locale },
+				origin: ctx.requestUrl().origin,
+				draft: args.draft
+					? { subject: args.subject, heading: args.heading, body: args.body }
+					: undefined,
+				footerDraft: args.footer ?? undefined
+			});
+			if (!preview) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 			return { subject: preview.subject, html: preview.html };
 		}
 	})
@@ -142,7 +189,7 @@ schemaBuilder.queryFields((t) => ({
 /** A language the app speaks, or the request fails. */
 function assertLocale(value: string) {
 	const locale = toLocale(value);
-	if (!locale) throw apiError('INVALID_INPUT', m.emailTextUnknownLanguage());
+	if (!locale) throw apiError({ code: 'INVALID_INPUT', message: m.emailTextUnknownLanguage() });
 	return locale;
 }
 
@@ -150,6 +197,35 @@ function assertLocale(value: string) {
 const ownText = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
 
 schemaBuilder.mutationFields((t) => ({
+	/**
+	 * Sends a person one mail they are owed right now, however often it went out before and whether
+	 * or not its kind is switched on. Logged as sent by hand, by the caller.
+	 */
+	sendPersonEmail: t.field({
+		type: SendPersonEmailResult,
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			userId: t.arg.id({ required: true }),
+			kind: t.arg({ type: emailKindEnum, required: true }),
+			subjectKey: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			const sentById = callerUserId(ctx);
+			if (!sentById) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
+			const error = await sendPersonEmail({
+				conferenceId: args.conferenceId,
+				userId: args.userId,
+				kind: args.kind,
+				subjectKey: args.subjectKey,
+				sentById,
+				origin: ctx.requestUrl().origin
+			});
+			if (error === undefined) throw apiError({ code: 'CONFLICT', message: m.emailSendNotOwed() });
+			return { sent: error === null, error };
+		}
+	}),
+
 	/**
 	 * Writes a conference's own text for one kind and language. A field left empty keeps the
 	 * default; all three empty removes the row, back to the default text.
@@ -165,7 +241,7 @@ schemaBuilder.mutationFields((t) => ({
 			body: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails(ctx, args.conferenceId);
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
 			const locale = assertLocale(args.locale);
 			const text = {
 				subject: ownText(args.subject),
@@ -174,9 +250,12 @@ schemaBuilder.mutationFields((t) => ({
 			};
 			const table = schema.conferenceEmailText;
 			if (!text.subject && !text.heading && !text.body) {
-				await db
-					.delete(table)
-					.where(whereRows(table, { conferenceId: args.conferenceId, kind: args.kind, locale }));
+				await db.delete(table).where(
+					whereRows({
+						table,
+						filter: { conferenceId: args.conferenceId, kind: args.kind, locale }
+					})
+				);
 			} else {
 				await db
 					.insert(table)
@@ -203,12 +282,14 @@ schemaBuilder.mutationFields((t) => ({
 			text: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails(ctx, args.conferenceId);
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
 			const locale = assertLocale(args.locale);
 			const text = ownText(args.text);
 			const table = schema.conferenceEmailFooter;
 			if (!text) {
-				await db.delete(table).where(whereRows(table, { conferenceId: args.conferenceId, locale }));
+				await db
+					.delete(table)
+					.where(whereRows({ table, filter: { conferenceId: args.conferenceId, locale } }));
 			} else {
 				await db
 					.insert(table)
@@ -237,14 +318,20 @@ schemaBuilder.mutationFields((t) => ({
 			notifyExisting: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanManageEmails(ctx, args.conferenceId);
-			if (isAlwaysSent(args.kind)) throw apiError('INVALID_INPUT', m.emailKindAlwaysSent());
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			if (isAlwaysSent(args.kind))
+				throw apiError({ code: 'INVALID_INPUT', message: m.emailKindAlwaysSent() });
 			if (args.enabled && args.notifyExisting === false) {
-				await skipOpenEmails(args.conferenceId, [args.kind]);
+				await skipOpenEmails({ conferenceId: args.conferenceId, kinds: [args.kind] });
 			}
-			await setEmailKindsEnabled(args.conferenceId, [args.kind], args.enabled);
+			await setEmailKindsEnabled({
+				conferenceId: args.conferenceId,
+				kinds: [args.kind],
+				enabled: args.enabled
+			});
 			conferenceEmailSettingPubsub.updated();
-			if (args.enabled) scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			if (args.enabled)
+				scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;
 		}
 	})

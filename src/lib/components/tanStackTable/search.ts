@@ -5,11 +5,15 @@ import type { ColumnDef, RowData, TableFeatures } from '@tanstack/svelte-table';
  * The text a row is searched by: the string values of its columns in column order, so what a
  * table shows first (the name) is what an early match is closest to.
  */
-export function rowSearchText<TFeatures extends TableFeatures, TData extends RowData>(
-	columns: readonly ColumnDef<TFeatures, TData>[],
-	row: TData,
-	index: number
-): string {
+export function rowSearchText<TFeatures extends TableFeatures, TData extends RowData>({
+	columns,
+	row,
+	index
+}: {
+	columns: readonly ColumnDef<TFeatures, TData>[];
+	row: TData;
+	index: number;
+}): string {
 	let text = '';
 	for (const column of columns) {
 		let value: unknown;
@@ -44,10 +48,13 @@ function firstMatchIndex(matches: FuseSortFunctionArg['matches']): number {
  * only used to order. Returns a function from a search to the matching rows; an empty search
  * gives every row in its own order.
  */
-export function createFuzzySearch<T>(
-	rows: readonly T[],
-	textOf: (row: T, index: number) => string
-): (search: string) => readonly T[] {
+export function createFuzzySearch<T>({
+	rows,
+	textOf
+}: {
+	rows: readonly T[];
+	textOf: (row: T, index: number) => string;
+}): (search: string) => readonly T[] {
 	const fuse = new Fuse(
 		rows.map((row, index) => ({ row, text: textOf(row, index) })),
 		{

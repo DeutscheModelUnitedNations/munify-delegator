@@ -9,7 +9,7 @@ import { browser } from '$app/env';
  * missing, blocked or holds something unparseable, so the page has to work without it. Changes made
  * in another tab are not picked up.
  */
-export function createPersistedState<T>(key: string, initial: T) {
+export function createPersistedState<T>({ key, initial }: { key: string; initial: T }) {
 	function read(fallback: T): T {
 		if (!browser) return fallback;
 		try {

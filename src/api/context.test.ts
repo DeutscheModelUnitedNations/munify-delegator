@@ -43,35 +43,38 @@ describe('effectiveRoles', () => {
 
 describe('sessionUser', () => {
 	test('is nobody without a session', () => {
-		expect(sessionUser({}, [])).toBeUndefined();
+		expect(sessionUser({ locals: {}, OIDCRoleNames: [] })).toBeUndefined();
 	});
 
 	test("is the session's user with its roles", () => {
-		const user = sessionUser({ oidc: session('a', ['admin']) }, ['admin']);
+		const user = sessionUser({
+			locals: { oidc: session('a', ['admin']) },
+			OIDCRoleNames: ['admin']
+		});
 		expect(user).toMatchObject({ sub: 'a', email: undefined, OIDCRoleNames: ['admin'] });
 		expect(user?.hasRole('admin')).toBe(true);
 		expect(user?.hasRole('member')).toBe(false);
 	});
 
 	test("takes the impersonated user's identity from their row, keeping the token's sub", () => {
-		const user = sessionUser(
-			{
+		const user = sessionUser({
+			locals: {
 				oidc: session('target', [], session('care', ['member'])),
 				impersonatedIdentity: { email: 'target@example.org', given_name: 'T', family_name: 'U' }
 			},
-			[]
-		);
+			OIDCRoleNames: []
+		});
 		expect(user).toMatchObject({ sub: 'target', email: 'target@example.org', given_name: 'T' });
 	});
 
 	test('ignores a loaded identity while nobody is impersonated', () => {
-		const user = sessionUser(
-			{
+		const user = sessionUser({
+			locals: {
 				oidc: session('a', []),
 				impersonatedIdentity: { email: 'other@example.org', given_name: 'O', family_name: 'P' }
 			},
-			[]
-		);
+			OIDCRoleNames: []
+		});
 		expect(user?.email).toBeUndefined();
 		expect(user).not.toHaveProperty('given_name');
 	});

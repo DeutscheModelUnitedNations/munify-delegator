@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
-import { nonStateActorUpdateData } from '#api/services/seatPlanning';
+import { nonStateActorUpdateData } from '#api/handlers/seatPlanning/seatPlanningService';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { conferenceRolePubsub, roleApplicationPubsub, singleParticipantPubsub } from '#api/pubsub';
 import {
@@ -28,15 +28,19 @@ query({ table: 'conferenceRole' });
  * Creates a role of the seat planning (a non-state actor, a custom role), announces it, and
  * answers how to read it back.
  */
-async function createRole<A extends { conferenceId: string }>(
-	ctx: ApiContext,
-	args: A,
-	create: (args: A) => Promise<string>
-) {
-	await assertCanCreateConferenceRole(ctx, args.conferenceId);
+async function createRole<A extends { conferenceId: string }>({
+	ctx,
+	args,
+	create
+}: {
+	ctx: ApiContext;
+	args: A;
+	create: (args: A) => Promise<string>;
+}) {
+	await assertCanCreateConferenceRole({ ctx, conferenceId: args.conferenceId });
 	const createdId = await create(args);
 	conferenceRolePubsub.created();
-	return queryAllowed(ctx.abilities.conferenceRole, createdId);
+	return queryAllowed({ ability: ctx.abilities.conferenceRole, id: createdId });
 }
 
 schemaBuilder.mutationFields((t) => {
@@ -58,7 +62,7 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (query, _root, args, ctx) =>
 				db.query.conferenceRole
-					.findFirst(query(await createRole(ctx, args, createNonStateActor)))
+					.findFirst(query(await createRole({ ctx, args, create: createNonStateActor })))
 					.then(assertFindFirstExists)
 		}),
 
@@ -74,14 +78,20 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (query, _root, args, ctx) => {
 				const data = nonStateActorUpdateData(args);
-				const before = await assertCanUpdateConferenceRole(ctx, args.id, 'NON_STATE_ACTOR');
-				const { applicationsTidied } = await updateNonStateActor(before, data);
+				const before = await assertCanUpdateConferenceRole({
+					ctx,
+					id: args.id,
+					kind: 'NON_STATE_ACTOR'
+				});
+				const { applicationsTidied } = await updateNonStateActor({ before, data });
 
 				conferenceRolePubsub.updated(args.id);
 				if (applicationsTidied) roleApplicationPubsub.removed();
 
 				return db.query.conferenceRole
-					.findFirst(query(await queryAllowed(ctx.abilities.conferenceRole, args.id)))
+					.findFirst(
+						query(await queryAllowed({ ability: ctx.abilities.conferenceRole, id: args.id }))
+					)
 					.then(assertFindFirstExists);
 			}
 		}),
@@ -90,7 +100,7 @@ schemaBuilder.mutationFields((t) => {
 			type: 'Boolean',
 			args: { id: t.arg.id({ required: true }) },
 			resolve: async (_root, args, ctx) => {
-				await assertCanDeleteConferenceRole(ctx, args.id, 'NON_STATE_ACTOR');
+				await assertCanDeleteConferenceRole({ ctx, id: args.id, kind: 'NON_STATE_ACTOR' });
 				await deleteNonStateActor(args.id);
 
 				conferenceRolePubsub.removed();
@@ -106,7 +116,7 @@ schemaBuilder.mutationFields((t) => {
 			args: { ...plannedRoleArgs(), description: t.arg.string() },
 			resolve: async (query, _root, args, ctx) =>
 				db.query.conferenceRole
-					.findFirst(query(await createRole(ctx, args, createCustomRole)))
+					.findFirst(query(await createRole({ ctx, args, create: createCustomRole })))
 					.then(assertFindFirstExists)
 		}),
 
@@ -120,13 +130,13 @@ schemaBuilder.mutationFields((t) => {
 				seatAmount: t.arg.int()
 			},
 			resolve: async (query, _root, { id, ...data }, ctx) => {
-				await assertCanUpdateConferenceRole(ctx, id, 'CUSTOM');
-				await updateCustomRole(id, data);
+				await assertCanUpdateConferenceRole({ ctx, id, kind: 'CUSTOM' });
+				await updateCustomRole({ id, data });
 
 				conferenceRolePubsub.updated(id);
 
 				return db.query.conferenceRole
-					.findFirst(query(await queryAllowed(ctx.abilities.conferenceRole, id)))
+					.findFirst(query(await queryAllowed({ ability: ctx.abilities.conferenceRole, id })))
 					.then(assertFindFirstExists);
 			}
 		}),
@@ -135,7 +145,7 @@ schemaBuilder.mutationFields((t) => {
 			type: 'Boolean',
 			args: { id: t.arg.id({ required: true }) },
 			resolve: async (_root, args, ctx) => {
-				await assertCanDeleteConferenceRole(ctx, args.id, 'CUSTOM');
+				await assertCanDeleteConferenceRole({ ctx, id: args.id, kind: 'CUSTOM' });
 				await deleteCustomRole(args.id);
 
 				conferenceRolePubsub.removed();

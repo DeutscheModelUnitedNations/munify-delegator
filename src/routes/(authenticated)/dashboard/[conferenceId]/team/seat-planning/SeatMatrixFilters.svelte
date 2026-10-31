@@ -32,7 +32,7 @@
 	>
 		<option value="">{m.seatPlanningAllGroups()}</option>
 		{#each regionalGroups as group (group)}
-			<option value={group}>{translateRegionalGroup(group)}</option>
+			<option value={group}>{translateRegionalGroup({ group })}</option>
 		{/each}
 	</select>
 	<select

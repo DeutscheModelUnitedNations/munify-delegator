@@ -1,7 +1,7 @@
 import { db } from '#api/db/db';
 import { m } from '#lib/paraglide/messages';
 import { getLocale } from '#lib/paraglide/runtime';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * Finds how a user is already in a conference - as participant (supervisor, single participant,
@@ -31,16 +31,28 @@ export async function fetchParticipationsAndTeamMembership({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw apiError('CONFLICT', m.youAreAlreadySupervisor({}, { locale: getLocale() }));
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.youAreAlreadySupervisor({}, { locale: getLocale() })
+			});
 		}
 		if (foundSingleParticipant) {
-			throw apiError('CONFLICT', m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.youAreAlreadySingleParticipant({}, { locale: getLocale() })
+			});
 		}
 		if (foundDelegationMember) {
-			throw apiError('CONFLICT', m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.youAreAlreadyDelegationMember({}, { locale: getLocale() })
+			});
 		}
 		if (foundTeamMember) {
-			throw apiError('CONFLICT', m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.youAreAlreadyTeamMember({}, { locale: getLocale() })
+			});
 		}
 	}
 

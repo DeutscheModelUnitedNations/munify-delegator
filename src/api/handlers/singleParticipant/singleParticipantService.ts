@@ -13,11 +13,15 @@ import {
 } from '#api/services/registration/applicationReadiness';
 import { nullToUndefined } from '#api/services/args';
 import { applicationFormSchema } from '#lib/schemata/applicationForm';
+import {
+	type ApplicationArgs,
+	parseApplicationArgs
+} from '#api/services/registration/applicationArgs';
 import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 
@@ -28,37 +32,39 @@ import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitin
  * same line the update ability draws. That the role applied for is one of the conference's is
  * checked next (`assertRolesOf`).
  */
-export async function ownRegistrationToEdit(
-	userId: string,
-	args: SchoolChoice & {
-		conferenceId: string;
-		motivation?: string | null;
-		experience?: string | null;
-	}
-) {
-	applicationFormSchema.parse({
-		schoolId: args.schoolId,
-		schoolName: args.schoolName,
-		motivation: args.motivation,
-		experience: args.experience
-	});
+export async function ownRegistrationToEdit({
+	userId,
+	args
+}: {
+	userId: string;
+	args: ApplicationArgs;
+}) {
+	parseApplicationArgs(args);
 
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
 		await fetchParticipationsAndTeamMembership({ conferenceId: args.conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
-		throw apiError(
-			'CONFLICT',
-			m.youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference()
-		);
+		throw apiError({
+			code: 'CONFLICT',
+			message: m.youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference()
+		});
 	}
 	if (foundSingleParticipant?.applied) {
-		throw apiError('CONFLICT', m.youAreAlreadySingleParticipant());
+		throw apiError({ code: 'CONFLICT', message: m.youAreAlreadySingleParticipant() });
 	}
 	return foundSingleParticipant;
 }
 
 /** Links a single participant to a custom conference role (the join table behind `appliedForRoles`). */
-async function applyForRoles(tx: Transaction, singleParticipantId: string, roleIds: string[]) {
+async function applyForRoles({
+	tx,
+	singleParticipantId,
+	roleIds
+}: {
+	tx: Transaction;
+	singleParticipantId: string;
+	roleIds: string[];
+}) {
 	if (roleIds.length === 0) return;
 	await tx
 		.insert(schema.singleParticipantRoleWish)
@@ -66,13 +72,22 @@ async function applyForRoles(tx: Transaction, singleParticipantId: string, roleI
 		.onConflictDoNothing();
 }
 
-async function unapplyForRoles(tx: Transaction, singleParticipantId: string, roleIds: string[]) {
+async function unapplyForRoles({
+	tx,
+	singleParticipantId,
+	roleIds
+}: {
+	tx: Transaction;
+	singleParticipantId: string;
+	roleIds: string[];
+}) {
 	if (roleIds.length === 0) return;
-	await tx
-		.delete(schema.singleParticipantRoleWish)
-		.where(
-			whereRows(schema.singleParticipantRoleWish, { b: singleParticipantId, a: { in: roleIds } })
-		);
+	await tx.delete(schema.singleParticipantRoleWish).where(
+		whereRows({
+			table: schema.singleParticipantRoleWish,
+			filter: { b: singleParticipantId, a: { in: roleIds } }
+		})
+	);
 }
 
 /**
@@ -80,30 +95,42 @@ async function unapplyForRoles(tx: Transaction, singleParticipantId: string, rol
  * the legacy resolver updated it instead of failing, so this does the same: `existing` is what
  * `ownRegistrationToEdit` found. Returns the row id.
  */
-export async function registerSingleParticipant(
-	userId: string,
+export async function registerSingleParticipant({
+	userId,
+	args,
+	existing
+}: {
+	userId: string;
 	args: SchoolChoice & {
 		conferenceId: string;
 		roleId: string;
 		motivation?: string | null;
 		experience?: string | null;
-	},
-	existing: { id: string } | undefined
-) {
+	};
+	existing: { id: string } | undefined;
+}) {
 	// Editing an existing registration is open in any stage; a new one only while applications are taken.
 	if (!existing) await assertRegistrationOpen(args.conferenceId);
 	// The person's row, the registration and the role it applies for go in together, so a refused
 	// insert leaves none of them.
 	return db.transaction(async (tx) => {
-		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, userId);
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: args.conferenceId,
+			userId
+		});
 		// The school they name is their own; the registration keeps none.
-		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: await resolveSchoolChoice({ choice: args, tx })
+		});
 		let rowId: string;
 		if (existing) {
 			await tx
 				.update(schema.singleParticipant)
 				.set({ motivation: args.motivation, experience: args.experience })
-				.where(whereRows(schema.singleParticipant, { id: existing.id }));
+				.where(whereRows({ table: schema.singleParticipant, filter: { id: existing.id } }));
 			rowId = existing.id;
 		} else {
 			const created = await tx
@@ -118,7 +145,7 @@ export async function registerSingleParticipant(
 			rowId = created.id;
 		}
 
-		await applyForRoles(tx, rowId, [args.roleId]);
+		await applyForRoles({ tx, singleParticipantId: rowId, roleIds: [args.roleId] });
 
 		return rowId;
 	});
@@ -144,7 +171,11 @@ export async function updateSingleParticipantApplication(args: {
 			})
 			.then(assertFindFirstExists);
 
-		assertApplicationReady(participant, args, MIN_ROLE_APPLICATIONS.singleParticipant);
+		assertApplicationReady({
+			applicant: participant,
+			edits: args,
+			minRoleApplications: MIN_ROLE_APPLICATIONS.singleParticipant
+		});
 	}
 
 	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
@@ -162,11 +193,19 @@ export async function updateSingleParticipantApplication(args: {
 			await tx
 				.update(schema.singleParticipant)
 				.set(values)
-				.where(whereRows(schema.singleParticipant, { id: args.id }));
+				.where(whereRows({ table: schema.singleParticipant, filter: { id: args.id } }));
 		}
 
-		await applyForRoles(tx, args.id, args.applyForRolesIdList ?? []);
-		await unapplyForRoles(tx, args.id, args.unApplyForRolesIdList ?? []);
+		await applyForRoles({
+			tx,
+			singleParticipantId: args.id,
+			roleIds: args.applyForRolesIdList ?? []
+		});
+		await unapplyForRoles({
+			tx,
+			singleParticipantId: args.id,
+			roleIds: args.unApplyForRolesIdList ?? []
+		});
 	});
 }
 
@@ -180,13 +219,25 @@ export async function createAssignedSingleParticipant(args: {
 	roleId: string;
 }) {
 	if (await isParticipantOrTeamMember({ userId: args.userId, conferenceId: args.conferenceId })) {
-		throw apiError('CONFLICT', m.singleParticipantUserHasOtherRole());
+		throw apiError({ code: 'CONFLICT', message: m.singleParticipantUserHasOtherRole() });
 	}
 
 	const created = await db.transaction(async (tx) => {
-		const waiting = await markSeatedFromWaitingList(tx, args.conferenceId, args.userId);
-		const participantId = await ensureConferenceParticipant(tx, args.conferenceId, args.userId);
-		await setParticipantSchool(tx, [participantId], waiting?.schoolId ?? undefined);
+		const waiting = await markSeatedFromWaitingList({
+			tx,
+			conferenceId: args.conferenceId,
+			userId: args.userId
+		});
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: args.conferenceId,
+			userId: args.userId
+		});
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: waiting?.schoolId ?? undefined
+		});
 
 		return tx
 			.insert(schema.singleParticipant)

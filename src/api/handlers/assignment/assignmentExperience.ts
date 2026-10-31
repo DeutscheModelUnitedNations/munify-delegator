@@ -1,6 +1,6 @@
 import { db } from '#api/db/db';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * The delegation members and single participants of a conference whose person was accepted to an
@@ -12,7 +12,7 @@ export async function loadExperiencedIds(conferenceId: string) {
 		where: { id: conferenceId },
 		columns: { startConference: true }
 	});
-	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
+	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 	const earlier = { id: { ne: conferenceId }, endConference: { lt: conference.startConference } };
 
 	const [members, singles, seatedMembers, seatedSingles] = await Promise.all([

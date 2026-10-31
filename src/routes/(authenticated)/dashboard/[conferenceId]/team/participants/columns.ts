@@ -51,7 +51,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'userId',
 			header: m.userId(),
-			cell: ({ row }) => renderComponent(MonoCell, { value: row.original.userId }),
+			cell: ({ row }) =>
+				renderComponent({ component: MonoCell, props: { value: row.original.userId } }),
 			group: m.personalData(),
 			defaultVisible: false,
 			filter: { type: 'text' }
@@ -116,8 +117,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			accessorKey: 'hasBirthdayDuringConference',
 			header: m.conferenceBirthday(),
 			cell: ({ row }) =>
-				renderComponent(ConferenceBirthdayCell, {
-					hasBirthday: row.original.hasBirthdayDuringConference
+				renderComponent({
+					component: ConferenceBirthdayCell,
+					props: {
+						hasBirthday: row.original.hasBirthdayDuringConference
+					}
 				}),
 			group: m.computedValues(),
 			defaultVisible: false,
@@ -146,7 +150,10 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			accessorKey: 'foodPreference',
 			header: m.foodPreference(),
 			cell: ({ row }) =>
-				renderComponent(FoodPreferenceCell, { value: row.original.foodPreference }),
+				renderComponent({
+					component: FoodPreferenceCell,
+					props: { value: row.original.foodPreference }
+				}),
 			group: m.personalData(),
 			defaultVisible: false,
 			filter: {
@@ -175,7 +182,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'role',
 			header: m.participationType(),
-			cell: ({ row }) => renderComponent(RoleBadge, { role: row.original.role }),
+			cell: ({ row }) =>
+				renderComponent({ component: RoleBadge, props: { role: row.original.role } }),
 			group: m.participation(),
 			defaultVisible: true,
 			filter: {
@@ -193,11 +201,14 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 					: ''),
 			header: m.nation(),
 			cell: ({ row }) =>
-				renderComponent(FlagCell, {
-					alpha2Code: row.original.nationAlpha2Code,
-					alpha3Code: row.original.nationAlpha3Code,
-					nsaName: row.original.nsaName,
-					nsaIcon: row.original.nsaIcon
+				renderComponent({
+					component: FlagCell,
+					props: {
+						alpha2Code: row.original.nationAlpha2Code,
+						alpha3Code: row.original.nationAlpha3Code,
+						nsaName: row.original.nsaName,
+						nsaIcon: row.original.nsaIcon
+					}
 				}),
 			sortFn: (rowA, rowB, columnId) => {
 				const a = rowA.getValue<string>(columnId) ?? '';
@@ -225,7 +236,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'isHeadDelegate',
 			header: m.headDelegate(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.isHeadDelegate }),
+			cell: ({ row }) =>
+				renderComponent({ component: BooleanIcon, props: { value: row.original.isHeadDelegate } }),
 			group: m.participation(),
 			defaultVisible: false,
 			filter: { type: 'boolean' }
@@ -259,7 +271,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'onWaitingList',
 			header: m.onWaitingList(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.onWaitingList }),
+			cell: ({ row }) =>
+				renderComponent({ component: BooleanIcon, props: { value: row.original.onWaitingList } }),
 			group: m.participation(),
 			defaultVisible: false,
 			description: m.onWaitingListDescription(),
@@ -283,7 +296,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'plansOwnAttendance',
 			header: m.attendancePlan(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.plansOwnAttendance }),
+			cell: ({ row }) =>
+				renderComponent({
+					component: BooleanIcon,
+					props: { value: row.original.plansOwnAttendance }
+				}),
 			group: m.participation(),
 			defaultVisible: false,
 			filter: { type: 'boolean' }
@@ -293,7 +310,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'paymentStatus',
 			header: m.payment(),
-			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.paymentStatus }),
+			cell: ({ row }) =>
+				renderComponent({ component: StatusIcon, props: { status: row.original.paymentStatus } }),
 			group: m.status(),
 			defaultVisible: true,
 			filter: {
@@ -307,7 +325,10 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			accessorKey: 'postalRegistrationStatus',
 			header: m.postalRegistration(),
 			cell: ({ row }) =>
-				renderComponent(StatusIcon, { status: row.original.postalRegistrationStatus }),
+				renderComponent({
+					component: StatusIcon,
+					props: { status: row.original.postalRegistrationStatus }
+				}),
 			group: m.status(),
 			defaultVisible: true,
 			filter: {
@@ -320,7 +341,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'didAttend',
 			header: m.attendance(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.didAttend }),
+			cell: ({ row }) =>
+				renderComponent({ component: BooleanIcon, props: { value: row.original.didAttend } }),
 			group: m.status(),
 			defaultVisible: true,
 			filter: { type: 'boolean' }
@@ -328,7 +350,11 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'termsAndConditions',
 			header: m.termsAndConditions(),
-			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.termsAndConditions }),
+			cell: ({ row }) =>
+				renderComponent({
+					component: StatusIcon,
+					props: { status: row.original.termsAndConditions }
+				}),
 			group: m.status(),
 			defaultVisible: false,
 			filter: {
@@ -343,9 +369,12 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			header: m.guardianConsent(),
 			id: 'guardianConsent',
 			cell: ({ row }) =>
-				renderComponent(GuardianConsentCell, {
-					status: row.original.guardianConsent,
-					ageAtConference: row.original.ageAtConference
+				renderComponent({
+					component: GuardianConsentCell,
+					props: {
+						status: row.original.guardianConsent,
+						ageAtConference: row.original.ageAtConference
+					}
 				}),
 			group: m.status(),
 			defaultVisible: false,
@@ -360,7 +389,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 			accessorKey: 'mediaConsent',
 			header: m.mediaConsentStatus(),
 			id: 'mediaConsent',
-			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.mediaConsent }),
+			cell: ({ row }) =>
+				renderComponent({ component: StatusIcon, props: { status: row.original.mediaConsent } }),
 			group: m.status(),
 			defaultVisible: false,
 			filter: {
@@ -389,7 +419,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'accepted',
 			header: m.accepted(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.accepted }),
+			cell: ({ row }) =>
+				renderComponent({ component: BooleanIcon, props: { value: row.original.accepted } }),
 			group: m.computedValues(),
 			defaultVisible: true,
 			filter: { type: 'boolean', alwaysAvailable: true }
@@ -397,7 +428,8 @@ function participantColumns(): ManagedColumn<ParticipantRow>[] {
 		{
 			accessorKey: 'hasOpenIssue',
 			header: m.openIssues(),
-			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.hasOpenIssue }),
+			cell: ({ row }) =>
+				renderComponent({ component: BooleanIcon, props: { value: row.original.hasOpenIssue } }),
 			group: m.computedValues(),
 			defaultVisible: false,
 			description: m.openIssuesDescription(),
@@ -419,7 +451,7 @@ export function createColumnDefs(): ManagedColumn<ParticipantRow>[] {
 		const id = columnIdOf(column);
 		return id === undefined
 			? column
-			: { ...column, exportValue: (row) => getPlainTextValue(row, id) };
+			: { ...column, exportValue: (row) => getPlainTextValue({ row, columnId: id }) };
 	});
 }
 

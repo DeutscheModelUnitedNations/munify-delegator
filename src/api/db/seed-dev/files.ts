@@ -27,8 +27,11 @@ export function seedStorage(): Storage {
  * Adds an uploaded file to the batch, as if the team had uploaded it for `kind`/`field` of the
  * conference, and returns its id for the row's file column.
  */
-export function addSeedFile(
-	batch: SeedBatch,
+export function addSeedFile({
+	batch,
+	file
+}: {
+	batch: SeedBatch;
 	file: {
 		conferenceId: string;
 		kind: string;
@@ -36,11 +39,11 @@ export function addSeedFile(
 		bytes: Uint8Array;
 		mimeType: string;
 		fileName: string;
-	}
-) {
+	};
+}) {
 	const id = nanoid();
-	const purpose = filePurpose(file.kind, file.field);
-	const key = objectKey(file.conferenceId, purpose, id);
+	const purpose = filePurpose({ kind: file.kind, field: file.field });
+	const key = objectKey({ conferenceId: file.conferenceId, purpose, uniqueId: id });
 	batch.storedFile.push({
 		id,
 		key,
@@ -57,9 +60,15 @@ export function addSeedFile(
  * Empties the bucket, like the reset empties the database, and writes the objects of the files
  * the batch added.
  */
-export async function replaceSeedObjects(storage: Storage, batch: SeedBatch) {
+export async function replaceSeedObjects({
+	storage,
+	batch
+}: {
+	storage: Storage;
+	batch: SeedBatch;
+}) {
 	await storage.delete((await storage.list()).map((object) => object.key));
 	for (const object of batch.storedObject) {
-		await storage.put(object.key, object.bytes, object.mimeType);
+		await storage.put({ key: object.key, bytes: object.bytes, mimeType: object.mimeType });
 	}
 }

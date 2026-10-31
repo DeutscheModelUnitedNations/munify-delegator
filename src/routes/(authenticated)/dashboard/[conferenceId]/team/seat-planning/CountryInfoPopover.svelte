@@ -66,7 +66,7 @@
 	});
 
 	// world-countries names languages by ISO 639-3 code with an English name
-	const languageName = (code: string, fallback: string) => {
+	const languageName = ({ code, fallback }: { code: string; fallback: string }) => {
 		try {
 			return languageNames?.of(code) ?? fallback;
 		} catch {
@@ -97,7 +97,7 @@
 			</div>
 			<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
 				<dt class="text-base-content/60">{m.countryInfoRegionalGroup()}</dt>
-				<dd>{translateRegionalGroup(member.regionalGroup)}</dd>
+				<dd>{translateRegionalGroup({ group: member.regionalGroup })}</dd>
 				<dt class="text-base-content/60">{m.countryInfoRegion()}</dt>
 				<dd>{member.subregion || member.region}</dd>
 				<dt class="text-base-content/60">{m.countryInfoCapital()}</dt>
@@ -105,7 +105,7 @@
 				<dt class="text-base-content/60">{m.countryInfoLanguages()}</dt>
 				<dd>
 					{member.languages
-						.map((language) => languageName(language.code, language.name))
+						.map((language) => languageName({ code: language.code, fallback: language.name }))
 						.join(', ')}
 				</dd>
 				<dt class="text-base-content/60">{m.countryInfoNeighbours()}</dt>

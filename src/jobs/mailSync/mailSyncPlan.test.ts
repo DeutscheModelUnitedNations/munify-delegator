@@ -66,7 +66,9 @@ describe('isManagedListName', () => {
 
 describe('planForUser', () => {
 	test('creates a missing subscriber with all desired lists', () => {
-		expect(planForUser(state([TEAM, NEWSLETTER]), undefined, listNameToId)).toEqual({
+		expect(
+			planForUser({ state: state([TEAM, NEWSLETTER]), subscriber: undefined, listNameToId })
+		).toEqual({
 			kind: 'create',
 			userId: 'u1',
 			email: 'erika@example.org',
@@ -78,12 +80,12 @@ describe('planForUser', () => {
 
 	test('does nothing when our lists, name and attribs match', () => {
 		const sub = subscriber({ lists: [list(1, TEAM)] });
-		expect(planForUser(state([TEAM]), sub, listNameToId)).toBeUndefined();
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
 	});
 
 	test('adds and removes only the difference on our lists', () => {
 		const sub = subscriber({ lists: [list(2, NEWSLETTER)] });
-		expect(planForUser(state([TEAM]), sub, listNameToId)).toMatchObject({
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toMatchObject({
 			kind: 'update',
 			addListIds: [1],
 			removeListIds: [2],
@@ -96,7 +98,7 @@ describe('planForUser', () => {
 			lists: [list(1, TEAM), list(9, FOREIGN)],
 			attribs: { userId: 'u1', conferences: [], mitgliedshub: { memberId: 'm1' } }
 		});
-		expect(planForUser(state([TEAM]), sub, listNameToId)).toBeUndefined();
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
 	});
 
 	test('keeps the name while another system shares the subscriber', () => {
@@ -104,12 +106,12 @@ describe('planForUser', () => {
 			name: 'Dr. Erika Mustermann',
 			lists: [list(1, TEAM), list(9, FOREIGN)]
 		});
-		expect(planForUser(state([TEAM]), sub, listNameToId)).toBeUndefined();
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toBeUndefined();
 	});
 
 	test('updates the name of a subscriber that is ours alone', () => {
 		const sub = subscriber({ name: 'E. Mustermann', lists: [list(1, TEAM)] });
-		expect(planForUser(state([TEAM]), sub, listNameToId)).toMatchObject({
+		expect(planForUser({ state: state([TEAM]), subscriber: sub, listNameToId })).toMatchObject({
 			patch: { name: 'Erika Mustermann', attribs: { userId: 'u1', conferences: [] } }
 		});
 	});
@@ -119,7 +121,7 @@ describe('planForUser', () => {
 			lists: [list(1, TEAM)],
 			attribs: { userId: 'old', mitgliedshub: { memberId: 'm1' } }
 		});
-		const action = planForUser(state([TEAM]), sub, listNameToId);
+		const action = planForUser({ state: state([TEAM]), subscriber: sub, listNameToId });
 		expect(action).toMatchObject({ patch: { attribs: { userId: 'u1', conferences: [] } } });
 		expect(action?.kind === 'update' && action.patch?.attribs).not.toHaveProperty('mitgliedshub');
 	});

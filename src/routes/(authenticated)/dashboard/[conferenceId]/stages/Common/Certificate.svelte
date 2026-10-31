@@ -53,7 +53,13 @@
 	 * The template is read live: the dashboard has the conference cached already, so the first answer
 	 * lacks the template until the network's arrives, and a one-shot read would keep that first one.
 	 */
-	async function fetchCertificate(conferenceId: string, userId: string) {
+	async function fetchCertificate({
+		conferenceId,
+		userId
+	}: {
+		conferenceId: string;
+		userId: string;
+	}) {
 		return Promise.all([
 			client.liveQuery.conference({
 				__args: { id: conferenceId },
@@ -71,7 +77,7 @@
 	}
 
 	const sources = $derived(
-		conferenceId && userId ? await fetchCertificate(conferenceId, userId) : undefined
+		conferenceId && userId ? await fetchCertificate({ conferenceId, userId }) : undefined
 	);
 	const certificate = $derived.by((): CertificateData | undefined => {
 		if (!sources) return undefined;
@@ -86,18 +92,21 @@
 	});
 
 	const downloadPDF = async () => {
-		const download = planCertificateDownload(certificate, userId);
+		const download = planCertificateDownload({ certificate, userId });
 		if (download.kind === 'incomplete') {
 			toast.error(m.certificateDownloadError());
 		}
 		if (download.kind !== 'ready') return;
 
-		await downloadCompleteCertificate(
-			download.holder,
-			download.content,
-			download.filename,
-			resolveDocumentLayout('certificate', sources?.[0].documentLayouts)
-		);
+		await downloadCompleteCertificate({
+			data: download.holder,
+			certificate: download.content,
+			fileName: download.filename,
+			layout: resolveDocumentLayout({
+				document: 'certificate',
+				stored: sources?.[0].documentLayouts
+			})
+		});
 	};
 </script>
 

@@ -11,7 +11,7 @@
 
 	let { seatCounts, onSelectGroup }: Props = $props();
 
-	const groups = $derived(seatedByGroup(unMembers, seatCounts));
+	const groups = $derived(seatedByGroup({ members: unMembers, seatCounts }));
 </script>
 
 <section class="bg-base-200 rounded-box flex flex-col gap-1 p-3">
@@ -24,7 +24,7 @@
 		>
 			<span class="flex items-center gap-2">
 				<i class="fa-sharp-duotone fa-solid fa-filter text-base-content/60 text-xs"></i>
-				{translateRegionalGroup(group)}
+				{translateRegionalGroup({ group })}
 			</span>
 			<span class="badge badge-sm {unseated > 0 ? 'badge-neutral' : 'badge-ghost'}">
 				{unseated}/{total}

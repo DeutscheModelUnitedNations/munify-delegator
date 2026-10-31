@@ -94,10 +94,10 @@
 	];
 
 	let filteredFlags = $derived(
-		filterAndSortFlags(
-			flagCollection?.flags,
-			filterOptions.find((option) => option.id === filterState)?.keep
-		)
+		filterAndSortFlags({
+			flags: flagCollection?.flags,
+			keep: filterOptions.find((option) => option.id === filterState)?.keep
+		})
 	);
 </script>
 

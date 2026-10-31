@@ -1,20 +1,13 @@
 import { db, schema } from '#api/db/db';
 import type { TeamRole } from '#api/services/authHelper/rules';
-import {
-	getInvitationExpiryDate,
-	hashToken,
-	makeInvitationToken
-} from '#api/services/account/invitationToken';
-import {
-	sendTeamInvitationEmail,
-	sendTeamWelcomeEmail
-} from '#api/services/email/sendTeamInvitationEmail';
+import { getInvitationExpiryDate, hashToken, makeInvitationToken } from './invitationToken';
+import { sendTeamInvitationEmail } from '#api/handlers/email/teamInvitationEmail';
 import { m } from '#lib/paraglide/messages';
 import { getLocale } from '#lib/paraglide/runtime';
-import { localeOfUser } from '#api/services/requestLocale';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import { isParticipantOrTeamMember } from '#api/services/registration/participation';
+import { logger } from '#lib/logger';
 
 /** An invitation as the service needs it, already authorized by the resolver. */
 type Invitation = {
@@ -32,13 +25,19 @@ async function inviterDisplayName(callerId: string) {
 }
 
 /** Mails a regenerated invitation's new link. Sending happens in the background, best-effort. */
-async function resendInvitationEmail(
-	invitation: { conferenceId: string; email: string; role: TeamRole },
-	callerId: string,
-	origin: string,
-	token: string,
-	expiresAt: Date
-) {
+async function resendInvitationEmail({
+	invitation,
+	callerId,
+	origin,
+	token,
+	expiresAt
+}: {
+	invitation: { id: string; conferenceId: string; email: string; role: TeamRole };
+	callerId: string;
+	origin: string;
+	token: string;
+	expiresAt: Date;
+}) {
 	const conference = await db.query.conference.findFirst({
 		where: { id: invitation.conferenceId }
 	});
@@ -46,6 +45,8 @@ async function resendInvitationEmail(
 
 	sendTeamInvitationEmail({
 		conferenceId: invitation.conferenceId,
+		invitationId: invitation.id,
+		sentById: callerId,
 		recipientEmail: invitation.email,
 		conferenceTitle: conference.title,
 		role: invitation.role,
@@ -53,11 +54,11 @@ async function resendInvitationEmail(
 		inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
 		expiresAt,
 		locale: getLocale()
-	}).catch((err) => console.error('Failed to send invitation email:', err));
+	}).catch((err: unknown) => logger.error('Failed to send invitation email', err));
 }
 
 /** An invitation that is still open: not used, not revoked, not expired. */
-function findPendingInvitation(conferenceId: string, email: string) {
+function findPendingInvitation({ conferenceId, email }: { conferenceId: string; email: string }) {
 	return db.query.teamMemberInvitation.findFirst({
 		where: {
 			conferenceId,
@@ -88,13 +89,13 @@ type InvitationContext = {
 };
 
 /** Why an address cannot be invited, or undefined when it can. */
-async function invitationRefusal(conferenceId: string, email: string) {
+async function invitationRefusal({ conferenceId, email }: { conferenceId: string; email: string }) {
 	const existingTeamMember = await db.query.teamMember.findFirst({
 		where: { conferenceId, user: { email } }
 	});
 	if (existingTeamMember) return { refusal: m.invitationAlreadyTeamMember() };
 
-	const pending = await findPendingInvitation(conferenceId, email);
+	const pending = await findPendingInvitation({ conferenceId, email });
 	if (pending) return { refusal: m.invitationAlreadyPending() };
 
 	const existingUser = await db.query.user.findFirst({ where: { email } });
@@ -113,12 +114,17 @@ async function invitationRefusal(conferenceId: string, email: string) {
  * still shows who invited them. Both or neither: a membership without its record would hide who
  * granted it.
  */
-async function addKnownUser(
-	context: InvitationContext,
-	user: { id: string; givenName: string; familyName: string; locale: string },
-	email: string,
-	role: TeamRole
-): Promise<CreatedInvitation> {
+async function addKnownUser({
+	context,
+	user,
+	email,
+	role
+}: {
+	context: InvitationContext;
+	user: { id: string };
+	email: string;
+	role: TeamRole;
+}): Promise<CreatedInvitation> {
 	const { conferenceId, callerId } = context;
 	const now = new Date();
 	const teamMember = await db.transaction(async (tx) => {
@@ -142,26 +148,19 @@ async function addKnownUser(
 		return member;
 	});
 
-	sendTeamWelcomeEmail({
-		conferenceId,
-		recipientName: `${user.givenName} ${user.familyName}`,
-		recipientEmail: email,
-		conferenceTitle: context.conferenceTitle,
-		role,
-		inviterName: context.inviterName,
-		dashboardUrl: `${context.origin}/dashboard/${conferenceId}`,
-		locale: localeOfUser(user.locale)
-	}).catch((err) => console.error('Failed to send welcome email:', err));
-
 	return { id: teamMember.id, email, role, token: null, expiresAt: now, addedDirectly: true };
 }
 
 /** Unknown user: store only the hash, hand the plaintext token back to the caller. */
-async function inviteUnknownUser(
-	context: InvitationContext,
-	email: string,
-	role: TeamRole
-): Promise<CreatedInvitation> {
+async function inviteUnknownUser({
+	context,
+	email,
+	role
+}: {
+	context: InvitationContext;
+	email: string;
+	role: TeamRole;
+}): Promise<CreatedInvitation> {
 	const { conferenceId } = context;
 	const token = makeInvitationToken();
 	const expiresAt = getInvitationExpiryDate();
@@ -180,6 +179,8 @@ async function inviteUnknownUser(
 
 	sendTeamInvitationEmail({
 		conferenceId,
+		invitationId: record.id,
+		sentById: context.callerId,
 		recipientEmail: email,
 		conferenceTitle: context.conferenceTitle,
 		role,
@@ -187,7 +188,7 @@ async function inviteUnknownUser(
 		inviteUrl: `${context.origin}/auth/accept-invitation?token=${token}`,
 		expiresAt,
 		locale: getLocale()
-	}).catch((err) => console.error('Failed to send invitation email:', err));
+	}).catch((err: unknown) => logger.error('Failed to send invitation email', err));
 
 	return { id: record.id, email, role, token, expiresAt, addedDirectly: false };
 }
@@ -199,13 +200,19 @@ async function inviteUnknownUser(
  * `assertMayGrant` is the caller's permission check for one role; a role it refuses is reported
  * for that address like any other failure.
  */
-export async function createInvitations(
-	callerId: string,
-	origin: string,
-	conferenceId: string,
-	invitations: { email: string; role: TeamRole }[],
-	assertMayGrant: (role: TeamRole) => Promise<void>
-) {
+export async function createInvitations({
+	callerId,
+	origin,
+	conferenceId,
+	invitations,
+	assertMayGrant
+}: {
+	callerId: string;
+	origin: string;
+	conferenceId: string;
+	invitations: { email: string; role: TeamRole }[];
+	assertMayGrant: (role: TeamRole) => Promise<void>;
+}) {
 	const conference = await db.query.conference
 		.findFirst({ where: { id: conferenceId } })
 		.then(assertFindFirstExists);
@@ -224,15 +231,15 @@ export async function createInvitations(
 		const email = invitation.email.toLowerCase().trim();
 		try {
 			await assertMayGrant(invitation.role);
-			const { refusal, existingUser } = await invitationRefusal(conferenceId, email);
+			const { refusal, existingUser } = await invitationRefusal({ conferenceId, email });
 			if (refusal) {
 				errors.push({ email, error: refusal });
 				continue;
 			}
 			created.push(
 				existingUser
-					? await addKnownUser(context, existingUser, email, invitation.role)
-					: await inviteUnknownUser(context, email, invitation.role)
+					? await addKnownUser({ context, user: existingUser, email, role: invitation.role })
+					: await inviteUnknownUser({ context, email, role: invitation.role })
 			);
 		} catch (error) {
 			errors.push({
@@ -257,18 +264,23 @@ export async function revokeInvitation(invitation: Invitation) {
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ revokedAt: new Date() })
-		.where(whereRows(schema.teamMemberInvitation, { id: invitation.id }));
+		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
 
 	return { success: true, message: null };
 }
 
 /** Issues a fresh token for an invitation, optionally mailing it. */
-export async function regenerateInvitation(
-	invitation: Invitation,
-	callerId: string,
-	origin: string,
-	sendEmail: boolean | null | undefined
-) {
+export async function regenerateInvitation({
+	invitation,
+	callerId,
+	origin,
+	sendEmail
+}: {
+	invitation: Invitation;
+	callerId: string;
+	origin: string;
+	sendEmail: boolean | null | undefined;
+}) {
 	if (invitation.usedAt) {
 		return {
 			success: false,
@@ -285,10 +297,16 @@ export async function regenerateInvitation(
 	await db
 		.update(schema.teamMemberInvitation)
 		.set({ token: hashToken(newToken), expiresAt: newExpiresAt, revokedAt: null })
-		.where(whereRows(schema.teamMemberInvitation, { id: invitation.id }));
+		.where(whereRows({ table: schema.teamMemberInvitation, filter: { id: invitation.id } }));
 
 	if (sendEmail) {
-		await resendInvitationEmail(invitation, callerId, origin, newToken, newExpiresAt);
+		await resendInvitationEmail({
+			invitation,
+			callerId,
+			origin,
+			token: newToken,
+			expiresAt: newExpiresAt
+		});
 	}
 
 	return { success: true, newToken, newExpiresAt, message: null };
@@ -298,7 +316,13 @@ export async function regenerateInvitation(
  * What will happen to each address before anything is sent: already on the team, already
  * invited, a known user who would be added directly, or a genuinely new one.
  */
-export async function checkInvitationEmails(conferenceId: string, emails: { email: string }[]) {
+export async function checkInvitationEmails({
+	conferenceId,
+	emails
+}: {
+	conferenceId: string;
+	emails: { email: string }[];
+}) {
 	const results: {
 		email: string;
 		status: string;
@@ -322,7 +346,7 @@ export async function checkInvitationEmails(conferenceId: string, emails: { emai
 			continue;
 		}
 
-		const pending = await findPendingInvitation(conferenceId, email);
+		const pending = await findPendingInvitation({ conferenceId, email });
 		if (pending) {
 			results.push({
 				email,

@@ -17,10 +17,13 @@ const hasRoom = (option: OptionLoad) => !option.upperLimit || option.taken < opt
  * then to the earlier one. Never puts anybody into an option past its limit: once no option has
  * room, the rest get nothing.
  */
-export function distributeToOptions(
-	participantIds: readonly string[],
-	options: readonly OptionLoad[]
-): { participantId: string; optionId: string }[] {
+export function distributeToOptions({
+	participantIds,
+	options
+}: {
+	participantIds: readonly string[];
+	options: readonly OptionLoad[];
+}): { participantId: string; optionId: string }[] {
 	const loads = options.map((option) => ({ ...option }));
 	const plan: { participantId: string; optionId: string }[] = [];
 	for (const participantId of participantIds) {

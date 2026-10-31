@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import GenericDownloadButton from './GenericDownloadButton.svelte';
-	import { downloadSemicolonCsv, fetchConferenceTitle, fileNamePrefix } from './seatDownloads';
-	import { compareByText } from './sortRows';
+	import { downloadSortedCsv, fetchConferenceTitle, fileNamePrefix } from './seatDownloads';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -24,25 +22,18 @@
 			fetchConferenceTitle(conferenceId)
 		]);
 
-		if (members.length === 0) {
-			toast.error(m.noDataFound());
-			return;
-		}
-
-		downloadSemicolonCsv(
-			[
-				[m.name(), m.firstName(), m.lastName(), m.email()],
-				...[...members]
-					.sort(compareByText((member) => member.delegation.assignedRole?.abbreviation))
-					.map((member) => [
-						member.delegation.assignedRole?.abbreviation,
-						member.user.givenName,
-						member.user.familyName,
-						member.user.email
-					])
+		downloadSortedCsv({
+			items: members,
+			header: [m.name(), m.firstName(), m.lastName(), m.email()],
+			sortKey: (member) => member.delegation.assignedRole?.abbreviation,
+			row: (member) => [
+				member.delegation.assignedRole?.abbreviation,
+				member.user.givenName,
+				member.user.familyName,
+				member.user.email
 			],
-			`${fileNamePrefix(title)}_nsa_members.csv`
-		);
+			filename: `${fileNamePrefix(title)}_nsa_members.csv`
+		});
 	};
 </script>
 

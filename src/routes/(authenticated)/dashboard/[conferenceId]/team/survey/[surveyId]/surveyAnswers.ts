@@ -3,7 +3,13 @@ import { client } from '#lib/api/rumbleClient/client';
 const answeringUser = { id: true, givenName: true, familyName: true } as const;
 
 /** One survey's options and answers, plus everyone who still owes an answer. */
-export async function fetchSurveyResults(conferenceId: string, surveyId: string) {
+export async function fetchSurveyResults({
+	conferenceId,
+	surveyId
+}: {
+	conferenceId: string;
+	surveyId: string;
+}) {
 	/** Anyone who holds a seat but has not answered this question yet. */
 	const notAnswered = { NOT: { surveyAnswers: { questionId: { eq: surveyId } } } };
 

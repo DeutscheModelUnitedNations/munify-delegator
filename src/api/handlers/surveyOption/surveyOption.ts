@@ -39,7 +39,7 @@ schemaBuilder.mutationFields((t) => ({
 			upperLimit: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateSurveyOption(ctx, args.questionId);
+			await assertCanCreateSurveyOption({ ctx, questionId: args.questionId });
 
 			const created = await db
 				.insert(schema.surveyOption)
@@ -55,7 +55,9 @@ schemaBuilder.mutationFields((t) => ({
 			surveyOptionPubsub.created();
 
 			return db.query.surveyOption
-				.findFirst(query(await queryAllowed(ctx.abilities.surveyOption, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.surveyOption, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -69,16 +71,21 @@ schemaBuilder.mutationFields((t) => ({
 			upperLimit: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateIfAllowed(ctx, 'surveyOption', args.id, {
-				title: args.title ?? undefined,
-				description: args.description ?? undefined,
-				upperLimit: args.upperLimit ?? undefined
+			await updateIfAllowed({
+				ctx,
+				table: 'surveyOption',
+				id: args.id,
+				values: {
+					title: args.title ?? undefined,
+					description: args.description ?? undefined,
+					upperLimit: args.upperLimit ?? undefined
+				}
 			});
 
 			surveyOptionPubsub.updated(args.id);
 
 			return db.query.surveyOption
-				.findFirst(query(await queryAllowed(ctx.abilities.surveyOption, args.id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.surveyOption, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -87,7 +94,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'surveyOption', args.id);
+			await deleteIfAllowed({ ctx, table: 'surveyOption', id: args.id });
 			surveyOptionPubsub.removed();
 
 			return true;

@@ -12,11 +12,13 @@ const CONFERENCE_STATES = [
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** A random date between `fromDays` and `toDays` days from now. */
-const inDays = (fromDays: number, toDays: number) => () =>
-	faker.date.between({
-		from: new Date(Date.now() + fromDays * DAY_MS),
-		to: new Date(Date.now() + toDays * DAY_MS)
-	});
+const inDays =
+	({ fromDays, toDays }: { fromDays: number; toDays: number }) =>
+	() =>
+		faker.date.between({
+			from: new Date(Date.now() + fromDays * DAY_MS),
+			to: new Date(Date.now() + toDays * DAY_MS)
+		});
 const past = () => faker.date.past();
 const future = () => faker.date.future();
 
@@ -29,19 +31,19 @@ type ConferenceDates = Record<
 const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates> = {
 	// Assignment in at least a week, the conference in at least two.
 	PRE: {
-		applicationDeadline: inDays(7, 14),
-		startConference: inDays(15, 21),
-		endConference: inDays(30, 35)
+		applicationDeadline: inDays({ fromDays: 7, toDays: 14 }),
+		startConference: inDays({ fromDays: 15, toDays: 21 }),
+		endConference: inDays({ fromDays: 30, toDays: 35 })
 	},
 	PARTICIPANT_REGISTRATION: {
 		applicationDeadline: past,
-		startConference: inDays(7, 14),
-		endConference: inDays(30, 35)
+		startConference: inDays({ fromDays: 7, toDays: 14 }),
+		endConference: inDays({ fromDays: 30, toDays: 35 })
 	},
 	PREPARATION: {
 		applicationDeadline: past,
-		startConference: inDays(7, 14),
-		endConference: inDays(30, 35)
+		startConference: inDays({ fromDays: 7, toDays: 14 }),
+		endConference: inDays({ fromDays: 30, toDays: 35 })
 	},
 	ACTIVE: { applicationDeadline: past, startConference: past, endConference: future },
 	POST: { applicationDeadline: past, startConference: past, endConference: past }

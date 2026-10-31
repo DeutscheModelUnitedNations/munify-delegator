@@ -24,7 +24,7 @@ export function createEntryCodeInput(initial = '') {
 			timer = setTimeout(() => (settled = true), SETTLE_MS);
 		},
 		get ready() {
-			return isLookupReady(value, settled) ? value : undefined;
+			return isLookupReady({ code: value, settled }) ? value : undefined;
 		}
 	};
 }

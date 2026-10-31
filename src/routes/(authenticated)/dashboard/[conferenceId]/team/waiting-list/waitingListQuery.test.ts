@@ -25,13 +25,13 @@ function where(
 		userIds
 	}: Options = {}
 ) {
-	return waitingListWhere(
-		'c1',
-		{ columnFilters, search },
-		{ hideHidden, showSeated },
-		start,
+	return waitingListWhere({
+		conferenceId: 'c1',
+		state: { columnFilters, search },
+		toggles: { hideHidden, showSeated },
+		startConference: start,
 		userIds
-	);
+	});
 }
 
 describe('waitingListWhere', () => {

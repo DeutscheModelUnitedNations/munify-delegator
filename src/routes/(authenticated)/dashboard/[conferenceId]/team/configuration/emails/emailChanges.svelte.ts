@@ -32,7 +32,7 @@ export function createEmailChanges() {
 		/** What the switch shows: the staged value, else what is stored. */
 		enabledOf: (kind: EmailkindEnum, stored: boolean) => staged.get(kind)?.enabled ?? stored,
 		/** Switching back to what is stored drops the change. */
-		stage(change: EmailChange, stored: boolean) {
+		stage({ change, stored }: { change: EmailChange; stored: boolean }) {
 			if (change.enabled === stored) staged.delete(change.kind);
 			else staged.set(change.kind, change);
 		},

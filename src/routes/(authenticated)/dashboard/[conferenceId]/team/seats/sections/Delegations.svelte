@@ -84,7 +84,13 @@
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
-	const addParticipant = async (roleId: string, committeeId: string) => {
+	const addParticipant = async ({
+		roleId,
+		committeeId
+	}: {
+		roleId: string;
+		committeeId: string;
+	}) => {
 		if (!user?.id) return;
 		await client.mutate.createAppliedDelegationMember({
 			__args: {
@@ -134,7 +140,7 @@
 		);
 	}
 
-	const seatLabel = (nation: Nation, committee: Committee) =>
+	const seatLabel = ({ nation, committee }: { nation: Nation; committee: Committee }) =>
 		`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`;
 
 	/** `count` keys for an `{#each}` that renders one thing per seat. */
@@ -152,10 +158,11 @@
 			delegationId: delegation?.id,
 			roleId: nation.roleId,
 			committeeId: committee.id,
-			seatLabel: seatLabel(nation, committee)
+			seatLabel: seatLabel({ nation, committee })
 		}}
 		bind:user
-		addParticipant={async () => await addParticipant(nation.roleId, committee.id)}
+		addParticipant={async () =>
+			await addParticipant({ roleId: nation.roleId, committeeId: committee.id })}
 		{warning}
 	/>
 {/snippet}
@@ -180,7 +187,7 @@
 			<SeatedMembers
 				members={assignedDelegationMember}
 				delegationId={delegation.id}
-				seatLabel={seatLabel(nation, committee)}
+				seatLabel={seatLabel({ nation, committee })}
 			/>
 
 			{#each seatKeys(seatsPerCommittee - assignedDelegationMember.length) as seat (seat)}

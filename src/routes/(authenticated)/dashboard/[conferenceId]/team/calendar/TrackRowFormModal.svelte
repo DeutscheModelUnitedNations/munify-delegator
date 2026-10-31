@@ -30,7 +30,10 @@
 			await Promise.all(
 				tracks.map((track) =>
 					client.mutate.updateCalendarTrack({
-						__args: { id: track.id, ...trackFields(name, description, track.sortOrder) },
+						__args: {
+							id: track.id,
+							...trackFields({ name, description, sortOrder: track.sortOrder })
+						},
 						id: true
 					})
 				)
@@ -41,7 +44,10 @@
 		await Promise.all(
 			days.map((day) =>
 				client.mutate.createCalendarTrack({
-					__args: { calendarDayId: day.id, ...trackFields(name, description, index) },
+					__args: {
+						calendarDayId: day.id,
+						...trackFields({ name, description, sortOrder: index })
+					},
 					id: true
 				})
 			)
@@ -50,7 +56,8 @@
 
 	async function save() {
 		if (!name) return;
-		if (await saveWithToast((loading) => (isLoading = loading), writeRow)) onClose();
+		if (await saveWithToast({ setLoading: (loading) => (isLoading = loading), write: writeRow }))
+			onClose();
 	}
 </script>
 

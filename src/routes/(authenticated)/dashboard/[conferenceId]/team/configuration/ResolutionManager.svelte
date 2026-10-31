@@ -53,23 +53,29 @@
 
 	async function uploadFiles(files: File[]) {
 		uploading = true;
-		const failed = await uploadEach(files, async (file) => {
-			const fileId = await uploadFile(file, { kind: 'resolution', field: 'content', conferenceId });
-			if (!fileId) throw new Error(m.fileUploadEmpty());
-			return client.mutate.createResolution({
-				__args: {
-					conferenceId,
-					committeeId: uploadCommitteeId || undefined,
-					fileId
-				},
-				id: true
-			});
+		const failed = await uploadEach({
+			files,
+			upload: async (file) => {
+				const fileId = await uploadFile({
+					file,
+					target: { kind: 'resolution', field: 'content', conferenceId }
+				});
+				if (!fileId) throw new Error(m.fileUploadEmpty());
+				return client.mutate.createResolution({
+					__args: {
+						conferenceId,
+						committeeId: uploadCommitteeId || undefined,
+						fileId
+					},
+					id: true
+				});
+			}
 		});
 		uploading = false;
-		reportUpload(failed, files.length);
+		reportUpload({ failed, total: files.length });
 	}
 
-	function reportUpload(failed: string[], total: number) {
+	function reportUpload({ failed, total }: { failed: string[]; total: number }) {
 		if (failed.length === 0) toast.success(m.resolutionUploadSuccess());
 		else if (failed.length === total) toast.error(m.resolutionUploadError());
 		else toast.error(m.resolutionUploadPartialError({ files: failed.join(', ') }));

@@ -6,8 +6,7 @@
  * and the time after it (`seed-dev/plans.ts`). In them, the accounts on the oidc-mock login page
  * (`seed-data/devAccounts.ts`) each play one role: the team roles in every conference, the
  * application stages in the registration conferences, and the participant roles - delegates,
- * single participants, supervisors, rejected applicants - from preparation onwards. Around them
- * an anonymous crowd provides the volume tables, statistics and assignment tools need.
+ * single participants, supervisors, rejected appl{ kind, options }: { kind: CrowdKind; options?: { incomplete?: boolean; ages?: [number, number]; }; }s the volume tables, statistics and assignment tools need.
  *
  * The overview printed at the end says which account to sign in with for what.
  */
@@ -42,6 +41,7 @@ import {
 	addElsewhereTeam
 } from './seed-dev/duplicates';
 import { conferencePlans } from './seed-dev/plans';
+import { logger } from '#lib/logger';
 
 // Run outside SvelteKit, so the connection string comes straight off the process rather than
 // through `$app/env/private`.
@@ -69,7 +69,7 @@ let participantCount = 0;
 const world: SeedWorld = {
 	batch,
 	nations: batch.nation.map((nation) => nation.alpha3Code),
-	crowdUser(kind, options = {}) {
+	crowdUser({ kind, options = {} }) {
 		const [minAge, maxAge] = options.ages ?? CROWD_AGES[kind];
 		const user = makeSeedUser({ minAge, maxAge, incomplete: options.incomplete });
 		if (kind === 'participant') user.globalNotes = careNoteFor(participantCount++);
@@ -89,7 +89,7 @@ for (const plan of conferencePlans) {
 	const templates = await conferenceTemplatePdfs(
 		plan.conference.longTitle ?? plan.conference.title
 	);
-	const cs = buildConferenceStructure(world, plan, templates);
+	const cs = buildConferenceStructure({ world, plan, templates });
 	if (plan.key === 'elsewhere') {
 		// Another organizer's conference: nothing of the dev team in it, only the duplicate scenarios.
 		addElsewhereTeam(cs);
@@ -102,7 +102,7 @@ for (const plan of conferencePlans) {
 	else addRegistrationPersonas(cs);
 	addCrowd(cs);
 	if (plan.with.assignmentDraft) addAssignmentDraft(cs);
-	addWaitingList(cs, 'dev-waitlist');
+	addWaitingList({ cs, personaUserId: 'dev-waitlist' });
 	addPapers(cs);
 	addSurveys(cs);
 	addEmails(cs);
@@ -115,16 +115,16 @@ for (const plan of conferencePlans) {
 // Last: one person per conference comes from another school than their delegation, as after a merger.
 addMergedMembers(batch);
 
-console.info('Resetting database...');
+logger.info('Resetting database...');
 await reset(db, schema);
-console.info(
+logger.info(
 	`Inserting ${batch.user.length} users, ${batch.delegation.length} delegations and ${batch.singleParticipant.length} single participants in ${conferencePlans.length} conferences...`
 );
-await insertBatch(db, batch);
-console.info(`Replacing the bucket's objects with ${batch.storedObject.length} uploaded files...`);
-await replaceSeedObjects(storage, batch);
+await insertBatch({ db, batch });
+logger.info(`Replacing the bucket's objects with ${batch.storedObject.length} uploaded files...`);
+await replaceSeedObjects({ storage, batch });
 // The app refreshes them every few minutes; until then the statistics would show the old data.
-console.info('Refreshing the statistics views...');
+logger.info('Refreshing the statistics views...');
 for (const view of STATISTICS_VIEWS) {
 	await db.execute(sql.raw(`REFRESH MATERIALIZED VIEW "${view}"`));
 }

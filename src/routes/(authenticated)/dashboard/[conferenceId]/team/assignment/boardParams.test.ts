@@ -16,14 +16,18 @@ describe('boardParams', () => {
 
 	it('writes them back, leaving defaults and other parameters alone', () => {
 		const url = new URL('http://x/board?tab=2&size=4');
-		expect(withBoardParams(url, { size: 7, disqualified: true }).search).toBe(
+		expect(withBoardParams({ url, params: { size: 7, disqualified: true } }).search).toBe(
 			'?tab=2&size=7&disqualified=true'
 		);
-		expect(withBoardParams(url, { size: 0, disqualified: false }).search).toBe('?tab=2');
+		expect(withBoardParams({ url, params: { size: 0, disqualified: false } }).search).toBe(
+			'?tab=2'
+		);
 	});
 
 	it('reads back what it writes', () => {
 		const params = { size: 3, disqualified: true };
-		expect(boardParams(withBoardParams(new URL('http://x/'), params).searchParams)).toEqual(params);
+		expect(
+			boardParams(withBoardParams({ url: new URL('http://x/'), params }).searchParams)
+		).toEqual(params);
 	});
 });

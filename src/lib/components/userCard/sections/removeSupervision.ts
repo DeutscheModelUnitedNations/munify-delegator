@@ -11,19 +11,26 @@ interface Person {
 }
 
 const nameOf = (person: Person) =>
-	formatNames(person.givenName, person.familyName, {
-		givenNameUppercase: false,
-		familyNameUppercase: false
+	formatNames({
+		givenName: person.givenName,
+		familyName: person.familyName,
+		options: {
+			givenNameUppercase: false,
+			familyNameUppercase: false
+		}
 	});
 
 /**
  * Ends a supervision after asking: the supervisor (by their registration's id) no longer looks
  * after the student (by their user id). Both sides of the user card offer it.
  */
-export async function removeSupervision(
-	supervisor: { id: string; user: Person },
-	student: { id: string } & Person
-) {
+export async function removeSupervision({
+	supervisor,
+	student
+}: {
+	supervisor: { id: string; user: Person };
+	student: { id: string } & Person;
+}) {
 	const text = m.confirmRemoveSupervision({
 		supervisor: nameOf(supervisor.user),
 		student: nameOf(student)

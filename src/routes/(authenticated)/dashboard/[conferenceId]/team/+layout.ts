@@ -17,5 +17,5 @@ export const load: LayoutLoad = async (event) => {
 
 	const relativePath = event.url.pathname.replace(`/dashboard/${conferenceId}/`, '');
 	const route = teamRouteForPath(relativePath);
-	if (route && !mayOpenTeamRoute(route, access)) error(403, m.noAccess());
+	if (route && !mayOpenTeamRoute({ route, access })) error(403, m.noAccess());
 };

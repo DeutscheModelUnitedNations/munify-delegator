@@ -40,6 +40,17 @@ const OwnNametagTable = schemaBuilder.simpleObject('OwnNametagTable', {
 	})
 });
 
+/** The bin count and language of a conference the caller may read the bins of. */
+async function binConference(conferenceId: string) {
+	const conference = await db.query.conference
+		.findFirst({
+			where: { id: conferenceId },
+			columns: { nametagBinCount: true, language: true }
+		})
+		.then(assertFindFirstExists);
+	return { ...conference, language: normalizeConferenceLanguage(conference.language) };
+}
+
 schemaBuilder.queryFields((t) => ({
 	/**
 	 * How the seated participants split into the conference's nametag bins. Computed on request:
@@ -53,20 +64,15 @@ schemaBuilder.queryFields((t) => ({
 			binCount: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadNametagBins(ctx, args.conferenceId);
+			await assertCanReadNametagBins({ ctx, conferenceId: args.conferenceId });
 
-			const conference = await db.query.conference
-				.findFirst({
-					where: { id: args.conferenceId },
-					columns: { nametagBinCount: true, language: true }
-				})
-				.then(assertFindFirstExists);
+			const conference = await binConference(args.conferenceId);
 
-			const bins = await loadNametagBins(
-				args.conferenceId,
-				args.binCount ?? conference.nametagBinCount,
-				normalizeConferenceLanguage(conference.language)
-			);
+			const bins = await loadNametagBins({
+				conferenceId: args.conferenceId,
+				binCount: args.binCount ?? conference.nametagBinCount,
+				language: conference.language
+			});
 			return bins.map((bin, index) => ({
 				index,
 				...bin,
@@ -92,12 +98,12 @@ schemaBuilder.queryFields((t) => ({
 				columns: { nametagBinCount: true, assignmentReleased: true, language: true }
 			});
 			if (!conference?.assignmentReleased) return null;
-			return loadOwnNametagTable(
-				args.conferenceId,
-				conference.nametagBinCount,
-				user.sub,
-				normalizeConferenceLanguage(conference.language)
-			);
+			return loadOwnNametagTable({
+				conferenceId: args.conferenceId,
+				binCount: conference.nametagBinCount,
+				userId: user.sub,
+				language: normalizeConferenceLanguage(conference.language)
+			});
 		}
 	}),
 
@@ -110,16 +116,14 @@ schemaBuilder.queryFields((t) => ({
 			index: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadNametagBins(ctx, args.conferenceId);
-			const conference = await db.query.conference
-				.findFirst({ where: { id: args.conferenceId }, columns: { language: true } })
-				.then(assertFindFirstExists);
-			return loadNametagBinGroups(
-				args.conferenceId,
-				args.binCount,
-				args.index,
-				normalizeConferenceLanguage(conference.language)
-			);
+			await assertCanReadNametagBins({ ctx, conferenceId: args.conferenceId });
+			const conference = await binConference(args.conferenceId);
+			return loadNametagBinGroups({
+				conferenceId: args.conferenceId,
+				binCount: args.binCount,
+				index: args.index,
+				language: conference.language
+			});
 		}
 	})
 }));

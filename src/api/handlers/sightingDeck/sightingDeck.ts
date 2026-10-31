@@ -12,7 +12,7 @@ import {
 import { assertCanReadSightingDeck } from './sightingDeckPermissions';
 import codenmz from '#lib/helpers/codenamize';
 import { z } from 'zod';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 const SightingDeckEntry = schemaBuilder.simpleObject('SightingDeckEntry', {
 	description: 'One application under review: what the deck orders, filters and colours it by.',
@@ -75,7 +75,8 @@ const MAX_NAME_MATCHES = 50;
 
 function statusOf(value: string | null | undefined) {
 	const status = value ?? 'all';
-	if (!isSightingStatusFilter(status)) throw apiError('INVALID_INPUT', `Unknown status ${status}`);
+	if (!isSightingStatusFilter(status))
+		throw apiError({ code: 'INVALID_INPUT', message: `Unknown status ${status}` });
 	return status;
 }
 
@@ -98,7 +99,7 @@ schemaBuilder.queryFields((t) => ({
 			revision: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadSightingDeck(ctx, args.conferenceId);
+			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const result = await db.execute<{ result: unknown }>(
 				deckSql({
 					conferenceId: args.conferenceId,
@@ -123,11 +124,16 @@ schemaBuilder.queryFields((t) => ({
 			school: t.arg.string()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadSightingDeck(ctx, args.conferenceId);
+			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const ids = args.ids.slice(0, MAX_ENTRIES);
 			if (ids.length === 0) return [];
 			const result = await db.execute<{ result: unknown }>(
-				entriesSql(args.conferenceId, ids, statusOf(args.status), args.school ?? null)
+				entriesSql({
+					conferenceId: args.conferenceId,
+					ids,
+					status: statusOf(args.status),
+					school: args.school ?? null
+				})
 			);
 			return result.rows.map((row) => deckSchema.shape.current.unwrap().parse(row.result));
 		}
@@ -144,7 +150,7 @@ schemaBuilder.queryFields((t) => ({
 			search: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadSightingDeck(ctx, args.conferenceId);
+			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const term = args.search.trim().toLowerCase();
 			if (!term) return [];
 			const result = await db.execute<{ id: string }>(applicationIdsSql(args.conferenceId));
@@ -167,10 +173,14 @@ schemaBuilder.queryFields((t) => ({
 			limit: t.arg.int()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadSightingDeck(ctx, args.conferenceId);
+			await assertCanReadSightingDeck({ ctx, conferenceId: args.conferenceId });
 			const search = (args.search ?? '').trim().replace(/[\\%_]/g, '\\$&');
 			const result = await db.execute<Record<string, unknown>>(
-				schoolsSql(args.conferenceId, `%${search}%`, Math.min(args.limit ?? 20, 50))
+				schoolsSql({
+					conferenceId: args.conferenceId,
+					like: `%${search}%`,
+					limit: Math.min(args.limit ?? 20, 50)
+				})
 			);
 			return z.array(schoolRowSchema).parse(result.rows);
 		}

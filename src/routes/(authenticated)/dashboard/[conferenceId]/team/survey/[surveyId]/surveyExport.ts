@@ -37,10 +37,13 @@ export interface RoleInfo {
 
 const noRole: RoleInfo = { roleType: '', roleName: '', committee: '' };
 
-function delegationMemberRole(
-	dm: ExportDelegationMember,
-	nationName: (alpha3Code: string) => string
-): RoleInfo | undefined {
+function delegationMemberRole({
+	dm,
+	nationName
+}: {
+	dm: ExportDelegationMember;
+	nationName: (alpha3Code: string) => string;
+}): RoleInfo | undefined {
 	const { nation, nonStateActor: nsa } = splitRole(dm.delegation.assignedRole);
 	if (nation) {
 		return {
@@ -57,14 +60,18 @@ function delegationMemberRole(
  * The seat every assigned participant holds, by user id. A single participant's role wins over a
  * delegation seat of the same user.
  */
-export function buildUserRoleMap(
-	delegationMembers: readonly ExportDelegationMember[],
-	singleParticipants: readonly ExportSingleParticipant[],
-	nationName: (alpha3Code: string) => string
-): Map<string, RoleInfo> {
+export function buildUserRoleMap({
+	delegationMembers,
+	singleParticipants,
+	nationName
+}: {
+	delegationMembers: readonly ExportDelegationMember[];
+	singleParticipants: readonly ExportSingleParticipant[];
+	nationName: (alpha3Code: string) => string;
+}): Map<string, RoleInfo> {
 	const userRoleMap = new Map<string, RoleInfo>();
 	for (const dm of delegationMembers) {
-		const role = delegationMemberRole(dm, nationName);
+		const role = delegationMemberRole({ dm, nationName });
 		if (role) userRoleMap.set(dm.user.id, role);
 	}
 	for (const sp of singleParticipants) {
@@ -80,7 +87,13 @@ export function buildUserRoleMap(
 }
 
 /** The role of a user, or empty columns for someone without a seat. */
-export function roleInfoOf(userRoleMap: ReadonlyMap<string, RoleInfo>, userId: string): RoleInfo {
+export function roleInfoOf({
+	userRoleMap,
+	userId
+}: {
+	userRoleMap: ReadonlyMap<string, RoleInfo>;
+	userId: string;
+}): RoleInfo {
 	return userRoleMap.get(userId) ?? noRole;
 }
 
@@ -91,11 +104,15 @@ export function formatBirthday(birthday: Date | null): string {
 }
 
 /** A user data row for CSV export, matching the user headers, plus any extra columns. */
-export function buildUserRow(
-	user: ExportUser,
-	roleInfo: RoleInfo,
-	additionalColumns: string[] = []
-): string[] {
+export function buildUserRow({
+	user,
+	roleInfo,
+	additionalColumns = []
+}: {
+	user: ExportUser;
+	roleInfo: RoleInfo;
+	additionalColumns?: string[];
+}): string[] {
 	return [
 		user.id,
 		user.familyName ?? '',
@@ -116,11 +133,15 @@ export function byFamilyName(a: string[], b: string[]) {
 }
 
 /** Everyone holding a seat who has not answered, each once, delegation members first. */
-export function collectNotAnswered(
-	answeredUserIds: ReadonlySet<string>,
-	participants: readonly { user: ExportUser }[],
-	userRoleMap: ReadonlyMap<string, RoleInfo>
-): { user: ExportUser; roleInfo: RoleInfo }[] {
+export function collectNotAnswered({
+	answeredUserIds,
+	participants,
+	userRoleMap
+}: {
+	answeredUserIds: ReadonlySet<string>;
+	participants: readonly { user: ExportUser }[];
+	userRoleMap: ReadonlyMap<string, RoleInfo>;
+}): { user: ExportUser; roleInfo: RoleInfo }[] {
 	const result: { user: ExportUser; roleInfo: RoleInfo }[] = [];
 	const seen = new Set<string>();
 	for (const { user } of participants) {
@@ -141,5 +162,8 @@ export function compareByDisplayName(
 }
 
 function displayName(user: { givenName: string | null; familyName: string | null }) {
-	return formatNames(user.givenName ?? undefined, user.familyName ?? undefined);
+	return formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined
+	});
 }

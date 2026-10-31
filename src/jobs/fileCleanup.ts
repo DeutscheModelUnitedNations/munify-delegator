@@ -4,6 +4,7 @@ import { createStorage, type Storage } from '#api/handlers/storedFile/storageCli
 import { storageConfig } from './config';
 import { db, schema } from './db';
 import { DEFAULT_GRACE_HOURS, fileReferenceColumns, orphanedObjectKeys } from './fileReferences';
+import { logger } from '#lib/logger';
 
 /** Files per page. */
 const BATCH = 500;
@@ -25,13 +26,14 @@ export async function runFileCleanup(
 	const storage = createStorage(storageConfig());
 	const unused = unusedSince(cutoff);
 
-	const files = dryRun ? await db.$count(file, unused) : await deleteFiles(storage, unused);
-	const orphans = await orphanedObjects(storage, cutoff);
+	const files = dryRun ? await db.$count(file, unused) : await deleteFiles({ storage, unused });
+	const orphans = await orphanedObjects({ storage, cutoff });
 	if (!dryRun) await storage.delete(orphans);
 
-	console.info(
-		`${files} unused files and ${orphans.length} orphaned objects ${dryRun ? 'would be deleted (dry run)' : 'deleted'}`
-	);
+	logger.info(dryRun ? 'Would delete unused files (dry run)' : 'Deleted unused files', {
+		files,
+		orphans: orphans.length
+	});
 	return { files, orphans: orphans.length };
 }
 
@@ -39,7 +41,7 @@ export async function runFileCleanup(
 function unusedSince(cutoff: Date) {
 	return and(
 		lt(file.createdAt, cutoff),
-		...fileReferenceColumns(schema, file).map(({ table, column }) =>
+		...fileReferenceColumns({ tables: schema, storedFile: file }).map(({ table, column }) =>
 			notExists(
 				db
 					.select({ one: sql`1` })
@@ -61,7 +63,7 @@ function unusedSince(cutoff: Date) {
  * whose bytes were deleted. Whether they are still unused is asked again after locking, which
  * catches a reference that landed between the page's query and the lock.
  */
-async function deleteFiles(storage: Storage, unused: SQL | undefined) {
+async function deleteFiles({ storage, unused }: { storage: Storage; unused: SQL | undefined }) {
 	const unusedWhere = rawWhere(unused);
 	let deleted = 0;
 	let after: string | undefined;
@@ -71,7 +73,7 @@ async function deleteFiles(storage: Storage, unused: SQL | undefined) {
 			const locked = await tx
 				.select({ id: file.id })
 				.from(file)
-				.where(whereRows(file, { ...unusedWhere, ...afterWhere }))
+				.where(whereRows({ table: file, filter: { ...unusedWhere, ...afterWhere } }))
 				.orderBy(asc(file.id))
 				.limit(BATCH)
 				.for('update');
@@ -84,7 +86,9 @@ async function deleteFiles(storage: Storage, unused: SQL | undefined) {
 			});
 			await storage.delete(garbage.map((row) => row.key));
 			if (garbage.length > 0) {
-				await tx.delete(file).where(whereRows(file, { id: { in: garbage.map((row) => row.id) } }));
+				await tx
+					.delete(file)
+					.where(whereRows({ table: file, filter: { id: { in: garbage.map((row) => row.id) } } }));
 			}
 			return { last: ids[ids.length - 1], deleted: garbage.length };
 		});
@@ -103,9 +107,9 @@ function idAfter(id: string | undefined) {
 }
 
 /** Objects in the bucket no file knows, older than `cutoff`. */
-async function orphanedObjects(storage: Storage, cutoff: Date) {
+async function orphanedObjects({ storage, cutoff }: { storage: Storage; cutoff: Date }) {
 	const knownKeys = new Set(
 		(await db.query.storedFile.findMany({ columns: { key: true } })).map((row) => row.key)
 	);
-	return orphanedObjectKeys(await storage.list(), knownKeys, cutoff);
+	return orphanedObjectKeys({ objects: await storage.list(), knownKeys, cutoff });
 }

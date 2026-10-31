@@ -28,10 +28,13 @@ const headOf = (members: SeatSwitchMember[], delegationId: string) =>
 
 describe('applySeatSwitch', () => {
 	it('keeps the head delegate flag with the seat when swapping between delegations', () => {
-		const after = applySeatSwitch([...france, ...kenya], {
-			kind: 'swap',
-			memberId: 'fr-head',
-			otherMemberId: 'ke-2'
+		const after = applySeatSwitch({
+			members: [...france, ...kenya],
+			change: {
+				kind: 'swap',
+				memberId: 'fr-head',
+				otherMemberId: 'ke-2'
+			}
 		});
 
 		expect(after.find((x) => x.id === 'fr-head')?.delegationId).toBe('ke');
@@ -41,20 +44,26 @@ describe('applySeatSwitch', () => {
 	});
 
 	it('keeps the head delegate flag with the person when swapping within a delegation', () => {
-		const after = applySeatSwitch(france, {
-			kind: 'swap',
-			memberId: 'fr-head',
-			otherMemberId: 'fr-2'
+		const after = applySeatSwitch({
+			members: france,
+			change: {
+				kind: 'swap',
+				memberId: 'fr-head',
+				otherMemberId: 'fr-2'
+			}
 		});
 
 		expect(after).toEqual(france);
 	});
 
 	it('hands the head role to a remaining member when the head moves into a delegation with a head', () => {
-		const after = applySeatSwitch([...france, ...kenya], {
-			kind: 'move',
-			memberId: 'fr-head',
-			targetDelegationId: 'ke'
+		const after = applySeatSwitch({
+			members: [...france, ...kenya],
+			change: {
+				kind: 'move',
+				memberId: 'fr-head',
+				targetDelegationId: 'ke'
+			}
 		});
 
 		expect(headOf(after, 'fr')).toEqual(['fr-2']);
@@ -62,10 +71,13 @@ describe('applySeatSwitch', () => {
 	});
 
 	it('makes the mover head of a delegation that has none yet', () => {
-		const after = applySeatSwitch(france, {
-			kind: 'move',
-			memberId: 'fr-2',
-			targetDelegationId: 'new'
+		const after = applySeatSwitch({
+			members: france,
+			change: {
+				kind: 'move',
+				memberId: 'fr-2',
+				targetDelegationId: 'new'
+			}
 		});
 
 		expect(headOf(after, 'new')).toEqual(['fr-2']);
@@ -75,14 +87,20 @@ describe('applySeatSwitch', () => {
 
 describe('withChosenHeadDelegates', () => {
 	it('only overrides delegations that have a chosen member', () => {
-		const after = withChosenHeadDelegates([...france, ...kenya], ['fr-2']);
+		const after = withChosenHeadDelegates({
+			members: [...france, ...kenya],
+			headDelegateIds: ['fr-2']
+		});
 
 		expect(headOf(after, 'fr')).toEqual(['fr-2']);
 		expect(headOf(after, 'ke')).toEqual(['ke-head']);
 	});
 
 	it('is rejected when two heads are chosen for one delegation', () => {
-		const after = withChosenHeadDelegates(france, ['fr-head', 'fr-2']);
+		const after = withChosenHeadDelegates({
+			members: france,
+			headDelegateIds: ['fr-head', 'fr-2']
+		});
 
 		expect(hasOneHeadPerDelegation(after)).toBe(false);
 	});
@@ -104,27 +122,32 @@ const freeSeat: SwitchEmptySeat = {
 
 describe('nextSwitchSelection', () => {
 	it('selects a member first, ignoring free seats', () => {
-		expect(nextSwitchSelection(undefined, freeSeat)).toEqual({ selected: undefined });
-		expect(nextSwitchSelection(undefined, pick('fr-2', 'fr'))).toEqual({
+		expect(nextSwitchSelection({ selected: undefined, seat: freeSeat })).toEqual({
+			selected: undefined
+		});
+		expect(nextSwitchSelection({ selected: undefined, seat: pick('fr-2', 'fr') })).toEqual({
 			selected: pick('fr-2', 'fr')
 		});
 	});
 
 	it('deselects on a second click on the same member and targets anything else', () => {
 		const selected = pick('fr-2', 'fr');
-		expect(nextSwitchSelection(selected, pick('fr-2', 'fr'))).toEqual({});
-		expect(nextSwitchSelection(selected, freeSeat)).toEqual({ selected, target: freeSeat });
+		expect(nextSwitchSelection({ selected, seat: pick('fr-2', 'fr') })).toEqual({});
+		expect(nextSwitchSelection({ selected, seat: freeSeat })).toEqual({
+			selected,
+			target: freeSeat
+		});
 	});
 });
 
 describe('switch requests', () => {
 	it('moves into a delegation that does not exist yet', () => {
-		expect(toSeatSwitch(pick('fr-2', 'fr'), freeSeat)).toEqual({
+		expect(toSeatSwitch({ selected: pick('fr-2', 'fr'), target: freeSeat })).toEqual({
 			kind: 'move',
 			memberId: 'fr-2',
 			targetDelegationId: 'new'
 		});
-		expect(seatSwitchVariables(pick('fr-2', 'fr'), freeSeat)).toEqual({
+		expect(seatSwitchVariables({ selected: pick('fr-2', 'fr'), target: freeSeat })).toEqual({
 			memberId: 'fr-2',
 			targetRoleId: 'ken',
 			targetCommitteeId: 'gv'
@@ -133,19 +156,33 @@ describe('switch requests', () => {
 
 	it('only asks about head delegates when one changes delegation', () => {
 		const members = [...france, ...kenya];
-		expect(isHeadDelegateInvolved(members, pick('fr-head', 'fr'), pick('ke-2', 'ke'))).toBe(true);
-		expect(isHeadDelegateInvolved(members, pick('fr-2', 'fr'), pick('ke-2', 'ke'))).toBe(false);
-		expect(isHeadDelegateInvolved(members, pick('fr-head', 'fr'), pick('fr-2', 'fr'))).toBe(false);
+		expect(
+			isHeadDelegateInvolved({
+				members,
+				selected: pick('fr-head', 'fr'),
+				target: pick('ke-2', 'ke')
+			})
+		).toBe(true);
+		expect(
+			isHeadDelegateInvolved({ members, selected: pick('fr-2', 'fr'), target: pick('ke-2', 'ke') })
+		).toBe(false);
+		expect(
+			isHeadDelegateInvolved({
+				members,
+				selected: pick('fr-head', 'fr'),
+				target: pick('fr-2', 'fr')
+			})
+		).toBe(false);
 	});
 });
 
 describe('headDelegateChanges', () => {
 	it('lists only the flags that change', () => {
-		const changes = headDelegateChanges(
-			[...france, ...kenya],
-			{ kind: 'swap', memberId: 'fr-head', otherMemberId: 'ke-2' },
-			['fr-2', 'ke-head']
-		);
+		const changes = headDelegateChanges({
+			before: [...france, ...kenya],
+			change: { kind: 'swap', memberId: 'fr-head', otherMemberId: 'ke-2' },
+			chosenHeadDelegateIds: ['fr-2', 'ke-head']
+		});
 
 		expect(changes).toEqual([
 			{ id: 'fr-head', delegationId: 'ke', isHeadDelegate: false },
@@ -155,10 +192,11 @@ describe('headDelegateChanges', () => {
 
 	it('refuses a choice that leaves a delegation with two heads', () => {
 		expect(
-			headDelegateChanges(france, { kind: 'move', memberId: 'fr-2', targetDelegationId: 'fr' }, [
-				'fr-head',
-				'fr-2'
-			])
+			headDelegateChanges({
+				before: france,
+				change: { kind: 'move', memberId: 'fr-2', targetDelegationId: 'fr' },
+				chosenHeadDelegateIds: ['fr-head', 'fr-2']
+			})
 		).toBeUndefined();
 	});
 });

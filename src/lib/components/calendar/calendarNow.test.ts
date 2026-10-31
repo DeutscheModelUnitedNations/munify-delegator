@@ -14,10 +14,12 @@ const NOW = new Date('2026-10-11T07:30:00Z');
 
 describe('wallClockNow', () => {
 	test('turns an instant into the conference timezone wall clock, as UTC', () => {
-		expect(new Date(wallClockNow('Europe/Berlin', NOW)).toISOString()).toBe(
+		expect(new Date(wallClockNow({ timezone: 'Europe/Berlin', now: NOW })).toISOString()).toBe(
 			'2026-10-11T09:30:00.000Z'
 		);
-		expect(new Date(wallClockNow('UTC', NOW)).toISOString()).toBe('2026-10-11T07:30:00.000Z');
+		expect(new Date(wallClockNow({ timezone: 'UTC', now: NOW })).toISOString()).toBe(
+			'2026-10-11T07:30:00.000Z'
+		);
 	});
 });
 
@@ -53,12 +55,12 @@ describe('entriesForSeat', () => {
 	];
 
 	test('keeps the entries for every track and those on the seat’s own track, on every day', () => {
-		const names = entriesForSeat(days, ['Sicherheitsrat', 'SR']).map((e) => e.name);
+		const names = entriesForSeat({ days, seatNames: ['Sicherheitsrat', 'SR'] }).map((e) => e.name);
 		expect(names).toEqual(['For everyone', 'On all tracks', 'Council', 'Both', 'Next day council']);
 	});
 
 	test('matches the name without caring for case or spacing', () => {
-		expect(entriesForSeat(days, ['  gv   presse']).map((e) => e.name)).toEqual([
+		expect(entriesForSeat({ days, seatNames: ['  gv   presse'] }).map((e) => e.name)).toEqual([
 			'For everyone',
 			'On all tracks',
 			'Press',
@@ -67,7 +69,7 @@ describe('entriesForSeat', () => {
 	});
 
 	test('someone whose seat matches no track gets every entry once', () => {
-		const names = entriesForSeat(days, []).map((e) => e.name);
+		const names = entriesForSeat({ days, seatNames: [] }).map((e) => e.name);
 		expect(names).toContain('Council');
 		expect(names).toContain('Press');
 		expect(new Set(names).size).toBe(names.length);
@@ -84,7 +86,7 @@ describe('timelineOf', () => {
 	];
 
 	test('names what is running and the next two to start', () => {
-		const { current, upcoming } = timelineOf(entries, 'Europe/Berlin', NOW);
+		const { current, upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: NOW });
 		expect(current?.name).toBe('Mittagspause');
 		expect(upcoming.map((u) => u.entry.name)).toEqual(['Workshop', 'Abend']);
 		expect(upcoming.map((u) => u.newDay)).toEqual([false, false]);
@@ -92,13 +94,13 @@ describe('timelineOf', () => {
 
 	test('marks the entry where another day begins, counting from today', () => {
 		const evening = new Date('2026-10-11T15:00:00Z');
-		const { upcoming } = timelineOf(entries, 'Europe/Berlin', evening);
+		const { upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: evening });
 		expect(upcoming.map((u) => [u.entry.name, u.newDay])).toEqual([['Sitzung V', true]]);
 	});
 
 	test('marks a day change in the middle of the timeline', () => {
 		const lateMorning = new Date('2026-10-11T08:30:00Z');
-		const { upcoming } = timelineOf(entries, 'Europe/Berlin', lateMorning);
+		const { upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: lateMorning });
 		expect(upcoming.map((u) => [u.entry.name, u.newDay])).toEqual([
 			['Abend', false],
 			['Sitzung V', true]
@@ -107,19 +109,21 @@ describe('timelineOf', () => {
 
 	test('an entry that ended exactly now is over and one that starts now is running', () => {
 		const atNine = new Date('2026-10-11T07:00:00Z');
-		expect(timelineOf(entries, 'Europe/Berlin', atNine).current?.name).toBe('Mittagspause');
+		expect(timelineOf({ entries, timezone: 'Europe/Berlin', now: atNine }).current?.name).toBe(
+			'Mittagspause'
+		);
 	});
 
 	test('between entries there is nothing running', () => {
 		const gap = new Date('2026-10-11T17:00:00Z');
-		const { current, upcoming } = timelineOf(entries, 'Europe/Berlin', gap);
+		const { current, upcoming } = timelineOf({ entries, timezone: 'Europe/Berlin', now: gap });
 		expect(current).toBeUndefined();
 		expect(upcoming.map((u) => u.entry.name)).toEqual(['Sitzung V']);
 	});
 
 	test('nothing is left after the last entry', () => {
 		const after = new Date('2026-10-13T12:00:00Z');
-		expect(timelineOf(entries, 'Europe/Berlin', after)).toEqual({
+		expect(timelineOf({ entries, timezone: 'Europe/Berlin', now: after })).toEqual({
 			current: undefined,
 			upcoming: []
 		});

@@ -118,7 +118,15 @@ export function addSurveys(cs: ConferenceSeed) {
 		}
 	}
 
-	const answer = (userId: string, questionKey: string, optionTitle: string) => {
+	const answer = ({
+		userId,
+		questionKey,
+		optionTitle
+	}: {
+		userId: string;
+		questionKey: string;
+		optionTitle: string;
+	}) => {
 		const questionId = questionIds.get(questionKey);
 		const optionId = optionIds.get(`${questionKey}/${optionTitle}`);
 		if (questionId && optionId) {
@@ -131,16 +139,32 @@ export function addSurveys(cs: ConferenceSeed) {
 	};
 
 	for (const [userId, questionKey, optionTitle] of PERSONA_ANSWERS) {
-		answer(userId, questionKey, optionTitle);
+		answer({ userId, questionKey, optionTitle });
 	}
 
 	// The crowd fills the limited workshop and answers the rest at random.
 	const crowd = cs.acceptedUsers.filter((userId) => !userId.startsWith('dev-'));
-	crowd.slice(0, 3).forEach((userId) => answer(userId, 'workshop', 'Verhandlungstraining'));
+	crowd
+		.slice(0, 3)
+		.forEach((userId) =>
+			answer({ userId, questionKey: 'workshop', optionTitle: 'Verhandlungstraining' })
+		);
 	for (const userId of crowd.slice(3)) {
 		if (faker.datatype.boolean(0.4)) continue;
-		answer(userId, 'workshop', faker.helpers.arrayElement(['Rhetorik', 'Resolutionen schreiben']));
-		answer(userId, 'dinner', faker.helpers.arrayElement(['Pizza', 'Pasta', 'Salat']));
-		answer(userId, 'excursion', faker.helpers.arrayElement(['Bundestag', 'Museum']));
+		answer({
+			userId,
+			questionKey: 'workshop',
+			optionTitle: faker.helpers.arrayElement(['Rhetorik', 'Resolutionen schreiben'])
+		});
+		answer({
+			userId,
+			questionKey: 'dinner',
+			optionTitle: faker.helpers.arrayElement(['Pizza', 'Pasta', 'Salat'])
+		});
+		answer({
+			userId,
+			questionKey: 'excursion',
+			optionTitle: faker.helpers.arrayElement(['Bundestag', 'Museum'])
+		});
 	}
 }

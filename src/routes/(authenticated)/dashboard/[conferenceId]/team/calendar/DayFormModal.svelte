@@ -41,7 +41,7 @@
 	}
 
 	async function writeDay() {
-		const fields = dayFields(name, date, otherDays, day);
+		const fields = dayFields({ name, date, others: otherDays, current: day });
 		if (day) {
 			await client.mutate.updateCalendarDay({ __args: { id: day.id, ...fields }, id: true });
 		} else if (importData) {
@@ -56,7 +56,8 @@
 
 	async function save() {
 		if (!name || !date) return;
-		if (await saveWithToast((loading) => (isLoading = loading), writeDay)) onClose();
+		if (await saveWithToast({ setLoading: (loading) => (isLoading = loading), write: writeDay }))
+			onClose();
 	}
 </script>
 

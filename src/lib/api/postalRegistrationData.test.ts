@@ -31,9 +31,15 @@ const user = {
 
 describe('formatPostalParticipantName', () => {
 	test('prints the given name first, all uppercase', () => {
-		expect(formatPostalParticipantName('Erika', 'Mustermann')).toBe('ERIKA MUSTERMANN');
-		expect(formatPostalParticipantName(null, 'Mustermann')).toBe('MUSTERMANN');
-		expect(formatPostalParticipantName('Erika', undefined)).toBe('ERIKA');
+		expect(formatPostalParticipantName({ givenName: 'Erika', familyName: 'Mustermann' })).toBe(
+			'ERIKA MUSTERMANN'
+		);
+		expect(formatPostalParticipantName({ givenName: null, familyName: 'Mustermann' })).toBe(
+			'MUSTERMANN'
+		);
+		expect(formatPostalParticipantName({ givenName: 'Erika', familyName: undefined })).toBe(
+			'ERIKA'
+		);
 	});
 });
 

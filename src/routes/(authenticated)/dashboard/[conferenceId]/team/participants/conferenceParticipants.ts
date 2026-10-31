@@ -22,7 +22,13 @@ const participantUser = {
  * One list query per registration type for the people of one page (`userIds`), holding only what
  * the table's columns show and export. Everything else about a person is fetched by the user card when a row is opened.
  */
-export async function fetchConferenceParticipants(conferenceId: string, userIds: string[]) {
+export async function fetchConferenceParticipants({
+	conferenceId,
+	userIds
+}: {
+	conferenceId: string;
+	userIds: string[];
+}) {
 	const ofPeople = { conferenceId: { eq: conferenceId }, userId: { in: userIds } };
 	const inConference = { where: ofPeople };
 	// registrations reach the conference and the person through their participant row

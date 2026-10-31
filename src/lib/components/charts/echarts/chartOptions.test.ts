@@ -31,17 +31,21 @@ describe('chartTitle', () => {
 
 describe('themedChartOptions', () => {
 	test('fills in palette, background and text color', () => {
-		const result = themedChartOptions({}, theme, ['#abc']);
+		const result = themedChartOptions({ options: {}, theme, palette: ['#abc'] });
 		expect(result.color).toEqual(['#abc']);
 		expect(result.backgroundColor).toBe('transparent');
 		expect(result.textStyle).toEqual({ color: '#111' });
 	});
 	test('keeps what the options set themselves', () => {
-		const result = themedChartOptions(
-			{ color: ['#fff'], backgroundColor: '#000', textStyle: { color: '#f00', fontSize: 3 } },
+		const result = themedChartOptions({
+			options: {
+				color: ['#fff'],
+				backgroundColor: '#000',
+				textStyle: { color: '#f00', fontSize: 3 }
+			},
 			theme,
-			['#abc']
-		);
+			palette: ['#abc']
+		});
 		expect(result.color).toEqual(['#fff']);
 		expect(result.backgroundColor).toBe('#000');
 		expect(result.textStyle).toEqual({ color: '#f00', fontSize: 3 });
@@ -223,8 +227,8 @@ describe('pieChartOptions', () => {
 
 describe('percentOf', () => {
 	test('rounds a share and guards an empty total', () => {
-		expect(percentOf(1, 3)).toBe(33);
-		expect(percentOf(5, 0)).toBe(0);
+		expect(percentOf({ part: 1, total: 3 })).toBe(33);
+		expect(percentOf({ part: 5, total: 0 })).toBe(0);
 	});
 });
 
@@ -243,12 +247,12 @@ describe('stackedBarTooltip', () => {
 	});
 
 	test('describes a single point', () => {
-		expect(stackedBarTooltip(point(1), 4)).toBe('Paid: 1 (25%)');
+		expect(stackedBarTooltip({ params: point(1), total: 4 })).toBe('Paid: 1 (25%)');
 	});
 	test('takes the first of an array and treats non-numbers as 0', () => {
-		expect(stackedBarTooltip([point('x')], 4)).toBe('Paid: 0 (0%)');
+		expect(stackedBarTooltip({ params: [point('x')], total: 4 })).toBe('Paid: 0 (0%)');
 	});
 	test('handles an empty array', () => {
-		expect(stackedBarTooltip([], 0)).toBe('undefined: 0 (0%)');
+		expect(stackedBarTooltip({ params: [], total: 0 })).toBe('undefined: 0 (0%)');
 	});
 });

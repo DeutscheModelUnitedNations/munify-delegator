@@ -9,10 +9,13 @@ export interface MatrixRow<D, P> {
  * Groups the columns' papers by delegation, one row each, sorted by the name `nameOf` gives
  * the delegation. A delegation without a paper in any column gets no row.
  */
-export function matrixRows<D extends { id: string }, P extends { delegation: D }>(
-	columns: readonly { id: string; papers: readonly P[] }[],
-	nameOf: (paper: P) => string
-): MatrixRow<D, P>[] {
+export function matrixRows<D extends { id: string }, P extends { delegation: D }>({
+	columns,
+	nameOf
+}: {
+	columns: readonly { id: string; papers: readonly P[] }[];
+	nameOf: (paper: P) => string;
+}): MatrixRow<D, P>[] {
 	const byDelegation = new Map<string, MatrixRow<D, P>>();
 	for (const column of columns) {
 		for (const paper of column.papers) {

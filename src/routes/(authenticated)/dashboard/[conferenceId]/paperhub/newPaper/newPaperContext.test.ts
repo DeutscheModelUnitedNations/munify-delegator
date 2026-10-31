@@ -27,7 +27,11 @@ beforeEach(() => {
 
 describe('fetchNewPaperContext', () => {
 	test('seeds the form with the delegation, its committee and the type asked for', async () => {
-		const context = await fetchNewPaperContext('c1', 'u1', 'INTRODUCTION_PAPER');
+		const context = await fetchNewPaperContext({
+			conferenceId: 'c1',
+			userId: 'u1',
+			typeParam: 'INTRODUCTION_PAPER'
+		});
 		expect(context.form.data).toMatchObject({
 			delegation: 'Kenya',
 			committee: 'General Assembly',
@@ -38,23 +42,33 @@ describe('fetchNewPaperContext', () => {
 	});
 
 	test('writes a position paper unless another valid type is asked for', async () => {
-		expect((await fetchNewPaperContext('c1', 'u1', null)).form.data.type).toBe('POSITION_PAPER');
-		expect((await fetchNewPaperContext('c1', 'u1', 'WORKING_PAPER')).form.data.type).toBe(
-			'POSITION_PAPER'
-		);
+		expect(
+			(await fetchNewPaperContext({ conferenceId: 'c1', userId: 'u1', typeParam: null })).form.data
+				.type
+		).toBe('POSITION_PAPER');
+		expect(
+			(await fetchNewPaperContext({ conferenceId: 'c1', userId: 'u1', typeParam: 'WORKING_PAPER' }))
+				.form.data.type
+		).toBe('POSITION_PAPER');
 	});
 
 	test('leaves the names empty for a delegation without a role or committee', async () => {
 		delegationMembers.mockResolvedValue([
 			{ ...member, assignedCommittee: null, delegation: { id: 'd', assignedRole: null } }
 		]);
-		const { form } = await fetchNewPaperContext('c1', 'u1', null);
+		const { form } = await fetchNewPaperContext({
+			conferenceId: 'c1',
+			userId: 'u1',
+			typeParam: null
+		});
 		expect(form.data.delegation).toBe('');
 		expect(form.data.committee).toBeUndefined();
 	});
 
 	test('refuses someone who is not in a delegation', async () => {
 		delegationMembers.mockResolvedValue([]);
-		await expect(fetchNewPaperContext('c1', 'u1', null)).rejects.toMatchObject({ status: 400 });
+		await expect(
+			fetchNewPaperContext({ conferenceId: 'c1', userId: 'u1', typeParam: null })
+		).rejects.toMatchObject({ status: 400 });
 	});
 });

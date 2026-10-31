@@ -61,8 +61,8 @@
 							<span class="font-bold">{entry.codename}</span>
 							<span class="text-base-content/50 font-mono text-xs">{entry.id}</span>
 							<span class="flex flex-col gap-0.5 text-xs">
-								{#each matchReasons(entry, search) as reason (reason.kind + reason.value)}
-									{@const snippet = snippetOf(reason)}
+								{#each matchReasons({ entry, search }) as reason (reason.kind + reason.value)}
+									{@const snippet = snippetOf({ reason })}
 									<span class="flex min-w-0 gap-2">
 										<span class="text-base-content/60 shrink-0 font-semibold">
 											{reasonLabels[reason.kind]()}

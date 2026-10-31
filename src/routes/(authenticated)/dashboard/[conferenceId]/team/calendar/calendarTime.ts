@@ -5,7 +5,13 @@ export function toTimeString(d: Date): string {
 }
 
 /** The same wall-clock time as `time`, on the date of `dayDate`. */
-export function moveToDay(time: Date | string, dayDate: Date | string): Date {
+export function moveToDay({
+	time,
+	dayDate
+}: {
+	time: Date | string;
+	dayDate: Date | string;
+}): Date {
 	const source = new Date(time);
 	const moved = new Date(dayDate);
 	moved.setUTCHours(source.getUTCHours(), source.getUTCMinutes(), 0, 0);

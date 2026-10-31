@@ -26,11 +26,15 @@ export interface CopySourceEntry<Color> {
  * source day. A track the target day lacks is left out; an entry that ends up without any
  * is skipped by the copy.
  */
-export function matchingTargetTrackIds(
-	trackIds: readonly string[],
-	sourceTracks: readonly NamedTrack[],
-	targetTracks: readonly NamedTrack[]
-): string[] {
+export function matchingTargetTrackIds({
+	trackIds,
+	sourceTracks,
+	targetTracks
+}: {
+	trackIds: readonly string[];
+	sourceTracks: readonly NamedTrack[];
+	targetTracks: readonly NamedTrack[];
+}): string[] {
 	return trackIds.flatMap((trackId) => {
 		const sourceTrack = sourceTracks.find((t) => t.id === trackId);
 		const target = sourceTrack && targetTracks.find((t) => t.name === sourceTrack.name);
@@ -42,37 +46,45 @@ export function matchingTargetTrackIds(
  * Where the tracks of a moved entry land on the target day: the matching ones, or, without a
  * match, the target day's first track.
  */
-export function retargetTrackRange(
-	range: { from: string | null; to: string | null },
-	sourceTracks: readonly NamedTrack[],
-	targetTracks: readonly NamedTrack[]
-): { from: string | null; to: string | null } {
-	const [from, to] = matchingTargetTrackIds(
-		[range.from, range.to ?? range.from].filter((id) => id !== null),
+export function retargetTrackRange({
+	range,
+	sourceTracks,
+	targetTracks
+}: {
+	range: { from: string | null; to: string | null };
+	sourceTracks: readonly NamedTrack[];
+	targetTracks: readonly NamedTrack[];
+}): { from: string | null; to: string | null } {
+	const [from, to] = matchingTargetTrackIds({
+		trackIds: [range.from, range.to ?? range.from].filter((id) => id !== null),
 		sourceTracks,
 		targetTracks
-	);
+	});
 	const first = from ?? targetTracks[0]?.id ?? null;
 	return { from: first, to: to ?? first };
 }
 
 /** The arguments that create a copy of `entry` on the target day, at the same wall-clock times. */
-export function copiedEntryArgs<Color>(
-	entry: CopySourceEntry<Color>,
-	targetDay: { id: string; date: Date | string },
-	tracks: { source: readonly NamedTrack[]; target: readonly NamedTrack[] }
-) {
+export function copiedEntryArgs<Color>({
+	entry,
+	targetDay,
+	tracks
+}: {
+	entry: CopySourceEntry<Color>;
+	targetDay: { id: string; date: Date | string };
+	tracks: { source: readonly NamedTrack[]; target: readonly NamedTrack[] };
+}) {
 	return {
 		calendarDayId: targetDay.id,
-		calendarTrackIds: matchingTargetTrackIds(
-			entry.tracks.map((track) => track.id),
-			tracks.source,
-			tracks.target
-		),
+		calendarTrackIds: matchingTargetTrackIds({
+			trackIds: entry.tracks.map((track) => track.id),
+			sourceTracks: tracks.source,
+			targetTracks: tracks.target
+		}),
 		name: entry.name,
 		description: entry.description ?? null,
-		startTime: moveToDay(entry.startTime, targetDay.date),
-		endTime: moveToDay(entry.endTime, targetDay.date),
+		startTime: moveToDay({ time: entry.startTime, dayDate: targetDay.date }),
+		endTime: moveToDay({ time: entry.endTime, dayDate: targetDay.date }),
 		fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
 		color: entry.color,
 		placeId: entry.placeId ?? null,

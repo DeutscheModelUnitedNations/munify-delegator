@@ -34,10 +34,10 @@ const doc = (...paragraphs: string[]) => ({
 
 describe('computeDiff', () => {
 	it('splits a change into what the before and after panels show', () => {
-		const { beforeSegments, afterSegments } = computeDiff(
-			doc('The council decides.'),
-			doc('The council firmly decides.')
-		);
+		const { beforeSegments, afterSegments } = computeDiff({
+			beforeContent: doc('The council decides.'),
+			afterContent: doc('The council firmly decides.')
+		});
 
 		expect(beforeSegments.map((segment) => segment.type)).not.toContain('insert');
 		expect(afterSegments.map((segment) => segment.type)).not.toContain('delete');
@@ -52,10 +52,10 @@ describe('computeDiff', () => {
 	});
 
 	it('marks removed text as deleted on the before side only', () => {
-		const { beforeSegments, afterSegments } = computeDiff(
-			doc('Keep this. Drop this.'),
-			doc('Keep this.')
-		);
+		const { beforeSegments, afterSegments } = computeDiff({
+			beforeContent: doc('Keep this. Drop this.'),
+			afterContent: doc('Keep this.')
+		});
 
 		expect(beforeSegments).toContainEqual({
 			text: expect.stringContaining('Drop'),
@@ -66,7 +66,7 @@ describe('computeDiff', () => {
 
 	it('shows identical documents as one unchanged segment on both sides', () => {
 		const same = doc('Nothing changed.');
-		expect(computeDiff(same, same)).toEqual({
+		expect(computeDiff({ beforeContent: same, afterContent: same })).toEqual({
 			beforeSegments: [{ text: 'Nothing changed.', type: 'equal' }],
 			afterSegments: [{ text: 'Nothing changed.', type: 'equal' }]
 		});

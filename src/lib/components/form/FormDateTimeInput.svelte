@@ -66,18 +66,18 @@
 		return value;
 	});
 
-	let inputValue = $derived(dateToInputValue(currentDate, enableTime));
+	let inputValue = $derived(dateToInputValue({ date: currentDate, enableTime }));
 
 	function setDate(date: DateField) {
 		field.set(date);
 	}
 
 	function handleInput(value: string) {
-		setDate(inputValueToDate(value, enableTime));
+		setDate(inputValueToDate({ value, enableTime }));
 	}
 
 	function nonNativeDatePickEvent(e: { startDate: string | number | Date; startDateTime: string }) {
-		setDate(pickedDate(e.startDate, e.startDateTime, enableTime));
+		setDate(pickedDate({ startDate: e.startDate, startDateTime: e.startDateTime, enableTime }));
 	}
 </script>
 

@@ -24,26 +24,34 @@ export const NO_TEAM_ACCESS: TeamAccess = { isAdmin: false, roles: [] };
 export const isOnTeam = (access: TeamAccess) => access.isAdmin || access.roles.length > 0;
 
 /** A system admin, or holding at least one of `roles` */
-export const hasAnyRole = (access: TeamAccess, roles: readonly TeamroleEnum[]) =>
-	access.isAdmin || roles.some((role) => access.roles.includes(role));
+export const hasAnyRole = ({
+	access,
+	roles
+}: {
+	access: TeamAccess;
+	roles: readonly TeamroleEnum[];
+}) => access.isAdmin || roles.some((role) => access.roles.includes(role));
 
 /** Changing the conference itself: its settings and its committees' existence */
 export const canEditConference = (access: TeamAccess) =>
-	hasAnyRole(access, PROJECT_MANAGEMENT_ROLES);
+	hasAnyRole({ access, roles: PROJECT_MANAGEMENT_ROLES });
 
 /** Links, postal address, templates, status, features and resolutions */
 export const canEditConferenceContent = (access: TeamAccess) =>
-	hasAnyRole(access, CONFERENCE_CONTENT_ROLES);
+	hasAnyRole({ access, roles: CONFERENCE_CONTENT_ROLES });
 
 /** Editing committees, their seats and agenda items; creating and deleting is `canEditConference` */
-export const canEditCommittees = (access: TeamAccess) => hasAnyRole(access, SEAT_PLANNING_ROLES);
+export const canEditCommittees = (access: TeamAccess) =>
+	hasAnyRole({ access, roles: SEAT_PLANNING_ROLES });
 
 /** Planning which nations sit where */
-export const canPlanSeats = (access: TeamAccess) => hasAnyRole(access, SEAT_PLANNING_ROLES);
+export const canPlanSeats = (access: TeamAccess) =>
+	hasAnyRole({ access, roles: SEAT_PLANNING_ROLES });
 
 /** Switching the automatic mails and writing their texts */
-export const canManageEmails = (access: TeamAccess) => hasAnyRole(access, PARTICIPANT_CARE_ROLES);
+export const canManageEmails = (access: TeamAccess) =>
+	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });
 
 /** Storing an access card on a person's status, which the scanner's badge option does */
 export const canWriteAccessCards = (access: TeamAccess) =>
-	hasAnyRole(access, PARTICIPANT_CARE_ROLES);
+	hasAnyRole({ access, roles: PARTICIPANT_CARE_ROLES });

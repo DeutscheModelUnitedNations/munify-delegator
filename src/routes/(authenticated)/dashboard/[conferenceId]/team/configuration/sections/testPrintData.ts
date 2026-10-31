@@ -29,10 +29,14 @@ export function testPrintRecipient(address: PostalAddress): RecipientData {
 export function testPrintParticipant(): ParticipantData {
 	return {
 		id: '123456781234567812345678',
-		name: formatNames('Antonio', 'Guterres', {
-			givenNameFirst: true,
-			familyNameUppercase: true,
-			givenNameUppercase: true
+		name: formatNames({
+			givenName: 'Antonio',
+			familyName: 'Guterres',
+			options: {
+				givenNameFirst: true,
+				familyNameUppercase: true,
+				givenNameUppercase: true
+			}
 		}),
 		address: '405 E 45th St, New York, NY 10017, USA',
 		birthday: new Date('1949-04-30').toLocaleDateString(getLocale())

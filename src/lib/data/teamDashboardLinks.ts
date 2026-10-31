@@ -70,23 +70,32 @@ export function getPaperHubLink(canSeePaperHub: boolean): TeamDashboardLink | un
  */
 export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboardLink[] {
 	return [
-		externalLink(ctx.linkToTeamWiki, {
-			id: 'teamWiki',
-			icon: 'book-open',
-			getTitle: () => m.teamWiki(),
-			getDescription: () => m.teamWikiDescription()
+		externalLink({
+			url: ctx.linkToTeamWiki,
+			link: {
+				id: 'teamWiki',
+				icon: 'book-open',
+				getTitle: () => m.teamWiki(),
+				getDescription: () => m.teamWikiDescription()
+			}
 		}),
-		externalLink(ctx.linkToServicesPage, {
-			id: 'servicesPage',
-			icon: 'toolbox',
-			getTitle: () => m.servicesPage(),
-			getDescription: () => m.servicesPageDescription()
+		externalLink({
+			url: ctx.linkToServicesPage,
+			link: {
+				id: 'servicesPage',
+				icon: 'toolbox',
+				getTitle: () => m.servicesPage(),
+				getDescription: () => m.servicesPageDescription()
+			}
 		}),
-		externalLink(ctx.linkToPreparationGuide, {
-			id: 'preparation',
-			icon: 'book-bookmark',
-			getTitle: () => m.preparation(),
-			getDescription: () => m.teamPreparationDescription()
+		externalLink({
+			url: ctx.linkToPreparationGuide,
+			link: {
+				id: 'preparation',
+				icon: 'book-bookmark',
+				getTitle: () => m.preparation(),
+				getDescription: () => m.teamPreparationDescription()
+			}
 		}),
 		{
 			id: 'seats',
@@ -95,11 +104,14 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 			getDescription: () => m.seatsLinkDescription(),
 			getHref: (linkCtx) => resolve(`dashboard/${linkCtx.conferenceId}/${publicSeatsPath}`)
 		},
-		externalLink(ctx.docsUrl, {
-			id: 'appDocs',
-			icon: 'circle-question',
-			getTitle: () => m.appDocs(),
-			getDescription: () => m.appDocsDescription()
+		externalLink({
+			url: ctx.docsUrl,
+			link: {
+				id: 'appDocs',
+				icon: 'circle-question',
+				getTitle: () => m.appDocs(),
+				getDescription: () => m.appDocsDescription()
+			}
 		}),
 		{
 			id: 'calendar',
@@ -113,10 +125,13 @@ export function getTeamResourceLinks(ctx: TeamDashboardLinkContext): TeamDashboa
 }
 
 /** A link out of the app, which exists only while its url is set. */
-function externalLink(
-	url: string | null | undefined,
-	link: Pick<TeamDashboardLink, 'id' | 'icon' | 'getTitle' | 'getDescription'>
-): TeamDashboardLink | undefined {
+function externalLink({
+	url,
+	link
+}: {
+	url: string | null | undefined;
+	link: Pick<TeamDashboardLink, 'id' | 'icon' | 'getTitle' | 'getDescription'>;
+}): TeamDashboardLink | undefined {
 	if (!url) return undefined;
 	return { ...link, getHref: () => ({ externalUrl: url }), external: true };
 }

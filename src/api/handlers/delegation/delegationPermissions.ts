@@ -34,11 +34,16 @@ export function registerDelegationAbilities() {
 	// nation or non-state actor only once the team has released the assignment.
 	abilityBuilder.delegation
 		.allow('read')
-		.when((ctx) => maskedUntilRelease(ownDelegation(ctx), DELEGATION_ASSIGNMENT));
+		.when((ctx) =>
+			maskedUntilRelease({ filter: ownDelegation(ctx), assignmentColumns: DELEGATION_ASSIGNMENT })
+		);
 	abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(ownDelegation(ctx)));
-	abilityBuilder.delegation
-		.allow('read')
-		.when((ctx) => maskedUntilRelease(supervisedDelegation(ctx), DELEGATION_ASSIGNMENT));
+	abilityBuilder.delegation.allow('read').when((ctx) =>
+		maskedUntilRelease({
+			filter: supervisedDelegation(ctx),
+			assignmentColumns: DELEGATION_ASSIGNMENT
+		})
+	);
 	abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
 
 	// The head delegate may change the delegation until it has applied.
@@ -53,12 +58,12 @@ export function registerDelegationAbilities() {
 	// included: whoever may change a delegation after it applied may also take it out.
 	abilityBuilder.delegation
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
 	// Any team member of the conference may see them - without the join code, which the members,
 	// their supervisors and participant care hand out.
 	abilityBuilder.delegation.allow('read').when((ctx) => {
-		const team = isTeamMemberOfConference(ctx);
+		const team = isTeamMemberOfConference({ ctx });
 		return team ? { where: team, columns: { entryCode: false } } : undefined;
 	});
 }
@@ -67,7 +72,7 @@ export function registerDelegationAbilities() {
  * Refuses unless the caller may update the delegation (the row's update ability). Returns it with
  * its members, conference and role applications, which `updateDelegation` judges it by.
  */
-export async function assertCanUpdateDelegation(ctx: ApiContext, id: string) {
+export async function assertCanUpdateDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const updatable = (await ctx.abilities.delegation.filter('update')).merge({ where: { id } });
 	return db.query.delegation
 		.findFirst({

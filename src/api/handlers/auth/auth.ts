@@ -1,6 +1,6 @@
 import { schemaBuilder } from '#api/rumble';
-import { OIDC } from '#api/services/OIDC';
-import { oidcRoles } from '#api/services/oidcRoles';
+import { OIDC } from '#api/services/oidc/OIDC';
+import { oidcRoles } from '#api/services/oidc/oidcRoles';
 import { offlineUserOf } from './offlineUser';
 import { oidcIdentityFields } from './oidcIdentityFields';
 
@@ -53,7 +53,7 @@ schemaBuilder.queryFields((t) => ({
 			}
 
 			return {
-				user: offlineUserOf(user, ctx.oidc.claims),
+				user: offlineUserOf({ user, claims: ctx.oidc.claims }),
 				// The library refreshes on its own schedule and does not surface a deadline.
 				nextTokenRefreshDue: null
 			};

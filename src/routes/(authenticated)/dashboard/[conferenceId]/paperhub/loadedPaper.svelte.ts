@@ -31,9 +31,9 @@ export function createLoadedPaper() {
 		},
 
 		/** Loads `paper` into the editor unless it is already the one loaded. */
-		loadIfNew(paper: PaperIdentity, latestContent: unknown) {
+		loadIfNew({ paper, latestContent }: { paper: PaperIdentity; latestContent: unknown }) {
 			if (paper.id === paperId) return;
-			const result = loadPaperIntoEditor(paper, latestContent);
+			const result = loadPaperIntoEditor({ paper, latestContent });
 			validationError = result.validationError;
 			invalidRawContent = result.invalidRawContent;
 			paperId = paper.id;

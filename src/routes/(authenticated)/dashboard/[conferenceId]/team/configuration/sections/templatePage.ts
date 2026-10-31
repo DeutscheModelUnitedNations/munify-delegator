@@ -3,7 +3,15 @@
  * screens), and answers the page's size in points. pdf.js is loaded on demand: only the
  * certificate layout editor needs it.
  */
-export async function renderFirstPage(url: string, canvas: HTMLCanvasElement, cssWidth: number) {
+export async function renderFirstPage({
+	url,
+	canvas,
+	cssWidth
+}: {
+	url: string;
+	canvas: HTMLCanvasElement;
+	cssWidth: number;
+}) {
 	const [pdfjs, worker] = await Promise.all([
 		import('pdfjs-dist'),
 		import('pdfjs-dist/build/pdf.worker.min.mjs?url')

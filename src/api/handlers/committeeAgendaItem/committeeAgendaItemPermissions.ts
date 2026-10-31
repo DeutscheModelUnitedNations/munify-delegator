@@ -19,7 +19,7 @@ export function registerCommitteeAgendaItemAbilities() {
 
 	// Scoped through the committee, since an agenda item has no direct conference relation.
 	abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when((ctx) => {
-		const committee = isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES);
+		const committee = isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES });
 		return committee ? { where: { committee } } : undefined;
 	});
 }
@@ -28,12 +28,20 @@ export function registerCommitteeAgendaItemAbilities() {
  * The chase integration creates agenda items with the `service_user` OIDC role; the conference's
  * project management may add them by hand.
  */
-export async function assertCanCreateAgendaItem(ctx: ApiContext, committeeId: string) {
+export async function assertCanCreateAgendaItem({
+	ctx,
+	committeeId
+}: {
+	ctx: ApiContext;
+	committeeId: string;
+}) {
 	await db.query.committee
 		.findFirst({
 			where: {
 				id: committeeId,
-				...(ctx.hasRole('service_user') ? {} : { conference: teamConference(ctx, 'planSeats') })
+				...(ctx.hasRole('service_user')
+					? {}
+					: { conference: teamConference({ ctx, permission: 'planSeats' }) })
 			},
 			columns: { id: true }
 		})
@@ -41,21 +49,27 @@ export async function assertCanCreateAgendaItem(ctx: ApiContext, committeeId: st
 }
 
 /** Refuses unless the caller's update ability matches the agenda item. */
-export async function assertCanUpdateAgendaItem(ctx: ApiContext, id: string) {
-	await assertAllowed(ctx, 'committeeAgendaItem', 'update', id);
+export async function assertCanUpdateAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'committeeAgendaItem', action: 'update', id });
 }
 
 /**
  * Reviewers get this on top of the update ability, which they do not otherwise hold for agenda
  * items - hence the team's `papers` filter on the agenda item's conference.
  */
-export async function assertCanSetAgendaItemReviewHelpStatus(
-	ctx: ApiContext,
-	agendaItemId: string
-) {
+export async function assertCanSetAgendaItemReviewHelpStatus({
+	ctx,
+	agendaItemId
+}: {
+	ctx: ApiContext;
+	agendaItemId: string;
+}) {
 	await db.query.committeeAgendaItem
 		.findFirst({
-			where: { id: agendaItemId, committee: { conference: teamConference(ctx, 'reviewPapers') } },
+			where: {
+				id: agendaItemId,
+				committee: { conference: teamConference({ ctx, permission: 'reviewPapers' }) }
+			},
 			columns: { id: true }
 		})
 		.then(assertFindFirstExists);

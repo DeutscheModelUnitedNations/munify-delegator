@@ -80,8 +80,11 @@ describe('flag sorting and filtering', () => {
 	});
 
 	test('filterAndSortFlags keeps and sorts', () => {
-		expect(filterAndSortFlags(flags).map((f) => f.name)).toEqual(['c', 'a', 'b']);
-		expect(filterAndSortFlags(flags, (f) => !f.done).map((f) => f.name)).toEqual(['c', 'b']);
-		expect(filterAndSortFlags(undefined)).toEqual([]);
+		expect(filterAndSortFlags({ flags }).map((f) => f.name)).toEqual(['c', 'a', 'b']);
+		expect(filterAndSortFlags({ flags, keep: (f) => !f.done }).map((f) => f.name)).toEqual([
+			'c',
+			'b'
+		]);
+		expect(filterAndSortFlags({ flags: undefined })).toEqual([]);
 	});
 });

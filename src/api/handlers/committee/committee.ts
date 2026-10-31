@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
 	committeeAgendaItemPubsub,
@@ -31,6 +31,11 @@ query({ table: 'committee' });
 
 const regionalBaselineEnum = enum_({ tsName: 'regionalBaseline' });
 
+/** The committee as the caller may read it, for re-reading the row a mutation wrote. */
+function allowedCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return queryAllowed({ ability: ctx.abilities.committee, id });
+}
+
 schemaBuilder.mutationFields((t) => ({
 	createCommittee: t.drizzleField({
 		type: CommitteeRef,
@@ -41,13 +46,13 @@ schemaBuilder.mutationFields((t) => ({
 			numOfSeatsPerDelegation: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCommittee(ctx, args.conferenceId);
+			await assertCanCreateCommittee({ ctx, conferenceId: args.conferenceId });
 			const createdId = await createCommittee(args);
 
 			committeePubsub.created();
 
 			return db.query.committee
-				.findFirst(query(await queryAllowed(ctx.abilities.committee, createdId)))
+				.findFirst(query(await allowedCommittee({ ctx, id: createdId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -62,14 +67,14 @@ schemaBuilder.mutationFields((t) => ({
 			numOfSeatsPerDelegation: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const before = await assertCanUpdateCommittee(ctx, args.id);
-			const { applicationsTidied } = await updateCommittee(args.id, before, args);
+			const before = await assertCanUpdateCommittee({ ctx, id: args.id });
+			const { applicationsTidied } = await updateCommittee({ id: args.id, before, data: args });
 
 			committeePubsub.updated(args.id);
 			if (applicationsTidied) roleApplicationPubsub.removed();
 
 			return db.query.committee
-				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.id)))
+				.findFirst(query(await allowedCommittee({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -82,7 +87,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDeleteCommittee(ctx, args.id);
+			await assertCanDeleteCommittee({ ctx, id: args.id });
 			const { droppedRoleIds } = await deleteCommittee(args.id);
 
 			committeePubsub.removed();
@@ -108,12 +113,12 @@ schemaBuilder.mutationFields((t) => ({
 			enabled: t.arg.boolean({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const committee = await assertCanPlanCommitteeSeats(ctx, args.committeeId);
-			const { rolesChanged } = await setCommitteeNationSeat(
-				{ id: args.committeeId, conferenceId: committee.conferenceId },
-				args.nationAlpha3Code,
-				args.enabled
-			);
+			const committee = await assertCanPlanCommitteeSeats({ ctx, committeeId: args.committeeId });
+			const { rolesChanged } = await setCommitteeNationSeat({
+				committee: { id: args.committeeId, conferenceId: committee.conferenceId },
+				nationAlpha3Code: args.nationAlpha3Code,
+				enabled: args.enabled
+			});
 			if (!args.enabled) roleApplicationPubsub.removed();
 			if (rolesChanged) {
 				if (args.enabled) conferenceRolePubsub.created();
@@ -123,7 +128,7 @@ schemaBuilder.mutationFields((t) => ({
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.committeeId)))
+				.findFirst(query(await allowedCommittee({ ctx, id: args.committeeId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -140,17 +145,20 @@ schemaBuilder.mutationFields((t) => ({
 			targets: t.arg.intList()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const committee = await assertCanPlanCommitteeSeats(ctx, args.committeeId);
-			await setCommitteeRegionalBaseline(
-				{ id: args.committeeId, regionalBaselineTargets: committee.regionalBaselineTargets },
-				args.baseline,
-				args.targets
-			);
+			const committee = await assertCanPlanCommitteeSeats({ ctx, committeeId: args.committeeId });
+			await setCommitteeRegionalBaseline({
+				committee: {
+					id: args.committeeId,
+					regionalBaselineTargets: committee.regionalBaselineTargets
+				},
+				baseline: args.baseline,
+				newTargets: args.targets
+			});
 
 			committeePubsub.updated(args.committeeId);
 
 			return db.query.committee
-				.findFirst(query(await queryAllowed(ctx.abilities.committee, args.committeeId)))
+				.findFirst(query(await allowedCommittee({ ctx, id: args.committeeId })))
 				.then(assertFindFirstExists);
 		}
 	})

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { UserPreview } from './userPreview';
 	import Modal from '#lib/components/Modal.svelte';
@@ -104,7 +105,7 @@
 					if (exact) user = exact;
 					else if (!results.some((candidate) => candidate.id === user?.id)) user = undefined;
 				})
-				.catch((error) => console.error(error))
+				.catch((error: unknown) => logger.error('User search failed', error))
 				.finally(() => {
 					if (!stale) loading = false;
 				});

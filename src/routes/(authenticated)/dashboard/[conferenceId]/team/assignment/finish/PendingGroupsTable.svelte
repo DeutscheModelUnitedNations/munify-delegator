@@ -27,7 +27,10 @@
 
 	/** The wish column: the rank of the new role, or that it was not wished; empty without one. */
 	function wishLabel(group: AssignmentGroup) {
-		const wish = wishStatus(wishesById.get(group.delegationId ?? ''), group.target);
+		const wish = wishStatus({
+			wishes: wishesById.get(group.delegationId ?? ''),
+			target: group.target
+		});
 		if (!wish) return '';
 		return wish.rank === undefined
 			? m.assignmentNoWish()
@@ -71,7 +74,7 @@
 							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved in sightingHref -->
 							<a
 								class="link link-hover"
-								href={sightingHref(conferenceId, applicationId)}
+								href={sightingHref({ conferenceId, applicationId })}
 								title={m.assignmentCardSighting()}
 							>
 								{codenamize(applicationId)}

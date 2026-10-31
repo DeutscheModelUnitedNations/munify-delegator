@@ -41,7 +41,7 @@
 	/** Whether a collapsible picker shows its options. */
 	let expanded = $state(false);
 
-	function toggle(id: string, picked: boolean) {
+	function toggle({ id, picked }: { id: string; picked: boolean }) {
 		selected = picked ? [...selected, id] : selected.filter((optionId) => optionId !== id);
 	}
 </script>
@@ -68,7 +68,7 @@
 								type="checkbox"
 								class="checkbox checkbox-sm checkbox-primary"
 								checked={selected.includes(option.id)}
-								onchange={(event) => toggle(option.id, event.currentTarget.checked)}
+								onchange={(event) => toggle({ id: option.id, picked: event.currentTarget.checked })}
 							/>
 							<span class="text-base-content">{option.title}</span>
 						</label>

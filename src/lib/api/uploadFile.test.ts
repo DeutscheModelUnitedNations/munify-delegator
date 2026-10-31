@@ -22,15 +22,15 @@ afterEach(() => {
 
 describe('uploadFile', () => {
 	test('leaves an untouched field alone', async () => {
-		expect(await uploadFile(undefined, target)).toBeUndefined();
-		expect(await uploadFile(new File([], 'empty.pdf'), target)).toBeUndefined();
+		expect(await uploadFile({ file: undefined, target })).toBeUndefined();
+		expect(await uploadFile({ file: new File([], 'empty.pdf'), target })).toBeUndefined();
 		expect(mocks.requestFileUpload).not.toHaveBeenCalled();
 	});
 
 	test('announces the file, puts it with its type and returns its id', async () => {
 		const file = new File(['%PDF'], 'plan.pdf', { type: 'application/pdf' });
 
-		expect(await uploadFile(file, target)).toBe('f1');
+		expect(await uploadFile({ file, target })).toBe('f1');
 		expect(mocks.requestFileUpload).toHaveBeenCalledWith(
 			expect.objectContaining({
 				__args: { ...target, fileName: 'plan.pdf', mimeType: 'application/pdf', size: 4 }
@@ -44,7 +44,7 @@ describe('uploadFile', () => {
 	});
 
 	test('announces a file of unknown type as bytes', async () => {
-		await uploadFile(new File(['x'], 'blob'), target);
+		await uploadFile({ file: new File(['x'], 'blob'), target });
 		expect(mocks.requestFileUpload).toHaveBeenCalledWith(
 			expect.objectContaining({
 				__args: expect.objectContaining({ mimeType: 'application/octet-stream' })
@@ -54,6 +54,6 @@ describe('uploadFile', () => {
 
 	test('fails when the storage refuses the file', async () => {
 		fetchMock.mockResolvedValueOnce(new Response(null, { status: 403 }));
-		await expect(uploadFile(new File(['x'], 'a.pdf'), target)).rejects.toThrow('a.pdf');
+		await expect(uploadFile({ file: new File(['x'], 'a.pdf'), target })).rejects.toThrow('a.pdf');
 	});
 });

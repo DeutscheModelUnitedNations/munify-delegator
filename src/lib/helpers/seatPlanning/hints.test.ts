@@ -35,10 +35,13 @@ describe('nationSeatCounts', () => {
 
 describe('committeeSeatTotals', () => {
 	test('multiplies the seated nations with the seats per delegation, in committee order', () => {
-		const totals = committeeSeatTotals(committees, [
-			{ id: 'sr', name: 'Sicherheitsrat', abbreviation: 'SR' },
-			{ id: 'gv', name: 'Generalversammlung', abbreviation: 'GV' }
-		]);
+		const totals = committeeSeatTotals({
+			committees,
+			info: [
+				{ id: 'sr', name: 'Sicherheitsrat', abbreviation: 'SR' },
+				{ id: 'gv', name: 'Generalversammlung', abbreviation: 'GV' }
+			]
+		});
 		expect(totals.map(({ id, seats }) => [id, seats])).toEqual([
 			['gv', 4],
 			['sr', 4],
@@ -50,10 +53,13 @@ describe('committeeSeatTotals', () => {
 });
 
 describe('rolesOf and sizeHistogram', () => {
-	const roles = rolesOf(nationSeatCounts(committees), [
-		{ id: 'greenpeace', seatAmount: 3 },
-		{ id: 'icrc', seatAmount: 1 }
-	]);
+	const roles = rolesOf({
+		seatCounts: nationSeatCounts(committees),
+		nonStateActors: [
+			{ id: 'greenpeace', seatAmount: 3 },
+			{ id: 'icrc', seatAmount: 1 }
+		]
+	});
 
 	test('combines seated nations and NSAs', () => {
 		expect(roles).toHaveLength(6);
@@ -73,24 +79,24 @@ describe('rolesOf and sizeHistogram', () => {
 	});
 
 	test('ignores nations without a seat', () => {
-		expect(rolesOf(new Map([['deu', 0]]), [])).toEqual([]);
+		expect(rolesOf({ seatCounts: new Map([['deu', 0]]), nonStateActors: [] })).toEqual([]);
 	});
 });
 
 describe('exactSizeWarnings', () => {
 	test('warns about sizes with fewer than three roles and suggests nations one seat away', () => {
-		const roles = rolesOf(
-			new Map([
+		const roles = rolesOf({
+			seatCounts: new Map([
 				['a', 2],
 				['b', 2],
 				['c', 2],
 				['d', 3],
 				['e', 4]
 			]),
-			[{ id: 'nsa', seatAmount: 3 }]
-		);
+			nonStateActors: [{ id: 'nsa', seatAmount: 3 }]
+		});
 
-		const warnings = exactSizeWarnings(roles);
+		const warnings = exactSizeWarnings({ roles });
 		expect(warnings.map(({ size, count }) => ({ size, count }))).toEqual([
 			{ size: 3, count: 2 },
 			{ size: 4, count: 1 }
@@ -101,29 +107,29 @@ describe('exactSizeWarnings', () => {
 	});
 
 	test('is quiet when every size has enough roles', () => {
-		const roles = rolesOf(
-			new Map([
+		const roles = rolesOf({
+			seatCounts: new Map([
 				['a', 2],
 				['b', 2],
 				['c', 2]
 			]),
-			[]
-		);
-		expect(exactSizeWarnings(roles)).toEqual([]);
+			nonStateActors: []
+		});
+		expect(exactSizeWarnings({ roles })).toEqual([]);
 	});
 });
 
 describe('isOutsideSizeLimits', () => {
 	test('respects min and max independently', () => {
-		expect(isOutsideSizeLimits(1, { min: 2, max: null })).toBe(true);
-		expect(isOutsideSizeLimits(2, { min: 2, max: null })).toBe(false);
-		expect(isOutsideSizeLimits(7, { min: null, max: 6 })).toBe(true);
-		expect(isOutsideSizeLimits(6, { min: 2, max: 6 })).toBe(false);
+		expect(isOutsideSizeLimits({ size: 1, limits: { min: 2, max: null } })).toBe(true);
+		expect(isOutsideSizeLimits({ size: 2, limits: { min: 2, max: null } })).toBe(false);
+		expect(isOutsideSizeLimits({ size: 7, limits: { min: null, max: 6 } })).toBe(true);
+		expect(isOutsideSizeLimits({ size: 6, limits: { min: 2, max: 6 } })).toBe(false);
 	});
 
 	test('never flags unseated nations or missing limits', () => {
-		expect(isOutsideSizeLimits(0, { min: 2, max: 6 })).toBe(false);
-		expect(isOutsideSizeLimits(12, { min: null, max: null })).toBe(false);
+		expect(isOutsideSizeLimits({ size: 0, limits: { min: 2, max: 6 } })).toBe(false);
+		expect(isOutsideSizeLimits({ size: 12, limits: { min: null, max: null } })).toBe(false);
 	});
 });
 
@@ -134,7 +140,7 @@ describe('unMembers and seatedByGroup', () => {
 	});
 
 	test('counts seated and unseated members per group', () => {
-		const african = seatedByGroup(unMembers, new Map([['egy', 4]])).find(
+		const african = seatedByGroup({ members: unMembers, seatCounts: new Map([['egy', 4]]) }).find(
 			(entry) => entry.group === 'African Group'
 		);
 		expect(african).toEqual({ group: 'African Group', total: 54, seated: 1, unseated: 53 });
@@ -161,12 +167,12 @@ describe('matchesSeatFilters', () => {
 	const none = { q: null, group: null, noSeat: null, size: null };
 
 	test('passes without filters', () => {
-		expect(matchesSeatFilters(germany, 3, none)).toBe(true);
+		expect(matchesSeatFilters({ row: germany, size: 3, filters: none })).toBe(true);
 	});
 
 	test('searches the localized name and the ISO codes, best match first', () => {
 		const rows = [germany, { ...germany, name: 'Frankreich', alpha2Code: 'fr', alpha3Code: 'fra' }];
-		const found = (q: string) => searchSeatRows(rows, q).map((row) => row.alpha3Code);
+		const found = (q: string) => searchSeatRows({ rows, q }).map((row) => row.alpha3Code);
 		expect(found('deutsch')).toEqual(['deu']);
 		expect(found('deu')).toContain('deu');
 		expect(found('fra')).toEqual(['fra']);
@@ -174,11 +180,19 @@ describe('matchesSeatFilters', () => {
 	});
 
 	test('filters by group, missing seat and exact size', () => {
-		expect(matchesSeatFilters(germany, 3, { ...none, group: 'African Group' })).toBe(false);
-		expect(matchesSeatFilters(germany, 3, { ...none, noSeat: true })).toBe(false);
-		expect(matchesSeatFilters(germany, 0, { ...none, noSeat: true })).toBe(true);
-		expect(matchesSeatFilters(germany, 3, { ...none, size: 3 })).toBe(true);
-		expect(matchesSeatFilters(germany, 3, { ...none, size: 2 })).toBe(false);
+		expect(
+			matchesSeatFilters({ row: germany, size: 3, filters: { ...none, group: 'African Group' } })
+		).toBe(false);
+		expect(matchesSeatFilters({ row: germany, size: 3, filters: { ...none, noSeat: true } })).toBe(
+			false
+		);
+		expect(matchesSeatFilters({ row: germany, size: 0, filters: { ...none, noSeat: true } })).toBe(
+			true
+		);
+		expect(matchesSeatFilters({ row: germany, size: 3, filters: { ...none, size: 3 } })).toBe(true);
+		expect(matchesSeatFilters({ row: germany, size: 3, filters: { ...none, size: 2 } })).toBe(
+			false
+		);
 	});
 });
 
@@ -195,17 +209,17 @@ describe('assignedMemberCounts', () => {
 
 describe('seatsWithPending', () => {
 	test('applies unconfirmed additions and removals on top of the saved seats', () => {
-		const seats = seatsWithPending(
-			[
+		const seats = seatsWithPending({
+			committees: [
 				{ id: 'gv', nations: [{ alpha3Code: 'deu' }, { alpha3Code: 'fra' }] },
 				{ id: 'sr', nations: [] }
 			],
-			[
+			pending: [
 				{ committeeId: 'gv', nationAlpha3Code: 'fra', enabled: false },
 				{ committeeId: 'sr', nationAlpha3Code: 'usa', enabled: true },
 				{ committeeId: 'unknown', nationAlpha3Code: 'chn', enabled: true }
 			]
-		);
+		});
 		expect(seats.get('gv')).toEqual(new Set(['deu']));
 		expect(seats.get('sr')).toEqual(new Set(['usa']));
 		expect(seats.has('unknown')).toBe(false);

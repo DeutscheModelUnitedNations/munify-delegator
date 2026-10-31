@@ -24,7 +24,7 @@ export function paperTypeLabel(type: PapertypeEnum) {
 const valueOf = (p: TooltipPoint) => (typeof p.value === 'number' ? p.value : 0);
 
 /** One paper type's block of the tooltip: its total, then each status that has papers. */
-function typeSection(points: TooltipPoint[], typeLabel: string) {
+function typeSection({ points, typeLabel }: { points: TooltipPoint[]; typeLabel: string }) {
 	const ofType = points.filter((p) => p.seriesName?.startsWith(typeLabel));
 	const typeTotal = ofType.reduce((sum, p) => sum + valueOf(p), 0);
 	if (typeTotal <= 0) return '';
@@ -38,14 +38,17 @@ function typeSection(points: TooltipPoint[], typeLabel: string) {
  * The committee chart's tooltip: the committee, then per paper type (series are named
  * `<type label> - <status label>`) its total and its non-empty statuses.
  */
-export function committeeTooltip(
-	params: TooltipComponentFormatterCallbackParams,
-	typeLabels: readonly string[]
-) {
+export function committeeTooltip({
+	params,
+	typeLabels
+}: {
+	params: TooltipComponentFormatterCallbackParams;
+	typeLabels: readonly string[];
+}) {
 	if (!Array.isArray(params) || params.length === 0) return '';
 	// Axis-triggered tooltips carry the category on every point; echarts' types omit it.
 	const first = params[0];
 	const committee = 'axisValue' in first ? first.axisValue : undefined;
-	const sections = typeLabels.map((label) => typeSection(params, label));
+	const sections = typeLabels.map((label) => typeSection({ points: params, typeLabel: label }));
 	return `<strong>${committee}</strong><br/>${sections.join('')}`;
 }

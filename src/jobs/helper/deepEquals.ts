@@ -35,11 +35,15 @@
  * const y: any = {}; y.self = y;
  * deepEquals(x, y); // true
  */
-export default function deepEquals(
-	a: unknown,
-	b: unknown,
+export default function deepEquals({
+	a,
+	b,
 	seen = new WeakMap<object, object>()
-): boolean {
+}: {
+	a: unknown;
+	b: unknown;
+	seen?: WeakMap<object, object>;
+}): boolean {
 	if (Object.is(a, b)) return true; // handles -0/+0 and NaN
 
 	// If types differ, or one is null and the other not, bail out
@@ -51,9 +55,9 @@ export default function deepEquals(
 
 	// Handle Array vs non-Array
 	if (Array.isArray(a) || Array.isArray(b)) {
-		return Array.isArray(a) && Array.isArray(b) && arraysEqual(a, b, seen);
+		return Array.isArray(a) && Array.isArray(b) && arraysEqual({ a, b, seen });
 	}
-	return objectsEqual(a, b, seen);
+	return objectsEqual({ a, b, seen });
 }
 
 function isObject(value: unknown): value is object {
@@ -61,13 +65,21 @@ function isObject(value: unknown): value is object {
 }
 
 /** Positions matter; undefined entries are compared normally. */
-function arraysEqual(a: unknown[], b: unknown[], seen: WeakMap<object, object>) {
+function arraysEqual({
+	a,
+	b,
+	seen
+}: {
+	a: unknown[];
+	b: unknown[];
+	seen: WeakMap<object, object>;
+}) {
 	if (a.length !== b.length) return false;
-	return a.every((entry, i) => deepEquals(entry, b[i], seen));
+	return a.every((entry, i) => deepEquals({ a: entry, b: b[i], seen }));
 }
 
 /** Compares plain objects, but ignores keys whose value is undefined on either side. */
-function objectsEqual(a: object, b: object, seen: WeakMap<object, object>) {
+function objectsEqual({ a, b, seen }: { a: object; b: object; seen: WeakMap<object, object> }) {
 	const definedEntries = (value: object) =>
 		new Map(Object.entries(value).filter(([, entry]) => entry !== undefined));
 	const entriesA = definedEntries(a);
@@ -78,7 +90,7 @@ function objectsEqual(a: object, b: object, seen: WeakMap<object, object>) {
 
 	for (const [k, value] of entriesA) {
 		if (!entriesB.has(k)) return false;
-		if (!deepEquals(value, entriesB.get(k), seen)) return false;
+		if (!deepEquals({ a: value, b: entriesB.get(k), seen })) return false;
 	}
 
 	return true;

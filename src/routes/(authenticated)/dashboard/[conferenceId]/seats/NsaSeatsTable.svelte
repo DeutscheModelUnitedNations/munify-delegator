@@ -20,10 +20,13 @@
 			header: m.nonStateActors(),
 			accessorFn: (row) => row.name,
 			cell: ({ row }) =>
-				renderComponent(FlagNameCell, {
-					name: row.original.name ?? '',
-					nsa: true,
-					nsaIcon: row.original.fontAwesomeIcon
+				renderComponent({
+					component: FlagNameCell,
+					props: {
+						name: row.original.name ?? '',
+						nsa: true,
+						nsaIcon: row.original.fontAwesomeIcon
+					}
 				})
 		},
 		{

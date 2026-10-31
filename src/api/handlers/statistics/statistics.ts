@@ -397,29 +397,29 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 		}),
 		countdowns: t.field({
 			type: countdownsType,
-			resolve: ({ conference }) => countdownsOf(conference)
+			resolve: ({ conference }) => countdownsOf({ conference })
 		}),
 		registered: t.field({
 			type: registeredType,
 			resolve: async ({ rows, filter }) =>
-				registrationStatisticsOf(
-					await rows.people(),
-					await rows.delegations(),
-					await rows.roleApplications(),
+				registrationStatisticsOf({
+					people: await rows.people(),
+					delegations: await rows.delegations(),
+					roleApplications: await rows.roleApplications(),
 					filter
-				)
+				})
 		}),
 		age: t.field({
 			type: ageStatsType,
-			resolve: async ({ rows, filter }) => ageStatisticsOf(await rows.ages(), filter)
+			resolve: async ({ rows, filter }) => ageStatisticsOf({ ages: await rows.ages(), filter })
 		}),
 		diet: t.field({
 			type: dietType,
-			resolve: async ({ rows, filter }) => dietOf(await rows.people(), filter)
+			resolve: async ({ rows, filter }) => dietOf({ people: await rows.people(), filter })
 		}),
 		gender: t.field({
 			type: genderType,
-			resolve: async ({ rows, filter }) => genderOf(await rows.people(), filter)
+			resolve: async ({ rows, filter }) => genderOf({ people: await rows.people(), filter })
 		}),
 		status: t.field({
 			type: statusType,
@@ -429,7 +429,7 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 			type: [addressesType],
 			resolve: async ({ rows, filter }) => {
 				const [addresses, coordinates] = await Promise.all([rows.addresses(), zipCoordinates()]);
-				return addressesOf(addresses, filter).map((address) => ({
+				return addressesOf({ addresses, filter }).map((address) => ({
 					...address,
 					...(address.country === 'DEU' && address.zipPrefix !== null
 						? coordinates.get(address.zipPrefix)
@@ -440,7 +440,7 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 		roleBased: t.field({
 			type: roleBasedStats,
 			resolve: async ({ rows, filter }) =>
-				roleBasedOf(await rows.people(), await rows.delegations(), filter)
+				roleBasedOf({ people: await rows.people(), delegations: await rows.delegations(), filter })
 		}),
 		committeeFillRates: t.field({
 			type: [committeeFillRate],
@@ -449,15 +449,16 @@ const StatisticsResult = schemaBuilder.objectRef<StatisticsSource>('StatisticsRe
 		registrationTimeline: t.field({
 			type: [registrationTimelineEntry],
 			resolve: async ({ rows, filter }) =>
-				registrationTimelineOf(await rows.registrationDays(), filter)
+				registrationTimelineOf({ days: await rows.registrationDays(), filter })
 		}),
 		nationalityDistribution: t.field({
 			type: [nationalityStats],
-			resolve: async ({ rows, filter }) => nationalityDistributionOf(await rows.addresses(), filter)
+			resolve: async ({ rows, filter }) =>
+				nationalityDistributionOf({ addresses: await rows.addresses(), filter })
 		}),
 		schoolStats: t.field({
 			type: [schoolStats],
-			resolve: async ({ rows, filter }) => schoolStatsOf(await rows.schools(), filter)
+			resolve: async ({ rows, filter }) => schoolStatsOf({ schools: await rows.schools(), filter })
 		}),
 		waitingList: t.field({
 			type: waitingListStats,
@@ -486,7 +487,7 @@ schemaBuilder.queryFields((t) => ({
 			filter: t.arg({ type: StatsFilterEnum, defaultValue: 'ALL' })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadStatistics(ctx, args.conferenceId);
+			await assertCanReadStatistics({ ctx, conferenceId: args.conferenceId });
 
 			const conference = await db.query.conference
 				.findFirst({

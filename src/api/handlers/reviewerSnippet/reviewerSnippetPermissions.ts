@@ -14,6 +14,12 @@ export function registerReviewerSnippetAbilities() {
 }
 
 /** Refuses unless the snippet exists and the caller may update it: it is their own. */
-export async function assertCanUpdateReviewerSnippet(ctx: ApiContext, id: string) {
-	await assertAllowed(ctx, 'reviewerSnippet', 'update', id, { message: m.snippetNotFound });
+export async function assertCanUpdateReviewerSnippet({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({
+		ctx,
+		table: 'reviewerSnippet',
+		action: 'update',
+		id,
+		options: { message: m.snippetNotFound }
+	});
 }

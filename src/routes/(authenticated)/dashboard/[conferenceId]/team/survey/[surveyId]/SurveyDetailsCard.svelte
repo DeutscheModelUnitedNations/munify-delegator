@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import { dateToDatetimeLocal, formatInTimezone } from '#lib/helpers/conferenceTimezoneDate';
@@ -38,7 +39,7 @@
 	let editDeadline = $state('');
 
 	const formatDeadline = (date: Date) => {
-		return formatInTimezone(date, conferenceTimezone);
+		return formatInTimezone({ date, timezone: conferenceTimezone });
 	};
 
 	const toggleShowSelection = async () => {
@@ -49,7 +50,7 @@
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle showSelectionOnDashboard:', error);
+			logger.error('Failed to toggle showSelectionOnDashboard', error);
 		} finally {
 			isLoading = false;
 		}
@@ -58,12 +59,17 @@
 	const startEditSurvey = () => {
 		editTitle = survey.title;
 		editDescription = survey.description;
-		editDeadline = dateToDatetimeLocal(survey.deadline, conferenceTimezone);
+		editDeadline = dateToDatetimeLocal({ date: survey.deadline, timezone: conferenceTimezone });
 		editingSurvey = true;
 	};
 
 	const saveSurvey = async () => {
-		const fields = surveyFields(editTitle, editDescription, editDeadline, conferenceTimezone);
+		const fields = surveyFields({
+			title: editTitle,
+			description: editDescription,
+			deadline: editDeadline,
+			timezone: conferenceTimezone
+		});
 		if (!fields) return;
 		isLoading = true;
 		try {
@@ -73,7 +79,7 @@
 			});
 			editingSurvey = false;
 		} catch (error) {
-			console.error('Failed to update survey:', error);
+			logger.error('Failed to update survey', error);
 		} finally {
 			isLoading = false;
 		}

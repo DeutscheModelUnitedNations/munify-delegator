@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { untrack } from 'svelte';
 	import BinRow from './BinRow.svelte';
 	import Modal from '#lib/components/Modal.svelte';
@@ -75,9 +76,12 @@
 		try {
 			const [assets, sheets] = await Promise.all([
 				loadSheetAssets(conferenceId),
-				buildSheets(conferenceId, previewCount, bins)
+				buildSheets({ conferenceId, binCount: previewCount, bins })
 			]);
-			downloadPdf(await buildNametagSheetsPdf({ sheets, ...assets }), 'nametag-tables.pdf');
+			downloadPdf({
+				bytes: await buildNametagSheetsPdf({ sheets, ...assets }),
+				filename: 'nametag-tables.pdf'
+			});
 		} catch (error) {
 			reportDownloadError(error);
 		} finally {
@@ -93,14 +97,14 @@
 		downloadingQr = true;
 		try {
 			const assets = await loadSheetAssets(conferenceId);
-			downloadPdf(
-				await buildNametagQrPdf({
+			downloadPdf({
+				bytes: await buildNametagQrPdf({
 					url: `${location.origin}/dashboard/${conferenceId}/check-in`,
 					prompt: m.nametagQrPrompt(),
 					...assets
 				}),
-				'check-in-qr.pdf'
-			);
+				filename: 'check-in-qr.pdf'
+			});
 		} catch (error) {
 			reportDownloadError(error);
 		} finally {
@@ -109,7 +113,7 @@
 	}
 
 	function reportDownloadError(error: unknown) {
-		console.error(error);
+		logger.error('Check-in failed', error);
 		toast.error(error instanceof Error ? error.message : String(error));
 	}
 

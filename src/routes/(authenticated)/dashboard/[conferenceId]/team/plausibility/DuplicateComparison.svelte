@@ -57,7 +57,7 @@
 			label: m.duplicateReasonName(),
 			icon: 'id-card',
 			reason: 'name',
-			value: (a: Account) => formatNames(a.givenName, a.familyName)
+			value: (a: Account) => formatNames({ givenName: a.givenName, familyName: a.familyName })
 		},
 		{
 			label: m.duplicateReasonBirthday(),
@@ -99,7 +99,7 @@
 		<!-- On a phone the buttons go below the name, which has only half the width to wrap in -->
 		<div class="flex flex-col items-start justify-between gap-1 sm:flex-row sm:gap-2">
 			<span class="min-w-0 text-base font-bold wrap-anywhere">
-				{formatNames(side.account.givenName, side.account.familyName)}
+				{formatNames({ givenName: side.account.givenName, familyName: side.account.familyName })}
 			</span>
 			<div class="flex items-center gap-1">
 				<!-- Always there, hidden without a note, so the buttons do not move between the accounts -->

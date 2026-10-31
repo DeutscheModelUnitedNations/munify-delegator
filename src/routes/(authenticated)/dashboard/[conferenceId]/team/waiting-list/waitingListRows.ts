@@ -46,23 +46,30 @@ export interface WaitingListSourceEntry {
 	createdAt: Date | string;
 }
 
-function conferenceAge(
-	birthday: Maybe<Date | string>,
-	startConference: Maybe<Date | string>
-): number | undefined {
+function conferenceAge({
+	birthday,
+	startConference
+}: {
+	birthday: Maybe<Date | string>;
+	startConference: Maybe<Date | string>;
+}): number | undefined {
 	if (!birthday || !startConference) return undefined;
-	return getAgeAtConference(birthday, startConference);
+	return getAgeAtConference({ birthday, startConference });
 }
 
 /**
  * One table row; `startConference` decides the age the person will be at the conference, and
  * `positions` (entry id to place, `waitingListPositions`) the place on the list.
  */
-export function toWaitingListRow(
-	entry: WaitingListSourceEntry,
-	startConference: Maybe<Date | string>,
-	positions: ReadonlyMap<string, number> = new Map()
-): WaitingListRow {
+export function toWaitingListRow({
+	entry,
+	startConference,
+	positions = new Map()
+}: {
+	entry: WaitingListSourceEntry;
+	startConference: Maybe<Date | string>;
+	positions?: ReadonlyMap<string, number>;
+}): WaitingListRow {
 	const { user } = entry;
 	return {
 		id: entry.id,
@@ -74,7 +81,7 @@ export function toWaitingListRow(
 		given_name: user.givenName,
 		email: user.email,
 		phone: user.phone ?? null,
-		conferenceAge: conferenceAge(user.birthday, startConference),
+		conferenceAge: conferenceAge({ birthday: user.birthday, startConference }),
 		participationCount: user.conferenceParticipationsCount,
 		city: user.city ?? null,
 		school: entry.school?.name ?? null,

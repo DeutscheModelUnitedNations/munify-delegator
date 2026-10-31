@@ -32,7 +32,7 @@
 
 	let { conferenceId, kind, locale }: Props = $props();
 
-	const fallback: EmailText = untrack(() => defaultEmailText(kind, locale));
+	const fallback: EmailText = untrack(() => defaultEmailText({ kind, locale }));
 
 	const stored = await client.query.conferenceEmailTexts({
 		__args: {
@@ -60,7 +60,7 @@
 	};
 
 	/** A field equal to the default is stored as none, so it follows when the default improves. */
-	const ownOrNone = (value: string, standard: string) =>
+	const ownOrNone = ({ value, standard }: { value: string; standard: string }) =>
 		value.trim() === standard.trim() ? null : value;
 
 	async function save({ subject, heading, body }: EmailText) {
@@ -70,9 +70,9 @@
 					conferenceId,
 					kind,
 					locale,
-					subject: ownOrNone(subject, fallback.subject),
-					heading: ownOrNone(heading, fallback.heading),
-					body: ownOrNone(body, fallback.body)
+					subject: ownOrNone({ value: subject, standard: fallback.subject }),
+					heading: ownOrNone({ value: heading, standard: fallback.heading }),
+					body: ownOrNone({ value: body, standard: fallback.body })
 				}
 			})
 		);
@@ -95,10 +95,10 @@
 		form.form.set({ ...fallback }, { taint: true });
 	}
 
-	const draft = debounced<EmailText>(
-		() => ({ subject: $formData.subject, heading: $formData.heading, body: $formData.body }),
-		{ ...initial }
-	);
+	const draft = debounced<EmailText>({
+		read: () => ({ subject: $formData.subject, heading: $formData.heading, body: $formData.body }),
+		initial: { ...initial }
+	});
 	const preview = $derived(
 		await fetchEmailPreview({ conferenceId, kind, locale, draft: true, ...draft.current })
 	);

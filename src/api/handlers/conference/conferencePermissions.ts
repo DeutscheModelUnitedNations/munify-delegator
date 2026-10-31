@@ -13,7 +13,7 @@ import { grantWhere } from '#api/services/authHelper/utils';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import type { FileField } from '#api/handlers/storedFile/fileSources';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import type { ConferenceUpdateArgs } from './conferenceService';
 
 /** Where the fee goes, where postal documents go, and the documents themselves. */
@@ -55,20 +55,26 @@ export function registerConferenceAbilities() {
 	});
 
 	// The team reads all of it.
-	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf(ctx)));
+	abilityBuilder.conference.allow('read').when((ctx) => grantWhere(isTeamMemberOf({ ctx })));
 
 	// Update and delete are limited to the conference's own project management.
 	abilityBuilder.conference
 		.allow(['update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOf({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 }
 
 /**
  * Refuses unless the caller hands out document numbers in the conference (the postal page), which
  * is participant care's: the next number tells how many were handed out so far.
  */
-export async function assertCanReadNextDocumentNumber(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanReadNextDocumentNumber({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /**
@@ -110,7 +116,13 @@ const CONFERENCE_CONTENT_ARGS: readonly string[] = [
  * project management's, so the link-only path checks the role itself and refuses any other
  * argument rather than ignoring it.
  */
-export async function assertCanUpdateConference(ctx: ApiContext, args: ConferenceUpdateArgs) {
+export async function assertCanUpdateConference({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: ConferenceUpdateArgs;
+}) {
 	const updateFilter = (await ctx.abilities.conference.filter('update')).merge({
 		where: { id: args.id }
 	});
@@ -120,52 +132,80 @@ export async function assertCanUpdateConference(ctx: ApiContext, args: Conferenc
 	}));
 	if (mayEditAll) return;
 
-	await assertTeamPermission(ctx, args.id, 'editConferenceContent');
+	await assertTeamPermission({ ctx, conferenceId: args.id, permission: 'editConferenceContent' });
 	const forbidden = Object.entries(args).filter(
 		([key, value]) => value !== undefined && !CONFERENCE_CONTENT_ARGS.includes(key)
 	);
 	if (forbidden.length > 0) {
-		throw apiError(
-			'FORBIDDEN',
-			m.conferenceChangeProjectManagementOnly({
+		throw apiError({
+			code: 'FORBIDDEN',
+			message: m.conferenceChangeProjectManagementOnly({
 				fields: forbidden.map(([key]) => key).join(', ')
 			})
-		);
+		});
 	}
 }
 
 /** Refuses unless the caller uploaded every file `updateConference` is asked to store, for its field. */
-export async function assertCanClaimConferenceFiles(ctx: ApiContext, args: ConferenceUpdateArgs) {
-	const claim = (field: FileField<'conference'>, fileId: string | null | undefined) =>
-		assertCanClaimFile(ctx, fileId, { kind: 'conference', field, conferenceId: args.id });
-	await claim('image', args.imageFileId);
-	await claim('emblem', args.emblemFileId);
-	await claim('logo', args.logoFileId);
-	await claim('contract', args.contractFileId);
-	await claim('guardianConsent', args.guardianConsentFileId);
-	await claim('mediaConsent', args.mediaConsentFileId);
-	await claim('termsAndConditions', args.termsAndConditionsFileId);
-	await claim('certificate', args.certificateFileId);
+export async function assertCanClaimConferenceFiles({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: ConferenceUpdateArgs;
+}) {
+	const claim = ({
+		field,
+		fileId
+	}: {
+		field: FileField<'conference'>;
+		fileId: string | null | undefined;
+	}) =>
+		assertCanClaimFile({
+			ctx,
+			fileId,
+			target: { kind: 'conference', field, conferenceId: args.id }
+		});
+	await claim({ field: 'image', fileId: args.imageFileId });
+	await claim({ field: 'emblem', fileId: args.emblemFileId });
+	await claim({ field: 'logo', fileId: args.logoFileId });
+	await claim({ field: 'contract', fileId: args.contractFileId });
+	await claim({ field: 'guardianConsent', fileId: args.guardianConsentFileId });
+	await claim({ field: 'mediaConsent', fileId: args.mediaConsentFileId });
+	await claim({ field: 'termsAndConditions', fileId: args.termsAndConditionsFileId });
+	await claim({ field: 'certificate', fileId: args.certificateFileId });
 }
 
 /** Placing the generated parts on the templates goes with the templates themselves. */
-export async function assertCanSetDocumentLayout(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'editConferenceContent');
+export async function assertCanSetDocumentLayout({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'editConferenceContent' });
 }
 
 /** Refused when `updateConference` matched no row, as when the update ability matches none. */
 export function conferenceUpdateRefused() {
-	return apiError('FORBIDDEN', m.accessDeniedProjectManagement());
+	return apiError({ code: 'FORBIDDEN', message: m.accessDeniedProjectManagement() });
 }
 
 /** Creating a conference from a seeding document is for system admins. */
 export function assertCanSeedConference(ctx: ApiContext) {
 	if (!isSystemAdmin(ctx)) {
-		throw apiError('FORBIDDEN', m.unauthorized({ error: 'User is not admin' }));
+		throw apiError({ code: 'FORBIDDEN', message: m.unauthorized({ error: 'User is not admin' }) });
 	}
 }
 
 /** The plausibility check is the conference's participant care's tool. */
-export async function assertCanReadPlausibility(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanReadPlausibility({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }

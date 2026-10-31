@@ -25,7 +25,7 @@
 
 	const languageOptions = CONFERENCE_LANGUAGES.map((language) => ({
 		value: language,
-		label: conferenceLanguageName(language, getLocale())
+		label: conferenceLanguageName({ language, inLocale: getLocale() })
 	})).sort((a, b) => a.label.localeCompare(b.label, getLocale()));
 	let formData = $derived(form.form);
 

@@ -10,7 +10,7 @@
 
 	let { roles, roleName, maxSuggestions }: Props = $props();
 
-	const sizeWarnings = $derived(exactSizeWarnings(roles));
+	const sizeWarnings = $derived(exactSizeWarnings({ roles }));
 	const singleSeats = $derived(singleSeatRoles(roles));
 
 	const describe = (candidates: Role[]) =>

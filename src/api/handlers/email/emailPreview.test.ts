@@ -21,12 +21,11 @@ vi.mock('#api/services/email/emailService', () => ({ emailService: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
 vi.mock('#api/services/requestLocale', () => ({
 	localeOfUser: (locale: string | null) => locale ?? 'de',
-	runWithLocale: (_locale: string, fn: () => unknown) => fn()
+	runWithLocale: ({ fn }: { locale: string; fn: () => unknown }) => fn()
 }));
 vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot: async () => stored.snapshot }));
-vi.mock('#api/services/email/sendTeamInvitationEmail', () => ({
-	renderTeamInvitationEmail: (...args: unknown[]) => ({ team: 'invitation', args }),
-	renderTeamWelcomeEmail: (...args: unknown[]) => ({ team: 'welcome', args })
+vi.mock('./teamInvitationEmail', () => ({
+	renderTeamInvitationEmail: (...args: unknown[]) => ({ team: 'invitation', args })
 }));
 
 const { previewEmail } = await import('./emailSweep');
@@ -62,13 +61,25 @@ beforeEach(() => {
 describe('previewEmail', () => {
 	test('is nothing for a conference without a snapshot', async () => {
 		stored.snapshot = undefined;
-		expect(await previewEmail('c1', 'PAYMENT_UNLOCKED', user, 'https://app')).toBeUndefined();
+		expect(
+			await previewEmail({
+				conferenceId: 'c1',
+				kind: 'PAYMENT_UNLOCKED',
+				user,
+				origin: 'https://app'
+			})
+		).toBeUndefined();
 	});
 
 	test("renders the conference's stored text and footer", async () => {
 		stored.texts = [{ kind: 'PAYMENT_UNLOCKED', locale: 'de', subject: 'Stored {conference}' }];
 		stored.footers = [{ locale: 'de', text: 'Stored footer' }];
-		const preview = await previewEmail('c1', 'PAYMENT_UNLOCKED', user, 'https://app');
+		const preview = await previewEmail({
+			conferenceId: 'c1',
+			kind: 'PAYMENT_UNLOCKED',
+			user,
+			origin: 'https://app'
+		});
 		expect(preview?.subject).toBe('Stored MUN-SH 2027');
 		expect(preview && 'html' in preview ? preview.html : '').toContain('Stored footer');
 	});
@@ -76,26 +87,43 @@ describe('previewEmail', () => {
 	test('shows the drafts instead of what is stored', async () => {
 		stored.texts = [{ kind: 'PAYMENT_UNLOCKED', locale: 'de', subject: 'Stored' }];
 		stored.footers = [{ locale: 'de', text: 'Stored footer' }];
-		const preview = await previewEmail(
-			'c1',
-			'PAYMENT_UNLOCKED',
+		const preview = await previewEmail({
+			conferenceId: 'c1',
+			kind: 'PAYMENT_UNLOCKED',
 			user,
-			'https://app',
-			{ subject: 'Draft' },
-			'Draft footer'
-		);
+			origin: 'https://app',
+			draft: { subject: 'Draft' },
+			footerDraft: 'Draft footer'
+		});
 		expect(preview?.subject).toBe('Draft');
 		const html = preview && 'html' in preview ? preview.html : '';
 		expect(html).toContain('Draft footer');
 		expect(html).not.toContain('Stored footer');
 	});
 
-	test('renders the team mails with their own templates', async () => {
-		expect(await previewEmail('c1', 'TEAM_INVITATION', user, 'https://app')).toMatchObject({
+	test('renders the team invitation with its own template', async () => {
+		expect(
+			await previewEmail({
+				conferenceId: 'c1',
+				kind: 'TEAM_INVITATION',
+				user,
+				origin: 'https://app'
+			})
+		).toMatchObject({
 			team: 'invitation'
 		});
-		expect(await previewEmail('c1', 'TEAM_WELCOME', user, 'https://app')).toMatchObject({
-			team: 'welcome'
+	});
+
+	test('renders the team welcome like every automatic mail, from the caller to themselves', async () => {
+		const preview = await previewEmail({
+			conferenceId: 'c1',
+			kind: 'TEAM_WELCOME',
+			user,
+			origin: 'https://app'
 		});
+		expect(preview?.subject).toContain('MUN-SH 2027');
+		const html = preview && 'html' in preview ? preview.html : '';
+		expect(html).toContain('Ada Lovelace hat Sie zum Team');
+		expect(html).toContain('https://app/dashboard/c1');
 	});
 });

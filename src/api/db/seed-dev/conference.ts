@@ -58,11 +58,15 @@ export interface ConferenceTemplates {
 }
 
 /** The conference row and what every conference has: committees, agenda, actors and roles. */
-export function buildConferenceStructure(
-	world: SeedWorld,
-	plan: ConferencePlan,
-	templates: ConferenceTemplates
-): ConferenceSeed {
+export function buildConferenceStructure({
+	world,
+	plan,
+	templates
+}: {
+	world: SeedWorld;
+	plan: ConferencePlan;
+	templates: ConferenceTemplates;
+}): ConferenceSeed {
 	const at = (days: number) => new Date(Date.now() + days * DAY_MS);
 	const startConference = at(plan.days.startConference);
 	startConference.setHours(9, 0, 0, 0);
@@ -70,17 +74,28 @@ export function buildConferenceStructure(
 	endConference.setHours(17, 0, 0, 0);
 
 	const conferenceId = seedConferenceId(plan.key);
-	const file = (field: string, bytes: Uint8Array, mimeType = 'application/pdf') =>
-		addSeedFile(world.batch, {
-			conferenceId,
-			kind: 'conference',
-			field,
-			bytes,
-			mimeType,
-			fileName: `${field}.${mimeType === 'application/pdf' ? 'pdf' : 'jpg'}`
+	const file = ({
+		field,
+		bytes,
+		mimeType = 'application/pdf'
+	}: {
+		field: string;
+		bytes: Uint8Array;
+		mimeType?: string;
+	}) =>
+		addSeedFile({
+			batch: world.batch,
+			file: {
+				conferenceId,
+				kind: 'conference',
+				field,
+				bytes,
+				mimeType,
+				fileName: `${field}.${mimeType === 'application/pdf' ? 'pdf' : 'jpg'}`
+			}
 		});
 	const template = (field: keyof ConferenceTemplates) =>
-		plan.with.templates ? file(field, templates[field]) : null;
+		plan.with.templates ? file({ field, bytes: templates[field] }) : null;
 
 	const conference = {
 		...makeSeedConference({
@@ -97,7 +112,7 @@ export function buildConferenceStructure(
 		feeAmount: 85,
 		linkToPreparationGuide: 'https://example.org/vorbereitung',
 		info: null,
-		imageFileId: file('image', conferenceImageJpeg, 'image/jpeg'),
+		imageFileId: file({ field: 'image', bytes: conferenceImageJpeg, mimeType: 'image/jpeg' }),
 		contractFileId: template('contract'),
 		guardianConsentFileId: template('guardianConsent'),
 		mediaConsentFileId: template('mediaConsent'),
@@ -110,7 +125,7 @@ export function buildConferenceStructure(
 		...plan.conference
 	};
 	world.batch.conference.push(conference);
-	const cs = createConferenceSeed(world, plan, conference, startConference);
+	const cs = createConferenceSeed({ world, plan, conference, startConference });
 
 	COMMITTEE_CATALOG.slice(0, plan.crowd.committees).forEach((entry, index) => {
 		const committeeId = cs.rowId(`committee-${entry.abbreviation.toLowerCase()}`);
@@ -188,7 +203,7 @@ export function buildConferenceStructure(
 }
 
 /** Seats a delegation of `size` would have as a nation: summed over the committees it sits in. */
-export function nationSeats(cs: ConferenceSeed, nation: string) {
+export function nationSeats({ cs, nation }: { cs: ConferenceSeed; nation: string }) {
 	return cs.committees
 		.filter((committee) => committee.nations.includes(nation))
 		.reduce((sum, committee) => {
@@ -201,15 +216,23 @@ export function nationSeats(cs: ConferenceSeed, nation: string) {
  * Role preferences a delegation of `size` can keep when it applies: the server drops every
  * nation or actor with fewer seats than members, so only roomy ones are offered.
  */
-export function roomyPreferences(
-	cs: ConferenceSeed,
-	size: number,
-	count: number,
-	options: { withNonStateActor?: boolean; skip?: number } = {}
-): RolePreference[] {
+export function roomyPreferences({
+	cs,
+	size,
+	count,
+	options = {}
+}: {
+	cs: ConferenceSeed;
+	size: number;
+	count: number;
+	options?: { withNonStateActor?: boolean; skip?: number };
+}): RolePreference[] {
 	const nations = [...new Set(cs.committees.flatMap((committee) => committee.nations))]
-		.filter((nation) => nation !== PERSONA_NATION && nationSeats(cs, nation) >= size)
-		.sort((a, b) => nationSeats(cs, b) - nationSeats(cs, a) || a.localeCompare(b));
+		.filter((nation) => nation !== PERSONA_NATION && nationSeats({ cs, nation }) >= size)
+		.sort(
+			(a, b) =>
+				nationSeats({ cs, nation: b }) - nationSeats({ cs, nation: a }) || a.localeCompare(b)
+		);
 	const picked: RolePreference[] = nations
 		.slice(options.skip ?? 0, (options.skip ?? 0) + count)
 		.map((nation) => ({ nation }));
@@ -267,12 +290,17 @@ interface CrowdRolePools {
 }
 
 /** One delegation of the crowd: the `index`th, which decides its seat and its oddities. */
-function addCrowdDelegation(
-	cs: ConferenceSeed,
-	index: number,
-	pools: CrowdRolePools,
-	appliedShare: number
-): CrowdDelegation {
+function addCrowdDelegation({
+	cs,
+	index,
+	pools,
+	appliedShare
+}: {
+	cs: ConferenceSeed;
+	index: number;
+	pools: CrowdRolePools;
+	appliedShare: number;
+}): CrowdDelegation {
 	const { plan, world } = cs;
 	// Three in four applicants get a seat; two in three of those a nation.
 	const seated = plan.assigned && index % 4 !== 3;
@@ -285,83 +313,126 @@ function addCrowdDelegation(
 	const size = faker.number.int({ min: 2, max: 5 });
 	// The first delegate of the first delegation is 27: the plausibility check flags them.
 	const userIds = Array.from({ length: size }, (_unused, memberIndex) =>
-		world.crowdUser('participant', {
-			ages: index === 0 && memberIndex === 1 ? [27, 27] : undefined,
-			incomplete: index === 1 && memberIndex === 1
+		world.crowdUser({
+			kind: 'participant',
+			options: {
+				ages: index === 0 && memberIndex === 1 ? [27, 27] : undefined,
+				incomplete: index === 1 && memberIndex === 1
+			}
 		})
 	);
-	const { memberIds } = addDelegation(cs, {
-		applied: faker.datatype.boolean(appliedShare),
-		members: userIds.map((userId, memberIndex) => ({
-			userId,
-			committeeId: committees.length > 0 ? committees[memberIndex % committees.length].id : null
-		})),
-		nation,
-		nonStateActorId,
-		preferences: roomyPreferences(cs, Math.min(size, 3), faker.number.int({ min: 3, max: 5 }), {
-			withNonStateActor: faker.datatype.boolean(),
-			skip: index % 4
-		})
+	const { memberIds } = addDelegation({
+		cs,
+		plan: {
+			applied: faker.datatype.boolean(appliedShare),
+			members: userIds.map((userId, memberIndex) => ({
+				userId,
+				committeeId: committees.length > 0 ? committees[memberIndex % committees.length].id : null
+			})),
+			nation,
+			nonStateActorId,
+			preferences: roomyPreferences({
+				cs,
+				size: Math.min(size, 3),
+				count: faker.number.int({ min: 3, max: 5 }),
+				options: {
+					withNonStateActor: faker.datatype.boolean(),
+					skip: index % 4
+				}
+			})
+		}
 	});
 
 	if ((nation || nonStateActorId) && plan.with.participantStatus) {
-		addSeatedCrowdStatuses(cs, index, userIds);
+		addSeatedCrowdStatuses({ cs, index, userIds });
 	}
 	return { headId: userIds[0], userIds, memberIds: [...memberIds.values()] };
 }
 
 /** Statuses, attendance and (for every other delegation) a payment of a seated delegation. */
-function addSeatedCrowdStatuses(cs: ConferenceSeed, index: number, userIds: string[]) {
+function addSeatedCrowdStatuses({
+	cs,
+	index,
+	userIds
+}: {
+	cs: ConferenceSeed;
+	index: number;
+	userIds: string[];
+}) {
 	for (const userId of userIds) {
-		const statusId = addStatus(cs, userId, crowdStatus(cs));
+		const statusId = addStatus({ cs, userId, plan: crowdStatus(cs) });
 		if (cs.plan.with.attendance && faker.datatype.boolean(0.9)) {
-			addAttendance(cs, statusId, 'dev-team-member', ['Check-in Tag 1']);
+			addAttendance({
+				cs,
+				statusId,
+				recordedById: 'dev-team-member',
+				occasions: ['Check-in Tag 1']
+			});
 		}
 	}
-	if (index % 2 === 0) addPayment(cs, userIds[0], userIds, faker.datatype.boolean(0.7));
+	if (index % 2 === 0)
+		addPayment({
+			cs,
+			payerId: userIds[0],
+			forUserIds: userIds,
+			received: faker.datatype.boolean(0.7)
+		});
 }
 
 /** The crowd's single participants; returns their ids. */
-function addCrowdSingles(cs: ConferenceSeed, appliedShare: number) {
+function addCrowdSingles({ cs, appliedShare }: { cs: ConferenceSeed; appliedShare: number }) {
 	const { plan, world } = cs;
 	const singleIds: string[] = [];
 	for (let index = 0; index < plan.crowd.singles; index++) {
-		const userId = world.crowdUser('participant');
+		const userId = world.crowdUser({ kind: 'participant' });
 		const roleId =
 			plan.assigned && index % 4 !== 3 ? faker.helpers.arrayElement(cs.customRoleIds) : undefined;
 		singleIds.push(
-			addSingle(cs, {
-				userId,
-				applied: faker.datatype.boolean(appliedShare),
-				roleId,
-				preferences: faker.helpers.arrayElements(cs.customRoleIds, { min: 1, max: 3 })
+			addSingle({
+				cs,
+				plan: {
+					userId,
+					applied: faker.datatype.boolean(appliedShare),
+					roleId,
+					preferences: faker.helpers.arrayElements(cs.customRoleIds, { min: 1, max: 3 })
+				}
 			})
 		);
-		if (roleId && plan.with.participantStatus) addStatus(cs, userId, crowdStatus(cs));
+		if (roleId && plan.with.participantStatus) addStatus({ cs, userId, plan: crowdStatus(cs) });
 	}
 	return singleIds;
 }
 
 /** The crowd's supervisors, each with a delegation or two and a few single participants. */
-function addCrowdSupervisors(
-	cs: ConferenceSeed,
-	crowdDelegations: CrowdDelegation[],
-	singleIds: string[]
-) {
+function addCrowdSupervisors({
+	cs,
+	crowdDelegations,
+	singleIds
+}: {
+	cs: ConferenceSeed;
+	crowdDelegations: CrowdDelegation[];
+	singleIds: string[];
+}) {
 	const { plan, world } = cs;
 	for (let index = 0; index < plan.crowd.supervisors; index++) {
 		const students = faker.helpers.arrayElements(crowdDelegations, { min: 1, max: 2 });
-		const userId = world.crowdUser('supervisor', {
-			// The first supervisor is 19: the plausibility check flags them as too young.
-			ages: index === 0 ? [19, 19] : undefined
+		const userId = world.crowdUser({
+			kind: 'supervisor',
+			options: {
+				// The first supervisor is 19: the plausibility check flags them as too young.
+				ages: index === 0 ? [19, 19] : undefined
+			}
 		});
-		addSupervisor(cs, {
-			userId,
-			attends: faker.datatype.boolean(0.7),
-			memberIds: students.flatMap((delegation) => delegation.memberIds),
-			singleIds: faker.helpers.arrayElements(singleIds, { min: 0, max: 2 })
+		addSupervisor({
+			cs,
+			plan: {
+				userId,
+				attends: faker.datatype.boolean(0.7),
+				memberIds: students.flatMap((delegation) => delegation.memberIds),
+				singleIds: faker.helpers.arrayElements(singleIds, { min: 0, max: 2 })
+			}
 		});
-		if (plan.with.participantStatus) addStatus(cs, userId, crowdStatus(cs));
+		if (plan.with.participantStatus) addStatus({ cs, userId, plan: crowdStatus(cs) });
 	}
 }
 
@@ -382,10 +453,10 @@ export function addCrowd(cs: ConferenceSeed) {
 	const appliedShare = crowdAppliedShare(cs.plan);
 
 	const crowdDelegations = Array.from({ length: cs.plan.crowd.delegations }, (_unused, index) =>
-		addCrowdDelegation(cs, index, pools, appliedShare)
+		addCrowdDelegation({ cs, index, pools, appliedShare })
 	);
-	const singleIds = addCrowdSingles(cs, appliedShare);
-	addCrowdSupervisors(cs, crowdDelegations, singleIds);
+	const singleIds = addCrowdSingles({ cs, appliedShare });
+	addCrowdSupervisors({ cs, crowdDelegations, singleIds });
 
 	cs.crowdDelegations = crowdDelegations;
 }
@@ -397,11 +468,15 @@ export interface WaitingListEntryPlan {
 	createdAt?: Date;
 }
 
-export function addWaitingListEntry(
-	cs: ConferenceSeed,
-	userId: string,
-	plan: WaitingListEntryPlan = {}
-) {
+export function addWaitingListEntry({
+	cs,
+	userId,
+	plan = {}
+}: {
+	cs: ConferenceSeed;
+	userId: string;
+	plan?: WaitingListEntryPlan;
+}) {
 	cs.batch.waitingListEntry.push({
 		conferenceId: cs.id,
 		userId,
@@ -419,7 +494,13 @@ export function addWaitingListEntry(
  * The waiting list, sized from the seats and participants so the status light shows `target`:
  * a few entries leave vacancies, more than twenty beyond the free seats make the list long.
  */
-export function addWaitingList(cs: ConferenceSeed, personaUserId: DevAccountSub) {
+export function addWaitingList({
+	cs,
+	personaUserId
+}: {
+	cs: ConferenceSeed;
+	personaUserId: DevAccountSub;
+}) {
 	const target = cs.plan.with.waitingList;
 	if (!target) return;
 
@@ -428,16 +509,22 @@ export function addWaitingList(cs: ConferenceSeed, personaUserId: DevAccountSub)
 		cs.nonStateActorIds.length;
 	const freeSeats = Math.max(seats - cs.acceptedUsers.length, 0);
 	const entries = target === 'VACANCIES' ? 5 : freeSeats + 25;
-	const entry = (userId: string, overrides: WaitingListEntryPlan = {}) =>
-		addWaitingListEntry(cs, userId, overrides);
+	const entry = ({
+		userId,
+		overrides = {}
+	}: {
+		userId: string;
+		overrides?: WaitingListEntryPlan;
+	}) => addWaitingListEntry({ cs, userId, plan: overrides });
 
-	entry(personaUserId);
+	entry({ userId: personaUserId });
 	// Two who already got a seat from the list, and two hidden as duplicates or no-shows.
 	const seatedFromList = cs.crowdDelegations.flatMap((delegation) => delegation.userIds).slice(-2);
-	for (const userId of seatedFromList) entry(userId, { assigned: true });
+	for (const userId of seatedFromList) entry({ userId, overrides: { assigned: true } });
 	for (let index = 0; index < 2; index++)
-		entry(cs.world.crowdUser('participant'), { hidden: true });
-	for (let index = 5; index < entries; index++) entry(cs.world.crowdUser('participant'));
+		entry({ userId: cs.world.crowdUser({ kind: 'participant' }), overrides: { hidden: true } });
+	for (let index = 5; index < entries; index++)
+		entry({ userId: cs.world.crowdUser({ kind: 'participant' }) });
 }
 
 /** Everyone signed, paid and present, apart from what `overrides` says. */

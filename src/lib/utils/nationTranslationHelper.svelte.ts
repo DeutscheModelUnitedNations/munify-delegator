@@ -2,6 +2,7 @@
 
 import { getLocale, locales } from '#lib/paraglide/runtime';
 import allNations from 'world-countries';
+import { logger } from '#lib/logger';
 
 const addressNations = [
 	{ iso_code: 'ZAF' },
@@ -243,7 +244,15 @@ const addressNations = [
 ];
 
 //TODO this could probably be part of the localization engine
-function nationCodeToLocalName(code: string, locale = getLocale(), official = false) {
+function nationCodeToLocalName({
+	code,
+	locale = getLocale(),
+	official = false
+}: {
+	code: string;
+	locale?: 'en' | 'de';
+	official?: boolean;
+}) {
 	const getTranslationCode = (locale: string) => {
 		switch (locale) {
 			case 'de':
@@ -296,7 +305,10 @@ function hasEveryLocale(
 for (const nation of allNations) {
 	const translationObject: Partial<TranslationObject> = {};
 	for (const languageTag of locales) {
-		translationObject[languageTag] = nationCodeToLocalName(nation.cca3, languageTag);
+		translationObject[languageTag] = nationCodeToLocalName({
+			code: nation.cca3,
+			locale: languageTag
+		});
 	}
 	if (hasEveryLocale(translationObject)) {
 		NationIso3ToLocalNamesMap.set(nation.cca3, translationObject);
@@ -319,7 +331,7 @@ export const translatedNationCodeAddressFormOptions = $state(
 export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {
 	const found = NationIso3ToLocalNamesMap.get(isoCode.toUpperCase());
 	if (found) return found[getLocale()];
-	console.warn('Could not translate country code', isoCode);
+	logger.warn('Could not translate country code', isoCode);
 	return 'N/A';
 };
 

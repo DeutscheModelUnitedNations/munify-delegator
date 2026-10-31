@@ -125,7 +125,13 @@ export function extractTextFromTipTapJson(content: unknown): string {
  * Compute diff between two TipTap JSON documents
  * Returns segments for both "before" and "after" panels
  */
-export function computeDiff(beforeContent: unknown, afterContent: unknown): DiffResult {
+export function computeDiff({
+	beforeContent,
+	afterContent
+}: {
+	beforeContent: unknown;
+	afterContent: unknown;
+}): DiffResult {
 	const dmp = new DiffMatchPatch();
 
 	const beforeText = extractTextFromTipTapJson(beforeContent);
@@ -160,7 +166,13 @@ export function computeDiff(beforeContent: unknown, afterContent: unknown): Diff
 /**
  * Check if two contents are identical
  */
-export function areContentsEqual(content1: unknown, content2: unknown): boolean {
+export function areContentsEqual({
+	content1,
+	content2
+}: {
+	content1: unknown;
+	content2: unknown;
+}): boolean {
 	const text1 = extractTextFromTipTapJson(content1);
 	const text2 = extractTextFromTipTapJson(content2);
 	return text1 === text2;
@@ -175,7 +187,13 @@ export interface DiffStats {
  * Compute character change statistics between two TipTap JSON documents
  * Returns the number of characters added and removed
  */
-export function computeDiffStats(beforeContent: unknown, afterContent: unknown): DiffStats {
+export function computeDiffStats({
+	beforeContent,
+	afterContent
+}: {
+	beforeContent: unknown;
+	afterContent: unknown;
+}): DiffStats {
 	const dmp = new DiffMatchPatch();
 
 	const beforeText = extractTextFromTipTapJson(beforeContent);
@@ -209,7 +227,15 @@ interface DiffLine {
 const emptyLine = (): DiffLine => ({ parts: [], hasChange: false, changeType: 'none' });
 
 /** Appends one piece of text to a line and folds its change into the line's change type. */
-function addPart(line: DiffLine, text: string, type: DiffSegment['type']) {
+function addPart({
+	line,
+	text,
+	type
+}: {
+	line: DiffLine;
+	text: string;
+	type: DiffSegment['type'];
+}) {
 	line.parts.push({ text, type });
 	if (type === 'equal') return;
 	line.hasChange = true;
@@ -228,7 +254,7 @@ export function splitIntoDiffLines(segments: DiffSegment[]): DiffLine[] {
 	for (const segment of segments) {
 		const textParts = segment.text.split('\n');
 		textParts.forEach((text, i) => {
-			if (text.length > 0 || i === 0) addPart(currentLine, text, segment.type);
+			if (text.length > 0 || i === 0) addPart({ line: currentLine, text, type: segment.type });
 			// Every part but the last ends at a newline
 			if (i < textParts.length - 1) {
 				result.push(currentLine);

@@ -11,11 +11,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { Redis } from 'ioredis';
 import { REDIS_URL } from '$app/env/private';
-import {
-	createAttemptLimiter,
-	createMemoryFailureStore,
-	createRedisFailureStore
-} from '#api/services/failureLimit';
+import { createAttemptLimiter, createCounter } from '#api/services/failureLimit';
 import {
 	assertSignedIn,
 	compileEnv,
@@ -27,6 +23,7 @@ import {
 	readRawTypst
 } from './pdfRequest';
 import type { RequestHandler } from './$types';
+import { logger } from '#lib/logger';
 
 const execFileAsync = promisify(execFile);
 
@@ -37,16 +34,17 @@ const TYPST_BIN = join(process.cwd(), 'node_modules/.bin/typst');
  * twenty leaves room for retries and stops anybody keeping the compiler busy.
  */
 const COMPILES_PER_WINDOW = 20;
-const WINDOW_MS = 10 * 60_000;
+const WINDOW_SECONDS = 10 * 60;
 /** Compiles running at once in this process; beyond that a request is turned away, not queued. */
 const PARALLEL_COMPILES = 2;
 
 const compileLimiter = createAttemptLimiter({
-	store: REDIS_URL
-		? createRedisFailureStore(new Redis(REDIS_URL, { lazyConnect: true }), 'pdf-compile:')
-		: createMemoryFailureStore(),
-	limit: COMPILES_PER_WINDOW,
-	windowMs: WINDOW_MS,
+	counter: createCounter({
+		redis: REDIS_URL ? new Redis(REDIS_URL, { lazyConnect: true }) : undefined,
+		prefix: 'pdf-compile',
+		limit: COMPILES_PER_WINDOW,
+		windowSeconds: WINDOW_SECONDS
+	}),
 	refused: () => error(429, 'Too many PDF requests, please try again later')
 });
 const compileSlots = createCompileSlots(PARALLEL_COMPILES);
@@ -55,11 +53,15 @@ const compileSlots = createCompileSlots(PARALLEL_COMPILES);
  * Generates the Typst source of a structured resolution in `dir`, writing the emblem it
  * references next to it.
  */
-async function resolutionSource(
-	resolution: unknown,
-	header: ResolutionHeaderData,
-	dir: string
-): Promise<string> {
+async function resolutionSource({
+	resolution,
+	header,
+	dir
+}: {
+	resolution: unknown;
+	header: ResolutionHeaderData;
+	dir: string;
+}): Promise<string> {
 	const parsed = ResolutionSchema.safeParse(resolution);
 	if (!parsed.success) throw error(400, 'Invalid resolution data');
 	// The file is referenced via `#image(...)` so it works with all Typst versions.
@@ -70,7 +72,7 @@ async function resolutionSource(
 }
 
 /** Compiles `source` to a PDF in `dir` and returns the PDF's bytes. */
-async function compileTypst(dir: string, source: string): Promise<Buffer> {
+async function compileTypst({ dir, source }: { dir: string; source: string }): Promise<Buffer> {
 	await writeFile(join(dir, 'resolution.typ'), source);
 
 	await execFileAsync(TYPST_BIN, ['compile', 'resolution.typ', 'resolution.pdf'], {
@@ -108,22 +110,26 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const release = compileSlots.take();
 	if (!release) throw error(503, 'PDF generation is busy, please try again in a moment');
 	try {
-		return await renderPdf(rawTypst, body.resolution, header);
+		return await renderPdf({ rawTypst, resolution: body.resolution, header });
 	} finally {
 		release();
 	}
 };
 
 /** Renders the raw Typst source, or else the structured resolution, in a temporary directory. */
-async function renderPdf(
-	rawTypst: string | undefined,
-	resolution: unknown,
-	header: ResolutionHeaderData
-): Promise<Response> {
+async function renderPdf({
+	rawTypst,
+	resolution,
+	header
+}: {
+	rawTypst: string | undefined;
+	resolution: unknown;
+	header: ResolutionHeaderData;
+}): Promise<Response> {
 	const dir = await mkdtemp(join(tmpdir(), 'mun-'));
 	try {
-		const source = rawTypst ?? (await resolutionSource(resolution, header, dir));
-		const pdf = await compileTypst(dir, source);
+		const source = rawTypst ?? (await resolutionSource({ resolution, header, dir }));
+		const pdf = await compileTypst({ dir, source });
 		return new Response(new Uint8Array(pdf), {
 			headers: {
 				'Content-Type': 'application/pdf',
@@ -136,7 +142,7 @@ async function renderPdf(
 		if (isHttpError(e)) throw e;
 		// Log full diagnostics server-side only; never leak compiler output
 		// (paths, source fragments) to the client.
-		console.error('[api/pdf] Typst compilation failed:', compileErrorDetail(e));
+		logger.error('Typst compilation failed', { detail: compileErrorDetail(e) });
 		throw error(500, 'Typst compilation failed');
 	} finally {
 		await rm(dir, { recursive: true, force: true });

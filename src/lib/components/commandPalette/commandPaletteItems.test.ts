@@ -76,56 +76,62 @@ describe('flattenResults', () => {
 
 describe('resultTarget', () => {
 	test('a seat opens its holder, or the participant list when nobody holds it', () => {
-		expect(resultTarget({ type: 'seat', data: seat }, conferenceId)).toEqual({ userId: 'u9' });
+		expect(resultTarget({ item: { type: 'seat', data: seat }, conferenceId })).toEqual({
+			userId: 'u9'
+		});
 		expect(
-			resultTarget({ type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId)
+			resultTarget({ item: { type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId })
 		).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
 	});
 	test('a committee opens the committees tab', () => {
-		expect(resultTarget({ type: 'committee', data: committee }, conferenceId)).toHaveProperty(
-			'href',
-			expect.stringContaining('/conf-1/team/configuration?tab=committees')
-		);
+		expect(
+			resultTarget({ item: { type: 'committee', data: committee }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/configuration?tab=committees'));
 	});
 	test('users open their card', () => {
-		expect(resultTarget({ type: 'user', data: user }, conferenceId)).toEqual({ userId: 'u1' });
-		expect(resultTarget({ type: 'foreignUser', data: foreignUser }, conferenceId)).toEqual({
+		expect(resultTarget({ item: { type: 'user', data: user }, conferenceId })).toEqual({
+			userId: 'u1'
+		});
+		expect(
+			resultTarget({ item: { type: 'foreignUser', data: foreignUser }, conferenceId })
+		).toEqual({
 			userId: 'f1'
 		});
 	});
 	test('a delegation opens its head delegate, or the participant list', () => {
-		expect(resultTarget({ type: 'delegation', data: delegation }, conferenceId)).toEqual({
+		expect(resultTarget({ item: { type: 'delegation', data: delegation }, conferenceId })).toEqual({
 			userId: 'u9'
 		});
-		const target = resultTarget(
-			{ type: 'delegation', data: { ...delegation, headDelegateUserId: null } },
+		const target = resultTarget({
+			item: { type: 'delegation', data: { ...delegation, headDelegateUserId: null } },
 			conferenceId
-		);
+		});
 		expect(target).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
 	});
 	test('pages, configuration and transactions navigate', () => {
-		expect(resultTarget({ type: 'page', data: page }, conferenceId)).toEqual({ href: page.href });
-		expect(resultTarget({ type: 'config', data: config }, conferenceId)).toHaveProperty(
+		expect(resultTarget({ item: { type: 'page', data: page }, conferenceId })).toEqual({
+			href: page.href
+		});
+		expect(resultTarget({ item: { type: 'config', data: config }, conferenceId })).toHaveProperty(
 			'href',
 			expect.stringContaining('/conf-1/team/configuration?tab=general')
 		);
-		expect(resultTarget({ type: 'transaction', data: transaction }, conferenceId)).toHaveProperty(
-			'href',
-			expect.stringContaining('/conf-1/team/payments?searchValue=t1')
-		);
+		expect(
+			resultTarget({ item: { type: 'transaction', data: transaction }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/payments?searchValue=t1'));
 	});
 });
 
 describe('steppedIndex', () => {
 	test('moves and clamps', () => {
-		expect(steppedIndex('ArrowDown', 0, 3)).toBe(1);
-		expect(steppedIndex('ArrowDown', 2, 3)).toBe(2);
-		expect(steppedIndex('ArrowUp', 2, 3)).toBe(1);
-		expect(steppedIndex('ArrowUp', 0, 3)).toBe(0);
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 0, count: 3 })).toBe(1);
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 2, count: 3 })).toBe(2);
+		expect(steppedIndex({ key: 'ArrowUp', activeIndex: 2, count: 3 })).toBe(1);
+		expect(steppedIndex({ key: 'ArrowUp', activeIndex: 0, count: 3 })).toBe(0);
 	});
 	test('nothing to move', () => {
-		expect(steppedIndex('ArrowDown', 0, 0)).toBeUndefined();
-		expect(steppedIndex('Enter', 0, 3)).toBeUndefined();
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 0, count: 0 })).toBeUndefined();
+		expect(steppedIndex({ key: 'Enter', activeIndex: 0, count: 3 })).toBeUndefined();
 	});
 });
 
@@ -204,12 +210,16 @@ describe('describeItem', () => {
 
 describe('searchHint', () => {
 	test('too short a term', () => {
-		expect(searchHint('a', 0, false)).toBe(m.commandPaletteMinChars());
+		expect(searchHint({ searchTerm: 'a', resultCount: 0, searchLoading: false })).toBe(
+			m.commandPaletteMinChars()
+		);
 	});
 	test('nothing found once settled', () => {
-		expect(searchHint('ab', 0, false)).toBe(m.commandPaletteNoResults());
-		expect(searchHint('ab', 0, true)).toBeUndefined();
-		expect(searchHint('ab', 2, false)).toBeUndefined();
-		expect(searchHint('', 0, false)).toBeUndefined();
+		expect(searchHint({ searchTerm: 'ab', resultCount: 0, searchLoading: false })).toBe(
+			m.commandPaletteNoResults()
+		);
+		expect(searchHint({ searchTerm: 'ab', resultCount: 0, searchLoading: true })).toBeUndefined();
+		expect(searchHint({ searchTerm: 'ab', resultCount: 2, searchLoading: false })).toBeUndefined();
+		expect(searchHint({ searchTerm: '', resultCount: 0, searchLoading: false })).toBeUndefined();
 	});
 });

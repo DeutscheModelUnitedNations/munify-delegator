@@ -10,8 +10,8 @@ const meta: PaperTypstMeta = {
 };
 
 /** The body of the document: everything after the rule that ends the header. */
-function body(content: Parameters<typeof paperToTypst>[0]) {
-	return paperToTypst(content, meta).split('#v(8pt)\n\n')[1].trimEnd();
+function body(content: Parameters<typeof paperToTypst>[0]['content']) {
+	return paperToTypst({ content, meta }).split('#v(8pt)\n\n')[1].trimEnd();
 }
 
 const text = (value: string, marks?: { type: string; attrs?: Record<string, unknown> }[]) => ({
@@ -24,7 +24,7 @@ const paragraph = (...content: object[]) => ({ type: 'paragraph', content });
 
 describe('paperToTypst', () => {
 	test('renders the conference, paper type and disclaimer', () => {
-		const source = paperToTypst(null, meta);
+		const source = paperToTypst({ content: null, meta });
 		expect(source).toContain('#text(size: 15pt, weight: "bold")[MUN-SH 2026]');
 		expect(source).toContain('#text(size: 11pt)[Positionspapier]');
 		expect(source).toContain('#align(center)[Kein offizielles Dokument]');
@@ -32,15 +32,18 @@ describe('paperToTypst', () => {
 	});
 
 	test('lists only the header lines that are given', () => {
-		const withoutDetails = paperToTypst(null, meta);
+		const withoutDetails = paperToTypst({ content: null, meta });
 		expect(withoutDetails).not.toContain('#strong[');
 		expect(withoutDetails).not.toContain('Gremium:');
 
-		const source = paperToTypst(null, {
-			...meta,
-			entityName: 'Deutschland',
-			committeeLine: 'General Assembly (GA)',
-			topic: 'Klima'
+		const source = paperToTypst({
+			content: null,
+			meta: {
+				...meta,
+				entityName: 'Deutschland',
+				committeeLine: 'General Assembly (GA)',
+				topic: 'Klima'
+			}
 		});
 		expect(source).toContain(
 			'#strong[Deutschland] #linebreak()\nGremium: General Assembly (GA) #linebreak()\nThema: Klima'
@@ -51,9 +54,9 @@ describe('paperToTypst', () => {
 		expect(body({ type: 'doc', content: [paragraph(text('a#b*c_[d]\\e'))] })).toBe(
 			'a\\#b\\*c\\_\\[d\\]\\\\e'
 		);
-		expect(paperToTypst(null, { ...meta, conferenceName: '$100 @ <home>' })).toContain(
-			'[\\$100 \\@ \\<home\\>]'
-		);
+		expect(
+			paperToTypst({ content: null, meta: { ...meta, conferenceName: '$100 @ <home>' } })
+		).toContain('[\\$100 \\@ \\<home\\>]');
 	});
 
 	test('wraps text in every supported mark, in order', () => {

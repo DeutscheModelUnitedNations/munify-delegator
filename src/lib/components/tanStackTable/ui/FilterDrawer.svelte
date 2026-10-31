@@ -47,7 +47,7 @@
 		return textFilterModes.find((m) => m.value === mode)?.needsInput ?? true;
 	}
 
-	const entries = $derived(filterEntries(columns, table));
+	const entries = $derived(filterEntries({ columns, table }));
 
 	type FilterColumn = (typeof entries)[number]['col'];
 
@@ -62,7 +62,15 @@
 		return raw ?? { mode: 'contains', value: '' };
 	}
 
-	function setTextFilter(columnId: string, mode: TextFilterMode, value: string) {
+	function setTextFilter({
+		columnId,
+		mode,
+		value
+	}: {
+		columnId: string;
+		mode: TextFilterMode;
+		value: string;
+	}) {
 		const col = table.getColumn(columnId);
 		if (!col) return;
 		if (!modeNeedsInput(mode)) {
@@ -72,23 +80,33 @@
 		}
 	}
 
-	function toggleEnumValue(columnId: string, value: string) {
+	function toggleEnumValue({ columnId, value }: { columnId: string; value: string }) {
 		const col = table.getColumn(columnId);
 		if (!col) return;
-		col.setFilterValue(toggledEnumFilter(col.getFilterValue() as string[] | undefined, value));
+		col.setFilterValue(
+			toggledEnumFilter({ current: col.getFilterValue() as string[] | undefined, value })
+		);
 	}
 
-	function setBooleanFilter(columnId: string, value: boolean | null) {
+	function setBooleanFilter({ columnId, value }: { columnId: string; value: boolean | null }) {
 		const col = table.getColumn(columnId);
 		if (!col) return;
 		col.setFilterValue(value);
 	}
 
-	function setRangeFilter(columnId: string, index: 0 | 1, value: string) {
+	function setRangeFilter({
+		columnId,
+		index,
+		value
+	}: {
+		columnId: string;
+		index: 0 | 1;
+		value: string;
+	}) {
 		const col = table.getColumn(columnId);
 		if (!col) return;
 		const current = col.getFilterValue() as [number | null, number | null] | undefined;
-		col.setFilterValue(updatedRangeFilter(current, index, value));
+		col.setFilterValue(updatedRangeFilter({ current, index, value }));
 	}
 </script>
 
@@ -98,7 +116,12 @@
 		<select
 			class="select select-md join-item w-auto shrink-0"
 			value={state.mode}
-			onchange={(e) => setTextFilter(col.id, e.currentTarget.value as TextFilterMode, state.value)}
+			onchange={(e) =>
+				setTextFilter({
+					columnId: col.id,
+					mode: e.currentTarget.value as TextFilterMode,
+					value: state.value
+				})}
 		>
 			{#each textFilterModes as mode (mode.value)}
 				<option value={mode.value}>{mode.label}</option>
@@ -110,7 +133,8 @@
 				class="input input-md join-item min-w-0 grow"
 				placeholder={header}
 				value={state.value}
-				oninput={(e) => setTextFilter(col.id, state.mode, e.currentTarget.value)}
+				oninput={(e) =>
+					setTextFilter({ columnId: col.id, mode: state.mode, value: e.currentTarget.value })}
 			/>
 		{/if}
 	</div>
@@ -134,7 +158,7 @@
 				class:btn-primary={isSelected}
 				class:btn-soft={!isSelected}
 				aria-pressed={isSelected}
-				onclick={() => toggleEnumValue(col.id, filterKey)}
+				onclick={() => toggleEnumValue({ columnId: col.id, value: filterKey })}
 			>
 				{filterKey === '—' || !label ? filterKey : label(filterKey)}
 				{#if count !== undefined}<span class="text-sm opacity-70">{count}</span>{/if}
@@ -153,7 +177,7 @@
 				class:btn-primary={isSelected}
 				class:btn-soft={!isSelected}
 				aria-pressed={isSelected}
-				onclick={() => setBooleanFilter(col.id, option.value)}
+				onclick={() => setBooleanFilter({ columnId: col.id, value: option.value })}
 			>
 				{option.label}
 			</button>
@@ -173,7 +197,7 @@
 			class="input input-md w-20"
 			placeholder={facetedMinMax?.[0]?.toString() ?? 'Min'}
 			value={currentRange[0] ?? ''}
-			oninput={(e) => setRangeFilter(col.id, 0, e.currentTarget.value)}
+			oninput={(e) => setRangeFilter({ columnId: col.id, index: 0, value: e.currentTarget.value })}
 		/>
 		<span class="text-base-content/50">—</span>
 		<input
@@ -181,7 +205,7 @@
 			class="input input-md w-20"
 			placeholder={facetedMinMax?.[1]?.toString() ?? 'Max'}
 			value={currentRange[1] ?? ''}
-			oninput={(e) => setRangeFilter(col.id, 1, e.currentTarget.value)}
+			oninput={(e) => setRangeFilter({ columnId: col.id, index: 1, value: e.currentTarget.value })}
 		/>
 	</div>
 {/snippet}

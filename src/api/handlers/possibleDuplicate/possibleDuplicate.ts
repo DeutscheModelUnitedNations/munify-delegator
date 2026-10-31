@@ -53,19 +53,24 @@ async function attendancesOf(id: string): Promise<Attendance[]> {
 			with: { conference: CONFERENCE_COLUMNS }
 		})
 	]);
-	const attendance = (
-		conference: { id: string; title: string; startConference: Date },
-		role: Attendance['role']
-	): Attendance => ({
+	const attendance = ({
+		conference,
+		role
+	}: {
+		conference: { id: string; title: string; startConference: Date };
+		role: Attendance['role'];
+	}): Attendance => ({
 		conferenceId: conference.id,
 		title: conference.title,
 		startConference: conference.startConference,
 		role
 	});
 	return [
-		...memberships.map((m) => attendance(m.delegation.conference, 'DELEGATION_MEMBER')),
-		...singles.map((s) => attendance(s.conference, 'SINGLE_PARTICIPANT')),
-		...supervisions.map((s) => attendance(s.conference, 'SUPERVISOR'))
+		...memberships.map((m) =>
+			attendance({ conference: m.delegation.conference, role: 'DELEGATION_MEMBER' })
+		),
+		...singles.map((s) => attendance({ conference: s.conference, role: 'SINGLE_PARTICIPANT' })),
+		...supervisions.map((s) => attendance({ conference: s.conference, role: 'SUPERVISOR' }))
 	].sort((a, b) => b.startConference.getTime() - a.startConference.getTime());
 }
 
@@ -90,7 +95,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanScanPossibleDuplicates(ctx, args.conferenceId);
+			await assertCanScanPossibleDuplicates({ ctx, conferenceId: args.conferenceId });
 			return scanConferenceForDuplicates(args.conferenceId);
 		}
 	}),
@@ -106,8 +111,12 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: statusEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const pair = await assertCanDecidePossibleDuplicate(ctx, args.id);
-			await decidePossibleDuplicate(args.id, args.status, callerUserId(ctx) ?? null);
+			const pair = await assertCanDecidePossibleDuplicate({ ctx, id: args.id });
+			await decidePossibleDuplicate({
+				id: args.id,
+				status: args.status,
+				decidedById: callerUserId(ctx) ?? null
+			});
 
 			possibleDuplicatePubsub.updated(args.id);
 			// what of each account the care team may read follows the decision
@@ -115,7 +124,9 @@ schemaBuilder.mutationFields((t) => ({
 			userPubsub.updated(pair.candidateId);
 
 			return db.query.possibleDuplicate
-				.findFirst(query(await queryAllowed(ctx.abilities.possibleDuplicate, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.possibleDuplicate, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	})

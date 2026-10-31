@@ -27,7 +27,13 @@ export function createPoolPages<T>() {
 		},
 
 		/** Loads the first page of `key`, unless it is loaded or loading. A later key wins. */
-		async load(key: string, fetchPage: (page: number) => Promise<PoolPage<T>>) {
+		async load({
+			key,
+			fetchPage
+		}: {
+			key: string;
+			fetchPage: (page: number) => Promise<PoolPage<T>>;
+		}) {
 			if (loaded.key === key || loading === key) return;
 			loading = key;
 			try {
@@ -39,7 +45,13 @@ export function createPoolPages<T>() {
 		},
 
 		/** Loads the page after those loaded for `key`; one at a time, and only for the current key. */
-		async loadMore(key: string, fetchPage: (page: number) => Promise<PoolPage<T>>) {
+		async loadMore({
+			key,
+			fetchPage
+		}: {
+			key: string;
+			fetchPage: (page: number) => Promise<PoolPage<T>>;
+		}) {
 			if (loading !== undefined || loaded.key !== key) return;
 			loading = key;
 			try {
@@ -66,7 +78,7 @@ export function createPool<T>(source: () => PoolSource<T>) {
 	const loader = createPoolPages<T>();
 	$effect(() => {
 		const { key, fetchPage } = source();
-		loader.load(key, fetchPage).catch(toastError);
+		loader.load({ key, fetchPage }).catch(toastError);
 	});
 	const pages = () => loader.pages(source().key);
 	return {
@@ -84,7 +96,7 @@ export function createPool<T>(source: () => PoolSource<T>) {
 		},
 		loadMore() {
 			const { key, fetchPage } = source();
-			loader.loadMore(key, fetchPage).catch(toastError);
+			loader.loadMore({ key, fetchPage }).catch(toastError);
 		}
 	};
 }
@@ -130,7 +142,7 @@ export function createPoolSearch() {
 /** The groups of a pool that are on its loaded pages: while searching, only those are matches. */
 export function onPages<
 	G extends { delegationId?: string | null; singleParticipantId: string | null }
->(groups: readonly G[], pages: readonly PoolPage<{ id: string }>[]) {
+>({ groups, pages }: { groups: readonly G[]; pages: readonly PoolPage<{ id: string }>[] }) {
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a lookup built per call, never mutated
 	const ids = new Set(pages.flatMap((page) => page.rows.map((row) => row.id)));
 	return groups.filter((group) => ids.has(group.delegationId ?? group.singleParticipantId ?? ''));

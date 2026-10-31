@@ -9,7 +9,13 @@ import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
  * that nation sits in; for a non-state actor it is its own seat count (`roleSeats`). Runs in the
  * transaction of the change that shrank the delegation or the role, so the two go in together.
  */
-export async function tidyRoleApplications(delegationId: string, tx: Transaction) {
+export async function tidyRoleApplications({
+	delegationId,
+	tx
+}: {
+	delegationId: string;
+	tx: Transaction;
+}) {
 	const delegation = await tx.query.delegation.findFirst({
 		where: { id: delegationId },
 		columns: { id: true, conferenceId: true },
@@ -31,28 +37,32 @@ export async function tidyRoleApplications(delegationId: string, tx: Transaction
 
 	const memberCount = delegation.members.length;
 	const tooSmall = delegation.appliedForRoles
-		.filter((application) => memberCount > roleSeats(application.role, committees))
+		.filter((application) => memberCount > roleSeats({ role: application.role, committees }))
 		.map((application) => application.id);
 
 	if (tooSmall.length > 0) {
 		await tx
 			.delete(schema.roleApplication)
-			.where(whereRows(schema.roleApplication, { id: { in: tooSmall } }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: { in: tooSmall } } }));
 	}
 
 	// Close the gaps the deletions above may have left in the ranking.
-	await normalizeRoleApplicationRanks(delegation.id, tx);
+	await normalizeRoleApplicationRanks({ delegationId: delegation.id, tx });
 }
 
 /**
  * Re-checks the applications of every delegation of the conference that applied for one of the
  * given roles, e.g. after a nation lost a committee seat or a non-state actor got fewer seats.
  */
-export async function tidyRoleApplicationsForRoles(
-	conferenceId: string,
-	roleIds: string[],
-	tx: Transaction
-) {
+export async function tidyRoleApplicationsForRoles({
+	conferenceId,
+	roleIds,
+	tx
+}: {
+	conferenceId: string;
+	roleIds: string[];
+	tx: Transaction;
+}) {
 	if (roleIds.length === 0) return;
 	const delegations = await tx.query.delegation.findMany({
 		where: { conferenceId, appliedForRoles: { roleId: { in: roleIds } } },
@@ -60,6 +70,6 @@ export async function tidyRoleApplicationsForRoles(
 	});
 
 	for (const delegation of delegations) {
-		await tidyRoleApplications(delegation.id, tx);
+		await tidyRoleApplications({ delegationId: delegation.id, tx });
 	}
 }

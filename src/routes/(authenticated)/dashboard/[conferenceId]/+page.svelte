@@ -27,7 +27,10 @@
 		])
 	);
 	const isOfAgeAtConference = $derived(
-		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
+		ofAgeAtConference({
+			startConference: participation?.conference?.startConference,
+			dateOfBirth: participation?.user?.birthday
+		})
 	);
 	let conference = $derived(participation?.conference);
 	let delegationMember = $derived(participation?.delegationMember);

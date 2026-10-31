@@ -41,11 +41,13 @@
 	let parsed = $derived(fileInput === undefined ? undefined : parsePresenceExport(fileInput));
 	let participants = $derived(parsed?.ok ? parsed.data.participants : undefined);
 
-	let delegates = $derived(participants && scoreDelegates(participants, delegateThreshold));
+	let delegates = $derived(
+		participants && scoreDelegates({ participants, thresholdPercent: delegateThreshold })
+	);
 	let presentDelegates = $derived(delegates?.filter((d) => d.attended));
 	let absentDelegates = $derived(delegates?.filter((d) => !d.attended));
 
-	let nsas = $derived(participants && scoreNsas(participants, nsaMinCheckIns));
+	let nsas = $derived(participants && scoreNsas({ participants, minCheckIns: nsaMinCheckIns }));
 	let presentNsas = $derived(nsas?.filter((n) => n.attended));
 	let absentNsas = $derived(nsas?.filter((n) => !n.attended));
 
@@ -59,8 +61,11 @@
 	const committeeName = (id: string | null) => committees.find((c) => c.id === id)?.name ?? 'N/A';
 
 	const setFileInput = (e: Event) =>
-		readSelectedTextFile(e, (text) => {
-			fileInput = text;
+		readSelectedTextFile({
+			e,
+			onText: (text) => {
+				fileInput = text;
+			}
 		});
 
 	const roleColumn = <T extends { representation: ChasePresenceRepresentation | null }>() =>
@@ -70,7 +75,10 @@
 			accessorFn: (row) => representationLabel(row.representation),
 			cell: ({ row }) =>
 				row.original.representation
-					? renderComponent(RepresentationBadge, { representation: row.original.representation })
+					? renderComponent({
+							component: RepresentationBadge,
+							props: { representation: row.original.representation }
+						})
 					: 'N/A'
 		}) satisfies ManagedColumn<T>;
 
@@ -99,7 +107,13 @@
 
 	const columnClasses = { role: 'text-center' };
 
-	async function apply(rows: { email: string }[] | undefined, didAttend: boolean) {
+	async function apply({
+		rows,
+		didAttend
+	}: {
+		rows: { email: string }[] | undefined;
+		didAttend: boolean;
+	}) {
 		if (!rows) return;
 		if (!(await confirmDialog({ text: m.cannotBeUndone(), danger: true }))) return;
 		loading = true;
@@ -194,7 +208,11 @@
 		onRowClick={selectRow}
 		queryParamKey="{key}PresentFilter"
 	/>
-	<button class="btn btn-primary" disabled={loading} onclick={() => apply(present, true)}>
+	<button
+		class="btn btn-primary"
+		disabled={loading}
+		onclick={() => apply({ rows: present, didAttend: true })}
+	>
 		{@render saveIcon()}
 		{m.save()}
 	</button>
@@ -207,7 +225,11 @@
 		onRowClick={selectRow}
 		queryParamKey="{key}AbsentFilter"
 	/>
-	<button class="btn btn-primary" disabled={loading} onclick={() => apply(absent, false)}>
+	<button
+		class="btn btn-primary"
+		disabled={loading}
+		onclick={() => apply({ rows: absent, didAttend: false })}
+	>
 		{@render saveIcon()}
 		{m.save()}
 	</button>

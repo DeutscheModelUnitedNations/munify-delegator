@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { object, query, schemaBuilder } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import {
 	assertCanReadConferenceSchools,
 	assertCanReadSchoolMetrics,
@@ -97,7 +97,10 @@ schemaBuilder.queryFields((t) => ({
 			limit: t.arg.int()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const ids = await searchSchoolIds(args.search, Math.min(Math.max(args.limit ?? 10, 1), 50));
+			const ids = await searchSchoolIds({
+				search: args.search,
+				limit: Math.min(Math.max(args.limit ?? 10, 1), 50)
+			});
 			if (ids.length === 0) return [];
 			return db.query.school.findMany(
 				query({
@@ -126,9 +129,10 @@ schemaBuilder.queryFields((t) => ({
 			offset: t.arg.int({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReadConferenceSchools(ctx, args.conferenceId);
+			await assertCanReadConferenceSchools({ ctx, conferenceId: args.conferenceId });
 			const sortColumn = args.sortColumn ?? 'participants';
-			if (!isSortColumn(sortColumn)) throw apiError('INVALID_INPUT', m.invalidSortColumn());
+			if (!isSortColumn(sortColumn))
+				throw apiError({ code: 'INVALID_INPUT', message: m.invalidSortColumn() });
 			return conferenceSchoolsPage({
 				conferenceId: args.conferenceId,
 				search: args.search,
@@ -145,8 +149,8 @@ schemaBuilder.queryFields((t) => ({
 		type: [SchoolMetrics],
 		args: { schoolId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const conferenceIds = await assertCanReadSchoolMetrics(ctx, args.schoolId);
-			return schoolMetrics(args.schoolId, conferenceIds);
+			const conferenceIds = await assertCanReadSchoolMetrics({ ctx, schoolId: args.schoolId });
+			return schoolMetrics({ schoolId: args.schoolId, conferenceIds });
 		}
 	})
 }));
@@ -171,11 +175,11 @@ schemaBuilder.mutationFields((t) => ({
 			notes: t.arg.string()
 		},
 		resolve: async (query, _root, { id, ...update }, ctx) => {
-			await assertCanUpdateSchools(ctx, [id]);
-			await updateSchool(id, update);
+			await assertCanUpdateSchools({ ctx, ids: [id] });
+			await updateSchool({ id, update });
 			schoolPubsub.updated(id);
 			return db.query.school
-				.findFirst(query(await queryAllowed(ctx.abilities.school, id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.school, id })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -193,8 +197,12 @@ schemaBuilder.mutationFields((t) => ({
 			name: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateSchools(ctx, [args.targetId, ...args.sourceIds]);
-			await mergeSchools(args.targetId, args.sourceIds, args.name ?? undefined);
+			await assertCanUpdateSchools({ ctx, ids: [args.targetId, ...args.sourceIds] });
+			await mergeSchools({
+				targetId: args.targetId,
+				sourceIds: args.sourceIds,
+				name: args.name ?? undefined
+			});
 
 			schoolPubsub.updated();
 			delegationPubsub.updated();
@@ -206,7 +214,7 @@ schemaBuilder.mutationFields((t) => ({
 			schoolSuggestionVariantPubsub.updated();
 
 			return db.query.school
-				.findFirst(query(await queryAllowed(ctx.abilities.school, args.targetId)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.school, id: args.targetId })))
 				.then(assertFindFirstExists);
 		}
 	})

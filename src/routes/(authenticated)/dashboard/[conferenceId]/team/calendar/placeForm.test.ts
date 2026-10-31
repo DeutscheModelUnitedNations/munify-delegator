@@ -15,14 +15,14 @@ const noCity = () => Promise.resolve(undefined);
 describe('resolvePlusCode', () => {
 	test('decodes a full code without looking anything up', async () => {
 		const lookUpCity = vi.fn(noCity);
-		const position = await resolvePlusCode('8fvc9g8f+6x', lookUpCity);
+		const position = await resolvePlusCode({ input: '8fvc9g8f+6x', lookUpCity });
 		expect(position).toMatchObject({ latitude: expect.closeTo(47.3655625, 6) });
 		expect(lookUpCity).not.toHaveBeenCalled();
 	});
 
 	test('recovers a short code from the city named after it', async () => {
 		const lookUpCity = vi.fn(() => Promise.resolve(zurich));
-		const position = await resolvePlusCode('9G8F+6X Zürich', lookUpCity);
+		const position = await resolvePlusCode({ input: '9G8F+6X Zürich', lookUpCity });
 		expect(lookUpCity).toHaveBeenCalledWith('Zürich');
 		expect(position).toMatchObject({
 			latitude: expect.closeTo(47.3655625, 6),
@@ -31,10 +31,18 @@ describe('resolvePlusCode', () => {
 	});
 
 	test('tells what is missing', async () => {
-		expect(await resolvePlusCode('not a code', noCity)).toEqual({ error: 'invalid' });
-		expect(await resolvePlusCode('8FVC9G8A+6X', noCity)).toEqual({ error: 'invalid' });
-		expect(await resolvePlusCode('9G8F+6X', noCity)).toEqual({ error: 'short' });
-		expect(await resolvePlusCode('9G8F+6X Atlantis', noCity)).toEqual({ error: 'cityNotFound' });
+		expect(await resolvePlusCode({ input: 'not a code', lookUpCity: noCity })).toEqual({
+			error: 'invalid'
+		});
+		expect(await resolvePlusCode({ input: '8FVC9G8A+6X', lookUpCity: noCity })).toEqual({
+			error: 'invalid'
+		});
+		expect(await resolvePlusCode({ input: '9G8F+6X', lookUpCity: noCity })).toEqual({
+			error: 'short'
+		});
+		expect(await resolvePlusCode({ input: '9G8F+6X Atlantis', lookUpCity: noCity })).toEqual({
+			error: 'cityNotFound'
+		});
 	});
 });
 
@@ -50,7 +58,7 @@ const values = {
 
 describe('placeFields', () => {
 	test('stores empty inputs as none and coordinates as numbers', () => {
-		expect(placeFields(values, 'file-1')).toEqual({
+		expect(placeFields({ values, sitePlanFileId: 'file-1' })).toEqual({
 			name: 'Town hall',
 			address: null,
 			latitude: 54.32,
@@ -70,15 +78,15 @@ describe('savePlaceFields', () => {
 	});
 
 	test('updates the place being edited', async () => {
-		const fields = placeFields(values, undefined);
-		await savePlaceFields('c1', 'p1', fields);
+		const fields = placeFields({ values, sitePlanFileId: undefined });
+		await savePlaceFields({ conferenceId: 'c1', placeId: 'p1', fields });
 		expect(updatePlace).toHaveBeenCalledWith({ __args: { id: 'p1', ...fields }, id: true });
 		expect(createPlace).not.toHaveBeenCalled();
 	});
 
 	test('creates a place in the conference otherwise', async () => {
-		const fields = placeFields(values, undefined);
-		await savePlaceFields('c1', undefined, fields);
+		const fields = placeFields({ values, sitePlanFileId: undefined });
+		await savePlaceFields({ conferenceId: 'c1', placeId: undefined, fields });
 		expect(createPlace).toHaveBeenCalledWith({
 			__args: { conferenceId: 'c1', ...fields },
 			id: true

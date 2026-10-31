@@ -15,7 +15,10 @@ describe('PendingMoves', () => {
 
 	it('holds a card from the drop until the board shows it elsewhere', async () => {
 		let finish: (done: boolean) => void = () => {};
-		const tracked = moves.track('a', () => new Promise<boolean>((resolve) => (finish = resolve)));
+		const tracked = moves.track({
+			key: 'a',
+			change: () => new Promise<boolean>((resolve) => (finish = resolve))
+		});
 		expect(moves.has('a')).toBe(true);
 
 		finish(true);
@@ -30,19 +33,19 @@ describe('PendingMoves', () => {
 	});
 
 	it('counts a card whose key went away as moved', async () => {
-		await moves.track('a', async () => true);
+		await moves.track({ key: 'a', change: async () => true });
 		places.delete('a');
 		moves.settle();
 		expect(moves.size).toBe(0);
 	});
 
 	it('frees a card at once when its change fails', async () => {
-		await moves.track('a', async () => false);
+		await moves.track({ key: 'a', change: async () => false });
 		expect(moves.has('a')).toBe(false);
 	});
 
 	it('frees a card the board never shows elsewhere after a while', async () => {
-		await moves.track('a', async () => true);
+		await moves.track({ key: 'a', change: async () => true });
 		moves.settle();
 		expect(moves.has('a')).toBe(true);
 		vi.advanceTimersByTime(10_000);
@@ -51,7 +54,10 @@ describe('PendingMoves', () => {
 
 	it('tracks cards independently', async () => {
 		places.set('b', 'pool');
-		await Promise.all([moves.track('a', async () => true), moves.track('b', async () => true)]);
+		await Promise.all([
+			moves.track({ key: 'a', change: async () => true }),
+			moves.track({ key: 'b', change: async () => true })
+		]);
 		places.set('b', 'nation:DEU');
 		moves.settle();
 		expect([moves.has('a'), moves.has('b')]).toEqual([true, false]);

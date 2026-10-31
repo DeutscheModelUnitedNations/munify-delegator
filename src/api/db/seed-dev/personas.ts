@@ -19,81 +19,115 @@ import { joinCodes } from './plans';
 
 /** The application stages, in the three registration-phase conferences. */
 export function addRegistrationPersonas(cs: ConferenceSeed) {
-	const crowd = () => cs.world.crowdUser('participant');
+	const crowd = () => cs.world.crowdUser({ kind: 'participant' });
 
 	if (cs.plan.key === 'registration') {
 		// Created a moment ago: alone, no preferences, application texts still empty.
-		addDelegation(cs, {
-			id: 'delegation-new',
-			entryCode: joinCodes.newDelegation,
-			applied: false,
-			members: [{ userId: 'dev-reg-head-new' }],
-			withoutTexts: true
+		addDelegation({
+			cs,
+			plan: {
+				id: 'delegation-new',
+				entryCode: joinCodes.newDelegation,
+				applied: false,
+				members: [{ userId: 'dev-reg-head-new' }],
+				withoutTexts: true
+			}
 		});
-		addSingle(cs, {
-			id: 'single-new',
-			userId: 'dev-reg-single-new',
-			applied: false,
-			withoutTexts: true
+		addSingle({
+			cs,
+			plan: {
+				id: 'single-new',
+				userId: 'dev-reg-single-new',
+				applied: false,
+				withoutTexts: true
+			}
 		});
 	}
 
 	if (cs.plan.key === 'registration') {
-		addSingle(cs, {
-			id: 'single-mixed',
-			userId: 'dev-mixed-supervisor',
-			applied: true,
-			preferences: cs.customRoleIds.slice(2, 4)
+		addSingle({
+			cs,
+			plan: {
+				id: 'single-mixed',
+				userId: 'dev-mixed-supervisor',
+				applied: true,
+				preferences: cs.customRoleIds.slice(2, 4)
+			}
 		});
 	}
 
 	if (cs.plan.key === 'registration' || cs.plan.key === 'closed') {
 		const ready =
 			cs.plan.key === 'registration'
-				? addDelegation(cs, {
-						id: 'delegation-ready',
-						entryCode: joinCodes.readyDelegation,
-						applied: false,
-						members: [
-							{ userId: 'dev-reg-head-ready', head: true },
-							{ userId: 'dev-reg-member', head: false },
-							{ userId: crowd(), head: false }
-						],
-						preferences: roomyPreferences(cs, 3, 3, { withNonStateActor: true })
+				? addDelegation({
+						cs,
+						plan: {
+							id: 'delegation-ready',
+							entryCode: joinCodes.readyDelegation,
+							applied: false,
+							members: [
+								{ userId: 'dev-reg-head-ready', head: true },
+								{ userId: 'dev-reg-member', head: false },
+								{ userId: crowd(), head: false }
+							],
+							preferences: roomyPreferences({
+								cs,
+								size: 3,
+								count: 3,
+								options: { withNonStateActor: true }
+							})
+						}
 					})
 				: undefined;
-		const applied = addDelegation(cs, {
-			id: 'delegation-applied',
-			entryCode: joinCodes.appliedDelegation,
-			applied: true,
-			members: [{ userId: 'dev-reg-head-applied' }, { userId: crowd() }],
-			preferences: roomyPreferences(cs, 2, 4, { withNonStateActor: true, skip: 3 })
+		const applied = addDelegation({
+			cs,
+			plan: {
+				id: 'delegation-applied',
+				entryCode: joinCodes.appliedDelegation,
+				applied: true,
+				members: [{ userId: 'dev-reg-head-applied' }, { userId: crowd() }],
+				preferences: roomyPreferences({
+					cs,
+					size: 2,
+					count: 4,
+					options: { withNonStateActor: true, skip: 3 }
+				})
+			}
 		});
-		addSingle(cs, {
-			id: 'single-applied',
-			userId: 'dev-reg-single-applied',
-			applied: true,
-			preferences: cs.customRoleIds.slice(0, 2)
+		addSingle({
+			cs,
+			plan: {
+				id: 'single-applied',
+				userId: 'dev-reg-single-applied',
+				applied: true,
+				preferences: cs.customRoleIds.slice(0, 2)
+			}
 		});
-		addSupervisor(cs, {
-			id: 'supervisor',
-			userId: 'dev-reg-supervisor',
-			// Connection codes are unique across conferences; "Closed" draws a random one.
-			code: cs.plan.key === 'registration' ? joinCodes.supervisor : undefined,
-			attends: true,
-			memberIds: [...(ready?.memberIds.values() ?? []), ...applied.memberIds.values()]
+		addSupervisor({
+			cs,
+			plan: {
+				id: 'supervisor',
+				userId: 'dev-reg-supervisor',
+				// Connection codes are unique across conferences; "Closed" draws a random one.
+				code: cs.plan.key === 'registration' ? joinCodes.supervisor : undefined,
+				attends: true,
+				memberIds: [...(ready?.memberIds.values() ?? []), ...applied.memberIds.values()]
+			}
 		});
 	}
 
 	if (cs.plan.key === 'grace' || cs.plan.key === 'closed') {
 		// Everything an application needs, but not sent: in "grace" the server still takes it,
 		// in "closed" it refuses.
-		addDelegation(cs, {
-			id: 'delegation-late',
-			entryCode: joinCodes.lateDelegation,
-			applied: false,
-			members: [{ userId: 'dev-reg-late' }, { userId: crowd() }],
-			preferences: roomyPreferences(cs, 2, 3)
+		addDelegation({
+			cs,
+			plan: {
+				id: 'delegation-late',
+				entryCode: joinCodes.lateDelegation,
+				applied: false,
+				members: [{ userId: 'dev-reg-late' }, { userId: crowd() }],
+				preferences: roomyPreferences({ cs, size: 2, count: 3 })
+			}
 		});
 	}
 }
@@ -179,114 +213,153 @@ const attendance: Partial<Record<DevAccountSub, string[]>> = {
 
 /** The roles once seats are assigned, in both preparation conferences, Active and Post. */
 export function addAssignedPersonas(cs: ConferenceSeed) {
-	const crowd = () => cs.world.crowdUser('participant');
+	const crowd = () => cs.world.crowdUser({ kind: 'participant' });
 	const [first, second, third] = cs.committees;
 	const preparing = cs.plan.conference.state === 'PREPARATION';
 
-	const german = addDelegation(cs, {
-		id: 'delegation-germany',
-		entryCode: joinCodes.germanDelegation,
-		applied: true,
-		nation: PERSONA_NATION,
-		members: [
-			{ userId: 'dev-head-delegate', head: true, committeeId: first.id },
-			{ userId: 'dev-delegate', head: false, committeeId: second.id },
-			// Still without a committee while preparing, which gives the head delegate the
-			// committee assignment task.
-			{ userId: 'dev-delegate-minor', head: false, committeeId: preparing ? null : third.id }
-		],
-		preferences: [{ nation: PERSONA_NATION }, ...roomyPreferences(cs, 3, 2)]
+	const german = addDelegation({
+		cs,
+		plan: {
+			id: 'delegation-germany',
+			entryCode: joinCodes.germanDelegation,
+			applied: true,
+			nation: PERSONA_NATION,
+			members: [
+				{ userId: 'dev-head-delegate', head: true, committeeId: first.id },
+				{ userId: 'dev-delegate', head: false, committeeId: second.id },
+				// Still without a committee while preparing, which gives the head delegate the
+				// committee assignment task.
+				{ userId: 'dev-delegate-minor', head: false, committeeId: preparing ? null : third.id }
+			],
+			preferences: [{ nation: PERSONA_NATION }, ...roomyPreferences({ cs, size: 3, count: 2 })]
+		}
 	});
 
 	const nsaPartner = crowd();
-	addDelegation(cs, {
-		id: 'delegation-nsa',
-		applied: true,
-		nonStateActorId: cs.nonStateActorIds[0],
-		members: [{ userId: 'dev-nsa-delegate' }, { userId: nsaPartner }],
-		preferences: [{ nonStateActorId: cs.nonStateActorIds[0] }, ...roomyPreferences(cs, 2, 2)]
+	addDelegation({
+		cs,
+		plan: {
+			id: 'delegation-nsa',
+			applied: true,
+			nonStateActorId: cs.nonStateActorIds[0],
+			members: [{ userId: 'dev-nsa-delegate' }, { userId: nsaPartner }],
+			preferences: [
+				{ nonStateActorId: cs.nonStateActorIds[0] },
+				...roomyPreferences({ cs, size: 2, count: 2 })
+			]
+		}
 	});
 
-	const single = addSingle(cs, {
-		id: 'single',
-		userId: 'dev-single',
-		applied: true,
-		roleId: cs.customRoleIds[0],
-		preferences: cs.customRoleIds.slice(0, 2)
+	const single = addSingle({
+		cs,
+		plan: {
+			id: 'single',
+			userId: 'dev-single',
+			applied: true,
+			roleId: cs.customRoleIds[0],
+			preferences: cs.customRoleIds.slice(0, 2)
+		}
 	});
 
 	// A team member elsewhere, a participant with a role here.
 	if (['preparation', 'post'].includes(cs.plan.key)) {
-		addSingle(cs, {
-			id: 'single-mixed',
-			userId: 'dev-mixed-team',
-			applied: true,
-			roleId: cs.customRoleIds[3],
-			preferences: cs.customRoleIds.slice(3, 5)
+		addSingle({
+			cs,
+			plan: {
+				id: 'single-mixed',
+				userId: 'dev-mixed-team',
+				applied: true,
+				roleId: cs.customRoleIds[3],
+				preferences: cs.customRoleIds.slice(3, 5)
+			}
 		});
 	}
 
-	const rejected = addDelegation(cs, {
-		id: 'delegation-rejected',
-		applied: true,
-		members: [{ userId: 'dev-rejected-delegate' }, { userId: crowd() }],
-		preferences: roomyPreferences(cs, 2, 3, { skip: 2 })
+	const rejected = addDelegation({
+		cs,
+		plan: {
+			id: 'delegation-rejected',
+			applied: true,
+			members: [{ userId: 'dev-rejected-delegate' }, { userId: crowd() }],
+			preferences: roomyPreferences({ cs, size: 2, count: 3, options: { skip: 2 } })
+		}
 	});
-	addSingle(cs, {
-		id: 'single-rejected',
-		userId: 'dev-rejected-single',
-		applied: true,
-		preferences: cs.customRoleIds.slice(1, 3)
+	addSingle({
+		cs,
+		plan: {
+			id: 'single-rejected',
+			userId: 'dev-rejected-single',
+			applied: true,
+			preferences: cs.customRoleIds.slice(1, 3)
+		}
 	});
 
-	addPersonaSupervisors(cs, {
-		delegationMemberIds: [...german.memberIds.values()],
-		rejectedMemberIds: [...rejected.memberIds.values()],
-		singleId: single
+	addPersonaSupervisors({
+		cs,
+		supervised: {
+			delegationMemberIds: [...german.memberIds.values()],
+			rejectedMemberIds: [...rejected.memberIds.values()],
+			singleId: single
+		}
 	});
-	addPersonaStatuses(cs, nsaPartner);
+	addPersonaStatuses({ cs, nsaPartner });
 }
 
 /** The supervisors of the assigned personas: present, mixed, absent and of the rejected ones. */
-function addPersonaSupervisors(
-	cs: ConferenceSeed,
-	supervised: { delegationMemberIds: string[]; rejectedMemberIds: string[]; singleId: string }
-) {
+function addPersonaSupervisors({
+	cs,
+	supervised
+}: {
+	cs: ConferenceSeed;
+	supervised: { delegationMemberIds: string[]; rejectedMemberIds: string[]; singleId: string };
+}) {
 	// Connection codes are unique across conferences: the fixed ones belong to "Seed 5", and
 	// "Seed 2" holds `joinCodes.supervisor`.
 	const fixedCodes = cs.plan.key === 'preparation';
-	addSupervisor(cs, {
-		id: 'supervisor',
-		userId: 'dev-supervisor',
-		attends: true,
-		memberIds: [...supervised.delegationMemberIds, ...supervised.rejectedMemberIds]
+	addSupervisor({
+		cs,
+		plan: {
+			id: 'supervisor',
+			userId: 'dev-supervisor',
+			attends: true,
+			memberIds: [...supervised.delegationMemberIds, ...supervised.rejectedMemberIds]
+		}
 	});
 	if (['preparation', 'active', 'post'].includes(cs.plan.key)) {
-		addSupervisor(cs, {
-			id: 'supervisor-mixed',
-			userId: 'dev-mixed-supervisor',
-			attends: true,
-			memberIds: supervised.delegationMemberIds
+		addSupervisor({
+			cs,
+			plan: {
+				id: 'supervisor-mixed',
+				userId: 'dev-mixed-supervisor',
+				attends: true,
+				memberIds: supervised.delegationMemberIds
+			}
 		});
 	}
-	addSupervisor(cs, {
-		id: 'supervisor-absent',
-		userId: 'dev-supervisor-absent',
-		code: fixedCodes ? joinCodes.supervisorAbsent : undefined,
-		attends: false,
-		singleIds: [supervised.singleId]
+	addSupervisor({
+		cs,
+		plan: {
+			id: 'supervisor-absent',
+			userId: 'dev-supervisor-absent',
+			code: fixedCodes ? joinCodes.supervisorAbsent : undefined,
+			attends: false,
+			singleIds: [supervised.singleId]
+		}
 	});
-	addSupervisor(cs, {
-		id: 'supervisor-rejected',
-		userId: 'dev-supervisor-rejected',
-		code: fixedCodes ? joinCodes.supervisorRejected : undefined,
-		attends: true,
-		memberIds: supervised.rejectedMemberIds
+	addSupervisor({
+		cs,
+		plan: {
+			id: 'supervisor-rejected',
+			userId: 'dev-supervisor-rejected',
+			code: fixedCodes ? joinCodes.supervisorRejected : undefined,
+			attends: true,
+			memberIds: supervised.rejectedMemberIds
+		}
 	});
 }
 
 /** The statuses, attendance and payments of the assigned personas and the actor's partner. */
-function addPersonaStatuses(cs: ConferenceSeed, nsaPartner: string) {
+function addPersonaStatuses({ cs, nsaPartner }: { cs: ConferenceSeed; nsaPartner: string }) {
 	if (!cs.plan.with.participantStatus) return;
 
 	const preparing = cs.plan.conference.state === 'PREPARATION';
@@ -294,30 +367,54 @@ function addPersonaStatuses(cs: ConferenceSeed, nsaPartner: string) {
 	for (const userId of STATUS_HOLDERS) {
 		const status = statuses[userId];
 		if (!status) continue;
-		const statusId = addStatus(cs, userId, status);
+		const statusId = addStatus({ cs, userId, plan: status });
 		const occasions = attendance[userId];
 		if (cs.plan.with.attendance && occasions && status.didAttend) {
-			addAttendance(cs, statusId, 'dev-team-member', occasions);
+			addAttendance({ cs, statusId, recordedById: 'dev-team-member', occasions });
 		}
 	}
-	addStatus(cs, nsaPartner, preparing ? NSA_PREPARATION_STATUS : doneAndPresent());
+	addStatus({
+		cs,
+		userId: nsaPartner,
+		plan: preparing ? NSA_PREPARATION_STATUS : doneAndPresent()
+	});
 
 	if (preparing) {
 		// Paid for themselves and the minor; the head delegate's own transfer is still open.
-		addPayment(cs, 'dev-delegate', ['dev-delegate', 'dev-delegate-minor'], true);
-		addPayment(cs, 'dev-head-delegate', ['dev-head-delegate'], false);
-		addPayment(cs, 'dev-nsa-delegate', ['dev-nsa-delegate', nsaPartner], true);
-		addPayment(cs, 'dev-single', ['dev-single'], false);
-		addPayment(cs, 'dev-supervisor', ['dev-supervisor'], false);
-	} else {
-		addPayment(
+		addPayment({
 			cs,
-			'dev-head-delegate',
-			['dev-head-delegate', 'dev-delegate', 'dev-delegate-minor'],
-			true
-		);
-		addPayment(cs, 'dev-nsa-delegate', ['dev-nsa-delegate', nsaPartner], true);
-		addPayment(cs, 'dev-single', ['dev-single'], true);
-		addPayment(cs, 'dev-supervisor', ['dev-supervisor'], true);
+			payerId: 'dev-delegate',
+			forUserIds: ['dev-delegate', 'dev-delegate-minor'],
+			received: true
+		});
+		addPayment({
+			cs,
+			payerId: 'dev-head-delegate',
+			forUserIds: ['dev-head-delegate'],
+			received: false
+		});
+		addPayment({
+			cs,
+			payerId: 'dev-nsa-delegate',
+			forUserIds: ['dev-nsa-delegate', nsaPartner],
+			received: true
+		});
+		addPayment({ cs, payerId: 'dev-single', forUserIds: ['dev-single'], received: false });
+		addPayment({ cs, payerId: 'dev-supervisor', forUserIds: ['dev-supervisor'], received: false });
+	} else {
+		addPayment({
+			cs,
+			payerId: 'dev-head-delegate',
+			forUserIds: ['dev-head-delegate', 'dev-delegate', 'dev-delegate-minor'],
+			received: true
+		});
+		addPayment({
+			cs,
+			payerId: 'dev-nsa-delegate',
+			forUserIds: ['dev-nsa-delegate', nsaPartner],
+			received: true
+		});
+		addPayment({ cs, payerId: 'dev-single', forUserIds: ['dev-single'], received: true });
+		addPayment({ cs, payerId: 'dev-supervisor', forUserIds: ['dev-supervisor'], received: true });
 	}
 }

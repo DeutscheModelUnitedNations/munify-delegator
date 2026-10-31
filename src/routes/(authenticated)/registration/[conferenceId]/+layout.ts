@@ -24,11 +24,14 @@ export const load: LayoutLoad = async (event) => {
 
 	const { conferenceId } = event.params;
 	const target = conference
-		? registrationRedirect(
-				getRegistrationStatus(conference.state, new Date(conference.applicationDeadline)),
-				event.url.pathname,
+		? registrationRedirect({
+				status: getRegistrationStatus({
+					conferenceState: conference.state,
+					applicationDeadline: new Date(conference.applicationDeadline)
+				}),
+				pathname: event.url.pathname,
 				conferenceId
-			)
+			})
 		: `/dashboard/${conferenceId}`;
 	if (target) redirect(307, target);
 };

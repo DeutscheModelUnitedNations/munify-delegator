@@ -45,18 +45,18 @@ describe('sortPapers', () => {
 	const papers = [germany, amnesty, nobody];
 
 	test('keeps the original order without a config, in a copy', () => {
-		const result = sortPapers(papers, null);
+		const result = sortPapers({ papers, config: null });
 		expect(names(result)).toEqual(['germany', 'amnesty', 'nobody']);
 		expect(result).not.toBe(papers);
 	});
 
 	test('sorts by nation code, falling back to the non-state actor name, then empty', () => {
-		expect(names(sortPapers(papers, { key: 'country', direction: 'asc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'country', direction: 'asc' } }))).toEqual([
 			'nobody',
 			'amnesty',
 			'germany'
 		]);
-		expect(names(sortPapers(papers, { key: 'country', direction: 'desc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'country', direction: 'desc' } }))).toEqual([
 			'germany',
 			'amnesty',
 			'nobody'
@@ -64,12 +64,12 @@ describe('sortPapers', () => {
 	});
 
 	test('sorts by type and by status', () => {
-		expect(names(sortPapers(papers, { key: 'type', direction: 'asc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'type', direction: 'asc' } }))).toEqual([
 			'amnesty',
 			'nobody',
 			'germany'
 		]);
-		expect(names(sortPapers(papers, { key: 'status', direction: 'desc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'status', direction: 'desc' } }))).toEqual([
 			'germany',
 			'nobody',
 			'amnesty'
@@ -77,27 +77,27 @@ describe('sortPapers', () => {
 	});
 
 	test('sorts by dates, with missing dates first when ascending', () => {
-		expect(names(sortPapers(papers, { key: 'createdAt', direction: 'asc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'createdAt', direction: 'asc' } }))).toEqual([
 			'amnesty',
 			'nobody',
 			'germany'
 		]);
-		expect(names(sortPapers(papers, { key: 'updatedAt', direction: 'asc' }))).toEqual([
+		expect(names(sortPapers({ papers, config: { key: 'updatedAt', direction: 'asc' } }))).toEqual([
 			'nobody',
 			'germany',
 			'amnesty'
 		]);
-		expect(names(sortPapers(papers, { key: 'firstSubmittedAt', direction: 'desc' }))).toEqual([
-			'germany',
-			'amnesty',
-			'nobody'
-		]);
+		expect(
+			names(sortPapers({ papers, config: { key: 'firstSubmittedAt', direction: 'desc' } }))
+		).toEqual(['germany', 'amnesty', 'nobody']);
 	});
 
 	test('keeps equal papers in their order', () => {
 		const a = paper('a');
 		const b = paper('b');
-		expect(names(sortPapers([a, b], { key: 'status', direction: 'asc' }))).toEqual(['a', 'b']);
+		expect(
+			names(sortPapers({ papers: [a, b], config: { key: 'status', direction: 'asc' } }))
+		).toEqual(['a', 'b']);
 	});
 });
 
@@ -113,13 +113,13 @@ describe('PaperSortState', () => {
 	test('sorts ascending first, flips on the same column and resets on another', () => {
 		const state = createPaperSortState();
 		expect(state.get('g')).toBeNull();
-		state.toggle('g', 'type');
+		state.toggle({ groupId: 'g', key: 'type' });
 		expect(state.get('g')).toEqual({ key: 'type', direction: 'asc' });
-		state.toggle('g', 'type');
+		state.toggle({ groupId: 'g', key: 'type' });
 		expect(state.get('g')).toEqual({ key: 'type', direction: 'desc' });
-		state.toggle('g', 'type');
+		state.toggle({ groupId: 'g', key: 'type' });
 		expect(state.get('g')).toEqual({ key: 'type', direction: 'asc' });
-		state.toggle('g', 'status');
+		state.toggle({ groupId: 'g', key: 'status' });
 		expect(state.get('g')).toEqual({ key: 'status', direction: 'asc' });
 		expect(state.get('other')).toBeNull();
 	});

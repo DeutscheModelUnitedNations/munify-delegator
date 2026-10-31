@@ -7,10 +7,10 @@ import { hasTextContent } from '../tiptapText';
  * Why a reviewer snippet cannot be saved (`error`), and otherwise whether it contains
  * placeholders the reviewer should be told about.
  */
-export function checkSnippet(
-	name: string,
-	content: JSONContent
-): { error: string | null; hasPlaceholders: boolean } {
+export function checkSnippet({ name, content }: { name: string; content: JSONContent }): {
+	error: string | null;
+	hasPlaceholders: boolean;
+} {
 	const invalid = (error: string) => ({ error, hasPlaceholders: false });
 	if (!name.trim()) return invalid(m.snippetNameRequired());
 	if (!hasTextContent(content)) return invalid(m.snippetContentRequired());

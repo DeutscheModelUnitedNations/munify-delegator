@@ -18,7 +18,7 @@ schemaBuilder.mutationFields((t) => ({
 	issueIdentityCode: t.field({
 		type: IdentityCode,
 		resolve: async (_root, _args, ctx) => ({
-			code: await issueIdentityCode(ctx.mustBeLoggedIn().sub)
+			code: await issueIdentityCode({ userId: ctx.mustBeLoggedIn().sub })
 		})
 	})
 }));

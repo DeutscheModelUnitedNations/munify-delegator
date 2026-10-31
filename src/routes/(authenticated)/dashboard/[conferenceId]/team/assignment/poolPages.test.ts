@@ -20,10 +20,10 @@ describe('PoolPages', () => {
 		const fetchPage = vi.fn(async (index: number) => page(2, index * 2));
 		const pages = createPoolPages<Row>();
 		expect(pages.pending('c')).toBe(true);
-		await pages.load('c', fetchPage);
-		await pages.load('c', fetchPage);
-		await pages.loadMore('c', fetchPage);
-		await pages.loadMore('c', fetchPage);
+		await pages.load({ key: 'c', fetchPage });
+		await pages.load({ key: 'c', fetchPage });
+		await pages.loadMore({ key: 'c', fetchPage });
+		await pages.loadMore({ key: 'c', fetchPage });
 		expect(fetchPage.mock.calls).toEqual([[0], [1], [2]]);
 		expect(pages.pending('c')).toBe(false);
 		expect(pages.pages('c').map((loaded) => loaded.rows[0].id)).toEqual(['r0', 'r2', 'r4']);
@@ -31,11 +31,11 @@ describe('PoolPages', () => {
 
 	it('loads one page at a time', async () => {
 		const pages = createPoolPages<Row>();
-		await pages.load('c', async () => page(1));
+		await pages.load({ key: 'c', fetchPage: async () => page(1) });
 		const next = deferred();
 		const fetchPage = vi.fn(() => next.promise);
-		const first = pages.loadMore('c', fetchPage);
-		await pages.loadMore('c', fetchPage);
+		const first = pages.loadMore({ key: 'c', fetchPage });
+		await pages.loadMore({ key: 'c', fetchPage });
 		next.resolve(page(1));
 		await first;
 		expect(fetchPage).toHaveBeenCalledTimes(1);
@@ -45,8 +45,8 @@ describe('PoolPages', () => {
 	it('starts over for another key, and the latest key wins', async () => {
 		const pages = createPoolPages<Row>();
 		const slow = deferred();
-		const first = pages.load('a', () => slow.promise);
-		await pages.load('b', async () => page(1, 10));
+		const first = pages.load({ key: 'a', fetchPage: () => slow.promise });
+		await pages.load({ key: 'b', fetchPage: async () => page(1, 10) });
 		slow.resolve(page(1));
 		await first;
 		expect(pages.pending('a')).toBe(true);
@@ -56,16 +56,16 @@ describe('PoolPages', () => {
 	it('only loads more for the key that is shown', async () => {
 		const pages = createPoolPages<Row>();
 		const fetchPage = vi.fn(async () => page(1));
-		await pages.loadMore('c', fetchPage);
+		await pages.loadMore({ key: 'c', fetchPage });
 		expect(fetchPage).not.toHaveBeenCalled();
 	});
 
 	it('frees itself after a failed page', async () => {
 		const pages = createPoolPages<Row>();
-		await expect(pages.load('c', () => Promise.reject(new Error('offline')))).rejects.toThrow(
-			'offline'
-		);
-		await pages.load('c', async () => page(1));
+		await expect(
+			pages.load({ key: 'c', fetchPage: () => Promise.reject(new Error('offline')) })
+		).rejects.toThrow('offline');
+		await pages.load({ key: 'c', fetchPage: async () => page(1) });
 		expect(pages.pages('c')).toHaveLength(1);
 	});
 

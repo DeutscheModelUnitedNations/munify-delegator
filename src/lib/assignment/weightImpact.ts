@@ -27,7 +27,13 @@ type Effect = Impact['effects'][number];
 const NO_EFFECT: Impact['effects'] = [{ effect: 'noEffect', tone: 'neutral' }];
 
 /** Seated or left out first, and (when it reaches contested roles) wishes weighing more or less. */
-function favourEffects(favoured: boolean, reachesWishes: boolean): Effect[] {
+function favourEffects({
+	favoured,
+	reachesWishes
+}: {
+	favoured: boolean;
+	reachesWishes: boolean;
+}): Effect[] {
 	const seating: Effect = favoured
 		? { effect: 'seatedFirst', tone: 'good' }
 		: { effect: 'leftOutFirst', tone: 'bad' };
@@ -66,7 +72,10 @@ function markImpacts(weights: AssignmentWeights): Impact[] {
 	return [
 		{
 			subject: 'flagged',
-			effects: favourEffects(weights.markBonus > 0, weights.markEffect === 'WISHES_AND_SEATING')
+			effects: favourEffects({
+				favoured: weights.markBonus > 0,
+				reachesWishes: weights.markEffect === 'WISHES_AND_SEATING'
+			})
 		}
 	];
 }
@@ -87,7 +96,7 @@ function experienceImpacts(weights: AssignmentWeights): Impact[] {
 	return [
 		{
 			subject: 'experienced',
-			effects: favourEffects(favoured, contested)
+			effects: favourEffects({ favoured, reachesWishes: contested })
 		},
 		{ subject: 'newcomers', effects: [newcomerSeating, ...newcomerContested] }
 	];

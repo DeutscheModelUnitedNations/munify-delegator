@@ -11,7 +11,7 @@
 
 	const isMac = browser && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 
-	const formatted = $derived(formatHotkey(hotkey, isMac));
+	const formatted = $derived(formatHotkey({ hotkey, isMac }));
 </script>
 
 <span class="kbd kbd-{size} hidden md:inline-flex">{formatted}</span>

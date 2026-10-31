@@ -54,11 +54,11 @@
 				})
 			: []
 	);
-	const rows = $derived(sessionRows(occasions, openSessions));
+	const rows = $derived(sessionRows({ occasions, openSessions }));
 
 	let saving = $state<string>();
 
-	async function toggleCertificate(occasion: string, show: boolean) {
+	async function toggleCertificate({ occasion, show }: { occasion: string; show: boolean }) {
 		saving = occasion;
 		try {
 			await client.mutate.setAttendanceOccasionOnCertificate({
@@ -73,7 +73,7 @@
 	}
 
 	/** Renames every session of the occasion; a name another occasion has merges the two. */
-	async function rename(row: SessionRow, name: string) {
+	async function rename({ row, name }: { row: SessionRow; name: string }) {
 		if (name.trim() === row.name) return;
 		if (!row.occasion && row.open) {
 			await onRenameSession(row.open.id, name);
@@ -109,7 +109,7 @@
 				readonly={!canManage}
 				label={m.scanRenameSession({ occasion: row.name })}
 				initialValue={row.name}
-				onSave={(value) => rename(row, value)}
+				onSave={(value) => rename({ row, name: value })}
 			>
 				<span class="truncate {row.open ? 'font-semibold' : ''}">{row.name}</span>
 			</EditableIdentityField>
@@ -139,7 +139,8 @@
 					checked={row.occasion.showOnCertificate}
 					disabled={saving === row.name}
 					aria-label={m.certificateOccasionsShowFor({ occasion: row.name })}
-					onchange={(event) => toggleCertificate(row.name, event.currentTarget.checked)}
+					onchange={(event) =>
+						toggleCertificate({ occasion: row.name, show: event.currentTarget.checked })}
 				/>
 			</label>
 		{/if}

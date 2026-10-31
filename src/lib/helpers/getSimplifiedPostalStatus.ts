@@ -10,7 +10,10 @@ import type * as schema from '#api/db/schema/index';
  * @param ofAge - Boolean indicating if participant is of legal age
  * @returns A simplified status: 'PROBLEM', 'PENDING', or 'DONE'
  */
-export default function getSimplifiedPostalStatus(
+export default function getSimplifiedPostalStatus({
+	participantStatus,
+	ofAge = false
+}: {
 	participantStatus:
 		| (Pick<
 				typeof schema.conferenceParticipant.$inferSelect,
@@ -19,9 +22,9 @@ export default function getSimplifiedPostalStatus(
 				[key: string]: unknown;
 		  })
 		| undefined
-		| null,
-	ofAge: boolean = false
-) {
+		| null;
+	ofAge?: boolean;
+}) {
 	const statuus: AdministrativestatusEnum[] = [];
 
 	statuus.push(participantStatus?.termsAndConditions ?? 'PENDING');

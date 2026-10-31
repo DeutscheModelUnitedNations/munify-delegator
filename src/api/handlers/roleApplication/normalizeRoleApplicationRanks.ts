@@ -10,7 +10,13 @@ import { whereRows } from '#api/db/whereRows';
  * intermediate state collides. The two passes have to run in the caller's transaction: a failure
  * between them would leave the ranks negative.
  */
-export async function normalizeRoleApplicationRanks(delegationId: string, tx: Transaction) {
+export async function normalizeRoleApplicationRanks({
+	delegationId,
+	tx
+}: {
+	delegationId: string;
+	tx: Transaction;
+}) {
 	const applications = await tx.query.roleApplication.findMany({
 		where: { delegationId },
 		orderBy: { rank: 'asc', createdAt: 'asc' },
@@ -23,12 +29,12 @@ export async function normalizeRoleApplicationRanks(delegationId: string, tx: Tr
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: -(index + 1) })
-			.where(whereRows(schema.roleApplication, { id: application.id }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));
 	}
 	for (const [index, application] of applications.entries()) {
 		await tx
 			.update(schema.roleApplication)
 			.set({ rank: index + 1 })
-			.where(whereRows(schema.roleApplication, { id: application.id }));
+			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));
 	}
 }

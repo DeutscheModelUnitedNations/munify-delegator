@@ -54,9 +54,9 @@
 
 	const resetResolution = () => resolutionStore.replaceResolution(createEmptyResolution(''));
 
-	const draft = createDraftAutosave<ResolutionDraft, Resolution>(
-		`resolutionDraft_${conferenceId}`,
-		{
+	const draft = createDraftAutosave<ResolutionDraft, Resolution>({
+		storageKey: `resolutionDraft_${conferenceId}`,
+		options: {
 			// Skip saving if resolution has no meaningful content
 			readContent: () =>
 				isResolutionEmpty(resolutionStore.snapshot) ? undefined : resolutionStore.snapshot,
@@ -73,9 +73,9 @@
 			},
 			resetEditor: resetResolution
 		}
-	);
+	});
 
-	const context = await fetchNewResolutionContext(conferenceId, currentUser.sub);
+	const context = await fetchNewResolutionContext({ conferenceId, userId: currentUser.sub });
 	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember.delegation);
 	let committee = $derived(delegationMember.assignedCommittee);
@@ -100,7 +100,8 @@
 
 	// Resolution header data for working papers
 	let resolutionHeaderData = $derived(
-		resolutionHeader(conference, {
+		resolutionHeader({
+			conference,
 			committee,
 			topic: committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)?.title,
 			authoringDelegation: paperEntityName(delegation),
@@ -123,8 +124,8 @@
 			return;
 		}
 
-		await createPaper(
-			{
+		await createPaper({
+			paper: {
 				conferenceId: params.conferenceId,
 				authorId: currentUser.sub,
 				delegationId: delegation.id,
@@ -133,13 +134,13 @@
 				agendaItemId: $formData.agendaItemId
 			},
 			submit,
-			() => {
+			onCreated: () => {
 				// Clear store so next paper creation starts fresh
 				resetResolution();
 				// Clear localStorage draft on successful submission
 				draft.clear();
 			}
-		);
+		});
 	};
 </script>
 

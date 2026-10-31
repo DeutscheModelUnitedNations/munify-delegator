@@ -38,8 +38,8 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const option = await loadAnswerOption(args);
-			const answer = await assertCanAnswerSurvey(ctx, option, args);
-			const { answerId, existed } = await saveSurveyAnswer(option, answer);
+			const answer = await assertCanAnswerSurvey({ ctx, option, args });
+			const { answerId, existed } = await saveSurveyAnswer({ option, answer });
 
 			// A new row has to reach list queries (`created`), which an update of its id does not.
 			if (existed) surveyAnswerPubsub.updated(answerId);
@@ -50,7 +50,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			return db.query.surveyAnswer
-				.findFirst(query(await queryAllowed(ctx.abilities.surveyAnswer, answerId)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.surveyAnswer, id: answerId })))
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -63,8 +63,10 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { questionId: t.arg.id({ required: true }), userId: t.arg.id() },
 		resolve: async (_root, args, ctx) => {
-			const answer = await assertCanDeleteSurveyAnswer(ctx, args);
-			await db.delete(schema.surveyAnswer).where(whereRows(schema.surveyAnswer, { id: answer.id }));
+			const answer = await assertCanDeleteSurveyAnswer({ ctx, args });
+			await db
+				.delete(schema.surveyAnswer)
+				.where(whereRows({ table: schema.surveyAnswer, filter: { id: answer.id } }));
 
 			surveyAnswerPubsub.removed();
 			for (const optionId of await optionIdsOfQuestion(answer.questionId)) {
@@ -82,7 +84,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Int',
 		args: { questionId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanDistributeSurvey(ctx, args.questionId);
+			await assertCanDistributeSurvey({ ctx, questionId: args.questionId });
 			const { optionIds, assigned } = await distributeUnansweredSurvey(args.questionId);
 
 			if (assigned > 0) {

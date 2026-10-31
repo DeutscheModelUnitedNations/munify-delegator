@@ -13,7 +13,13 @@ import {
  * Meant to be called once, at the moment of download. The templates are PDFs, so only their
  * URLs are selected; the PDF generator fetches the files.
  */
-export async function fetchPostalRegistrationSources(userId: string, conferenceId: string) {
+export async function fetchPostalRegistrationSources({
+	userId,
+	conferenceId
+}: {
+	userId: string;
+	conferenceId: string;
+}) {
 	const [user, conference] = await Promise.all([
 		client.query.user({
 			__args: { id: userId },
@@ -68,11 +74,14 @@ export async function downloadPostalRegistrationDocuments({
 	recipient: RecipientData;
 	fileName: string;
 }): Promise<void> {
-	await downloadCompletePostalRegistrationPDF(
-		ofAgeAtConference(conference.startConference, birthday),
+	await downloadCompletePostalRegistrationPDF({
+		isOfAge: ofAgeAtConference({
+			startConference: conference.startConference,
+			dateOfBirth: birthday
+		}),
 		participant,
 		recipient,
-		conference,
+		templates: conference,
 		fileName
-	);
+	});
 }

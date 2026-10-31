@@ -72,9 +72,17 @@
 	let postalStats = $derived(
 		countStatuses((member) => {
 			const isOfAge = conferenceStartDate
-				? ofAgeAtConference(conferenceStartDate, member.user.birthday)
+				? ofAgeAtConference({
+						startConference: conferenceStartDate,
+						dateOfBirth: member.user.birthday
+					})
 				: true;
-			return getSimplifiedPostalStatus(participantStatusOf(member), isOfAge) ?? 'PENDING';
+			return (
+				getSimplifiedPostalStatus({
+					participantStatus: participantStatusOf(member),
+					ofAge: isOfAge
+				}) ?? 'PENDING'
+			);
 		})
 	);
 

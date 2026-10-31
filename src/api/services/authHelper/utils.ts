@@ -10,7 +10,7 @@ import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ApiContext } from '#api/rumble';
 import type { Context } from '#api/context';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /** The signed-in caller's user id; undefined when nobody is signed in. */
 export function callerUserId(ctx: Context) {
@@ -43,13 +43,19 @@ type IdFilterable = {
  * through: `.where(await whereAllowed(ctx, 'user', 'update', id))` touches nothing otherwise.
  * `extra` narrows it further (a role of one `kind`, a row of one conference).
  */
-export async function whereAllowed<K extends TableWithId>(
-	ctx: ApiContext,
-	table: K,
-	action: RowAction,
-	id: string,
-	extra?: SQL
-) {
+export async function whereAllowed<K extends TableWithId>({
+	ctx,
+	table,
+	action,
+	id,
+	extra
+}: {
+	ctx: ApiContext;
+	table: K;
+	action: RowAction;
+	id: string;
+	extra?: SQL;
+}) {
 	const ability: IdFilterable = ctx.abilities[table];
 	// drizzle throws on an `undefined` filter value, so `RAW` only goes in when there is one
 	return (await ability.filter(action)).merge({ where: extra ? { id, RAW: extra } : { id } }).sql
@@ -60,57 +66,77 @@ export async function whereAllowed<K extends TableWithId>(
  * Throws NOT_FOUND unless the caller may `action` the row `id` of `table`. For a check ahead of
  * other work; to just change or delete the row, use `updateIfAllowed` / `deleteIfAllowed`.
  */
-export async function assertAllowed<K extends TableWithId>(
-	ctx: ApiContext,
-	table: K,
-	action: RowAction,
-	id: string,
-	options: { extra?: SQL; message?: () => string; tx?: Transaction | typeof db } = {}
-) {
+export async function assertAllowed<K extends TableWithId>({
+	ctx,
+	table,
+	action,
+	id,
+	options = {}
+}: {
+	ctx: ApiContext;
+	table: K;
+	action: RowAction;
+	id: string;
+	options?: { extra?: SQL; message?: () => string; tx?: Transaction | typeof db };
+}) {
 	const [row] = await (options.tx ?? db)
 		.select({ found: sql`1` })
 		.from(schema[table])
-		.where(await whereAllowed(ctx, table, action, id, options.extra))
+		.where(await whereAllowed({ ctx, table, action, id, extra: options.extra }))
 		.limit(1);
 	if (!row) {
 		const message =
 			options.message ??
 			(action === 'update' ? m.updateNotFoundOrForbidden : m.deleteNotFoundOrForbidden);
-		throw apiError('NOT_FOUND', message());
+		throw apiError({ code: 'NOT_FOUND', message: message() });
 	}
 }
 
 /** Sets `values` on the row `id` of `table` if the caller may update it; NOT_FOUND otherwise. */
-export async function updateIfAllowed<K extends TableWithId>(
-	ctx: ApiContext,
-	table: K,
-	id: string,
-	values: PgUpdateSetSource<(typeof schema)[K]>,
-	tx: Transaction | typeof db = db
-) {
+export async function updateIfAllowed<K extends TableWithId>({
+	ctx,
+	table,
+	id,
+	values,
+	tx = db
+}: {
+	ctx: ApiContext;
+	table: K;
+	id: string;
+	values: PgUpdateSetSource<(typeof schema)[K]>;
+	tx?: Transaction | typeof db;
+}) {
 	const updated = await tx
 		.update(schema[table])
 		.set(values)
-		.where(await whereAllowed(ctx, table, 'update', id))
+		.where(await whereAllowed({ ctx, table, action: 'update', id }))
 		.returning({ id: schema[table].id });
 	if (updated.length === 0) {
-		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
 }
 
 /** Deletes the row `id` of `table` if the caller may delete it; NOT_FOUND otherwise. */
-export async function deleteIfAllowed<K extends TableWithId>(
-	ctx: ApiContext,
-	table: K,
-	id: string,
-	options: { message?: () => string; tx?: Transaction | typeof db } = {}
-) {
+export async function deleteIfAllowed<K extends TableWithId>({
+	ctx,
+	table,
+	id,
+	options = {}
+}: {
+	ctx: ApiContext;
+	table: K;
+	id: string;
+	options?: { message?: () => string; tx?: Transaction | typeof db };
+}) {
 	const deleted = await (options.tx ?? db)
 		.delete(schema[table])
-		.where(await whereAllowed(ctx, table, 'delete', id))
+		.where(await whereAllowed({ ctx, table, action: 'delete', id }))
 		.returning({ id: schema[table].id });
 	if (deleted.length === 0) {
-		throw apiError('NOT_FOUND', (options.message ?? m.deleteNotFoundOrForbidden)());
+		throw apiError({
+			code: 'NOT_FOUND',
+			message: (options.message ?? m.deleteNotFoundOrForbidden)()
+		});
 	}
 }
 
@@ -120,14 +146,18 @@ export async function deleteIfAllowed<K extends TableWithId>(
  * It takes the ability rather than the table name because drizzle cannot type the relational query
  * of a table that is only known generically.
  */
-export async function queryAllowed<S>(
+export async function queryAllowed<S>({
+	ability,
+	id,
+	action = 'read'
+}: {
 	ability: {
 		filter(
 			action: RowAction
 		): Promise<{ merge(filter: { where: { id: string } }): { query: { single: S } } }>;
-	},
-	id: string,
-	action: RowAction = 'read'
-) {
+	};
+	id: string;
+	action?: RowAction;
+}) {
 	return (await ability.filter(action)).merge({ where: { id } }).query.single;
 }

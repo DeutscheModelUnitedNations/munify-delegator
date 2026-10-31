@@ -33,7 +33,7 @@ describe('formatRegistrationStatus', () => {
 	});
 });
 
-const statuses: NonNullable<Parameters<typeof registrationStatusColumns>[0]> = {
+const statuses: NonNullable<Parameters<typeof registrationStatusColumns>[0]['status']> = {
 	paymentStatus: 'DONE',
 	termsAndConditions: 'PENDING',
 	guardianConsent: 'PROBLEM',
@@ -42,25 +42,46 @@ const statuses: NonNullable<Parameters<typeof registrationStatusColumns>[0]> = {
 
 describe('registrationStatusColumns', () => {
 	test('includes the guardian consent only for minors', () => {
-		expect(registrationStatusColumns(statuses, false)).toEqual(['', 'X', 'P', '', 'N']);
-		expect(registrationStatusColumns(statuses, true)).toEqual(['', 'X', '', '', 'Y']);
+		expect(registrationStatusColumns({ status: statuses, ofAge: false })).toEqual([
+			'',
+			'X',
+			'P',
+			'',
+			'N'
+		]);
+		expect(registrationStatusColumns({ status: statuses, ofAge: true })).toEqual([
+			'',
+			'X',
+			'',
+			'',
+			'Y'
+		]);
 	});
 
 	test('treats a missing status row as pending', () => {
-		expect(registrationStatusColumns(undefined, false)).toEqual(['X', 'X', 'X', 'X', 'N']);
+		expect(registrationStatusColumns({ status: undefined, ofAge: false })).toEqual([
+			'X',
+			'X',
+			'X',
+			'X',
+			'N'
+		]);
 	});
 });
 
 describe('supervisorRow', () => {
 	test('lists name, statuses and own attendance', () => {
 		expect(
-			supervisorRow(
-				{ user: user('Ada', 'Lovelace'), plansOwnAttendenceAtConference: true },
-				statuses
-			)
+			supervisorRow({
+				supervisor: { user: user('Ada', 'Lovelace'), plansOwnAttendenceAtConference: true },
+				status: statuses
+			})
 		).toEqual(['Lovelace', 'Ada', '', 'X', '', 'Y']);
 		expect(
-			supervisorRow({ user: user(null, null), plansOwnAttendenceAtConference: false }, undefined)
+			supervisorRow({
+				supervisor: { user: user(null, null), plansOwnAttendenceAtConference: false },
+				status: undefined
+			})
 		).toEqual(['', '', 'X', 'X', 'X', 'N']);
 	});
 });

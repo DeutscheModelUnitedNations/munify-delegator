@@ -6,6 +6,10 @@ import { applyHref } from '../apply/applyPaths';
 export const load: PageLoad = ({ params, url }) => {
 	redirect(
 		307,
-		applyHref(params.conferenceId, 'joinDelegation', { code: url.searchParams.get('code') })
+		applyHref({
+			conferenceId: params.conferenceId,
+			path: 'joinDelegation',
+			extra: { code: url.searchParams.get('code') }
+		})
 	);
 };

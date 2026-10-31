@@ -82,6 +82,12 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 	participationCount: (row) => String(row.participationCount)
 };
 
-export function getPlainTextValue(row: ParticipantRow, columnId: string): string {
+export function getPlainTextValue({
+	row,
+	columnId
+}: {
+	row: ParticipantRow;
+	columnId: string;
+}): string {
 	return Object.hasOwn(plainTextValues, columnId) ? plainTextValues[columnId](row) : '';
 }

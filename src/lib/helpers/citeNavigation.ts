@@ -11,10 +11,13 @@ export interface FindCiteResult {
  * Finds all occurrences of the quoted text in the paper container,
  * highlights them, and scrolls to the first match
  */
-export function findAndHighlightCite(
-	searchText: string,
-	paperContainer: HTMLElement | null
-): FindCiteResult {
+export function findAndHighlightCite({
+	searchText,
+	paperContainer
+}: {
+	searchText: string;
+	paperContainer: HTMLElement | null;
+}): FindCiteResult {
 	if (!paperContainer || !searchText.trim()) {
 		return { found: false, matchCount: 0 };
 	}
@@ -30,7 +33,10 @@ export function findAndHighlightCite(
 	}
 
 	// Find all matches and wrap them in highlight spans
-	const highlightSpans = findAndWrapMatches(paperContainer, normalizedSearch);
+	const highlightSpans = findAndWrapMatches({
+		container: paperContainer,
+		searchText: normalizedSearch
+	});
 
 	if (highlightSpans.length === 0) {
 		return { found: false, matchCount: 0 };
@@ -71,7 +77,13 @@ function clearCiteHighlights(container: HTMLElement): void {
 /**
  * Finds all occurrences of searchText in the container and wraps them in highlight spans
  */
-function findAndWrapMatches(container: HTMLElement, searchText: string): HTMLElement[] {
+function findAndWrapMatches({
+	container,
+	searchText
+}: {
+	container: HTMLElement;
+	searchText: string;
+}): HTMLElement[] {
 	const highlightSpans: HTMLElement[] = [];
 
 	// Get all text-containing elements
@@ -99,7 +111,7 @@ function findAndWrapMatches(container: HTMLElement, searchText: string): HTMLEle
 		}
 
 		// Find and highlight the text within this block
-		const spans = highlightTextInBlock(block as HTMLElement, searchText);
+		const spans = highlightTextInBlock({ block: block as HTMLElement, searchText });
 		highlightSpans.push(...spans);
 	}
 
@@ -135,11 +147,15 @@ function mapTextNodes(block: HTMLElement): { combinedText: string; nodeMap: Text
  * covers in a highlight span. Returns the span, or undefined if the node holds none of the match
  * or the range cannot be wrapped.
  */
-function highlightInNode(
-	{ node, start, end }: TextNodeSpan,
-	matchStart: number,
-	matchEnd: number
-): HTMLElement | undefined {
+function highlightInNode({
+	span: { node, start, end },
+	matchStart,
+	matchEnd
+}: {
+	span: TextNodeSpan;
+	matchStart: number;
+	matchEnd: number;
+}): HTMLElement | undefined {
 	// Check if this node overlaps with our match
 	if (end <= matchStart || start >= matchEnd) return undefined;
 
@@ -148,7 +164,11 @@ function highlightInNode(
 	const overlapEnd = Math.min(end - start, matchEnd - start);
 
 	// Map normalized positions back to original text positions
-	const positions = mapNormalizedToOriginal(node.textContent || '', overlapStart, overlapEnd);
+	const positions = mapNormalizedToOriginal({
+		originalText: node.textContent || '',
+		normalizedStart: overlapStart,
+		normalizedEnd: overlapEnd
+	});
 	if (positions.start >= positions.end) return undefined;
 
 	try {
@@ -169,7 +189,13 @@ function highlightInNode(
 /**
  * Highlights all occurrences of searchText within a single block element
  */
-function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLElement[] {
+function highlightTextInBlock({
+	block,
+	searchText
+}: {
+	block: HTMLElement;
+	searchText: string;
+}): HTMLElement[] {
 	const highlightSpans: HTMLElement[] = [];
 	const { combinedText, nodeMap } = mapTextNodes(block);
 
@@ -180,7 +206,7 @@ function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLEleme
 
 		// Find which text nodes this match spans
 		for (const entry of nodeMap) {
-			const span = highlightInNode(entry, searchIndex, searchEnd);
+			const span = highlightInNode({ span: entry, matchStart: searchIndex, matchEnd: searchEnd });
 			if (span) highlightSpans.push(span);
 		}
 
@@ -193,11 +219,15 @@ function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLEleme
 /**
  * Maps positions in normalized text (whitespace collapsed) back to original text
  */
-function mapNormalizedToOriginal(
-	originalText: string,
-	normalizedStart: number,
-	normalizedEnd: number
-): { start: number; end: number } {
+function mapNormalizedToOriginal({
+	originalText,
+	normalizedStart,
+	normalizedEnd
+}: {
+	originalText: string;
+	normalizedStart: number;
+	normalizedEnd: number;
+}): { start: number; end: number } {
 	let originalPos = 0;
 	let normalizedPos = 0;
 	let resultStart = 0;

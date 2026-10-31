@@ -77,10 +77,10 @@ export const BlockquoteWithFind = Blockquote.extend<BlockquoteWithFindOptions>({
 			const findInPaper = () => {
 				const paperContainer = this.options.getPaperContainer();
 				if (!paperContainer) return false;
-				const result: FindCiteResult = findAndHighlightCite(
-					content.textContent || '',
+				const result: FindCiteResult = findAndHighlightCite({
+					searchText: content.textContent || '',
 					paperContainer
-				);
+				});
 				return result.found;
 			};
 

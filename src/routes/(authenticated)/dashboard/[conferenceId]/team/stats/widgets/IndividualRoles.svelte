@@ -29,14 +29,14 @@
 
 	// Get the filtered value for a role
 	function getRoleValue(role: { total: number; applied: number; notApplied: number }) {
-		return getFilteredValue(role) ?? 0;
+		return getFilteredValue({ object: role }) ?? 0;
 	}
 
 	// Get the filtered value from history for a role
 	function getHistoryRoleValue(index: number) {
 		const historyRole = selectedHistory?.stats.registered.singleParticipants.byRole[index];
 		if (!historyRole) return undefined;
-		return getFilteredValue(historyRole);
+		return getFilteredValue({ object: historyRole });
 	}
 </script>
 

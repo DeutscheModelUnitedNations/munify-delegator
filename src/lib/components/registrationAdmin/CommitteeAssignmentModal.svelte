@@ -78,7 +78,7 @@
 		);
 	}
 
-	function assign(memberId: string, committeeId: string) {
+	function assign({ memberId, committeeId }: { memberId: string; committeeId: string }) {
 		return runAssignment(
 			Promise.resolve(
 				client.mutate.updateDelegationMemberCommittee({
@@ -107,7 +107,7 @@
 	{@const active = member.assignedCommittee?.id === committeeId}
 	<button
 		class="btn btn-square btn-sm {active ? 'btn-success' : ''} {loading && 'disabled'}"
-		onclick={() => assign(member.id, committeeId)}
+		onclick={() => assign({ memberId: member.id, committeeId })}
 	>
 		{#if loading}
 			<i class="fa-sharp-duotone fa-solid fa-spin fa-spinner"></i>
@@ -132,7 +132,10 @@
 				{#each members as member (member.id)}
 					<tr>
 						<td>
-							{formatNames(member.user.givenName ?? undefined, member.user.familyName ?? undefined)}
+							{formatNames({
+								givenName: member.user.givenName ?? undefined,
+								familyName: member.user.familyName ?? undefined
+							})}
 						</td>
 						{#each filteredCommittees as committee (committee.id)}
 							<td>{@render assignButton(member, committee.id)}</td>

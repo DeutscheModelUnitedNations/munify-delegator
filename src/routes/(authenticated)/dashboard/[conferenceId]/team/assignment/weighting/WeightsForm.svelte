@@ -34,14 +34,25 @@
 		})
 	).at(0);
 	// A missing or unusable stored value falls back to the default, so the form always starts valid
-	const orDefault = (value: number | null | undefined, fallback: number) =>
-		typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+	const orDefault = ({
+		value,
+		fallback
+	}: {
+		value: number | null | undefined;
+		fallback: number;
+	}) => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
 	const initialValues = {
-		nullRating: orDefault(stored?.nullRating, DEFAULT_WEIGHTS.nullRating),
-		ratingFactor: orDefault(stored?.ratingFactor, DEFAULT_WEIGHTS.ratingFactor),
-		markBonus: orDefault(stored?.markBonus, DEFAULT_WEIGHTS.markBonus),
+		nullRating: orDefault({ value: stored?.nullRating, fallback: DEFAULT_WEIGHTS.nullRating }),
+		ratingFactor: orDefault({
+			value: stored?.ratingFactor,
+			fallback: DEFAULT_WEIGHTS.ratingFactor
+		}),
+		markBonus: orDefault({ value: stored?.markBonus, fallback: DEFAULT_WEIGHTS.markBonus }),
 		markEffect: stored?.markEffect ?? DEFAULT_WEIGHTS.markEffect,
-		experienceModifier: orDefault(stored?.experienceModifier, DEFAULT_WEIGHTS.experienceModifier),
+		experienceModifier: orDefault({
+			value: stored?.experienceModifier,
+			fallback: DEFAULT_WEIGHTS.experienceModifier
+		}),
 		experienceEffect: stored?.experienceEffect ?? DEFAULT_WEIGHTS.experienceEffect
 	};
 
@@ -93,12 +104,12 @@
 			}
 		].map((example) => ({
 			label: example.label,
-			cost: assignmentCost(
-				$formData,
-				example.review && { ...example.review, disqualified: false },
-				example.rank,
-				example.experience
-			)
+			cost: assignmentCost({
+				weights: $formData,
+				review: example.review && { ...example.review, disqualified: false },
+				wishRank: example.rank,
+				experience: example.experience
+			})
 		}))
 	);
 

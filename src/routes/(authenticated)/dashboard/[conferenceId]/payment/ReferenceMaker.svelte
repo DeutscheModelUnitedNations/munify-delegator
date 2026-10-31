@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
 	import type { ConferencePaymentData } from './conferencePaymentData';
 	import DisabledInput from '#lib/components/DisabledInput.svelte';
@@ -43,14 +44,18 @@
 
 	function toastReferenceError(error: unknown) {
 		// Without this the button stays disabled on its spinner, with no hint anything failed.
-		console.error(error);
+		logger.error('Creating the payment reference failed', error);
 		// Somebody in the selection was marked paid since the page loaded
-		toast.error(hasErrorCode(error, 'CONFLICT') ? m.paymentAlreadyPaid() : m.genericToastError());
+		toast.error(
+			hasErrorCode({ err: error, code: 'CONFLICT' })
+				? m.paymentAlreadyPaid()
+				: m.genericToastError()
+		);
 	}
 
 	async function generateReference() {
 		if (!conferencePaymentData) {
-			console.error('No conference payment data found');
+			logger.error('No conference payment data found');
 			return;
 		}
 
@@ -81,7 +86,10 @@
 	<div class="mb-4 flex flex-wrap gap-1">
 		{#each users as user (user.id)}
 			<span class="badge badge-neutral"
-				>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</span
+				>{formatNames({
+					givenName: user.givenName ?? undefined,
+					familyName: user.familyName ?? undefined
+				})}</span
 			>
 		{:else}
 			<span class="italic">&mdash;</span>
@@ -102,7 +110,10 @@
 		<span class="mr-1 font-semibold">{m.paymentCovers()}</span>
 		{#each users as user (user.id)}
 			<span class="badge badge-neutral"
-				>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</span
+				>{formatNames({
+					givenName: user.givenName ?? undefined,
+					familyName: user.familyName ?? undefined
+				})}</span
 			>
 		{/each}
 	</div>

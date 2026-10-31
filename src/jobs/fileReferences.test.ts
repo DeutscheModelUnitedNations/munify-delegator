@@ -4,7 +4,9 @@ import { fileReferenceColumns, orphanedObjectKeys } from './fileReferences';
 
 describe('fileReferenceColumns', () => {
 	test('finds every column pointing at a stored file', () => {
-		const columns = fileReferenceColumns(schema, schema.storedFile).map(({ column }) => column);
+		const columns = fileReferenceColumns({ tables: schema, storedFile: schema.storedFile }).map(
+			({ column }) => column
+		);
 		expect(columns).toEqual(
 			expect.arrayContaining([
 				schema.conference.logoFileId,
@@ -24,15 +26,15 @@ describe('orphanedObjectKeys', () => {
 
 	test('picks old objects no stored file knows', () => {
 		expect(
-			orphanedObjectKeys(
-				[
+			orphanedObjectKeys({
+				objects: [
 					{ key: 'known', lastModified: before },
 					{ key: 'orphan', lastModified: before },
 					{ key: 'fresh', lastModified: after }
 				],
-				new Set(['known']),
+				knownKeys: new Set(['known']),
 				cutoff
-			)
+			})
 		).toEqual(['orphan']);
 	});
 });

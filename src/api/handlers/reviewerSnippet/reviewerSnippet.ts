@@ -8,7 +8,7 @@ import {
 } from './reviewerSnippetPermissions';
 import { reviewerSnippetPubsub } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { deleteIfAllowed, queryAllowed } from '#api/services/authHelper/utils';
 
 registerReviewerSnippetAbilities();
@@ -38,7 +38,7 @@ schemaBuilder.mutationFields((t) => ({
 				where: { userId: id, name: args.name }
 			});
 			if (existing) {
-				throw apiError('CONFLICT', m.snippetNameTaken());
+				throw apiError({ code: 'CONFLICT', message: m.snippetNameTaken() });
 			}
 
 			const created = await db
@@ -50,7 +50,9 @@ schemaBuilder.mutationFields((t) => ({
 			reviewerSnippetPubsub.created();
 
 			return db.query.reviewerSnippet
-				.findFirst(query(await queryAllowed(ctx.abilities.reviewerSnippet, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.reviewerSnippet, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -63,16 +65,18 @@ schemaBuilder.mutationFields((t) => ({
 			content: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateReviewerSnippet(ctx, args.id);
+			await assertCanUpdateReviewerSnippet({ ctx, id: args.id });
 			await db
 				.update(schema.reviewerSnippet)
 				.set({ name: args.name, content: args.content })
-				.where(whereRows(schema.reviewerSnippet, { id: args.id }));
+				.where(whereRows({ table: schema.reviewerSnippet, filter: { id: args.id } }));
 
 			reviewerSnippetPubsub.updated(args.id);
 
 			return db.query.reviewerSnippet
-				.findFirst(query(await queryAllowed(ctx.abilities.reviewerSnippet, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.reviewerSnippet, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -81,7 +85,12 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'reviewerSnippet', args.id, { message: m.snippetNotFound });
+			await deleteIfAllowed({
+				ctx,
+				table: 'reviewerSnippet',
+				id: args.id,
+				options: { message: m.snippetNotFound }
+			});
 			reviewerSnippetPubsub.removed();
 
 			return true;

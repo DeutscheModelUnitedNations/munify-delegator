@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /** The signed-in user as the OIDC library parses it. */
 interface SessionUser {
 	sub: string;
@@ -9,31 +11,29 @@ interface SessionUser {
 	phone?: string | null;
 }
 
-const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
-
-const isStringArray = (value: unknown): value is string[] =>
-	Array.isArray(value) && value.every((item) => typeof item === 'string');
-
-const isSsoIdentities = (value: unknown): value is { issuer: string; identityId: string }[] =>
-	Array.isArray(value) &&
-	value.every(
-		(item) =>
-			item !== null &&
-			typeof item === 'object' &&
-			'issuer' in item &&
-			'identityId' in item &&
-			typeof item.issuer === 'string' &&
-			typeof item.identityId === 'string'
-	);
-
-/** A claim of the expected shape, or null when the provider omits or reshapes it. */
-const claim = <T>(value: unknown, is: (value: unknown) => value is T) => (is(value) ? value : null);
+/** Provider extras the library's parsed user does not model; null when omitted or reshaped. */
+const providerExtras = z.object({
+	password: z.boolean().nullable().catch(null),
+	mfa: z.array(z.string()).nullable().catch(null),
+	sso_identities: z
+		.array(z.object({ issuer: z.string(), identityId: z.string() }))
+		.nullable()
+		.catch(null),
+	social_identities: z.array(z.string()).nullable().catch(null)
+});
 
 /**
  * The session's user as the client sees it. Provider extras the library's parsed user does not
  * model are read off the raw token claims and narrowed rather than trusted.
  */
-export function offlineUserOf(user: SessionUser, claims: Record<string, unknown>) {
+export function offlineUserOf({
+	user,
+	claims
+}: {
+	user: SessionUser;
+	claims: Record<string, unknown>;
+}) {
+	const extras = providerExtras.parse(claims);
 	return {
 		sub: user.sub,
 		email: user.email ?? '',
@@ -42,9 +42,9 @@ export function offlineUserOf(user: SessionUser, claims: Record<string, unknown>
 		given_name: user.given_name ?? null,
 		locale: user.locale ?? null,
 		phone: user.phone ?? null,
-		hasPassword: claim(claims['password'], isBoolean),
-		mfaVerificationFactors: claim(claims['mfa'], isStringArray),
-		ssoIdentities: claim(claims['sso_identities'], isSsoIdentities),
-		socialIdentities: claim(claims['social_identities'], isStringArray)
+		hasPassword: extras.password,
+		mfaVerificationFactors: extras.mfa,
+		ssoIdentities: extras.sso_identities,
+		socialIdentities: extras.social_identities
 	};
 }

@@ -27,7 +27,7 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateSurveyQuestion(ctx, args.conferenceId);
+			await assertCanCreateSurveyQuestion({ ctx, conferenceId: args.conferenceId });
 
 			const created = await db
 				.insert(schema.surveyQuestion)
@@ -46,7 +46,9 @@ schemaBuilder.mutationFields((t) => ({
 			surveyQuestionPubsub.created();
 
 			return db.query.surveyQuestion
-				.findFirst(query(await queryAllowed(ctx.abilities.surveyQuestion, created.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.surveyQuestion, id: created.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -63,19 +65,26 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateIfAllowed(ctx, 'surveyQuestion', args.id, {
-				title: nullToUndefined(args.title),
-				description: nullToUndefined(args.description),
-				deadline: nullToUndefined(args.deadline),
-				draft: nullToUndefined(args.draft),
-				hidden: nullToUndefined(args.hidden),
-				showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
+			await updateIfAllowed({
+				ctx,
+				table: 'surveyQuestion',
+				id: args.id,
+				values: {
+					title: nullToUndefined(args.title),
+					description: nullToUndefined(args.description),
+					deadline: nullToUndefined(args.deadline),
+					draft: nullToUndefined(args.draft),
+					hidden: nullToUndefined(args.hidden),
+					showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
+				}
 			});
 
 			surveyQuestionPubsub.updated(args.id);
 
 			return db.query.surveyQuestion
-				.findFirst(query(await queryAllowed(ctx.abilities.surveyQuestion, args.id)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.surveyQuestion, id: args.id }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -84,7 +93,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed(ctx, 'surveyQuestion', args.id);
+			await deleteIfAllowed({ ctx, table: 'surveyQuestion', id: args.id });
 			surveyQuestionPubsub.removed();
 
 			return true;

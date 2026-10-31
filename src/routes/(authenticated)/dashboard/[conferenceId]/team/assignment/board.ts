@@ -162,20 +162,25 @@ export function seatedFrom(input: {
 	const delegations = new Map<string, BoardDelegation>();
 	const singleParticipants = new Map<string, BoardSingleParticipant>();
 	const reviews: BoardReviewRow[] = [];
-	const add = <T extends { id: string; applied: boolean }>(
-		into: Map<string, T>,
-		row: WithReview<T> | null | undefined
-	) => {
+	const add = <T extends { id: string; applied: boolean }>({
+		into,
+		row
+	}: {
+		into: Map<string, T>;
+		row: WithReview<T> | null | undefined;
+	}) => {
 		if (!row?.applied || into.has(row.id)) return;
 		// Kept with its review attached: the extra field is harmless to everything reading the row.
 		into.set(row.id, row);
 		if (row.assignmentReview) reviews.push(row.assignmentReview);
 	};
-	for (const row of input.delegations) add(delegations, row);
-	for (const unit of input.units) add(delegations, unit.sourceDelegation);
-	for (const row of input.singleParticipants) add(singleParticipants, row);
-	for (const unit of input.units) add(singleParticipants, unit.sourceSingleParticipant);
-	for (const role of input.draftSingleRoles) add(singleParticipants, role.singleParticipant);
+	for (const row of input.delegations) add({ into: delegations, row });
+	for (const unit of input.units) add({ into: delegations, row: unit.sourceDelegation });
+	for (const row of input.singleParticipants) add({ into: singleParticipants, row });
+	for (const unit of input.units)
+		add({ into: singleParticipants, row: unit.sourceSingleParticipant });
+	for (const role of input.draftSingleRoles)
+		add({ into: singleParticipants, row: role.singleParticipant });
 	return {
 		delegations: [...delegations.values()],
 		singleParticipants: [...singleParticipants.values()],
@@ -212,7 +217,7 @@ export function seatedSnapshot() {
 }
 
 /** The reviews of the given applications, live. */
-function fetchReviewsOf(conferenceId: string, ids: ApplicationIds) {
+function fetchReviewsOf({ conferenceId, ids }: { conferenceId: string; ids: ApplicationIds }) {
 	return fetchReviews({
 		...inConference(conferenceId),
 		OR: [
@@ -236,7 +241,13 @@ interface PoolSearch {
 /** The people and codenames a term matches, asked for once per term rather than once per page. */
 const resolvedSearches = new Map<string, Promise<PoolSearch>>();
 
-function resolveSearch(conferenceId: string, search: string): Promise<PoolSearch> | undefined {
+function resolveSearch({
+	conferenceId,
+	search
+}: {
+	conferenceId: string;
+	search: string;
+}): Promise<PoolSearch> | undefined {
 	const term = search.trim();
 	if (!term) return undefined;
 	const key = `${conferenceId}|${term}`;
@@ -303,10 +314,13 @@ export interface DelegationPoolFilter {
  * The delegations of a pool, as the backend filters them: applied, without a live role, of the
  * group size shown (any, without one) and, unless shown, not excluded by the team.
  */
-function delegationPoolWhere(
-	conferenceId: string,
-	filter: { size?: number; showDisqualified: boolean; search?: PoolSearch }
-): DelegationWhereInputArgument {
+function delegationPoolWhere({
+	conferenceId,
+	filter
+}: {
+	conferenceId: string;
+	filter: { size?: number; showDisqualified: boolean; search?: PoolSearch };
+}): DelegationWhereInputArgument {
 	return {
 		...(filter.search ? { AND: [searchedDelegations(filter.search)] } : {}),
 		...inConference(conferenceId),
@@ -352,15 +366,19 @@ interface PoolTier<T> {
  * The tiers of `REVIEW_TIERS` for the applications `scope` selects; `read` asks for one page of a
  * tier's reviews (`where`), by rating when `byRating`, with their applications.
  */
-function reviewTiersOf<T>(
-	conferenceId: string,
-	scope: AssignmentreviewWhereInputArgument,
+function reviewTiersOf<T>({
+	conferenceId,
+	scope,
+	read
+}: {
+	conferenceId: string;
+	scope: AssignmentreviewWhereInputArgument;
 	read: (
 		where: AssignmentreviewWhereInputArgument,
 		byRating: boolean,
 		paging: { limit: number; offset: number }
-	) => Promise<PoolEntry<T>[]>
-): PoolTier<T>[] {
+	) => Promise<PoolEntry<T>[]>;
+}): PoolTier<T>[] {
 	return REVIEW_TIERS.map(({ where: tier, byRating }) => {
 		const where = { ...inConference(conferenceId), ...tier, ...scope };
 		return {
@@ -377,7 +395,13 @@ function reviewTiersOf<T>(
  * need: whatever the draft or applying changes about these applications reaches it through
  * `fetchSeatedApplications`, which is.
  */
-async function tieredPage<T>(page: number, tiers: PoolTier<T>[]): Promise<PoolPage<T>> {
+async function tieredPage<T>({
+	page,
+	tiers
+}: {
+	page: number;
+	tiers: PoolTier<T>[];
+}): Promise<PoolPage<T>> {
 	const counts = await Promise.all(tiers.map((tier) => tier.count?.() ?? Infinity));
 	let skip = page * POOL_PAGE;
 	const entries: PoolEntry<T>[] = [];
@@ -397,20 +421,24 @@ async function tieredPage<T>(page: number, tiers: PoolTier<T>[]): Promise<PoolPa
 }
 
 /** One page of a pool of delegations, pinned and best rated first (see `tieredPage`). */
-export async function fetchDelegationPoolPage(
-	conferenceId: string,
-	{ search, ...rest }: DelegationPoolFilter,
-	page: number
-): Promise<PoolPage<BoardDelegation>> {
+export async function fetchDelegationPoolPage({
+	conferenceId,
+	filter: { search, ...rest },
+	page
+}: {
+	conferenceId: string;
+	filter: DelegationPoolFilter;
+	page: number;
+}): Promise<PoolPage<BoardDelegation>> {
 	const filter: ResolvedPoolFilter = {
 		...rest,
-		search: await resolveSearch(conferenceId, search)
+		search: await resolveSearch({ conferenceId, search })
 	};
-	const pool = delegationPoolWhere(conferenceId, filter);
-	const reviewTiers = reviewTiersOf(
+	const pool = delegationPoolWhere({ conferenceId, filter });
+	const reviewTiers = reviewTiersOf({
 		conferenceId,
-		{ delegation: pool },
-		async (where, byRating, paging) => {
+		scope: { delegation: pool },
+		read: async (where, byRating, paging) => {
 			const reviewed = await client.query.assignmentReviews({
 				__args: {
 					where,
@@ -424,23 +452,30 @@ export async function fetchDelegationPoolPage(
 				delegation ? [{ row: delegation, review }] : []
 			);
 		}
-	);
-	return tieredPage(page, [
-		...reviewTiers,
-		{
-			rows: async (paging) => {
-				const rest = await client.query.delegations({
-					__args: { where: { AND: [pool, outsideReviewTiers] }, orderBy: { id: 'asc' }, ...paging },
-					...delegationCard,
-					assignmentReview: reviewFields
-				});
-				return [...rest].map(({ assignmentReview, ...row }) => ({
-					row,
-					review: assignmentReview
-				}));
+	});
+	return tieredPage({
+		page,
+		tiers: [
+			...reviewTiers,
+			{
+				rows: async (paging) => {
+					const rest = await client.query.delegations({
+						__args: {
+							where: { AND: [pool, outsideReviewTiers] },
+							orderBy: { id: 'asc' },
+							...paging
+						},
+						...delegationCard,
+						assignmentReview: reviewFields
+					});
+					return [...rest].map(({ assignmentReview, ...row }) => ({
+						row,
+						review: assignmentReview
+					}));
+				}
 			}
-		}
-	]);
+		]
+	});
 }
 
 /**
@@ -450,14 +485,18 @@ export async function fetchDelegationPoolPage(
  * the draft (`poolCountsBesidesDraft` takes the touched delegations out), so a move on the board
  * asks for nothing new.
  */
-export async function fetchDelegationPoolSizes(
-	conferenceId: string,
-	showDisqualified: boolean,
+export async function fetchDelegationPoolSizes({
+	conferenceId,
+	showDisqualified,
 	searchTerm = ''
-) {
-	const search = await resolveSearch(conferenceId, searchTerm);
+}: {
+	conferenceId: string;
+	showDisqualified: boolean;
+	searchTerm?: string;
+}) {
+	const search = await resolveSearch({ conferenceId, search: searchTerm });
 	const where = (size?: number) =>
-		delegationPoolWhere(conferenceId, { size, showDisqualified, search });
+		delegationPoolWhere({ conferenceId, filter: { size, showDisqualified, search } });
 	const [largest] = await client.query.delegations({
 		__args: { where: where(), orderBy: { memberCount: 'desc' }, limit: 1 },
 		memberCount: true
@@ -470,10 +509,13 @@ export async function fetchDelegationPoolSizes(
 }
 
 /** The single participants of the pool: applied, without a custom role. */
-const singlePoolWhere = (
-	conferenceId: string,
-	search?: PoolSearch
-): SingleparticipantWhereInputArgument => ({
+const singlePoolWhere = ({
+	conferenceId,
+	search
+}: {
+	conferenceId: string;
+	search?: PoolSearch;
+}): SingleparticipantWhereInputArgument => ({
 	...(search ? { AND: [searchedSingles(search)] } : {}),
 	...singlesInConference(conferenceId),
 	applied: { eq: true },
@@ -481,16 +523,23 @@ const singlePoolWhere = (
 });
 
 /** One page of the single participants without a role, pinned and best rated first (see `tieredPage`). */
-export async function fetchSinglePoolPage(
-	conferenceId: string,
-	searchTerm: string,
-	page: number
-): Promise<PoolPage<BoardSingleParticipant>> {
-	const pool = singlePoolWhere(conferenceId, await resolveSearch(conferenceId, searchTerm));
-	const reviewTiers = reviewTiersOf(
+export async function fetchSinglePoolPage({
+	conferenceId,
+	searchTerm,
+	page
+}: {
+	conferenceId: string;
+	searchTerm: string;
+	page: number;
+}): Promise<PoolPage<BoardSingleParticipant>> {
+	const pool = singlePoolWhere({
 		conferenceId,
-		{ singleParticipant: pool },
-		async (where, byRating, paging) => {
+		search: await resolveSearch({ conferenceId, search: searchTerm })
+	});
+	const reviewTiers = reviewTiersOf({
+		conferenceId,
+		scope: { singleParticipant: pool },
+		read: async (where, byRating, paging) => {
 			const reviewed = await client.query.assignmentReviews({
 				__args: {
 					where,
@@ -506,23 +555,30 @@ export async function fetchSinglePoolPage(
 				singleParticipant ? [{ row: singleParticipant, review }] : []
 			);
 		}
-	);
-	return tieredPage(page, [
-		...reviewTiers,
-		{
-			rows: async (paging) => {
-				const rest = await client.query.singleParticipants({
-					__args: { where: { AND: [pool, outsideReviewTiers] }, orderBy: { id: 'asc' }, ...paging },
-					...singleCard,
-					assignmentReview: reviewFields
-				});
-				return [...rest].map(({ assignmentReview, ...row }) => ({
-					row,
-					review: assignmentReview
-				}));
+	});
+	return tieredPage({
+		page,
+		tiers: [
+			...reviewTiers,
+			{
+				rows: async (paging) => {
+					const rest = await client.query.singleParticipants({
+						__args: {
+							where: { AND: [pool, outsideReviewTiers] },
+							orderBy: { id: 'asc' },
+							...paging
+						},
+						...singleCard,
+						assignmentReview: reviewFields
+					});
+					return [...rest].map(({ assignmentReview, ...row }) => ({
+						row,
+						review: assignmentReview
+					}));
+				}
 			}
-		}
-	]);
+		]
+	});
 }
 
 export type PoolPage<T> = { rows: T[]; reviews: BoardReviewRow[] };

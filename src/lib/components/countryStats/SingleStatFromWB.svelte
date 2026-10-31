@@ -17,7 +17,7 @@
 	let value = $state<string>();
 
 	onMount(() => {
-		fetchWBStat(countryCode, wbIndicator)
+		fetchWBStat({ country: countryCode, indicator: wbIndicator })
 			.then((data) => {
 				if (!data) {
 					value = '–';

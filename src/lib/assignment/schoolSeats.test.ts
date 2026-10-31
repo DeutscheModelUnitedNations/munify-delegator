@@ -48,8 +48,8 @@ const members = (prefix: string, count: number) =>
 
 describe('schoolSeats', () => {
 	test('counts every person holding a role, single participants with a role once', () => {
-		const counts = schoolSeats(
-			{
+		const counts = schoolSeats({
+			view: {
 				groups: [
 					group({
 						key: 'd1',
@@ -82,7 +82,7 @@ describe('schoolSeats', () => {
 				]
 			},
 			lookups
-		);
+		});
 		expect(counts).toEqual([
 			{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 6 },
 			{ schoolId: 'luebeck', name: 'Schule Lübeck', seats: 1 }
@@ -98,11 +98,11 @@ describe('schoolSeats', () => {
 			target: { roleId: 'r1' }
 		});
 		// someone without a school counts for none, not for the delegation's majority
-		expect(schoolsOfGroup(merged, lookups)).toEqual([
+		expect(schoolsOfGroup({ group: merged, lookups })).toEqual([
 			{ school: luebeck, seats: 1 },
 			{ school: kiel, seats: 2 }
 		]);
-		expect(schoolSeats({ groups: [merged], singles: [] }, lookups)).toEqual([
+		expect(schoolSeats({ view: { groups: [merged], singles: [] }, lookups })).toEqual([
 			{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 2 },
 			{ schoolId: 'luebeck', name: 'Schule Lübeck', seats: 1 }
 		]);
@@ -116,11 +116,13 @@ describe('schoolsOverLimit', () => {
 	];
 
 	test('lists the schools past the limit only', () => {
-		expect(schoolsOverLimit(counts, 16).map((count) => count.schoolId)).toEqual(['kiel']);
+		expect(schoolsOverLimit({ counts, limit: 16 }).map((count) => count.schoolId)).toEqual([
+			'kiel'
+		]);
 	});
 
 	test('is empty without a limit', () => {
-		expect(schoolsOverLimit(counts, null)).toEqual([]);
+		expect(schoolsOverLimit({ counts, limit: null })).toEqual([]);
 	});
 });
 
@@ -128,26 +130,26 @@ describe('exceededBy', () => {
 	const counts = [{ schoolId: 'kiel', name: 'Gymnasium Kiel', seats: 15 }];
 
 	test('tells when the added seats go past the limit', () => {
-		expect(exceededBy(counts, [{ school: kiel, seats: 2 }], 16)).toEqual({
+		expect(exceededBy({ counts, added: [{ school: kiel, seats: 2 }], limit: 16 })).toEqual({
 			name: 'Gymnasium Kiel',
 			seats: 17,
 			limit: 16
 		});
-		expect(exceededBy(counts, [{ school: kiel, seats: 1 }], 16)).toBeUndefined();
+		expect(exceededBy({ counts, added: [{ school: kiel, seats: 1 }], limit: 16 })).toBeUndefined();
 	});
 
 	test('counts a school without seats yet from zero, and checks every school added', () => {
 		expect(
-			exceededBy(
+			exceededBy({
 				counts,
-				[
+				added: [
 					{ school: kiel, seats: 1 },
 					{ school: luebeck, seats: 3 }
 				],
-				2
-			)
+				limit: 2
+			})
 		).toEqual({ name: 'Gymnasium Kiel', seats: 16, limit: 2 });
-		expect(exceededBy([], [{ school: luebeck, seats: 3 }], 2)).toEqual({
+		expect(exceededBy({ counts: [], added: [{ school: luebeck, seats: 3 }], limit: 2 })).toEqual({
 			name: 'Schule Lübeck',
 			seats: 3,
 			limit: 2
@@ -155,8 +157,10 @@ describe('exceededBy', () => {
 	});
 
 	test('says nothing without a limit or added seats', () => {
-		expect(exceededBy(counts, [], 1)).toBeUndefined();
-		expect(exceededBy(counts, [{ school: kiel, seats: 5 }], null)).toBeUndefined();
-		expect(exceededBy(counts, [{ school: kiel, seats: 0 }], 1)).toBeUndefined();
+		expect(exceededBy({ counts, added: [], limit: 1 })).toBeUndefined();
+		expect(
+			exceededBy({ counts, added: [{ school: kiel, seats: 5 }], limit: null })
+		).toBeUndefined();
+		expect(exceededBy({ counts, added: [{ school: kiel, seats: 0 }], limit: 1 })).toBeUndefined();
 	});
 });

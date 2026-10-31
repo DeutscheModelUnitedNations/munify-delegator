@@ -46,7 +46,10 @@
 	const people = (users: { id: string; givenName: string | null; familyName: string | null }[]) =>
 		users.map((user) => ({
 			id: user.id,
-			label: formatNames(user.givenName ?? undefined, user.familyName ?? undefined)
+			label: formatNames({
+				givenName: user.givenName ?? undefined,
+				familyName: user.familyName ?? undefined
+			})
 		}));
 
 	/** Each check with the rule the API applied (`conferencePlausibility`) and who it found. */
@@ -86,7 +89,7 @@
 			.filter((pair) => pair.status === 'OPEN')
 			.map((pair) => ({
 				id: pair.id,
-				label: `${formatNames(pair.user.givenName, pair.user.familyName)} ↔ ${formatNames(pair.candidate.givenName, pair.candidate.familyName)}`
+				label: `${formatNames({ givenName: pair.user.givenName, familyName: pair.user.familyName })} ↔ ${formatNames({ givenName: pair.candidate.givenName, familyName: pair.candidate.familyName })}`
 			}))
 	);
 

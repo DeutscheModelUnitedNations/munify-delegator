@@ -13,26 +13,33 @@ export async function addResolutions(cs: ConferenceSeed) {
 	const conference = cs.conference.longTitle ?? cs.conference.title;
 	let number = 0;
 
-	async function add(
-		committee: { id: string; name: string } | null,
-		topic: string,
-		headline: string
-	) {
+	async function add({
+		committee,
+		topic,
+		headline
+	}: {
+		committee: { id: string; name: string } | null;
+		topic: string;
+		headline: string;
+	}) {
 		number++;
 		const fileName = `Resolution ${number} - ${topic}.pdf`;
-		const fileId = addSeedFile(cs.batch, {
-			conferenceId: cs.id,
-			kind: 'resolution',
-			field: 'content',
-			bytes: await resolutionPdf({
-				conference,
-				committee: committee?.name ?? null,
-				headline,
-				topic,
-				number: `Res. ${number}/${new Date().getFullYear()}`
-			}),
-			mimeType: 'application/pdf',
-			fileName
+		const fileId = addSeedFile({
+			batch: cs.batch,
+			file: {
+				conferenceId: cs.id,
+				kind: 'resolution',
+				field: 'content',
+				bytes: await resolutionPdf({
+					conference,
+					committee: committee?.name ?? null,
+					headline,
+					topic,
+					number: `Res. ${number}/${new Date().getFullYear()}`
+				}),
+				mimeType: 'application/pdf',
+				fileName
+			}
 		});
 		cs.batch.resolution.push({
 			id: cs.rowId(`resolution-${number}`),
@@ -48,8 +55,12 @@ export async function addResolutions(cs: ConferenceSeed) {
 		const headline = row?.resolutionHeadline ?? `Resolution der ${committee.name}`;
 		for (const agendaItemId of committee.agendaItemIds) {
 			const item = cs.batch.committeeAgendaItem.find((a) => a.id === agendaItemId);
-			if (item) await add(committee, item.title, headline);
+			if (item) await add({ committee, topic: item.title, headline });
 		}
 	}
-	await add(null, 'Abschlusserklärung der Konferenz', 'Gemeinsame Abschlusserklärung');
+	await add({
+		committee: null,
+		topic: 'Abschlusserklärung der Konferenz',
+		headline: 'Gemeinsame Abschlusserklärung'
+	});
 }

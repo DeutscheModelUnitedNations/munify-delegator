@@ -44,7 +44,11 @@ describe('download helpers', () => {
 
 	test('writes plain UTF-8 CSV with the stored delimiter', async () => {
 		useSettings(';', 'utf-8');
-		downloadCSV(['Name', 'Land'], [['Erika', 'Deutschland']], 'out.csv');
+		downloadCSV({
+			header: ['Name', 'Land'],
+			data: [['Erika', 'Deutschland']],
+			filename: 'out.csv'
+		});
 
 		const [{ blob, filename }] = downloaded;
 		expect(filename).toBe('out.csv');
@@ -55,13 +59,13 @@ describe('download helpers', () => {
 
 	test('lets the caller override the delimiter', async () => {
 		useSettings(';', 'utf-8');
-		downloadCSV(['a', 'b'], [], 'out.csv', '\t');
+		downloadCSV({ header: ['a', 'b'], data: [], filename: 'out.csv', overrideDelimiter: '\t' });
 		expect(await downloaded[0].blob.text()).toBe('a\tb\n');
 	});
 
 	test('prefixes a byte order mark for Excel', async () => {
 		useSettings(',', 'utf-8-bom');
-		downloadCSV(['ä'], [], 'out.csv');
+		downloadCSV({ header: ['ä'], data: [], filename: 'out.csv' });
 
 		const { blob } = downloaded[0];
 		expect(blob.type).toBe('text/csv;charset=utf-8');
@@ -70,7 +74,7 @@ describe('download helpers', () => {
 
 	test('encodes ISO-8859-1 one byte per character, replacing what it cannot hold', async () => {
 		useSettings(',', 'iso-8859-1');
-		downloadCSV(['ä€'], [], 'out.csv');
+		downloadCSV({ header: ['ä€'], data: [], filename: 'out.csv' });
 
 		const { blob } = downloaded[0];
 		expect(blob.type).toBe('text/csv;charset=iso-8859-1');
@@ -78,7 +82,7 @@ describe('download helpers', () => {
 	});
 
 	test('downloads JSON, pretty-printed', async () => {
-		downloadJSON({ a: 1 }, 'data.json');
+		downloadJSON({ data: { a: 1 }, filename: 'data.json' });
 		const [{ blob, filename }] = downloaded;
 		expect(filename).toBe('data.json');
 		expect(blob.type).toBe('application/json');
@@ -86,7 +90,7 @@ describe('download helpers', () => {
 	});
 
 	test('downloads PDF bytes', async () => {
-		downloadPDF(new Uint8Array([37, 80, 68, 70]), 'doc.pdf');
+		downloadPDF({ bytes: new Uint8Array([37, 80, 68, 70]), filename: 'doc.pdf' });
 		const [{ blob, filename }] = downloaded;
 		expect(filename).toBe('doc.pdf');
 		expect(blob.type).toBe('application/pdf');

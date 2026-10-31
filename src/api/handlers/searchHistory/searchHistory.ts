@@ -22,8 +22,8 @@ schemaBuilder.mutationFields((t) => ({
 			label: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const userId = await assertCanRecordSearch(ctx, args.conferenceId);
-			await recordSearch(userId, args);
+			const userId = await assertCanRecordSearch({ ctx, conferenceId: args.conferenceId });
+			await recordSearch({ userId, args });
 
 			searchHistoryPubsub.created();
 			return true;

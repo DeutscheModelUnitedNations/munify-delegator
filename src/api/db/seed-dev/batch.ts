@@ -113,7 +113,13 @@ export function emptyBatch(): SeedBatch {
 /** Postgres takes at most 65535 parameters per statement; 500 rows stay well below that. */
 const CHUNK = 500;
 
-async function insertChunked<T>(rows: T[], insert: (chunk: T[]) => Promise<unknown>) {
+async function insertChunked<T>({
+	rows,
+	insert
+}: {
+	rows: T[];
+	insert: (chunk: T[]) => Promise<unknown>;
+}) {
 	for (let start = 0; start < rows.length; start += CHUNK) {
 		await insert(rows.slice(start, start + CHUNK));
 	}
@@ -144,98 +150,188 @@ function conferenceFileColumns(row: typeof schema.conference.$inferInsert) {
 }
 
 /** Writes the batch, parents before children. */
-export async function insertBatch(db: NodePgDatabase, batch: SeedBatch) {
+export async function insertBatch({ db, batch }: { db: NodePgDatabase; batch: SeedBatch }) {
 	const s = schema;
-	await insertChunked(batch.nation, (rows) => db.insert(s.nation).values(rows));
-	await insertChunked(batch.user, (rows) => db.insert(s.user).values(rows));
-	await insertChunked(batch.reviewerSnippet, (rows) => db.insert(s.reviewerSnippet).values(rows));
-	await insertChunked(batch.school, (rows) => db.insert(s.school).values(rows));
+	await insertChunked({ rows: batch.nation, insert: (rows) => db.insert(s.nation).values(rows) });
+	await insertChunked({ rows: batch.user, insert: (rows) => db.insert(s.user).values(rows) });
+	await insertChunked({
+		rows: batch.reviewerSnippet,
+		insert: (rows) => db.insert(s.reviewerSnippet).values(rows)
+	});
+	await insertChunked({ rows: batch.school, insert: (rows) => db.insert(s.school).values(rows) });
 	// Conferences and their files point at each other: the conference goes in without its file
 	// columns, the files after it, and the columns last.
 	const conferenceFiles = batch.conference.map(conferenceFileColumns);
-	await insertChunked(batch.conference, (rows) =>
-		db.insert(s.conference).values(rows.map((row) => ({ ...row, ...nullFileColumns })))
-	);
-	await insertChunked(batch.storedFile, (rows) => db.insert(s.storedFile).values(rows));
+	await insertChunked({
+		rows: batch.conference,
+		insert: (rows) =>
+			db.insert(s.conference).values(rows.map((row) => ({ ...row, ...nullFileColumns })))
+	});
+	await insertChunked({
+		rows: batch.storedFile,
+		insert: (rows) => db.insert(s.storedFile).values(rows)
+	});
 	for (const [index, row] of batch.conference.entries()) {
 		const files = conferenceFiles[index];
 		if (row.id && files && Object.values(files).some(Boolean)) {
 			await db
 				.update(s.conference)
 				.set(files)
-				.where(whereRows(s.conference, { id: row.id }));
+				.where(whereRows({ table: s.conference, filter: { id: row.id } }));
 		}
 	}
-	await insertChunked(batch.committee, (rows) => db.insert(s.committee).values(rows));
-	await insertChunked(batch.conferenceRole, (rows) => db.insert(s.conferenceRole).values(rows));
-	await insertChunked(batch.committeeToRole, (rows) => db.insert(s.committeeToRole).values(rows));
-	await insertChunked(batch.committeeAgendaItem, (rows) =>
-		db.insert(s.committeeAgendaItem).values(rows)
-	);
-	await insertChunked(batch.resolution, (rows) => db.insert(s.resolution).values(rows));
-	await insertChunked(batch.conferenceParticipant, (rows) =>
-		db.insert(s.conferenceParticipant).values(rows)
-	);
-	await insertChunked(batch.delegation, (rows) => db.insert(s.delegation).values(rows));
-	await insertChunked(batch.delegationMember, (rows) => db.insert(s.delegationMember).values(rows));
-	await insertChunked(batch.roleApplication, (rows) => db.insert(s.roleApplication).values(rows));
-	await insertChunked(batch.singleParticipant, (rows) =>
-		db.insert(s.singleParticipant).values(rows)
-	);
-	await insertChunked(batch.singleParticipantRoleWish, (rows) =>
-		db.insert(s.singleParticipantRoleWish).values(rows)
-	);
-	await insertChunked(batch.conferenceSupervisor, (rows) =>
-		db.insert(s.conferenceSupervisor).values(rows)
-	);
-	await insertChunked(batch.supervision, (rows) => db.insert(s.supervision).values(rows));
-	await insertChunked(batch.teamMember, (rows) => db.insert(s.teamMember).values(rows));
-	await insertChunked(batch.teamMemberInvitation, (rows) =>
-		db.insert(s.teamMemberInvitation).values(rows)
-	);
-	await insertChunked(batch.waitingListEntry, (rows) => db.insert(s.waitingListEntry).values(rows));
-	await insertChunked(batch.attendanceSession, (rows) =>
-		db.insert(s.attendanceSession).values(rows)
-	);
-	await insertChunked(batch.attendanceEntry, (rows) => db.insert(s.attendanceEntry).values(rows));
-	await insertChunked(batch.paymentTransaction, (rows) =>
-		db.insert(s.paymentTransaction).values(rows)
-	);
-	await insertChunked(batch.userReferenceInPaymentTransaction, (rows) =>
-		db.insert(s.userReferenceInPaymentTransaction).values(rows)
-	);
-	await insertChunked(batch.paper, (rows) => db.insert(s.paper).values(rows));
-	await insertChunked(batch.paperVersion, (rows) => db.insert(s.paperVersion).values(rows));
-	await insertChunked(batch.paperReview, (rows) => db.insert(s.paperReview).values(rows));
-	await insertChunked(batch.surveyQuestion, (rows) => db.insert(s.surveyQuestion).values(rows));
-	await insertChunked(batch.surveyOption, (rows) => db.insert(s.surveyOption).values(rows));
-	await insertChunked(batch.surveyAnswer, (rows) => db.insert(s.surveyAnswer).values(rows));
-	await insertChunked(batch.place, (rows) => db.insert(s.place).values(rows));
-	await insertChunked(batch.calendarDay, (rows) => db.insert(s.calendarDay).values(rows));
-	await insertChunked(batch.calendarTrack, (rows) => db.insert(s.calendarTrack).values(rows));
-	await insertChunked(batch.calendarEntry, (rows) => db.insert(s.calendarEntry).values(rows));
-	await insertChunked(batch.calendarEntryToCalendarTrack, (rows) =>
-		db.insert(s.calendarEntryToCalendarTrack).values(rows)
-	);
-	await insertChunked(batch.assignmentReview, (rows) => db.insert(s.assignmentReview).values(rows));
-	await insertChunked(batch.assignmentUnit, (rows) => db.insert(s.assignmentUnit).values(rows));
-	await insertChunked(batch.assignmentUnitMember, (rows) =>
-		db.insert(s.assignmentUnitMember).values(rows)
-	);
-	await insertChunked(batch.assignmentSingleRole, (rows) =>
-		db.insert(s.assignmentSingleRole).values(rows)
-	);
-	await insertChunked(batch.assignmentWeights, (rows) =>
-		db.insert(s.assignmentWeights).values(rows)
-	);
-	await insertChunked(batch.possibleDuplicate, (rows) =>
-		db.insert(s.possibleDuplicate).values(rows)
-	);
-	await insertChunked(batch.conferenceEmailSetting, (rows) =>
-		db.insert(s.conferenceEmailSetting).values(rows)
-	);
-	await insertChunked(batch.conferenceEmailText, (rows) =>
-		db.insert(s.conferenceEmailText).values(rows)
-	);
-	await insertChunked(batch.emailLog, (rows) => db.insert(s.emailLog).values(rows));
+	await insertChunked({
+		rows: batch.committee,
+		insert: (rows) => db.insert(s.committee).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceRole,
+		insert: (rows) => db.insert(s.conferenceRole).values(rows)
+	});
+	await insertChunked({
+		rows: batch.committeeToRole,
+		insert: (rows) => db.insert(s.committeeToRole).values(rows)
+	});
+	await insertChunked({
+		rows: batch.committeeAgendaItem,
+		insert: (rows) => db.insert(s.committeeAgendaItem).values(rows)
+	});
+	await insertChunked({
+		rows: batch.resolution,
+		insert: (rows) => db.insert(s.resolution).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceParticipant,
+		insert: (rows) => db.insert(s.conferenceParticipant).values(rows)
+	});
+	await insertChunked({
+		rows: batch.delegation,
+		insert: (rows) => db.insert(s.delegation).values(rows)
+	});
+	await insertChunked({
+		rows: batch.delegationMember,
+		insert: (rows) => db.insert(s.delegationMember).values(rows)
+	});
+	await insertChunked({
+		rows: batch.roleApplication,
+		insert: (rows) => db.insert(s.roleApplication).values(rows)
+	});
+	await insertChunked({
+		rows: batch.singleParticipant,
+		insert: (rows) => db.insert(s.singleParticipant).values(rows)
+	});
+	await insertChunked({
+		rows: batch.singleParticipantRoleWish,
+		insert: (rows) => db.insert(s.singleParticipantRoleWish).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceSupervisor,
+		insert: (rows) => db.insert(s.conferenceSupervisor).values(rows)
+	});
+	await insertChunked({
+		rows: batch.supervision,
+		insert: (rows) => db.insert(s.supervision).values(rows)
+	});
+	await insertChunked({
+		rows: batch.teamMember,
+		insert: (rows) => db.insert(s.teamMember).values(rows)
+	});
+	await insertChunked({
+		rows: batch.teamMemberInvitation,
+		insert: (rows) => db.insert(s.teamMemberInvitation).values(rows)
+	});
+	await insertChunked({
+		rows: batch.waitingListEntry,
+		insert: (rows) => db.insert(s.waitingListEntry).values(rows)
+	});
+	await insertChunked({
+		rows: batch.attendanceSession,
+		insert: (rows) => db.insert(s.attendanceSession).values(rows)
+	});
+	await insertChunked({
+		rows: batch.attendanceEntry,
+		insert: (rows) => db.insert(s.attendanceEntry).values(rows)
+	});
+	await insertChunked({
+		rows: batch.paymentTransaction,
+		insert: (rows) => db.insert(s.paymentTransaction).values(rows)
+	});
+	await insertChunked({
+		rows: batch.userReferenceInPaymentTransaction,
+		insert: (rows) => db.insert(s.userReferenceInPaymentTransaction).values(rows)
+	});
+	await insertChunked({ rows: batch.paper, insert: (rows) => db.insert(s.paper).values(rows) });
+	await insertChunked({
+		rows: batch.paperVersion,
+		insert: (rows) => db.insert(s.paperVersion).values(rows)
+	});
+	await insertChunked({
+		rows: batch.paperReview,
+		insert: (rows) => db.insert(s.paperReview).values(rows)
+	});
+	await insertChunked({
+		rows: batch.surveyQuestion,
+		insert: (rows) => db.insert(s.surveyQuestion).values(rows)
+	});
+	await insertChunked({
+		rows: batch.surveyOption,
+		insert: (rows) => db.insert(s.surveyOption).values(rows)
+	});
+	await insertChunked({
+		rows: batch.surveyAnswer,
+		insert: (rows) => db.insert(s.surveyAnswer).values(rows)
+	});
+	await insertChunked({ rows: batch.place, insert: (rows) => db.insert(s.place).values(rows) });
+	await insertChunked({
+		rows: batch.calendarDay,
+		insert: (rows) => db.insert(s.calendarDay).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarTrack,
+		insert: (rows) => db.insert(s.calendarTrack).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarEntry,
+		insert: (rows) => db.insert(s.calendarEntry).values(rows)
+	});
+	await insertChunked({
+		rows: batch.calendarEntryToCalendarTrack,
+		insert: (rows) => db.insert(s.calendarEntryToCalendarTrack).values(rows)
+	});
+	await insertChunked({
+		rows: batch.assignmentReview,
+		insert: (rows) => db.insert(s.assignmentReview).values(rows)
+	});
+	await insertChunked({
+		rows: batch.assignmentUnit,
+		insert: (rows) => db.insert(s.assignmentUnit).values(rows)
+	});
+	await insertChunked({
+		rows: batch.assignmentUnitMember,
+		insert: (rows) => db.insert(s.assignmentUnitMember).values(rows)
+	});
+	await insertChunked({
+		rows: batch.assignmentSingleRole,
+		insert: (rows) => db.insert(s.assignmentSingleRole).values(rows)
+	});
+	await insertChunked({
+		rows: batch.assignmentWeights,
+		insert: (rows) => db.insert(s.assignmentWeights).values(rows)
+	});
+	await insertChunked({
+		rows: batch.possibleDuplicate,
+		insert: (rows) => db.insert(s.possibleDuplicate).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceEmailSetting,
+		insert: (rows) => db.insert(s.conferenceEmailSetting).values(rows)
+	});
+	await insertChunked({
+		rows: batch.conferenceEmailText,
+		insert: (rows) => db.insert(s.conferenceEmailText).values(rows)
+	});
+	await insertChunked({
+		rows: batch.emailLog,
+		insert: (rows) => db.insert(s.emailLog).values(rows)
+	});
 }

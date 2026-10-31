@@ -66,10 +66,13 @@ function fromTypable(text: string): Uint8Array<ArrayBuffer> | null {
 }
 
 /** The bytes that get signed: the id and the issue time, under a label no other signature uses. */
-export function identityCodeMessage(
-	userId: string,
-	issuedAtSeconds: number
-): Uint8Array<ArrayBuffer> {
+export function identityCodeMessage({
+	userId,
+	issuedAtSeconds
+}: {
+	userId: string;
+	issuedAtSeconds: number;
+}): Uint8Array<ArrayBuffer> {
 	return Uint8Array.from(new TextEncoder().encode(`${DOMAIN}\n${userId}\n${issuedAtSeconds}`));
 }
 
@@ -78,7 +81,15 @@ function numberBytes(value: number) {
 	return Uint8Array.from([value >>> 24, (value >>> 16) & 255, (value >>> 8) & 255, value & 255]);
 }
 
-export function encodeIdentityCode(userId: string, issuedAtSeconds: number, signature: Uint8Array) {
+export function encodeIdentityCode({
+	userId,
+	issuedAtSeconds,
+	signature
+}: {
+	userId: string;
+	issuedAtSeconds: number;
+	signature: Uint8Array;
+}) {
 	return `${PREFIX}.${userId}.${toTypable(numberBytes(issuedAtSeconds))}.${toTypable(signature)}`;
 }
 
@@ -104,11 +115,15 @@ export type IdentityCodeCheck =
 	{ valid: true; userId: string } | { valid: false; reason: 'malformed' | 'forged' | 'expired' };
 
 /** Checks a scanned code against the deployment's public key (the raw key, base64url). */
-export async function verifyIdentityCode(
-	code: string,
-	publicKey: string,
+export async function verifyIdentityCode({
+	code,
+	publicKey,
 	now = Date.now()
-): Promise<IdentityCodeCheck> {
+}: {
+	code: string;
+	publicKey: string;
+	now?: number;
+}): Promise<IdentityCodeCheck> {
 	const parsed = parseIdentityCode(code);
 	if (!parsed) return { valid: false, reason: 'malformed' };
 
@@ -119,7 +134,7 @@ export async function verifyIdentityCode(
 		'Ed25519',
 		key,
 		parsed.signature,
-		identityCodeMessage(parsed.userId, parsed.issuedAtSeconds)
+		identityCodeMessage({ userId: parsed.userId, issuedAtSeconds: parsed.issuedAtSeconds })
 	);
 	if (!genuine) return { valid: false, reason: 'forged' };
 

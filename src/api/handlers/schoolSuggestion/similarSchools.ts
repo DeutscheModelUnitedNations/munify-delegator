@@ -72,10 +72,13 @@ function blockByToken(normalized: readonly string[]): Map<string, number[]> {
 }
 
 /** Every unordered pair inside the blocks that is small enough to be worth comparing, once. */
-function* candidatePairs(
-	blocks: Map<string, number[]>,
-	total: number
-): Generator<[number, number]> {
+function* candidatePairs({
+	blocks,
+	total
+}: {
+	blocks: Map<string, number[]>;
+	total: number;
+}): Generator<[number, number]> {
 	const seen = new Set<number>();
 	for (const block of blocks.values()) {
 		if (block.length < 2 || block.length > MAX_BLOCK_SIZE) continue;
@@ -101,7 +104,10 @@ export function findSimilarSchools(schools: readonly SchoolVariant[]): SchoolSug
 	const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
 	const lowest = new Map<number, number>();
 
-	for (const [i, j] of candidatePairs(blockByToken(normalized), schools.length)) {
+	for (const [i, j] of candidatePairs({
+		blocks: blockByToken(normalized),
+		total: schools.length
+	})) {
 		const score = similarity(normalized[i], normalized[j]);
 		if (score < SIMILARITY_THRESHOLD) continue;
 		const [ri, rj] = [find(i), find(j)];

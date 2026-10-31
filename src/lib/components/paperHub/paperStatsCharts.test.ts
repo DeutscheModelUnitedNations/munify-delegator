@@ -30,20 +30,20 @@ describe('paper type labels and colors', () => {
 
 describe('committeeTooltip', () => {
 	test('nothing for a single point or an empty list', () => {
-		expect(committeeTooltip(point('PP - Accepted', 1), ['PP'])).toBe('');
-		expect(committeeTooltip([], ['PP'])).toBe('');
+		expect(committeeTooltip({ params: point('PP - Accepted', 1), typeLabels: ['PP'] })).toBe('');
+		expect(committeeTooltip({ params: [], typeLabels: ['PP'] })).toBe('');
 	});
 
 	test('lists each type with papers, and its non-empty statuses', () => {
-		const tooltip = committeeTooltip(
-			[
+		const tooltip = committeeTooltip({
+			params: [
 				point('PP - Submitted', 2),
 				point('PP - Accepted', 0),
 				point('PP - Revised', 'x'),
 				point('WP - Submitted', 0)
 			],
-			['PP', 'WP']
-		);
+			typeLabels: ['PP', 'WP']
+		});
 		expect(tooltip).toBe(
 			'<strong>GA</strong><br/><br/><strong>PP: 2</strong><br/>* Submitted: 2<br/>'
 		);
@@ -52,7 +52,7 @@ describe('committeeTooltip', () => {
 	test('a point without a category', () => {
 		const { axisValue, ...withoutAxis } = point('PP - Submitted', 1);
 		expect(axisValue).toBe('GA');
-		expect(committeeTooltip([withoutAxis], ['PP'])).toBe(
+		expect(committeeTooltip({ params: [withoutAxis], typeLabels: ['PP'] })).toBe(
 			'<strong>undefined</strong><br/><br/><strong>PP: 1</strong><br/>* Submitted: 1<br/>'
 		);
 	});

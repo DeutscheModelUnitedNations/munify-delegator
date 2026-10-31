@@ -33,7 +33,7 @@ export function createPaymentParticipantSelection(payable: () => PayableUser[]) 
 		return selected.some((user) => user.id === userId);
 	}
 
-	function setSelected(user: PayableUser, isSelectedNow: boolean) {
+	function setSelected({ user, isSelectedNow }: { user: PayableUser; isSelectedNow: boolean }) {
 		if (locked()) return;
 		const ids = selected.map((x) => x.id).filter((id) => id !== user.id);
 		pickedIds = isSelectedNow ? [...ids, user.id] : ids;

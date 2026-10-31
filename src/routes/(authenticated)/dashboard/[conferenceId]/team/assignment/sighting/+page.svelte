@@ -84,11 +84,11 @@
 	// `SightingDeckWindow`). The card asked for is read once, when the deck is set up.
 	const [loaded, startConference] = $derived(
 		await Promise.all([
-			loadSightingDeck(
+			loadSightingDeck({
 				conferenceId,
-				{ status, school },
-				untrack(() => view.application)
-			),
+				filter: { status, school },
+				currentId: untrack(() => view.application)
+			}),
 			fetchStartConference(conferenceId)
 		])
 	);
@@ -107,9 +107,13 @@
 		return () => clearTimeout(timer);
 	});
 	const hits = $derived(
-		searchTerm ? await searchApplications(conferenceId, searchTerm, { status, school }) : undefined
+		searchTerm
+			? await searchApplications({ conferenceId, search: searchTerm, filter: { status, school } })
+			: undefined
 	);
-	const searchShown = $derived(searchHitEntries(hits, searchTerm, codenamize));
+	const searchShown = $derived(
+		searchHitEntries({ hits, search: searchTerm, codenameOf: codenamize })
+	);
 	// Typing has not paused yet, or the backend has not answered
 	const searchBusy = $derived(
 		searching && ((params.search ?? '').trim() !== searchTerm || $effect.pending() > 0)
@@ -120,10 +124,12 @@
 	const currentKind = $derived(current ? entryKind(current.kind) : undefined);
 	const currentId = $derived(current?.id);
 	const detail = $derived(
-		currentKind && currentId ? await fetchApplication(currentKind, currentId) : undefined
+		currentKind && currentId
+			? await fetchApplication({ kind: currentKind, id: currentId })
+			: undefined
 	);
 	const fetchedReview = $derived(
-		currentKind && currentId ? await fetchReview(currentKind, currentId) : undefined
+		currentKind && currentId ? await fetchReview({ kind: currentKind, id: currentId }) : undefined
 	);
 	// What this browser saved shows at once, ahead of what the backend had when the card was read.
 	const review = $derived((currentId && savedReview(currentId)) || fetchedReview);
@@ -131,7 +137,10 @@
 		detail &&
 			(detail.kind === 'single'
 				? singleApplication(detail.single)
-				: delegationApplication(detail.delegation, getFullTranslatedCountryNameFromISO3Code))
+				: delegationApplication({
+						delegation: detail.delegation,
+						nationName: getFullTranslatedCountryNameFromISO3Code
+					}))
 	);
 
 	// The cards around the one on top are what the next key presses open; they are read ahead,
@@ -139,7 +148,7 @@
 	const PREFETCH_AHEAD = 5;
 	const PREFETCH_BEHIND = 2;
 	$effect(() => {
-		prefetchCards(sighting.upcoming(PREFETCH_AHEAD, PREFETCH_BEHIND));
+		prefetchCards(sighting.upcoming({ ahead: PREFETCH_AHEAD, behind: PREFETCH_BEHIND }));
 	});
 
 	// Which way the next card slides in from: forward comes from the right, back from the left.
@@ -167,8 +176,11 @@
 	async function reviewCurrent(change: Partial<SightingReview>) {
 		if (!currentKind || !currentId) return;
 		const deckWindow = sighting;
-		deckWindow.recolour(currentId, { flagged: false, disqualified: false, ...review, ...change });
-		await saveReview(currentKind, currentId, review, change);
+		deckWindow.recolour({
+			id: currentId,
+			review: { flagged: false, disqualified: false, ...review, ...change }
+		});
+		await saveReview({ kind: currentKind, id: currentId, review, change });
 		deckWindow.refresh();
 	}
 

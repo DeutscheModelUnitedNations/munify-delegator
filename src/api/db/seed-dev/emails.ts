@@ -118,7 +118,7 @@ export function addEmails(cs: ConferenceSeed) {
 
 	for (const entry of log) {
 		const email = emails.get(entry.userId);
-		if (email) cs.batch.emailLog.push(logRow(cs, entry, email));
+		if (email) cs.batch.emailLog.push(logRow({ cs, entry, email }));
 	}
 
 	cs.batch.conferenceEmailText.push({
@@ -150,7 +150,7 @@ const STATUS_DETAILS: Record<
 	SENDING: () => ({ attempts: 1, error: null, sentAt: null })
 };
 
-function logRow(cs: ConferenceSeed, entry: LogPlan, email: string) {
+function logRow({ cs, entry, email }: { cs: ConferenceSeed; entry: LogPlan; email: string }) {
 	const at = new Date(Date.now() - entry.daysAgo * DAY);
 	return {
 		id: cs.rowId(`email-${entry.kind}-${entry.userId}`),

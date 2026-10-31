@@ -34,9 +34,13 @@
 	);
 
 	const nameOf = (user: { givenName: string; familyName: string }) =>
-		formatNames(user.givenName, user.familyName, {
-			givenNameUppercase: false,
-			familyNameUppercase: false
+		formatNames({
+			givenName: user.givenName,
+			familyName: user.familyName,
+			options: {
+				givenNameUppercase: false,
+				familyNameUppercase: false
+			}
 		});
 </script>
 

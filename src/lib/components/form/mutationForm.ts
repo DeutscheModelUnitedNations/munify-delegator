@@ -12,12 +12,17 @@ export function mutationForm<
 	T extends Record<string, unknown>,
 	M,
 	In extends Record<string, unknown> = T
->(
-	initial: SuperValidated<T, M, In>,
-	validators: NonNullable<FormOptions<T, M, In>['validators']>,
-	save: (data: T) => Promise<unknown>,
-	{ toastProgress = true }: { toastProgress?: boolean } = {}
-) {
+>({
+	initial,
+	validators,
+	save,
+	toastProgress = true
+}: {
+	initial: SuperValidated<T, M, In>;
+	validators: NonNullable<FormOptions<T, M, In>['validators']>;
+	save: (data: T) => Promise<unknown>;
+	toastProgress?: boolean;
+}) {
 	return superForm<T, M, In>(initial, {
 		SPA: true,
 		resetForm: false,

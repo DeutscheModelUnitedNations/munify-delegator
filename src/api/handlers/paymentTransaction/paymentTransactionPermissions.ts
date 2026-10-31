@@ -10,7 +10,7 @@ import {
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 export function registerPaymentTransactionAbilities() {
 	// Ported from abilities/entities/paymentTransaction.ts
@@ -19,7 +19,7 @@ export function registerPaymentTransactionAbilities() {
 	// Only project management and participant care of the conference, as in the CASL rules.
 	abilityBuilder.paymentTransaction
 		.allow(['read', 'update'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
 	// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
 	// its creator, whose reference is the whole point of the payment pages. The legacy resolver
@@ -35,18 +35,27 @@ export function registerPaymentTransactionAbilities() {
  * the participants `paymentFor`. The payer has to take part in the conference too. Answers with
  * the participant rows of the payer and of everybody the payment covers (each once).
  */
-export async function assertCanCreatePaymentTransaction(
-	ctx: ApiContext,
-	args: { conferenceId: string; userId: string; paymentFor: readonly string[] }
-) {
+export async function assertCanCreatePaymentTransaction({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { conferenceId: string; userId: string; paymentFor: readonly string[] };
+}) {
 	const caller = ctx.mustBeLoggedIn().sub;
 
 	// A reference is made by its payer, for people that payer can see in the conference -
 	// themselves, their delegation, the participants they supervise and the supervisors they
 	// share a student with. Participant care may make one on anybody's behalf.
-	if (!(await hasTeamPermission(ctx, args.conferenceId, 'manageParticipants'))) {
+	if (
+		!(await hasTeamPermission({
+			ctx,
+			conferenceId: args.conferenceId,
+			permission: 'manageParticipants'
+		}))
+	) {
 		if (args.userId !== caller) {
-			throw apiError('FORBIDDEN', m.paymentOnlyOwnName());
+			throw apiError({ code: 'FORBIDDEN', message: m.paymentOnlyOwnName() });
 		}
 		// in this conference: whom the caller knows from another one is no reason to pay for them here
 		const paymentFor = [...new Set(args.paymentFor)];
@@ -69,7 +78,7 @@ export async function assertCanCreatePaymentTransaction(
 			columns: { id: true }
 		});
 		if (own.length !== paymentFor.length) {
-			throw apiError('FORBIDDEN', m.paymentOnlyForOwn());
+			throw apiError({ code: 'FORBIDDEN', message: m.paymentOnlyForOwn() });
 		}
 	}
 	const payer = await db.query.conferenceParticipant.findFirst({
@@ -77,9 +86,12 @@ export async function assertCanCreatePaymentTransaction(
 		columns: { id: true }
 	});
 	if (!payer) {
-		throw apiError('INVALID_INPUT', m.paymentPayerNotParticipant());
+		throw apiError({ code: 'INVALID_INPUT', message: m.paymentPayerNotParticipant() });
 	}
-	const covered = await participantIdsOf(args.conferenceId, args.paymentFor);
+	const covered = await participantIdsOf({
+		conferenceId: args.conferenceId,
+		userIds: args.paymentFor
+	});
 	return {
 		payerParticipantId: payer.id,
 		coveredParticipantIds: [...covered.values()]
@@ -87,7 +99,13 @@ export async function assertCanCreatePaymentTransaction(
 }
 
 /** The payment transaction `id` with whom it covers, if the caller may update it; an error otherwise. */
-export async function assertCanUpdatePaymentTransaction(ctx: ApiContext, id: string) {
+export async function assertCanUpdatePaymentTransaction({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
 	const updatable = (await ctx.abilities.paymentTransaction.filter('update')).merge({
 		where: { id }
 	});

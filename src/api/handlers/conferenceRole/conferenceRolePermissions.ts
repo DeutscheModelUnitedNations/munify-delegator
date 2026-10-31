@@ -24,7 +24,7 @@ export function registerConferenceRoleAbilities() {
 	// it. Nation roles follow the committee seats (`setCommitteeNationSeat`) and are not edited
 	// directly.
 	abilityBuilder.conferenceRole.allow(['update', 'delete']).when((ctx) => {
-		const team = isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES);
+		const team = isTeamMemberOfConference({ ctx, roles: SEAT_PLANNING_ROLES });
 		return grantWhere(
 			team && { ...team, kind: { in: ['NON_STATE_ACTOR' as const, 'CUSTOM' as const] } }
 		);
@@ -34,16 +34,26 @@ export function registerConferenceRoleAbilities() {
 /** The kinds of role the seat planning creates, edits and deletes directly. */
 type PlannedRoleKind = 'NON_STATE_ACTOR' | 'CUSTOM';
 
-export async function assertCanCreateConferenceRole(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'planSeats');
+export async function assertCanCreateConferenceRole({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'planSeats' });
 }
 
 /** Loads the role of this `kind` through the caller's update ability, with its current seats. */
-export async function assertCanUpdateConferenceRole(
-	ctx: ApiContext,
-	id: string,
-	kind: PlannedRoleKind
-) {
+export async function assertCanUpdateConferenceRole({
+	ctx,
+	id,
+	kind
+}: {
+	ctx: ApiContext;
+	id: string;
+	kind: PlannedRoleKind;
+}) {
 	const updateFilter = (await ctx.abilities.conferenceRole.filter('update')).merge({
 		where: { id, kind }
 	});
@@ -56,12 +66,22 @@ export async function assertCanUpdateConferenceRole(
 }
 
 /** Refuses unless the caller's delete ability matches the role of this `kind`. */
-export async function assertCanDeleteConferenceRole(
-	ctx: ApiContext,
-	id: string,
-	kind: PlannedRoleKind
-) {
-	await assertAllowed(ctx, 'conferenceRole', 'delete', id, {
-		extra: whereRows(schema.conferenceRole, { kind })
+export async function assertCanDeleteConferenceRole({
+	ctx,
+	id,
+	kind
+}: {
+	ctx: ApiContext;
+	id: string;
+	kind: PlannedRoleKind;
+}) {
+	await assertAllowed({
+		ctx,
+		table: 'conferenceRole',
+		action: 'delete',
+		id,
+		options: {
+			extra: whereRows({ table: schema.conferenceRole, filter: { kind } })
+		}
 	});
 }

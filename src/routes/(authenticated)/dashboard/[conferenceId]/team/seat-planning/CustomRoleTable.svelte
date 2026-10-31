@@ -27,15 +27,22 @@
 	const totalHolders = $derived(customRoles.reduce((sum, role) => sum + role.holders, 0));
 
 	/** saves one field; a refused change puts the saved value back into the input */
-	const update = (
-		input: HTMLInputElement,
-		saved: string | number,
-		id: string,
-		data: { name?: string; description?: string; fontAwesomeIcon?: string; seatAmount?: number }
-	) =>
-		saveField(input, saved, () =>
-			client.mutate.updateCustomRole({ __args: { id, ...data }, seatAmount: true })
-		);
+	const update = ({
+		input,
+		saved,
+		id,
+		data
+	}: {
+		input: HTMLInputElement;
+		saved: string | number;
+		id: string;
+		data: { name?: string; description?: string; fontAwesomeIcon?: string; seatAmount?: number };
+	}) =>
+		saveField({
+			input,
+			saved,
+			save: () => client.mutate.updateCustomRole({ __args: { id, ...data }, seatAmount: true })
+		});
 
 	async function create() {
 		if (!draftValid) return;
@@ -89,8 +96,13 @@
 								class="min-w-24"
 								value={role.fontAwesomeIcon ?? ''}
 								onchange={(e) =>
-									update(e.currentTarget, role.fontAwesomeIcon ?? '', role.id, {
-										fontAwesomeIcon: e.currentTarget.value
+									update({
+										input: e.currentTarget,
+										saved: role.fontAwesomeIcon ?? '',
+										id: role.id,
+										data: {
+											fontAwesomeIcon: e.currentTarget.value
+										}
 									})}
 							/>
 						</td>
@@ -101,7 +113,12 @@
 								required
 								value={role.name}
 								onchange={(e) =>
-									update(e.currentTarget, role.name, role.id, { name: e.currentTarget.value })}
+									update({
+										input: e.currentTarget,
+										saved: role.name,
+										id: role.id,
+										data: { name: e.currentTarget.value }
+									})}
 							/>
 						</td>
 						<td>
@@ -110,8 +127,13 @@
 								label={m.description()}
 								value={role.description}
 								onchange={(e) =>
-									update(e.currentTarget, role.description, role.id, {
-										description: e.currentTarget.value
+									update({
+										input: e.currentTarget,
+										saved: role.description,
+										id: role.id,
+										data: {
+											description: e.currentTarget.value
+										}
 									})}
 							/>
 						</td>
@@ -120,8 +142,13 @@
 								min={Math.max(role.holders, 1)}
 								value={role.seatAmount}
 								onchange={(e) =>
-									update(e.currentTarget, role.seatAmount, role.id, {
-										seatAmount: Number(e.currentTarget.value)
+									update({
+										input: e.currentTarget,
+										saved: role.seatAmount,
+										id: role.id,
+										data: {
+											seatAmount: Number(e.currentTarget.value)
+										}
 									})}
 							/>
 						</td>

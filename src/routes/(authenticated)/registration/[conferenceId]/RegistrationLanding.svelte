@@ -23,7 +23,7 @@
 	/** Which of the three registration paths the caller has already taken, if any. */
 	const existing = $derived(
 		currentUser
-			? await fetchExistingRegistrations(conferenceId, currentUser.sub)
+			? await fetchExistingRegistrations({ conferenceId, userId: currentUser.sub })
 			: { singleParticipants: [], delegationMembers: [], supervisors: [] }
 	);
 
@@ -35,7 +35,10 @@
 		})
 	);
 	const status = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
+		getRegistrationStatus({
+			conferenceState: conference.state,
+			applicationDeadline: new Date(conference.applicationDeadline)
+		})
 	);
 
 	// Delegates and supervisors cannot also register as individuals.
@@ -146,10 +149,10 @@
 
 							linkStyle default stroke-width:2px;
 
-							click E "${applyHref(conferenceId, 'createDelegation')}"
-							click D "${applyHref(conferenceId, 'joinDelegation')}"
-							click Individual "${applyHref(conferenceId, 'individual')}"
-							click G "${applyHref(conferenceId, 'supervisor')}"
+							click E "${applyHref({ conferenceId, path: 'createDelegation' })}"
+							click D "${applyHref({ conferenceId, path: 'joinDelegation' })}"
+							click Individual "${applyHref({ conferenceId, path: 'individual' })}"
+							click G "${applyHref({ conferenceId, path: 'supervisor' })}"
 					`}
 						/>
 					</div>

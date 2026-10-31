@@ -28,11 +28,15 @@ export interface NewPaper {
  * `onCreated` gets to clear the editor and its stored draft, and the author returns to the paper
  * hub.
  */
-export async function createPaper(
-	{ delegationId, ...paper }: NewPaper,
-	submit: boolean,
-	onCreated: () => void
-) {
+export async function createPaper({
+	paper: { delegationId, ...paper },
+	submit,
+	onCreated
+}: {
+	paper: NewPaper;
+	submit: boolean;
+	onCreated: () => void;
+}) {
 	if (!delegationId) {
 		toast.error(m.paperSaveDraftError());
 		return;

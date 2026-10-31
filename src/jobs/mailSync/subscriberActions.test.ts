@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 import type { SubscriberAction } from './types';
 
 const client = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), PATCH: vi.fn() }));
@@ -28,8 +29,9 @@ const update = (patch?: { name?: string; attribs: Record<string, unknown> }): Su
 
 describe('executeActions', () => {
 	beforeEach(() => {
-		vi.spyOn(console, 'info').mockImplementation(() => {});
-		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.spyOn(logger, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'error').mockImplementation(() => {});
+		vi.spyOn(logger, 'debug').mockImplementation(() => {});
 		for (const method of Object.values(client)) method.mockResolvedValue({});
 	});
 
@@ -39,12 +41,18 @@ describe('executeActions', () => {
 	});
 
 	test('does nothing without actions', async () => {
-		expect(await executeActions('releases', [])).toEqual({ succeeded: 0, failed: 0 });
-		expect(console.info).not.toHaveBeenCalled();
+		expect(await executeActions({ label: 'releases', actions: [] })).toEqual({
+			succeeded: 0,
+			failed: 0
+		});
+		expect(logger.info).not.toHaveBeenCalled();
 	});
 
 	test('creates subscribers on their lists, preconfirmed', async () => {
-		expect(await executeActions('user changes', [create])).toEqual({ succeeded: 1, failed: 0 });
+		expect(await executeActions({ label: 'user changes', actions: [create] })).toEqual({
+			succeeded: 1,
+			failed: 0
+		});
 		expect(client.POST).toHaveBeenCalledWith('/subscribers', {
 			body: {
 				email: "o'brien@example.org",
@@ -55,12 +63,12 @@ describe('executeActions', () => {
 				preconfirm_subscriptions: true
 			}
 		});
-		expect(console.info).toHaveBeenCalledWith('  - Created user u1 [1/1]');
+		expect(logger.debug).toHaveBeenCalledWith('Created user u1', { done: 1, total: 1 });
 	});
 
 	test('updates lists through add/remove and everything else through PATCH', async () => {
 		const patch = { name: 'Erika M.', attribs };
-		expect(await executeActions('user changes', [update(patch)])).toEqual({
+		expect(await executeActions({ label: 'user changes', actions: [update(patch)] })).toEqual({
 			succeeded: 1,
 			failed: 0
 		});
@@ -74,13 +82,16 @@ describe('executeActions', () => {
 			params: { path: { id: 7 } },
 			body: patch
 		});
-		expect(console.info).toHaveBeenCalledWith('  - Updated subscriber 7 [1/1]');
+		expect(logger.debug).toHaveBeenCalledWith('Updated subscriber 7', { done: 1, total: 1 });
 	});
 
 	test('skips list changes and patches that are empty', async () => {
-		await executeActions('releases', [
-			{ kind: 'update', subscriberId: 7, addListIds: [], removeListIds: [], patch: undefined }
-		]);
+		await executeActions({
+			label: 'releases',
+			actions: [
+				{ kind: 'update', subscriberId: 7, addListIds: [], removeListIds: [], patch: undefined }
+			]
+		});
 		expect(client.PUT).not.toHaveBeenCalled();
 		expect(client.PATCH).not.toHaveBeenCalled();
 	});
@@ -89,20 +100,30 @@ describe('executeActions', () => {
 		client.PUT.mockResolvedValue({ error: 'list error' });
 		client.PATCH.mockResolvedValue({ error: { message: 'bad attribs' } });
 
-		const result = await executeActions('user changes', [update({ attribs }), update()]);
+		const result = await executeActions({
+			label: 'user changes',
+			actions: [update({ attribs }), update()]
+		});
 
 		expect(result).toEqual({ succeeded: 0, failed: 2 });
-		expect(console.error).toHaveBeenCalledWith(
-			'  ! Failed to update subscriber 7: Listmonk API Error\nadd lists: list error\nremove lists: list error\npatch: {\n  "message": "bad attribs"\n}'
-		);
-		expect(console.info).toHaveBeenCalledWith('user changes finished: 0 succeeded, 2 failed');
+		expect(logger.error).toHaveBeenCalledWith('Failed to update subscriber 7', {
+			errors: [
+				'add lists: list error',
+				'remove lists: list error',
+				'patch: {\n  "message": "bad attribs"\n}'
+			]
+		});
+		expect(logger.info).toHaveBeenCalledWith('Finished user changes', { succeeded: 0, failed: 2 });
 	});
 
 	test('joins a subscriber another system created in the meantime', async () => {
 		client.POST.mockResolvedValue({ error: 'exists' });
 		client.GET.mockResolvedValue({ data: { data: { results: [{ id: 9 }] } } });
 
-		expect(await executeActions('user changes', [create])).toEqual({ succeeded: 1, failed: 0 });
+		expect(await executeActions({ label: 'user changes', actions: [create] })).toEqual({
+			succeeded: 1,
+			failed: 0
+		});
 		expect(client.GET).toHaveBeenCalledWith('/subscribers', {
 			params: {
 				query: {
@@ -123,10 +144,13 @@ describe('executeActions', () => {
 	test('fails a create that finds no subscriber to join', async () => {
 		client.POST.mockResolvedValue({ error: 'invalid email' });
 
-		expect(await executeActions('user changes', [create])).toEqual({ succeeded: 0, failed: 1 });
-		expect(console.error).toHaveBeenCalledWith(
-			'  ! Failed to create user u1: Listmonk API Error\ncreate: invalid email'
-		);
+		expect(await executeActions({ label: 'user changes', actions: [create] })).toEqual({
+			succeeded: 0,
+			failed: 1
+		});
+		expect(logger.error).toHaveBeenCalledWith('Failed to create user u1', {
+			errors: ['create: invalid email']
+		});
 	});
 });
 
@@ -137,7 +161,7 @@ describe('collectGarbage', () => {
 	});
 
 	test('deletes every subscriber on no list who is not blocklisted', async () => {
-		vi.spyOn(console, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'info').mockImplementation(() => {});
 		client.POST.mockResolvedValue({});
 		await collectGarbage();
 		expect(client.POST).toHaveBeenCalledWith('/subscribers/query/delete', {
@@ -146,15 +170,15 @@ describe('collectGarbage', () => {
 					"subscribers.status != 'blocklisted' AND NOT EXISTS (SELECT 1 FROM subscriber_lists sl WHERE sl.subscriber_id = subscribers.id)"
 			}
 		});
-		expect(console.info).toHaveBeenCalledWith('  - Deleted subscribers without lists');
+		expect(logger.info).toHaveBeenCalledWith('Deleted subscribers without lists');
 	});
 
 	test('reports a failed deletion', async () => {
-		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.spyOn(logger, 'error').mockImplementation(() => {});
 		client.POST.mockResolvedValue({ error: 'timeout' });
 		await collectGarbage();
-		expect(console.error).toHaveBeenCalledWith(
-			'  ! Failed to delete subscribers without lists: timeout'
-		);
+		expect(logger.error).toHaveBeenCalledWith('Failed to delete subscribers without lists', {
+			error: 'timeout'
+		});
 	});
 });

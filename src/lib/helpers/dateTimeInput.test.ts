@@ -27,8 +27,8 @@ describe('dateTimeInput', () => {
 			// then submit it - three times, as a user hitting save repeatedly.
 			let current = stored;
 			for (let i = 0; i < 3; i++) {
-				const shown = dateToInputValue(current, true);
-				const readBack = inputValueToDate(shown, true);
+				const shown = dateToInputValue({ date: current, enableTime: true });
+				const readBack = inputValueToDate({ value: shown, enableTime: true });
 				current = new Date(dateToFormValue(readBack));
 			}
 
@@ -37,24 +37,28 @@ describe('dateTimeInput', () => {
 
 		it('renders the browser wall clock without seconds', () => {
 			const date = new Date(2026, 1, 20, 9, 5);
-			expect(dateToInputValue(date, true)).toBe('2026-02-20T09:05');
+			expect(dateToInputValue({ date, enableTime: true })).toBe('2026-02-20T09:05');
 		});
 	});
 
 	describe('date only', () => {
 		it('renders the UTC calendar date', () => {
-			expect(dateToInputValue(new Date('2000-05-03T00:00:00.000Z'), false)).toBe('2000-05-03');
+			expect(
+				dateToInputValue({ date: new Date('2000-05-03T00:00:00.000Z'), enableTime: false })
+			).toBe('2000-05-03');
 		});
 
 		it('parses to UTC midnight, independent of the browser timezone', () => {
-			expect(inputValueToDate('2000-05-03', false)?.toISOString()).toBe('2000-05-03T00:00:00.000Z');
+			expect(inputValueToDate({ value: '2000-05-03', enableTime: false })?.toISOString()).toBe(
+				'2000-05-03T00:00:00.000Z'
+			);
 		});
 
 		it('keeps the day stable across repeated saves', () => {
 			let current: Date | undefined = new Date('2000-05-03T00:00:00.000Z');
 			for (let i = 0; i < 3; i++) {
-				const shown = dateToInputValue(current, false);
-				current = new Date(dateToFormValue(inputValueToDate(shown, false)));
+				const shown = dateToInputValue({ date: current, enableTime: false });
+				current = new Date(dateToFormValue(inputValueToDate({ value: shown, enableTime: false })));
 			}
 			expect(current.toISOString()).toBe('2000-05-03T00:00:00.000Z');
 		});
@@ -62,9 +66,9 @@ describe('dateTimeInput', () => {
 
 	describe('empty input', () => {
 		it('maps an empty input value to undefined', () => {
-			expect(inputValueToDate('', true)).toBeUndefined();
-			expect(inputValueToDate('', false)).toBeUndefined();
-			expect(dateToInputValue(undefined, true)).toBe('');
+			expect(inputValueToDate({ value: '', enableTime: true })).toBeUndefined();
+			expect(inputValueToDate({ value: '', enableTime: false })).toBeUndefined();
+			expect(dateToInputValue({ date: undefined, enableTime: true })).toBe('');
 		});
 	});
 });

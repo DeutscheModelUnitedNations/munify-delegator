@@ -15,21 +15,23 @@ const { formatDateRange, getStateColor, translateState } = await import('./confe
 
 describe('formatDateRange', () => {
 	test('names the month once when both dates are in it', () => {
-		expect(formatDateRange(new Date(2026, 4, 3), new Date(2026, 4, 5))).toBe('3. – May 5, 2026');
+		expect(formatDateRange({ start: new Date(2026, 4, 3), end: new Date(2026, 4, 5) })).toBe(
+			'3. – May 5, 2026'
+		);
 	});
 
 	test('writes both dates out across months and years', () => {
-		expect(formatDateRange(new Date(2026, 4, 30), new Date(2026, 5, 2))).toBe(
+		expect(formatDateRange({ start: new Date(2026, 4, 30), end: new Date(2026, 5, 2) })).toBe(
 			'May 30, 2026 – June 2, 2026'
 		);
-		expect(formatDateRange(new Date(2025, 4, 3), new Date(2026, 4, 5))).toBe(
+		expect(formatDateRange({ start: new Date(2025, 4, 3), end: new Date(2026, 4, 5) })).toBe(
 			'May 3, 2025 – May 5, 2026'
 		);
 	});
 
 	test('is empty while a date is missing', () => {
-		expect(formatDateRange(null, new Date(2026, 4, 5))).toBe('');
-		expect(formatDateRange(new Date(2026, 4, 5), undefined)).toBe('');
+		expect(formatDateRange({ start: null, end: new Date(2026, 4, 5) })).toBe('');
+		expect(formatDateRange({ start: new Date(2026, 4, 5), end: undefined })).toBe('');
 	});
 });
 

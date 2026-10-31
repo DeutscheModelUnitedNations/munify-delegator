@@ -60,13 +60,13 @@ describe('findResolutionUploadProblem', () => {
 describe('uploadEach', () => {
 	test('uploads every file in order and names the ones that failed', async () => {
 		const uploaded: string[] = [];
-		const failed = await uploadEach(
-			[{ name: 'a.pdf' }, { name: 'b.pdf' }, { name: 'c.pdf' }],
-			async (file) => {
+		const failed = await uploadEach({
+			files: [{ name: 'a.pdf' }, { name: 'b.pdf' }, { name: 'c.pdf' }],
+			upload: async (file) => {
 				if (file.name === 'b.pdf') throw new Error('boom');
 				uploaded.push(file.name);
 			}
-		);
+		});
 		expect(uploaded).toEqual(['a.pdf', 'c.pdf']);
 		expect(failed).toEqual(['b.pdf']);
 	});

@@ -2,12 +2,8 @@ import { GraphQLError } from 'graphql';
 import { Redis } from 'ioredis';
 import { REDIS_URL } from '$app/env/private';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
-import {
-	createFailureLimiter,
-	createMemoryFailureStore,
-	createRedisFailureStore
-} from './failureLimit';
+import { apiError } from '#api/services/errors';
+import { createCounter, createFailureLimiter } from './failureLimit';
 
 /**
  * How many codes one account may get wrong before it has to wait. A delegation's entry code and a
@@ -17,7 +13,7 @@ import {
  * request, a request-based limit would not.
  */
 const LIMIT = 10;
-const WINDOW_MS = 10 * 60_000;
+const WINDOW_SECONDS = 10 * 60;
 
 function isNotFound(error: unknown) {
 	return error instanceof GraphQLError && error.extensions.code === 'NOT_FOUND';
@@ -30,11 +26,12 @@ function isNotFound(error: unknown) {
  * Shared across instances through Redis when there is one.
  */
 export const codeGuessLimiter = createFailureLimiter({
-	store: REDIS_URL
-		? createRedisFailureStore(new Redis(REDIS_URL, { lazyConnect: true }), 'code-guess:')
-		: createMemoryFailureStore(),
-	limit: LIMIT,
-	windowMs: WINDOW_MS,
+	counter: createCounter({
+		redis: REDIS_URL ? new Redis(REDIS_URL, { lazyConnect: true }) : undefined,
+		prefix: 'code-guess',
+		limit: LIMIT,
+		windowSeconds: WINDOW_SECONDS
+	}),
 	isFailure: isNotFound,
-	refused: () => apiError('TOO_MANY_ATTEMPTS', m.tooManyCodeAttempts())
+	refused: () => apiError({ code: 'TOO_MANY_ATTEMPTS', message: m.tooManyCodeAttempts() })
 });

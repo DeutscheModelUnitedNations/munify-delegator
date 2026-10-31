@@ -40,7 +40,10 @@
 				{#each participants as user (user.id)}
 					<p>
 						<button class="hover:underline cursor-pointer" onclick={() => openUserCard(user.id)}>
-							{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
+							{formatNames({
+								givenName: user.givenName ?? undefined,
+								familyName: user.familyName ?? undefined
+							})}
 						</button>
 					</p>
 				{/each}

@@ -65,7 +65,7 @@
 			if (!updatedForm.valid) return;
 
 			const promise = client.mutate.updateUser({
-				__args: toUpdateUserArgs(userId, updatedForm.data),
+				__args: toUpdateUserArgs({ id: userId, values: updatedForm.data }),
 				id: true
 			});
 
@@ -98,8 +98,13 @@
 	}
 
 	// What the copy buttons copy: the stored values as the fields show them, labels for the selects
-	const labelOf = (options: { value: string; label: string }[], value: string | null) =>
-		options.find((option) => option.value === value)?.label;
+	const labelOf = ({
+		options,
+		value
+	}: {
+		options: { value: string; label: string }[];
+		value: string | null;
+	}) => options.find((option) => option.value === value)?.label;
 	// A calendar day arrives as UTC midnight, so it is formatted in UTC
 	const birthdayText = $derived(
 		user.birthday?.toLocaleDateString(getLocale(), { dateStyle: 'medium', timeZone: 'UTC' })
@@ -188,7 +193,10 @@
 							<i class="fa-sharp-duotone fa-solid fa-{genderIcon}"></i>
 							<span class="text-sm">{m.gender()}</span>
 						</div>
-						<CopyField value={labelOf(genderOptions(), user.gender)} show={showCopy}>
+						<CopyField
+							value={labelOf({ options: genderOptions(), value: user.gender })}
+							show={showCopy}
+						>
 							<FormSelect {form} name="gender" options={genderOptions()} disabled={!editing} />
 						</CopyField>
 					</div>
@@ -207,7 +215,7 @@
 							<span class="text-sm">{m.diet()}</span>
 						</div>
 						<CopyField
-							value={labelOf(foodPreferenceOptions(), user.foodPreference)}
+							value={labelOf({ options: foodPreferenceOptions(), value: user.foodPreference })}
 							show={showCopy}
 						>
 							<FormSelect
@@ -316,7 +324,10 @@
 						/>
 					</CopyField>
 					<CopyField
-						value={labelOf(translatedNationCodeAddressFormOptions, user.country)}
+						value={labelOf({
+							options: translatedNationCodeAddressFormOptions,
+							value: user.country
+						})}
 						show={showCopy}
 					>
 						<FormSelect

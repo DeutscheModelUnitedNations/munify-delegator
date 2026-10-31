@@ -13,7 +13,11 @@ const WIDTH = 192;
 const HEIGHT = 144;
 const RADIUS = 14;
 
-function roundedCanvas(width = WIDTH, height = HEIGHT, radius = RADIUS) {
+function roundedCanvas({
+	width = WIDTH,
+	height = HEIGHT,
+	radius = RADIUS
+}: { width?: number; height?: number; radius?: number } = {}) {
 	const canvas = document.createElement('canvas');
 	canvas.width = width;
 	canvas.height = height;

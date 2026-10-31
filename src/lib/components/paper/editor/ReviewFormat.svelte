@@ -74,7 +74,7 @@
 	// Handle placeholder modal confirmation
 	function handlePlaceholderConfirm(values: Record<string, string>) {
 		if (pendingSnippet) {
-			const filledContent = replacePlaceholders(pendingSnippet.content, values);
+			const filledContent = replacePlaceholders({ content: pendingSnippet.content, values });
 			insertSnippetContent(filledContent);
 		}
 		pendingSnippet = null;

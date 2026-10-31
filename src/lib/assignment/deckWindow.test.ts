@@ -42,7 +42,7 @@ function window(
 
 describe('deckPosition', () => {
 	it('turns within the window without the backend', () => {
-		const position = deckPosition(window(10, 60, 200), 'c40');
+		const position = deckPosition({ deck: window(10, 60, 200), id: 'c40' });
 		expect(position.index).toBe(40);
 		expect(position.current?.id).toBe('c40');
 		expect(position.previous?.id).toBe('c39');
@@ -51,18 +51,18 @@ describe('deckPosition', () => {
 	});
 
 	it('knows nothing of a card outside the window', () => {
-		const position = deckPosition(window(0, 10, 10), 'elsewhere');
+		const position = deckPosition({ deck: window(0, 10, 10), id: 'elsewhere' });
 		expect(position.current).toBeUndefined();
 		expect(position.next).toBeUndefined();
 	});
 
 	it('moves the window along near an edge, unless the deck ends there', () => {
 		const deck = window(10, 60, 200);
-		expect(deckPosition(deck, `c${10 + WINDOW_MARGIN - 1}`).nearEdge).toBe(true);
-		expect(deckPosition(deck, `c${69 - WINDOW_MARGIN + 1}`).nearEdge).toBe(true);
+		expect(deckPosition({ deck, id: `c${10 + WINDOW_MARGIN - 1}` }).nearEdge).toBe(true);
+		expect(deckPosition({ deck, id: `c${69 - WINDOW_MARGIN + 1}` }).nearEdge).toBe(true);
 		const whole = window(0, 30, 30);
-		expect(deckPosition(whole, 'c0').nearEdge).toBe(false);
-		expect(deckPosition(whole, 'c29').nearEdge).toBe(false);
+		expect(deckPosition({ deck: whole, id: 'c0' }).nearEdge).toBe(false);
+		expect(deckPosition({ deck: whole, id: 'c29' }).nearEdge).toBe(false);
 	});
 
 	it('finds the next unrated card in the window first, then past it', () => {
@@ -72,21 +72,25 @@ describe('deckPosition', () => {
 		deck.entries = deck.entries.map((e) => ({ ...e, status: 'rated' }));
 		deck.entries[1].status = 'unrated';
 		deck.entries[3].status = 'unrated';
-		expect(deckPosition(deck, 'c0').nextUnreviewed?.id).toBe('c1');
-		expect(deckPosition(deck, 'c1').nextUnreviewed?.id).toBe('c3');
-		expect(deckPosition(deck, 'c3').nextUnreviewed?.id).toBe('c50');
+		expect(deckPosition({ deck, id: 'c0' }).nextUnreviewed?.id).toBe('c1');
+		expect(deckPosition({ deck, id: 'c1' }).nextUnreviewed?.id).toBe('c3');
+		expect(deckPosition({ deck, id: 'c3' }).nextUnreviewed?.id).toBe('c50');
 	});
 
 	it('does not offer the card on top as the next unrated one', () => {
 		const deck = window(0, 3, 3, { unreviewedPastWindow: entry('c2') });
-		expect(deckPosition(deck, 'c2').nextUnreviewed).toBeUndefined();
+		expect(deckPosition({ deck, id: 'c2' }).nextUnreviewed).toBeUndefined();
 	});
 });
 
 describe('withReview', () => {
 	it('recolours the card and the counts at once', () => {
 		const deck = window(0, 3, 3);
-		const reviewed = withReview(deck, 'c1', { evaluation: 4, flagged: false, disqualified: false });
+		const reviewed = withReview({
+			deck,
+			id: 'c1',
+			review: { evaluation: 4, flagged: false, disqualified: false }
+		});
 		expect(reviewed.entries[1].status).toBe('rated');
 		expect(reviewed.counts.rated).toBe(1);
 		expect(reviewed.counts.unrated).toBe(2);
@@ -100,10 +104,14 @@ describe('withReview', () => {
 			overallRated: 1
 		});
 		deck.entries[0].status = 'rated';
-		const reviewed = withReview(deck, 'c0', {
-			evaluation: null,
-			flagged: true,
-			disqualified: false
+		const reviewed = withReview({
+			deck,
+			id: 'c0',
+			review: {
+				evaluation: null,
+				flagged: true,
+				disqualified: false
+			}
 		});
 		expect(reviewed.entries[0].status).toBe('flagged');
 		expect(reviewed.counts).toEqual({ rated: 0, flagged: 1, disqualified: 0, unrated: 1 });
@@ -112,8 +120,12 @@ describe('withReview', () => {
 
 	it('leaves the window alone for a card outside it, or no change of status', () => {
 		const deck = window(0, 2, 2);
-		expect(withReview(deck, 'elsewhere', { flagged: true, disqualified: false })).toBe(deck);
-		expect(withReview(deck, 'c0', { flagged: false, disqualified: false, note: 'x' })).toBe(deck);
+		expect(
+			withReview({ deck, id: 'elsewhere', review: { flagged: true, disqualified: false } })
+		).toBe(deck);
+		expect(
+			withReview({ deck, id: 'c0', review: { flagged: false, disqualified: false, note: 'x' } })
+		).toBe(deck);
 	});
 });
 
@@ -128,12 +140,16 @@ describe('reviewStatus', () => {
 
 describe('upcomingEntries', () => {
 	it('lists the nearest cards first, ahead before behind', () => {
-		const ids = upcomingEntries(window(0, 10, 10), 'c5', 3, 1).map((e) => e.id);
+		const ids = upcomingEntries({ deck: window(0, 10, 10), id: 'c5', ahead: 3, behind: 1 }).map(
+			(e) => e.id
+		);
 		expect(ids).toEqual(['c6', 'c4', 'c7', 'c8']);
 	});
 
 	it('stops at the window', () => {
-		const ids = upcomingEntries(window(0, 3, 3), 'c2', 3, 1).map((e) => e.id);
+		const ids = upcomingEntries({ deck: window(0, 3, 3), id: 'c2', ahead: 3, behind: 1 }).map(
+			(e) => e.id
+		);
 		expect(ids).toEqual(['c1']);
 	});
 });
@@ -142,21 +158,30 @@ describe('arrival', () => {
 	const deck = window(0, 5, 5);
 
 	it('keeps the card turned to on top when the window holds it', () => {
-		expect(arrival(deck, { currentId: 'c1' }, 'c3')).toEqual({ take: true, currentId: 'c3' });
+		expect(arrival({ deck, asked: { currentId: 'c1' }, wanted: 'c3' })).toEqual({
+			take: true,
+			currentId: 'c3'
+		});
 	});
 
 	it('puts the card taking its place on top when the one asked for was filtered away', () => {
 		const moved = { ...deck, current: deck.entries[2] };
-		expect(arrival(moved, { currentId: 'gone' }, 'gone')).toEqual({ take: true, currentId: 'c2' });
+		expect(arrival({ deck: moved, asked: { currentId: 'gone' }, wanted: 'gone' })).toEqual({
+			take: true,
+			currentId: 'c2'
+		});
 	});
 
 	it('asks again for a card turned to while the window was on its way', () => {
-		expect(arrival(deck, { currentId: 'c1' }, 'far')).toEqual({ take: false, askFor: 'far' });
+		expect(arrival({ deck, asked: { currentId: 'c1' }, wanted: 'far' })).toEqual({
+			take: false,
+			askFor: 'far'
+		});
 	});
 
 	it('lets a seek take whatever lies at its place', () => {
 		const sought = { ...deck, current: deck.entries[4] };
-		expect(arrival(sought, { currentId: null, index: 4 }, 'c0')).toEqual({
+		expect(arrival({ deck: sought, asked: { currentId: null, index: 4 }, wanted: 'c0' })).toEqual({
 			take: true,
 			currentId: 'c4'
 		});
@@ -164,6 +189,9 @@ describe('arrival', () => {
 
 	it('takes an empty deck', () => {
 		const empty = window(0, 0, 0, { current: null });
-		expect(arrival(empty, { currentId: 'c0' }, 'c0')).toEqual({ take: true, currentId: null });
+		expect(arrival({ deck: empty, asked: { currentId: 'c0' }, wanted: 'c0' })).toEqual({
+			take: true,
+			currentId: null
+		});
 	});
 });

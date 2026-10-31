@@ -30,7 +30,7 @@ const statusPredicates: Record<SightingStatusFilter, SQL> = {
  * The schools of an application's people (`p` their `conference_participant`), each once, with ''
  * for anyone without one: a delegation keeps no school of its own.
  */
-const schoolsOfPeople = (from: SQL, where: SQL) => sql`
+const schoolsOfPeople = ({ from, where }: { from: SQL; where: SQL }) => sql`
 	coalesce((select array_agg(distinct coalesce(sc.name, '')) ${from}
 		left join school sc on sc.id = p.school_id where ${where}), '{}')`;
 
@@ -49,10 +49,10 @@ function applications(conferenceId: string): SQL {
 function applicationRows(conferenceId: string): SQL {
 	return sql`
 		select d.id, 'delegation'::text as kind, 0 as kind_rank,
-			${schoolsOfPeople(
-				sql`from delegation_member dm join conference_participant p on p.id = dm.conference_participant_id`,
-				sql`dm.delegation_id = d.id`
-			)} as schools,
+			${schoolsOfPeople({
+				from: sql`from delegation_member dm join conference_participant p on p.id = dm.conference_participant_id`,
+				where: sql`dm.delegation_id = d.id`
+			})} as schools,
 			d.member_count as size,
 			r.evaluation, coalesce(r.flagged, false) as flagged,
 			coalesce(r.disqualified, false) as disqualified, coalesce(r.required, false) as required, r.note,
@@ -65,7 +65,7 @@ function applicationRows(conferenceId: string): SQL {
 		where d.conference_id = ${conferenceId} and d.applied
 		union all
 		select s.id, 'single'::text, 1,
-			${schoolsOfPeople(sql`from conference_participant p`, sql`p.id = s.conference_participant_id`)},
+			${schoolsOfPeople({ from: sql`from conference_participant p`, where: sql`p.id = s.conference_participant_id` })},
 			1,
 			r.evaluation, coalesce(r.flagged, false), coalesce(r.disqualified, false),
 			coalesce(r.required, false), r.note,
@@ -82,7 +82,13 @@ function applicationRows(conferenceId: string): SQL {
 /** The deck's order: delegations before singles, the largest first, ties by id. */
 const deckOrder = sql`a.kind_rank, a.size desc, a.id`;
 
-function passes(status: SightingStatusFilter, school: string | null | undefined): SQL {
+function passes({
+	status,
+	school
+}: {
+	status: SightingStatusFilter;
+	school: string | null | undefined;
+}): SQL {
 	return school === null || school === undefined
 		? statusPredicates[status]
 		: sql`${statusPredicates[status]} and ${school} = any(a.schools)`;
@@ -143,7 +149,7 @@ export function deckSql(options: {
 		deck as (
 			select a.id, a.kind, a.kind_rank, a.school, a.size, a.status, a.required,
 				row_number() over (order by ${deckOrder}) - 1 as idx
-			from apps a where ${passes(status, school)}
+			from apps a where ${passes({ status, school })}
 		),
 		totals as (select count(*)::int as n from deck),
 		cur as (
@@ -186,12 +192,17 @@ export function deckSql(options: {
 }
 
 /** The deck entries among `ids` that pass the filters, in deck order. */
-export function entriesSql(
-	conferenceId: string,
-	ids: readonly string[],
-	status: SightingStatusFilter,
-	school: string | null
-): SQL {
+export function entriesSql({
+	conferenceId,
+	ids,
+	status,
+	school
+}: {
+	conferenceId: string;
+	ids: readonly string[];
+	status: SightingStatusFilter;
+	school: string | null;
+}): SQL {
 	return sql`
 		select json_build_object('kind', a.kind, 'id', a.id, 'school', a.school, 'size', a.size,
 			'status', a.status, 'required', a.required) as result
@@ -199,7 +210,7 @@ export function entriesSql(
 		where a.id in (${sql.join(
 			ids.map((id) => sql`${id}`),
 			sql`, `
-		)}) and ${passes(status, school)}
+		)}) and ${passes({ status, school })}
 		order by ${deckOrder}`;
 }
 
@@ -213,7 +224,15 @@ export const schoolRowSchema = z.object({
  * The schools of the people in the conference's applications matching `search` ('' for those
  * without one), with how many applications they are in and how many people they send.
  */
-export function schoolsSql(conferenceId: string, like: string, limit: number): SQL {
+export function schoolsSql({
+	conferenceId,
+	like,
+	limit
+}: {
+	conferenceId: string;
+	like: string;
+	limit: number;
+}): SQL {
 	return sql`
 		with people as (
 			select dm.delegation_id as application_id, coalesce(sc.name, '') as school

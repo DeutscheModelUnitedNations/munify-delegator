@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { clearsRatingKey, deckKeyTarget, isTyping, ratingForKey } from './deckKeys';
 
 const neighbours = { previousId: 'before', nextId: 'after' };
-const press = (key: string, extra: Partial<Parameters<typeof deckKeyTarget>[0]> = {}) => ({
+const press = (key: string, extra: Partial<Parameters<typeof deckKeyTarget>[0]['event']> = {}) => ({
 	key,
 	altKey: false,
 	ctrlKey: false,
@@ -13,34 +13,48 @@ const press = (key: string, extra: Partial<Parameters<typeof deckKeyTarget>[0]> 
 
 describe('deckKeyTarget', () => {
 	it('turns to the neighbour the arrow points at', () => {
-		expect(deckKeyTarget(press('ArrowLeft'), neighbours)).toBe('before');
-		expect(deckKeyTarget(press('ArrowRight'), neighbours)).toBe('after');
+		expect(deckKeyTarget({ event: press('ArrowLeft'), neighbours })).toBe('before');
+		expect(deckKeyTarget({ event: press('ArrowRight'), neighbours })).toBe('after');
 	});
 
 	it('does nothing past either end or for other keys', () => {
-		expect(deckKeyTarget(press('ArrowLeft'), { nextId: 'after' })).toBeUndefined();
-		expect(deckKeyTarget(press('ArrowRight'), { previousId: 'before' })).toBeUndefined();
-		expect(deckKeyTarget(press('a'), neighbours)).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowLeft'), neighbours: { nextId: 'after' } })
+		).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowRight'), neighbours: { previousId: 'before' } })
+		).toBeUndefined();
+		expect(deckKeyTarget({ event: press('a'), neighbours })).toBeUndefined();
 	});
 
 	it('leaves browser and editor shortcuts alone', () => {
-		expect(deckKeyTarget(press('ArrowLeft', { altKey: true }), neighbours)).toBeUndefined();
-		expect(deckKeyTarget(press('ArrowRight', { metaKey: true }), neighbours)).toBeUndefined();
-		expect(deckKeyTarget(press('ArrowRight', { ctrlKey: true }), neighbours)).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowLeft', { altKey: true }), neighbours })
+		).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowRight', { metaKey: true }), neighbours })
+		).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowRight', { ctrlKey: true }), neighbours })
+		).toBeUndefined();
 	});
 
 	it('keeps out of the way while somebody types', () => {
 		const field = document.createElement('textarea');
-		expect(deckKeyTarget(press('ArrowLeft', { target: field }), neighbours)).toBeUndefined();
+		expect(
+			deckKeyTarget({ event: press('ArrowLeft', { target: field }), neighbours })
+		).toBeUndefined();
 		const button = document.createElement('button');
-		expect(deckKeyTarget(press('ArrowLeft', { target: button }), neighbours)).toBe('before');
+		expect(deckKeyTarget({ event: press('ArrowLeft', { target: button }), neighbours })).toBe(
+			'before'
+		);
 	});
 });
 
 describe('deckKeyTarget, next unreviewed', () => {
 	it('jumps to the next unreviewed card on n', () => {
-		expect(deckKeyTarget(press('n'), { unreviewedId: 'open' })).toBe('open');
-		expect(deckKeyTarget(press('n'), neighbours)).toBeUndefined();
+		expect(deckKeyTarget({ event: press('n'), neighbours: { unreviewedId: 'open' } })).toBe('open');
+		expect(deckKeyTarget({ event: press('n'), neighbours })).toBeUndefined();
 	});
 });
 

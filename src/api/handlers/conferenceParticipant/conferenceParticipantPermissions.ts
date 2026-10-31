@@ -1,5 +1,5 @@
 import { db, schema } from '#api/db/db';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
@@ -38,12 +38,18 @@ export function registerConferenceParticipantAbilities() {
 	// Participant care and project management manage their conference's statuses.
 	abilityBuilder.conferenceParticipant
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
 /** Refuses unless the caller's `update` ability reaches the status row `id`. */
-export async function assertCanUpdateParticipantStatus(ctx: ApiContext, id: string) {
-	await assertAllowed(ctx, 'conferenceParticipant', 'update', id);
+export async function assertCanUpdateParticipantStatus({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
+	await assertAllowed({ ctx, table: 'conferenceParticipant', action: 'update', id });
 }
 
 /**
@@ -53,25 +59,47 @@ export async function assertCanUpdateParticipantStatus(ctx: ApiContext, id: stri
  * care. Running first keeps the lookups (does this address have an account, is this card in use)
  * from answering anyone who may not write there.
  */
-export async function assertCanUpsertParticipantStatus(
-	ctx: ApiContext,
-	args: { id?: string | null; conferenceId: string }
-) {
+export async function assertCanUpsertParticipantStatus({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { id?: string | null; conferenceId: string };
+}) {
 	ctx.mustBeLoggedIn();
 	if (args.id) {
-		await assertAllowed(ctx, 'conferenceParticipant', 'update', args.id, {
-			extra: whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId })
+		await assertAllowed({
+			ctx,
+			table: 'conferenceParticipant',
+			action: 'update',
+			id: args.id,
+			options: {
+				extra: whereRows({
+					table: schema.conferenceParticipant,
+					filter: { conferenceId: args.conferenceId }
+				})
+			}
 		});
 		return;
 	}
-	await assertTeamPermission(ctx, args.conferenceId, 'manageParticipants');
+	await assertTeamPermission({
+		ctx,
+		conferenceId: args.conferenceId,
+		permission: 'manageParticipants'
+	});
 }
 
 /**
  * Refuses unless the user is a participant of the conference (`participatesIn`) or on its team.
  * Attendance is narrower: it records participants only (`attendanceEntryPermissions.ts`).
  */
-async function assertParticipantOrTeamMemberIn(conferenceId: string, userId: string) {
+async function assertParticipantOrTeamMemberIn({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
 	const user = await db.query.user.findFirst({
 		where: {
 			id: userId,
@@ -80,7 +108,7 @@ async function assertParticipantOrTeamMemberIn(conferenceId: string, userId: str
 		columns: { id: true }
 	});
 	if (!user) {
-		throw apiError('INVALID_INPUT', m.userNotInConference());
+		throw apiError({ code: 'INVALID_INPUT', message: m.userNotInConference() });
 	}
 }
 
@@ -88,18 +116,28 @@ async function assertParticipantOrTeamMemberIn(conferenceId: string, userId: str
  * Refuses to create a status row unless the caller is the conference's participant care, and the
  * user actually belongs to the conference. There is no row for the update ability to judge yet.
  */
-export async function assertCanCreateParticipantStatus(
-	ctx: ApiContext,
-	conferenceId: string,
-	userId: string
-) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
-	await assertParticipantOrTeamMemberIn(conferenceId, userId);
+export async function assertCanCreateParticipantStatus({
+	ctx,
+	conferenceId,
+	userId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	userId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	await assertParticipantOrTeamMemberIn({ conferenceId, userId });
 }
 
 /** The bulk attendance toggle is for the conference's participant care. */
-export async function assertCanSetAttendanceForAll(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanSetAttendanceForAll({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /**
@@ -107,13 +145,25 @@ export async function assertCanSetAttendanceForAll(ctx: ApiContext, conferenceId
  * (participant care), or without one the caller's own row in the conference. Refuses when they take
  * no part in it (the team and the waiting list have no row).
  */
-export async function assertCanSetParticipantSchool(
-	ctx: ApiContext,
-	args: { conferenceId: string; id?: string | null }
-) {
+export async function assertCanSetParticipantSchool({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { conferenceId: string; id?: string | null };
+}) {
 	if (args.id) {
-		await assertAllowed(ctx, 'conferenceParticipant', 'update', args.id, {
-			extra: whereRows(schema.conferenceParticipant, { conferenceId: args.conferenceId })
+		await assertAllowed({
+			ctx,
+			table: 'conferenceParticipant',
+			action: 'update',
+			id: args.id,
+			options: {
+				extra: whereRows({
+					table: schema.conferenceParticipant,
+					filter: { conferenceId: args.conferenceId }
+				})
+			}
 		});
 		return args.id;
 	}
@@ -121,6 +171,6 @@ export async function assertCanSetParticipantSchool(
 		where: { conferenceId: args.conferenceId, userId: ctx.mustBeLoggedIn().sub },
 		columns: { id: true }
 	});
-	if (!own) throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+	if (!own) throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	return own.id;
 }

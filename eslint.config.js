@@ -58,6 +58,25 @@ export default ts.config(
 		}
 	},
 	{
+		// Errors reach Sentry through `logger.error` (`#lib/logger`), never by hand; only the hooks
+		// set Sentry up.
+		files: ['src/**'],
+		ignores: ['src/hooks.client.ts', 'src/hooks.server.ts', 'src/lib/sentryDataCollection.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: [
+						{
+							name: '@sentry/sveltekit',
+							message: "Report errors with `logger.error` from '#lib/logger'."
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		rules: {
 			'@typescript-eslint/no-unused-vars': 'warn',
 			'@typescript-eslint/no-explicit-any': 'warn',

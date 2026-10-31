@@ -25,7 +25,13 @@ export interface Timeline<E extends TimedEntry> {
  * `now` as a calendar time. Entries hold wall-clock times in the conference's timezone, stored as
  * if they were UTC, so the instant has to be turned into the wall clock of that timezone first.
  */
-export function wallClockNow(timezone: string, now = new Date()): number {
+export function wallClockNow({
+	timezone,
+	now = new Date()
+}: {
+	timezone: string;
+	now?: Date;
+}): number {
 	const parts = new Intl.DateTimeFormat('en-US', {
 		timeZone: timezone,
 		year: 'numeric',
@@ -53,10 +59,13 @@ const normalize = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' 
  * name, not by id. Someone whose seat matches no track (no seat, or a team member) gets every
  * entry of the schedule, parallel copies of one session counted once.
  */
-export function entriesForSeat<E extends TimedEntry>(
-	days: readonly DayWithTracks<E>[],
-	seatNames: readonly string[]
-): E[] {
+export function entriesForSeat<E extends TimedEntry>({
+	days,
+	seatNames
+}: {
+	days: readonly DayWithTracks<E>[];
+	seatNames: readonly string[];
+}): E[] {
 	const seats = new Set(seatNames.map(normalize));
 	const hasOwnTrack = days.some((day) =>
 		day.tracks.some((track) => seats.has(normalize(track.name)))
@@ -87,13 +96,18 @@ export function entriesForSeat<E extends TimedEntry>(
  * What is running now and the next `count` things to start, for a list of entries. A day marker
  * (`newDay`) sits on the first entry of every day other than the one before it, counting from today.
  */
-export function timelineOf<E extends TimedEntry>(
-	entries: readonly E[],
-	timezone: string,
+export function timelineOf<E extends TimedEntry>({
+	entries,
+	timezone,
 	now = new Date(),
 	count = 2
-): Timeline<E> {
-	const wall = wallClockNow(timezone, now);
+}: {
+	entries: readonly E[];
+	timezone: string;
+	now?: Date;
+	count?: number;
+}): Timeline<E> {
+	const wall = wallClockNow({ timezone, now });
 	const sorted = entries.toSorted((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
 	const current = sorted.find(

@@ -17,13 +17,15 @@ const delegation = (id: string, size: number, roleId: string | null = null) => (
 
 describe('assignmentCost', () => {
 	it('costs a wish its rank', () => {
-		expect(assignmentCost(DEFAULT_WEIGHTS, undefined, 1)).toBe(1);
+		expect(assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 1 })).toBe(1);
 	});
 
 	it('squares the rank so a far pick costs more than several near ones', () => {
-		expect(assignmentCost(DEFAULT_WEIGHTS, undefined, 3)).toBe(9);
-		expect(assignmentCost(DEFAULT_WEIGHTS, undefined, 3)).toBeGreaterThan(
-			2 * assignmentCost(DEFAULT_WEIGHTS, undefined, 2)
+		expect(assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 3 })).toBe(9);
+		expect(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 3 })
+		).toBeGreaterThan(
+			2 * assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 2 })
 		);
 	});
 
@@ -31,17 +33,29 @@ describe('assignmentCost', () => {
 		const rated = (evaluation: number) => ({ evaluation, flagged: false, disqualified: false });
 		const weights = DEFAULT_WEIGHTS;
 		expect(
-			assignmentCost(weights, rated(5), 4) - assignmentCost(weights, rated(5), 1)
-		).toBeGreaterThan(assignmentCost(weights, rated(1), 4) - assignmentCost(weights, rated(1), 1));
+			assignmentCost({ weights, review: rated(5), wishRank: 4 }) -
+				assignmentCost({ weights, review: rated(5), wishRank: 1 })
+		).toBeGreaterThan(
+			assignmentCost({ weights, review: rated(1), wishRank: 4 }) -
+				assignmentCost({ weights, review: rated(1), wishRank: 1 })
+		);
 	});
 
 	it('makes good ratings and flags cheaper', () => {
 		const review = { evaluation: 5, flagged: true, disqualified: false };
-		expect(assignmentCost({ ...DEFAULT_WEIGHTS, markBonus: 1, ratingFactor: 0 }, review, 2)).toBe(
-			3
-		);
-		expect(assignmentCost(DEFAULT_WEIGHTS, review, 1)).toBeLessThan(
-			assignmentCost(DEFAULT_WEIGHTS, { ...review, evaluation: 1 }, 1)
+		expect(
+			assignmentCost({
+				weights: { ...DEFAULT_WEIGHTS, markBonus: 1, ratingFactor: 0 },
+				review,
+				wishRank: 2
+			})
+		).toBe(3);
+		expect(assignmentCost({ weights: DEFAULT_WEIGHTS, review, wishRank: 1 })).toBeLessThan(
+			assignmentCost({
+				weights: DEFAULT_WEIGHTS,
+				review: { ...review, evaluation: 1 },
+				wishRank: 1
+			})
 		);
 	});
 });
@@ -54,12 +68,13 @@ describe('flags', () => {
 		markEffect
 	});
 	const slope = (w: ReturnType<typeof weights>, review: typeof flagged | undefined) =>
-		assignmentCost(w, review, 4) - assignmentCost(w, review, 1);
+		assignmentCost({ weights: w, review, wishRank: 4 }) -
+		assignmentCost({ weights: w, review, wishRank: 1 });
 
 	it('only shifts the cost by default, leaving the weight of the wishes alone', () => {
 		expect(DEFAULT_WEIGHTS.markEffect).toBe('SEATING_ONLY');
-		expect(assignmentCost(weights(2), flagged, 2)).toBe(
-			assignmentCost(weights(2), undefined, 2) - 2
+		expect(assignmentCost({ weights: weights(2), review: flagged, wishRank: 2 })).toBe(
+			assignmentCost({ weights: weights(2), review: undefined, wishRank: 2 }) - 2
 		);
 		expect(slope(weights(2), flagged)).toBe(slope(weights(2), undefined));
 	});
@@ -74,9 +89,9 @@ describe('flags', () => {
 
 	it('does not touch groups that are not flagged', () => {
 		const unflagged = { ...flagged, flagged: false };
-		expect(assignmentCost(weights(2, 'WISHES_AND_SEATING'), unflagged, 3)).toBe(
-			assignmentCost(weights(0), unflagged, 3)
-		);
+		expect(
+			assignmentCost({ weights: weights(2, 'WISHES_AND_SEATING'), review: unflagged, wishRank: 3 })
+		).toBe(assignmentCost({ weights: weights(0), review: unflagged, wishRank: 3 }));
 	});
 
 	describe('when assigning', () => {
@@ -85,7 +100,11 @@ describe('flags', () => {
 			w: ReturnType<typeof weights>,
 			roles = [role('nation-fra', 2), role('nation-gbr', 2)]
 		) => {
-			const { groups } = assignmentGroups([delegation('flag', 2), delegation('plain', 2)], [], []);
+			const { groups } = assignmentGroups({
+				delegations: [delegation('flag', 2), delegation('plain', 2)],
+				singleParticipants: [],
+				units: []
+			});
 			const result = autoAssign({
 				size: 2,
 				groups,
@@ -135,21 +154,49 @@ describe('experience', () => {
 	});
 
 	it('does nothing with the default weights', () => {
-		expect(assignmentCost(DEFAULT_WEIGHTS, undefined, 2, 1)).toBe(
-			assignmentCost(DEFAULT_WEIGHTS, undefined, 2, 0)
+		expect(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 2, experience: 1 })
+		).toBe(
+			assignmentCost({ weights: DEFAULT_WEIGHTS, review: undefined, wishRank: 2, experience: 0 })
 		);
 	});
 
 	it('charges the modifier scaled by the share of experienced members', () => {
-		const base = assignmentCost(weights(0, 'SEATING_ONLY'), undefined, 2);
-		expect(assignmentCost(weights(3, 'SEATING_ONLY'), undefined, 2, 1)).toBe(base + 3);
-		expect(assignmentCost(weights(3, 'SEATING_ONLY'), undefined, 2, 0.5)).toBe(base + 1.5);
-		expect(assignmentCost(weights(-3, 'SEATING_ONLY'), undefined, 2, 1)).toBe(base - 3);
+		const base = assignmentCost({
+			weights: weights(0, 'SEATING_ONLY'),
+			review: undefined,
+			wishRank: 2
+		});
+		expect(
+			assignmentCost({
+				weights: weights(3, 'SEATING_ONLY'),
+				review: undefined,
+				wishRank: 2,
+				experience: 1
+			})
+		).toBe(base + 3);
+		expect(
+			assignmentCost({
+				weights: weights(3, 'SEATING_ONLY'),
+				review: undefined,
+				wishRank: 2,
+				experience: 0.5
+			})
+		).toBe(base + 1.5);
+		expect(
+			assignmentCost({
+				weights: weights(-3, 'SEATING_ONLY'),
+				review: undefined,
+				wishRank: 2,
+				experience: 1
+			})
+		).toBe(base - 3);
 	});
 
 	it('weighs the wishes less for experienced groups when asked to', () => {
 		const slope = (w: ReturnType<typeof weights>, experience: number) =>
-			assignmentCost(w, undefined, 4, experience) - assignmentCost(w, undefined, 1, experience);
+			assignmentCost({ weights: w, review: undefined, wishRank: 4, experience }) -
+			assignmentCost({ weights: w, review: undefined, wishRank: 1, experience });
 		expect(slope(weights(4), 1)).toBeLessThan(slope(weights(4), 0));
 		expect(slope(weights(-4), 1)).toBeGreaterThan(slope(weights(-4), 0));
 	});
@@ -157,7 +204,8 @@ describe('experience', () => {
 	it('keeps the wishes at the same weight when it only affects seating', () => {
 		const w = weights(4, 'SEATING_ONLY');
 		const slope = (experience: number) =>
-			assignmentCost(w, undefined, 4, experience) - assignmentCost(w, undefined, 1, experience);
+			assignmentCost({ weights: w, review: undefined, wishRank: 4, experience }) -
+			assignmentCost({ weights: w, review: undefined, wishRank: 1, experience });
 		expect(slope(1)).toBe(slope(0));
 	});
 });
@@ -166,11 +214,11 @@ describe('autoAssign', () => {
 	const wishes: Record<string, string[]> = { a: ['nation-fra', 'nation-gbr'], b: ['nation-fra'] };
 
 	it('gives the first wish to whoever ranks it best and only fills roles exactly', () => {
-		const { groups } = assignmentGroups(
-			[delegation('a', 2), delegation('b', 2), delegation('c', 3)],
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2), delegation('b', 2), delegation('c', 3)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -189,11 +237,11 @@ describe('autoAssign', () => {
 	});
 
 	it('skips disqualified and already assigned groups and filled roles', () => {
-		const { groups } = assignmentGroups(
-			[delegation('a', 2), delegation('b', 2, 'nation-fra'), delegation('c', 2)],
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2), delegation('b', 2, 'nation-fra'), delegation('c', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -209,11 +257,11 @@ describe('autoAssign', () => {
 	});
 
 	it('seats a required group before better-rated ones, even on a role it did not wish for', () => {
-		const { groups } = assignmentGroups(
-			[delegation('star', 2), delegation('good', 2), delegation('must', 2)],
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('star', 2), delegation('good', 2), delegation('must', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -231,7 +279,11 @@ describe('autoAssign', () => {
 	});
 
 	it('still gives a required group the role it wished for most', () => {
-		const { groups } = assignmentGroups([delegation('must', 2), delegation('other', 2)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('must', 2), delegation('other', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -251,7 +303,11 @@ describe('autoAssign', () => {
 	});
 
 	it('gives leftover roles to groups without a wish, in the same pass, after the wishes are served', () => {
-		const { groups } = assignmentGroups([delegation('a', 2)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const base = {
 			size: 2,
 			groups,
@@ -264,7 +320,11 @@ describe('autoAssign', () => {
 	});
 
 	it('seats as many groups on their wishes as possible', () => {
-		const { groups } = assignmentGroups([delegation('a', 2), delegation('b', 2)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2), delegation('b', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -288,7 +348,11 @@ describe('autoAssign', () => {
 	});
 
 	it("weighs a well-rated group's wish higher in a contest", () => {
-		const { groups } = assignmentGroups([delegation('a', 2), delegation('b', 2)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2), delegation('b', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 2,
 			groups,
@@ -306,7 +370,11 @@ describe('autoAssign', () => {
 	});
 
 	it('breaks ties the same way for the same seed regardless of input order', () => {
-		const { groups } = assignmentGroups([delegation('a', 2), delegation('b', 2)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 2), delegation('b', 2)],
+			singleParticipants: [],
+			units: []
+		});
 		const run = (list: typeof groups) =>
 			autoAssign({
 				size: 2,
@@ -327,7 +395,11 @@ describe('autoAssign', () => {
 			roles = [role('nation-fra', 2), role('nation-gbr', 2)],
 			seed = ''
 		) => {
-			const { groups } = assignmentGroups([delegation('vet', 2), delegation('new', 2)], [], []);
+			const { groups } = assignmentGroups({
+				delegations: [delegation('vet', 2), delegation('new', 2)],
+				singleParticipants: [],
+				units: []
+			});
 			const result = autoAssign({
 				size: 2,
 				groups,
@@ -394,11 +466,11 @@ describe('autoAssign matching quality', () => {
 		extra: Partial<Parameters<typeof autoAssign>[0]> = {},
 		size = 4
 	) => {
-		const { groups } = assignmentGroups(
-			Object.keys(wishes).map((key) => delegation(key, size)),
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: Object.keys(wishes).map((key) => delegation(key, size)),
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size,
 			groups,
@@ -546,11 +618,11 @@ describe('autoAssign matching quality', () => {
 	});
 
 	it('does not seat anyone when no role has exactly the group size free', () => {
-		const { groups } = assignmentGroups(
-			[delegation('a', 4), delegation('b', 4, 'nation-fra')],
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 4), delegation('b', 4, 'nation-fra')],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 4,
 			groups,
@@ -564,11 +636,11 @@ describe('autoAssign matching quality', () => {
 	});
 
 	it('uses a role that is exactly as free as the group is large after others took seats', () => {
-		const { groups } = assignmentGroups(
-			[delegation('a', 4), delegation('b', 4, 'nation-fra')],
-			[],
-			[]
-		);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('a', 4), delegation('b', 4, 'nation-fra')],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 4,
 			groups,
@@ -581,7 +653,11 @@ describe('autoAssign matching quality', () => {
 	});
 
 	it('only considers groups of the requested size', () => {
-		const { groups } = assignmentGroups([delegation('two', 2), delegation('four', 4)], [], []);
+		const { groups } = assignmentGroups({
+			delegations: [delegation('two', 2), delegation('four', 4)],
+			singleParticipants: [],
+			units: []
+		});
 		const result = autoAssign({
 			size: 4,
 			groups,

@@ -54,6 +54,7 @@ export {
 export {
 	emailKind,
 	emailStatus,
+	emailTrigger,
 	conferenceEmailSetting,
 	conferenceEmailText,
 	conferenceEmailFooter,

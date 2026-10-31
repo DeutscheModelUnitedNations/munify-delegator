@@ -162,7 +162,13 @@ export function createScannedUserFlow<S>(fetchStatus: (userId: string) => Promis
 		 * Saves a status change through `write` and reloads the person, so the drawer shows what was
 		 * stored. Without a person there is nothing to change.
 		 */
-		async changeStatus(userId: string | undefined, write: (userId: string) => Promise<unknown>) {
+		async changeStatus({
+			userId,
+			write
+		}: {
+			userId: string | undefined;
+			write: (userId: string) => Promise<unknown>;
+		}) {
 			if (!userId) {
 				toast.error(m.userNotFound());
 				return;

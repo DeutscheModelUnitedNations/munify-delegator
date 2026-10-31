@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { logger } from '#lib/logger';
 
 const findMailSyncUsers = vi.hoisted(() => vi.fn());
 
@@ -12,7 +13,7 @@ const CUTOFF = new Date('2026-01-01T00:00:00Z');
 
 describe('processUsersInBatches', () => {
 	beforeEach(() => {
-		vi.spyOn(console, 'info').mockImplementation(() => {});
+		vi.spyOn(logger, 'info').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
@@ -27,8 +28,11 @@ describe('processUsersInBatches', () => {
 			.mockResolvedValueOnce(users('e'));
 		const seen: string[][] = [];
 
-		const total = await processUsersInBatches(CUTOFF, async (batch) => {
-			seen.push(batch.map((user) => user.id));
+		const total = await processUsersInBatches({
+			cutoff: CUTOFF,
+			callback: async (batch) => {
+				seen.push(batch.map((user) => user.id));
+			}
 		});
 
 		expect(total).toBe(5);
@@ -44,18 +48,20 @@ describe('processUsersInBatches', () => {
 		findMailSyncUsers.mockResolvedValueOnce(users('a', 'b')).mockResolvedValueOnce([]);
 		const callback = vi.fn();
 
-		expect(await processUsersInBatches(CUTOFF, callback, 2)).toBe(2);
+		expect(await processUsersInBatches({ cutoff: CUTOFF, callback, batchSize: 2 })).toBe(2);
 		expect(callback).toHaveBeenCalledOnce();
 	});
 
 	test('processes nobody when there are no users', async () => {
 		findMailSyncUsers.mockResolvedValueOnce([]);
-		expect(await processUsersInBatches(CUTOFF, vi.fn(), 10)).toBe(0);
+		expect(await processUsersInBatches({ cutoff: CUTOFF, callback: vi.fn(), batchSize: 10 })).toBe(
+			0
+		);
 	});
 
 	test('loads opted-in users and participants of conferences that ended after the cutoff', async () => {
 		findMailSyncUsers.mockResolvedValueOnce([]);
-		await processUsersInBatches(CUTOFF, vi.fn(), 10);
+		await processUsersInBatches({ cutoff: CUTOFF, callback: vi.fn(), batchSize: 10 });
 
 		const [{ where }] = findMailSyncUsers.mock.calls[0];
 		expect(where.OR).toContainEqual({ wantsToReceiveGeneralInformation: true });

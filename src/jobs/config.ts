@@ -8,7 +8,13 @@ import type { StorageConfig } from '#api/handlers/storedFile/storageClient';
  */
 
 /** Parses `process.env` against `schema`, reporting every problem at once. */
-function parseEnv<T extends z.ZodType>(schema: T, group: string): z.output<T> {
+function parseEnv<T extends z.ZodType>({
+	schema,
+	group
+}: {
+	schema: T;
+	group: string;
+}): z.output<T> {
 	const result = schema.safeParse(process.env);
 	if (result.success) return result.data;
 	const problems = result.error.issues
@@ -47,15 +53,15 @@ const sendEmailsSchema = z.object({
 
 /** Where the app runs, and the secret its `/api/jobs/send-emails` endpoint expects. */
 export function sendEmailsConfig() {
-	return parseEnv(sendEmailsSchema, 'sending the automatic emails');
+	return parseEnv({ schema: sendEmailsSchema, group: 'sending the automatic emails' });
 }
 
 export function databaseConfig() {
-	return parseEnv(databaseSchema, 'the database');
+	return parseEnv({ schema: databaseSchema, group: 'the database' });
 }
 
 export function storageConfig(): StorageConfig {
-	const env = parseEnv(storageSchema, 'the file bucket');
+	const env = parseEnv({ schema: storageSchema, group: 'the file bucket' });
 	return {
 		endpoint: env.S3_ENDPOINT,
 		publicEndpoint: env.S3_PUBLIC_ENDPOINT,
@@ -66,4 +72,4 @@ export function storageConfig(): StorageConfig {
 }
 
 /** Parsed when the sync is first imported, so the other jobs start without any of it. */
-export const config = parseEnv(mailSyncSchema, 'the mail sync');
+export const config = parseEnv({ schema: mailSyncSchema, group: 'the mail sync' });

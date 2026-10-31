@@ -39,34 +39,37 @@
 	// someone is writing would discard their work.
 	const conferenceId = untrack(() => params.conferenceId);
 
-	const draft = createDraftAutosave<PaperDraft, unknown>(`paperDraft_${conferenceId}`, {
-		readContent: () => get(editorContentStore),
-		toDraft: (content, savedAt) => {
-			const currentFormData = get(form.form);
-			return {
-				type: currentFormData.type,
-				agendaItemId: currentFormData.agendaItemId,
-				content,
-				savedAt
-			};
-		},
-		applyDraft: (saved) => {
-			$formData.type = saved.type;
-			if (saved.agendaItemId) {
-				$formData.agendaItemId = saved.agendaItemId;
+	const draft = createDraftAutosave<PaperDraft, unknown>({
+		storageKey: `paperDraft_${conferenceId}`,
+		options: {
+			readContent: () => get(editorContentStore),
+			toDraft: (content, savedAt) => {
+				const currentFormData = get(form.form);
+				return {
+					type: currentFormData.type,
+					agendaItemId: currentFormData.agendaItemId,
+					content,
+					savedAt
+				};
+			},
+			applyDraft: (saved) => {
+				$formData.type = saved.type;
+				if (saved.agendaItemId) {
+					$formData.agendaItemId = saved.agendaItemId;
+				}
+				$editorContentStore = saved.content;
+			},
+			resetEditor: () => {
+				$editorContentStore = undefined;
 			}
-			$editorContentStore = saved.content;
-		},
-		resetEditor: () => {
-			$editorContentStore = undefined;
 		}
 	});
 
-	const context = await fetchNewPaperContext(
+	const context = await fetchNewPaperContext({
 		conferenceId,
-		currentUser.sub,
-		untrack(() => page.url.searchParams.get('type'))
-	);
+		userId: currentUser.sub,
+		typeParam: untrack(() => page.url.searchParams.get('type'))
+	});
 	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
@@ -97,29 +100,36 @@
 		// Use TipTap editor content store
 		const content = $editorContentStore;
 
-		const error = newPaperSaveError($formData.type, $formData.agendaItemId, content);
+		const error = newPaperSaveError({
+			type: $formData.type,
+			agendaItemId: $formData.agendaItemId,
+			content
+		});
 		if (error) {
 			toast.error(error);
 			return;
 		}
 
-		await createPaper(
-			{
+		await createPaper({
+			paper: {
 				conferenceId: params.conferenceId,
 				authorId: currentUser.sub,
 				delegationId: delegation?.id,
 				type: $formData.type,
 				content,
-				agendaItemId: newPaperAgendaItemId($formData.type, $formData.agendaItemId)
+				agendaItemId: newPaperAgendaItemId({
+					type: $formData.type,
+					agendaItemId: $formData.agendaItemId
+				})
 			},
 			submit,
-			() => {
+			onCreated: () => {
 				// Clear store so next paper creation starts fresh
 				$editorContentStore = undefined;
 				// Clear localStorage draft on successful submission
 				draft.clear();
 			}
-		);
+		});
 	};
 </script>
 

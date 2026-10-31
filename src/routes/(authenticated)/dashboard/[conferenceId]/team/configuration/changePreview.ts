@@ -243,7 +243,7 @@ function isEmpty(value: unknown): boolean {
 	return false;
 }
 
-function valuesAreEqual(before: unknown, after: unknown): boolean {
+function valuesAreEqual({ before, after }: { before: unknown; after: unknown }): boolean {
 	if (isEmpty(before) && isEmpty(after)) return true;
 	if (before instanceof Date && after instanceof Date) {
 		return before.getTime() === after.getTime();
@@ -290,7 +290,7 @@ export function collectConfigChanges({
 
 		// Superforms untaints a field that was changed back to its original value, but
 		// guard against it anyway so the preview never lists a non-change.
-		if (valuesAreEqual(before, after)) continue;
+		if (valuesAreEqual({ before, after })) continue;
 
 		const description = fieldDescriptions[key];
 		const format = description.format ?? formatValue;

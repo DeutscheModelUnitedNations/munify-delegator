@@ -53,16 +53,19 @@ describe('personBadge', () => {
 
 	test('shows a nation by its flag, a label under the UN flag, a supervisor by an image', () => {
 		const nation = badgeRow(
-			personBadge(person, {
-				kind: 'nation',
-				alpha2Code: 'de',
-				countryName: 'Deutschland',
-				committee: 'GV'
+			personBadge({
+				person,
+				seat: {
+					kind: 'nation',
+					alpha2Code: 'de',
+					countryName: 'Deutschland',
+					committee: 'GV'
+				}
 			})
 		);
-		const label = badgeRow(personBadge(person, { kind: 'label', label: 'Presse' }));
+		const label = badgeRow(personBadge({ person, seat: { kind: 'label', label: 'Presse' } }));
 		const image = badgeRow(
-			personBadge(person, { kind: 'image', label: 'Betreuung', image: 'supervisor' })
+			personBadge({ person, seat: { kind: 'image', label: 'Betreuung', image: 'supervisor' } })
 		);
 		expect(nation).toEqual([
 			'Ada Lovelace',
@@ -85,8 +88,8 @@ describe('placardBadges', () => {
 	const countryName = (alpha3: string) => names[alpha3] ?? alpha3;
 
 	test('puts one placard per seat at each committee table, without person names', () => {
-		const placards = placardBadges(
-			[
+		const placards = placardBadges({
+			committees: [
 				{
 					abbreviation: 'SR',
 					nations: [{ alpha2Code: 'fr', alpha3Code: 'fra' }],
@@ -101,9 +104,9 @@ describe('placardBadges', () => {
 					nonStateActors: []
 				}
 			],
-			['Greenpeace'],
+			unseatedNonStateActors: ['Greenpeace'],
 			countryName
-		);
+		});
 		expect(placards.map((p) => [p.committee ?? '', p.countryName])).toEqual([
 			['GV', 'Deutschland'],
 			['GV', 'Frankreich'],

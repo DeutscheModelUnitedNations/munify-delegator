@@ -41,8 +41,8 @@
 		(delegation?.members ?? []).toSorted(
 			(a, b) =>
 				Number(b.isHeadDelegate) - Number(a.isHeadDelegate) ||
-				formatNames(a.user.givenName, a.user.familyName).localeCompare(
-					formatNames(b.user.givenName, b.user.familyName)
+				formatNames({ givenName: a.user.givenName, familyName: a.user.familyName }).localeCompare(
+					formatNames({ givenName: b.user.givenName, familyName: b.user.familyName })
 				)
 		)
 	);
@@ -89,7 +89,10 @@
 						}}
 					>
 						<span class="flex-1 truncate">
-							{formatNames(member.user.givenName, member.user.familyName)}
+							{formatNames({
+								givenName: member.user.givenName,
+								familyName: member.user.familyName
+							})}
 						</span>
 						{#if member.isHeadDelegate}
 							<div class="tooltip tooltip-left" data-tip={m.headDelegate()}>

@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { logger } from '#lib/logger';
 
 // Run outside SvelteKit (`bun run db:reset`), so the connection string comes straight off the
 // process rather than through `$app/env/private`.
 const db = drizzle(process.env.DATABASE_URL!);
 
-console.info('Resetting database...');
+logger.info('Resetting database...');
 await db.execute(sql`
 	DO $$ DECLARE
 		r RECORD;
@@ -25,5 +26,5 @@ await db.execute(sql`
 		END LOOP;
 	END $$;
 `);
-console.info('Resetting database done.');
+logger.info('Resetting database done.');
 process.exit(0);

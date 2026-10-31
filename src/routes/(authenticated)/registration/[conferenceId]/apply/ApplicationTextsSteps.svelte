@@ -28,14 +28,14 @@
 		$props();
 
 	// One form across the steps; only the last step's button submits it.
-	const form = mutationForm(
-		defaults(
+	const form = mutationForm({
+		initial: defaults(
 			{ schoolId: null, schoolName: '', motivation: '', experience: '' },
 			zod4Client(applicationFormSchema)
 		),
-		zod4Client(applicationFormSchema),
-		(answers) => submit(answers)
-	);
+		validators: zod4Client(applicationFormSchema),
+		save: (answers) => submit(answers)
+	});
 	const { form: formData, submitting } = form;
 
 	/** How many questions are answered: the step after them is the open one. */

@@ -50,12 +50,16 @@ schemaBuilder.mutationFields((t) => ({
 			size: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const source = await assertCanUploadFile(ctx, args);
-			const id = await requestUpload(source, ctx.mustBeLoggedIn().sub, args);
+			const source = await assertCanUploadFile({ ctx, target: args });
+			const id = await requestUpload({
+				source,
+				uploaderId: ctx.mustBeLoggedIn().sub,
+				request: args
+			});
 			storedFilePubsub.created();
 
 			return db.query.storedFile
-				.findFirst(query(await queryAllowed(ctx.abilities.storedFile, id)))
+				.findFirst(query(await queryAllowed({ ability: ctx.abilities.storedFile, id })))
 				.then(assertFindFirstExists);
 		}
 	})

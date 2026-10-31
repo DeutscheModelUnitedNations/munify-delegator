@@ -4,11 +4,15 @@
  * caught too: `//evil.example` and `/\evil.example` (a backslash reads as a slash) both navigate
  * away from the site. For a redirect after a sign-in or a notice, never redirect anywhere else.
  */
-export function sameSitePath(
-	path: string | null | undefined,
-	origin: string,
+export function sameSitePath({
+	path,
+	origin,
 	fallback = '/'
-): string {
+}: {
+	path: string | null | undefined;
+	origin: string;
+	fallback?: string;
+}): string {
 	if (!path || !path.startsWith('/')) return fallback;
 	let target: URL;
 	try {

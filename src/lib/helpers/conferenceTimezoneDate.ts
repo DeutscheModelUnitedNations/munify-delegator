@@ -7,7 +7,13 @@ import { getLocale } from '#lib/paraglide/runtime';
  * `new Date("2026-02-20T18:00")` interprets them in the browser's local timezone.
  * This function instead interprets the value in the conference timezone.
  */
-export function datetimeLocalToDate(datetimeLocal: string, timezone: string): Date {
+export function datetimeLocalToDate({
+	datetimeLocal,
+	timezone
+}: {
+	datetimeLocal: string;
+	timezone: string;
+}): Date {
 	const [datePart, timePart] = datetimeLocal.split('T');
 	const [year, month, day] = datePart.split('-').map(Number);
 	const [hours, minutes] = timePart.split(':').map(Number);
@@ -17,9 +23,11 @@ export function datetimeLocalToDate(datetimeLocal: string, timezone: string): Da
 	// target timezone. A single-pass offset lookup can be wrong by up to ±1 h
 	// when the tentative time and the result straddle a DST transition, so we
 	// run a second pass to correct for that.
-	let result = new Date(desiredWallMs - getOffsetMs(new Date(desiredWallMs), timezone));
-	const secondOffset = getOffsetMs(result, timezone);
-	const firstOffset = getOffsetMs(new Date(desiredWallMs), timezone);
+	let result = new Date(
+		desiredWallMs - getOffsetMs({ instant: new Date(desiredWallMs), timezone })
+	);
+	const secondOffset = getOffsetMs({ instant: result, timezone });
+	const firstOffset = getOffsetMs({ instant: new Date(desiredWallMs), timezone });
 	if (secondOffset !== firstOffset) {
 		result = new Date(desiredWallMs - secondOffset);
 	}
@@ -27,7 +35,7 @@ export function datetimeLocalToDate(datetimeLocal: string, timezone: string): Da
 }
 
 /** Returns the UTC-offset (in ms) of `timezone` at the given instant. */
-function getOffsetMs(instant: Date, timezone: string): number {
+function getOffsetMs({ instant, timezone }: { instant: Date; timezone: string }): number {
 	const formatter = new Intl.DateTimeFormat('en-US', {
 		timeZone: timezone,
 		year: 'numeric',
@@ -58,7 +66,7 @@ function getOffsetMs(instant: Date, timezone: string): number {
  * Converts a Date object to a datetime-local string (e.g. "2026-02-20T18:00")
  * representing the wall-clock time in the given timezone.
  */
-export function dateToDatetimeLocal(date: Date, timezone: string): string {
+export function dateToDatetimeLocal({ date, timezone }: { date: Date; timezone: string }): string {
 	const formatter = new Intl.DateTimeFormat('en-US', {
 		timeZone: timezone,
 		year: 'numeric',
@@ -85,7 +93,7 @@ export function dateToDatetimeLocal(date: Date, timezone: string): string {
 /**
  * Formats a Date for display in the conference timezone.
  */
-export function formatInTimezone(date: Date, timezone: string): string {
+export function formatInTimezone({ date, timezone }: { date: Date; timezone: string }): string {
 	return date.toLocaleString(getLocale(), {
 		timeZone: timezone,
 		year: 'numeric',

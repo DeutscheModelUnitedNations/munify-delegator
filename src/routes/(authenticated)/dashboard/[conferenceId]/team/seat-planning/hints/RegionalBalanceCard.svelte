@@ -21,8 +21,8 @@
 	const transfer = $derived.by(() => {
 		if (!recommendation) return '';
 		const groups = {
-			from: translateRegionalGroup(recommendation.from.group, true),
-			to: translateRegionalGroup(recommendation.to.group, true)
+			from: translateRegionalGroup({ group: recommendation.from.group, short: true }),
+			to: translateRegionalGroup({ group: recommendation.to.group, short: true })
 		};
 		return recommendation.seats === 1
 			? m.regionalBalanceTransferOne(groups)
@@ -31,7 +31,10 @@
 	/** seats with assigned delegates cannot be given up */
 	const removals = $derived(
 		deviation.removals
-			.filter((nation) => !planner.lockedBy(deviation.committeeId, nation))
+			.filter(
+				(nation) =>
+					!planner.lockedBy({ committeeId: deviation.committeeId, nationAlpha3Code: nation })
+			)
 			.slice(0, maxSuggestions)
 	);
 	const additions = $derived(deviation.suggestions.slice(0, maxSuggestions));
@@ -80,7 +83,7 @@
 				<div class="border-base-300 mt-1 flex flex-col gap-2 border-t border-dashed pt-2 text-xs">
 					<p>
 						{m.regionalBalanceRemoveTitle({
-							group: translateRegionalGroup(recommendation.from.group, true)
+							group: translateRegionalGroup({ group: recommendation.from.group, short: true })
 						})}
 					</p>
 					<div class="flex flex-wrap gap-1.5">
@@ -89,7 +92,12 @@
 							<button
 								class="btn btn-outline btn-primary btn-xs rounded-full"
 								aria-label={m.regionalBalanceRemoveSeat({ nation: name, committee: abbreviation })}
-								onclick={() => planner.setSeat(deviation.committeeId, nation, false)}
+								onclick={() =>
+									planner.setSeat({
+										committeeId: deviation.committeeId,
+										nationAlpha3Code: nation,
+										enabled: false
+									})}
 							>
 								− {name}
 							</button>
@@ -99,7 +107,7 @@
 					</div>
 					<p>
 						{m.regionalBalanceAddTitle({
-							group: translateRegionalGroup(recommendation.to.group, true)
+							group: translateRegionalGroup({ group: recommendation.to.group, short: true })
 						})}
 					</p>
 					<div class="flex flex-wrap gap-1.5">
@@ -108,7 +116,12 @@
 							<button
 								class="btn btn-outline btn-warning btn-xs rounded-full"
 								aria-label={m.regionalBalanceAddSeat({ nation: name, committee: abbreviation })}
-								onclick={() => planner.setSeat(deviation.committeeId, nation, true)}
+								onclick={() =>
+									planner.setSeat({
+										committeeId: deviation.committeeId,
+										nationAlpha3Code: nation,
+										enabled: true
+									})}
 							>
 								+ {name}
 							</button>

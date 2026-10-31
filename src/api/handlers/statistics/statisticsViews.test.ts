@@ -14,8 +14,8 @@ import {
 import { matchesStatsFilter } from './statisticsFilters';
 
 type PeopleRow = Parameters<typeof supervisorStatsOf>[0][number];
-type DelegationsRow = Parameters<typeof roleBasedOf>[1][number];
-type AgesRow = Parameters<typeof ageStatisticsOf>[0][number];
+type DelegationsRow = Parameters<typeof roleBasedOf>[0]['delegations'][number];
+type AgesRow = Parameters<typeof ageStatisticsOf>[0]['ages'][number];
 type StatusRow = Parameters<typeof participantStatusOf>[0][number];
 
 const person = (overrides: Partial<PeopleRow>): PeopleRow => ({
@@ -50,9 +50,9 @@ describe('matchesStatsFilter', () => {
 	};
 
 	test('selects by applied and role', () => {
-		const selected = (filter: Parameters<typeof matchesStatsFilter>[0]) =>
+		const selected = (filter: Parameters<typeof matchesStatsFilter>[0]['filter']) =>
 			Object.entries(rows)
-				.filter(([, row]) => matchesStatsFilter(filter, row))
+				.filter(([, row]) => matchesStatsFilter({ filter, row }))
 				.map(([name]) => name);
 
 		expect(selected('ALL')).toEqual(['notApplied', 'applied', 'withRole']);
@@ -73,10 +73,13 @@ describe('registrationStatisticsOf', () => {
 			person({ kind: 'SUPERVISOR', applied: false, count: 1 }),
 			person({ kind: 'TEAM_MEMBER', count: 9 })
 		];
-		const stats = registrationStatisticsOf(
+		const stats = registrationStatisticsOf({
 			people,
-			[delegations({ applied: true, delegations: 2 }), delegations({ delegations: 1 })],
-			[
+			delegations: [
+				delegations({ applied: true, delegations: 2 }),
+				delegations({ delegations: 1 })
+			],
+			roleApplications: [
 				{
 					conferenceId: 'c',
 					roleId: 'r2',
@@ -94,8 +97,8 @@ describe('registrationStatisticsOf', () => {
 					applied: 0
 				}
 			],
-			'APPLIED'
-		);
+			filter: 'APPLIED'
+		});
 
 		expect(stats).toMatchObject({
 			total: 10,
@@ -135,7 +138,7 @@ describe('supervisors', () => {
 	});
 
 	test('only count towards the diet when they attend', () => {
-		expect(dietOf(supervisors, 'ALL').supervisors).toEqual({
+		expect(dietOf({ people: supervisors, filter: 'ALL' }).supervisors).toEqual({
 			omnivore: 0,
 			vegetarian: 0,
 			vegan: 1
@@ -156,7 +159,7 @@ describe('roleBasedOf', () => {
 	];
 
 	test('splits members, single participants and delegations by role', () => {
-		expect(roleBasedOf(people, rows, 'ALL')).toEqual({
+		expect(roleBasedOf({ people, delegations: rows, filter: 'ALL' })).toEqual({
 			delegationMembersWithRole: 4,
 			delegationMembersWithoutRole: 2,
 			delegationMembersWithCommittee: 3,
@@ -169,7 +172,7 @@ describe('roleBasedOf', () => {
 	});
 
 	test('leaves the side a filter excludes at zero', () => {
-		const stats = roleBasedOf(people, rows, 'APPLIED_WITH_ROLE');
+		const stats = roleBasedOf({ people, delegations: rows, filter: 'APPLIED_WITH_ROLE' });
 		expect(stats.delegationMembersWithoutRole).toBe(0);
 		expect(stats.delegationsWithoutAssignment).toBe(0);
 		expect(stats.delegationMembersWithRole).toBe(4);
@@ -206,7 +209,7 @@ describe('ageStatisticsOf', () => {
 	];
 
 	test('weights every age by its head count', () => {
-		const stats = ageStatisticsOf(rows, 'ALL');
+		const stats = ageStatisticsOf({ ages: rows, filter: 'ALL' });
 
 		expect(stats.overall).toEqual({
 			average: (16 * 3 + 18 + 20 + 17 * 2) / 7,
@@ -225,15 +228,13 @@ describe('ageStatisticsOf', () => {
 	});
 
 	test('orders delegation categories before roles before single participants without one', () => {
-		expect(ageStatisticsOf(rows, 'ALL').byCategory.map((c) => c.categoryName)).toEqual([
-			'Nation Delegates',
-			'Presse',
-			'Unassigned'
-		]);
+		expect(
+			ageStatisticsOf({ ages: rows, filter: 'ALL' }).byCategory.map((c) => c.categoryName)
+		).toEqual(['Nation Delegates', 'Presse', 'Unassigned']);
 	});
 
 	test('applies the filter', () => {
-		const stats = ageStatisticsOf(rows, 'APPLIED_WITHOUT_ROLE');
+		const stats = ageStatisticsOf({ ages: rows, filter: 'APPLIED_WITHOUT_ROLE' });
 		expect(stats.overall).toEqual({ average: 20, total: 1, missingBirthdays: 0 });
 	});
 });
@@ -301,14 +302,14 @@ describe('registrationTimelineOf', () => {
 		});
 
 		expect(
-			registrationTimelineOf(
-				[
+			registrationTimelineOf({
+				days: [
 					day('2026-03-30', 'SUPERVISOR', 1),
 					day('2026-03-28', 'DELEGATION', 2, 7),
 					day('2026-03-28', 'SINGLE_PARTICIPANT', 1)
 				],
-				'ALL'
-			)
+				filter: 'ALL'
+			})
 		).toEqual([
 			{
 				date: '2026-03-28',
@@ -347,10 +348,10 @@ describe('addressesOf', () => {
 		});
 
 		expect(
-			addressesOf(
-				[address(true, '241', 2), address(false, '241', 1), address(true, null, 4)],
-				'ALL'
-			)
+			addressesOf({
+				addresses: [address(true, '241', 2), address(false, '241', 1), address(true, null, 4)],
+				filter: 'ALL'
+			})
 		).toEqual([
 			{ country: 'DEU', zipPrefix: '241', _count: { _all: 3, zipPrefix: 3, country: 3 } },
 			{ country: 'DEU', zipPrefix: null, _count: { _all: 4, zipPrefix: 0, country: 4 } }
@@ -370,15 +371,15 @@ describe('nationalityDistributionOf', () => {
 
 	test('sums the counts per country and skips addresses without one', () => {
 		expect(
-			nationalityDistributionOf(
-				[
+			nationalityDistributionOf({
+				addresses: [
 					address(true, 'DEU', 2),
 					address(false, 'DEU', 1),
 					address(true, 'AUT', 4),
 					address(true, null, 5)
 				],
-				'ALL'
-			)
+				filter: 'ALL'
+			})
 		).toEqual([
 			{ country: 'DEU', countryCode: 'DEU', count: 3 },
 			{ country: 'AUT', countryCode: 'AUT', count: 4 }
@@ -387,10 +388,10 @@ describe('nationalityDistributionOf', () => {
 
 	test('leaves out addresses the filter excludes', () => {
 		expect(
-			nationalityDistributionOf(
-				[address(true, 'DEU', 2), address(false, 'DEU', 1), address(false, 'AUT', 4)],
-				'APPLIED'
-			)
+			nationalityDistributionOf({
+				addresses: [address(true, 'DEU', 2), address(false, 'DEU', 1), address(false, 'AUT', 4)],
+				filter: 'APPLIED'
+			})
 		).toEqual([{ country: 'DEU', countryCode: 'DEU', count: 2 }]);
 	});
 });
@@ -407,7 +408,10 @@ describe('schoolStatsOf', () => {
 
 	test('counts people by their own school, most first, without one as "Unknown"', () => {
 		expect(
-			schoolStatsOf([row('Kiel', 2), row('Lübeck', 5), row('Kiel', 4, false), row(null, 1)], 'ALL')
+			schoolStatsOf({
+				schools: [row('Kiel', 2), row('Lübeck', 5), row('Kiel', 4, false), row(null, 1)],
+				filter: 'ALL'
+			})
 		).toEqual([
 			{ school: 'Kiel', people: 6 },
 			{ school: 'Lübeck', people: 5 },
@@ -416,8 +420,8 @@ describe('schoolStatsOf', () => {
 	});
 
 	test('follows the filter', () => {
-		expect(schoolStatsOf([row('Kiel', 2), row('Kiel', 4, false)], 'NOT_APPLIED')).toEqual([
-			{ school: 'Kiel', people: 4 }
-		]);
+		expect(
+			schoolStatsOf({ schools: [row('Kiel', 2), row('Kiel', 4, false)], filter: 'NOT_APPLIED' })
+		).toEqual([{ school: 'Kiel', people: 4 }]);
 	});
 });

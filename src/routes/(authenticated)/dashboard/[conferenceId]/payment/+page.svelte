@@ -38,7 +38,10 @@
 	const supervisedDelegationMembers = $derived(supervisor?.supervisedDelegationMembers ?? []);
 	const supervisedSingleParticipants = $derived(supervisor?.supervisedSingleParticipants ?? []);
 	const otherSupervisors = $derived(
-		findOtherSupervisors(supervisor, people.supervisorsSharingAStudent).toSorted(sortByNames)
+		findOtherSupervisors({
+			me: supervisor,
+			candidates: people.supervisorsSharingAStudent
+		}).toSorted(sortByNames)
 	);
 
 	const registrations = $derived([

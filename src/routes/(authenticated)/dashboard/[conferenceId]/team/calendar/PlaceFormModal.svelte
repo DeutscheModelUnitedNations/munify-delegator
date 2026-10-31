@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { toast } from 'svelte-sonner';
 	import ActionModal from '#lib/components/ActionModal.svelte';
 	import { client } from '#lib/api/rumbleClient/client';
@@ -71,7 +72,7 @@
 		if (!input) return;
 		plusCodeLoading = true;
 		try {
-			const result = await resolvePlusCode(input);
+			const result = await resolvePlusCode({ input });
 			if ('error' in result) {
 				plusCodeError = plusCodeErrors[result.error]();
 				return;
@@ -101,10 +102,13 @@
 		if (!placeName) return;
 		isLoading = true;
 		try {
-			const sitePlanFileId = await uploadFile(uploadedSitePlan, {
-				kind: 'place',
-				field: 'sitePlan',
-				conferenceId
+			const sitePlanFileId = await uploadFile({
+				file: uploadedSitePlan,
+				target: {
+					kind: 'place',
+					field: 'sitePlan',
+					conferenceId
+				}
 			});
 			const values = {
 				name: placeName,
@@ -115,10 +119,14 @@
 				info: placeInfo,
 				websiteUrl: placeWebsiteUrl
 			};
-			await savePlaceFields(conferenceId, editedPlaceId, placeFields(values, sitePlanFileId));
+			await savePlaceFields({
+				conferenceId,
+				placeId: editedPlaceId,
+				fields: placeFields({ values, sitePlanFileId })
+			});
 			onClose();
 		} catch (error) {
-			console.error('Failed to save place:', error);
+			logger.error('Failed to save place', error);
 			toast.error(error instanceof Error ? error.message : String(error));
 		} finally {
 			isLoading = false;

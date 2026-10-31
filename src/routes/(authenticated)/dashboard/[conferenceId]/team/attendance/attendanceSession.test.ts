@@ -34,9 +34,15 @@ describe('attendanceSession', () => {
 	});
 
 	test('scanErrorText prefers offline, then the message, then the fallback', () => {
-		expect(scanErrorText(new TypeError('x'), 'offline', 'generic')).toBe('offline');
-		expect(scanErrorText(new Error('boom'), 'offline', 'generic')).toBe('boom');
-		expect(scanErrorText('x', 'offline', 'generic')).toBe('generic');
+		expect(
+			scanErrorText({ err: new TypeError('x'), offlineText: 'offline', fallback: 'generic' })
+		).toBe('offline');
+		expect(
+			scanErrorText({ err: new Error('boom'), offlineText: 'offline', fallback: 'generic' })
+		).toBe('boom');
+		expect(scanErrorText({ err: 'x', offlineText: 'offline', fallback: 'generic' })).toBe(
+			'generic'
+		);
 	});
 
 	test('isAlreadyScanned reads the error code, not the message', () => {
@@ -69,13 +75,13 @@ describe('attendanceSession', () => {
 
 	test('hasScanOf and findLogged', () => {
 		const entries = [entry(), entry({ userId: 'u2', timestamp: 't2', synced: true })];
-		expect(hasScanOf(undefined, 'u1')).toBe(false);
-		expect(hasScanOf(entries, 'u1')).toBe(true);
-		expect(hasScanOf(entries, 'u1', true)).toBe(false);
-		expect(hasScanOf(entries, 'u2', true)).toBe(true);
-		expect(findLogged(entries, 'u2', 't2')).toBe(entries[1]);
-		expect(findLogged(entries, 'u2', 't1')).toBeUndefined();
-		expect(findLogged(undefined, 'u2', 't2')).toBeUndefined();
+		expect(hasScanOf({ entries: undefined, userId: 'u1' })).toBe(false);
+		expect(hasScanOf({ entries, userId: 'u1' })).toBe(true);
+		expect(hasScanOf({ entries, userId: 'u1', syncedOnly: true })).toBe(false);
+		expect(hasScanOf({ entries, userId: 'u2', syncedOnly: true })).toBe(true);
+		expect(findLogged({ entries, userId: 'u2', timestamp: 't2' })).toBe(entries[1]);
+		expect(findLogged({ entries, userId: 'u2', timestamp: 't1' })).toBeUndefined();
+		expect(findLogged({ entries: undefined, userId: 'u2', timestamp: 't2' })).toBeUndefined();
 	});
 
 	test('queueFromEntries keeps only unsynced scans as pending', () => {
@@ -85,18 +91,24 @@ describe('attendanceSession', () => {
 	});
 
 	test('scanIntake', () => {
-		expect(scanIntake('a', null, false)).toEqual({ action: 'ignore' });
-		expect(scanIntake('a', 'b', true)).toEqual({ action: 'hold', held: 'b' });
-		expect(scanIntake('  ', null, true)).toEqual({ action: 'ignore' });
-		expect(scanIntake(' a ', null, true)).toEqual({ action: 'take', trimmed: 'a' });
+		expect(scanIntake({ code: 'a', held: null, active: false })).toEqual({ action: 'ignore' });
+		expect(scanIntake({ code: 'a', held: 'b', active: true })).toEqual({
+			action: 'hold',
+			held: 'b'
+		});
+		expect(scanIntake({ code: '  ', held: null, active: true })).toEqual({ action: 'ignore' });
+		expect(scanIntake({ code: ' a ', held: null, active: true })).toEqual({
+			action: 'take',
+			trimmed: 'a'
+		});
 	});
 
 	test('scanStep', () => {
-		expect(scanStep(true, true)).toBe('badge');
-		expect(scanStep(false, true)).toBeNull();
-		expect(scanStep(false, false)).toBe('ack');
-		expect(scanStep(false, false, true)).toBe('decide');
-		expect(scanStep(false, true, true)).toBeNull();
+		expect(scanStep({ badgeMode: true, passed: true })).toBe('badge');
+		expect(scanStep({ badgeMode: false, passed: true })).toBeNull();
+		expect(scanStep({ badgeMode: false, passed: false })).toBe('ack');
+		expect(scanStep({ badgeMode: false, passed: false, decides: true })).toBe('decide');
+		expect(scanStep({ badgeMode: false, passed: true, decides: true })).toBeNull();
 	});
 
 	test('mayRecordAnyway', () => {
@@ -121,10 +133,10 @@ describe('attendanceSession', () => {
 			entries: []
 		};
 		// not on the server yet: it starts under the new name
-		expect(renameTargets(local, 's1')).toEqual({ server: false, local });
-		expect(renameTargets({ ...local, started: true }, 's1').server).toBe(true);
+		expect(renameTargets({ local, id: 's1' })).toEqual({ server: false, local });
+		expect(renameTargets({ local: { ...local, started: true }, id: 's1' }).server).toBe(true);
 		// another device's session
-		expect(renameTargets(local, 's2')).toEqual({ server: true, local: null });
-		expect(renameTargets(null, 's2')).toEqual({ server: true, local: null });
+		expect(renameTargets({ local, id: 's2' })).toEqual({ server: true, local: null });
+		expect(renameTargets({ local: null, id: 's2' })).toEqual({ server: true, local: null });
 	});
 });

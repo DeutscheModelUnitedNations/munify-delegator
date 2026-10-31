@@ -29,7 +29,9 @@
 
 	let colorConfig = $derived(getColorConfig(color));
 
-	let timeLabel = $derived(`${formatClock(startTime)} – ${formatClock(endTime)}`);
+	let timeLabel = $derived(
+		`${formatClock({ time: startTime })} – ${formatClock({ time: endTime })}`
+	);
 
 	let locationLabel = $derived([place?.name, room].filter(Boolean).join(' · '));
 </script>

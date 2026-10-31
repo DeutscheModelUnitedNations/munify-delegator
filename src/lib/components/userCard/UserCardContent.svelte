@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import UserCardBody from './UserCardBody.svelte';
 	import UserCardLoadError from './UserCardLoadError.svelte';
 	import type { UserCardTab } from './userCardTabs';
@@ -18,7 +19,7 @@
 
 <!-- Keyed so pointing the card at someone else shows the skeleton instead of the previous person. -->
 {#key `${conferenceId}:${userId}`}
-	<svelte:boundary onerror={(error) => console.error('Failed to load user card data:', error)}>
+	<svelte:boundary onerror={(error) => logger.error('Failed to load user card data', error)}>
 		<UserCardBody {userId} {conferenceId} {mode} bind:activeTab />
 
 		{#snippet pending()}

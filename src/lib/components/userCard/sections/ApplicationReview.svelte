@@ -39,7 +39,7 @@
 <section class="flex flex-col gap-3">
 	<div class="flex items-center justify-between gap-2">
 		<h3 class="text-lg font-bold">{m.userCardReview()}</h3>
-		<a class="btn btn-sm" href={sightingHref(conferenceId, applicationId)}>
+		<a class="btn btn-sm" href={sightingHref({ conferenceId, applicationId })}>
 			<i class="fa-sharp-duotone fa-solid fa-binoculars"></i>
 			{m.assignmentTabSighting()}
 		</a>

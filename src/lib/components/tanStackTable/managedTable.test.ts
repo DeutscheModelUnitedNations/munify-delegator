@@ -17,12 +17,20 @@ import {
 describe('soleFilteredRow', () => {
 	const params = new URLSearchParams({ filter: 'x' });
 	test('the single row a URL filter matched', () => {
-		expect(soleFilteredRow(['r'], 'filter', params)).toBe('r');
+		expect(soleFilteredRow({ rows: ['r'], queryParamKey: 'filter', searchParams: params })).toBe(
+			'r'
+		);
 	});
 	test('nothing otherwise', () => {
-		expect(soleFilteredRow(['r', 's'], 'filter', params)).toBeUndefined();
-		expect(soleFilteredRow(['r'], undefined, params)).toBeUndefined();
-		expect(soleFilteredRow(['r'], 'other', params)).toBeUndefined();
+		expect(
+			soleFilteredRow({ rows: ['r', 's'], queryParamKey: 'filter', searchParams: params })
+		).toBeUndefined();
+		expect(
+			soleFilteredRow({ rows: ['r'], queryParamKey: undefined, searchParams: params })
+		).toBeUndefined();
+		expect(
+			soleFilteredRow({ rows: ['r'], queryParamKey: 'other', searchParams: params })
+		).toBeUndefined();
 	});
 });
 
@@ -43,14 +51,14 @@ describe('tableExport', () => {
 
 	test('exports accessor and custom columns as text, skipping columns with neither', () => {
 		expect(
-			tableExport(
+			tableExport({
 				columns,
-				[
+				rows: [
 					{ name: 'a', age: 3, hidden: true },
 					{ name: 'b', age: null, hidden: false }
 				],
 				labels
-			)
+			})
 		).toEqual({
 			header: ['Name', 'Age', 'Hidden', 'Shout'],
 			data: [
@@ -60,7 +68,12 @@ describe('tableExport', () => {
 		});
 	});
 	test('still has its header without rows', () => {
-		expect(tableExport(columns, [], labels).header).toEqual(['Name', 'Age', 'Hidden', 'Shout']);
+		expect(tableExport({ columns, rows: [], labels }).header).toEqual([
+			'Name',
+			'Age',
+			'Hidden',
+			'Shout'
+		]);
 	});
 });
 
@@ -89,12 +102,14 @@ describe('column visibility', () => {
 	});
 
 	test('a stored visibility wins, no store falls back to the defaults', () => {
-		expect(initialColumnVisibility('{"email":true}', columns)).toEqual({ email: true });
-		expect(initialColumnVisibility(null, columns)).toEqual(defaultColumnVisibility(columns));
+		expect(initialColumnVisibility({ stored: '{"email":true}', columns })).toEqual({ email: true });
+		expect(initialColumnVisibility({ stored: null, columns })).toEqual(
+			defaultColumnVisibility(columns)
+		);
 	});
 
 	test('an unreadable store leaves the visibility alone', () => {
-		expect(initialColumnVisibility('{broken', columns)).toBeUndefined();
+		expect(initialColumnVisibility({ stored: '{broken', columns })).toBeUndefined();
 	});
 });
 
@@ -129,10 +144,10 @@ describe('URL codecs', () => {
 			'c'
 		]);
 		expect(shownColumnsParam.decode(null)).toBeNull();
-		const visibility = visibilityFromShown(columns, ['a', 'c']);
+		const visibility = visibilityFromShown({ columns, shown: ['a', 'c'] });
 		expect(visibility).toEqual({ a: true, b: false, c: true });
-		expect(shownFromVisibility(columns, visibility)).toEqual(['a', 'c']);
-		expect(shownFromVisibility(columns, { b: false })).toEqual(['a', 'c']);
+		expect(shownFromVisibility({ columns, visibility })).toEqual(['a', 'c']);
+		expect(shownFromVisibility({ columns, visibility: { b: false } })).toEqual(['a', 'c']);
 	});
 
 	test('sameSorting compares column by column', () => {

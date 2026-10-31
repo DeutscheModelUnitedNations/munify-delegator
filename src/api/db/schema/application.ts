@@ -65,11 +65,11 @@ export const delegation = snakeCase.table(
 			table.entryCode.asc().nullsLast()
 		),
 		// rumble's `search` argument; see `trigramIndex`.
-		trigramIndex('delegation_id_trgm', table.id),
+		trigramIndex({ name: 'delegation_id_trgm', column: table.id }),
 		// The management tables search these with `ilike '%word%'`, which the same indexes serve.
-		trigramIndex('delegation_entry_code_trgm', table.entryCode),
-		trigramIndex('delegation_motivation_trgm', table.motivation),
-		trigramIndex('delegation_experience_trgm', table.experience),
+		trigramIndex({ name: 'delegation_entry_code_trgm', column: table.entryCode }),
+		trigramIndex({ name: 'delegation_motivation_trgm', column: table.motivation }),
+		trigramIndex({ name: 'delegation_experience_trgm', column: table.experience }),
 		// paging through a conference's delegations, newest first
 		index('delegation_conference_id_created_at_idx').using(
 			'btree',
@@ -127,18 +127,18 @@ export const singleParticipant = snakeCase.table(
 			'btree',
 			table.conferenceParticipantId.asc().nullsLast()
 		),
-		trigramIndex('single_participant_id_trgm', table.id),
-		trigramIndex('single_participant_motivation_trgm', table.motivation),
-		trigramIndex('single_participant_experience_trgm', table.experience)
+		trigramIndex({ name: 'single_participant_id_trgm', column: table.id }),
+		trigramIndex({ name: 'single_participant_motivation_trgm', column: table.motivation }),
+		trigramIndex({ name: 'single_participant_experience_trgm', column: table.experience })
 	]
 );
 
 /** The custom roles a single participant applies for (`a` the role, `b` the participant). */
-export const singleParticipantRoleWish = implicitManyToMany(
-	'single_participant_role_wish',
-	() => conferenceRole.id,
-	() => singleParticipant.id
-);
+export const singleParticipantRoleWish = implicitManyToMany({
+	name: 'single_participant_role_wish',
+	a: () => conferenceRole.id,
+	b: () => singleParticipant.id
+});
 
 export const roleApplication = snakeCase.table(
 	'role_application',
@@ -189,9 +189,9 @@ export const waitingListEntry = snakeCase.table(
 			table.userId.asc().nullsLast()
 		),
 		index('waiting_list_entry_school_id_idx').using('btree', table.schoolId.asc().nullsLast()),
-		trigramIndex('waiting_list_entry_experience_trgm', table.experience),
-		trigramIndex('waiting_list_entry_motivation_trgm', table.motivation),
-		trigramIndex('waiting_list_entry_requests_trgm', table.requests),
+		trigramIndex({ name: 'waiting_list_entry_experience_trgm', column: table.experience }),
+		trigramIndex({ name: 'waiting_list_entry_motivation_trgm', column: table.motivation }),
+		trigramIndex({ name: 'waiting_list_entry_requests_trgm', column: table.requests }),
 		index('waiting_list_entry_conference_id_assigned_at_created_at_idx').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),

@@ -19,7 +19,7 @@
 
 	// Only the day shown first depends on these props, so reading them once is intended
 	// svelte-ignore state_referenced_locally
-	let selectedDayIndex = $state(todayIndex(days, timezone));
+	let selectedDayIndex = $state(todayIndex({ days, timezone }));
 	let filterTrackId = $state<string | null>(null);
 
 	let selectedDay = $derived(days[selectedDayIndex]);
@@ -30,9 +30,11 @@
 	let selectedEntry = $state<Entry | null>(null);
 	let selectedDayForDrawer = $state<Day | null>(null);
 
-	let selectedTrack = $derived(entryTrackSummary(selectedDayForDrawer, selectedEntry));
+	let selectedTrack = $derived(
+		entryTrackSummary({ day: selectedDayForDrawer, entry: selectedEntry })
+	);
 
-	function handleEntryClick(entry: Entry, day: Day) {
+	function handleEntryClick({ entry, day }: { entry: Entry; day: Day }) {
 		selectedEntry = entry;
 		selectedDayForDrawer = day;
 		drawerOpen = true;
@@ -86,7 +88,7 @@
 				entries={selectedDay.entries}
 				{filterTrackId}
 				{timezone}
-				onEntryClick={(entry) => handleEntryClick(entry, selectedDay)}
+				onEntryClick={(entry) => handleEntryClick({ entry, day: selectedDay })}
 			/>
 		{/if}
 	</div>
@@ -102,7 +104,7 @@
 				{filterTrackId}
 				{timezone}
 				minTrackWidth="0"
-				onEntryClick={(entry) => handleEntryClick(entry, day)}
+				onEntryClick={(entry) => handleEntryClick({ entry, day })}
 			/>
 		{/each}
 	</div>

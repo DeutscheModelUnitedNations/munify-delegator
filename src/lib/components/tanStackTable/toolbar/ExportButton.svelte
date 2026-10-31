@@ -16,15 +16,15 @@
 
 	async function exportCsv() {
 		const { header, data } = await getExport();
-		downloadCSV(header, data, `${filename}-${stamp()}.csv`);
+		downloadCSV({ header, data, filename: `${filename}-${stamp()}.csv` });
 	}
 
 	async function exportJson() {
 		const { header, data } = await getExport();
-		downloadJSON(
-			data.map((row) => Object.fromEntries(header.map((name, i) => [name, row[i]]))),
-			`${filename}-${stamp()}.json`
-		);
+		downloadJSON({
+			data: data.map((row) => Object.fromEntries(header.map((name, i) => [name, row[i]]))),
+			filename: `${filename}-${stamp()}.json`
+		});
 	}
 </script>
 

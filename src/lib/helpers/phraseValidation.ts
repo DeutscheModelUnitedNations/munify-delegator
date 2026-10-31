@@ -39,7 +39,13 @@ export function parsePhrasePatterns(content: string): PhrasePattern[] {
 /**
  * Validate text against a list of phrase patterns
  */
-export function validatePhrase(text: string, patterns: PhrasePattern[]): ValidationResult {
+export function validatePhrase({
+	text,
+	patterns
+}: {
+	text: string;
+	patterns: PhrasePattern[];
+}): ValidationResult {
 	const trimmedText = text.trim();
 
 	if (!trimmedText) {

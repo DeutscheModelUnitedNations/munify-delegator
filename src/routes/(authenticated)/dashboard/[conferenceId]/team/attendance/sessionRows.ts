@@ -36,7 +36,13 @@ const startOf = (row: SessionRow) =>
  * name, and open sessions whose occasion is not listed (yet, or not for the caller). Running ones
  * come first, then the newest.
  */
-export function sessionRows(occasions: Occasion[], openSessions: OpenSession[]): SessionRow[] {
+export function sessionRows({
+	occasions,
+	openSessions
+}: {
+	occasions: Occasion[];
+	openSessions: OpenSession[];
+}): SessionRow[] {
 	const latestOpen = new Map<string, OpenSession>();
 	for (const open of openSessions) {
 		const key = occasionKey(open.occasion);

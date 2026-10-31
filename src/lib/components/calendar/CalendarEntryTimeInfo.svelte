@@ -12,7 +12,7 @@
 
 	let { entry, track = null, dayName, dayDate = null }: Props = $props();
 
-	const formatTime = (date: Date) => formatClock(date);
+	const formatTime = (date: Date) => formatClock({ time: date });
 
 	let timeLabel = $derived(`${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}`);
 

@@ -4,31 +4,35 @@ import { rolesWithTeamPermission } from '#lib/helpers/teamRoles';
 
 describe('findFileSource', () => {
 	test('maps a route to its column, purpose, limits and caching', () => {
-		expect(findFileSource('conference', 'logo')).toMatchObject({
+		expect(findFileSource({ kind: 'conference', field: 'logo' })).toMatchObject({
 			kind: 'conference',
 			field: 'logo',
 			purpose: 'conference/logo',
 			column: 'logoFileId',
 			permission: 'manageConference'
 		});
-		expect(findFileSource('conference', 'certificate')).toMatchObject({
+		expect(findFileSource({ kind: 'conference', field: 'certificate' })).toMatchObject({
 			mimeTypes: ['application/pdf']
 		});
-		expect(findFileSource('resolution', 'content')?.column).toBe('fileId');
+		expect(findFileSource({ kind: 'resolution', field: 'content' })?.column).toBe('fileId');
 	});
 
 	test('lets the content roles upload templates, but only project management the pictures', () => {
-		expect(findFileSource('conference', 'contract')?.permission).toBe('editConferenceContent');
+		expect(findFileSource({ kind: 'conference', field: 'contract' })?.permission).toBe(
+			'editConferenceContent'
+		);
 		expect(rolesWithTeamPermission('editConferenceContent')).toContain('CONTENT_LEAD');
-		expect(findFileSource('conference', 'emblem')?.permission).toBe('manageConference');
+		expect(findFileSource({ kind: 'conference', field: 'emblem' })?.permission).toBe(
+			'manageConference'
+		);
 		expect(rolesWithTeamPermission('manageConference')).not.toContain('CONTENT_LEAD');
 	});
 
 	test('does not serve anything that is not listed', () => {
-		expect(findFileSource('user', 'avatar')).toBeUndefined();
-		expect(findFileSource('conference', 'iban')).toBeUndefined();
-		expect(findFileSource('conference', 'constructor')).toBeUndefined();
-		expect(findFileSource('constructor', 'logo')).toBeUndefined();
+		expect(findFileSource({ kind: 'user', field: 'avatar' })).toBeUndefined();
+		expect(findFileSource({ kind: 'conference', field: 'iban' })).toBeUndefined();
+		expect(findFileSource({ kind: 'conference', field: 'constructor' })).toBeUndefined();
+		expect(findFileSource({ kind: 'constructor', field: 'logo' })).toBeUndefined();
 	});
 });
 

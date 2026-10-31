@@ -14,11 +14,11 @@ import {
 } from '#lib/helpers/plausibilityRules';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '#api/services/args';
-import { totalSeats } from '#api/services/seatPlanning';
+import { totalSeats } from '#api/handlers/seatPlanning/seatPlanningService';
 import { MAX_NAMETAG_BINS } from '#api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import { documentLayoutSchema, type LayoutDocument } from '#lib/helpers/documentLayout';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
@@ -56,7 +56,7 @@ export async function countOfferedSeats(conferenceId: string) {
 		})
 	]);
 
-	return totalSeats(committees, nonStateActors);
+	return totalSeats({ committees, nonStateActors });
 }
 
 /** The settings with a closed set of values; an omitted or cleared one is left to the column. */
@@ -66,18 +66,21 @@ export function assertValidConferenceSettings(args: {
 	language?: string | null;
 }) {
 	if (args.maxSeatsPerSchool != null && args.maxSeatsPerSchool < 1) {
-		throw apiError('INVALID_INPUT', m.conferenceMaxSeatsPerSchoolRange());
+		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceMaxSeatsPerSchoolRange() });
 	}
 
 	if (
 		args.nametagBinCount != null &&
 		!(args.nametagBinCount >= 1 && args.nametagBinCount <= MAX_NAMETAG_BINS)
 	) {
-		throw apiError('INVALID_INPUT', m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS }));
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.conferenceNametagBinsRange({ max: MAX_NAMETAG_BINS })
+		});
 	}
 
 	if (args.language != null && !isConferenceLanguage(args.language)) {
-		throw apiError('INVALID_INPUT', m.conferenceLanguageUnsupported());
+		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceLanguageUnsupported() });
 	}
 }
 
@@ -150,7 +153,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 			postalCountry: args.postalCountry,
 			...files
 		})
-		.where(whereRows(schema.conference, { id: args.id }))
+		.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
 		.returning({ id: schema.conference.id });
 
 	return updated.length > 0;
@@ -162,7 +165,7 @@ export async function updateConference(args: ConferenceUpdateArgs) {
  */
 export async function seedConference(input: unknown) {
 	if (!input) {
-		throw apiError('INVALID_INPUT', m.plausibilityIncompleteOrInvalidData());
+		throw apiError({ code: 'INVALID_INPUT', message: m.plausibilityIncompleteOrInvalidData() });
 	}
 
 	const data = ConferenceSeedingSchema.parse(input);
@@ -181,10 +184,10 @@ export async function seedConference(input: unknown) {
 			.map((nation) => `${committee.abbreviation}: ${nation}`)
 	);
 	if (unknownNations.length > 0) {
-		throw apiError(
-			'INVALID_INPUT',
-			m.conferenceSeedingUnknownNations({ nations: unknownNations.join(', ') })
-		);
+		throw apiError({
+			code: 'INVALID_INPUT',
+			message: m.conferenceSeedingUnknownNations({ nations: unknownNations.join(', ') })
+		});
 	}
 
 	const created = await db.transaction(async (tx) => {
@@ -267,7 +270,13 @@ export type ReadableUsers = Awaited<ReturnType<ApiContext['abilities']['user']['
  * Flags participants whose age does not fit the role they registered for, plus those whose
  * account data no longer satisfies the registration form.
  */
-export async function findPlausibilityIssues(conferenceId: string, readableUsers: ReadableUsers) {
+export async function findPlausibilityIssues({
+	conferenceId,
+	readableUsers
+}: {
+	conferenceId: string;
+	readableUsers: ReadableUsers;
+}) {
 	const participating = {
 		OR: [
 			{ singleParticipant: { participant: { conferenceId } } },
@@ -327,24 +336,29 @@ export async function findPlausibilityIssues(conferenceId: string, readableUsers
  * Stores where a document's generated parts go on its template; null goes back to the defaults.
  * The other documents' layouts stay as they are. Answers whether the conference exists.
  */
-export async function setDocumentLayout(
-	conferenceId: string,
-	document: LayoutDocument,
-	layout: unknown
-) {
+export async function setDocumentLayout({
+	conferenceId,
+	document,
+	layout
+}: {
+	conferenceId: string;
+	document: LayoutDocument;
+	layout: unknown;
+}) {
 	const column = schema.conference.documentLayouts;
 	let value;
 	if (layout === null || layout === undefined) {
 		value = sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`;
 	} else {
 		const parsed = documentLayoutSchema(document).safeParse(layout);
-		if (!parsed.success) throw apiError('INVALID_INPUT', m.documentLayoutInvalid());
+		if (!parsed.success)
+			throw apiError({ code: 'INVALID_INPUT', message: m.documentLayoutInvalid() });
 		value = sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(parsed.data)}::jsonb)`;
 	}
 	const updated = await db
 		.update(schema.conference)
 		.set({ documentLayouts: value })
-		.where(whereRows(schema.conference, { id: conferenceId }))
+		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }))
 		.returning({ id: schema.conference.id });
 	return updated.length > 0;
 }

@@ -20,6 +20,6 @@ export function normalizeEntryCode(code: string) {
  * only once `settled` - while somebody is still typing an eight-letter code, its first six letters
  * would otherwise be looked up, miss, and count as a wrong guess.
  */
-export function isLookupReady(code: string, settled: boolean) {
+export function isLookupReady({ code, settled }: { code: string; settled: boolean }) {
 	return code.length === ENTRY_CODE_LENGTH || (settled && code.length === LEGACY_ENTRY_CODE_LENGTH);
 }

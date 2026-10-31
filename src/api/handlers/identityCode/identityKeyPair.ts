@@ -35,14 +35,20 @@ export async function identityPublicKey() {
 }
 
 /** A signed code for `userId`, good for `IDENTITY_CODE_VALIDITY_MS` from `now`. */
-export async function issueIdentityCode(userId: string, now = Date.now()) {
+export async function issueIdentityCode({
+	userId,
+	now = Date.now()
+}: {
+	userId: string;
+	now?: number;
+}) {
 	const issuedAtSeconds = Math.floor(now / 1000);
 	const signature = new Uint8Array(
 		await crypto.subtle.sign(
 			'Ed25519',
 			(await keys).privateKey,
-			identityCodeMessage(userId, issuedAtSeconds)
+			identityCodeMessage({ userId, issuedAtSeconds })
 		)
 	);
-	return encodeIdentityCode(userId, issuedAtSeconds, signature);
+	return encodeIdentityCode({ userId, issuedAtSeconds, signature });
 }

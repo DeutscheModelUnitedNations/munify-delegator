@@ -9,7 +9,8 @@
  * unambiguous no matter which timezone the server runs in.
  */
 
-const pad = (value: number, length = 2) => String(value).padStart(length, '0');
+const pad = ({ value, length = 2 }: { value: number; length?: number }) =>
+	String(value).padStart(length, '0');
 
 /**
  * Renders a `Date` for a native date input.
@@ -19,12 +20,18 @@ const pad = (value: number, length = 2) => String(value).padStart(length, '0');
  * previous day for anyone west of UTC. Datetime values use the browser's wall
  * clock, which is what `datetime-local` inputs represent.
  */
-export function dateToInputValue(date: Date | undefined, enableTime: boolean): string {
+export function dateToInputValue({
+	date,
+	enableTime
+}: {
+	date: Date | undefined;
+	enableTime: boolean;
+}): string {
 	if (!date || Number.isNaN(date.getTime())) return '';
 	if (!enableTime) return date.toISOString().slice(0, 10);
 	return (
-		`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-		`T${pad(date.getHours())}:${pad(date.getMinutes())}`
+		`${date.getFullYear()}-${pad({ value: date.getMonth() + 1 })}-${pad({ value: date.getDate() })}` +
+		`T${pad({ value: date.getHours() })}:${pad({ value: date.getMinutes() })}`
 	);
 }
 
@@ -35,7 +42,13 @@ export function dateToInputValue(date: Date | undefined, enableTime: boolean): s
  * regardless of the browser timezone; datetime values are interpreted in the
  * browser timezone, mirroring `dateToInputValue`.
  */
-export function inputValueToDate(value: string, enableTime: boolean): Date | undefined {
+export function inputValueToDate({
+	value,
+	enableTime
+}: {
+	value: string;
+	enableTime: boolean;
+}): Date | undefined {
 	if (!value) return undefined;
 	const date = new Date(enableTime ? value : `${value}T00:00:00.000Z`);
 	return Number.isNaN(date.getTime()) ? undefined : date;

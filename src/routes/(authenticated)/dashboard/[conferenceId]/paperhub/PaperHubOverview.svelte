@@ -27,7 +27,7 @@
 	let { conferenceId }: Props = $props();
 
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
-	const focusMode = createPersistedState('paperHubFocusMode', false);
+	const focusMode = createPersistedState({ key: 'paperHubFocusMode', initial: false });
 
 	const paperSelection = {
 		id: true,
@@ -83,10 +83,13 @@
 		helpStatusOverrides.get(agendaItem.id) ?? agendaItem.reviewHelpStatus;
 
 	// Cycle through review help status values
-	const cycleReviewHelpStatus = async (
-		agendaItemId: string,
-		currentStatus: ReviewhelpstatusEnum
-	) => {
+	const cycleReviewHelpStatus = async ({
+		agendaItemId,
+		currentStatus
+	}: {
+		agendaItemId: string;
+		currentStatus: ReviewhelpstatusEnum;
+	}) => {
 		const nextStatus =
 			currentStatus === 'UNSPECIFIED'
 				? 'HELP_NEEDED'
@@ -168,10 +171,10 @@
 
 	const timeOf = (date: Date | null) => (date ? new Date(date).getTime() : 0);
 
-	const getSortedPapers = (agendaItemId: string, papers: Paper[]) => {
+	const getSortedPapers = ({ agendaItemId, papers }: { agendaItemId: string; papers: Paper[] }) => {
 		const config = sortState.get(agendaItemId);
 		// Default sort: updatedAt ascending (oldest paper on top)
-		let result = sortPapers(papers, config ?? { key: 'updatedAt', direction: 'asc' });
+		let result = sortPapers({ papers, config: config ?? { key: 'updatedAt', direction: 'asc' } });
 
 		// Apply focus mode: prioritize papers without reviews, then oldest first, limit to 5
 		if (focusMode.current) {
@@ -219,10 +222,10 @@
 {#snippet papersTable(groupId: string, papers: Paper[])}
 	<div class="px-2 pb-2">
 		<PaperTable
-			papers={getSortedPapers(groupId, papers)}
+			papers={getSortedPapers({ agendaItemId: groupId, papers })}
 			sortable={true}
 			sortConfig={sortState.get(groupId)}
-			onSort={(key) => sortState.toggle(groupId, key)}
+			onSort={(key) => sortState.toggle({ groupId, key })}
 			paperHref={(paperId) => resolve(`dashboard/${conferenceId}/paperhub/${paperId}`)}
 		/>
 	</div>
@@ -314,7 +317,11 @@
 									<!-- Review Help Status Toggle -->
 									<ReviewHelpStatusToggle
 										status={helpStatus}
-										onCycle={() => cycleReviewHelpStatus(agendaItem.id, helpStatus)}
+										onCycle={() =>
+											cycleReviewHelpStatus({
+												agendaItemId: agendaItem.id,
+												currentStatus: helpStatus
+											})}
 									/>
 								{/snippet}
 								{#snippet aside()}

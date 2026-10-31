@@ -23,7 +23,7 @@ function createSeatSwitch() {
 			return target;
 		},
 		pick(seat: SwitchSeat) {
-			({ selected, target } = nextSwitchSelection(selected, seat));
+			({ selected, target } = nextSwitchSelection({ selected, seat }));
 		},
 		clearTarget() {
 			target = undefined;

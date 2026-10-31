@@ -12,13 +12,13 @@ const base = { inConference: true, status: done, birthday: adult, alreadyScanned
 
 describe('isMinor', () => {
 	test('is true until the eighteenth birthday', () => {
-		expect(isMinor(new Date('2008-10-10'), now)).toBe(true);
-		expect(isMinor(new Date('2008-10-09'), now)).toBe(false);
+		expect(isMinor({ birthday: new Date('2008-10-10'), now })).toBe(true);
+		expect(isMinor({ birthday: new Date('2008-10-09'), now })).toBe(false);
 	});
 
 	test('an unknown birthday counts as of age', () => {
-		expect(isMinor(null, now)).toBe(false);
-		expect(isMinor(undefined, now)).toBe(false);
+		expect(isMinor({ birthday: null, now })).toBe(false);
+		expect(isMinor({ birthday: undefined, now })).toBe(false);
 	});
 });
 

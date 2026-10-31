@@ -11,5 +11,8 @@ export async function downloadResolution(id: string) {
 		title: true,
 		file: { url: true, fileName: true }
 	});
-	await downloadFromURL(resolution.file.url, resolution.file.fileName ?? `${resolution.title}.pdf`);
+	await downloadFromURL({
+		url: resolution.file.url,
+		filename: resolution.file.fileName ?? `${resolution.title}.pdf`
+	});
 }

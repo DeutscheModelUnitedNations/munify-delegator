@@ -34,10 +34,13 @@ interface SeatingCommittee {
  * How many people a role seats: a nation the seats of every committee it sits in, a non-state
  * actor or custom role its own `seatAmount`.
  */
-export function roleSeats(
-	role: { id: string; kind: ConferenceRoleKind; seatAmount: number | null },
-	committees: readonly SeatingCommittee[]
-) {
+export function roleSeats({
+	role,
+	committees
+}: {
+	role: { id: string; kind: ConferenceRoleKind; seatAmount: number | null };
+	committees: readonly SeatingCommittee[];
+}) {
 	if (role.kind !== 'NATION') return role.seatAmount ?? 0;
 	return committees
 		.filter((committee) => committee.roles.some((seated) => seated.id === role.id))

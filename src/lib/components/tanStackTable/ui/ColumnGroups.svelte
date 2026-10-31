@@ -18,7 +18,7 @@
 	let { entries, groupOrder = [], listClass, groupClass = '', item }: Props = $props();
 
 	/** Columns without a group come first and get no heading. */
-	const groups = $derived(groupEntries(entries, groupOrder));
+	const groups = $derived(groupEntries({ entries, groupOrder }));
 </script>
 
 {#each groups as [heading, members] (heading ?? '')}

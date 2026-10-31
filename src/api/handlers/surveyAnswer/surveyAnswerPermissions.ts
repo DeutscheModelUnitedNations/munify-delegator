@@ -10,7 +10,7 @@ import {
 import { callerUserId } from '#api/services/authHelper/utils';
 import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 export function registerSurveyAnswerAbilities() {
 	// Ported from abilities/entities/surveyAnswer.ts
@@ -36,7 +36,7 @@ export function registerSurveyAnswerAbilities() {
 
 	// Participant care and project management manage their conference's answers.
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
-		const question = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+		const question = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return question ? { where: { question } } : undefined;
 	});
 }
@@ -53,23 +53,31 @@ interface AnsweredOption {
  * row the answer belongs to, and whether the caller answers as participant care - organizers may
  * overfill an option and answer past the deadline; participants may not.
  */
-async function answeringFor(
-	ctx: ApiContext,
-	option: AnsweredOption,
-	requestedUserId: string | null | undefined
-) {
+async function answeringFor({
+	ctx,
+	option,
+	requestedUserId
+}: {
+	ctx: ApiContext;
+	option: AnsweredOption;
+	requestedUserId: string | null | undefined;
+}) {
 	const caller = ctx.mustBeLoggedIn().sub;
 	const conferenceId = option.question.conferenceId;
 	const subject = requestedUserId ?? caller;
 
-	const ignoresLimits = await hasTeamPermission(ctx, conferenceId, 'manageParticipants');
+	const ignoresLimits = await hasTeamPermission({
+		ctx,
+		conferenceId,
+		permission: 'manageParticipants'
+	});
 	if (!ignoresLimits && subject !== caller) {
-		throw apiError('FORBIDDEN', m.surveyAnswerOnlyOwn());
+		throw apiError({ code: 'FORBIDDEN', message: m.surveyAnswerOnlyOwn() });
 	}
-	const participantIds = await participantIdsOf(conferenceId, [subject]);
+	const participantIds = await participantIdsOf({ conferenceId, userIds: [subject] });
 	const subjectParticipantId = participantIds.get(subject);
 	if (!subjectParticipantId) {
-		throw apiError('INVALID_INPUT', m.usersNotInConference());
+		throw apiError({ code: 'INVALID_INPUT', message: m.usersNotInConference() });
 	}
 	return { subjectParticipantId, ignoresLimits };
 }
@@ -78,13 +86,17 @@ async function answeringFor(
  * Whom an answer is for, checked: the user it names, or, addressed by id alone, whoever the
  * answer already belongs to. The question it names has to be the option's.
  */
-async function answerSubject(
-	ctx: ApiContext,
-	option: AnsweredOption,
-	args: { id?: string | null; questionId?: string | null; userId?: string | null }
-) {
+async function answerSubject({
+	ctx,
+	option,
+	args
+}: {
+	ctx: ApiContext;
+	option: AnsweredOption;
+	args: { id?: string | null; questionId?: string | null; userId?: string | null };
+}) {
 	if (args.questionId && args.questionId !== option.questionId) {
-		throw apiError('INVALID_INPUT', m.surveyAnswerOptionOtherQuestion());
+		throw apiError({ code: 'INVALID_INPUT', message: m.surveyAnswerOptionOtherQuestion() });
 	}
 	const addressed = args.id
 		? await db.query.surveyAnswer.findFirst({
@@ -94,7 +106,11 @@ async function answerSubject(
 				with: { participant: { columns: { userId: true } } }
 			})
 		: undefined;
-	return answeringFor(ctx, option, args.userId ?? addressed?.participant.userId);
+	return answeringFor({
+		ctx,
+		option,
+		requestedUserId: args.userId ?? addressed?.participant.userId
+	});
 }
 
 /**
@@ -102,12 +118,16 @@ async function answerSubject(
  * participant row in the question's conference), whether the option's limits apply to the caller,
  * and the caller's answer to replace, if there is one they may update.
  */
-export async function assertCanAnswerSurvey(
-	ctx: ApiContext,
-	option: AnsweredOption,
-	args: { id?: string | null; questionId?: string | null; userId?: string | null }
-) {
-	const { subjectParticipantId, ignoresLimits } = await answerSubject(ctx, option, args);
+export async function assertCanAnswerSurvey({
+	ctx,
+	option,
+	args
+}: {
+	ctx: ApiContext;
+	option: AnsweredOption;
+	args: { id?: string | null; questionId?: string | null; userId?: string | null };
+}) {
+	const { subjectParticipantId, ignoresLimits } = await answerSubject({ ctx, option, args });
 
 	const subjectsAnswer = {
 		questionId: option.questionId,
@@ -127,10 +147,13 @@ export async function assertCanAnswerSurvey(
  * Refuses unless the caller may take back the answer `userId` (by default the caller) gave to the
  * question (the row's delete ability). Returns it.
  */
-export async function assertCanDeleteSurveyAnswer(
-	ctx: ApiContext,
-	args: { questionId: string; userId?: string | null }
-) {
+export async function assertCanDeleteSurveyAnswer({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { questionId: string; userId?: string | null };
+}) {
 	const subject = args.userId ?? ctx.mustBeLoggedIn().sub;
 	const answer = await db.query.surveyAnswer.findFirst({
 		...(await ctx.abilities.surveyAnswer.filter('delete')).merge({
@@ -138,11 +161,17 @@ export async function assertCanDeleteSurveyAnswer(
 		}).query.single,
 		columns: { id: true, questionId: true }
 	});
-	if (!answer) throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+	if (!answer) throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 	return answer;
 }
 
 /** Refuses unless the caller may answer the question for everybody who has not yet. */
-export async function assertCanDistributeSurvey(ctx: ApiContext, questionId: string) {
-	await assertTeamPermissionForSurveyQuestion(ctx, questionId);
+export async function assertCanDistributeSurvey({
+	ctx,
+	questionId
+}: {
+	ctx: ApiContext;
+	questionId: string;
+}) {
+	await assertTeamPermissionForSurveyQuestion({ ctx, questionId });
 }

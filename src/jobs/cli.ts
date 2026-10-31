@@ -1,6 +1,7 @@
 import { defineCommand, runMain } from 'citty';
 import { DEFAULT_RETENTION_DAYS } from './retention';
 import { DEFAULT_GRACE_HOURS } from './fileReferences';
+import { logger } from '#lib/logger';
 
 /**
  * One-shot background jobs, run by an external scheduler (a cron job, a Dokploy schedule) as
@@ -32,7 +33,7 @@ const invitationCleanup = defineCommand({
 			);
 		}
 		const { runInvitationCleanup } = await import('./invitationCleanup');
-		console.info('Starting invitation-cleanup job');
+		logger.info('Starting job', { job: 'invitation-cleanup' });
 		await runInvitationCleanup({ retentionDays, dryRun: args['dry-run'] });
 		process.exit(0);
 	}
@@ -60,7 +61,7 @@ const fileCleanup = defineCommand({
 			throw new Error(`--grace-hours must be at least 1, got "${args['grace-hours']}"`);
 		}
 		const { runFileCleanup } = await import('./fileCleanup');
-		console.info('Starting file-cleanup job');
+		logger.info('Starting job', { job: 'file-cleanup' });
 		await runFileCleanup({ graceHours, dryRun: args['dry-run'] });
 		process.exit(0);
 	}
@@ -70,7 +71,7 @@ const refreshStatistics = defineCommand({
 	meta: { description: 'Refresh the statistics materialized views' },
 	async run() {
 		const { runRefreshStatistics } = await import('./refreshStatistics');
-		console.info('Starting refresh-statistics job');
+		logger.info('Starting job', { job: 'refresh-statistics' });
 		await runRefreshStatistics();
 		process.exit(0);
 	}
@@ -92,7 +93,7 @@ const sendEmails = defineCommand({
 	},
 	async run() {
 		const { runSendEmails } = await import('./sendEmails');
-		console.info('Starting send-emails job');
+		logger.info('Starting job', { job: 'send-emails' });
 		await runSendEmails();
 		process.exit(0);
 	}
@@ -113,6 +114,6 @@ const main = defineCommand({
 });
 
 runMain(main).catch((error) => {
-	console.error(error);
+	logger.error('Job failed', error);
 	process.exit(1);
 });

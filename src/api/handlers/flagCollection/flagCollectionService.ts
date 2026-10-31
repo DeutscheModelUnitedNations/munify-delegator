@@ -45,7 +45,7 @@ function getNationName(alpha3Code: string): string {
 
 const NSA_PIECE_COUNT = 3;
 
-function pieceState(found: boolean, unlocked: boolean): PieceState {
+function pieceState({ found, unlocked }: { found: boolean; unlocked: boolean }): PieceState {
 	if (found) return 'FOUND';
 	if (unlocked) return 'UNLOCKED';
 	return 'LOCKED';
@@ -153,10 +153,13 @@ function nationAgendaItemsOf(committees: FlagSources['committees']) {
 	return nationAgendaItems;
 }
 
-function nationFlagsOf(
-	committees: FlagSources['committees'],
-	nationPieceStates: Map<string, PieceInfo>
-): FlagProgress[] {
+function nationFlagsOf({
+	committees,
+	nationPieceStates
+}: {
+	committees: FlagSources['committees'];
+	nationPieceStates: Map<string, PieceInfo>;
+}): FlagProgress[] {
 	const nationFlags: FlagProgress[] = [];
 
 	for (const [alpha3Code, agendaItems] of nationAgendaItemsOf(committees)) {
@@ -175,7 +178,7 @@ function nationFlagsOf(
 				agendaItemId: agendaItem.agendaItemId,
 				agendaItemTitle: agendaItem.agendaItemTitle,
 				committeeAbbreviation: agendaItem.committeeAbbreviation,
-				state: pieceState(Boolean(info?.hasReview), Boolean(info?.hasPaper))
+				state: pieceState({ found: Boolean(info?.hasReview), unlocked: Boolean(info?.hasPaper) })
 			};
 		});
 		const { foundPieces, unlockedPieces } = progressOf(pieces);
@@ -199,10 +202,13 @@ function nationFlagsOf(
 }
 
 /** Non-state actors write a fixed number of papers, so their flags have a fixed size. */
-function nsaFlagsOf(
-	nsas: FlagSources['nsas'],
-	nsaPaperInfo: Map<string, NsaPaperInfo>
-): FlagProgress[] {
+function nsaFlagsOf({
+	nsas,
+	nsaPaperInfo
+}: {
+	nsas: FlagSources['nsas'];
+	nsaPaperInfo: Map<string, NsaPaperInfo>;
+}): FlagProgress[] {
 	return nsas.map((nsa) => {
 		const info = nsaPaperInfo.get(nsa.id) ?? { totalPapers: 0, reviewedPapers: 0 };
 
@@ -211,7 +217,7 @@ function nsaFlagsOf(
 			agendaItemId: null,
 			agendaItemTitle: index === 0 ? 'Introduction Paper' : `Paper ${index + 1}`,
 			committeeAbbreviation: null,
-			state: pieceState(info.reviewedPapers > index, info.totalPapers > index)
+			state: pieceState({ found: info.reviewedPapers > index, unlocked: info.totalPapers > index })
 		}));
 		const { foundPieces, unlockedPieces } = progressOf(pieces);
 
@@ -248,8 +254,8 @@ export async function buildFlagCollection(conferenceId: string): Promise<FlagCol
 	const { nationPieceStates, nsaPaperInfo } = tallyPapers(sources);
 
 	const allFlags = [
-		...nationFlagsOf(sources.committees, nationPieceStates),
-		...nsaFlagsOf(sources.nsas, nsaPaperInfo)
+		...nationFlagsOf({ committees: sources.committees, nationPieceStates }),
+		...nsaFlagsOf({ nsas: sources.nsas, nsaPaperInfo })
 	];
 
 	// Most progress first, alphabetical within the same progress.

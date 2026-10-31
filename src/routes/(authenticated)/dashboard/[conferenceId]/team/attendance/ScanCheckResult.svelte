@@ -66,9 +66,15 @@
 		if (awaiting === 'badge' && badgeInputElem) badgeInputElem.focus();
 	});
 
-	async function saveIdentityField(field: 'givenName' | 'familyName' | 'birthday', value: string) {
+	async function saveIdentityField({
+		field,
+		value
+	}: {
+		field: 'givenName' | 'familyName' | 'birthday';
+		value: string;
+	}) {
 		const promise = client.mutate.updateUsersIdentityInfo({
-			__args: { id: person.user.id, ...identityUpdate(field, value) },
+			__args: { id: person.user.id, ...identityUpdate({ field, value }) },
 			id: true,
 			givenName: true,
 			familyName: true,
@@ -100,14 +106,14 @@
 			<EditableIdentityField
 				initialValue={person.user.givenName ?? ''}
 				readonly={!canEdit}
-				onSave={(value) => saveIdentityField('givenName', value)}
+				onSave={(value) => saveIdentityField({ field: 'givenName', value })}
 			>
 				<span class="text-2xl font-bold md:text-3xl">{person.user.givenName}</span>
 			</EditableIdentityField>
 			<EditableIdentityField
 				initialValue={person.user.familyName ?? ''}
 				readonly={!canEdit}
-				onSave={(value) => saveIdentityField('familyName', value)}
+				onSave={(value) => saveIdentityField({ field: 'familyName', value })}
 			>
 				<span class="text-2xl font-bold md:text-3xl">{person.user.familyName}</span>
 			</EditableIdentityField>
@@ -120,7 +126,7 @@
 				initialValue={person.user.birthday
 					? new Date(person.user.birthday).toISOString().split('T')[0]
 					: ''}
-				onSave={(value) => saveIdentityField('birthday', value)}
+				onSave={(value) => saveIdentityField({ field: 'birthday', value })}
 			>
 				<i class="fa-sharp-duotone fa-solid fa-cake-candles md:text-xl"></i>
 				<span class="md:text-xl">

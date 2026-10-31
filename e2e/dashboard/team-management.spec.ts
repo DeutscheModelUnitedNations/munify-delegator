@@ -44,4 +44,19 @@ test('a project manager can invite a team member by email', async ({ page }) => 
 			{ timeout: 15_000 }
 		)
 		.toBe(1);
+
+	// The invitation is logged like every mail sent by hand, to the address, by the inviter
+	await expect
+		.poll(
+			async () => {
+				const res = await page.request.post('/api/graphql', {
+					data: {
+						query: `query { emailLogs(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, kind: { eq: TEAM_INVITATION }, email: { eq: "${invitee}" } }) { trigger sentById } }`
+					}
+				});
+				return (await res.json())?.data?.emailLogs ?? [];
+			},
+			{ timeout: 15_000 }
+		)
+		.toEqual([{ trigger: 'MANUAL', sentById: E2E_ASSIGNMENT_ADMIN_ID }]);
 });

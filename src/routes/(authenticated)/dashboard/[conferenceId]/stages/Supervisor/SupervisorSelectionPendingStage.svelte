@@ -33,14 +33,22 @@
 
 	type Student = ComponentProps<typeof SelectionStudentRow> & { id: string };
 
-	const toStudent = (
-		id: string,
-		user: { givenName?: string | null; familyName?: string | null; pronouns?: string | null },
-		participantType: Student['participantType'],
-		applied: boolean
-	): Student => ({
+	const toStudent = ({
 		id,
-		name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined),
+		user,
+		participantType,
+		applied
+	}: {
+		id: string;
+		user: { givenName?: string | null; familyName?: string | null; pronouns?: string | null };
+		participantType: Student['participantType'];
+		applied: boolean;
+	}): Student => ({
+		id,
+		name: formatNames({
+			givenName: user.givenName ?? undefined,
+			familyName: user.familyName ?? undefined
+		}),
 		pronouns: user.pronouns ?? '',
 		participantType,
 		applied
@@ -49,10 +57,20 @@
 	const students = $derived(
 		[
 			...supervisor.supervisedDelegationMembers.map((member) =>
-				toStudent(member.id, member.user, 'delegation', member.delegation.applied)
+				toStudent({
+					id: member.id,
+					user: member.user,
+					participantType: 'delegation',
+					applied: member.delegation.applied
+				})
 			),
 			...supervisor.supervisedSingleParticipants.map((participant) =>
-				toStudent(participant.id, participant.user, 'singleParticipant', participant.applied)
+				toStudent({
+					id: participant.id,
+					user: participant.user,
+					participantType: 'singleParticipant',
+					applied: participant.applied
+				})
 			)
 		].sort((a, b) => a.name.localeCompare(b.name))
 	);

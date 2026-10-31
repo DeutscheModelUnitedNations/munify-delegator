@@ -8,34 +8,41 @@ import {
 	assertApplicationReady,
 	assertRegistrationOpen
 } from '#api/services/registration/applicationReadiness';
-import { tidyRoleApplications } from '#api/services/registration/tidyRoleApplications';
+import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import formatNames from '#lib/helpers/formatNames';
 import { applicationFormSchema } from '#lib/schemata/applicationForm';
+import {
+	type ApplicationArgs,
+	parseApplicationArgs
+} from '#api/services/registration/applicationArgs';
 import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import type { UpdatableDelegation } from './delegationPermissions';
 import { whereRows } from '#api/db/whereRows';
 import { delegationColumnChanges } from './delegationColumnChanges';
-import { apiError } from '#api/services/errors/apiError';
-import { codeNotFound } from '#api/services/errors/codeNotFound';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import { apiError, codeNotFound } from '#api/services/errors';
+import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
 import { distinctSchoolNames } from '#lib/helpers/delegationSchools';
 
 /** Hands the head delegate role from the current holder to another member of the delegation. */
-async function transferHeadDelegate(
-	tx: Transaction,
-	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[],
-	newHeadDelegateUserId: string
-) {
+async function transferHeadDelegate({
+	tx,
+	members,
+	newHeadDelegateUserId
+}: {
+	tx: Transaction;
+	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[];
+	newHeadDelegateUserId: string;
+}) {
 	const current = members.find((member) => member.isHeadDelegate);
 	if (!current) {
-		throw apiError('NOT_FOUND', m.delegationNoHeadDelegate());
+		throw apiError({ code: 'NOT_FOUND', message: m.delegationNoHeadDelegate() });
 	}
 	const next = members.find((member) => member.participant.userId === newHeadDelegateUserId);
 	if (!next) {
-		throw apiError('NOT_FOUND', m.delegationNoNewHeadDelegate());
+		throw apiError({ code: 'NOT_FOUND', message: m.delegationNoNewHeadDelegate() });
 	}
 
 	// Order is safe here only because the resolver checks the update ability once, up front
@@ -47,31 +54,25 @@ async function transferHeadDelegate(
 	await tx
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: false })
-		.where(whereRows(schema.delegationMember, { id: current.id }));
+		.where(whereRows({ table: schema.delegationMember, filter: { id: current.id } }));
 	await tx
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: true })
-		.where(whereRows(schema.delegationMember, { id: next.id }));
+		.where(whereRows({ table: schema.delegationMember, filter: { id: next.id } }));
 }
 
 /**
  * Creates a delegation with the caller as its head delegate, who applies with the school they
  * name (their own; the delegation keeps none). Returns the delegation's id.
  */
-export async function createDelegationWithHead(
-	userId: string,
-	args: SchoolChoice & {
-		conferenceId: string;
-		motivation?: string | null;
-		experience?: string | null;
-	}
-) {
-	applicationFormSchema.parse({
-		schoolId: args.schoolId,
-		schoolName: args.schoolName,
-		motivation: args.motivation,
-		experience: args.experience
-	});
+export async function createDelegationWithHead({
+	userId,
+	args
+}: {
+	userId: string;
+	args: ApplicationArgs;
+}) {
+	parseApplicationArgs(args);
 
 	await assertRegistrationOpen(args.conferenceId);
 	// Refuses if the user already takes part in this conference in any role.
@@ -94,13 +95,21 @@ export async function createDelegationWithHead(
 			.then(assertFirstEntryExists);
 
 		// The creator becomes the head delegate.
-		const participantId = await ensureConferenceParticipant(tx, delegation.conferenceId, userId);
+		const participantId = await ensureConferenceParticipant({
+			tx,
+			conferenceId: delegation.conferenceId,
+			userId
+		});
 		await tx.insert(schema.delegationMember).values({
 			delegationId: delegation.id,
 			conferenceParticipantId: participantId,
 			isHeadDelegate: true
 		});
-		await setParticipantSchool(tx, [participantId], await resolveSchoolChoice(args, tx));
+		await setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: await resolveSchoolChoice({ choice: args, tx })
+		});
 
 		return delegation;
 	});
@@ -118,32 +127,41 @@ type DelegationDetailArgs = {
 };
 
 /** Applies or withdraws the delegation's application; applying needs a complete one. */
-async function setApplied(
-	tx: Transaction,
-	delegation: UpdatableDelegation,
-	args: DelegationDetailArgs,
-	applied: boolean
-) {
+async function setApplied({
+	tx,
+	delegation,
+	args,
+	applied
+}: {
+	tx: Transaction;
+	delegation: UpdatableDelegation;
+	args: DelegationDetailArgs;
+	applied: boolean;
+}) {
 	// Drop applications the delegation has outgrown before judging whether it may apply.
-	await tidyRoleApplications(delegation.id, tx);
+	await tidyRoleApplications({ delegationId: delegation.id, tx });
 
 	// Taking an application back reopens it for changes, which only makes sense while the
 	// conference takes registrations; afterwards the assignment works with what was sent.
 	if (!applied && delegation.conference.state !== 'PARTICIPANT_REGISTRATION') {
-		throw apiError('CONFLICT', m.applicationTimeframeClosed());
+		throw apiError({ code: 'CONFLICT', message: m.applicationTimeframeClosed() });
 	}
 
 	if (applied) {
 		if (delegation.members.length < MIN_DELEGATION_MEMBERS) {
-			throw apiError('CONFLICT', m.notEnoughMembers());
+			throw apiError({ code: 'CONFLICT', message: m.notEnoughMembers() });
 		}
-		assertApplicationReady(delegation, args, MIN_ROLE_APPLICATIONS.delegation);
+		assertApplicationReady({
+			applicant: delegation,
+			edits: args,
+			minRoleApplications: MIN_ROLE_APPLICATIONS.delegation
+		});
 	}
 
 	await tx
 		.update(schema.delegation)
 		.set({ applied })
-		.where(whereRows(schema.delegation, { id: delegation.id }));
+		.where(whereRows({ table: schema.delegation, filter: { id: delegation.id } }));
 }
 
 /**
@@ -151,31 +169,45 @@ async function setApplied(
  * (`assertCanUpdateDelegation`), in one transaction: a refused application or head delegate
  * leaves the delegation as it was. The caller publishes afterwards.
  */
-export async function updateDelegationDetails(
-	delegation: UpdatableDelegation,
-	args: DelegationDetailArgs
-) {
+export async function updateDelegationDetails({
+	delegation,
+	args
+}: {
+	delegation: UpdatableDelegation;
+	args: DelegationDetailArgs;
+}) {
 	applicationFormSchema.parse({ experience: args.experience, motivation: args.motivation });
 
 	await db.transaction(async (tx) => {
-		if (typeof args.applied === 'boolean') await setApplied(tx, delegation, args, args.applied);
+		if (typeof args.applied === 'boolean')
+			await setApplied({ tx, delegation, args, applied: args.applied });
 
-		const changes = delegationColumnChanges(args, makeEntryCode);
+		const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
 		if (Object.keys(changes).length > 0) {
 			await tx
 				.update(schema.delegation)
 				.set(changes)
-				.where(whereRows(schema.delegation, { id: delegation.id }));
+				.where(whereRows({ table: schema.delegation, filter: { id: delegation.id } }));
 		}
 
 		if (args.newHeadDelegateUserId) {
-			await transferHeadDelegate(tx, delegation.members, args.newHeadDelegateUserId);
+			await transferHeadDelegate({
+				tx,
+				members: delegation.members,
+				newHeadDelegateUserId: args.newHeadDelegateUserId
+			});
 		}
 	});
 }
 
 /** What somebody sees after entering a delegation's join code, before committing to join. */
-export async function previewDelegationByEntryCode(conferenceId: string, entryCode: string) {
+export async function previewDelegationByEntryCode({
+	conferenceId,
+	entryCode
+}: {
+	conferenceId: string;
+	entryCode: string;
+}) {
 	const delegation = await db.query.delegation.findFirst({
 		where: { conferenceId, entryCode },
 		with: {
@@ -215,6 +247,9 @@ function headDelegatePreview(
 	return {
 		headDelegateSchoolId: school?.id ?? null,
 		headDelegateSchoolName: school?.name ?? null,
-		headDelegateFullName: formatNames(headDelegate?.user?.givenName, headDelegate?.user?.familyName)
+		headDelegateFullName: formatNames({
+			givenName: headDelegate?.user?.givenName,
+			familyName: headDelegate?.user?.familyName
+		})
 	};
 }

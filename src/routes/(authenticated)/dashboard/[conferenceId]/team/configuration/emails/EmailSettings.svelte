@@ -71,30 +71,43 @@
 		}
 	}
 
-	function stage(kind: EmailkindEnum, enabled: boolean, notifyExisting: boolean, count = 0) {
-		changes.stage({ kind, enabled, notifyExisting, openCount: count }, stored.has(kind));
+	function stage({
+		kind,
+		enabled,
+		notifyExisting,
+		count = 0
+	}: {
+		kind: EmailkindEnum;
+		enabled: boolean;
+		notifyExisting: boolean;
+		count?: number;
+	}) {
+		changes.stage({
+			change: { kind, enabled, notifyExisting, openCount: count },
+			stored: stored.has(kind)
+		});
 	}
 
 	/**
 	 * Switching on asks first whether those it already applies to get it once saved. Switching back
 	 * to what is stored needs no question.
 	 */
-	async function toggle(kind: EmailkindEnum, on: boolean) {
-		if (!on || stored.has(kind)) return stage(kind, on, false);
+	async function toggle({ kind, on }: { kind: EmailkindEnum; on: boolean }) {
+		if (!on || stored.has(kind)) return stage({ kind, enabled: on, notifyExisting: false });
 		const count = await openCount(kind);
-		if (count !== undefined) ask(kind, count);
+		if (count !== undefined) ask({ kind, count });
 	}
 
 	/** Nobody to ask about: it simply goes to whoever qualifies from now on. */
-	function ask(kind: EmailkindEnum, count: number) {
+	function ask({ kind, count }: { kind: EmailkindEnum; count: number }) {
 		if (count > 0) confirming = { kind, count };
-		else stage(kind, true, true);
+		else stage({ kind, enabled: true, notifyExisting: true });
 	}
 
 	function confirm(notifyExisting: boolean) {
 		const pending = confirming;
 		confirming = undefined;
-		if (pending) stage(pending.kind, true, notifyExisting, pending.count);
+		if (pending) stage({ kind: pending.kind, enabled: true, notifyExisting, count: pending.count });
 	}
 
 	/** The kind whose text is being edited. */
@@ -116,7 +129,7 @@
 					customized={customized.has(kind)}
 					busy={busy === kind}
 					counts={statsOf(kind)}
-					ontoggle={(on) => toggle(kind, on)}
+					ontoggle={(on) => toggle({ kind, on })}
 					onedit={() => (editing = kind)}
 				/>
 			{/each}

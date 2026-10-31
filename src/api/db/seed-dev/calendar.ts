@@ -29,7 +29,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 
 	// The first day as a calendar date in the conference's timezone: the wall clock of that moment
 	// read as UTC gives it directly.
-	const firstDay = new Date(wallClockNow(timezone, cs.startConference));
+	const firstDay = new Date(wallClockNow({ timezone, now: cs.startConference }));
 	const dayDates = [0, 1, 2].map(
 		(index) =>
 			new Date(
@@ -45,7 +45,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 	const PROGRAMME_START = 9 * 60;
 	const PROGRAMME_END = 22 * 60;
 	const anchoredToNow = cs.plan.conference.state === 'ACTIVE';
-	const nowMinutes = (wallClockNow(timezone) % (24 * 60 * MINUTE_MS)) / MINUTE_MS;
+	const nowMinutes = (wallClockNow({ timezone }) % (24 * 60 * MINUTE_MS)) / MINUTE_MS;
 	const shift = anchoredToNow
 		? Math.min(
 				Math.max(Math.round((nowMinutes - 10 * 60) / 15) * 15, -PROGRAMME_START),
@@ -67,14 +67,17 @@ export async function addCalendar(cs: ConferenceSeed) {
 	cs.batch.calendarTrack.push(...tracksPerDay.flat());
 
 	/** A venue's floor plan, uploaded the way participant care would. */
-	const sitePlan = async (venue: string, rooms: string[]) =>
-		addSeedFile(cs.batch, {
-			conferenceId,
-			kind: 'place',
-			field: 'sitePlan',
-			bytes: await sitePlanPdf(venue, rooms),
-			mimeType: 'application/pdf',
-			fileName: `Lageplan ${venue}.pdf`
+	const sitePlan = async ({ venue, rooms }: { venue: string; rooms: string[] }) =>
+		addSeedFile({
+			batch: cs.batch,
+			file: {
+				conferenceId,
+				kind: 'place',
+				field: 'sitePlan',
+				bytes: await sitePlanPdf({ venue, rooms }),
+				mimeType: 'application/pdf',
+				fileName: `Lageplan ${venue}.pdf`
+			}
 		});
 
 	const landtag = makeSeedPlace({
@@ -85,12 +88,10 @@ export async function addCalendar(cs: ConferenceSeed) {
 		longitude: 9.7414,
 		directions: 'Vom Hauptbahnhof mit der U-Bahn Linie 3 oder 7 bis Waterloo, dann 5 Min zu Fuß.',
 		info: 'Bitte Personalausweis mitbringen. Keine Getränke im Plenarsaal.',
-		sitePlanFileId: await sitePlan('Landtag Niedersachsen', [
-			'Plenarsaal',
-			'Raum 201',
-			'Raum 202',
-			'Raum 203'
-		])
+		sitePlanFileId: await sitePlan({
+			venue: 'Landtag Niedersachsen',
+			rooms: ['Plenarsaal', 'Raum 201', 'Raum 202', 'Raum 203']
+		})
 	});
 	const kulturzentrum = makeSeedPlace({
 		conferenceId,
@@ -98,30 +99,38 @@ export async function addCalendar(cs: ConferenceSeed) {
 		address: 'Beispielstr. 42, 30159 Hannover',
 		latitude: 52.374,
 		longitude: 9.7385,
-		sitePlanFileId: await sitePlan('Kulturzentrum', ['Großer Saal', 'Workshop 1', 'Workshop 2'])
+		sitePlanFileId: await sitePlan({
+			venue: 'Kulturzentrum',
+			rooms: ['Großer Saal', 'Workshop 1', 'Workshop 2']
+		})
 	});
 	cs.batch.place.push(landtag, kulturzentrum);
 
 	/** A wall-clock time of a programme day, shifted along with the programme */
-	function at(date: Date, hours: number, minutes: number) {
+	function at({ date, hours, minutes }: { date: Date; hours: number; minutes: number }) {
 		return new Date(date.getTime() + (hours * 60 + minutes + shift) * MINUTE_MS);
 	}
 
 	const trackLinks: (typeof schema.calendarEntryToCalendarTrack.$inferInsert)[] = [];
 
 	/** The same session in all three tracks, one room each. */
-	function parallelSessions(
-		dayIndex: number,
-		name: string,
-		from: [number, number],
-		to: [number, number]
-	) {
+	function parallelSessions({
+		dayIndex,
+		name,
+		from,
+		to
+	}: {
+		dayIndex: number;
+		name: string;
+		from: [number, number];
+		to: [number, number];
+	}) {
 		return tracksPerDay[dayIndex].map((track, trackIndex) => {
 			const entry = makeSeedCalendarEntry({
 				calendarDayId: days[dayIndex].id,
 				name,
-				startTime: at(dayDates[dayIndex], from[0], from[1]),
-				endTime: at(dayDates[dayIndex], to[0], to[1]),
+				startTime: at({ date: dayDates[dayIndex], hours: from[0], minutes: from[1] }),
+				endTime: at({ date: dayDates[dayIndex], hours: to[0], minutes: to[1] }),
 				color: 'SESSION',
 				fontAwesomeIcon: 'gavel',
 				room: `Raum ${201 + trackIndex}`
@@ -135,8 +144,8 @@ export async function addCalendar(cs: ConferenceSeed) {
 	const workshop = makeSeedCalendarEntry({
 		calendarDayId: days[1].id,
 		name: 'Workshop: Diplomatische Verhandlungen',
-		startTime: at(dayDates[1], 12, 0),
-		endTime: at(dayDates[1], 13, 30),
+		startTime: at({ date: dayDates[1], hours: 12, minutes: 0 }),
+		endTime: at({ date: dayDates[1], hours: 13, minutes: 30 }),
 		color: 'WORKSHOP',
 		fontAwesomeIcon: 'chalkboard-user',
 		room: 'Saal A'
@@ -150,8 +159,8 @@ export async function addCalendar(cs: ConferenceSeed) {
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Eröffnungsfeier',
-			startTime: at(dayDates[0], 10, 0),
-			endTime: at(dayDates[0], 11, 30),
+			startTime: at({ date: dayDates[0], hours: 10, minutes: 0 }),
+			endTime: at({ date: dayDates[0], hours: 11, minutes: 30 }),
 			color: 'CEREMONY',
 			fontAwesomeIcon: 'flag',
 			placeId: landtag.id,
@@ -160,63 +169,63 @@ export async function addCalendar(cs: ConferenceSeed) {
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Mittagspause',
-			startTime: at(dayDates[0], 11, 30),
-			endTime: at(dayDates[0], 12, 30),
+			startTime: at({ date: dayDates[0], hours: 11, minutes: 30 }),
+			endTime: at({ date: dayDates[0], hours: 12, minutes: 30 }),
 			color: 'BREAK',
 			fontAwesomeIcon: 'utensils'
 		}),
-		...parallelSessions(0, 'Sitzung I', [12, 30], [14, 30]),
+		...parallelSessions({ dayIndex: 0, name: 'Sitzung I', from: [12, 30], to: [14, 30] }),
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Kaffeepause',
-			startTime: at(dayDates[0], 14, 30),
-			endTime: at(dayDates[0], 15, 0),
+			startTime: at({ date: dayDates[0], hours: 14, minutes: 30 }),
+			endTime: at({ date: dayDates[0], hours: 15, minutes: 0 }),
 			color: 'BREAK',
 			fontAwesomeIcon: 'mug-hot'
 		}),
-		...parallelSessions(0, 'Sitzung II', [15, 0], [17, 0]),
+		...parallelSessions({ dayIndex: 0, name: 'Sitzung II', from: [15, 0], to: [17, 0] }),
 		makeSeedCalendarEntry({
 			calendarDayId: days[0].id,
 			name: 'Abendessen',
-			startTime: at(dayDates[0], 17, 30),
-			endTime: at(dayDates[0], 18, 30),
+			startTime: at({ date: dayDates[0], hours: 17, minutes: 30 }),
+			endTime: at({ date: dayDates[0], hours: 18, minutes: 30 }),
 			color: 'SOCIAL',
 			fontAwesomeIcon: 'utensils'
 		}),
-		...parallelSessions(1, 'Sitzung III', [9, 0], [11, 0]),
+		...parallelSessions({ dayIndex: 1, name: 'Sitzung III', from: [9, 0], to: [11, 0] }),
 		makeSeedCalendarEntry({
 			calendarDayId: days[1].id,
 			name: 'Mittagspause',
-			startTime: at(dayDates[1], 11, 0),
-			endTime: at(dayDates[1], 12, 0),
+			startTime: at({ date: dayDates[1], hours: 11, minutes: 0 }),
+			endTime: at({ date: dayDates[1], hours: 12, minutes: 0 }),
 			color: 'BREAK',
 			fontAwesomeIcon: 'utensils'
 		}),
 		workshop,
-		...parallelSessions(1, 'Sitzung IV', [13, 30], [15, 30]),
+		...parallelSessions({ dayIndex: 1, name: 'Sitzung IV', from: [13, 30], to: [15, 30] }),
 		makeSeedCalendarEntry({
 			calendarDayId: days[1].id,
 			name: 'Delegiertenabend',
-			startTime: at(dayDates[1], 18, 0),
-			endTime: at(dayDates[1], 22, 0),
+			startTime: at({ date: dayDates[1], hours: 18, minutes: 0 }),
+			endTime: at({ date: dayDates[1], hours: 22, minutes: 0 }),
 			color: 'SOCIAL',
 			fontAwesomeIcon: 'party-horn',
 			placeId: kulturzentrum.id
 		}),
-		...parallelSessions(2, 'Sitzung V', [9, 0], [11, 0]),
+		...parallelSessions({ dayIndex: 2, name: 'Sitzung V', from: [9, 0], to: [11, 0] }),
 		makeSeedCalendarEntry({
 			calendarDayId: days[2].id,
 			name: 'Mittagspause',
-			startTime: at(dayDates[2], 11, 0),
-			endTime: at(dayDates[2], 12, 0),
+			startTime: at({ date: dayDates[2], hours: 11, minutes: 0 }),
+			endTime: at({ date: dayDates[2], hours: 12, minutes: 0 }),
 			color: 'BREAK',
 			fontAwesomeIcon: 'utensils'
 		}),
 		makeSeedCalendarEntry({
 			calendarDayId: days[2].id,
 			name: 'Abschlussfeier',
-			startTime: at(dayDates[2], 12, 0),
-			endTime: at(dayDates[2], 14, 0),
+			startTime: at({ date: dayDates[2], hours: 12, minutes: 0 }),
+			endTime: at({ date: dayDates[2], hours: 14, minutes: 0 }),
 			color: 'CEREMONY',
 			fontAwesomeIcon: 'award',
 			placeId: landtag.id,

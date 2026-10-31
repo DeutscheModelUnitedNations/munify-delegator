@@ -43,13 +43,16 @@
 
 	// Reset and reinitialize when paper changes
 	$effect(() => {
-		if (paperData) loaded.loadIfNew(paperData, paperData.versions.at(0)?.content);
+		if (paperData)
+			loaded.loadIfNew({ paper: paperData, latestContent: paperData.versions.at(0)?.content });
 	});
 
 	const conferenceInfo = $derived(await conferenceHeaderInfo(paperData?.conference));
 
 	let resolutionHeaderData = $derived(
-		paperData ? buildResolutionHeaderData(paperData, conferenceInfo) : undefined
+		paperData
+			? buildResolutionHeaderData({ paper: paperData, conference: conferenceInfo })
+			: undefined
 	);
 </script>
 

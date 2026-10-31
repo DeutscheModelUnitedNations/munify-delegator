@@ -2,7 +2,7 @@ import { db, schema, type Transaction } from '#api/db/db';
 import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /**
  * Refuses a waiting list entry the conference cannot take: the waiting list is only open during
@@ -11,7 +11,13 @@ import { apiError } from '#api/services/errors/apiError';
  * so a registration alone does not count. Until the assignment is released nobody knows whether
  * they have a place, and refusing only those who do would tell them, so every applicant waits.
  */
-export async function assertWaitingListOpenFor(conferenceId: string, userId: string) {
+export async function assertWaitingListOpenFor({
+	conferenceId,
+	userId
+}: {
+	conferenceId: string;
+	userId: string;
+}) {
 	const where = { conferenceId, userId };
 	// a registration names the conference and the user through the person's part in it
 	const registration = { participant: where };
@@ -32,20 +38,21 @@ export async function assertWaitingListOpenFor(conferenceId: string, userId: str
 		})
 	]);
 
-	if (!conference) throw apiError('NOT_FOUND', m.conferenceNotFound());
+	if (!conference) throw apiError({ code: 'NOT_FOUND', message: m.conferenceNotFound() });
 	if (conference.state !== 'PREPARATION') {
-		throw apiError('CONFLICT', m.waitingListNotOpen());
+		throw apiError({ code: 'CONFLICT', message: m.waitingListNotOpen() });
 	}
-	if (existing) throw apiError('CONFLICT', m.waitingListAlreadyOn());
+	if (existing) throw apiError({ code: 'CONFLICT', message: m.waitingListAlreadyOn() });
 
 	const registrations = [singleParticipant, delegationMember?.delegation].filter(
 		(registration) => registration !== undefined
 	);
 	if (registrations.length === 0) return;
 	if (!conference.assignmentReleased) {
-		throw apiError('CONFLICT', m.waitingListAfterAssignmentRelease());
+		throw apiError({ code: 'CONFLICT', message: m.waitingListAfterAssignmentRelease() });
 	}
-	if (registrations.some(holdsRole)) throw apiError('CONFLICT', m.waitingListAlreadyAccepted());
+	if (registrations.some(holdsRole))
+		throw apiError({ code: 'CONFLICT', message: m.waitingListAlreadyAccepted() });
 }
 
 /** Whether a single participant was given a role, or a delegation a nation or non-state actor. */
@@ -58,15 +65,19 @@ function holdsRole(registration: { assignedRoleId: string | null }) {
  * first was, and answers with the school the entry named so the new registration can carry it.
  * Not every user the team seats came from the waiting list: then this changes nothing.
  */
-export async function markSeatedFromWaitingList(
-	tx: Transaction,
-	conferenceId: string,
-	userId: string
-): Promise<{ schoolId: string | null } | undefined> {
+export async function markSeatedFromWaitingList({
+	tx,
+	conferenceId,
+	userId
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	userId: string;
+}): Promise<{ schoolId: string | null } | undefined> {
 	const [entry] = await tx
 		.update(schema.waitingListEntry)
 		.set({ assignedAt: sql`coalesce(${schema.waitingListEntry.assignedAt}, now())` })
-		.where(whereRows(schema.waitingListEntry, { conferenceId, userId }))
+		.where(whereRows({ table: schema.waitingListEntry, filter: { conferenceId, userId } }))
 		.returning({ schoolId: schema.waitingListEntry.schoolId });
 	return entry;
 }

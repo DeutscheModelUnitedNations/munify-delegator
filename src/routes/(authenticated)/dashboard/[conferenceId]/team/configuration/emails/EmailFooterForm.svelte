@@ -51,10 +51,7 @@
 	});
 	const formData = $derived(form.form);
 
-	const draft = debounced(
-		() => $formData.text,
-		untrack(() => $formData.text)
-	);
+	const draft = debounced({ read: () => $formData.text, initial: untrack(() => $formData.text) });
 	const preview = $derived(
 		await fetchEmailPreview({
 			conferenceId,

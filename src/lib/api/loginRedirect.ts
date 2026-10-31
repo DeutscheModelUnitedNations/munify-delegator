@@ -32,14 +32,20 @@ function rememberRedirect(now: number) {
 }
 
 /** Whether an answer means the visitor has to sign in (again); not while they are signing in. */
-export function needsSignIn(error: unknown, pathname: string) {
-	return hasErrorCode(error, 'UNAUTHENTICATED') && !pathname.startsWith('/login');
+export function needsSignIn({ error, pathname }: { error: unknown; pathname: string }) {
+	return hasErrorCode({ err: error, code: 'UNAUTHENTICATED' }) && !pathname.startsWith('/login');
 }
 
 type BrowserLocation = Parameters<typeof loginUrl>[0] & { assign(url: string): void };
 
 /** Sends the browser to the sign-in and back, unless it was sent there a moment ago. */
-export function redirectToLogin(location: BrowserLocation, now = Date.now()) {
+export function redirectToLogin({
+	location,
+	now = Date.now()
+}: {
+	location: BrowserLocation;
+	now?: number;
+}) {
 	if (redirectedRecently(now)) return;
 	rememberRedirect(now);
 	location.assign(loginUrl(location));
@@ -55,8 +61,8 @@ export const loginRedirectExchange: Exchange = ({ forward }) => {
 		pipe(
 			forward(operations),
 			tap((result) => {
-				if (browser && needsSignIn(result.error, window.location.pathname)) {
-					redirectToLogin(window.location);
+				if (browser && needsSignIn({ error: result.error, pathname: window.location.pathname })) {
+					redirectToLogin({ location: window.location });
 				}
 			})
 		);

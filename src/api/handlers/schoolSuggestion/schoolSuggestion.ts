@@ -20,11 +20,11 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanAnalyzeSchoolSuggestions(ctx, args.conferenceId);
-			await refreshSchoolSuggestions(
-				args.conferenceId,
-				await readableSchoolRegistrations(ctx, args.conferenceId)
-			);
+			await assertCanAnalyzeSchoolSuggestions({ ctx, conferenceId: args.conferenceId });
+			await refreshSchoolSuggestions({
+				conferenceId: args.conferenceId,
+				readable: await readableSchoolRegistrations({ ctx, conferenceId: args.conferenceId })
+			});
 			schoolSuggestionPubsub.updated();
 			schoolSuggestionVariantPubsub.updated();
 			return true;
@@ -35,7 +35,12 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await updateIfAllowed(ctx, 'schoolSuggestion', args.id, { dismissed: true });
+			await updateIfAllowed({
+				ctx,
+				table: 'schoolSuggestion',
+				id: args.id,
+				values: { dismissed: true }
+			});
 			schoolSuggestionPubsub.updated(args.id);
 			return true;
 		}

@@ -12,7 +12,7 @@
 	let { size, sizeLimits, members }: Props = $props();
 
 	const badgeClass = $derived.by(() => {
-		if (isOutsideSizeLimits(size, sizeLimits)) return 'badge-error';
+		if (isOutsideSizeLimits({ size, limits: sizeLimits })) return 'badge-error';
 		return size === 1 ? 'badge-warning' : 'badge-ghost';
 	});
 </script>

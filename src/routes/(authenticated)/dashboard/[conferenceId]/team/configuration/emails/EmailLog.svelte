@@ -23,7 +23,9 @@
 			error: true,
 			createdAt: true,
 			sentAt: true,
-			user: { givenName: true, familyName: true }
+			trigger: true,
+			user: { givenName: true, familyName: true },
+			sentBy: { givenName: true, familyName: true }
 		})
 	);
 </script>

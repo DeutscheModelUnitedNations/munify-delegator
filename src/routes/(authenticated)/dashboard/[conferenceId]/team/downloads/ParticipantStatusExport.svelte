@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -103,8 +104,8 @@
 					fetchParticipantStatusesByUser(conferenceId)
 				]);
 
-			const row = (user: ExportedUser, role: RoleColumns) =>
-				exportRow(user, role, statusMap.get(user.id) ?? defaultStatus);
+			const row = ({ user, role }: { user: ExportedUser; role: RoleColumns }) =>
+				exportRow({ user, role, status: statusMap.get(user.id) ?? defaultStatus });
 
 			const rows: string[][] = [
 				// Delegations (nation assigned)
@@ -113,40 +114,49 @@
 						delegation.assignedRole?.nation?.alpha3Code ?? ''
 					);
 					return delegation.members.map((member) =>
-						row(member.user, {
-							roleType: 'Delegation',
-							roleName: nationName,
-							committee: member.assignedCommittee?.name,
-							supervisors: formatSupervisorNames(member.supervisors)
+						row({
+							user: member.user,
+							role: {
+								roleType: 'Delegation',
+								roleName: nationName,
+								committee: member.assignedCommittee?.name,
+								supervisors: formatSupervisorNames(member.supervisors)
+							}
 						})
 					);
 				}),
 				// NSAs
 				...nsaDelegations.flatMap((delegation) =>
 					delegation.members.map((member) =>
-						row(member.user, {
-							roleType: 'NSA',
-							roleName: delegation.assignedRole?.name ?? '',
-							supervisors: formatSupervisorNames(member.supervisors)
+						row({
+							user: member.user,
+							role: {
+								roleType: 'NSA',
+								roleName: delegation.assignedRole?.name ?? '',
+								supervisors: formatSupervisorNames(member.supervisors)
+							}
 						})
 					)
 				),
 				// Single participants
 				...singleParticipants.map((participant) =>
-					row(participant.user, {
-						roleType: 'SingleParticipant',
-						roleName: participant.assignedRole?.name ?? '',
-						supervisors: formatSupervisorNames(participant.supervisors)
+					row({
+						user: participant.user,
+						role: {
+							roleType: 'SingleParticipant',
+							roleName: participant.assignedRole?.name ?? '',
+							supervisors: formatSupervisorNames(participant.supervisors)
+						}
 					})
 				),
 				// Supervisors, who have no supervisors of their own
 				...supervisors.map((supervisor) =>
-					row(supervisor.user, { roleType: 'Supervisor', roleName: 'Supervisor' })
+					row({ user: supervisor.user, role: { roleType: 'Supervisor', roleName: 'Supervisor' } })
 				)
 			];
 
 			if (rows.length === 0) {
-				console.error('No data found');
+				logger.error('No data found');
 				toast.error(m.httpGenericError());
 				return;
 			}
@@ -170,7 +180,7 @@
 				'combinedStatus'
 			];
 
-			downloadCSV(header, rows, `ParticipantStatus_${conferenceId}.csv`);
+			downloadCSV({ header, data: rows, filename: `ParticipantStatus_${conferenceId}.csv` });
 		} finally {
 			loading = false;
 		}

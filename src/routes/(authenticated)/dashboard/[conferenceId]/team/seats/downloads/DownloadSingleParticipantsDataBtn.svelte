@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
 	import GenericDownloadButton from './GenericDownloadButton.svelte';
-	import { downloadSemicolonCsv, fetchConferenceTitle, fileNamePrefix } from './seatDownloads';
-	import { compareByText } from './sortRows';
+	import { downloadSortedCsv, fetchConferenceTitle, fileNamePrefix } from './seatDownloads';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -24,25 +22,18 @@
 			fetchConferenceTitle(conferenceId)
 		]);
 
-		if (participants.length === 0) {
-			toast.error(m.noDataFound());
-			return;
-		}
-
-		downloadSemicolonCsv(
-			[
-				[m.name(), m.firstName(), m.lastName(), m.email()],
-				...[...participants]
-					.sort(compareByText((participant) => participant.assignedRole?.name))
-					.map((participant) => [
-						participant.assignedRole?.name,
-						participant.user.givenName,
-						participant.user.familyName,
-						participant.user.email
-					])
+		downloadSortedCsv({
+			items: participants,
+			header: [m.name(), m.firstName(), m.lastName(), m.email()],
+			sortKey: (participant) => participant.assignedRole?.name,
+			row: (participant) => [
+				participant.assignedRole?.name,
+				participant.user.givenName,
+				participant.user.familyName,
+				participant.user.email
 			],
-			`${fileNamePrefix(title)}_single_participants.csv`
-		);
+			filename: `${fileNamePrefix(title)}_single_participants.csv`
+		});
 	};
 </script>
 

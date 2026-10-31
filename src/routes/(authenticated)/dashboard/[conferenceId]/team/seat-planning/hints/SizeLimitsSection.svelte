@@ -12,7 +12,7 @@
 	let { roles, sizeLimits, roleName }: Props = $props();
 
 	const outsideLimits = $derived(
-		roles.filter((role) => isOutsideSizeLimits(role.size, sizeLimits))
+		roles.filter((role) => isOutsideSizeLimits({ size: role.size, limits: sizeLimits }))
 	);
 
 	const parseLimit = (value: string) => (value ? Number(value) : null);

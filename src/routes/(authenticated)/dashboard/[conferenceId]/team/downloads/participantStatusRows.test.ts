@@ -56,11 +56,11 @@ describe('calculateCombinedStatus', () => {
 describe('exportRow', () => {
 	test('lists identity, role and every status column', () => {
 		expect(
-			exportRow(
-				{ id: 'u', email: 'a@example.org', givenName: 'Ada', familyName: 'Lovelace' },
-				{ roleType: 'Delegation', roleName: 'Germany', committee: 'GA', supervisors: 'T' },
-				done
-			)
+			exportRow({
+				user: { id: 'u', email: 'a@example.org', givenName: 'Ada', familyName: 'Lovelace' },
+				role: { roleType: 'Delegation', roleName: 'Germany', committee: 'GA', supervisors: 'T' },
+				status: done
+			})
 		).toEqual([
 			'u',
 			'a@example.org',
@@ -82,11 +82,11 @@ describe('exportRow', () => {
 	});
 
 	test('leaves missing values empty', () => {
-		const row = exportRow(
-			{ id: 'u', email: null, givenName: null, familyName: null },
-			{ roleType: 'Supervisor', roleName: 'Supervisor' },
-			defaultStatus
-		);
+		const row = exportRow({
+			user: { id: 'u', email: null, givenName: null, familyName: null },
+			role: { roleType: 'Supervisor', roleName: 'Supervisor' },
+			status: defaultStatus
+		});
 		expect(row.slice(0, 8)).toEqual(['u', '', '', '', 'Supervisor', 'Supervisor', '', '']);
 		expect(row.at(-2)).toBe('false');
 	});

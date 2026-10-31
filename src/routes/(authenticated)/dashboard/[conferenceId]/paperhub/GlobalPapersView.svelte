@@ -75,7 +75,7 @@
 
 	// Filter papers by search query (delegation name), keeping the order of the papers
 	const filterPapersBySearch = (papers: Paper[]) => {
-		const hits = new Set(createFuzzySearch(papers, roleText)(searchQuery));
+		const hits = new Set(createFuzzySearch({ rows: papers, textOf: roleText })(searchQuery));
 		return papers.filter((paper) => hits.has(paper));
 	};
 

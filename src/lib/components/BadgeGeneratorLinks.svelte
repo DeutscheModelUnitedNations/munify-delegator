@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
 	import { toast } from 'svelte-sonner';
@@ -26,9 +27,15 @@
 		try {
 			const rows = (await badges()).map(badgeRow);
 			// The generator decodes UTF-8 and expects commas, whatever the CSV settings say.
-			downloadCSV(badgeHeader, rows, `${filename}.csv`, ',', 'utf-8');
+			downloadCSV({
+				header: badgeHeader,
+				data: rows,
+				filename: `${filename}.csv`,
+				overrideDelimiter: ',',
+				overrideEncoding: 'utf-8'
+			});
 		} catch (error) {
-			console.error('Badge CSV failed', error);
+			logger.error('Badge CSV failed', error);
 			toast.error(m.genericToastError());
 		} finally {
 			busy = false;

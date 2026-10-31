@@ -18,15 +18,18 @@
 	let { conference }: Props = $props();
 
 	let registrationStatus = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.applicationDeadline))
+		getRegistrationStatus({
+			conferenceState: conference.state,
+			applicationDeadline: new Date(conference.applicationDeadline)
+		})
 	);
 
 	let waitingListStatus = $derived(
-		getWaitingListStatus(
-			conference.totalSeats,
-			conference.totalParticipants,
-			conference.waitingListLength
-		)
+		getWaitingListStatus({
+			seats: conference.totalSeats,
+			participants: conference.totalParticipants,
+			listEntries: conference.waitingListLength
+		})
 	);
 </script>
 

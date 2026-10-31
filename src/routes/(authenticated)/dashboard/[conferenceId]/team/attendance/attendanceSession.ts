@@ -36,14 +36,22 @@ export function fullName(user: { givenName?: string | null; familyName?: string 
 }
 
 /** The text a failed lookup or save shows: offline, the error's own message, else the fallback. */
-export function scanErrorText(err: unknown, offlineText: string, fallback: string) {
+export function scanErrorText({
+	err,
+	offlineText,
+	fallback
+}: {
+	err: unknown;
+	offlineText: string;
+	fallback: string;
+}) {
 	if (isNetworkError(err)) return offlineText;
 	return err instanceof Error ? err.message : fallback;
 }
 
 /** Whether the server refused a scan because another device logged the person in this session. */
 export function isAlreadyScanned(err: unknown) {
-	return hasErrorCode(err, 'ALREADY_SCANNED');
+	return hasErrorCode({ err, code: 'ALREADY_SCANNED' });
 }
 
 /**
@@ -51,7 +59,7 @@ export function isAlreadyScanned(err: unknown) {
  * has not reached the server yet (it then starts under the new name), and here when it is this
  * device's session.
  */
-export function renameTargets(local: ScanSession | null, id: string) {
+export function renameTargets({ local, id }: { local: ScanSession | null; id: string }) {
 	const isLocal = local?.id === id;
 	return { server: !isLocal || !!local?.started, local: isLocal ? local : null };
 }
@@ -62,12 +70,28 @@ export function hasUnsynced(session: ScanSession | null) {
 }
 
 /** Whether the entries hold a scan of the person; `syncedOnly` ignores those still on their way. */
-export function hasScanOf(entries: ScanLogEntry[] | undefined, userId: string, syncedOnly = false) {
+export function hasScanOf({
+	entries,
+	userId,
+	syncedOnly = false
+}: {
+	entries: ScanLogEntry[] | undefined;
+	userId: string;
+	syncedOnly?: boolean;
+}) {
 	return entries?.some((e) => e.userId === userId && (!syncedOnly || e.synced)) ?? false;
 }
 
 /** The log entry of one scan, found by who and when. */
-export function findLogged(entries: ScanLogEntry[] | undefined, userId: string, timestamp: string) {
+export function findLogged({
+	entries,
+	userId,
+	timestamp
+}: {
+	entries: ScanLogEntry[] | undefined;
+	userId: string;
+	timestamp: string;
+}) {
 	return entries?.find((e) => e.userId === userId && e.timestamp === timestamp);
 }
 
@@ -92,7 +116,15 @@ export type ScanIntake =
 	| { action: 'take'; trimmed: string };
 
 /** What to do with a code that appeared in the scanner's field. */
-export function scanIntake(code: string, held: string | null, active: boolean): ScanIntake {
+export function scanIntake({
+	code,
+	held,
+	active
+}: {
+	code: string;
+	held: string | null;
+	active: boolean;
+}): ScanIntake {
 	if (!active) return { action: 'ignore' };
 	if (held !== null) return { action: 'hold', held };
 	const trimmed = code.trim();
@@ -123,11 +155,15 @@ export const isShownPerson = (value: Shown | null): value is ShownPerson =>
  * points either an acknowledgement or, where the scan is recorded only on purpose (`decides`, the
  * check mode), the decision whether to record it anyway.
  */
-export function scanStep(
-	badgeMode: boolean,
-	passed: boolean,
+export function scanStep({
+	badgeMode,
+	passed,
 	decides = false
-): ShownPerson['awaiting'] {
+}: {
+	badgeMode: boolean;
+	passed: boolean;
+	decides?: boolean;
+}): ShownPerson['awaiting'] {
 	if (badgeMode) return 'badge';
 	if (passed) return null;
 	return decides ? 'decide' : 'ack';
@@ -141,12 +177,17 @@ export function mayRecordAnyway(issues: readonly ScanIssue[]) {
 }
 
 /** The result for a person who was looked up. */
-export function personShown(
-	person: FoundPerson,
-	issues: ScanIssue[],
-	alreadyScanned: boolean,
-	awaiting: ShownPerson['awaiting']
-): ShownPerson {
+export function personShown({
+	person,
+	issues,
+	alreadyScanned,
+	awaiting
+}: {
+	person: FoundPerson;
+	issues: ScanIssue[];
+	alreadyScanned: boolean;
+	awaiting: ShownPerson['awaiting'];
+}): ShownPerson {
 	return {
 		state: 'person',
 		person,

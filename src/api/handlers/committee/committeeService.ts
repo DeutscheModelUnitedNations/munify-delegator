@@ -3,11 +3,10 @@ import {
 	assertCommitteeDeletable,
 	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
-	committeeUpdateData,
-	seatRemovalBlockersWhere
-} from '#api/services/seatPlanning';
-import { tidyRoleApplicationsForRoles } from '#api/services/registration/tidyRoleApplications';
-import { apiError } from '#api/services/errors/apiError';
+	committeeUpdateData
+} from '#api/handlers/seatPlanning/seatPlanningService';
+import { tidyRoleApplicationsForRoles } from '#api/handlers/roleApplication/tidyRoleApplications';
+import { apiError } from '#api/services/errors';
 import formatNames from '#lib/helpers/formatNames';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -24,7 +23,10 @@ export async function createCommittee(data: {
 	abbreviation: string;
 	numOfSeatsPerDelegation: number;
 }) {
-	assertSeatsPerDelegationAllowed(data.numOfSeatsPerDelegation, []);
+	assertSeatsPerDelegationAllowed({
+		numOfSeatsPerDelegation: data.numOfSeatsPerDelegation,
+		assignedMembers: []
+	});
 
 	const created = await db
 		.insert(schema.committee)
@@ -45,17 +47,24 @@ export async function createCommittee(data: {
  * delegation shrink every nation of the committee, so the applications that no longer fit go in
  * the same transaction. Returns whether that happened.
  */
-export async function updateCommittee(
-	id: string,
+export async function updateCommittee({
+	id,
+	before,
+	data
+}: {
+	id: string;
 	before: {
 		conferenceId: string;
 		numOfSeatsPerDelegation: number;
 		roles: { id: string }[];
 		delegationMembers: { delegationId: string }[];
-	},
-	data: Parameters<typeof committeeUpdateData>[0]
-) {
-	assertSeatsPerDelegationAllowed(data.numOfSeatsPerDelegation, before.delegationMembers);
+	};
+	data: Parameters<typeof committeeUpdateData>[0];
+}) {
+	assertSeatsPerDelegationAllowed({
+		numOfSeatsPerDelegation: data.numOfSeatsPerDelegation,
+		assignedMembers: before.delegationMembers
+	});
 
 	const seatsAfter = data.numOfSeatsPerDelegation ?? before.numOfSeatsPerDelegation;
 	const shrunk = seatsAfter < before.numOfSeatsPerDelegation;
@@ -64,14 +73,14 @@ export async function updateCommittee(
 		await tx
 			.update(schema.committee)
 			.set(committeeUpdateData(data))
-			.where(whereRows(schema.committee, { id }));
+			.where(whereRows({ table: schema.committee, filter: { id } }));
 
 		if (shrunk) {
-			await tidyRoleApplicationsForRoles(
-				before.conferenceId,
-				before.roles.map((role) => role.id),
+			await tidyRoleApplicationsForRoles({
+				conferenceId: before.conferenceId,
+				roleIds: before.roles.map((role) => role.id),
 				tx
-			);
+			});
 		}
 	});
 	return { applicationsTidied: shrunk };
@@ -82,7 +91,7 @@ export async function updateCommittee(
  * a delegation still holds it, which keeps the role (without seats) until the assignment moves it.
  * Wishes for a dropped role go with it. Returns the ids of the dropped roles.
  */
-async function dropUnseatedNationRoles(tx: Transaction, roleIds: string[]) {
+async function dropUnseatedNationRoles({ tx, roleIds }: { tx: Transaction; roleIds: string[] }) {
 	if (roleIds.length === 0) return [];
 	const unseated = await tx.query.conferenceRole.findMany({
 		where: {
@@ -96,7 +105,7 @@ async function dropUnseatedNationRoles(tx: Transaction, roleIds: string[]) {
 	if (ids.length > 0) {
 		await tx
 			.delete(schema.conferenceRole)
-			.where(whereRows(schema.conferenceRole, { id: { in: ids } }));
+			.where(whereRows({ table: schema.conferenceRole, filter: { id: { in: ids } } }));
 	}
 	return ids;
 }
@@ -117,19 +126,24 @@ export async function deleteCommittee(id: string) {
 			}
 		});
 		if (!existing) {
-			throw apiError('NOT_FOUND', m.deleteNotFoundOrForbidden());
+			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
 		}
 		const papers = await tx.query.paper.findMany({
 			where: { agendaItem: { committeeId: existing.id } },
 			columns: { id: true }
 		});
 
-		assertCommitteeDeletable(existing.delegationMembers.length, papers.length);
+		assertCommitteeDeletable({
+			assignedMembers: existing.delegationMembers.length,
+			papers: papers.length
+		});
 
-		await tx.delete(schema.committee).where(whereRows(schema.committee, { id: existing.id }));
+		await tx
+			.delete(schema.committee)
+			.where(whereRows({ table: schema.committee, filter: { id: existing.id } }));
 		const roleIds = existing.roles.map((role) => role.id);
-		const droppedRoleIds = await dropUnseatedNationRoles(tx, roleIds);
-		await tidyRoleApplicationsForRoles(existing.conferenceId, roleIds, tx);
+		const droppedRoleIds = await dropUnseatedNationRoles({ tx, roleIds });
+		await tidyRoleApplicationsForRoles({ conferenceId: existing.conferenceId, roleIds, tx });
 
 		return { droppedRoleIds };
 	});
@@ -141,16 +155,20 @@ export async function deleteCommittee(id: string) {
  * refused while members of the delegation holding the nation are assigned to the committee;
  * applications that no longer fit are dropped. Returns whether a role was created or dropped.
  */
-export async function setCommitteeNationSeat(
-	committee: { id: string; conferenceId: string },
-	nationAlpha3Code: string,
-	enabled: boolean
-) {
+export async function setCommitteeNationSeat({
+	committee,
+	nationAlpha3Code,
+	enabled
+}: {
+	committee: { id: string; conferenceId: string };
+	nationAlpha3Code: string;
+	enabled: boolean;
+}) {
 	const nation = await db.query.nation.findFirst({
 		where: { alpha3Code: nationAlpha3Code.toLowerCase() },
 		columns: { alpha3Code: true }
 	});
-	if (!nation) throw apiError('NOT_FOUND', m.nationNotFound());
+	if (!nation) throw apiError({ code: 'NOT_FOUND', message: m.nationNotFound() });
 
 	if (enabled) {
 		return db.transaction(async (tx) => {
@@ -185,29 +203,36 @@ export async function setCommitteeNationSeat(
 	if (!role) return { rolesChanged: false };
 
 	const dropped = await db.transaction(async (tx) => {
+		// members of the nation's delegation sitting in exactly this committee would lose their seat
 		const blockers = await tx.query.delegationMember.findMany({
-			where: seatRemovalBlockersWhere(committee.id, role.id),
+			where: { assignedCommitteeId: committee.id, delegation: { assignedRoleId: role.id } },
 			columns: { id: true },
 			with: { user: { columns: { givenName: true, familyName: true } } }
 		});
 
 		if (blockers.length > 0) {
-			throw apiError(
-				'CONFLICT',
-				m.seatRemovalBlocked({
+			throw apiError({
+				code: 'CONFLICT',
+				message: m.seatRemovalBlocked({
 					members: blockers
-						.map(({ user }) => formatNames(user.givenName, user.familyName))
+						.map(({ user }) =>
+							formatNames({ givenName: user.givenName, familyName: user.familyName })
+						)
 						.join(', ')
 				})
-			);
+			});
 		}
 
 		await tx
 			.delete(schema.committeeToRole)
-			.where(whereRows(schema.committeeToRole, { a: committee.id, b: role.id }));
-		const droppedRoles = await dropUnseatedNationRoles(tx, [role.id]);
+			.where(whereRows({ table: schema.committeeToRole, filter: { a: committee.id, b: role.id } }));
+		const droppedRoles = await dropUnseatedNationRoles({ tx, roleIds: [role.id] });
 		if (droppedRoles.length === 0) {
-			await tidyRoleApplicationsForRoles(committee.conferenceId, [role.id], tx);
+			await tidyRoleApplicationsForRoles({
+				conferenceId: committee.conferenceId,
+				roleIds: [role.id],
+				tx
+			});
 		}
 		return droppedRoles;
 	});
@@ -216,16 +241,20 @@ export async function setCommitteeNationSeat(
 }
 
 /** Sets a committee's regional baseline; without new targets the stored ones are kept. */
-export async function setCommitteeRegionalBaseline(
-	committee: { id: string; regionalBaselineTargets: number[] },
-	baseline: RegionalBaseline,
-	newTargets: number[] | null | undefined
-) {
+export async function setCommitteeRegionalBaseline({
+	committee,
+	baseline,
+	newTargets
+}: {
+	committee: { id: string; regionalBaselineTargets: number[] };
+	baseline: RegionalBaseline;
+	newTargets: number[] | null | undefined;
+}) {
 	const targets = newTargets ?? committee.regionalBaselineTargets;
-	assertRegionalBaselineTargets(baseline, targets);
+	assertRegionalBaselineTargets({ baseline, targets });
 
 	await db
 		.update(schema.committee)
 		.set({ regionalBaseline: baseline, regionalBaselineTargets: targets })
-		.where(whereRows(schema.committee, { id: committee.id }));
+		.where(whereRows({ table: schema.committee, filter: { id: committee.id } }));
 }

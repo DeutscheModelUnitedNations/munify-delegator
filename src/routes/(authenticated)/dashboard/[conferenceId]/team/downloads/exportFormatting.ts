@@ -7,8 +7,12 @@ interface NamedUser {
 
 /** "Familyname Givenname", the order the exported lists sort people in. */
 export function sortableName(user: NamedUser): string {
-	return formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-		givenNameFirst: false
+	return formatNames({
+		givenName: user.givenName ?? undefined,
+		familyName: user.familyName ?? undefined,
+		options: {
+			givenNameFirst: false
+		}
 	});
 }
 
@@ -39,10 +43,13 @@ interface RegistrationStatuses {
 }
 
 /** The payment and paperwork columns; adults need no guardian consent. Ends with the of-age flag. */
-export function registrationStatusColumns(
-	status: RegistrationStatuses | undefined,
-	ofAge: boolean
-): string[] {
+export function registrationStatusColumns({
+	status,
+	ofAge
+}: {
+	status: RegistrationStatuses | undefined;
+	ofAge: boolean;
+}): string[] {
 	return [
 		formatRegistrationStatus(status?.paymentStatus),
 		formatRegistrationStatus(status?.termsAndConditions),
@@ -53,10 +60,13 @@ export function registrationStatusColumns(
 }
 
 /** A supervisor's row of the registration list. */
-export function supervisorRow(
-	supervisor: { user: NamedUser; plansOwnAttendenceAtConference: boolean },
-	status: RegistrationStatuses | undefined
-): string[] {
+export function supervisorRow({
+	supervisor,
+	status
+}: {
+	supervisor: { user: NamedUser; plansOwnAttendenceAtConference: boolean };
+	status: RegistrationStatuses | undefined;
+}): string[] {
 	return [
 		supervisor.user.familyName ?? '',
 		supervisor.user.givenName ?? '',

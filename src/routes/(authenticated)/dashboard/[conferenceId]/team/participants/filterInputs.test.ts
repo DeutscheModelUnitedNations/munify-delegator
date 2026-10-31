@@ -5,7 +5,7 @@ vi.mock('#lib/utils/nationTranslationHelper.svelte.js', () => ({
 }));
 
 const { toFilterInputs } = await import('./filterInputs');
-type Kinds = Parameters<typeof toFilterInputs>[1];
+type Kinds = Parameters<typeof toFilterInputs>[0]['kinds'];
 
 const kinds: Kinds = new Map([
 	['city', 'text'],
@@ -15,7 +15,8 @@ const kinds: Kinds = new Map([
 	['age', 'range']
 ]);
 
-const inputsOf = (id: string, value: unknown) => toFilterInputs([{ id, value }], kinds);
+const inputsOf = (id: string, value: unknown) =>
+	toFilterInputs({ filters: [{ id, value }], kinds });
 
 describe('toFilterInputs', () => {
 	test('text', () => {
@@ -64,13 +65,13 @@ describe('toFilterInputs', () => {
 
 	test('columns without a kind are left out', () => {
 		expect(
-			toFilterInputs(
-				[
+			toFilterInputs({
+				filters: [
 					{ id: 'unknown', value: 'x' },
 					{ id: 'accepted', value: true }
 				],
 				kinds
-			)
+			})
 		).toEqual([{ column: 'accepted', bool: true }]);
 	});
 });

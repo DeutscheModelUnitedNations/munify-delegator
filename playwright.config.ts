@@ -33,7 +33,7 @@ const baseURL = `http://localhost:${PORT}`;
 
 // A build is a production build whatever `.env` says: under NODE_ENV=development Vite compiles
 // Svelte in dev mode. Signing in still works, since the OIDC setup trusts a provider on this
-// machine over plain HTTP (`isLoopbackIssuer`, src/api/services/OIDC.ts).
+// machine over plain HTTP (`isLoopbackIssuer`, src/api/services/oidc/OIDC.ts).
 const serve =
 	SERVER === 'dev'
 		? `bun run dev:server -- --port ${PORT} --strictPort`

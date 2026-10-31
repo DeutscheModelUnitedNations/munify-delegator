@@ -79,7 +79,7 @@
 								<tr>
 									<td style="background-color: {brand.navy}; padding: 24px 32px;">
 										<p
-											style="margin: 0; font-size: 22px; line-height: 1.2; color: #ffffff; font-family: {brand.font};"
+											style="margin: 0; font-size: 22px; line-height: 1.2; color: {brand.navyContent}; font-family: {brand.font};"
 										>
 											<span style="font-weight: 200;">MUNify</span>
 											<span style="font-weight: 700;">DELEGATOR</span>
@@ -100,7 +100,7 @@
 									>
 								</tr>
 								<tr>
-									<td style="background-color: #ffffff; padding: 32px;">
+									<td style="background-color: {brand.surface}; padding: 32px;">
 										<h1
 											style="margin: 0 0 24px; font-size: 26px; line-height: 1.25; font-weight: 700; color: {brand.navy}; font-family: {brand.font};"
 										>

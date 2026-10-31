@@ -40,8 +40,13 @@ interface SeatPlannerSource {
 	assignments: SeatPlannerAssignments;
 }
 
-const seatKey = (committeeId: string, nationAlpha3Code: string) =>
-	`${committeeId}:${nationAlpha3Code}`;
+const seatKey = ({
+	committeeId,
+	nationAlpha3Code
+}: {
+	committeeId: string;
+	nationAlpha3Code: string;
+}) => `${committeeId}:${nationAlpha3Code}`;
 
 /**
  * Seat matrix state shared by the matrix, the NSA list and the hints sidebar. Clicks are applied
@@ -55,13 +60,13 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 
 	/** nations per committee, including the optimistic changes */
 	const seats: Map<string, Set<string>> = $derived(
-		seatsWithPending(
-			source().committees.map((committee) => ({
+		seatsWithPending({
+			committees: source().committees.map((committee) => ({
 				id: committee.id,
 				nations: committee.roles.flatMap((role) => (role.nation ? [role.nation] : []))
 			})),
-			[...pending.values()]
-		)
+			pending: [...pending.values()]
+		})
 	);
 
 	const committees: BaselineCommittee[] = $derived(
@@ -74,7 +79,7 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 		}))
 	);
 	const seatCounts: Map<string, number> = $derived(nationSeatCounts(committees));
-	const roles: Role[] = $derived(rolesOf(seatCounts, source().nonStateActors));
+	const roles: Role[] = $derived(rolesOf({ seatCounts, nonStateActors: source().nonStateActors }));
 
 	const abbreviations: Record<string, string | undefined> = $derived(
 		Object.fromEntries(source().committees.map((c) => [c.id, c.abbreviation]))
@@ -83,7 +88,7 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 	const locks: Record<string, string[] | undefined> = $derived(
 		Object.fromEntries(
 			source().assignments.committeeSeats.map((seat) => [
-				seatKey(seat.committeeId, seat.nationAlpha3Code),
+				seatKey({ committeeId: seat.committeeId, nationAlpha3Code: seat.nationAlpha3Code }),
 				seat.memberNames
 			])
 		)
@@ -101,7 +106,17 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 		);
 
 	/** shows the clicked state until the server answered; returns the id of this request */
-	function begin(key: string, committeeId: string, nationAlpha3Code: string, enabled: boolean) {
+	function begin({
+		key,
+		committeeId,
+		nationAlpha3Code,
+		enabled
+	}: {
+		key: string;
+		committeeId: string;
+		nationAlpha3Code: string;
+		enabled: boolean;
+	}) {
 		const request = (requests[key] ?? 0) + 1;
 		requests[key] = request;
 		pending.set(key, { committeeId, nationAlpha3Code, enabled });
@@ -109,11 +124,19 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 	}
 
 	/** a quicker second click on the same cell keeps its optimistic state until it is answered */
-	function end(key: string, request: number) {
+	function end({ key, request }: { key: string; request: number }) {
 		if (requests[key] === request) pending.delete(key);
 	}
 
-	function offerUndo(committeeId: string, nationAlpha3Code: string, enabled: boolean) {
+	function offerUndo({
+		committeeId,
+		nationAlpha3Code,
+		enabled
+	}: {
+		committeeId: string;
+		nationAlpha3Code: string;
+		enabled: boolean;
+	}) {
 		const values = {
 			nation: getFullTranslatedCountryNameFromISO3Code(nationAlpha3Code),
 			committee: abbreviations[committeeId] ?? ''
@@ -122,19 +145,25 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 		toast.success(message, {
 			action: {
 				label: m.undo(),
-				onClick: () => setSeat(committeeId, nationAlpha3Code, !enabled, false)
+				onClick: () =>
+					setSeat({ committeeId, nationAlpha3Code, enabled: !enabled, undoable: false })
 			}
 		});
 	}
 
-	async function setSeat(
-		committeeId: string,
-		nationAlpha3Code: string,
-		enabled: boolean,
+	async function setSeat({
+		committeeId,
+		nationAlpha3Code,
+		enabled,
 		undoable = true
-	) {
-		const key = seatKey(committeeId, nationAlpha3Code);
-		const request = begin(key, committeeId, nationAlpha3Code, enabled);
+	}: {
+		committeeId: string;
+		nationAlpha3Code: string;
+		enabled: boolean;
+		undoable?: boolean;
+	}) {
+		const key = seatKey({ committeeId, nationAlpha3Code });
+		const request = begin({ key, committeeId, nationAlpha3Code, enabled });
 		try {
 			await client.mutate.setCommitteeNationSeat({
 				__args: { committeeId, nationAlpha3Code, enabled },
@@ -144,10 +173,10 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 			toast.error(error instanceof Error ? error.message : m.genericToastError());
 			return;
 		} finally {
-			end(key, request);
+			end({ key, request });
 		}
 
-		if (undoable) offerUndo(committeeId, nationAlpha3Code, enabled);
+		if (undoable) offerUndo({ committeeId, nationAlpha3Code, enabled });
 	}
 
 	return {
@@ -161,13 +190,13 @@ export function createSeatPlanner(source: () => SeatPlannerSource) {
 			return roles;
 		},
 
-		hasSeat(committeeId: string, nationAlpha3Code: string) {
+		hasSeat({ committeeId, nationAlpha3Code }: { committeeId: string; nationAlpha3Code: string }) {
 			return !!seats.get(committeeId)?.has(nationAlpha3Code);
 		},
 
 		/** names of the delegates that make removing this seat impossible */
-		lockedBy(committeeId: string, nationAlpha3Code: string) {
-			return locks[seatKey(committeeId, nationAlpha3Code)];
+		lockedBy({ committeeId, nationAlpha3Code }: { committeeId: string; nationAlpha3Code: string }) {
+			return locks[seatKey({ committeeId, nationAlpha3Code })];
 		},
 
 		/** members of the delegation assigned to the nation, if any */

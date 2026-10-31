@@ -39,7 +39,7 @@ interface PaperPlan {
  * Writes the paper with its versions and reviews, spaced a day apart and ending today, so the
  * history reads in order and `firstSubmittedAt` is the first save that was not a draft.
  */
-function addPaper(cs: ConferenceSeed, plan: PaperPlan) {
+function addPaper({ cs, plan }: { cs: ConferenceSeed; plan: PaperPlan }) {
 	const paperId = faker.database.mongodbObjectId();
 	const start = Date.now() - plan.history.length * DAY_MS;
 	const versions: { id: string; status: PaperStatus }[] = [];
@@ -64,7 +64,7 @@ function addPaper(cs: ConferenceSeed, plan: PaperPlan) {
 					plan.content ??
 					(plan.type === 'WORKING_PAPER'
 						? resolutionDocument(plan.title)
-						: paperDocument(plan.title, versions.length))
+						: paperDocument({ title: plan.title, version: versions.length }))
 			});
 			statusBefore = status;
 			return;
@@ -121,62 +121,80 @@ export function addPapers(cs: ConferenceSeed) {
 		committeeOf
 	);
 
-	addPaper(cs, {
-		authorId: 'dev-delegate',
-		delegationId: germany.delegationId,
-		type: 'POSITION_PAPER',
-		agendaItemId: delegate.agendaItemIds[0],
-		title: 'Positionspapier Deutschland (angenommen)',
-		history: [
-			{ save: 'SUBMITTED' },
-			{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
-			{ save: 'REVISED' },
-			{ review: 'ACCEPTED', by: 'dev-team-pm' }
-		]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-delegate',
+			delegationId: germany.delegationId,
+			type: 'POSITION_PAPER',
+			agendaItemId: delegate.agendaItemIds[0],
+			title: 'Positionspapier Deutschland (angenommen)',
+			history: [
+				{ save: 'SUBMITTED' },
+				{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
+				{ save: 'REVISED' },
+				{ review: 'ACCEPTED', by: 'dev-team-pm' }
+			]
+		}
 	});
-	addPaper(cs, {
-		authorId: 'dev-head-delegate',
-		delegationId: germany.delegationId,
-		type: 'POSITION_PAPER',
-		agendaItemId: head.agendaItemIds[0],
-		title: 'Positionspapier Deutschland (Änderungen erbeten)',
-		history: [{ save: 'SUBMITTED' }, { review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' }]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-head-delegate',
+			delegationId: germany.delegationId,
+			type: 'POSITION_PAPER',
+			agendaItemId: head.agendaItemIds[0],
+			title: 'Positionspapier Deutschland (Änderungen erbeten)',
+			history: [{ save: 'SUBMITTED' }, { review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' }]
+		}
 	});
-	addPaper(cs, {
-		authorId: 'dev-head-delegate',
-		delegationId: germany.delegationId,
-		type: 'WORKING_PAPER',
-		agendaItemId: head.agendaItemIds[1],
-		title: head.name,
-		history: [{ save: 'SUBMITTED' }]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-head-delegate',
+			delegationId: germany.delegationId,
+			type: 'WORKING_PAPER',
+			agendaItemId: head.agendaItemIds[1],
+			title: head.name,
+			history: [{ save: 'SUBMITTED' }]
+		}
 	});
-	addPaper(cs, {
-		authorId: 'dev-delegate-minor',
-		delegationId: germany.delegationId,
-		type: 'POSITION_PAPER',
-		agendaItemId: minor.agendaItemIds[0],
-		title: 'Positionspapier Deutschland (Entwurf)',
-		history: [{ save: 'DRAFT' }, { save: 'DRAFT' }]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-delegate-minor',
+			delegationId: germany.delegationId,
+			type: 'POSITION_PAPER',
+			agendaItemId: minor.agendaItemIds[0],
+			title: 'Positionspapier Deutschland (Entwurf)',
+			history: [{ save: 'DRAFT' }, { save: 'DRAFT' }]
+		}
 	});
-	addPaper(cs, {
-		authorId: 'dev-nsa-delegate',
-		delegationId: nsaDelegationId,
-		type: 'INTRODUCTION_PAPER',
-		agendaItemId: null,
-		title: 'Vorstellung unserer Organisation (überarbeitet)',
-		history: [
-			{ save: 'SUBMITTED' },
-			{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
-			{ save: 'REVISED' }
-		]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-nsa-delegate',
+			delegationId: nsaDelegationId,
+			type: 'INTRODUCTION_PAPER',
+			agendaItemId: null,
+			title: 'Vorstellung unserer Organisation (überarbeitet)',
+			history: [
+				{ save: 'SUBMITTED' },
+				{ review: 'CHANGES_REQUESTED', by: 'dev-team-reviewer' },
+				{ save: 'REVISED' }
+			]
+		}
 	});
-	addPaper(cs, {
-		authorId: 'dev-nsa-delegate',
-		delegationId: nsaDelegationId,
-		type: 'POSITION_PAPER',
-		agendaItemId: cs.committees[3]?.agendaItemIds[0] ?? head.agendaItemIds[0],
-		title: 'Positionspapier unserer Organisation (eingereicht)',
-		history: [{ save: 'SUBMITTED' }]
+	addPaper({
+		cs,
+		plan: {
+			authorId: 'dev-nsa-delegate',
+			delegationId: nsaDelegationId,
+			type: 'POSITION_PAPER',
+			agendaItemId: cs.committees[3]?.agendaItemIds[0] ?? head.agendaItemIds[0],
+			title: 'Positionspapier unserer Organisation (eingereicht)',
+			history: [{ save: 'SUBMITTED' }]
+		}
 	});
 
 	// A queue for the reviewers: submitted papers from the crowd, and one broken working paper.
@@ -185,14 +203,17 @@ export function addPapers(cs: ConferenceSeed) {
 		const author = delegation.members[0];
 		const committee =
 			cs.committees.find((candidate) => candidate.id === author.committeeId) ?? cs.committees[0];
-		addPaper(cs, {
-			authorId: author.userId,
-			delegationId: delegation.delegationId,
-			type: index === 5 ? 'WORKING_PAPER' : 'POSITION_PAPER',
-			agendaItemId: committee.agendaItemIds[index % 2],
-			title: `Positionspapier ${delegation.nation.toUpperCase()}`,
-			history: [{ save: 'SUBMITTED' }],
-			content: index === 5 ? invalidResolutionDocument : undefined
+		addPaper({
+			cs,
+			plan: {
+				authorId: author.userId,
+				delegationId: delegation.delegationId,
+				type: index === 5 ? 'WORKING_PAPER' : 'POSITION_PAPER',
+				agendaItemId: committee.agendaItemIds[index % 2],
+				title: `Positionspapier ${delegation.nation.toUpperCase()}`,
+				history: [{ save: 'SUBMITTED' }],
+				content: index === 5 ? invalidResolutionDocument : undefined
+			}
 		});
 	});
 }

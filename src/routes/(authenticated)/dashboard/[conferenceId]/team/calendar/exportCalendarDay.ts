@@ -32,5 +32,5 @@ export async function exportCalendarDay(dayId: string) {
 		}
 	});
 
-	downloadJSON(toCalendarDayExport(day), `calendar-day-${day.name}.json`);
+	downloadJSON({ data: toCalendarDayExport(day), filename: `calendar-day-${day.name}.json` });
 }

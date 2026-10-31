@@ -26,13 +26,13 @@ describe('filterEntries', () => {
 		const columns: ManagedColumn<Row>[] = [
 			{ id: 'name', header: 'Name', group: 'Person', filter: { type: 'text' } }
 		];
-		const [entry] = filterEntries(columns, table(column('name')));
+		const [entry] = filterEntries({ columns, table: table(column('name')) });
 		expect(entry).toMatchObject({ group: 'Person', header: 'Name', filter: { type: 'text' } });
 	});
 
 	test('falls back to the column id as heading', () => {
 		const columns: ManagedColumn<Row>[] = [{ id: 'name', filter: { type: 'text' } }];
-		expect(filterEntries(columns, table(column('name')))[0].header).toBe('name');
+		expect(filterEntries({ columns, table: table(column('name')) })[0].header).toBe('name');
 	});
 
 	test('skips columns without a filter, an id, a table column or filtering', () => {
@@ -43,7 +43,7 @@ describe('filterEntries', () => {
 			{ id: 'locked', filter: { type: 'text' } }
 		];
 		const lookup = table(column('plain'), column('locked', { canFilter: false }));
-		expect(filterEntries(columns, lookup)).toEqual([]);
+		expect(filterEntries({ columns, table: lookup })).toEqual([]);
 	});
 
 	test('hidden columns are only offered when always available', () => {
@@ -52,7 +52,7 @@ describe('filterEntries', () => {
 			{ id: 'b', filter: { type: 'text', alwaysAvailable: true } }
 		];
 		const lookup = table(column('a', { visible: false }), column('b', { visible: false }));
-		expect(filterEntries(columns, lookup).map((entry) => entry.col.id)).toEqual(['b']);
+		expect(filterEntries({ columns, table: lookup }).map((entry) => entry.col.id)).toEqual(['b']);
 	});
 });
 
@@ -66,13 +66,13 @@ describe('groupEntries', () => {
 	];
 
 	test('ungrouped entries come first, groups keep their entries in order', () => {
-		const grouped = groupEntries(entries);
+		const grouped = groupEntries({ entries });
 		expect(grouped.map(([heading]) => heading)).toEqual([undefined, 'Z', 'A', 'Other']);
 		expect(grouped[1][1].map((entry) => entry.name)).toEqual(['a', 'd']);
 	});
 
 	test('listed headings follow their order, the rest after', () => {
-		const grouped = groupEntries(entries, ['A', 'Z']);
+		const grouped = groupEntries({ entries, groupOrder: ['A', 'Z'] });
 		expect(grouped.map(([heading]) => heading)).toEqual([undefined, 'A', 'Z', 'Other']);
 	});
 });

@@ -26,21 +26,11 @@ export function getInvitationExpiryDate(): Date {
 	return expiresAt;
 }
 
-/**
- * Check if an invitation token has expired
- */
-export function isTokenExpired(expiresAt: Date): boolean {
-	return new Date() > expiresAt;
-}
-
 /** Whether an invitation can still be accepted: it exists, and is neither revoked, used nor expired. */
 export function isOpenInvitation<
 	T extends { revokedAt: Date | null; usedAt: Date | null; expiresAt: Date }
 >(invitation: T | undefined): invitation is T {
 	return (
-		!!invitation &&
-		!invitation.revokedAt &&
-		!invitation.usedAt &&
-		!isTokenExpired(invitation.expiresAt)
+		!!invitation && !invitation.revokedAt && !invitation.usedAt && invitation.expiresAt > new Date()
 	);
 }

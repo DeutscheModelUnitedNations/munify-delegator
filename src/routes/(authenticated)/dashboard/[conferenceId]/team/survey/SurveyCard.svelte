@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { logger } from '#lib/logger';
 	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { m } from '#lib/paraglide/messages';
@@ -41,39 +42,45 @@
 	);
 
 	const formatDeadline = (date: Date) => {
-		return formatInTimezone(date, conferenceTimezone);
+		return formatInTimezone({ date, timezone: conferenceTimezone });
 	};
 
-	const toggleDraft = async (id: string, currentDraft: boolean) => {
+	const toggleDraft = async ({ id, currentDraft }: { id: string; currentDraft: boolean }) => {
 		try {
 			await client.mutate.updateSurveyQuestion({
 				__args: { id, draft: !currentDraft },
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle draft status:', error);
+			logger.error('Failed to toggle draft status', error);
 		}
 	};
 
-	const toggleHidden = async (id: string, currentHidden: boolean) => {
+	const toggleHidden = async ({ id, currentHidden }: { id: string; currentHidden: boolean }) => {
 		try {
 			await client.mutate.updateSurveyQuestion({
 				__args: { id, hidden: !currentHidden },
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle hidden status:', error);
+			logger.error('Failed to toggle hidden status', error);
 		}
 	};
 
-	const toggleShowSelection = async (id: string, currentValue: boolean) => {
+	const toggleShowSelection = async ({
+		id,
+		currentValue
+	}: {
+		id: string;
+		currentValue: boolean;
+	}) => {
 		try {
 			await client.mutate.updateSurveyQuestion({
 				__args: { id, showSelectionOnDashboard: !currentValue },
 				id: true
 			});
 		} catch (error) {
-			console.error('Failed to toggle showSelectionOnDashboard:', error);
+			logger.error('Failed to toggle showSelectionOnDashboard', error);
 		}
 	};
 </script>
@@ -146,7 +153,10 @@
 			<p class="text-sm whitespace-pre-line text-base-content/70">{survey.description}</p>
 		</div>
 		<div class="flex flex-none flex-wrap gap-2">
-			<button class="btn btn-ghost btn-sm" onclick={() => toggleDraft(survey.id, survey.draft)}>
+			<button
+				class="btn btn-ghost btn-sm"
+				onclick={() => toggleDraft({ id: survey.id, currentDraft: survey.draft })}
+			>
 				<i
 					class="fa-sharp-duotone fa-solid {survey.draft
 						? 'fa-eye-slash text-warning'
@@ -154,7 +164,10 @@
 				></i>
 				{survey.draft ? m.surveyIsDraft() : m.surveyIsLive()}
 			</button>
-			<button class="btn btn-ghost btn-sm" onclick={() => toggleHidden(survey.id, survey.hidden)}>
+			<button
+				class="btn btn-ghost btn-sm"
+				onclick={() => toggleHidden({ id: survey.id, currentHidden: survey.hidden })}
+			>
 				<i class="fa-sharp-duotone fa-solid fa-box-archive"></i>
 				{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 			</button>
@@ -186,7 +199,8 @@
 				type="checkbox"
 				class="toggle toggle-sm toggle-success"
 				checked={survey.showSelectionOnDashboard}
-				onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
+				onchange={() =>
+					toggleShowSelection({ id: survey.id, currentValue: survey.showSelectionOnDashboard })}
 			/>
 			<span class="text-sm">{m.showSelectionOnDashboard()}</span>
 			<span class="text-xs text-base-content/50">({m.showSelectionOnDashboardDescription()})</span>

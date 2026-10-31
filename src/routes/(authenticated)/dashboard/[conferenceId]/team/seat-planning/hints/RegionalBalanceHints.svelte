@@ -19,7 +19,11 @@
 
 	const abbreviations = $derived(new Map(committees.map((c) => [c.id, c.abbreviation])));
 	const deviations = $derived(
-		regionalDeviations(planner.committees, unMembers, planner.seatCounts)
+		regionalDeviations({
+			committees: planner.committees,
+			members: unMembers,
+			seatCounts: planner.seatCounts
+		})
 	);
 </script>
 

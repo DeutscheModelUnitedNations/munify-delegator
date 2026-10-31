@@ -14,7 +14,7 @@ import { callerUserId, grantWhere, assertAllowed } from '#api/services/authHelpe
 import type { Context } from '#api/context';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 /** The column that carries the committee a delegate was seated in (`maskedUntilRelease`). */
 const DELEGATION_MEMBER_ASSIGNMENT = { assignedCommitteeId: false } as const;
@@ -31,19 +31,25 @@ export function registerDelegationMemberAbilities() {
 
 	// Co-delegates see each other, and supervisors the delegates they supervise - the committee they
 	// were seated in only once the team has released the assignment.
-	abilityBuilder.delegationMember
-		.allow('read')
-		.when((ctx) => maskedUntilRelease(isInOwnDelegation(ctx), DELEGATION_MEMBER_ASSIGNMENT));
+	abilityBuilder.delegationMember.allow('read').when((ctx) =>
+		maskedUntilRelease({
+			filter: isInOwnDelegation(ctx),
+			assignmentColumns: DELEGATION_MEMBER_ASSIGNMENT
+		})
+	);
 	abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(isInOwnDelegation(ctx)));
-	abilityBuilder.delegationMember
-		.allow('read')
-		.when((ctx) => maskedUntilRelease(supervisedMember(ctx), DELEGATION_MEMBER_ASSIGNMENT));
+	abilityBuilder.delegationMember.allow('read').when((ctx) =>
+		maskedUntilRelease({
+			filter: supervisedMember(ctx),
+			assignmentColumns: DELEGATION_MEMBER_ASSIGNMENT
+		})
+	);
 	abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(supervisedMember(ctx)));
 
 	// Project management and participant care manage their conference's delegation members.
 	abilityBuilder.delegationMember
 		.allow(['read', 'update', 'delete'])
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 
 	// Only the head delegate may remove a delegate, and only before the delegation has applied.
 	abilityBuilder.delegationMember.allow('delete').when((ctx) => {
@@ -78,31 +84,43 @@ export function registerDelegationMemberAbilities() {
 }
 
 /** Refuses unless the caller may remove the delegate (the row's delete ability). */
-export async function assertCanDeleteDelegationMember(ctx: ApiContext, id: string) {
-	await assertAllowed(ctx, 'delegationMember', 'delete', id);
+export async function assertCanDeleteDelegationMember({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
+	await assertAllowed({ ctx, table: 'delegationMember', action: 'delete', id });
 }
 
 /** The role a user is placed into has to be one the conference offers. */
 export { assertOfferedIn };
 
 /** Placing a user straight into an assigned delegation is participant care's. */
-export async function assertCanCreateAppliedDelegationMember(
-	ctx: ApiContext,
-	conferenceId: string
-) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanCreateAppliedDelegationMember({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /**
  * Refuses a committee that does not seat the delegation's assigned role: a delegate can only sit
  * where their delegation has a seat, and a delegation without a role has none.
  */
-function assertCommitteeSeats(
-	committee: { roles: { id: string }[] },
-	assignedRoleId: string | null | undefined
-) {
+function assertCommitteeSeats({
+	committee,
+	assignedRoleId
+}: {
+	committee: { roles: { id: string }[] };
+	assignedRoleId: string | null | undefined;
+}) {
 	if (!assignedRoleId || !committee.roles.some((role) => role.id === assignedRoleId)) {
-		throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
+		throw apiError({ code: 'INVALID_INPUT', message: m.committeeDoesNotBelongToConferenceError() });
 	}
 }
 
@@ -112,11 +130,15 @@ function assertCommitteeSeats(
  * all. Returns both, the member with its delegation's members, which the move needs to find a
  * seat.
  */
-export async function assertCanMoveDelegationMemberToCommittee(
-	ctx: ApiContext,
-	id: string,
-	assignedCommitteeId: string
-) {
+export async function assertCanMoveDelegationMemberToCommittee({
+	ctx,
+	id,
+	assignedCommitteeId
+}: {
+	ctx: ApiContext;
+	id: string;
+	assignedCommitteeId: string;
+}) {
 	const member = await db.query.delegationMember
 		.findFirst({
 			...(await ctx.abilities.delegationMember.filter('update')).merge({ where: { id } }).query
@@ -131,7 +153,7 @@ export async function assertCanMoveDelegationMemberToCommittee(
 			with: { roles: { columns: { id: true } } }
 		})
 		.then(assertFindFirstExists);
-	assertCommitteeSeats(committee, member.delegation.assignedRoleId);
+	assertCommitteeSeats({ committee, assignedRoleId: member.delegation.assignedRoleId });
 
 	return { member, committee };
 }
@@ -144,11 +166,15 @@ export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMem
  * conference's and seats the delegate's delegation. A null committee clears the assignment, which
  * only needs the update.
  */
-export async function assertCanAssignCommittees(
-	ctx: ApiContext,
-	conferenceId: string,
-	assignments: { delegationMemberId: string; committeeId?: string | null }[]
-) {
+export async function assertCanAssignCommittees({
+	ctx,
+	conferenceId,
+	assignments
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+	assignments: { delegationMemberId: string; committeeId?: string | null }[];
+}) {
 	const memberIds = [...new Set(assignments.map((a) => a.delegationMemberId))];
 	const committeeIds = [...new Set(assignments.flatMap((a) => a.committeeId ?? []))];
 	const updatable = await ctx.abilities.delegationMember.filter('update');
@@ -167,7 +193,7 @@ export async function assertCanAssignCommittees(
 		})
 	]);
 	if (members.length !== memberIds.length) {
-		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
 	const memberById = new Map(members.map((member) => [member.id, member]));
 	const committeeById = new Map(committees.map((committee) => [committee.id, committee]));
@@ -176,15 +202,18 @@ export async function assertCanAssignCommittees(
 		if (!assignment.committeeId) continue;
 		const committee = committeeById.get(assignment.committeeId);
 		if (!committee) {
-			throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+			throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 		}
 		if (committee.conferenceId !== conferenceId) {
-			throw apiError('INVALID_INPUT', m.committeeDoesNotBelongToConferenceError());
+			throw apiError({
+				code: 'INVALID_INPUT',
+				message: m.committeeDoesNotBelongToConferenceError()
+			});
 		}
-		assertCommitteeSeats(
+		assertCommitteeSeats({
 			committee,
-			memberById.get(assignment.delegationMemberId)?.delegation.assignedRoleId
-		);
+			assignedRoleId: memberById.get(assignment.delegationMemberId)?.delegation.assignedRoleId
+		});
 	}
 }
 
@@ -194,8 +223,11 @@ export async function assertCanAssignCommittees(
  * has to be a delegate of the conference the caller may update, and the target role and committee
  * the conference's.
  */
-export async function assertCanSwitchDelegationMemberSeats(
-	ctx: ApiContext,
+export async function assertCanSwitchDelegationMemberSeats({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
 	args: {
 		conferenceId: string;
 		memberId: string;
@@ -203,13 +235,16 @@ export async function assertCanSwitchDelegationMemberSeats(
 		targetRoleId?: string | null;
 		targetCommitteeId?: string | null;
 		headDelegateMemberIds?: readonly string[] | null;
-	}
-) {
+	};
+}) {
 	const { conferenceId } = args;
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
-	await assertOfferedIn(conferenceId, {
-		roleId: args.targetRoleId,
-		committeeId: args.targetCommitteeId
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	await assertOfferedIn({
+		conferenceId,
+		ref: {
+			roleId: args.targetRoleId,
+			committeeId: args.targetCommitteeId
+		}
 	});
 
 	const memberIds = [
@@ -222,6 +257,6 @@ export async function assertCanSwitchDelegationMemberSeats(
 		columns: { id: true }
 	});
 	if (members.length !== memberIds.length) {
-		throw apiError('NOT_FOUND', m.updateNotFoundOrForbidden());
+		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 	}
 }

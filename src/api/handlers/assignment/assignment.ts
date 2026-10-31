@@ -18,7 +18,7 @@ import {
 	singleParticipantPubsub
 } from '#api/pubsub';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 import {
 	assertCanAssignDelegation,
 	assertCanAssignSingleParticipant,
@@ -76,8 +76,6 @@ function publishDraft() {
 		assignmentSingleRolePubsub
 	]) {
 		pubsub.created();
-		pubsub.removed();
-		pubsub.updated();
 	}
 }
 
@@ -89,7 +87,17 @@ const singleParticipantDraftChange =
 		) => Promise<unknown>
 	) =>
 	async (_root: unknown, args: { singleParticipantId: string }, ctx: ApiContext) => {
-		await change(await assertCanAssignSingleParticipant(ctx, args.singleParticipantId));
+		await change(await assertCanAssignSingleParticipant({ ctx, id: args.singleParticipantId }));
+		publishDraft();
+		return true;
+	};
+
+/** A resolver for a change to the whole draft of a conference the caller may plan. */
+const conferenceDraftChange =
+	(change: (args: { conferenceId: string; ctx: ApiContext }) => Promise<unknown>) =>
+	async (_root: unknown, args: { conferenceId: string }, ctx: ApiContext) => {
+		await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+		await change({ conferenceId: args.conferenceId, ctx });
 		publishDraft();
 		return true;
 	};
@@ -122,17 +130,22 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const problem = reviewProblem(args);
-			if (problem) throw apiError('INVALID_INPUT', REVIEW_PROBLEMS[problem]());
+			if (problem) throw apiError({ code: 'INVALID_INPUT', message: REVIEW_PROBLEMS[problem]() });
 			const review = reviewRow(args);
-			const conferenceId = await assertCanReviewApplication(ctx, review.application);
+			const conferenceId = await assertCanReviewApplication({
+				ctx,
+				application: review.application
+			});
 
-			const reviewId = await setAssignmentReview(conferenceId, review);
+			const reviewId = await setAssignmentReview({ conferenceId, review });
 			// An upsert: the first rating creates the row.
 			assignmentReviewPubsub.created();
 			assignmentReviewPubsub.updated(reviewId);
 
 			return db.query.assignmentReview
-				.findFirst(query(await queryAllowed(ctx.abilities.assignmentReview, reviewId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.assignmentReview, id: reviewId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -149,13 +162,15 @@ schemaBuilder.mutationFields((t) => ({
 			experienceEffect: t.arg({ type: experienceEffectEnum, required: true })
 		},
 		resolve: async (query, _root, { conferenceId, ...weights }, ctx) => {
-			await assertCanPlanAssignment(ctx, conferenceId);
-			const weightsId = await setAssignmentWeights(conferenceId, weights);
+			await assertCanPlanAssignment({ ctx, conferenceId });
+			const weightsId = await setAssignmentWeights({ conferenceId, weights });
 			assignmentWeightsPubsub.created();
 			assignmentWeightsPubsub.updated(weightsId);
 
 			return db.query.assignmentWeights
-				.findFirst(query(await queryAllowed(ctx.abilities.assignmentWeights, weightsId)))
+				.findFirst(
+					query(await queryAllowed({ ability: ctx.abilities.assignmentWeights, id: weightsId }))
+				)
 				.then(assertFindFirstExists);
 		}
 	}),
@@ -168,10 +183,10 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
-			const delegation = await assertCanAssignDelegation(ctx, args.delegationId);
+			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
 			const target = targetFrom(args);
-			await assertTargetOf(delegation.conferenceId, target);
-			await draftDelegationTarget(db, delegation, target);
+			await assertTargetOf({ conferenceId: delegation.conferenceId, target });
+			await draftDelegationTarget({ tx: db, delegation, target });
 			publishDraft();
 			return true;
 		}
@@ -185,10 +200,10 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
-			const unit = await assertCanAssignUnit(ctx, args.unitId);
+			const unit = await assertCanAssignUnit({ ctx, unitId: args.unitId });
 			const target = targetFrom(args);
-			await assertTargetOf(unit.conferenceId, target);
-			await draftUnitTarget(unit.id, target);
+			await assertTargetOf({ conferenceId: unit.conferenceId, target });
+			await draftUnitTarget({ unitId: unit.id, target });
 			publishDraft();
 			return true;
 		}
@@ -202,10 +217,10 @@ schemaBuilder.mutationFields((t) => ({
 			parts: t.arg({ type: [SplitPartInput], required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			const delegation = await assertCanAssignDelegation(ctx, args.delegationId);
-			const parts = splitParts(args.parts, delegation.members.length);
-			assertSplitMembersOf(delegation, parts);
-			await splitDelegation(delegation, parts);
+			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
+			const parts = splitParts({ parts: args.parts, memberCount: delegation.members.length });
+			assertSplitMembersOf({ delegation, parts });
+			await splitDelegation({ delegation, parts });
 			publishDraft();
 			return true;
 		}
@@ -216,7 +231,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { delegationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const delegation = await assertCanAssignDelegation(ctx, args.delegationId);
+			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
 			await undoDelegationSplit(delegation.id);
 			publishDraft();
 			return true;
@@ -246,10 +261,13 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
-			const participant = await assertCanAssignSingleParticipant(ctx, args.singleParticipantId);
+			const participant = await assertCanAssignSingleParticipant({
+				ctx,
+				id: args.singleParticipantId
+			});
 			const roleId = args.roleId || null;
-			await assertCustomRoleOf(participant.conferenceId, roleId);
-			await planSingleParticipantRole(participant, roleId);
+			await assertCustomRoleOf({ conferenceId: participant.conferenceId, roleId });
+			await planSingleParticipantRole({ participant, roleId });
 			publishDraft();
 			return true;
 		}
@@ -264,8 +282,11 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }), size: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
-			const assigned = await autoAssignDelegations(args.conferenceId, args.size);
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+			const assigned = await autoAssignDelegations({
+				conferenceId: args.conferenceId,
+				size: args.size
+			});
 			publishDraft();
 			return assigned;
 		}
@@ -280,7 +301,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
 			const assigned = await autoAssignSingleParticipants(args.conferenceId);
 			publishDraft();
 			return assigned;
@@ -292,8 +313,8 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }), seats: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
-			await resetAssignmentSize(args.conferenceId, args.seats);
+			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
+			await resetAssignmentSize({ conferenceId: args.conferenceId, seats: args.seats });
 			publishDraft();
 			return true;
 		}
@@ -303,12 +324,7 @@ schemaBuilder.mutationFields((t) => ({
 	discardAssignmentDraft: t.field({
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
-			await discardAssignmentDraft(args.conferenceId);
-			publishDraft();
-			return true;
-		}
+		resolve: conferenceDraftChange(({ conferenceId }) => discardAssignmentDraft(conferenceId))
 	}),
 
 	/**
@@ -319,11 +335,8 @@ schemaBuilder.mutationFields((t) => ({
 	applyAssignment: t.field({
 		type: 'Boolean',
 		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanPlanAssignment(ctx, args.conferenceId);
-			await applyAssignmentDraft(args.conferenceId);
-
-			publishDraft();
+		resolve: conferenceDraftChange(async ({ conferenceId, ctx }) => {
+			await applyAssignmentDraft(conferenceId);
 			// Delegations are created and dissolved, members move, single participants become
 			// delegates; reviews of dissolved delegations go with them.
 			for (const pubsub of [
@@ -336,9 +349,8 @@ schemaBuilder.mutationFields((t) => ({
 				pubsub.removed();
 				pubsub.updated();
 			}
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
-			return true;
-		}
+			scheduleEmailSweep({ conferenceId, origin: ctx.requestUrl().origin });
+		})
 	}),
 
 	/**
@@ -353,8 +365,16 @@ schemaBuilder.mutationFields((t) => ({
 			sendEmails: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanReleaseAssignment(ctx, args.conferenceId, args.sendEmails != null);
-			await setAssignmentReleased(args.conferenceId, args.released, args.sendEmails ?? undefined);
+			await assertCanReleaseAssignment({
+				ctx,
+				conferenceId: args.conferenceId,
+				decidesEmails: args.sendEmails != null
+			});
+			await setAssignmentReleased({
+				conferenceId: args.conferenceId,
+				released: args.released,
+				sendEmails: args.sendEmails ?? undefined
+			});
 
 			conferencePubsub.updated(args.conferenceId);
 			// What participants may read of these changes with the flag.
@@ -362,7 +382,7 @@ schemaBuilder.mutationFields((t) => ({
 			delegationMemberPubsub.updated();
 			singleParticipantPubsub.updated();
 			if (args.sendEmails) conferenceEmailSettingPubsub.updated();
-			scheduleEmailSweep(args.conferenceId, ctx.requestUrl().origin);
+			scheduleEmailSweep({ conferenceId: args.conferenceId, origin: ctx.requestUrl().origin });
 			return true;
 		}
 	})

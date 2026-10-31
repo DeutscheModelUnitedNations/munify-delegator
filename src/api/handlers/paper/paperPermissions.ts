@@ -15,7 +15,7 @@ import {
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 type PaperType = (typeof schema.paper.$inferSelect)['type'];
 type RoleKind = (typeof schema.conferenceRole.$inferSelect)['kind'];
@@ -48,7 +48,7 @@ export function registerPaperAbilities() {
 	// Only project management deletes somebody else's paper.
 	abilityBuilder.paper
 		.allow('delete')
-		.when((ctx) => grantWhere(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PROJECT_MANAGEMENT_ROLES })));
 
 	// Supervisors see the submitted papers of the delegations they supervise.
 	abilityBuilder.paper.allow('read').when((ctx) => {
@@ -71,17 +71,29 @@ export function registerPaperAbilities() {
 }
 
 /** Reviewers and conference management of the conference, or a system admin. */
-export function assertCanReviewPapers(ctx: ApiContext, conferenceId: string) {
-	return assertTeamPermission(ctx, conferenceId, 'reviewPapers');
+export function assertCanReviewPapers({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	return assertTeamPermission({ ctx, conferenceId, permission: 'reviewPapers' });
 }
 
 /** The non-throwing form of `assertCanReviewPapers`. */
-export function canReviewPapers(ctx: ApiContext, conferenceId: string) {
-	return hasTeamPermission(ctx, conferenceId, 'reviewPapers');
+export function canReviewPapers({ ctx, conferenceId }: { ctx: ApiContext; conferenceId: string }) {
+	return hasTeamPermission({ ctx, conferenceId, permission: 'reviewPapers' });
 }
 
 /** The reviewer check for the conference an agenda item belongs to. */
-export async function assertCanReviewAgendaItemPapers(ctx: ApiContext, agendaItemId: string) {
+export async function assertCanReviewAgendaItemPapers({
+	ctx,
+	agendaItemId
+}: {
+	ctx: ApiContext;
+	agendaItemId: string;
+}) {
 	const agendaItem = await db.query.committeeAgendaItem
 		.findFirst({
 			where: { id: agendaItemId },
@@ -90,7 +102,7 @@ export async function assertCanReviewAgendaItemPapers(ctx: ApiContext, agendaIte
 		})
 		.then(assertFindFirstExists);
 
-	await assertCanReviewPapers(ctx, agendaItem.committee.conferenceId);
+	await assertCanReviewPapers({ ctx, conferenceId: agendaItem.committee.conferenceId });
 }
 
 /**
@@ -98,16 +110,28 @@ export async function assertCanReviewAgendaItemPapers(ctx: ApiContext, agendaIte
  * single participant or supervisor), or an admin: who may list the conference's papers. Which
  * papers each of them sees is the read ability's business.
  */
-export async function assertCanReadConferencePapers(ctx: ApiContext, conferenceId: string) {
-	if (await canReviewPapers(ctx, conferenceId)) return;
-	await assertParticipantOfConference(ctx, conferenceId);
+export async function assertCanReadConferencePapers({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	if (await canReviewPapers({ ctx, conferenceId })) return;
+	await assertParticipantOfConference({ ctx, conferenceId });
 }
 
 /**
  * Refuses unless the caller takes part in the conference (delegate, single participant or
  * supervisor), or is a system admin.
  */
-async function assertParticipantOfConference(ctx: ApiContext, conferenceId: string) {
+async function assertParticipantOfConference({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
 	const caller = ctx.mustBeLoggedIn().sub;
 	if (isSystemAdmin(ctx)) return;
 	const participant = await db.query.user.findFirst({
@@ -115,7 +139,7 @@ async function assertParticipantOfConference(ctx: ApiContext, conferenceId: stri
 		columns: { id: true }
 	});
 	if (!participant) {
-		throw apiError('FORBIDDEN', m.accessDeniedParticipant());
+		throw apiError({ code: 'FORBIDDEN', message: m.accessDeniedParticipant() });
 	}
 }
 
@@ -127,45 +151,64 @@ async function assertParticipantOfConference(ctx: ApiContext, conferenceId: stri
  * caller writes nothing: answering differently per agenda item or paper type would tell them the
  * committee and role their read rules still mask.
  */
-export function paperRefusal(
+export function paperRefusal({
+	member,
+	paper
+}: {
 	member: {
 		assignmentReleased: boolean;
 		roleKind: RoleKind | null;
 		assignedCommitteeId: string | null;
-	},
+	};
 	paper: {
 		type: PaperType;
 		/** The agenda item's committee, or null for a paper without one. */
 		agendaItemCommitteeId: string | null;
-	}
-) {
+	};
+}) {
 	const isNSA = member.roleKind === 'NON_STATE_ACTOR';
 	if (!member.assignmentReleased || !(isNSA || member.roleKind === 'NATION')) {
-		return apiError('FORBIDDEN', m.paperNotYetAssigned());
+		return apiError({ code: 'FORBIDDEN', message: m.paperNotYetAssigned() });
 	}
 	return paper.type === 'INTRODUCTION_PAPER'
-		? introductionPaperRefusal(isNSA, paper.agendaItemCommitteeId)
-		: agendaItemPaperRefusal(isNSA, member.assignedCommitteeId, paper.agendaItemCommitteeId);
+		? introductionPaperRefusal({ isNSA, agendaItemCommitteeId: paper.agendaItemCommitteeId })
+		: agendaItemPaperRefusal({
+				isNSA,
+				assignedCommitteeId: member.assignedCommitteeId,
+				agendaItemCommitteeId: paper.agendaItemCommitteeId
+			});
 }
 
 /** An introduction paper: non-state actors only, and never on an agenda item. */
-function introductionPaperRefusal(isNSA: boolean, agendaItemCommitteeId: string | null) {
-	if (!isNSA) return apiError('FORBIDDEN', m.paperIntroductionOnlyNonStateActors());
+function introductionPaperRefusal({
+	isNSA,
+	agendaItemCommitteeId
+}: {
+	isNSA: boolean;
+	agendaItemCommitteeId: string | null;
+}) {
+	if (!isNSA)
+		return apiError({ code: 'FORBIDDEN', message: m.paperIntroductionOnlyNonStateActors() });
 	if (agendaItemCommitteeId) {
-		return apiError('INVALID_INPUT', m.paperIntroductionWithoutAgendaItem());
+		return apiError({ code: 'INVALID_INPUT', message: m.paperIntroductionWithoutAgendaItem() });
 	}
 	return undefined;
 }
 
 /** Any other paper: on an agenda item, of the member's own committee unless a non-state actor. */
-function agendaItemPaperRefusal(
-	isNSA: boolean,
-	assignedCommitteeId: string | null,
-	agendaItemCommitteeId: string | null
-) {
-	if (!agendaItemCommitteeId) return apiError('INVALID_INPUT', m.paperAgendaItemRequired());
+function agendaItemPaperRefusal({
+	isNSA,
+	assignedCommitteeId,
+	agendaItemCommitteeId
+}: {
+	isNSA: boolean;
+	assignedCommitteeId: string | null;
+	agendaItemCommitteeId: string | null;
+}) {
+	if (!agendaItemCommitteeId)
+		return apiError({ code: 'INVALID_INPUT', message: m.paperAgendaItemRequired() });
 	if (!isNSA && agendaItemCommitteeId !== assignedCommitteeId) {
-		return apiError('FORBIDDEN', m.paperOnlyOwnCommittee());
+		return apiError({ code: 'FORBIDDEN', message: m.paperOnlyOwnCommittee() });
 	}
 	return undefined;
 }
@@ -179,19 +222,22 @@ function agendaItemPaperRefusal(
  * moved to another committee later keeps the papers they wrote. Answers with the caller's
  * participant row, which the paper is written under.
  */
-export async function assertCanCreatePaper(
-	ctx: ApiContext,
+export async function assertCanCreatePaper({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
 	args: {
 		conferenceId: string;
 		authorId: string;
 		delegationId: string;
 		agendaItemId?: string | null;
 		type: PaperType;
-	}
-) {
+	};
+}) {
 	const caller = ctx.mustBeLoggedIn().sub;
 	if (args.authorId !== caller) {
-		throw apiError('FORBIDDEN', m.paperOnlyOwnName());
+		throw apiError({ code: 'FORBIDDEN', message: m.paperOnlyOwnName() });
 	}
 	const membership = await db.query.delegationMember.findFirst({
 		where: {
@@ -210,7 +256,7 @@ export async function assertCanCreatePaper(
 		}
 	});
 	if (!membership) {
-		throw apiError('FORBIDDEN', m.paperOnlyOwnDelegation());
+		throw apiError({ code: 'FORBIDDEN', message: m.paperOnlyOwnDelegation() });
 	}
 	const agendaItem = args.agendaItemId
 		? await db.query.committeeAgendaItem
@@ -220,20 +266,20 @@ export async function assertCanCreatePaper(
 				})
 				.then(assertFindFirstExists)
 		: undefined;
-	const refusal = paperRefusal(
-		{
+	const refusal = paperRefusal({
+		member: {
 			assignmentReleased: membership.delegation.conference.assignmentReleased,
 			roleKind: membership.delegation.assignedRole?.kind ?? null,
 			assignedCommitteeId: membership.assignedCommitteeId
 		},
-		{ type: args.type, agendaItemCommitteeId: agendaItem?.committeeId ?? null }
-	);
+		paper: { type: args.type, agendaItemCommitteeId: agendaItem?.committeeId ?? null }
+	});
 	if (refusal) throw refusal;
 	return { authorParticipantId: membership.conferenceParticipantId };
 }
 
 /** Refuses unless the paper exists and the caller may update it (authors, reviewers, admins). */
-export async function assertCanUpdatePaper(ctx: ApiContext, paperId: string) {
+export async function assertCanUpdatePaper({ ctx, paperId }: { ctx: ApiContext; paperId: string }) {
 	ctx.mustBeLoggedIn();
 	await db.query.paper
 		.findFirst({

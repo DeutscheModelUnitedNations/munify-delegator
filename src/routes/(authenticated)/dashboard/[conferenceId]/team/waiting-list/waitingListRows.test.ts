@@ -41,7 +41,7 @@ const bare: WaitingListSourceEntry = {
 
 describe('toWaitingListRow', () => {
 	test('maps every column and computes the age at the conference', () => {
-		expect(toWaitingListRow(entry, new Date('2026-03-19T00:00:00Z'))).toEqual({
+		expect(toWaitingListRow({ entry, startConference: new Date('2026-03-19T00:00:00Z') })).toEqual({
 			id: 'w1',
 			userId: 'u1',
 			createdAt: new Date('2026-01-02T03:04:05.000Z'),
@@ -64,20 +64,25 @@ describe('toWaitingListRow', () => {
 
 	test('takes the place on the list and the date a seat was given', () => {
 		const positions = waitingListPositions([{ id: 'w0' }, { id: 'w1' }]);
-		expect(toWaitingListRow(entry, null, positions).position).toBe(2);
-		expect(toWaitingListRow(bare, null, positions).position).toBeUndefined();
+		expect(toWaitingListRow({ entry, startConference: null, positions }).position).toBe(2);
 		expect(
-			toWaitingListRow({ ...bare, assignedAt: '2026-02-01T10:00:00.000Z' }, null).assignedAt
+			toWaitingListRow({ entry: bare, startConference: null, positions }).position
+		).toBeUndefined();
+		expect(
+			toWaitingListRow({
+				entry: { ...bare, assignedAt: '2026-02-01T10:00:00.000Z' },
+				startConference: null
+			}).assignedAt
 		).toEqual(new Date('2026-02-01T10:00:00.000Z'));
 	});
 
 	test('has no age without a conference start', () => {
-		expect(toWaitingListRow(entry, undefined).conferenceAge).toBeUndefined();
-		expect(toWaitingListRow(entry, null).conferenceAge).toBeUndefined();
+		expect(toWaitingListRow({ entry, startConference: undefined }).conferenceAge).toBeUndefined();
+		expect(toWaitingListRow({ entry, startConference: null }).conferenceAge).toBeUndefined();
 	});
 
 	test('fills missing optional fields with null and has no age without a birthday', () => {
-		expect(toWaitingListRow(bare, '2026-03-19')).toMatchObject({
+		expect(toWaitingListRow({ entry: bare, startConference: '2026-03-19' })).toMatchObject({
 			phone: null,
 			city: null,
 			school: null,

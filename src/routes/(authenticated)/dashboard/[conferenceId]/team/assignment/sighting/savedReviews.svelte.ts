@@ -26,19 +26,24 @@ export function savedReview(id: string) {
  * backend refuses it. `review` is the one shown, so quick changes build on each other. Resolves
  * with the review the backend stored, or `undefined` when it failed or a later save took over.
  */
-export async function saveReview(
-	kind: 'delegation' | 'single',
-	id: string,
-	review: SightingReview | undefined,
-	change: Partial<SightingReview>
-): Promise<SightingReview | undefined> {
+export async function saveReview({
+	kind,
+	id,
+	review,
+	change
+}: {
+	kind: 'delegation' | 'single';
+	id: string;
+	review: SightingReview | undefined;
+	change: Partial<SightingReview>;
+}): Promise<SightingReview | undefined> {
 	const save = ++saves;
 	latest.set(id, save);
 	const before = saved.get(id);
 	saved.set(id, { flagged: false, disqualified: false, ...review, ...change });
 	try {
 		const stored = await client.mutate.setAssignmentReview({
-			__args: reviewArgs(kind, id, review, change),
+			__args: reviewArgs({ kind, id, review, change }),
 			evaluation: true,
 			flagged: true,
 			disqualified: true,

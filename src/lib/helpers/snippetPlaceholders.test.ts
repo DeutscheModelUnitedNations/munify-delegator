@@ -77,13 +77,15 @@ describe('validatePlaceholders', () => {
 describe('replacePlaceholders', () => {
 	test('replaces every occurrence, tolerating spaces, without touching the original', () => {
 		const original = doc('Hallo {{name}} und {{ name }}, {{other}}');
-		const replaced = replacePlaceholders(original, { name: 'Erika' });
+		const replaced = replacePlaceholders({ content: original, values: { name: 'Erika' } });
 		expect(replaced).toEqual(doc('Hallo Erika und Erika, {{other}}'));
 		expect(original).toEqual(doc('Hallo {{name}} und {{ name }}, {{other}}'));
 	});
 
 	test('treats regex characters in keys literally', () => {
-		expect(replacePlaceholders(doc('{{a.b}} {{axb}}'), { 'a.b': '1' })).toEqual(doc('1 {{axb}}'));
+		expect(
+			replacePlaceholders({ content: doc('{{a.b}} {{axb}}'), values: { 'a.b': '1' } })
+		).toEqual(doc('1 {{axb}}'));
 	});
 
 	test('removes text nodes the replacement leaves empty', () => {
@@ -100,7 +102,7 @@ describe('replacePlaceholders', () => {
 				}
 			]
 		};
-		expect(replacePlaceholders(content, { gone: '' })).toEqual({
+		expect(replacePlaceholders({ content, values: { gone: '' } })).toEqual({
 			type: 'doc',
 			content: [
 				{ type: 'paragraph', content: [{ type: 'hardBreak' }, { type: 'text', text: 'bleibt' }] }
@@ -110,6 +112,6 @@ describe('replacePlaceholders', () => {
 
 	test('passes empty content through', () => {
 		const empty: JSONContent = {};
-		expect(replacePlaceholders(empty, { a: 'b' })).toEqual({});
+		expect(replacePlaceholders({ content: empty, values: { a: 'b' } })).toEqual({});
 	});
 });

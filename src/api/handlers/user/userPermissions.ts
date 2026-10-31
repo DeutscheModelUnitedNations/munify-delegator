@@ -12,8 +12,13 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
-import type { Context } from '#api/context';
-import { apiError } from '#api/services/errors/apiError';
+import type { RequestEvent } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import type { OIDCSession } from '@m1212e/sveltekit-oidc';
+import { rolesOfSession, type Context } from '#api/context';
+import { OIDC } from '#api/services/oidc/OIDC';
+import { logger } from '#lib/logger';
+import { apiError } from '#api/services/errors';
 
 /**
  * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
@@ -56,7 +61,13 @@ const WITHOUT_CARE_NOTES = { globalNotes: false };
 // who it is and, while the pair stands (open or confirmed), the care notes on it - the reason the
 // pair is shown - but no contact details. A dismissed pair keeps the name only, so the page can
 // still list it and the dismissal can be undone; the notes are withheld again.
-function duplicateOfManaged(ctx: Context, status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[]) {
+function duplicateOfManaged({
+	ctx,
+	status
+}: {
+	ctx: Context;
+	status: ('OPEN' | 'CONFIRMED' | 'DISMISSED')[];
+}) {
 	const managed = isCaredForUser(ctx);
 	if (!managed) return undefined;
 	const standing = { status: { in: status } };
@@ -94,11 +105,11 @@ export function registerUserAbilities() {
 
 	// The other account of a possible duplicate (see `duplicateOfManaged`).
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfManaged(ctx, ['OPEN', 'CONFIRMED']);
+		const filter = duplicateOfManaged({ ctx, status: ['OPEN', 'CONFIRMED'] });
 		return filter ? { where: filter, columns: { ...IDENTITY, globalNotes: true } } : undefined;
 	});
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const filter = duplicateOfManaged(ctx, ['DISMISSED']);
+		const filter = duplicateOfManaged({ ctx, status: ['DISMISSED'] });
 		return filter ? { where: filter, columns: IDENTITY } : undefined;
 	});
 
@@ -116,7 +127,7 @@ export function registerUserAbilities() {
 	// Team admins see their team in full but for the care notes: the team members page lists
 	// everybody's address, gender and food preference for planning.
 	abilityBuilder.user.allow('read').when((ctx) => {
-		const conference = isTeamMemberOf(ctx, TEAM_ADMIN_ROLES);
+		const conference = isTeamMemberOf({ ctx, roles: TEAM_ADMIN_ROLES });
 		return conference
 			? { where: { teamMember: { conference } }, columns: WITHOUT_CARE_NOTES }
 			: undefined;
@@ -214,14 +225,14 @@ export function registerUserAbilities() {
 }
 
 /** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
-export async function assertCanManageUser(ctx: Context, id: string) {
+export async function assertCanManageUser({ ctx, id }: { ctx: Context; id: string }) {
 	ctx.mustBeLoggedIn();
 	const managed = isCaredForUser(ctx);
 	const found = managed
 		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
 		: undefined;
 	if (!found) {
-		throw apiError('NOT_FOUND', m.userNotFoundOrNotSupervised());
+		throw apiError({ code: 'NOT_FOUND', message: m.userNotFoundOrNotSupervised() });
 	}
 }
 
@@ -230,11 +241,15 @@ export async function assertCanManageUser(ctx: Context, id: string) {
  * table. Each carries its own ability filter, merged with the conference/user scope, so a caller
  * who may remove one kind of participation but not another removes only what they are allowed to.
  */
-export async function deletableParticipation(
-	ctx: ApiContext,
-	userId: string,
-	conferenceId: string
-) {
+export async function deletableParticipation({
+	ctx,
+	userId,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	userId: string;
+	conferenceId: string;
+}) {
 	const scope = { conferenceId, userId };
 	// the registrations name the conference and the user through the person's part in it
 	const throughParticipant = { participant: scope };
@@ -265,17 +280,20 @@ export async function deletableParticipation(
  * template, and checked here instead of allowing anonymous opt-outs. Needs the template changed in
  * Listmonk, so it waits until that can be done together.
  */
-export function assertCanUpdateNewsletterPreferences(
-	ctx: Context,
+export function assertCanUpdateNewsletterPreferences({
+	ctx,
+	args
+}: {
+	ctx: Context;
 	args: {
 		email: string;
 		wantsToReceiveGeneralInformation?: boolean | null;
 		wantsJoinTeamInformation?: boolean | null;
-	}
-) {
+	};
+}) {
 	const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
 	if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email) {
-		throw apiError('FORBIDDEN', m.userNewsletterOnlyOwn());
+		throw apiError({ code: 'FORBIDDEN', message: m.userNewsletterOnlyOwn() });
 	}
 }
 
@@ -310,7 +328,13 @@ function impersonatableBy(actor: { sub: string; isAdmin: boolean }) {
  * The user `targetId` with what the app shows of their identity, if `actor` may impersonate them
  * as `impersonatableBy` defines it.
  */
-export function impersonatableUser(actor: { sub: string; isAdmin: boolean }, targetId: string) {
+function impersonatableUser({
+	actor,
+	targetId
+}: {
+	actor: { sub: string; isAdmin: boolean };
+	targetId: string;
+}) {
 	return db.query.user.findFirst({
 		where: { AND: [{ id: targetId }, impersonatableBy(actor)] },
 		columns: {
@@ -329,19 +353,64 @@ export function impersonatableUser(actor: { sub: string; isAdmin: boolean }, tar
  * Whether the caller may start impersonating `targetId`: signed in as themselves (not impersonating
  * somebody already) and allowed to by `impersonatableBy`.
  */
-export async function canImpersonate(ctx: Context, targetId: string) {
+export async function canImpersonate({ ctx, targetId }: { ctx: Context; targetId: string }) {
 	const caller = ctx.oidc.user;
 	if (!caller || ctx.oidc.impersonator) return false;
-	return !!(await impersonatableUser({ sub: caller.sub, isAdmin: isSystemAdmin(ctx) }, targetId));
+	return !!(await impersonatableUser({
+		actor: { sub: caller.sub, isAdmin: isSystemAdmin(ctx) },
+		targetId
+	}));
 }
 
 /** Refuses unless `canImpersonate`. */
-export async function assertCanImpersonate(ctx: Context, targetId: string) {
+export async function assertCanImpersonate({ ctx, targetId }: { ctx: Context; targetId: string }) {
 	ctx.mustBeLoggedIn();
 	if (ctx.oidc.impersonator) {
-		throw apiError('FORBIDDEN', m.impersonationAlreadyActive());
+		throw apiError({ code: 'FORBIDDEN', message: m.impersonationAlreadyActive() });
 	}
-	if (!(await canImpersonate(ctx, targetId))) {
-		throw apiError('FORBIDDEN', m.impersonationForbidden());
+	if (!(await canImpersonate({ ctx, targetId }))) {
+		throw apiError({ code: 'FORBIDDEN', message: m.impersonationForbidden() });
 	}
 }
+
+/**
+ * Ends an impersonation the impersonator may no longer hold - they left the target's conference
+ * team, the target joined a team, lost the conference or their row - and otherwise loads who the
+ * impersonated user is, which the exchanged token may not say (`locals.impersonatedIdentity`).
+ * The OIDC library has already checked that the impersonation belongs to this session.
+ */
+async function checkImpersonation({
+	event,
+	session,
+	impersonator
+}: {
+	event: RequestEvent;
+	session: OIDCSession;
+	impersonator: OIDCSession;
+}) {
+	const actor = {
+		sub: impersonator.user.sub,
+		isAdmin: rolesOfSession(impersonator).includes('admin')
+	};
+	const target = await impersonatableUser({ actor, targetId: session.user.sub });
+	if (!target) {
+		OIDC.stopImpersonation(event);
+		logger.info('Impersonation revoked', { actor: actor.sub, subject: session.user.sub });
+		return;
+	}
+	event.locals.impersonatedIdentity = {
+		email: target.email,
+		given_name: target.givenName,
+		family_name: target.familyName,
+		preferred_username: target.preferredUsername,
+		locale: target.locale,
+		phone: target.phone ?? undefined
+	};
+}
+
+export const impersonationHandle: Handle = async ({ event, resolve }) => {
+	const session = event.locals.oidc;
+	if (session?.impersonator)
+		await checkImpersonation({ event, session, impersonator: session.impersonator });
+	return resolve(event);
+};

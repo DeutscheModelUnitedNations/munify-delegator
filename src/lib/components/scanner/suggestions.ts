@@ -32,7 +32,15 @@ export function takesPart(user: {
  * What a key does to the suggestion list: the arrows move the highlight (wrapping around), Escape
  * closes the list. `undefined` when the key means nothing to an open list.
  */
-export function navigateSuggestions(key: string, highlighted: number, count: number) {
+export function navigateSuggestions({
+	key,
+	highlighted,
+	count
+}: {
+	key: string;
+	highlighted: number;
+	count: number;
+}) {
 	if (count === 0) return undefined;
 	if (key === 'ArrowDown') return { highlighted: (highlighted + 1) % count };
 	if (key === 'ArrowUp') return { highlighted: (highlighted - 1 + count) % count };
@@ -41,11 +49,15 @@ export function navigateSuggestions(key: string, highlighted: number, count: num
 }
 
 /** Enter: the highlighted person, else the code as typed when it is an id, else the best match. */
-export function codeToSubmit(
-	text: string,
-	suggestions: readonly UserSuggestion[],
-	highlighted: number
-) {
+export function codeToSubmit({
+	text,
+	suggestions,
+	highlighted
+}: {
+	text: string;
+	suggestions: readonly UserSuggestion[];
+	highlighted: number;
+}) {
 	const trimmed = text.trim();
 	if (!trimmed) return undefined;
 	const chosen =

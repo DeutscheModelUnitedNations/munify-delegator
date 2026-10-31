@@ -16,7 +16,13 @@
 
 	let { singleParticipantId, conferenceId }: Props = $props();
 
-	async function fetchApplication(singleParticipantId: string, conferenceId: string) {
+	async function fetchApplication({
+		singleParticipantId,
+		conferenceId
+	}: {
+		singleParticipantId: string;
+		conferenceId: string;
+	}) {
 		const [participant, conference] = await Promise.all([
 			client.liveQuery.singleParticipant({
 				__args: { id: singleParticipantId },
@@ -31,7 +37,7 @@
 		return { participant, conference };
 	}
 
-	const data = $derived(await fetchApplication(singleParticipantId, conferenceId));
+	const data = $derived(await fetchApplication({ singleParticipantId, conferenceId }));
 	const participant = $derived(data.participant);
 	const conferenceState = $derived(data.conference.state);
 

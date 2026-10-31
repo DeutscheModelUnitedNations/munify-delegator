@@ -2,7 +2,7 @@ import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import { assertTeamPermission, isCaredForUser, systemAdmin } from '#api/services/authHelper/rules';
 import { m } from '#lib/paraglide/messages';
-import { apiError } from '#api/services/errors/apiError';
+import { apiError } from '#api/services/errors';
 
 export function registerPossibleDuplicateAbilities() {
 	// Whoever looks after one of the two accounts sees the pair and decides on it. Who may read the
@@ -15,17 +15,29 @@ export function registerPossibleDuplicateAbilities() {
 }
 
 /** Scanning a conference for duplicates is participant care's. */
-export async function assertCanScanPossibleDuplicates(ctx: ApiContext, conferenceId: string) {
-	await assertTeamPermission(ctx, conferenceId, 'manageParticipants');
+export async function assertCanScanPossibleDuplicates({
+	ctx,
+	conferenceId
+}: {
+	ctx: ApiContext;
+	conferenceId: string;
+}) {
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /** Refuses unless the caller may decide the pair; returns its two accounts. */
-export async function assertCanDecidePossibleDuplicate(ctx: ApiContext, id: string) {
+export async function assertCanDecidePossibleDuplicate({
+	ctx,
+	id
+}: {
+	ctx: ApiContext;
+	id: string;
+}) {
 	const pair = await db.query.possibleDuplicate.findFirst({
 		...(await ctx.abilities.possibleDuplicate.filter('update')).merge({ where: { id } }).query
 			.single,
 		columns: { userId: true, candidateId: true }
 	});
-	if (!pair) throw apiError('NOT_FOUND', m.possibleDuplicateNotFound());
+	if (!pair) throw apiError({ code: 'NOT_FOUND', message: m.possibleDuplicateNotFound() });
 	return pair;
 }

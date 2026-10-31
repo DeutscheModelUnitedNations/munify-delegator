@@ -58,8 +58,12 @@ schemaBuilder.queryFields((t) => ({
 			sessionId: t.arg.id()
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanLookupScan(ctx, args.conferenceId);
-			return lookupScan(args.conferenceId, args.code, args.sessionId);
+			await assertCanLookupScan({ ctx, conferenceId: args.conferenceId });
+			return lookupScan({
+				conferenceId: args.conferenceId,
+				code: args.code,
+				sessionId: args.sessionId
+			});
 		}
 	})
 }));

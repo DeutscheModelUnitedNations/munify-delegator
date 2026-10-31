@@ -157,15 +157,15 @@ export function toEditorDay(day: {
 	};
 }
 
-function toEditorEntry(day: EditorDay, entry: EditorDayEntry): EditorEntry {
+function toEditorEntry({ day, entry }: { day: EditorDay; entry: EditorDayEntry }): EditorEntry {
 	const start = minutesOfDay(entry.startTime);
 	return {
 		id: entry.id,
 		dayId: day.id,
-		trackIds: normalizeTrackIds(
-			day.tracks.map((track) => track.id),
-			entry.tracks.map((track) => track.id)
-		),
+		trackIds: normalizeTrackIds({
+			dayTrackIds: day.tracks.map((track) => track.id),
+			trackIds: entry.tracks.map((track) => track.id)
+		}),
 		start,
 		end: Math.max(minutesOfDay(entry.endTime), start),
 		name: entry.name,
@@ -195,7 +195,9 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 	/** Show 00:00 to 24:00 instead of the hours around the entries */
 	let wholeDay = $state(false);
 
-	const base = $derived(days().flatMap((day) => day.entries.map((e) => toEditorEntry(day, e))));
+	const base = $derived(
+		days().flatMap((day) => day.entries.map((e) => toEditorEntry({ day, entry: e })))
+	);
 
 	/** The entries with saves in flight applied */
 	const committed = $derived(
@@ -218,7 +220,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 	const grid = $derived(buildGrid(days()));
 
 	/** The hours shown; it follows the saved entries, so it does not shift under a drag */
-	const range = $derived(editorHourRange(committed, wholeDay));
+	const range = $derived(editorHourRange({ spans: committed, wholeDay }));
 
 	const overlapping = $derived(overlappingIds(entries));
 
@@ -238,7 +240,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 					last: Math.max(current.anchorColumn, current.currentColumn)
 				}
 			: { first: current.anchorColumn, last: current.anchorColumn };
-		return tracksOfRange(block, columns);
+		return tracksOfRange({ block, range: columns });
 	}
 
 	/** The range being selected on an empty slot */
@@ -248,28 +250,51 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 		return {
 			dayId: current.dayId,
 			trackIds: createdTracks(current),
-			span: createSpan(current.anchor, current.current, true)
+			span: createSpan({
+				anchorMinutes: current.anchor,
+				currentMinutes: current.current,
+				dragged: true
+			})
 		};
 	});
 
 	/** Where a dragged entry lands with the pointer at `pointer` */
-	function targetOf(current: EntryDrag, pointer: PointerPosition): Placement {
-		const span = dragSpan(current.origin, current.mode, pointer.minutes - current.grabbed.minutes);
+	function targetOf({
+		current,
+		pointer
+	}: {
+		current: EntryDrag;
+		pointer: PointerPosition;
+	}): Placement {
+		const span = dragSpan({
+			origin: current.origin,
+			mode: current.mode,
+			deltaMinutes: pointer.minutes - current.grabbed.minutes
+		});
 		if (current.mode === 'resize-left' || current.mode === 'resize-right') {
-			const trackIds = stretchTracks(grid, current.origin, current.mode, pointer.unit);
+			const trackIds = stretchTracks({
+				grid,
+				origin: current.origin,
+				mode: current.mode,
+				unit: pointer.unit
+			});
 			return { ...current.origin, trackIds };
 		}
 		if (current.mode !== 'move') return { ...current.origin, ...span };
-		const placement = dropPlacement(grid, pointer.unit, {
-			dayId: current.origin.dayId,
-			trackIds: current.origin.trackIds,
-			unit: current.grabbed.unit
+		const placement = dropPlacement({
+			grid,
+			unit: pointer.unit,
+			origin: {
+				dayId: current.origin.dayId,
+				trackIds: current.origin.trackIds,
+				unit: current.grabbed.unit
+			}
 		});
 		return { ...(placement ?? current.origin), ...span };
 	}
 
 	/** Shows a change at once; returns the id of this request, so a later one is not undone by it. */
-	function begin(entryId: string, placement: Placement) {
+	function begin({ entryId, placement }: { entryId: string; placement: Placement }) {
 		const request = (requests[entryId] ?? 0) + 1;
 		requests[entryId] = request;
 		pending.set(entryId, { placement, settled: false });
@@ -277,7 +302,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 	}
 
 	/** Marks a change as saved; the overlay goes once the live data shows it (see `settle`). */
-	function answered(entryId: string, request: number) {
+	function answered({ entryId, request }: { entryId: string; request: number }) {
 		if (requests[entryId] !== request) return;
 		const inFlight = pending.get(entryId);
 		if (inFlight) inFlight.settled = true;
@@ -299,7 +324,15 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 	}
 
 	/** Moves an entry to a day, track and time; offers to undo it. */
-	async function place(entryId: string, placement: Placement, undoable = true) {
+	async function place({
+		entryId,
+		placement,
+		undoable = true
+	}: {
+		entryId: string;
+		placement: Placement;
+		undoable?: boolean;
+	}) {
 		const entry = committed.find((e) => e.id === entryId);
 		const day = days().find((d) => d.id === placement.dayId);
 		if (!entry || !day) return;
@@ -314,15 +347,15 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			end: entry.end
 		};
 
-		const request = begin(entryId, placement);
+		const request = begin({ entryId, placement });
 		try {
 			await client.mutate.updateCalendarEntry({
 				__args: {
 					id: entryId,
 					calendarDayId: placement.dayId,
 					calendarTrackIds: placement.trackIds,
-					startTime: dateAtMinutes(day.date, placement.start),
-					endTime: dateAtMinutes(day.date, placement.end)
+					startTime: dateAtMinutes({ dayDate: day.date, minutes: placement.start }),
+					endTime: dateAtMinutes({ dayDate: day.date, minutes: placement.end })
 				},
 				id: true
 			});
@@ -332,16 +365,19 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			return;
 		}
 
-		answered(entryId, request);
+		answered({ entryId, request });
 		if (undoable) {
 			const message = m.calendarEntryPlaced({
 				name: entry.name,
 				day: day.name,
-				start: formatClockMinutes(placement.start),
-				end: formatClockMinutes(placement.end)
+				start: formatClockMinutes({ minutes: placement.start }),
+				end: formatClockMinutes({ minutes: placement.end })
 			});
 			toast.success(message, {
-				action: { label: m.undo(), onClick: () => place(entryId, before, false) }
+				action: {
+					label: m.undo(),
+					onClick: () => place({ entryId, placement: before, undoable: false })
+				}
 			});
 		}
 	}
@@ -381,7 +417,15 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 
 		// === Pointer gestures ===
 
-		beginEntryDrag(entryId: string, mode: DragMode, pointer: PointerPosition) {
+		beginEntryDrag({
+			entryId,
+			mode,
+			pointer
+		}: {
+			entryId: string;
+			mode: DragMode;
+			pointer: PointerPosition;
+		}) {
 			const entry = committed.find((e) => e.id === entryId);
 			if (!entry) return;
 			const origin = {
@@ -401,7 +445,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			};
 		},
 
-		beginCreate(dayId: string, column: number, minutes: number) {
+		beginCreate({ dayId, column, minutes }: { dayId: string; column: number; minutes: number }) {
 			drag = {
 				kind: 'create',
 				dayId,
@@ -414,7 +458,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 		},
 
 		/** `travelled` is how far the pointer has moved since the press, in pixels */
-		moveDrag(pointer: PointerPosition, travelled: number) {
+		moveDrag({ pointer, travelled }: { pointer: PointerPosition; travelled: number }) {
 			const current = drag;
 			if (!current) return;
 			if (travelled >= DRAG_THRESHOLD) current.active = true;
@@ -422,8 +466,8 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			if (current.kind === 'create') {
 				current.current = pointer.minutes;
 				const block = grid.days.find((d) => d.dayId === current.dayId);
-				if (block) current.currentColumn = clampedIndex(block, pointer.unit);
-			} else current.target = targetOf(current, pointer);
+				if (block) current.currentColumn = clampedIndex({ block, unit: pointer.unit });
+			} else current.target = targetOf({ current, pointer });
 		},
 
 		cancelDrag() {
@@ -437,7 +481,11 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			if (!current) return { type: 'none' };
 			if (current.kind === 'create') {
 				// A click without a drag selects an hour from the slot; a drag the range it covered
-				const span = createSpan(current.anchor, current.current, current.active);
+				const span = createSpan({
+					anchorMinutes: current.anchor,
+					currentMinutes: current.current,
+					dragged: current.active
+				});
 				return {
 					type: 'create',
 					dayId: current.dayId,
@@ -447,7 +495,7 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			}
 			if (!current.active) return { type: 'click', entryId: current.entryId };
 			if (!samePlacement(current.origin, current.target))
-				void place(current.entryId, current.target);
+				void place({ entryId: current.entryId, placement: current.target });
 			return { type: 'none' };
 		},
 
@@ -459,7 +507,17 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 		 * Moves an entry (or with `resize` its end, or on the tracks axis its right edge) by a quarter
 		 * hour or a track, for the keyboard.
 		 */
-		nudge(entryId: string, mode: 'move' | 'resize', axis: 'time' | 'tracks', direction: 1 | -1) {
+		nudge({
+			entryId,
+			mode,
+			axis,
+			direction
+		}: {
+			entryId: string;
+			mode: 'move' | 'resize';
+			axis: 'time' | 'tracks';
+			direction: 1 | -1;
+		}) {
 			const entry = committed.find((e) => e.id === entryId);
 			if (!entry) return;
 			const next: Placement = {
@@ -471,18 +529,22 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 			if (axis === 'time') {
 				Object.assign(
 					next,
-					dragSpan(entry, mode === 'move' ? 'move' : 'resize-end', direction * SNAP_MINUTES)
+					dragSpan({
+						origin: entry,
+						mode: mode === 'move' ? 'move' : 'resize-end',
+						deltaMinutes: direction * SNAP_MINUTES
+					})
 				);
 			} else {
-				next.trackIds = nudgeTracks(
+				next.trackIds = nudgeTracks({
 					grid,
-					entry,
-					mode === 'move' ? 'move' : 'resize-right',
+					origin: entry,
+					mode: mode === 'move' ? 'move' : 'resize-right',
 					direction
-				);
+				});
 			}
 			if (samePlacement(entry, next)) return;
-			void place(entryId, next, false);
+			void place({ entryId, placement: next, undoable: false });
 		},
 
 		settle

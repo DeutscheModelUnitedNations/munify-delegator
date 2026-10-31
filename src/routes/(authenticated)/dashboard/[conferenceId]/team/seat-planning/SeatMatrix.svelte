@@ -30,21 +30,24 @@
 
 	const seats = {
 		size: (alpha3Code: string) => planner.seatCounts.get(alpha3Code) ?? 0,
-		hasSeat: (committeeId: string, alpha3Code: string) => planner.hasSeat(committeeId, alpha3Code)
+		hasSeat: (committeeId: string, alpha3Code: string) =>
+			planner.hasSeat({ committeeId, nationAlpha3Code: alpha3Code })
 	};
 
 	const rows = $derived(
-		sortSeatRows(
-			searchSeatRows(
-				unMembers.map((member) => ({
+		sortSeatRows({
+			rows: searchSeatRows({
+				rows: unMembers.map((member) => ({
 					...member,
 					name: getFullTranslatedCountryNameFromISO3Code(member.alpha3Code)
 				})),
-				params.q ?? null
-			).filter((row) => matchesSeatFilters(row, seats.size(row.alpha3Code), params)),
-			{ key: params.sort ?? 'name', descending: params.desc ?? false },
+				q: params.q ?? null
+			}).filter((row) =>
+				matchesSeatFilters({ row, size: seats.size(row.alpha3Code), filters: params })
+			),
+			sort: { key: params.sort ?? 'name', descending: params.desc ?? false },
 			seats
-		)
+		})
 	);
 
 	const sizes = $derived(
@@ -57,7 +60,7 @@
 
 	/** a click on the active column flips its direction, any other column starts with its default */
 	function sortBy(key: string) {
-		const next = nextSortParams(params, key);
+		const next = nextSortParams({ current: params, clicked: key });
 		params.desc = next.desc;
 		params.sort = next.sort;
 	}

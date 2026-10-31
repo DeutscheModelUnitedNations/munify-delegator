@@ -96,7 +96,7 @@ function defaultRegion(profile: MatchProfile): CountryCode {
 	return alpha2 && isSupportedCountry(alpha2) ? alpha2 : 'DE';
 }
 
-function e164(value: string, region: CountryCode): string | undefined {
+function e164({ value, region }: { value: string; region: CountryCode }): string | undefined {
 	const parsed = parsePhoneNumberFromString(value, region);
 	return parsed?.isValid() ? parsed.number : undefined;
 }
@@ -112,7 +112,7 @@ export function matchKeys(profile: MatchProfile): MatchKeys {
 	const given = letters(profile.givenName);
 	const family = letters(profile.familyName);
 	const firstGiven = letters(profile.givenName.split(/[\s-]+/)[0] ?? '');
-	const phone = profile.phone ? e164(profile.phone, region) : undefined;
+	const phone = profile.phone ? e164({ value: profile.phone, region }) : undefined;
 	const emergencyPhones = new Set(
 		findPhoneNumbersInText(profile.emergencyContacts ?? '', region)
 			.map((found) => found.number.number)
@@ -234,7 +234,7 @@ export function compareKeys(
 	const found = keyReasons(a, b);
 	const reasons: MatchReason[] = found.map(([reason]) => reason);
 	let score = found.reduce((sum, [, weight]) => sum + weight, 0);
-	const add = (reason: MatchReason, weight: number) => {
+	const add = ({ reason, weight }: { reason: MatchReason; weight: number }) => {
 		reasons.push(reason);
 		score += weight;
 	};
@@ -243,8 +243,8 @@ export function compareKeys(
 	// compares share nothing but a birthday with strangers
 	if (score + WEIGHTS.name >= DUPLICATE_THRESHOLD) {
 		const name = nameSimilarity(a, b);
-		if (name >= NAME_SIMILAR) add('name', WEIGHTS.name);
-		else if (name >= NAME_CLOSE) add('name', WEIGHTS.nameClose);
+		if (name >= NAME_SIMILAR) add({ reason: 'name', weight: WEIGHTS.name });
+		else if (name >= NAME_CLOSE) add({ reason: 'name', weight: WEIGHTS.nameClose });
 	}
 
 	if (score < DUPLICATE_THRESHOLD) return undefined;
@@ -275,7 +275,7 @@ export function createDuplicateIndex() {
 	const buckets = new Map<string, MatchKeys[]>();
 	const pairs = new Map<string, DuplicatePair>();
 
-	function compare(keys: MatchKeys, other: MatchKeys) {
+	function compare({ keys, other }: { keys: MatchKeys; other: MatchKeys }) {
 		const [userId, candidateId] = keys.id < other.id ? [keys.id, other.id] : [other.id, keys.id];
 		const pairKey = `${userId}|${candidateId}`;
 		if (pairs.has(pairKey)) return;
@@ -305,7 +305,7 @@ export function createDuplicateIndex() {
 					for (const other of buckets.get(key) ?? []) {
 						if (compared.has(other.id)) continue;
 						compared.add(other.id);
-						compare(keys, other);
+						compare({ keys, other });
 					}
 				}
 			}
@@ -321,7 +321,13 @@ export function createDuplicateIndex() {
 type DuplicateIndex = ReturnType<typeof createDuplicateIndex>;
 
 /** `createDuplicateIndex` in one go, for inputs small enough not to need breaks. */
-export function findDuplicates(scanned: MatchProfile[], pool: MatchProfile[]): DuplicatePair[] {
+export function findDuplicates({
+	scanned,
+	pool
+}: {
+	scanned: MatchProfile[];
+	pool: MatchProfile[];
+}): DuplicatePair[] {
 	const index = createDuplicateIndex();
 	index.add(pool);
 	index.match(scanned);

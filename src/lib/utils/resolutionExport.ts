@@ -11,7 +11,7 @@ function safeBaseName(documentNumber: string | null | undefined): string {
 	return base || 'resolution';
 }
 
-function triggerDownload(blob: Blob, filename: string) {
+function triggerDownload({ blob, filename }: { blob: Blob; filename: string }) {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
@@ -23,27 +23,35 @@ function triggerDownload(blob: Blob, filename: string) {
 }
 
 /** Serialize the resolution to a Typst source file and download it (client-side). */
-export function downloadResolutionTypst(
-	resolution: Resolution,
-	header: ResolutionHeaderData,
-	documentNumber?: string | null
-) {
+export function downloadResolutionTypst({
+	resolution,
+	header,
+	documentNumber
+}: {
+	resolution: Resolution;
+	header: ResolutionHeaderData;
+	documentNumber?: string | null;
+}) {
 	const typst = resolutionToTypst(resolution, header);
-	triggerDownload(
-		new Blob([typst], { type: 'text/plain;charset=utf-8' }),
-		`${safeBaseName(documentNumber)}.typ`
-	);
+	triggerDownload({
+		blob: new Blob([typst], { type: 'text/plain;charset=utf-8' }),
+		filename: `${safeBaseName(documentNumber)}.typ`
+	});
 }
 
 /**
  * Request a server-compiled PDF for the resolution and download it.
  * Throws on a non-OK response so callers can surface an error toast.
  */
-export async function downloadResolutionPdf(
-	resolution: Resolution,
-	header: ResolutionHeaderData,
-	documentNumber?: string | null
-) {
+export async function downloadResolutionPdf({
+	resolution,
+	header,
+	documentNumber
+}: {
+	resolution: Resolution;
+	header: ResolutionHeaderData;
+	documentNumber?: string | null;
+}) {
 	const res = await fetch('/api/pdf', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -52,23 +60,27 @@ export async function downloadResolutionPdf(
 	if (!res.ok) {
 		throw new Error(`PDF request failed (${res.status})`);
 	}
-	triggerDownload(await res.blob(), `${safeBaseName(documentNumber)}.pdf`);
+	triggerDownload({ blob: await res.blob(), filename: `${safeBaseName(documentNumber)}.pdf` });
 }
 
 /**
  * Serialize a position/introduction paper to a Typst source file and download
  * it (client-side).
  */
-export function downloadPaperTypst(
-	content: Parameters<typeof paperToTypst>[0],
-	meta: PaperTypstMeta,
-	documentNumber?: string | null
-) {
-	const typst = paperToTypst(content, meta);
-	triggerDownload(
-		new Blob([typst], { type: 'text/plain;charset=utf-8' }),
-		`${safeBaseName(documentNumber)}.typ`
-	);
+export function downloadPaperTypst({
+	content,
+	meta,
+	documentNumber
+}: {
+	content: Parameters<typeof paperToTypst>[0]['content'];
+	meta: PaperTypstMeta;
+	documentNumber?: string | null;
+}) {
+	const typst = paperToTypst({ content, meta });
+	triggerDownload({
+		blob: new Blob([typst], { type: 'text/plain;charset=utf-8' }),
+		filename: `${safeBaseName(documentNumber)}.typ`
+	});
 }
 
 /**
@@ -76,12 +88,16 @@ export function downloadPaperTypst(
  * server-compiled PDF and download it. Throws on a non-OK response so callers
  * can surface an error toast.
  */
-export async function downloadPaperPdf(
-	content: Parameters<typeof paperToTypst>[0],
-	meta: PaperTypstMeta,
-	documentNumber?: string | null
-) {
-	const typst = paperToTypst(content, meta);
+export async function downloadPaperPdf({
+	content,
+	meta,
+	documentNumber
+}: {
+	content: Parameters<typeof paperToTypst>[0]['content'];
+	meta: PaperTypstMeta;
+	documentNumber?: string | null;
+}) {
+	const typst = paperToTypst({ content, meta });
 	const res = await fetch('/api/pdf', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -90,5 +106,5 @@ export async function downloadPaperPdf(
 	if (!res.ok) {
 		throw new Error(`PDF request failed (${res.status})`);
 	}
-	triggerDownload(await res.blob(), `${safeBaseName(documentNumber)}.pdf`);
+	triggerDownload({ blob: await res.blob(), filename: `${safeBaseName(documentNumber)}.pdf` });
 }

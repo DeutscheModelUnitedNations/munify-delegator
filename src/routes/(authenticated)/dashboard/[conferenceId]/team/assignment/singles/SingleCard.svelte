@@ -39,7 +39,7 @@
 		busy = false
 	}: Props = $props();
 
-	const sightingLink = $derived(sightingHref(conferenceId, singleParticipantId));
+	const sightingLink = $derived(sightingHref({ conferenceId, applicationId: singleParticipantId }));
 	/** Every wish, the one matching the current assignment first. Wishes of a single are unranked. */
 	const wishes = $derived(
 		(single?.appliedForRoles ?? [])
@@ -65,14 +65,13 @@
 	class="bg-base-100 relative flex {fluid
 		? 'w-full'
 		: 'w-44'} cursor-grab gap-1 rounded-box border p-2 text-xs shadow-sm pointer-coarse:touch-pan-y! {cardBorder(
-		review,
-		pending
+		{ review, pending }
 	)}"
 >
 	<div class="flex min-w-0 flex-1 flex-col gap-1">
 		{#if single}
 			<span class="truncate font-bold">
-				{formatNames(single.user.givenName, single.user.familyName)}
+				{formatNames({ givenName: single.user.givenName, familyName: single.user.familyName })}
 			</span>
 		{/if}
 		{#if single?.school?.name}

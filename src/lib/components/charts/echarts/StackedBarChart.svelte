@@ -32,7 +32,7 @@
 	const total = $derived(data.reduce((sum, item) => sum + item.value, 0));
 
 	function formatTooltip(params: TooltipComponentFormatterCallbackParams) {
-		return stackedBarTooltip(params, total);
+		return stackedBarTooltip({ params, total });
 	}
 
 	const options = $derived.by<EChartsOption>(() => {
@@ -47,7 +47,7 @@
 				show: showLabels && item.value > 0,
 				position: 'inside' as const,
 				formatter: () => {
-					const percent = percentOf(item.value, total);
+					const percent = percentOf({ part: item.value, total });
 					if (showPercentage && percent > 10) {
 						return `${percent}%`;
 					}

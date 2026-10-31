@@ -48,7 +48,9 @@ export const SnippetSuggestion = Extension.create<SnippetSuggestionOptions>({
 
 				items: ({ query }) => {
 					const currentSnippets = getSnippets();
-					return createFuzzySearch(currentSnippets, (item) => item.name)(query).slice(0, 10);
+					return createFuzzySearch({ rows: currentSnippets, textOf: (item) => item.name })(
+						query
+					).slice(0, 10);
 				},
 
 				command: ({ editor, range, props }) => {

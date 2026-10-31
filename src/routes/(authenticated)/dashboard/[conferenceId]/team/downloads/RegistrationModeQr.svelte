@@ -14,14 +14,14 @@
 	/** A sheet whose QR code opens the participant's registration mode screen. */
 	async function download() {
 		const assets = await loadSheetAssets(conferenceId);
-		downloadPdf(
-			await buildNametagQrPdf({
+		downloadPdf({
+			bytes: await buildNametagQrPdf({
 				url: `${location.origin}/dashboard/${conferenceId}/registration-mode`,
 				prompt: m.registrationModeQrPrompt(),
 				...assets
 			}),
-			'registration-mode-qr.pdf'
-		);
+			filename: 'registration-mode-qr.pdf'
+		});
 	}
 </script>
 
