@@ -438,6 +438,8 @@
 	"authErrorDetails": "Technische Details",
 	"authErrorGenericDescription": "Bei der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
 	"authErrorGenericTitle": "Authentifizierungsfehler",
+	"authErrorInvitationOtherEmailDescription": "Diese Einladung wurde an eine andere E-Mail-Adresse geschickt als die Ihres Kontos. Melden Sie sich mit dem Konto der eingeladenen Adresse an, oder bitten Sie das Team um eine Einladung an Ihre Adresse.",
+	"authErrorInvitationOtherEmailTitle": "Einladung für eine andere E-Mail-Adresse",
 	"authErrorLoginRequiredDescription": "Ihre Sitzung beim Identitätsanbieter ist abgelaufen. Bitte melden Sie sich erneut an.",
 	"authErrorLoginRequiredTitle": "Anmeldung erforderlich",
 	"authErrorNetworkDescription": "Es konnte keine Verbindung zum Anmeldedienst hergestellt werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",

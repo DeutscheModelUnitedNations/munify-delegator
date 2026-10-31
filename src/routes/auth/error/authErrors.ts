@@ -11,7 +11,9 @@ const ERROR_TYPES = [
 	'temporarily_unavailable',
 	'token_exchange_failed',
 	'state_mismatch',
-	'network_error'
+	'network_error',
+	// A team invitation followed with an account of another address (`claimPendingInvitation`)
+	'invitation_other_email'
 ] as const;
 
 export type AuthErrorType = (typeof ERROR_TYPES)[number] | 'unknown';
@@ -23,7 +25,12 @@ export function parseAuthErrorType(value: string | null): AuthErrorType {
 
 /** Errors that mean the person was not allowed in, rather than that something broke. */
 export function isAccessError(type: AuthErrorType) {
-	return type === 'access_denied' || type === 'consent_required' || type === 'login_required';
+	return (
+		type === 'access_denied' ||
+		type === 'consent_required' ||
+		type === 'login_required' ||
+		type === 'invitation_other_email'
+	);
 }
 
 const TITLES: Partial<Record<AuthErrorType, () => string>> = {
@@ -34,7 +41,8 @@ const TITLES: Partial<Record<AuthErrorType, () => string>> = {
 	temporarily_unavailable: m.authErrorProviderUnavailableTitle,
 	token_exchange_failed: m.authErrorTechnicalTitle,
 	state_mismatch: m.authErrorTechnicalTitle,
-	network_error: m.authErrorTechnicalTitle
+	network_error: m.authErrorTechnicalTitle,
+	invitation_other_email: m.authErrorInvitationOtherEmailTitle
 };
 
 const DESCRIPTIONS: Partial<Record<AuthErrorType, () => string>> = {
@@ -45,7 +53,8 @@ const DESCRIPTIONS: Partial<Record<AuthErrorType, () => string>> = {
 	temporarily_unavailable: m.authErrorProviderUnavailableDescription,
 	token_exchange_failed: m.authErrorTokenExchangeDescription,
 	state_mismatch: m.authErrorStateMismatchDescription,
-	network_error: m.authErrorNetworkDescription
+	network_error: m.authErrorNetworkDescription,
+	invitation_other_email: m.authErrorInvitationOtherEmailDescription
 };
 
 /** The headline shown for an error type. */

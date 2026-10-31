@@ -29,3 +29,8 @@ export function assertInvitationUsable<I extends InvitationState>(
 		error(410, 'This invitation has expired');
 	}
 }
+
+/** Whether an account's email is the address an invitation was sent to, ignoring case and spaces. */
+export function isInvitedAddress({ invited, account }: { invited: string; account: string }) {
+	return invited.trim().toLowerCase() === account.trim().toLowerCase();
+}

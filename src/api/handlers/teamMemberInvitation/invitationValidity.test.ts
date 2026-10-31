@@ -1,6 +1,6 @@
 import { isHttpError } from '@sveltejs/kit';
 import { describe, expect, test } from 'vitest';
-import { assertInvitationUsable } from './invitationValidity';
+import { assertInvitationUsable, isInvitedAddress } from './invitationValidity';
 
 const future = new Date(Date.now() + 60 * 60 * 1000);
 const past = new Date(Date.now() - 60 * 60 * 1000);
@@ -42,5 +42,22 @@ describe('assertInvitationUsable', () => {
 			status: 410,
 			message: 'This invitation has expired'
 		});
+	});
+});
+
+describe('isInvitedAddress', () => {
+	test('matches the invited address ignoring case and surrounding spaces', () => {
+		expect(isInvitedAddress({ invited: 'Anna@Example.org', account: ' anna@example.org' })).toBe(
+			true
+		);
+	});
+
+	test('refuses any other address', () => {
+		expect(isInvitedAddress({ invited: 'anna@example.org', account: 'anna@example.com' })).toBe(
+			false
+		);
+		expect(isInvitedAddress({ invited: 'anna@example.org', account: 'hanna@example.org' })).toBe(
+			false
+		);
 	});
 });

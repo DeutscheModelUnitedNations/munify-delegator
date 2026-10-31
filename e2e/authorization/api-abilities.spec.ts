@@ -249,9 +249,12 @@ test('a team coordinator cannot hand out project management', async ({ page }) =
 	expect(outcome.errors).toHaveLength(1);
 });
 
-test('an invitation link makes one person a team member, once', async ({ browser, page }) => {
+test('an invitation link makes only the invited person a team member, once', async ({
+	browser,
+	page
+}) => {
 	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
-	const invitee = `authz-invite-once-${Date.now()}@e2e.test`;
+	const inviteeClaims = makeTestUser('authz-invitee');
 	const invited = await gql(
 		page,
 		`mutation ($c: ID!, $e: String!) {
@@ -260,30 +263,40 @@ test('an invitation link makes one person a team member, once', async ({ browser
 				errors { error }
 			}
 		}`,
-		{ c: E2E_CONFERENCE_ID, e: invitee }
+		// Invited in other case: the address is compared ignoring it.
+		{ c: E2E_CONFERENCE_ID, e: inviteeClaims.email.toUpperCase() }
 	);
 	const token = (
 		invited.data?.createTeamMemberInvitations as { created: { token: string | null }[] }
 	).created[0]?.token;
 	expect(token, JSON.stringify(invited)).toBeTruthy();
 
-	// Two people follow the same link; only the first joins the team.
-	const joined: boolean[] = [];
-	for (const prefix of ['authz-invite-first', 'authz-invite-second']) {
-		const visitor = await (await browser.newContext()).newPage();
-		const claims = makeTestUser(prefix);
-		await loginAs(visitor, claims);
-		await visitor.goto(`/auth/accept-invitation?token=${token}`);
+	const isMember = async (email: string) => {
 		const members = await gql(
 			page,
 			`query ($c: ID!, $e: String!) {
 				teamMembers(where: { conferenceId: { eq: $c }, user: { email: { eq: $e } } }) { id }
 			}`,
-			{ c: E2E_CONFERENCE_ID, e: claims.email }
+			{ c: E2E_CONFERENCE_ID, e: email }
 		);
-		joined.push(((members.data?.teamMembers as unknown[] | undefined) ?? []).length === 1);
-	}
-	expect(joined).toEqual([true, false]);
+		return ((members.data?.teamMembers as unknown[] | undefined) ?? []).length === 1;
+	};
+
+	// Somebody the link was forwarded to is told it is not theirs, and does not join.
+	const strangerClaims = makeTestUser('authz-invite-stranger');
+	const stranger = await (await browser.newContext()).newPage();
+	await loginAs(stranger, strangerClaims);
+	await stranger.goto(`/auth/accept-invitation?token=${token}`);
+	await expect(stranger).toHaveURL(/\/auth\/error\?type=invitation_other_email/);
+	expect(await isMember(strangerClaims.email)).toBe(false);
+
+	// The invited person joins; the link then works no more.
+	const invitee = await (await browser.newContext()).newPage();
+	await loginAs(invitee, inviteeClaims);
+	await invitee.goto(`/auth/accept-invitation?token=${token}`);
+	expect(await isMember(inviteeClaims.email)).toBe(true);
+	const again = await invitee.goto(`/auth/accept-invitation?token=${token}`);
+	expect(again?.status()).toBe(410);
 });
 
 test('the invite form tells whether an address has an account, never whose', async ({ page }) => {

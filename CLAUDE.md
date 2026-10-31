@@ -613,8 +613,9 @@ bun run preview
 - **Login-time user upsert** lives in `src/api/services/account/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation (`claimPendingInvitation`, `#api/handlers/teamMemberInvitation/pendingInvitation`,
-  which marks it used conditionally so a link joins one person once), and redirects to
-  `/auth/email-conflict` or `/my-account` when it has to.
+  which marks it used conditionally so a link joins one person once, and only for the account whose
+  email is the invited address), and redirects to `/auth/email-conflict`, `/my-account` or, for an
+  invitation sent to another address, `/auth/error?type=invitation_other_email` when it has to.
 - **Impersonation** is a delegated session the OIDC library keeps next to the caller's own
   (`OIDC.startImpersonation`). `startImpersonation` gets a subject token for the target from
   Logto's Management API (M2M credentials `OIDC_M2M_*`; oidc-mock serves the same endpoint, any

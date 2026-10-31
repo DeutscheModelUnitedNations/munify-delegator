@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { isInvitedAddress } from './invitationValidity';
 import { teamMemberInvitationPubsub, teamMemberPubsub } from '#api/pubsub';
 import type { TeamRole } from '#api/services/authHelper/rules';
 import { getInvitationExpiryDate, hashToken, makeInvitationToken } from './invitationToken';
@@ -422,19 +423,42 @@ async function invitationEmailStatus({
 	return existingUser ? 'EXISTS' : 'NEW_USER';
 }
 
+/** What became of an invitation someone redeemed. */
+export type RedeemOutcome = 'joined' | 'notRedeemed' | 'otherEmail';
+
 /**
- * Redeems the open invitation `token` names for `userId`: they join its conference's team in the
+ * Redeems the open invitation `token` names for `userId`, only when their account's email is the
+ * invited address (`otherEmail` otherwise: a forwarded link makes nobody a member). They join its conference's team in the
  * invited role, or the invitation is just closed out when they are on it already. Someone taking
  * part in the conference cannot join its team as well; the invitation then stays open for the team
  * to see that it was not taken up. Marking it used is conditional, so one invitation is redeemed
  * once even by two concurrent requests.
  */
-export async function redeemInvitation({ token, userId }: { token: string; userId: string }) {
+export async function redeemInvitation({
+	token,
+	userId
+}: {
+	token: string;
+	userId: string;
+}): Promise<RedeemOutcome> {
 	const invitation = await db.query.teamMemberInvitation.findFirst({
 		where: { token: hashToken(token) },
-		columns: { id: true, conferenceId: true, role: true }
+		columns: { id: true, conferenceId: true, role: true, email: true }
 	});
-	if (!invitation) return;
+	if (!invitation) return 'notRedeemed';
+
+	// The link is only the invited person's: a forwarded or leaked one makes nobody else a member.
+	const account = await db.query.user.findFirst({
+		where: { id: userId },
+		columns: { email: true }
+	});
+	if (!account || !isInvitedAddress({ invited: invitation.email, account: account.email })) {
+		logger.warn('Invitation not redeemed: signed in with another address', {
+			invitationId: invitation.id,
+			userId
+		});
+		return 'otherEmail';
+	}
 
 	const existingMember = await db.query.teamMember.findFirst({
 		where: { conferenceId: invitation.conferenceId, userId },
@@ -448,7 +472,7 @@ export async function redeemInvitation({ token, userId }: { token: string; userI
 			invitationId: invitation.id,
 			userId
 		});
-		return;
+		return 'notRedeemed';
 	}
 
 	const now = new Date();
@@ -477,11 +501,12 @@ export async function redeemInvitation({ token, userId }: { token: string; userI
 			.then(assertFirstEntryExists);
 		return { claimed: true, memberId: member.id };
 	});
-	if (!joined.claimed) return;
+	if (!joined.claimed) return 'notRedeemed';
 
 	teamMemberInvitationPubsub.updated(invitation.id);
 	if (joined.memberId) {
 		teamMemberPubsub.created();
 		teamMemberPubsub.updated(joined.memberId);
 	}
+	return 'joined';
 }

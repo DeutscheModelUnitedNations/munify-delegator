@@ -25,6 +25,7 @@ describe('isAccessError', () => {
 		expect(isAccessError('access_denied')).toBe(true);
 		expect(isAccessError('consent_required')).toBe(true);
 		expect(isAccessError('login_required')).toBe(true);
+		expect(isAccessError('invitation_other_email')).toBe(true);
 		expect(isAccessError('server_error')).toBe(false);
 		expect(isAccessError('unknown')).toBe(false);
 	});

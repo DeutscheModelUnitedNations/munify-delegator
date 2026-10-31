@@ -438,6 +438,8 @@
 	"authErrorDetails": "Technical details",
 	"authErrorGenericDescription": "An error occurred during the login process. Please try again.",
 	"authErrorGenericTitle": "Authentication Error",
+	"authErrorInvitationOtherEmailDescription": "This invitation was sent to a different email address than your account's. Sign in with the account of the invited address, or ask the team to invite your address instead.",
+	"authErrorInvitationOtherEmailTitle": "Invitation for another email address",
 	"authErrorLoginRequiredDescription": "Your session at the identity provider has expired. Please log in again.",
 	"authErrorLoginRequiredTitle": "Login Required",
 	"authErrorNetworkDescription": "Could not connect to the login service. Please check your internet connection and try again.",
