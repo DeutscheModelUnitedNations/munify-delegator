@@ -1709,6 +1709,8 @@
 	"ownPresence": "Eigene Anwesenheit",
 	"ownPresenceDescription": "Wenn Sie selbst teilnehmen, fällt auch für Sie der Teilnahmebeitrag an.",
 	"ownSchoolDescription": "Ihre eigene Schule oder Institution. Jede Person gibt ihre eigene an, auch innerhalb einer Delegation. Sie können sie jederzeit ändern. Optional.",
+	"pageLimitRange": "Eine Seite umfasst 1 bis {max} Einträge.",
+	"pageOffsetNegative": "Der Versatz darf nicht negativ sein.",
 	"paper": "Papier",
 	"paperAcrossCommittees": "Gremienübergreifend",
 	"paperAgendaItem": "Tagesordnungspunkt",

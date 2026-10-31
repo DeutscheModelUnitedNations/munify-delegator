@@ -1709,6 +1709,8 @@
 	"ownPresence": "Own presence at the conference",
 	"ownPresenceDescription": "If you attend yourself, the conference fee applies to you as well.",
 	"ownSchoolDescription": "Your own school or institution. Everyone gives their own, within a delegation too. You can change it at any time. Optional.",
+	"pageLimitRange": "A page holds 1 to {max} entries.",
+	"pageOffsetNegative": "The offset cannot be negative.",
 	"paper": "Paper",
 	"paperAcrossCommittees": "Across committees",
 	"paperAgendaItem": "Agenda item",

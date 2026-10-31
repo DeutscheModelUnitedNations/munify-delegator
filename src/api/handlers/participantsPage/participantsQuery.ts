@@ -5,8 +5,12 @@ import { m } from '#lib/paraglide/messages';
 
 type Kind = 'text' | 'enum' | 'bool' | 'number';
 
-/** What a table column is in SQL. The aliases are those of `pageQuery`. */
-const columns: Record<string, { expr: SQL; kind: Kind }> = {
+/**
+ * What a table column is in SQL. The aliases are those of `matching`. `teammatePrivate` marks the
+ * profile fields a team member may not read of a teammate (only team admins do), so they are
+ * blank on the team's rows for a caller who may not (`columnExpr`).
+ */
+const columns: Record<string, { expr: SQL; kind: Kind; teammatePrivate?: true }> = {
 	userId: { expr: sql`reg.user_id`, kind: 'text' },
 	family_name: { expr: sql`u.family_name`, kind: 'text' },
 	given_name: { expr: sql`u.given_name`, kind: 'text' },
@@ -14,10 +18,10 @@ const columns: Record<string, { expr: SQL; kind: Kind }> = {
 	phone: { expr: sql`u.phone`, kind: 'text' },
 	birthday: { expr: sql`u.birthday`, kind: 'number' },
 	pronouns: { expr: sql`u.pronouns`, kind: 'text' },
-	city: { expr: sql`u.city`, kind: 'text' },
-	country: { expr: sql`u.country`, kind: 'text' },
-	gender: { expr: sql`u.gender::text`, kind: 'enum' },
-	foodPreference: { expr: sql`u.food_preference::text`, kind: 'enum' },
+	city: { expr: sql`u.city`, kind: 'text', teammatePrivate: true },
+	country: { expr: sql`u.country`, kind: 'text', teammatePrivate: true },
+	gender: { expr: sql`u.gender::text`, kind: 'enum', teammatePrivate: true },
+	foodPreference: { expr: sql`u.food_preference::text`, kind: 'enum', teammatePrivate: true },
 	ageAtConference: {
 		expr: sql`date_part('year', age(c.start_conference, u.birthday))`,
 		kind: 'number'
@@ -98,6 +102,11 @@ export interface ParticipantFilter {
 
 export interface ParticipantsPageQuery {
 	conferenceId: string;
+	/**
+	 * Whether the caller may read the team members' private profile fields (team admins); without
+	 * it, filtering or ordering by one treats every team member as having none.
+	 */
+	teamDetails: boolean;
 	search?: string | null;
 	filters?: ParticipantFilter[] | null;
 	sort?: { column: string; desc: boolean }[] | null;
@@ -180,16 +189,37 @@ const conditionByKind: Record<Kind, ConditionOf> = {
 	text: textCondition
 };
 
+/** The column of that name, or undefined for one the table does not have. */
+function columnOf(name: string) {
+	return Object.hasOwn(columns, name) ? columns[name] : undefined;
+}
+
+/** The column's value, blank on the team's rows when it is private there and the caller may not read it. */
+function columnExpr({
+	column,
+	teamDetails
+}: {
+	column: (typeof columns)[string];
+	teamDetails: boolean;
+}) {
+	return column.teammatePrivate && !teamDetails
+		? sql`(case when reg.role = 'TEAM_MEMBER' then null else ${column.expr} end)`
+		: column.expr;
+}
+
 /** The condition one filter means, or `undefined` when it filters nothing. */
-function condition(filter: ParticipantFilter): SQL | undefined {
-	const column = Object.hasOwn(columns, filter.column) ? columns[filter.column] : undefined;
-	if (!column)
-		throw apiError({
-			code: 'INVALID_INPUT',
-			message: `Unknown participant column: ${filter.column}`
-		});
+function condition({
+	filter,
+	teamDetails
+}: {
+	filter: ParticipantFilter;
+	teamDetails: boolean;
+}): SQL | undefined {
+	const column = columnOf(filter.column);
+	// The argument's schema refuses unknown columns already; this keeps the SQL safe on its own.
+	if (!column) throw apiError({ code: 'INVALID_INPUT', message: m.participantColumnUnknown() });
 	const conditionOf = filter.column === 'nation' ? nationCondition : conditionByKind[column.kind];
-	return conditionOf(filter, column.expr);
+	return conditionOf(filter, columnExpr({ column, teamDetails }));
 }
 
 /** The search as typed has to appear in the name (given name first) or the email. */
@@ -208,11 +238,23 @@ export const participantColumnSchema = z
 		error: () => m.participantColumnUnknown()
 	});
 
-/** The order asked for; columns that do not exist are left out. */
-function orderOf(sort: ParticipantsPageQuery['sort']) {
+/**
+ * The order asked for; columns that do not exist are left out, since the table also sorts by
+ * columns it computes itself.
+ */
+function orderOf({
+	sort,
+	teamDetails
+}: {
+	sort: ParticipantsPageQuery['sort'];
+	teamDetails: boolean;
+}) {
 	return (sort ?? []).flatMap(({ column, desc }) => {
-		const found = Object.hasOwn(columns, column) ? columns[column] : undefined;
-		return found ? [sql`${found.expr} ${desc ? sql`desc` : sql`asc`} nulls last`] : [];
+		const found = columnOf(column);
+		if (!found) return [];
+		return [
+			sql`${columnExpr({ column: found, teamDetails })} ${desc ? sql`desc` : sql`asc`} nulls last`
+		];
 	});
 }
 
@@ -286,10 +328,10 @@ function registrations(conferenceId: string) {
 function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 	const filters = args.filters ?? [];
 	const conditions = [
-		...filters.flatMap((filter) => condition(filter) ?? []),
+		...filters.flatMap((filter) => condition({ filter, teamDetails: args.teamDetails }) ?? []),
 		...searchConditions(args.search)
 	];
-	const orders = orderOf(args.sort);
+	const orders = orderOf({ sort: args.sort, teamDetails: args.teamDetails });
 	const usesCount = [...filters, ...(args.sort ?? [])].some(
 		(entry) => entry.column === 'participationCount'
 	);
@@ -323,15 +365,8 @@ function matching(args: Omit<ParticipantsPageQuery, 'limit' | 'offset'>) {
 }
 
 /** The statement selecting one page of user ids (one more than `limit`, to tell if more follow). */
-export function participantsPageSql({
-	args,
-	limit,
-	offset
-}: {
-	args: ParticipantsPageQuery;
-	limit: number;
-	offset: number;
-}) {
+export function participantsPageSql(args: ParticipantsPageQuery) {
+	const { limit, offset } = args;
 	const { from, orders } = matching(args);
 	return sql`
 		select reg.user_id

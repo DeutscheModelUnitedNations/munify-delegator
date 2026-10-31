@@ -14,8 +14,18 @@ const dialect = new PgDialect();
  * if the filters' were the only ones (the conference id comes first, several times).
  */
 function whereOf(...filters: ParticipantFilter[]) {
+	return whereWith({ filters, teamDetails: true });
+}
+
+function whereWith({
+	filters,
+	teamDetails
+}: {
+	filters: ParticipantFilter[];
+	teamDetails: boolean;
+}) {
 	const { sql, params } = dialect.sqlToQuery(
-		participantsCountSql({ conferenceId: 'c', filters, limit: 10, offset: 0 })
+		participantsCountSql({ conferenceId: 'c', teamDetails, filters, limit: 10, offset: 0 })
 	);
 	const flat = sql.replace(/\s+/g, ' ');
 	const at = flat.lastIndexOf(' where ');
@@ -31,11 +41,7 @@ function whereOf(...filters: ParticipantFilter[]) {
 
 const page = (args: Partial<ParticipantsPageQuery>) => {
 	const { sql, params } = dialect.sqlToQuery(
-		participantsPageSql({
-			args: { conferenceId: 'c', limit: 10, offset: 0, ...args },
-			limit: 10,
-			offset: 20
-		})
+		participantsPageSql({ conferenceId: 'c', teamDetails: true, limit: 10, offset: 20, ...args })
 	);
 	return { sql: sql.replace(/\s+/g, ' '), params };
 };
@@ -46,8 +52,8 @@ describe('participant filters', () => {
 	});
 
 	test('reject columns that do not exist', () => {
-		expect(() => whereOf({ column: 'password' })).toThrow('Unknown participant column: password');
-		expect(() => whereOf({ column: 'toString' })).toThrow('Unknown participant column');
+		expect(() => whereOf({ column: 'password' })).toThrow();
+		expect(() => whereOf({ column: 'toString' })).toThrow();
 	});
 
 	describe('text', () => {
@@ -162,6 +168,18 @@ describe('participant filters', () => {
 		});
 	});
 
+	test("blank a teammate's private fields for a caller who may not read them", () => {
+		const filter = { column: 'city', text: 'Kiel' };
+		expect(whereWith({ filters: [filter], teamDetails: true }).where).toBe('u.city ilike $1');
+		expect(whereWith({ filters: [filter], teamDetails: false }).where).toBe(
+			"(case when reg.role = 'TEAM_MEMBER' then null else u.city end) ilike $1"
+		);
+		// names and contact details are the team's to read, so they filter the team as they are
+		expect(whereWith({ filters: [{ column: 'phone', text: '1' }], teamDetails: false }).where).toBe(
+			'u.phone ilike $1'
+		);
+	});
+
 	test('several filters all apply', () => {
 		expect(whereOf({ column: 'accepted', bool: true }, { column: 'birthday', min: 3 }).where).toBe(
 			'reg.accepted = $1 and (u.birthday >= $2)'
@@ -188,6 +206,13 @@ describe('participants page', () => {
 			'order by u.family_name desc nulls last, u.city asc nulls last, u.family_name asc, reg.user_id asc'
 		);
 		expect(params.slice(-2)).toEqual([11, 20]);
+	});
+
+	test('orders the team without their private fields for a caller who may not read them', () => {
+		const { sql } = page({ teamDetails: false, sort: [{ column: 'gender', desc: false }] });
+		expect(sql).toContain(
+			"order by (case when reg.role = 'TEAM_MEMBER' then null else u.gender::text end) asc nulls last"
+		);
 	});
 
 	test('counts seats only when a filter or the order uses them', () => {

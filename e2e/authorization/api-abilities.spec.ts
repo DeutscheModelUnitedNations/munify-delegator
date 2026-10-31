@@ -588,6 +588,34 @@ test('participant care does not look after the team; the team admins read it wit
 	}
 });
 
+test('the participants table does not reveal a teammate’s address to participant care by filtering', async ({
+	browser
+}) => {
+	// The table lists the team too. Filtering it by a field that only team admins may read of a
+	// teammate would tell anybody else whether the teammate has it, value by value.
+	const teammateWithCountry = async (actorId: string) => {
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, fixedTestUser(actorId));
+		const result = await gql(
+			page,
+			`query ($c: ID!, $u: String!) {
+				participantsPage(conferenceId: $c, limit: 10, offset: 0, filters: [
+					{ column: "userId", mode: "equals", text: $u },
+					{ column: "country", mode: "equals", text: "DEU" }
+				]) { total }
+			}`,
+			{ c: E2E_CONFERENCE_ID, u: E2E_TEAMMATE_USER_ID }
+		);
+		expect(result.errors, JSON.stringify(result)).toBeUndefined();
+		return (result.data?.participantsPage as { total: number }).total;
+	};
+
+	// Participant care reads the teammate's name and phone, not where they live.
+	expect(await teammateWithCountry(E2E_MGMT_ADMIN_ID)).toBe(0);
+	// Project management is a team admin and reads it.
+	expect(await teammateWithCountry(E2E_ASSIGNMENT_ADMIN_ID)).toBe(1);
+});
+
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
 	// Registering makes the caller a participant, which opens the conference's members-only
 	// details to them; the preparation conference has closed its registration.
