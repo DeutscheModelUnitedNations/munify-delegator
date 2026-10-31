@@ -1,5 +1,5 @@
 import { schemaBuilder } from '#api/rumble';
-import { assertCanReviewPapers } from '#api/handlers/paper/paperPermissions';
+import { assertCanReadFlagCollection } from './flagCollectionPermissions';
 import type {
 	FlagCollectionData,
 	FlagCollectionStats,
@@ -28,7 +28,11 @@ const FlagPieceRef = schemaBuilder.objectRef<FlagPiece>('FlagPiece').implement({
 		agendaItemId: t.exposeString('agendaItemId', { nullable: true }),
 		agendaItemTitle: t.exposeString('agendaItemTitle', { nullable: true }),
 		committeeAbbreviation: t.exposeString('committeeAbbreviation', { nullable: true }),
-		state: t.field({ type: FlagPieceState, resolve: (parent) => parent.state })
+		state: t.field({
+			description: 'Locked until the paper is submitted, unlocked then, found once it is reviewed.',
+			type: FlagPieceState,
+			resolve: (parent) => parent.state
+		})
 	})
 });
 
@@ -73,12 +77,11 @@ const FlagCollectionDataRef = schemaBuilder
 schemaBuilder.queryFields((t) => ({
 	flagCollection: t.field({
 		description:
-			'Paper progress as a game for the reviewers: every nation and non-state actor is a flag of pieces, one per expected paper, unlocked when it is submitted and found once it is reviewed. Most progress first.',
+			'Paper progress as a game for the reviewers: every nation and non-state actor is a flag of pieces, one per expected paper, unlocked when it is submitted and found once it is reviewed. Most progress first. The paper team only (FORBIDDEN otherwise).',
 		type: FlagCollectionDataRef,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertCanReviewPapers({ ctx, conferenceId: args.conferenceId });
-
+			await assertCanReadFlagCollection({ ctx, conferenceId: args.conferenceId });
 			return buildFlagCollection(args.conferenceId);
 		}
 	})
