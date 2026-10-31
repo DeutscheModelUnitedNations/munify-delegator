@@ -21,42 +21,48 @@ import {
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { conferenceSupervisorPubsub } from '#api/pubsub';
-import { assertAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
+import { updateIfAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceSupervisorAbilities();
 
 const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
-/** The supervisor with this id, as far as the caller may read it. */
+
+/** The supervisor `id` as far as the caller may read it, for a `drizzleField` to answer with. */
 const readableSupervisor = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 	(await ctx.abilities.conferenceSupervisor.filter('read')).merge({ where: { id } }).query.single;
 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({
 		description:
-			'Registers the caller as a supervisor of the conference, or, with `userId`, the team registers someone else.',
+			'Registers the caller as a supervisor of the conference, or, with `userId`, participant care registers someone else (in any stage). CONFLICT outside the registration window, or when the person takes part in the conference already or is on its team.',
 		type: ConferenceSupervisorRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			/** Omitted when someone registers themselves; set when a team member assigns another user. */
-			userId: t.arg.id(),
-			plansOwnAttendenceAtConference: t.arg.boolean(),
-			/** An existing school, or `schoolName` to find or create one; neither for no school. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string().validate(schoolNameSchema)
+			userId: t.arg.id({
+				description: 'Somebody else to register; left out registers the caller.'
+			}),
+			plansOwnAttendenceAtConference: t.arg.boolean({
+				description: 'Whether they attend the conference themselves; true when left out.'
+			}),
+			schoolId: t.arg.id({
+				description: "An existing school as the supervisor's own; neither school argument for none."
+			}),
+			schoolName: t.arg
+				.string({
+					description: 'The name of a school to find (ignoring case and spacing) or create.'
+				})
+				.validate(schoolNameSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
-			await assertCanCreateConferenceSupervisor({
+			const subject = await assertCanCreateConferenceSupervisor({
 				ctx,
 				conferenceId: args.conferenceId,
 				subjectUserId: args.userId
 			});
-
 			const createdId = await registerSupervisor({
 				conferenceId: args.conferenceId,
-				subjectId,
-				selfService: subjectId === ctx.mustBeLoggedIn().sub,
+				...subject,
 				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
 				schoolId: args.schoolId,
 				schoolName: args.schoolName
@@ -69,26 +75,20 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateConferenceSupervisor: t.drizzleField({
-		description: 'Changes whether the supervisor plans to attend the conference themselves.',
+		description:
+			'Changes whether the supervisor plans to attend the conference themselves: the supervisor, or participant care.',
 		type: ConferenceSupervisorRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			plansOwnAttendenceAtConference: t.arg.boolean()
+			plansOwnAttendenceAtConference: t.arg.boolean({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			if (typeof args.plansOwnAttendenceAtConference === 'boolean') {
-				await updateIfAllowed({
-					ctx,
-					table: 'conferenceSupervisor',
-					id: args.id,
-					values: {
-						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
-					}
-				});
-			} else {
-				await assertAllowed({ ctx, table: 'conferenceSupervisor', action: 'update', id: args.id });
-			}
-
+			await updateIfAllowed({
+				ctx,
+				table: 'conferenceSupervisor',
+				id: args.id,
+				values: { plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference }
+			});
 			conferenceSupervisorPubsub.updated(args.id);
 
 			return db.query.conferenceSupervisor
@@ -99,21 +99,21 @@ schemaBuilder.mutationFields((t) => ({
 
 	connectToConferenceSupervisor: t.drizzleField({
 		description:
-			"A participant attaches themselves to a supervisor using that supervisor's connection code.",
+			"Puts a delegate or single participant into a supervisor's care by the supervisor's connection code: the caller themselves, or, with `userId`, participant care someone else. A wrong code answers NOT_FOUND (ten in ten minutes: TOO_MANY_ATTEMPTS); a supervisor or team member cannot be supervised (CONFLICT).",
 		type: ConferenceSupervisorRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			connectionCode: t.arg.string({ required: true }),
-			userId: t.arg.id()
+			userId: t.arg.id({
+				description: 'Somebody else to connect; left out connects the caller.'
+			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const subjectId = args.userId ?? ctx.mustBeLoggedIn().sub;
-			await assertCanConnectToConferenceSupervisor({
+			const { subjectId } = await assertCanConnectToConferenceSupervisor({
 				ctx,
 				conferenceId: args.conferenceId,
-				subjectId
+				subjectUserId: args.userId
 			});
-
 			const supervisor = await codeGuessLimiter.attempt({
 				key: ctx.mustBeLoggedIn().sub,
 				run: () =>
@@ -135,11 +135,12 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	disconnectFromConferenceSupervisor: t.field({
-		description: 'Ends a supervision: the supervisor no longer looks after the person.',
+		description:
+			'Ends a supervision, so the supervisor no longer looks after the person: the person, the supervisor, or participant care.',
 		type: 'Boolean',
 		args: {
 			supervisorId: t.arg.id({ required: true }),
-			userId: t.arg.id({ required: true })
+			userId: t.arg.id({ required: true, description: 'The supervised person.' })
 		},
 		resolve: async (_root, args, ctx) => {
 			const { conferenceId } = await assertCanDisconnectFromConferenceSupervisor({
@@ -158,7 +159,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	rotateSupervisorConnectionCode: t.drizzleField({
 		description:
-			'Gives the supervisor a new connection code; the old one stops working, people already connected stay so.',
+			'Gives the supervisor a new connection code: the supervisor, or participant care. The old one stops working; people already connected stay so.',
 		type: ConferenceSupervisorRef,
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
@@ -173,13 +174,15 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 const PreviewConferenceSupervisor = schemaBuilder.simpleObject('PreviewConferenceSupervisor', {
+	description: 'What the connect form shows about the supervisor a connection code names.',
 	fields: (t) => ({
 		given_name: t.string({ nullable: true }),
 		family_name: t.string({ nullable: true }),
-		school_name: t.string({ nullable: true }),
+		school_name: t.string({ nullable: true, description: "The supervisor's own school." }),
 		school_city: t.string({ nullable: true }),
 		different_school: t.boolean({
-			description: "Whether the supervisor's school is another than the caller's own."
+			description:
+				"Whether the supervisor's school is another than the caller's own; false while either is unknown."
 		})
 	})
 });
@@ -187,23 +190,25 @@ const PreviewConferenceSupervisor = schemaBuilder.simpleObject('PreviewConferenc
 schemaBuilder.queryFields((t) => ({
 	previewConferenceSupervisor: t.field({
 		description:
-			'Shows whose supervision a participant is about to accept, before they connect. Like `previewDelegation`, the connection code is the authorisation - but this one also requires the caller to already take part in the conference in some role, so an arbitrary logged-in user cannot probe codes.',
+			'Shows whose supervision a participant is about to accept, before they connect. Like `previewDelegation`, the connection code is the authorisation, but the caller has to take part in the conference already (FORBIDDEN otherwise), so an arbitrary signed-in user cannot probe codes. A wrong code answers NOT_FOUND (ten in ten minutes: TOO_MANY_ATTEMPTS).',
 		type: PreviewConferenceSupervisor,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			connectionCode: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanPreviewConferenceSupervisor({ ctx, conferenceId: args.conferenceId });
-			const caller = ctx.mustBeLoggedIn();
+			const { callerId } = await assertCanPreviewConferenceSupervisor({
+				ctx,
+				conferenceId: args.conferenceId
+			});
 
 			return codeGuessLimiter.attempt({
-				key: caller.sub,
+				key: callerId,
 				run: () =>
 					previewSupervisorByCode({
 						conferenceId: args.conferenceId,
 						connectionCode: args.connectionCode,
-						callerId: caller.sub
+						callerId
 					})
 			});
 		}

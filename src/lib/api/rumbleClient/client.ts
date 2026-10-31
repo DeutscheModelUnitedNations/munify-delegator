@@ -2648,7 +2648,7 @@ export type Mutation = {
   }) => Conference,
   updateConferenceSupervisor: (p: {
     id: ID,
-    plansOwnAttendenceAtConference?: Boolean | null | undefined
+    plansOwnAttendenceAtConference: Boolean
   }) => Conferencesupervisor,
   updateCustomRole: (p: {
     description?: String | null | undefined,

@@ -20,8 +20,6 @@ import { apiError, codeNotFound } from '#api/services/errors';
 import { whereRows } from '#api/db/whereRows';
 import { supervisorPreview } from './supervisorPreview';
 
-/** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
-
 /**
  * A connection code no supervisor holds yet, in any conference: the codes are unique across
  * conferences (a unique index), so a code alone names its supervisor. 20^8 codes make a clash
@@ -38,13 +36,17 @@ async function unusedConnectionCode() {
 	}
 }
 
-/** Registers a user as supervisor of a conference. Returns the new row's id. */
+/**
+ * Registers a user as supervisor of a conference, with the school they name as their own. Refuses
+ * (CONFLICT) somebody who takes part in the conference already or is on its team, and a
+ * registration of one's own outside the registration window. Returns the new row's id.
+ */
 export async function registerSupervisor(
 	args: SchoolChoice & {
 		conferenceId: string;
 		subjectId: string;
 		plansOwnAttendenceAtConference?: boolean | null;
-		/** Whether the caller registers themselves; the team registering somebody else may do so in any stage. */
+		/** Whether the user registers themselves; the team registering somebody else may in any stage. */
 		selfService: boolean;
 	}
 ) {
@@ -122,15 +124,15 @@ export async function connectParticipantToSupervisor({
 	const participantId =
 		participation.foundDelegationMember?.conferenceParticipantId ??
 		participation.foundSingleParticipant?.conferenceParticipantId;
-	if (participantId) {
-		await db
-			.insert(schema.supervision)
-			.values({ a: supervisorId, b: participantId })
-			.onConflictDoNothing();
-	}
+	if (!participantId) return;
+	await db
+		.insert(schema.supervision)
+		.values({ a: supervisorId, b: participantId })
+		.onConflictDoNothing();
 
 	// Nothing on these rows changed, but who supervises whom did.
 	conferenceSupervisorPubsub.updated(supervisorId);
+	conferenceParticipantPubsub.updated(participantId);
 	const delegationMemberId = participation.foundDelegationMember?.id;
 	if (delegationMemberId) delegationMemberPubsub.updated(delegationMemberId);
 	const singleParticipantId = participation.foundSingleParticipant?.id;
@@ -172,8 +174,8 @@ export async function disconnectParticipantFromSupervisor({
 }
 
 /**
- * Shows whose supervision a participant is about to accept, before they connect. The caller
- * checks first that they may look (`assertCanPreviewConferenceSupervisor`).
+ * Shows whose supervision a participant is about to accept, before they connect; a wrong code is
+ * NOT_FOUND. The caller checks first that they may look (`assertCanPreviewConferenceSupervisor`).
  */
 export async function previewSupervisorByCode({
 	conferenceId,

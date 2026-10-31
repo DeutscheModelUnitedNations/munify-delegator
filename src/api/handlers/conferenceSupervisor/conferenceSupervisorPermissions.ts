@@ -8,7 +8,10 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
-import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
+import {
+	fetchParticipationsAndTeamMembership,
+	isParticipantOrTeamMember
+} from '#api/services/registration/participation';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
@@ -44,7 +47,7 @@ export function registerConferenceSupervisorAbilities() {
 			: undefined;
 	});
 
-	// Supervisors read, update and delete their own supervisor row.
+	// Everyone reads, updates and deletes their own supervisor row.
 	abilityBuilder.conferenceSupervisor
 		.allow(['read', 'update', 'delete'])
 		.when((ctx) => grantWhere(isOwnUser(ctx)));
@@ -69,7 +72,9 @@ export function registerConferenceSupervisorAbilities() {
 
 /**
  * Refuses registering somebody else (`subjectUserId`) as supervisor unless the caller holds
- * `manageParticipants` in the conference; registering oneself always passes.
+ * `manageParticipants` (project management and participant care) in the conference; registering
+ * oneself always passes here (the registration window is the service's). Returns who is
+ * registered, and whether it is the caller themselves (`selfService`).
  */
 export async function assertCanCreateConferenceSupervisor({
 	ctx,
@@ -81,34 +86,39 @@ export async function assertCanCreateConferenceSupervisor({
 	subjectUserId: string | null | undefined;
 }) {
 	const callerId = ctx.mustBeLoggedIn().sub;
-	if (subjectUserId && subjectUserId !== callerId) {
-		await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	if (!subjectUserId || subjectUserId === callerId) {
+		return { subjectId: callerId, selfService: true };
 	}
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	return { subjectId: subjectUserId, selfService: false };
 }
 
 /**
- * Refuses connecting somebody else (`subjectId`) to a supervisor unless the caller holds
- * `manageParticipants` (the user card's supervisor modal); connecting oneself passes, the
- * connection code being the check there.
+ * Refuses connecting somebody else (`subjectUserId`) to a supervisor unless the caller holds
+ * `manageParticipants` (project management and participant care; the user card's supervisor
+ * modal); connecting oneself passes, the connection code being the check there. Returns who is
+ * connected.
  */
 export async function assertCanConnectToConferenceSupervisor({
 	ctx,
 	conferenceId,
-	subjectId
+	subjectUserId
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
-	subjectId: string;
+	subjectUserId: string | null | undefined;
 }) {
-	if (subjectId !== ctx.mustBeLoggedIn().sub) {
-		await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	}
+	const callerId = ctx.mustBeLoggedIn().sub;
+	if (!subjectUserId || subjectUserId === callerId) return { subjectId: callerId };
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	return { subjectId: subjectUserId };
 }
 
 /**
  * Refuses ending a supervision unless the caller is the supervised person, the supervisor, or holds
- * `manageParticipants` in the supervisor's conference. Returns that conference's id, which the
- * service needs to find the person's participant row.
+ * `manageParticipants` (project management and participant care) in the supervisor's conference;
+ * an unknown supervisor is NOT_FOUND. Returns that conference's id, which the service needs to
+ * find the person's participant row.
  */
 export async function assertCanDisconnectFromConferenceSupervisor({
 	ctx,
@@ -135,8 +145,8 @@ export async function assertCanDisconnectFromConferenceSupervisor({
 
 /**
  * Refuses a subject who cannot be supervised in the conference: only delegates and single
- * participants can, never supervisors or the team. About the subject, not the caller. Returns the
- * subject's participations, which get the supervision link.
+ * participants can (FORBIDDEN otherwise), never supervisors or the team (CONFLICT). About the
+ * subject, not the caller. Returns the subject's participations, which get the supervision link.
  */
 export async function assertCanBeSupervised({
 	conferenceId,
@@ -160,8 +170,9 @@ export async function assertCanBeSupervised({
 }
 
 /**
- * Refuses unless the caller may update the supervisor (the row's update ability: the supervisor,
- * participant care, system admins). Returns the supervisor's id.
+ * Refuses (FORBIDDEN) unless the caller's update ability reaches the supervisor: the supervisor
+ * themselves, or `manageParticipants` (project management and participant care) in its
+ * conference. Returns the supervisor's id.
  */
 export async function assertCanRotateSupervisorConnectionCode({
 	ctx,
@@ -182,8 +193,9 @@ export async function assertCanRotateSupervisorConnectionCode({
 }
 
 /**
- * Refuses unless the caller already has a part in the conference (delegate, single participant,
- * supervisor or team), so an arbitrary signed-in user cannot probe connection codes.
+ * Refuses (FORBIDDEN) unless the caller already has a part in the conference (delegate, single
+ * participant, supervisor or team), so an arbitrary signed-in user cannot probe connection codes.
+ * Returns the caller's id, whose school the preview compares with the supervisor's.
  */
 export async function assertCanPreviewConferenceSupervisor({
 	ctx,
@@ -192,17 +204,9 @@ export async function assertCanPreviewConferenceSupervisor({
 	ctx: ApiContext;
 	conferenceId: string;
 }) {
-	const participation = await fetchParticipationsAndTeamMembership({
-		conferenceId,
-		userId: ctx.mustBeLoggedIn().sub
-	});
-
-	if (
-		!participation.foundDelegationMember &&
-		!participation.foundSingleParticipant &&
-		!participation.foundTeamMember &&
-		!participation.foundSupervisor
-	) {
+	const callerId = ctx.mustBeLoggedIn().sub;
+	if (!(await isParticipantOrTeamMember({ conferenceId, userId: callerId }))) {
 		throw apiError({ code: 'FORBIDDEN', message: m.notRegisteredForConference() });
 	}
+	return { callerId };
 }
