@@ -38,17 +38,27 @@ const CreatePaperReviewResult = schemaBuilder.simpleObject('CreatePaperReviewRes
 schemaBuilder.mutationFields((t) => ({
 	createPaperReview: t.field({
 		description:
-			"Records a reviewer's verdict on a paper's latest version. Besides writing the review it advances the paper and version status, has the author told (the `PAPER_REVIEWED` mail, where the conference sends it) and works out whether this was the first review for a \"piece\" of the flag collection - the gamified progress display. That last part has three shapes: a nation delegation counts one piece per agenda item, a non-state actor's introduction paper is its own piece, and its other papers count up to two more.",
+			"Records a reviewer's verdict on a paper's latest version. Besides writing the review it gives the paper and version that status, has the author told (the `PAPER_REVIEWED` mail, where the conference sends it) and works out whether this was the first review for a \"piece\" of the flag collection - the gamified progress display. That last part has three shapes: a nation delegation counts one piece per agenda item, a non-state actor's introduction paper is its own piece, and its other papers count up to two more. NOT_FOUND for anyone but the conference's paper team, CONFLICT for a draft.",
 		type: CreatePaperReviewResult,
 		args: {
 			paperId: t.arg.id({ required: true }),
 			comments: t.arg({ type: 'JSON', required: true }),
-			newStatus: t.arg({ type: paperStatusEnum, required: true }).validate(reviewVerdictSchema)
+			newStatus: t
+				.arg({
+					type: paperStatusEnum,
+					required: true,
+					description: 'The verdict: ACCEPTED or CHANGES_REQUESTED.'
+				})
+				.validate(reviewVerdictSchema)
 		},
 		resolve: async (_root, args, ctx) => {
-			const reviewer = ctx.mustBeLoggedIn();
-			await assertCanReviewPaper({ ctx, paperId: args.paperId });
-			return createPaperReview({ args, reviewer });
+			const { reviewerId } = await assertCanReviewPaper({ ctx, paperId: args.paperId });
+			return createPaperReview({
+				paperId: args.paperId,
+				comments: args.comments,
+				verdict: args.newStatus,
+				reviewerId
+			});
 		}
 	})
 }));

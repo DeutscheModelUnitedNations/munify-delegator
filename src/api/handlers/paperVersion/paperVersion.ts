@@ -9,7 +9,7 @@ object({
 	adjust: (t) => ({
 		contentHash: t.field({
 			description:
-				'Lets the editor tell whether the version it holds still matches the stored one. The editor compares this against `md5(JSON.stringify(itsContent))`, so the column - a jsonb object - has to be stringified here too. The Pothos resolver asserted the column to `string` and hashed the object itself, which could never match.',
+				'Lets the editor tell whether the version it holds still matches the stored one: the hash of `JSON.stringify(content)`, which the editor computes over its own content the same way (`hashEditorContent`). Empty for a version without content.',
 			type: 'String',
 			resolve: async (version) =>
 				version.content ? await hashEditorContent(JSON.stringify(version.content)) : ''

@@ -1,10 +1,16 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import { PAPER_ROLES, systemAdmin, teamConference } from '#api/services/authHelper/rules';
+import {
+	isTeamMemberOf,
+	PAPER_ROLES,
+	systemAdmin,
+	teamConference
+} from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
+/** The abilities of paper reviews: written through `createPaperReview`, never updated. */
 export function registerPaperReviewAbilities() {
 	abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -16,27 +22,18 @@ export function registerPaperReviewAbilities() {
 			: undefined;
 	});
 
-	// The paper team (every team role but the plain member) reads the reviews of the conference's
-	// papers. Reviews are written through `createPaperReview`, never updated.
+	// The paper team (`reviewPapers`: reviewer, project management, participant care, team
+	// coordinator, content lead) reads the reviews of the conference's papers.
 	abilityBuilder.paperReview.allow('read').when((ctx) => {
-		const id = callerUserId(ctx);
-		return id
-			? {
-					where: {
-						paperVersion: {
-							paper: {
-								conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } }
-							}
-						}
-					}
-				}
-			: undefined;
+		const conference = isTeamMemberOf({ ctx, roles: PAPER_ROLES });
+		return conference ? { where: { paperVersion: { paper: { conference } } } } : undefined;
 	});
 }
 
 /**
- * Refuses (NOT_FOUND) unless the paper exists in a conference where the caller is on the paper
- * team (`reviewPapers`). Reading the paper is not enough to review it.
+ * Refuses (NOT_FOUND) unless the paper exists in a conference where the caller holds
+ * `reviewPapers` (reviewer, project management, participant care, team coordinator, content lead).
+ * Reading the paper is not enough to review it. Returns the caller's id, the review's reviewer.
  */
 export async function assertCanReviewPaper({ ctx, paperId }: { ctx: ApiContext; paperId: string }) {
 	const paper = await db.query.paper.findFirst({
@@ -47,4 +44,5 @@ export async function assertCanReviewPaper({ ctx, paperId }: { ctx: ApiContext; 
 		columns: { id: true }
 	});
 	if (!paper) throw apiError({ code: 'NOT_FOUND', message: m.reviewOnlyReviewers() });
+	return { reviewerId: ctx.mustBeLoggedIn().sub };
 }
