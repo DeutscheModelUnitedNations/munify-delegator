@@ -5,8 +5,9 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
+import { assertCanManageSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 
+/** The abilities of survey options, which follow their question's. */
 export function registerSurveyOptionAbilities() {
 	abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -20,14 +21,17 @@ export function registerSurveyOptionAbilities() {
 	});
 
 	// Participant care (project management and participant care) reads, updates and deletes the
-	// options of its conference's questions.
+	// options of its conference's questions; creating one is `assertCanCreateSurveyOption`.
 	abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
 		const question = isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES });
 		return question ? { where: { question } } : undefined;
 	});
 }
 
-/** Refuses unless the caller is participant care in the question's conference. */
+/**
+ * Refuses (NOT_FOUND) unless the question exists in a conference where the caller holds
+ * `manageParticipants` (project management and participant care).
+ */
 export async function assertCanCreateSurveyOption({
 	ctx,
 	questionId
@@ -35,5 +39,5 @@ export async function assertCanCreateSurveyOption({
 	ctx: ApiContext;
 	questionId: string;
 }) {
-	await assertTeamPermissionForSurveyQuestion({ ctx, questionId });
+	await assertCanManageSurveyQuestion({ ctx, questionId });
 }

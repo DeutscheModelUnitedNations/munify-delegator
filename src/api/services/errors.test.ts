@@ -1,5 +1,19 @@
 import { describe, expect, it, test } from 'vitest';
-import { isSerializationFailure, isUniqueViolationOn } from './errors';
+import { isForeignKeyViolation, isSerializationFailure, isUniqueViolationOn } from './errors';
+
+describe('isForeignKeyViolation', () => {
+	it('finds the code on the error or on what drizzle wrapped', () => {
+		expect(isForeignKeyViolation({ code: '23503' })).toBe(true);
+		expect(isForeignKeyViolation(new Error('query failed', { cause: { code: '23503' } }))).toBe(
+			true
+		);
+	});
+
+	it('ignores other errors', () => {
+		expect(isForeignKeyViolation({ code: '23505' })).toBe(false);
+		expect(isForeignKeyViolation(null)).toBe(false);
+	});
+});
 
 describe('isSerializationFailure', () => {
 	it('finds the code on the error or on what drizzle wrapped', () => {

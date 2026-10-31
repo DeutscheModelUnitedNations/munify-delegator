@@ -8,11 +8,12 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { assertTeamPermissionForSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
+import { assertCanManageSurveyQuestion } from '#api/handlers/surveyQuestion/surveyQuestionPermissions';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
+/** The abilities of survey answers. Answers are given through `upsertSurveyAnswer`. */
 export function registerSurveyAnswerAbilities() {
 	abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -41,45 +42,43 @@ export function registerSurveyAnswerAbilities() {
 	});
 }
 
-/** The option an answer picks, with what deciding who may give it needs. */
-interface AnsweredOption {
-	questionId: string;
-	question: { conferenceId: string };
-}
-
 /**
  * The option an answer picks, with its question, as far as the caller reads it: participants only
- * those of published (non-draft, not hidden) questions, participant care every one of its
- * conference. Refuses (NOT_FOUND) any other.
+ * those of published (non-draft, not hidden) questions of their conferences, participant care every
+ * one of its conference. Refuses (NOT_FOUND) any other.
  */
 async function readableOption({ ctx, optionId }: { ctx: ApiContext; optionId: string }) {
 	return db.query.surveyOption
 		.findFirst({
 			...(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: optionId } }).query
 				.single,
-			with: { question: true }
+			columns: { id: true, questionId: true, upperLimit: true },
+			with: { question: { columns: { conferenceId: true, deadline: true } } }
 		})
 		.then(assertFindFirstExists);
 }
 
 /**
- * Refuses unless the caller may answer for `requestedUserId` (by default themselves): participant
- * care for anybody in its conference, everybody else only for themselves; either way the subject
- * has to take part in the conference. Returns the subject's participant row and whether the caller
- * answers as participant care, who may overfill an option and answer past the deadline.
+ * Refuses unless the caller reads the option (`readableOption`, NOT_FOUND) and may answer its
+ * question for `userId` (by default themselves): everybody for themselves, participant care
+ * (`manageParticipants`: project management and participant care) for anybody in its conference
+ * (FORBIDDEN otherwise). Either way the person has to take part in the conference
+ * (INVALID_INPUT). Returns the option, the person's participant row, and whether the option's
+ * limits and the deadline apply: participant care may overfill an option and answer late.
  */
-async function assertCanAnswerFor({
+export async function assertCanAnswerSurvey({
 	ctx,
-	option,
-	requestedUserId
+	optionId,
+	userId
 }: {
 	ctx: ApiContext;
-	option: AnsweredOption;
-	requestedUserId: string | null | undefined;
+	optionId: string;
+	userId: string | null | undefined;
 }) {
 	const caller = ctx.mustBeLoggedIn().sub;
+	const option = await readableOption({ ctx, optionId });
 	const conferenceId = option.question.conferenceId;
-	const subject = requestedUserId ?? caller;
+	const subject = userId ?? caller;
 
 	const ignoresLimits = await hasTeamPermission({
 		ctx,
@@ -90,98 +89,31 @@ async function assertCanAnswerFor({
 		throw apiError({ code: 'FORBIDDEN', message: m.surveyAnswerOnlyOwn() });
 	}
 	const participantIds = await participantIdsOf({ conferenceId, userIds: [subject] });
-	const subjectParticipantId = participantIds.get(subject);
-	if (!subjectParticipantId) {
+	const participantId = participantIds.get(subject);
+	if (!participantId) {
 		throw apiError({ code: 'INVALID_INPUT', message: m.usersNotInConference() });
 	}
-	return { subjectParticipantId, ignoresLimits };
-}
-
-/**
- * Whom an answer is for: the user it names, or, addressed by id alone, whoever the answer already
- * belongs to - checked by `assertCanAnswerFor`. Refuses a question that is not the option's.
- */
-async function answerSubject({
-	ctx,
-	option,
-	args
-}: {
-	ctx: ApiContext;
-	option: AnsweredOption;
-	args: { id?: string | null; questionId?: string | null; userId?: string | null };
-}) {
-	if (args.questionId && args.questionId !== option.questionId) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.surveyAnswerOptionOtherQuestion() });
-	}
-	const addressed = args.id
-		? await db.query.surveyAnswer.findFirst({
-				...(await ctx.abilities.surveyAnswer.filter('update')).merge({ where: { id: args.id } })
-					.query.single,
-				columns: {},
-				with: { participant: { columns: { userId: true } } }
-			})
-		: undefined;
-	return assertCanAnswerFor({
-		ctx,
-		option,
-		requestedUserId: args.userId ?? addressed?.participant.userId
-	});
-}
-
-/**
- * Refuses unless the caller reads the option (`readableOption`) and may give the answer it stands
- * for, for themselves or, as participant care, for someone else. Returns the option, whom the
- * answer is for (their participant row in the question's conference), whether the option's limits
- * apply to the caller, and the caller's answer to replace, if there is one they may update.
- */
-export async function assertCanAnswerSurvey({
-	ctx,
-	args
-}: {
-	ctx: ApiContext;
-	args: {
-		id?: string | null;
-		questionId?: string | null;
-		userId?: string | null;
-		optionId: string;
-	};
-}) {
-	const option = await readableOption({ ctx, optionId: args.optionId });
-	const { subjectParticipantId, ignoresLimits } = await answerSubject({ ctx, option, args });
-
-	const subjectsAnswer = {
-		questionId: option.questionId,
-		conferenceParticipantId: subjectParticipantId
-	};
-	const existing = await db.query.surveyAnswer.findFirst({
-		...(await ctx.abilities.surveyAnswer.filter('update')).merge({
-			where: args.id ? { id: args.id, ...subjectsAnswer } : subjectsAnswer
-		}).query.single,
-		columns: { id: true }
-	});
-
-	return {
-		option,
-		answer: { subjectParticipantId, ignoresLimits, updatableAnswerId: existing?.id }
-	};
+	return { option, participantId, ignoresLimits };
 }
 
 /**
  * Refuses (NOT_FOUND) unless the caller may delete the answer `userId` (by default the caller)
- * gave to the question: their own before the deadline, or anybody's as participant care. Returns
- * it.
+ * gave to the question (the delete ability: their own before the deadline, anybody's in its
+ * conference for participant care). Returns it.
  */
 export async function assertCanDeleteSurveyAnswer({
 	ctx,
-	args
+	questionId,
+	userId
 }: {
 	ctx: ApiContext;
-	args: { questionId: string; userId?: string | null };
+	questionId: string;
+	userId: string | null | undefined;
 }) {
-	const subject = args.userId ?? ctx.mustBeLoggedIn().sub;
+	const subject = userId ?? ctx.mustBeLoggedIn().sub;
 	const answer = await db.query.surveyAnswer.findFirst({
 		...(await ctx.abilities.surveyAnswer.filter('delete')).merge({
-			where: { questionId: args.questionId, participant: { userId: subject } }
+			where: { questionId, participant: { userId: subject } }
 		}).query.single,
 		columns: { id: true, questionId: true }
 	});
@@ -190,8 +122,8 @@ export async function assertCanDeleteSurveyAnswer({
 }
 
 /**
- * Refuses unless the caller is participant care in the question's conference, who may answer it
- * for everybody who has not yet.
+ * Refuses (NOT_FOUND) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the question's conference, who may answer it for everybody who has not yet.
  */
 export async function assertCanDistributeSurvey({
 	ctx,
@@ -200,5 +132,5 @@ export async function assertCanDistributeSurvey({
 	ctx: ApiContext;
 	questionId: string;
 }) {
-	await assertTeamPermissionForSurveyQuestion({ ctx, questionId });
+	await assertCanManageSurveyQuestion({ ctx, questionId });
 }

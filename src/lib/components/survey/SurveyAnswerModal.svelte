@@ -49,7 +49,7 @@
 			setLoading: (isLoading) => (loading = isLoading),
 			write: async () => {
 				await client.mutate.upsertSurveyAnswer({
-					__args: { userId, questionId: question.id, optionId },
+					__args: { userId, optionId },
 					id: true,
 					question: { id: true },
 					option: { id: true, countSurveyAnswers: true }

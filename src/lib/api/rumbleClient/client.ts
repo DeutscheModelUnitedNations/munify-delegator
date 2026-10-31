@@ -2848,9 +2848,7 @@ export type Mutation = {
     userId?: ID | null | undefined
   }) => Conferenceparticipant,
   upsertSurveyAnswer: (p: {
-    id?: ID | null | undefined,
     optionId: ID,
-    questionId?: ID | null | undefined,
     userId?: ID | null | undefined
   }) => Surveyanswer    
 };

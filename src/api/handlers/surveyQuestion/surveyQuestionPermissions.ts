@@ -9,10 +9,10 @@ import {
 	teamConference
 } from '#api/services/authHelper/rules';
 import { grantWhere } from '#api/services/authHelper/utils';
-import type { TeamPermission } from '#lib/helpers/teamRoles';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
+/** The abilities of survey questions. */
 export function registerSurveyQuestionAbilities() {
 	abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -30,7 +30,10 @@ export function registerSurveyQuestionAbilities() {
 		.when((ctx) => grantWhere(isTeamMemberOfConference({ ctx, roles: PARTICIPANT_CARE_ROLES })));
 }
 
-/** Refuses unless the caller is participant care (`manageParticipants`) in the conference. */
+/**
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the conference.
+ */
 export async function assertCanCreateSurveyQuestion({
 	ctx,
 	conferenceId
@@ -43,23 +46,25 @@ export async function assertCanCreateSurveyQuestion({
 
 /**
  * Refuses (NOT_FOUND) unless the question exists in a conference where the caller holds
- * `permission` (participant care by default). For what goes under a question: options, answers
- * given for others, the distribution.
+ * `manageParticipants` (project management and participant care). For what goes under a question:
+ * its options and the distribution of the unanswered. Returns the question's conference.
  */
-export async function assertTeamPermissionForSurveyQuestion({
+export async function assertCanManageSurveyQuestion({
 	ctx,
-	questionId,
-	permission = 'manageParticipants'
+	questionId
 }: {
 	ctx: ApiContext;
 	questionId: string;
-	permission?: TeamPermission;
 }) {
 	const question = await db.query.surveyQuestion.findFirst({
-		where: { id: questionId, conference: teamConference({ ctx, permission }) },
+		where: {
+			id: questionId,
+			conference: teamConference({ ctx, permission: 'manageParticipants' })
+		},
 		columns: { conferenceId: true }
 	});
 	if (!question) {
 		throw apiError({ code: 'NOT_FOUND', message: m.surveyQuestionNotFound() });
 	}
+	return { conferenceId: question.conferenceId };
 }

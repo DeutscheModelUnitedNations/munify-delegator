@@ -93,7 +93,7 @@ export const E2E_SURVEY_OPTION_A_TITLE = 'Seeded Option A';
 export const E2E_SURVEY_OPTION_B_ID = 'e2e00000surveyoption000002';
 export const E2E_SURVEY_OPTION_B_TITLE = 'Seeded Option B';
 // A hidden question beside it: participants must neither read nor answer it.
-export const E2E_HIDDEN_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0002';
+const E2E_HIDDEN_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0002';
 export const E2E_HIDDEN_SURVEY_OPTION_ID = 'e2e00000surveyoption000003';
 
 // Management: admin views/updates a pre-registered participant's status.

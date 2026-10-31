@@ -23,7 +23,7 @@
 		loading = true;
 		try {
 			await client.mutate.upsertSurveyAnswer({
-				__args: { questionId: survey.id, userId, optionId },
+				__args: { userId, optionId },
 				id: true,
 				option: { id: true, title: true }
 			});

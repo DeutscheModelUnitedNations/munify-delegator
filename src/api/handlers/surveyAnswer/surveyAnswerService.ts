@@ -1,10 +1,9 @@
 import { type Transaction, db, schema } from '#api/db/db';
-import { assertFindFirstExists } from '@m1212e/rumble';
+import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
-import { z } from 'zod';
 import { distributeToOptions } from './surveyDistribution';
 import { surveyAnswerPubsub, surveyOptionPubsub } from '#api/pubsub';
 
@@ -53,24 +52,15 @@ async function assertOptionOpen({
 	}
 }
 
-/** An answer is addressed either by its id or by its question and user. */
-export const answerLookupSchema = z
-	.object({
-		id: z.string().nullish(),
-		questionId: z.string().nullish(),
-		userId: z.string().nullish()
-	})
-	.refine((args) => args.id || (args.questionId && args.userId), {
-		error: () => m.surveyAnswerNeedsLookup()
-	});
-
 /**
- * Stores the answer an option stands for, updating `updatableAnswerId` when given or creating it.
- * Returns the answer's id.
+ * Makes the option the person's answer to its question, replacing an earlier answer. Unless
+ * `ignoresLimits` (participant care), a question past its deadline and a full option are refused
+ * (CONFLICT). Returns the answer's id.
  */
 export async function upsertSurveyAnswer({
 	option,
-	answer
+	participantId,
+	ignoresLimits
 }: {
 	option: {
 		id: string;
@@ -78,60 +68,61 @@ export async function upsertSurveyAnswer({
 		upperLimit: number;
 		question: { deadline: Date };
 	};
-	answer: {
-		subjectParticipantId: string;
-		ignoresLimits: boolean;
-		updatableAnswerId: string | undefined;
-	};
+	participantId: string;
+	ignoresLimits: boolean;
 }) {
 	const { answerId, optionIds } = await db.transaction(async (tx) => {
-		if (!answer.ignoresLimits) {
-			await assertOptionOpen({ tx, option, participantId: answer.subjectParticipantId });
-		}
+		if (!ignoresLimits) await assertOptionOpen({ tx, option, participantId });
 
-		const answerId = answer.updatableAnswerId
-			? (
-					await tx
-						.update(schema.surveyAnswer)
-						.set({ optionId: option.id })
-						.where(
-							whereRows({ table: schema.surveyAnswer, filter: { id: answer.updatableAnswerId } })
-						)
-						.returning({ id: schema.surveyAnswer.id })
-				)[0].id
-			: (
-					await tx
-						.insert(schema.surveyAnswer)
-						.values({
-							questionId: option.questionId,
-							conferenceParticipantId: answer.subjectParticipantId,
-							optionId: option.id
-						})
-						// Two tabs answering at once would otherwise collide on the unique index.
-						.onConflictDoUpdate({
-							target: [schema.surveyAnswer.questionId, schema.surveyAnswer.conferenceParticipantId],
-							set: { optionId: option.id }
-						})
-						.returning({ id: schema.surveyAnswer.id })
-				)[0].id;
+		const { id: answerId } = await tx
+			.insert(schema.surveyAnswer)
+			.values({
+				questionId: option.questionId,
+				conferenceParticipantId: participantId,
+				optionId: option.id
+			})
+			.onConflictDoUpdate({
+				target: [schema.surveyAnswer.questionId, schema.surveyAnswer.conferenceParticipantId],
+				set: { optionId: option.id, updatedAt: new Date() }
+			})
+			.returning({ id: schema.surveyAnswer.id })
+			.then(assertFirstEntryExists);
 
 		const optionIds = await optionIdsOfQuestion({ tx, questionId: option.questionId });
 		return { answerId, optionIds };
 	});
-	// A new row has to reach list queries (`created`), which an update of its id does not
-	if (answer.updatableAnswerId) surveyAnswerPubsub.updated(answerId);
-	else surveyAnswerPubsub.created();
+	// The answer may be new, which reaches list queries only as `created`
+	surveyAnswerPubsub.created();
+	surveyAnswerPubsub.updated(answerId);
 	// The options show how many answers they hold: the one left and the one picked both change
 	for (const optionId of optionIds) surveyOptionPubsub.updated(optionId);
 
 	return answerId;
 }
 
+/** Takes back an answer, leaving the question unanswered for its person. */
+export async function withdrawSurveyAnswer({
+	answerId,
+	questionId
+}: {
+	answerId: string;
+	questionId: string;
+}) {
+	await db
+		.delete(schema.surveyAnswer)
+		.where(whereRows({ table: schema.surveyAnswer, filter: { id: answerId } }));
+	surveyAnswerPubsub.removed();
+	// The options show how many answers they hold
+	for (const optionId of await optionIdsOfQuestion({ tx: db, questionId })) {
+		surveyOptionPubsub.updated(optionId);
+	}
+}
+
 /**
  * The options of a question, by id. A changed answer moves a count from one of them to another,
  * and an option in a live result only hears an update named with its own id.
  */
-export async function optionIdsOfQuestion({
+async function optionIdsOfQuestion({
 	tx,
 	questionId
 }: {

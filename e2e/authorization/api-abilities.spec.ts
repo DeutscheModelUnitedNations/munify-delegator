@@ -19,8 +19,6 @@ import {
 	E2E_SUPERVISOR_FOR_CONNECT_USER_ID,
 	E2E_SURVEY_OPTION_A_ID,
 	E2E_HIDDEN_SURVEY_OPTION_ID,
-	E2E_HIDDEN_SURVEY_QUESTION_ID,
-	E2E_SURVEY_QUESTION_ID,
 	E2E_MGMT_ADMIN_ID,
 	E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
 	E2E_TEAM_COORDINATOR_ID,
@@ -68,10 +66,8 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 	expectRefused(
 		await gql(
 			page,
-			`mutation ($q: ID!, $u: ID!, $o: ID!) {
-				upsertSurveyAnswer(questionId: $q, userId: $u, optionId: $o) { id }
-			}`,
-			{ q: E2E_SURVEY_QUESTION_ID, u: E2E_PREP_PARTICIPANT_USER_ID, o: E2E_SURVEY_OPTION_A_ID }
+			`mutation ($u: ID!, $o: ID!) { upsertSurveyAnswer(userId: $u, optionId: $o) { id } }`,
+			{ u: E2E_PREP_PARTICIPANT_USER_ID, o: E2E_SURVEY_OPTION_A_ID }
 		),
 		/only answer surveys for yourself/
 	);
@@ -132,11 +128,9 @@ test('a participant cannot answer a hidden survey question', async ({ page }) =>
 
 	// The option id alone used to be enough: it was loaded past the read rules.
 	expectRefused(
-		await gql(
-			page,
-			`mutation ($q: ID!, $o: ID!) { upsertSurveyAnswer(questionId: $q, optionId: $o) { id } }`,
-			{ q: E2E_HIDDEN_SURVEY_QUESTION_ID, o: E2E_HIDDEN_SURVEY_OPTION_ID }
-		),
+		await gql(page, `mutation ($o: ID!) { upsertSurveyAnswer(optionId: $o) { id } }`, {
+			o: E2E_HIDDEN_SURVEY_OPTION_ID
+		}),
 		/not found/i
 	);
 });

@@ -61,3 +61,13 @@ export function isUniqueViolationOn({
 function isUniqueViolationOnCause({ cause, column }: { cause: unknown; column: string }) {
 	return cause !== undefined && isUniqueViolationOn({ error: cause, column });
 }
+
+/**
+ * Postgres reports a row that other rows still reference (a `restrict` foreign key) as 23503.
+ * Drizzle wraps the driver's error, so the code is looked for on the error and on its `cause`.
+ */
+export function isForeignKeyViolation(error: unknown): boolean {
+	if (typeof error !== 'object' || error === null) return false;
+	const candidate: { code?: unknown; cause?: unknown } = error;
+	return candidate.code === '23503' || isForeignKeyViolation(candidate.cause);
+}
