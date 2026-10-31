@@ -2,6 +2,7 @@ import { db } from '#api/db/db';
 import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
+	assertCanCreateReviewerSnippet,
 	assertCanUpdateReviewerSnippet,
 	registerReviewerSnippetAbilities
 } from './reviewerSnippetPermissions';
@@ -22,15 +23,16 @@ const readableSnippet = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 schemaBuilder.mutationFields((t) => ({
 	createReviewerSnippet: t.drizzleField({
 		description:
-			'Saves a text block the caller reuses in paper reviews. A name the caller already uses is refused with CONFLICT.',
+			'Saves a text block the caller reuses in paper reviews: for whoever reviews papers in some conference (`reviewPapers`), FORBIDDEN for anybody else. A name the caller already uses is refused with CONFLICT.',
 		type: ReviewerSnippetRef,
 		args: {
 			name: t.arg.string({ required: true }).validate(snippetNameSchema),
 			content: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const { callerId } = await assertCanCreateReviewerSnippet(ctx);
 			const id = await createSnippet({
-				userId: ctx.mustBeLoggedIn().sub,
+				userId: callerId,
 				name: args.name,
 				content: args.content
 			});

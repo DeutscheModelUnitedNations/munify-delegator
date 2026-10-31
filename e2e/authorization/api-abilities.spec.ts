@@ -303,6 +303,18 @@ test('an invitation link makes only the invited person a team member, once', asy
 	expect(again?.status()).toBe(410);
 });
 
+test('only the paper team keeps reviewer snippets', async ({ page }) => {
+	// Snippets are text blocks for paper reviews; a participant writes none.
+	await loginAs(page, makeTestUser('authz-snippet-writer'));
+	expectRefused(
+		await gql(
+			page,
+			`mutation { createReviewerSnippet(name: "authz", content: { type: "doc", content: [] }) { id } }`
+		),
+		/only people who review papers/i
+	);
+});
+
 test('the last project management stays on the team', async ({ page }) => {
 	// The e2e conference has one project manager; demoting or removing them would leave nobody to
 	// manage the team, which only a system admin may do.

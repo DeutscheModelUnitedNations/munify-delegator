@@ -2486,6 +2486,7 @@
 	"snippetSaved": "Snippet saved",
 	"snippetUpdatedAt": "Updated",
 	"snippets": "Snippets",
+	"snippetsOnlyForReviewers": "Only people who review papers can create snippets.",
 	"specialRole": "Special role",
 	"specialWishes": "Special Wishes",
 	"ssoIdentities": "Connected Accounts",

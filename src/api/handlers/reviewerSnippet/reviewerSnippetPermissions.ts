@@ -1,9 +1,14 @@
+import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
-import { systemAdmin } from '#api/services/authHelper/rules';
+import { isSystemAdmin, systemAdmin, teamConference } from '#api/services/authHelper/rules';
+import { apiError } from '#api/services/errors';
 import { callerUserId, assertAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
 
-/** The abilities of reviewer snippets, a reviewer's own text blocks. Anybody signed in creates them. */
+/**
+ * The abilities of reviewer snippets, a reviewer's own text blocks. Creating one is for the paper
+ * team (`assertCanCreateReviewerSnippet`).
+ */
 export function registerReviewerSnippetAbilities() {
 	abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when(systemAdmin);
 
@@ -23,4 +28,22 @@ export async function assertCanUpdateReviewerSnippet({ ctx, id }: { ctx: ApiCont
 		id,
 		options: { message: m.snippetNotFound }
 	});
+}
+
+/**
+ * Refuses (FORBIDDEN) unless the caller holds `reviewPapers` (reviewer, project management,
+ * participant care, team coordinator, content lead) in some conference, or is a system admin:
+ * snippets are text blocks for paper reviews. Returns the caller's user id, the snippet's owner.
+ */
+export async function assertCanCreateReviewerSnippet(ctx: ApiContext) {
+	const callerId = ctx.mustBeLoggedIn().sub;
+	if (isSystemAdmin(ctx)) return { callerId };
+	const reviewsSomewhere = await db.query.conference.findFirst({
+		where: teamConference({ ctx, permission: 'reviewPapers' }),
+		columns: { id: true }
+	});
+	if (!reviewsSomewhere) {
+		throw apiError({ code: 'FORBIDDEN', message: m.snippetsOnlyForReviewers() });
+	}
+	return { callerId };
 }

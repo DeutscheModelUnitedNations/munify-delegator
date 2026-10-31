@@ -2486,6 +2486,7 @@
 	"snippetSaved": "Textbaustein gespeichert",
 	"snippetUpdatedAt": "Aktualisiert",
 	"snippets": "Textbausteine",
+	"snippetsOnlyForReviewers": "Textbausteine legen nur Personen an, die Papiere begutachten.",
 	"specialRole": "Spezielle Rolle",
 	"specialWishes": "Spezielle Wünsche",
 	"ssoIdentities": "Verknüpfte Konten",
