@@ -1,6 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { E2E_CONFERENCE_ID } from '../seed/seed';
-import { isOidcUrl } from '../support/auth';
+import { test, expect } from '../support/test';
 
 // Unauthenticated, publicly reachable routes. None of them had coverage, and the certificate
 // validator is the one place an outsider's input is cryptographically checked - a regression
@@ -23,11 +21,17 @@ test('the certificate validator rejects obvious garbage in the token slot', asyn
 	await expect(page.getByText(/ungültig|not valid/i).first()).toBeVisible({ timeout: 15_000 });
 });
 
-test('the public seats page renders for an anonymous visitor', async ({ page }) => {
-	const res = await page.goto(`/seats/${E2E_CONFERENCE_ID}`);
-
+test('the selector and a conference page are public, what is behind them needs a login', async ({
+	page
+}) => {
+	const res = await page.goto('/dashboard');
 	expect(res?.status()).toBeLessThan(400);
-	// It must render conference content rather than bouncing to the OIDC provider.
-	expect(isOidcUrl(page.url())).toBe(false);
-	await expect(page.locator('main, body')).toBeVisible({ timeout: 15_000 });
+	expect(new URL(page.url()).pathname).toBe('/dashboard');
+
+	const conference = await page.goto('/dashboard/anything');
+	expect(conference?.status()).toBeLessThan(400);
+	expect(new URL(page.url()).pathname).toBe('/dashboard/anything');
+
+	await page.goto('/dashboard/anything/payment');
+	await page.waitForURL((url) => url.pathname.startsWith('/oidc'), { timeout: 15_000 });
 });

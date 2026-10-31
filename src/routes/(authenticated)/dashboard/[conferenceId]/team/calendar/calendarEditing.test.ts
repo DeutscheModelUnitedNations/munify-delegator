@@ -1,0 +1,112 @@
+import { describe, expect, test } from 'vitest';
+import { dayFields, entryFields, trackFields, trackOrderChanges } from './calendarEditing';
+
+describe('dayFields', () => {
+	test('reads the date input as that calendar day', () => {
+		const fields = dayFields({ name: 'Day 3', date: '2026-03-14' });
+		expect(fields).toEqual({ name: 'Day 3', date: new Date('2026-03-14T00:00:00.000Z') });
+	});
+});
+
+describe('trackFields', () => {
+	test('stores an empty description as none', () => {
+		expect(trackFields({ name: 'Main', description: '', sortOrder: 2 })).toEqual({
+			name: 'Main',
+			description: null,
+			sortOrder: 2
+		});
+		expect(trackFields({ name: 'Main', description: 'Hall A', sortOrder: 0 }).description).toBe(
+			'Hall A'
+		);
+	});
+});
+
+describe('trackOrderChanges', () => {
+	const tracks = [
+		{ id: 'a', sortOrder: 0 },
+		{ id: 'b', sortOrder: 1 },
+		{ id: 'c', sortOrder: 2 }
+	];
+
+	test('swaps a track with its neighbour', () => {
+		expect(trackOrderChanges({ tracks, trackId: 'b', direction: -1 })).toEqual([
+			{ id: 'b', sortOrder: 0 },
+			{ id: 'a', sortOrder: 1 }
+		]);
+		expect(trackOrderChanges({ tracks, trackId: 'b', direction: 1 })).toEqual([
+			{ id: 'c', sortOrder: 1 },
+			{ id: 'b', sortOrder: 2 }
+		]);
+	});
+
+	test('does nothing at the ends or for an unknown track', () => {
+		expect(trackOrderChanges({ tracks, trackId: 'a', direction: -1 })).toEqual([]);
+		expect(trackOrderChanges({ tracks, trackId: 'c', direction: 1 })).toEqual([]);
+		expect(trackOrderChanges({ tracks, trackId: 'x', direction: 1 })).toEqual([]);
+	});
+
+	test('renumbers tied or gapped sort orders', () => {
+		const messy = [
+			{ id: 'a', sortOrder: 5 },
+			{ id: 'b', sortOrder: 5 },
+			{ id: 'c', sortOrder: 9 }
+		];
+		expect(trackOrderChanges({ tracks: messy, trackId: 'c', direction: -1 })).toEqual([
+			{ id: 'a', sortOrder: 0 },
+			{ id: 'c', sortOrder: 1 },
+			{ id: 'b', sortOrder: 2 }
+		]);
+	});
+});
+
+describe('entryFields', () => {
+	const form = {
+		name: 'Plenum',
+		description: '',
+		startTime: '09:30',
+		endTime: '11:00',
+		icon: '',
+		color: 'SESSION',
+		placeId: null,
+		room: '',
+		surveyOptionIds: [] as string[],
+		trackIds: [] as string[]
+	};
+
+	test('puts the times on the day, and stores empty text as none', () => {
+		const fields = entryFields({ form, dayDate: new Date('2026-03-12T00:00:00Z') });
+		expect(fields.startTime.toISOString()).toBe('2026-03-12T09:30:00.000Z');
+		expect(fields.endTime.toISOString()).toBe('2026-03-12T11:00:00.000Z');
+		expect(fields).toMatchObject({
+			description: null,
+			fontAwesomeIcon: null,
+			placeId: null,
+			room: null,
+			surveyOptionIds: [],
+			calendarTrackIds: []
+		});
+	});
+
+	test('keeps what was filled in', () => {
+		const fields = entryFields({
+			form: {
+				...form,
+				description: 'Opening',
+				icon: 'gavel',
+				room: 'A1',
+				placeId: 'p',
+				surveyOptionIds: ['o', 'p'],
+				trackIds: ['t', 'u']
+			},
+			dayDate: '2026-03-12T00:00:00Z'
+		});
+		expect(fields).toMatchObject({
+			description: 'Opening',
+			fontAwesomeIcon: 'gavel',
+			room: 'A1',
+			placeId: 'p',
+			surveyOptionIds: ['o', 'p'],
+			calendarTrackIds: ['t', 'u']
+		});
+	});
+});

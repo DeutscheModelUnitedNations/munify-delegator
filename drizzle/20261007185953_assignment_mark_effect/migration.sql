@@ -1,0 +1,2 @@
+CREATE TYPE "assignment_mark_effect" AS ENUM('WISHES_AND_SEATING', 'SEATING_ONLY');--> statement-breakpoint
+ALTER TABLE "assignment_weights" ADD COLUMN "mark_effect" "assignment_mark_effect" DEFAULT 'SEATING_ONLY'::"assignment_mark_effect" NOT NULL;

@@ -1,0 +1,2 @@
+ALTER TABLE "conference_participant" ADD COLUMN "school_id" text;--> statement-breakpoint
+ALTER TABLE "conference_participant" ADD CONSTRAINT "conference_participant_school_id_school_id_fkey" FOREIGN KEY ("school_id") REFERENCES "school"("id") ON DELETE SET NULL ON UPDATE CASCADE;

@@ -1,25 +1,35 @@
 <script lang="ts">
-	import type { ConferencesPreview$result } from '$houdini';
-	import RegistrationStatusLight from '$lib/components/RegistrationStatusLight.svelte';
-	import { getRegistrationStatus } from '$lib/services/registrationStatus';
-	import { getWaitingListStatus } from '$lib/services/waitingListStatus';
+	import type { ConferencestateEnum } from '#lib/api/rumbleClient/client';
+	import RegistrationStatusLight from '#lib/components/RegistrationStatusLight.svelte';
+	import { getRegistrationStatus } from '#lib/utils/registrationStatus';
+	import { getWaitingListStatus } from '#lib/helpers/waitingListStatus';
 
 	interface Props {
-		conference: NonNullable<ConferencesPreview$result['findManyConferences']>[number];
+		conference: {
+			title: string;
+			state: ConferencestateEnum;
+			applicationDeadline: Date;
+			totalSeats: number;
+			totalParticipants: number;
+			waitingListLength: number;
+		};
 	}
 
 	let { conference }: Props = $props();
 
 	let registrationStatus = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
+		getRegistrationStatus({
+			conferenceState: conference.state,
+			applicationDeadline: new Date(conference.applicationDeadline)
+		})
 	);
 
 	let waitingListStatus = $derived(
-		getWaitingListStatus(
-			conference.totalSeats,
-			conference.totalParticipants,
-			conference.waitingListLength
-		)
+		getWaitingListStatus({
+			seats: conference.totalSeats,
+			participants: conference.totalParticipants,
+			listEntries: conference.waitingListLength
+		})
 	);
 </script>
 

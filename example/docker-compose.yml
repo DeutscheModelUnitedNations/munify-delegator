@@ -15,7 +15,6 @@ services:
 
   delegator:
     image: deutschemodelunitednations/delegator:latest
-    command: ['sh', '-c', 'ls -l && npx prisma migrate deploy && node ./index.js']
     depends_on:
       - postgres
     ports:
@@ -26,7 +25,7 @@ services:
       interval: 30s
       retries: 5
       timeout: 5s
-    # for config options, please refer to the '/src/config' directory
+    # for config options, please refer to 'src/env.ts'
     environment:
       # - PORT=3000
       # - HOST=0.0.0.0
@@ -49,8 +48,13 @@ services:
       # for login and logout callbacks.
       # You can set those in the redirect settings of your auth provider!
 
-  delegator-tasks:
-    image: deutschemodelunitednations/delegator-tasks:latest
+  # One-shot jobs, run on demand or from a scheduler (cron, Dokploy schedule):
+  #   docker compose run --rm delegator-jobs refresh-statistics
+  # Commands: refresh-statistics (every few minutes), mail-sync (every 15 minutes),
+  # invitation-cleanup (daily).
+  delegator-jobs:
+    image: deutschemodelunitednations/delegator-jobs:latest
+    profiles: [jobs]
     depends_on:
       postgres:
         condition: service_started
@@ -58,15 +62,10 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
-      - TASK_CRON_MAIL_SYNC=default
-      - TASK_CRON_CONFERENCE_STATUS=default
-      # Required when TASK_CRON_MAIL_SYNC is set:
+      # Needed by mail-sync:
       # - LISTMONK_API_URL=http://listmonk:9000/api
       # - LISTMONK_API_USER=admin
       # - LISTMONK_API_KEY=admin
-      # Optional:
-      # - SLACK_NOTIFICATION_WEBHOOK=https://hooks.slack.com/...
-      # - SLACK_ERROR_WEBHOOK=https://hooks.slack.com/...
 
 volumes:
   delegator:

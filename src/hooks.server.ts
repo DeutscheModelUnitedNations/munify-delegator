@@ -1,40 +1,62 @@
 import * as Sentry from '@sentry/sveltekit';
-import type { Handle } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
-import { paraglideMiddleware } from '$lib/paraglide/server';
-import { building } from '$app/environment';
-import { configPrivate } from '$config/private';
-import { configPublic } from '$config/public';
+import { sentryDataCollection } from '#lib/sentryDataCollection';
+import { graphqlLogger, logger } from '#lib/logger';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
+
+import { OIDC, oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
+import { paraglideMiddleware } from '#lib/paraglide/server';
+import { impersonationHandle } from '#api/handlers/user/userPermissions';
+import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
+import { building } from '$app/env';
+import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
+import {
+	PUBLIC_FONTAWESOME_CSS_URL,
+	PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL
+} from '$app/env/public';
 
 // Initialize Sentry (only if DSN provided and not building)
-if (!building && configPrivate.SENTRY_DSN) {
+if (!building && SENTRY_DSN) {
 	Sentry.init({
-		dsn: configPrivate.SENTRY_DSN,
-		environment: configPrivate.NODE_ENV,
+		dsn: SENTRY_DSN,
+		environment: NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		sendDefaultPii: configPrivate.SENTRY_SEND_DEFAULT_PII ?? false
+		dataCollection: sentryDataCollection(SENTRY_SEND_DEFAULT_PII ?? false),
+		// Every `logger.error` becomes an issue; Bugsink takes no logs, so nothing else is sent.
+		integrations: [Sentry.pinoIntegration({ error: { levels: ['error'] }, log: { levels: [] } })]
 	});
+	Sentry.pinoIntegration.untrackLogger(graphqlLogger);
 }
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
-		event.request = localizedRequest;
-		return resolve(event, {
-			transformPageChunk: ({ html }) => {
-				return html
-					.replace('%lang%', locale)
-					.replace(
-						'%fontawesome.stylesheet%',
-						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />`
-					);
-			},
-			// Houdini's fetch plugin reads the content-type header from responses
-			// fetched during SSR load; SvelteKit only serializes headers that pass
-			// this filter, so it must be explicitly allowed through.
-			filterSerializedResponseHeaders: (name) => name === 'content-type'
-		});
+		const render = () =>
+			resolve(event, {
+				transformPageChunk: ({ html }) => {
+					return html
+						.replace('%lang%', locale)
+						.replace(
+							'%fontawesome.stylesheet%',
+							`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_CSS_URL}" />` +
+								`<link rel="stylesheet" href="${PUBLIC_FONTAWESOME_SHARP_DUOTONE_CSS_URL}" />`
+						);
+				}
+			});
+
+		// API calls carry no locale in their path; the client names its own in a header.
+		const requested = localeOfRequest(localizedRequest);
+		return requested && requested !== locale
+			? runWithLocale({ locale: requested, fn: render })
+			: render();
 	});
 
 export const handleError = Sentry.handleErrorWithSentry();
-export const handle: Handle = sequence(Sentry.sentryHandle(), paraglideHandle);
+export const handle: Handle = sequence(
+	Sentry.sentryHandle(),
+	// Protects the authenticated routes, serves both callback routes and puts the validated session
+	// on `event.locals.oidc`. Everything auth-related used to be spread across route loads.
+	oidcHandle,
+	userInfoHandle,
+	impersonationHandle,
+	paraglideHandle
+);

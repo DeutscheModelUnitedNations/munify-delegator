@@ -2,7 +2,8 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		conferenceId: string;
@@ -10,27 +11,25 @@
 
 	let { conferenceId }: Props = $props();
 
-	const choices = [
+	const choices = $derived([
 		{
 			icon: 'arrow-right',
 			title: m.individualApplication(),
 			class: 'btn-primary',
-			href: `${conferenceId}/individual`
+			href: resolve(`registration/${conferenceId}/individual`)
 		}
-	];
+	]);
 </script>
 
 <ChatBot delay={400}>
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 	<p>{@html m.assistantFlowFinalIndividual1()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
 	<p>{m.assistantFlowFinalIndividual2()}</p>
 	<p>{m.assistantFlowFinalIndividual3()}</p>
 </ChatBot>
-<ChatBot delay={2400}>
-	<p>{m.assistantFlowFinalIndividual4()}</p>
-</ChatBot>
 
-<Choice {choices} delay={3400}></Choice>
-
-<EndOfChat delay={4000}></EndOfChat>
+<ChatBot delay={2400}><p>{m.assistantFlowFinalIndividual4()}</p></ChatBot>
+<Choice {choices} delay={3400} />
+<EndOfChat delay={4000} />

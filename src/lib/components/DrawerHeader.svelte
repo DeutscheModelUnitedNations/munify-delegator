@@ -20,8 +20,8 @@
 	</div>
 {:else}
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-thin uppercase">{category}</h3>
-		<h2 class="bg-base-300 rounded-md p-2 text-3xl font-bold">
+		<h3 class="text-xl font-thin break-words uppercase max-sm:pr-12">{category}</h3>
+		<h2 class="bg-base-300 rounded-field p-2 text-3xl font-bold break-words max-sm:text-2xl">
 			{#if titleSnippet}
 				{@render titleSnippet()}
 			{:else}

@@ -1,5 +1,5 @@
 /**
- * Fixtures for the seats overview specs (e2e/management/seats.spec.ts).
+ * Fixtures for the seats overview specs (e2e/team/seats.spec.ts).
  *
  * A separate conference, because the specs move delegates between seats. Every run resets it to
  * the state below. GV and SR have one seat per delegation, and Germany, France and Italy sit in
@@ -8,19 +8,26 @@
  * - France: Carla Gamma (head delegate, GV) and Dora Delta, who has no committee yet
  * - Italy: no delegation, so both its seats are free
  */
-import { ConferenceState, type PrismaClient } from '@prisma/client';
-import { makeSeedConference } from '../../prisma/seed/dev/conference';
-import { makeSeedDelegation } from '../../prisma/seed/dev/delegation';
-import { makeSeedDelegationMember } from '../../prisma/seed/dev/delegationMember';
-import { makeSeedTeamMember } from '../../prisma/seed/dev/teamMember';
-import { makeSeedUser } from '../../prisma/seed/dev/user';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
+import * as schema from '../../src/api/db/schema';
+import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
+import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
+import { makeSeedUser } from '../../src/api/db/seed-data/user';
+import { upsertParticipant } from './participant';
+import { seatNations, upsertNationRole } from './conferenceRole';
+import { upsertTeamMember } from './teamMember';
+import { COMPLETE_PROFILE, upsertUsers } from './user';
+import { upsertCommittee, upsertConference } from './conference';
 
-export const E2E_SEATS_CONFERENCE_ID = 'e2e00000conference0000004';
+export const E2E_SEATS_CONFERENCE_ID = 'e2e00000conference0000005';
 export const E2E_SEATS_GV_ID = 'e2e00000seatscommittee0001';
-export const E2E_SEATS_SR_ID = 'e2e00000seatscommittee0002';
+const E2E_SEATS_SR_ID = 'e2e00000seatscommittee0002';
 export const E2E_SEATS_PARTICIPANT_CARE_ID = 'e2e-seats-pc';
-export const E2E_SEATS_GERMANY_DELEGATION_ID = 'e2e00000seatsdelegation001';
-export const E2E_SEATS_FRANCE_DELEGATION_ID = 'e2e00000seatsdelegation002';
+const GERMANY_DELEGATION_ID = 'e2e00000seatsdelegation001';
+const FRANCE_DELEGATION_ID = 'e2e00000seatsdelegation002';
+const PARIS_SCHOOL_ID = 'e2e00000seatsschool000001';
+export const E2E_SEATS_PARIS_SCHOOL = 'E2E Schule Paris';
 
 /** The seated and unseated delegates, by the initials the seats table shows */
 export const E2E_SEATS_DELEGATES = {
@@ -52,112 +59,94 @@ export const E2E_SEATS_DELEGATES = {
 
 const NATIONS = { deu: 'de', fra: 'fr', ita: 'it' };
 
-export async function seedSeats(db: PrismaClient) {
-	const conference = {
-		...makeSeedConference({ state: ConferenceState.PARTICIPANT_REGISTRATION }),
+export async function seedSeats(db: NodePgDatabase) {
+	const { id: conferenceId } = await upsertConference(db, {
 		id: E2E_SEATS_CONFERENCE_ID,
-		title: 'E2E Seats Conference'
-	};
-	await db.conference.upsert({
-		where: { id: conference.id },
-		update: conference,
-		create: conference
+		title: 'E2E Seats Conference',
+		state: 'PARTICIPANT_REGISTRATION',
+		nations: NATIONS
 	});
-
-	for (const [alpha3Code, alpha2Code] of Object.entries(NATIONS)) {
-		await db.nation.upsert({
-			where: { alpha3Code },
-			update: {},
-			create: { alpha3Code, alpha2Code }
-		});
-	}
 
 	const committees = [
 		{ id: E2E_SEATS_GV_ID, name: 'Generalversammlung', abbreviation: 'STGV' },
 		{ id: E2E_SEATS_SR_ID, name: 'Sicherheitsrat', abbreviation: 'STSR' }
 	];
-	for (const [index, { id, name, abbreviation }] of committees.entries()) {
-		const data = {
-			conferenceId: conference.id,
-			name,
-			abbreviation,
-			numOfSeatsPerDelegation: 1,
-			// fixed order of the table columns
-			createdAt: new Date(2026, 0, 1 + index),
-			nations: { set: Object.keys(NATIONS).map((alpha3Code) => ({ alpha3Code })) }
-		};
-		await db.committee.upsert({
-			where: { id },
-			update: data,
-			create: { ...data, id, nations: { connect: data.nations.set } }
-		});
+	for (const [index, data] of committees.entries()) {
+		// fixed order of the table columns
+		const committee = await upsertCommittee(db, conferenceId, data, index);
+		await seatNations(db, committee, Object.keys(NATIONS));
 	}
 
-	const users = [
-		{ id: E2E_SEATS_PARTICIPANT_CARE_ID, given_name: 'E2E', family_name: 'SeatsCare' },
+	await seedSeatsPeople(db, conferenceId);
+	await seedSeatsDelegations(db, conferenceId);
+}
+
+/** The participant care member and the delegates, with the school the French ones name. */
+async function seedSeatsPeople(db: NodePgDatabase, conferenceId: string) {
+	await upsertUsers(db, [
+		{
+			...makeSeedUser(),
+			...COMPLETE_PROFILE,
+			id: E2E_SEATS_PARTICIPANT_CARE_ID,
+			givenName: 'E2E',
+			familyName: 'SeatsCare'
+		},
 		...Object.values(E2E_SEATS_DELEGATES).map((x) => ({
+			...makeSeedUser(),
 			id: x.id,
-			given_name: x.given,
-			family_name: x.family
+			givenName: x.given,
+			familyName: x.family
 		}))
-	];
-	for (const overrides of users) {
-		const user = { ...makeSeedUser(), ...overrides, email: `${overrides.id}@e2e.test` };
-		await db.user.upsert({ where: { id: user.id }, update: user, create: user });
-	}
+	]);
+	await upsertTeamMember(db, conferenceId, E2E_SEATS_PARTICIPANT_CARE_ID, 'PARTICIPANT_CARE');
 
-	const teamMember = {
-		...makeSeedTeamMember({
-			conferenceId: conference.id,
-			userId: E2E_SEATS_PARTICIPANT_CARE_ID,
-			role: 'PARTICIPANT_CARE'
-		}),
-		id: `e2e-team-${E2E_SEATS_PARTICIPANT_CARE_ID}`
-	};
-	await db.teamMember.upsert({
-		where: { id: teamMember.id },
-		update: teamMember,
-		create: teamMember
-	});
+	const school = { id: PARIS_SCHOOL_ID, name: E2E_SEATS_PARIS_SCHOOL };
+	await db
+		.insert(schema.school)
+		.values(school)
+		.onConflictDoUpdate({ target: schema.school.id, set: school });
+}
 
-	// the specs move delegates and create delegations (e.g. Italy's), so start from scratch
-	await db.delegationMember.deleteMany({ where: { conferenceId: conference.id } });
-	await db.delegation.deleteMany({ where: { conferenceId: conference.id } });
+/** Germany's and France's delegations as described at the top, replacing whatever a run left. */
+async function seedSeatsDelegations(db: NodePgDatabase, conferenceId: string) {
+	// the specs move delegates and create delegations (e.g. Italy's), so start from scratch; the
+	// members go with their delegations
+	await db.delete(schema.delegation).where(eq(schema.delegation.conferenceId, conferenceId));
 
 	const delegations = [
-		{ id: E2E_SEATS_GERMANY_DELEGATION_ID, nation: 'deu', school: 'E2E Schule Berlin' },
-		{ id: E2E_SEATS_FRANCE_DELEGATION_ID, nation: 'fra', school: 'E2E Schule Paris' }
-	];
-	for (const { id, nation, school } of delegations) {
-		await db.delegation.create({
-			data: {
-				...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
-				id,
-				school,
-				assignedNationAlpha3Code: nation
-			}
+		[GERMANY_DELEGATION_ID, 'deu'],
+		[FRANCE_DELEGATION_ID, 'fra']
+	] as const;
+	for (const [id, nation] of delegations) {
+		await db.insert(schema.delegation).values({
+			...makeSeedDelegation({ conferenceId, applied: true }),
+			id,
+			assignedRoleId: await upsertNationRole(db, conferenceId, nation)
 		});
 	}
 
 	const { anna, bert, carla, dora } = E2E_SEATS_DELEGATES;
 	const members = [
-		[anna, E2E_SEATS_GERMANY_DELEGATION_ID, E2E_SEATS_GV_ID, true],
-		[bert, E2E_SEATS_GERMANY_DELEGATION_ID, E2E_SEATS_SR_ID, false],
-		[carla, E2E_SEATS_FRANCE_DELEGATION_ID, E2E_SEATS_GV_ID, true],
-		[dora, E2E_SEATS_FRANCE_DELEGATION_ID, null, false]
+		[anna, GERMANY_DELEGATION_ID, E2E_SEATS_GV_ID, true],
+		[bert, GERMANY_DELEGATION_ID, E2E_SEATS_SR_ID, false],
+		[carla, FRANCE_DELEGATION_ID, E2E_SEATS_GV_ID, true],
+		[dora, FRANCE_DELEGATION_ID, null, false]
 	] as const;
 	for (const [delegate, delegationId, assignedCommitteeId, isHeadDelegate] of members) {
-		await db.delegationMember.create({
-			data: {
-				...makeSeedDelegationMember({
-					conferenceId: conference.id,
-					delegationId,
-					userId: delegate.id,
-					assignedCommitteeId,
-					isHeadDelegate
-				}),
-				id: delegate.memberId
-			}
+		const conferenceParticipantId = await upsertParticipant(db, conferenceId, delegate.id);
+		// the French delegates name their school, which the members menu shows
+		await db
+			.update(schema.conferenceParticipant)
+			.set({ schoolId: delegationId === FRANCE_DELEGATION_ID ? PARIS_SCHOOL_ID : null })
+			.where(eq(schema.conferenceParticipant.id, conferenceParticipantId));
+		await db.insert(schema.delegationMember).values({
+			...makeSeedDelegationMember({
+				delegationId,
+				conferenceParticipantId,
+				assignedCommitteeId,
+				isHeadDelegate
+			}),
+			id: delegate.memberId
 		});
 	}
 }

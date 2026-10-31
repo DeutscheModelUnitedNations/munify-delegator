@@ -1,12 +1,15 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		deadline: Date | string;
 		conferenceTimezone: string;
+		/** A line of muted text instead of badges, for places where the deadline is secondary. */
+		plain?: boolean;
 	}
 
-	let { deadline, conferenceTimezone }: Props = $props();
+	let { deadline, conferenceTimezone, plain = false }: Props = $props();
 
 	let deadlineDate = $derived(deadline instanceof Date ? deadline : new Date(deadline));
 	let isClosed = $derived(deadlineDate < new Date());
@@ -15,7 +18,7 @@
 	let timezoneDiffers = $derived(userTimezone !== conferenceTimezone);
 
 	let conferenceTimeFormatted = $derived(
-		deadlineDate.toLocaleString(undefined, {
+		deadlineDate.toLocaleString(getLocale(), {
 			timeZone: conferenceTimezone,
 			year: 'numeric',
 			month: '2-digit',
@@ -27,7 +30,7 @@
 	);
 
 	let userTimeFormatted = $derived(
-		deadlineDate.toLocaleString(undefined, {
+		deadlineDate.toLocaleString(getLocale(), {
 			timeZone: userTimezone,
 			hour: '2-digit',
 			minute: '2-digit',
@@ -36,19 +39,34 @@
 	);
 </script>
 
-<div class="flex flex-col gap-0.5">
-	<div class="flex flex-col md:flex-row gap-2">
+{#if plain}
+	<span class="text-base-content/60 flex flex-wrap items-center gap-x-1.5 text-xs">
 		{#if isClosed}
-			<span class="badge badge-error badge-sm">{m.surveyClosed()}</span>
+			<i class="fa-sharp-duotone fa-solid fa-lock"></i>
+			{m.surveyClosed()}
 		{:else}
-			<span class="badge badge-success badge-sm"
-				>{m.surveyOpen({ deadline: conferenceTimeFormatted })}</span
-			>
+			<i class="fa-sharp-duotone fa-solid fa-clock"></i>
+			{m.surveyOpen({ deadline: conferenceTimeFormatted })}
 			{#if timezoneDiffers}
-				<span class="badge badge-success badge-outline badge-sm">
-					{userTimeFormatted} ({m.yourTime()})
-				</span>
+				<span>({userTimeFormatted} {m.yourTime()})</span>
 			{/if}
 		{/if}
+	</span>
+{:else}
+	<div class="flex flex-col gap-0.5">
+		<div class="flex flex-col md:flex-row gap-2">
+			{#if isClosed}
+				<span class="badge badge-error badge-sm">{m.surveyClosed()}</span>
+			{:else}
+				<span class="badge badge-success badge-sm"
+					>{m.surveyOpen({ deadline: conferenceTimeFormatted })}</span
+				>
+				{#if timezoneDiffers}
+					<span class="badge badge-success badge-outline badge-sm">
+						{userTimeFormatted} ({m.yourTime()})
+					</span>
+				{/if}
+			{/if}
+		</div>
 	</div>
-</div>
+{/if}

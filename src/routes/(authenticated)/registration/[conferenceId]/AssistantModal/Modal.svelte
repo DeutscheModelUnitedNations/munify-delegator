@@ -37,7 +37,7 @@
 <dialog id="assistent_modal" class="modal modal-open modal-bottom sm:modal-middle h-screen">
 	<div class="modal-box h-full overflow-x-hidden overflow-y-auto">
 		<h3 class="text-lg font-bold">
-			<i class="fa-duotone fa-message-question mr-2"></i>
+			<i class="fa-sharp-duotone fa-solid fa-message-question mr-2"></i>
 			Anmeldeassistent
 		</h3>
 		<div class="my-8 flex flex-col gap-4">

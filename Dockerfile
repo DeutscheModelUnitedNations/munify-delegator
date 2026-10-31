@@ -1,20 +1,14 @@
 FROM oven/bun:1.3-slim AS base
 
-FROM base AS dual
+FROM base AS patched
 WORKDIR /temp
 # Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
 # CI passes the current date so this layer is rebuilt daily instead of being served from a
 # build cache that predates newer Debian security fixes.
 ARG OS_UPDATES_DATE
-RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade; apt-get -y install curl
-# we need to use node and bun for generating prisma files, see https://github.com/prisma/prisma/issues/21241
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
-# Only the node binary is needed (everything else runs through bun/bunx). Drop the npm bundled
-# with nodejs: it ships its own outdated copies of e.g. brace-expansion and undici that the
-# Trivy image scan flags and that package.json overrides cannot reach.
-RUN apt-get install -y nodejs && rm -rf /usr/lib/node_modules/npm /usr/bin/npm /usr/bin/npx
+RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade
 
-FROM dual AS builder
+FROM patched AS builder
 WORKDIR /run
 
 COPY package.json bun.lock tsconfig.json ./
@@ -26,21 +20,19 @@ ARG SHA
 ENV PUBLIC_SHA=$SHA
 
 COPY . .
-RUN bunx prisma generate
 # Increase Node.js heap size for build (default is too small for large codebases)
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 # `bun run check` is not repeated here: the CI `typecheck` job runs the same command and is in
 # the docker-build `needs` list, so the image is only built once it has already passed.
-RUN bun run build:app
-# Strip the Go-built dev tool binaries (esbuild, lefthook, the native TypeScript 7 tsc pulled in
-# by fallow). They are only needed for the build above, never at runtime, and Trivy's gobinary
-# scan flags the Go stdlib compiled into them whenever a new Go advisory lands.
-RUN find node_modules -type d \( -path '*/@esbuild/linux-*' -o -name 'lefthook-linux-*' \
-  -o -path '*/@typescript/typescript-linux-*' \) -prune -exec rm -rf {} +
+# The compute worker threads go into build/ next to the server, so the image needs nothing else.
+RUN bun run build:app && bun run build:compute
+# Strip the Go-built dev tools (lefthook, the native TypeScript 7 tsc): unused at runtime, and
+# Trivy's gobinary scan flags the Go stdlib compiled into them. esbuild stays: drizzle-kit needs it.
+RUN find node_modules -type d \( -name 'lefthook-linux-*' -o -path '*/@typescript/typescript-linux-*' \) \
+  -prune -exec rm -rf {} +
 
-# Copying the built tree into a fresh stage leaves the removed binaries, bun's install cache
-# (/root/.bun) and the intermediate build layers behind.
-FROM dual AS runner
+# A fresh stage leaves the removed binaries, bun's install cache and the build layers behind.
+FROM patched AS runner
 WORKDIR /run
 COPY --from=builder /run /run
 
@@ -59,4 +51,4 @@ ENV NODE_ENV=production
 # runtime via the BODY_SIZE_LIMIT env var (see .env.example).
 ENV BODY_SIZE_LIMIT=64M
 EXPOSE 3000/tcp
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun ./build/index.js"]
+CMD ["sh", "-c", "bunx drizzle-kit migrate && bun ./build/index.js"]

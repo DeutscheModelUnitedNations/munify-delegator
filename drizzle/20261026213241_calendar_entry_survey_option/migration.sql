@@ -1,0 +1,2 @@
+ALTER TABLE "calendar_entry" ADD COLUMN "survey_option_id" text;--> statement-breakpoint
+ALTER TABLE "calendar_entry" ADD CONSTRAINT "calendar_entry_survey_option_id_survey_option_id_fkey" FOREIGN KEY ("survey_option_id") REFERENCES "survey_option"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

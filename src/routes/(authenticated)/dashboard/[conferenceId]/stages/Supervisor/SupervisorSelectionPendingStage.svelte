@@ -1,55 +1,85 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import type { ComponentProps } from 'svelte';
+	import { client } from '#lib/api/rumbleClient/client';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
+	import formatNames from '#lib/helpers/formatNames';
+	import { m } from '#lib/paraglide/messages';
 	import SelectionInProgressNotice from '../Common/SelectionInProgressNotice.svelte';
 	import SelectionStudentRow from './SelectionStudentRow.svelte';
 
+	/** A supervisor's dashboard between the application deadline and the end of registration. */
 	interface Props {
-		supervisor: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
-		>;
+		supervisorId: string;
 	}
 
-	let { supervisor }: Props = $props();
+	let { supervisorId }: Props = $props();
 
-	interface StudentRow {
+	const supervisor = $derived(
+		await client.liveQuery.conferenceSupervisor({
+			__args: { id: supervisorId },
+			supervisedDelegationMembers: {
+				id: true,
+				user: { givenName: true, familyName: true, pronouns: true },
+				delegation: { applied: true }
+			},
+			supervisedSingleParticipants: {
+				id: true,
+				user: { givenName: true, familyName: true, pronouns: true },
+				applied: true
+			}
+		})
+	);
+
+	type Student = ComponentProps<typeof SelectionStudentRow> & { id: string };
+
+	const toStudent = ({
+		id,
+		user,
+		participantType,
+		applied
+	}: {
 		id: string;
-		name: string;
-		pronouns: string;
-		participantType: 'delegation' | 'singleParticipant';
+		user: { givenName?: string | null; familyName?: string | null; pronouns?: string | null };
+		participantType: Student['participantType'];
 		applied: boolean;
-	}
-
-	let students = $derived.by((): StudentRow[] => {
-		const rows: StudentRow[] = [
-			...supervisor.supervisedDelegationMembers.map((member) => ({
-				id: member.id,
-				name: formatNames(member.user.given_name, member.user.family_name),
-				pronouns: member.user.pronouns ?? '',
-				participantType: 'delegation' as const,
-				applied: member.delegation.applied
-			})),
-			...supervisor.supervisedSingleParticipants.map((participant) => ({
-				id: participant.id,
-				name: formatNames(participant.user.given_name, participant.user.family_name),
-				pronouns: participant.user.pronouns ?? '',
-				participantType: 'singleParticipant' as const,
-				applied: participant.applied
-			}))
-		];
-		return rows.sort((a, b) => a.name.localeCompare(b.name));
+	}): Student => ({
+		id,
+		name: formatNames({
+			givenName: user.givenName ?? undefined,
+			familyName: user.familyName ?? undefined
+		}),
+		pronouns: user.pronouns ?? '',
+		participantType,
+		applied
 	});
 
-	let appliedCount = $derived(students.filter((student) => student.applied).length);
+	const students = $derived(
+		[
+			...supervisor.supervisedDelegationMembers.map((member) =>
+				toStudent({
+					id: member.id,
+					user: member.user,
+					participantType: 'delegation',
+					applied: member.delegation.applied
+				})
+			),
+			...supervisor.supervisedSingleParticipants.map((participant) =>
+				toStudent({
+					id: participant.id,
+					user: participant.user,
+					participantType: 'singleParticipant',
+					applied: participant.applied
+				})
+			)
+		].sort((a, b) => a.name.localeCompare(b.name))
+	);
 
 	const stats = $derived([
 		{
 			icon: 'users',
 			title: m.studentsInSelectionProcess(),
-			value: `${appliedCount} / ${students.length}`,
+			value: `${students.filter((s) => s.applied).length} / ${students.length}`,
 			desc: m.applicationCompletedTitle()
 		}
 	]);
@@ -88,7 +118,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
 			{m.noConnectedStudents()}
 		</div>
 	{/if}

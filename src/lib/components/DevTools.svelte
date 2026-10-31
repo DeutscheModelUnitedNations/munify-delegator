@@ -1,5 +1,6 @@
 <script lang="ts">
-	import graphqlIcon from '$assets/graphqlIcon.svg';
+	import { resolve } from '$app/paths';
+	import graphqlIcon from '#assets/graphqlIcon.svg';
 </script>
 
 <div class="fab">
@@ -10,7 +11,7 @@
 	<!-- buttons that show up when FAB is open -->
 	<a
 		class="btn btn-lg btn-circle"
-		href="/api/graphql"
+		href={resolve('api/graphql')}
 		aria-label="GraphQL Playground"
 		title="GraphQL Playground"
 		target="_blank"

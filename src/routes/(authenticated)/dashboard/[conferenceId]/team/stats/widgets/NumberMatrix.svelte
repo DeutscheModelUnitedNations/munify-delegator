@@ -1,0 +1,59 @@
+<script lang="ts">
+	interface Props {
+		title: string;
+		data: number[][];
+		xLabels: (string | { label: string; icon: string })[];
+		yLabels: (string | { label: string; icon: string })[];
+	}
+
+	let { data, xLabels, yLabels, title }: Props = $props();
+</script>
+
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
+	<div class="card-body p-4">
+		<h2 class="card-title text-base font-semibold">
+			<i class="fa-sharp-duotone fa-solid fa-table text-base-content/70"></i>
+			{title}
+		</h2>
+		<div class="overflow-x-auto">
+			<table class="table table-sm">
+				<thead>
+					<tr>
+						<th></th>
+						{#each xLabels as label, column (column)}
+							<th class="text-center text-xs">{typeof label === 'string' ? label : label.label}</th>
+						{/each}
+						<th class="text-center text-xs font-bold">Σ</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data as rowData, i (i)}
+						<tr>
+							<th class="text-xs">
+								{#if typeof yLabels[i] === 'string'}
+									{yLabels[i]}
+								{:else}
+									<i class="fa-sharp-duotone fa-solid {yLabels[i].icon} mr-1"></i>
+									{yLabels[i].label}
+								{/if}
+							</th>
+							{#each rowData as entry, column (column)}
+								<td class="text-center">{entry}</td>
+							{/each}
+							<td class="text-center font-bold">{rowData.reduce((a, b) => a + b, 0)}</td>
+						</tr>
+					{/each}
+					<tr class="border-t border-base-300">
+						<th class="text-xs font-bold">Σ</th>
+						{#each Array.from(data[0] ?? [], (_, column) => column) as i (i)}
+							<td class="text-center font-bold">{data.reduce((a, b) => a + b[i], 0)}</td>
+						{/each}
+						<td class="text-center font-bold"
+							>{data.reduce((a, b) => a + b.reduce((c, d) => c + d, 0), 0)}</td
+						>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>

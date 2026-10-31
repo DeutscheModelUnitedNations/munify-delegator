@@ -1,24 +1,30 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import DataMatrixDisplay from '$lib/components/RegistrationMode/DataMatrixDisplay.svelte';
-	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
-	import { m } from '$lib/paraglide/messages';
+	import BackToDashboard from '#lib/components/BackToDashboard.svelte';
+	import { getLocale } from '#lib/paraglide/runtime';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { fetchMyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import IdentityCode from '#lib/components/IdentityCode.svelte';
+	import Flag from '#lib/components/Flag.svelte';
+	import { m } from '#lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
+	import { describeParticipant } from './participantInfo';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let conference = $derived(conferenceQueryData?.findUniqueConference);
-	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
-	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
-	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
-	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(
+		await fetchMyConferenceParticipation({
+			userId: currentUser.sub,
+			conferenceId: params.conferenceId
+		})
+	);
+	let conference = $derived(participation?.conference);
 
 	// User identity from OIDC
-	let fullName = $derived(`${data.user.given_name} ${data.user.family_name}`);
-	let userId = $derived(data.user.sub);
+	let fullName = $derived(`${currentUser.given_name} ${currentUser.family_name}`);
+	let userId = $derived(currentUser.sub);
 
 	// Live timestamp
 	let currentTime = $state(new Date());
@@ -39,90 +45,33 @@
 		}
 	});
 
-	// Determine participant type and role info
-	type ParticipantInfo = {
-		type: 'delegation' | 'single' | 'team' | 'supervisor' | 'unassigned' | 'none';
-		roleDisplay: string;
-		committeeAbbreviation?: string;
-		alpha2Code?: string;
-		isNSA?: boolean;
-		nsaIcon?: string | null;
-	};
-
-	let participantInfo = $derived.by((): ParticipantInfo => {
-		// Delegation Member with assigned nation
-		if (delegationMember?.delegation?.assignedNation) {
-			const nation = delegationMember.delegation.assignedNation;
-			const committee = delegationMember.assignedCommittee;
-			return {
-				type: 'delegation',
-				roleDisplay: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-				committeeAbbreviation: committee?.abbreviation,
-				alpha2Code: nation.alpha2Code.toLowerCase()
-			};
-		}
-
-		// Delegation Member with assigned NSA
-		if (delegationMember?.delegation?.assignedNonStateActor) {
-			const nsa = delegationMember.delegation.assignedNonStateActor;
-			return {
-				type: 'delegation',
-				roleDisplay: nsa.name,
-				isNSA: true,
-				nsaIcon: nsa.fontAwesomeIcon
-			};
-		}
-
-		// Delegation Member without assignment
-		if (delegationMember) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Single Participant with assigned role
-		if (singleParticipant?.assignedRole) {
-			const role = singleParticipant.assignedRole;
-			return {
-				type: 'single',
-				roleDisplay: role.name,
-				isNSA: true,
-				nsaIcon: role.fontAwesomeIcon
-			};
-		}
-
-		// Single Participant without assignment
-		if (singleParticipant) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Team Member (always valid)
-		if (teamMember) {
-			return {
-				type: 'team',
-				roleDisplay: translateTeamRole(teamMember.role),
-				isNSA: true,
-				nsaIcon: 'users-gear'
-			};
-		}
-
-		// Supervisor (always valid)
-		if (supervisor) {
-			return {
-				type: 'supervisor',
-				roleDisplay: m.supervisor(),
-				isNSA: true,
-				nsaIcon: 'chalkboard-user'
-			};
-		}
-
-		return { type: 'none', roleDisplay: '' };
-	});
+	let participantInfo = $derived(describeParticipant(participation));
 
 	let isValidParticipant = $derived(
 		participantInfo.type !== 'unassigned' && participantInfo.type !== 'none'
 	);
 
+	// A tip for getting the most out of the page on a phone, until it is put away.
+	const TIP_KEY = 'registration-mode-tip-dismissed';
+	let tipDismissed = $state(false);
+	onMount(() => {
+		try {
+			tipDismissed = localStorage.getItem(TIP_KEY) === '1';
+		} catch {
+			// storage unavailable: the tip stays
+		}
+	});
+	function dismissTip() {
+		tipDismissed = true;
+		try {
+			localStorage.setItem(TIP_KEY, '1');
+		} catch {
+			// private mode: dismissed until the page is left
+		}
+	}
+
 	function formatTime(date: Date): string {
-		return date.toLocaleTimeString([], {
+		return date.toLocaleTimeString(getLocale(), {
 			hour: '2-digit',
 			minute: '2-digit',
 			second: '2-digit'
@@ -135,22 +84,35 @@
 </svelte:head>
 
 <div class="bg-base-100 flex min-h-screen w-full flex-col items-center p-4 sm:p-6">
-	<!-- Header: Conference + Timestamp -->
+	<!-- Header: Back button + Conference + Timestamp -->
 	<div class="flex w-full items-start justify-between">
-		<div class="text-base-content/60 text-sm">
-			{conference?.title ?? ''}
+		<div class="flex flex-col items-start gap-1">
+			<BackToDashboard conferenceId={params.conferenceId} />
+			<div class="text-base-content/60 px-3 text-sm">
+				{conference?.title ?? ''}
+			</div>
 		</div>
-		<div class="bg-base-200 rounded-lg px-3 py-1 font-mono text-lg tabular-nums">
+		<div class="bg-base-200 rounded-box px-3 py-1 font-mono text-lg tabular-nums">
 			{formatTime(currentTime)}
 		</div>
 	</div>
 
+	{#if isValidParticipant && !tipDismissed}
+		<div role="note" class="alert alert-info alert-soft mt-4 w-full max-w-xl text-sm">
+			<i class="fa-sharp-duotone fa-solid fa-lightbulb"></i>
+			<span>{m.registrationModeTip()}</span>
+			<button class="btn btn-ghost btn-xs btn-square" aria-label={m.close()} onclick={dismissTip}>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+			</button>
+		</div>
+	{/if}
+
 	{#if isValidParticipant}
 		<!-- Main content area -->
-		<div class="flex flex-1 flex-col items-center justify-center gap-4 sm:gap-6">
+		<div class="flex flex-1 flex-col items-center justify-start gap-4 pt-6 sm:gap-6 sm:pt-8">
 			<!-- Flag - Most Prominent -->
 			<div class="flex flex-col items-center gap-2">
-				<div class="flag-glow rounded-xl">
+				<div class="flag-glow rounded-box">
 					{#if participantInfo.alpha2Code}
 						<Flag size="lg" alpha2Code={participantInfo.alpha2Code} />
 					{:else if participantInfo.isNSA}
@@ -167,15 +129,13 @@
 			</span>
 
 			<!-- Full Name -->
+
 			<h1 class="mt-2 text-center font-bold" style="font-size: clamp(1.75rem, 8vw, 4rem);">
 				{fullName}
 			</h1>
 
-			<!-- DataMatrix Barcode - Smaller -->
-			<div class="mt-2 w-full max-w-[10rem]">
-				<DataMatrixDisplay data={userId} />
-			</div>
-
+			<!-- Signed identity code, renewed while the page is open -->
+			<div class="mt-2 w-full max-w-64"><IdentityCode conferenceId={params.conferenceId} /></div>
 			<!-- User ID -->
 			<div class="text-base-content/40 font-mono" style="font-size: clamp(0.7rem, 2.5vw, 0.9rem);">
 				{userId}
@@ -185,7 +145,7 @@
 		<!-- Error state for unassigned/no participant -->
 		<div class="flex flex-1 flex-col items-center justify-center gap-6">
 			<div class="text-error text-6xl">
-				<i class="fa-solid fa-circle-exclamation"></i>
+				<i class="fa-sharp-duotone fa-solid fa-circle-exclamation"></i>
 			</div>
 			<h1 class="text-center text-2xl font-bold">
 				{m.registrationModeNotRegistered()}
@@ -195,14 +155,6 @@
 			</p>
 		</div>
 	{/if}
-
-	<!-- Back Button -->
-	<div class="mt-auto w-full pt-4">
-		<a href="/dashboard/{conference?.id}" class="btn btn-ghost btn-sm gap-2">
-			<i class="fa-solid fa-arrow-left"></i>
-			{m.backToDashboard()}
-		</a>
-	</div>
 </div>
 
 <style>

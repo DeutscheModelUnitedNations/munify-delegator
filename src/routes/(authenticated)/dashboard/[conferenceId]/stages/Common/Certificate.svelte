@@ -1,31 +1,28 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
+	import StudentsAcceptedStat from './StudentsAcceptedStat.svelte';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { downloadCompleteCertificate } from '#lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
 	import ResolutionDownloads from './ResolutionDownloads.svelte';
-	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import RoleWidget from '#lib/components/delegationStats/RoleWidget.svelte';
+	import type { ComponentProps } from 'svelte';
+	import { planCertificateDownload, type CertificateData } from './certificateDownload';
+	import { resolveDocumentLayout } from '#lib/helpers/documentLayout';
+
+	type Role = ComponentProps<typeof RoleWidget>;
 
 	interface Props {
 		conferenceId: string | undefined;
 		userId: string;
 		didAttend: boolean;
 		// Role data for delegates
-		country?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>['delegation']['assignedNation'];
-		assignedCommittee?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>['assignedCommittee'];
-		nonStateActor?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>['delegation']['assignedNonStateActor'];
+		country?: Role['country'];
+		assignedCommittee?: { name: string } | null;
+		nonStateActor?: Role['nonStateActor'];
 		// Role data for single participants
-		customConferenceRole?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
-		>['assignedRole'];
+		customConferenceRole?: Role['customConferenceRole'];
 		// Supervisor data
 		isSupervisor?: boolean;
 		acceptedStudentsCount?: number;
@@ -45,51 +42,71 @@
 		totalStudentsCount = 0
 	}: Props = $props();
 
-	const allStudentsAccepted = $derived(
-		isSupervisor && totalStudentsCount > 0 && acceptedStudentsCount === totalStudentsCount
-	);
-
 	// Wrap single committee in array for RoleWidget, adding numOfSeatsPerDelegation=1 to hide "(Nx)" suffix
 	const committees = $derived(
-		assignedCommittee
-			? [{ ...assignedCommittee, numOfSeatsPerDelegation: 1, nations: [] }]
-			: undefined
+		assignedCommittee ? [{ name: assignedCommittee.name, numOfSeatsPerDelegation: 1 }] : undefined
 	);
 
 	const hasRole = $derived(!!country || !!nonStateActor || !!customConferenceRole);
 
-	let loading = $state(false);
+	/**
+	 * The template is read live: the dashboard has the conference cached already, so the first answer
+	 * lacks the template until the network's arrives, and a one-shot read would keep that first one.
+	 */
+	async function fetchCertificate({
+		conferenceId,
+		userId
+	}: {
+		conferenceId: string;
+		userId: string;
+	}) {
+		return Promise.all([
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				certificateFile: { url: true },
+				documentLayouts: true,
+				title: true
+			}),
+			client.query.getCertificateJWT({
+				__args: { conferenceId, userId },
+				jwt: true,
+				fullName: true,
+				sessions: true
+			})
+		]);
+	}
 
-	$effect(() => {
-		if (conferenceId && userId) {
-			certificateQuery.fetch({ variables: { conferenceId, userId } });
-		}
+	const sources = $derived(
+		conferenceId && userId ? await fetchCertificate({ conferenceId, userId }) : undefined
+	);
+	const certificate = $derived.by((): CertificateData | undefined => {
+		if (!sources) return undefined;
+		const [conference, jwt] = sources;
+		return {
+			templateUrl: conference.certificateFile?.url ?? null,
+			title: conference.title,
+			jwt: jwt.jwt,
+			fullName: jwt.fullName,
+			sessions: jwt.sessions
+		};
 	});
 
 	const downloadPDF = async () => {
-		const conference = $certificateQuery.data?.findUniqueConference;
-
-		if (!conference?.certificateContent || !userId) {
-			return;
-		}
-
-		if (
-			!$certificateQuery.data?.getCertificateJWT?.fullName ||
-			!$certificateQuery.data?.getCertificateJWT?.jwt
-		) {
+		const download = planCertificateDownload({ certificate, userId });
+		if (download.kind === 'incomplete') {
 			toast.error(m.certificateDownloadError());
-			return;
 		}
+		if (download.kind !== 'ready') return;
 
-		loading = true;
-		await downloadCompleteCertificate(
-			{
-				fullName: $certificateQuery.data?.getCertificateJWT?.fullName,
-				jwt: $certificateQuery.data?.getCertificateJWT?.jwt
-			},
-			conference.certificateContent,
-			`${$certificateQuery.data?.getCertificateJWT?.fullName.replace(' ', '-')}_${conference.title.replace(' ', '-')}_certificate.pdf`
-		);
+		await downloadCompleteCertificate({
+			data: download.holder,
+			certificate: download.content,
+			fileName: download.filename,
+			layout: resolveDocumentLayout({
+				document: 'certificate',
+				stored: sources?.[0].documentLayouts
+			})
+		});
 	};
 </script>
 
@@ -99,7 +116,7 @@
 	description={m.thanksForParticipatingDescription()}
 >
 	<div class="flex flex-col items-center justify-center py-4">
-		<i class="fa-duotone fa-hands-clapping text-6xl text-primary mb-4"></i>
+		<i class="fa-sharp-duotone fa-solid fa-hands-clapping text-6xl text-primary mb-4"></i>
 		<p class="text-center text-base-content/70">{m.conferenceCompleteMessage()}</p>
 	</div>
 </DashboardSection>
@@ -122,23 +139,7 @@
 		title={m.yourStudents()}
 		description={m.yourStudentsPostDescription()}
 	>
-		<div class="stats bg-base-200 shadow">
-			<div class="stat">
-				<div class="stat-figure text-primary">
-					<i
-						class="fa-duotone text-4xl"
-						class:fa-circle-check={allStudentsAccepted}
-						class:text-success={allStudentsAccepted}
-						class:fa-users={!allStudentsAccepted}
-					></i>
-				</div>
-				<div class="stat-title">{m.studentsAccepted()}</div>
-				<div class="stat-value">{acceptedStudentsCount} / {totalStudentsCount}</div>
-				{#if allStudentsAccepted}
-					<div class="stat-desc text-success">{m.allStudentsAcceptedMessage()}</div>
-				{/if}
-			</div>
-		</div>
+		<StudentsAcceptedStat accepted={acceptedStudentsCount} total={totalStudentsCount} />
 	</DashboardSection>
 {/if}
 
@@ -147,13 +148,13 @@
 	title={m.certificate()}
 	description={m.certificateDescription()}
 >
-	{#if !$certificateQuery.fetching && $certificateQuery.variables}
-		{#if !$certificateQuery.data?.findUniqueConference?.certificateContent}
+	{#if certificate}
+		{#if !certificate.templateUrl}
 			<div class="alert alert-warning">
 				<i class="fas fa-hourglass-half"></i>
 				<p>{m.certificateNotYetAvailable()}</p>
 			</div>
-		{:else if didAttend && userId && $certificateQuery.data?.getCertificateJWT.jwt}
+		{:else if didAttend && userId && certificate.jwt}
 			<button class="btn btn-primary self-start" onclick={downloadPDF}>
 				<i class="fas fa-download"></i>
 				{m.downloadCertificate()}
@@ -169,4 +170,6 @@
 	{/if}
 </DashboardSection>
 
-<ResolutionDownloads {conferenceId} />
+{#if conferenceId}
+	<ResolutionDownloads {conferenceId} />
+{/if}

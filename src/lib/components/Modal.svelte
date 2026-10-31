@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -17,7 +18,7 @@
 	<div class="modal {open && 'modal-open'} modal-bottom sm:modal-middle">
 		<button
 			class="modal-backdrop"
-			aria-label="Close modal"
+			aria-label={m.a11yCloseDialog()}
 			onclick={() => {
 				open = false;
 				if (onclose) onclose();

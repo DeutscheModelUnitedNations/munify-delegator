@@ -1,0 +1,225 @@
+import { describe, expect, test } from 'vitest';
+import { resolve } from '$app/paths';
+import { m } from '#lib/paraglide/messages';
+import {
+	describeItem,
+	describeTransaction,
+	flattenResults,
+	participationTypeLabel,
+	resultTarget,
+	searchHint,
+	steppedIndex,
+	type ResultItem
+} from './commandPaletteItems';
+import type { ConfigEntry, PageEntry } from './pageRegistry';
+import { getLocale } from '#lib/paraglide/runtime';
+
+const conferenceId = 'conf-1';
+const user = {
+	id: 'u1',
+	email: 'a@b.c',
+	givenName: 'Ada',
+	familyName: 'Lovelace',
+	participationType: 'single'
+};
+const delegation = {
+	id: 'd1',
+	school: 'Gym',
+	memberCount: 3,
+	headDelegateUserId: 'u9'
+};
+const transaction = { id: 't1', amount: 10, currency: 'EUR', recievedAt: null };
+const page: PageEntry = {
+	id: 'stats',
+	title: () => 'Stats',
+	icon: 'fa-chart-pie',
+	href: resolve('/(authenticated)/dashboard/[conferenceId]/team/stats', { conferenceId }),
+	category: 'management',
+	keywords: []
+};
+const config: ConfigEntry = {
+	id: 'c',
+	title: () => 'Title',
+	section: () => 'Section',
+	icon: 'fa-gears',
+	tab: 'general',
+	keywords: []
+};
+const seat = { id: 's1', title: 'Frankreich', subtitle: 'Gym', holderUserId: 'u9' };
+const committee = { id: 'c1', title: 'Sicherheitsrat', subtitle: 'SC' };
+const foreignUser = { id: 'f1', email: 'f@b.c', givenName: 'Fo', familyName: 'Reign' };
+
+describe('flattenResults', () => {
+	test('orders the groups', () => {
+		const items = flattenResults({
+			users: [user],
+			delegations: [delegation],
+			seats: [seat],
+			committees: [committee],
+			transactions: [transaction],
+			pages: [page],
+			configs: [config],
+			foreignUsers: [foreignUser]
+		});
+		expect(items.map((i) => i.type)).toEqual([
+			'user',
+			'delegation',
+			'seat',
+			'committee',
+			'transaction',
+			'page',
+			'config',
+			'foreignUser'
+		]);
+	});
+});
+
+describe('resultTarget', () => {
+	test('a seat opens its holder, or the participant list when nobody holds it', () => {
+		expect(resultTarget({ item: { type: 'seat', data: seat }, conferenceId })).toEqual({
+			userId: 'u9'
+		});
+		expect(
+			resultTarget({ item: { type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
+	});
+	test('a committee opens the committees tab', () => {
+		expect(
+			resultTarget({ item: { type: 'committee', data: committee }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/configuration?tab=committees'));
+	});
+	test('users open their card', () => {
+		expect(resultTarget({ item: { type: 'user', data: user }, conferenceId })).toEqual({
+			userId: 'u1'
+		});
+		expect(
+			resultTarget({ item: { type: 'foreignUser', data: foreignUser }, conferenceId })
+		).toEqual({
+			userId: 'f1'
+		});
+	});
+	test('a delegation opens its head delegate, or the participant list', () => {
+		expect(resultTarget({ item: { type: 'delegation', data: delegation }, conferenceId })).toEqual({
+			userId: 'u9'
+		});
+		const target = resultTarget({
+			item: { type: 'delegation', data: { ...delegation, headDelegateUserId: null } },
+			conferenceId
+		});
+		expect(target).toHaveProperty('href', expect.stringContaining('/conf-1/team/participants'));
+	});
+	test('pages, configuration and transactions navigate', () => {
+		expect(resultTarget({ item: { type: 'page', data: page }, conferenceId })).toEqual({
+			href: page.href
+		});
+		expect(resultTarget({ item: { type: 'config', data: config }, conferenceId })).toHaveProperty(
+			'href',
+			expect.stringContaining('/conf-1/team/configuration?tab=general')
+		);
+		expect(
+			resultTarget({ item: { type: 'transaction', data: transaction }, conferenceId })
+		).toHaveProperty('href', expect.stringContaining('/conf-1/team/payments?searchValue=t1'));
+	});
+});
+
+describe('steppedIndex', () => {
+	test('moves and clamps', () => {
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 0, count: 3 })).toBe(1);
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 2, count: 3 })).toBe(2);
+		expect(steppedIndex({ key: 'ArrowUp', activeIndex: 2, count: 3 })).toBe(1);
+		expect(steppedIndex({ key: 'ArrowUp', activeIndex: 0, count: 3 })).toBe(0);
+	});
+	test('nothing to move', () => {
+		expect(steppedIndex({ key: 'ArrowDown', activeIndex: 0, count: 0 })).toBeUndefined();
+		expect(steppedIndex({ key: 'Enter', activeIndex: 0, count: 3 })).toBeUndefined();
+	});
+});
+
+describe('participationTypeLabel', () => {
+	test.each([
+		['delegation', m.delegationMember()],
+		['single', m.singleParticipant()],
+		['supervisor', m.supervisor()],
+		['team', m.teamMember()],
+		['other', 'other']
+	])('%s', (type, label) => {
+		expect(participationTypeLabel(type)).toBe(label);
+	});
+});
+
+describe('describeTransaction', () => {
+	test('not yet received', () => {
+		expect(describeTransaction(transaction)).toBe(
+			m.commandPalettePaymentNotReceived({ amount: 10, currency: 'EUR' })
+		);
+	});
+	test('received, with its date', () => {
+		const recievedAt = '2026-03-04T00:00:00.000Z';
+		const text = describeTransaction({ ...transaction, recievedAt });
+		expect(text).toBe(
+			m.commandPalettePaymentReceived({
+				amount: 10,
+				currency: 'EUR',
+				date: new Date(recievedAt).toLocaleDateString(getLocale(), {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				})
+			})
+		);
+	});
+});
+
+describe('describeItem', () => {
+	const cases: [ResultItem, { icon: string; primary: string; secondary?: string }][] = [
+		[
+			{ type: 'user', data: user },
+			{ icon: 'fa-user', primary: 'Ada Lovelace', secondary: `a@b.c · ${m.singleParticipant()}` }
+		],
+		[
+			{ type: 'delegation', data: delegation },
+			{ icon: 'fa-users-viewfinder', primary: 'Gym', secondary: `3 ${m.members()}` }
+		],
+		[
+			{ type: 'delegation', data: { ...delegation, school: null } },
+			{ icon: 'fa-users-viewfinder', primary: 'd1', secondary: `3 ${m.members()}` }
+		],
+		[
+			{ type: 'page', data: page },
+			{ icon: 'fa-chart-pie', primary: 'Stats' }
+		],
+		[
+			{ type: 'config', data: config },
+			{ icon: 'fa-gears', primary: 'Title', secondary: 'Section' }
+		],
+		[
+			{ type: 'foreignUser', data: foreignUser },
+			{ icon: 'fa-user-xmark', primary: 'Fo Reign', secondary: 'f@b.c' }
+		]
+	];
+	test.each(cases)('%o', (item, expected) => {
+		expect(describeItem(item)).toEqual(expected);
+	});
+	test('transactions show whether they arrived', () => {
+		expect(describeItem({ type: 'transaction', data: transaction }).icon).toBe('fa-circle-xmark');
+		expect(
+			describeItem({ type: 'transaction', data: { ...transaction, recievedAt: '2026-01-01' } }).icon
+		).toBe('fa-circle-check');
+	});
+});
+
+describe('searchHint', () => {
+	test('too short a term', () => {
+		expect(searchHint({ searchTerm: 'a', resultCount: 0, searchLoading: false })).toBe(
+			m.commandPaletteMinChars()
+		);
+	});
+	test('nothing found once settled', () => {
+		expect(searchHint({ searchTerm: 'ab', resultCount: 0, searchLoading: false })).toBe(
+			m.commandPaletteNoResults()
+		);
+		expect(searchHint({ searchTerm: 'ab', resultCount: 0, searchLoading: true })).toBeUndefined();
+		expect(searchHint({ searchTerm: 'ab', resultCount: 2, searchLoading: false })).toBeUndefined();
+		expect(searchHint({ searchTerm: '', resultCount: 0, searchLoading: false })).toBeUndefined();
+	});
+});

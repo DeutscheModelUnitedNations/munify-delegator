@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
 	E2E_CONFERENCE_ID,
@@ -19,26 +19,27 @@ async function graphql(page: import('@playwright/test').Page, query: string) {
 test('a participant can connect themselves to a supervisor via connection code', async ({
 	page
 }) => {
+	// The link a supervisor shares; it lands on the dashboard with the code filled in.
 	await loginAs(page, fixedTestUser(E2E_CONNECT_PARTICIPANT_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/connectSupervisor?code=${E2E_SUPERVISOR_CONNECTION_CODE}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/connect-supervisor?code=${E2E_SUPERVISOR_CONNECTION_CODE}`
 	});
+	await expect(page.getByLabel('Betreuer*in verbinden')).toHaveValue(
+		E2E_SUPERVISOR_CONNECTION_CODE,
+		{ timeout: 15_000 }
+	);
 
 	const connectButton = page.getByRole('button', { name: 'Verbinden' });
-	await expect(connectButton).toBeVisible({ timeout: 15_000 });
+	await expect(connectButton).toBeEnabled({ timeout: 15_000 });
 	await connectButton.click();
-
-	await page.waitForURL(new RegExp(`/dashboard/${E2E_CONFERENCE_ID}$`), {
-		timeout: 15_000,
-		waitUntil: 'commit'
-	});
+	await expect(page.getByLabel('Betreuer*in verbinden')).toHaveValue('', { timeout: 15_000 });
 
 	// The participant can read their own SingleParticipant record (including `supervisors`), but
 	// not the supervisor's full supervised-participant list, so verify from their own side.
 	const data = await graphql(
 		page,
-		`query { findUniqueSingleParticipant(where: { conferenceId_userId: { conferenceId: "${E2E_CONFERENCE_ID}", userId: "${E2E_CONNECT_PARTICIPANT_ID}" } }) { supervisors { id } } }`
+		`query { singleParticipants(where: { conference: { id: { eq: "${E2E_CONFERENCE_ID}" } }, user: { id: { eq: "${E2E_CONNECT_PARTICIPANT_ID}" } } }) { supervisors { id } } }`
 	);
-	const supervisorIds = data?.findUniqueSingleParticipant?.supervisors?.map(
+	const supervisorIds = data?.singleParticipants?.[0]?.supervisors?.map(
 		(s: { id: string }) => s.id
 	);
 	expect(supervisorIds).toContain(E2E_SUPERVISOR_ID);

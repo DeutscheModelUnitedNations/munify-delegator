@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '#lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import DrawerHeader from './DrawerHeader.svelte';
 
@@ -46,20 +47,20 @@
 		class="fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
 	></div>
 	<div
-		class="no-scrollbar fixed top-0 right-0 z-40 h-screen overflow-y-auto duration-300"
+		class="no-scrollbar fixed top-0 right-0 z-40 h-screen max-w-full overflow-y-auto duration-300"
 		style="width: {width}"
 	>
-		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10">
+		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10 max-sm:gap-6 max-sm:px-4">
 			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />
 			{#if loading}
 				<div class="flex w-full items-center justify-center">
-					<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 				</div>
 			{:else}
 				{@render children()}
 			{/if}
-			<button class="btn absolute top-4 right-4" onclick={close} aria-label="Close">
-				<i class="fa-duotone fa-xmark"></i>
+			<button class="btn absolute top-4 right-4" onclick={close} aria-label={m.close()}>
+				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
 			</button>
 		</div>
 	</div>

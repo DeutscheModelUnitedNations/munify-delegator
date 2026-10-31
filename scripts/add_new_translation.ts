@@ -1,14 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
-import * as readline from 'readline';
 
 const MESSAGES_DIR = './messages';
-
-const rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
 
 function saveToTranslationFile(data: Record<string, string>, languages: string[]) {
 	for (const lang of languages) {
@@ -83,23 +77,21 @@ async function bulkAdd() {
 	]);
 
 	for (const line of data.translations.split('\n')) {
-		const translations: Record<string, string> = {};
-		const [key, ...values] = line.split(';');
-		if (!key) {
-			console.error('Key is required');
-			process.exit(1);
-		}
-
-		translations.key = key;
-
-		for (let i = 0; i < languages.length; i++) {
-			const lang = languages[i];
-			const translation = values[i] || '';
-			translations[lang] = translation;
-		}
-
-		saveToTranslationFile(translations, languages);
+		saveToTranslationFile(translationsOfLine(line, languages), languages);
 	}
+}
+
+/** One `key;de;en` line as the key and its translation per language, missing ones left empty. */
+function translationsOfLine(line: string, languages: string[]): Record<string, string> {
+	const [key, ...values] = line.split(';');
+	if (!key) {
+		console.error('Key is required');
+		process.exit(1);
+	}
+	return {
+		key,
+		...Object.fromEntries(languages.map((lang, i) => [lang, values[i] || '']))
+	};
 }
 
 async function main() {
