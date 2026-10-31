@@ -1,8 +1,8 @@
+import { updateConference } from '#api/handlers/conference/conferenceService';
 import { db } from '#api/db/db';
 import { enum_, object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { applyAssignmentDraft } from './applyDraft';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { assertCustomRolesOf, assertOfferedIn } from '#api/services/authHelper/rules';
 import {
 	assertCanAssignDelegation,
 	assertCanAssignSingleParticipant,
@@ -24,7 +24,6 @@ import {
 	resetAssignmentSize,
 	reviewArgsSchema,
 	revertSingleParticipantConversion,
-	setAssignmentReleased,
 	splitDelegation,
 	undoDelegationSplit,
 	upsertAssignmentReview,
@@ -155,7 +154,6 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const delegation = await assertCanAssignDelegation({ ctx, id: args.delegationId });
 			const roleId = args.roleId || null;
-			if (roleId) await assertOfferedIn({ conferenceId: delegation.conferenceId, ref: { roleId } });
 			await planDelegationRole({ delegation, roleId });
 			return true;
 		}
@@ -172,7 +170,6 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const unit = await assertCanAssignUnit({ ctx, unitId: args.unitId });
 			const roleId = args.roleId || null;
-			if (roleId) await assertOfferedIn({ conferenceId: unit.conferenceId, ref: { roleId } });
 			await planUnitRole({ unitId: unit.id, roleId });
 			return true;
 		}
@@ -234,10 +231,6 @@ schemaBuilder.mutationFields((t) => ({
 				id: args.singleParticipantId
 			});
 			const roleId = args.roleId || null;
-			await assertCustomRolesOf({
-				conferenceId: participant.conferenceId,
-				roleIds: roleId ? [roleId] : []
-			});
 			await planSingleParticipantRole({ participant, roleId });
 			return true;
 		}
@@ -314,7 +307,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanPlanAssignment({ ctx, conferenceId: args.conferenceId });
-			await setAssignmentReleased(args);
+			await updateConference({ id: args.conferenceId, assignmentReleased: args.released });
 			return true;
 		}
 	})

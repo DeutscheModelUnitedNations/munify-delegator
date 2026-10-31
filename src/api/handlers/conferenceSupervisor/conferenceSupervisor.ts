@@ -7,7 +7,7 @@ import {
 	findSupervisorByConnectionCode,
 	previewSupervisorByCode,
 	registerSupervisor,
-	rotateConnectionCode
+	updateConferenceSupervisor
 } from './conferenceSupervisorService';
 import {
 	assertCanBeSupervised,
@@ -20,8 +20,7 @@ import {
 } from './conferenceSupervisorPermissions';
 import { codeGuessLimiter } from '#api/services/codeGuessLimit';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { conferenceSupervisorPubsub } from '#api/pubsub';
-import { updateIfAllowed } from '#api/services/authHelper/utils';
+import { assertAllowed } from '#api/services/authHelper/utils';
 
 registerConferenceSupervisorAbilities();
 
@@ -83,13 +82,11 @@ schemaBuilder.mutationFields((t) => ({
 			plansOwnAttendenceAtConference: t.arg.boolean({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await updateIfAllowed({
-				ctx,
-				table: 'conferenceSupervisor',
+			await assertAllowed({ ctx, table: 'conferenceSupervisor', action: 'update', id: args.id });
+			await updateConferenceSupervisor({
 				id: args.id,
-				values: { plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference }
+				plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference
 			});
-			conferenceSupervisorPubsub.updated(args.id);
 
 			return db.query.conferenceSupervisor
 				.findFirst(query(await readableSupervisor({ ctx, id: args.id })))
@@ -164,7 +161,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
 			const supervisor = await assertCanRotateSupervisorConnectionCode({ ctx, id: args.id });
-			await rotateConnectionCode(supervisor.id);
+			await updateConferenceSupervisor({ id: supervisor.id, rotateConnectionCode: true });
 
 			return db.query.conferenceSupervisor
 				.findFirst(query(await readableSupervisor({ ctx, id: supervisor.id })))

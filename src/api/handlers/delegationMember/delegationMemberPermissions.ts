@@ -1,7 +1,6 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertOfferedIn,
 	assertTeamPermission,
 	hasTeamPermission,
 	isInOwnDelegation,
@@ -120,9 +119,9 @@ function assertCommitteeSeats({
 
 /**
  * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference, who place a user straight into an assigned delegation, the role is a nation or
- * non-state actor of the conference, and the committee, if any, is one of its committees that
- * seats the role (INVALID_INPUT otherwise).
+ * the conference, who place a user straight into an assigned delegation, and the committee, if any,
+ * is one of its committees that seats the role (INVALID_INPUT otherwise). The role being a nation
+ * or non-state actor of the conference is the database's check (`conference_role_kind`).
  */
 export async function assertCanCreateAppliedDelegationMember({
 	ctx,
@@ -133,7 +132,6 @@ export async function assertCanCreateAppliedDelegationMember({
 }) {
 	const { conferenceId, assignedRoleId, assignedCommitteeId } = args;
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	await assertOfferedIn({ conferenceId, ref: { roleId: assignedRoleId } });
 	if (!assignedCommitteeId) return;
 	const committee = await db.query.committee.findFirst({
 		where: { id: assignedCommitteeId, conferenceId },
@@ -193,8 +191,9 @@ export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMem
 /**
  * Refuses unless, for every pairing, the caller's update ability reaches the delegation member
  * (NOT_FOUND; see `assertCanMoveDelegationMemberToCommittee` for who has it), the member is of
- * `conferenceId`, and the committee (if any) is the conference's and seats the member's delegation
- * (INVALID_INPUT). Checked before anything is written; a null committee only clears the seat.
+ * `conferenceId`, and the committee (if any) seats the member's delegation (INVALID_INPUT), which
+ * makes it the conference's. Checked before anything is written; a null committee only clears the
+ * seat.
  */
 export async function assertCanAssignCommittees({
 	ctx,
@@ -218,7 +217,7 @@ export async function assertCanAssignCommittees({
 		}),
 		db.query.committee.findMany({
 			where: { id: { in: committeeIds } },
-			columns: { id: true, conferenceId: true },
+			columns: { id: true },
 			with: { roles: { columns: { id: true } } }
 		})
 	]);
@@ -234,12 +233,6 @@ export async function assertCanAssignCommittees({
 		if (!committee) {
 			throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
 		}
-		if (committee.conferenceId !== conferenceId) {
-			throw apiError({
-				code: 'INVALID_INPUT',
-				message: m.committeeDoesNotBelongToConferenceError()
-			});
-		}
 		assertCommitteeSeats({
 			committee,
 			assignedRoleId: memberById.get(assignment.delegationMemberId)?.delegation.assignedRoleId
@@ -249,9 +242,9 @@ export async function assertCanAssignCommittees({
 
 /**
  * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference, the target role and committee are the conference's (INVALID_INPUT), and every
- * member the switch names (the one moving, the one swapped with, the new head delegates) is one
- * of the conference's that the caller may update (NOT_FOUND).
+ * the conference and every member the switch names (the one moving, the one swapped with, the new
+ * head delegates) is one of the conference's that the caller may update (NOT_FOUND). The target
+ * role and committee are looked up within the conference by `switchSeats`.
  */
 export async function assertCanSwitchDelegationMemberSeats({
 	ctx,
@@ -269,13 +262,6 @@ export async function assertCanSwitchDelegationMemberSeats({
 }) {
 	const { conferenceId } = args;
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	await assertOfferedIn({
-		conferenceId,
-		ref: {
-			roleId: args.targetRoleId,
-			committeeId: args.targetCommitteeId
-		}
-	});
 
 	const memberIds = [
 		...new Set([args.memberId, args.otherMemberId ?? [], args.headDelegateMemberIds ?? []].flat())

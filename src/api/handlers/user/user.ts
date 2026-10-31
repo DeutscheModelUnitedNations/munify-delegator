@@ -1,15 +1,16 @@
-import { db } from '#api/db/db';
+import { db, schema } from '#api/db/db';
+import { sql } from 'drizzle-orm';
+import { whereRows } from '#api/db/whereRows';
 import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
+import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
 	countConferenceParticipations,
 	profileArgsSchema,
 	removeParticipation,
-	setGlobalNotes,
-	updateNewsletterPreferences,
-	updateIdentity,
-	updateProfile
+	updateUser,
+	type UserChanges
 } from './userService';
 import {
 	assertCanImpersonate,
@@ -77,6 +78,20 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
+/** Changes a user the caller manages (participant care), past the self-service rules. */
+async function manageUser({
+	ctx,
+	id,
+	changes
+}: {
+	ctx: ApiContext;
+	id: string;
+	changes: UserChanges;
+}) {
+	await assertCanManageUser({ ctx, id });
+	await updateUser({ where: whereRows({ table: schema.user, filter: { id } }), changes });
+}
+
 schemaBuilder.mutationFields((t) => {
 	/** Name and birthday, which a profile update and management's corrections both take. */
 	const identityArgs = () => ({
@@ -106,12 +121,15 @@ schemaBuilder.mutationFields((t) => {
 				},
 				profileArgsSchema
 			),
-			resolve: async (query, _root, profile, ctx) => {
-				await assertCanUpdateUser({ ctx, id: profile.id });
-				await updateProfile(profile);
+			resolve: async (query, _root, { id, changes }, ctx) => {
+				await assertCanUpdateUser({ ctx, id });
+				await updateUser({ where: whereRows({ table: schema.user, filter: { id } }), changes });
+
+				// a completed or changed profile may now look like an account from before
+				scanUserForDuplicatesInBackground(id);
 
 				return db.query.user
-					.findFirst(query(await allowedUser({ ctx, id: profile.id })))
+					.findFirst(query(await allowedUser({ ctx, id })))
 					.then(assertFindFirstExists);
 			}
 		}),
@@ -127,7 +145,14 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (_root, args, ctx) => {
 				assertCanUpdateNewsletterPreferences({ ctx, args });
-				await updateNewsletterPreferences(args);
+				await updateUser({
+					// the scalar lowercases; addresses stored before it did may still carry capitals
+					where: sql`lower(${schema.user.email}) = ${args.email}`,
+					changes: {
+						wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
+						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
+					}
+				});
 				return true;
 			}
 		}),
@@ -141,8 +166,7 @@ schemaBuilder.mutationFields((t) => {
 				globalNotes: t.arg.string({ required: true })
 			},
 			resolve: async (query, _root, args, ctx) => {
-				await assertCanManageUser({ ctx, id: args.id });
-				await setGlobalNotes(args);
+				await manageUser({ ctx, id: args.id, changes: { globalNotes: args.globalNotes } });
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id: args.id })))
@@ -159,8 +183,18 @@ schemaBuilder.mutationFields((t) => {
 				...identityArgs()
 			},
 			resolve: async (query, _root, args, ctx) => {
-				await assertCanManageUser({ ctx, id: args.id });
-				await updateIdentity({ id: args.id, args });
+				await manageUser({
+					ctx,
+					id: args.id,
+					changes: {
+						givenName: args.givenName ?? undefined,
+						familyName: args.familyName ?? undefined,
+						birthday: args.birthday ?? undefined
+					}
+				});
+
+				// a corrected identity may now look like an account from before
+				scanUserForDuplicatesInBackground(args.id);
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id: args.id })))

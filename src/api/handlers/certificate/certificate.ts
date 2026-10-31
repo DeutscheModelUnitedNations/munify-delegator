@@ -17,16 +17,6 @@ const JWK = schemaBuilder.simpleObject('JWK', {
 	})
 });
 
-const CertificateSession = schemaBuilder.simpleObject('CertificateSession', {
-	description: 'A check-in occasion a certificate lists.',
-	fields: (t) => ({
-		name: t.string({ description: "The session's name." }),
-		attended: t.boolean({
-			description: 'Always true: a certificate lists only where its holder was.'
-		})
-	})
-});
-
 const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 	description: 'A signed participation certificate, or nulls while attendance is not recorded.',
 	fields: (t) => ({
@@ -35,10 +25,9 @@ const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 			nullable: true,
 			description: "The holder's name as the certificate states it."
 		}),
-		sessions: t.field({
+		sessions: t.stringList({
 			description:
-				"The conference's check-in occasions the holder was checked in at, in the order they started; the team can take one off the certificates.",
-			type: [CertificateSession]
+				"The names of the conference's check-in occasions the holder was checked in at, in the order they started; the team can take one off the certificates."
 		})
 	})
 });

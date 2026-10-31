@@ -204,11 +204,29 @@ export async function previewSupervisorByCode({
 	return supervisorPreview({ supervisor, callerSchoolId: caller?.schoolId });
 }
 
-/** Hands the supervisor a new connection code; the old one stops working. */
-export async function rotateConnectionCode(supervisorId: string) {
-	await db
-		.update(schema.conferenceSupervisor)
-		.set({ connectionCode: await unusedConnectionCode() })
-		.where(whereRows({ table: schema.conferenceSupervisor, filter: { id: supervisorId } }));
-	conferenceSupervisorPubsub.updated(supervisorId);
+/**
+ * Changes a supervisor's row; an absent field is left as it is. A rotated connection code makes
+ * the old one stop working, people already connected stay so.
+ */
+export async function updateConferenceSupervisor({
+	id,
+	plansOwnAttendenceAtConference,
+	rotateConnectionCode
+}: {
+	id: string;
+	plansOwnAttendenceAtConference?: boolean | null;
+	rotateConnectionCode?: boolean;
+}) {
+	const values = {
+		plansOwnAttendenceAtConference: plansOwnAttendenceAtConference ?? undefined,
+		connectionCode: rotateConnectionCode ? await unusedConnectionCode() : undefined
+	};
+	// drizzle refuses an empty `set`
+	if (Object.values(values).some((value) => value !== undefined)) {
+		await db
+			.update(schema.conferenceSupervisor)
+			.set(values)
+			.where(whereRows({ table: schema.conferenceSupervisor, filter: { id } }));
+	}
+	conferenceSupervisorPubsub.updated(id);
 }

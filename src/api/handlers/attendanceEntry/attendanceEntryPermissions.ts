@@ -45,27 +45,17 @@ export function registerAttendanceEntryAbilities() {
 
 /**
  * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference, and every survey option the session expects is one of the conference's.
+ * the conference. The survey options the session expects being the conference's is the database's
+ * check (`attendance_session_to_survey_option_same_conference`).
  */
 export async function assertCanStartAttendanceSession({
 	ctx,
-	conferenceId,
-	surveyOptionIds = []
+	conferenceId
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
-	surveyOptionIds?: readonly string[];
 }) {
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	const ids = [...new Set(surveyOptionIds)];
-	if (ids.length === 0) return;
-	const options = await db.query.surveyOption.findMany({
-		where: { id: { in: ids }, question: { conferenceId } },
-		columns: { id: true }
-	});
-	if (options.length !== ids.length) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.sessionSurveyOptionOtherConference() });
-	}
 }
 
 /**
@@ -142,8 +132,9 @@ async function assertParticipantToScan({
 
 /**
  * Refuses unless the caller is on the conference's team (any role: the scanner is on every team
- * member's dashboard), the scanned user takes part in it (`assertParticipantToScan`) and the
- * session belongs to it. Returns the caller's user id, who is recorded as the scanner.
+ * member's dashboard) and the scanned user takes part in it (`assertParticipantToScan`); the session
+ * belonging to it is the database's check (`attendance_entry_same_conference`). Returns the
+ * caller's user id, who is recorded as the scanner.
  */
 export async function assertCanCreateAttendanceEntry({
 	ctx,
@@ -154,6 +145,5 @@ export async function assertCanCreateAttendanceEntry({
 }) {
 	await assertTeamPermission({ ctx, conferenceId: args.conferenceId, permission: 'useTeamTools' });
 	await assertParticipantToScan({ conferenceId: args.conferenceId, subjectId: args.userId });
-	await assertSessionOfConference({ sessionId: args.sessionId, conferenceId: args.conferenceId });
 	return { callerId: ctx.mustBeLoggedIn().sub };
 }

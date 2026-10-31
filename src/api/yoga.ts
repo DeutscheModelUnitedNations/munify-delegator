@@ -2,6 +2,7 @@ import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { createYoga } from '#api/rumble';
 import { dev } from '$app/env';
 import { GRAPHQL_STREAM_ENDPOINT } from '#lib/api/streamEndpoint';
+import { databaseRuleError } from '#api/services/errors';
 
 import '#api/handlers/register';
 
@@ -21,7 +22,22 @@ import '#api/handlers/register';
 export const yoga = createYoga({
 	graphqlEndpoint: '/api/graphql',
 	maskedErrors: !dev,
-	plugins: [useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT })],
+	plugins: [
+		useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT }),
+		// Answers a write the database's triggers refused as the input error it is, before masking
+		// would turn it into an unexpected one (yoga runs these plugins ahead of its masking).
+		{
+			onExecute: () => ({
+				onExecuteDone: ({ result, setResult }) => {
+					if (Symbol.asyncIterator in result || !result.errors) return;
+					setResult({
+						...result,
+						errors: result.errors.map((error) => databaseRuleError(error) ?? error)
+					});
+				}
+			})
+		}
+	],
 	fetchAPI: {
 		fetch,
 		Request,

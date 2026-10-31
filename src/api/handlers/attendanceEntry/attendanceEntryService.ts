@@ -23,35 +23,9 @@ async function scanInSession({ sessionId, statusId }: { sessionId: string; statu
 	});
 }
 
-/** The session of the conference with this name, ignoring case; names are unique there. */
-function sameName({ conferenceId, occasion }: { conferenceId: string; occasion: string }) {
-	return {
-		conferenceId,
-		RAW: (session: typeof schema.attendanceSession) =>
-			sql`lower(${session.occasion}) = lower(${occasion})`
-	};
-}
-
-/** Refuses (CONFLICT) a name another session of the conference already has. */
-async function assertNameFree({
-	conferenceId,
-	occasion,
-	sessionId
-}: {
-	conferenceId: string;
-	occasion: string;
-	sessionId: string;
-}) {
-	const holder = await db.query.attendanceSession.findFirst({
-		where: { ...sameName({ conferenceId, occasion }), id: { ne: sessionId } },
-		columns: { id: true }
-	});
-	if (holder) throw sessionNameTaken();
-}
-
 const sessionNameTaken = () => apiError({ code: 'CONFLICT', message: m.sessionNameTaken() });
 
-/** Turns the unique index refusing a taken name, in a race the check above lost, into its error. */
+/** Turns the unique index refusing a name another session of the conference has (ignoring case) into its error. */
 async function refusingTakenName<T>(write: Promise<T>) {
 	try {
 		return await write;
@@ -72,11 +46,6 @@ export async function startSession({
 	values: typeof schema.attendanceSession.$inferInsert & { id: string };
 	surveyOptionIds: readonly string[];
 }) {
-	await assertNameFree({
-		conferenceId: values.conferenceId,
-		occasion: values.occasion,
-		sessionId: values.id
-	});
 	const started = await refusingTakenName(
 		db.transaction(async (tx) => {
 			const [started] = await tx
@@ -96,67 +65,34 @@ export async function startSession({
 	if (started) attendanceSessionPubsub.created();
 }
 
-/** Gives a session another name; one another session of the conference has is refused. */
-export async function renameSession({
-	sessionId,
-	conferenceId,
-	occasion
+/**
+ * Changes a session; an absent field is left as it is. A name another session of the conference
+ * has is refused. Ending keeps the time it first ended; reopening keeps its scans, so nobody is
+ * scanned twice.
+ */
+export async function updateAttendanceSession({
+	id,
+	occasion,
+	showOnCertificate,
+	ended
 }: {
-	sessionId: string;
-	conferenceId: string;
-	occasion: string;
+	id: string;
+	occasion?: string;
+	showOnCertificate?: boolean;
+	ended?: boolean;
 }) {
-	await assertNameFree({ conferenceId, occasion, sessionId });
+	const endedAt = schema.attendanceSession.endedAt;
 	await refusingTakenName(
 		db
 			.update(schema.attendanceSession)
-			.set({ occasion })
-			.where(whereRows({ table: schema.attendanceSession, filter: { id: sessionId } }))
+			.set({
+				occasion,
+				showOnCertificate,
+				endedAt: ended === undefined ? undefined : ended ? sql`coalesce(${endedAt}, now())` : null
+			})
+			.where(whereRows({ table: schema.attendanceSession, filter: { id } }))
 	);
-	attendanceSessionPubsub.updated(sessionId);
-}
-
-/** Lists the session on the participation certificates, or takes it off them. */
-export async function setSessionOnCertificate({
-	sessionId,
-	show
-}: {
-	sessionId: string;
-	show: boolean;
-}) {
-	await db
-		.update(schema.attendanceSession)
-		.set({ showOnCertificate: show })
-		.where(whereRows({ table: schema.attendanceSession, filter: { id: sessionId } }));
-	attendanceSessionPubsub.updated(sessionId);
-}
-
-/** Lets an ended session take scans again; its earlier scans stay, so nobody is scanned twice. */
-export async function reopenSession(sessionId: string) {
-	await db
-		.update(schema.attendanceSession)
-		.set({ endedAt: null })
-		.where(
-			whereRows({
-				table: schema.attendanceSession,
-				filter: { id: sessionId, endedAt: { isNotNull: true } }
-			})
-		);
-	attendanceSessionPubsub.updated(sessionId);
-}
-
-/** Ends a session for everybody working in it; ending it again changes nothing. */
-export async function endSession(sessionId: string) {
-	await db
-		.update(schema.attendanceSession)
-		.set({ endedAt: new Date() })
-		.where(
-			whereRows({
-				table: schema.attendanceSession,
-				filter: { id: sessionId, endedAt: { isNull: true } }
-			})
-		);
-	attendanceSessionPubsub.updated(sessionId);
+	attendanceSessionPubsub.updated(id);
 }
 
 /**

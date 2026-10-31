@@ -327,9 +327,9 @@ reuses the conference's track of that name, which names are unique for.
 
 ### Rules
 
-- **Day order comes from the date.** The day form has no sort order; `dayFields` / `daySortOrder`
-  place the day among the others (days are unique by sort order, so a taken place goes last).
-  Tracks are ordered with the arrows (`trackOrderChanges` renumbers them).
+- **Day order comes from the date.** Days have no sort order; they are listed by their `date`
+  (a calendar day), and the day form sends only name and date (`dayFields`). Tracks are ordered
+  with the arrows (`trackOrderChanges` renumbers them).
 - **Times are wall-clock minutes stored as UTC.** The editor works in minutes of the day and writes
   them back with `dateAtMinutes`; a drag ends at 23:45 at the latest.
 - **The hour range follows the saved entries, not the drag**, so the grid does not shift under the

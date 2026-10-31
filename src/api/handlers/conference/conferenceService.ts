@@ -25,7 +25,14 @@ import {
 } from '#lib/helpers/documentLayout';
 import { jsonDocument } from '#api/services/argSchemas';
 import { z } from 'zod';
-import { committeePubsub, conferencePubsub, conferenceRolePubsub } from '#api/pubsub';
+import {
+	committeePubsub,
+	conferencePubsub,
+	conferenceRolePubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	singleParticipantPubsub
+} from '#api/pubsub';
 
 /** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
 export async function countSeatedParticipants(conferenceId: string) {
@@ -83,16 +90,42 @@ export async function nextDocumentNumber(conferenceId: string) {
 }
 
 type ConferenceInsert = typeof schema.conference.$inferInsert;
-/** The arguments of `updateConference`: any column but the id, left out or cleared with null. */
+/**
+ * The arguments of `updateConference`: any column but the id, left out or cleared with null.
+ * `documentLayout` places one document's generated parts and keeps the others' layouts; a null
+ * layout goes back to the defaults. `assignmentReleased` shows participants their roles, or hides
+ * them again.
+ */
 export type ConferenceUpdateArgs = { id: string } & {
-	[K in keyof Omit<ConferenceInsert, 'id'>]?: ConferenceInsert[K] | null;
+	[
+		K in keyof Omit<
+			ConferenceInsert,
+			'id' | 'documentLayouts' | 'assignmentReleased' | 'assignmentReleasedAt'
+		>
+	]?: ConferenceInsert[K] | null;
+} & {
+	documentLayout?: {
+		document: LayoutDocument;
+		layout?: z.output<ReturnType<typeof documentLayoutSchema>> | null;
+	};
+	assignmentReleased?: boolean;
 };
+
+/** The `documentLayouts` value writing one document's layout, or `undefined` for none. */
+function documentLayoutsValue(change: ConferenceUpdateArgs['documentLayout']) {
+	if (!change) return undefined;
+	const column = schema.conference.documentLayouts;
+	return change.layout == null
+		? sql`coalesce(${column}, '{}'::jsonb) - ${change.document}::text`
+		: sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${change.document}::text, ${JSON.stringify(change.layout)}::jsonb)`;
+}
 
 /**
  * Writes the given settings of the conference; left out keeps a setting, `null` clears a nullable
  * one. Who may send which argument, and store which file, is checked before
- * (`assertCanUpdateConference`, `assertCanClaimConferenceFiles`), the values with the arguments
- * (`conferenceSettingSchemas` in `conferenceSettings.ts`); an uploaded file has to have arrived in full.
+ * (`assertCanUpdateConference`, `assertCanClaimConferenceFiles`, `assertCanSetDocumentLayout`,
+ * `assertCanPlanAssignment`), the values with the arguments (`conferenceSettingSchemas` in
+ * `conferenceSettings.ts`); an uploaded file has to have arrived in full.
  */
 export async function updateConference(args: ConferenceUpdateArgs) {
 	// An omitted file leaves the stored one untouched; only a supplied file replaces it.
@@ -151,7 +184,15 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 				postalZip: args.postalZip,
 				postalCity: args.postalCity,
 				postalCountry: args.postalCountry,
-				...files
+				...files,
+				documentLayouts: documentLayoutsValue(args.documentLayout),
+				assignmentReleased: args.assignmentReleased,
+				assignmentReleasedAt:
+					args.assignmentReleased === undefined
+						? undefined
+						: args.assignmentReleased
+							? new Date()
+							: null
 			})
 			.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
 			.returning({
@@ -163,6 +204,29 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 		if (written) assertConferenceDatesInOrder(written);
 	});
 	conferencePubsub.updated(args.id);
+	if (args.assignmentReleased !== undefined) await announceReleaseVisibility(args.id);
+}
+
+/** Announces the rows whose readable columns the release flag decides. */
+async function announceReleaseVisibility(conferenceId: string) {
+	const [delegations, members, singles] = await Promise.all([
+		db.query.delegation.findMany({ where: { conferenceId }, columns: { id: true } }),
+		db.query.delegationMember.findMany({
+			where: { participant: { conferenceId } },
+			columns: { id: true }
+		}),
+		db.query.singleParticipant.findMany({
+			where: { participant: { conferenceId } },
+			columns: { id: true }
+		})
+	]);
+	/** Announces the rows as updated, unless there are none. */
+	const announce = (pubsub: { updated: (ids: string[]) => void }, rows: { id: string }[]) => {
+		if (rows.length > 0) pubsub.updated(rows.map((row) => row.id));
+	};
+	announce(delegationPubsub, delegations);
+	announce(delegationMemberPubsub, members);
+	announce(singleParticipantPubsub, singles);
 }
 
 /** A seeding document, as JSON string or parsed. */
@@ -359,28 +423,3 @@ export const documentLayoutArgsSchema = z
 		ctx.issues.push({ code: 'custom', input: args.layout, message: m.documentLayoutInvalid() });
 		return z.NEVER;
 	});
-
-/**
- * Stores where a document's generated parts go on its template; null goes back to the defaults.
- * The other documents' layouts stay as they are.
- */
-export async function setDocumentLayout({
-	conferenceId,
-	document,
-	layout
-}: {
-	conferenceId: string;
-	document: LayoutDocument;
-	layout?: z.output<ReturnType<typeof documentLayoutSchema>> | null;
-}) {
-	const column = schema.conference.documentLayouts;
-	const value =
-		layout == null
-			? sql`coalesce(${column}, '{}'::jsonb) - ${document}::text`
-			: sql`coalesce(${column}, '{}'::jsonb) || jsonb_build_object(${document}::text, ${JSON.stringify(layout)}::jsonb)`;
-	await db
-		.update(schema.conference)
-		.set({ documentLayouts: value })
-		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }));
-	conferencePubsub.updated(conferenceId);
-}

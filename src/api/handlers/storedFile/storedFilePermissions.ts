@@ -8,7 +8,7 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
-import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
+import { calendarConference } from '#api/handlers/calendar/calendarDayPermissions';
 import { m } from '#lib/paraglide/messages';
 import type { TeamPermission } from '#lib/helpers/teamRoles';
 import { findFileSource, type FileField, type FileKind } from './fileSources';

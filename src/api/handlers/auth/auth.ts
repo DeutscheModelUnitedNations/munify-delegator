@@ -1,7 +1,7 @@
 import { schemaBuilder } from '#api/rumble';
 import { OIDC } from '#api/services/oidc/OIDC';
 import { oidcRoles } from '#api/services/oidc/oidcRoles';
-import { offlineUserOf } from './offlineUser';
+import { offlineUserOf } from './authService';
 import { oidcIdentityFields } from './oidcIdentityFields';
 
 const OIDCRolesEnum = schemaBuilder.enumType('OIDCRolesEnum', { values: oidcRoles });

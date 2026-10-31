@@ -42,11 +42,7 @@ schemaBuilder.mutationFields((t) => ({
 			...applicationArgs(t.arg)
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const { callerId } = await assertCanCreateSingleParticipant({
-				ctx,
-				conferenceId: args.conferenceId,
-				roleId: args.roleId
-			});
+			const { callerId } = assertCanCreateSingleParticipant(ctx);
 			const id = await registerSingleParticipant({ userId: callerId, args });
 
 			return db.query.singleParticipant
@@ -78,11 +74,7 @@ schemaBuilder.mutationFields((t) => ({
 			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateSingleParticipant({
-				ctx,
-				id: args.id,
-				applyForRolesIdList: args.applyForRolesIdList ?? []
-			});
+			await assertCanUpdateSingleParticipant({ ctx, id: args.id });
 			await updateSingleParticipantApplication(args);
 
 			return db.query.singleParticipant
@@ -114,11 +106,7 @@ schemaBuilder.mutationFields((t) => ({
 			roleId: t.arg.id({ required: true, description: 'A custom role of the conference.' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateAppliedSingleParticipant({
-				ctx,
-				conferenceId: args.conferenceId,
-				roleId: args.roleId
-			});
+			await assertCanCreateAppliedSingleParticipant({ ctx, conferenceId: args.conferenceId });
 			const id = await createAssignedSingleParticipant(args);
 
 			return db.query.singleParticipant

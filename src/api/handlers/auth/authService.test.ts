@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { offlineUserOf } from './offlineUser';
+import { offlineUserOf } from './authService';
 
 describe('offlineUserOf', () => {
 	test('fills the missing parts of the parsed user with null, and the email with an empty string', () => {

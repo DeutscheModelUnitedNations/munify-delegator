@@ -13,7 +13,6 @@ import {
 	nextDocumentNumber,
 	seedConference,
 	seedingDataSchema,
-	setDocumentLayout,
 	updateConference,
 	type PlausibilityUser
 } from './conferenceService';
@@ -202,8 +201,8 @@ schemaBuilder.mutationFields((t) => ({
 		),
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSetDocumentLayout({ ctx, conferenceId: args.conferenceId });
-			await setDocumentLayout(args);
-
+			const { conferenceId, document, layout } = args;
+			await updateConference({ id: conferenceId, documentLayout: { document, layout } });
 			return db.query.conference
 				.findFirst(query(await readableConference({ ctx, id: args.conferenceId })))
 				.then(assertFindFirstExists);

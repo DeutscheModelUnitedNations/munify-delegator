@@ -37,7 +37,6 @@ export interface CalendarDay {
 	id: string;
 	name: string;
 	date: Date;
-	sortOrder: number;
 	tracks: CalendarTrack[];
 	entries: CalendarEntry[];
 }

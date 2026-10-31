@@ -1,11 +1,8 @@
 import formatNames from '#lib/helpers/formatNames';
 import type { CertificateJWTPayload } from '#lib/helpers/certificateJwt';
 
-/** One check-in occasion of a conference; a certificate lists only those its holder was at. */
-export type CertificateSession = { name: string; attended: boolean };
-
 /**
- * The conference's check-in sessions the person was scanned at, in the order they started. A
+ * The names of the check-in sessions the person was scanned at, in the order they started. A
  * certificate states only where someone was, never where they were not, so the sessions they
  * missed are left out, and so are those the team took off the certificates (`showOnCertificate`).
  */
@@ -16,12 +13,39 @@ export function certificateSessions(
 		attended: boolean;
 		showOnCertificate: boolean;
 	}[]
-): CertificateSession[] {
+): string[] {
 	return sessions
 		.map((session) => ({ ...session, name: session.occasion.trim() }))
 		.filter((session) => session.name && session.attended && session.showOnCertificate)
 		.sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
-		.map(({ name, attended }) => ({ name, attended }));
+		.map(({ name }) => name);
+}
+
+interface CertifiedConference {
+	title: string;
+	longTitle: string | null;
+	startConference: Date | null;
+	endConference: Date | null;
+}
+
+const timeOf = (date: Date | null) => date?.getTime() ?? 0;
+
+function certificatePayload({
+	fullName,
+	conference,
+	sessions
+}: {
+	fullName: string;
+	conference: CertifiedConference;
+	sessions?: string[];
+}): CertificateJWTPayload {
+	return {
+		n: fullName,
+		t: conference.longTitle || conference.title,
+		s: timeOf(conference.startConference),
+		e: timeOf(conference.endConference),
+		...(sessions?.length ? { a: sessions } : {})
+	};
 }
 
 /**
@@ -30,45 +54,23 @@ export function certificateSessions(
  */
 export function certificateContents(status: {
 	didAttend: boolean;
-	conference:
-		| {
-				title: string;
-				longTitle: string | null;
-				startConference: Date | null;
-				endConference: Date | null;
-		  }
-		| null
-		| undefined;
+	conference: CertifiedConference | null | undefined;
 	user: { givenName: string; familyName: string } | null | undefined;
-	sessions?: CertificateSession[];
+	/** The names of the sessions the person was at (`certificateSessions`). */
+	sessions?: string[];
 }): { fullName: string; payload: CertificateJWTPayload } | undefined {
-	const { conference, user } = status;
+	const { conference, sessions } = status;
 	if (!status.didAttend || !conference) return undefined;
 
+	const { givenName, familyName } = status.user ?? {};
 	const fullName = formatNames({
-		givenName: user?.givenName,
-		familyName: user?.familyName,
+		givenName,
+		familyName,
 		options: {
 			familyNameUppercase: false,
 			givenNameUppercase: false
 		}
 	});
 
-	return {
-		fullName,
-		payload: {
-			n: fullName,
-			t: conference.longTitle || conference.title,
-			s: conference.startConference?.getTime() ?? 0,
-			e: conference.endConference?.getTime() ?? 0,
-			...(status.sessions?.length
-				? {
-						a: status.sessions.map((session): [string, 0 | 1] => [
-							session.name,
-							session.attended ? 1 : 0
-						])
-					}
-				: {})
-		}
-	};
+	return { fullName, payload: certificatePayload({ fullName, conference, sessions }) };
 }

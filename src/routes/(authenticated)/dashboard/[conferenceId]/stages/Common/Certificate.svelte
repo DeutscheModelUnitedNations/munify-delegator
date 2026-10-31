@@ -71,7 +71,7 @@
 				__args: { conferenceId, userId },
 				jwt: true,
 				fullName: true,
-				sessions: { name: true, attended: true }
+				sessions: true
 			})
 		]);
 	}
@@ -87,7 +87,7 @@
 			title: conference.title,
 			jwt: jwt.jwt,
 			fullName: jwt.fullName,
-			sessions: jwt.sessions.map((session) => ({ name: session.name, attended: session.attended }))
+			sessions: jwt.sessions
 		};
 	});
 

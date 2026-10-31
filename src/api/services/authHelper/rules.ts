@@ -4,7 +4,6 @@ import { sql } from 'drizzle-orm';
 import type { ApiContext } from '#api/rumble';
 import type { Context } from '#api/context';
 import type { teamRole } from '#api/db/schema/index';
-import { DELEGATION_ROLE_KINDS, type ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 import {
 	PARTICIPANT_CARE_ROLES,
 	rolesWithTeamPermission,
@@ -271,77 +270,6 @@ export async function participantIdsOf({
 		throw apiError({ code: 'INVALID_INPUT', message: m.usersNotInConference() });
 	}
 	return new Map(found.map((row) => [row.userId, row.id]));
-}
-
-/**
- * Whether the conference has the role and committee the arguments name, and the role is of one
- * of `roleKinds` (a delegation's by default); an absent one passes. A nation is the conference's
- * while one of its committees seats it, which `setCommitteeNationSeat` keeps its role row for.
- */
-export async function offeredIn({
-	conferenceId,
-	ref,
-	roleKinds = DELEGATION_ROLE_KINDS,
-	tx = db
-}: {
-	conferenceId: string;
-	ref: { roleId?: string | null; committeeId?: string | null };
-	roleKinds?: readonly ConferenceRoleKind[];
-	tx?: Transaction | typeof db;
-}) {
-	const [role, committee] = await Promise.all([
-		ref.roleId
-			? tx.query.conferenceRole.findFirst({
-					where: { id: ref.roleId, conferenceId, kind: { in: [...roleKinds] } },
-					columns: { id: true }
-				})
-			: true,
-		ref.committeeId
-			? tx.query.committee.findFirst({
-					where: { id: ref.committeeId, conferenceId },
-					columns: { id: true }
-				})
-			: true
-	]);
-	return Boolean(role && committee);
-}
-
-/** Refuses (INVALID_INPUT) a role or committee that the conference does not have (`offeredIn`). */
-export async function assertOfferedIn({
-	conferenceId,
-	ref,
-	roleKinds,
-	tx = db
-}: {
-	conferenceId: string;
-	ref: Parameters<typeof offeredIn>[0]['ref'];
-	roleKinds?: readonly ConferenceRoleKind[];
-	tx?: Transaction | typeof db;
-}) {
-	if (!(await offeredIn({ conferenceId, ref, roleKinds, tx }))) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.roleNotOnOffer() });
-	}
-}
-
-/** Refuses (INVALID_INPUT) role ids that are not custom roles of the given conference. */
-export async function assertCustomRolesOf({
-	conferenceId,
-	roleIds,
-	tx = db
-}: {
-	conferenceId: string;
-	roleIds: readonly string[];
-	tx?: Transaction | typeof db;
-}) {
-	const unique = [...new Set(roleIds)];
-	if (unique.length === 0) return;
-	const roles = await tx.query.conferenceRole.findMany({
-		where: { id: { in: unique }, conferenceId, kind: 'CUSTOM' },
-		columns: { id: true }
-	});
-	if (roles.length !== unique.length) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.rolesNotInConference() });
-	}
 }
 
 /**

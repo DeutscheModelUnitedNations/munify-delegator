@@ -48,40 +48,62 @@ export async function createCommittee(data: {
 }
 
 /**
- * Changes the given fields of a committee (`committeeUpdateData`). `before` is the committee as it
- * was, with the members assigned to it, which bound how far its seats per delegation may go down.
- * Fewer seats per delegation shrink every nation of the committee, so the applications that no
- * longer fit go in the same transaction.
+ * Changes the given fields of a committee (`committeeUpdateData`), checked against the committee
+ * as it is, read in the same transaction. Seats per delegation cannot drop below the members of one
+ * delegation assigned to it (CONFLICT); lowering them drops the applications for its nations that
+ * no longer fit. Given regional baseline targets were checked with the arguments
+ * (`regionalBaselineArgsSchema`); a new baseline without targets keeps the stored ones, which have
+ * to suit it too, so switching back restores them.
  */
 export async function updateCommittee({
 	id,
-	before,
 	data
 }: {
 	id: string;
-	before: {
-		conferenceId: string;
-		numOfSeatsPerDelegation: number;
-		roles: { id: string }[];
-		delegationMembers: { delegationId: string }[];
+	data: Parameters<typeof committeeUpdateData>[0] & {
+		regionalBaseline?: RegionalBaseline;
+		regionalBaselineTargets?: number[] | null;
 	};
-	data: Parameters<typeof committeeUpdateData>[0];
 }) {
-	assertSeatsPerDelegationAllowed({
-		numOfSeatsPerDelegation: data.numOfSeatsPerDelegation,
-		assignedMembers: before.delegationMembers
-	});
-
-	const seatsAfter = data.numOfSeatsPerDelegation ?? before.numOfSeatsPerDelegation;
-	const shrunk = seatsAfter < before.numOfSeatsPerDelegation;
-
 	await db.transaction(async (tx) => {
+		const before = await tx.query.committee
+			.findFirst({
+				where: { id },
+				columns: {
+					conferenceId: true,
+					numOfSeatsPerDelegation: true,
+					regionalBaseline: true,
+					regionalBaselineTargets: true
+				},
+				with: {
+					roles: { columns: { id: true } },
+					delegationMembers: { columns: { delegationId: true } }
+				}
+			})
+			.then(assertFindFirstExists);
+
+		assertSeatsPerDelegationAllowed({
+			numOfSeatsPerDelegation: data.numOfSeatsPerDelegation,
+			assignedMembers: before.delegationMembers
+		});
+		const baselineChanged =
+			data.regionalBaseline !== undefined || data.regionalBaselineTargets != null;
+		const regionalBaseline = data.regionalBaseline ?? before.regionalBaseline;
+		const regionalBaselineTargets = data.regionalBaselineTargets ?? before.regionalBaselineTargets;
+		if (baselineChanged && data.regionalBaselineTargets == null) {
+			assertStoredTargetsUsable({ baseline: regionalBaseline, targets: regionalBaselineTargets });
+		}
+
 		await tx
 			.update(schema.committee)
-			.set(committeeUpdateData(data))
+			.set({
+				...committeeUpdateData(data),
+				...(baselineChanged ? { regionalBaseline, regionalBaselineTargets } : {})
+			})
 			.where(whereRows({ table: schema.committee, filter: { id } }));
 
-		if (shrunk) {
+		const seatsAfter = data.numOfSeatsPerDelegation ?? before.numOfSeatsPerDelegation;
+		if (seatsAfter < before.numOfSeatsPerDelegation) {
 			await tidyRoleApplicationsForRoles({
 				conferenceId: before.conferenceId,
 				roleIds: before.roles.map((role) => role.id),
@@ -286,28 +308,4 @@ export async function setCommitteeNationSeat({
 	const nation = await findNation(nationAlpha3Code);
 	if (enabled) await seatNation({ committee, nationAlpha3Code: nation.alpha3Code });
 	else await unseatNation({ committee, nationAlpha3Code: nation.alpha3Code });
-}
-
-/**
- * Sets a committee's regional baseline. Given targets were checked with the arguments
- * (`regionalBaselineArgsSchema`); without them the stored ones are kept, and have to suit the
- * baseline too.
- */
-export async function setCommitteeRegionalBaseline({
-	committee,
-	baseline,
-	newTargets
-}: {
-	committee: { id: string; regionalBaselineTargets: number[] };
-	baseline: RegionalBaseline;
-	newTargets: number[] | null | undefined;
-}) {
-	const targets = newTargets ?? committee.regionalBaselineTargets;
-	if (!newTargets) assertStoredTargetsUsable({ baseline, targets });
-
-	await db
-		.update(schema.committee)
-		.set({ regionalBaseline: baseline, regionalBaselineTargets: targets })
-		.where(whereRows({ table: schema.committee, filter: { id: committee.id } }));
-	committeePubsub.updated(committee.id);
 }

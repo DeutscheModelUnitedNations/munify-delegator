@@ -46,7 +46,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRoleIds: t.arg.idList({ description: rolesDescription })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarTrack({ ctx, conferenceId: args.conferenceId, refs: args });
+			await assertCanCreateCalendarTrack({ ctx, conferenceId: args.conferenceId });
 
 			const id = await createCalendarTrack({
 				values: {
@@ -56,7 +56,7 @@ schemaBuilder.mutationFields((t) => ({
 					sortOrder: args.sortOrder
 				},
 				calendarDayIds: args.calendarDayIds ?? [],
-				seats: args
+				audience: args
 			});
 
 			return db.query.calendarTrack
@@ -78,7 +78,7 @@ schemaBuilder.mutationFields((t) => ({
 			conferenceRoleIds: t.arg.idList({ description: `${rolesDescription} Left out keeps them.` })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateCalendarTrack({ ctx, id: args.id, refs: args });
+			await assertCanUpdateCalendarTrack({ ctx, id: args.id });
 
 			// `description` is nullable, so an explicit null clears it.
 			await updateCalendarTrack({
@@ -88,7 +88,7 @@ schemaBuilder.mutationFields((t) => ({
 					sortOrder: args.sortOrder ?? undefined,
 					description: args.description
 				},
-				seats: args
+				audience: args
 			});
 
 			return db.query.calendarTrack
@@ -107,11 +107,7 @@ schemaBuilder.mutationFields((t) => ({
 			runs: t.arg.boolean({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertCanUpdateCalendarTrack({
-				ctx,
-				id: args.id,
-				refs: { calendarDayIds: [args.calendarDayId] }
-			});
+			await assertCanUpdateCalendarTrack({ ctx, id: args.id });
 			await setCalendarTrackOnDay({
 				trackId: args.id,
 				calendarDayId: args.calendarDayId,

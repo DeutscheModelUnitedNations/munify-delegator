@@ -62,7 +62,7 @@ schemaBuilder.mutationFields((t) => ({
 			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateResolution({ ctx, id: args.id, committeeId: args.committeeId });
+			await assertCanUpdateResolution({ ctx, id: args.id });
 			await updateResolution({
 				id: args.id,
 				changes: { title: args.title, committeeId: args.committeeId }

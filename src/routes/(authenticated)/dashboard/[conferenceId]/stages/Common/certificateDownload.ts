@@ -1,5 +1,3 @@
-import type { CertificateSessionMark } from '#lib/utils/certificateSessionLayout';
-
 /** What the certificate download is made of, as fetched for the participant. */
 export interface CertificateData {
 	/** The certificate's PDF template, null while none is uploaded. */
@@ -8,7 +6,7 @@ export interface CertificateData {
 	jwt: string | null;
 	fullName: string | null;
 	/** The check-in sessions the certificate lists. */
-	sessions: readonly CertificateSessionMark[];
+	sessions: readonly string[];
 }
 
 /**
@@ -21,7 +19,7 @@ export type CertificateDownload =
 	| { kind: 'incomplete' }
 	| {
 			kind: 'ready';
-			holder: { fullName: string; jwt: string; sessions: readonly CertificateSessionMark[] };
+			holder: { fullName: string; jwt: string; sessions: readonly string[] };
 			content: string;
 			filename: string;
 	  };

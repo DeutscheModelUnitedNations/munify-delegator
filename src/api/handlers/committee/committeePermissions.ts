@@ -47,23 +47,10 @@ export async function assertCanCreateCommittee({
 
 /**
  * Refuses (NOT_FOUND) unless the caller's update ability reaches the committee: `planSeats`
- * (project management and content lead) in its conference. Returns what an update has to check
- * against: its conference, seats per delegation, roles and the delegations of its seated members.
+ * (project management and content lead) in its conference.
  */
 export async function assertCanUpdateCommittee({ ctx, id }: { ctx: ApiContext; id: string }) {
-	const updateFilter = (await ctx.abilities.committee.filter('update')).merge({
-		where: { id }
-	});
-	return db.query.committee
-		.findFirst({
-			where: updateFilter.query.single.where,
-			columns: { conferenceId: true, numOfSeatsPerDelegation: true },
-			with: {
-				roles: { columns: { id: true } },
-				delegationMembers: { columns: { delegationId: true } }
-			}
-		})
-		.then(assertFindFirstExists);
+	await assertAllowed({ ctx, table: 'committee', action: 'update', id });
 }
 
 /**
@@ -76,7 +63,7 @@ export async function assertCanDeleteCommittee({ ctx, id }: { ctx: ApiContext; i
 
 /**
  * Refuses (NOT_FOUND) unless the caller holds `planSeats` (project management and content lead) in
- * the committee's conference. Returns the committee's conference and its regional baseline targets.
+ * the committee's conference. Returns the committee's conference.
  */
 export async function assertCanPlanCommitteeSeats({
 	ctx,
@@ -88,7 +75,7 @@ export async function assertCanPlanCommitteeSeats({
 	return db.query.committee
 		.findFirst({
 			where: { id: committeeId, conference: teamConference({ ctx, permission: 'planSeats' }) },
-			columns: { conferenceId: true, regionalBaselineTargets: true }
+			columns: { conferenceId: true }
 		})
 		.then(assertFindFirstExists);
 }

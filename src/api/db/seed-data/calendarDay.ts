@@ -2,16 +2,12 @@ import { faker } from '@faker-js/faker';
 import type * as schema from '../schema';
 
 export function makeSeedCalendarDay(
-	options: Pick<
-		typeof schema.calendarDay.$inferInsert,
-		'conferenceId' | 'date' | 'name' | 'sortOrder'
-	>
+	options: Pick<typeof schema.calendarDay.$inferInsert, 'conferenceId' | 'date' | 'name'>
 ): typeof schema.calendarDay.$inferInsert & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		date: options.date,
 		name: options.name,
-		sortOrder: options.sortOrder,
 		conferenceId: options.conferenceId,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()

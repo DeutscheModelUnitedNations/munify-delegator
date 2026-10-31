@@ -24,34 +24,21 @@ export async function createAgendaItem(values: {
 	return created.id;
 }
 
-/** Changes the given fields of an agenda item; left out or null keeps a field. */
+/** Changes the given fields of an agenda item; `null` leaves the title and teaser as they are. */
 export async function updateAgendaItem({
 	id,
 	title,
-	teaserText
+	teaserText,
+	reviewHelpStatus
 }: {
 	id: string;
 	title?: string | null;
 	teaserText?: string | null;
+	reviewHelpStatus?: ReviewHelpStatus;
 }) {
 	await db
 		.update(schema.committeeAgendaItem)
-		.set({ title: title ?? undefined, teaserText: teaserText ?? undefined })
-		.where(whereRows({ table: schema.committeeAgendaItem, filter: { id } }));
-	committeeAgendaItemPubsub.updated(id);
-}
-
-/** Marks whether the agenda item's papers need more reviewers. */
-export async function setReviewHelpStatus({
-	id,
-	status
-}: {
-	id: string;
-	status: ReviewHelpStatus;
-}) {
-	await db
-		.update(schema.committeeAgendaItem)
-		.set({ reviewHelpStatus: status })
+		.set({ title: title ?? undefined, teaserText: teaserText ?? undefined, reviewHelpStatus })
 		.where(whereRows({ table: schema.committeeAgendaItem, filter: { id } }));
 	committeeAgendaItemPubsub.updated(id);
 }

@@ -1,7 +1,6 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertCustomRolesOf,
 	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
@@ -62,70 +61,52 @@ export function registerSingleParticipantAbilities() {
 }
 
 /**
- * Refuses the caller registering themselves as a single participant unless `roleId` is a custom
- * role of the conference (INVALID_INPUT). Whether they may register at all (not already in the
- * conference otherwise, the registration window) is the service's. Returns the caller's id, who
- * is the one registered.
+ * Lets a signed-in caller register themselves as a single participant; the role being a custom
+ * role of the conference is the database's check (`single_participant_same_conference`,
+ * `single_participant_role_kind`). Whether they may register at all (not already in the conference
+ * otherwise, the registration window) is the service's. Returns the caller's id, who is the one
+ * registered.
  */
-export async function assertCanCreateSingleParticipant({
-	ctx,
-	conferenceId,
-	roleId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-	roleId: string;
-}) {
-	const callerId = ctx.mustBeLoggedIn().sub;
-	await assertCustomRolesOf({ conferenceId, roleIds: [roleId] });
-	return { callerId };
+export function assertCanCreateSingleParticipant(ctx: ApiContext) {
+	return { callerId: ctx.mustBeLoggedIn().sub };
 }
 
 /**
  * Refuses (NOT_FOUND) unless the caller's update ability reaches the single participant - their
  * own registration until it is sent in, or `manageParticipants` (project management and
- * participant care) in its conference - and (INVALID_INPUT) unless every role in
- * `applyForRolesIdList` is a custom role of its conference.
+ * participant care) in its conference. The roles it applies for being custom roles of its
+ * conference is the database's check (`single_participant_role_wish_same_conference`,
+ * `single_participant_role_wish_role_kind`).
  */
 export async function assertCanUpdateSingleParticipant({
 	ctx,
-	id,
-	applyForRolesIdList
+	id
 }: {
 	ctx: ApiContext;
 	id: string;
-	applyForRolesIdList: readonly string[];
 }) {
 	// Checked up front: the role changes go to the join table directly, so an update that matched
 	// no row would otherwise not stop them.
-	const target = await db.query.singleParticipant
+	await db.query.singleParticipant
 		.findFirst({
 			...(await ctx.abilities.singleParticipant.filter('update')).merge({ where: { id } }).query
 				.single,
-			columns: { id: true },
-			with: { participant: { columns: { conferenceId: true } } }
+			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
-	await assertCustomRolesOf({
-		conferenceId: target.participant.conferenceId,
-		roleIds: applyForRolesIdList
-	});
 }
 
 /**
  * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference, who place a user straight into a role, and `roleId` is one of its custom roles
- * (INVALID_INPUT).
+ * the conference, who place a user straight into a role. The role being one of its custom roles is
+ * the database's check (`single_participant_same_conference`, `single_participant_role_kind`).
  */
 export async function assertCanCreateAppliedSingleParticipant({
 	ctx,
-	conferenceId,
-	roleId
+	conferenceId
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
-	roleId: string;
 }) {
 	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
-	await assertCustomRolesOf({ conferenceId, roleIds: [roleId] });
 }

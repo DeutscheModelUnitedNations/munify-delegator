@@ -28,7 +28,7 @@
 					__args: { conferenceId, userId },
 					jwt: true,
 					fullName: true,
-					sessions: { name: true, attended: true }
+					sessions: true
 				}),
 				client.query.user({ __args: { id: userId }, id: true, givenName: true, familyName: true })
 			]);

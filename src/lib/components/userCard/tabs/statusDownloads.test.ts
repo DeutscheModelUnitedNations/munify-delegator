@@ -73,12 +73,12 @@ describe('certificateContentsOf', () => {
 			certificateContentsOf({
 				jwt: 'token',
 				fullName: 'Erika Mustermann',
-				sessions: [{ name: 'Day 1', attended: true }]
+				sessions: ['Day 1']
 			})
 		).toEqual({
 			jwt: 'token',
 			fullName: 'Erika Mustermann',
-			sessions: [{ name: 'Day 1', attended: true }]
+			sessions: ['Day 1']
 		});
 	});
 

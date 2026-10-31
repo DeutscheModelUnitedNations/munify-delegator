@@ -1,5 +1,4 @@
 import { db, schema } from '#api/db/db';
-import { whereRows } from '#api/db/whereRows';
 import {
 	conferenceParticipantPubsub,
 	conferenceSupervisorPubsub,
@@ -13,7 +12,6 @@ import { userUpdateSchema } from '#lib/schemata/userForm';
 import { apiError } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 import { z } from 'zod';
-import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 
 /**
  * How many conferences this person actually took part in - registrations that never got a
@@ -234,68 +232,26 @@ export const profileArgsSchema = z
 		return { id, changes };
 	});
 
-export type ProfileUpdate = z.output<typeof profileArgsSchema>;
+/** The user columns the mutations write; each is left as it is when undefined. */
+export type UserChanges = Partial<
+	Omit<typeof schema.user.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>
+>;
 
 /**
- * Writes the given profile fields of user `id`, already checked (`profileArgsSchema`), and looks
- * for accounts from before that the changed profile may now resemble.
+ * Writes the given columns to the rows `where` (pre-authorized) matches. What the mutations hand
+ * over was checked with their arguments (`profileArgsSchema` for a profile).
  */
-export async function updateProfile({ id, changes }: ProfileUpdate) {
-	await db
-		.update(schema.user)
-		.set({ ...changes, updatedAt: new Date() })
-		.where(whereRows({ table: schema.user, filter: { id } }));
-	userPubsub.updated(id);
-	scanUserForDuplicatesInBackground(id);
-}
-
-/** Replaces the care team's notes about user `id`. */
-export async function setGlobalNotes({ id, globalNotes }: { id: string; globalNotes: string }) {
-	await db
-		.update(schema.user)
-		.set({ globalNotes })
-		.where(whereRows({ table: schema.user, filter: { id } }));
-	userPubsub.updated(id);
-}
-
-/**
- * Name and birthday corrections by the care team; an absent field is left as it is. Looks for
- * accounts from before that the corrected identity may now resemble.
- */
-export async function updateIdentity({
-	id,
-	args
+export async function updateUser({
+	where,
+	changes
 }: {
-	id: string;
-	args: { givenName?: string | null; familyName?: string | null; birthday?: Date | null };
-}) {
-	await db
-		.update(schema.user)
-		.set({
-			givenName: args.givenName ?? undefined,
-			familyName: args.familyName ?? undefined,
-			birthday: args.birthday ?? undefined
-		})
-		.where(whereRows({ table: schema.user, filter: { id } }));
-	userPubsub.updated(id);
-	scanUserForDuplicatesInBackground(id);
-}
-
-/** Newsletter opt-ins, addressed by email rather than id. */
-export async function updateNewsletterPreferences(args: {
-	email: string;
-	wantsToReceiveGeneralInformation?: boolean | null;
-	wantsJoinTeamInformation?: boolean | null;
+	where: SQL | undefined;
+	changes: UserChanges;
 }) {
 	const updated = await db
 		.update(schema.user)
-		.set({
-			wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
-			wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
-		})
-		// the scalar lowercases; addresses stored before it did may still carry capitals
-		.where(sql`lower(${schema.user.email}) = ${args.email}`)
+		.set({ ...changes, updatedAt: new Date() })
+		.where(where)
 		.returning({ id: schema.user.id });
-
 	for (const { id } of updated) userPubsub.updated(id);
 }

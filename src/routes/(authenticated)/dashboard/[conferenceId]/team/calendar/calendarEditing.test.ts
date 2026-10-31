@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { parseDayImport, entryFields, trackFields, trackOrderChanges } from './calendarEditing';
+import { dayFields, entryFields, trackFields, trackOrderChanges } from './calendarEditing';
+
+describe('dayFields', () => {
+	test('reads the date input as that calendar day', () => {
+		const fields = dayFields({ name: 'Day 3', date: '2026-03-14' });
+		expect(fields).toEqual({ name: 'Day 3', date: new Date('2026-03-14T00:00:00.000Z') });
+	});
+});
 
 describe('trackFields', () => {
 	test('stores an empty description as none', () => {
@@ -101,19 +108,5 @@ describe('entryFields', () => {
 			surveyOptionIds: ['o', 'p'],
 			calendarTrackIds: ['t', 'u']
 		});
-	});
-});
-
-describe('parseDayImport', () => {
-	test('is no choice without text', () => {
-		expect(parseDayImport(null)).toEqual({ data: null, invalid: false });
-	});
-
-	test('flags text that is not JSON', () => {
-		expect(parseDayImport('nope')).toEqual({ data: null, invalid: true });
-	});
-
-	test('flags JSON that is no export', () => {
-		expect(parseDayImport('{"a":1}')).toEqual({ data: null, invalid: true });
 	});
 });

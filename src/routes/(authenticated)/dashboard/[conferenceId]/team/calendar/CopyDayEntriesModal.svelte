@@ -21,7 +21,7 @@
 		await client.liveQuery.calendarDays({
 			__args: {
 				where: { conferenceId: { eq: conferenceId }, id: { ne: dayId } },
-				orderBy: { sortOrder: 'asc' }
+				orderBy: { date: 'asc' }
 			},
 			id: true,
 			name: true,

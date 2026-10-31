@@ -3,7 +3,6 @@ export interface MatrixDay {
 	id: string;
 	name: string;
 	date: Date;
-	sortOrder: number;
 	entries: { id: string }[];
 	tracks: { id: string }[];
 }

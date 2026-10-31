@@ -49,7 +49,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		validate: entryTimesSchema,
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreateCalendarEntry({ ctx, args });
+			await assertCanCreateCalendarEntry({ ctx, calendarDayId: args.calendarDayId });
 
 			const createdId = await createCalendarEntry({
 				values: {
@@ -97,12 +97,11 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		validate: entryTimesSchema,
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdateCalendarEntry({ ctx, args });
+			await assertCanUpdateCalendarEntry({ ctx, id: args.id });
 
 			await updateCalendarEntry({
 				id: args.id,
-				// An omitted argument arrives as `undefined` and leaves the column alone; an
-				// explicit `null` clears it. Only the non-nullable columns coerce null away.
+				// Left out leaves a column alone, `null` clears it; non-null columns ignore `null`.
 				values: {
 					name: nullToUndefined(args.name),
 					startTime: nullToUndefined(args.startTime),
@@ -115,7 +114,6 @@ schemaBuilder.mutationFields((t) => ({
 					placeId: args.placeId
 				},
 				trackIds: args.calendarTrackIds,
-				// Omitted keeps the options; an empty list shows the entry to everybody
 				surveyOptionIds: args.surveyOptionIds
 			});
 

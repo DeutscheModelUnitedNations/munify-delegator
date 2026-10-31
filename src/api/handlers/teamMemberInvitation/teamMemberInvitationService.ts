@@ -318,53 +318,57 @@ export async function createInvitations({
 	return { created, errors };
 }
 
-/** Marks an invitation revoked. Refuses (CONFLICT) one already revoked or used. */
-export async function revokeInvitation(invitation: Invitation) {
-	if (invitation.revokedAt) {
-		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyRevoked() });
-	}
-	if (invitation.usedAt) {
-		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyUsed() });
-	}
-
-	await db
-		.update(schema.teamMemberInvitation)
-		.set({ revokedAt: new Date() })
-		.where(
-			whereRows({
-				table: schema.teamMemberInvitation,
-				filter: { id: invitation.id, usedAt: { isNull: true } }
-			})
-		);
-	teamMemberInvitationPubsub.updated(invitation.id);
+/** Why the change is refused (CONFLICT): a used invitation, or revoking one already revoked. */
+function updateRefusal({ invitation, revoke }: { invitation: Invitation; revoke?: boolean }) {
+	if (revoke && invitation.revokedAt) return m.invitationAlreadyRevoked();
+	if (invitation.usedAt) return m.invitationAlreadyUsed();
+	return null;
 }
 
+/** How to issue a fresh link: who asks, the origin the link points at, and whether to mail it. */
+type Regeneration = { callerId: string; origin: string; sendEmail: boolean };
+
+/** A regenerated invitation's plaintext token and new expiry. */
+type FreshLink = { token: string; expiresAt: Date };
+
 /**
- * Issues a fresh token for an invitation with a new expiry, which also undoes a revocation, and
- * mails the new link when `sendEmail` is set. Refuses (CONFLICT) one already used, or a revoked one
- * whose address has been invited again since. Returns the plaintext token and the new expiry.
+ * Revokes an invitation, or issues a fresh token for it with a new expiry, which also undoes a
+ * revocation and mails the new link when `regenerate.sendEmail` is set. Refuses (CONFLICT) one
+ * already used, revoking one already revoked, and regenerating a revoked one whose address has
+ * been invited again since. Returns the fresh link of a regenerated one.
  */
-export async function regenerateInvitation({
+export async function updateInvitation(args: {
+	invitation: Invitation;
+	revoke: true;
+}): Promise<undefined>;
+export async function updateInvitation(args: {
+	invitation: Invitation;
+	regenerate: Regeneration;
+}): Promise<FreshLink>;
+export async function updateInvitation({
 	invitation,
-	callerId,
-	origin,
-	sendEmail
+	revoke,
+	regenerate
 }: {
 	invitation: Invitation;
-	callerId: string;
-	origin: string;
-	sendEmail: boolean;
-}) {
-	if (invitation.usedAt) {
-		throw apiError({ code: 'CONFLICT', message: m.invitationAlreadyUsed() });
-	}
+	revoke?: true;
+	regenerate?: Regeneration;
+}): Promise<FreshLink | undefined> {
+	const refusal = updateRefusal({ invitation, revoke });
+	if (refusal) throw apiError({ code: 'CONFLICT', message: refusal });
 
-	const token = makeInvitationToken();
-	const expiresAt = getInvitationExpiryDate();
+	const link = regenerate
+		? { token: makeInvitationToken(), expiresAt: getInvitationExpiryDate() }
+		: undefined;
 	await refusingSecondPending(
 		db
 			.update(schema.teamMemberInvitation)
-			.set({ token: hashToken(token), expiresAt, revokedAt: null })
+			// a fresh link also undoes a revocation
+			.set(
+				link
+					? { token: hashToken(link.token), expiresAt: link.expiresAt, revokedAt: null }
+					: { revokedAt: new Date() }
+			)
 			.where(
 				whereRows({
 					table: schema.teamMemberInvitation,
@@ -374,16 +378,15 @@ export async function regenerateInvitation({
 	);
 	teamMemberInvitationPubsub.updated(invitation.id);
 
-	if (sendEmail) {
+	if (link && regenerate?.sendEmail) {
 		const context = await invitationContext({
-			callerId,
-			origin,
+			callerId: regenerate.callerId,
+			origin: regenerate.origin,
 			conferenceId: invitation.conferenceId
 		});
-		mailInvitation({ context, invitation, token, expiresAt });
+		mailInvitation({ context, invitation, ...link });
 	}
-
-	return { token, expiresAt };
+	return link;
 }
 
 /**

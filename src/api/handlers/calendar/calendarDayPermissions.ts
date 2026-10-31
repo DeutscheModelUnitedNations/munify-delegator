@@ -14,16 +14,14 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 /**
- * The conferences whose schedule (calendar days, tracks, entries, places, site plans) the caller
- * may read: the team's always, a participant's once the team has switched the calendar on
- * (`showCalendar`), which is when the dashboard shows it. Undefined for an anonymous caller.
+ * Filter on the conferences whose schedule (days, tracks, entries, places, site plans) the caller
+ * reads: as team member always, as participant once `showCalendar` is on. Undefined when none.
  */
 export function calendarConference(ctx: Context) {
 	return hasPartIn({ ctx, asParticipant: { showCalendar: true } });
 }
 
 export function registerCalendarDayAbilities() {
-	// Whoever reads the conference's schedule (`calendarConference`) reads its days.
 	abilityBuilder.calendarDay.allow('read').when((ctx) => {
 		const conference = calendarConference(ctx);
 		return conference ? { where: { conference } } : undefined;

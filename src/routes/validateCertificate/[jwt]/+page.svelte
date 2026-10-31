@@ -41,7 +41,7 @@
 							{#each sessions as session, index (index)}
 								<li class="flex items-center gap-2">
 									<i class="fa-sharp-duotone fa-solid fa-check text-success" aria-hidden="true"></i>
-									<span>{session.name}</span>
+									<span>{session}</span>
 								</li>
 							{/each}
 						</ul>

@@ -8,12 +8,7 @@ import {
 	assertCanUpdateAgendaItem,
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
-import {
-	createAgendaItem,
-	deleteAgendaItem,
-	setReviewHelpStatus,
-	updateAgendaItem
-} from './committeeAgendaItemService';
+import { createAgendaItem, deleteAgendaItem, updateAgendaItem } from './committeeAgendaItemService';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -87,7 +82,7 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanSetAgendaItemReviewHelpStatus({ ctx, agendaItemId: args.agendaItemId });
-			await setReviewHelpStatus({ id: args.agendaItemId, status: args.status });
+			await updateAgendaItem({ id: args.agendaItemId, reviewHelpStatus: args.status });
 
 			return db.query.committeeAgendaItem
 				.findFirst(query(await readableAgendaItem({ ctx, id: args.agendaItemId })))

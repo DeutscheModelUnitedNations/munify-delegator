@@ -1,15 +1,8 @@
 import { db, schema } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
-import {
-	endSession,
-	recordScan,
-	renameSession,
-	reopenSession,
-	setSessionOnCertificate,
-	startSession
-} from './attendanceEntryService';
+import { recordScan, startSession, updateAttendanceSession } from './attendanceEntryService';
 import {
 	assertCanCreateAttendanceEntry,
 	assertCanManageAttendanceSession,
@@ -23,6 +16,16 @@ import { m } from '#lib/paraglide/messages';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerAttendanceEntryAbilities();
+
+/** Changes a session the caller may manage. */
+async function manageSession({
+	ctx,
+	...change
+}: { ctx: ApiContext } & Parameters<typeof updateAttendanceSession>[0]) {
+	await assertCanManageAttendanceSession({ ctx, sessionId: change.id });
+	await updateAttendanceSession(change);
+	return true;
+}
 
 const attendanceSessionModeEnum = enum_({ tsName: 'attendanceSessionMode' });
 const AttendanceEntryRef = object({ table: 'attendanceEntry' });
@@ -73,11 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
 			const surveyOptionIds = args.surveyOptionIds ?? [];
-			await assertCanStartAttendanceSession({
-				ctx,
-				conferenceId: args.conferenceId,
-				surveyOptionIds
-			});
+			await assertCanStartAttendanceSession({ ctx, conferenceId: args.conferenceId });
 
 			await startSession({
 				values: {
@@ -110,11 +109,7 @@ schemaBuilder.mutationFields((t) => ({
 			id: t.arg.id({ required: true }),
 			show: t.arg.boolean({ required: true })
 		},
-		resolve: async (_root, args, ctx) => {
-			await assertCanManageAttendanceSession({ ctx, sessionId: args.id });
-			await setSessionOnCertificate({ sessionId: args.id, show: args.show });
-			return true;
-		}
+		resolve: (_root, args, ctx) => manageSession({ ctx, id: args.id, showOnCertificate: args.show })
 	}),
 
 	renameAttendanceSession: t.field({
@@ -125,22 +120,14 @@ schemaBuilder.mutationFields((t) => ({
 			id: t.arg.id({ required: true }),
 			occasion: t.arg.string({ required: true }).validate(occasionSchema)
 		},
-		resolve: async (_root, args, ctx) => {
-			const { conferenceId } = await assertCanManageAttendanceSession({ ctx, sessionId: args.id });
-			await renameSession({ sessionId: args.id, conferenceId, occasion: args.occasion });
-			return true;
-		}
+		resolve: (_root, args, ctx) => manageSession({ ctx, id: args.id, occasion: args.occasion })
 	}),
 
 	endAttendanceSession: t.field({
 		description: 'Ends a session for everybody working in it; ending it again changes nothing.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanManageAttendanceSession({ ctx, sessionId: args.id });
-			await endSession(args.id);
-			return true;
-		}
+		resolve: (_root, args, ctx) => manageSession({ ctx, id: args.id, ended: true })
 	}),
 
 	reopenAttendanceSession: t.field({
@@ -148,11 +135,7 @@ schemaBuilder.mutationFields((t) => ({
 			'Opens an ended session again, keeping its scans; reopening a running one changes nothing.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await assertCanManageAttendanceSession({ ctx, sessionId: args.id });
-			await reopenSession(args.id);
-			return true;
-		}
+		resolve: (_root, args, ctx) => manageSession({ ctx, id: args.id, ended: false })
 	}),
 
 	createAttendanceEntry: t.drizzleField({

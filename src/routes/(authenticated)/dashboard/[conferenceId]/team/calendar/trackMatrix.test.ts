@@ -19,7 +19,6 @@ const day = (id: string, trackIds: string[]) => ({
 	id,
 	name: id,
 	date: new Date('2026-01-01T00:00:00Z'),
-	sortOrder: 0,
 	entries: [],
 	tracks: trackIds.map((trackId) => ({ id: trackId }))
 });

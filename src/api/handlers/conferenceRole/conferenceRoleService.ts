@@ -17,8 +17,7 @@ import {
 	assertCustomRoleDeletable,
 	assertCustomRoleSeatsAllowed,
 	assertNonStateActorSeatsAllowed,
-	assertNonStateActorDeletable,
-	nonStateActorUpdateData
+	assertNonStateActorDeletable
 } from './plannedRoleRules';
 
 /** Names and abbreviations are unique per conference; turns the database's 23505 into CONFLICT. */
@@ -151,34 +150,48 @@ export async function createNonStateActor(data: {
 }
 
 /**
- * Changes the given fields of a non-state actor (`nonStateActorUpdateData`). Lowering the seats
- * below the members of the delegation assigned to it is refused (CONFLICT); the applications that
- * no longer fit are dropped in the same transaction.
+ * Writes update data to a non-state actor or custom role, as `before` (the row as it was) is.
+ * Lowering a non-state actor's seats below the members of the delegation assigned to it is refused
+ * (CONFLICT); the applications that no longer fit are dropped in the same transaction. A custom
+ * role's seats may not drop below the people already holding it: unlike applications, an
+ * assignment is not something to drop quietly. Both are counted in the transaction, so an
+ * assignment cannot slip in between.
  */
-export async function updateNonStateActor({
+export async function updateConferenceRole({
 	before,
-	args
+	data
 }: {
-	before: { id: string; conferenceId: string; seatAmount: number | null };
-	args: Parameters<typeof nonStateActorUpdateData>[0];
+	before: {
+		id: string;
+		conferenceId: string;
+		kind: typeof schema.conferenceRole.$inferSelect.kind;
+		seatAmount: number | null;
+	};
+	data: Partial<typeof schema.conferenceRole.$inferInsert>;
 }) {
-	const data = nonStateActorUpdateData(args);
 	const seatsBefore = before.seatAmount ?? 0;
 	const shrunk = (data.seatAmount ?? seatsBefore) < seatsBefore;
+	const isNonStateActor = before.kind === 'NON_STATE_ACTOR';
 
 	await withUniqueNameCheck(
 		db.transaction(async (tx) => {
-			if (shrunk) {
+			if (isNonStateActor && shrunk) {
 				assertNonStateActorSeatsAllowed({
 					seatAmount: data.seatAmount,
 					assignedMembers: await assignedMembersOf({ tx, roleId: before.id })
+				});
+			}
+			if (!isNonStateActor && data.seatAmount != null) {
+				assertCustomRoleSeatsAllowed({
+					seatAmount: data.seatAmount,
+					holders: await holdersOf({ tx, roleId: before.id })
 				});
 			}
 			await tx
 				.update(schema.conferenceRole)
 				.set(data)
 				.where(whereRows({ table: schema.conferenceRole, filter: { id: before.id } }));
-			if (shrunk) {
+			if (isNonStateActor && shrunk) {
 				await tidyRoleApplicationsForRoles({
 					conferenceId: before.conferenceId,
 					roleIds: [before.id],
@@ -232,45 +245,6 @@ export async function createCustomRole(data: {
 	);
 	conferenceRolePubsub.created();
 	return created.id;
-}
-
-/**
- * Changes the given fields of a custom role; an empty name keeps the old one, `null` clears the
- * description and icon. Its seats may not drop below the people already holding it, counted in
- * the same transaction so an assignment cannot slip in between.
- */
-export async function updateCustomRole({
-	id,
-	data
-}: {
-	id: string;
-	data: {
-		name?: string | null;
-		description?: string | null;
-		fontAwesomeIcon?: string | null;
-		seatAmount?: number | null;
-	};
-}) {
-	await withUniqueNameCheck(
-		db.transaction(async (tx) => {
-			if (data.seatAmount != null) {
-				assertCustomRoleSeatsAllowed({
-					seatAmount: data.seatAmount,
-					holders: await holdersOf({ tx, roleId: id })
-				});
-			}
-			await tx
-				.update(schema.conferenceRole)
-				.set({
-					name: data.name || undefined,
-					description: data.description,
-					fontAwesomeIcon: data.fontAwesomeIcon,
-					seatAmount: data.seatAmount ?? undefined
-				})
-				.where(whereRows({ table: schema.conferenceRole, filter: { id } }));
-		})
-	);
-	conferenceRolePubsub.updated(id);
 }
 
 /**

@@ -1,7 +1,6 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	assertOfferedIn,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	PARTICIPANT_CARE_ROLES,
@@ -50,8 +49,8 @@ export function registerRoleApplicationAbilities() {
 /**
  * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation - its head delegate
  * until it has applied, or `manageParticipants` (project management and participant care) in its
- * conference - and (INVALID_INPUT) unless the role is a nation or non-state actor of that
- * conference.
+ * conference. The role being a nation or non-state actor of its conference is the database's check
+ * (`role_application_same_conference`, `role_application_role_kind`).
  */
 export async function assertCanCreateRoleApplication({
 	ctx,
@@ -60,16 +59,14 @@ export async function assertCanCreateRoleApplication({
 	ctx: ApiContext;
 	args: { delegationId: string; roleId: string };
 }) {
-	const delegation = await db.query.delegation
+	await db.query.delegation
 		.findFirst({
 			...(await ctx.abilities.delegation.filter('update')).merge({
 				where: { id: args.delegationId }
 			}).query.single,
-			columns: { conferenceId: true }
+			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
-
-	await assertOfferedIn({ conferenceId: delegation.conferenceId, ref: { roleId: args.roleId } });
 }
 
 /**

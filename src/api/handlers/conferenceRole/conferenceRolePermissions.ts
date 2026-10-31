@@ -67,7 +67,7 @@ export async function assertCanUpdateConferenceRole({
 	return db.query.conferenceRole
 		.findFirst({
 			where: updateFilter.query.single.where,
-			columns: { id: true, conferenceId: true, seatAmount: true }
+			columns: { id: true, conferenceId: true, kind: true, seatAmount: true }
 		})
 		.then(assertFindFirstExists);
 }

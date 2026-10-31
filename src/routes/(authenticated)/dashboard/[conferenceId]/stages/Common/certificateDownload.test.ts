@@ -6,7 +6,7 @@ const certificate: CertificateData = {
 	title: 'MUN SH 2026',
 	jwt: 'signed',
 	fullName: 'Ada Lovelace',
-	sessions: [{ name: 'Eröffnung', attended: true }]
+	sessions: ['Eröffnung']
 };
 
 describe('planCertificateDownload', () => {
@@ -41,7 +41,7 @@ describe('planCertificateDownload', () => {
 			holder: {
 				fullName: 'Ada Lovelace',
 				jwt: 'signed',
-				sessions: [{ name: 'Eröffnung', attended: true }]
+				sessions: ['Eröffnung']
 			},
 			content: 'https://s3.test/certificate.pdf',
 			filename: 'Ada-Lovelace_MUN-SH 2026_certificate.pdf'

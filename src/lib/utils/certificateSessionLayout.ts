@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-/** One check-in occasion on a certificate; only those the holder was at are listed. */
-export interface CertificateSessionMark {
-	name: string;
-	attended: boolean;
-}
-
 export interface CertificateSessionLayoutOptions {
 	/** Width of the area the list is centred in: the page, or the box the team placed it in. */
 	pageWidth: number;
@@ -23,7 +17,7 @@ export interface CertificateSessionLayoutOptions {
 export interface CertificateSessionLayout {
 	heading: { x: number; y: number; size: number };
 	/** `x` is the left edge of the checkmark, `y` the text baseline. */
-	rows: (CertificateSessionMark & { x: number; y: number })[];
+	rows: { name: string; x: number; y: number }[];
 	size: number;
 	box: number;
 }
@@ -50,7 +44,8 @@ export function layoutCertificateSessions({
 	heading,
 	options
 }: {
-	sessions: readonly CertificateSessionMark[];
+	/** The names of the sessions the holder was at. */
+	sessions: readonly string[];
 	heading: string;
 	options: CertificateSessionLayoutOptions;
 }): CertificateSessionLayout | undefined {
@@ -69,7 +64,7 @@ export function layoutCertificateSessions({
 		sessions.slice(column * perColumn, (column + 1) * perColumn)
 	).filter((group) => group.length > 0);
 	const widths = groups.map(
-		(group) => box + GAP + Math.max(...group.map((session) => options.measure(session.name, size)))
+		(group) => box + GAP + Math.max(...group.map((name) => options.measure(name, size)))
 	);
 	const total = widths.reduce((sum, width) => sum + width, 0) + COLUMN_GAP * (groups.length - 1);
 
@@ -79,9 +74,9 @@ export function layoutCertificateSessions({
 	let x = left + (options.pageWidth - total) / 2;
 	const rows: CertificateSessionLayout['rows'] = [];
 	groups.forEach((group, column) => {
-		group.forEach((session, index) => {
+		group.forEach((name, index) => {
 			const y = firstRow - index * lineHeight;
-			if (y >= options.bottom) rows.push({ ...session, x, y });
+			if (y >= options.bottom) rows.push({ name, x, y });
 		});
 		x += widths[column] + COLUMN_GAP;
 	});
@@ -98,19 +93,14 @@ export function layoutCertificateSessions({
 	};
 }
 
-const sessionsClaim = z.array(z.tuple([z.string(), z.union([z.literal(0), z.literal(1)])]));
+const sessionsClaim = z.array(z.string());
 
 /**
- * The check-in sessions a signed certificate states the holder was at (its `a` claim). Earlier
- * certificates also list the sessions the holder missed, with 0; those are left out, as a
- * certificate says nothing about where someone was not. Certificates issued before sessions were
- * listed, or with a claim of another shape, state none.
+ * The names of the check-in sessions a signed certificate states the holder was at (its `a`
+ * claim). Certificates issued before sessions were listed, or with a claim of another shape, state
+ * none.
  */
-export function sessionsFromClaim(claim: unknown): CertificateSessionMark[] {
+export function sessionsFromClaim(claim: unknown): string[] {
 	const parsed = sessionsClaim.safeParse(claim);
-	return parsed.success
-		? parsed.data
-				.filter(([, attended]) => attended === 1)
-				.map(([name]) => ({ name, attended: true }))
-		: [];
+	return parsed.success ? parsed.data : [];
 }

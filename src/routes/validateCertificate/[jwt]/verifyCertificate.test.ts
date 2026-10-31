@@ -36,17 +36,14 @@ describe('certificateFacts', () => {
 				t: 'MUN-SH 2026',
 				s: start,
 				e: end,
-				a: [
-					['Opening', 1],
-					['Plenary', 0]
-				]
+				a: ['Opening']
 			})
 		).toEqual({
 			fullName: 'Ada Lovelace',
 			conferenceTitle: 'MUN-SH 2026',
 			conferenceStartDate: new Date(start),
 			conferenceEndDate: new Date(end),
-			sessions: [{ name: 'Opening', attended: true }]
+			sessions: ['Opening']
 		});
 	});
 

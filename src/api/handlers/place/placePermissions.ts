@@ -7,7 +7,7 @@ import {
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
-import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
+import { calendarConference } from '#api/handlers/calendar/calendarDayPermissions';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
 

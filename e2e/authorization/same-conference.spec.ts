@@ -10,6 +10,7 @@ import {
 	E2E_PREP_CONFERENCE_ID,
 	E2E_PREP_DELEGATION_ID,
 	E2E_PREP_PARTICIPANT_USER_ID,
+	E2E_ROLE_ID,
 	E2E_SUPERVISOR_ID,
 	E2E_SURVEY_OPTION_A_ID,
 	E2E_SURVEY_QUESTION_ID,
@@ -136,6 +137,36 @@ test('the same writes within one conference pass', async () => {
 	];
 	for (const write of fitting) {
 		expect(await attempt(write), write.name).toBeNull();
+	}
+});
+
+// Delegations hold nations and non-state actors, single participants custom roles, committees seat
+// nations (the `conference_role_kind` migration); a role's kind never changes.
+test('a role of the wrong kind is refused', async () => {
+	const wrongKind: Case[] = [
+		{
+			name: 'a delegation holding a custom role',
+			sql: 'UPDATE delegation SET assigned_role_id = $1 WHERE id = $2',
+			params: [E2E_ROLE_ID, E2E_PAPER_DELEGATION_ID]
+		},
+		{
+			name: 'a delegation applying for a custom role',
+			sql: 'INSERT INTO role_application (id, delegation_id, role_id, rank) VALUES ($1, $2, $3, 99)',
+			params: [id(), E2E_PAPER_DELEGATION_ID, E2E_ROLE_ID]
+		},
+		{
+			name: 'a committee seating a custom role',
+			sql: 'INSERT INTO committee_to_role (id, a, b) VALUES ($1, $2, $3)',
+			params: [id(), E2E_COMMITTEE_ID, E2E_ROLE_ID]
+		},
+		{
+			name: 'a custom role turned into a non-state actor',
+			sql: `UPDATE conference_role SET kind = 'NON_STATE_ACTOR', abbreviation = 'X' WHERE id = $1`,
+			params: [E2E_ROLE_ID]
+		}
+	];
+	for (const write of wrongKind) {
+		expect(await attempt(write), write.name).toMatch(/_role_kind(_immutable)?$/);
 	}
 });
 

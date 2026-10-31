@@ -12,7 +12,6 @@ import {
 	createCommittee,
 	deleteCommittee,
 	setCommitteeNationSeat,
-	setCommitteeRegionalBaseline,
 	updateCommittee
 } from './committeeService';
 import { seatCountSchema } from '#api/handlers/seatPlanning/seatRules';
@@ -64,8 +63,8 @@ schemaBuilder.mutationFields((t) => ({
 			numOfSeatsPerDelegation: t.arg.int().validate(seatCountSchema.nullish())
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const before = await assertCanUpdateCommittee({ ctx, id: args.id });
-			await updateCommittee({ id: args.id, before, data: args });
+			await assertCanUpdateCommittee({ ctx, id: args.id });
+			await updateCommittee({ id: args.id, data: args });
 
 			return db.query.committee
 				.findFirst(query(await allowedCommittee({ ctx, id: args.id })))
@@ -79,6 +78,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
+			// TODO: Rumble abilities would allow us to do this in one query
+			// we should rework so this is used properly
+			// also the indirection throuh passed through function should be reduced -> The call could just happen right here
 			await assertCanDeleteCommittee({ ctx, id: args.id });
 			await deleteCommittee(args.id);
 
@@ -123,14 +125,10 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		validate: regionalBaselineArgsSchema,
 		resolve: async (query, _root, args, ctx) => {
-			const committee = await assertCanPlanCommitteeSeats({ ctx, committeeId: args.committeeId });
-			await setCommitteeRegionalBaseline({
-				committee: {
-					id: args.committeeId,
-					regionalBaselineTargets: committee.regionalBaselineTargets
-				},
-				baseline: args.baseline,
-				newTargets: args.targets
+			await assertCanPlanCommitteeSeats({ ctx, committeeId: args.committeeId });
+			await updateCommittee({
+				id: args.committeeId,
+				data: { regionalBaseline: args.baseline, regionalBaselineTargets: args.targets }
 			});
 
 			return db.query.committee

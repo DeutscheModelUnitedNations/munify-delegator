@@ -71,3 +71,67 @@ export function isForeignKeyViolation(error: unknown): boolean {
 	const candidate: { code?: unknown; cause?: unknown } = error;
 	return candidate.code === '23503' || isForeignKeyViolation(candidate.cause);
 }
+
+type ApiErrorArgs = Parameters<typeof apiError>[0];
+
+/**
+ * The rules the database's triggers keep (see the `conference_anchor`, `conference_reach_unchanged`,
+ * `one_part_per_conference`, `conference_calendar_tracks` and `conference_role_kind` migrations),
+ * by the constraint name they raise with. They are the only check of these rules: resolvers do not
+ * look the rows up first.
+ */
+const DATABASE_RULES: { matches: (constraint: string) => boolean; error: () => ApiErrorArgs }[] = [
+	{
+		matches: (constraint) => constraint.endsWith('_same_conference'),
+		error: () => ({ code: 'INVALID_INPUT', message: m.referencesOtherConference() })
+	},
+	{
+		matches: (constraint) => /_conference(_id)?_immutable$/.test(constraint),
+		error: () => ({ code: 'INVALID_INPUT', message: m.conferenceCannotChange() })
+	},
+	{
+		matches: (constraint) => constraint.endsWith('_role_kind'),
+		error: () => ({ code: 'INVALID_INPUT', message: m.roleNotOnOffer() })
+	},
+	{
+		matches: (constraint) => constraint === 'calendar_entry_track_runs_on_day',
+		error: () => ({ code: 'INVALID_INPUT', message: m.calendarEntryTrackNotOnDay() })
+	},
+	{
+		matches: (constraint) => constraint === 'one_part_per_conference',
+		error: () => ({ code: 'CONFLICT', message: m.alreadyTakesPartInConference() })
+	}
+];
+
+/** The constraint a check violation (23514) names, looked for on the error and its causes. */
+function violatedCheck(error: unknown): string | undefined {
+	if (typeof error !== 'object' || error === null) return undefined;
+	const candidate: {
+		code?: unknown;
+		constraint?: unknown;
+		originalError?: unknown;
+		cause?: unknown;
+	} = error;
+	if (candidate.code === '23514' && typeof candidate.constraint === 'string') {
+		return candidate.constraint;
+	}
+	return violatedCheck(candidate.originalError) ?? violatedCheck(candidate.cause);
+}
+
+/**
+ * The error a GraphQL error caused by one of the database's rules (`DATABASE_RULES`) is answered
+ * with, at the same place in the result; undefined for any other error.
+ */
+export function databaseRuleError(error: GraphQLError): GraphQLError | undefined {
+	const constraint = violatedCheck(error.originalError);
+	const rule = constraint ? DATABASE_RULES.find((r) => r.matches(constraint)) : undefined;
+	if (!rule) return undefined;
+	const { code, message } = rule.error();
+	return new GraphQLError(message, {
+		nodes: error.nodes,
+		source: error.source,
+		positions: error.positions,
+		path: error.path,
+		extensions: { code }
+	});
+}

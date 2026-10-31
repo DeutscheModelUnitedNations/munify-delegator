@@ -4,8 +4,7 @@ import { layoutCertificateSessions, sessionsFromClaim } from './certificateSessi
 // every character is as wide as the font size: easy to reason about
 const measure = (text: string, size: number) => text.length * size;
 const options = { pageWidth: 600, top: 400, bottom: 100, measure };
-const sessions = (count: number) =>
-	Array.from({ length: count }, (_, i) => ({ name: `S${i}`, attended: true }));
+const sessions = (count: number) => Array.from({ length: count }, (_, i) => `S${i}`);
 
 describe('layoutCertificateSessions', () => {
 	test('draws nothing without sessions', () => {
@@ -46,18 +45,13 @@ describe('layoutCertificateSessions', () => {
 });
 
 describe('sessionsFromClaim', () => {
-	test('reads the signed sessions, leaving out those an earlier certificate lists as missed', () => {
-		expect(
-			sessionsFromClaim([
-				['Eröffnung', 1],
-				['Abend', 0]
-			])
-		).toEqual([{ name: 'Eröffnung', attended: true }]);
+	test('reads the signed session names', () => {
+		expect(sessionsFromClaim(['Eröffnung', 'Abend'])).toEqual(['Eröffnung', 'Abend']);
 	});
 
 	test('states none for an absent or malformed claim', () => {
 		expect(sessionsFromClaim(undefined)).toEqual([]);
-		expect(sessionsFromClaim([['Eröffnung', 2]])).toEqual([]);
+		expect(sessionsFromClaim([['Eröffnung', 1]])).toEqual([]);
 		expect(sessionsFromClaim('Eröffnung')).toEqual([]);
 	});
 });

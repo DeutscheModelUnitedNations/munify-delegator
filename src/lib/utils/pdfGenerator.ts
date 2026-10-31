@@ -4,10 +4,7 @@ import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
 import { downloadPDF } from '#lib/utils/downloadHelpers';
-import {
-	layoutCertificateSessions,
-	type CertificateSessionMark
-} from '#lib/utils/certificateSessionLayout';
+import { layoutCertificateSessions } from '#lib/utils/certificateSessionLayout';
 import {
 	boxInPoints,
 	defaultLayout,
@@ -37,8 +34,8 @@ export interface RecipientData {
 export interface ParticipantCertificateData {
 	fullName?: string | null;
 	jwt?: string | null;
-	/** The check-in sessions the holder was checked in at. */
-	sessions?: readonly CertificateSessionMark[];
+	/** The names of the check-in sessions the holder was checked in at. */
+	sessions?: readonly string[];
 }
 
 /**
@@ -54,7 +51,7 @@ function drawCertificateSessions({
 }: {
 	page: PDFPage;
 	font: PDFFont;
-	sessions: readonly CertificateSessionMark[];
+	sessions: readonly string[];
 	area: { left: number; width: number; top: number; bottom: number };
 }) {
 	const heading = m.certificateSessionsHeading();

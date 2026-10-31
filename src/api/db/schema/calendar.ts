@@ -52,23 +52,12 @@ export const place = snakeCase.table(
 	]
 );
 
-export const calendarDay = snakeCase.table(
-	'calendar_day',
-	{
-		...defaultIdAndTimestamps,
-		date: timestamp({ precision: 3 }).notNull(),
-		name: text().notNull(),
-		sortOrder: integer().notNull(),
-		conferenceId: conferenceRef('cascade')
-	},
-	(table) => [
-		uniqueIndex('calendar_day_conference_id_sort_order_key').using(
-			'btree',
-			table.conferenceId.asc().nullsLast(),
-			table.sortOrder.asc().nullsLast()
-		)
-	]
-);
+export const calendarDay = snakeCase.table('calendar_day', {
+	...defaultIdAndTimestamps,
+	date: date({ mode: 'date' }).notNull(),
+	name: text().notNull(),
+	conferenceId: conferenceRef('cascade')
+});
 
 /**
  * A parallel strand of the conference's programme (a committee's sessions, a workshop line). It is

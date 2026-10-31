@@ -247,8 +247,8 @@ bun run preview
   query returns stays in the GraphQL layer; every other use of `ctx.abilities` is a permission
   check. `authHelper/` holds only building blocks that are not about one entity, in two modules:
   `rules.ts` says who may do what (`systemAdmin`, the team and participant filters,
-  `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks, `assertOfferedIn` /
-  `offeredIn`, `assertCustomRolesOf`, `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
+  `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
+  `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
   reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement)
   and `whereAllowed` (the `where` to write through yourself). A row is re-read after a write with
@@ -330,10 +330,13 @@ bun run preview
     `assertTeamPermission({ ctx, conferenceId, permission })` (`hasTeamPermission` is the
     non-throwing form; both take a `tx`). A system admin always passes. Never compare a
     caller's roles by hand: a new kind of check is a new team permission.
-  - **Every id an argument names is checked to belong where the row goes**: a track to its day, a
+  - **Every id an argument names has to belong where the row goes**: a track to its day, a
     place, role, committee or nation to the conference, a `userId` to the caller unless the
-    caller is participant care. A missing check here is how a team of one conference writes into
-    another.
+    caller is participant care. The resolver anchors the row in the conference it authorized (the
+    `conferenceId` it checked, or a parent loaded through the ability); that the other ids are of
+    the same conference, and roles of the right kind, is the database's (see "The database keeps
+    rows inside one conference") - do not look them up first. A `userId` is still resolved to the
+    person's row in the authorized conference (`participantIdsOf`), which is a lookup, not a check.
   - **A rule's `columns` apply to the rows that rule matched** (rumble ≥ 0.25 masks per row), so
     visibility that depends on how the reader relates to a row is a rule like any other: the user
     table (paper reviewers read names only; co-delegates names and email; students their supervisors' name and
@@ -702,6 +705,14 @@ bun run preview
   carry the rows naming it along past their checks. None of this is
   drizzle-managed: a new table with two such parents gets its trigger in its migration, as does a
   new link of that kind, and `db:push` creates none. `e2e/authorization/same-conference.spec.ts` pins them down.
+  Likewise a role's kind (`conference_role_kind` migration): delegations, role applications and
+  assignment units name nations or non-state actors, single participants, their wishes and planned
+  roles custom roles, committees seat nations, and a role's kind never changes. A refused write
+  reaches the client as the input error it is: the triggers raise `check_violation` with a
+  constraint name, and `databaseRuleError` (`#api/services/errors.ts`, run by a plugin in `yoga.ts`
+  ahead of the error masking) answers the known ones (`…_same_conference`, `…_immutable`,
+  `…_role_kind`, `calendar_entry_track_runs_on_day`, `one_part_per_conference`) with a code and an
+  `m.…()` message. A new trigger raises under a name that list matches.
 - **A person takes part in a conference in one way only**: delegation member, single participant,
   supervisor or team. The flows refuse a second part up front (`fetchParticipationsAndTeamMembership`,
   `#api/services/registration/participation.ts`, the team invitations included), and deferred
@@ -757,10 +768,10 @@ bun run preview
   unsaved layout. A new placed field is an element in `DOCUMENT_ELEMENTS` plus a label and sample in
   `team/configuration/sections/layoutElements.ts`. Certificates get no fold marks; letters keep them.
 - **Certificates list the check-in sessions the holder was at**: `getCertificateJWT` returns the
-  conference's scanner sessions the holder was scanned at (`certificateSessions`) and signs them
-  into the optional `a` claim, so the PDF and `/validateCertificate` show the same list. A
-  certificate never mentions a session someone missed; claims of earlier certificates that still
-  list those (with 0) are read without them (`sessionsFromClaim`). Participant care takes a session
+  names of the conference's scanner sessions the holder was scanned at (`certificateSessions`) and
+  signs them into the optional `a` claim (a list of names), so the PDF and `/validateCertificate`
+  show the same list. A certificate never mentions a session someone missed, not even in its
+  signed data. Participant care takes a session
   off the certificates on the scanner page (`attendanceSession.showOnCertificate`, set by
   `setAttendanceSessionOnCertificate`).
 - **A scanner session's name is unique in its conference**, ignoring case

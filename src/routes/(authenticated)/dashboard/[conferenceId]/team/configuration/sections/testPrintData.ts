@@ -60,6 +60,6 @@ export function testPrintCertificate(sessions: string[]): ParticipantCertificate
 	return {
 		fullName: 'Antonio Guterres',
 		jwt: `${randomString(20)}.${randomString(200)}.${randomString(350)}`,
-		sessions: sessions.map((name) => ({ name, attended: true }))
+		sessions
 	};
 }

@@ -70,10 +70,7 @@ describe('certificateSessions', () => {
 				session({ occasion: ' Eröffnung ', hour: 9 }),
 				session({ occasion: 'Mittag', hour: 12, attended: false })
 			])
-		).toEqual([
-			{ name: 'Eröffnung', attended: true },
-			{ name: 'Abendveranstaltung', attended: true }
-		]);
+		).toEqual(['Eröffnung', 'Abendveranstaltung']);
 	});
 
 	test('leaves out empty names', () => {
@@ -86,12 +83,12 @@ describe('certificateSessions', () => {
 				session({ occasion: 'Probelauf', hour: 8, showOnCertificate: false }),
 				session({ occasion: 'Eröffnung', hour: 10 })
 			])
-		).toEqual([{ name: 'Eröffnung', attended: true }]);
+		).toEqual(['Eröffnung']);
 	});
 });
 
 describe('certificateContents with sessions', () => {
-	test('signs the sessions in compactly, and leaves the claim out without any', () => {
+	test('signs in only the names, and leaves the claim out without any', () => {
 		const conference = {
 			title: 'MUN',
 			longTitle: null,
@@ -104,15 +101,9 @@ describe('certificateContents with sessions', () => {
 				didAttend: true,
 				conference,
 				user,
-				sessions: [
-					{ name: 'Eröffnung', attended: true },
-					{ name: 'Abschluss', attended: false }
-				]
+				sessions: ['Eröffnung', 'Abschluss']
 			})?.payload.a
-		).toEqual([
-			['Eröffnung', 1],
-			['Abschluss', 0]
-		]);
+		).toEqual(['Eröffnung', 'Abschluss']);
 		expect(
 			certificateContents({ didAttend: true, conference, user, sessions: [] })?.payload
 		).not.toHaveProperty('a');

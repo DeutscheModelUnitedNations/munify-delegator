@@ -1,0 +1,1 @@
+ALTER TABLE "calendar_day" ALTER COLUMN "date" SET DATA TYPE date USING "date"::date;

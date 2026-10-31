@@ -9,16 +9,22 @@ export const certificateAlg = 'RS256';
 /** The claims every certificate carries; one without them does not verify. */
 export const certificateRequiredClaims = ['n', 't', 's', 'e'];
 
+/**
+ * The claims a participation certificate signs. The names are deliberately terse: they end up in a
+ * QR code, so every byte counts.
+ */
 export interface CertificateJWTPayload extends Record<string, unknown> {
-	/** Deliberately terse: these end up in a QR code, so every byte counts. */
+	/** The holder's full name, as printed on the certificate. */
 	n: string;
+	/** The conference's long title, or its title when it has none. */
 	t: string;
+	/** When the conference started, in milliseconds since the epoch; 0 when no date was set. */
 	s: number;
+	/** When the conference ended, in milliseconds since the epoch; 0 when no date was set. */
 	e: number;
 	/**
-	 * The check-in sessions the person was checked in at, by name, each with 1. Certificates issued
-	 * earlier also list the sessions the person missed, with 0, which nothing shows any more; those
-	 * issued before sessions were listed have no claim at all.
+	 * The names of the check-in sessions the person was checked in at, never those they missed.
+	 * Left out without any, and on certificates issued before sessions were listed.
 	 */
-	a?: [string, 0 | 1][];
+	a?: string[];
 }

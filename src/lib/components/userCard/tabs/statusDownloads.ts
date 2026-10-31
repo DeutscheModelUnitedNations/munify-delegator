@@ -82,7 +82,7 @@ export function certificateContentsOf(
 		| {
 				jwt?: string | null;
 				fullName?: string | null;
-				sessions: readonly { name: string; attended: boolean }[];
+				sessions: readonly string[];
 		  }
 		| null
 		| undefined
@@ -91,9 +91,6 @@ export function certificateContentsOf(
 	return {
 		fullName: jwtData.fullName,
 		jwt: jwtData.jwt,
-		sessions: jwtData.sessions.map((session) => ({
-			name: session.name,
-			attended: session.attended
-		}))
+		sessions: [...jwtData.sessions]
 	};
 }

@@ -18,12 +18,11 @@
 			client.liveQuery.calendarDays({
 				__args: {
 					where: { conferenceId: { eq: conferenceId } },
-					orderBy: { sortOrder: 'asc' }
+					orderBy: { date: 'asc' }
 				},
 				id: true,
 				name: true,
 				date: true,
-				sortOrder: true,
 				tracks: { id: true },
 				entries: { id: true }
 			}),

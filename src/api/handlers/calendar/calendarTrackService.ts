@@ -1,6 +1,7 @@
 import { db, type Transaction, schema } from '#api/db/db';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
+import { replaceLinks } from '#api/db/replaceLinks';
 import { calendarDayPubsub, calendarEntryPubsub, calendarTrackPubsub } from '#api/pubsub';
 import { apiError, isUniqueViolationOn } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
@@ -17,55 +18,39 @@ async function refusingTakenName<T>(write: Promise<T>) {
 	}
 }
 
-/** Makes `ids` the rows `table` links the track (`a`) to. */
-async function setLinks({
-	tx,
-	table,
-	trackId,
-	ids
-}: {
-	tx: Transaction;
-	table: typeof schema.calendarTrackToCommittee | typeof schema.calendarTrackToConferenceRole;
-	trackId: string;
-	ids: readonly string[];
-}) {
-	await tx.delete(table).where(whereRows({ table, filter: { a: trackId } }));
-	const distinct = [...new Set(ids)];
-	if (distinct.length > 0) {
-		await tx.insert(table).values(distinct.map((id) => ({ a: trackId, b: id })));
-	}
-}
-
-/** Who a track is for: given lists replace the committees and roles, left out keeps them. */
-interface Seats {
+/**
+ * Who a track is for. Each list replaces its links whole: `[]` clears them, left out or `null`
+ * keeps them.
+ */
+interface TrackAudience {
 	committeeIds?: readonly string[] | null;
 	conferenceRoleIds?: readonly string[] | null;
 }
 
 /** Replaces whom the track is for: each given list, a left out one stays. */
-async function setSeats({
+async function setAudience({
 	tx,
 	trackId,
-	seats
+	audience
 }: {
 	tx: Transaction;
 	trackId: string;
-	seats: Seats;
+	audience: TrackAudience;
 }) {
-	if (seats.committeeIds) {
-		await setLinks({
+	if (audience.committeeIds) {
+		await replaceLinks({
 			tx,
 			table: schema.calendarTrackToCommittee,
-			trackId,
-			ids: seats.committeeIds
+			aId: trackId,
+			bIds: audience.committeeIds
 		});
 	}
-	if (seats.conferenceRoleIds) {
-		await setLinks({
+	if (audience.conferenceRoleIds) {
+		await replaceLinks({
 			tx,
 			table: schema.calendarTrackToConferenceRole,
-			trackId,
-			ids: seats.conferenceRoleIds
+			aId: trackId,
+			bIds: audience.conferenceRoleIds
 		});
 	}
 }
@@ -77,11 +62,11 @@ async function setSeats({
 export async function createCalendarTrack({
 	values,
 	calendarDayIds,
-	seats
+	audience
 }: {
 	values: typeof schema.calendarTrack.$inferInsert;
 	calendarDayIds: readonly string[];
-	seats: Seats;
+	audience: TrackAudience;
 }) {
 	const dayIds = [...new Set(calendarDayIds)];
 	const created = await refusingTakenName(
@@ -96,7 +81,7 @@ export async function createCalendarTrack({
 					.insert(schema.calendarDayToCalendarTrack)
 					.values(dayIds.map((dayId) => ({ a: dayId, b: created.id })));
 			}
-			await setSeats({ tx, trackId: created.id, seats });
+			await setAudience({ tx, trackId: created.id, audience });
 			return created;
 		})
 	);
@@ -112,11 +97,11 @@ export async function createCalendarTrack({
 export async function updateCalendarTrack({
 	id,
 	values,
-	seats
+	audience
 }: {
 	id: string;
 	values: Partial<typeof schema.calendarTrack.$inferInsert>;
-	seats: Seats;
+	audience: TrackAudience;
 }) {
 	await refusingTakenName(
 		db.transaction(async (tx) => {
@@ -126,48 +111,26 @@ export async function updateCalendarTrack({
 					.set(values)
 					.where(whereRows({ table: schema.calendarTrack, filter: { id } }));
 			}
-			await setSeats({ tx, trackId: id, seats });
+			await setAudience({ tx, trackId: id, audience });
 		})
 	);
 	calendarTrackPubsub.updated(id);
 }
 
-/**
- * Takes the track off the entries of `entries` and deletes those left on no track: every entry
- * runs on at least one. Returns the ids of the entries that stay and of the deleted ones.
- */
-async function detachEntries({
-	tx,
-	trackId,
-	entries
-}: {
-	tx: Transaction;
-	trackId: string;
-	entries: { id: string; tracks: { id: string }[] }[];
-}) {
-	const deleted = entries.filter((entry) => entry.tracks.every((t) => t.id === trackId));
-	const kept = entries.filter((entry) => !deleted.includes(entry));
-	if (kept.length > 0) {
-		await tx.delete(schema.calendarEntryToCalendarTrack).where(
-			whereRows({
-				table: schema.calendarEntryToCalendarTrack,
-				filter: { b: trackId, a: { in: kept.map((entry) => entry.id) } }
-			})
-		);
-	}
-	if (deleted.length > 0) {
-		await tx.delete(schema.calendarEntry).where(
-			whereRows({
-				table: schema.calendarEntry,
-				filter: { id: { in: deleted.map((entry) => entry.id) } }
-			})
-		);
-	}
-	return { keptIds: kept.map((entry) => entry.id), deletedIds: deleted.map((entry) => entry.id) };
+interface EntryOnTrack {
+	id: string;
+	/** Every track the entry runs on, this one included. */
+	tracks: { id: string }[];
 }
 
-/** The entries on a track, those of one day only when `calendarDayId` is given. */
-function entriesOnTrack({
+/** Ids of the entries a track change kept (now on fewer tracks) and deleted. */
+interface ChangedEntries {
+	keptIds: string[];
+	deletedIds: string[];
+}
+
+/** The entries on a track, only those on `calendarDayId` when given. */
+function findEntriesOnTrack({
 	tx,
 	trackId,
 	calendarDayId
@@ -175,7 +138,7 @@ function entriesOnTrack({
 	tx: Transaction;
 	trackId: string;
 	calendarDayId?: string;
-}) {
+}): Promise<EntryOnTrack[]> {
 	return tx.query.calendarEntry.findMany({
 		where: { tracks: { id: trackId }, ...(calendarDayId && { calendarDayId }) },
 		columns: { id: true },
@@ -183,37 +146,70 @@ function entriesOnTrack({
 	});
 }
 
+/**
+ * Takes `entries` off the track. An entry must run on some track, so those on this track alone
+ * are deleted instead.
+ */
+async function takeEntriesOffTrack({
+	tx,
+	trackId,
+	entries
+}: {
+	tx: Transaction;
+	trackId: string;
+	entries: EntryOnTrack[];
+}): Promise<ChangedEntries> {
+	const onThisTrackOnly = entries.filter((entry) => entry.tracks.every((t) => t.id === trackId));
+	const onOtherTracksToo = entries.filter((entry) => !onThisTrackOnly.includes(entry));
+	const keptIds = onOtherTracksToo.map((entry) => entry.id);
+	const deletedIds = onThisTrackOnly.map((entry) => entry.id);
+	if (keptIds.length > 0) {
+		await tx.delete(schema.calendarEntryToCalendarTrack).where(
+			whereRows({
+				table: schema.calendarEntryToCalendarTrack,
+				filter: { b: trackId, a: { in: keptIds } }
+			})
+		);
+	}
+	if (deletedIds.length > 0) {
+		await tx
+			.delete(schema.calendarEntry)
+			.where(whereRows({ table: schema.calendarEntry, filter: { id: { in: deletedIds } } }));
+	}
+	return { keptIds, deletedIds };
+}
+
 /** Announces the entries `detachEntries` changed, once its transaction has committed. */
-function announceEntries({ keptIds, deletedIds }: { keptIds: string[]; deletedIds: string[] }) {
+function publishChangedEntries({ keptIds, deletedIds }: ChangedEntries) {
 	if (keptIds.length > 0) calendarEntryPubsub.updated(keptIds);
 	if (deletedIds.length > 0) calendarEntryPubsub.removed();
 }
 
-/** Deletes a track; entries that ran on it alone go with it, entries on others stay. */
+/** Deletes a track; entries that ran on it alone go with it, entries on other tracks stay. */
 export async function deleteCalendarTrack(id: string) {
-	const { dayIds, ...entries } = await db.transaction(async (tx) => {
-		const days = await tx.query.calendarDayToCalendarTrack.findMany({
+	const { dayIds, ...changedEntries } = await db.transaction(async (tx) => {
+		const dayLinks = await tx.query.calendarDayToCalendarTrack.findMany({
 			where: { b: id },
 			columns: { a: true }
 		});
-		const entries = await detachEntries({
+		const changedEntries = await takeEntriesOffTrack({
 			tx,
 			trackId: id,
-			entries: await entriesOnTrack({ tx, trackId: id })
+			entries: await findEntriesOnTrack({ tx, trackId: id })
 		});
 		await tx
 			.delete(schema.calendarTrack)
 			.where(whereRows({ table: schema.calendarTrack, filter: { id } }));
-		return { dayIds: days.map((day) => day.a), ...entries };
+		return { dayIds: dayLinks.map((link) => link.a), ...changedEntries };
 	});
 	calendarTrackPubsub.removed();
 	if (dayIds.length > 0) calendarDayPubsub.updated(dayIds);
-	announceEntries(entries);
+	publishChangedEntries(changedEntries);
 }
 
 /**
- * Lets a track run on a day, or takes it off the day: the day's entries leave the track, and
- * those on no other track go.
+ * Lets a track run on a day (`runs`), or takes it off the day, along with that day's entries as
+ * `takeEntriesOffTrack` does.
  */
 export async function setCalendarTrackOnDay({
 	trackId,
@@ -224,7 +220,7 @@ export async function setCalendarTrackOnDay({
 	calendarDayId: string;
 	runs: boolean;
 }) {
-	const entries = await db.transaction(async (tx) => {
+	const changedEntries = await db.transaction(async (tx): Promise<ChangedEntries> => {
 		if (runs) {
 			await tx
 				.insert(schema.calendarDayToCalendarTrack)
@@ -232,10 +228,10 @@ export async function setCalendarTrackOnDay({
 				.onConflictDoNothing();
 			return { keptIds: [], deletedIds: [] };
 		}
-		const entries = await detachEntries({
+		const changedEntries = await takeEntriesOffTrack({
 			tx,
 			trackId,
-			entries: await entriesOnTrack({ tx, trackId, calendarDayId })
+			entries: await findEntriesOnTrack({ tx, trackId, calendarDayId })
 		});
 		await tx.delete(schema.calendarDayToCalendarTrack).where(
 			whereRows({
@@ -243,9 +239,9 @@ export async function setCalendarTrackOnDay({
 				filter: { a: calendarDayId, b: trackId }
 			})
 		);
-		return entries;
+		return changedEntries;
 	});
 	calendarDayPubsub.updated(calendarDayId);
 	calendarTrackPubsub.updated(trackId);
-	announceEntries(entries);
+	publishChangedEntries(changedEntries);
 }

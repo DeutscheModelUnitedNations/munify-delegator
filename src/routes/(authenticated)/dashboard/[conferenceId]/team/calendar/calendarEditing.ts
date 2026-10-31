@@ -1,7 +1,11 @@
-import { calendarDayExportSchema } from '#lib/schemata/calendarDayExport';
 import { dateAtMinutes } from './calendarGrid';
 
 /** Pure decisions behind the calendar management tabs. */
+
+/** The fields a day form writes; `date` is the date input's `YYYY-MM-DD`. */
+export function dayFields({ name, date }: { name: string; date: string }) {
+	return { name, date: new Date(date) };
+}
 
 /** The fields a track form writes; an empty description is stored as none. */
 export function trackFields({
@@ -56,7 +60,8 @@ interface EntryFormValues<Color> {
 	trackIds: string[];
 }
 
-const minutesOf = (time: string) => {
+/** `09:30` as `570`. */
+export const minutesOf = (time: string) => {
 	const [hours, minutes] = time.split(':').map(Number);
 	return hours * 60 + minutes;
 };
@@ -81,19 +86,4 @@ export function entryFields<Color>({
 		surveyOptionIds: form.surveyOptionIds,
 		calendarTrackIds: form.trackIds
 	};
-}
-
-/**
- * Reads a day export file. `invalid` is set when the text is not an export;
- * a read that did not yield text counts as nothing chosen.
- */
-export function parseDayImport(text: unknown) {
-	if (typeof text !== 'string') return { data: null, invalid: false };
-	try {
-		const result = calendarDayExportSchema.safeParse(JSON.parse(text));
-		if (result.success) return { data: result.data, invalid: false };
-	} catch {
-		// not JSON at all: invalid like any other file that is no export
-	}
-	return { data: null, invalid: true };
 }

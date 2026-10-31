@@ -6,8 +6,7 @@ import {
 	INVITATION_EMAIL_STATUSES,
 	invitationEmailsSchema,
 	invitationsSchema,
-	regenerateInvitation,
-	revokeInvitation
+	updateInvitation
 } from './teamMemberInvitationService';
 import {
 	assertCanManageInvitations,
@@ -117,7 +116,7 @@ schemaBuilder.mutationFields((t) => ({
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
-			await revokeInvitation(invitation);
+			await updateInvitation({ invitation, revoke: true });
 			return true;
 		}
 	}),
@@ -135,11 +134,13 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const invitation = await assertCanUpdateInvitation({ ctx, invitationId: args.invitationId });
-			return regenerateInvitation({
+			return updateInvitation({
 				invitation,
-				callerId: ctx.mustBeLoggedIn().sub,
-				origin: ctx.requestUrl().origin,
-				sendEmail: args.sendEmail ?? false
+				regenerate: {
+					callerId: ctx.mustBeLoggedIn().sub,
+					origin: ctx.requestUrl().origin,
+					sendEmail: args.sendEmail ?? false
+				}
 			});
 		}
 	})

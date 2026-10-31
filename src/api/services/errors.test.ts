@@ -1,5 +1,11 @@
 import { describe, expect, it, test } from 'vitest';
-import { isForeignKeyViolation, isSerializationFailure, isUniqueViolationOn } from './errors';
+import { GraphQLError } from 'graphql';
+import {
+	databaseRuleError,
+	isForeignKeyViolation,
+	isSerializationFailure,
+	isUniqueViolationOn
+} from './errors';
 
 describe('isForeignKeyViolation', () => {
 	it('finds the code on the error or on what drizzle wrapped', () => {
@@ -72,5 +78,38 @@ describe('isUniqueViolationOn', () => {
 			})
 		).toBe(true);
 		expect(isUniqueViolationOn({ error: new Error('query failed'), column: 'email' })).toBe(false);
+	});
+});
+
+describe('databaseRuleError', () => {
+	/** What graphql makes of a resolver that failed on drizzle's wrapped driver error. */
+	const failed = (driverError: object) =>
+		new GraphQLError('Failed query', {
+			path: ['createCalendarEntry'],
+			originalError: new Error('Failed query', { cause: driverError })
+		});
+
+	test.each([
+		['calendar_entry_same_conference', 'INVALID_INPUT'],
+		['calendar_entry_conference_immutable', 'INVALID_INPUT'],
+		['resolution_conference_id_immutable', 'INVALID_INPUT'],
+		['delegation_role_kind', 'INVALID_INPUT'],
+		['calendar_entry_track_runs_on_day', 'INVALID_INPUT'],
+		['one_part_per_conference', 'CONFLICT']
+	])('answers %s as %s, at the same place', (constraint, code) => {
+		const error = databaseRuleError(failed({ code: '23514', constraint }));
+		expect(error?.extensions.code).toBe(code);
+		expect(error?.path).toEqual(['createCalendarEntry']);
+		expect(error?.originalError).toBeUndefined();
+	});
+
+	test('leaves other errors to the masking', () => {
+		expect(databaseRuleError(failed({ code: '23514', constraint: 'conference_role_check' }))).toBe(
+			undefined
+		);
+		expect(databaseRuleError(failed({ code: '23505', constraint: 'x_same_conference' }))).toBe(
+			undefined
+		);
+		expect(databaseRuleError(new GraphQLError('no cause'))).toBe(undefined);
 	});
 });

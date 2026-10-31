@@ -462,7 +462,7 @@ export type Calendarday = {
   }) => Conference,
   conferenceId: ID,
   createdAt: DateTime,
-  date: DateTime,
+  date: Date,
   entries: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -473,7 +473,6 @@ export type Calendarday = {
   id: ID,
   name: String,
   search_distance: Float | null,
-  sortOrder: Int,
   tracks: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -490,7 +489,6 @@ export type CalendardayOrderInputArgument = {
   date?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   name?: SortingParameter | null | undefined,
-  sortOrder?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
 		
@@ -501,11 +499,10 @@ export type CalendardayWhereInputArgument = {
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
-  date?: DateTimeWhereInputArgument | null | undefined,
+  date?: DateWhereInputArgument | null | undefined,
   entries?: CalendarentryWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   name?: StringWhereInputArgument | null | undefined,
-  sortOrder?: IntWhereInputArgument | null | undefined,
   tracks?: CalendartrackWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
@@ -661,12 +658,7 @@ export type CalendartrackWhereInputArgument = {
 export type CertificateJWT = {
   fullName: String | null,
   jwt: String | null,
-  sessions: () => CertificateSession[]    
-};
-		
-export type CertificateSession = {
-  attended: Boolean,
-  name: String    
+  sessions: String[]    
 };
 		
 export type Committee = {
@@ -2171,7 +2163,7 @@ export type Mutation = {
   }) => Attendanceentry,
   createCalendarDay: (p: {
     conferenceId: ID,
-    date: DateTime,
+    date: Date,
     name: String
   }) => Calendarday,
   createCalendarEntry: (p: {
@@ -2398,12 +2390,6 @@ export type Mutation = {
   endAttendanceSession: (p: {
     id: ID
   }) => Boolean,
-  importCalendarDay: (p: {
-    conferenceId: ID,
-    date: DateTime,
-    importData: JSON,
-    name: String
-  }) => Calendarday,
   issueIdentityCode: () => IdentityCode,
   mergeSchools: (p: {
     name?: String | null | undefined,
@@ -2564,7 +2550,7 @@ export type Mutation = {
     didAttend?: Boolean | null | undefined
   }) => UpdateAllConferenceParticipantsResponse,
   updateCalendarDay: (p: {
-    date?: DateTime | null | undefined,
+    date?: Date | null | undefined,
     id: ID,
     name?: String | null | undefined
   }) => Calendarday,

@@ -13,10 +13,9 @@ import {
 	createNonStateActor,
 	deleteCustomRole,
 	deleteNonStateActor,
-	updateCustomRole,
-	updateNonStateActor
+	updateConferenceRole
 } from './conferenceRoleService';
-import { customRoleSeatsSchema } from './plannedRoleRules';
+import { customRoleSeatsSchema, nonStateActorUpdateData } from './plannedRoleRules';
 
 registerConferenceRoleAbilities();
 
@@ -74,7 +73,7 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (query, _root, { id, ...args }, ctx) => {
 				const before = await assertCanUpdateConferenceRole({ ctx, id, kind: 'NON_STATE_ACTOR' });
-				await updateNonStateActor({ before, args });
+				await updateConferenceRole({ before, data: nonStateActorUpdateData(args) });
 
 				return db.query.conferenceRole
 					.findFirst(query(await readableRole({ ctx, id })))
@@ -122,8 +121,16 @@ schemaBuilder.mutationFields((t) => {
 				seatAmount: t.arg.int().validate(customRoleSeatsSchema.nullish())
 			},
 			resolve: async (query, _root, { id, ...data }, ctx) => {
-				await assertCanUpdateConferenceRole({ ctx, id, kind: 'CUSTOM' });
-				await updateCustomRole({ id, data });
+				const before = await assertCanUpdateConferenceRole({ ctx, id, kind: 'CUSTOM' });
+				await updateConferenceRole({
+					before,
+					data: {
+						name: data.name || undefined,
+						description: data.description,
+						fontAwesomeIcon: data.fontAwesomeIcon,
+						seatAmount: data.seatAmount ?? undefined
+					}
+				});
 
 				return db.query.conferenceRole
 					.findFirst(query(await readableRole({ ctx, id })))

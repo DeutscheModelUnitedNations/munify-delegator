@@ -55,7 +55,7 @@ export async function addCalendar(cs: ConferenceSeed) {
 		: 0;
 
 	const days = dayNames.map((name, index) =>
-		makeSeedCalendarDay({ conferenceId, name, date: dayDates[index], sortOrder: index })
+		makeSeedCalendarDay({ conferenceId, name, date: dayDates[index] })
 	);
 	cs.batch.calendarDay.push(...days);
 
