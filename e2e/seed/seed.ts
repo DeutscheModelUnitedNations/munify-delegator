@@ -127,6 +127,11 @@ export const E2E_COMMITTEE_ASSIGN_MEMBER_ID = 'e2e00000delegationmember0004';
 // A committee of the same conference that does not seat the committee-assign nation, so a head
 // delegate trying to place a member there has to be refused.
 export const E2E_UNSEATED_COMMITTEE_ID = 'e2e00000committee000000005';
+// A co-delegate the team seated in a committee of one seat per delegation, which the head
+// delegate must not take away from them by moving the unseated head delegate in.
+export const E2E_COMMITTEE_ASSIGN_SEATED_USER_ID = 'e2e-committee-assign-seated';
+export const E2E_COMMITTEE_ASSIGN_SEATED_MEMBER_ID = 'e2e00000delegationmember0010';
+export const E2E_FULL_COMMITTEE_ID = 'e2e00000committee000000010';
 // An agenda item of that committee, which the paper delegate (seated in E2E_COMMITTEE_ID) may
 // not write on.
 export const E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID = 'e2e00000agendaitem00000002';
@@ -299,6 +304,7 @@ export default async function seed() {
 	await upsertActorUser(E2E_CONNECT_PARTICIPANT_ID);
 	await upsertActorUser(E2E_SUPERVISED_PARTICIPANT_USER_ID);
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID);
+	await upsertActorUser(E2E_COMMITTEE_ASSIGN_SEATED_USER_ID);
 	await upsertActorUser(E2E_TEAM_COORDINATOR_ID);
 
 	const upsertTeamMember = (
@@ -762,6 +768,35 @@ export default async function seed() {
 		.values(unseatedCommittee)
 		.onConflictDoUpdate({ target: schema.committee.id, set: unseatedCommittee });
 	await seatNations(db, unseatedCommittee, [E2E_NATION_ALPHA3]);
+	const fullCommittee = {
+		...makeSeedCommittee({ conferenceId: conference.id }),
+		id: E2E_FULL_COMMITTEE_ID,
+		name: 'E2E Committee Full For Italy',
+		abbreviation: 'FULLIT',
+		numOfSeatsPerDelegation: 1
+	};
+	await db
+		.insert(schema.committee)
+		.values(fullCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: fullCommittee });
+	await seatNations(db, fullCommittee, [E2E_COMMITTEE_ASSIGN_NATION_ALPHA3]);
+	const committeeAssignSeatedMember = {
+		...makeSeedDelegationMember({
+			delegationId: committeeAssignDelegation.id,
+			conferenceParticipantId: await upsertParticipant(
+				db,
+				conference.id,
+				E2E_COMMITTEE_ASSIGN_SEATED_USER_ID
+			),
+			isHeadDelegate: false,
+			assignedCommitteeId: fullCommittee.id
+		}),
+		id: E2E_COMMITTEE_ASSIGN_SEATED_MEMBER_ID
+	};
+	await db.insert(schema.delegationMember).values(committeeAssignSeatedMember).onConflictDoUpdate({
+		target: schema.delegationMember.id,
+		set: committeeAssignSeatedMember
+	});
 	const otherCommitteeAgendaItem = {
 		id: E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID,
 		title: 'E2E Agenda Item Of Another Committee',

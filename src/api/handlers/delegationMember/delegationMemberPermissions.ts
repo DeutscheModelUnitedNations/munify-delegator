@@ -3,6 +3,7 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertOfferedIn,
 	assertTeamPermission,
+	hasTeamPermission,
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	maskedUntilRelease,
@@ -86,7 +87,11 @@ export function registerDelegationMemberAbilities() {
 	});
 }
 
-/** Refuses (NOT_FOUND) unless the caller's delete ability reaches the delegation member. */
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the delegation member: the member
+ * themselves or their head delegate until the delegation has applied, or `manageParticipants`
+ * (project management and participant care) in its conference at any time.
+ */
 export async function assertCanDeleteDelegationMember({
 	ctx,
 	id
@@ -95,23 +100,6 @@ export async function assertCanDeleteDelegationMember({
 	id: string;
 }) {
 	await assertAllowed({ ctx, table: 'delegationMember', action: 'delete', id });
-}
-
-/** Refuses a role or committee the conference does not offer (placing a user into a delegation). */
-export { assertOfferedIn };
-
-/**
- * Refuses unless the caller holds `manageParticipants` (participant care) in the conference: only
- * they place a user straight into an applied delegation.
- */
-export async function assertCanCreateAppliedDelegationMember({
-	ctx,
-	conferenceId
-}: {
-	ctx: ApiContext;
-	conferenceId: string;
-}) {
-	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
 }
 
 /**
@@ -131,9 +119,41 @@ function assertCommitteeSeats({
 }
 
 /**
- * Refuses unless the caller's update ability reaches the delegation member and the committee is
- * one of the member's conference that seats their delegation. Returns both, the member with its
- * delegation's members, which the move needs to find a seat.
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the conference, who place a user straight into an assigned delegation, the role is a nation or
+ * non-state actor of the conference, and the committee, if any, is one of its committees that
+ * seats the role (INVALID_INPUT otherwise).
+ */
+export async function assertCanCreateAppliedDelegationMember({
+	ctx,
+	args
+}: {
+	ctx: ApiContext;
+	args: { conferenceId: string; assignedRoleId: string; assignedCommitteeId?: string | null };
+}) {
+	const { conferenceId, assignedRoleId, assignedCommitteeId } = args;
+	await assertTeamPermission({ ctx, conferenceId, permission: 'manageParticipants' });
+	await assertOfferedIn({ conferenceId, ref: { roleId: assignedRoleId } });
+	if (!assignedCommitteeId) return;
+	const committee = await db.query.committee.findFirst({
+		where: { id: assignedCommitteeId, conferenceId },
+		columns: { id: true },
+		with: { roles: { columns: { id: true } } }
+	});
+	if (!committee) {
+		throw apiError({ code: 'INVALID_INPUT', message: m.committeeDoesNotBelongToConferenceError() });
+	}
+	assertCommitteeSeats({ committee, assignedRoleId });
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation member: their head
+ * delegate once the assignment is released and while the member has no committee, or
+ * `manageParticipants` (project management and participant care) in its conference. Refuses
+ * (INVALID_INPUT) a committee that is not one of the conference's seating the delegation. Returns
+ * the member with its delegation's members, the committee, and whether the caller may displace a
+ * seated member when the committee is full: only participant care may, a head delegate seats
+ * nobody out of a seat the team gave.
  */
 export async function assertCanMoveDelegationMemberToCommittee({
 	ctx,
@@ -160,15 +180,21 @@ export async function assertCanMoveDelegationMemberToCommittee({
 		.then(assertFindFirstExists);
 	assertCommitteeSeats({ committee, assignedRoleId: member.delegation.assignedRoleId });
 
-	return { member, committee };
+	const mayDisplace = await hasTeamPermission({
+		ctx,
+		conferenceId: member.delegation.conferenceId,
+		permission: 'manageParticipants'
+	});
+	return { member, committee, mayDisplace };
 }
 
 export type CommitteeMove = Awaited<ReturnType<typeof assertCanMoveDelegationMemberToCommittee>>;
 
 /**
- * Refuses unless, for every pairing, the caller's update ability reaches the delegation member, the
- * member is of `conferenceId`, and the committee (if any) is the conference's and seats the
- * member's delegation. Checked before anything is written; a null committee only clears the seat.
+ * Refuses unless, for every pairing, the caller's update ability reaches the delegation member
+ * (NOT_FOUND; see `assertCanMoveDelegationMemberToCommittee` for who has it), the member is of
+ * `conferenceId`, and the committee (if any) is the conference's and seats the member's delegation
+ * (INVALID_INPUT). Checked before anything is written; a null committee only clears the seat.
  */
 export async function assertCanAssignCommittees({
 	ctx,
@@ -222,10 +248,10 @@ export async function assertCanAssignCommittees({
 }
 
 /**
- * Refuses unless the caller holds `manageParticipants` (participant care) in the conference, the
- * target role and committee are the conference's, and the caller's update ability reaches every
- * member the switch names (the one moving, the one swapped with, the new head delegates) within
- * that conference.
+ * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
+ * the conference, the target role and committee are the conference's (INVALID_INPUT), and every
+ * member the switch names (the one moving, the one swapped with, the new head delegates) is one
+ * of the conference's that the caller may update (NOT_FOUND).
  */
 export async function assertCanSwitchDelegationMemberSeats({
 	ctx,

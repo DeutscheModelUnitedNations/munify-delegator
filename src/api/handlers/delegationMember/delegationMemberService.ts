@@ -1,16 +1,17 @@
 import { type Transaction, db, schema } from '#api/db/db';
-import { delegationMemberPubsub, delegationPubsub, singleParticipantPubsub } from '#api/pubsub';
+import {
+	conferenceParticipantPubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	singleParticipantPubsub
+} from '#api/pubsub';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
 } from '#api/handlers/conferenceParticipant/conferenceParticipantService';
 import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
-import {
-	fetchParticipationsAndTeamMembership,
-	isParticipantOrTeamMember
-} from '#api/services/registration/participation';
+import { fetchParticipationsAndTeamMembership } from '#api/services/registration/participation';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
-import { nullToUndefined } from '#api/services/args';
 import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { assertRegistrationOpen } from '#api/services/registration/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
@@ -22,11 +23,14 @@ import type { CommitteeMove } from './delegationMemberPermissions';
 import type { ConferenceRoleKind } from '#lib/helpers/conferenceRole';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import type { SeatSwitch } from '#lib/helpers/seatSwitch';
+import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { headDelegateChanges, isSameSeat, type Seat } from './seatSwitch';
 
 /**
  * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it
- * out keeps one they already have). Returns the id of the new member.
+ * out keeps one they already have). Refuses (CONFLICT) outside the registration window, an
+ * applied delegation, and somebody who already takes part in the conference; a wrong code is
+ * NOT_FOUND. Returns the id of the new member.
  */
 export async function joinDelegationByEntryCode({
 	userId,
@@ -40,7 +44,10 @@ export async function joinDelegationByEntryCode({
 	school: SchoolChoice;
 }) {
 	await assertRegistrationOpen(conferenceId);
-	const delegation = await db.query.delegation.findFirst({ where: { conferenceId, entryCode } });
+	const delegation = await db.query.delegation.findFirst({
+		where: { conferenceId, entryCode: normalizeEntryCode(entryCode) },
+		columns: { id: true, conferenceId: true, applied: true }
+	});
 	if (!delegation) throw codeNotFound();
 
 	if (delegation.applied) {
@@ -67,7 +74,7 @@ export async function joinDelegationByEntryCode({
 				conferenceParticipantId: participantId,
 				isHeadDelegate: false
 			})
-			.returning()
+			.returning({ id: schema.delegationMember.id })
 			.then(assertFirstEntryExists);
 		await setParticipantSchool({
 			tx,
@@ -81,63 +88,79 @@ export async function joinDelegationByEntryCode({
 		return member;
 	});
 	delegationMemberPubsub.created();
+	// its member count changed
+	delegationPubsub.updated(delegation.id);
 
 	return created.id;
 }
 
+/** What a member leaving their delegation changed, for `announceLeave`. */
+type Leave = { delegationId: string; delegationRemoved: boolean; successorId?: string };
+
 /**
- * Removing a delegate. If the head delegate leaves, another member is promoted; if nobody is
- * left, the delegation itself goes. Same ordering as the legacy resolver. The caller checks first
- * that the delegate may be removed (`assertCanDeleteDelegationMember`).
+ * Takes the member out of their delegation, in the caller's transaction: a leaving head delegate
+ * hands the role to another member, and a delegation nobody is left in is deleted. The role
+ * applications the smaller delegation can no longer seat are dropped.
  */
-export async function removeDelegationMember(id: string) {
-	const removed = await db.transaction(async (tx) => {
-		const [deleted] = await tx
-			.delete(schema.delegationMember)
-			.where(whereRows({ table: schema.delegationMember, filter: { id } }))
-			.returning({
-				id: schema.delegationMember.id,
-				delegationId: schema.delegationMember.delegationId,
-				isHeadDelegate: schema.delegationMember.isHeadDelegate
-			});
+async function leaveDelegation({ tx, memberId }: { tx: Transaction; memberId: string }) {
+	const [deleted] = await tx
+		.delete(schema.delegationMember)
+		.where(whereRows({ table: schema.delegationMember, filter: { id: memberId } }))
+		.returning({
+			delegationId: schema.delegationMember.delegationId,
+			isHeadDelegate: schema.delegationMember.isHeadDelegate
+		});
+	if (!deleted) {
+		throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
+	}
 
-		if (!deleted) {
-			throw apiError({ code: 'NOT_FOUND', message: m.deleteNotFoundOrForbidden() });
-		}
-
-		let successorId: string | undefined;
-		if (deleted.isHeadDelegate) {
-			const successor = await tx.query.delegationMember.findFirst({
-				where: { delegationId: deleted.delegationId }
-			});
-
-			if (!successor) {
-				await tx
-					.delete(schema.delegation)
-					.where(whereRows({ table: schema.delegation, filter: { id: deleted.delegationId } }));
-				return { delegationId: deleted.delegationId, delegationRemoved: true, successorId };
-			}
-
-			await tx
-				.update(schema.delegationMember)
-				.set({ isHeadDelegate: true })
-				.where(whereRows({ table: schema.delegationMember, filter: { id: successor.id } }));
-			successorId = successor.id;
-		}
-
-		// Only meaningful while the delegation still exists.
-		await tidyRoleApplications({ delegationId: deleted.delegationId, tx });
-		return { delegationId: deleted.delegationId, delegationRemoved: false, successorId };
+	const remaining = await tx.query.delegationMember.findFirst({
+		where: { delegationId: deleted.delegationId },
+		columns: { id: true }
 	});
+	if (!remaining) {
+		await tx
+			.delete(schema.delegation)
+			.where(whereRows({ table: schema.delegation, filter: { id: deleted.delegationId } }));
+		return { delegationId: deleted.delegationId, delegationRemoved: true } satisfies Leave;
+	}
 
+	let successorId: string | undefined;
+	if (deleted.isHeadDelegate) {
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate: true })
+			.where(whereRows({ table: schema.delegationMember, filter: { id: remaining.id } }));
+		successorId = remaining.id;
+	}
+	await tidyRoleApplications({ delegationId: deleted.delegationId, tx });
+	return { delegationId: deleted.delegationId, delegationRemoved: false, successorId };
+}
+
+/** Announces a committed `leaveDelegation`. */
+function announceLeave(leave: Leave) {
 	delegationMemberPubsub.removed();
-	if (removed.delegationRemoved) {
+	if (leave.delegationRemoved) {
 		delegationPubsub.removed();
 		return;
 	}
-	if (removed.successorId) delegationMemberPubsub.updated(removed.successorId);
+	if (leave.successorId) delegationMemberPubsub.updated(leave.successorId);
 	// it lost a member, and maybe its head delegate
-	delegationPubsub.updated(removed.delegationId);
+	delegationPubsub.updated(leave.delegationId);
+}
+
+/**
+ * Removing a delegate the caller may remove (`assertCanDeleteDelegationMember`). If the head
+ * delegate leaves, another member is promoted; if nobody is left, the delegation itself goes.
+ */
+export async function removeDelegationMember(id: string) {
+	const member = await db.query.delegationMember
+		.findFirst({ where: { id }, columns: { conferenceParticipantId: true } })
+		.then(assertFindFirstExists);
+	const leave = await db.transaction((tx) => leaveDelegation({ tx, memberId: id }));
+	announceLeave(leave);
+	// what the person takes part as changed
+	conferenceParticipantPubsub.updated(member.conferenceParticipantId);
 }
 
 /** Placeholder details, so an assigned delegation looks "applied" like any other. */
@@ -147,7 +170,15 @@ const ASSIGNED_DELEGATION_INFOS = {
 	motivation: 'Assigned by management'
 };
 
-/** Removes the user's delegation membership or single registration in the conference, if any. */
+/** What `clearParticipation` took away, for announcing it once committed. */
+type ClearedParticipation = { leave?: Leave; removedSingle?: boolean };
+
+/**
+ * Takes the user's delegation membership or single registration in the conference away, in the
+ * caller's transaction, so the team can seat them elsewhere; a membership is left as
+ * `leaveDelegation` leaves it. Refuses (CONFLICT) a supervisor or team member: they cannot be
+ * moved into a seat.
+ */
 async function clearParticipation({
 	tx,
 	conferenceId,
@@ -156,45 +187,41 @@ async function clearParticipation({
 	tx: Transaction;
 	conferenceId: string;
 	userId: string;
-}) {
-	if (!(await isParticipantOrTeamMember({ userId, conferenceId }))) return;
-
-	const participant = await tx.query.conferenceParticipant.findFirst({
-		where: { conferenceId, userId },
-		columns: { id: true }
-	});
-	// Registered, but only on the team: nothing to clear, and nothing to move either.
-	if (!participant) {
+}): Promise<ClearedParticipation> {
+	const [participant, teamMember] = await Promise.all([
+		tx.query.conferenceParticipant.findFirst({
+			where: { conferenceId, userId },
+			columns: { id: true },
+			with: {
+				delegationMember: { columns: { id: true } },
+				singleParticipant: { columns: { id: true } },
+				conferenceSupervisor: { columns: { id: true } }
+			}
+		}),
+		tx.query.teamMember.findFirst({ where: { conferenceId, userId }, columns: { id: true } })
+	]);
+	if (teamMember || participant?.conferenceSupervisor) {
 		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
 	}
-
-	const removedMember = await tx
-		.delete(schema.delegationMember)
-		.where(
-			whereRows({
-				table: schema.delegationMember,
-				filter: { conferenceParticipantId: participant.id }
-			})
-		)
-		.returning({ id: schema.delegationMember.id });
-	if (removedMember.length > 0) {
-		delegationMemberPubsub.removed();
-		return;
+	if (participant?.delegationMember) {
+		return { leave: await leaveDelegation({ tx, memberId: participant.delegationMember.id }) };
 	}
-
-	const removedSingle = await tx
-		.delete(schema.singleParticipant)
-		.where(
+	if (participant?.singleParticipant) {
+		await tx.delete(schema.singleParticipant).where(
 			whereRows({
 				table: schema.singleParticipant,
-				filter: { conferenceParticipantId: participant.id }
+				filter: { id: participant.singleParticipant.id }
 			})
-		)
-		.returning({ id: schema.singleParticipant.id });
-	if (removedSingle.length === 0) {
-		throw apiError({ code: 'CONFLICT', message: m.delegationMemberUserAlreadyInConference() });
+		);
+		return { removedSingle: true };
 	}
-	singleParticipantPubsub.removed();
+	return {};
+}
+
+/** Announces a committed `clearParticipation`. */
+function announceCleared(cleared: ClearedParticipation) {
+	if (cleared.leave) announceLeave(cleared.leave);
+	if (cleared.removedSingle) singleParticipantPubsub.removed();
 }
 
 type AssignedDelegation = {
@@ -203,8 +230,9 @@ type AssignedDelegation = {
 };
 
 /**
- * The delegation that carries the role: the existing one, or a new one created for it. An
- * existing delegation without members gets the placeholder details.
+ * The delegation that carries the role, in the caller's transaction: the existing one, or a new
+ * one created for it (`created`). An existing delegation without members gets the placeholder
+ * details.
  */
 async function prepareAssignedDelegation({
 	tx,
@@ -216,7 +244,7 @@ async function prepareAssignedDelegation({
 	conferenceId: string;
 	assignedRoleId: string;
 	existing: AssignedDelegation | undefined;
-}): Promise<AssignedDelegation> {
+}): Promise<AssignedDelegation & { created: boolean }> {
 	if (!existing) {
 		const created = await tx
 			.insert(schema.delegation)
@@ -226,10 +254,9 @@ async function prepareAssignedDelegation({
 				entryCode: makeEntryCode(),
 				...ASSIGNED_DELEGATION_INFOS
 			})
-			.returning()
+			.returning({ id: schema.delegation.id })
 			.then(assertFirstEntryExists);
-		delegationPubsub.created();
-		return { ...created, members: [] };
+		return { id: created.id, members: [], created: true };
 	}
 
 	if (existing.members.length === 0) {
@@ -237,48 +264,52 @@ async function prepareAssignedDelegation({
 			.update(schema.delegation)
 			.set(ASSIGNED_DELEGATION_INFOS)
 			.where(whereRows({ table: schema.delegation, filter: { id: existing.id } }));
-		delegationPubsub.updated(existing.id);
 	}
-	return existing;
+	return { ...existing, created: false };
+}
+
+/** Announces the delegation `prepareAssignedDelegation` found or created, once committed. */
+function announceAssignedDelegation(delegation: { id: string; created: boolean }) {
+	if (delegation.created) delegationPubsub.created();
+	delegationPubsub.updated(delegation.id);
 }
 
 /**
  * Management placing a user straight into an assigned delegation, bypassing the normal
- * application flow. The delegation is created on demand for the role if none holds it yet.
- * Returns the id of the new member.
+ * application flow; the caller checked the role and committee
+ * (`assertCanCreateAppliedDelegationMember`). The user's other registration in the conference is
+ * cleared first (`clearParticipation`), and the delegation is created on demand for the role if
+ * none holds it yet. Returns the id of the new member.
  */
-export async function placeUserInAssignedDelegation(args: {
+export async function placeUserInAssignedDelegation({
+	conferenceId,
+	userId,
+	assignedRoleId,
+	assignedCommitteeId
+}: {
 	conferenceId: string;
 	userId: string;
 	assignedRoleId: string;
 	assignedCommitteeId?: string | null;
 }) {
-	const memberId = await db.transaction(async (tx) => {
+	const placed = await db.transaction(async (tx) => {
+		const cleared = await clearParticipation({ tx, conferenceId, userId });
+
+		// Looked up after clearing: the user may have just left this very delegation.
 		const existing = await tx.query.delegation.findFirst({
-			where: { conferenceId: args.conferenceId, assignedRoleId: args.assignedRoleId },
-			with: { members: true }
+			where: { conferenceId, assignedRoleId },
+			columns: { id: true },
+			with: { members: { columns: { isHeadDelegate: true } } }
 		});
-
-		// Existing participation is cleared first, so the user can be moved.
-		await clearParticipation({ tx, conferenceId: args.conferenceId, userId: args.userId });
-
-		const waiting = await markSeatedFromWaitingList({
-			tx,
-			conferenceId: args.conferenceId,
-			userId: args.userId
-		});
+		const waiting = await markSeatedFromWaitingList({ tx, conferenceId, userId });
 		const delegation = await prepareAssignedDelegation({
 			tx,
-			conferenceId: args.conferenceId,
-			assignedRoleId: args.assignedRoleId,
+			conferenceId,
+			assignedRoleId,
 			existing
 		});
 
-		const participantId = await ensureConferenceParticipant({
-			tx,
-			conferenceId: args.conferenceId,
-			userId: args.userId
-		});
+		const participantId = await ensureConferenceParticipant({ tx, conferenceId, userId });
 		// Their own school: the one they waited with, else the one they had.
 		await setParticipantSchool({
 			tx,
@@ -290,35 +321,38 @@ export async function placeUserInAssignedDelegation(args: {
 			.values({
 				conferenceParticipantId: participantId,
 				delegationId: delegation.id,
-				assignedCommitteeId: nullToUndefined(args.assignedCommitteeId),
-				isHeadDelegate: !delegation.members.some((m) => m.isHeadDelegate)
+				assignedCommitteeId: assignedCommitteeId ?? undefined,
+				isHeadDelegate: !delegation.members.some((x) => x.isHeadDelegate)
 			})
-			.returning()
+			.returning({ id: schema.delegationMember.id })
 			.then(assertFirstEntryExists);
 
-		return member.id;
+		return { memberId: member.id, cleared, delegation };
 	});
+	announceCleared(placed.cleared);
+	announceAssignedDelegation(placed.delegation);
 	delegationMemberPubsub.created();
-	return memberId;
+	return placed.memberId;
 }
 
 /**
- * Moves a delegate into a committee. Committees have a per-delegation seat limit, so when the
- * target is already full for this delegation the longest-untouched occupant is displaced into
- * the seat this member is leaving - a swap, rather than a refusal. Takes what
- * `assertCanMoveDelegationMemberToCommittee` checked and loaded.
+ * Moves a delegate into a committee, as `assertCanMoveDelegationMemberToCommittee` checked and
+ * loaded. Committees have a per-delegation seat limit: when the target is already full for this
+ * delegation, participant care (`mayDisplace`) moves the longest-untouched occupant into the seat
+ * this member is leaving - a swap, rather than a refusal; anybody else is refused (CONFLICT).
  */
-export async function moveMemberToCommittee({ member, committee }: CommitteeMove) {
-	const displacedId = await db.transaction(async (tx) => {
-		const siblings = (member.delegation?.members ?? []).filter((x) => x.id !== member.id);
-		const occupying = siblings.filter((x) => x.assignedCommitteeId === committee.id);
+export async function moveMemberToCommittee({ member, committee, mayDisplace }: CommitteeMove) {
+	const siblings = member.delegation.members.filter((x) => x.id !== member.id);
+	const occupying = siblings.filter((x) => x.assignedCommitteeId === committee.id);
+	const displaced =
+		occupying.length >= committee.numOfSeatsPerDelegation
+			? occupying.toSorted((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime())[0]
+			: undefined;
+	if (displaced && !mayDisplace) {
+		throw apiError({ code: 'CONFLICT', message: m.committeeSeatsExceeded() });
+	}
 
-		const displaced =
-			occupying.length >= committee.numOfSeatsPerDelegation
-				? [...occupying].sort(
-						(a, b) => (a.updatedAt?.getTime() ?? 0) - (b.updatedAt?.getTime() ?? 0)
-					)[0]
-				: undefined;
+	await db.transaction(async (tx) => {
 		if (displaced) {
 			await tx
 				.update(schema.delegationMember)
@@ -330,10 +364,8 @@ export async function moveMemberToCommittee({ member, committee }: CommitteeMove
 			.update(schema.delegationMember)
 			.set({ assignedCommitteeId: committee.id })
 			.where(whereRows({ table: schema.delegationMember, filter: { id: member.id } }));
-		return displaced?.id;
 	});
-	if (displacedId) delegationMemberPubsub.updated(displacedId);
-	delegationMemberPubsub.updated(member.id);
+	delegationMemberPubsub.updated(displaced ? [displaced.id, member.id] : member.id);
 }
 
 /** Refuses when a delegation of the given members now fills a committee beyond its seats. */
@@ -370,9 +402,9 @@ async function assertSeatLimits({ tx, memberIds }: { tx: Transaction; memberIds:
 }
 
 /**
- * Applies the committee assignment produced by the assignment assistant, whose pairings
- * `assertCanAssignCommittees` checked. One pairing that breaks a seat limit rolls the whole batch
- * back, which is why this runs in a transaction rather than writing as it goes.
+ * Applies a committee assignment whose pairings `assertCanAssignCommittees` checked. One pairing
+ * that breaks a seat limit (CONFLICT) rolls the whole batch back, which is why this runs in a
+ * transaction rather than writing as it goes. Returns the ids of the members it seated.
  */
 export async function assignCommittees(
 	assignments: { delegationMemberId: string; committeeId?: string | null }[]
@@ -397,16 +429,21 @@ export async function assignCommittees(
 			memberIds: assignments.map((assignment) => assignment.delegationMemberId)
 		});
 	});
-	const memberIds = assignments.map((assignment) => assignment.delegationMemberId);
+	const memberIds = [...new Set(assignments.map((assignment) => assignment.delegationMemberId))];
 	if (memberIds.length > 0) delegationMemberPubsub.updated(memberIds);
+	return memberIds;
 }
 
 type SeatOf = Seat & { id: string };
 
-/** What a switch writes: the new seat per moved member, and the switch the head delegates follow. */
+/**
+ * What a switch writes: the new seat per moved member, the switch the head delegates follow, and
+ * whether a delegation had to be created for the target role.
+ */
 interface SeatSwitchPlan {
 	seats: Map<string, Seat>;
 	change: SeatSwitch;
+	createdDelegation?: boolean;
 }
 
 function loadSeat({ tx, id }: { tx: Transaction; id: string }): Promise<SeatOf> {
@@ -523,7 +560,8 @@ async function moveToFreeSeat({
 		seats: new Map([
 			[member.id, { delegationId: delegation.id, assignedCommitteeId: committeeId }]
 		]),
-		change: { kind: 'move', memberId: member.id, targetDelegationId: delegation.id }
+		change: { kind: 'move', memberId: member.id, targetDelegationId: delegation.id },
+		createdDelegation: delegation.created
 	};
 }
 
@@ -616,7 +654,12 @@ export interface SeatSwitchArgs {
  * a CONFLICT to retry. Returns the members moved.
  */
 export async function switchSeats(args: SeatSwitchArgs) {
-	let switched: { memberIds: string[]; delegationIds: string[]; headDelegateIds: string[] };
+	let switched: {
+		memberIds: string[];
+		delegationIds: string[];
+		headDelegateIds: string[];
+		createdDelegation: boolean;
+	};
 	try {
 		switched = await db.transaction(
 			async (tx) => {
@@ -628,7 +671,11 @@ export async function switchSeats(args: SeatSwitchArgs) {
 					fromDelegationId: member.delegationId,
 					chosenHeadDelegateIds: args.headDelegateMemberIds
 				});
-				return { memberIds: [...plan.seats.keys()], ...written };
+				return {
+					memberIds: [...plan.seats.keys()],
+					...written,
+					createdDelegation: plan.createdDelegation ?? false
+				};
 			},
 			{ isolationLevel: 'serializable' }
 		);
@@ -641,6 +688,7 @@ export async function switchSeats(args: SeatSwitchArgs) {
 	delegationMemberPubsub.updated([
 		...new Set([...switched.memberIds, ...switched.headDelegateIds])
 	]);
+	if (switched.createdDelegation) delegationPubsub.created();
 	delegationPubsub.updated(switched.delegationIds);
 	return switched.memberIds;
 }

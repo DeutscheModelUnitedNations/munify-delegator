@@ -4,6 +4,8 @@ import {
 	E2E_AGENDA_ITEM_ID,
 	E2E_COMMITTEE_ASSIGN_HEAD_USER_ID,
 	E2E_COMMITTEE_ASSIGN_MEMBER_ID,
+	E2E_COMMITTEE_ASSIGN_SEATED_MEMBER_ID,
+	E2E_FULL_COMMITTEE_ID,
 	E2E_ASSIGNMENT_ADMIN_ID,
 	E2E_CONFERENCE_ID,
 	E2E_CONNECT_PARTICIPANT_ID,
@@ -788,6 +790,34 @@ test('a head delegate seats members only in committees that seat their delegatio
 		),
 		unseated
 	);
+});
+
+test('a head delegate does not move a seated co-delegate out of a full committee', async ({
+	page
+}) => {
+	// The committee seats one member of the delegation, and the team put the co-delegate there.
+	// Moving the unseated head delegate in used to displace the co-delegate into no committee.
+	await loginAs(page, fixedTestUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID));
+
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($id: ID!, $c: ID!) {
+				updateDelegationMemberCommittee(id: $id, assignedCommitteeId: $c) { id }
+			}`,
+			{ id: E2E_COMMITTEE_ASSIGN_MEMBER_ID, c: E2E_FULL_COMMITTEE_ID }
+		),
+		/more members of this delegation than it seats/
+	);
+
+	const seated = await gql(
+		page,
+		`query ($id: ID!) { delegationMember(id: $id) { assignedCommitteeId } }`,
+		{ id: E2E_COMMITTEE_ASSIGN_SEATED_MEMBER_ID }
+	);
+	expect(seated.data, JSON.stringify(seated)).toEqual({
+		delegationMember: { assignedCommitteeId: E2E_FULL_COMMITTEE_ID }
+	});
 });
 
 test('a delegate writes papers only on their committee’s agenda items, as their role allows', async ({
