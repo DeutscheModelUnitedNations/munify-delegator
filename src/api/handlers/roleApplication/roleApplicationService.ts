@@ -4,6 +4,7 @@ import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
+import { assertRoleSeatsDelegation } from './tidyRoleApplications';
 import { apiError, isUniqueViolationOn } from '#api/services/errors';
 import { m } from '#lib/paraglide/messages';
 
@@ -32,6 +33,7 @@ export async function appendRoleApplication({
 }) {
 	const created = await refusingRepeatedWish(
 		db.transaction(async (tx) => {
+			await assertRoleSeatsDelegation({ tx, delegationId, roleId });
 			// Close any gap first, so "one past the count" cannot collide with an existing rank.
 			await normalizeRoleApplicationRanks({ delegationId, tx });
 			const [existing] = await tx

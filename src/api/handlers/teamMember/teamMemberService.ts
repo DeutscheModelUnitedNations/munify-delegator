@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { lockConference } from '#api/db/lockConference';
 import { whereRows } from '#api/db/whereRows';
 import { teamMemberPubsub } from '#api/pubsub';
 import type { TeamRole } from '#api/services/authHelper/rules';
@@ -26,11 +27,7 @@ async function changeMembership({
 			columns: { conferenceId: true }
 		});
 		if (!found) return;
-		await tx
-			.select({ id: schema.conference.id })
-			.from(schema.conference)
-			.where(whereRows({ table: schema.conference, filter: { id: found.conferenceId } }))
-			.for('update');
+		await lockConference({ tx, conferenceId: found.conferenceId });
 		// Read again under the lock: another change to the team may have just committed.
 		const member = await tx.query.teamMember.findFirst({
 			where: { id },

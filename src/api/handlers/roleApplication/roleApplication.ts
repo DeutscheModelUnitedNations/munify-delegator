@@ -17,7 +17,7 @@ query({ table: 'roleApplication' });
 schemaBuilder.mutationFields((t) => ({
 	createRoleApplication: t.drizzleField({
 		description:
-			"Adds a role at the end of the delegation's wishes: the head delegate until the delegation has applied, or participant care. A role the delegation already wishes for answers CONFLICT.",
+			"Adds a role at the end of the delegation's wishes: the head delegate until the delegation has applied, or participant care. A role the delegation already wishes for answers CONFLICT, one with fewer seats than the delegation has members INVALID_INPUT.",
 		type: RoleApplicationRef,
 		args: {
 			delegationId: t.arg.id({ required: true }),

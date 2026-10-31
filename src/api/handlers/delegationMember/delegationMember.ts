@@ -97,7 +97,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	createAppliedDelegationMember: t.drizzleField({
 		description:
-			"Participant care placing a user straight into the delegation holding a role, bypassing the application. The user's delegation membership or single registration in the conference is cleared first; a supervisor or team member is refused with CONFLICT. The delegation is created for the role if none holds it yet.",
+			"Participant care placing a user straight into the delegation holding a role, bypassing the application. The user's delegation membership or single registration in the conference is cleared first; a supervisor or team member is refused with CONFLICT, as is a role with no seat left or a committee that already seats as many of the delegation as it may. The delegation is created for the role if none holds it yet.",
 		type: DelegationMemberRef,
 		args: {
 			userId: t.arg.id({ required: true }),

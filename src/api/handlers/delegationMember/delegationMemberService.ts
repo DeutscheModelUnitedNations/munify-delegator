@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { lockConference } from '#api/db/lockConference';
 import {
 	conferenceParticipantPubsub,
 	delegationMemberPubsub,
@@ -25,6 +26,8 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import type { SeatSwitch } from '#lib/helpers/seatSwitch';
 import { normalizeEntryCode } from '#lib/helpers/entryCode';
 import { headDelegateChanges, isSameSeat, type Seat } from './seatSwitch';
+import { placementProblem } from './placementRules';
+import { roleSeats } from '#lib/helpers/conferenceRole';
 
 /**
  * Joining a delegation by entry code, with the school the newcomer names as their own (leaving it
@@ -226,8 +229,53 @@ function announceCleared(cleared: ClearedParticipation) {
 
 type AssignedDelegation = {
 	id: string;
-	members: { isHeadDelegate: boolean }[];
+	members: { isHeadDelegate: boolean; assignedCommitteeId?: string | null }[];
 };
+
+/**
+ * Refuses (CONFLICT) to place one more person into the delegation holding `assignedRoleId`, when
+ * the role has no seat left or the committee already seats as many of the delegation as it may.
+ */
+async function assertPlacementFits({
+	tx,
+	conferenceId,
+	assignedRoleId,
+	assignedCommitteeId,
+	existing
+}: {
+	tx: Transaction;
+	conferenceId: string;
+	assignedRoleId: string;
+	assignedCommitteeId?: string | null;
+	existing: AssignedDelegation | undefined;
+}) {
+	const [role, committees] = await Promise.all([
+		tx.query.conferenceRole
+			.findFirst({
+				where: { id: assignedRoleId },
+				columns: { id: true, kind: true, seatAmount: true }
+			})
+			.then(assertFindFirstExists),
+		tx.query.committee.findMany({
+			where: { conferenceId },
+			columns: { id: true, numOfSeatsPerDelegation: true },
+			with: { roles: { columns: { id: true } } }
+		})
+	]);
+	const problem = placementProblem({
+		roleSeats: roleSeats({ role, committees }),
+		members: (existing?.members ?? []).map((member) => ({
+			assignedCommitteeId: member.assignedCommitteeId ?? null
+		})),
+		committee: committees.find((committee) => committee.id === assignedCommitteeId)
+	});
+	if (problem === 'roleFull') {
+		throw apiError({ code: 'CONFLICT', message: m.placementRoleFull() });
+	}
+	if (problem === 'committeeFull') {
+		throw apiError({ code: 'CONFLICT', message: m.placementCommitteeFull() });
+	}
+}
 
 /**
  * The delegation that carries the role, in the caller's transaction: the existing one, or a new
@@ -279,7 +327,8 @@ function announceAssignedDelegation(delegation: { id: string; created: boolean }
  * application flow; the caller checked the role and committee
  * (`assertCanCreateAppliedDelegationMember`). The user's other registration in the conference is
  * cleared first (`clearParticipation`), and the delegation is created on demand for the role if
- * none holds it yet. Returns the id of the new member.
+ * none holds it yet. Refuses (CONFLICT) a role with no seat left or a full committee
+ * (`assertPlacementFits`). Returns the id of the new member.
  */
 export async function placeUserInAssignedDelegation({
 	conferenceId,
@@ -293,13 +342,22 @@ export async function placeUserInAssignedDelegation({
 	assignedCommitteeId?: string | null;
 }) {
 	const placed = await db.transaction(async (tx) => {
+		// Placements in one conference wait for each other, so two cannot take the last seat.
+		await lockConference({ tx, conferenceId });
 		const cleared = await clearParticipation({ tx, conferenceId, userId });
 
 		// Looked up after clearing: the user may have just left this very delegation.
 		const existing = await tx.query.delegation.findFirst({
 			where: { conferenceId, assignedRoleId },
 			columns: { id: true },
-			with: { members: { columns: { isHeadDelegate: true } } }
+			with: { members: { columns: { isHeadDelegate: true, assignedCommitteeId: true } } }
+		});
+		await assertPlacementFits({
+			tx,
+			conferenceId,
+			assignedRoleId,
+			assignedCommitteeId,
+			existing
 		});
 		const waiting = await markSeatedFromWaitingList({ tx, conferenceId, userId });
 		const delegation = await prepareAssignedDelegation({

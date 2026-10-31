@@ -1,4 +1,5 @@
 import { type Transaction, db, schema } from '#api/db/db';
+import { lockConference } from '#api/db/lockConference';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import {
 	planApply,
@@ -163,11 +164,7 @@ export async function clearDraft({ tx, conferenceId }: { tx: Transaction; confer
 export async function applyAssignmentDraft(conferenceId: string) {
 	const plan = await db.transaction(async (tx) => {
 		// Two applies at once would both plan from the same draft and create its delegations twice.
-		await tx
-			.select({ id: schema.conference.id })
-			.from(schema.conference)
-			.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }))
-			.for('update');
+		await lockConference({ tx, conferenceId });
 		const { input, roleNames } = await loadAssignmentState({ tx, conferenceId });
 		const { plan, errors } = planApply(input);
 		if (errors.length > 0) {

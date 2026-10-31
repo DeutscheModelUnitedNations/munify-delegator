@@ -3,6 +3,8 @@ import { whereRows } from '#api/db/whereRows';
 import { roleApplicationPubsub } from '#api/pubsub';
 import { roleSeats } from '#lib/helpers/conferenceRole';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
+import { apiError } from '#api/services/errors';
+import { m } from '#lib/paraglide/messages';
 
 /**
  * A delegation's size can change after it has applied for roles. This drops any application for a
@@ -30,11 +32,7 @@ export async function tidyRoleApplications({
 	});
 	if (!delegation) return;
 
-	const committees = await tx.query.committee.findMany({
-		where: { conferenceId: delegation.conferenceId },
-		columns: { numOfSeatsPerDelegation: true },
-		with: { roles: { columns: { id: true } } }
-	});
+	const committees = await seatingCommittees({ tx, conferenceId: delegation.conferenceId });
 
 	const memberCount = delegation.members.length;
 	const tooSmall = delegation.appliedForRoles
@@ -73,5 +71,45 @@ export async function tidyRoleApplicationsForRoles({
 
 	for (const delegation of delegations) {
 		await tidyRoleApplications({ delegationId: delegation.id, tx });
+	}
+}
+
+/** The conference's committees as `roleSeats` needs them to count a nation's seats. */
+function seatingCommittees({ tx, conferenceId }: { tx: Transaction; conferenceId: string }) {
+	return tx.query.committee.findMany({
+		where: { conferenceId },
+		columns: { numOfSeatsPerDelegation: true },
+		with: { roles: { columns: { id: true } } }
+	});
+}
+
+/**
+ * Refuses (INVALID_INPUT) a wish for a role that cannot seat the whole delegation as it is now;
+ * the same rule `tidyRoleApplications` applies once a delegation grows or a role shrinks.
+ */
+export async function assertRoleSeatsDelegation({
+	tx,
+	delegationId,
+	roleId
+}: {
+	tx: Transaction;
+	delegationId: string;
+	roleId: string;
+}) {
+	const [delegation, role] = await Promise.all([
+		tx.query.delegation.findFirst({
+			where: { id: delegationId },
+			columns: { conferenceId: true },
+			with: { members: { columns: { id: true } } }
+		}),
+		tx.query.conferenceRole.findFirst({
+			where: { id: roleId },
+			columns: { id: true, kind: true, seatAmount: true }
+		})
+	]);
+	if (!delegation || !role) return;
+	const committees = await seatingCommittees({ tx, conferenceId: delegation.conferenceId });
+	if (delegation.members.length > roleSeats({ role, committees })) {
+		throw apiError({ code: 'INVALID_INPUT', message: m.roleApplicationRoleTooSmall() });
 	}
 }
