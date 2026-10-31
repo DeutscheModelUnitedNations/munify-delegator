@@ -50,7 +50,7 @@
 		><i class="fa-sharp-duotone fa-solid fa-{genderIcon(person.gender)}"></i></td
 	>
 	<td class="text-right tabular-nums">
-		{#if person.conferenceParticipationsCount > 0}
+		{#if (person.conferenceParticipationsCount ?? 0) > 0}
 			<span class="text-warning" title={m.assignmentPreviousParticipations()}>
 				<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 				{person.conferenceParticipationsCount}

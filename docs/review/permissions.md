@@ -72,6 +72,9 @@ team members too.
 Columns: `id`, timestamps, `email`, `givenName`, `familyName`, `preferredUsername`, `locale`,
 `pronouns`, `birthday`, `phone`, `street`, `apartment`, `zip`, `city`, `region`, `country`,
 `gender`, `foodPreference`, `emergencyContacts`, newsletter flags, `globalNotes` (care notes).
+The computed `conferenceParticipationsCount` (how many conferences the person took part in) answers
+only the person themselves, project management and participant care of a conference they take part
+or wait in, and system admins; it is null for every other reader.
 
 ### Read
 

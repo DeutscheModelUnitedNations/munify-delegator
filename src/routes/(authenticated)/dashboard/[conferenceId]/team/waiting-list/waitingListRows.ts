@@ -35,7 +35,7 @@ export interface WaitingListSourceEntry {
 		phone?: Maybe<string>;
 		city?: Maybe<string>;
 		birthday?: Maybe<Date | string>;
-		conferenceParticipationsCount: number;
+		conferenceParticipationsCount: number | null;
 	};
 	school?: Maybe<{ name: string }>;
 	experience?: Maybe<string>;
@@ -82,7 +82,7 @@ export function toWaitingListRow({
 		email: user.email,
 		phone: user.phone ?? null,
 		conferenceAge: conferenceAge({ birthday: user.birthday, startConference }),
-		participationCount: user.conferenceParticipationsCount,
+		participationCount: user.conferenceParticipationsCount ?? 0,
 		city: user.city ?? null,
 		school: entry.school?.name ?? null,
 		motivation: entry.motivation ?? null,

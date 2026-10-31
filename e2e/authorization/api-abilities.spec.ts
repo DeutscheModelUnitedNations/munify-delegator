@@ -191,7 +191,7 @@ test('co-delegates see each other’s names and email addresses, no other contac
 	const read = await gql(
 		member,
 		`query ($id: ID!) {
-			delegation(id: $id) { members { user { id givenName phone emergencyContacts globalNotes birthday } } }
+			delegation(id: $id) { members { user { id givenName phone emergencyContacts globalNotes birthday conferenceParticipationsCount } } }
 		}`,
 		{ id: delegation.id }
 	);
@@ -203,6 +203,7 @@ test('co-delegates see each other’s names and email addresses, no other contac
 			emergencyContacts: string | null;
 			globalNotes: string | null;
 			birthday: string | null;
+			conferenceParticipationsCount: number | null;
 		};
 	};
 	const members = (read.data?.delegation as { members: Member[] }).members;
@@ -215,6 +216,9 @@ test('co-delegates see each other’s names and email addresses, no other contac
 	expect(other?.user.phone).toBeNull();
 	expect(other?.user.emergencyContacts).toBeNull();
 	expect(other?.user.birthday).toBeNull();
+	// How many conferences someone attended is for them and their care team, not their co-delegates.
+	expect(own?.user.conferenceParticipationsCount).toBe(0);
+	expect(other?.user.conferenceParticipationsCount).toBeNull();
 
 	// Co-delegates may write to each other: the email address is theirs to read.
 	const withEmail = await gql(

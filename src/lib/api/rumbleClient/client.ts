@@ -5573,7 +5573,7 @@ export type User = {
     search?: String | null | undefined,
     where?: ConferenceparticipantWhereInputArgument | null | undefined
   }) => Conferenceparticipant[],
-  conferenceParticipationsCount: Int,
+  conferenceParticipationsCount: Int | null,
   conferenceSupervisor: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,

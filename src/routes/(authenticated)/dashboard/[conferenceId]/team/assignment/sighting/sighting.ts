@@ -121,7 +121,8 @@ interface Person extends WithLinkedAccounts {
 	email?: Nullable<string>;
 	birthday?: Nullable<Date | string>;
 	gender?: Nullable<string>;
-	conferenceParticipationsCount: number;
+	/** Null when the caller may not see it (only those who have the person in their care may). */
+	conferenceParticipationsCount: number | null;
 }
 
 interface Supervisor {
@@ -288,7 +289,7 @@ export function memberSummary({
 	const known = ages.filter((age) => age !== undefined);
 	return {
 		averageAge: known.length ? known.reduce((sum, age) => sum + age, 0) / known.length : undefined,
-		participations: people.reduce((sum, p) => sum + p.conferenceParticipationsCount, 0)
+		participations: people.reduce((sum, p) => sum + (p.conferenceParticipationsCount ?? 0), 0)
 	};
 }
 

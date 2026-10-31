@@ -58,7 +58,7 @@
 						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
 							<span title={m.assignmentAge()}>{age ?? '?'}</span>
 							<i class="fa-sharp-duotone fa-solid fa-{genderIcon(person.gender)}"></i>
-							{#if person.conferenceParticipationsCount > 0}
+							{#if (person.conferenceParticipationsCount ?? 0) > 0}
 								<span class="text-warning" title={m.assignmentPreviousParticipations()}>
 									<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
 									{person.conferenceParticipationsCount}

@@ -440,3 +440,20 @@ export const impersonationHandle: Handle = async ({ event, resolve }) => {
 		await checkImpersonation({ event, session, impersonator: session.impersonator });
 	return resolve(event);
 };
+
+/**
+ * Whether the caller may see how many conferences the user `id` took part in: they themselves, and
+ * whoever has them in their care (`isCaredForUser`: participant care and project management of a
+ * conference they take part or wait in, system admins). Others who read the user, such as
+ * co-delegates or paper reviewers, would learn something about the person they have no need for.
+ */
+export async function canReadParticipationCount({ ctx, id }: { ctx: Context; id: string }) {
+	if (callerUserId(ctx) === id) return true;
+	const caredFor = isCaredForUser(ctx);
+	if (!caredFor) return false;
+	const user = await db.query.user.findFirst({
+		where: { id, ...caredFor },
+		columns: { id: true }
+	});
+	return !!user;
+}
