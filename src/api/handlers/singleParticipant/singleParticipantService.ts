@@ -19,25 +19,24 @@ import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 import { apiError } from '#api/services/errors';
-import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
 import { markSeatedFromWaitingList } from '#api/handlers/waitingListEntry/waitingListEntryService';
 
 /**
- * The caller's existing single registration in the conference, if any, after making sure they may
+ * The user's existing single registration in the conference, if any, after making sure they may
  * register (again): not already in the conference in another way - unlike the delegation flow an
  * existing single registration is tolerated, and edited - and not already sent in, which is the
- * same line the update ability draws. That the role applied for is one of the conference's is
- * checked next (`assertRolesOf`).
+ * same line the update ability draws (CONFLICT otherwise).
  */
-export async function ownRegistrationToEdit({
+async function ownRegistrationToEdit({
 	userId,
-	args
+	conferenceId
 }: {
 	userId: string;
-	args: ApplicationArgs;
+	conferenceId: string;
 }) {
 	const { foundDelegationMember, foundSupervisor, foundTeamMember, foundSingleParticipant } =
-		await fetchParticipationsAndTeamMembership({ conferenceId: args.conferenceId, userId });
+		await fetchParticipationsAndTeamMembership({ conferenceId, userId });
 	if (foundDelegationMember || foundSupervisor || foundTeamMember) {
 		throw apiError({
 			code: 'CONFLICT',
@@ -86,24 +85,19 @@ async function unapplyForRoles({
 }
 
 /**
- * Registering as a single participant. If the user already has an entry for this conference
- * the legacy resolver updated it instead of failing, so this does the same: `existing` is what
- * `ownRegistrationToEdit` found. Returns the row id.
+ * Registers the user as a single participant applying for `roleId`, which the caller checked
+ * (`assertCanCreateSingleParticipant`). An existing registration of theirs in the conference that
+ * is not sent in yet is updated instead (`ownRegistrationToEdit`); a new one is only taken while
+ * the conference takes applications. Returns the row id.
  */
 export async function registerSingleParticipant({
 	userId,
-	args,
-	existing
+	args
 }: {
 	userId: string;
-	args: SchoolChoice & {
-		conferenceId: string;
-		roleId: string;
-		motivation?: string | null;
-		experience?: string | null;
-	};
-	existing: { id: string } | undefined;
+	args: ApplicationArgs & { roleId: string };
 }) {
+	const existing = await ownRegistrationToEdit({ userId, conferenceId: args.conferenceId });
 	// Editing an existing registration is open in any stage; a new one only while applications are taken.
 	if (!existing) await assertRegistrationOpen(args.conferenceId);
 	// The person's row, the registration and the role it applies for go in together, so a refused
@@ -122,10 +116,14 @@ export async function registerSingleParticipant({
 		});
 		let rowId: string;
 		if (existing) {
-			await tx
-				.update(schema.singleParticipant)
-				.set({ motivation: args.motivation, experience: args.experience })
-				.where(whereRows({ table: schema.singleParticipant, filter: { id: existing.id } }));
+			// Only the texts given; `null` clears one.
+			const texts = { motivation: args.motivation, experience: args.experience };
+			if (texts.motivation !== undefined || texts.experience !== undefined) {
+				await tx
+					.update(schema.singleParticipant)
+					.set(texts)
+					.where(whereRows({ table: schema.singleParticipant, filter: { id: existing.id } }));
+			}
 			rowId = existing.id;
 		} else {
 			const created = await tx
@@ -149,66 +147,89 @@ export async function registerSingleParticipant({
 	return rowId;
 }
 
-/**
- * Updates a single participant's application and the roles it applies for, in one transaction.
- * The caller checks first that it may (`assertCanUpdateSingleParticipant`).
- */
-export async function updateSingleParticipantApplication(args: {
+export type SingleParticipantUpdate = {
 	id: string;
 	experience?: string | null;
 	motivation?: string | null;
 	applyForRolesIdList?: string[] | null;
 	unApplyForRolesIdList?: string[] | null;
 	applied?: boolean | null;
+};
+
+/**
+ * Refuses (CONFLICT) sending in the application unless it is ready, judged as it stands inside the
+ * transaction, after this update's role changes and with its texts.
+ */
+async function assertReadyToApply({
+	tx,
+	update
+}: {
+	tx: Transaction;
+	update: SingleParticipantUpdate;
 }) {
-	if (args.applied) {
-		const participant = await db.query.singleParticipant
-			.findFirst({
-				where: { id: args.id },
-				with: { appliedForRoles: true, conference: true }
-			})
-			.then(assertFindFirstExists);
+	const participant = await tx.query.singleParticipant
+		.findFirst({
+			where: { id: update.id },
+			columns: { experience: true, motivation: true },
+			with: {
+				appliedForRoles: { columns: { id: true } },
+				conference: {
+					columns: {
+						state: true,
+						applicationDeadline: true,
+						registrationDeadlineGracePeriodMinutes: true
+					}
+				}
+			}
+		})
+		.then(assertFindFirstExists);
+	assertApplicationReady({
+		applicant: participant,
+		edits: update,
+		minRoleApplications: MIN_ROLE_APPLICATIONS.singleParticipant
+	});
+}
 
-		assertApplicationReady({
-			applicant: participant,
-			edits: args,
-			minRoleApplications: MIN_ROLE_APPLICATIONS.singleParticipant
-		});
-	}
-
-	// A call that only changes role applications has nothing to set, and drizzle rejects an
-	// empty `set` ("No values to set").
+/**
+ * Updates a single participant's application and the roles it applies for, in one transaction;
+ * the caller checked it may (`assertCanUpdateSingleParticipant`). Sending it in is refused unless
+ * it is ready with this update's changes (`assertReadyToApply`).
+ */
+export async function updateSingleParticipantApplication(update: SingleParticipantUpdate) {
 	await db.transaction(async (tx) => {
-		// Motivation and experience are nullable, so an explicit null clears them.
+		await applyForRoles({
+			tx,
+			singleParticipantId: update.id,
+			roleIds: update.applyForRolesIdList ?? []
+		});
+		await unapplyForRoles({
+			tx,
+			singleParticipantId: update.id,
+			roleIds: update.unApplyForRolesIdList ?? []
+		});
+		if (update.applied) await assertReadyToApply({ tx, update });
+
+		// Motivation and experience are nullable, so an explicit null clears them. A call that only
+		// changes role applications has nothing to set, and drizzle rejects an empty `set`.
 		const values = {
-			experience: args.experience,
-			motivation: args.motivation,
-			applied: args.applied ?? undefined
+			experience: update.experience,
+			motivation: update.motivation,
+			applied: update.applied ?? undefined
 		};
 		if (Object.values(values).some((value) => value !== undefined)) {
 			await tx
 				.update(schema.singleParticipant)
 				.set(values)
-				.where(whereRows({ table: schema.singleParticipant, filter: { id: args.id } }));
+				.where(whereRows({ table: schema.singleParticipant, filter: { id: update.id } }));
 		}
-
-		await applyForRoles({
-			tx,
-			singleParticipantId: args.id,
-			roleIds: args.applyForRolesIdList ?? []
-		});
-		await unapplyForRoles({
-			tx,
-			singleParticipantId: args.id,
-			roleIds: args.unApplyForRolesIdList ?? []
-		});
 	});
-	singleParticipantPubsub.updated(args.id);
+	singleParticipantPubsub.updated(update.id);
 }
 
 /**
  * Management assigning a user directly as a single participant with a role, which the caller
- * checked (`assertCanCreateAppliedSingleParticipant`). Returns the row id.
+ * checked (`assertCanCreateAppliedSingleParticipant`). Refuses (CONFLICT) a user who already takes
+ * part in the conference or is on its team. Returns the row id.
  */
 export async function createAssignedSingleParticipant(args: {
 	userId: string;
