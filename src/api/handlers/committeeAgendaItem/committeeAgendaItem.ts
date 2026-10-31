@@ -31,7 +31,7 @@ async function readableAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) 
 schemaBuilder.mutationFields((t) => ({
 	createAgendaItem: t.drizzleField({
 		description:
-			'Adds an agenda item (a topic) to a committee. Seat planning creates them, and so does a service user (the chase integration) in any conference.',
+			'Adds an agenda item (a topic) to a committee: `planSeats` (project management and content lead) in its conference. NOT_FOUND otherwise.',
 		type: CommitteeAgendaItemRef,
 		args: {
 			committeeId: t.arg.id({ required: true }),

@@ -27,9 +27,9 @@ export function registerCommitteeAgendaItemAbilities() {
 }
 
 /**
- * Refuses (NOT_FOUND) unless the committee exists and the caller is a service user (the chase
- * integration, any conference: the OIDC `service_user` role, not a team role) or holds `planSeats`
- * (project management and content lead) in its conference.
+ * Refuses (NOT_FOUND) unless the committee exists and the caller holds `planSeats` (project
+ * management and content lead) in its conference. An integration creating agenda items (chase)
+ * needs that team role in the conference, or a system admin account.
  */
 export async function assertCanCreateAgendaItem({
 	ctx,
@@ -40,12 +40,7 @@ export async function assertCanCreateAgendaItem({
 }) {
 	await db.query.committee
 		.findFirst({
-			where: {
-				id: committeeId,
-				...(ctx.hasRole('service_user')
-					? {}
-					: { conference: teamConference({ ctx, permission: 'planSeats' }) })
-			},
+			where: { id: committeeId, conference: teamConference({ ctx, permission: 'planSeats' }) },
 			columns: { id: true }
 		})
 		.then(assertFindFirstExists);
