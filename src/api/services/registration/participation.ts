@@ -1,6 +1,5 @@
 import { db } from '#api/db/db';
 import { m } from '#lib/paraglide/messages';
-import { getLocale } from '#lib/paraglide/runtime';
 import { apiError } from '#api/services/errors';
 
 /**
@@ -33,25 +32,25 @@ export async function fetchParticipationsAndTeamMembership({
 		if (foundSupervisor) {
 			throw apiError({
 				code: 'CONFLICT',
-				message: m.youAreAlreadySupervisor({}, { locale: getLocale() })
+				message: m.youAreAlreadySupervisor()
 			});
 		}
 		if (foundSingleParticipant) {
 			throw apiError({
 				code: 'CONFLICT',
-				message: m.youAreAlreadySingleParticipant({}, { locale: getLocale() })
+				message: m.youAreAlreadySingleParticipant()
 			});
 		}
 		if (foundDelegationMember) {
 			throw apiError({
 				code: 'CONFLICT',
-				message: m.youAreAlreadyDelegationMember({}, { locale: getLocale() })
+				message: m.youAreAlreadyDelegationMember()
 			});
 		}
 		if (foundTeamMember) {
 			throw apiError({
 				code: 'CONFLICT',
-				message: m.youAreAlreadyTeamMember({}, { locale: getLocale() })
+				message: m.youAreAlreadyTeamMember()
 			});
 		}
 	}

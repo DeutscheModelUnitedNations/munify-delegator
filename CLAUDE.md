@@ -732,9 +732,11 @@ bun run preview
 - Paper submission system with versioning and reviews
 - **Seats from the waiting list are dated**: seating a user who has a waiting list entry
   (`markSeatedFromWaitingList`, called by `createAppliedDelegationMember` /
-  `createAppliedSingleParticipant`) sets the entry's `assigned` and `assignedAt` and hands its
-  school to the new registration. The participants table shows waiting people as `WAITING_LIST`
-  rows and everybody's `waitingListSince` / `seatedFromWaitingListAt`.
+  `createAppliedSingleParticipant`) sets the entry's `assignedAt` and hands its school to the new
+  registration; that is the only way an entry is marked seated. The participants table shows
+  waiting people as `WAITING_LIST` rows and everybody's `waitingListSince` /
+  `seatedFromWaitingListAt`. Placing someone into a delegation clears their other registration
+  first, a membership as if they had left (a new head delegate, an empty delegation deleted).
 - **The team places the generated parts on its own templates.** `#lib/helpers/documentLayout.ts`
   declares, per document (`certificate`, `contract`, `guardianConsent`, `mediaConsent`), the
   elements the generator draws - texts (a point and a font size), boxes and square codes - with
