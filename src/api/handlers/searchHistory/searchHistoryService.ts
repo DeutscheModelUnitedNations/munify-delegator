@@ -8,8 +8,9 @@ import { z } from 'zod';
 const KEPT_ENTRIES = 20;
 const MAX_LABEL_LENGTH = 200;
 
-/** A picked result: its id, and the label shown for it, trimmed and cut to length. */
+/** A picked result: the tab it was picked in, its id, and the label shown for it, trimmed and cut to length. */
 export const recordSearchSchemas = {
+	originId: z.string().min(1, { error: () => m.searchHistoryNeedsIdAndLabel() }),
 	resultId: z.string().min(1, { error: () => m.searchHistoryNeedsIdAndLabel() }),
 	label: z
 		.string()
@@ -29,27 +30,16 @@ export async function recordSearch({
 	userId: string;
 	args: { conferenceId: string; originId: string; resultId: string; label: string };
 }) {
-	const { label } = args;
-
 	const { searchHistory } = schema;
+	const { conferenceId, originId, resultId, label } = args;
 	await db.transaction(async (tx) => {
 		await tx.delete(searchHistory).where(
 			whereRows({
 				table: searchHistory,
-				filter: {
-					userId,
-					conferenceId: args.conferenceId,
-					resultId: args.resultId
-				}
+				filter: { userId, conferenceId, resultId }
 			})
 		);
-		await tx.insert(searchHistory).values({
-			userId,
-			conferenceId: args.conferenceId,
-			originId: args.originId,
-			resultId: args.resultId,
-			label
-		});
+		await tx.insert(searchHistory).values({ userId, conferenceId, originId, resultId, label });
 		const stale = await tx.query.searchHistory.findMany({
 			where: { userId },
 			columns: { id: true },
@@ -66,4 +56,6 @@ export async function recordSearch({
 		}
 	});
 	searchHistoryPubsub.created();
+	// The entry picked again and the oldest ones went
+	searchHistoryPubsub.removed();
 }
