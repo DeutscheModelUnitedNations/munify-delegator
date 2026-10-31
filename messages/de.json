@@ -2679,6 +2679,7 @@
 	"teamMemberWithRole": "Teammitglied · {role}",
 	"teamMembers": "Teammitglieder",
 	"teamMembersAreNotScanned": "Teammitglieder werden nicht eingescannt; der Scanner erfasst nur Teilnehmende.",
+	"teamNeedsProjectManagement": "Das Team braucht mindestens eine Person in der Projektleitung. Ernennen Sie zuerst jemand anderen zur Projektleitung.",
 	"teamPreparationDescription": "Ressourcen zur Vorbereitung auf die Konferenz",
 	"teamRoleContentLead": "Leitung Inhalt",
 	"teamRoleMember": "Mitglied",

@@ -1,19 +1,7 @@
 import { toast } from 'svelte-sonner';
-import { CombinedError } from '@urql/core';
 import { m } from '#lib/paraglide/messages';
 import { logger } from '#lib/logger';
-import { hasErrorCode } from '#lib/api/errorCodes';
-
-/**
- * The message of a refusal of the invitation's state (CONFLICT: already used, already revoked,
- * invited again), which the person can act on; undefined for any other failure.
- */
-function conflictMessage(error: unknown) {
-	if (!(error instanceof CombinedError) || !hasErrorCode({ err: error, code: 'CONFLICT' })) {
-		return undefined;
-	}
-	return error.graphQLErrors[0]?.message;
-}
+import { conflictMessageOf } from '#lib/api/errorCodes';
 
 /**
  * Runs an invitation mutation, then `onSuccess` with its result. A CONFLICT is toasted with its
@@ -31,7 +19,8 @@ export async function runInvitationAction<R>({
 	try {
 		await onSuccess(await mutation());
 	} catch (error) {
-		const conflict = conflictMessage(error);
+		// Refused by the invitation's state: already used, already revoked, invited again.
+		const conflict = conflictMessageOf(error);
 		if (conflict) {
 			toast.error(conflict);
 			return;

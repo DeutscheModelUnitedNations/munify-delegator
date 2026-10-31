@@ -1,7 +1,7 @@
 import { CombinedError } from '@urql/core';
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
-import { errorCodeOf, hasErrorCode } from './errorCodes';
+import { conflictMessageOf, errorCodeOf, hasErrorCode } from './errorCodes';
 
 const failed = (extensions?: Record<string, unknown>) =>
 	new CombinedError({ graphQLErrors: [new GraphQLError('Text', { extensions })] });
@@ -33,5 +33,16 @@ describe('hasErrorCode', () => {
 	it('matches one code', () => {
 		expect(hasErrorCode({ err: failed({ code: 'CONFLICT' }), code: 'CONFLICT' })).toBe(true);
 		expect(hasErrorCode({ err: failed({ code: 'CONFLICT' }), code: 'FORBIDDEN' })).toBe(false);
+	});
+});
+
+describe('conflictMessageOf', () => {
+	it('answers the message of a refusal of the current state', () => {
+		expect(conflictMessageOf(failed({ code: 'CONFLICT' }))).toBe('Text');
+	});
+
+	it('answers nothing for any other failure', () => {
+		expect(conflictMessageOf(failed({ code: 'FORBIDDEN' }))).toBeUndefined();
+		expect(conflictMessageOf(new Error('CONFLICT'))).toBeUndefined();
 	});
 });

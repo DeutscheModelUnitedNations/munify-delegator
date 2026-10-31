@@ -6,10 +6,11 @@ import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
 	isTeamMemberOfConference,
+	isSystemAdmin,
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 
 export function registerTeamMemberAbilities() {
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -75,4 +76,20 @@ export async function assertCanGrantTeamRole({
 		conferenceId,
 		permission: role === 'PROJECT_MANAGEMENT' ? 'manageConference' : 'manageTeam'
 	});
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches team member `id`: project
+ * management for anybody on its team, team coordinators for anybody but project management.
+ */
+export async function assertCanRemoveTeamMember({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'teamMember', action: 'delete', id });
+}
+
+/**
+ * Whether a change the caller makes to a team has to leave it with project management. Only a
+ * system admin may take the last one away, to repair a team or wind it up.
+ */
+export function mustKeepProjectManagement(ctx: ApiContext) {
+	return !isSystemAdmin(ctx);
 }

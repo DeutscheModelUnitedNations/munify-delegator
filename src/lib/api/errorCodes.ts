@@ -46,3 +46,14 @@ export function errorCodeOf(err: unknown): ErrorCode | undefined {
 export function hasErrorCode({ err, code }: { err: unknown; code: ErrorCode }) {
 	return errorCodeOf(err) === code;
 }
+
+/**
+ * The message of a refusal of the current state (CONFLICT), which the person can act on; undefined
+ * for any other failure, whose message is not meant for them.
+ */
+export function conflictMessageOf(err: unknown) {
+	if (!(err instanceof CombinedError) || !hasErrorCode({ err, code: 'CONFLICT' })) {
+		return undefined;
+	}
+	return err.graphQLErrors[0]?.message;
+}

@@ -2679,6 +2679,7 @@
 	"teamMemberWithRole": "Team Member · {role}",
 	"teamMembers": "Team Members",
 	"teamMembersAreNotScanned": "Team members are not scanned in; the scanner records participants only.",
+	"teamNeedsProjectManagement": "The team needs at least one person in project management. Make someone else project management first.",
 	"teamPreparationDescription": "Resources to prepare for the conference",
 	"teamRoleContentLead": "Content Lead",
 	"teamRoleMember": "Member",

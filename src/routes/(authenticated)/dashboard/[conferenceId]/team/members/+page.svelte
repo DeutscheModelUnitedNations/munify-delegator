@@ -14,6 +14,7 @@
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 	import { TEAM_ROLES, fetchAllTeamMembers, fetchTeamMembersPage } from './teamMembersQuery';
 	import { toast } from 'svelte-sonner';
+	import { conflictMessageOf } from '#lib/api/errorCodes';
 	import { z } from 'zod';
 	import { openUserCard } from '#lib/components/userCard/userCardState.svelte.js';
 	import { startImpersonation } from '#lib/api/startImpersonation';
@@ -88,7 +89,8 @@
 		toast.promise(promise, {
 			loading: m.deletingTeamMember(),
 			success: m.teamMemberDeleted(),
-			error: m.deleteTeamMemberError()
+			// The last project management cannot be removed; the server says so.
+			error: (error: unknown) => conflictMessageOf(error) ?? m.deleteTeamMemberError()
 		});
 		await promise;
 	};

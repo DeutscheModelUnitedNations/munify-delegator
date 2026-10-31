@@ -636,6 +636,8 @@ bun run preview
   - Each entity's abilities live in its `<entity>Permissions.ts`
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. The role lists live
   in `#lib/helpers/teamRoles.ts`, shared by the API (`authHelper/rules.ts` re-exports them) and the UI.
+  A team keeps at least one `PROJECT_MANAGEMENT` member: demoting or removing the last one answers
+  `CONFLICT` (`teamMemberService.ts`, under a lock on the conference); only a system admin may.
   `CONTENT_LEAD` reaches the seat planning, the committees and the conference's content (links,
   postal address, templates, status, resolutions) next to the scanner and the settings.
 

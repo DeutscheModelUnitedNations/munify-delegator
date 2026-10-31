@@ -299,6 +299,33 @@ test('an invitation link makes only the invited person a team member, once', asy
 	expect(again?.status()).toBe(410);
 });
 
+test('the last project management stays on the team', async ({ page }) => {
+	// The e2e conference has one project manager; demoting or removing them would leave nobody to
+	// manage the team, which only a system admin may do.
+	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
+	const own = await gql(
+		page,
+		`query ($c: ID!, $u: String!) {
+			teamMembers(where: { conferenceId: { eq: $c }, user: { id: { eq: $u } } }) { id }
+		}`,
+		{ c: E2E_CONFERENCE_ID, u: E2E_ASSIGNMENT_ADMIN_ID }
+	);
+	const id = (own.data?.teamMembers as { id: string }[] | undefined)?.[0]?.id;
+	expect(id, JSON.stringify(own)).toBeTruthy();
+
+	const lastOne = /at least one person in project management/i;
+	expectRefused(
+		await gql(page, `mutation ($id: ID!) { updateTeamMemberRole(id: $id, role: MEMBER) { id } }`, {
+			id
+		}),
+		lastOne
+	);
+	expectRefused(
+		await gql(page, `mutation ($id: ID!) { deleteTeamMember(id: $id) }`, { id }),
+		lastOne
+	);
+});
+
 test('the invite form tells whether an address has an account, never whose', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_TEAM_COORDINATOR_ID));
 	// The check used to answer with the account's user id.
