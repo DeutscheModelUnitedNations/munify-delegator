@@ -1,134 +1,92 @@
-import { db, schema } from '#api/db/db';
-import { object, query, schemaBuilder } from '#api/rumble';
-import { whereRows } from '#api/db/whereRows';
+import { db } from '#api/db/db';
+import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertCanCreatePlace,
+	assertCanDeletePlace,
 	assertCanUpdatePlace,
 	registerPlaceAbilities
 } from './placePermissions';
-import { ensureUploadComplete } from '#api/handlers/storedFile/storedFileService';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { placePubsub } from '#api/pubsub';
-import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { createPlace, deletePlace, updatePlace } from './placeService';
+import { latitudeSchema, longitudeSchema } from './placeRules';
 
 registerPlaceAbilities();
 
 const PlaceRef = object({ table: 'place' });
 query({ table: 'place' });
 
-type ArgBuilder = Pick<
-	PothosSchemaTypes.InputFieldBuilder<(typeof schemaBuilder)['$inferSchemaTypes'], 'Arg'>,
-	'id' | 'string' | 'float'
->;
+/** The place as the caller may read it, for re-reading the row a mutation wrote. */
+async function readablePlace({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.place.filter('read')).merge({ where: { id } }).query.single;
+}
 
-/** Everything about a place but its name, each optional. */
-const placeDetailArgs = (arg: ArgBuilder) => ({
-	address: arg.string(),
-	latitude: arg.float(),
-	longitude: arg.float(),
-	directions: arg.string(),
-	info: arg.string(),
-	websiteUrl: arg.string(),
-	/** A file uploaded through `requestFileUpload`. */
-	sitePlanFileId: arg.id()
+schemaBuilder.mutationFields((t) => {
+	/** Everything about a place but its name, each optional. */
+	const placeDetailArgs = () => ({
+		address: t.arg.string(),
+		latitude: t.arg.float({ description: 'Degrees, -90 to 90.' }).validate(latitudeSchema),
+		longitude: t.arg.float({ description: 'Degrees, -180 to 180.' }).validate(longitudeSchema),
+		directions: t.arg.string(),
+		info: t.arg.string(),
+		websiteUrl: t.arg.string(),
+		sitePlanFileId: t.arg.id({
+			description:
+				'A file uploaded through `requestFileUpload` for the site plan of a place of this conference.'
+		})
+	});
+
+	return {
+		createPlace: t.drizzleField({
+			description:
+				"Adds a place (a venue) the conference's schedule entries can name. A name another place of the conference has is refused with CONFLICT.",
+			type: PlaceRef,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				name: t.arg.string({ required: true }),
+				...placeDetailArgs()
+			},
+			resolve: async (query, _root, { conferenceId, name, ...details }, ctx) => {
+				await assertCanCreatePlace({
+					ctx,
+					conferenceId,
+					sitePlanFileId: details.sitePlanFileId
+				});
+				const id = await createPlace({ conferenceId, name, details });
+
+				return db.query.place
+					.findFirst(query(await readablePlace({ ctx, id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		updatePlace: t.drizzleField({
+			description:
+				'Changes the given fields of a place; left out keeps a field, `null` clears all but the name. A name another place of the conference has is refused with CONFLICT.',
+			type: PlaceRef,
+			args: {
+				id: t.arg.id({ required: true }),
+				name: t.arg.string(),
+				...placeDetailArgs()
+			},
+			resolve: async (query, _root, { id, name, ...details }, ctx) => {
+				await assertCanUpdatePlace({ ctx, id, sitePlanFileId: details.sitePlanFileId });
+				await updatePlace({ id, name, details });
+
+				return db.query.place
+					.findFirst(query(await readablePlace({ ctx, id })))
+					.then(assertFindFirstExists);
+			}
+		}),
+
+		deletePlace: t.field({
+			description: 'Deletes a place; schedule entries at it stay, without a place.',
+			type: 'Boolean',
+			args: { id: t.arg.id({ required: true }) },
+			resolve: async (_root, args, ctx) => {
+				await assertCanDeletePlace({ ctx, id: args.id });
+				await deletePlace(args.id);
+				return true;
+			}
+		})
+	};
 });
-
-schemaBuilder.mutationFields((t) => ({
-	createPlace: t.drizzleField({
-		description: "Adds a place (a venue) the conference's schedule entries can name.",
-		type: PlaceRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			name: t.arg.string({ required: true }),
-			...placeDetailArgs(t.arg)
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanCreatePlace({
-				ctx,
-				conferenceId: args.conferenceId,
-				sitePlanFileId: args.sitePlanFileId
-			});
-
-			const created = await db
-				.insert(schema.place)
-				.values({
-					conferenceId: args.conferenceId,
-					name: args.name,
-					address: args.address ?? undefined,
-					latitude: args.latitude ?? undefined,
-					longitude: args.longitude ?? undefined,
-					directions: args.directions ?? undefined,
-					info: args.info ?? undefined,
-					websiteUrl: args.websiteUrl ?? undefined,
-					sitePlanFileId: (await ensureUploadComplete(args.sitePlanFileId)) ?? undefined
-				})
-				.returning()
-				.then(assertFirstEntryExists);
-
-			placePubsub.created();
-
-			return db.query.place
-				.findFirst(
-					query(
-						(await ctx.abilities.place.filter('read')).merge({ where: { id: created.id } }).query
-							.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	updatePlace: t.drizzleField({
-		description:
-			'Changes the given fields of a place; the others stay as they are, `null` clears all but the name.',
-		type: PlaceRef,
-		args: {
-			id: t.arg.id({ required: true }),
-			name: t.arg.string(),
-			...placeDetailArgs(t.arg)
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdatePlace({ ctx, id: args.id, sitePlanFileId: args.sitePlanFileId });
-			const sitePlanFileId = await ensureUploadComplete(args.sitePlanFileId);
-
-			await db
-				.update(schema.place)
-				// Every column but the name is nullable, so an explicit null clears it while an
-				// omitted argument leaves it alone.
-				.set({
-					name: args.name ?? undefined,
-					address: args.address,
-					latitude: args.latitude,
-					longitude: args.longitude,
-					directions: args.directions,
-					info: args.info,
-					websiteUrl: args.websiteUrl,
-					sitePlanFileId
-				})
-				.where(whereRows({ table: schema.place, filter: { id: args.id } }));
-
-			placePubsub.updated(args.id);
-
-			return db.query.place
-				.findFirst(
-					query(
-						(await ctx.abilities.place.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	deletePlace: t.field({
-		description: 'Deletes a place; schedule entries at it stay, without a place.',
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			await deleteIfAllowed({ ctx, table: 'place', id: args.id });
-			placePubsub.removed();
-
-			return true;
-		}
-	})
-}));

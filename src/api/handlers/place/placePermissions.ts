@@ -6,7 +6,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 import { calendarConference } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { assertCanClaimFile } from '#api/handlers/storedFile/storedFilePermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
@@ -26,8 +26,9 @@ export function registerPlaceAbilities() {
 }
 
 /**
- * Refuses unless the caller holds `manageParticipants` (project management and participant care) in
- * the conference and uploaded the site plan given (`assertCanClaimFile`).
+ * Refuses (FORBIDDEN) unless the caller holds `manageParticipants` (project management and
+ * participant care) in the conference, and unless they uploaded the site plan given for a place of
+ * this conference (`assertCanClaimFile`).
  */
 export async function assertCanCreatePlace({
 	ctx,
@@ -47,8 +48,9 @@ export async function assertCanCreatePlace({
 }
 
 /**
- * Refuses unless the caller may update the place (participant care of its conference) and uploaded
- * the site plan given (`assertCanClaimFile`).
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the place: `manageParticipants`
+ * (project management and participant care) in its conference; and unless they uploaded the site
+ * plan given for a place of that conference (`assertCanClaimFile`).
  */
 export async function assertCanUpdatePlace({
 	ctx,
@@ -74,4 +76,12 @@ export async function assertCanUpdatePlace({
 			conferenceId: place.conferenceId
 		}
 	});
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the place: `manageParticipants`
+ * (project management and participant care) in its conference.
+ */
+export async function assertCanDeletePlace({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'place', action: 'delete', id });
 }

@@ -1902,6 +1902,8 @@
 	"pieceLockedTooltip": "No paper submitted yet",
 	"pieceUnlockedTooltip": "Paper submitted, awaiting review",
 	"piecesCollected": "pieces collected",
+	"placeCoordinatesInvalid": "The latitude lies between -90 and 90, the longitude between -180 and 180.",
+	"placeNameTaken": "The conference already has a place of this name.",
 	"placePlusCodePlaceholder": "e.g. 84W3+7X Kiel",
 	"placeholderTooLong": "Placeholder names must be 50 characters or less.",
 	"plausibilityIncompleteOrInvalidData": "Incomplete or invalid data",

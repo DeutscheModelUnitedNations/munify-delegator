@@ -1902,6 +1902,8 @@
 	"pieceLockedTooltip": "Noch kein Papier eingereicht",
 	"pieceUnlockedTooltip": "Papier eingereicht, Bewertung ausstehend",
 	"piecesCollected": "Stücke gesammelt",
+	"placeCoordinatesInvalid": "Der Breitengrad liegt zwischen -90 und 90, der Längengrad zwischen -180 und 180.",
+	"placeNameTaken": "Die Konferenz hat schon einen Ort mit diesem Namen.",
 	"placePlusCodePlaceholder": "z. B. 84W3+7X Kiel",
 	"placeholderTooLong": "Platzhalternamen dürfen maximal 50 Zeichen lang sein.",
 	"plausibilityIncompleteOrInvalidData": "Unvollständige oder ungültige Daten",
