@@ -503,6 +503,7 @@
 	"calendarDay": "Tag",
 	"calendarDayNeedsTrack": "Dieser Tag hat keine Tracks. Legen Sie zuerst einen Track an.",
 	"calendarDayNotFound": "Der Konferenztag wurde nicht gefunden.",
+	"calendarDayPlaceTaken": "Gerade wurde ein anderer Tag an dieser Stelle eingefügt. Bitte noch einmal speichern.",
 	"calendarDays": "Tage",
 	"calendarDaysAndTracks": "Tage & Tracks",
 	"calendarDeleteDay": "Tag löschen",

@@ -503,6 +503,7 @@
 	"calendarDay": "Day",
 	"calendarDayNeedsTrack": "This day has no tracks. Add a track first.",
 	"calendarDayNotFound": "The calendar day was not found.",
+	"calendarDayPlaceTaken": "Another day was just placed there. Please save again.",
 	"calendarDays": "Days",
 	"calendarDaysAndTracks": "Days & tracks",
 	"calendarDeleteDay": "Delete day",

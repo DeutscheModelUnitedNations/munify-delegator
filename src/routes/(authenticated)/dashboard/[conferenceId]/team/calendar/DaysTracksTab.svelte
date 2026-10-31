@@ -94,12 +94,7 @@
 
 {#if dayForm}
 	{#key dayForm}
-		<DayFormModal
-			{conferenceId}
-			day={dayForm.day}
-			otherDays={calendarDays.filter((d) => d.id !== dayForm?.day?.id)}
-			onClose={() => (dayForm = null)}
-		/>
+		<DayFormModal {conferenceId} day={dayForm.day} onClose={() => (dayForm = null)} />
 	{/key}
 {/if}
 

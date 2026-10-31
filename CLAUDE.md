@@ -254,7 +254,7 @@ bun run preview
   and `whereAllowed` (the `where` to write through yourself). A row is re-read after a write with
   `(await ctx.abilities.x.filter('read')).merge({ where: { id } }).query.single`. A check used once
   stays private in its permissions file; one about a single entity that others need (a calendar
-  day's `calendarConference` and `assertTeamPermissionForCalendarDay`, a survey question's check,
+  day's `calendarConference` and `assertCanManageCalendarDay`, a survey question's check,
   `assertCanGrantTeamRole` for team roles) is exported from that entity's permissions file. Permission
   functions take `ApiContext` (`#api/rumble`), which carries `abilities`.
 

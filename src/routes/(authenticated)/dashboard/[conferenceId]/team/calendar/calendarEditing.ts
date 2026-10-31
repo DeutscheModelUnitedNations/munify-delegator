@@ -3,59 +3,6 @@ import { dateAtMinutes } from './calendarGrid';
 
 /** Pure decisions behind the calendar management tabs. */
 
-interface OrderedDay {
-	date: Date | string;
-	sortOrder: number;
-}
-
-const timeOf = (day: OrderedDay) => new Date(day.date).getTime();
-
-/**
- * The sort order for a day on `date`, so that days stay in date order without anyone typing a
- * number. It goes right after the last earlier day, or before the first later one; days are
- * unique by sort order, so when that place is taken it goes last.
- */
-export function daySortOrder({
-	date,
-	others
-}: {
-	date: Date | string;
-	others: readonly OrderedDay[];
-}) {
-	const time = new Date(date).getTime();
-	const taken = new Set(others.map((d) => d.sortOrder));
-	const byDate = [...others].sort((a, b) => timeOf(a) - timeOf(b) || a.sortOrder - b.sortOrder);
-	const previous = byDate.filter((d) => timeOf(d) <= time).at(-1);
-	const next = byDate.find((d) => timeOf(d) > time);
-	const candidate = previous ? previous.sortOrder + 1 : next ? next.sortOrder - 1 : 0;
-	const fits = !taken.has(candidate) && (!next || candidate < next.sortOrder);
-	return fits ? candidate : Math.max(-1, ...taken) + 1;
-}
-
-/**
- * The fields a day form writes. A day that keeps its date keeps its place; otherwise it is
- * placed by its date among the `others`.
- */
-export function dayFields({
-	name,
-	date,
-	others,
-	current
-}: {
-	name: string;
-	date: string;
-	others: readonly OrderedDay[];
-	current?: OrderedDay;
-}) {
-	const day = new Date(date);
-	const keeps = current && timeOf(current) === day.getTime();
-	return {
-		name,
-		date: day,
-		sortOrder: keeps ? current.sortOrder : daySortOrder({ date: day, others })
-	};
-}
-
 /** The fields a track form writes; an empty description is stored as none. */
 export function trackFields({
 	name,

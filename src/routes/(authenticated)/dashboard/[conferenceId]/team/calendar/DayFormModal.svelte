@@ -6,18 +6,16 @@
 	import { saveWithToast } from '#lib/helpers/saveWithToast';
 	import { m } from '#lib/paraglide/messages';
 	import type { CalendarDayExportData } from '#lib/schemata/calendarDayExport';
-	import { dayFields, parseDayImport } from './calendarEditing';
+	import { parseDayImport } from './calendarEditing';
 
 	interface Props {
 		conferenceId: string;
-		/** The day to edit; a new day is added when this is left out */
-		day?: { id: string; name: string; date: Date | string; sortOrder: number };
-		/** The conference's other days, which decide where the day is placed */
-		otherDays: { date: Date | string; sortOrder: number }[];
+		/** The day to edit; a new day is added when this is left out. The server places it by its date. */
+		day?: { id: string; name: string; date: Date | string };
 		onClose: () => void;
 	}
 
-	let { conferenceId, day, otherDays, onClose }: Props = $props();
+	let { conferenceId, day, onClose }: Props = $props();
 
 	// Seeded once: re-reading the row while someone types would discard their edits
 	let name = $state(untrack(() => day?.name ?? ''));
@@ -41,7 +39,7 @@
 	}
 
 	async function writeDay() {
-		const fields = dayFields({ name, date, others: otherDays, current: day });
+		const fields = { name, date: new Date(date) };
 		if (day) {
 			await client.mutate.updateCalendarDay({ __args: { id: day.id, ...fields }, id: true });
 		} else if (importData) {

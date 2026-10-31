@@ -2172,8 +2172,7 @@ export type Mutation = {
   createCalendarDay: (p: {
     conferenceId: ID,
     date: DateTime,
-    name: String,
-    sortOrder: Int
+    name: String
   }) => Calendarday,
   createCalendarEntry: (p: {
     calendarDayId: ID,
@@ -2403,8 +2402,7 @@ export type Mutation = {
     conferenceId: ID,
     date: DateTime,
     importData: JSON,
-    name: String,
-    sortOrder: Int
+    name: String
   }) => Calendarday,
   issueIdentityCode: () => IdentityCode,
   mergeSchools: (p: {
@@ -2568,8 +2566,7 @@ export type Mutation = {
   updateCalendarDay: (p: {
     date?: DateTime | null | undefined,
     id: ID,
-    name?: String | null | undefined,
-    sortOrder?: Int | null | undefined
+    name?: String | null | undefined
   }) => Calendarday,
   updateCalendarEntry: (p: {
     calendarDayId?: ID | null | undefined,

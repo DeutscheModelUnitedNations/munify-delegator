@@ -7,7 +7,7 @@ import {
 } from '#api/services/authHelper/rules';
 import { callerUserId } from '#api/services/authHelper/utils';
 import {
-	assertTeamPermissionForCalendarDay,
+	assertCanManageCalendarDay,
 	calendarConference
 } from '#api/handlers/calendarDay/calendarDayPermissions';
 import { assertFindFirstExists } from '@m1212e/rumble';
@@ -150,7 +150,7 @@ export async function assertCanCreateCalendarEntry({
 		surveyOptionIds?: readonly string[] | null;
 	};
 }) {
-	const day = await assertTeamPermissionForCalendarDay({ ctx, calendarDayId: args.calendarDayId });
+	const day = await assertCanManageCalendarDay({ ctx, calendarDayId: args.calendarDayId });
 	await assertReferencesInConference({
 		conferenceId: day.conferenceId,
 		refs: {
