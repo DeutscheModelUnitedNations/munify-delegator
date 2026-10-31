@@ -11,8 +11,10 @@ vi.mock('#api/pubsub', () => ({
 }));
 import type * as schema from '#api/db/schema/index';
 import {
+	authorStatusSchema,
 	groupPapersByCommittee,
 	newPaperRows,
+	newPaperStatusSchema,
 	paperSubmissionChanges,
 	reviewStatsFrom
 } from './paperService';
@@ -20,8 +22,16 @@ import {
 const now = new Date('2026-02-01T12:00:00Z');
 const earlier = new Date('2026-01-01T12:00:00Z');
 
-const unreviewed = { firstSubmittedAt: null, versions: [{ reviews: [] }] };
-const reviewed = { firstSubmittedAt: earlier, versions: [{ reviews: [] }, { reviews: [{}] }] };
+const unreviewed = {
+	status: 'DRAFT' as const,
+	firstSubmittedAt: null,
+	versions: [{ reviews: [] }]
+};
+const reviewed = {
+	status: 'CHANGES_REQUESTED' as const,
+	firstSubmittedAt: earlier,
+	versions: [{ reviews: [] }, { reviews: [{}] }]
+};
 
 describe('paperSubmissionChanges', () => {
 	test('marks the first submission', () => {
@@ -40,14 +50,28 @@ describe('paperSubmissionChanges', () => {
 		});
 	});
 
-	test('treats an update without a status as a submission, leaving the status alone', () => {
+	test('keeps the status when none is given, as a reviewer editing the text does', () => {
 		expect(paperSubmissionChanges({ paper: unreviewed, requestedStatus: null, now })).toEqual({
-			status: undefined,
-			firstSubmittedAt: now
+			status: 'DRAFT',
+			firstSubmittedAt: undefined
 		});
 		expect(
-			paperSubmissionChanges({ paper: unreviewed, requestedStatus: undefined, now }).status
-		).toBeUndefined();
+			paperSubmissionChanges({
+				paper: { ...reviewed, status: 'ACCEPTED' },
+				requestedStatus: undefined,
+				now
+			})
+		).toEqual({ status: 'ACCEPTED', firstSubmittedAt: undefined });
+	});
+
+	test('stamps a paper that is out without its date, whatever left it so', () => {
+		expect(
+			paperSubmissionChanges({
+				paper: { ...unreviewed, status: 'SUBMITTED' },
+				requestedStatus: undefined,
+				now
+			})
+		).toEqual({ status: 'SUBMITTED', firstSubmittedAt: now });
 	});
 
 	test('keeps the date of an earlier first submission', () => {
@@ -75,19 +99,29 @@ describe('paperSubmissionChanges', () => {
 		).toBe('SUBMITTED');
 	});
 
-	test('passes other statuses through', () => {
-		expect(
-			paperSubmissionChanges({ paper: reviewed, requestedStatus: 'ACCEPTED', now }).status
-		).toBe('ACCEPTED');
+	test('lets the author take a paper back to a draft', () => {
 		expect(paperSubmissionChanges({ paper: reviewed, requestedStatus: 'DRAFT', now }).status).toBe(
 			'DRAFT'
 		);
 	});
 });
 
+describe('authorStatusSchema', () => {
+	test('refuses the verdicts, which only reviews hand out', () => {
+		expect(authorStatusSchema.safeParse('ACCEPTED').success).toBe(false);
+		expect(authorStatusSchema.safeParse('CHANGES_REQUESTED').success).toBe(false);
+		expect(authorStatusSchema.safeParse('REVISED').success).toBe(true);
+	});
+
+	test('takes only a draft or a submission for a new paper', () => {
+		expect(newPaperStatusSchema.safeParse('DRAFT').success).toBe(true);
+		expect(newPaperStatusSchema.safeParse('SUBMITTED').success).toBe(true);
+		expect(newPaperStatusSchema.safeParse('REVISED').success).toBe(false);
+	});
+});
+
 describe('newPaperRows', () => {
 	const base = {
-		conferenceId: 'c',
 		authorParticipantId: 'author',
 		delegationId: 'del',
 		type: 'POSITION_PAPER' as const
@@ -109,16 +143,20 @@ describe('newPaperRows', () => {
 		expect(rows.version).toEqual({ content: { text: 'x' }, status: 'SUBMITTED', version: 1 });
 	});
 
-	test('leaves a draft unstamped and unset fields to their defaults', () => {
-		const rows = newPaperRows({ args: { ...base, status: null, agendaItemId: null }, now });
+	test('leaves a draft unstamped, on the same status as its first version', () => {
+		const rows = newPaperRows({
+			args: { ...base, status: 'DRAFT', agendaItemId: null, content: {} },
+			now
+		});
 		expect(rows.paper).toMatchObject({
 			agendaItemId: undefined,
-			status: undefined,
+			status: 'DRAFT',
 			firstSubmittedAt: undefined
 		});
-		expect(rows.version).toEqual({ content: undefined, status: undefined, version: 1 });
+		expect(rows.version).toEqual({ content: {}, status: 'DRAFT', version: 1 });
 		expect(
-			newPaperRows({ args: { ...base, status: 'DRAFT', agendaItemId: 'a' }, now }).paper
+			newPaperRows({ args: { ...base, status: 'DRAFT', agendaItemId: 'a', content: {} }, now })
+				.paper
 		).toMatchObject({
 			agendaItemId: 'a',
 			status: 'DRAFT',

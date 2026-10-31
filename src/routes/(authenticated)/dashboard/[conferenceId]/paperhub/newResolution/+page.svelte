@@ -127,7 +127,6 @@
 		await createPaper({
 			paper: {
 				conferenceId: params.conferenceId,
-				authorId: currentUser.sub,
 				delegationId: delegation.id,
 				type: 'WORKING_PAPER',
 				content,

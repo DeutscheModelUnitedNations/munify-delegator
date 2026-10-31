@@ -7,6 +7,7 @@ import {
 	E2E_ASSIGNMENT_ADMIN_ID,
 	E2E_CONFERENCE_ID,
 	E2E_CONNECT_PARTICIPANT_ID,
+	E2E_DRAFT_PAPER_ID,
 	E2E_PAPER_DELEGATE_USER_ID,
 	E2E_PAPER_DELEGATION_ID,
 	E2E_PAPER_REVIEWER_ID,
@@ -75,22 +76,18 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 		/only answer surveys for yourself/
 	);
 
-	// A paper in another delegate's name, for a delegation the caller is not in.
+	// A paper for a delegation the caller is not in. The author is always the caller, so there is
+	// no name to give.
 	expectRefused(
 		await gql(
 			page,
-			`mutation ($c: ID!, $a: ID!, $d: ID!, $i: ID) {
-				createPaper(conferenceId: $c, authorId: $a, delegationId: $d, agendaItemId: $i,
-					type: POSITION_PAPER, content: {}) { id }
+			`mutation ($d: ID!, $i: ID) {
+				createPaper(delegationId: $d, agendaItemId: $i, type: POSITION_PAPER, content: {},
+					status: DRAFT) { id }
 			}`,
-			{
-				c: E2E_CONFERENCE_ID,
-				a: E2E_PAPER_DELEGATE_USER_ID,
-				d: E2E_PAPER_DELEGATION_ID,
-				i: E2E_AGENDA_ITEM_ID
-			}
+			{ d: E2E_PAPER_DELEGATION_ID, i: E2E_AGENDA_ITEM_ID }
 		),
-		/in your own name/
+		/for your own delegation/
 	);
 
 	// Attaching another participant to a supervisor with a known code.
@@ -673,16 +670,11 @@ test('a delegate writes papers only on their committee’s agenda items, as thei
 	const create = (type: string, agendaItemId: string | null) =>
 		gql(
 			page,
-			`mutation ($c: ID!, $a: ID!, $d: ID!, $i: ID) {
-				createPaper(conferenceId: $c, authorId: $a, delegationId: $d, agendaItemId: $i,
-					type: ${type}, content: {}, status: DRAFT) { id }
+			`mutation ($d: ID!, $i: ID) {
+				createPaper(delegationId: $d, agendaItemId: $i, type: ${type}, content: {},
+					status: DRAFT) { id }
 			}`,
-			{
-				c: E2E_CONFERENCE_ID,
-				a: E2E_PAPER_DELEGATE_USER_ID,
-				d: E2E_PAPER_DELEGATION_ID,
-				i: agendaItemId
-			}
+			{ d: E2E_PAPER_DELEGATION_ID, i: agendaItemId }
 		);
 
 	expectRefused(
@@ -690,4 +682,18 @@ test('a delegate writes papers only on their committee’s agenda items, as thei
 		/agenda items of your own committee/
 	);
 	expectRefused(await create('INTRODUCTION_PAPER', null), /Only non-state actors/);
+});
+
+test('a reviewer edits a paper’s text but never its status', async ({ page }) => {
+	// The paper team's edit mode used to send a status too, which let a reviewer take a paper back
+	// to a draft or undo a verdict without a review.
+	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID));
+	expectRefused(
+		await gql(
+			page,
+			`mutation ($p: ID!) { updatePaper(paperId: $p, content: {}, status: SUBMITTED) { id } }`,
+			{ p: E2E_DRAFT_PAPER_ID }
+		),
+		/only be accepted or sent back through a review/
+	);
 });

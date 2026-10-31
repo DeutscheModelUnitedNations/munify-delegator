@@ -113,7 +113,6 @@
 		await createPaper({
 			paper: {
 				conferenceId: params.conferenceId,
-				authorId: currentUser.sub,
 				delegationId: delegation?.id,
 				type: $formData.type,
 				content,

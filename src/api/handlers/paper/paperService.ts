@@ -1,4 +1,5 @@
-import { db, schema } from '#api/db/db';
+import { z } from 'zod';
+import { type Transaction, db, schema } from '#api/db/db';
 import codenmz from '#lib/helpers/codenamize';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -11,59 +12,53 @@ type PaperStatus = (typeof schema.paper.$inferSelect)['status'];
 type PaperContent = (typeof schema.paperVersion.$inferInsert)['content'];
 
 /**
+ * The statuses an author saves a paper with. ACCEPTED and CHANGES_REQUESTED are verdicts, which
+ * only reviews hand out; REVISED is normalised (`paperSubmissionChanges`).
+ */
+export const authorStatusSchema = z.enum(['DRAFT', 'SUBMITTED', 'REVISED'], {
+	error: () => m.paperStatusOnlyThroughReview()
+});
+export type AuthorStatus = z.output<typeof authorStatusSchema>;
+
+/** A new paper is a draft or goes straight out; REVISED answers a review, and it has had none. */
+export const newPaperStatusSchema = z.enum(['DRAFT', 'SUBMITTED'], {
+	error: () => m.paperNewDraftOrSubmission()
+});
+
+/**
  * What an update of a paper writes besides its content.
  *
- * A resubmission of an already-reviewed paper counts as REVISED, not SUBMITTED - and a client
- * asking for REVISED directly is normalised to SUBMITTED first, so this rule is the only thing
- * that can produce REVISED. The first update that is not a draft marks the paper as submitted.
+ * A status left out keeps the paper's (a reviewer's edit of the text always does). A resubmission
+ * of an already-reviewed paper counts as REVISED, not SUBMITTED - and a client asking for REVISED
+ * directly is normalised to SUBMITTED first, so this rule is the only thing that can produce
+ * REVISED. The first save that leaves the paper anything but a draft marks it as submitted.
  */
 export function paperSubmissionChanges({
 	paper,
 	requestedStatus,
 	now
 }: {
-	paper: { firstSubmittedAt: Date | null; versions: { reviews: unknown[] }[] };
-	requestedStatus: PaperStatus | null | undefined;
+	paper: { status: PaperStatus; firstSubmittedAt: Date | null; versions: { reviews: unknown[] }[] };
+	requestedStatus: AuthorStatus | null | undefined;
 	now: Date;
-}): { status: PaperStatus | undefined; firstSubmittedAt: Date | undefined } {
+}): { status: PaperStatus; firstSubmittedAt: Date | undefined } {
 	const hasAnyReviews = paper.versions.some((version) => version.reviews.length > 0);
 	const normalised = requestedStatus === 'REVISED' ? 'SUBMITTED' : requestedStatus;
-	const status = normalised === 'SUBMITTED' && hasAnyReviews ? 'REVISED' : normalised;
-	const isFirstSubmission = paper.firstSubmittedAt === null && requestedStatus !== 'DRAFT';
+	const status =
+		normalised === 'SUBMITTED' && hasAnyReviews ? 'REVISED' : (normalised ?? paper.status);
+	const isFirstSubmission = paper.firstSubmittedAt === null && status !== 'DRAFT';
 
-	return {
-		status: status ?? undefined,
-		firstSubmittedAt: isFirstSubmission ? now : undefined
-	};
-}
-
-/** What an author may ask for; ACCEPTED and CHANGES_REQUESTED are verdicts, set by reviews. */
-const AUTHOR_STATUSES: readonly PaperStatus[] = ['DRAFT', 'SUBMITTED', 'REVISED'];
-
-/**
- * Refuses a status a save may not set. Authors move between draft and submitted; a reviewer
- * editing the text keeps whatever verdict the paper already has. Neither may hand out a verdict.
- */
-function assertSavableStatus({
-	requested,
-	current
-}: {
-	requested: PaperStatus | null | undefined;
-	current?: PaperStatus;
-}) {
-	if (!requested || requested === current || AUTHOR_STATUSES.includes(requested)) return;
-	throw apiError({ code: 'CONFLICT', message: m.paperStatusOnlyThroughReview() });
+	return { status, firstSubmittedAt: isFirstSubmission ? now : undefined };
 }
 
 type NewPaper = {
-	conferenceId: string;
 	/** The author's part in the conference, which `assertCanCreatePaper` found. */
 	authorParticipantId: string;
 	delegationId: string;
 	agendaItemId?: string | null;
 	type: (typeof schema.paper.$inferSelect)['type'];
-	content?: PaperContent;
-	status?: PaperStatus | null;
+	content: PaperContent;
+	status: z.output<typeof newPaperStatusSchema>;
 };
 
 /** The rows of a new paper: the paper (stamped as submitted if it goes straight out) and its first version. */
@@ -74,84 +69,106 @@ export function newPaperRows({ args, now }: { args: NewPaper; now: Date }) {
 			delegationId: args.delegationId,
 			agendaItemId: args.agendaItemId ?? undefined,
 			type: args.type,
-			status: args.status ?? undefined,
+			status: args.status,
 			firstSubmittedAt: args.status === 'SUBMITTED' ? now : undefined
 		},
 		// The content lives on versions, never on the paper row itself.
-		version: { content: args.content, status: args.status ?? undefined, version: 1 }
+		version: { content: args.content, status: args.status, version: 1 }
 	};
 }
 
-/** Writes a new paper together with its first version. */
-export async function createPaper(args: NewPaper) {
-	assertSavableStatus({ requested: args.status });
-
-	const paper = await db.transaction(async (tx) => {
-		const conference = await tx.query.conference
-			.findFirst({ where: { id: args.conferenceId } })
-			.then(assertFindFirstExists);
-
-		if (!conference.isOpenPaperSubmission) {
-			throw apiError({ code: 'CONFLICT', message: m.paperSubmissionClosed() });
-		}
-
-		const rows = newPaperRows({ args, now: new Date() });
-		const paper = await tx
-			.insert(schema.paper)
-			.values(rows.paper)
-			.returning()
-			.then(assertFirstEntryExists);
-
-		await tx.insert(schema.paperVersion).values({ ...rows.version, paperId: paper.id });
-
-		return paper;
-	});
-	paperPubsub.created();
-	paperVersionPubsub.created();
-	return paper;
+/** Refuses (CONFLICT) unless the conference takes papers. */
+async function assertPaperSubmissionOpen({
+	tx,
+	conferenceId
+}: {
+	tx: Transaction;
+	conferenceId: string;
+}) {
+	const conference = await tx.query.conference
+		.findFirst({ where: { id: conferenceId }, columns: { isOpenPaperSubmission: true } })
+		.then(assertFindFirstExists);
+	if (!conference.isOpenPaperSubmission) {
+		throw apiError({ code: 'CONFLICT', message: m.paperSubmissionClosed() });
+	}
 }
 
 /**
- * Each update appends a new version rather than editing the previous one. The caller's right to
- * update the paper is checked before (`assertCanUpdatePaper`).
+ * Writes a new paper in the conference together with its first version, unless the conference
+ * takes no papers (CONFLICT). Returns its id.
  */
-export async function updatePaper(args: {
+export async function createPaper({
+	conferenceId,
+	paper: newPaper
+}: {
+	conferenceId: string;
+	paper: NewPaper;
+}) {
+	const paperId = await db.transaction(async (tx) => {
+		await assertPaperSubmissionOpen({ tx, conferenceId });
+
+		const rows = newPaperRows({ args: newPaper, now: new Date() });
+		const { id } = await tx
+			.insert(schema.paper)
+			.values(rows.paper)
+			.returning({ id: schema.paper.id })
+			.then(assertFirstEntryExists);
+
+		await tx.insert(schema.paperVersion).values({ ...rows.version, paperId: id });
+
+		return id;
+	});
+	paperPubsub.created();
+	paperVersionPubsub.created();
+	return paperId;
+}
+
+/**
+ * Saves a new version of the paper rather than editing the previous one, unless its conference
+ * takes no papers any more (CONFLICT). A status left out keeps the paper's.
+ */
+export async function updatePaper({
+	paperId,
+	content,
+	status: requestedStatus
+}: {
 	paperId: string;
-	content?: PaperContent;
-	status?: PaperStatus | null;
+	content: PaperContent;
+	status: AuthorStatus | null | undefined;
 }) {
 	await db.transaction(async (tx) => {
 		const paper = await tx.query.paper
 			.findFirst({
-				where: { id: args.paperId },
-				with: { versions: { with: { reviews: true } }, conference: true }
+				where: { id: paperId },
+				columns: { status: true, firstSubmittedAt: true },
+				with: {
+					versions: { columns: { id: true }, with: { reviews: { columns: { id: true } } } },
+					delegation: { columns: { conferenceId: true } }
+				}
 			})
 			.then(assertFindFirstExists);
 
-		if (!paper.conference?.isOpenPaperSubmission) {
-			throw apiError({ code: 'CONFLICT', message: m.paperSubmissionClosed() });
-		}
-		assertSavableStatus({ requested: args.status, current: paper.status });
+		await assertPaperSubmissionOpen({ tx, conferenceId: paper.delegation.conferenceId });
 
 		const { status, firstSubmittedAt } = paperSubmissionChanges({
 			paper,
-			requestedStatus: args.status,
+			requestedStatus,
 			now: new Date()
 		});
 
 		await tx
 			.update(schema.paper)
 			.set({ status, firstSubmittedAt, updatedAt: new Date() })
-			.where(whereRows({ table: schema.paper, filter: { id: args.paperId } }));
+			.where(whereRows({ table: schema.paper, filter: { id: paperId } }));
 
 		await tx.insert(schema.paperVersion).values({
-			paperId: args.paperId,
-			content: args.content,
+			paperId,
+			content,
 			status,
 			version: paper.versions.length + 1
 		});
 	});
-	paperPubsub.updated(args.paperId);
+	paperPubsub.updated(paperId);
 	paperVersionPubsub.created();
 }
 
@@ -297,36 +314,18 @@ export async function reviewStatsOf({
 }
 
 /**
- * The paper a reviewer should pick up next for an agenda item: the least recently touched
- * one, with never-reviewed submissions taking precedence over revisions.
+ * The id of the paper a reviewer should pick up next for an agenda item: the least recently
+ * touched one, with never-reviewed submissions taking precedence over revisions. Refuses
+ * (NOT_FOUND) when none waits for a review.
  */
-export async function findNextPaperToReview(agendaItemId: string) {
+export async function nextPaperToReview(agendaItemId: string) {
 	const papers = await db.query.paper.findMany({
 		where: { agendaItemId, status: { in: ['SUBMITTED', 'REVISED'] } },
+		columns: { id: true, status: true },
 		orderBy: { updatedAt: 'asc' }
 	});
 
-	if (papers.length === 0) {
-		throw apiError({ code: 'NOT_FOUND', message: m.paperNoneForAgendaItem() });
-	}
-
-	return papers.find((paper) => paper.status === 'SUBMITTED') ?? papers[0];
-}
-
-/** The delegations of the conference with a member the user supervises. */
-export async function supervisedDelegationIds({
-	conferenceId,
-	supervisorId
-}: {
-	conferenceId: string;
-	supervisorId: string;
-}) {
-	const supervised = await db.query.delegationMember.findMany({
-		where: {
-			participant: { conferenceId },
-			supervisors: { participant: { userId: supervisorId } }
-		},
-		columns: { delegationId: true }
-	});
-	return [...new Set(supervised.map((member) => member.delegationId))];
+	const next = papers.find((paper) => paper.status === 'SUBMITTED') ?? papers.at(0);
+	if (!next) throw apiError({ code: 'NOT_FOUND', message: m.paperNoneForAgendaItem() });
+	return next.id;
 }

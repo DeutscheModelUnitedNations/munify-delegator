@@ -2,12 +2,13 @@ import { db } from '#api/db/db';
 import { countQuery, enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { callerUserId, deleteIfAllowed } from '#api/services/authHelper/utils';
 import {
+	authorStatusSchema,
 	createPaper,
-	findNextPaperToReview,
+	nextPaperToReview,
 	groupPapersByCommittee,
+	newPaperStatusSchema,
 	reviewStatsOf,
 	reviewerLeaderboard,
-	supervisedDelegationIds,
 	updatePaper,
 	type AgendaItemGroup,
 	type CommitteeGroup
@@ -19,35 +20,41 @@ import {
 	assertCanReviewPapers,
 	assertCanUpdatePaper,
 	canReviewPapers,
-	registerPaperAbilities
+	registerPaperAbilities,
+	supervisedDelegationOf
 } from './paperPermissions';
 import { CommitteeRef } from '../committee/committee';
 import { CommitteeAgendaItemRef } from '../committeeAgendaItem/committeeAgendaItem';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { z } from 'zod';
-import { m } from '#lib/paraglide/messages';
-import { paperPubsub } from '#api/pubsub';
+import { paperPubsub, paperReviewPubsub, paperVersionPubsub } from '#api/pubsub';
 
 registerPaperAbilities();
 
 const PaperRef = object({ table: 'paper' });
 
+// `paper(id)` is the single paper view's query, for authors, the paper team and the participants
+// alike: the read ability decides who gets which paper.
 query({ table: 'paper' });
+countQuery({ table: 'paper' }); // generates `papersCount(where)`, which the team dashboard's card shows
+const paperTypeEnum = enum_({ tsName: 'paperType' });
+const paperStatusEnum = enum_({ tsName: 'paperStatus' });
 
-/** The submitted introduction papers (those without an agenda item) the caller may read. */
-const readableIntroductionPapers = async ({
+/** The paper with this id, as far as the caller may read it. */
+const readablePaper = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
+	(await ctx.abilities.paper.filter('read')).merge({ where: { id } }).query.single;
+
+/** The submitted papers of a conference matching `where`, as far as the caller may read them. */
+const readableSubmittedPapers = async ({
 	ctx,
-	conferenceId
+	conferenceId,
+	where = {}
 }: {
 	ctx: ApiContext;
 	conferenceId: string;
+	where?: object;
 }) =>
 	(await ctx.abilities.paper.filter('read')).merge({
-		where: {
-			delegation: { conferenceId },
-			status: { ne: 'DRAFT' },
-			agendaItemId: { isNull: true }
-		}
+		where: { delegation: { conferenceId }, status: { ne: 'DRAFT' }, ...where }
 	}).query.many;
 
 /** The submitted papers of a conference the caller may read, by committee and agenda item. */
@@ -60,62 +67,70 @@ async function readablePapersGroupedByCommittee({
 }) {
 	return groupPapersByCommittee(
 		await db.query.paper.findMany({
-			...(await ctx.abilities.paper.filter('read')).merge({
-				where: { delegation: { conferenceId }, status: { ne: 'DRAFT' } }
-			}).query.many,
+			...(await readableSubmittedPapers({ ctx, conferenceId })),
 			with: { agendaItem: { with: { committee: true } } }
 		})
 	);
 }
 
-countQuery({ table: 'paper' }); // generates `papersCount(where)`, which the team dashboard's card shows
-const paperTypeEnum = enum_({ tsName: 'paperType' });
-const paperStatusEnum = enum_({ tsName: 'paperStatus' });
-
-/** The paper with this id, as far as the caller may read it. */
-const readablePaper = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
-	(await ctx.abilities.paper.filter('read')).merge({ where: { id } }).query.single;
-
 schemaBuilder.mutationFields((t) => ({
 	createPaper: t.drizzleField({
-		description: 'Writes a new paper with its first version, as a draft or submitted.',
+		description:
+			"Writes a new paper with its first version, in the caller's name, for a delegation they are a member of, in that delegation's conference. Refused with FORBIDDEN when the delegation's role does not allow the paper type or agenda item, and with CONFLICT while the conference takes no papers.",
 		type: PaperRef,
 		args: {
-			conferenceId: t.arg.id({ required: true }),
-			authorId: t.arg.id({ required: true }),
 			delegationId: t.arg.id({ required: true }),
-			agendaItemId: t.arg.id(),
+			agendaItemId: t.arg.id({
+				description: 'The agenda item it is on; left out for an introduction paper.'
+			}),
 			type: t.arg({ type: paperTypeEnum, required: true }),
 			content: t.arg({ type: 'JSON', required: true }),
-			status: t.arg({ type: paperStatusEnum })
+			status: t
+				.arg({
+					type: paperStatusEnum,
+					required: true,
+					description: 'DRAFT to keep working on it, SUBMITTED to hand it in.'
+				})
+				.validate(newPaperStatusSchema)
 		},
-		// REVISED answers a review, and a new paper has had none.
-		validate: z
-			.object({ status: z.string().nullish() })
-			.refine((args) => args.status !== 'REVISED', {
-				error: () => m.paperNewDraftOrSubmission()
-			}),
 		resolve: async (query, _root, args, ctx) => {
-			const { authorParticipantId } = await assertCanCreatePaper({ ctx, args });
-			const created = await createPaper({ ...args, authorParticipantId });
+			const { authorParticipantId, conferenceId } = await assertCanCreatePaper({ ctx, args });
+			const paperId = await createPaper({
+				conferenceId,
+				paper: {
+					authorParticipantId,
+					delegationId: args.delegationId,
+					agendaItemId: args.agendaItemId,
+					type: args.type,
+					content: args.content,
+					status: args.status
+				}
+			});
 
 			return db.query.paper
-				.findFirst(query(await readablePaper({ ctx, id: created.id })))
+				.findFirst(query(await readablePaper({ ctx, id: paperId })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	updatePaper: t.drizzleField({
-		description: 'Each update appends a new version rather than editing the previous one.',
+		description:
+			'Saves the paper as a new version rather than editing the previous one. Its author and the paper team edit it; CONFLICT while the conference takes no papers.',
 		type: PaperRef,
 		args: {
 			paperId: t.arg.id({ required: true }),
 			content: t.arg({ type: 'JSON', required: true }),
-			status: t.arg({ type: paperStatusEnum })
+			status: t
+				.arg({
+					type: paperStatusEnum,
+					description:
+						"The author's DRAFT or SUBMITTED (a resubmission after a review becomes REVISED); left out keeps the paper's. Only the author sets it (FORBIDDEN for the paper team, whose verdicts go through reviews)."
+				})
+				.validate(authorStatusSchema.nullish())
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpdatePaper({ ctx, paperId: args.paperId });
-			await updatePaper(args);
+			await assertCanUpdatePaper({ ctx, paperId: args.paperId, status: args.status });
+			await updatePaper({ paperId: args.paperId, content: args.content, status: args.status });
 
 			return db.query.paper
 				.findFirst(query(await readablePaper({ ctx, id: args.paperId })))
@@ -124,12 +139,16 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deletePaper: t.field({
-		description: 'Deletes a paper with all its versions and reviews.',
+		description:
+			'Deletes a paper with all its versions and reviews: its author while it is a draft, project management any time.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await deleteIfAllowed({ ctx, table: 'paper', id: args.id });
+			// Its versions and their reviews went with it
 			paperPubsub.removed();
+			paperVersionPubsub.removed();
+			paperReviewPubsub.removed();
 
 			return true;
 		}
@@ -139,57 +158,41 @@ schemaBuilder.mutationFields((t) => ({
 schemaBuilder.queryFields((t) => ({
 	findIntroductionPapers: t.drizzleField({
 		description:
-			"Introduction papers are the ones with no agenda item - a non-state actor writes one per conference rather than one per topic. For the reviewer hub and the participants' paper view alike; the read ability decides which papers each of them gets.",
+			"Introduction papers are the ones with no agenda item - a non-state actor writes one per conference rather than one per topic. For the reviewer hub and the participants' paper view alike; the read ability decides which papers each of them gets. FORBIDDEN for anyone without a part in the conference.",
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
 			await assertCanReadConferencePapers({ ctx, conferenceId: args.conferenceId });
 
 			return db.query.paper.findMany(
-				query(await readableIntroductionPapers({ ctx, conferenceId: args.conferenceId }))
+				query(
+					await readableSubmittedPapers({
+						ctx,
+						conferenceId: args.conferenceId,
+						where: { agendaItemId: { isNull: true } }
+					})
+				)
 			);
 		}
 	}),
 
 	findSupervisedPapers: t.drizzleField({
-		description: 'Papers of the delegations the caller supervises.',
+		description:
+			'The submitted papers of the delegations with a member the caller supervises; empty for anyone else.',
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
 			const callerId = ctx.mustBeLoggedIn().sub;
 
-			const delegationIds = await supervisedDelegationIds({
-				conferenceId: args.conferenceId,
-				supervisorId: callerId
-			});
-			if (delegationIds.length === 0) return [];
-
 			return db.query.paper.findMany(
 				query(
-					(await ctx.abilities.paper.filter('read')).merge({
-						where: {
-							delegation: { conferenceId: args.conferenceId },
-							delegationId: { in: delegationIds },
-							status: { ne: 'DRAFT' }
-						}
-					}).query.many
+					await readableSubmittedPapers({
+						ctx,
+						conferenceId: args.conferenceId,
+						where: supervisedDelegationOf(callerId)
+					})
 				)
 			);
-		}
-	})
-}));
-
-schemaBuilder.queryFields((t) => ({
-	findPublicPaperContent: t.drizzleField({
-		description:
-			'A single paper for the public paper view: exactly what the read ability allows - authors and reviewers in any state, participants of the conference once it is no longer a draft.',
-		type: PaperRef,
-		args: { paperId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			ctx.mustBeLoggedIn();
-			return db.query.paper
-				.findFirst(query(await readablePaper({ ctx, id: args.paperId })))
-				.then(assertFindFirstExists);
 		}
 	})
 }));
@@ -223,7 +226,7 @@ const CommitteePaperGroup = schemaBuilder
 schemaBuilder.queryFields((t) => ({
 	findPapersGroupedByCommittee: t.field({
 		description:
-			"The conference's papers by committee and agenda item, for reviewers and participants alike.",
+			"The conference's submitted papers by committee and agenda item, for the paper team and participants alike; the read ability decides which papers each of them gets. FORBIDDEN for anyone without a part in the conference.",
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
@@ -253,20 +256,19 @@ const MyReviewStats = schemaBuilder.simpleObject('MyReviewStats', {
 schemaBuilder.queryFields((t) => ({
 	reviewerLeaderboard: t.field({
 		description:
-			'Top ten reviewers of a conference, ranked by how often they got to a paper first.',
+			'Top ten reviewers of a conference, ranked by how often they got to a paper first, under anonymised names. For the paper team only (FORBIDDEN otherwise).',
 		type: [ReviewerStat],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const callerId = callerUserId(ctx);
 			await assertCanReviewPapers({ ctx, conferenceId: args.conferenceId });
 
-			return reviewerLeaderboard({ conferenceId: args.conferenceId, callerId });
+			return reviewerLeaderboard({ conferenceId: args.conferenceId, callerId: callerUserId(ctx) });
 		}
 	}),
 
 	myReviewStats: t.field({
 		description:
-			"The caller's own review counts. Null rather than an error when they are not a reviewer.",
+			"The caller's own review counts. Null rather than an error when they are not on the conference's paper team.",
 		type: MyReviewStats,
 		nullable: true,
 		args: { conferenceId: t.arg.id({ required: true }) },
@@ -278,18 +280,20 @@ schemaBuilder.queryFields((t) => ({
 
 			return reviewStatsOf({ conferenceId: args.conferenceId, callerId });
 		}
-	})
-}));
+	}),
 
-schemaBuilder.queryFields((t) => ({
-	findNextPaperToReview: t.field({
+	findNextPaperToReview: t.drizzleField({
 		description:
-			'The paper a reviewer should pick up next for an agenda item: the least recently touched one, with never-reviewed submissions taking precedence over revisions.',
+			'The paper a reviewer should pick up next for an agenda item: the least recently touched one, with never-reviewed submissions taking precedence over revisions. NOT_FOUND when none waits for a review. For the paper team only (FORBIDDEN otherwise).',
 		type: PaperRef,
 		args: { agendaItemId: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
+		resolve: async (query, _root, args, ctx) => {
 			await assertCanReviewAgendaItemPapers({ ctx, agendaItemId: args.agendaItemId });
-			return findNextPaperToReview(args.agendaItemId);
+			const paperId = await nextPaperToReview(args.agendaItemId);
+
+			return db.query.paper
+				.findFirst(query(await readablePaper({ ctx, id: paperId })))
+				.then(assertFindFirstExists);
 		}
 	})
 }));

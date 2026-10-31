@@ -10,10 +10,12 @@
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
+	const paperId = $derived(params.paperId);
 
+	// The read ability decides: participants of the conference get it once it is submitted.
 	const paperData = $derived(
-		await client.liveQuery.findPublicPaperContent({
-			__args: { paperId: params.paperId },
+		await client.liveQuery.paper({
+			__args: { id: paperId },
 			id: true,
 			type: true,
 			firstSubmittedAt: true,

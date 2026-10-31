@@ -2256,11 +2256,9 @@ export type Mutation = {
   }) => Conferencerole,
   createPaper: (p: {
     agendaItemId?: ID | null | undefined,
-    authorId: ID,
-    conferenceId: ID,
     content: JSON,
     delegationId: ID,
-    status?: PaperstatusEnum | null | undefined,
+    status: PaperstatusEnum,
     type: PapertypeEnum
   }) => Paper,
   createPaperReview: (p: {
@@ -3617,9 +3615,6 @@ export type Query = {
   findPapersGroupedByCommittee: (p: {
     conferenceId: ID
   }) => CommitteePaperGroup[],
-  findPublicPaperContent: (p: {
-    paperId: ID
-  }) => Paper,
   findSupervisedPapers: (p: {
     conferenceId: ID
   }) => Paper[],

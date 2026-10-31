@@ -106,14 +106,12 @@
 	const saveFile = async (submit: boolean) => {
 		if (!paperData) return;
 
-		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
-		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
-
 		const promise = client.mutate.updatePaper({
 			__args: {
 				paperId: paperData.id,
 				content: currentEditorContent(paperData.type),
-				status: newStatus
+				// A reviewer's edit keeps the status; only the author drafts or submits
+				status: reviewerEditMode ? undefined : submit ? 'SUBMITTED' : 'DRAFT'
 			},
 			id: true
 		});

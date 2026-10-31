@@ -14,8 +14,8 @@ export function paperSaveToastMessages(submit: boolean) {
 }
 
 export interface NewPaper {
+	/** Where the author returns to; the API takes the conference from the delegation. */
 	conferenceId: string;
-	authorId: string;
 	/** Missing when the author's delegation could not be found; the save is refused then. */
 	delegationId: string | undefined;
 	type: PapertypeEnum;
@@ -29,7 +29,7 @@ export interface NewPaper {
  * hub.
  */
 export async function createPaper({
-	paper: { delegationId, ...paper },
+	paper: { delegationId, conferenceId, ...paper },
 	submit,
 	onCreated
 }: {
@@ -51,6 +51,6 @@ export async function createPaper({
 	const created = await promise;
 	if (created.id) {
 		onCreated();
-		goto(resolve(`dashboard/${paper.conferenceId}/paperhub`));
+		goto(resolve(`dashboard/${conferenceId}/paperhub`));
 	}
 }
