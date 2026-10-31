@@ -1,4 +1,5 @@
 import { db, schema } from '#api/db/db';
+import { assertConferenceDatesInOrder } from './conferenceSettings';
 import type { ApiContext } from '#api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { ConferenceSeedingSchema } from '#lib/seeding/seedSchema';
@@ -106,52 +107,61 @@ export async function updateConference(args: ConferenceUpdateArgs) {
 		certificateFileId: await ensureUploadComplete(args.certificateFileId)
 	};
 
-	await db
-		.update(schema.conference)
-		// An omitted argument arrives as `undefined` and leaves the column alone; an
-		// explicit `null` clears it. Only the non-nullable columns coerce null away.
-		.set({
-			title: nullToUndefined(args.title),
-			longTitle: args.longTitle,
-			location: args.location,
-			language: args.language,
-			website: args.website,
-			info: args.info,
-			showInfoExpanded: nullToUndefined(args.showInfoExpanded),
-			linkToPreparationGuide: args.linkToPreparationGuide,
-			linkToTeamWiki: args.linkToTeamWiki,
-			linkToServicesPage: args.linkToServicesPage,
-			linkToPaperInbox: args.linkToPaperInbox,
-			isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
-			showCalendar: nullToUndefined(args.showCalendar),
-			timezone: nullToUndefined(args.timezone),
-			nametagBinCount: nullToUndefined(args.nametagBinCount),
-			// null lifts the limit
-			maxSeatsPerSchool: args.maxSeatsPerSchool,
-			state: nullToUndefined(args.state),
-			applicationDeadline: nullToUndefined(args.applicationDeadline),
-			startConference: nullToUndefined(args.startConference),
-			endConference: nullToUndefined(args.endConference),
-			registrationDeadlineGracePeriodMinutes: nullToUndefined(
-				args.registrationDeadlineGracePeriodMinutes
-			),
-			unlockPayments: nullToUndefined(args.unlockPayments),
-			unlockPostals: nullToUndefined(args.unlockPostals),
-			feeAmount: args.feeAmount,
-			bankAccountHolder: args.bankAccountHolder,
-			iban: args.iban,
-			bic: args.bic,
-			bankName: args.bankName,
-			currency: args.currency,
-			postalName: args.postalName,
-			postalStreet: args.postalStreet,
-			postalApartment: args.postalApartment,
-			postalZip: args.postalZip,
-			postalCity: args.postalCity,
-			postalCountry: args.postalCountry,
-			...files
-		})
-		.where(whereRows({ table: schema.conference, filter: { id: args.id } }));
+	await db.transaction(async (tx) => {
+		const [written] = await tx
+			.update(schema.conference)
+			// An omitted argument arrives as `undefined` and leaves the column alone; an
+			// explicit `null` clears it. Only the non-nullable columns coerce null away.
+			.set({
+				title: nullToUndefined(args.title),
+				longTitle: args.longTitle,
+				location: args.location,
+				language: args.language,
+				website: args.website,
+				info: args.info,
+				showInfoExpanded: nullToUndefined(args.showInfoExpanded),
+				linkToPreparationGuide: args.linkToPreparationGuide,
+				linkToTeamWiki: args.linkToTeamWiki,
+				linkToServicesPage: args.linkToServicesPage,
+				linkToPaperInbox: args.linkToPaperInbox,
+				isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
+				showCalendar: nullToUndefined(args.showCalendar),
+				timezone: nullToUndefined(args.timezone),
+				nametagBinCount: nullToUndefined(args.nametagBinCount),
+				// null lifts the limit
+				maxSeatsPerSchool: args.maxSeatsPerSchool,
+				state: nullToUndefined(args.state),
+				applicationDeadline: nullToUndefined(args.applicationDeadline),
+				startConference: nullToUndefined(args.startConference),
+				endConference: nullToUndefined(args.endConference),
+				registrationDeadlineGracePeriodMinutes: nullToUndefined(
+					args.registrationDeadlineGracePeriodMinutes
+				),
+				unlockPayments: nullToUndefined(args.unlockPayments),
+				unlockPostals: nullToUndefined(args.unlockPostals),
+				feeAmount: args.feeAmount,
+				bankAccountHolder: args.bankAccountHolder,
+				iban: args.iban,
+				bic: args.bic,
+				bankName: args.bankName,
+				currency: args.currency,
+				postalName: args.postalName,
+				postalStreet: args.postalStreet,
+				postalApartment: args.postalApartment,
+				postalZip: args.postalZip,
+				postalCity: args.postalCity,
+				postalCountry: args.postalCountry,
+				...files
+			})
+			.where(whereRows({ table: schema.conference, filter: { id: args.id } }))
+			.returning({
+				applicationDeadline: schema.conference.applicationDeadline,
+				startConference: schema.conference.startConference,
+				endConference: schema.conference.endConference
+			});
+		// Checked on the row as written: a change may give only one of the dates.
+		if (written) assertConferenceDatesInOrder(written);
+	});
 	conferencePubsub.updated(args.id);
 }
 

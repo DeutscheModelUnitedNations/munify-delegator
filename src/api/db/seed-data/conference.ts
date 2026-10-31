@@ -20,14 +20,16 @@ const inDays =
 			to: new Date(Date.now() + toDays * DAY_MS)
 		});
 const past = () => faker.date.past();
-const future = () => faker.date.future();
 
 type ConferenceDates = Record<
 	'applicationDeadline' | 'startConference' | 'endConference',
 	() => Date
 >;
 
-/** Plausible dates for a conference in each state, relative to now. */
+/**
+ * Plausible dates for a conference in each state, relative to now, always in the order the settings
+ * keep (deadline, start, end: `conferenceDatesProblem`).
+ */
 const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates> = {
 	// Assignment in at least a week, the conference in at least two.
 	PRE: {
@@ -45,8 +47,16 @@ const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates
 		startConference: inDays({ fromDays: 7, toDays: 14 }),
 		endConference: inDays({ fromDays: 30, toDays: 35 })
 	},
-	ACTIVE: { applicationDeadline: past, startConference: past, endConference: future },
-	POST: { applicationDeadline: past, startConference: past, endConference: past }
+	ACTIVE: {
+		applicationDeadline: inDays({ fromDays: -60, toDays: -30 }),
+		startConference: inDays({ fromDays: -3, toDays: -1 }),
+		endConference: inDays({ fromDays: 1, toDays: 3 })
+	},
+	POST: {
+		applicationDeadline: inDays({ fromDays: -365, toDays: -200 }),
+		startConference: inDays({ fromDays: -150, toDays: -100 }),
+		endConference: inDays({ fromDays: -99, toDays: -90 })
+	}
 };
 
 export function makeSeedConference(

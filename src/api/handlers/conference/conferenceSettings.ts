@@ -2,6 +2,8 @@ import { m } from '#lib/paraglide/messages';
 import { binCountSchema } from '#api/handlers/nametagBins/bins';
 import { isConferenceLanguage } from '#lib/helpers/conferenceLanguage';
 import { z } from 'zod';
+import { conferenceDatesProblem } from '#lib/helpers/conferenceDates';
+import { apiError } from '#api/services/errors';
 
 /** The checks of the conference settings, kept apart from the database so they are unit tested. */
 
@@ -45,5 +47,16 @@ function isKnownTimeZone(timeZone: string) {
 		return true;
 	} catch {
 		return false;
+	}
+}
+
+/** Refuses (INVALID_INPUT) a conference whose dates are out of order (`conferenceDatesProblem`). */
+export function assertConferenceDatesInOrder(dates: Parameters<typeof conferenceDatesProblem>[0]) {
+	const problem = conferenceDatesProblem(dates);
+	if (problem === 'deadlineAfterStart') {
+		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceDeadlineAfterStart() });
+	}
+	if (problem === 'startAfterEnd') {
+		throw apiError({ code: 'INVALID_INPUT', message: m.conferenceStartAfterEnd() });
 	}
 }

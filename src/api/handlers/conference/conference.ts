@@ -107,7 +107,7 @@ const fileArgDescription =
 schemaBuilder.mutationFields((t) => ({
 	updateConference: t.drizzleField({
 		description:
-			'Changes the given settings of a conference; left out keeps a setting, `null` clears a nullable one. Project management changes everything; the content roles (participant care, content lead) only the links, the announcement, the postal address, the templates, the status and the feature switches - any other argument is refused with FORBIDDEN. Uploaded files (logo, templates) are passed by the id `requestFileUpload` returned.',
+			'Changes the given settings of a conference; left out keeps a setting, `null` clears a nullable one. Project management changes everything; the content roles (participant care, content lead) only the links, the announcement, the postal address, the templates, the status and the feature switches - any other argument is refused with FORBIDDEN. Uploaded files (logo, templates) are passed by the id `requestFileUpload` returned. Dates that end up out of order (the application deadline after the start, the start after the end) are refused with INVALID_INPUT.',
 		type: ConferenceRef,
 		args: {
 			id: t.arg.id({ required: true }),
