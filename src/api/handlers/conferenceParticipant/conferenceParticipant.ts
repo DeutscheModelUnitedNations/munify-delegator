@@ -1,30 +1,31 @@
 import { db } from '#api/db/db';
-import { enum_, object, query, schemaBuilder } from '#api/rumble';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
-	createStatus,
+	changeParticipantSchool,
 	isOfAgeAtConference,
-	planParticipantStatusUpsert,
 	setAttendanceForAll,
-	setParticipantSchool,
-	updateStatus
+	upsertParticipantStatus
 } from './conferenceParticipantService';
-import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
 import { ScanIssueEnum } from '#api/handlers/scanLookup/scanLookup';
 import { participantCheckIssues } from '#api/handlers/scanLookup/scanLookupService';
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 import { z } from 'zod';
 import { m } from '#lib/paraglide/messages';
 import {
-	assertCanCreateParticipantStatus,
 	assertCanSetAttendanceForAll,
-	assertCanUpdateParticipantStatus,
+	assertCanSetParticipantSchool,
 	assertCanUpsertParticipantStatus,
-	registerConferenceParticipantAbilities,
-	assertCanSetParticipantSchool
+	registerConferenceParticipantAbilities
 } from './conferenceParticipantPermissions';
 
 registerConferenceParticipantAbilities();
+
+/** The participant row `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+async function readableParticipant({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.conferenceParticipant.filter('read')).merge({ where: { id } }).query
+		.single;
+}
 
 const ConferenceParticipantRef = object({
 	table: 'conferenceParticipant',
@@ -64,7 +65,7 @@ const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
 schemaBuilder.mutationFields((t) => ({
 	upsertConferenceParticipant: t.drizzleField({
 		description:
-			"Upserts a participant's status. The row is addressed either by id, or by conference plus user id, or by conference plus user email - the management UI knows different things in different places, which is why all three are accepted.",
+			"Writes the given fields of a person's status in a conference (participant care); fields left out or `null` stay as they are. The row is addressed by id, or by conference plus user id or email: a person without a row gets one if they take part in the conference or are on its team. An unknown email answers NOT_FOUND, an access card another participant carries CONFLICT.",
 		type: ConferenceParticipantRef,
 		args: {
 			id: t.arg.id(),
@@ -78,7 +79,10 @@ schemaBuilder.mutationFields((t) => ({
 			paymentStatus: t.arg({ type: administrativeStatusEnum }),
 			didAttend: t.arg.boolean(),
 			assignedDocumentNumber: t.arg.int(),
-			assignNextDocumentNumber: t.arg.boolean(),
+			assignNextDocumentNumber: t.arg.boolean({
+				description:
+					'Gives the person the number after the highest one in the conference, instead of `assignedDocumentNumber`.'
+			}),
 			accessCardId: t.arg.string()
 		},
 		validate: z
@@ -90,70 +94,49 @@ schemaBuilder.mutationFields((t) => ({
 			.refine((args) => args.id || args.userId || args.userEmail, {
 				error: () => m.participantStatusNeedsLookup()
 			}),
-		resolve: async (query, _root, args, ctx) => {
-			await assertCanUpsertParticipantStatus({ ctx, args });
-			const upsert = await planParticipantStatusUpsert(args);
-			let statusId: string;
-			if (upsert.existingId !== undefined) {
-				await assertCanUpdateParticipantStatus({ ctx, id: upsert.existingId });
-				statusId = await updateStatus({ id: upsert.existingId, values: upsert.values });
-			} else {
-				await assertCanCreateParticipantStatus({
-					ctx,
-					conferenceId: args.conferenceId,
-					userId: upsert.userId
-				});
-				statusId = await createStatus({
-					values: upsert.values,
-					conferenceId: args.conferenceId,
-					userId: upsert.userId
-				});
-			}
+		resolve: async (query, _root, { id, conferenceId, userId, userEmail, ...status }, ctx) => {
+			const target = await assertCanUpsertParticipantStatus({
+				ctx,
+				args: { id, conferenceId, userId, userEmail }
+			});
+			const statusId = await upsertParticipantStatus({ conferenceId, target, args: status });
 
 			return db.query.conferenceParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
-							where: { id: statusId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableParticipant({ ctx, id: statusId })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	setParticipantSchool: t.drizzleField({
 		description:
-			"Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it.",
+			"Sets a person's school in a conference: the only school a person taking part has, which the seats and numbers per school count, and which the assignment never changes. Without `id` it is the caller's own (as a delegate, single participant or supervisor); with it, participant care correcting somebody's. Both school arguments null removes it, both left out keeps it.",
 		type: ConferenceParticipantRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			id: t.arg.id(),
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string().validate(schoolNameSchema)
+			id: t.arg.id({ description: "The participant row; left out for the caller's own." }),
+			schoolId: t.arg.id({ description: 'An existing school.' }),
+			schoolName: t.arg
+				.string({
+					description: 'The name of a school to find (ignoring case and spacing) or create.'
+				})
+				.validate(schoolNameSchema)
 		},
 		resolve: async (query, _root, args, ctx) => {
 			const { participantId } = await assertCanSetParticipantSchool({ ctx, args });
-			await setParticipantSchool({
-				tx: db,
-				participantIds: [participantId],
-				schoolId: await resolveSchoolChoice({ choice: args })
+			await changeParticipantSchool({
+				participantId,
+				school: { schoolId: args.schoolId, schoolName: args.schoolName }
 			});
 
 			return db.query.conferenceParticipant
-				.findFirst(
-					query(
-						(await ctx.abilities.conferenceParticipant.filter('read')).merge({
-							where: { id: participantId }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableParticipant({ ctx, id: participantId })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	updateAllConferenceParticipants: t.field({
-		description: 'Bulk attendance toggle across a whole conference, for its participant care.',
+		description:
+			'Sets whether everybody registered in the conference attended (participant care), creating the participant rows that are missing.',
 		type: BulkStatusUpdateResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),

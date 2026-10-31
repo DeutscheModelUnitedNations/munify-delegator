@@ -1,12 +1,13 @@
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import { type Transaction, db, schema } from '#api/db/db';
-import { nullToUndefined } from '#api/services/args';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFirstEntryExists } from '@m1212e/rumble';
 import { max } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 import { conferenceParticipantPubsub } from '#api/pubsub';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
+import type { ParticipantStatusTarget } from './conferenceParticipantPermissions';
 
 /**
  * The person's row in the conference, created the first time they register there (as delegate,
@@ -31,6 +32,8 @@ export async function ensureConferenceParticipant({
 		})
 		.returning({ id: schema.conferenceParticipant.id })
 		.then(assertFirstEntryExists);
+	// The row may be new.
+	conferenceParticipantPubsub.created();
 	conferenceParticipantPubsub.updated(row.id);
 	return row.id;
 }
@@ -62,14 +65,25 @@ export async function setParticipantSchool({
 	conferenceParticipantPubsub.updated([...participantIds]);
 }
 
-/** The user a status is addressed to, when it is addressed by user id or email. */
-async function targetUserIdOf(args: { userId?: string | null; userEmail?: string | null }) {
-	if (args.userId) return args.userId;
-	if (!args.userEmail) return undefined;
-	const found = await db.query.user
-		.findFirst({ where: { email: args.userEmail } })
-		.then(assertFindFirstExists);
-	return found.id;
+/**
+ * Sets the school of one person's participant row, which the caller may change
+ * (`assertCanSetParticipantSchool`): an existing school, one found or created by name, or none.
+ * Both left out changes nothing.
+ */
+export async function changeParticipantSchool({
+	participantId,
+	school
+}: {
+	participantId: string;
+	school: SchoolChoice;
+}) {
+	await db.transaction(async (tx) =>
+		setParticipantSchool({
+			tx,
+			participantIds: [participantId],
+			schoolId: await resolveSchoolChoice({ choice: school, tx })
+		})
+	);
 }
 
 /** "Assign the next free number" is resolved per conference, as in the legacy resolver. */
@@ -91,58 +105,14 @@ async function documentNumberOf(args: {
 	return (highest?.value ?? 0) + 1;
 }
 
-type StatusValues = Partial<typeof schema.conferenceParticipant.$inferInsert>;
-
-/**
- * Updates the status row `id`; whether the caller may is checked before
- * (`assertCanUpdateParticipantStatus`).
- */
-export async function updateStatus({ id, values }: { id: string; values: StatusValues }) {
-	const [updated] = await db
-		.update(schema.conferenceParticipant)
-		.set(values)
-		.where(whereRows({ table: schema.conferenceParticipant, filter: { id } }))
-		.returning({ id: schema.conferenceParticipant.id });
-	if (!updated) {
-		throw apiError({ code: 'NOT_FOUND', message: m.updateNotFoundOrForbidden() });
-	}
-	conferenceParticipantPubsub.updated(updated.id);
-	return updated.id;
-}
-
-/**
- * Creates a status row; whether the caller may, for this user, is checked before
- * (`assertCanCreateParticipantStatus`).
- */
-export async function createStatus({
-	values,
-	conferenceId,
-	userId
-}: {
-	values: StatusValues;
-	conferenceId: string;
-	userId: string;
-}) {
-	const created = await db
-		.insert(schema.conferenceParticipant)
-		.values({ ...values, userId, conferenceId })
-		.returning()
-		.then(assertFirstEntryExists);
-	// announced as an update, like an existing row the upsert writes
-	conferenceParticipantPubsub.updated(created.id);
-	return created.id;
-}
-
 export type StatusUpdateArgs = {
-	id?: string | null;
-	conferenceId: string;
-	userId?: string | null;
-	userEmail?: string | null;
-	termsAndConditions?: StatusValues['termsAndConditions'] | null;
-	guardianConsent?: StatusValues['guardianConsent'] | null;
-	mediaConsent?: StatusValues['mediaConsent'] | null;
-	mediaConsentStatus?: StatusValues['mediaConsentStatus'] | null;
-	paymentStatus?: StatusValues['paymentStatus'] | null;
+	termsAndConditions?:
+		(typeof schema.conferenceParticipant.$inferInsert)['termsAndConditions'] | null;
+	guardianConsent?: (typeof schema.conferenceParticipant.$inferInsert)['guardianConsent'] | null;
+	mediaConsent?: (typeof schema.conferenceParticipant.$inferInsert)['mediaConsent'] | null;
+	mediaConsentStatus?:
+		(typeof schema.conferenceParticipant.$inferInsert)['mediaConsentStatus'] | null;
+	paymentStatus?: (typeof schema.conferenceParticipant.$inferInsert)['paymentStatus'] | null;
 	didAttend?: boolean | null;
 	assignedDocumentNumber?: number | null;
 	assignNextDocumentNumber?: boolean | null;
@@ -167,51 +137,57 @@ async function assertAccessCardFree({
 }
 
 /**
- * Works out what upserting a participant's status writes: the values, and either the existing row
- * to update or the user to create one for. The row is addressed either by id, or by conference
- * plus user id, or by conference plus user email. Whether the caller may write there is checked
- * before this runs (`assertCanUpsertParticipantStatus`): the lookups answer who has an account and
- * which card is in use, which only the conference's participant care may learn.
+ * Writes the given fields of a participant's status where `assertCanUpsertParticipantStatus`
+ * pointed: the existing row, or a new one for the user. Left out and `null` both keep a field.
+ * Refuses (CONFLICT) an access card another participant of the conference carries. Returns the
+ * row's id.
  */
-export async function planParticipantStatusUpsert(
-	args: StatusUpdateArgs
-): Promise<
-	{ values: StatusValues } & ({ existingId: string } | { existingId?: undefined; userId: string })
-> {
-	const targetUserId = await targetUserIdOf(args);
-	const documentNumber = await documentNumberOf(args);
+export async function upsertParticipantStatus({
+	conferenceId,
+	target,
+	args
+}: {
+	conferenceId: string;
+	target: ParticipantStatusTarget;
+	args: StatusUpdateArgs;
+}) {
+	const existingId = 'existingId' in target ? target.existingId : undefined;
+	const accessCardId = args.accessCardId ?? undefined;
+	if (accessCardId) await assertAccessCardFree({ conferenceId, accessCardId, ownId: existingId });
 
 	const values = {
-		termsAndConditions: nullToUndefined(args.termsAndConditions),
-		guardianConsent: nullToUndefined(args.guardianConsent),
-		mediaConsent: nullToUndefined(args.mediaConsent),
-		mediaConsentStatus: nullToUndefined(args.mediaConsentStatus),
-		paymentStatus: nullToUndefined(args.paymentStatus),
-		didAttend: nullToUndefined(args.didAttend),
-		assignedDocumentNumber: documentNumber,
-		accessCardId: nullToUndefined(args.accessCardId)
+		termsAndConditions: args.termsAndConditions ?? undefined,
+		guardianConsent: args.guardianConsent ?? undefined,
+		mediaConsent: args.mediaConsent ?? undefined,
+		mediaConsentStatus: args.mediaConsentStatus ?? undefined,
+		paymentStatus: args.paymentStatus ?? undefined,
+		didAttend: args.didAttend ?? undefined,
+		assignedDocumentNumber: await documentNumberOf({ conferenceId, ...args }),
+		accessCardId
 	};
 
-	const existing = await db.query.conferenceParticipant.findFirst({
-		where: args.id ? { id: args.id } : { conferenceId: args.conferenceId, userId: targetUserId }
-	});
-
-	if (values.accessCardId) {
-		await assertAccessCardFree({
-			conferenceId: args.conferenceId,
-			accessCardId: values.accessCardId,
-			ownId: existing?.id
-		});
+	if ('existingId' in target) {
+		await db
+			.update(schema.conferenceParticipant)
+			.set({ ...values, updatedAt: new Date() })
+			.where(whereRows({ table: schema.conferenceParticipant, filter: { id: target.existingId } }));
+		conferenceParticipantPubsub.updated(target.existingId);
+		return target.existingId;
 	}
-
-	if (existing) return { values, existingId: existing.id };
-	if (!targetUserId) {
-		throw apiError({ code: 'INVALID_INPUT', message: m.participantStatusNeedsUser() });
-	}
-	return { values, userId: targetUserId };
+	const created = await db
+		.insert(schema.conferenceParticipant)
+		.values({ ...values, userId: target.userId, conferenceId })
+		.returning({ id: schema.conferenceParticipant.id })
+		.then(assertFirstEntryExists);
+	conferenceParticipantPubsub.created();
+	conferenceParticipantPubsub.updated(created.id);
+	return created.id;
 }
 
-/** Bulk attendance toggle across a whole conference; answers how many participants it touched. */
+/**
+ * Sets whether everybody registered in the conference attended, creating the participant rows
+ * that are missing. Answers how many participants it touched.
+ */
 export async function setAttendanceForAll(args: {
 	conferenceId: string;
 	didAttend?: boolean | null;
@@ -246,7 +222,9 @@ export async function setAttendanceForAll(args: {
 			changed.push(row.id);
 		}
 	});
+	// rows may be new, and the others changed
 	conferenceParticipantPubsub.created();
+	if (changed.length > 0) conferenceParticipantPubsub.updated(changed);
 
 	return changed.length;
 }
