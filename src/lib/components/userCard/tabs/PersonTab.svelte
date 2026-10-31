@@ -21,6 +21,7 @@
 	import CopyField from '../CopyField.svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { untrack } from 'svelte';
+	import { getCurrentUser } from '#lib/state/currentUser.svelte.js';
 
 	interface Props {
 		userId: string;
@@ -53,6 +54,11 @@
 	});
 
 	let editing = $state(false);
+
+	// `updateUser` changes one's own profile, or anybody's for a system admin; the care team corrects
+	// names and birthdays elsewhere (`updateUsersIdentityInfo`).
+	const me = await getCurrentUser();
+	const canEdit = $derived(me.sub === userId || me.myOIDCRoles.includes('admin'));
 
 	const initialData = defaults(buildUserFormValues(user), zod4Client(adminUserFormSchema));
 
@@ -369,17 +375,19 @@
 		</div>
 	</Form>
 
-	<div class="flex justify-end">
-		<button class="btn btn-sm {editing ? 'btn-ghost' : 'btn-outline'}" onclick={toggleEdit}>
-			{#if editing}
-				<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
-				{m.cancel()}
-			{:else}
-				<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
-				{m.edit()}
-			{/if}
-		</button>
-	</div>
+	{#if canEdit}
+		<div class="flex justify-end">
+			<button class="btn btn-sm {editing ? 'btn-ghost' : 'btn-outline'}" onclick={toggleEdit}>
+				{#if editing}
+					<i class="fa-sharp-duotone fa-solid fa-xmark"></i>
+					{m.cancel()}
+				{:else}
+					<i class="fa-sharp-duotone fa-solid fa-pen-to-square"></i>
+					{m.edit()}
+				{/if}
+			</button>
+		</div>
+	{/if}
 
 	<ParticipantSchoolSection {userId} {conferenceId} />
 

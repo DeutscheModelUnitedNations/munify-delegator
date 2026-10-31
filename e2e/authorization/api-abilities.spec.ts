@@ -697,6 +697,18 @@ test('the entrance scanner refuses a session of another conference', async ({ pa
 	);
 });
 
+test('a profile is changed by its owner, not by the care team', async ({ page }) => {
+	// Participant care reads a participant in full, but `updateUser` is self-service: it used to
+	// answer as if it had saved, writing nothing.
+	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID));
+	expectRefused(
+		await gql(page, `mutation ($id: ID!) { updateUser(id: $id, pronouns: "authz") { id } }`, {
+			id: E2E_PAPER_DELEGATE_USER_ID
+		}),
+		/not found, or you may not change it/
+	);
+});
+
 test('nobody registers into a conference that is not taking applications', async ({ page }) => {
 	// Registering makes the caller a participant, which opens the conference's members-only
 	// details to them; the preparation conference has closed its registration.

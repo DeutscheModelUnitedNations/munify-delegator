@@ -6,6 +6,10 @@ import {
 	OIDC_RESOURCE
 } from '$app/env/private';
 import { OIDC } from '#api/services/oidc/OIDC';
+import type { RequestEvent } from '@sveltejs/kit';
+import { apiError } from '#api/services/errors';
+import { m } from '#lib/paraglide/messages';
+import { logger } from '#lib/logger';
 
 // TODO: Logto-only. Make the subject token step an adapter per provider (Logto, Zitadel), picked
 // from the discovery document's endpoint paths, with an optional `OIDC_IMPERSONATION` override.
@@ -77,7 +81,7 @@ async function subjectTokenFor(userId: string): Promise<string> {
  * access token, so the issued token names the actor in its `act` claim. Checks no permissions;
  * `assertCanImpersonate` comes first.
  */
-export async function impersonationTokens({
+async function impersonationTokens({
 	actorAccessToken,
 	userId
 }: {
@@ -90,4 +94,53 @@ export async function impersonationTokens({
 		resource: OIDC_RESOURCE
 	});
 	return { access_token: tokens.access_token, id_token: tokens.id_token };
+}
+
+/**
+ * Starts acting as `targetId` in the session of `event`: tokens delegated to the actor, kept by the
+ * OIDC library next to the actor's own session. Refuses (FORBIDDEN) when the deployment lacks the
+ * Management API credentials, and (CONFLICT) when the provider does not issue the tokens. Checks no
+ * permissions; `assertCanImpersonate` comes first.
+ */
+export async function startImpersonation({
+	event,
+	actorId,
+	targetId
+}: {
+	event: RequestEvent;
+	actorId: string;
+	targetId: string;
+}) {
+	if (!impersonationConfigured()) {
+		throw apiError({ code: 'FORBIDDEN', message: m.impersonationNotConfigured() });
+	}
+	const actorAccessToken = event.locals.oidc?.tokens.accessToken;
+	if (!actorAccessToken) throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
+
+	try {
+		const tokens = await impersonationTokens({ actorAccessToken, userId: targetId });
+		await OIDC.startImpersonation(event, tokens);
+	} catch (error) {
+		logger.warn('Impersonation failed to start', {
+			actor: actorId,
+			subject: targetId,
+			reason: error instanceof Error ? error.message : String(error)
+		});
+		throw apiError({ code: 'CONFLICT', message: m.impersonationFailed() });
+	}
+	logger.info('Impersonation started', { actor: actorId, subject: targetId });
+}
+
+/** Puts the session of `event` back to the actor's own; nothing changes outside an impersonation. */
+export function stopImpersonation({
+	event,
+	actorId,
+	targetId
+}: {
+	event: RequestEvent;
+	actorId: string | undefined;
+	targetId: string | undefined;
+}) {
+	OIDC.stopImpersonation(event);
+	if (actorId) logger.info('Impersonation stopped', { actor: actorId, subject: targetId });
 }

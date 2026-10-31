@@ -87,7 +87,7 @@ export const variables = defineEnvVars({
 	// in sends none.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },
 	// Machine-to-machine credentials for the Logto Management API, which issues the subject tokens
-	// impersonation exchanges (#api/services/account/impersonation). Without them it is unavailable.
+	// impersonation exchanges (#api/handlers/user/impersonation). Without them it is unavailable.
 	OIDC_M2M_CLIENT_ID: { schema: z.string().optional() },
 	OIDC_M2M_CLIENT_SECRET: { schema: z.string().optional() },
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)

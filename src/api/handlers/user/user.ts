@@ -1,13 +1,12 @@
-import { db, schema } from '#api/db/db';
-import { whereRows } from '#api/db/whereRows';
-import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
+import { db } from '#api/db/db';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { enum_ } from '#api/rumble';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
-import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
 	countConferenceParticipations,
+	profileArgsSchema,
 	removeParticipation,
+	setGlobalNotes,
 	updateNewsletterPreferences,
 	updateIdentity,
 	updateProfile
@@ -15,23 +14,17 @@ import {
 import {
 	assertCanImpersonate,
 	assertCanManageUser,
-	canImpersonate,
 	assertCanUpdateNewsletterPreferences,
+	assertCanUpdateUser,
+	canImpersonate,
 	deletableParticipation,
 	registerUserAbilities
 } from './userPermissions';
-import { userPubsub } from '#api/pubsub';
-import { OIDC } from '#api/services/oidc/OIDC';
-import { impersonationConfigured, impersonationTokens } from '#api/services/account/impersonation';
-import { apiError } from '#api/services/errors';
-import { m } from '#lib/paraglide/messages';
-import { whereAllowed } from '#api/services/authHelper/utils';
-import { logger } from '#lib/logger';
+import { impersonationConfigured, startImpersonation, stopImpersonation } from './impersonation';
 
 registerUserAbilities();
 
 const genderEnum = enum_({ tsName: 'gender' });
-// The column is an enum; the legacy arg was a loose string that Prisma rejected at runtime.
 const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
 
 export const UserRef = object({
@@ -55,7 +48,7 @@ async function allowedUser({ ctx, id }: { ctx: ApiContext; id: string }) {
 schemaBuilder.mutationFields((t) => ({
 	unregisterParticipant: t.drizzleField({
 		description:
-			"Removes every trace of a user's participation in one conference - delegation membership, single participant entry, supervisor entry and participant status - while leaving the user account itself alone. Each delete carries its own ability filter, so a caller who may remove one kind of participation but not another removes only what they are allowed to.",
+			"Removes every trace of a user's participation in one conference - delegation membership, single participant entry, supervisor entry and participant status - while leaving the user account itself alone. Each delete carries its own ability filter, so a caller who may remove one kind of participation but not another removes only what they are allowed to. NOT_FOUND when the user takes no part in the conference.",
 		type: UserRef,
 		args: {
 			userId: t.arg.id({ required: true }),
@@ -88,39 +81,32 @@ schemaBuilder.mutationFields((t) => {
 	});
 
 	return {
-		/**
-		 * The my-account form and the user card's. rumble's scalars normalize what they can (names,
-		 * the phone number as E.164, the address against the country's postal metadata); the same zod
-		 * schema the form uses then judges the rest.
-		 */
 		updateUser: t.drizzleField({
 			description:
-				'Changes the given fields of a profile; the others stay as they are. `null` clears the apartment or the pronouns, and leaves every field a profile always has as it is.',
+				"Changes the given fields of a profile; the others stay as they are. `null` clears the apartment or the pronouns, and leaves every field a profile always has as it is. The fields are judged by the rules the profile forms use (INVALID_INPUT). Everybody changes their own profile, a system admin anybody's; NOT_FOUND otherwise.",
 			type: UserRef,
-			args: {
-				id: t.arg.id({ required: true }),
-				...identityArgs(),
-				phone: t.arg({ type: 'PhoneNumber' }),
-				address: t.arg({ type: 'AddressInput' }),
-				apartment: t.arg.string(),
-				gender: t.arg({ type: genderEnum }),
-				pronouns: t.arg.string(),
-				foodPreference: t.arg({ type: foodPreferenceEnum }),
-				emergencyContacts: t.arg.string(),
-				wantsToReceiveGeneralInformation: t.arg.boolean(),
-				wantsJoinTeamInformation: t.arg.boolean()
-			},
-			resolve: async (query, _root, args, ctx) => {
-				await updateProfile({
-					args,
-					updatable: await whereAllowed({ ctx, table: 'user', action: 'update', id: args.id })
-				});
-
-				// a completed or changed profile may now look like an account from before
-				scanUserForDuplicatesInBackground(args.id);
+			args: t.validate(
+				{
+					id: t.arg.id({ required: true }),
+					...identityArgs(),
+					phone: t.arg({ type: 'PhoneNumber' }),
+					address: t.arg({ type: 'AddressInput' }),
+					apartment: t.arg.string(),
+					gender: t.arg({ type: genderEnum }),
+					pronouns: t.arg.string(),
+					foodPreference: t.arg({ type: foodPreferenceEnum }),
+					emergencyContacts: t.arg.string(),
+					wantsToReceiveGeneralInformation: t.arg.boolean(),
+					wantsJoinTeamInformation: t.arg.boolean()
+				},
+				profileArgsSchema
+			),
+			resolve: async (query, _root, profile, ctx) => {
+				await assertCanUpdateUser({ ctx, id: profile.id });
+				await updateProfile(profile);
 
 				return db.query.user
-					.findFirst(query(await allowedUser({ ctx, id: args.id })))
+					.findFirst(query(await allowedUser({ ctx, id: profile.id })))
 					.then(assertFindFirstExists);
 			}
 		}),
@@ -143,7 +129,7 @@ schemaBuilder.mutationFields((t) => {
 
 		updateUsersGlobalNotes: t.drizzleField({
 			description:
-				'Participant care notes, kept separate so they are never part of a self-service update.',
+				"Replaces the care team's notes about a participant, kept separate so they are never part of a self-service update. For participant care of a conference the person takes part in or waits for; NOT_FOUND otherwise.",
 			type: UserRef,
 			args: {
 				id: t.arg.id({ required: true }),
@@ -151,13 +137,7 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (query, _root, args, ctx) => {
 				await assertCanManageUser({ ctx, id: args.id });
-
-				await db
-					.update(schema.user)
-					.set({ globalNotes: args.globalNotes })
-					.where(whereRows({ table: schema.user, filter: { id: args.id } }));
-
-				userPubsub.updated(args.id);
+				await setGlobalNotes(args);
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id: args.id })))
@@ -167,7 +147,7 @@ schemaBuilder.mutationFields((t) => {
 
 		updateUsersIdentityInfo: t.drizzleField({
 			description:
-				'Name and birthday corrections by management; each field is optional and skipped when absent.',
+				'Name and birthday corrections by participant care of a conference the person takes part in or waits for (NOT_FOUND otherwise); each field is optional and left as it is when absent or null.',
 			type: UserRef,
 			args: {
 				id: t.arg.id({ required: true }),
@@ -175,10 +155,7 @@ schemaBuilder.mutationFields((t) => {
 			},
 			resolve: async (query, _root, args, ctx) => {
 				await assertCanManageUser({ ctx, id: args.id });
-
 				await updateIdentity({ id: args.id, args });
-
-				scanUserForDuplicatesInBackground(args.id);
 
 				return db.query.user
 					.findFirst(query(await allowedUser({ ctx, id: args.id })))
@@ -188,50 +165,26 @@ schemaBuilder.mutationFields((t) => {
 
 		startImpersonation: t.field({
 			description:
-				"Acts as `targetUserId` from the next request on, until `stopImpersonation`, the session ends or the impersonation token expires. The provider issues the target's tokens through a token exchange that names the caller as their actor (`act`), and the OIDC library keeps them next to the caller's own session and checks them against it on every request. Whether the caller may still impersonate the target is checked on every request too (`impersonationHandle` in `userPermissions.ts`).",
+				"Acts as `targetUserId` from the next request on, until `stopImpersonation`, the session ends or the impersonation token expires. The provider issues the target's tokens through a token exchange that names the caller as their actor (`act`), and the OIDC library keeps them next to the caller's own session and checks them against it on every request. Whether the caller may still impersonate the target is checked on every request too (`impersonationHandle` in `userPermissions.ts`). FORBIDDEN when the caller may not or already impersonates somebody, or the deployment is not set up for it; CONFLICT when the provider refuses the exchange.",
 			type: 'Boolean',
 			args: { targetUserId: t.arg.id({ required: true }) },
 			resolve: async (_root, args, ctx) => {
-				await assertCanImpersonate({ ctx, targetId: args.targetUserId });
-				const actor = ctx.mustBeLoggedIn();
-				if (!impersonationConfigured()) {
-					throw apiError({ code: 'FORBIDDEN', message: m.impersonationNotConfigured() });
-				}
-				const actorAccessToken = ctx.event.locals.oidc?.tokens.accessToken;
-				if (!actorAccessToken)
-					throw apiError({ code: 'UNAUTHENTICATED', message: m.mustBeLoggedIn() });
-
-				try {
-					const tokens = await impersonationTokens({ actorAccessToken, userId: args.targetUserId });
-					await OIDC.startImpersonation(ctx.event, tokens);
-				} catch (error) {
-					logger.warn('Impersonation failed to start', {
-						actor: actor.sub,
-						subject: args.targetUserId,
-						reason: error instanceof Error ? error.message : String(error)
-					});
-					throw apiError({ code: 'CONFLICT', message: m.impersonationFailed() });
-				}
-				logger.info('Impersonation started', {
-					actor: actor.sub,
-					subject: args.targetUserId
-				});
+				const { actorId } = await assertCanImpersonate({ ctx, targetId: args.targetUserId });
+				await startImpersonation({ event: ctx.event, actorId, targetId: args.targetUserId });
 				return true;
 			}
 		}),
 
 		stopImpersonation: t.field({
-			description: 'Puts the caller back in their own session.',
+			description:
+				'Puts the caller back in their own session; outside an impersonation nothing changes.',
 			type: 'Boolean',
 			resolve: (_root, _args, ctx) => {
-				const impersonator = ctx.oidc.impersonator;
-				OIDC.stopImpersonation(ctx.event);
-				if (impersonator) {
-					logger.info('Impersonation stopped', {
-						actor: impersonator.sub,
-						subject: ctx.oidc.user?.sub
-					});
-				}
+				stopImpersonation({
+					event: ctx.event,
+					actorId: ctx.oidc.impersonator?.sub,
+					targetId: ctx.oidc.user?.sub
+				});
 				return true;
 			}
 		})

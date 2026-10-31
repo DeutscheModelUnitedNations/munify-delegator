@@ -11,8 +11,9 @@ import { alpha2ToAlpha3 } from '#lib/helpers/countryCodes';
 import { and, count, eq, isNotNull, notExists, sql, type SQL } from 'drizzle-orm';
 import { userUpdateSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { apiError } from '#api/services/errors';
-import { nullToUndefined } from '#api/services/args';
 import { m } from '#lib/paraglide/messages';
+import { z } from 'zod';
+import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 
 /**
  * How many conferences this person actually took part in - registrations that never got a
@@ -115,46 +116,36 @@ export async function removeParticipation({
 	singleParticipantPubsub.removed();
 	conferenceSupervisorPubsub.removed();
 	conferenceParticipantPubsub.removed();
+	// how many conferences they took part in may have changed
+	userPubsub.updated(userId);
 }
 
-/**
- * What the profile forms submit, as the mutation receives it. A field left out (or `null`, for
- * one the profile always has) stays as it is.
- */
-export type ProfileUpdate = {
-	id: string;
-	givenName?: string | null;
-	familyName?: string | null;
-	birthday?: Date | null;
-	phone?: { number: string } | null;
-	/** Always whole: the country decides which of the other parts it needs. */
-	address?: {
-		countryCode: string;
-		streetAddress: string;
-		postalCode?: string | null;
-		locality?: string | null;
-		region?: string | null;
-	} | null;
-	/** `null` clears it. */
-	apartment?: string | null;
-	gender?: (typeof schema.user.$inferInsert)['gender'] | null;
-	/** `null` clears it. */
-	pronouns?: string | null;
-	foodPreference?: (typeof schema.user.$inferInsert)['foodPreference'] | null;
-	emergencyContacts?: string | null;
-	wantsToReceiveGeneralInformation?: boolean | null;
-	wantsJoinTeamInformation?: boolean | null;
+type ProfileAddress = {
+	countryCode: string;
+	streetAddress: string;
+	postalCode?: string | null;
+	locality?: string | null;
+	region?: string | null;
 };
 
-/** The address columns of an address input, or `undefined` when it names none. */
-function addressColumns(address: ProfileUpdate['address']) {
-	if (!address) return undefined;
+/** The address columns an address argument writes; none when it is left out. */
+function addressColumns({
+	address,
+	ctx
+}: {
+	address: ProfileAddress | null | undefined;
+	ctx: z.RefinementCtx;
+}) {
+	if (!address) return {};
 	const country = alpha2ToAlpha3(address.countryCode);
-	if (!country)
-		throw apiError({
-			code: 'INVALID_INPUT',
+	if (!country) {
+		ctx.addIssue({
+			code: 'custom',
+			path: ['address'],
 			message: m.userUnknownCountry({ country: address.countryCode })
 		});
+		return {};
+	}
 	return {
 		street: address.streetAddress,
 		zip: address.postalCode ?? null,
@@ -164,44 +155,94 @@ function addressColumns(address: ProfileUpdate['address']) {
 	};
 }
 
-/**
- * The my-account form and the user card's. rumble's scalars normalize what they can; the same
- * zod rules the form uses then judge the fields given. Writes only those, and only to the row
- * `updatable` (pre-authorized) matches.
- */
-export async function updateProfile({
-	args,
-	updatable
+/** Adds the issues the profile forms' rules (`userUpdateSchema`) find in the given columns. */
+function judgeByProfileRules({
+	changes: { givenName, familyName, ...rest },
+	ctx
 }: {
-	args: ProfileUpdate;
-	updatable: SQL | undefined;
+	changes: { givenName?: string; familyName?: string } & Record<string, unknown>;
+	ctx: z.RefinementCtx;
 }) {
-	const changes = {
-		givenName: nullToUndefined(args.givenName),
-		familyName: nullToUndefined(args.familyName),
-		birthday: nullToUndefined(args.birthday),
-		phone: args.phone?.number,
-		...addressColumns(args.address),
-		apartment: args.apartment,
-		gender: nullToUndefined(args.gender),
-		pronouns: args.pronouns,
-		foodPreference: nullToUndefined(args.foodPreference),
-		emergencyContacts: nullToUndefined(args.emergencyContacts),
-		wantsToReceiveGeneralInformation: nullToUndefined(args.wantsToReceiveGeneralInformation),
-		wantsJoinTeamInformation: nullToUndefined(args.wantsJoinTeamInformation)
-	};
+	const judged = userUpdateSchema.safeParse({
+		given_name: givenName,
+		family_name: familyName,
+		...rest
+	});
+	for (const issue of judged.error?.issues ?? []) {
+		ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+	}
+}
 
-	const { givenName, familyName, ...rest } = changes;
-	userUpdateSchema.parse({ given_name: givenName, family_name: familyName, ...rest });
+/** A column of the user table that is never null: `null` leaves it as it is, like undefined. */
+const keep = <T extends z.ZodType>(value: T) =>
+	value.nullish().transform((given) => given ?? undefined);
 
+/**
+ * The arguments of `updateUser` as rumble's scalars hand them over (names, the phone number as
+ * E.164, the address checked against the country's postal metadata), turned into the columns they
+ * write. A field left out stays as it is; `null` clears the apartment or the pronouns and leaves
+ * every field a profile always has as it is. The fields given are then judged by the rules the
+ * profile forms use (`userUpdateSchema`).
+ */
+export const profileArgsSchema = z
+	.object({
+		id: z.string(),
+		givenName: keep(z.string()),
+		familyName: keep(z.string()),
+		birthday: keep(z.date()),
+		phone: z.object({ number: z.string() }).nullish(),
+		/** Always whole: the country decides which of the other parts it needs. */
+		address: z
+			.object({
+				countryCode: z.string(),
+				streetAddress: z.string(),
+				postalCode: z.string().nullish(),
+				locality: z.string().nullish(),
+				region: z.string().nullish()
+			})
+			.nullish(),
+		apartment: z.string().nullish(),
+		gender: keep(z.enum(schema.gender.enumValues)),
+		pronouns: z.string().nullish(),
+		foodPreference: keep(z.enum(schema.foodPreference.enumValues)),
+		emergencyContacts: keep(z.string()),
+		wantsToReceiveGeneralInformation: keep(z.boolean()),
+		wantsJoinTeamInformation: keep(z.boolean())
+	})
+	.transform(({ id, phone, address, ...fields }, ctx) => {
+		const changes = { ...fields, phone: phone?.number, ...addressColumns({ address, ctx }) };
+		judgeByProfileRules({ changes, ctx });
+		return { id, changes };
+	});
+
+export type ProfileUpdate = z.output<typeof profileArgsSchema>;
+
+/**
+ * Writes the given profile fields of user `id`, already checked (`profileArgsSchema`), and looks
+ * for accounts from before that the changed profile may now resemble.
+ */
+export async function updateProfile({ id, changes }: ProfileUpdate) {
 	await db
 		.update(schema.user)
 		.set({ ...changes, updatedAt: new Date() })
-		.where(updatable);
-	userPubsub.updated(args.id);
+		.where(whereRows({ table: schema.user, filter: { id } }));
+	userPubsub.updated(id);
+	scanUserForDuplicatesInBackground(id);
 }
 
-/** Name and birthday corrections by management; an absent field is left as it is. */
+/** Replaces the care team's notes about user `id`. */
+export async function setGlobalNotes({ id, globalNotes }: { id: string; globalNotes: string }) {
+	await db
+		.update(schema.user)
+		.set({ globalNotes })
+		.where(whereRows({ table: schema.user, filter: { id } }));
+	userPubsub.updated(id);
+}
+
+/**
+ * Name and birthday corrections by the care team; an absent field is left as it is. Looks for
+ * accounts from before that the corrected identity may now resemble.
+ */
 export async function updateIdentity({
 	id,
 	args
@@ -218,6 +259,7 @@ export async function updateIdentity({
 		})
 		.where(whereRows({ table: schema.user, filter: { id } }));
 	userPubsub.updated(id);
+	scanUserForDuplicatesInBackground(id);
 }
 
 /** Newsletter opt-ins, addressed by email rather than id. */

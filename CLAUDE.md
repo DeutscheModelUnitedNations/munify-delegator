@@ -619,7 +619,7 @@ bun run preview
   (`OIDC.startImpersonation`). `startImpersonation` gets a subject token for the target from
   Logto's Management API (M2M credentials `OIDC_M2M_*`; oidc-mock serves the same endpoint, any
   values work locally) and exchanges it (RFC 8693) with the caller's access token as actor, so the
-  issued token names them in `act`; `#api/services/account/impersonation.ts` does both. The library
+  issued token names them in `act`; `#api/handlers/user/impersonation.ts` does both. The library
   accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
   on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
   themselves, participant care and project management the participants of their conferences, never

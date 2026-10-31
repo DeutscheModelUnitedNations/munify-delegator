@@ -11,7 +11,7 @@ import {
 	participatesIn,
 	systemAdmin
 } from '#api/services/authHelper/rules';
-import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
+import { assertAllowed, callerUserId, grantWhere } from '#api/services/authHelper/utils';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
@@ -87,10 +87,9 @@ function supervisedByCaller(ctx: Context) {
 }
 
 export function registerUserAbilities() {
-	// System admins read, update and delete every account.
 	abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-	// Everybody reads their own account, but for the care notes about them, and updates it.
+	// Everyone reads their own account, but for the care notes about them, and updates it.
 	abilityBuilder.user.allow('read').when((ctx) => {
 		const id = callerUserId(ctx);
 		return id ? { where: { id }, columns: WITHOUT_CARE_NOTES } : undefined;
@@ -227,8 +226,18 @@ export function registerUserAbilities() {
 }
 
 /**
- * Refuses (NOT_FOUND) unless the user is in the caller's care (`isCaredForUser`): for the care
- * team's edits of somebody else's account, not self-service.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches user `id`: their own account, or
+ * anybody's for a system admin. The care team corrects identities through `assertCanManageUser`.
+ */
+export async function assertCanUpdateUser({ ctx, id }: { ctx: ApiContext; id: string }) {
+	await assertAllowed({ ctx, table: 'user', action: 'update', id });
+}
+
+/**
+ * Refuses (NOT_FOUND) unless the user is in the caller's care (`isCaredForUser`: project
+ * management and participant care of a conference the person takes part in or waits for, never
+ * for a teammate; a system admin for anybody): for the care team's edits of somebody else's
+ * account, not self-service.
  */
 export async function assertCanManageUser({ ctx, id }: { ctx: Context; id: string }) {
 	ctx.mustBeLoggedIn();
@@ -373,15 +382,19 @@ export async function canImpersonate({ ctx, targetId }: { ctx: Context; targetId
 	}));
 }
 
-/** Refuses (FORBIDDEN) unless `canImpersonate`, saying so when the caller already impersonates. */
+/**
+ * Refuses (FORBIDDEN) unless `canImpersonate`, saying so when the caller already impersonates.
+ * Returns the caller's id, who acts as the target.
+ */
 export async function assertCanImpersonate({ ctx, targetId }: { ctx: Context; targetId: string }) {
-	ctx.mustBeLoggedIn();
+	const actor = ctx.mustBeLoggedIn();
 	if (ctx.oidc.impersonator) {
 		throw apiError({ code: 'FORBIDDEN', message: m.impersonationAlreadyActive() });
 	}
 	if (!(await canImpersonate({ ctx, targetId }))) {
 		throw apiError({ code: 'FORBIDDEN', message: m.impersonationForbidden() });
 	}
+	return { actorId: actor.sub };
 }
 
 /**
