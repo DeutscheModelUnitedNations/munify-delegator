@@ -24,8 +24,11 @@ const OfflineUser = schemaBuilder.simpleObject('OfflineUser', {
 
 const OfflineUserRefresh = schemaBuilder.simpleObject('OfflineUserRefresh', {
 	fields: (t) => ({
-		user: t.field({ type: OfflineUser, nullable: true }),
-		nextTokenRefreshDue: t.field({ type: 'DateTime', nullable: true })
+		user: t.field({
+			type: OfflineUser,
+			nullable: true,
+			description: 'The signed-in person; null when signed out.'
+		})
 	})
 });
 
@@ -43,19 +46,11 @@ schemaBuilder.queryFields((t) => ({
 
 	offlineUserRefresh: t.field({
 		description:
-			'The session as the client should see it, without a round trip to the identity provider. Claims that vary by provider are narrowed rather than trusted, so a provider that omits or reshapes one yields null instead of a type error at the boundary.',
+			'The session as the client should see it, without a round trip to the identity provider; while impersonating, the impersonated person. Claims that vary by provider are narrowed rather than trusted, so a provider that omits or reshapes one yields null instead of a type error at the boundary.',
 		type: OfflineUserRefresh,
 		resolve: (_root, _args, ctx) => {
 			const user = ctx.oidc.user;
-			if (!user) {
-				return { user: null, nextTokenRefreshDue: null };
-			}
-
-			return {
-				user: offlineUserOf({ user, claims: ctx.oidc.claims }),
-				// The library refreshes on its own schedule and does not surface a deadline.
-				nextTokenRefreshDue: null
-			};
+			return { user: user ? offlineUserOf({ user, claims: ctx.oidc.claims }) : null };
 		}
 	})
 }));

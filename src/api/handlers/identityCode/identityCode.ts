@@ -23,7 +23,7 @@ schemaBuilder.mutationFields((t) => ({
 schemaBuilder.queryFields((t) => ({
 	identityCodePublicKey: t.field({
 		description:
-			'The public key identity codes are checked against, raw and base64url. Public by nature.',
+			'The public key identity codes are checked against, raw and base64url. Public by nature, but only handed to signed-in callers (UNAUTHENTICATED otherwise).',
 		type: IdentityCodePublicKey,
 		resolve: async (_root, _args, ctx) => {
 			ctx.mustBeLoggedIn();

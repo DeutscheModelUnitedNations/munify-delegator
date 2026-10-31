@@ -2918,7 +2918,6 @@ export type OfflineUser = {
 };
 		
 export type OfflineUserRefresh = {
-  nextTokenRefreshDue: DateTime | null,
   user: () => OfflineUser | null    
 };
 		
