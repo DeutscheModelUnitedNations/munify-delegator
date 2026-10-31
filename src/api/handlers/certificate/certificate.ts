@@ -1,60 +1,43 @@
-import { db } from '#api/db/db';
 import { schemaBuilder } from '#api/rumble';
-import { generateSeededRsa } from './deterministicRSAKeypair';
-import { CERTIFICATE_SECRET } from '$app/env/private';
-import { certificateContents, certificateSessions } from './certificatePayload';
-import { assertFindFirstExists } from '@m1212e/rumble';
-import { SignJWT, exportJWK } from 'jose';
-import { certificateAlg } from '../certificateConfig/certificateConfig';
 import { assertCanGetCertificate } from './certificatePermissions';
+import { certificatePublicKey, issueCertificate } from './certificateService';
 
 /**
- * Participation certificates are signed so they can be verified offline, by anyone, without
- * calling back into this app. The key pair is derived deterministically from a single secret so
- * it survives redeploys - rotating `CERTIFICATE_SECRET` invalidates every certificate issued.
+ * The public key certificates are verified with. Only the members of an RSA public key: a JWK
+ * type that also had the private members would be one export away from publishing them.
  */
-const keyPair = generateSeededRsa({ seed: CERTIFICATE_SECRET, opts: { bits: 2048 } });
-
-const jwkPublicKey = exportJWK((await keyPair).publicKey).then((key) => {
-	key.alg = certificateAlg;
-	return key;
-});
-
-export type { CertificateJWTPayload } from './certificatePayload';
-
 const JWK = schemaBuilder.simpleObject('JWK', {
+	description: 'The public RSA key certificates are signed with, as a JSON Web Key.',
 	fields: (t) => ({
-		alg: t.string({ nullable: true }),
-		crv: t.string({ nullable: true }),
-		d: t.string({ nullable: true }),
-		dp: t.string({ nullable: true }),
-		dq: t.string({ nullable: true }),
-		e: t.string({ nullable: true }),
-		k: t.string({ nullable: true }),
-		kty: t.string({ nullable: true }),
-		n: t.string({ nullable: true }),
-		p: t.string({ nullable: true }),
-		q: t.string({ nullable: true }),
-		qi: t.string({ nullable: true }),
-		use: t.string({ nullable: true }),
-		x: t.string({ nullable: true }),
-		y: t.string({ nullable: true })
+		kty: t.string({ nullable: true, description: 'The key type, `RSA`.' }),
+		alg: t.string({ nullable: true, description: 'The signing algorithm, `RS256`.' }),
+		n: t.string({ nullable: true, description: 'The modulus, base64url.' }),
+		e: t.string({ nullable: true, description: 'The public exponent, base64url.' }),
+		use: t.string({ nullable: true, description: 'What the key is for, if stated.' })
 	})
 });
 
 const CertificateSession = schemaBuilder.simpleObject('CertificateSession', {
+	description: 'A check-in occasion a certificate lists.',
 	fields: (t) => ({
-		name: t.string(),
-		attended: t.boolean()
+		name: t.string({ description: "The session's name." }),
+		attended: t.boolean({
+			description: 'Always true: a certificate lists only where its holder was.'
+		})
 	})
 });
 
 const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
+	description: 'A signed participation certificate, or nulls while attendance is not recorded.',
 	fields: (t) => ({
-		jwt: t.string({ nullable: true }),
-		fullName: t.string({ nullable: true }),
+		jwt: t.string({ nullable: true, description: 'The certificate, a JWT signed with RS256.' }),
+		fullName: t.string({
+			nullable: true,
+			description: "The holder's name as the certificate states it."
+		}),
 		sessions: t.field({
-			description: "The conference's check-in occasions, ticked where the holder was checked in.",
+			description:
+				"The conference's check-in occasions the holder was checked in at, in the order they started; the team can take one off the certificates.",
 			type: [CertificateSession]
 		})
 	})
@@ -63,73 +46,22 @@ const CertificateJWT = schemaBuilder.simpleObject('CertificateJWT', {
 schemaBuilder.queryFields((t) => ({
 	getCertificateJWT: t.field({
 		description:
-			'Issues a signed participation certificate, but only once attendance is recorded - an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
+			'Issues a signed participation certificate, for the holder themselves and participant care (FORBIDDEN for anybody else). NOT_FOUND for somebody without a part in the conference. Only once attendance is recorded: an absent participant gets nulls rather than an error, so the UI can say "not yet available".',
 		type: CertificateJWT,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			userId: t.arg.id({ required: true })
+			userId: t.arg.id({ required: true, description: "The holder's user id." })
 		},
 		resolve: async (_root, args, ctx) => {
 			await assertCanGetCertificate({ ctx, conferenceId: args.conferenceId, userId: args.userId });
-
-			const status = await db.query.conferenceParticipant
-				.findFirst({
-					...(await ctx.abilities.conferenceParticipant.filter('read')).merge({
-						where: { conferenceId: args.conferenceId, userId: args.userId }
-					}).query.single,
-					with: {
-						conference: {
-							columns: {
-								title: true,
-								longTitle: true,
-								startConference: true,
-								endConference: true
-							}
-						},
-						user: { columns: { givenName: true, familyName: true } }
-					}
-				})
-				.then(assertFindFirstExists);
-
-			const sessions = certificateSessions(
-				(
-					await db.query.attendanceSession.findMany({
-						where: { conferenceId: args.conferenceId },
-						columns: { occasion: true, startedAt: true, showOnCertificate: true },
-						// only the holder's own scan, if any
-						with: {
-							entries: {
-								where: { conferenceParticipantId: status.id },
-								columns: { id: true },
-								limit: 1
-							}
-						}
-					})
-				).map((session) => ({
-					occasion: session.occasion,
-					startedAt: session.startedAt,
-					showOnCertificate: session.showOnCertificate,
-					attended: session.entries.length > 0
-				}))
-			);
-
-			const contents = certificateContents({ ...status, sessions });
-			if (!contents) {
-				return { jwt: null, fullName: null, sessions: [] };
-			}
-
-			const jwt = await new SignJWT(contents.payload)
-				.setProtectedHeader({ alg: certificateAlg })
-				.setIssuedAt()
-				.sign((await keyPair).privateKey);
-
-			return { jwt, fullName: contents.fullName, sessions };
+			return issueCertificate(args);
 		}
 	}),
 
 	getCertificateJWTPublicKeyObject: t.field({
-		description: 'The public half, so certificates can be verified without this app.',
+		description:
+			'The public half of the signing key, so certificates can be verified without this app. Open to anybody.',
 		type: JWK,
-		resolve: async () => await jwkPublicKey
+		resolve: () => certificatePublicKey()
 	})
 }));

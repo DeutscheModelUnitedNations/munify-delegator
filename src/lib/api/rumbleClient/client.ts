@@ -2104,20 +2104,10 @@ export type JSONWhereInputArgument = {
 		
 export type JWK = {
   alg: String | null,
-  crv: String | null,
-  d: String | null,
-  dp: String | null,
-  dq: String | null,
   e: String | null,
-  k: String | null,
   kty: String | null,
   n: String | null,
-  p: String | null,
-  q: String | null,
-  qi: String | null,
-  use: String | null,
-  x: String | null,
-  y: String | null    
+  use: String | null    
 };
 		
 export type LayoutDocument = "certificate" | "contract" | "guardianConsent" | "mediaConsent";

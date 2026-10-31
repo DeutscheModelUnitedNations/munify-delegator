@@ -4,9 +4,9 @@ import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
 
 /**
- * Refuses unless the certificate of `userId` is the caller's own or the caller is participant care
- * (`manageParticipants`) in the conference. Reading somebody's status (a co-delegate's, say) is not
- * enough to be handed a signed copy.
+ * Refuses (FORBIDDEN) unless the certificate of `userId` is the caller's own or the caller holds
+ * `manageParticipants` (project management and participant care) in the conference. Reading
+ * somebody's status (a co-delegate's, say) is not enough to be handed a signed copy.
  */
 export async function assertCanGetCertificate({
 	ctx,

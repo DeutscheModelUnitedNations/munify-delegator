@@ -1,18 +1,5 @@
 import formatNames from '#lib/helpers/formatNames';
-
-export interface CertificateJWTPayload extends Record<string, unknown> {
-	/** Deliberately terse: these end up in a QR code, so every byte counts. */
-	n: string;
-	t: string;
-	s: number;
-	e: number;
-	/**
-	 * The check-in sessions the person was checked in at, by name, each with 1. Certificates issued
-	 * earlier also list the sessions the person missed, with 0, which nothing shows any more; those
-	 * issued before sessions were listed have no claim at all.
-	 */
-	a?: [string, 0 | 1][];
-}
+import type { CertificateJWTPayload } from '#lib/helpers/certificateJwt';
 
 /** One check-in occasion of a conference; a certificate lists only those its holder was at. */
 export type CertificateSession = { name: string; attended: boolean };

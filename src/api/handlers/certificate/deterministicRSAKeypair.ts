@@ -41,6 +41,8 @@ export async function generateSeededRsa({
 }) {
 	if (building) {
 		// Mock the function to return a dummy keypair as Uint8Arrays
+		// TYPE-SAFETY-EXCEPTION: `vite build` evaluates the module without the secret; nothing signs
+		// or verifies with these placeholders, and generating a real key there would slow every build.
 		return {
 			publicKey: new Uint8Array(0) as unknown as CryptoKey,
 			privateKey: new Uint8Array(0) as unknown as CryptoKey

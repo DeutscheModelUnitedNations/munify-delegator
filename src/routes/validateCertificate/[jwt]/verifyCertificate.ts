@@ -2,9 +2,9 @@ import { importJWK, jwtVerify } from 'jose';
 import { client } from '#lib/api/rumbleClient/client';
 import {
 	certificateAlg,
-	certificateRequiredClaims
-} from '#api/handlers/certificateConfig/certificateConfig';
-import type { CertificateJWTPayload } from '#api/handlers/certificate/certificate';
+	certificateRequiredClaims,
+	type CertificateJWTPayload
+} from '#lib/helpers/certificateJwt';
 import { sessionsFromClaim } from '#lib/utils/certificateSessionLayout';
 import { logger } from '#lib/logger';
 
