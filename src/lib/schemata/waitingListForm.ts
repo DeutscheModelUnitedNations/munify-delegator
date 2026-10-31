@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { applicationTextSchema } from '#lib/schemata/applicationForm';
 import { schoolNameSchema } from '#lib/schemata/schoolChoice';
 

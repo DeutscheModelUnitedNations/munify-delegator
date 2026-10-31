@@ -236,14 +236,14 @@ Columns: `plansOwnAttendenceAtConference`, `connectionCode`.
 
 ## Waiting list (`waitingListEntry`)
 
-Columns: `motivation`, `experience`, `requests`, `assigned`, `assignedAt`, `hidden`, `schoolId`.
+Columns: `motivation`, `experience`, `requests`, `assignedAt`, `hidden`, `schoolId`.
 
-| Who                                                | Can                                                                                                          | Notes                                                                                                       | ✓   |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | --- |
-| Self                                               | Read own entry; update `motivation`, `experience`, `requests`, `schoolId` and delete it until it is assigned | `hidden` and `assigned` stay with project management and participant care (`assertCanSetWaitingListFlags`). | [ ] |
-| Signed-in user                                     | `createWaitingListEntry`                                                                                     | While the conference is in PREPARATION, the assignment is not released and they hold no seat.               | [ ] |
-| Project management, participant care, system admin | Read, update (`motivation`, `experience`, `requests`, `hidden`, `assigned`), delete                          |                                                                                                             | [ ] |
-| Project management, participant care               | Seat somebody from the list                                                                                  | Through `createAppliedDelegationMember` / `createAppliedSingleParticipant`.                                 | [ ] |
+| Who                                                | Can                                                                                                                 | Notes                                                                                                                                       | ✓   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Self                                               | Read own entry; update `motivation`, `experience`, `requests`, `schoolId` and delete it until they are given a seat | `hidden` stays with project management and participant care (`assertCanUpdateWaitingListEntry`).                                            | [ ] |
+| Signed-in user                                     | `createWaitingListEntry`                                                                                            | While the conference is in PREPARATION. Somebody who applied waits until the assignment is released, and is refused if it gave them a role. | [ ] |
+| Project management, participant care, system admin | Read, update (`motivation`, `experience`, `requests`, `schoolId`, `hidden`), delete                                 | `assignedAt` is set only by seating somebody from the list.                                                                                 | [ ] |
+| Project management, participant care               | Seat somebody from the list                                                                                         | Through `createAppliedDelegationMember` / `createAppliedSingleParticipant`.                                                                 | [ ] |
 
 ## Conference (`conference`)
 

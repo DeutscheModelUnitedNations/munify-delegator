@@ -3,16 +3,18 @@ import { sql } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 import { m } from '#lib/paraglide/messages';
 import { apiError } from '#api/services/errors';
+import { assertFirstEntryExists } from '@m1212e/rumble';
 import { waitingListEntryPubsub } from '#api/pubsub';
+import { resolveSchoolChoice, type SchoolChoice } from '#api/handlers/school/schoolService';
 
 /**
- * Refuses a waiting list entry the conference cannot take: the waiting list is only open during
+ * Refuses (CONFLICT) a waiting list entry the conference cannot take: the waiting list is only open during
  * preparation, and it is for people without a place, so an applicant who was given a role cannot
  * join it. Rejected applicants keep their registration and are sent here (`ApplicationRejected`),
  * so a registration alone does not count. Until the assignment is released nobody knows whether
  * they have a place, and refusing only those who do would tell them, so every applicant waits.
  */
-export async function assertWaitingListOpenFor({
+async function assertWaitingListOpenFor({
 	conferenceId,
 	userId
 }: {
@@ -83,4 +85,76 @@ export async function markSeatedFromWaitingList({
 	if (!entry) return undefined;
 	waitingListEntryPubsub.updated(entry.id);
 	return { schoolId: entry.schoolId };
+}
+
+/** What an entrant writes about themselves; on an update, a field left out stays as it is. */
+type EntryTexts = {
+	motivation?: string | null;
+	experience?: string | null;
+	requests?: string | null;
+};
+
+/**
+ * Puts the user on the conference's waiting list, with the school they name, if the list is open
+ * to them (`assertWaitingListOpenFor`). Returns the entry's id.
+ */
+export async function createWaitingListEntry({
+	conferenceId,
+	userId,
+	school,
+	texts
+}: {
+	conferenceId: string;
+	userId: string;
+	school: SchoolChoice;
+	texts: { motivation: string; experience: string; requests?: string | null };
+}) {
+	await assertWaitingListOpenFor({ conferenceId, userId });
+	const created = await db.transaction(async (tx) =>
+		tx
+			.insert(schema.waitingListEntry)
+			.values({
+				conferenceId,
+				userId,
+				schoolId: (await resolveSchoolChoice({ choice: school, tx })) ?? undefined,
+				...texts,
+				requests: texts.requests ?? undefined
+			})
+			.returning({ id: schema.waitingListEntry.id })
+			.then(assertFirstEntryExists)
+	);
+	waitingListEntryPubsub.created();
+	return created.id;
+}
+
+/**
+ * Changes the given fields of an entry the caller may update (`assertCanUpdateWaitingListEntry`):
+ * `null` clears the requests and keeps the motivation and experience, which are never empty. The school is
+ * resolved in the same transaction, so a refused update creates no school.
+ */
+export async function updateWaitingListEntry({
+	id,
+	school,
+	texts,
+	hidden
+}: {
+	id: string;
+	school: SchoolChoice;
+	texts: EntryTexts;
+	hidden?: boolean | null;
+}) {
+	await db.transaction(async (tx) => {
+		await tx
+			.update(schema.waitingListEntry)
+			.set({
+				schoolId: await resolveSchoolChoice({ choice: school, tx }),
+				motivation: texts.motivation ?? undefined,
+				experience: texts.experience ?? undefined,
+				requests: texts.requests,
+				hidden: hidden ?? undefined,
+				updatedAt: new Date()
+			})
+			.where(whereRows({ table: schema.waitingListEntry, filter: { id } }));
+	});
+	waitingListEntryPubsub.updated(id);
 }

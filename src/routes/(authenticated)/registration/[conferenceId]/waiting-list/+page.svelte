@@ -4,7 +4,7 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { waitingListFormSchema } from './form-schema';
+	import { waitingListFormSchema } from '#lib/schemata/waitingListForm';
 	import FormFieldset from '#lib/components/form/FormFieldset.svelte';
 	import SchoolPicker from '#lib/components/form/SchoolPicker.svelte';
 	import FormTextArea from '#lib/components/form/FormTextArea.svelte';

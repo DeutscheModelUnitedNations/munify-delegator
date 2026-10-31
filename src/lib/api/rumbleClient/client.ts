@@ -2781,7 +2781,6 @@ export type Mutation = {
     wantsToReceiveGeneralInformation?: Boolean | null | undefined
   }) => Boolean,
   updateWaitingListEntry: (p: {
-    assigned?: Boolean | null | undefined,
     experience?: String | null | undefined,
     hidden?: Boolean | null | undefined,
     id: ID,

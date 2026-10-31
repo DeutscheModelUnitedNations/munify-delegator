@@ -1,17 +1,14 @@
-import { db, schema } from '#api/db/db';
-import { object, countQuery, query, schemaBuilder } from '#api/rumble';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { sql } from 'drizzle-orm';
-import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
-import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
-import { nullToUndefined } from '#api/services/args';
+import { db } from '#api/db/db';
+import { object, countQuery, query, schemaBuilder, type ApiContext } from '#api/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { waitingListFormSchema } from '#lib/schemata/waitingListForm';
 import {
-	assertCanSetWaitingListFlags,
+	assertCanUpdateWaitingListEntry,
 	registerWaitingListEntryAbilities
 } from './waitingListEntryPermissions';
 import { waitingListEntryPubsub } from '#api/pubsub';
-import { assertWaitingListOpenFor } from './waitingListEntryService';
-import { assertAllowed, deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
+import { createWaitingListEntry, updateWaitingListEntry } from './waitingListEntryService';
+import { deleteIfAllowed } from '#api/services/authHelper/utils';
 
 registerWaitingListEntryAbilities();
 
@@ -19,16 +16,25 @@ const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
 countQuery({ table: 'waitingListEntry' });
 
+/** The entry `id` as far as the caller may read it, for a `drizzleField` to answer with. */
+async function readableEntry({ ctx, id }: { ctx: ApiContext; id: string }) {
+	return (await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id } }).query
+		.single;
+}
+
 schemaBuilder.mutationFields((t) => ({
 	createWaitingListEntry: t.drizzleField({
 		description:
-			"Puts the caller on the conference's waiting list; refused unless the waiting list is open to them.",
+			"Puts the caller on the conference's waiting list. CONFLICT unless the conference is in preparation, the caller is not on it yet, and, having applied, the assignment is released and gave them no role.",
 		type: WaitingListEntryRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			/** An existing school, or `schoolName` to find or create one; neither for no school. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string(),
+			schoolId: t.arg.id({
+				description: "An existing school as the entrant's own; neither school argument for none."
+			}),
+			schoolName: t.arg.string({
+				description: 'The name of a school to find (ignoring case and spacing) or create.'
+			}),
 			motivation: t.arg.string({ required: true }),
 			experience: t.arg.string({ required: true }),
 			requests: t.arg.string()
@@ -36,93 +42,66 @@ schemaBuilder.mutationFields((t) => ({
 		// The registration form's schema, so the limits stay in one place.
 		validate: waitingListFormSchema,
 		resolve: async (query, _root, args, ctx) => {
-			const id = ctx.mustBeLoggedIn().sub;
-
-			await assertWaitingListOpenFor({ conferenceId: args.conferenceId, userId: id });
-
-			const created = await db
-				.insert(schema.waitingListEntry)
-				.values({
-					conferenceId: args.conferenceId,
-					userId: id,
-					schoolId: (await resolveSchoolChoice({ choice: args })) ?? undefined,
+			const id = await createWaitingListEntry({
+				conferenceId: args.conferenceId,
+				userId: ctx.mustBeLoggedIn().sub,
+				school: { schoolId: args.schoolId, schoolName: args.schoolName },
+				texts: {
 					motivation: args.motivation,
 					experience: args.experience,
-					requests: nullToUndefined(args.requests)
-				})
-				.returning()
-				.then(assertFirstEntryExists);
-
-			waitingListEntryPubsub.created();
+					requests: args.requests
+				}
+			});
 
 			return db.query.waitingListEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.waitingListEntry.filter('read')).merge({
-							where: { id: created.id }
-						}).query.single
-					)
-				)
+				.findFirst(query(await readableEntry({ ctx, id })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	updateWaitingListEntry: t.drizzleField({
 		description:
-			"Changes the given fields of a waiting list entry; the others stay as they are. Hiding the entry or marking it seated is the team's.",
+			"Changes the given fields of a waiting list entry; the others stay as they are. The entrant may until they are given a seat, participant care at any time; hiding the entry is participant care's alone.",
 		type: WaitingListEntryRef,
 		args: {
 			id: t.arg.id({ required: true }),
-			/** Both null removes the school; both left out keeps it. */
-			schoolId: t.arg.id(),
-			schoolName: t.arg.string().validate(waitingListFormSchema.shape.schoolName),
+			schoolId: t.arg.id({
+				description: 'Both school arguments null removes the school; both left out keeps it.'
+			}),
+			schoolName: t.arg
+				.string({
+					description: 'The name of a school to find (ignoring case and spacing) or create.'
+				})
+				.validate(waitingListFormSchema.shape.schoolName),
 			motivation: t.arg.string().validate(waitingListFormSchema.shape.motivation.nullish()),
 			experience: t.arg.string().validate(waitingListFormSchema.shape.experience.nullish()),
 			requests: t.arg.string().validate(waitingListFormSchema.shape.requests),
-			hidden: t.arg.boolean(),
-			/** Setting it records when the entrant was given a seat; clearing it forgets the date. */
-			assigned: t.arg.boolean()
+			hidden: t.arg.boolean({
+				description: 'Hides the entry from the waiting list the team works through.'
+			})
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertCanSetWaitingListFlags({ ctx, id: args.id, args });
-			// before resolving the school: a typed name creates one
-			await assertAllowed({ ctx, table: 'waitingListEntry', action: 'update', id: args.id });
-			const schoolId = await resolveSchoolChoice({ choice: args });
-			const assignedAt =
-				args.assigned === true
-					? sql`coalesce(${schema.waitingListEntry.assignedAt}, now())`
-					: args.assigned === false
-						? null
-						: undefined;
-			await updateIfAllowed({
-				ctx,
-				table: 'waitingListEntry',
+			await assertCanUpdateWaitingListEntry({ ctx, id: args.id, hidden: args.hidden });
+			await updateWaitingListEntry({
 				id: args.id,
-				values: {
-					schoolId,
-					motivation: nullToUndefined(args.motivation),
-					experience: nullToUndefined(args.experience),
-					requests: nullToUndefined(args.requests),
-					hidden: nullToUndefined(args.hidden),
-					assignedAt
-				}
+				school: { schoolId: args.schoolId, schoolName: args.schoolName },
+				texts: {
+					motivation: args.motivation,
+					experience: args.experience,
+					requests: args.requests
+				},
+				hidden: args.hidden
 			});
 
-			waitingListEntryPubsub.updated(args.id);
-
 			return db.query.waitingListEntry
-				.findFirst(
-					query(
-						(await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id: args.id } })
-							.query.single
-					)
-				)
+				.findFirst(query(await readableEntry({ ctx, id: args.id })))
 				.then(assertFindFirstExists);
 		}
 	}),
 
 	deleteWaitingListEntry: t.field({
-		description: 'Takes an entry off the waiting list.',
+		description:
+			'Takes an entry off the waiting list: the entrant until they are given a seat, participant care at any time.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
