@@ -13,7 +13,7 @@ import {
 	assertRegistrationOpen
 } from '#api/services/registration/applicationReadiness';
 import { nullToUndefined } from '#api/services/args';
-import { type ApplicationArgs } from '#api/services/registration/applicationArgs';
+import type { ApplicationArgs } from '#api/services/registration/applicationArgs';
 import { MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';

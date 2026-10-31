@@ -13,35 +13,27 @@ describe('delegationColumnChanges', () => {
 		).toEqual({});
 	});
 
-	test('writes both texts once either is given, leaving an absent one alone', () => {
+	test('writes only the texts that are given, so a concurrent edit of the other one survives', () => {
 		expect(
 			delegationColumnChanges({ args: { experience: 'MUN 2024' }, newEntryCode: code })
-		).toEqual({
-			experience: 'MUN 2024',
-			motivation: undefined
-		});
+		).toEqual({ experience: 'MUN 2024' });
 		expect(
 			delegationColumnChanges({
 				args: { experience: null, motivation: 'Why we go' },
 				newEntryCode: code
 			})
-		).toEqual({
-			experience: null,
-			motivation: 'Why we go'
-		});
+		).toEqual({ experience: null, motivation: 'Why we go' });
 	});
 
-	test('does not write texts that are both empty', () => {
-		expect(
-			delegationColumnChanges({ args: { experience: '', motivation: null }, newEntryCode: code })
-		).toEqual({});
+	test('clears a text given as null', () => {
+		expect(delegationColumnChanges({ args: { motivation: null }, newEntryCode: code })).toEqual({
+			motivation: null
+		});
 	});
 
 	test('hands out a fresh entry code only when asked to', () => {
 		expect(delegationColumnChanges({ args: { resetEntryCode: true }, newEntryCode: code })).toEqual(
-			{
-				entryCode: 'NEWCODE'
-			}
+			{ entryCode: 'NEWCODE' }
 		);
 	});
 });

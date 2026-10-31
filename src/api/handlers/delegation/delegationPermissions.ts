@@ -68,8 +68,10 @@ export function registerDelegationAbilities() {
 }
 
 /**
- * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation. Returns it with
- * its members, conference and role applications, which `updateDelegation` judges the change by.
+ * Refuses (NOT_FOUND) unless the caller's update ability reaches the delegation: its head delegate
+ * until it has applied, or `manageParticipants` (project management and participant care) in its
+ * conference at any time. Returns it with its members, conference and role applications, which
+ * `updateDelegation` judges the change by.
  */
 export async function assertCanUpdateDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
 	const updatable = (await ctx.abilities.delegation.filter('update')).merge({ where: { id } });
@@ -86,3 +88,24 @@ export async function assertCanUpdateDelegation({ ctx, id }: { ctx: ApiContext; 
 }
 
 export type UpdatableDelegation = Awaited<ReturnType<typeof assertCanUpdateDelegation>>;
+
+/**
+ * Refuses (NOT_FOUND) unless the caller's delete ability reaches the delegation: its head delegate
+ * until it has applied, or `manageParticipants` (project management and participant care) in its
+ * conference at any time. Returns its id with its members' participant rows, which lose their
+ * membership with it.
+ */
+export async function assertCanDeleteDelegation({ ctx, id }: { ctx: ApiContext; id: string }) {
+	const deletable = (await ctx.abilities.delegation.filter('delete')).merge({ where: { id } });
+	const delegation = await db.query.delegation
+		.findFirst({
+			...deletable.query.single,
+			columns: { id: true },
+			with: { members: { columns: { conferenceParticipantId: true } } }
+		})
+		.then(assertFindFirstExists);
+	return {
+		id: delegation.id,
+		participantIds: delegation.members.map((member) => member.conferenceParticipantId)
+	};
+}

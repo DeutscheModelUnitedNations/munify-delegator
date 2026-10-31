@@ -1,7 +1,7 @@
 import { applicationFormSchema } from '#lib/schemata/applicationForm';
 import { db } from '#api/db/db';
 import { object, query, schemaBuilder } from '#api/rumble';
-import { applicationArgs } from '#api/handlers/delegation/applicationArgs';
+import { applicationArgs } from '#api/services/registration/applicationArgs';
 import {
 	createAssignedSingleParticipant,
 	ownRegistrationToEdit,

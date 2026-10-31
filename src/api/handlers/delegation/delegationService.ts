@@ -1,5 +1,11 @@
 import { type Transaction, db, schema } from '#api/db/db';
-import { delegationMemberPubsub, delegationPubsub } from '#api/pubsub';
+import {
+	conferenceParticipantPubsub,
+	delegationMemberPubsub,
+	delegationPubsub,
+	paperPubsub,
+	roleApplicationPubsub
+} from '#api/pubsub';
 import {
 	ensureConferenceParticipant,
 	setParticipantSchool
@@ -12,7 +18,7 @@ import {
 import { tidyRoleApplications } from '#api/handlers/roleApplication/tidyRoleApplications';
 import { makeEntryCode } from '#api/services/registration/entryCodeGenerator';
 import formatNames from '#lib/helpers/formatNames';
-import { type ApplicationArgs } from '#api/services/registration/applicationArgs';
+import type { ApplicationArgs } from '#api/services/registration/applicationArgs';
 import { MIN_DELEGATION_MEMBERS, MIN_ROLE_APPLICATIONS } from '#lib/helpers/applicationReadiness';
 import { m } from '#lib/paraglide/messages';
 import { assertFirstEntryExists } from '@m1212e/rumble';
@@ -22,16 +28,18 @@ import { delegationColumnChanges } from './delegationColumnChanges';
 import { apiError, codeNotFound } from '#api/services/errors';
 import { resolveSchoolChoice } from '#api/handlers/school/schoolService';
 import { distinctSchoolNames } from '#lib/helpers/delegationSchools';
+import { normalizeEntryCode } from '#lib/helpers/entryCode';
 
-/** Hands the head delegate role from the current holder to another member of the delegation. */
+/**
+ * Hands the head delegate role from the current holder to another member of the delegation.
+ * Returns the ids of both, whose flag changed.
+ */
 async function transferHeadDelegate({
 	tx,
-	delegationId,
 	members,
 	newHeadDelegateUserId
 }: {
 	tx: Transaction;
-	delegationId: string;
 	members: { id: string; isHeadDelegate: boolean; participant: { userId: string } }[];
 	newHeadDelegateUserId: string;
 }) {
@@ -44,12 +52,9 @@ async function transferHeadDelegate({
 		throw apiError({ code: 'NOT_FOUND', message: m.delegationNoNewHeadDelegate() });
 	}
 
-	// Order is safe here only because the resolver checks the update ability once, up front
-	// (`assertCanUpdateDelegation`), and these writes go by raw id rather than re-deriving an
-	// ability filter per statement. The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
-	// ability on every statement inside the transaction, so demoting the acting head
-	// delegate first revoked their own permission before the promotion ran. Don't
-	// reintroduce a per-statement ability re-check here without also promoting first.
+	// The update ability was checked once, up front (`assertCanUpdateDelegation`), and these writes
+	// go by id. Re-checking the ability per statement would revoke the acting head delegate's own
+	// permission with the demotion, before the promotion ran.
 	await tx
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: false })
@@ -58,8 +63,7 @@ async function transferHeadDelegate({
 		.update(schema.delegationMember)
 		.set({ isHeadDelegate: true })
 		.where(whereRows({ table: schema.delegationMember, filter: { id: next.id } }));
-	delegationMemberPubsub.updated([current.id, next.id]);
-	delegationPubsub.updated(delegationId);
+	return [current.id, next.id];
 }
 
 /**
@@ -163,7 +167,6 @@ async function setApplied({
 		.update(schema.delegation)
 		.set({ applied })
 		.where(whereRows({ table: schema.delegation, filter: { id: delegation.id } }));
-	delegationPubsub.updated(delegation.id);
 }
 
 /**
@@ -179,28 +182,44 @@ export async function updateDelegationDetails({
 	args: DelegationDetailArgs;
 }) {
 	const changes = delegationColumnChanges({ args, newEntryCode: makeEntryCode });
-	const changesColumns = Object.keys(changes).length > 0;
-	await db.transaction(async (tx) => {
+	const newHeadDelegateUserId = args.newHeadDelegateUserId;
+	const changedMemberIds = await db.transaction(async (tx) => {
 		if (typeof args.applied === 'boolean')
 			await setApplied({ tx, delegation, args, applied: args.applied });
 
-		if (changesColumns) {
+		if (Object.keys(changes).length > 0) {
 			await tx
 				.update(schema.delegation)
 				.set(changes)
 				.where(whereRows({ table: schema.delegation, filter: { id: delegation.id } }));
 		}
 
-		if (args.newHeadDelegateUserId) {
-			await transferHeadDelegate({
-				tx,
-				delegationId: delegation.id,
-				members: delegation.members,
-				newHeadDelegateUserId: args.newHeadDelegateUserId
-			});
-		}
+		return newHeadDelegateUserId
+			? transferHeadDelegate({ tx, members: delegation.members, newHeadDelegateUserId })
+			: [];
 	});
-	if (changesColumns) delegationPubsub.updated(delegation.id);
+	delegationPubsub.updated(delegation.id);
+	if (changedMemberIds.length > 0) delegationMemberPubsub.updated(changedMemberIds);
+}
+
+/**
+ * Deletes a delegation the caller may delete (`assertCanDeleteDelegation`). Its members, role
+ * applications, papers and assignment draft rows cascade; the members' participant rows stay.
+ */
+export async function deleteDelegation({
+	id,
+	participantIds
+}: {
+	id: string;
+	participantIds: readonly string[];
+}) {
+	await db.delete(schema.delegation).where(whereRows({ table: schema.delegation, filter: { id } }));
+	delegationPubsub.removed();
+	delegationMemberPubsub.removed();
+	roleApplicationPubsub.removed();
+	paperPubsub.removed();
+	// what they take part as changed
+	if (participantIds.length > 0) conferenceParticipantPubsub.updated([...participantIds]);
 }
 
 /** What somebody sees after entering a delegation's join code, before committing to join. */
@@ -212,7 +231,7 @@ export async function previewDelegationByEntryCode({
 	entryCode: string;
 }) {
 	const delegation = await db.query.delegation.findFirst({
-		where: { conferenceId, entryCode },
+		where: { conferenceId, entryCode: normalizeEntryCode(entryCode) },
 		with: {
 			conference: { columns: { title: true } },
 			members: {
