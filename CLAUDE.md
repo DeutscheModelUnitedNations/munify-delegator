@@ -839,7 +839,7 @@ bun run preview
 - **Matching** is pure, in `#api/handlers/possibleDuplicate/duplicateMatching.ts`: names are transliterated to Latin
   letters (`any-ascii`, any script) and compared per part with Jaro-Winkler; birthday, email local
   part, phone, emergency numbers and address add weights, none of them enough alone. Only accounts
-  sharing a blocking key are compared. `possibleDuplicates.ts` loads the accounts and stores the
+  sharing a blocking key are compared. `possibleDuplicateService.ts` loads the accounts and stores the
   pairs: the pool is everyone who attended a conference that is over or has a care note; a
   conference scan (button on the page) and every profile change (`updateUser`,
   `updateUsersIdentityInfo`) compare against it, a chunk at a time so the event loop keeps

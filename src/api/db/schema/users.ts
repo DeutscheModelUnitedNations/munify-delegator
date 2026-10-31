@@ -136,7 +136,7 @@ export const possibleDuplicateStatus = pgEnum('possible_duplicate_status', [
 ]);
 
 /**
- * Two accounts that may belong to one person (`#api/handlers/possibleDuplicate/possibleDuplicates` finds them),
+ * Two accounts that may belong to one person (`#api/handlers/possibleDuplicate/possibleDuplicateService` finds them),
  * so a care note on the old one is not lost to a fresh signup. Stored rather than computed on
  * read so a dismissal sticks and a re-scan only refreshes the score. `userId` is the smaller of the
  * two ids, so each pair has one row.

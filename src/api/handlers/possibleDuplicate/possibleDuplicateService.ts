@@ -174,6 +174,57 @@ export function scanUserForDuplicatesInBackground(userId: string) {
 	});
 }
 
+/** A conference an account of a possible duplicate took part in, and as what. */
+export type Attendance = {
+	conferenceId: string;
+	title: string;
+	startConference: Date;
+	role: 'DELEGATION_MEMBER' | 'SINGLE_PARTICIPANT' | 'SUPERVISOR';
+};
+
+const CONFERENCE_COLUMNS = { columns: { id: true, title: true, startConference: true } } as const;
+
+/**
+ * Every conference the account took part in, newest first: what tells the care team whether the
+ * other account is the one they remember. Conference titles and dates are public, so this does
+ * not go through the registration rows' read rules, which would show far more.
+ */
+export async function attendancesOf(userId: string): Promise<Attendance[]> {
+	const [memberships, singles, supervisions] = await Promise.all([
+		db.query.delegationMember.findMany({
+			where: { participant: { userId } },
+			with: { delegation: { columns: {}, with: { conference: CONFERENCE_COLUMNS } } }
+		}),
+		db.query.singleParticipant.findMany({
+			where: { participant: { userId } },
+			with: { conference: CONFERENCE_COLUMNS }
+		}),
+		db.query.conferenceSupervisor.findMany({
+			where: { participant: { userId } },
+			with: { conference: CONFERENCE_COLUMNS }
+		})
+	]);
+	const attendance = ({
+		conference,
+		role
+	}: {
+		conference: { id: string; title: string; startConference: Date };
+		role: Attendance['role'];
+	}): Attendance => ({
+		conferenceId: conference.id,
+		title: conference.title,
+		startConference: conference.startConference,
+		role
+	});
+	return [
+		...memberships.map((m) =>
+			attendance({ conference: m.delegation.conference, role: 'DELEGATION_MEMBER' })
+		),
+		...singles.map((s) => attendance({ conference: s.conference, role: 'SINGLE_PARTICIPANT' })),
+		...supervisions.map((s) => attendance({ conference: s.conference, role: 'SUPERVISOR' }))
+	].sort((a, b) => b.startConference.getTime() - a.startConference.getTime());
+}
+
 /**
  * Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`, which
  * forgets who decided and when.
@@ -185,7 +236,7 @@ export async function decidePossibleDuplicate({
 }: {
 	id: string;
 	status: (typeof schema.possibleDuplicate.$inferSelect)['status'];
-	decidedById: string | null;
+	decidedById: string;
 }) {
 	const decided = status !== 'OPEN';
 	const updated = await db

@@ -4,7 +4,7 @@ import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '#api/rumble';
 import { oidcIdentityFields } from '#api/handlers/auth/oidcIdentityFields';
-import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicates';
+import { scanUserForDuplicatesInBackground } from '#api/handlers/possibleDuplicate/possibleDuplicateService';
 import {
 	countConferenceParticipations,
 	removeParticipation,
