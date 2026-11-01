@@ -1,4 +1,4 @@
-import { db, schema, type Transaction } from '#api/db/db';
+import { db, schema } from '#api/db/db';
 import { roleApplicationPubsub } from '#api/pubsub';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
