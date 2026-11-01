@@ -67,6 +67,26 @@ const fileCleanup = defineCommand({
 	}
 });
 
+const uploadLegacyFiles = defineCommand({
+	meta: {
+		description:
+			'Put the files stored inline before the bucket into it (once, after the stored_files migration)'
+	},
+	args: {
+		'dry-run': {
+			type: 'boolean',
+			description: 'Only count what would be uploaded',
+			default: false
+		}
+	},
+	async run({ args }) {
+		const { runLegacyFileUpload } = await import('./legacyFileUpload');
+		logger.info('Starting job', { job: 'upload-legacy-files' });
+		await runLegacyFileUpload({ dryRun: args['dry-run'] });
+		process.exit(0);
+	}
+});
+
 const refreshStatistics = defineCommand({
 	meta: { description: 'Refresh the statistics materialized views' },
 	async run() {
@@ -109,7 +129,8 @@ const main = defineCommand({
 		'invitation-cleanup': invitationCleanup,
 		'mail-sync': mailSync,
 		'refresh-statistics': refreshStatistics,
-		'send-emails': sendEmails
+		'send-emails': sendEmails,
+		'upload-legacy-files': uploadLegacyFiles
 	}
 });
 

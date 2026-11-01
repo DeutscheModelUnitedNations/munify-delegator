@@ -205,6 +205,10 @@ bun run preview
   - `invitationCleanup.ts` - Deletes team member invitations long after they expired
   - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
   - `sendEmails.ts` - Sends the automatic mails that are due, through the app's `sendDueEmails`
+  - `legacyFileUpload.ts` - Once, after the `stored_files` migration: puts the files the Prisma
+    app kept inline (data URLs) into the bucket. The migration already made them `stored_file`
+    rows and parked their bytes in `legacy_file_upload` (outside the drizzle schema); the job
+    uploads them and drops that table
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -1037,6 +1041,8 @@ bun run preview
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
   - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
     `--dry-run`; needs the `S3_*` variables
+  - `upload-legacy-files` - once, right after deploying the move off Prisma, before the app is
+    used: until then the moved files' URLs find nothing. `--dry-run`; needs the `S3_*` variables
   - `send-emails` - every few minutes; sends what is due of the kinds switched to automatic.
     Needs `DATABASE_URL`, the app's `SMTP_*`, `REDIS_URL` when the app has one (the shared
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
