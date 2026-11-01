@@ -367,6 +367,7 @@
 	/** One mutation for the pace and one per switch; switching on owes what the sweep then sends. */
 	async function saveEmailChanges() {
 		const pace = emailChanges.pace;
+		const switches = emailChanges.list;
 		const promise = Promise.all([
 			...(pace
 				? [
@@ -375,7 +376,7 @@
 						})
 					]
 				: []),
-			...emailChanges.list.map((change) =>
+			...switches.map((change) =>
 				client.mutate.setConferenceEmailEnabled({
 					__args: {
 						conferenceId,
@@ -388,7 +389,7 @@
 		]);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		emailChanges.saved();
+		emailChanges.saved({ pace, switches });
 	}
 
 	const emailsChanged = $derived(

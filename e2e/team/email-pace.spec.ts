@@ -52,13 +52,14 @@ test('participant care sets and lifts the sending pace', async ({ page }) => {
 	await expect(dialog.getByText(/Versandgeschwindigkeit|Sending speed/)).toBeVisible();
 	await dialog.getByRole('button', { name: /^(speichern|save)$/i }).click();
 	await expect.poll(() => storedPace(page)).toBe(5);
+	// the page has caught up with the save: the field follows the stored value, nothing is pending
+	const save = page.getByRole('button', { name: /einstellungen speichern|save settings/i }).last();
+	await expect(field).toHaveValue('5');
+	await expect(save).toBeDisabled();
 
 	// emptied, the limit is lifted
 	await field.fill('');
-	await page
-		.getByRole('button', { name: /einstellungen speichern|save settings/i })
-		.last()
-		.click();
+	await save.click();
 	await dialog.getByRole('button', { name: /^(speichern|save)$/i }).click();
 	await expect.poll(() => storedPace(page)).toBeNull();
 });

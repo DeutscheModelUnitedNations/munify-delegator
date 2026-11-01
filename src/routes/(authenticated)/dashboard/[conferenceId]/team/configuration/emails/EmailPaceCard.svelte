@@ -19,7 +19,13 @@
 
 	/** What the team typed; follows the stored value until they type something of their own. */
 	let typed = $state<string>();
-	const shown = $derived(typed ?? String(changes.paceOf(stored) ?? ''));
+	// Reads the stored value even while the team types: a live result nobody reads loses its
+	// subscriber, and the update a save publishes would never reach the field.
+	const storedText = $derived(String(changes.paceOf(stored) ?? ''));
+	const shown = $derived.by(() => {
+		const fallback = storedText;
+		return typed ?? fallback;
+	});
 	const invalid = $derived(typed !== undefined && parseEmailsPerSecond(typed) === undefined);
 
 	function oninput(event: Event & { currentTarget: HTMLInputElement }) {
