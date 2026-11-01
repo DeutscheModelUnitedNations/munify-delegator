@@ -8,6 +8,8 @@ import { providerClaims } from '../account/providerClaims';
 import { upsertSelfFromClaims } from '../account/upsertSelf';
 import { userInfoClaims } from './userInfoClaims';
 import { deLocalizeUrl } from '#lib/paraglide/runtime';
+import { logger } from '#lib/logger';
+import { retryAtStartup } from './retryAtStartup';
 
 /**
  * Everything behind the `(authenticated)` route group, except the conference selector at
@@ -73,27 +75,39 @@ function isLoopbackIssuer(issuer: string): boolean {
  * change.
  */
 export const OIDC = !building
-	? await makeOIDC({
-			development: dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY),
-			issuer: PUBLIC_OIDC_AUTHORITY,
-			clientId: PUBLIC_OIDC_CLIENT_ID,
-			clientSecret: OIDC_CLIENT_SECRET,
-			scope: OIDC_SCOPES,
-			loginCallbackRoute: '/auth/login-callback',
-			logoutCallbackRoute: '/auth/logout-callback',
-			// A function rather than the list: the library would match the list against the
-			// localized `url.pathname`, which the guard has to see without its locale prefix.
-			authenticatedRoutes: (url) => isAuthenticatedPath(routePath(url)),
-			logoutPath: '/',
-			allowBearerToken: true,
-			logLevel: dev ? 'info' : 'warn',
-			userLoggedInSuccessfully: async ({ user }, { returnTo }) => {
-				await upsertSelfFromClaims({ claims: providerClaims.parse(user), returnTo });
-			}
+	? await retryAtStartup({
+			// makeOIDC fetches the provider's discovery document; see retryAtStartup.
+			attempt: () => makeOIDC(oidcOptions()),
+			onRetry: ({ error, attemptsLeft }) =>
+				logger.warn('The identity provider is not reachable yet, retrying', {
+					err: error,
+					attemptsLeft
+				})
 		})
 	: // TYPE-SAFETY-EXCEPTION: nothing may connect to the provider during `vite build`, and nothing
 		// uses `OIDC` there either
 		({} as Awaited<ReturnType<typeof makeOIDC>>);
+
+function oidcOptions(): Parameters<typeof makeOIDC>[0] {
+	return {
+		development: dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY),
+		issuer: PUBLIC_OIDC_AUTHORITY,
+		clientId: PUBLIC_OIDC_CLIENT_ID,
+		clientSecret: OIDC_CLIENT_SECRET,
+		scope: OIDC_SCOPES,
+		loginCallbackRoute: '/auth/login-callback',
+		logoutCallbackRoute: '/auth/logout-callback',
+		// A function rather than the list: the library would match the list against the
+		// localized `url.pathname`, which the guard has to see without its locale prefix.
+		authenticatedRoutes: (url) => isAuthenticatedPath(routePath(url)),
+		logoutPath: '/',
+		allowBearerToken: true,
+		logLevel: dev ? 'info' : 'warn',
+		userLoggedInSuccessfully: async ({ user }, { returnTo }) => {
+			await upsertSelfFromClaims({ claims: providerClaims.parse(user), returnTo });
+		}
+	};
+}
 
 /**
  * The OIDC handle, except that a public page (see `isPublicRoute`) is served without a session
