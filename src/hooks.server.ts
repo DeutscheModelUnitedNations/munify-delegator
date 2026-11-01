@@ -32,6 +32,9 @@ if (!building && SENTRY_DSN) {
 
 // Awaited before the first request: files moved off the Prisma app's data URLs must be in the
 // bucket before anyone is handed their URLs. A failure stops the start, and the next one resumes.
+// TODO: remove this hook, `legacyFileUpload.ts` and the export of `storage()` once production has
+// started on the drizzle schema and `legacy_file_upload` is gone (and "Files from before the
+// bucket" in CLAUDE.md).
 export const init: ServerInit = async () => {
 	if (building) return;
 	await uploadLegacyFiles({ db, storage: storage() });

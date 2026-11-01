@@ -17,6 +17,8 @@ type Db = typeof appDb;
  * A page at a time: its objects are put, then its staging rows deleted, so a start that fails
  * halfway goes on where it stopped (putting an object again is harmless, its key is its own).
  * Instances starting together skip each other's pages, and the last one done drops the table.
+ *
+ * TODO: remove (with the `init` hook in `hooks.server.ts`) once production has run it.
  */
 export async function uploadLegacyFiles({ db, storage }: { db: Db; storage: Storage }) {
 	if (!(await stagingTableExists(db))) return;
