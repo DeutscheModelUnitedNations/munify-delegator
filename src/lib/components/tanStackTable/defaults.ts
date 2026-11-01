@@ -8,11 +8,7 @@ import {
 	sortFn_alphanumeric,
 	sortFn_basic,
 	sortFn_datetime,
-	sortFn_text,
-	type CellData,
-	type Column,
-	type RowData,
-	type TableFeatures
+	sortFn_text
 } from '@tanstack/svelte-table';
 
 /**

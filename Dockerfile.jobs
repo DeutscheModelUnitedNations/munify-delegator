@@ -4,7 +4,8 @@
 # Runs a single command and exits, e.g. `docker run <image> invitation-cleanup`,
 # started by an external scheduler (cron job, Dokploy schedule). Unlike
 # Dockerfile.tasks it is not a long-running scheduler. Assumes the database is
-# already migrated and needs nothing but DATABASE_URL.
+# already migrated. Each job reads only the variables it uses: DATABASE_URL,
+# plus the app's SMTP_* / REDIS_URL and APP_URL for send-emails, and so on.
 # =============================================================================
 
 FROM oven/bun:1.3-slim AS base
@@ -15,9 +16,13 @@ FROM oven/bun:1.3-slim AS base
 FROM base AS builder
 WORKDIR /build
 
-COPY package.json bun.lock tsconfig.json svelte.config.js tsdown.jobs.config.ts ./
+COPY package.json bun.lock tsconfig.json vite.config.ts tsdown.jobs.config.ts ./
+COPY patches ./patches
 COPY src ./src
 COPY static ./static
+# Paraglide compiles the messages the mails are written in into the bundle
+COPY project.inlang ./project.inlang
+COPY messages ./messages
 
 RUN bun install --frozen-lockfile
 

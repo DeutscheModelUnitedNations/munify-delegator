@@ -9,6 +9,10 @@ import {
 test('a head delegate can create a delegation and a second user can join it with the entry code', async ({
 	browser
 }) => {
+	// Two separate sign-ups, each through the full login and profile flow, like the delegation
+	// signup spec
+	test.setTimeout(90_000);
+
 	const headDelegateContext = await browser.newContext();
 	const headDelegatePage = await headDelegateContext.newPage();
 

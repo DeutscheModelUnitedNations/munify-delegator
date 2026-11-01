@@ -197,7 +197,7 @@
 		"build": "bun run build:app && bun run build:compute",
 		"build:app": "vite build",
 		"build:compute": "tsdown --config tsdown.compute.config.ts",
-		"jobs": "bun src/jobs/cli.ts",
+		"jobs": "tsdown --config tsdown.jobs.config.ts --logLevel warn && bun jobsOut/cli.js",
 		"build:jobs": "tsdown --config tsdown.jobs.config.ts",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

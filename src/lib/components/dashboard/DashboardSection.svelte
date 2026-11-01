@@ -77,7 +77,8 @@
 			</div>
 		{/snippet}
 		{#if collapsible}
-			<div class="collapse rounded-none {collapsed ? '' : 'collapse-open'}">
+			<!-- Not isolated as daisyUI's collapse is: a modal inside would stay under the later sections -->
+			<div class="collapse isolation-auto rounded-none {collapsed ? '' : 'collapse-open'}">
 				<div
 					class="flex cursor-pointer items-start gap-4 select-none"
 					role="button"

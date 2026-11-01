@@ -39,8 +39,9 @@ schemaBuilder.mutationFields((t) => ({
 			experience: t.arg.string({ required: true }),
 			requests: t.arg.string()
 		},
-		// The registration form's schema, so the limits stay in one place.
-		validate: waitingListFormSchema,
+		// The registration form's schema, so the limits stay in one place; loose, so the
+		// conference survives it.
+		validate: waitingListFormSchema.loose(),
 		resolve: async (query, _root, args, ctx) => {
 			const id = await createWaitingListEntry({
 				conferenceId: args.conferenceId,

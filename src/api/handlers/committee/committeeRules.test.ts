@@ -84,6 +84,13 @@ describe('regionalBaselineArgsSchema', () => {
 		).toBe(true);
 	});
 
+	test('keeps the arguments it does not check', () => {
+		expect(regionalBaselineArgsSchema.parse({ committeeId: 'c', baseline: 'MANUAL' })).toEqual({
+			committeeId: 'c',
+			baseline: 'MANUAL'
+		});
+	});
+
 	test('leaves left out targets to the stored ones', () => {
 		expect(regionalBaselineArgsSchema.safeParse({ baseline: 'MANUAL' }).success).toBe(true);
 		expect(() => assertStoredTargetsUsable({ baseline: 'MANUAL', targets: [] })).toThrow();

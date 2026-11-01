@@ -72,6 +72,7 @@
 			{/if}
 		</div>
 		{#if stored}
+			<!-- eslint-disable svelte/no-navigation-without-resolve -- a file in the bucket -->
 			<a
 				class="btn btn-ghost btn-sm btn-square"
 				href={stored.url}
@@ -82,6 +83,7 @@
 			>
 				<i class="fa-sharp-duotone fa-solid fa-eye"></i>
 			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
 	</div>
 

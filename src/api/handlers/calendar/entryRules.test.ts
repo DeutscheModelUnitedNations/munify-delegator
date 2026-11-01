@@ -25,6 +25,11 @@ describe('entryTimesSchema', () => {
 			entryTimesSchema.safeParse({ startTime: at('09:00'), endTime: at('10:00') }).success
 		).toBe(true);
 	});
+
+	it('keeps the arguments it does not check', () => {
+		const args = { calendarDayId: 'day', startTime: at('09:00'), endTime: at('10:00') };
+		expect(entryTimesSchema.parse(args)).toEqual(args);
+	});
 });
 
 describe('entryTrackIdsSchema', () => {

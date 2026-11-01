@@ -35,7 +35,10 @@ import { E2E_ATTENDANCE_ENDED_SESSION } from '../seed/attendance';
 // for reads, to hand back nothing it should not. They pin down the rules in
 // src/api/services/authHelper/ and the handlers built on them.
 
-type GraphQLResult = { data?: Record<string, unknown> | null; errors?: { message: string }[] };
+type GraphQLResult = {
+	data?: Record<string, unknown> | null;
+	errors?: { message: string; path?: (string | number)[] }[];
+};
 
 async function gql(page: Page, query: string, variables: Record<string, unknown> = {}) {
 	const res = await page.request.post('/api/graphql', {
@@ -65,14 +68,15 @@ test('a participant cannot write on somebody else’s behalf', async ({ page }) 
 		/requires one of|you may not change it/
 	);
 
-	// A survey answer for another participant.
+	// A survey answer for another participant. The caller takes no part in the survey's
+	// conference, so the option is not even theirs to read.
 	expectRefused(
 		await gql(
 			page,
 			`mutation ($u: ID!, $o: ID!) { upsertSurveyAnswer(userId: $u, optionId: $o) { id } }`,
 			{ u: E2E_PREP_PARTICIPANT_USER_ID, o: E2E_SURVEY_OPTION_A_ID }
 		),
-		/only answer surveys for yourself/
+		/not found/i
 	);
 
 	// A paper for a delegation the caller is not in. The author is always the caller, so there is
@@ -321,7 +325,7 @@ test('the last project management stays on the team', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
 	const own = await gql(
 		page,
-		`query ($c: ID!, $u: String!) {
+		`query ($c: ID!, $u: ID!) {
 			teamMembers(where: { conferenceId: { eq: $c }, user: { id: { eq: $u } } }) { id }
 		}`,
 		{ c: E2E_CONFERENCE_ID, u: E2E_ASSIGNMENT_ADMIN_ID }
@@ -405,13 +409,12 @@ test('a reviewer reads delegations without their join codes', async ({ page }) =
 	});
 
 	// ...its join code is masked for this row, and a non-null column that is masked cannot be
-	// selected at all.
-	expectRefused(
-		await gql(page, `query ($id: ID!) { delegation(id: $id) { id entryCode } }`, {
-			id: E2E_PAPER_DELEGATION_ID
-		}),
-		/non-nullable field Delegation\.entryCode/
-	);
+	// selected at all. Production masks the message, so the error is recognised by its path.
+	const withCode = await gql(page, `query ($id: ID!) { delegation(id: $id) { id entryCode } }`, {
+		id: E2E_PAPER_DELEGATION_ID
+	});
+	expect(withCode.data?.delegation ?? null, JSON.stringify(withCode)).toBeNull();
+	expect(withCode.errors?.[0]?.path, JSON.stringify(withCode)).toEqual(['delegation', 'entryCode']);
 });
 
 test('the team uploads resolutions, everybody with a part in it downloads them', async ({

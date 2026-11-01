@@ -35,8 +35,8 @@ const MEMBERS_ONLY = {
 	certificateFileId: false,
 	documentLayouts: false
 };
-/** Columns only the conference's team reads: links to its internal tools. */
-const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
+/** Columns only the conference's team reads: links to its internal tools, the mail pace. */
+const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false, emailsPerSecond: false };
 
 export function registerConferenceAbilities() {
 	// Anyone (signed in or not) reads the public conferences - open for registration or, from the

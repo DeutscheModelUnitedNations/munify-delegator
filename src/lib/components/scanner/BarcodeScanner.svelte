@@ -50,6 +50,7 @@
 		manualPlaceholder = '',
 		scanPromptText = '',
 		scannedCode = $bindable<string | null>(''),
+		// eslint-disable-next-line no-useless-assignment -- a $bindable default, see eslint.config.js
 		scannedFormat = $bindable<string | null>(null),
 		result,
 		belowCamera,

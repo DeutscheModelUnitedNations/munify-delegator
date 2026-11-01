@@ -14,7 +14,6 @@ import {
 	clampedIndex,
 	stretchTracks,
 	tracksOfRange,
-	formatMinutes,
 	minutesOfDay,
 	normalizeTrackIds,
 	nudgeTracks,
@@ -550,5 +549,3 @@ export function createCalendarEditor(days: () => EditorDay[]) {
 		settle
 	};
 }
-
-type CalendarEditor = ReturnType<typeof createCalendarEditor>;

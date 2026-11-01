@@ -14,7 +14,8 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { queryParameters } from 'sveltekit-search-params';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { client } from '#lib/api/rumbleClient/client';
 	import Form from '#lib/components/form/Form.svelte';
 	import Modal from '#lib/components/Modal.svelte';
@@ -292,7 +293,7 @@
 				certificateBasePDF: !!storedFiles.certificateFile
 			}
 		}),
-		...emailConfigChanges(emailChanges.list)
+		...emailConfigChanges({ switches: emailChanges.list, pace: emailChanges.pace })
 	]);
 
 	let changeCountPerTab = $derived.by(() => {
@@ -313,14 +314,25 @@
 		'emails'
 	] as const;
 	type TabType = (typeof validTabs)[number];
-	const params = queryParameters({ tab: true });
+	// The tab is kept here and mirrored into the URL without a navigation, like the assignment
+	// board's size: `sveltekit-search-params` reads `page`, which is still the placeholder while the
+	// tabs' first queries are pending, and a tab container updated in that window stayed hidden.
+	let pickedTab = $state(page.url.searchParams.get('tab'));
 	let currentTab = $derived<TabType>(
-		validTabs.find((tab) => tab === params.tab && (tab !== 'emails' || canManageEmails)) ??
-			'general'
+		validTabs.find((tab) => tab === pickedTab && (tab !== 'emails' || canManageEmails)) ?? 'general'
 	);
 
 	function setTab(tab: TabType) {
-		params.tab = tab;
+		pickedTab = tab;
+		// On the next task: a shallow `goto` writes `page`, which must not happen while Svelte is
+		// still committing the tab switch
+		setTimeout(() => {
+			// The browser's own URL: `page.url` does not follow shallow navigations
+			const url = new URL(location.href);
+			url.searchParams.set('tab', tab);
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- the current page's own URL, with another tab
+			goto(url, { shallow: true, replace: true, state: page.state });
+		});
 	}
 
 	const tabs: { value: TabType; label: string; icon: string }[] = $derived([
@@ -352,10 +364,18 @@
 			: m.saveSettings()
 	);
 
-	/** One mutation per switch; the sweep each one schedules sends what switching on owes. */
+	/** One mutation for the pace and one per switch; switching on owes what the sweep then sends. */
 	async function saveEmailChanges() {
-		const promise = Promise.all(
-			emailChanges.list.map((change) =>
+		const pace = emailChanges.pace;
+		const promise = Promise.all([
+			...(pace
+				? [
+						client.mutate.setConferenceEmailsPerSecond({
+							__args: { conferenceId, emailsPerSecond: pace.after }
+						})
+					]
+				: []),
+			...emailChanges.list.map((change) =>
 				client.mutate.setConferenceEmailEnabled({
 					__args: {
 						conferenceId,
@@ -365,13 +385,15 @@
 					}
 				})
 			)
-		);
+		]);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		emailChanges.saved();
 	}
 
-	const emailsChanged = $derived(canManageEmails && emailChanges.list.length > 0);
+	const emailsChanged = $derived(
+		canManageEmails && (emailChanges.list.length > 0 || !!emailChanges.pace)
+	);
 	// e-mail switches alone are no reason to submit the form
 	const formChanged = $derived(
 		canEditContent && pendingChanges.some((change) => change.group !== 'emails')

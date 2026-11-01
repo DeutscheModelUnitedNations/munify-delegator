@@ -7,9 +7,6 @@
 
 export type ConferenceRoleKind = 'NATION' | 'NON_STATE_ACTOR' | 'CUSTOM';
 
-/** The role kinds a delegation can hold; a single participant holds a `CUSTOM` one. */
-export const DELEGATION_ROLE_KINDS = ['NATION', 'NON_STATE_ACTOR'] as const;
-
 /**
  * Splits a role into the nation or the non-state actor it is: exactly one of the two is set for a
  * delegation's role, neither for no role (or a custom one).

@@ -38,7 +38,7 @@ test('the participant dashboard routes render for an assigned participant', asyn
 			continue;
 		}
 		const body = await page.locator('body').innerText();
-		if (/hier hast du keinen zugriff|you don't have access to this page/i.test(body)) {
+		if (/hier haben sie keinen zugriff|you don't have access to this page/i.test(body)) {
 			failures.push(`${path}: rendered access-denied for an assigned participant`);
 		}
 		const realErrors = pageErrors.filter((e) => !DEV_SERVER_NOISE.test(e));

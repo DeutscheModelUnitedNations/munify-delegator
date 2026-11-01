@@ -42,5 +42,3 @@ export function createPersistedState<T>({ key, initial }: { key: string; initial
 		}
 	};
 }
-
-type PersistedState<T> = ReturnType<typeof createPersistedState<T>>;

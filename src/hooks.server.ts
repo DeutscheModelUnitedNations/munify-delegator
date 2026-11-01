@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
-import { graphqlLogger, logger } from '#lib/logger';
+import { graphqlLogger } from '#lib/logger';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
-import { OIDC, oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
+import { oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
 import { paraglideMiddleware } from '#lib/paraglide/server';
 import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';

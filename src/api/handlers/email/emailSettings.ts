@@ -1,6 +1,7 @@
 import { db, schema } from '#api/db/db';
 import { whereRows } from '#api/db/whereRows';
 import {
+	conferencePubsub,
 	conferenceEmailFooterPubsub,
 	conferenceEmailSettingPubsub,
 	conferenceEmailTextPubsub
@@ -46,6 +47,30 @@ export async function setEmailKindsEnabled({
 	// an upsert: new rows for the lists, changed ones by id
 	conferenceEmailSettingPubsub.created();
 	conferenceEmailSettingPubsub.updated(rows.map((row) => row.id));
+}
+
+/** How many mails per second the conference's sweeps send at most; `null` for no limit. */
+export async function emailsPerSecondOf(conferenceId: string) {
+	const conference = await db.query.conference.findFirst({
+		where: { id: conferenceId },
+		columns: { emailsPerSecond: true }
+	});
+	return conference?.emailsPerSecond ?? null;
+}
+
+/** Sets how many mails per second the conference's sweeps send at most; `null` lifts the limit. */
+export async function setEmailsPerSecond({
+	conferenceId,
+	emailsPerSecond
+}: {
+	conferenceId: string;
+	emailsPerSecond: number | null;
+}) {
+	await db
+		.update(schema.conference)
+		.set({ emailsPerSecond })
+		.where(whereRows({ table: schema.conference, filter: { id: conferenceId } }));
+	conferencePubsub.updated(conferenceId);
 }
 
 /** Every conference that sends any automatic mail. */

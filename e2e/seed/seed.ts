@@ -34,6 +34,7 @@ import { seatNations, upsertNationRole } from './conferenceRole';
 import { seedSeatPlanning } from './seatPlanning';
 import { seedSeats } from './seats';
 import { seedAttendance } from './attendance';
+import { seedEmailPace } from './emailPace';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
@@ -132,6 +133,14 @@ export const E2E_UNSEATED_COMMITTEE_ID = 'e2e00000committee000000005';
 export const E2E_COMMITTEE_ASSIGN_SEATED_USER_ID = 'e2e-committee-assign-seated';
 export const E2E_COMMITTEE_ASSIGN_SEATED_MEMBER_ID = 'e2e00000delegationmember0010';
 export const E2E_FULL_COMMITTEE_ID = 'e2e00000committee000000010';
+// The head delegate of a delegation of its own, who seats themselves through the committee
+// assignment page. The API specs above need their member to stay without a committee, so the page
+// spec, which gives one, cannot share it.
+export const E2E_COMMITTEE_UI_NATION_ALPHA3 = 'GRC';
+export const E2E_COMMITTEE_UI_NATION_ALPHA2 = 'GR';
+export const E2E_COMMITTEE_UI_DELEGATION_ID = 'e2e00000delegation00000012';
+export const E2E_COMMITTEE_UI_HEAD_USER_ID = 'e2e-committee-ui-head';
+const E2E_COMMITTEE_UI_MEMBER_ID = 'e2e00000delegationmember0012';
 // An agenda item of that committee, which the paper delegate (seated in E2E_COMMITTEE_ID) may
 // not write on.
 export const E2E_OTHER_COMMITTEE_AGENDA_ITEM_ID = 'e2e00000agendaitem00000002';
@@ -162,6 +171,9 @@ export const E2E_SPLIT_MEMBER_2_ID = 'e2e-split-member-2';
 export const E2E_PREFS_COMMITTEE_ID = 'e2e00000committee000000002';
 export const E2E_PREFS_NATION_ALPHA3S = ['ITA', 'ESP', 'PRT'] as const;
 export const E2E_PREFS_NATION_ALPHA2S = ['IT', 'ES', 'PT'] as const;
+// A delegation without members whose wishes participant care adds all at once; every run starts
+// it without any.
+export const E2E_WISHES_DELEGATION_ID = 'e2e00000delegation00000013';
 
 // Paper editing: a pre-existing DRAFT paper (with a version) for the paper delegate to edit and
 // submit - distinct from paper-review.spec.ts, which creates a brand new paper each run.
@@ -194,8 +206,11 @@ export default async function seed() {
 			state: 'PARTICIPANT_REGISTRATION',
 			// Registration only shows as OPEN while applicationDeadline is in the future
 			// (see src/lib/helpers/registrationStatus.ts) - the dev seed helper defaults this
-			// to a past date for PARTICIPANT_REGISTRATION, which would leave it CLOSED here.
-			applicationDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+			// to a past date for PARTICIPANT_REGISTRATION, which would leave it CLOSED here. The
+			// conference follows the deadline: an update is checked on the row as written.
+			applicationDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+			startConference: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+			endConference: new Date(Date.now() + 63 * 24 * 60 * 60 * 1000)
 		}),
 		id: E2E_CONFERENCE_ID,
 		title: 'E2E Test Conference',
@@ -234,6 +249,7 @@ export default async function seed() {
 	await upsertNation(E2E_NATION_ALPHA3, E2E_NATION_ALPHA2);
 	await upsertNation(E2E_ASSIGNMENT_NATION_ALPHA3, E2E_ASSIGNMENT_NATION_ALPHA2);
 	await upsertNation(E2E_COMMITTEE_ASSIGN_NATION_ALPHA3, E2E_COMMITTEE_ASSIGN_NATION_ALPHA2);
+	await upsertNation(E2E_COMMITTEE_UI_NATION_ALPHA3, E2E_COMMITTEE_UI_NATION_ALPHA2);
 
 	const committee = {
 		...makeSeedCommittee({ conferenceId: conference.id }),
@@ -253,7 +269,8 @@ export default async function seed() {
 	await seatNations(db, committee, [
 		E2E_NATION_ALPHA3,
 		E2E_ASSIGNMENT_NATION_ALPHA3,
-		E2E_COMMITTEE_ASSIGN_NATION_ALPHA3
+		E2E_COMMITTEE_ASSIGN_NATION_ALPHA3,
+		E2E_COMMITTEE_UI_NATION_ALPHA3
 	]);
 
 	const agendaItem = {
@@ -305,6 +322,7 @@ export default async function seed() {
 	await upsertActorUser(E2E_SUPERVISED_PARTICIPANT_USER_ID);
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID);
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_SEATED_USER_ID);
+	await upsertActorUser(E2E_COMMITTEE_UI_HEAD_USER_ID);
 	await upsertActorUser(E2E_TEAM_COORDINATOR_ID);
 
 	const upsertTeamMember = (
@@ -529,7 +547,25 @@ export default async function seed() {
 		.insert(schema.committee)
 		.values(prefsCommittee)
 		.onConflictDoUpdate({ target: schema.committee.id, set: prefsCommittee });
-	await seatNations(db, prefsCommittee, E2E_PREFS_NATION_ALPHA3S);
+	// The committee page's nation is offered in the wish pool too, where it has to seat a delegation
+	// of two like the others
+	await seatNations(db, prefsCommittee, [
+		...E2E_PREFS_NATION_ALPHA3S,
+		E2E_COMMITTEE_UI_NATION_ALPHA3
+	]);
+
+	const wishesDelegation = {
+		...makeSeedDelegation({ conferenceId: conference.id, applied: false }),
+		id: E2E_WISHES_DELEGATION_ID,
+		entryCode: 'WISHES'
+	};
+	await db
+		.insert(schema.delegation)
+		.values(wishesDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: wishesDelegation });
+	await db
+		.delete(schema.roleApplication)
+		.where(eq(schema.roleApplication.delegationId, E2E_WISHES_DELEGATION_ID));
 
 	// --- paper fixture: a delegation already assigned to the committee/nation, ready to submit ---
 	const paperDelegation = {
@@ -728,6 +764,18 @@ export default async function seed() {
 	// answered yet" precondition true on every run against a persistent database.
 	await db.delete(schema.surveyAnswer).where(eq(schema.surveyAnswer.questionId, surveyQuestion.id));
 
+	// The calendar specs add days, tracks and places on every run, all on the same date; nothing
+	// seeds any, so the conference starts each run without.
+	for (const table of [schema.calendarDay, schema.calendarTrack, schema.place]) {
+		await db.delete(table).where(eq(table.conferenceId, E2E_CONFERENCE_ID));
+	}
+
+	// The sighting specs rate and exclude applications and take it back at the end; a run that
+	// failed halfway would leave the deck coloured for the next one.
+	await db
+		.delete(schema.assignmentReview)
+		.where(eq(schema.assignmentReview.conferenceId, E2E_CONFERENCE_ID));
+
 	// --- committee assignment fixture: a delegation assigned a nation, member needs a committee ---
 	const committeeAssignDelegation = {
 		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
@@ -756,6 +804,34 @@ export default async function seed() {
 		.insert(schema.delegationMember)
 		.values(committeeAssignMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeAssignMember });
+
+	const committeeUiDelegation = {
+		...makeSeedDelegation({ conferenceId: conference.id, applied: true }),
+		id: E2E_COMMITTEE_UI_DELEGATION_ID,
+		entryCode: 'COMUIS',
+		assignedRoleId: await upsertNationRole(db, conference.id, E2E_COMMITTEE_UI_NATION_ALPHA3)
+	};
+	await db
+		.insert(schema.delegation)
+		.values(committeeUiDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: committeeUiDelegation });
+	const committeeUiMember = {
+		...makeSeedDelegationMember({
+			delegationId: committeeUiDelegation.id,
+			conferenceParticipantId: await upsertParticipant(
+				db,
+				conference.id,
+				E2E_COMMITTEE_UI_HEAD_USER_ID
+			),
+			isHeadDelegate: true,
+			assignedCommitteeId: null
+		}),
+		id: E2E_COMMITTEE_UI_MEMBER_ID
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(committeeUiMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeUiMember });
 	const unseatedCommittee = {
 		...makeSeedCommittee({ conferenceId: conference.id }),
 		id: E2E_UNSEATED_COMMITTEE_ID,
@@ -922,6 +998,7 @@ export default async function seed() {
 	await seedSeatPlanning(db);
 	await seedSeats(db);
 	await seedAttendance(db);
+	await seedEmailPace(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }

@@ -29,7 +29,9 @@ export default ts.config(
 		languageOptions: {
 			globals: {
 				...globals.browser,
-				...globals.node
+				...globals.node,
+				// Pothos declares its types in a global namespace
+				PothosSchemaTypes: 'readonly'
 			}
 		}
 	},
@@ -78,7 +80,16 @@ export default ts.config(
 	},
 	{
 		rules: {
-			'@typescript-eslint/no-unused-vars': 'warn',
+			// A leading underscore marks a name a signature or a destructuring needs but nobody reads
+			'@typescript-eslint/no-unused-vars': [
+				'warn',
+				{
+					argsIgnorePattern: '^_',
+					varsIgnorePattern: '^_',
+					caughtErrorsIgnorePattern: '^_',
+					destructuredArrayIgnorePattern: '^_'
+				}
+			],
 			'@typescript-eslint/no-explicit-any': 'warn',
 			'svelte/no-at-html-tags': 'warn',
 			'svelte/valid-compile': 'warn',

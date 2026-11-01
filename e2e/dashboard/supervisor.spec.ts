@@ -1,5 +1,5 @@
 import { test, expect } from '../support/test';
-import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
+import { loginAs, makeTestUser } from '../support/auth';
 import { chooseApplyPath, openFirstConferenceForRegistration } from '../support/registration';
 
 // Covers the supervisor self-service flow: signup, toggling own attendance, and rotating the

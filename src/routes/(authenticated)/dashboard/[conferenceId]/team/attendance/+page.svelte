@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { getLocale } from '#lib/paraglide/runtime';
 	import { confirmDialog } from '#lib/state/dialogs.svelte.js';
 	import { client } from '#lib/api/rumbleClient/client';
 	import hotkeys from 'hotkeys-js';

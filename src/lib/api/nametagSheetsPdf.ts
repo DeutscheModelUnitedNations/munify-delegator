@@ -1,4 +1,4 @@
-import { rgb, type PDFDocument, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
+import { type PDFDocument, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
 import {
 	createNametagPdf,
 	MUTED,

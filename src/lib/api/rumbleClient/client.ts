@@ -882,6 +882,7 @@ export type Conference = {
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
   documentLayouts: JSON | null,
+  emailsPerSecond: Int | null,
   emblemFile: (p?: {
     orderBy?: StoredfileOrderInputArgument | null | undefined,
     where?: StoredfileWhereInputArgument | null | undefined
@@ -1027,6 +1028,7 @@ export type ConferenceOrderInputArgument = {
   createdAt?: SortingParameter | null | undefined,
   currency?: SortingParameter | null | undefined,
   documentLayouts?: SortingParameter | null | undefined,
+  emailsPerSecond?: SortingParameter | null | undefined,
   emblemFileId?: SortingParameter | null | undefined,
   endConference?: SortingParameter | null | undefined,
   feeAmount?: SortingParameter | null | undefined,
@@ -1119,6 +1121,7 @@ export type ConferenceWhereInputArgument = {
   delegationMembers?: DelegationmemberWhereInputArgument | null | undefined,
   delegations?: DelegationWhereInputArgument | null | undefined,
   documentLayouts?: JSONWhereInputArgument | null | undefined,
+  emailsPerSecond?: IntWhereInputArgument | null | undefined,
   emblemFile?: StoredfileWhereInputArgument | null | undefined,
   emblemFileId?: IDWhereInputArgument | null | undefined,
   endConference?: DateTimeWhereInputArgument | null | undefined,
@@ -2490,6 +2493,10 @@ export type Mutation = {
     conferenceId: ID,
     locale: String,
     text: String
+  }) => Boolean,
+  setConferenceEmailsPerSecond: (p: {
+    conferenceId: ID,
+    emailsPerSecond?: Int | null | undefined
   }) => Boolean,
   setDocumentLayout: (p: {
     conferenceId: ID,

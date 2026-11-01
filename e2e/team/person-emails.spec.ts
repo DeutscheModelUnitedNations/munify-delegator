@@ -34,7 +34,7 @@ test('participant care sends a person an owed mail by hand from the user card', 
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
 	});
 
-	const statusTab = page.getByRole('tab', { name: /status/i });
+	const statusTab = page.getByRole('tab', { name: /formalitäten|formalities/i });
 	await expect(statusTab).toBeVisible({ timeout: 15_000 });
 	await statusTab.click();
 

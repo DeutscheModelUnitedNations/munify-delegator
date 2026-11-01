@@ -21,4 +21,9 @@ describe('the school filter', () => {
 		).toBe(false);
 		expect(schoolFilterSchema.safeParse({ schoolId: 'school-1' }).success).toBe(true);
 	});
+
+	it('keeps the arguments it does not check', () => {
+		const args = { conferenceId: 'c', schoolId: 'school-1', size: 10 };
+		expect(schoolFilterSchema.parse(args)).toEqual(args);
+	});
 });

@@ -69,7 +69,7 @@ schemaBuilder.mutationFields((t) => ({
 			})
 		},
 		validate: z
-			.object({ mode: z.string(), surveyOptionIds: z.array(z.string()).nullish() })
+			.looseObject({ mode: z.string(), surveyOptionIds: z.array(z.string()).nullish() })
 			.refine((args) => args.mode !== 'RECORD' || !args.surveyOptionIds?.length, {
 				error: () => m.sessionSurveyOptionsNeedCheck()
 			}),

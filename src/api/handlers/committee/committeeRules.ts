@@ -112,7 +112,7 @@ export function regionalBaselineTargetsUsable({
  * out targets keep the stored ones, which the service checks (`assertStoredTargetsUsable`).
  */
 export const regionalBaselineArgsSchema = z
-	.object({ baseline: z.string(), targets: z.array(z.number()).nullish() })
+	.looseObject({ baseline: z.string(), targets: z.array(z.number()).nullish() })
 	.refine(
 		({ baseline, targets }) => !targets || regionalBaselineTargetsUsable({ baseline, targets }),
 		{ error: () => m.regionalBaselineTargetsInvalid() }

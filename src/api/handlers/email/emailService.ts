@@ -28,7 +28,8 @@ import { sendBadgeFoundEmail } from './badgeFoundEmail';
  */
 
 export { personEmails } from './personEmails';
-export { setEmailFooter, setEmailText } from './emailSettings';
+export { setEmailFooter, setEmailText, setEmailsPerSecond } from './emailSettings';
+export { emailsPerSecondSchema } from '#lib/schemata/emailsPerSecond';
 
 /** A language the app speaks; anything else is refused. */
 export const localeSchema = z.string().transform((value, ctx) => {
@@ -56,7 +57,7 @@ export const optionalLocaleSchema = z
 
 /** Refuses (INVALID_INPUT) the kinds the conference cannot switch: the ones always sent. */
 export const switchableKindSchema = z
-	.object({ kind: z.string() })
+	.looseObject({ kind: z.string() })
 	.refine(({ kind }) => !isAlwaysSent(kind), { error: () => m.emailKindAlwaysSent() });
 
 /** The kinds among `kinds` (else all) that follow from state; the team invitation never does. */

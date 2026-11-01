@@ -22,7 +22,11 @@
 
 	let anchor = $state<HTMLButtonElement>();
 	let popover = $state<HTMLDivElement>();
-	let position = $state({ top: 0, left: 0 });
+	/** The edge it hangs from: below the button, or above it where the viewport ends too soon */
+	let position = $state('top: 0px; left: 0px;');
+
+	/** Room the menu wants below the button before it opens above instead */
+	const MENU_ROOM = 360;
 
 	const popoverId = $props.id();
 
@@ -31,10 +35,12 @@
 	const place = (event: ToggleEvent) => {
 		if (event.newState !== 'open' || !anchor) return;
 		const rect = anchor.getBoundingClientRect();
-		position = {
-			top: Math.min(rect.bottom + 4, window.innerHeight - 360),
-			left: Math.max(8, rect.right - 288)
-		};
+		const left = Math.max(8, rect.right - 288);
+		// never over the button, which closes it again
+		position =
+			window.innerHeight - rect.bottom >= MENU_ROOM
+				? `top: ${rect.bottom + 4}px; left: ${left}px;`
+				: `top: auto; bottom: ${window.innerHeight - rect.top + 4}px; left: ${left}px;`;
 	};
 
 	const members = $derived(
@@ -67,7 +73,7 @@
 		popover="auto"
 		onbeforetoggle={place}
 		class="bg-base-100 text-base-content border-base-300 rounded-box m-0 w-72 border p-0 text-left shadow-lg"
-		style="top: {position.top}px; left: {position.left}px;"
+		style={position}
 	>
 		<div class="border-base-300 bg-base-200 flex flex-col gap-1 border-b px-4 py-3 text-sm">
 			<div class="flex items-center gap-2">

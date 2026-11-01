@@ -9,6 +9,14 @@ describe('assignmentWeightsArgsSchema', () => {
 		);
 	});
 
+	// A field's `validate` hands the resolver what the schema returns
+	it('keeps the arguments it does not check', () => {
+		expect(assignmentWeightsArgsSchema.parse({ conferenceId: 'c', markBonus: 3 })).toEqual({
+			conferenceId: 'c',
+			markBonus: 3
+		});
+	});
+
 	it('refuses a weight out of range', () => {
 		expect(assignmentWeightsArgsSchema.safeParse({ nullRating: 1e300 }).success).toBe(false);
 		expect(assignmentWeightsArgsSchema.safeParse({ ratingFactor: -1 }).success).toBe(false);

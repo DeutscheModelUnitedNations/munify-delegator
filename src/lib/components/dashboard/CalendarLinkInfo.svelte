@@ -1,7 +1,7 @@
 <!--
 	@component
-	A compact timeline for the schedule's card on the dashboard: a "now" icon, then an arrow to each
-	of the next thing to start on the signed-in person's track, with their start and end, and
+	A compact timeline for the schedule's card on the dashboard: what runs now, then each
+	of the next things to start on the signed-in person's track, with their start and end, and
 	a marker wherever another day begins. Shows nothing for a visitor who is not signed in, and
 	when nothing is left. Ticks along every minute so it stays true.
 -->
@@ -52,12 +52,6 @@
 			timeZone: 'UTC'
 		}).format(date);
 </script>
-
-{#snippet arrow()}
-	<li class="flex shrink-0 items-center" aria-hidden="true">
-		<i class="fa-sharp-duotone fa-solid fa-arrow-right text-base-content/40 text-xs"></i>
-	</li>
-{/snippet}
 
 <!-- Only for someone signed in: it is their track -->
 {#if participation && (timeline.current || timeline.upcoming.length > 0)}

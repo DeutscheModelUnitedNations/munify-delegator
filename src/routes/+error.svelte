@@ -6,6 +6,7 @@
 	import access_denied from '#assets/undraw/access_denied.svg';
 
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 
 	const pictures: Partial<Record<number, string>> = {
 		404: svg404,
@@ -29,5 +30,5 @@
 	<img src={getPicture(page.status)} alt="" class="w-full max-w-xs" />
 	<h1 class="text-center text-3xl">{getErrorText(page.status)}</h1>
 	<p>{page.error?.message}</p>
-	<a href="/" class="btn btn-primary">{m.backToHome()}</a>
+	<a href={resolve('/')} class="btn btn-primary">{m.backToHome()}</a>
 </main>

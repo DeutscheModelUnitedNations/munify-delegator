@@ -13,12 +13,12 @@ test('a team member can mark a participant payment status as done from the parti
 	});
 
 	// A filter that narrows the table to one row opens that row's user card by itself.
-	const statusTab = page.getByRole('tab', { name: /status/i });
+	const statusTab = page.getByRole('tab', { name: /formalitäten|formalities/i });
 	await expect(statusTab).toBeVisible({ timeout: 15_000 });
 	await statusTab.click();
 
 	const paymentDoneButton = page
-		.locator('.card:has(.fa-money-bill)')
+		.locator('div:has(> i.fa-money-bill)')
 		.getByRole('button', { name: /^(erledigt|done)$/i });
 	await expect(paymentDoneButton).toBeVisible({ timeout: 15_000 });
 	await paymentDoneButton.click();

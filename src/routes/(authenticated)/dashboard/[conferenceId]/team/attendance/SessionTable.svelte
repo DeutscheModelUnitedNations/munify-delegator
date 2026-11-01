@@ -65,16 +65,18 @@
 	);
 	const rows = $derived(sessionRows({ listed, openSessions }));
 
-	let saving = $state<string>();
-
-	async function toggleCertificate({ id, show }: { id: string; show: boolean }) {
-		saving = id;
+	/**
+	 * The toggle keeps the state it was clicked to until the live update confirms it. Nothing about
+	 * the input may change in between (a `disabled` while saving did): that re-renders it from the
+	 * row, which still holds the old value, and snaps it back.
+	 */
+	async function toggleCertificate({ id, input }: { id: string; input: HTMLInputElement }) {
+		const show = input.checked;
 		try {
 			await client.mutate.setAttendanceSessionOnCertificate({ __args: { id, show } });
 		} catch (error) {
+			input.checked = !show;
 			toast.error(error instanceof Error ? error.message : m.genericToastError());
-		} finally {
-			saving = undefined;
 		}
 	}
 
@@ -143,9 +145,8 @@
 				type="checkbox"
 				class="toggle toggle-success toggle-sm"
 				checked={row.listed.showOnCertificate}
-				disabled={saving === row.id}
 				aria-label={m.certificateOccasionsShowFor({ occasion: row.name })}
-				onchange={(event) => toggleCertificate({ id: row.id, show: event.currentTarget.checked })}
+				onchange={(event) => toggleCertificate({ id: row.id, input: event.currentTarget })}
 			/>
 		</label>
 		<button

@@ -12,7 +12,8 @@ test('an author can edit an existing draft paper and submit it', async ({ page }
 
 	// Scope to the seeded draft paper's row specifically: repeated test runs accumulate other
 	// papers for this same author, so `.first()` on a generic row/link locator is not reliable.
-	await page.locator(`a[href*="${E2E_DRAFT_PAPER_ID}"]`).click();
+	// The table and the phone layout's list both link it; one of them is hidden
+	await page.locator(`a[href*="${E2E_DRAFT_PAPER_ID}"]`).filter({ visible: true }).click();
 	await page.waitForURL(new RegExp(`/paperhub/${E2E_DRAFT_PAPER_ID}$`), { timeout: 15_000 });
 
 	const editor = page.locator('[contenteditable="true"]').first();

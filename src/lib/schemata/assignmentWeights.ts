@@ -14,7 +14,7 @@ export const assignmentWeightsSchema = z.object({
 const { shape } = assignmentWeightsSchema;
 
 /** The same limits for `upsertAssignmentWeights`, where a weight left out or null stays as it is. */
-export const assignmentWeightsArgsSchema = z.object({
+export const assignmentWeightsArgsSchema = z.looseObject({
 	nullRating: shape.nullRating.nullish(),
 	ratingFactor: shape.ratingFactor.nullish(),
 	markBonus: shape.markBonus.nullish(),

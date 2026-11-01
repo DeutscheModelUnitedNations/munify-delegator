@@ -2,7 +2,6 @@ import {
 	snakeCase,
 	text,
 	timestamp,
-	boolean,
 	index,
 	uniqueIndex,
 	type AnyPgColumn

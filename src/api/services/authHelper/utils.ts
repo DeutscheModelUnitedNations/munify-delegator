@@ -44,7 +44,7 @@ type IdFilterable = {
  * otherwise.
  * `extra` narrows it further (a role of one `kind`, a row of one conference).
  */
-export async function whereAllowed<K extends TableWithId>({
+async function whereAllowed<K extends TableWithId>({
 	ctx,
 	table,
 	action,

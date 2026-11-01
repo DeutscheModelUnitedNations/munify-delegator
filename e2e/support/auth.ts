@@ -112,10 +112,9 @@ export async function loginAs(
 	const startUrl = opts.startUrl ?? '/dashboard';
 	const sessionKey = JSON.stringify(claims);
 	const session = sessions.get(sessionKey);
-	if (session) {
-		await page.context().clearCookies();
-		await page.context().addCookies(session);
-	}
+	// Whoever the page was signed in as before would otherwise pass `/login` straight through
+	await page.context().clearCookies();
+	if (session) await page.context().addCookies(session);
 	await page.goto(`/login?next=${encodeURIComponent(startUrl)}`);
 	if (session && !isOidcUrl(page.url())) {
 		await waitForHydration(page);

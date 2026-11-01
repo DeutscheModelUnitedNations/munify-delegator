@@ -89,7 +89,7 @@ const mailSync = defineCommand({
 
 const sendEmails = defineCommand({
 	meta: {
-		description: 'Send the automatic emails that are due (asks the app to, it renders them)'
+		description: 'Send the automatic emails that are due'
 	},
 	async run() {
 		const { runSendEmails } = await import('./sendEmails');

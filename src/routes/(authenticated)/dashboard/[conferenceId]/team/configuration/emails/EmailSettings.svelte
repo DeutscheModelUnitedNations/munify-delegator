@@ -10,13 +10,14 @@
 	import EmailLog from './EmailLog.svelte';
 	import EmailEditorModal from './EmailEditorModal.svelte';
 	import EmailFooterCard from './EmailFooterCard.svelte';
+	import EmailPaceCard from './EmailPaceCard.svelte';
 	import EmailFooterForm from './EmailFooterForm.svelte';
 	import EmailTextForm from './EmailTextForm.svelte';
 	import type { EmailChanges } from './emailChanges.svelte';
 
 	interface Props {
 		conferenceId: string;
-		/** Where the switches wait for the page's save button. */
+		/** Where the switches and the pace wait for the page's save button. */
 		changes: EmailChanges;
 	}
 
@@ -163,6 +164,7 @@
 
 <div class="flex flex-col gap-6">
 	<EmailFooterCard {conferenceId} onedit={() => (editingFooter = true)} />
+	<EmailPaceCard {conferenceId} {changes} />
 
 	{#each EMAIL_GROUPS as group (group.id)}
 		<section class="flex flex-col gap-3">

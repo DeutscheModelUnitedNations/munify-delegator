@@ -190,18 +190,21 @@ bun run preview
   (or build) with one report listing every problem. `$env/*` is switched off. A variable that is
   required at runtime but not during `vite build` goes through `requiredAtRuntime` there. A test
   that needs one mocks the module (`vi.mock('$app/env/private', …)`): nothing fills them in
-  under vitest. `src/jobs/` runs outside SvelteKit and validates its own variables with zod in `src/jobs/config.ts`, the only jobs module that reads `process.env`.
+  under vitest. `src/jobs/` runs outside SvelteKit and validates its own variables with zod in `src/jobs/config.ts`; app code a job calls reads `$app/env/*` as usual, which the jobs bundle answers from `process.env` through the same schemas (`src/jobs/appEnv.ts`).
 
 - **`src/jobs/`** - One-shot jobs behind the `delegator-jobs` CLI (`cli.ts`, one file per job, after
   avv), built by `bun run build:jobs` into `jobsOut/` and shipped as its own image
-  (`Dockerfile.jobs`). Run by an external scheduler; `bun run jobs <command>` runs one locally.
-  Jobs-only code lives here, not in `src/api`, and `db.ts` is the jobs' own client so a job needs
-  only `DATABASE_URL` and does not read the app's configuration.
+  (`Dockerfile.jobs`). Run by an external scheduler; `bun run jobs <command>` builds the bundle
+  and runs one locally. Jobs-only code lives here, not in `src/api`; a job may call the app's
+  services directly (`send-emails` does), since `tsdown.jobs.config.ts` builds what Vite would
+  for them: Svelte components and runes modules, `?raw`, Paraglide, and `$app/env/*` read from
+  `process.env` (`appEnv.ts`). The bundle keeps only the variables a job reads, so each needs only
+  its own; `db.ts` is the jobs' own client for the jobs that need nothing but `DATABASE_URL`.
   - `refresh-statistics.ts` - Recomputes the statistics materialized views (every few minutes)
   - `mailSync/` + `apis/listmonk/` - Mail list synchronisation with Listmonk (`mail-sync`)
   - `invitationCleanup.ts` - Deletes team member invitations long after they expired
   - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
-  - `sendEmails.ts` - Calls the app's `/api/jobs/send-emails` until no automatic mail is left due
+  - `sendEmails.ts` - Sends the automatic mails that are due, through the app's `sendDueEmails`
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -250,8 +253,7 @@ bun run preview
   `teamConference` / `assertTeamPermission`, `hasPartIn`, the release masks,
   `participantIdsOf`), `utils.ts` is the plumbing: `grantWhere` (a filter as a `.when()` rule), `callerUserId`, and the
   row helpers that go through the caller's ability on the row and answer NOT_FOUND when it does not
-  reach - `assertAllowed` (check only), `updateIfAllowed` / `deleteIfAllowed` (one statement)
-  and `whereAllowed` (the `where` to write through yourself). A row is re-read after a write with
+  reach - `assertAllowed` (check only) and `updateIfAllowed` / `deleteIfAllowed` (one statement). A row is re-read after a write with
   `(await ctx.abilities.x.filter('read')).merge({ where: { id } }).query.single`. A check used once
   stays private in its permissions file; one about a single entity that others need (a calendar
   day's `calendarConference` and `assertCanManageCalendarDay`, a survey question's check,
@@ -261,7 +263,9 @@ bun run preview
 - **Arguments are checked by zod schemas on the arguments, never by hand in a resolver or service.**
   rumble installs `@pothos/plugin-validation`: one argument with `t.arg.int().validate(schema)`,
   several together with `validate: schema` on the field, and `args: t.validate({ … }, schema)`
-  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). Word each issue
+  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). The resolver gets
+  what a field's `validate` schema returns, so that schema is a `z.looseObject` (`.loose()` on a
+  shared form schema): a plain `z.object` drops every argument it does not name. Word each issue
   with a lazy `m.…()` (`{ error: () => m.x() }`): a failure becomes an `INVALID_INPUT` error with
   those messages (`validation.validationError` in `rumble.ts`). A JSON argument holding a whole
   document goes through `jsonDocument` (`#api/services/argSchemas`). Keep the schema in the
@@ -1007,14 +1011,17 @@ bun run preview
   again, logged as sent by hand with the time as `subjectKey`. Everything else, the team welcome
   included, is an automatic mail.
 - **Two triggers, one path:** the team's `sendOpenEmails` (`sendOpenEmailsInBackground`, one at a
-  time per conference, any kinds) and the `send-emails` job, which calls `/api/jobs/send-emails`
-  with `x-jobs-secret: JOBS_SECRET` every few minutes and sends the kinds switched to automatic,
-  reminders included; both go through `sendDueEmails`. The app renders the mails (one template, `NotificationEmail.svelte` on
+  time per conference, any kinds) and the `send-emails` job, which runs the sweep itself every few
+  minutes, for every conference with a kind switched to automatic, reminders included; both go through `sendDueEmails`. It keeps to the conference's
+  `emailsPerSecond` (the "sending speed" on the e-mail tab, `setConferenceEmailsPerSecond`, empty
+  for no limit): `emailPacing.ts` spaces the sends, reserving each slot in Redis (a Lua script on
+  Redis's clock, `email-pace:<conferenceId>`) so every sweep on every instance shares the pace,
+  in memory without Redis or while it is unreachable; a paced round is cut to a minute's worth. The app renders the mails (one template, `NotificationEmail.svelte` on
   `#api/handlers/email/templates/EmailLayout.svelte`, DMUN's corporate design from `brand.ts`, which
   reads its colours, radius and font from the corporate identity's CSS (`?raw`; vitest lets those
   files through with `test.css.include`); values per kind in
   `emailContent.ts`) in the recipient's locale; links use the origin of the request that
-  started the sending.
+  started the sending, or the job's `APP_URL`.
 
 #### 10. Background Tasks and Jobs
 
@@ -1029,9 +1036,10 @@ bun run preview
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
   - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
     `--dry-run`; needs the `S3_*` variables
-  - `send-emails` - every few minutes; asks the app to send what is due of the kinds switched to
-    automatic (it renders them). Needs `APP_URL` and `JOBS_SECRET` (the same as the app's);
-    `APP_URL` has to be the public address, since the mails link to the origin the job calls
+  - `send-emails` - every few minutes; sends what is due of the kinds switched to automatic.
+    Needs `DATABASE_URL`, the app's `SMTP_*`, `REDIS_URL` when the app has one (the shared
+    sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
+    the mails link to
 
 ### Logging
 

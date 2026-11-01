@@ -2,11 +2,12 @@
  * Fixtures for the scanner session specs (e2e/team/attendance-sessions.spec.ts).
  *
  * A separate conference, because the specs start, end and reopen sessions. Every run resets it to
- * one ended session, "Eröffnung", in which Ada (a single participant) was scanned.
+ * one ended session, "Eröffnung", in which Ada (a single participant with a seat) was scanned.
  */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../src/api/db/schema';
+import { makeSeedCustomConferenceRole } from '../../src/api/db/seed-data/conferenceRole';
 import { makeSeedSingleParticipant } from '../../src/api/db/seed-data/singleParticipant';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { upsertConference } from './conference';
@@ -22,6 +23,7 @@ export const E2E_ATTENDANCE_ENDED_SESSION = {
 	occasion: 'Eröffnung'
 } as const;
 const ADA_SINGLE_PARTICIPANT_ID = 'e2e00000attendancesingle01';
+const ADA_ROLE_ID = 'e2e00000attendancerole0001';
 
 export async function seedAttendance(db: NodePgDatabase) {
 	const { id: conferenceId } = await upsertConference(db, {
@@ -43,12 +45,24 @@ export async function seedAttendance(db: NodePgDatabase) {
 	]);
 	await upsertTeamMember(db, conferenceId, E2E_ATTENDANCE_CARE_ID, 'PARTICIPANT_CARE');
 
+	// A seat, so her user card has the access tab with her badge
+	const role = {
+		...makeSeedCustomConferenceRole({ conferenceId }),
+		id: ADA_ROLE_ID,
+		name: 'E2E Attendance Role'
+	};
+	await db
+		.insert(schema.conferenceRole)
+		.values(role)
+		.onConflictDoUpdate({ target: schema.conferenceRole.id, set: role });
+
 	const single = {
 		...makeSeedSingleParticipant({
 			conferenceParticipantId: await upsertParticipant(db, conferenceId, E2E_ATTENDANCE_ADA_ID),
 			applied: true
 		}),
-		id: ADA_SINGLE_PARTICIPANT_ID
+		id: ADA_SINGLE_PARTICIPANT_ID,
+		assignedRoleId: role.id
 	};
 	await db
 		.insert(schema.singleParticipant)

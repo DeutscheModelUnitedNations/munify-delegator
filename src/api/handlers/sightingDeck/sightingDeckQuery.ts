@@ -101,7 +101,7 @@ const deckOrder = sql`a.kind_rank, a.size desc, a.id`;
  * someone without one; every application when both are left out.
  */
 export const schoolFilterSchema = z
-	.object({ schoolId: z.string().nullish(), withoutSchool: z.boolean().nullish() })
+	.looseObject({ schoolId: z.string().nullish(), withoutSchool: z.boolean().nullish() })
 	.refine((args) => !(args.schoolId && args.withoutSchool), {
 		error: () => m.sightingSchoolFilterConflict()
 	});

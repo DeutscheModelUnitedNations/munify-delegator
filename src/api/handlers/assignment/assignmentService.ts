@@ -7,15 +7,9 @@ import { assignmentGroups, singleRoles, type AssignmentGroup } from '#lib/assign
 import { m } from '#lib/paraglide/messages';
 import { whereRows } from '#api/db/whereRows';
 import { announceDraftChange, clearDraft, loadAssignmentState } from './applyDraft';
-import {
-	assignmentReviewPubsub,
-	assignmentWeightsPubsub,
-	conferencePubsub,
-	delegationMemberPubsub,
-	delegationPubsub,
-	singleParticipantPubsub
-} from '#api/pubsub';
+import { assignmentReviewPubsub, assignmentWeightsPubsub } from '#api/pubsub';
 import { loadExperiencedIds } from './loadExperiencedIds';
+import { lockDelegation } from '#api/handlers/delegation/lockDelegation';
 import { matchSingles } from './matching';
 
 /** A flag is never null in the table: null leaves it as it is, like undefined. */
@@ -132,25 +126,6 @@ async function changeDraft(write: (tx: Transaction) => Promise<unknown>) {
 	announceDraftChange();
 }
 
-/**
- * Makes concurrent writes to one delegation's units wait for each other, so a plan cannot read
- * them while a split or another plan replaces them.
- */
-async function lockDelegationUnits({
-	tx,
-	delegationId
-}: {
-	tx: Transaction;
-	delegationId: string;
-}) {
-	await tx
-		.select({ id: schema.delegation.id })
-		.from(schema.delegation)
-		.where(whereRows({ table: schema.delegation, filter: { id: delegationId } }))
-		// Not `update`: that would also block inserts of rows referencing the delegation.
-		.for('no key update');
-}
-
 /** Deletes the delegation's units, with the roles planned for it or its parts. */
 async function deleteDelegationUnits({
 	tx,
@@ -182,7 +157,7 @@ async function writeDelegationPlan({
 	delegation: PlannedDelegation;
 	roleId: string | null;
 }) {
-	await lockDelegationUnits({ tx, delegationId: delegation.id });
+	await lockDelegation({ tx, delegationId: delegation.id });
 	const units = await tx.query.assignmentUnit.findMany({
 		where: { sourceDelegationId: delegation.id },
 		with: { members: { columns: { id: true }, limit: 1 } }
@@ -334,7 +309,7 @@ export function splitDelegation({
 	parts: string[][];
 }) {
 	return changeDraft(async (tx) => {
-		await lockDelegationUnits({ tx, delegationId: delegation.id });
+		await lockDelegation({ tx, delegationId: delegation.id });
 		await deleteDelegationUnits({ tx, delegationId: delegation.id });
 		for (const memberIds of parts) {
 			const [unit] = await tx

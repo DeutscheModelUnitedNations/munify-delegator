@@ -425,8 +425,11 @@ jobs:
           filters: |
             jobs:
               - 'src/jobs/**'
-              - 'src/api/db/schema/**'
-              - 'src/api/db/relations.ts'
+              # send-emails bundles the email handler and everything it imports
+              - 'src/api/**'
+              - 'src/lib/**'
+              - 'src/env.ts'
+              - 'messages/**'
               - 'tsdown.jobs.config.ts'
               - 'Dockerfile.jobs'
               - 'package.json'

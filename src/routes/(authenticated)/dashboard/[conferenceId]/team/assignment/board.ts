@@ -66,17 +66,15 @@ const reviewFields = {
 } as const;
 
 /** The delegations matching `where`, live. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- only its result type is used
 function fetchBoardDelegations(where: DelegationWhereInputArgument) {
 	return client.liveQuery.delegations({ __args: { where }, ...delegationCard });
 }
 
 /** The single participants matching `where`, live. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- only its result type is used
 function fetchBoardSingleParticipants(where: SingleparticipantWhereInputArgument) {
 	return client.liveQuery.singleParticipants({ __args: { where }, ...singleCard });
-}
-
-function fetchReviews(where: AssignmentreviewWhereInputArgument) {
-	return client.liveQuery.assignmentReviews({ __args: { where }, ...reviewFields });
 }
 
 /** A card's fields with the application's review, for rows read along with something else. */
@@ -112,11 +110,6 @@ export async function fetchAssignmentDraft(conferenceId: string) {
 }
 
 type AssignmentDraft = Awaited<ReturnType<typeof fetchAssignmentDraft>>;
-
-interface ApplicationIds {
-	delegationIds: readonly string[];
-	singleParticipantIds: readonly string[];
-}
 
 /**
  * The applied delegations and single participants that hold a role, live, with their reviews.
@@ -214,17 +207,6 @@ export function seatedSnapshot() {
 			})
 		};
 	};
-}
-
-/** The reviews of the given applications, live. */
-function fetchReviewsOf({ conferenceId, ids }: { conferenceId: string; ids: ApplicationIds }) {
-	return fetchReviews({
-		...inConference(conferenceId),
-		OR: [
-			{ delegationId: { in: [...ids.delegationIds] } },
-			{ singleParticipantId: { in: [...ids.singleParticipantIds] } }
-		]
-	});
 }
 
 /**
@@ -587,7 +569,6 @@ export type BoardDelegation = Awaited<ReturnType<typeof fetchBoardDelegations>>[
 export type BoardSingleParticipant = Awaited<
 	ReturnType<typeof fetchBoardSingleParticipants>
 >[number];
-type BoardReview = Awaited<ReturnType<typeof fetchReviews>>[number];
 
 /** The nations, non-state actors and custom roles of a conference, with their seats. */
 export async function fetchAssignmentRoles(conferenceId: string) {

@@ -378,12 +378,11 @@ Columns hidden from some readers below: `bankAccountHolder`, `iban`, `bic`, `ban
 
 ## Emails (`conferenceEmailSetting`, `conferenceEmailText`, `conferenceEmailFooter`, `emailLog`)
 
-| Who                                         | Can                                                                                                                                                                                                              | Notes | ✓   |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- |
-| Team member (any role)                      | Read which kinds are on, the texts and footers                                                                                                                                                                   |       | [ ] |
-| Project management, participant care        | Switch kinds (with "skip existing"), write texts and footers, `emailPreview` (rendered to the caller's own data), `openEmailCount`, `emailStats`, read the log (recipient user and the address the mail went to) |       | [ ] |
-| Project management, participant care        | `notifyBadgeFound(id)`: mail a participant of the conference that their lost badge was handed in (checked through the participant row's `update` ability)                                                        |       | [ ] |
-| The `send-emails` job, with `x-jobs-secret` | `POST /api/jobs/send-emails`                                                                                                                                                                                     |       | [ ] |
+| Who                                  | Can                                                                                                                                                                                                              | Notes | ✓   |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- |
+| Team member (any role)               | Read which kinds are on, the texts and footers                                                                                                                                                                   |       | [ ] |
+| Project management, participant care | Switch kinds (with "skip existing"), write texts and footers, `emailPreview` (rendered to the caller's own data), `openEmailCount`, `emailStats`, read the log (recipient user and the address the mail went to) |       | [ ] |
+| Project management, participant care | `notifyBadgeFound(id)`: mail a participant of the conference that their lost badge was handed in (checked through the participant row's `update` ability)                                                        |       | [ ] |
 
 ## Files (`storedFile`)
 

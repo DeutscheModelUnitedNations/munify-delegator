@@ -23,6 +23,7 @@
 	{#if school}
 		<span class="text-sm">
 			{#if href}
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved by the caller -->
 				<a class="link link-hover" {href}>{school.name}</a>
 			{:else}
 				{school.name}

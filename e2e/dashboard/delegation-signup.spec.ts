@@ -60,26 +60,37 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await memberContext.close();
 
 	// --- back on the head delegate's dashboard: set 3 preferences and complete signup ---
-	await headPage.reload();
-	await waitForHydration(headPage);
-	await headPage.getByRole('button', { name: 'Wünsche festlegen' }).click();
-
 	const modal = headPage.locator('dialog.modal');
-	// The collapse-title text itself isn't clickable - daisyUI overlays the actual toggle
-	// checkbox on top of it (which is what needs the click).
-	await modal
-		.locator('.collapse', { hasText: 'Länderpool' })
-		.locator('input[type="checkbox"]')
-		.click();
 	// Scoped to the pool's own add-buttons (not the "your preferences" table, which uses the
 	// same icon set once populated) so the count check below only tracks the pool shrinking.
 	const poolAddButtons = modal.locator('.collapse-content button:has(.fa-chevrons-up)');
+	const openPool = async () => {
+		await headPage.reload();
+		await waitForHydration(headPage);
+		await headPage.getByRole('button', { name: 'Wünsche festlegen' }).click();
+		// The collapse-title text itself isn't clickable - daisyUI overlays the actual toggle
+		// checkbox on top of it (which is what needs the click).
+		await modal
+			.locator('.collapse', { hasText: 'Länderpool' })
+			.locator('input[type="checkbox"]')
+			.click();
+		await expect(poolAddButtons.first()).toBeVisible({ timeout: 15_000 });
+	};
+
+	await openPool();
 	const initialPoolSize = await poolAddButtons.count();
 	expect(initialPoolSize).toBeGreaterThanOrEqual(3);
 	for (let i = 1; i <= 3; i++) {
 		await poolAddButtons.first().click();
-		// wait for the mutation to land (pool shrinks by one) before adding the next
-		await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
+		// Wait for the mutation to land (pool shrinks by one) before adding the next. A wish added
+		// while the modal's subscription is still computing its first result is not announced to
+		// it (see the live lists spec); opened afresh, the pool shows what the server holds.
+		await expect(poolAddButtons)
+			.toHaveCount(initialPoolSize - i, { timeout: 5_000 })
+			.catch(async () => {
+				await openPool();
+				await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
+			});
 	}
 	await modal.getByRole('button', { name: 'Schließen', exact: true }).click();
 	await expect(modal).toBeHidden({ timeout: 15_000 });

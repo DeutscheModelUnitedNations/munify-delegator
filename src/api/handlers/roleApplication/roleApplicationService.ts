@@ -1,8 +1,9 @@
-import { db, schema } from '#api/db/db';
+import { db, schema, type Transaction } from '#api/db/db';
 import { roleApplicationPubsub } from '#api/pubsub';
 import { assertFirstEntryExists } from '@m1212e/rumble';
 import { count } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
+import { lockDelegation } from '#api/handlers/delegation/lockDelegation';
 import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 import { assertRoleSeatsDelegation } from './tidyRoleApplications';
 import { apiError, isUniqueViolationOn } from '#api/services/errors';
@@ -33,6 +34,7 @@ export async function appendRoleApplication({
 }) {
 	const created = await refusingRepeatedWish(
 		db.transaction(async (tx) => {
+			await lockDelegation({ tx, delegationId });
 			await assertRoleSeatsDelegation({ tx, delegationId, roleId });
 			// Close any gap first, so "one past the count" cannot collide with an existing rank.
 			await normalizeRoleApplicationRanks({ delegationId, tx });
@@ -58,6 +60,7 @@ export async function appendRoleApplication({
  */
 export async function removeRoleApplication(application: { id: string; delegationId: string }) {
 	await db.transaction(async (tx) => {
+		await lockDelegation({ tx, delegationId: application.delegationId });
 		await tx
 			.delete(schema.roleApplication)
 			.where(whereRows({ table: schema.roleApplication, filter: { id: application.id } }));

@@ -7,7 +7,6 @@
 	import MyConferencesSection from '#lib/components/dashboard/MyConferencesSection.svelte';
 	import ConferenceStateGroup from './ConferenceStateGroup.svelte';
 	import NoConferenceIndicator from '#lib/components/NoConferenceIndicator.svelte';
-	import ConferenceSelectorCard from '#lib/components/dashboard/ConferenceSelectorCard.svelte';
 	import { fetchMyConferenceIds, fetchSelectableConferences } from './conferenceSelector';
 	import { groupConferencesByState } from './conferenceGroups';
 

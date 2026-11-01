@@ -8,6 +8,7 @@ import {
 	emailStats,
 	emailLineSchema,
 	emailParagraphsSchema,
+	emailsPerSecondSchema,
 	localeSchema,
 	notifyBadgeFound,
 	openEmailCounts,
@@ -18,6 +19,7 @@ import {
 	sendOwedEmail,
 	setEmailFooter,
 	setEmailText,
+	setEmailsPerSecond,
 	skipEmails,
 	switchableKindSchema,
 	switchEmailKind
@@ -263,6 +265,24 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
 			await setEmailFooter(args);
+			return true;
+		}
+	}),
+
+	setConferenceEmailsPerSecond: t.field({
+		description:
+			'Sets how many mails per second the sweeps of a conference (the team\'s "send now" and the `send-emails` job) send at most; `null` lifts the limit. A whole number from 1 to 1000, else INVALID_INPUT.',
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			emailsPerSecond: t.arg.int().validate(emailsPerSecondSchema.optional())
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });
+			await setEmailsPerSecond({
+				conferenceId: args.conferenceId,
+				emailsPerSecond: args.emailsPerSecond ?? null
+			});
 			return true;
 		}
 	}),

@@ -29,24 +29,24 @@
 
 	// Whom a track can be for: the committees, and the roles that are not a nation (a nation's
 	// delegates sit in committees, which name them already).
-	const [committees, roles] = await Promise.all([
+	// A role's kind filters by one value, so each kind is asked for on its own.
+	const rolesOfKind = (kind: 'NON_STATE_ACTOR' | 'CUSTOM') =>
+		client.query.conferenceRoles({
+			__args: { where: { conferenceId: { eq: untrack(() => conferenceId) }, kind } },
+			id: true,
+			name: true
+		});
+	const [committees, nonStateActors, customRoles] = await Promise.all([
 		client.query.committees({
 			__args: { where: { conferenceId: { eq: untrack(() => conferenceId) } } },
 			id: true,
 			name: true,
 			abbreviation: true
 		}),
-		client.query.conferenceRoles({
-			__args: {
-				where: {
-					conferenceId: { eq: untrack(() => conferenceId) },
-					kind: { in: ['NON_STATE_ACTOR', 'CUSTOM'] }
-				}
-			},
-			id: true,
-			name: true
-		})
+		rolesOfKind('NON_STATE_ACTOR'),
+		rolesOfKind('CUSTOM')
 	]);
+	const roles = [...nonStateActors, ...customRoles];
 
 	async function writeTrack() {
 		const seats = { committeeIds: [...committeeIds], conferenceRoleIds: [...roleIds] };

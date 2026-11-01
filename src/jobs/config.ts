@@ -47,11 +47,13 @@ const mailSyncSchema = z.object({
 });
 
 const sendEmailsSchema = z.object({
-	APP_URL: z.url(),
-	JOBS_SECRET: z.string().min(16, 'must be at least 16 characters')
+	APP_URL: z.url()
 });
 
-/** Where the app runs, and the secret its `/api/jobs/send-emails` endpoint expects. */
+/**
+ * The app's public address, which the mails link to. The rest of what sending needs (the database,
+ * SMTP, Redis) are the app's own variables, read through `$app/env/private` (`appEnv.ts`).
+ */
 export function sendEmailsConfig() {
 	return parseEnv({ schema: sendEmailsSchema, group: 'sending the automatic emails' });
 }

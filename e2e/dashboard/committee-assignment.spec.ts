@@ -1,16 +1,12 @@
 import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
-import {
-	E2E_COMMITTEE_ASSIGN_HEAD_USER_ID,
-	E2E_COMMITTEE_ID,
-	E2E_CONFERENCE_ID
-} from '../seed/seed';
+import { E2E_COMMITTEE_UI_HEAD_USER_ID, E2E_COMMITTEE_ID, E2E_CONFERENCE_ID } from '../seed/seed';
 
 // Covers the head delegate assigning delegation members to committees post-assignment - a
 // self-service step that happens after the admin has assigned the delegation a nation, with no
 // admin in the loop for this specific action.
 test('a head delegate can assign a delegation member to a committee', async ({ page }) => {
-	await loginAs(page, fixedTestUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID), {
+	await loginAs(page, fixedTestUser(E2E_COMMITTEE_UI_HEAD_USER_ID), {
 		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/committee-assignment`
 	});
 
@@ -32,7 +28,7 @@ test('a head delegate can assign a delegation member to a committee', async ({ p
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { delegationMembers(where: { conference: { id: { eq: "${E2E_CONFERENCE_ID}" } }, user: { id: { eq: "${E2E_COMMITTEE_ASSIGN_HEAD_USER_ID}" } } }) { assignedCommittee { id } } }`
+			query: `query { delegationMembers(where: { conference: { id: { eq: "${E2E_CONFERENCE_ID}" } }, user: { id: { eq: "${E2E_COMMITTEE_UI_HEAD_USER_ID}" } } }) { assignedCommittee { id } } }`
 		}
 	});
 	const data = (await res.json())?.data?.delegationMembers?.[0];

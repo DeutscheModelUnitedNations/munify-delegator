@@ -22,6 +22,10 @@ import '#api/handlers/register';
 export const yoga = createYoga({
 	graphqlEndpoint: '/api/graphql',
 	maskedErrors: !dev,
+	// GraphQL Armor guards production only (development serves the API docs instead). Its default
+	// depth of 6 refused the paper hub's papers by committee, which name each paper's nation seven
+	// levels down.
+	armorConfig: { maxDepth: { n: 7 } },
 	plugins: [
 		useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT }),
 		// Answers a write the database's triggers refused as the input error it is, before masking

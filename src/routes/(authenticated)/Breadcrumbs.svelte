@@ -68,13 +68,14 @@ import path via the parameter! The home link is the wordmark in the header, so t
 				</span>
 			{/snippet}
 			{#if hasPage(pathSegment)}
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
 				<a
 					class="btn btn-ghost btn-sm max-sm:px-1.5 max-w-48 !no-underline"
 					href={pathSegment.href}
 				>
 					{@render label()}
 				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{:else}
 				<span class="btn btn-ghost btn-sm max-sm:px-1.5 pointer-events-none max-w-48 !no-underline">
 					{@render label()}

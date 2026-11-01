@@ -3,12 +3,11 @@ import {
 	deckPosition,
 	upcomingEntries,
 	withReview,
-	type DeckPosition,
-	type DeckWindowData
+	type DeckPosition
 } from './deckPosition';
 import type { SightingReview } from './sighting';
 import { toastError } from '../toastError';
-import { fetchSightingDeck, type DeckFilter, type LoadedSightingDeck } from './applications';
+import { fetchSightingDeck, type LoadedSightingDeck } from './applications';
 
 /**
  * The deck of one filter as the page holds it: a window of the backend's deck and the card on top.
@@ -108,5 +107,3 @@ export function createSightingDeckWindow(loaded: LoadedSightingDeck) {
 		}
 	};
 }
-
-type SightingDeckWindow = ReturnType<typeof createSightingDeckWindow>;

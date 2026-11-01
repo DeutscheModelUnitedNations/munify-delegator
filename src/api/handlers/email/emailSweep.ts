@@ -17,7 +17,9 @@ import {
 	renderAutomaticEmail,
 	type ConferenceWording
 } from './emailDelivery';
-import { enabledKinds } from './emailSettings';
+import { emailsPerSecondOf, enabledKinds } from './emailSettings';
+import { roundLimit } from './emailPacing';
+import { emailPacer } from './emailPacer';
 import { logger } from '#lib/logger';
 
 /**
@@ -187,10 +189,12 @@ async function send({
 async function sendEach({
 	conferenceId,
 	batch,
+	perSecond,
 	send
 }: {
 	conferenceId: string;
 	batch: DueEmail[];
+	perSecond: number | null;
 	send: (email: DueEmail, logId: string) => Promise<boolean>;
 }) {
 	let sent = 0;
@@ -200,6 +204,7 @@ async function sendEach({
 		const logId = await claim({ conferenceId, email });
 		if (!logId) continue;
 		logIds.push(logId);
+		await emailPacer.wait({ key: conferenceId, perSecond });
 		if (await send(email, logId)) sent++;
 		else failed++;
 	}
@@ -208,7 +213,8 @@ async function sendEach({
 
 /**
  * Sends up to `limit` of the mails the conference owes, of `kinds` (by hand), else of the kinds
- * switched to automatic. Answers how many went out, failed, and are left for the next round.
+ * switched to automatic, no faster than the conference's `emailsPerSecond` (and then no more than
+ * a minute's worth). Answers how many went out, failed, and are left for the next round.
  */
 export async function sendDueEmails({
 	conferenceId,
@@ -228,11 +234,13 @@ export async function sendDueEmails({
 	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
 
 	const open = await openEmails({ snapshot, kinds, now });
-	const batch = open.slice(0, limit);
+	const perSecond = await emailsPerSecondOf(conferenceId);
+	const batch = open.slice(0, roundLimit({ limit, perSecond }));
 	const wording = await loadWording(conferenceId);
 	const { logIds, ...counts } = await sendEach({
 		conferenceId,
 		batch,
+		perSecond,
 		send: (email, logId) => send({ email, snapshot, origin, wording, logId })
 	});
 	// a claim either inserts the row or retries an existing one

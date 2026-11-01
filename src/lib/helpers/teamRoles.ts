@@ -57,17 +57,14 @@ export const PROJECT_MANAGEMENT_ROLES = [
  * (`rolesWithTeamPermission`). The API turns one into a filter on the conference
  * (`isTeamPermittedIn` / `teamConference` in `authHelper/rules.ts`) that the query doing the work carries.
  */
-const TEAM_PERMISSIONS = [
-	'useTeamTools',
-	'manageParticipants',
-	'reviewPapers',
-	'manageTeam',
-	'planSeats',
-	'editConferenceContent',
-	'manageConference'
-] as const;
-
-export type TeamPermission = (typeof TEAM_PERMISSIONS)[number];
+export type TeamPermission =
+	| 'useTeamTools'
+	| 'manageParticipants'
+	| 'reviewPapers'
+	| 'manageTeam'
+	| 'planSeats'
+	| 'editConferenceContent'
+	| 'manageConference';
 
 /** The roles each team permission is granted to (`rolesWithTeamPermission`); undefined for any. */
 const TEAM_PERMISSION_ROLES: Record<TeamPermission, readonly TeamroleEnum[] | undefined> = {

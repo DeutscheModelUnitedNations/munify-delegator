@@ -91,6 +91,7 @@
 				<span class="flex min-w-0 flex-1 flex-col">
 					<span class="font-medium {look.task}">
 						{#if step.href}
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- an anchor on this page -->
 							<a class="link link-hover" href={step.href}>{step.task}</a>
 						{:else}
 							{step.task}

@@ -47,16 +47,11 @@
 			.sort((a, b) => b.similarity - a.similarity || b.variants.length - a.variants.length)
 	);
 
-	let analyzing = $state(false);
-
 	async function analyze() {
-		analyzing = true;
 		try {
 			await client.mutate.analyzeSchoolSuggestions({ __args: { conferenceId } });
 		} catch (error) {
 			toast.error(String(error));
-		} finally {
-			analyzing = false;
 		}
 	}
 

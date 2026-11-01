@@ -24,6 +24,7 @@
 {#snippet entry(icon: string, value: string, href: string, label: string)}
 	<!-- The copy button shows on hover or focus, so the line reads as plain contact details -->
 	<span class="group flex min-w-0 items-center gap-0.5">
+		<!-- eslint-disable svelte/no-navigation-without-resolve -- a mailto: or tel: link -->
 		<a
 			{href}
 			class="link link-hover flex min-w-0 items-center gap-1.5 break-all"
@@ -32,6 +33,7 @@
 			<i class="fa-sharp-duotone fa-solid {icon} text-xs"></i>
 			{value}
 		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		<!-- A touch screen has no hover, so there it shows faintly all the time -->
 		<button
 			class="btn btn-ghost btn-xs btn-square opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-60"

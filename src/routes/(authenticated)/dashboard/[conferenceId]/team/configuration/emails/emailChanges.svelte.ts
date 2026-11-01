@@ -13,17 +13,33 @@ export interface EmailChange {
 	openCount: number;
 }
 
+/** The sending pace changed on the page, not saved yet; `null` lifts the limit. */
+export interface EmailsPerSecondChange {
+	before: number | null;
+	after: number | null;
+}
+
 /**
- * The switches of the e-mail page, held until its save button. `revision` counts the saves, for
- * whatever is worked out from the log.
+ * The switches and the sending pace of the e-mail page, held until its save button. `revision`
+ * counts the saves, for whatever is worked out from the log.
  */
 export function createEmailChanges() {
 	const staged = new SvelteMap<EmailkindEnum, EmailChange>();
+	let pace = $state<EmailsPerSecondChange>();
 	let revision = $state(0);
 
 	return {
 		get list() {
 			return [...staged.values()];
+		},
+		get pace() {
+			return pace;
+		},
+		/** What the pace field shows: the staged value, else what is stored. */
+		paceOf: (stored: number | null) => (pace ? pace.after : stored),
+		/** Going back to what is stored drops the change. */
+		stagePace(change: EmailsPerSecondChange) {
+			pace = change.after === change.before ? undefined : change;
 		},
 		get revision() {
 			return revision;
@@ -38,6 +54,7 @@ export function createEmailChanges() {
 		},
 		saved() {
 			staged.clear();
+			pace = undefined;
 			revision++;
 		}
 	};
@@ -45,8 +62,34 @@ export function createEmailChanges() {
 
 export type EmailChanges = ReturnType<typeof createEmailChanges>;
 
-/** The staged switches as entries of the save preview. */
-export function emailConfigChanges(changes: readonly EmailChange[]): ConfigChange[] {
+const paceLabel = (value: number | null) =>
+	value === null ? m.emailsPerSecondUnlimited() : m.emailsPerSecondValue({ count: value });
+
+/** The staged pace and switches as entries of the save preview. */
+export function emailConfigChanges({
+	switches,
+	pace
+}: {
+	switches: readonly EmailChange[];
+	pace: EmailsPerSecondChange | undefined;
+}): ConfigChange[] {
+	const paceChange: ConfigChange[] = pace
+		? [
+				{
+					key: 'email:pace',
+					group: 'emails',
+					label: m.emailsPerSecondTitle(),
+					before: paceLabel(pace.before),
+					after: paceLabel(pace.after),
+					isFile: false,
+					highImpact: false
+				}
+			]
+		: [];
+	return [...paceChange, ...switchChanges(switches)];
+}
+
+function switchChanges(changes: readonly EmailChange[]): ConfigChange[] {
 	return changes.map((change) => {
 		const sendsNow = change.enabled && change.notifyExisting && change.openCount > 0;
 		return {

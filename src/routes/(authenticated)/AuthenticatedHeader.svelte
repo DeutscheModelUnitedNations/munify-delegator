@@ -9,7 +9,6 @@
 	import Kbd from '#lib/components/Kbd.svelte';
 	import { getAvailableHandoff } from '#lib/components/commandPalette/searchHistory.svelte.js';
 	import { headerState } from '#lib/state/authenticatedHeaderStatus.svelte.js';
-	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import Breadcrumbs from './Breadcrumbs.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';

@@ -6,7 +6,6 @@ import {
 	integer,
 	doublePrecision,
 	boolean,
-	uniqueIndex,
 	jsonb,
 	type UpdateDeleteAction
 } from 'drizzle-orm/pg-core';
@@ -96,5 +95,7 @@ export const conference = snakeCase.table('conference', {
 	 * How many seats one school may be given; the assignment warns beyond it. Empty means no
 	 * limit.
 	 */
-	maxSeatsPerSchool: integer().default(16)
+	maxSeatsPerSchool: integer().default(16),
+	/** How many mails a sweep sends per second at most. Empty means as fast as it can. */
+	emailsPerSecond: integer()
 });

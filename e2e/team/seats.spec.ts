@@ -233,9 +233,13 @@ test('the user card shows an error instead of empty fields and recovers on retry
 }) => {
 	await loginAs(page, fixedTestUser(E2E_SEATS_PARTICIPANT_CARE_ID), { startUrl: SEATS });
 
-	// the card's queries, which name the person, cannot reach the server
-	const failCardQuery = (route: Parameters<Parameters<Page['route']>[1]>[0]) =>
-		route.request().postData()?.includes(carla.id) ? route.abort() : route.fallback();
+	// the card's queries, which name the person, cannot reach the server; queries go out as GET,
+	// with the variables in the URL
+	const failCardQuery = (route: Parameters<Parameters<Page['route']>[1]>[0]) => {
+		const request = route.request();
+		const names = `${decodeURIComponent(request.url())} ${request.postData() ?? ''}`;
+		return names.includes(carla.id) ? route.abort() : route.fallback();
+	};
 	await page.route('**/api/graphql**', failCardQuery);
 
 	await page.goto(`${SEATS}?userCard=${carla.id}`);

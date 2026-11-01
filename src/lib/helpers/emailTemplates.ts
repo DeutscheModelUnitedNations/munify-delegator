@@ -15,23 +15,21 @@ export interface EmailText {
 	body: string;
 }
 
-const EMAIL_PLACEHOLDERS = [
-	'name',
-	'conference',
-	'seat',
-	'date',
-	'student',
-	'item',
-	'list',
-	'delegationHint',
-	'paper',
-	'reviewer',
-	'status',
-	'role',
-	'inviter',
-	'survey'
-] as const;
-export type EmailPlaceholder = (typeof EMAIL_PLACEHOLDERS)[number];
+export type EmailPlaceholder =
+	| 'name'
+	| 'conference'
+	| 'seat'
+	| 'date'
+	| 'student'
+	| 'item'
+	| 'list'
+	| 'delegationHint'
+	| 'paper'
+	| 'reviewer'
+	| 'status'
+	| 'role'
+	| 'inviter'
+	| 'survey';
 
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */

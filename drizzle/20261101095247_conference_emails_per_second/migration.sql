@@ -1,0 +1,1 @@
+ALTER TABLE "conference" ADD COLUMN "emails_per_second" integer;

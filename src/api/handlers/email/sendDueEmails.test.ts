@@ -8,7 +8,12 @@ vi.mock('#api/db/db', () => ({
 const loadEmailSnapshot = vi.fn(async () => undefined);
 vi.mock('./emailSnapshot', () => ({ loadEmailSnapshot }));
 vi.mock('./mailTransport', () => ({ mailTransport: {} }));
-vi.mock('#api/pubsub', () => ({ emailLogPubsub: {}, conferenceEmailSettingPubsub: {} }));
+vi.mock('./emailPacer', () => ({ emailPacer: { wait: async () => {} } }));
+vi.mock('#api/pubsub', () => ({
+	emailLogPubsub: {},
+	conferenceEmailSettingPubsub: {},
+	conferencePubsub: {}
+}));
 vi.mock('./templates/index', () => ({
 	renderEmail: () => undefined,
 	NotificationEmail: undefined
