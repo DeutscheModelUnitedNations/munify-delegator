@@ -46,16 +46,19 @@ test('the sighting turns through the applications one card at a time', async ({ 
 });
 
 // Ratings, exclusions and notes live in the database, not in the browser: they come back after a
-// reload and colour the card in the strip of the deck.
+// reload and colour the card in the strip of the deck. A delegation of its own, since applying a
+// draft in the assignment spec creates and deletes delegations at the front of the deck.
 test('the sighting keeps ratings, exclusions and notes on the server', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/team/assignment/sighting?application=${E2E_COMMITTEE_ASSIGN_DELEGATION_ID}`
 	});
-	const strip = page.getByRole('list', { name: /überblick|glance/i }).getByRole('button');
-	await expect(strip.first()).toHaveClass(/bg-base-300/);
+	const card = page
+		.getByRole('list', { name: /überblick|glance/i })
+		.locator('button[aria-current="true"]');
+	await expect(card).toHaveClass(/bg-base-300/);
 
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
-	await expect(strip.first()).toHaveClass(/bg-error/);
+	await expect(card).toHaveClass(/bg-error/);
 
 	const note = page.getByRole('textbox', { name: /notiz|note/i });
 	await note.fill('e2e note');
@@ -64,12 +67,12 @@ test('the sighting keeps ratings, exclusions and notes on the server', async ({ 
 
 	await page.reload();
 	await waitForHydration(page);
-	await expect(strip.first()).toHaveClass(/bg-error/);
+	await expect(card).toHaveClass(/bg-error/);
 	await expect(page.getByRole('textbox', { name: /notiz|note/i })).toHaveValue('e2e note');
 
 	// Undo, so the shared seed stays as it was.
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
-	await expect(strip.first()).toHaveClass(/bg-base-300/);
+	await expect(card).toHaveClass(/bg-base-300/);
 	await page.getByRole('textbox', { name: /notiz|note/i }).fill('');
 	await page.getByRole('textbox', { name: /notiz|note/i }).blur();
 });

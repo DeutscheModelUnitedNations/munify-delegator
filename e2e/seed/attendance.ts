@@ -41,7 +41,14 @@ export async function seedAttendance(db: NodePgDatabase) {
 			givenName: 'E2E',
 			familyName: 'AttendanceCare'
 		},
-		{ ...makeSeedUser(), id: E2E_ATTENDANCE_ADA_ID, givenName: 'Ada', familyName: 'Lovelace' }
+		// An adult: the spec expects her payment and terms open, never a guardian's consent
+		{
+			...makeSeedUser(),
+			id: E2E_ATTENDANCE_ADA_ID,
+			givenName: 'Ada',
+			familyName: 'Lovelace',
+			birthday: new Date('1990-12-10')
+		}
 	]);
 	await upsertTeamMember(db, conferenceId, E2E_ATTENDANCE_CARE_ID, 'PARTICIPANT_CARE');
 

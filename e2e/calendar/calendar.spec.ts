@@ -1,5 +1,5 @@
 import { test, expect } from '../support/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_MGMT_ADMIN_ID } from '../seed/seed';
 
 test('an admin can build a calendar day with a place and an entry, and drag it around', async ({
@@ -15,10 +15,14 @@ test('an admin can build a calendar day with a place and an entry, and drag it a
 	const trackName = `E2E Track ${Date.now()}`;
 
 	// --- Days & tracks tab: create a day ---
+	await waitForHydration(page);
 	await page.getByRole('tab', { name: 'Tage & Tracks', exact: true }).click();
-	await page.getByRole('button', { name: 'Tag hinzufügen' }).first().click();
-
 	const dayModal = page.locator('.modal.modal-open');
+	// a click landing before the tab's handlers are attached opens nothing
+	await expect(async () => {
+		await page.getByRole('button', { name: 'Tag hinzufügen' }).first().click();
+		await expect(dayModal).toBeVisible({ timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
 	await dayModal.locator('input[type="text"]').fill(dayName);
 	await dayModal.locator('input[type="date"]').fill('2026-09-15');
 	await dayModal.getByRole('button', { name: 'Erstellen' }).click();

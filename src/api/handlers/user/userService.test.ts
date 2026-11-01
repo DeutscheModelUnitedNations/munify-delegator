@@ -6,7 +6,8 @@ vi.mock('#api/handlers/possibleDuplicate/possibleDuplicateService', () => ({
 	scanUserForDuplicatesInBackground: () => {}
 }));
 
-const { profileArgsSchema } = await import('./userService');
+const { countConferenceParticipations, profileArgsSchema } = await import('./userService');
+const { db } = await import('#api/db/db');
 
 describe('profileArgsSchema', () => {
 	it('writes only the fields given, and null keeps what a profile always has', () => {
@@ -64,5 +65,34 @@ describe('profileArgsSchema', () => {
 		).toBe(false);
 		expect(profileArgsSchema.safeParse({ id: 'u', emergencyContacts: '1' }).success).toBe(false);
 		expect(profileArgsSchema.safeParse({ id: 'u', givenName: '' }).success).toBe(false);
+	});
+});
+
+describe('countConferenceParticipations', () => {
+	/** Answers the count queries with `results`, in the order they are asked. */
+	function fakeCounts(results: { value: number }[][]) {
+		const answers = [...results];
+		Object.assign(db, {
+			select: () => {
+				const chain = {
+					from: () => chain,
+					innerJoin: () => chain,
+					where: async () => answers.shift()
+				};
+				return chain;
+			}
+		});
+	}
+
+	it('adds the seated delegation memberships and single participations', async () => {
+		fakeCounts([[{ value: 2 }], [{ value: 1 }]]);
+		expect(await countConferenceParticipations('u')).toBe(3);
+	});
+
+	it('counts a query without a row as none', async () => {
+		fakeCounts([[], [{ value: 4 }]]);
+		expect(await countConferenceParticipations('u')).toBe(4);
+		fakeCounts([[{ value: 1 }], []]);
+		expect(await countConferenceParticipations('u')).toBe(1);
 	});
 });

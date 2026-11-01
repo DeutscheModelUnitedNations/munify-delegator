@@ -38,7 +38,13 @@ vi.mock('#api/pubsub', () => {
 	return new Proxy({}, { get: () => pubsub, has: () => true });
 });
 import { m } from '#lib/paraglide/messages';
-import { planDelegationRole, reviewArgsSchema, splitDelegation } from './assignmentService';
+import {
+	planDelegationRole,
+	reviewArgsSchema,
+	splitDelegation,
+	writeGroupPlan
+} from './assignmentService';
+import type { AssignmentGroup } from '#lib/assignment/state';
 
 describe("writes to a delegation's units", () => {
 	beforeEach(() => {
@@ -60,6 +66,62 @@ describe("writes to a delegation's units", () => {
 		});
 		expect(steps[0]).toBe('lock no key update');
 		expect(steps[1]).toBe('delete units');
+	});
+});
+
+describe('writeGroupPlan', () => {
+	const group: AssignmentGroup = {
+		key: 'd',
+		unitId: null,
+		delegationId: 'd',
+		singleParticipantId: null,
+		memberIds: ['a', 'b'],
+		size: 2,
+		whole: true,
+		part: false,
+		target: { roleId: 'r' },
+		liveTarget: { roleId: 'live' },
+		pending: true
+	};
+	/** What planning `roleId` for the group asks of the transaction. */
+	async function stepsFor(changes: Partial<AssignmentGroup>, roleId: string | null) {
+		steps.length = 0;
+		// TYPE-SAFETY-EXCEPTION: the fake transaction above, with only the calls the writers make
+		await writeGroupPlan({
+			tx: tx as never,
+			conferenceId: 'c',
+			group: { ...group, ...changes },
+			roleId
+		});
+		return [...steps];
+	}
+
+	it('plans a part of a split or a converted single participant through its unit', async () => {
+		expect(await stepsFor({ unitId: 'u', part: true, whole: false }, 'r')).toEqual(['update']);
+		expect(
+			await stepsFor({ unitId: 'u', delegationId: null, singleParticipantId: 's' }, null)
+		).toEqual(['update']);
+	});
+
+	it('plans a whole delegation for the delegation, even when it has a unit', async () => {
+		expect(await stepsFor({}, 'r')).toEqual(['lock no key update', 'read units', 'insert']);
+		expect(await stepsFor({ unitId: 'u' }, 'r')).toEqual([
+			'lock no key update',
+			'read units',
+			'insert'
+		]);
+	});
+
+	it('drops the plan of a delegation given back the role it holds', async () => {
+		expect(await stepsFor({}, 'live')).toEqual([
+			'lock no key update',
+			'read units',
+			'delete units'
+		]);
+	});
+
+	it('writes nothing for a group without a unit or a delegation', async () => {
+		expect(await stepsFor({ delegationId: null, singleParticipantId: 's' }, 'r')).toEqual([]);
 	});
 });
 

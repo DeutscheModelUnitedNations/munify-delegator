@@ -237,7 +237,7 @@ async function writeSingleParticipantPlan({
  * Plans a role for a group of the board: through its own unit for a part of a split delegation or
  * a converted single participant, otherwise for the whole delegation.
  */
-async function writeGroupPlan({
+export async function writeGroupPlan({
 	tx,
 	conferenceId,
 	group,

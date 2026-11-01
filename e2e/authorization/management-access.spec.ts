@@ -3,7 +3,7 @@ import { loginAs, makeTestUser } from '../support/auth';
 import { E2E_CONFERENCE_ID } from '../seed/seed';
 
 // The app's `noAccess` message, in both locales the suite may run under.
-const m_noAccess = /hier haben sie keinen zugriff|you don't have access to this page/i;
+const m_noAccess = /hier hast du keinen zugriff|you don't have access to this page/i;
 
 // Every other spec drives a happy path as an actor who IS allowed to do the thing. These cover
 // the inverse - that a plain participant is refused - which is what actually guards the

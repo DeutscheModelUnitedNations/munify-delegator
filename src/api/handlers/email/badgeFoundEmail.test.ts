@@ -7,7 +7,25 @@ vi.mock('$app/env/private', () => ({ DATABASE_URL: '', REDIS_URL: undefined }));
 vi.mock('#api/db/db', () => ({ db: {}, schema: {} }));
 vi.mock('#api/pubsub', () => ({ emailLogPubsub: { updated: () => undefined } }));
 
-const { renderBadgeFoundEmail } = await import('./badgeFoundEmail');
+// Sending is emailDelivery's, tested there: here it only records what it was handed.
+const sent: { to: string; userId: string | null; sentById: string; subject: string }[] = [];
+let sendError: string | undefined;
+vi.mock('./emailDelivery', async (importOriginal) => ({
+	...(await importOriginal<typeof import('./emailDelivery')>()),
+	loadWording: async () => ({ texts: [], footers: [] }),
+	sendByHand: async (args: {
+		to: string;
+		userId: string | null;
+		sentById: string;
+		render: () => Promise<{ subject: string }>;
+	}) => {
+		sent.push({ ...args, subject: (await args.render()).subject });
+		return sendError;
+	}
+}));
+
+const { renderBadgeFoundEmail, sendBadgeFoundEmail } = await import('./badgeFoundEmail');
+const { db } = await import('#api/db/db');
 
 const recipient = {
 	id: 'u1',
@@ -59,5 +77,49 @@ describe('the found badge mail', () => {
 		expect(mail.html).toContain('Dein Team von MUN-SH 2027');
 		// the subject it left alone stays the default
 		expect(mail.subject).toBe('Dein Zugangsausweis für MUN-SH 2027 wurde gefunden');
+	});
+});
+
+describe('sendBadgeFoundEmail', () => {
+	/** Answers `participant` for any participant row asked for. */
+	function fakeParticipant(participant: object | undefined) {
+		Object.assign(db, {
+			query: { conferenceParticipant: { findFirst: async () => participant } }
+		});
+	}
+	const participant = {
+		conferenceId: 'c1',
+		user: recipient,
+		conference: { title: 'MUN-SH 2027' }
+	};
+
+	test('sends it to the person, logged as sent by the team member', async () => {
+		sent.length = 0;
+		sendError = undefined;
+		fakeParticipant(participant);
+		expect(await sendBadgeFoundEmail({ participantId: 'p1', sentById: 'care' })).toBeNull();
+		expect(sent).toMatchObject([
+			{
+				to: 'ada@example.org',
+				userId: 'u1',
+				sentById: 'care',
+				subject: 'Dein Zugangsausweis für MUN-SH 2027 wurde gefunden'
+			}
+		]);
+	});
+
+	test('answers why sending failed', async () => {
+		sendError = 'SMTP down';
+		fakeParticipant(participant);
+		expect(await sendBadgeFoundEmail({ participantId: 'p1', sentById: 'care' })).toBe('SMTP down');
+	});
+
+	test('answers nothing for a participant row that is not there', async () => {
+		sent.length = 0;
+		fakeParticipant(undefined);
+		expect(await sendBadgeFoundEmail({ participantId: 'gone', sentById: 'care' })).toBeUndefined();
+		fakeParticipant({ ...participant, user: null });
+		expect(await sendBadgeFoundEmail({ participantId: 'p1', sentById: 'care' })).toBeUndefined();
+		expect(sent).toEqual([]);
 	});
 });
