@@ -1,10 +1,10 @@
 # =============================================================================
 # Dockerfile.jobs — Dedicated image for one-shot jobs (the `delegator-jobs` CLI)
 # =============================================================================
-# Runs a single command and exits, e.g. `docker run <image> invitation-cleanup`,
-# started by an external scheduler (cron job, Dokploy schedule). Unlike
-# Dockerfile.tasks it is not a long-running scheduler. Assumes the database is
-# already migrated. Each job reads only the variables it uses: DATABASE_URL,
+# Stays running and does nothing by itself: a scheduler execs `delegator-jobs <job>`
+# into it (Dokploy application schedules). A one-off run is
+# `docker run --rm <image> delegator-jobs <job>`. Assumes the database is already
+# migrated. Each job reads only the variables it uses: DATABASE_URL,
 # plus the app's SMTP_* / REDIS_URL and APP_URL for send-emails, and so on.
 # =============================================================================
 
@@ -50,10 +50,15 @@ RUN bun add pg@^8.23.0
 
 COPY --from=builder /build/jobsOut ./
 
+# The CLI on the PATH as `delegator-jobs`, what the scheduler execs
+RUN printf '#!/bin/sh\nexec bun /run/cli.js "$@"\n' > /usr/local/bin/delegator-jobs \
+  && chmod +x /usr/local/bin/delegator-jobs
+
 USER bun
 ENV NODE_ENV=production
 
-# One-shot CLI job runner, not a long-running service, so no active health check applies.
+# Only waits for the scheduler's exec, so there is nothing to health check.
 HEALTHCHECK NONE
 
-ENTRYPOINT ["bun", "./cli.js"]
+# The base image's entrypoint runs this as given, as it does `delegator-jobs <job>`
+CMD ["sleep", "infinity"]

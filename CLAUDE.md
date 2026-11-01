@@ -1027,7 +1027,8 @@ bun run preview
 
 - **Jobs** (`src/jobs/`) are one-shot commands of the `delegator-jobs` CLI (citty), run by a
   scheduler outside the app (a cron job, a Dokploy schedule); nothing inside the app runs on a
-  timer. A new job is a file with a `run…` function and a sub-command in `cli.ts` that imports it
+  timer. The jobs image idles (`sleep infinity`) so the scheduler can exec `delegator-jobs <command>`
+  into it; a one-off run is `docker run --rm <image> delegator-jobs <command>`. A new job is a file with a `run…` function and a sub-command in `cli.ts` that imports it
   when it runs. Schedule:
   - `refresh-statistics` - every few minutes. The app only reads the views; without the job they
     go stale (`bun run db:seed:dev` refreshes them once).
