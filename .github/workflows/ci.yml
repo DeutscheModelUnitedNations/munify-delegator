@@ -54,8 +54,16 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  e2e:
+  # The suite in four shards, each on a runner of its own: on one runner the server, Postgres and
+  # two browsers starve each other's four cores, so the tests ran ~11 minutes and timed out.
+  # Only for a tagged release; pull requests and main rely on the faster jobs.
+  e2e-shard:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       PUBLIC_OIDC_AUTHORITY: http://127.0.0.1:8090/oidc/.well-known/openid-configuration
@@ -89,16 +97,48 @@ jobs:
       - run: bunx svelte-kit sync
       - run: bun run db:migrate
       - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
+      # A blob report per shard, merged into one HTML report by the e2e job below.
+      - run: bun run test:e2e --shard=${{ matrix.shard }}/4 --reporter=github,blob
+      - name: Upload the shard's report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  # The shards' verdict under one name, which publish-reports and the image builds wait for, and
+  # their reports merged into one. Passes without doing anything when the shards did not run (no
+  # tag), so the jobs waiting for it are not skipped along with them.
+  e2e:
+    needs: [e2e-shard]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        if: ${{ needs.e2e-shard.result != 'skipped' }}
+      - uses: ./.github/actions/setup-bun
+        if: ${{ needs.e2e-shard.result != 'skipped' }}
+      - uses: actions/download-artifact@v4
+        if: ${{ needs.e2e-shard.result != 'skipped' }}
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - if: ${{ needs.e2e-shard.result != 'skipped' }}
+        run: bunx playwright merge-reports --reporter html ./all-blob-reports
       # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
       # all the publish-reports job needs to host it.
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ needs.e2e-shard.result == 'failure' }}
         with:
           name: report-playwright
           path: playwright-report/
           retention-days: 7
+      - name: Fail when a shard failed
+        if: ${{ needs.e2e-shard.result == 'failure' || needs.e2e-shard.result == 'cancelled' }}
+        run: exit 1
 
   # Hosts the HTML reports of this run on GitHub Pages (gh-pages branch) instead of leaving them
   # as zip downloads: the Playwright report when e2e fails, and the unit test coverage. Runs in
