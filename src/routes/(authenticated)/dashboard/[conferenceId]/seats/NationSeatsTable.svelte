@@ -1,0 +1,100 @@
+<script lang="ts">
+	import { renderComponent } from '#lib/components/tanStackTable/index';
+	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
+	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import getNationRegionalGroup from '#lib/helpers/getNationRegionalGroup';
+	import { roleSeats } from '#lib/helpers/conferenceRole';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import { m } from '#lib/paraglide/messages';
+	import FlagNameCell from './FlagNameCell.svelte';
+	import SeatsCell from './SeatsCell.svelte';
+	import type { ConferenceSeats, SeatedNation } from './conferenceSeats';
+
+	interface Props {
+		committees: ConferenceSeats['committees'];
+		nations: SeatedNation[];
+	}
+
+	let { committees, nations }: Props = $props();
+
+	type NationRow = {
+		alpha2Code: string;
+		alpha3Code: string;
+		name: string;
+		region: string;
+		seatsByCommittee: Record<string, number>;
+		total: number;
+	};
+
+	const rows = $derived<NationRow[]>(
+		nations.map((role) => ({
+			alpha2Code: role.nation.alpha2Code,
+			alpha3Code: role.nation.alpha3Code,
+			name: getFullTranslatedCountryNameFromISO3Code(role.nation.alpha3Code),
+			region: getNationRegionalGroup(role.nation.alpha3Code) ?? '',
+			seatsByCommittee: Object.fromEntries(
+				committees.map((committee) => [
+					committee.id,
+					committee.roles.some((seated) => seated.id === role.id)
+						? committee.numOfSeatsPerDelegation
+						: 0
+				])
+			),
+			total: roleSeats({ role, committees })
+		}))
+	);
+
+	const columns = $derived<ManagedColumn<NationRow>[]>([
+		{
+			id: 'name',
+			header: m.nation(),
+			accessorFn: (row) => row.name,
+			cell: ({ row }) =>
+				renderComponent({
+					component: FlagNameCell,
+					props: {
+						name: row.original.name,
+						alpha2Code: row.original.alpha2Code
+					}
+				})
+		},
+		{
+			id: 'region',
+			header: m.regionalGroup(),
+			accessorFn: (row) => row.region,
+			filter: { type: 'enum' }
+		},
+		...committees.map((committee): ManagedColumn<NationRow> => ({
+			id: `committee-${committee.id}`,
+			header: committee.abbreviation,
+			description: committee.name,
+			group: m.committees(),
+			accessorFn: (row) => row.seatsByCommittee[committee.id] ?? 0,
+			cell: ({ row }) =>
+				renderComponent({
+					component: SeatsCell,
+					props: {
+						seats: row.original.seatsByCommittee[committee.id] ?? 0
+					}
+				}),
+			exportValue: (row) => String(row.seatsByCommittee[committee.id] ?? 0),
+			filter: { type: 'range' }
+		})),
+		{
+			id: 'total',
+			header: m.total(),
+			accessorFn: (row) => row.total,
+			filter: { type: 'range' }
+		}
+	]);
+</script>
+
+<ManagedTable
+	{columns}
+	{rows}
+	queryParamKey="nation"
+	pageSize={200}
+	columnClasses={{ total: 'text-center', region: 'whitespace-nowrap' }}
+	initialSorting={[{ id: 'name', desc: false }]}
+	storageKey="seat-overview-nations"
+/>

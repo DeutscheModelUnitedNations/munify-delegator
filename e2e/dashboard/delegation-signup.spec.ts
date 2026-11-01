@@ -1,6 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, acceptDialogs } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import {
+	chooseApplyPath,
+	fillApplicationSteps,
+	openFirstConferenceForRegistration
+} from '../support/registration';
 
 // Covers the delegation dashboard's self-service "complete signup" wizard - creating a
 // delegation, inviting a second member, setting 3 role preferences, then finalizing. Unlike
@@ -10,35 +14,36 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can set preferences and complete their delegation signup', async ({
 	browser
 }) => {
+	// Two separate sign-ups, each through the full login and profile flow, plus the flow itself
+	// run within a few seconds of the default 30s.
+	test.setTimeout(90_000);
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
-	headPage.on('dialog', (dialog) => dialog.accept());
+	await acceptDialogs(headPage);
 
 	const headDelegate = makeTestUser('signup-head');
-	await loginAs(headPage, headDelegate, { startUrl: '/registration' });
+	await loginAs(headPage, headDelegate);
 	const conferenceId = await openFirstConferenceForRegistration(headPage);
 
-	await headPage.locator('a[href$="/create-delegation"]').click();
-	await headPage.waitForURL(/\/create-delegation$/);
+	await chooseApplyPath(headPage, /Delegation erstellen/);
 
-	const schoolInput = headPage.locator('input[name="school"]');
+	const schoolInput = headPage.locator('input[name="schoolName"]');
 	await expect(async () => {
 		await headPage.getByRole('button', { name: /weiter|next/i }).click();
 		await expect(schoolInput).toBeVisible({ timeout: 2_000 });
 	}).toPass({ timeout: 15_000 });
 
-	await schoolInput.fill('E2E Test School');
-	await headPage.locator('textarea[name="motivation"]').fill('We want to join.');
-	await headPage.locator('textarea[name="experience"]').fill('Some experience.');
-	await headPage.locator('form button.btn-primary').first().click();
+	await fillApplicationSteps(headPage, {
+		school: 'E2E Test School',
+		motivation: 'We want to join.',
+		experience: 'Some experience.'
+	});
 
 	const entryCodeLocator = headPage.locator('p.font-mono');
 	await expect(entryCodeLocator).toBeVisible({ timeout: 15_000 });
 	const entryCode = (await entryCodeLocator.textContent())?.trim();
 	expect(entryCode).toBeTruthy();
-
-	await headPage.getByRole('link', { name: /zum dashboard|to dashboard/i }).click();
-	await headPage.waitForURL(/\/dashboard(\/.+)?$/, { timeout: 15_000 });
 
 	// --- second member joins, so "invite people" reads as completed ---
 	const memberContext = await browser.newContext();
@@ -55,32 +60,46 @@ test('a head delegate can set preferences and complete their delegation signup',
 	await memberContext.close();
 
 	// --- back on the head delegate's dashboard: set 3 preferences and complete signup ---
-	await headPage.reload();
-	await waitForHydration(headPage);
-	await headPage.getByRole('button', { name: 'Wünsche festlegen' }).click();
-
 	const modal = headPage.locator('dialog.modal');
-	// The collapse-title text itself isn't clickable - daisyUI overlays the actual toggle
-	// checkbox on top of it (which is what needs the click).
-	await modal
-		.locator('.collapse', { hasText: 'Länderpool' })
-		.locator('input[type="checkbox"]')
-		.click();
 	// Scoped to the pool's own add-buttons (not the "your preferences" table, which uses the
 	// same icon set once populated) so the count check below only tracks the pool shrinking.
 	const poolAddButtons = modal.locator('.collapse-content button:has(.fa-chevrons-up)');
-	const initialPoolSize = await poolAddButtons.count();
-	expect(initialPoolSize).toBeGreaterThanOrEqual(3);
+	const openPool = async () => {
+		await headPage.reload();
+		await waitForHydration(headPage);
+		await headPage.getByRole('button', { name: 'Wünsche festlegen' }).click();
+		// The collapse-title text itself isn't clickable - daisyUI overlays the actual toggle
+		// checkbox on top of it (which is what needs the click).
+		await modal
+			.locator('.collapse', { hasText: 'Länderpool' })
+			.locator('input[type="checkbox"]')
+			.click();
+		await expect(poolAddButtons.first()).toBeVisible({ timeout: 15_000 });
+	};
+
+	// The wishes so far, a row each with its remove button. Counted rather than the pool shrinking:
+	// the pool is every nation seating the delegation, which specs running beside this one change.
+	const wishRows = modal.locator('tr:has(button .fa-xmark)');
+
+	await openPool();
+	expect(await poolAddButtons.count()).toBeGreaterThanOrEqual(3);
 	for (let i = 1; i <= 3; i++) {
 		await poolAddButtons.first().click();
-		// wait for the mutation to land (pool shrinks by one) before adding the next
-		await expect(poolAddButtons).toHaveCount(initialPoolSize - i, { timeout: 15_000 });
+		// Wait for the mutation to land before adding the next. A wish added while the modal's
+		// subscription is still computing its first result is not announced to it (see the live
+		// lists spec); opened afresh, the modal shows what the server holds.
+		await expect(wishRows)
+			.toHaveCount(i, { timeout: 5_000 })
+			.catch(async () => {
+				await openPool();
+				await expect(wishRows).toHaveCount(i, { timeout: 15_000 });
+			});
 	}
-	await modal.locator('button[aria-label="Close"]').click();
+	await modal.getByRole('button', { name: 'Schließen', exact: true }).click();
 	await expect(modal).toBeHidden({ timeout: 15_000 });
 
 	const completeSignupButton = headPage.getByRole('button', {
-		name: 'Anmeldung verbindlich abschließen und damit am Auswahlverfahren teilnehmen'
+		name: 'Bewerbung verbindlich abschließen und damit am Auswahlverfahren teilnehmen'
 	});
 	// The button is gated on the delegation's member and role-application counts. Closing the
 	// preferences modal does not always land the cache invalidation that refreshes them, leaving
@@ -103,10 +122,10 @@ test('a head delegate can set preferences and complete their delegation signup',
 
 	const res = await headPage.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyDelegations(where: { entryCode: { equals: "${entryCode}" } }) { applied appliedForRoles { id } } }`
+			query: `query { delegations(where: { entryCode: { eq: "${entryCode}" } }) { applied appliedForRoles { id } } }`
 		}
 	});
 	const json = await res.json();
-	expect(json.data?.findManyDelegations?.[0]?.applied).toBe(true);
-	expect(json.data?.findManyDelegations?.[0]?.appliedForRoles?.length).toBe(3);
+	expect(json.data?.delegations?.[0]?.applied).toBe(true);
+	expect(json.data?.delegations?.[0]?.appliedForRoles?.length).toBe(3);
 });

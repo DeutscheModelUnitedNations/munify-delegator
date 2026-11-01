@@ -1,0 +1,1 @@
+ALTER TABLE "single_participant" DROP COLUMN "assignment_details";

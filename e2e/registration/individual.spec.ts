@@ -1,28 +1,30 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
-import { openFirstConferenceForRegistration } from '../support/registration';
+import {
+	chooseApplyPath,
+	fillApplicationSteps,
+	openFirstConferenceForRegistration
+} from '../support/registration';
 
 test('a new user can register as an individual participant', async ({ page }) => {
 	const user = makeTestUser('individual');
-	await loginAs(page, user, { startUrl: '/registration' });
+	await loginAs(page, user);
 
 	await openFirstConferenceForRegistration(page);
 
-	await page.locator('a[href$="/individual"]').click();
-	await page.waitForURL(/\/individual$/);
+	await chooseApplyPath(page, /Einzelbewerbung/);
 
-	// pick the first available role
-	await page.locator('main a.btn-primary').first().click();
-	await page.waitForURL(/\/individual\/[^/]+$/);
+	// pick the first available role; the questions open below it
+	await page.locator('ol .card button.btn-primary').first().click();
 
-	await page.locator('input[name="school"]').fill('E2E Test School');
-	await page.locator('textarea[name="motivation"]').fill('I want to represent my country.');
-	await page.locator('textarea[name="experience"]').fill('This is my first conference.');
+	await fillApplicationSteps(page, {
+		school: 'E2E Test School',
+		motivation: 'I want to represent my country.',
+		experience: 'This is my first conference.'
+	});
 
-	await page.locator('form button.btn-primary').first().click();
-
-	// The app redirects to /dashboard, which itself redirects to /dashboard/{conferenceId}
-	// once the user has exactly one conference to show.
-	await page.waitForURL(/\/dashboard(\/.+)?$/);
-	await expect(page).toHaveURL(/\/dashboard(\/.+)?$/);
+	// The form never leaves the dashboard: once the application exists, the dashboard shows it.
+	await expect(page.locator('section', { hasText: 'Rollenbewerbungen' })).toBeVisible({
+		timeout: 15_000
+	});
 });

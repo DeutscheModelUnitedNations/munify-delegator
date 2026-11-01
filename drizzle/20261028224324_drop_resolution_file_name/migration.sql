@@ -1,0 +1,1 @@
+ALTER TABLE "resolution" DROP COLUMN "file_name";

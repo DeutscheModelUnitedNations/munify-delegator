@@ -1,0 +1,73 @@
+import { regionalGroups, type RegionalGroup } from '#lib/helpers/seatPlanning/unMembers';
+
+/**
+ * Sorting of the states matrix. `key` is `name`, `group`, `size` or the id of a committee (sorts
+ * by whether the state holds a seat there). Ties are always broken by the name, ascending.
+ */
+
+export interface SortableRow {
+	name: string;
+	alpha3Code: string;
+	regionalGroup: RegionalGroup;
+}
+
+export interface SeatLookup {
+	size: (alpha3Code: string) => number;
+	hasSeat: (committeeId: string, alpha3Code: string) => boolean;
+}
+
+/** Text columns start A-Z, number and seat columns start with the most seats */
+export const defaultDescending = (key: string) => key !== 'name' && key !== 'group';
+
+function sortValue({
+	row,
+	key,
+	seats
+}: {
+	row: SortableRow;
+	key: string;
+	seats: SeatLookup;
+}): number {
+	if (key === 'group') return regionalGroups.indexOf(row.regionalGroup);
+	if (key === 'size') return seats.size(row.alpha3Code);
+	return seats.hasSeat(key, row.alpha3Code) ? 1 : 0;
+}
+
+export function sortSeatRows<T extends SortableRow>({
+	rows,
+	sort,
+	seats
+}: {
+	rows: T[];
+	sort: { key: string; descending: boolean };
+	seats: SeatLookup;
+}): T[] {
+	const direction = sort.descending ? -1 : 1;
+	const byName = (a: T, b: T) => a.name.localeCompare(b.name);
+
+	if (sort.key === 'name') return [...rows].sort((a, b) => direction * byName(a, b));
+
+	return [...rows].sort(
+		(a, b) =>
+			direction *
+				(sortValue({ row: a, key: sort.key, seats }) -
+					sortValue({ row: b, key: sort.key, seats })) || byName(a, b)
+	);
+}
+
+/**
+ * URL parameters after a click on a column header: the active column flips its direction, any
+ * other column starts with its default. Defaults (sorted by name, ascending) are `null`, which
+ * keeps them out of the URL.
+ */
+export function nextSortParams({
+	current,
+	clicked
+}: {
+	current: { sort: string | null; desc: boolean | null };
+	clicked: string;
+}) {
+	const active = current.sort ?? 'name';
+	const descending = active === clicked ? !current.desc : defaultDescending(clicked);
+	return { sort: clicked === 'name' ? null : clicked, desc: descending || null };
+}

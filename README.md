@@ -16,7 +16,7 @@ We are happy to recieve feedback, contributions and donations. Please see below 
 
 ## Develop Locally
 
-Make sure you have Docker and Bun installed. (You might need to have Node.js installed too for managing the database ORM [prisma](https://www.prisma.io/))
+Make sure you have Docker and Bun installed.
 
 1. Clone the Repository
 

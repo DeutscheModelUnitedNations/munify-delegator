@@ -1,0 +1,35 @@
+diff --git a/node_modules/sveltekit-breadcrumbs/.bun-tag-f144f9bb5b15a25a b/.bun-tag-f144f9bb5b15a25a
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/Breadcrumbs.svelte b/dist/Breadcrumbs.svelte
+index 10b9da14db0e088f3901a9b0cab2202f60b543b1..7c04a2c9aa9e87b008b33905dbaf5b0ef1f786af 100644
+--- a/dist/Breadcrumbs.svelte
++++ b/dist/Breadcrumbs.svelte
+@@ -109,8 +109,6 @@
+ 		});
+ 	});
+ 
+-	console.log(importObject);
+-	console.log(staticPaths);
+ 
+ 	/**
+ 	 * Finds the best matching static path array for a given path string segment array
+@@ -120,7 +118,7 @@
+ 	function findMatchingStaticPath(
+ 		pathSegments: string[],
+ 		staticPaths: StaticPathSegmentInfo[][]
+-	): StaticPathSegmentInfo[] {
++	): StaticPathSegmentInfo[] | undefined {
+ 		// we iteratively filter this variable to circle the possible matches closer each time
+ 		let staticPathsFiltered = staticPaths.filter(
+ 			(staticPath) => staticPath.length === pathSegments.length
+@@ -175,6 +173,9 @@
+ 	let currentPath: PathSegment<Parameter, boolean>[] = $derived.by(() => {
+ 		const matchingStaticPath = findMatchingStaticPath(currentPathRawSegments, staticPaths);
+ 
++		// a URL without a page (a 404) matches nothing: no crumbs rather than a crash
++		if (!matchingStaticPath) return [];
++
+ 		return matchingStaticPath.map((staticPathSegment, i) => {
+ 			return {
+ 				key: staticPathSegment.key as Parameter,

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -14,16 +13,16 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th><i class="fa-duotone fa-flag"></i></th>
-			<th><i class="fa-duotone fa-earth"></i></th>
-			{#each committees as committee}
+			<th><i class="fa-sharp-duotone fa-solid fa-flag"></i></th>
+			<th><i class="fa-sharp-duotone fa-solid fa-earth"></i></th>
+			{#each committees as committee, committeeIndex (committeeIndex)}
 				<th class="text-center">
 					<div class="tooltip tooltip-bottom" data-tip={committee.name}>
 						{committee.abbreviation}
 					</div>
 				</th>
 			{/each}
-			<th class="text-center"><i class="fa-duotone fa-users"></i></th>
+			<th class="text-center"><i class="fa-sharp-duotone fa-solid fa-users"></i></th>
 			{#if includeActionCell}<th></th>{/if}
 		</tr>
 	</thead>

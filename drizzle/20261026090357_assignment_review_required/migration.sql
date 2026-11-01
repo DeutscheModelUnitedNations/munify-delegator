@@ -1,0 +1,1 @@
+ALTER TABLE "assignment_review" ADD COLUMN "required" boolean DEFAULT false NOT NULL;

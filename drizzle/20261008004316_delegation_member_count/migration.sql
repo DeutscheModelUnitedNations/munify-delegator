@@ -1,0 +1,2 @@
+ALTER TABLE "delegation" ADD COLUMN "member_count" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+CREATE INDEX "delegation_conference_id_member_count_idx" ON "delegation" ("conference_id","member_count");

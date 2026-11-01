@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { fly } from 'svelte/transition';
-	import type { DelegationPreviewComponentQueryVariables } from './$houdini';
 	import Spinner from './Spinner.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { goto } from '$app/navigation';
+	import DelegationJoinForm from './DelegationJoinForm.svelte';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;
@@ -13,43 +12,43 @@
 
 	let { conferenceId, entryCode }: Props = $props();
 
-	export const _DelegationPreviewComponentQueryVariables: DelegationPreviewComponentQueryVariables =
-		({ props }: { props: Props }) => {
-			return props;
-		};
+	function fetchPreview() {
+		return client.query.previewDelegation({
+			__args: { conferenceId, entryCode },
+			memberCount: true,
+			applied: true,
+			headDelegateFullName: true,
+			conferenceTitle: true,
+			schools: true,
+			headDelegateSchoolId: true,
+			headDelegateSchoolName: true
+		});
+	}
 
-	const delegationQuery = graphql(`
-		query DelegationPreviewComponentQuery($conferenceId: String!, $entryCode: String!) {
-			previewDelegation(conferenceId: $conferenceId, entryCode: $entryCode) {
-				memberCount
-				applied
-				headDelegateFullName
-				conferenceTitle
-				school
-			}
-		}
-	`);
+	let delegation = $state<Awaited<ReturnType<typeof fetchPreview>>>();
+	let previewLoading = $state(false);
+	let previewFailed = $state(false);
 
 	$effect(() => {
-		if (entryCode) {
-			delegationQuery.fetch({ variables: { conferenceId, entryCode } });
-		}
+		if (!entryCode) return;
+		previewLoading = true;
+		previewFailed = false;
+		void fetchPreview()
+			.then((result) => {
+				delegation = result;
+			})
+			.catch(() => {
+				previewFailed = true;
+			})
+			.finally(() => {
+				previewLoading = false;
+			});
 	});
-
-	let delegation = $derived($delegationQuery?.data?.previewDelegation);
-
-	const memberMutation = graphql(`
-		mutation CreateDelegationMemberMutation($entryCode: String!, $conferenceId: ID!) {
-			createOneDelegationMember(entryCode: $entryCode, conferenceId: $conferenceId) {
-				id
-			}
-		}
-	`);
 </script>
 
-{#if !$delegationQuery || $delegationQuery?.fetching}
+{#if previewLoading}
 	<Spinner />
-{:else if $delegationQuery?.errors}
+{:else if previewFailed}
 	<div
 		class="alert alert-warning"
 		in:fly={{ x: 50, duration: 300, delay: 300 }}
@@ -60,13 +59,13 @@
 			{m.noDelegationsFound()}
 		</div>
 	</div>
-{:else if $delegationQuery?.data}
+{:else if delegation}
 	<div
 		class="mb-10 flex flex-col items-center"
 		in:fly={{ x: 50, duration: 300, delay: 300 }}
 		out:fly={{ x: 50, duration: 300 }}
 	>
-		<div class="bg-base-100 dark:bg-base-200 rounded-lg p-4 shadow-lg dark:stroke-slate-300">
+		<div class="bg-base-100 dark:bg-base-200 rounded-box p-4 shadow-lg dark:stroke-slate-300">
 			<div class="overflow-x-auto">
 				<table class="table">
 					<tbody>
@@ -76,7 +75,7 @@
 						</tr>
 						<tr>
 							<td>{m.schoolOrInstitution()}</td>
-							<td>{delegation?.school}</td>
+							<td>{delegation?.schools.join(', ')}</td>
 						</tr>
 						<tr>
 							<td>{m.headDelegate()}</td>
@@ -90,12 +89,12 @@
 				</table>
 			</div>
 		</div>
-		<button
-			class="btn btn-primary mt-10"
-			onclick={async () => {
-				await memberMutation.mutate({ entryCode, conferenceId });
-				goto(`/dashboard/${conferenceId}`);
-			}}>{m.confirm()}</button
-		>
+		<DelegationJoinForm
+			{conferenceId}
+			{entryCode}
+			headDelegateSchool={delegation.headDelegateSchoolId && delegation.headDelegateSchoolName
+				? { id: delegation.headDelegateSchoolId, name: delegation.headDelegateSchoolName }
+				: null}
+		/>
 	</div>
 {/if}

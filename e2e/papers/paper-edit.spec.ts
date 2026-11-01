@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_DRAFT_PAPER_ID, E2E_PAPER_DELEGATE_USER_ID } from '../seed/seed';
 
@@ -12,7 +12,8 @@ test('an author can edit an existing draft paper and submit it', async ({ page }
 
 	// Scope to the seeded draft paper's row specifically: repeated test runs accumulate other
 	// papers for this same author, so `.first()` on a generic row/link locator is not reliable.
-	await page.locator(`a[href*="${E2E_DRAFT_PAPER_ID}"]`).click();
+	// The table and the phone layout's list both link it; one of them is hidden
+	await page.locator(`a[href*="${E2E_DRAFT_PAPER_ID}"]`).filter({ visible: true }).click();
 	await page.waitForURL(new RegExp(`/paperhub/${E2E_DRAFT_PAPER_ID}$`), { timeout: 15_000 });
 
 	const editor = page.locator('[contenteditable="true"]').first();
@@ -26,9 +27,9 @@ test('an author can edit an existing draft paper and submit it', async ({ page }
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniquePaper(where: { id: "${E2E_DRAFT_PAPER_ID}" }) { status } }`
+			query: `query { paper(id: "${E2E_DRAFT_PAPER_ID}") { status } }`
 		}
 	});
-	const data = (await res.json())?.data?.findUniquePaper;
+	const data = (await res.json())?.data?.paper;
 	expect(data?.status).toBe('SUBMITTED');
 });

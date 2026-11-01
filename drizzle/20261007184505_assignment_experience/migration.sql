@@ -1,0 +1,3 @@
+CREATE TYPE "assignment_experience_effect" AS ENUM('WISHES_AND_SEATING', 'SEATING_ONLY');--> statement-breakpoint
+ALTER TABLE "assignment_weights" ADD COLUMN "experience_modifier" double precision DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "assignment_weights" ADD COLUMN "experience_effect" "assignment_experience_effect" DEFAULT 'WISHES_AND_SEATING'::"assignment_experience_effect" NOT NULL;

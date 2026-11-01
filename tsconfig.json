@@ -1,25 +1,21 @@
 {
 	"compilerOptions": {
-		"allowJs": true,
-		"allowSyntheticDefaultImports": true, // This should be true as well
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"module": "ESNext", // or "CommonJS"
-		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"module": "ESNext",
 		"noImplicitAny": false,
-		"plugins": [
-			{
-				"name": "@0no-co/graphqlsp",
-				"schema": "./src/lib/gqlClient/schema.gql"
-			}
-		],
-		"resolveJsonModule": true,
-		"rootDirs": [".", "./.svelte-kit/types", "./.houdini/types"],
-		"skipLibCheck": true,
+		// Imports name a module without its extension (`#lib/helpers/countryCodes`). TypeScript
+		// applies `package.json`'s `imports` literally and finds no file there; `paths` it completes
+		// like a relative import. Keep in step with `imports`.
+		"paths": {
+			"#api/*": ["./src/api/*"],
+			"#assets/*": ["./src/assets/*"],
+			"#lib/*": ["./src/lib/*"]
+		},
+		"rootDirs": [".", "./.svelte-kit/types"],
 		"sourceMap": true,
 		"strict": true,
-		"target": "ESNext" // or "ES6"
+		"target": "ESNext"
 	},
-	"extends": "./.svelte-kit/tsconfig.json"
+	"extends": "$app/tsconfig",
+	"include": ["src", "vite.config.ts", "playwright.config.ts"]
 }

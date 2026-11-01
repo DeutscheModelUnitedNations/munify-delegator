@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
-	import { translatePaperStatus } from '$lib/services/enumTranslations';
+	import { m } from '#lib/paraglide/messages';
+	import { translatePaperStatus } from '#lib/utils/enumTranslations';
 
 	interface Props {
 		counts: {
@@ -16,41 +16,56 @@
 
 	let { counts, size = 'default', blur = false }: Props = $props();
 
-	let badgeSizeClass = $derived(size === 'small' ? 'badge-sm' : '');
+	const chips = $derived([
+		{
+			tip: translatePaperStatus('SUBMITTED'),
+			icon: 'fa-paper-plane',
+			color: 'text-warning',
+			count: counts.SUBMITTED
+		},
+		{
+			tip: translatePaperStatus('REVISED'),
+			icon: 'fa-rotate',
+			color: 'text-info',
+			count: counts.REVISED
+		},
+		{
+			tip: translatePaperStatus('CHANGES_REQUESTED'),
+			icon: 'fa-exclamation-triangle',
+			color: 'text-error',
+			count: counts.CHANGES_REQUESTED
+		},
+		{
+			tip: translatePaperStatus('ACCEPTED'),
+			icon: 'fa-check-circle',
+			color: 'text-success',
+			count: counts.ACCEPTED
+		}
+	]);
 </script>
 
-<div class="flex items-center gap-{size === 'small' ? '1' : '2'}">
+<!-- Counts per status; empty ones fade out so the ones with work stand out -->
+<div class="flex items-center {size === 'small' ? 'gap-2' : 'gap-3'} tabular-nums">
 	<div class="tooltip tooltip-left" data-tip={m.total()}>
-		<div class="badge badge-ghost {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-file-lines text-xs"></i>
+		<span
+			class="flex items-center gap-1 text-base-content/70 {size === 'small'
+				? 'text-xs'
+				: 'text-sm'}"
+		>
+			<i class="fa-sharp-duotone fa-solid fa-file-lines"></i>
 			<span class:blur-sm={blur} class:select-none={blur}>{counts.total}</span>
-		</div>
+		</span>
 	</div>
-	<div class="tooltip tooltip-left tooltip-warning" data-tip={translatePaperStatus('SUBMITTED')}>
-		<div class="badge badge-warning badge-outline {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-paper-plane text-xs"></i>
-			<span class:blur-sm={blur} class:select-none={blur}>{counts.SUBMITTED}</span>
+	{#each chips as chip (chip.icon)}
+		<div class="tooltip tooltip-left" data-tip={chip.tip}>
+			<span
+				class="flex items-center gap-1 {chip.color} {size === 'small'
+					? 'text-xs'
+					: 'text-sm'} {chip.count === 0 ? 'opacity-30' : 'font-semibold'}"
+			>
+				<i class="fa-sharp-duotone fa-solid {chip.icon}"></i>
+				<span class:blur-sm={blur} class:select-none={blur}>{chip.count}</span>
+			</span>
 		</div>
-	</div>
-	<div class="tooltip tooltip-left tooltip-info" data-tip={translatePaperStatus('REVISED')}>
-		<div class="badge badge-info badge-outline {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-rotate text-xs"></i>
-			<span class:blur-sm={blur} class:select-none={blur}>{counts.REVISED}</span>
-		</div>
-	</div>
-	<div
-		class="tooltip tooltip-left tooltip-error"
-		data-tip={translatePaperStatus('CHANGES_REQUESTED')}
-	>
-		<div class="badge badge-error badge-outline {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-exclamation-triangle text-xs"></i>
-			<span class:blur-sm={blur} class:select-none={blur}>{counts.CHANGES_REQUESTED}</span>
-		</div>
-	</div>
-	<div class="tooltip tooltip-left tooltip-success" data-tip={translatePaperStatus('ACCEPTED')}>
-		<div class="badge badge-success badge-outline {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-check-circle text-xs"></i>
-			<span class:blur-sm={blur} class:select-none={blur}>{counts.ACCEPTED}</span>
-		</div>
-	</div>
+	{/each}
 </div>

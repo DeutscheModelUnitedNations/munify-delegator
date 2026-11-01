@@ -1,0 +1,126 @@
+import { describe, expect, test } from 'vitest';
+import {
+	createPaperSortState,
+	paperHasReviews,
+	sortPapers,
+	type SortablePaper
+} from './paperSorting';
+
+type Paper = SortablePaper & { name: string };
+
+function paper(name: string, overrides: Partial<SortablePaper> = {}): Paper {
+	return {
+		name,
+		type: 'POSITION_PAPER',
+		status: 'DRAFT',
+		createdAt: null,
+		updatedAt: null,
+		firstSubmittedAt: null,
+		delegation: { assignedRole: null },
+		...overrides
+	};
+}
+
+const names = (papers: Paper[]) => papers.map((p) => p.name);
+
+describe('sortPapers', () => {
+	const germany = paper('germany', {
+		type: 'WORKING_PAPER',
+		status: 'SUBMITTED',
+		createdAt: new Date('2026-01-03'),
+		updatedAt: new Date('2026-02-01'),
+		firstSubmittedAt: new Date('2026-01-05'),
+		delegation: { assignedRole: { kind: 'NATION', name: null, nation: { alpha3Code: 'DEU' } } }
+	});
+	const amnesty = paper('amnesty', {
+		type: 'INTRODUCTION_PAPER',
+		status: 'ACCEPTED',
+		createdAt: new Date('2026-01-01'),
+		updatedAt: new Date('2026-03-01'),
+		delegation: { assignedRole: { kind: 'NON_STATE_ACTOR', name: 'Amnesty', nation: null } }
+	});
+	const nobody = paper('nobody', {
+		createdAt: new Date('2026-01-02')
+	});
+	const papers = [germany, amnesty, nobody];
+
+	test('keeps the original order without a config, in a copy', () => {
+		const result = sortPapers({ papers, config: null });
+		expect(names(result)).toEqual(['germany', 'amnesty', 'nobody']);
+		expect(result).not.toBe(papers);
+	});
+
+	test('sorts by nation code, falling back to the non-state actor name, then empty', () => {
+		expect(names(sortPapers({ papers, config: { key: 'country', direction: 'asc' } }))).toEqual([
+			'nobody',
+			'amnesty',
+			'germany'
+		]);
+		expect(names(sortPapers({ papers, config: { key: 'country', direction: 'desc' } }))).toEqual([
+			'germany',
+			'amnesty',
+			'nobody'
+		]);
+	});
+
+	test('sorts by type and by status', () => {
+		expect(names(sortPapers({ papers, config: { key: 'type', direction: 'asc' } }))).toEqual([
+			'amnesty',
+			'nobody',
+			'germany'
+		]);
+		expect(names(sortPapers({ papers, config: { key: 'status', direction: 'desc' } }))).toEqual([
+			'germany',
+			'nobody',
+			'amnesty'
+		]);
+	});
+
+	test('sorts by dates, with missing dates first when ascending', () => {
+		expect(names(sortPapers({ papers, config: { key: 'createdAt', direction: 'asc' } }))).toEqual([
+			'amnesty',
+			'nobody',
+			'germany'
+		]);
+		expect(names(sortPapers({ papers, config: { key: 'updatedAt', direction: 'asc' } }))).toEqual([
+			'nobody',
+			'germany',
+			'amnesty'
+		]);
+		expect(
+			names(sortPapers({ papers, config: { key: 'firstSubmittedAt', direction: 'desc' } }))
+		).toEqual(['germany', 'amnesty', 'nobody']);
+	});
+
+	test('keeps equal papers in their order', () => {
+		const a = paper('a');
+		const b = paper('b');
+		expect(
+			names(sortPapers({ papers: [a, b], config: { key: 'status', direction: 'asc' } }))
+		).toEqual(['a', 'b']);
+	});
+});
+
+describe('paperHasReviews', () => {
+	test('is true once any version has a review', () => {
+		expect(paperHasReviews({ versions: [{ reviews: [] }, { reviews: [{ id: 'r' }] }] })).toBe(true);
+		expect(paperHasReviews({ versions: [{ reviews: [] }] })).toBe(false);
+		expect(paperHasReviews({ versions: [] })).toBe(false);
+	});
+});
+
+describe('PaperSortState', () => {
+	test('sorts ascending first, flips on the same column and resets on another', () => {
+		const state = createPaperSortState();
+		expect(state.get('g')).toBeNull();
+		state.toggle({ groupId: 'g', key: 'type' });
+		expect(state.get('g')).toEqual({ key: 'type', direction: 'asc' });
+		state.toggle({ groupId: 'g', key: 'type' });
+		expect(state.get('g')).toEqual({ key: 'type', direction: 'desc' });
+		state.toggle({ groupId: 'g', key: 'type' });
+		expect(state.get('g')).toEqual({ key: 'type', direction: 'asc' });
+		state.toggle({ groupId: 'g', key: 'status' });
+		expect(state.get('g')).toEqual({ key: 'status', direction: 'asc' });
+		expect(state.get('other')).toBeNull();
+	});
+});

@@ -31,13 +31,13 @@ export const ConferenceSeedingSchema = z.object({
 			// ISO 8601 strings rather than `z.coerce.date()`: this is what the seeding
 			// files actually contain, and unlike a bare date it can be expressed in the
 			// JSON Schema served at /schemata/seed, which editors use to validate them.
-			startAssignment: isoDateTime,
+			applicationDeadline: isoDateTime,
 			startConference: isoDateTime,
 			endConference: isoDateTime
 		})
-		.refine((conference) => conference.startAssignment < conference.startConference, {
-			message: 'startAssignment has to be before startConference',
-			path: ['startAssignment']
+		.refine((conference) => conference.applicationDeadline < conference.startConference, {
+			message: 'applicationDeadline has to be before startConference',
+			path: ['applicationDeadline']
 		})
 		.refine((conference) => conference.startConference < conference.endConference, {
 			message: 'startConference has to be before endConference',
@@ -80,7 +80,9 @@ export const ConferenceSeedingSchema = z.object({
 		z.object({
 			name: z.string(),
 			description: z.string(),
-			fontAwesomeIcon: z.string()
+			fontAwesomeIcon: z.string(),
+			/** How many single participants the role seats. */
+			seatAmount: z.number().int().min(1).default(1)
 		})
 	)
 });

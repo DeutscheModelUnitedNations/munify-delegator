@@ -1,0 +1,1 @@
+ALTER TYPE "email_kind" ADD VALUE 'PAPER_REVIEWED';

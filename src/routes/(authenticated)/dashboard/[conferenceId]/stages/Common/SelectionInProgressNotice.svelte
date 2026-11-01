@@ -1,6 +1,6 @@
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import { m } from '$lib/paraglide/messages';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import { m } from '#lib/paraglide/messages';
 </script>
 
 <DashboardSection
@@ -12,7 +12,7 @@
 	<div class="flex flex-col gap-2 text-sm">
 		<p>{m.selectionInProgressDuration()}</p>
 		<div class="alert alert-warning alert-soft">
-			<i class="fa-solid fa-exclamation-triangle text-xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
 			<span>{m.selectionInProgressNoGuarantee()}</span>
 		</div>
 		<p class="font-semibold">{m.selectionInProgressNoInquiries()}</p>

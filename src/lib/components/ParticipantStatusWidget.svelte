@@ -1,19 +1,19 @@
 <script lang="ts">
-	import type { AdministrativeStatus } from '@prisma/client';
-	import hotkeys from 'hotkeys-js';
+	import type { AdministrativestatusEnum } from '#lib/api/rumbleClient/client';
 	import StatusWidget from './StatusWidget.svelte';
+	import { m } from '#lib/paraglide/messages';
 
 	interface Props {
 		title: string;
 		faIcon: string;
-		status: AdministrativeStatus;
-		changeStatus: (status: AdministrativeStatus) => Promise<void>;
+		status: AdministrativestatusEnum;
+		changeStatus: (status: AdministrativestatusEnum) => Promise<void>;
 		doneHotkey?: string;
 	}
 
 	let { title, faIcon, status, changeStatus, doneHotkey }: Props = $props();
 
-	const btnClick = async (status: AdministrativeStatus) => {
+	const btnClick = async (status: AdministrativestatusEnum) => {
 		await changeStatus(status);
 	};
 </script>
@@ -25,16 +25,19 @@
 	status={[
 		{
 			value: 'PENDING',
+			title: m.statusPending(),
 			faIcon: 'fa-hourglass-half',
 			color: 'btn-warning'
 		},
 		{
 			value: 'PROBLEM',
+			title: m.statusProblem(),
 			faIcon: 'fa-triangle-exclamation',
 			color: 'btn-error'
 		},
 		{
 			value: 'DONE',
+			title: m.statusDone(),
 			faIcon: 'fa-check',
 			color: 'btn-success',
 			hotkey: doneHotkey

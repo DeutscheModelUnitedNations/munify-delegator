@@ -1,17 +1,8 @@
-import { graphql } from '$houdini';
+import { redirect } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { applyHref } from '../apply/applyPaths';
 
-export const _houdini_load = graphql(`
-	query RoleSelectionQuery($conferenceId: String!) {
-		findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			name
-			description
-			fontAwesomeIcon
-		}
-	}
-`);
-
-export const _RoleSelectionQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+// The application is one form on the conference's dashboard; this link opens it on its path.
+export const load: PageLoad = ({ params }) => {
+	redirect(307, applyHref({ conferenceId: params.conferenceId, path: 'individual' }));
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m } from '#lib/paraglide/messages';
 	import { girocode } from '@dipser/epc-qr-code.js';
 
 	interface Props {
@@ -23,18 +23,16 @@
 	);
 </script>
 
-<div class="flex flex-col gap-4">
-	<h1 class="text-2xl font-bold">{m.giroCode()}</h1>
-	<p>{m.giroCodeDescription()}</p>
-	<div
-		class="flex aspect-square w-full items-center justify-center rounded-lg bg-white p-10 sm:max-w-sm"
-	>
+<div class="flex w-full max-w-xs flex-col gap-2">
+	<h3 class="font-bold">{m.giroCode()}</h3>
+	<p class="text-base-content/70 text-sm">{m.giroCodeDescription()}</p>
+	<div class="flex aspect-square w-full items-center justify-center rounded-box bg-white p-6">
 		{#if qrCode && qrCode !== ''}
-			<img src={qrCode} alt="QR Code" class="w-full" />
+			<img src={qrCode} alt={m.a11yQrCode()} class="w-full" />
 		{:else if qrCode === ''}
-			<i class="fa-duotone fa-bug text-3xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-bug text-3xl"></i>
 		{:else}
-			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+			<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin text-3xl"></i>
 		{/if}
 	</div>
 </div>

@@ -1,0 +1,133 @@
+/**
+ * Wipes the dev database and fills it with every state the app can show (`bun run db:seed:dev`).
+ *
+ * Nine conferences cover the life of a conference: before registration, three moments of the
+ * registration window, preparation with and without its steps unlocked, the running conference
+ * and the time after it (`seed-dev/plans.ts`). In them, the accounts on the oidc-mock login page
+ * (`seed-data/devAccounts.ts`) each play one role: the team roles in every conference, the
+ * application stages in the registration conferences, and the participant roles - delegates,
+ * single participants, supervisors, rejected appl{ kind, options }: { kind: CrowdKind; options?: { incomplete?: boolean; ages?: [number, number]; }; }s the volume tables, statistics and assignment tools need.
+ *
+ * The overview printed at the end says which account to sign in with for what.
+ */
+import { faker } from '@faker-js/faker';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { reset } from 'drizzle-seed';
+import { sql } from 'drizzle-orm';
+import { STATISTICS_VIEWS } from './statisticsViews';
+import * as schema from './schema';
+import { unMemberNations } from './seed-data/nations';
+import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user';
+import { devAccounts } from './seed-data/devAccounts';
+import { conferenceTemplatePdfs } from './seed-data/pdfDocuments';
+import { emptyBatch, insertBatch } from './seed-dev/batch';
+import { replaceSeedObjects, seedStorage } from './seed-dev/files';
+import { createUniqueCode, type CrowdKind, type SeedWorld } from './seed-dev/context';
+import { addCrowd, addWaitingList, buildConferenceStructure } from './seed-dev/conference';
+import { addAssignmentDraft } from './seed-dev/assignmentDraft';
+import { addAssignedPersonas, addRegistrationPersonas } from './seed-dev/personas';
+import { addReviewerSnippets, addTeam } from './seed-dev/team';
+import { addPapers } from './seed-dev/papers';
+import { addSurveys } from './seed-dev/surveys';
+import { addEmails } from './seed-dev/emails';
+import { addMergedMembers } from './seed-dev/schools';
+import { addBulk } from './seed-dev/bulk';
+import { addCalendar } from './seed-dev/calendar';
+import { addResolutions } from './seed-dev/resolutions';
+import { printOverview } from './seed-dev/overview';
+import {
+	addDuplicateScenarioAccounts,
+	addDuplicateScenarioParticipants,
+	addElsewhereTeam
+} from './seed-dev/duplicates';
+import { conferencePlans } from './seed-dev/plans';
+import { logger } from '#lib/logger';
+
+// Run outside SvelteKit, so the connection string comes straight off the process rather than
+// through `$app/env/private`.
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error('DATABASE_URL is not set');
+const db = drizzle(databaseUrl);
+// The uploaded files go to the bucket, which is emptied along with the database.
+const storage = seedStorage();
+
+// A fixed faker seed keeps the generated data identical between runs (dates aside, which are
+// relative to now so every stage stays where it belongs).
+faker.seed(123);
+
+const CROWD_AGES: Record<CrowdKind, [number, number]> = {
+	participant: [14, 20],
+	supervisor: [25, 62],
+	team: [18, 30]
+};
+
+const batch = emptyBatch();
+batch.nation.push(...unMemberNations());
+
+let participantCount = 0;
+
+const world: SeedWorld = {
+	batch,
+	nations: batch.nation.map((nation) => nation.alpha3Code),
+	crowdUser({ kind, options = {} }) {
+		const [minAge, maxAge] = options.ages ?? CROWD_AGES[kind];
+		const user = makeSeedUser({ minAge, maxAge, incomplete: options.incomplete });
+		if (kind === 'participant') user.globalNotes = careNoteFor(participantCount++);
+		batch.user.push(user);
+		return user.id;
+	},
+	uniqueCode: createUniqueCode('the seed')
+};
+
+for (const account of devAccounts) {
+	if (account.profile !== 'none') batch.user.push(makeDevAccountUser(account));
+}
+addReviewerSnippets(batch);
+addDuplicateScenarioAccounts(batch);
+
+for (const plan of conferencePlans) {
+	const templates = await conferenceTemplatePdfs(
+		plan.conference.longTitle ?? plan.conference.title
+	);
+	const cs = buildConferenceStructure({ world, plan, templates });
+	if (plan.key === 'elsewhere') {
+		// Another organizer's conference: nothing of the dev team in it, only the duplicate scenarios.
+		addElsewhereTeam(cs);
+		addDuplicateScenarioParticipants(cs);
+		continue;
+	}
+	addTeam(cs);
+	// Personas before the crowd: their fixed codes and nation are reserved first.
+	if (plan.assigned) addAssignedPersonas(cs);
+	else addRegistrationPersonas(cs);
+	addCrowd(cs);
+	if (plan.with.assignmentDraft) addAssignmentDraft(cs);
+	addWaitingList({ cs, personaUserId: 'dev-waitlist' });
+	addPapers(cs);
+	addSurveys(cs);
+	addEmails(cs);
+	await addCalendar(cs);
+	await addResolutions(cs);
+	addBulk(cs);
+	addDuplicateScenarioParticipants(cs);
+}
+
+// Last: one person per conference comes from another school than their delegation, as after a merger.
+addMergedMembers(batch);
+
+logger.info('Resetting database...');
+await reset(db, schema);
+logger.info(
+	`Inserting ${batch.user.length} users, ${batch.delegation.length} delegations and ${batch.singleParticipant.length} single participants in ${conferencePlans.length} conferences...`
+);
+await insertBatch({ db, batch });
+logger.info(`Replacing the bucket's objects with ${batch.storedObject.length} uploaded files...`);
+await replaceSeedObjects({ storage, batch });
+// The app refreshes them every few minutes; until then the statistics would show the old data.
+logger.info('Refreshing the statistics views...');
+for (const view of STATISTICS_VIEWS) {
+	await db.execute(sql.raw(`REFRESH MATERIALIZED VIEW "${view}"`));
+}
+
+printOverview();
+process.exit(0);

@@ -1,117 +1,146 @@
 <script lang="ts">
-	import codenamize from '$lib/services/codenamize';
-	import type { PageData } from '../../$houdini';
-	import { alpha3Code, m } from '$lib/paraglide/messages';
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
-	import Flag from '$lib/components/Flag.svelte';
+	import StudentsAcceptedStat from '../Common/StudentsAcceptedStat.svelte';
+	import type { CurrentUser } from '#lib/state/currentUser.svelte.js';
+	import { m } from '#lib/paraglide/messages';
+	import { client } from '#lib/api/rumbleClient/client';
+	import type { MyConferenceParticipation } from '#lib/api/myConferenceParticipation';
+	import type { ConferenceState } from '#lib/data/dashboardLinks';
+	import GenericWidget from '#lib/components/delegationStats/GenericWidget.svelte';
+	import DashboardSection from '#lib/components/dashboard/DashboardSection.svelte';
+	import ApplicationRejected from '#lib/components/ApplicationRejected.svelte';
+	import AssignmentPending from '#lib/components/AssignmentPending.svelte';
+	import ChunkLoadError from '#lib/components/ChunkLoadError.svelte';
+	import formatNames from '#lib/helpers/formatNames';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import {
-		downloadCompletePostalRegistrationPDF,
-		type ParticipantData,
-		type RecipientData
-	} from '$lib/services/pdfGenerator';
-	import { toast } from 'svelte-sonner';
-	import { invalidateAll } from '$app/navigation';
-	import { page } from '$app/state';
-	import EntryCode from '../Common/EntryCode.svelte';
-	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
-	import InfoGrid from '$lib/components/InfoGrid';
-	import { SvelteSet } from 'svelte/reactivity';
-
-	// TODO these components need some refactoring
+	import SupervisorPresence from './SupervisorPresence.svelte';
+	import MySchool from '../Common/MySchool.svelte';
+	import SupervisorConnectionCode from './SupervisorConnectionCode.svelte';
+	import SupervisedDelegationCard from './SupervisedDelegationCard.svelte';
+	import SupervisedSingleParticipantCard from './SupervisedSingleParticipantCard.svelte';
+	import SupervisorSelectionPendingStage from './SupervisorSelectionPendingStage.svelte';
 
 	interface Props {
-		user: PageData['user'];
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
-		supervisor: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
-		>;
-		status: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus']
-		>;
+		conferenceId: string;
+		conferenceState: ConferenceState;
+		/** Whether the team has released the assignment; until then nobody is accepted or rejected. */
+		assignmentReleased: boolean;
+		/** Whether the application deadline has passed and the team is selecting. */
+		selectionInProgress: boolean;
+		supervisorId: string;
+		user: CurrentUser;
+		status: MyConferenceParticipation['participantStatus'];
 		ofAge: boolean;
 	}
 
-	let { user, conference, supervisor, status, ofAge }: Props = $props();
+	let {
+		conferenceId,
+		conferenceState,
+		assignmentReleased,
+		selectionInProgress,
+		supervisorId,
+		user,
+		status,
+		ofAge
+	}: Props = $props();
 
-	let isStateParticipantRegistration = $derived(conference.state === 'PARTICIPANT_REGISTRATION');
+	/**
+	 * Just who this supervisor's students are and whether they got a role: enough to count them and
+	 * decide what to show. Each card fetches the details of the students it lists.
+	 */
+	const supervisor = $derived(
+		await client.liveQuery.conferenceSupervisor({
+			__args: { id: supervisorId },
+			id: true,
+			supervisedDelegationMembers: {
+				id: true,
+				assignedCommittee: { id: true },
+				user: {
+					id: true,
+					givenName: true,
+					familyName: true,
+					conferenceParticipants: { paymentStatus: true, conference: { id: true } }
+				},
+				delegation: {
+					id: true,
+					assignedRole: { id: true, kind: true }
+				}
+			},
+			supervisedSingleParticipants: {
+				id: true,
+				user: {
+					id: true,
+					givenName: true,
+					familyName: true,
+					conferenceParticipants: { paymentStatus: true, conference: { id: true } }
+				},
+				assignedRole: { id: true }
+			}
+		})
+	);
+
+	let isStateParticipantRegistration = $derived(conferenceState === 'PARTICIPANT_REGISTRATION');
+
+	const acceptedDelegationMembers = $derived(
+		supervisor.supervisedDelegationMembers.filter((x) => x.delegation.assignedRole)
+	);
+	const acceptedSingleParticipants = $derived(
+		supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
+	);
+
+	// While registration is open nobody has been accepted or rejected yet, so everyone is listed.
 	let delegationMembers = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedDelegationMembers
-			: supervisor.supervisedDelegationMembers.filter(
-					(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
-				)
+			: acceptedDelegationMembers
 	);
-	let rejectedParticipants = $derived.by(() => {
-		const res: Partial<{ given_name: string; family_name: string; id: string }>[] = [];
-		if (isStateParticipantRegistration) return res;
-		supervisor.supervisedDelegationMembers
-			.filter((x) => !x.delegation.assignedNation && !x.delegation.assignedNonStateActor)
-			.forEach((member) => {
-				res.push(member.user);
-			});
-
-		supervisor.supervisedSingleParticipants
-			.filter((x) => !x.assignedRole)
-			.forEach((participant) => {
-				res.push(participant.user);
-			});
-
-		return res;
-	});
-	let delegations = $derived([
-		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
-	]);
-	// Get all papers from unique delegations (using delegationMembers to access papers)
-	let allPapers = $derived.by(() => {
-		const seenDelegationIds = new SvelteSet<string>();
-		const papers: NonNullable<(typeof delegationMembers)[number]['delegation']['papers']> = [];
-		delegationMembers.forEach((member) => {
-			if (!seenDelegationIds.has(member.delegation.id)) {
-				seenDelegationIds.add(member.delegation.id);
-				papers.push(...(member.delegation.papers ?? []));
-			}
-		});
-		return papers;
-	});
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
-			: supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
+			: acceptedSingleParticipants
+	);
+	let delegationIds = $derived([...new Set(delegationMembers.map((x) => x.delegation.id))]);
+
+	let rejectedParticipants = $derived(
+		isStateParticipantRegistration
+			? []
+			: [
+					...supervisor.supervisedDelegationMembers
+						.filter((x) => !x.delegation.assignedRole)
+						.map((x) => x.user),
+					...supervisor.supervisedSingleParticipants
+						.filter((x) => !x.assignedRole)
+						.map((x) => x.user)
+				]
 	);
 
-	// Calculate total and accepted students for the students overview
 	let totalStudentsCount = $derived(
 		supervisor.supervisedDelegationMembers.length + supervisor.supervisedSingleParticipants.length
 	);
-	let acceptedStudentsCount = $derived(delegationMembers.length + singleParticipants.length);
+	let acceptedStudentsCount = $derived(
+		acceptedDelegationMembers.length + acceptedSingleParticipants.length
+	);
+	let atLeastOneAccepted = $derived(acceptedStudentsCount > 0);
+	/**
+	 * After registration, before anything else: whether the assignment is still being made, or
+	 * none of the students got a role.
+	 */
+	const outcomeView = $derived.by(() => {
+		if (isStateParticipantRegistration) return undefined;
+		if (!assignmentReleased) return 'pending';
+		return atLeastOneAccepted ? undefined : 'rejected';
+	});
 	let allStudentsAccepted = $derived(
 		!isStateParticipantRegistration &&
 			totalStudentsCount > 0 &&
 			acceptedStudentsCount === totalStudentsCount
 	);
 
-	let connectionLink = $derived(
-		`${page.url.origin}/dashboard/${conference.id}/connectSupervisor?code=${supervisor.connectionCode}`
-	);
-
 	const stats = $derived([
 		{
 			icon: 'flag',
 			title: m.delegations(),
-			value: delegations.length,
+			value: delegationIds.length,
 			desc: m.inTheConference()
 		},
 		{
@@ -128,243 +157,28 @@
 		}
 	]);
 
-	// Check if all payments are complete (supervisor + all supervised members + single participants)
-	let allPaymentsComplete = $derived.by(() => {
-		// Check supervisor's own payment status
-		const supervisorPaid = status?.paymentStatus === 'DONE';
+	const isPaid = (person: (typeof delegationMembers)[number]['user']) =>
+		person.conferenceParticipants.find((s) => s.conference.id === conferenceId)?.paymentStatus ===
+		'DONE';
 
-		// Check all supervised delegation members' payment status
-		const allMembersPaid = delegationMembers.every((member) => {
-			const participantStatus = member.user.conferenceParticipantStatus?.find(
-				(s) => s.conference.id === conference?.id
-			);
-			return participantStatus?.paymentStatus === 'DONE';
-		});
-
-		// Check all single participants' payment status
-		const allSinglesPaid = singleParticipants.every((sp) => {
-			const participantStatus = sp.user.conferenceParticipantStatus?.find(
-				(s) => s.conference.id === conference?.id
-			);
-			return participantStatus?.paymentStatus === 'DONE';
-		});
-
-		return supervisorPaid && allMembersPaid && allSinglesPaid;
-	});
-
-	const getName = (
-		user: { given_name: string; family_name: string } & { [key: string]: any },
-		shortenGiven = false
-	) => {
-		if (shortenGiven) {
-			return `${user.given_name.charAt(0)}. ${user.family_name}`;
-		}
-		return formatNames(user.given_name, user.family_name);
-	};
-
-	const updateQuery = graphql(`
-		mutation SupervisorAttendanceChangeMutation(
-			$where: ConferenceSupervisorWhereUniqueInput!
-			$data: ConferenceSupervisorUpdateDataInput!
-		) {
-			updateOneConferenceSupervisor(where: $where, data: $data) {
-				id
-				plansOwnAttendenceAtConference
-			}
-		}
-	`);
-
-	const handlePresenceChange = async (e: Event) => {
-		const promise = updateQuery.mutate({
-			where: {
-				conferenceId_userId: {
-					conferenceId: conference.id,
-					userId: user.sub
-				}
-			},
-			data: {
-				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
-			}
-		});
-		toast.promise(promise, {
-			loading: m.genericToastLoading(),
-			success: m.genericToastSuccess(),
-			error: m.genericToastError()
-		});
-		await promise;
-
-		cache.markStale();
-		await invalidateAll();
-	};
-
-	// const allParticipants = $derived([...supervisor.supervisedSingleParticipants, ...supervisor.supervisedDelegationMembers].sort((a, b) => a.user.family_name.localeCompare(b.user.family_name)));
-
-	const userQuery = graphql(`
-		query GetUserDetailsForPostalRegistration($id: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $id }) {
-				id
-				given_name
-				family_name
-				street
-				apartment
-				zip
-				city
-				country
-				birthday
-			}
-
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				contractContent
-				guardianConsentContent
-				mediaConsentContent
-				termsAndConditionsContent
-			}
-		}
-	`);
-
-	const downloadPostalDocuments = async (userId: string) => {
-		try {
-			const userDetailsStore = await userQuery.fetch({
-				variables: { id: userId, conferenceId: conference!.id }
-			});
-			const user = userDetailsStore?.data?.findUniqueUser;
-			const conferenceData = userDetailsStore?.data?.findUniqueConference;
-
-			if (user) {
-				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
-					toast.error(m.incompleteAddressOrBirthdayForPostalRegistration());
-					return;
-				}
-
-				const recipientData: RecipientData = {
-					name: `${conference?.postalName}`,
-					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
-					zip: conference?.postalZip?.toString() ?? '',
-					city: conference?.postalCity ?? '',
-					country: conference?.postalCountry ?? ''
-				};
-
-				const participantData: ParticipantData = {
-					id: user.id,
-					name: formatNames(user.given_name, user.family_name, {
-						givenNameFirst: true,
-						familyNameUppercase: true,
-						givenNameUppercase: true
-					}),
-					address: `${user.street} ${user.apartment ? user.apartment : ''}, ${user.zip} ${user.city}, ${user.country}`,
-					birthday: user.birthday?.toLocaleDateString() ?? ''
-				};
-
-				await downloadCompletePostalRegistrationPDF(
-					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
-					participantData,
-					recipientData,
-					conferenceData?.contractContent ?? undefined,
-					conferenceData?.guardianConsentContent ?? undefined,
-					conferenceData?.mediaConsentContent ?? undefined,
-					conferenceData?.termsAndConditionsContent ?? undefined,
-					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
-				);
-
-				toast.success(m.postalRegistrationPDFGenerated());
-			} else {
-				console.error('User details not found');
-				toast.error(m.errorGeneratingPostalRegistrationPDF());
-			}
-		} catch (error) {
-			console.error('Error generating PDF:', error);
-			toast.error(m.errorGeneratingPostalRegistrationPDF());
-		}
-	};
-
-	const rotateConnectionCodeMutation = graphql(`
-		mutation RotateSupervisorConnectionCode($id: ID!) {
-			rotateSupervisorConnectionCode(id: $id) {
-				id
-				connectionCode
-			}
-		}
-	`);
-
-	const linkContext = $derived<DashboardLinkContext>({
-		conferenceId: conference.id,
-		userType: 'supervisor',
-		conferenceState: conference.state,
-		unlockPayments: conference.unlockPayments,
-		unlockPostals: conference.unlockPostals,
-		hasConferenceInfo: !!conference.info,
-		linkToPreparationGuide: conference.linkToPreparationGuide,
-		isOpenPaperSubmission: conference.isOpenPaperSubmission,
-		paymentStatus: status?.paymentStatus,
-		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAge),
-		user
-	});
-
-	const visibleLinks = $derived(getLinksForUserType('supervisor', linkContext));
+	// The supervisor's own payment plus every listed student's
+	let allPaymentsComplete = $derived(
+		status?.paymentStatus === 'DONE' &&
+			delegationMembers.every((member) => isPaid(member.user)) &&
+			singleParticipants.every((participant) => isPaid(participant.user))
+	);
 </script>
 
-{#if isStateParticipantRegistration}
-	<section class="alert alert-info">
-		<i class="fa-solid fa-circle-info text-xl"></i>
-		{m.registeredAsSupervisor()}
-	</section>
-{/if}
-
-<DashboardSection icon="chart-pie" title={m.overview()} description={m.overviewDescription()}>
-	<GenericWidget content={stats} />
-</DashboardSection>
-
-<DashboardSection
-	icon="user-check"
-	title={m.ownPresence()}
-	description={m.ownPresenceDescription()}
->
-	<div class="card bg-base-100 dark:bg-base-200 max-w-80 p-6 shadow-md">
-		<fieldset class="fieldset">
-			<label class="label cursor-pointer">
-				<span>{m.presentAtConference()}</span>
-				<input
-					type="checkbox"
-					class="toggle toggle-success"
-					checked={supervisor.plansOwnAttendenceAtConference}
-					onchange={handlePresenceChange}
-					disabled={!isStateParticipantRegistration}
-				/>
-			</label>
-		</fieldset>
-	</div>
-	<p class="text-xs text-gray-500">
-		{#if supervisor.plansOwnAttendenceAtConference}
-			{@html m.willBePresentAtConference()}
-		{:else}
-			{@html m.willNotBePresentAtConference()}
-		{/if}
-	</p>
-</DashboardSection>
-
-{#if !isStateParticipantRegistration}
+{#snippet afterRegistration()}
 	{#if !allPaymentsComplete}
-		<ConferenceStatusWidget
-			conferenceId={conference!.id}
-			userId={user.sub}
-			ofAgeAtConference={ofAge}
-			{status}
-			unlockPayment={conference?.unlockPayments}
-			unlockPostals={conference?.unlockPostals}
-		/>
+		<ConferenceStatusWidget {conferenceId} ofAgeAtConference={ofAge} {status} />
 	{/if}
 
 	<DashboardSection icon="chart-bar" title={m.delegationStatistics()}>
-		<DelegationStatsCharts
-			members={delegationMembers}
-			papers={allPapers}
-			conferenceId={conference.id}
-			conferenceStartDate={conference.startConference}
-		/>
+		<DelegationStatsCharts {conferenceId} {supervisorId} />
 	</DashboardSection>
 
-	{#if delegationMembers.some((x) => x.delegation.assignedNation && !x.assignedCommittee)}
+	{#if delegationMembers.some((x) => x.delegation.assignedRole?.kind === 'NATION' && !x.assignedCommittee)}
 		<div class="alert alert-warning">
 			<i class="fas fa-arrows-turn-to-dots text-2xl"></i>
 			<div>
@@ -373,294 +187,42 @@
 			</div>
 		</div>
 	{/if}
+{/snippet}
 
-	<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
-		<DashboardLinksGrid>
-			{#each visibleLinks as link (link.id)}
-				{@const badge = link.getBadge?.(linkContext)}
-				<DashboardLinkCard
-					href={link.getHref(linkContext)}
-					icon={link.icon}
-					title={link.getTitle()}
-					description={link.getDescription()}
-					external={link.external}
-					disabled={link.isDisabled(linkContext)}
-					badge={badge?.value}
-					badgeType={badge?.type}
-					important={link.isImportant?.(linkContext) ?? false}
-				/>
-			{/each}
-		</DashboardLinksGrid>
+{#snippet students()}
+	<DashboardSection icon="flag" title={m.delegations()} description={m.delegationsDescription()}>
+		{#each delegationIds as delegationId (delegationId)}
+			<SupervisedDelegationCard
+				{conferenceId}
+				{supervisorId}
+				{delegationId}
+				{isStateParticipantRegistration}
+			/>
+		{:else}
+			<div class="alert alert-warning">
+				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
+				{m.noDelegationsFound()}
+			</div>
+		{/each}
 	</DashboardSection>
-{/if}
 
-<DashboardSection icon="flag" title={m.delegations()} description={m.delegationsDescription()}>
-	{#if delegations.length > 0}
-		{#each delegations as delegation (delegation.id)}
-			{@const members = delegationMembers.filter((x) => x.delegation.id === delegation.id)}
-			{@const hiddenMembers = delegation.members.filter(
-				(x) => !members.map((y) => y.id).includes(x.id)
-			)}
-
-			<SupervisorContentCard
-				title={codenamize(delegation.id)}
-				{isStateParticipantRegistration}
-				applied={delegation.applied}
-			>
-				{#snippet detailSpace()}
-					<InfoGrid.Grid>
-						{#if isStateParticipantRegistration}
-							<InfoGrid.Entry title={m.entryCode()} fontAwesomeIcon="fa-duotone fa-barcode">
-								<span class="font-mono tracking-[0.3rem]">{delegation.entryCode}</span>
-							</InfoGrid.Entry>
-							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="fa-duotone fa-flag">
-								{#if delegation.appliedForRoles.length > 0}
-									<div class="flex flex-wrap gap-2">
-										{#each delegation.appliedForRoles
-											.sort((x) => x.rank)
-											.reverse() as roleApplication (roleApplication.id)}
-											<Flag
-												size="xs"
-												alpha2Code={roleApplication.nation?.alpha2Code}
-												nsa={!!roleApplication.nonStateActor}
-												icon={roleApplication.nonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
-											/>
-										{/each}
-									</div>
-								{:else}
-									<i class="fa-duotone fa-dash"></i>
-								{/if}
-							</InfoGrid.Entry>
-						{:else}
-							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-duotone fa-flag">
-								<div class="flex items-center gap-2">
-									<Flag
-										size="xs"
-										alpha2Code={delegation.assignedNation?.alpha2Code}
-										nsa={!!delegation.assignedNonStateActor}
-										icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
-									/>
-									{#if delegation.assignedNation}
-										{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
-									{:else if delegation.assignedNonStateActor}
-										{delegation.assignedNonStateActor.name}
-									{/if}
-								</div>
-							</InfoGrid.Entry>
-						{/if}
-						<InfoGrid.Entry
-							title={m.delegationMembers()}
-							fontAwesomeIcon="fa-duotone fa-users"
-							content={delegation.members.length}
-						/>
-						{#if isStateParticipantRegistration}
-							<InfoGrid.Entry
-								title={m.schoolOrInstitution()}
-								fontAwesomeIcon="school"
-								content={delegation.school}
-							/>
-							<InfoGrid.Entry
-								title={m.experience()}
-								fontAwesomeIcon="compass"
-								content={delegation.experience}
-							/>
-							<InfoGrid.Entry
-								title={m.motivation()}
-								fontAwesomeIcon="fire-flame-curved"
-								content={delegation.motivation}
-							/>
-						{/if}
-					</InfoGrid.Grid>
-				{/snippet}
-
-				{#snippet memberSpace()}
-					<DelegationStatusTableWrapper
-						withPostalSatus={!isStateParticipantRegistration}
-						withPaymentStatus={!isStateParticipantRegistration}
-						withCommittee={!isStateParticipantRegistration}
-						withPaperCount={!isStateParticipantRegistration}
-						withEmail
-						title={m.members()}
-					>
-						{#each members ?? [] as member (member.id)}
-							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
-								(x) => x.conference.id === conference?.id
-							)}
-							{@const memberPaperCount =
-								delegation.papers?.filter((p) => p.author?.id === member.user.id).length ?? 0}
-							<DelegationStatusTableEntry
-								name={formatNames(member.user.given_name, member.user.family_name)}
-								pronouns={member.user.pronouns ?? ''}
-								headDelegate={member.isHeadDelegate}
-								email={member.user.email}
-								committee={!isStateParticipantRegistration
-									? (member.assignedCommittee?.abbreviation ?? '')
-									: undefined}
-								withPaymentStatus={!isStateParticipantRegistration}
-								withPostalStatus={!isStateParticipantRegistration}
-								withPaperCount={!isStateParticipantRegistration}
-								paperCount={memberPaperCount}
-								downloadPostalDocuments={conference?.unlockPostals
-									? () => downloadPostalDocuments(member.user.id)
-									: undefined}
-								postalSatus={getSimplifiedPostalStatus(
-									participantStatus,
-									ofAgeAtConference(conference?.startConference, member.user.birthday)
-								)}
-								paymentStatus={participantStatus?.paymentStatus}
-							/>
-						{/each}
-						{#each hiddenMembers as member (member.id)}
-							<tr>
-								<td colspan="5" class="text-gray-500 italic">
-									{m.hiddenMember()}
-									{#if member.isHeadDelegate}
-										<div class="tooltip" data-tip={m.headDelegate()}>
-											<i class="fa-duotone fa-medal ml-2"></i>
-										</div>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</DelegationStatusTableWrapper>
-				{/snippet}
-			</SupervisorContentCard>
-		{/each}
-	{:else}
-		<div class="alert alert-warning">
-			<i class="fa-solid fa-exclamation-triangle text-xl"></i>
-			{m.noDelegationsFound()}
-		</div>
-	{/if}
-</DashboardSection>
-
-<DashboardSection icon="user" title={m.singleParticipants()}>
-	{#if singleParticipants.length > 0}
+	<DashboardSection icon="user" title={m.singleParticipants()}>
 		{#each singleParticipants as singleParticipant (singleParticipant.id)}
-			<SupervisorContentCard
-				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
+			<SupervisedSingleParticipantCard
+				{conferenceId}
+				singleParticipantId={singleParticipant.id}
 				{isStateParticipantRegistration}
-				applied={singleParticipant.applied}
-			>
-				{#snippet detailSpace()}
-					<InfoGrid.Grid>
-						{#if isStateParticipantRegistration || !singleParticipant.assignedRole}
-							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="masks-theater">
-								{#if singleParticipant.appliedForRoles.length > 0}
-									<div class="flex flex-wrap gap-2">
-										{#each singleParticipant.appliedForRoles as roleApplication (roleApplication.id)}
-											<div class="badge">
-												<i
-													class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace(
-														'fa-',
-														''
-													)} mr-2"
-												></i>
-												{roleApplication.name}
-											</div>
-										{/each}
-									</div>
-								{:else}
-									<i class="fa-duotone fa-dash"></i>
-								{/if}
-							</InfoGrid.Entry>
-						{:else}
-							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="masks-theater">
-								<i
-									class="fa-duotone fa-{singleParticipant.assignedRole?.fontAwesomeIcon?.replace(
-										'fa-',
-										''
-									)}"
-								></i>
-								{singleParticipant.assignedRole?.name}
-							</InfoGrid.Entry>
-						{/if}
-						{#if isStateParticipantRegistration}
-							<InfoGrid.Entry
-								title={m.schoolOrInstitution()}
-								content={singleParticipant.school}
-								fontAwesomeIcon="school"
-							/>
-							<InfoGrid.Entry
-								title={m.experience()}
-								content={singleParticipant.experience}
-								fontAwesomeIcon="compass"
-							/>
-							<InfoGrid.Entry
-								title={m.motivation()}
-								content={singleParticipant.motivation}
-								fontAwesomeIcon="fire-flame-curved"
-							/>
-						{/if}
-					</InfoGrid.Grid>
-				{/snippet}
-
-				{#snippet memberSpace()}
-					<DelegationStatusTableWrapper
-						withPostalSatus={!isStateParticipantRegistration}
-						withPaymentStatus={!isStateParticipantRegistration}
-						withEmail
-						title={m.details()}
-					>
-						{@const participantStatus = singleParticipant.user?.conferenceParticipantStatus.find(
-							(x) => x.conference.id === conference?.id
-						)}
-						<DelegationStatusTableEntry
-							name={formatNames(
-								singleParticipant.user.given_name,
-								singleParticipant.user.family_name
-							)}
-							pronouns={singleParticipant.user.pronouns ?? ''}
-							email={singleParticipant.user.email}
-							withPaymentStatus={!isStateParticipantRegistration}
-							withPostalStatus={!isStateParticipantRegistration}
-							downloadPostalDocuments={conference?.unlockPostals
-								? () => downloadPostalDocuments(singleParticipant.user.id)
-								: undefined}
-							postalSatus={getSimplifiedPostalStatus(
-								participantStatus,
-								ofAgeAtConference(conference?.startConference, singleParticipant.user.birthday)
-							)}
-							paymentStatus={participantStatus?.paymentStatus}
-						/>
-					</DelegationStatusTableWrapper>
-				{/snippet}
-			</SupervisorContentCard>
+			/>
+		{:else}
+			<div class="alert alert-warning">
+				<i class="fa-sharp-duotone fa-solid fa-exclamation-triangle text-xl"></i>
+				{m.noSingleParticipantsFound()}
+			</div>
 		{/each}
-	{:else}
-		<div class="alert alert-warning">
-			<i class="fa-solid fa-exclamation-triangle text-xl"></i>
-			{m.noSingleParticipantsFound()}
-		</div>
-	{/if}
-</DashboardSection>
+	</DashboardSection>
+{/snippet}
 
-<DashboardSection
-	icon="users-line"
-	title={m.connectWithStudents()}
-	description={m.connectWithStudentsDescription()}
->
-	<EntryCode
-		entryCode={supervisor.connectionCode}
-		referralLink={connectionLink}
-		userHasRotationPermission={true}
-		rotationFn={async () => {
-			const promise = rotateConnectionCodeMutation.mutate({
-				id: supervisor.id
-			});
-			toast.promise(promise, {
-				loading: m.genericToastLoading(),
-				success: m.codeRotated(),
-				error: m.genericToastError()
-			});
-			await promise;
-			cache.markStale();
-			await invalidateAll();
-		}}
-	/>
-</DashboardSection>
-
-{#if !isStateParticipantRegistration && totalStudentsCount > 0}
+{#snippet outcome()}
 	<DashboardSection
 		icon={allStudentsAccepted ? 'circle-check' : 'user-xmark'}
 		title={allStudentsAccepted ? m.yourStudents() : m.rejectedParticipants()}
@@ -668,23 +230,7 @@
 			? m.yourStudentsPostDescription()
 			: m.rejectedParticipantsDescription()}
 	>
-		<div class="stats bg-base-200 shadow">
-			<div class="stat">
-				<div class="stat-figure text-primary">
-					<i
-						class="fa-duotone text-4xl"
-						class:fa-circle-check={allStudentsAccepted}
-						class:text-success={allStudentsAccepted}
-						class:fa-users={!allStudentsAccepted}
-					></i>
-				</div>
-				<div class="stat-title">{m.studentsAccepted()}</div>
-				<div class="stat-value">{acceptedStudentsCount} / {totalStudentsCount}</div>
-				{#if allStudentsAccepted}
-					<div class="stat-desc text-success">{m.allStudentsAcceptedMessage()}</div>
-				{/if}
-			</div>
-		</div>
+		<StudentsAcceptedStat accepted={acceptedStudentsCount} total={totalStudentsCount} />
 
 		{#if rejectedParticipants.length > 0}
 			<div class="card bg-base-100 border-base-200 mt-4 border p-4 shadow-md">
@@ -694,7 +240,10 @@
 						{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
 							<tr>
 								<td>
-									{formatNames(rejectedParticipant.given_name, rejectedParticipant.family_name)}
+									{formatNames({
+										givenName: rejectedParticipant.givenName ?? undefined,
+										familyName: rejectedParticipant.familyName ?? undefined
+									})}
 								</td>
 							</tr>
 						{/each}
@@ -703,4 +252,71 @@
 			</div>
 		{/if}
 	</DashboardSection>
+{/snippet}
+
+<!-- The dashboard before the conference is over -->
+{#snippet beforePost()}
+	{#if isStateParticipantRegistration}
+		<section class="alert alert-info alert-soft">
+			<i class="fa-sharp-duotone fa-solid fa-circle-info text-xl"></i>
+			{m.registeredAsSupervisor()}
+		</section>
+	{/if}
+
+	<!-- Without any students, connecting them is the one thing to do here -->
+	{#if totalStudentsCount === 0}
+		<SupervisorConnectionCode {conferenceId} {supervisorId} />
+	{:else}
+		<DashboardSection icon="chart-pie" title={m.overview()} description={m.overviewDescription()}>
+			<GenericWidget content={stats} />
+		</DashboardSection>
+	{/if}
+
+	<DashboardSection
+		icon="id-card"
+		title={m.supervisorDetails()}
+		description={m.supervisorDetailsDescription()}
+	>
+		<div class="bg-base-200 rounded-box divide-base-300 divide-y">
+			<SupervisorPresence {supervisorId} editable={isStateParticipantRegistration} />
+			<MySchool {conferenceId} hint={m.supervisorSchoolDescription()} />
+		</div>
+	</DashboardSection>
+
+	{#if !isStateParticipantRegistration}
+		{@render afterRegistration()}
+	{/if}
+
+	{#if totalStudentsCount > 0}
+		{@render students()}
+
+		<SupervisorConnectionCode {conferenceId} {supervisorId} />
+	{/if}
+
+	{#if !isStateParticipantRegistration && totalStudentsCount > 0}
+		{@render outcome()}
+	{/if}
+{/snippet}
+
+{#if selectionInProgress}
+	<SupervisorSelectionPendingStage {supervisorId} />
+{:else if outcomeView === 'pending'}
+	<AssignmentPending />
+{:else if outcomeView === 'rejected'}
+	<ApplicationRejected />
+{:else if conferenceState === 'POST'}
+	{#await import('../Common/Certificate.svelte') then { default: Certificate }}
+		<Certificate
+			{conferenceId}
+			userId={user.sub}
+			didAttend={!!status?.didAttend}
+			isSupervisor={true}
+			{totalStudentsCount}
+			{acceptedStudentsCount}
+		/>
+	{:catch error}
+		<ChunkLoadError {error} />
+	{/await}
+{:else}
+	{@render beforePost()}
 {/if}

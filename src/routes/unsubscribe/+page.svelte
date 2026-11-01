@@ -1,53 +1,35 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '#lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import Footer from '../Footer.svelte';
-	import type { PageProps } from './$types';
-	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { m } from '#lib/paraglide/messages';
 
-	let { data }: PageProps = $props();
-
-	let email = $state('');
-	let loading = $state(false);
+	// Unsubscribe links carry the address, so the field starts filled in.
+	let email = $state(page.url.searchParams.get('email') ?? '');
 	let unsubscribed = $state(false);
-
-	$effect(() => {
-		if (data.prefillEmail) email = data.prefillEmail;
-	});
-
-	const unsubscribeAllMutation = graphql(`
-		mutation UnsubscribeAllMutation($email: String!, $all: Boolean!) {
-			updateOneUsersNewsletterPreferences(
-				email: $email
-				wantsJoinTeamInformation: $all
-				wantsToReceiveGeneralInformation: $all
-			) {
-				id
-			}
-		}
-	`);
 
 	const unsubscribe = async () => {
 		if (!email) {
 			toast.error(m.unsubscribeEmailMissing());
 			return;
 		}
-		loading = true;
-		const promise = unsubscribeAllMutation.mutate({
-			email,
-			all: false
-		});
+		const promise = Promise.resolve(
+			client.mutate.updateUsersNewsletterPreferences({
+				__args: {
+					email,
+					wantsJoinTeamInformation: false,
+					wantsToReceiveGeneralInformation: false
+				}
+			})
+		);
 		toast.promise(promise, {
 			success: m.unsubscribeSuccess(),
 			error: m.unsubscribeError(),
 			loading: m.unsubscribeLoading()
 		});
-		try {
-			await promise;
-			unsubscribed = true;
-		} finally {
-			loading = false;
-		}
+		await promise;
+		unsubscribed = true;
 	};
 </script>
 
@@ -55,15 +37,20 @@
 	class="bg-base-200 flex min-h-screen w-full flex-col items-center justify-center p-5 text-center sm:p-10"
 >
 	{#if !unsubscribed}
-		<div class="card bg-base-100">
-			<div class="card-body">
+		<div class="card bg-base-100 max-sm:w-full">
+			<div class="card-body max-sm:p-4">
 				<h1 class="text-3xl">{m.unsubscribeNewsletters()}</h1>
-				<input class="input input-bordered mt-6 w-lg text-center" type="email" bind:value={email} />
+				<input
+					class="input input-bordered mt-6 w-lg max-w-full text-center"
+					type="email"
+					bind:value={email}
+				/>
 				<button class="btn btn-error {email ? '' : 'btn-disabled'} mt-5" onclick={unsubscribe}
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>
-				<h3 class="mt-6 text-lg">{m.usubscribeSomeOnly()}</h3>
-				<a class="btn btn-primary" href="/my-account">{m.goToProfile()}</a>
+				<h3 class="mt-6 text-lg">{m.unsubscribeSomeOnly()}</h3>
+
+				<a class="btn btn-primary" href={resolve('my-account')}>{m.goToProfile()}</a>
 			</div>
 		</div>
 	{:else}
@@ -71,10 +58,10 @@
 			<div class="card-body">
 				<h1 class="text-xl">{m.unsubscribedAll()}</h1>
 				<h3 class="mt-10 text-lg">{m.unsubscribeRegret()}</h3>
-				<a class="btn btn-primary" href="/my-account">{m.goToProfile()}</a>
-				<p class="max-w-lg text-xs">
-					{m.unsubscribeNote()}
-				</p>
+
+				<a class="btn btn-primary" href={resolve('my-account')}>{m.goToProfile()}</a>
+
+				<p class="max-w-lg text-xs">{m.unsubscribeNote()}</p>
 			</div>
 		</div>
 	{/if}

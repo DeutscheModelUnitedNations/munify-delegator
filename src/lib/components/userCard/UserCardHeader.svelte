@@ -1,0 +1,455 @@
+<script lang="ts">
+	import { logger } from '#lib/logger';
+	import { resolve } from '$app/paths';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { m } from '#lib/paraglide/messages';
+	import { toast } from 'svelte-sonner';
+	import formatNames from '#lib/helpers/formatNames';
+	import { getFullTranslatedCountryNameFromISO3Code } from '#lib/utils/nationTranslationHelper.svelte.js';
+	import UserCardStatusStrip from './UserCardStatusStrip.svelte';
+	import UserCardRoleSummary from './UserCardRoleSummary.svelte';
+	import PossibleDuplicateBadge from './PossibleDuplicateBadge.svelte';
+	import CareNotes from './CareNotes.svelte';
+	import ContactButtons from './ContactButtons.svelte';
+	import ImpersonationButton from './ImpersonationButton.svelte';
+	import Modal from '../Modal.svelte';
+	import { PUBLIC_BADGE_GENERATOR_URL } from '$app/env/public';
+	import { closeUserCard } from './userCardState.svelte';
+	import type { ParticipationStage, UserCardRoles } from './userCardRoles';
+	import type { UserCardTab } from './userCardTabs';
+	import {
+		badgeSeatOf,
+		badgeSessionBody,
+		requestBadgeSession,
+		seatBadgeValues
+	} from './badgeSession';
+	import BadgeGeneratorLinks from '../BadgeGeneratorLinks.svelte';
+	import { personBadge } from '#lib/helpers/badgeCsv';
+
+	interface Props extends UserCardRoles {
+		userId: string;
+		conferenceId: string;
+		givenName?: string | null;
+		familyName?: string | null;
+		pronouns?: string | null;
+		gender?: string | null;
+		mode: 'drawer' | 'page';
+		/** How far the person has come in the conference, if they apply for a seat */
+		stage: ParticipationStage | undefined;
+		/** Opens a tab of the card, where a status pill is changed */
+		onOpenTab: (tab: UserCardTab) => void;
+	}
+
+	let {
+		userId,
+		conferenceId,
+		givenName,
+		familyName,
+		pronouns,
+		gender,
+		mode,
+		stage,
+		onOpenTab,
+		delegationMember,
+		singleParticipant,
+		conferenceSupervisor,
+		teamMember
+	}: Props = $props();
+
+	let displayName = $derived(
+		formatNames({
+			givenName: givenName ?? undefined,
+			familyName: familyName ?? undefined,
+			options: {
+				givenNameFirst: false,
+				delimiter: ', '
+			}
+		})
+	);
+
+	let confirmDisplayName = $derived(
+		formatNames({ givenName: givenName ?? undefined, familyName: familyName ?? undefined })
+	);
+
+	let fullPageUrl = $derived(
+		resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
+			conferenceId,
+			userId
+		})
+	);
+
+	const genderIcon = $derived.by(() => {
+		switch (gender) {
+			case 'MALE':
+				return 'mars';
+			case 'FEMALE':
+				return 'venus';
+			case 'DIVERSE':
+				return 'transgender';
+			default:
+				return 'genderless';
+		}
+	});
+
+	const initials = $derived(
+		[givenName, familyName]
+			.map((name) => name?.trim().at(0))
+			.filter(Boolean)
+			.join('')
+			.toUpperCase()
+	);
+
+	const STAGES: Record<ParticipationStage, { label: () => string; badge: string; icon: string }> = {
+		waitingList: {
+			label: () => m.userCardStageWaitingList(),
+			badge: 'badge-info',
+			icon: 'fa-hourglass-clock'
+		},
+		registered: {
+			label: () => m.userCardStageRegistered(),
+			badge: 'badge-warning',
+			icon: 'fa-pen-line'
+		},
+		applied: { label: () => m.userCardStageApplied(), badge: 'badge-info', icon: 'fa-paper-plane' },
+		notSeated: {
+			label: () => m.userCardStageNotSeated(),
+			badge: 'badge-error',
+			icon: 'fa-circle-xmark'
+		},
+		seated: {
+			label: () => m.userCardStageSeated(),
+			badge: 'badge-success',
+			icon: 'fa-chair-office'
+		},
+		attended: {
+			label: () => m.userCardStageAttended(),
+			badge: 'badge-success',
+			icon: 'fa-calendar-check'
+		}
+	};
+
+	const isParticipant = $derived(
+		!!delegationMember || !!singleParticipant || !!conferenceSupervisor
+	);
+
+	const copyUserId = async () => {
+		await navigator.clipboard.writeText(userId);
+		toast.success(m.codeCopied());
+	};
+
+	// --- Badge generation ---
+	const openBadgeGenerator = async () => {
+		try {
+			// Only the badge needs it, so it is read when a badge is asked for.
+			const [status] = await client.query.conferenceParticipants({
+				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
+				id: true,
+				mediaConsentStatus: true
+			});
+			const body = badgeSessionBody({
+				givenName,
+				familyName,
+				...seatBadgeValues({
+					member: delegationMember,
+					countryName: getFullTranslatedCountryNameFromISO3Code
+				}),
+				pronouns,
+				id: userId,
+				mediaConsentStatus: status?.mediaConsentStatus
+			});
+			window.open(
+				await requestBadgeSession({ baseUrl: PUBLIC_BADGE_GENERATOR_URL, body }),
+				'_blank'
+			);
+		} catch (e) {
+			logger.error('Failed to open badge generator', e);
+			toast.error(m.genericToastError());
+		}
+	};
+
+	// What the person's badge shows, if they hold anything a badge could show.
+	const badgeSeat = $derived(
+		badgeSeatOf({
+			roles: { delegationMember, singleParticipant, conferenceSupervisor, teamMember },
+			labels: {
+				countryName: getFullTranslatedCountryNameFromISO3Code,
+				supervisor: m.supervisor(),
+				team: m.teamBadge()
+			}
+		})
+	);
+
+	const badgeName = $derived(
+		formatNames({
+			givenName: givenName ?? undefined,
+			familyName: familyName ?? undefined,
+			options: { familyNameUppercase: false }
+		})
+	);
+
+	/** The person's nametag as the one row of a badge CSV. */
+	const badgeRows = async () => {
+		if (!badgeSeat) return [];
+		const [status] = await client.query.conferenceParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
+			id: true,
+			mediaConsentStatus: true
+		});
+		// The team is photographed anyway; a participant's own consent decides for them
+		const mediaConsentStatus = teamMember ? 'ALLOWED_ALL' : status?.mediaConsentStatus;
+		return [
+			personBadge({
+				person: { name: badgeName, pronouns, id: userId, mediaConsentStatus },
+				seat: badgeSeat
+			})
+		];
+	};
+
+	let careNoteOpen = $state(false);
+	let badgeModalOpen = $state(false);
+	let actionsOpen = $state(false);
+	let actionsMenu = $state<HTMLDetailsElement>();
+
+	/** Runs a menu entry and closes the menu, which a `<details>` does not do on its own. */
+	const menuAction = (action: () => void) => () => {
+		actionsOpen = false;
+		action();
+	};
+
+	const closeActionsOutside = (event: MouseEvent) => {
+		if (actionsOpen && event.target instanceof Node && !actionsMenu?.contains(event.target)) {
+			actionsOpen = false;
+		}
+	};
+
+	// --- Delete participant ---
+	let deleteModalOpen = $state(false);
+	let deleteConfirmInput = $state('');
+	let deleteLoading = $state(false);
+
+	const deleteConfirmNameMatch = $derived(
+		deleteConfirmInput.trim().toLowerCase() === confirmDisplayName.trim().toLowerCase()
+	);
+
+	const executeDelete = async () => {
+		if (!deleteConfirmNameMatch) return;
+		deleteLoading = true;
+		try {
+			await client.mutate.unregisterParticipant({
+				__args: { conferenceId, userId },
+				id: true
+			});
+			deleteModalOpen = false;
+			toast.success(m.genericToastSuccess());
+			closeUserCard();
+		} catch {
+			toast.error(m.httpGenericError());
+		} finally {
+			deleteLoading = false;
+		}
+	};
+</script>
+
+<div class="flex items-center gap-3 px-3 pt-3 pb-2 sm:px-5 md:px-10 lg:px-16">
+	<div
+		class="border-base-300 from-primary/10 to-base-200 rounded-box flex min-w-0 flex-1 flex-col gap-3 border bg-linear-to-br p-3 sm:p-4"
+	>
+		<!-- On a phone the actions take a row of their own below the name -->
+		<div class="flex flex-wrap items-start gap-x-4 gap-y-2 sm:flex-nowrap">
+			<!-- Initials, so a card is recognisable at a glance -->
+			<div class="avatar avatar-placeholder hidden sm:flex">
+				<div class="bg-primary/20 text-primary w-14 rounded-full text-xl font-bold">
+					<span>{initials}</span>
+				</div>
+			</div>
+
+			<div class="flex min-w-0 flex-1 flex-col gap-1.5 max-sm:basis-full">
+				<!-- Clear of the drawer's close button, which a phone puts over the card -->
+				<div
+					class="flex flex-wrap items-center gap-x-3 gap-y-1 {mode === 'drawer'
+						? 'max-sm:pr-8'
+						: ''}"
+				>
+					<h2 class="text-2xl font-bold break-words sm:text-3xl">{displayName}</h2>
+					<i class="fa-sharp-duotone fa-solid fa-{genderIcon} text-base-content/50"></i>
+					{#if pronouns}
+						<span class="text-base-content/60 text-sm">({pronouns})</span>
+					{/if}
+					{#if stage}
+						{@const shown = STAGES[stage]}
+						<span class="badge badge-soft gap-1.5 {shown.badge}">
+							<i class="fa-sharp-duotone fa-solid {shown.icon} text-xs"></i>
+							{shown.label()}
+						</span>
+					{/if}
+					<PossibleDuplicateBadge {userId} {conferenceId} />
+				</div>
+				<UserCardRoleSummary
+					{delegationMember}
+					{singleParticipant}
+					{conferenceSupervisor}
+					{teamMember}
+				/>
+				<ContactButtons {userId} />
+			</div>
+
+			<!-- Action buttons -->
+			<div class="flex items-center gap-1 max-sm:-ml-2">
+				<!-- Opened by its button only: a focus-driven dropdown also opened when focus landed in it -->
+				{#if badgeSeat}
+					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
+						<button
+							class="btn btn-ghost btn-sm btn-square"
+							aria-label={m.generateBadge()}
+							onclick={() => (badgeModalOpen = true)}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-id-badge"></i>
+						</button>
+					</div>
+				{/if}
+
+				<ImpersonationButton {userId} iconOnly />
+
+				<!-- The rarer actions, the destructive one last -->
+				<!-- A <details> opens on click only, never because focus moved into it -->
+				<!-- Opens to the right on a phone, where the actions sit at the left edge -->
+				<details class="dropdown sm:dropdown-end" bind:open={actionsOpen} bind:this={actionsMenu}>
+					<summary
+						class="btn btn-ghost btn-sm btn-square list-none"
+						aria-label={m.userCardMoreActions()}
+						title={m.userCardMoreActions()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-ellipsis-vertical"></i>
+					</summary>
+					<ul
+						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-20 mt-2 w-60 border p-2 shadow-lg"
+					>
+						<li>
+							<button onclick={menuAction(() => (careNoteOpen = true))}>
+								<i class="fa-sharp-duotone fa-solid fa-note-sticky"></i>
+								{m.editGlobalNotes()}
+							</button>
+						</li>
+						<li>
+							<button onclick={menuAction(copyUserId)}>
+								<i class="fa-sharp-duotone fa-solid fa-copy"></i>
+								{m.copyUserId()}
+							</button>
+						</li>
+						{#if isParticipant}
+							<li>
+								<button
+									class="text-error"
+									onclick={menuAction(() => {
+										deleteConfirmInput = '';
+										deleteModalOpen = true;
+									})}
+								>
+									<i class="fa-sharp-duotone fa-solid fa-user-xmark"></i>
+									{m.deleteParticipant()}
+								</button>
+							</li>
+						{/if}
+					</ul>
+				</details>
+
+				{#if mode === 'drawer'}
+					<div class="divider divider-horizontal mx-0"></div>
+					<a
+						href={fullPageUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-ghost btn-sm btn-square"
+						title={m.userCardOpenFullPage()}
+					>
+						<i class="fa-sharp-duotone fa-solid fa-arrow-up-right-from-square"></i>
+					</a>
+				{/if}
+			</div>
+		</div>
+
+		<UserCardStatusStrip
+			{userId}
+			{conferenceId}
+			isConferenceSupervisor={!!conferenceSupervisor}
+			{onOpenTab}
+		/>
+
+		<CareNotes {userId} bind:editing={careNoteOpen} />
+	</div>
+</div>
+
+<svelte:window onclick={closeActionsOutside} />
+
+<Modal bind:open={badgeModalOpen} title={m.badgeForPerson()}>
+	<div class="flex flex-col gap-2">
+		{#if PUBLIC_BADGE_GENERATOR_URL}
+			<button class="btn btn-sm btn-primary w-full" onclick={openBadgeGenerator}>
+				<i class="fa-sharp-duotone fa-solid fa-wand-magic-sparkles"></i>
+				{m.badgeGeneratorPrefilled()}
+			</button>
+		{/if}
+		<BadgeGeneratorLinks
+			badges={badgeRows}
+			filename="badge_{formatNames({
+				givenName: givenName ?? undefined,
+				familyName: familyName ?? undefined,
+				options: {
+					givenNameFirst: false,
+					delimiter: '_'
+				}
+			})}"
+			label={m.badgeCsvDownload()}
+			showHint
+		/>
+	</div>
+</Modal>
+
+<!-- Delete confirmation modal -->
+<Modal bind:open={deleteModalOpen} title={m.deleteParticipant()}>
+	<div class="flex flex-col gap-4">
+		<div class="alert alert-error">
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation text-xl"></i>
+			<span>{m.deleteParticipantWarning()}</span>
+		</div>
+
+		<p class="text-sm">
+			{m.typeNameToConfirmDeletion()}
+			<button
+				class="font-semibold hover:underline cursor-pointer"
+				onclick={async () => {
+					await navigator.clipboard.writeText(confirmDisplayName);
+					toast.success(m.codeCopied());
+				}}
+				title={m.copy()}
+			>
+				{confirmDisplayName}
+				<i class="fa-sharp-duotone fa-solid fa-copy text-xs"></i>
+			</button>
+		</p>
+
+		<input
+			type="text"
+			class="input input-bordered w-full"
+			placeholder={confirmDisplayName}
+			bind:value={deleteConfirmInput}
+		/>
+	</div>
+
+	{#snippet action()}
+		<button class="btn btn-ghost" onclick={() => (deleteModalOpen = false)}>
+			{m.cancel()}
+		</button>
+		<button
+			class="btn btn-error"
+			disabled={!deleteConfirmNameMatch || deleteLoading}
+			onclick={executeDelete}
+		>
+			{#if deleteLoading}
+				<span class="loading loading-spinner loading-sm"></span>
+			{/if}
+			<i class="fa-sharp-duotone fa-solid fa-trash"></i>
+			{m.deleteParticipantConfirmButton()}
+		</button>
+	{/snippet}
+</Modal>

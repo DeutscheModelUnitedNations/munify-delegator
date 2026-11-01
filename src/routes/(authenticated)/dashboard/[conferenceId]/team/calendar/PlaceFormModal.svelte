@@ -1,0 +1,250 @@
+<script lang="ts">
+	import { logger } from '#lib/logger';
+	import { toast } from 'svelte-sonner';
+	import ActionModal from '#lib/components/ActionModal.svelte';
+	import { client } from '#lib/api/rumbleClient/client';
+	import { uploadFile } from '#lib/api/uploadFile';
+	import { m } from '#lib/paraglide/messages';
+	import { placeFields, resolvePlusCode, upsertPlace, type PlusCodeError } from './placeForm';
+	import { untrack } from 'svelte';
+
+	interface Props {
+		conferenceId: string;
+		/** The place to edit; a new place is created when this is left out. */
+		placeId?: string;
+		onClose: () => void;
+	}
+
+	let { conferenceId, placeId, onClose }: Props = $props();
+
+	// The modal is mounted once per place it edits, and its fields are seeded once: re-reading
+	// the row while someone types would discard their edits.
+	const editedPlaceId = untrack(() => placeId);
+	const place = editedPlaceId
+		? await client.query.place({
+				__args: { id: editedPlaceId },
+				id: true,
+				name: true,
+				address: true,
+				latitude: true,
+				longitude: true,
+				directions: true,
+				info: true,
+				websiteUrl: true,
+				sitePlanFile: { url: true }
+			})
+		: undefined;
+
+	let isLoading = $state(false);
+
+	let placeName = $state(place?.name ?? '');
+	let placeAddress = $state(place?.address ?? '');
+	let placeLatitude = $state(place?.latitude != null ? String(place.latitude) : '');
+	let placeLongitude = $state(place?.longitude != null ? String(place.longitude) : '');
+	let placeDirections = $state(place?.directions ?? '');
+	let placeInfo = $state(place?.info ?? '');
+	let placeWebsiteUrl = $state(place?.websiteUrl ?? '');
+	// The stored plan is served from a URL; a plan picked in this modal is uploaded on save and
+	// shown from memory until then. Leaving it untouched sends nothing, which keeps the stored one.
+	const storedSitePlanUrl = place?.sitePlanFile?.url ?? null;
+	let uploadedSitePlan = $state<File | null>(null);
+	let uploadedSitePlanUrl = $state<string | null>(null);
+	const sitePlanHref = $derived(uploadedSitePlanUrl ?? storedSitePlanUrl);
+	$effect(() => {
+		const url = uploadedSitePlanUrl;
+		return () => {
+			if (url) URL.revokeObjectURL(url);
+		};
+	});
+	let placePlusCode = $state('');
+	let plusCodeError = $state('');
+	let plusCodeLoading = $state(false);
+
+	const plusCodeErrors: Record<PlusCodeError, () => string> = {
+		invalid: m.calendarPlacePlusCodeInvalid,
+		short: m.calendarPlacePlusCodeShort,
+		cityNotFound: m.calendarPlacePlusCodeCityNotFound
+	};
+
+	async function decodePlusCode() {
+		const input = placePlusCode.trim();
+		plusCodeError = '';
+		if (!input) return;
+		plusCodeLoading = true;
+		try {
+			const result = await resolvePlusCode({ input });
+			if ('error' in result) {
+				plusCodeError = plusCodeErrors[result.error]();
+				return;
+			}
+			placeLatitude = String(result.latitude);
+			placeLongitude = String(result.longitude);
+		} catch {
+			plusCodeError = m.calendarPlacePlusCodeCityNotFound();
+		} finally {
+			plusCodeLoading = false;
+		}
+	}
+
+	function handleSitePlanUpload(event: Event & { currentTarget: HTMLInputElement }) {
+		const file = event.currentTarget.files?.[0];
+		if (!file) return;
+		if (file.size > 10_000_000) {
+			toast.error(m.fileTooLarge({ max: '10 MB' }));
+			event.currentTarget.value = '';
+			return;
+		}
+		uploadedSitePlan = file;
+		uploadedSitePlanUrl = URL.createObjectURL(file);
+	}
+
+	async function savePlace() {
+		if (!placeName) return;
+		isLoading = true;
+		try {
+			const sitePlanFileId = await uploadFile({
+				file: uploadedSitePlan,
+				target: {
+					kind: 'place',
+					field: 'sitePlan',
+					conferenceId
+				}
+			});
+			const values = {
+				name: placeName,
+				address: placeAddress,
+				latitude: placeLatitude,
+				longitude: placeLongitude,
+				directions: placeDirections,
+				info: placeInfo,
+				websiteUrl: placeWebsiteUrl
+			};
+			await upsertPlace({
+				conferenceId,
+				placeId: editedPlaceId,
+				fields: placeFields({ values, sitePlanFileId })
+			});
+			onClose();
+		} catch (error) {
+			logger.error('Failed to save place', error);
+			toast.error(error instanceof Error ? error.message : String(error));
+		} finally {
+			isLoading = false;
+		}
+	}
+</script>
+
+<ActionModal
+	title={editedPlaceId ? m.calendarEditPlace() : m.calendarAddPlace()}
+	boxClass="max-w-2xl"
+	confirmLabel={editedPlaceId ? m.save() : m.create()}
+	confirmDisabled={!placeName}
+	loading={isLoading}
+	onConfirm={savePlace}
+	{onClose}
+>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceName()}</legend>
+		<input type="text" bind:value={placeName} class="input w-full" required />
+	</fieldset>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceAddress()}</legend>
+		<input type="text" bind:value={placeAddress} class="input w-full" />
+	</fieldset>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlacePlusCode()}</legend>
+		<div class="flex gap-2">
+			<input
+				type="text"
+				bind:value={placePlusCode}
+				class="input flex-1"
+				placeholder={m.placePlusCodePlaceholder()}
+			/>
+			<button
+				type="button"
+				class="btn btn-ghost btn-sm"
+				onclick={decodePlusCode}
+				disabled={!placePlusCode.trim() || plusCodeLoading}
+			>
+				{#if plusCodeLoading}
+					<span class="loading loading-spinner loading-xs"></span>
+				{:else}
+					<i class="fas fa-location-crosshairs"></i>
+				{/if}
+			</button>
+		</div>
+		{#if plusCodeError}
+			<p class="text-error mt-1 text-xs">{plusCodeError}</p>
+		{/if}
+		<p class="text-base-content/50 mt-1 text-xs">{m.calendarPlacePlusCodeHint()}</p>
+	</fieldset>
+	<div class="grid grid-cols-2 gap-4">
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.calendarPlaceLatitude()}</legend>
+			<input type="number" step="any" bind:value={placeLatitude} class="input w-full" />
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.calendarPlaceLongitude()}</legend>
+			<input type="number" step="any" bind:value={placeLongitude} class="input w-full" />
+		</fieldset>
+	</div>
+	{#if placeLatitude && placeLongitude && !isNaN(parseFloat(placeLatitude)) && !isNaN(parseFloat(placeLongitude))}
+		<div class="h-[200px] w-full overflow-hidden rounded-box">
+			{#await import('sveaflet') then { Map, TileLayer, Marker }}
+				<Map
+					options={{
+						center: [parseFloat(placeLatitude), parseFloat(placeLongitude)],
+						zoom: 15,
+						scrollWheelZoom: false
+					}}
+				>
+					<TileLayer
+						url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}
+						options={{
+							attribution:
+								'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+						}}
+					/>
+					<Marker latLng={[parseFloat(placeLatitude), parseFloat(placeLongitude)]} />
+				</Map>
+			{/await}
+		</div>
+	{/if}
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
+		<textarea bind:value={placeDirections} class="textarea w-full"></textarea>
+	</fieldset>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceInfo()}</legend>
+		<textarea bind:value={placeInfo} class="textarea w-full"></textarea>
+	</fieldset>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceWebsite()}</legend>
+		<input type="url" bind:value={placeWebsiteUrl} class="input w-full" />
+	</fieldset>
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">{m.calendarPlaceSitePlan()}</legend>
+		<input
+			type="file"
+			accept="application/pdf"
+			class="file-input w-full"
+			onchange={handleSitePlanUpload}
+		/>
+		{#if sitePlanHref}
+			<div class="mt-1 flex items-center gap-2">
+				<span class="text-success text-xs">
+					<i class="fas fa-check-circle"></i>
+					PDF
+				</span>
+				<a
+					href={sitePlanHref}
+					rel="external"
+					download="site-plan.pdf"
+					class="link link-primary text-xs"
+				>
+					{m.calendarPlaceSitePlanDownload()}
+				</a>
+			</div>
+		{/if}
+	</fieldset>
+</ActionModal>

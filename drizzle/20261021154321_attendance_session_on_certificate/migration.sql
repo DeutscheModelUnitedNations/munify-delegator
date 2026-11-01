@@ -1,0 +1,1 @@
+ALTER TABLE "attendance_session" ADD COLUMN "show_on_certificate" boolean DEFAULT true NOT NULL;

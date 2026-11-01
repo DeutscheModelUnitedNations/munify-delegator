@@ -1,0 +1,6940 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "e2c55fcb-0cf6-4d1d-9c5a-35a7e64149a6",
+  "prevIds": [
+    "7c9f1773-c16e-4001-a33b-2128adb03c35"
+  ],
+  "ddl": [
+    {
+      "values": [
+        "DONE",
+        "PROBLEM",
+        "PENDING"
+      ],
+      "name": "administrative_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "SESSION",
+        "WORKSHOP",
+        "LOGISTICS",
+        "SOCIAL",
+        "CEREMONY",
+        "BREAK",
+        "HIGHLIGHT",
+        "INFO"
+      ],
+      "name": "calendar_entry_color",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PRE",
+        "PARTICIPANT_REGISTRATION",
+        "PREPARATION",
+        "ACTIVE",
+        "POST"
+      ],
+      "name": "conference_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "OMNIVORE",
+        "VEGETARIAN",
+        "VEGAN"
+      ],
+      "name": "food_preference",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "MALE",
+        "FEMALE",
+        "DIVERSE",
+        "NO_STATEMENT"
+      ],
+      "name": "gender",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "NOT_SET",
+        "ALLOWED_ALL",
+        "PARTIALLY_ALLOWED",
+        "NOT_ALLOWED"
+      ],
+      "name": "media_consent_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "SUBMITTED",
+        "CHANGES_REQUESTED",
+        "ACCEPTED",
+        "DRAFT",
+        "REVISED"
+      ],
+      "name": "paper_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "POSITION_PAPER",
+        "WORKING_PAPER",
+        "INTRODUCTION_PAPER"
+      ],
+      "name": "paper_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "UNSPECIFIED",
+        "HELP_NEEDED",
+        "NO_HELP_WANTED"
+      ],
+      "name": "review_help_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PROJECT_MANAGEMENT",
+        "PARTICIPANT_CARE",
+        "MEMBER",
+        "REVIEWER",
+        "TEAM_COORDINATOR"
+      ],
+      "name": "team_role",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "attendance_entry",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "calendar_day",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "calendar_entry",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "calendar_track",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "committee",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "committee_agenda_item",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "committee_to_nation",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "conference",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "conference_participant_status",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "conference_supervisor",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "conference_supervisor_to_delegation_member",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "conference_supervisor_to_single_participant",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "custom_conference_role",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "custom_conference_role_to_single_participant",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "delegation",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "delegation_member",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "nation",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "non_state_actor",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "paper",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "paper_review",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "paper_version",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "payment_transaction",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "place",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "reviewer_snippet",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "role_application",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "single_participant",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "survey_answer",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "survey_option",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "survey_question",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "team_member",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "team_member_invitation",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "user",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "user_reference_in_payment_transaction",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "waiting_list_entry",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "timestamp",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "occasion",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_participant_status_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "recorded_by_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sort_order",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "start_time",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "end_time",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "font_awesome_icon",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "calendar_entry_color",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'SESSION'",
+      "generated": null,
+      "identity": null,
+      "name": "color",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "room",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "calendar_day_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "calendar_track_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "place_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sort_order",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "calendar_day_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "abbreviation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "1",
+      "generated": null,
+      "identity": null,
+      "name": "num_of_seats_per_delegation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "resolution_headline",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "teaser_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "committee_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "review_help_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'UNSPECIFIED'",
+      "generated": null,
+      "identity": null,
+      "name": "review_help_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "a",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "b",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "long_title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "location",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "language",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "website",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "end_conference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "start_assignment",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "start_conference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "conference_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PRE'",
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "image_data_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "link_to_preparation_guide",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "account_holder",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "bank_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "bic",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "'EUR'",
+      "generated": null,
+      "identity": null,
+      "name": "currency",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "double precision",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "fee_amount",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "guardian_consent_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "iban",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "media_consent_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_apartment",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_city",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_country",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_street",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postal_zip",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "terms_and_conditions_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "unlock_payments",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "unlock_postals",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "link_to_paper_inbox",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "contract_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "certificate_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "30",
+      "generated": null,
+      "identity": null,
+      "name": "registration_deadline_grace_period_minutes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "is_open_paper_submission",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "emblem_data_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "show_info_expanded",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "link_to_services_page",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "link_to_team_wiki",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "logo_data_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "show_calendar",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'Europe/Berlin'",
+      "generated": null,
+      "identity": null,
+      "name": "timezone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "administrative_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "payment_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "did_attend",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "administrative_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "guardian_consent",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "administrative_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "media_consent",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "administrative_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "terms_and_conditions",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "media_consent_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'NOT_SET'",
+      "generated": null,
+      "identity": null,
+      "name": "media_consent_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigend_document_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "access_card_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "plans_own_attendence_at_conference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "connection_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "a",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "b",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "a",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "b",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "font_awesome_icon",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "1",
+      "generated": null,
+      "identity": null,
+      "name": "seat_amount",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "a",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "b",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entry_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "applied",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "school",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "motivation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "experience",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_nation_alpha3_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_non_state_actor_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "delegation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "is_head_delegate",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_committee_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "alpha3_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "nation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "alpha2_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "nation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "nation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "nation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "font_awesome_icon",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "abbreviation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "2",
+      "generated": null,
+      "identity": null,
+      "name": "seat_amount",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "author_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "delegation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "paper_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'SUBMITTED'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "agenda_item_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "paper_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "first_submitted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "comments",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewer_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "paper_version_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "paper_status",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "status_after",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "paper_status",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "status_before",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "paper_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "paper_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'DRAFT'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "double precision",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "amount",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "recieved_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "address",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "double precision",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "latitude",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "double precision",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "longitude",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "directions",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "info",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "website_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "site_plan_data_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "non_state_actor_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rank",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "delegation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "applied",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "school",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "motivation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "experience",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_role_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assignment_details",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "question_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "option_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "question_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "upper_limit",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deadline",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "true",
+      "generated": null,
+      "identity": null,
+      "name": "draft",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "hidden",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "show_selection_on_dashboard",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "team_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'MEMBER'",
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "team_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "used_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "revoked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "invited_by_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "accepted_by_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "family_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "given_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "locale",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "preferred_username",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "birthday",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "street",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "apartment",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "zip",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "city",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "country",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "pronouns",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "food_preference",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "food_preference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "wants_to_receive_general_information",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "wants_join_team_information",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "gender",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "gender",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "emergency_contacts",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "global_notes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "payment_transaction_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "timestamp(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "conference_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "school",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "experience",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "motivation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "requests",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "assigned",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "hidden",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "sort_order",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "calendar_day_conference_id_sort_order_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "calendar_day_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "sort_order",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "calendar_track_calendar_day_id_sort_order_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "b",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "committee_to_nation_b_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "assigend_document_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_participant_status_conference_id_doc_number_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_participant_status_user_id_conference_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "connection_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_supervisor_conference_id_connection_code_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_supervisor_conference_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "b",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_supervisor_to_delegation_member_b_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "b",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "conference_supervisor_to_single_participant_b_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "name",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "custom_conference_role_conference_id_name_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "b",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "custom_conference_role_to_single_participant_b_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "assigned_nation_alpha3_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "delegation_conference_id_assigned_nation_alpha3_code_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "assigned_non_state_actor_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "delegation_conference_id_assigned_non_state_actor_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "entry_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "delegation_conference_id_entry_code_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "delegation_member_conference_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "delegation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "delegation_member_delegation_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "alpha2_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "nation_alpha2_code_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "nation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "abbreviation",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "non_state_actor_conference_id_abbreviation_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "name",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "non_state_actor_conference_id_name_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "paper_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "version",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "paper_version_paper_id_version_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "name",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "place_conference_id_name_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "name",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "reviewer_snippet_user_id_name_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "delegation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "nation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "role_application_delegation_id_nation_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "delegation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "non_state_actor_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "role_application_delegation_id_non_state_actor_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "delegation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "rank",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "role_application_delegation_id_rank_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "single_participant_conference_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "question_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "survey_answer_question_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "question_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "title",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "survey_option_question_id_title_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "title",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "survey_question_conference_id_title_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_conference_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_invitation_conference_id_email_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "((\"usedAt\" IS NULL) AND (\"revokedAt\" IS NULL))",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_invitation_conference_id_email_pending_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_invitation_conference_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "token",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_invitation_token_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "token",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "team_member_invitation_token_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "user_email_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "user"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "conference_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "waiting_list_entry_conference_id_user_id_key",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_participant_status_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference_participant_status",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "AttendanceEntry_tZpYdr06IEqk_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "recorded_by_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "AttendanceEntry_recordedById_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attendance_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "CalendarDay_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "calendar_day"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "calendar_day_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "calendar_day",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "CalendarEntry_calendarDayId_CalendarDay_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "calendar_track_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "calendar_track",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "CalendarEntry_calendarTrackId_CalendarTrack_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "place_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "place",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "CalendarEntry_placeId_Place_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "calendar_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "calendar_day_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "calendar_day",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "CalendarTrack_calendarDayId_CalendarDay_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "calendar_track"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "Committee_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "committee"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "committee_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "committee",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "CommitteeAgendaItem_committeeId_Committee_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "committee_agenda_item"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "a"
+      ],
+      "schemaTo": "public",
+      "tableTo": "committee",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_CommitteeToNation_A_Committee_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "b"
+      ],
+      "schemaTo": "public",
+      "tableTo": "nation",
+      "columnsTo": [
+        "alpha3_code"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_CommitteeToNation_B_Nation_alpha3Code_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "ConferenceParticipantStatus_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "ConferenceParticipantStatus_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_participant_status"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "ConferenceSupervisor_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "ConferenceSupervisor_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "a"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference_supervisor",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_ConferenceSupervisorToDelegationMember_qbb5Tl3fXZ9Z_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "b"
+      ],
+      "schemaTo": "public",
+      "tableTo": "delegation_member",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_ConferenceSupervisorToDelegationMember_c9YL75qyYL1w_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "a"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference_supervisor",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_ConferenceSupervisorToSingleParticipant_lOmvXaLQ7Emw_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "b"
+      ],
+      "schemaTo": "public",
+      "tableTo": "single_participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_ConferenceSupervisorToSingleParticipant_SYhIytq03cXG_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "CustomConferenceRole_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_conference_role"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "a"
+      ],
+      "schemaTo": "public",
+      "tableTo": "custom_conference_role",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_CustomConferenceRoleToSingleParticipant_OlTbG7SUhG4i_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "b"
+      ],
+      "schemaTo": "public",
+      "tableTo": "single_participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "_CustomConferenceRoleToSingleParticipant_eEmIGzXiLYGr_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "Delegation_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "assigned_nation_alpha3_code"
+      ],
+      "schemaTo": "public",
+      "tableTo": "nation",
+      "columnsTo": [
+        "alpha3_code"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "Delegation_assignedNationAlpha3Code_Nation_alpha3Code_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "assigned_non_state_actor_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "non_state_actor",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "Delegation_assignedNonStateActorId_NonStateActor_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "DelegationMember_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "delegation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "delegation",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "DelegationMember_delegationId_Delegation_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "DelegationMember_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "assigned_committee_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "committee",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "DelegationMember_assignedCommitteeId_Committee_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "delegation_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "NonStateActor_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "non_state_actor"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "author_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "Paper_authorId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "delegation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "delegation",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "Paper_delegationId_Delegation_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "agenda_item_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "committee_agenda_item",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "Paper_agendaItemId_CommitteeAgendaItem_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "Paper_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "reviewer_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "PaperReview_reviewerId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "paper_version_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "paper_version",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "PaperReview_paperVersionId_PaperVersion_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper_review"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "paper_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "paper",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "PaperVersion_paperId_Paper_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "paper_version"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "PaymentTransaction_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "PaymentTransaction_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "payment_transaction"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "Place_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "place"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "ReviewerSnippet_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "reviewer_snippet"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "nation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "nation",
+      "columnsTo": [
+        "alpha3_code"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "RoleApplication_nationId_Nation_alpha3Code_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "non_state_actor_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "non_state_actor",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "RoleApplication_nonStateActorId_NonStateActor_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "delegation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "delegation",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "RoleApplication_delegationId_Delegation_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "role_application"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SingleParticipant_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SingleParticipant_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "assigned_role_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "custom_conference_role",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "SingleParticipant_assignedRoleId_CustomConferenceRole_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "single_participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "question_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "survey_question",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SurveyAnswer_questionId_SurveyQuestion_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SurveyAnswer_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "option_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "survey_option",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SurveyAnswer_optionId_SurveyOption_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "survey_answer"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "question_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "survey_question",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SurveyOption_questionId_SurveyQuestion_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "survey_option"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "SurveyQuestion_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "survey_question"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "TeamMember_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "TeamMember_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "team_member"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "TeamMemberInvitation_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "invited_by_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "TeamMemberInvitation_invitedById_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "accepted_by_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "TeamMemberInvitation_acceptedById_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "team_member_invitation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "payment_transaction_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "payment_transaction",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "UserReferenceInPaymentTransaction_5XV6pmj4zavE_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "UserReferenceInPaymentTransaction_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "conference_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "conference",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "WaitingListEntry_conferenceId_Conference_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "RESTRICT",
+      "name": "WaitingListEntry_userId_User_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "waiting_list_entry"
+    },
+    {
+      "columns": [
+        "a",
+        "b"
+      ],
+      "nameExplicit": true,
+      "name": "committee_to_nation_ab_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "committee_to_nation"
+    },
+    {
+      "columns": [
+        "a",
+        "b"
+      ],
+      "nameExplicit": true,
+      "name": "conference_supervisor_to_delegation_member_ab_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "conference_supervisor_to_delegation_member"
+    },
+    {
+      "columns": [
+        "a",
+        "b"
+      ],
+      "nameExplicit": true,
+      "name": "conference_supervisor_to_single_participant_ab_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "conference_supervisor_to_single_participant"
+    },
+    {
+      "columns": [
+        "a",
+        "b"
+      ],
+      "nameExplicit": true,
+      "name": "custom_conference_role_to_single_participant_ab_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "custom_conference_role_to_single_participant"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "AttendanceEntry_pkey",
+      "schema": "public",
+      "table": "attendance_entry",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "CalendarDay_pkey",
+      "schema": "public",
+      "table": "calendar_day",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "CalendarEntry_pkey",
+      "schema": "public",
+      "table": "calendar_entry",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "CalendarTrack_pkey",
+      "schema": "public",
+      "table": "calendar_track",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Committee_pkey",
+      "schema": "public",
+      "table": "committee",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "CommitteeAgendaItem_pkey",
+      "schema": "public",
+      "table": "committee_agenda_item",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Conference_pkey",
+      "schema": "public",
+      "table": "conference",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ConferenceParticipantStatus_pkey",
+      "schema": "public",
+      "table": "conference_participant_status",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ConferenceSupervisor_pkey",
+      "schema": "public",
+      "table": "conference_supervisor",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "CustomConferenceRole_pkey",
+      "schema": "public",
+      "table": "custom_conference_role",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Delegation_pkey",
+      "schema": "public",
+      "table": "delegation",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "DelegationMember_pkey",
+      "schema": "public",
+      "table": "delegation_member",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "alpha3_code"
+      ],
+      "nameExplicit": false,
+      "name": "Nation_pkey",
+      "schema": "public",
+      "table": "nation",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "NonStateActor_pkey",
+      "schema": "public",
+      "table": "non_state_actor",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Paper_pkey",
+      "schema": "public",
+      "table": "paper",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "PaperReview_pkey",
+      "schema": "public",
+      "table": "paper_review",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "PaperVersion_pkey",
+      "schema": "public",
+      "table": "paper_version",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "PaymentTransaction_pkey",
+      "schema": "public",
+      "table": "payment_transaction",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Place_pkey",
+      "schema": "public",
+      "table": "place",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ReviewerSnippet_pkey",
+      "schema": "public",
+      "table": "reviewer_snippet",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "RoleApplication_pkey",
+      "schema": "public",
+      "table": "role_application",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "SingleParticipant_pkey",
+      "schema": "public",
+      "table": "single_participant",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "SurveyAnswer_pkey",
+      "schema": "public",
+      "table": "survey_answer",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "SurveyOption_pkey",
+      "schema": "public",
+      "table": "survey_option",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "SurveyQuestion_pkey",
+      "schema": "public",
+      "table": "survey_question",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "TeamMember_pkey",
+      "schema": "public",
+      "table": "team_member",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "TeamMemberInvitation_pkey",
+      "schema": "public",
+      "table": "team_member_invitation",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "User_pkey",
+      "schema": "public",
+      "table": "user",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "UserReferenceInPaymentTransaction_pkey",
+      "schema": "public",
+      "table": "user_reference_in_payment_transaction",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "WaitingListEntry_pkey",
+      "schema": "public",
+      "table": "waiting_list_entry",
+      "entityType": "pks"
+    }
+  ],
+  "renames": [
+    "public.AdministrativeStatus->public.administrative_status",
+    "public.CalendarEntryColor->public.calendar_entry_color",
+    "public.ConferenceState->public.conference_state",
+    "public.FoodPreference->public.food_preference",
+    "public.Gender->public.gender",
+    "public.MediaConsentStatus->public.media_consent_status",
+    "public.PaperStatus->public.paper_status",
+    "public.PaperType->public.paper_type",
+    "public.ReviewHelpStatus->public.review_help_status",
+    "public.TeamRole->public.team_role",
+    "public.AttendanceEntry->public.attendance_entry",
+    "public.CalendarDay->public.calendar_day",
+    "public.CalendarEntry->public.calendar_entry",
+    "public.CalendarTrack->public.calendar_track",
+    "public.Committee->public.committee",
+    "public.CommitteeAgendaItem->public.committee_agenda_item",
+    "public._CommitteeToNation->public.committee_to_nation",
+    "public.Conference->public.conference",
+    "public.ConferenceParticipantStatus->public.conference_participant_status",
+    "public.ConferenceSupervisor->public.conference_supervisor",
+    "public._ConferenceSupervisorToDelegationMember->public.conference_supervisor_to_delegation_member",
+    "public._ConferenceSupervisorToSingleParticipant->public.conference_supervisor_to_single_participant",
+    "public.CustomConferenceRole->public.custom_conference_role",
+    "public._CustomConferenceRoleToSingleParticipant->public.custom_conference_role_to_single_participant",
+    "public.Delegation->public.delegation",
+    "public.DelegationMember->public.delegation_member",
+    "public.Nation->public.nation",
+    "public.NonStateActor->public.non_state_actor",
+    "public.Paper->public.paper",
+    "public.PaperReview->public.paper_review",
+    "public.PaperVersion->public.paper_version",
+    "public.PaymentTransaction->public.payment_transaction",
+    "public.Place->public.place",
+    "public.ReviewerSnippet->public.reviewer_snippet",
+    "public.RoleApplication->public.role_application",
+    "public.SingleParticipant->public.single_participant",
+    "public.SurveyAnswer->public.survey_answer",
+    "public.SurveyOption->public.survey_option",
+    "public.SurveyQuestion->public.survey_question",
+    "public.TeamMember->public.team_member",
+    "public.TeamMemberInvitation->public.team_member_invitation",
+    "public.User->public.user",
+    "public.UserReferenceInPaymentTransaction->public.user_reference_in_payment_transaction",
+    "public.WaitingListEntry->public.waiting_list_entry",
+    "public.attendance_entry.createdAt->public.attendance_entry.created_at",
+    "public.attendance_entry.updatedAt->public.attendance_entry.updated_at",
+    "public.attendance_entry.conferenceParticipantStatusId->public.attendance_entry.conference_participant_status_id",
+    "public.attendance_entry.recordedById->public.attendance_entry.recorded_by_id",
+    "public.calendar_day.createdAt->public.calendar_day.created_at",
+    "public.calendar_day.updatedAt->public.calendar_day.updated_at",
+    "public.calendar_day.sortOrder->public.calendar_day.sort_order",
+    "public.calendar_day.conferenceId->public.calendar_day.conference_id",
+    "public.calendar_entry.createdAt->public.calendar_entry.created_at",
+    "public.calendar_entry.updatedAt->public.calendar_entry.updated_at",
+    "public.calendar_entry.startTime->public.calendar_entry.start_time",
+    "public.calendar_entry.endTime->public.calendar_entry.end_time",
+    "public.calendar_entry.fontAwesomeIcon->public.calendar_entry.font_awesome_icon",
+    "public.calendar_entry.calendarDayId->public.calendar_entry.calendar_day_id",
+    "public.calendar_entry.calendarTrackId->public.calendar_entry.calendar_track_id",
+    "public.calendar_entry.placeId->public.calendar_entry.place_id",
+    "public.calendar_track.createdAt->public.calendar_track.created_at",
+    "public.calendar_track.updatedAt->public.calendar_track.updated_at",
+    "public.calendar_track.sortOrder->public.calendar_track.sort_order",
+    "public.calendar_track.calendarDayId->public.calendar_track.calendar_day_id",
+    "public.committee.createdAt->public.committee.created_at",
+    "public.committee.updatedAt->public.committee.updated_at",
+    "public.committee.conferenceId->public.committee.conference_id",
+    "public.committee.numOfSeatsPerDelegation->public.committee.num_of_seats_per_delegation",
+    "public.committee.resolutionHeadline->public.committee.resolution_headline",
+    "public.committee_agenda_item.createdAt->public.committee_agenda_item.created_at",
+    "public.committee_agenda_item.updatedAt->public.committee_agenda_item.updated_at",
+    "public.committee_agenda_item.teaserText->public.committee_agenda_item.teaser_text",
+    "public.committee_agenda_item.committeeId->public.committee_agenda_item.committee_id",
+    "public.committee_agenda_item.reviewHelpStatus->public.committee_agenda_item.review_help_status",
+    "public.committee_to_nation.A->public.committee_to_nation.a",
+    "public.committee_to_nation.B->public.committee_to_nation.b",
+    "public.conference.createdAt->public.conference.created_at",
+    "public.conference.updatedAt->public.conference.updated_at",
+    "public.conference.longTitle->public.conference.long_title",
+    "public.conference.endConference->public.conference.end_conference",
+    "public.conference.startAssignment->public.conference.start_assignment",
+    "public.conference.startConference->public.conference.start_conference",
+    "public.conference.imageDataURL->public.conference.image_data_url",
+    "public.conference.linkToPreparationGuide->public.conference.link_to_preparation_guide",
+    "public.conference.accountHolder->public.conference.account_holder",
+    "public.conference.bankName->public.conference.bank_name",
+    "public.conference.feeAmount->public.conference.fee_amount",
+    "public.conference.guardianConsentContent->public.conference.guardian_consent_content",
+    "public.conference.mediaConsentContent->public.conference.media_consent_content",
+    "public.conference.postalApartment->public.conference.postal_apartment",
+    "public.conference.postalCity->public.conference.postal_city",
+    "public.conference.postalCountry->public.conference.postal_country",
+    "public.conference.postalName->public.conference.postal_name",
+    "public.conference.postalStreet->public.conference.postal_street",
+    "public.conference.postalZip->public.conference.postal_zip",
+    "public.conference.termsAndConditionsContent->public.conference.terms_and_conditions_content",
+    "public.conference.unlockPayments->public.conference.unlock_payments",
+    "public.conference.unlockPostals->public.conference.unlock_postals",
+    "public.conference.linkToPaperInbox->public.conference.link_to_paper_inbox",
+    "public.conference.contractContent->public.conference.contract_content",
+    "public.conference.certificateContent->public.conference.certificate_content",
+    "public.conference.registrationDeadlineGracePeriodMinutes->public.conference.registration_deadline_grace_period_minutes",
+    "public.conference.isOpenPaperSubmission->public.conference.is_open_paper_submission",
+    "public.conference.emblemDataURL->public.conference.emblem_data_url",
+    "public.conference.showInfoExpanded->public.conference.show_info_expanded",
+    "public.conference.linkToServicesPage->public.conference.link_to_services_page",
+    "public.conference.linkToTeamWiki->public.conference.link_to_team_wiki",
+    "public.conference.logoDataURL->public.conference.logo_data_url",
+    "public.conference.showCalendar->public.conference.show_calendar",
+    "public.conference_participant_status.createdAt->public.conference_participant_status.created_at",
+    "public.conference_participant_status.updatedAt->public.conference_participant_status.updated_at",
+    "public.conference_participant_status.userId->public.conference_participant_status.user_id",
+    "public.conference_participant_status.conferenceId->public.conference_participant_status.conference_id",
+    "public.conference_participant_status.paymentStatus->public.conference_participant_status.payment_status",
+    "public.conference_participant_status.didAttend->public.conference_participant_status.did_attend",
+    "public.conference_participant_status.guardianConsent->public.conference_participant_status.guardian_consent",
+    "public.conference_participant_status.mediaConsent->public.conference_participant_status.media_consent",
+    "public.conference_participant_status.termsAndConditions->public.conference_participant_status.terms_and_conditions",
+    "public.conference_participant_status.mediaConsentStatus->public.conference_participant_status.media_consent_status",
+    "public.conference_participant_status.assigendDocumentNumber->public.conference_participant_status.assigend_document_number",
+    "public.conference_participant_status.accessCardId->public.conference_participant_status.access_card_id",
+    "public.conference_supervisor.createdAt->public.conference_supervisor.created_at",
+    "public.conference_supervisor.updatedAt->public.conference_supervisor.updated_at",
+    "public.conference_supervisor.conferenceId->public.conference_supervisor.conference_id",
+    "public.conference_supervisor.userId->public.conference_supervisor.user_id",
+    "public.conference_supervisor.plansOwnAttendenceAtConference->public.conference_supervisor.plans_own_attendence_at_conference",
+    "public.conference_supervisor.connectionCode->public.conference_supervisor.connection_code",
+    "public.conference_supervisor_to_delegation_member.A->public.conference_supervisor_to_delegation_member.a",
+    "public.conference_supervisor_to_delegation_member.B->public.conference_supervisor_to_delegation_member.b",
+    "public.conference_supervisor_to_single_participant.A->public.conference_supervisor_to_single_participant.a",
+    "public.conference_supervisor_to_single_participant.B->public.conference_supervisor_to_single_participant.b",
+    "public.custom_conference_role.createdAt->public.custom_conference_role.created_at",
+    "public.custom_conference_role.updatedAt->public.custom_conference_role.updated_at",
+    "public.custom_conference_role.conferenceId->public.custom_conference_role.conference_id",
+    "public.custom_conference_role.fontAwesomeIcon->public.custom_conference_role.font_awesome_icon",
+    "public.custom_conference_role.seatAmount->public.custom_conference_role.seat_amount",
+    "public.custom_conference_role_to_single_participant.A->public.custom_conference_role_to_single_participant.a",
+    "public.custom_conference_role_to_single_participant.B->public.custom_conference_role_to_single_participant.b",
+    "public.delegation.createdAt->public.delegation.created_at",
+    "public.delegation.updatedAt->public.delegation.updated_at",
+    "public.delegation.conferenceId->public.delegation.conference_id",
+    "public.delegation.entryCode->public.delegation.entry_code",
+    "public.delegation.assignedNationAlpha3Code->public.delegation.assigned_nation_alpha3_code",
+    "public.delegation.assignedNonStateActorId->public.delegation.assigned_non_state_actor_id",
+    "public.delegation_member.createdAt->public.delegation_member.created_at",
+    "public.delegation_member.updatedAt->public.delegation_member.updated_at",
+    "public.delegation_member.conferenceId->public.delegation_member.conference_id",
+    "public.delegation_member.delegationId->public.delegation_member.delegation_id",
+    "public.delegation_member.userId->public.delegation_member.user_id",
+    "public.delegation_member.isHeadDelegate->public.delegation_member.is_head_delegate",
+    "public.delegation_member.assignedCommitteeId->public.delegation_member.assigned_committee_id",
+    "public.nation.alpha3Code->public.nation.alpha3_code",
+    "public.nation.alpha2Code->public.nation.alpha2_code",
+    "public.nation.createdAt->public.nation.created_at",
+    "public.nation.updatedAt->public.nation.updated_at",
+    "public.non_state_actor.createdAt->public.non_state_actor.created_at",
+    "public.non_state_actor.updatedAt->public.non_state_actor.updated_at",
+    "public.non_state_actor.conferenceId->public.non_state_actor.conference_id",
+    "public.non_state_actor.fontAwesomeIcon->public.non_state_actor.font_awesome_icon",
+    "public.non_state_actor.seatAmount->public.non_state_actor.seat_amount",
+    "public.paper.createdAt->public.paper.created_at",
+    "public.paper.updatedAt->public.paper.updated_at",
+    "public.paper.authorId->public.paper.author_id",
+    "public.paper.delegationId->public.paper.delegation_id",
+    "public.paper.agendaItemId->public.paper.agenda_item_id",
+    "public.paper.conferenceId->public.paper.conference_id",
+    "public.paper.firstSubmittedAt->public.paper.first_submitted_at",
+    "public.paper_review.createdAt->public.paper_review.created_at",
+    "public.paper_review.reviewerId->public.paper_review.reviewer_id",
+    "public.paper_review.paperVersionId->public.paper_review.paper_version_id",
+    "public.paper_review.statusAfter->public.paper_review.status_after",
+    "public.paper_review.statusBefore->public.paper_review.status_before",
+    "public.paper_version.createdAt->public.paper_version.created_at",
+    "public.paper_version.paperId->public.paper_version.paper_id",
+    "public.payment_transaction.createdAt->public.payment_transaction.created_at",
+    "public.payment_transaction.updatedAt->public.payment_transaction.updated_at",
+    "public.payment_transaction.recievedAt->public.payment_transaction.recieved_at",
+    "public.payment_transaction.conferenceId->public.payment_transaction.conference_id",
+    "public.payment_transaction.userId->public.payment_transaction.user_id",
+    "public.place.createdAt->public.place.created_at",
+    "public.place.updatedAt->public.place.updated_at",
+    "public.place.websiteUrl->public.place.website_url",
+    "public.place.sitePlanDataURL->public.place.site_plan_data_url",
+    "public.place.conferenceId->public.place.conference_id",
+    "public.reviewer_snippet.createdAt->public.reviewer_snippet.created_at",
+    "public.reviewer_snippet.updatedAt->public.reviewer_snippet.updated_at",
+    "public.reviewer_snippet.userId->public.reviewer_snippet.user_id",
+    "public.role_application.createdAt->public.role_application.created_at",
+    "public.role_application.updatedAt->public.role_application.updated_at",
+    "public.role_application.nationId->public.role_application.nation_id",
+    "public.role_application.nonStateActorId->public.role_application.non_state_actor_id",
+    "public.role_application.delegationId->public.role_application.delegation_id",
+    "public.single_participant.createdAt->public.single_participant.created_at",
+    "public.single_participant.updatedAt->public.single_participant.updated_at",
+    "public.single_participant.conferenceId->public.single_participant.conference_id",
+    "public.single_participant.userId->public.single_participant.user_id",
+    "public.single_participant.assignedRoleId->public.single_participant.assigned_role_id",
+    "public.single_participant.assignmentDetails->public.single_participant.assignment_details",
+    "public.survey_answer.createdAt->public.survey_answer.created_at",
+    "public.survey_answer.updatedAt->public.survey_answer.updated_at",
+    "public.survey_answer.questionId->public.survey_answer.question_id",
+    "public.survey_answer.userId->public.survey_answer.user_id",
+    "public.survey_answer.optionId->public.survey_answer.option_id",
+    "public.survey_option.createdAt->public.survey_option.created_at",
+    "public.survey_option.updatedAt->public.survey_option.updated_at",
+    "public.survey_option.questionId->public.survey_option.question_id",
+    "public.survey_option.upperLimit->public.survey_option.upper_limit",
+    "public.survey_question.createdAt->public.survey_question.created_at",
+    "public.survey_question.updatedAt->public.survey_question.updated_at",
+    "public.survey_question.conferenceId->public.survey_question.conference_id",
+    "public.survey_question.showSelectionOnDashboard->public.survey_question.show_selection_on_dashboard",
+    "public.team_member.createdAt->public.team_member.created_at",
+    "public.team_member.updatedAt->public.team_member.updated_at",
+    "public.team_member.conferenceId->public.team_member.conference_id",
+    "public.team_member.userId->public.team_member.user_id",
+    "public.team_member_invitation.createdAt->public.team_member_invitation.created_at",
+    "public.team_member_invitation.updatedAt->public.team_member_invitation.updated_at",
+    "public.team_member_invitation.expiresAt->public.team_member_invitation.expires_at",
+    "public.team_member_invitation.usedAt->public.team_member_invitation.used_at",
+    "public.team_member_invitation.revokedAt->public.team_member_invitation.revoked_at",
+    "public.team_member_invitation.conferenceId->public.team_member_invitation.conference_id",
+    "public.team_member_invitation.invitedById->public.team_member_invitation.invited_by_id",
+    "public.team_member_invitation.acceptedById->public.team_member_invitation.accepted_by_id",
+    "public.user.createdAt->public.user.created_at",
+    "public.user.updatedAt->public.user.updated_at",
+    "public.user.foodPreference->public.user.food_preference",
+    "public.user.wantsToReceiveGeneralInformation->public.user.wants_to_receive_general_information",
+    "public.user.wantsJoinTeamInformation->public.user.wants_join_team_information",
+    "public.user.emergencyContacts->public.user.emergency_contacts",
+    "public.user.globalNotes->public.user.global_notes",
+    "public.user_reference_in_payment_transaction.createdAt->public.user_reference_in_payment_transaction.created_at",
+    "public.user_reference_in_payment_transaction.updatedAt->public.user_reference_in_payment_transaction.updated_at",
+    "public.user_reference_in_payment_transaction.paymentTransactionId->public.user_reference_in_payment_transaction.payment_transaction_id",
+    "public.user_reference_in_payment_transaction.userId->public.user_reference_in_payment_transaction.user_id",
+    "public.waiting_list_entry.createdAt->public.waiting_list_entry.created_at",
+    "public.waiting_list_entry.updatedAt->public.waiting_list_entry.updated_at",
+    "public.waiting_list_entry.conferenceId->public.waiting_list_entry.conference_id",
+    "public.waiting_list_entry.userId->public.waiting_list_entry.user_id",
+    "public.calendar_day.CalendarDay_conferenceId_sortOrder_key->public.calendar_day.calendar_day_conference_id_sort_order_key",
+    "public.calendar_track.CalendarTrack_calendarDayId_sortOrder_key->public.calendar_track.calendar_track_calendar_day_id_sort_order_key",
+    "public.committee_to_nation._CommitteeToNation_B_index->public.committee_to_nation.committee_to_nation_b_index",
+    "public.conference_participant_status.ConferenceParticipantStatus_conferenceId_assigendDocumentNu_key->public.conference_participant_status.conference_participant_status_conference_id_doc_number_key",
+    "public.conference_participant_status.ConferenceParticipantStatus_userId_conferenceId_key->public.conference_participant_status.conference_participant_status_user_id_conference_id_key",
+    "public.conference_supervisor.ConferenceSupervisor_conferenceId_connectionCode_key->public.conference_supervisor.conference_supervisor_conference_id_connection_code_key",
+    "public.conference_supervisor.ConferenceSupervisor_conferenceId_userId_key->public.conference_supervisor.conference_supervisor_conference_id_user_id_key",
+    "public.conference_supervisor_to_delegation_member._ConferenceSupervisorToDelegationMember_B_index->public.conference_supervisor_to_delegation_member.conference_supervisor_to_delegation_member_b_index",
+    "public.conference_supervisor_to_single_participant._ConferenceSupervisorToSingleParticipant_B_index->public.conference_supervisor_to_single_participant.conference_supervisor_to_single_participant_b_index",
+    "public.custom_conference_role.CustomConferenceRole_conferenceId_name_key->public.custom_conference_role.custom_conference_role_conference_id_name_key",
+    "public.custom_conference_role_to_single_participant._CustomConferenceRoleToSingleParticipant_B_index->public.custom_conference_role_to_single_participant.custom_conference_role_to_single_participant_b_index",
+    "public.delegation.Delegation_conferenceId_assignedNationAlpha3Code_key->public.delegation.delegation_conference_id_assigned_nation_alpha3_code_key",
+    "public.delegation.Delegation_conferenceId_assignedNonStateActorId_key->public.delegation.delegation_conference_id_assigned_non_state_actor_id_key",
+    "public.delegation.Delegation_conferenceId_entryCode_key->public.delegation.delegation_conference_id_entry_code_key",
+    "public.delegation_member.DelegationMember_conferenceId_userId_key->public.delegation_member.delegation_member_conference_id_user_id_key",
+    "public.delegation_member.DelegationMember_delegationId_userId_key->public.delegation_member.delegation_member_delegation_id_user_id_key",
+    "public.nation.Nation_alpha2Code_key->public.nation.nation_alpha2_code_key",
+    "public.non_state_actor.NonStateActor_conferenceId_abbreviation_key->public.non_state_actor.non_state_actor_conference_id_abbreviation_key",
+    "public.non_state_actor.NonStateActor_conferenceId_name_key->public.non_state_actor.non_state_actor_conference_id_name_key",
+    "public.paper_version.PaperVersion_paperId_version_key->public.paper_version.paper_version_paper_id_version_key",
+    "public.place.Place_conferenceId_name_key->public.place.place_conference_id_name_key",
+    "public.reviewer_snippet.ReviewerSnippet_userId_name_key->public.reviewer_snippet.reviewer_snippet_user_id_name_key",
+    "public.role_application.RoleApplication_delegationId_nationId_key->public.role_application.role_application_delegation_id_nation_id_key",
+    "public.role_application.RoleApplication_delegationId_nonStateActorId_key->public.role_application.role_application_delegation_id_non_state_actor_id_key",
+    "public.role_application.RoleApplication_delegationId_rank_key->public.role_application.role_application_delegation_id_rank_key",
+    "public.single_participant.SingleParticipant_conferenceId_userId_key->public.single_participant.single_participant_conference_id_user_id_key",
+    "public.survey_answer.SurveyAnswer_questionId_userId_key->public.survey_answer.survey_answer_question_id_user_id_key",
+    "public.survey_option.SurveyOption_questionId_title_key->public.survey_option.survey_option_question_id_title_key",
+    "public.survey_question.SurveyQuestion_conferenceId_title_key->public.survey_question.survey_question_conference_id_title_key",
+    "public.team_member.TeamMember_conferenceId_userId_key->public.team_member.team_member_conference_id_user_id_key",
+    "public.team_member_invitation.TeamMemberInvitation_conferenceId_email_idx->public.team_member_invitation.team_member_invitation_conference_id_email_idx",
+    "public.team_member_invitation.TeamMemberInvitation_conferenceId_email_pending_key->public.team_member_invitation.team_member_invitation_conference_id_email_pending_key",
+    "public.team_member_invitation.TeamMemberInvitation_conferenceId_idx->public.team_member_invitation.team_member_invitation_conference_id_idx",
+    "public.team_member_invitation.TeamMemberInvitation_token_idx->public.team_member_invitation.team_member_invitation_token_idx",
+    "public.team_member_invitation.TeamMemberInvitation_token_key->public.team_member_invitation.team_member_invitation_token_key",
+    "public.user.User_email_key->public.user.user_email_key",
+    "public.waiting_list_entry.WaitingListEntry_conferenceId_userId_key->public.waiting_list_entry.waiting_list_entry_conference_id_user_id_key",
+    "public.committee_to_nation._CommitteeToNation_AB_pkey->public.committee_to_nation.committee_to_nation_ab_pkey",
+    "public.conference_supervisor_to_delegation_member._ConferenceSupervisorToDelegationMember_AB_pkey->public.conference_supervisor_to_delegation_member.conference_supervisor_to_delegation_member_ab_pkey",
+    "public.conference_supervisor_to_single_participant._ConferenceSupervisorToSingleParticipant_AB_pkey->public.conference_supervisor_to_single_participant.conference_supervisor_to_single_participant_ab_pkey",
+    "public.custom_conference_role_to_single_participant._CustomConferenceRoleToSingleParticipant_AB_pkey->public.custom_conference_role_to_single_participant.custom_conference_role_to_single_participant_ab_pkey"
+  ]
+}

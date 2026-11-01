@@ -1,0 +1,18 @@
+diff --git a/package.json b/package.json
+index d29ec8af442d7d9d87ff56784ed5c43613b7b9ee..2622ac518bcf0d99d8c895d790587221111527b8 100644
+--- a/package.json
++++ b/package.json
+@@ -38,5 +38,12 @@
+     "src",
+     "index.mjs",
+     "index.js"
+-  ]
++  ],
++  "exports": {
++    ".": {
++      "svelte": "./VirtualList.svelte",
++      "default": "./VirtualList.svelte"
++    },
++    "./package.json": "./package.json"
++  }
+ }
