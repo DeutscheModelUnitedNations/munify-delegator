@@ -10,7 +10,7 @@
 		toEditorDay,
 		type EditorDay,
 		type PointerPosition
-	} from './calendarEditor.svelte';
+	} from './calendarEditor.svelte.js';
 	import {
 		columnIndexAt,
 		entryExtent,

@@ -26,7 +26,7 @@
 	import PlanStats from './PlanStats.svelte';
 	import ReleaseCard from './ReleaseCard.svelte';
 	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
-	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte';
+	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte.js';
 	import { ASSIGNMENT_KINDS } from '#lib/helpers/emailKinds';
 	import type { PageProps } from './$types';
 
