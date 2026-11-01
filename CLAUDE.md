@@ -205,10 +205,6 @@ bun run preview
   - `invitationCleanup.ts` - Deletes team member invitations long after they expired
   - `fileCleanup.ts` - Deletes stored files nothing uses any more, and bucket objects without a row
   - `sendEmails.ts` - Sends the automatic mails that are due, through the app's `sendDueEmails`
-  - `legacyFileUpload.ts` - Once, after the `stored_files` migration: puts the files the Prisma
-    app kept inline (data URLs) into the bucket. The migration already made them `stored_file`
-    rows and parked their bytes in `legacy_file_upload` (outside the drizzle schema); the job
-    uploads them and drops that table
 
 - **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
@@ -569,6 +565,11 @@ bun run preview
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
     `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
     (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
+  - **Files from before the bucket** (the Prisma app's data URLs) were turned into `stored_file`
+    rows by the `stored_files` migration, their bytes parked in `legacy_file_upload` (outside the
+    drizzle schema). The server's `init` hook (`uploadLegacyFiles`,
+    `#api/handlers/storedFile/legacyFileUpload`) puts them into the bucket before the first request
+    and drops that table; afterwards it costs one query per start.
   - **Cleanup is garbage collection:** no mutation or cascade deletes a file, and a file names no
     conference. The `file-cleanup` job collects every `stored_file` nothing points at, found
     through the schema's foreign keys to it (`fileReferenceColumns`), so **a file id kept in
@@ -1041,8 +1042,6 @@ bun run preview
   - `invitation-cleanup` - daily; `--retention-days` (30), `--dry-run`
   - `file-cleanup` - daily; deletes unused uploads and orphaned objects; `--grace-hours` (24),
     `--dry-run`; needs the `S3_*` variables
-  - `upload-legacy-files` - once, right after deploying the move off Prisma, before the app is
-    used: until then the moved files' URLs find nothing. `--dry-run`; needs the `S3_*` variables
   - `send-emails` - every few minutes; sends what is due of the kinds switched to automatic.
     Needs `DATABASE_URL`, the app's `SMTP_*`, `REDIS_URL` when the app has one (the shared
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address

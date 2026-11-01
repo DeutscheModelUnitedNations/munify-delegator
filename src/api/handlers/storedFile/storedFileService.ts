@@ -16,7 +16,7 @@ import { createStorage, objectKey, type Storage } from './storageClient';
 let instance: Storage | undefined;
 
 /** The app's bucket. Built on first use, so analysing the app during `vite build` needs no S3. */
-function storage(): Storage {
+export function storage(): Storage {
 	instance ??= createStorage({
 		endpoint: S3_ENDPOINT,
 		publicEndpoint: S3_PUBLIC_ENDPOINT,

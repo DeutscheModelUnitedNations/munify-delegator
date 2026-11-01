@@ -23,8 +23,8 @@ ALTER TABLE "place" ADD COLUMN "site_plan_file_id" text;--> statement-breakpoint
 ALTER TABLE "resolution" ADD COLUMN "file_id" text;--> statement-breakpoint
 -- Hand-edited: the files stored inline so far (data URLs) move into the bucket in two steps. Here
 -- each becomes a `stored_file` the row points at, keyed like an upload (`objectKey`), and its
--- bytes wait in "legacy_file_upload"; the `upload-legacy-files` job then puts them into the
--- bucket and drops that table. It is not in the drizzle schema: nothing but the job reads it.
+-- bytes wait in "legacy_file_upload"; the app puts them into the bucket when it starts
+-- (`uploadLegacyFiles`) and drops that table. It is not in the drizzle schema: nothing else reads it.
 CREATE TABLE "legacy_file_upload" (
 	"stored_file_id" text PRIMARY KEY REFERENCES "stored_file"("id") ON DELETE CASCADE,
 	"bytes" bytea NOT NULL
