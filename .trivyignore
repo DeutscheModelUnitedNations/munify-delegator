@@ -82,6 +82,7 @@ CVE-2026-56860  # net/url: DoS via quadratic complexity in path handling (esbuil
 CVE-2026-56862  # crypto/tls: DoS via indefinite KeyUpdate messages (esbuild, lefthook)
 CVE-2026-56864  # x/mod: malicious GOSUMDB can serve arbitrary module content (lefthook)
 CVE-2026-56865  # x/mod/sumdb/tlog: supply chain compromise via tile verification bypass (lefthook)
+CVE-2026-111943 # crypto/x509: MITM via untrusted intermediate certificates (esbuild; even 0.28.2 is built with go1.26.5, fix is 1.26.10)
 
 # Bundled inside the npm CLI that ships with the nodesource Node.js package
 # (/usr/lib/node_modules/npm), not in our dependency tree - our own
