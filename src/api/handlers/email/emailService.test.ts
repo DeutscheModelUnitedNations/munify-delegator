@@ -37,4 +37,10 @@ describe('the email argument schemas', () => {
 		expect(switchableKindSchema.safeParse({ kind: 'BADGE_FOUND' }).success).toBe(false);
 		expect(switchableKindSchema.safeParse({ kind: 'TEAM_WELCOME' }).success).toBe(true);
 	});
+
+	test('hand the resolver the arguments they do not check', () => {
+		expect(
+			switchableKindSchema.parse({ conferenceId: 'c', kind: 'TEAM_WELCOME', enabled: true })
+		).toMatchObject({ conferenceId: 'c', enabled: true });
+	});
 });

@@ -25,6 +25,13 @@ describe('entryTimesSchema', () => {
 			entryTimesSchema.safeParse({ startTime: at('09:00'), endTime: at('10:00') }).success
 		).toBe(true);
 	});
+
+	it('hands the resolver the arguments it does not check', () => {
+		expect(entryTimesSchema.parse({ id: 'e', name: 'Plenary' })).toMatchObject({
+			id: 'e',
+			name: 'Plenary'
+		});
+	});
 });
 
 describe('entryTrackIdsSchema', () => {

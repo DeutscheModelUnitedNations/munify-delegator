@@ -261,7 +261,10 @@ bun run preview
 - **Arguments are checked by zod schemas on the arguments, never by hand in a resolver or service.**
   rumble installs `@pothos/plugin-validation`: one argument with `t.arg.int().validate(schema)`,
   several together with `validate: schema` on the field, and `args: t.validate({ … }, schema)`
-  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). Word each issue
+  when a `transform` should hand the resolver what it needs (`reviewArgsSchema`). What a
+  field-level schema returns _replaces_ the resolver's `args`, so it is a `z.looseObject` (or
+  `.loose()` where a form shares a plain `z.object`): a strict one strips every argument it does
+  not name, and the resolver gets `conferenceId: undefined`. Word each issue
   with a lazy `m.…()` (`{ error: () => m.x() }`): a failure becomes an `INVALID_INPUT` error with
   those messages (`validation.validationError` in `rumble.ts`). A JSON argument holding a whole
   document goes through `jsonDocument` (`#api/services/argSchemas`). Keep the schema in the

@@ -89,4 +89,10 @@ describe('regionalBaselineArgsSchema', () => {
 		expect(() => assertStoredTargetsUsable({ baseline: 'MANUAL', targets: [] })).toThrow();
 		expect(() => assertStoredTargetsUsable({ baseline: 'UN_MEMBERS', targets: [] })).not.toThrow();
 	});
+
+	test('hands the resolver the arguments it does not check', () => {
+		expect(regionalBaselineArgsSchema.parse({ id: 'c', baseline: 'MANUAL' })).toMatchObject({
+			id: 'c'
+		});
+	});
 });

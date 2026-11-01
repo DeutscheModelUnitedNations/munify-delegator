@@ -56,7 +56,7 @@ export const optionalLocaleSchema = z
 
 /** Refuses (INVALID_INPUT) the kinds the conference cannot switch: the ones always sent. */
 export const switchableKindSchema = z
-	.object({ kind: z.string() })
+	.looseObject({ kind: z.string() })
 	.refine(({ kind }) => !isAlwaysSent(kind), { error: () => m.emailKindAlwaysSent() });
 
 /** The kinds among `kinds` (else all) that follow from state; the team invitation never does. */

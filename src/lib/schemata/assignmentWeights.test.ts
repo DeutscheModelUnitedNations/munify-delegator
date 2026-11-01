@@ -13,4 +13,10 @@ describe('assignmentWeightsArgsSchema', () => {
 		expect(assignmentWeightsArgsSchema.safeParse({ nullRating: 1e300 }).success).toBe(false);
 		expect(assignmentWeightsArgsSchema.safeParse({ ratingFactor: -1 }).success).toBe(false);
 	});
+
+	it('hands the resolver the arguments it does not check', () => {
+		expect(assignmentWeightsArgsSchema.parse({ conferenceId: 'c' })).toMatchObject({
+			conferenceId: 'c'
+		});
+	});
 });

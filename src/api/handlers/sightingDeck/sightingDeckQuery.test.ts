@@ -21,4 +21,10 @@ describe('the school filter', () => {
 		).toBe(false);
 		expect(schoolFilterSchema.safeParse({ schoolId: 'school-1' }).success).toBe(true);
 	});
+
+	it('hands the resolver the arguments it does not check', () => {
+		expect(schoolFilterSchema.parse({ conferenceId: 'c', schoolId: null })).toMatchObject({
+			conferenceId: 'c'
+		});
+	});
 });

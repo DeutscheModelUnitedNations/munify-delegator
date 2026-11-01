@@ -24,5 +24,5 @@ export const entryTrackIdsSchema = z
  * (`updateCalendarEntry`).
  */
 export const entryTimesSchema = z
-	.object({ startTime: z.date().nullish(), endTime: z.date().nullish() })
+	.looseObject({ startTime: z.date().nullish(), endTime: z.date().nullish() })
 	.refine(endsAfterStart, { error: () => m.calendarEntryEndBeforeStart() });
