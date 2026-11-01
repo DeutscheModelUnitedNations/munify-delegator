@@ -69,6 +69,8 @@ export default defineConfig({
 		reuseExistingServer: !process.env.CI,
 		// A build takes a few minutes on a slow machine.
 		timeout: SERVER === 'build' ? 600_000 : 120_000,
+		// warn even against a dev server, which would log every GraphQL operation at debug.
+		env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'warn' },
 		stdout: 'pipe',
 		stderr: 'pipe'
 	}

@@ -7,13 +7,14 @@ import pino from 'pino';
  * through its `browser` build.
  *
  * Reads `process.env` directly: the jobs and the seed run outside SvelteKit, and the browser has
- * no `process` at all. `LOG_LEVEL` overrides the level; under vitest it defaults to silent.
+ * no `process` at all. `LOG_LEVEL` overrides the level, which is debug in development, silent under
+ * vitest and warn otherwise, so production keeps out rumble's line per operation.
  */
 const env = typeof process === 'undefined' ? {} : process.env;
 const isDev = env.NODE_ENV === 'development';
 
 const pinoLogger = pino({
-	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'info'),
+	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'warn'),
 	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
 	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
 	transport: isDev
