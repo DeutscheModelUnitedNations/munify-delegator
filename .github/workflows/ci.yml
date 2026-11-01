@@ -34,6 +34,14 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
+      # `bun run lint` caches by file content, so the last run's cache holds across checkouts and only
+      # changed files are linted again. Saved under the commit, restored from the newest one; a
+      # dependency or config change starts over.
+      - uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-${{ hashFiles('bun.lock', 'eslint.config.js') }}-${{ github.sha }}
+          restore-keys: eslint-${{ hashFiles('bun.lock', 'eslint.config.js') }}-
       - run: bun run lint
 
   test:
