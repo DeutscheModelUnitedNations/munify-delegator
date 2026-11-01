@@ -79,9 +79,11 @@ jobs:
       - uses: ./.github/actions/setup-bun
       # The OIDC provider (oidc-mock) starts with the Vite dev server that Playwright launches, so
       # Postgres and the S3 bucket are the only containers. Reuse the project's compose definition.
-      - run: docker compose -f dev.docker-compose.yml up -d postgres s3 s3-init
-      - name: Wait for the bucket
-        run: docker compose -f dev.docker-compose.yml wait s3-init
+      - run: docker compose -f dev.docker-compose.yml up -d postgres s3
+      # Creates the bucket in the foreground: `run` waits for s3 to be healthy and fails with the
+      # one-shot's exit code. (`compose wait` finds no container once s3-init has already exited.)
+      - name: Create the bucket
+        run: docker compose -f dev.docker-compose.yml run --rm s3-init
       - name: Wait for postgres
         run: timeout 120 bash -c 'until docker exec postgres-dev-delegator pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done'
       - run: bunx svelte-kit sync
