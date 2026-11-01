@@ -64,7 +64,10 @@ export default defineConfig({
 		}
 	],
 	webServer: {
-		command: SERVER === 'build' ? `NODE_ENV=production bun run build && ${serve}` : serve,
+		command:
+			SERVER === 'build'
+				? `NODE_ENV=production PRECOMPRESS=false bun run build && ${serve}`
+				: serve,
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		// A build takes a few minutes on a slow machine.

@@ -80,7 +80,9 @@ export default defineConfig({
 			// before the app loads, and SvelteKit emits spans for handle, loads and remote functions
 			// into it. Both are inert unless OTEL_ENDPOINT_URL is set.
 			tracing: { server: true },
-			adapter: adapter()
+			// The e2e build skips the .gz/.br copies (`PRECOMPRESS=false`, playwright.config.ts): they
+			// take a quarter of the build, and `vite preview` serves none of them.
+			adapter: adapter({ precompress: process.env.PRECOMPRESS !== 'false' })
 		}),
 		paraglideVitePlugin({
 			project: './project.inlang',

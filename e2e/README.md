@@ -39,6 +39,12 @@ What the suite runs against, and how hard it works the machine, is set by enviro
 | `E2E_NICE`    | `19` (`0` in CI)        | CPU priority of everything the run starts, so a local run yields to the rest of the machine                                                                                                                     |
 | `E2E_PORT`    | `4173` (`5173` for dev) | Where the app is served; also lets CI shard without port collisions                                                                                                                                             |
 
+CI runs the suite in four shards, but not with Playwright's `--shard`, which splits by test count:
+`scripts/e2eShards.ts` packs the spec files by their running time in `e2e/durations.json`. A new
+spec counts as the median until it is recorded. When the shards' times drift apart, replace the
+file with the `e2e-durations` artifact of a recent CI run (or `bun scripts/e2eShards.ts record
+<report.json>` on a JSON report).
+
 A server already listening on the port is reused outside CI, so `E2E_SERVER=dev` runs against a
 `bun run dev` you have open. The dev server reloads its whole program on every save and compiles
 each page on its first visit, which is why it is not the default: a run against it takes about

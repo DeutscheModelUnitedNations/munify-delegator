@@ -103,8 +103,12 @@ jobs:
       - run: bunx svelte-kit sync
       - run: bun run db:migrate
       - run: bunx playwright install --with-deps chromium
+      # The shard's spec files, packed by their recorded durations (scripts/e2eShards.ts): Playwright's
+      # --shard splits by test count, which left one shard running three times as long as another.
       # A blob report per shard, merged into one HTML report by the e2e job below.
-      - run: bun run test:e2e --shard=${{ matrix.shard }}/4 --reporter=github,blob
+      - run: bun run test:e2e --reporter=github,blob $(bun scripts/e2eShards.ts split ${{ matrix.shard }} 4)
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
       - name: Upload the shard's report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -128,6 +132,17 @@ jobs:
           path: all-blob-reports
           merge-multiple: true
       - run: bunx playwright merge-reports --reporter html ./all-blob-reports
+      # The durations the shards are packed by, as measured here. Copy the artifact's file over
+      # e2e/durations.json when the shards drift apart.
+      - name: Record spec durations
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-report.json bunx playwright merge-reports --reporter json ./all-blob-reports
+          bun scripts/e2eShards.ts record e2e-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: e2e-durations
+          path: e2e/durations.json
+          retention-days: 7
       # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
       # all the publish-reports job needs to host it.
       - name: Upload Playwright report
