@@ -26,7 +26,7 @@ describe('the found badge mail', () => {
 			conferenceTitle: 'MUN-SH 2027',
 			wording: noWording
 		});
-		expect(mail.subject).toBe('Ihr Zugangsausweis für MUN-SH 2027 wurde gefunden');
+		expect(mail.subject).toBe('Dein Zugangsausweis für MUN-SH 2027 wurde gefunden');
 		expect(mail.html).toContain('Teilnehmendenbetreuung');
 		expect(mail.text).toContain('Ada Lovelace');
 
@@ -49,15 +49,15 @@ describe('the found badge mail', () => {
 						locale: 'de',
 						subject: null,
 						heading: null,
-						body: 'Ihr Ausweis liegt im Konferenzbüro von {conference}, Raum 101.'
+						body: 'Dein Ausweis liegt im Konferenzbüro von {conference}, Raum 101.'
 					}
 				],
-				footers: [{ locale: 'de', text: 'Ihr Team von {conference}' }]
+				footers: [{ locale: 'de', text: 'Dein Team von {conference}' }]
 			}
 		});
 		expect(mail.html).toContain('Konferenzbüro von MUN-SH 2027, Raum 101.');
-		expect(mail.html).toContain('Ihr Team von MUN-SH 2027');
+		expect(mail.html).toContain('Dein Team von MUN-SH 2027');
 		// the subject it left alone stays the default
-		expect(mail.subject).toBe('Ihr Zugangsausweis für MUN-SH 2027 wurde gefunden');
+		expect(mail.subject).toBe('Dein Zugangsausweis für MUN-SH 2027 wurde gefunden');
 	});
 });

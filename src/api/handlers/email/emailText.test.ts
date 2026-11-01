@@ -75,10 +75,10 @@ describe('emailFooterParagraphs', () => {
 	test('splits at blank lines, keeps line breaks and names the conference', () => {
 		expect(
 			emailFooterParagraphs({
-				footer: 'Ihr Team von {conference}\nKiel\n\n\n  info@example.org  ',
+				footer: 'Dein Team von {conference}\nKiel\n\n\n  info@example.org  ',
 				conferenceTitle: 'MUN-SH'
 			})
-		).toEqual(['Ihr Team von MUN-SH\nKiel', 'info@example.org']);
+		).toEqual(['Dein Team von MUN-SH\nKiel', 'info@example.org']);
 	});
 
 	test('is nothing without a footer', () => {

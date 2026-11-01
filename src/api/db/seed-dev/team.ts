@@ -109,7 +109,7 @@ export function addReviewerSnippets(batch: SeedBatch) {
 			userId: 'dev-team-reviewer',
 			name: 'Quellen fehlen',
 			content: snippetDocument(
-				'Bitte belegen Sie Ihre Aussagen mit Quellen, insbesondere zu {{Thema}}.'
+				'Bitte belege deine Aussagen mit Quellen, insbesondere zu {{Thema}}.'
 			)
 		},
 		{
