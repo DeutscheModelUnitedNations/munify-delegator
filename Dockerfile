@@ -12,6 +12,8 @@ FROM patched AS builder
 WORKDIR /run
 
 COPY package.json bun.lock tsconfig.json ./
+# bun applies patchedDependencies while installing, so the patches have to be there already
+COPY patches ./patches
 RUN bun install --frozen-lockfile
 
 ARG VERSION
