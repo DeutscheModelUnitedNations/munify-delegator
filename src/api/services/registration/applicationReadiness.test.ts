@@ -1,5 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 
+// Nothing fills the app's variables in under vitest, and validating them refuses the empty set.
+vi.mock('$app/env/private', () => ({ DATABASE_URL: '', REDIS_URL: undefined }));
+
 vi.mock('$app/env/public', () => ({
 	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: 100,
 	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: 1200
