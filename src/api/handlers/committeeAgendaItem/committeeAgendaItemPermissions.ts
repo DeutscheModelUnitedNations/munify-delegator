@@ -2,6 +2,8 @@ import { db } from '#api/db/db';
 import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	isTeamMemberOfConference,
+	linkedChase,
+	MIRRORED_CONFERENCE,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin,
@@ -11,6 +13,14 @@ import { assertAllowed } from '#api/services/authHelper/utils';
 import { assertFindFirstExists } from '@m1212e/rumble';
 
 export function registerCommitteeAgendaItemAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
+	abilityBuilder.committeeAgendaItem.allow('read').when(
+		linkedChase({
+			where: { committee: { conference: MIRRORED_CONFERENCE } },
+			columns: { id: true, title: true, committeeId: true }
+		})
+	);
+
 	// Anyone who may read the conference (`readableConference`) reads its committees' agenda items:
 	// they are part of the seat overview.
 	abilityBuilder.committeeAgendaItem

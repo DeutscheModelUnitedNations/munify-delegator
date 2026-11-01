@@ -661,6 +661,8 @@ export type CertificateJWT = {
   sessions: String[]    
 };
 		
+export type ChaseaccessEnum = "NONE" | "SPECTATOR" | "TEAM";
+		
 export type Committee = {
   abbreviation: String,
   agendaItems: (p?: {
@@ -1427,6 +1429,7 @@ export type Conferencerole = {
     search?: String | null | undefined,
     where?: CalendartrackWhereInputArgument | null | undefined
   }) => Calendartrack[],
+  chaseAccess: ChaseaccessEnum,
   committees: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -1464,6 +1467,7 @@ export type Conferencerole = {
 		
 export type ConferenceroleOrderInputArgument = {
   abbreviation?: SortingParameter | null | undefined,
+  chaseAccess?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   description?: SortingParameter | null | undefined,
@@ -1485,6 +1489,7 @@ export type ConferenceroleWhereInputArgument = {
   assignedDelegations?: DelegationWhereInputArgument | null | undefined,
   assignedSingleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
   calendarTracks?: CalendartrackWhereInputArgument | null | undefined,
+  chaseAccess?: ChaseaccessEnum | null | undefined,
   committees?: CommitteeWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
@@ -2029,6 +2034,57 @@ export type ImpersonationUser = {
   sub: String    
 };
 		
+export type Instancelink = {
+  confirmationCode: String,
+  createdAt: DateTime,
+  id: ID,
+  inboundTokenHash: String,
+  lastError: String | null,
+  lastEventAt: DateTime | null,
+  lastReconcileAt: DateTime | null,
+  linkedAt: DateTime | null,
+  outboundToken: String | null,
+  remoteUrl: String,
+  search_distance: Float | null,
+  status: InstancelinkstatusEnum,
+  updatedAt: DateTime    
+};
+		
+export type InstancelinkOrderInputArgument = {
+  confirmationCode?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  inboundTokenHash?: SortingParameter | null | undefined,
+  lastError?: SortingParameter | null | undefined,
+  lastEventAt?: SortingParameter | null | undefined,
+  lastReconcileAt?: SortingParameter | null | undefined,
+  linkedAt?: SortingParameter | null | undefined,
+  outboundToken?: SortingParameter | null | undefined,
+  remoteUrl?: SortingParameter | null | undefined,
+  status?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type InstancelinkWhereInputArgument = {
+  AND?: InstancelinkWhereInputArgument[] | undefined,
+  NOT?: InstancelinkWhereInputArgument | null | undefined,
+  OR?: InstancelinkWhereInputArgument[] | undefined,
+  confirmationCode?: StringWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  inboundTokenHash?: StringWhereInputArgument | null | undefined,
+  lastError?: StringWhereInputArgument | null | undefined,
+  lastEventAt?: DateTimeWhereInputArgument | null | undefined,
+  lastReconcileAt?: DateTimeWhereInputArgument | null | undefined,
+  linkedAt?: DateTimeWhereInputArgument | null | undefined,
+  outboundToken?: StringWhereInputArgument | null | undefined,
+  remoteUrl?: StringWhereInputArgument | null | undefined,
+  status?: InstancelinkstatusEnum | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
+};
+		
+export type InstancelinkstatusEnum = "ACTIVE" | "FROZEN" | "PENDING";
+		
 export type Int = number;
 		
 export type IntArrayWhereInputArgument = {
@@ -2135,6 +2191,10 @@ export type Mutation = {
   autoAssignSingleParticipants: (p: {
     conferenceId: ID
   }) => Int,
+  confirmChaseLink: (p: {
+    confirmationCode: String,
+    token: String
+  }) => Boolean,
   connectToConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String,
@@ -2419,6 +2479,9 @@ export type Mutation = {
   reopenAttendanceSession: (p: {
     id: ID
   }) => Boolean,
+  requestChaseLink: (p: {
+    chaseUrl: String
+  }) => ID,
   requestFileUpload: (p: {
     conferenceId: ID,
     field: String,
@@ -2543,6 +2606,7 @@ export type Mutation = {
   undoDelegationSplit: (p: {
     delegationId: ID
   }) => Boolean,
+  unlinkChase: Boolean,
   unregisterParticipant: (p: {
     conferenceId: ID,
     userId: ID
@@ -3605,6 +3669,16 @@ export type Query = {
   }) => StatisticsResult,
   identityCodePublicKey: () => IdentityCodePublicKey,
   impersonationStatus: () => ImpersonationStatus,
+  instanceLink: (p: {
+    id: ID
+  }) => Instancelink,
+  instanceLinks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: InstancelinkOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: InstancelinkWhereInputArgument | null | undefined
+  }) => Instancelink[],
   logoutUrl: String,
   myOIDCRoles: OIDCRolesEnum[],
   myReviewStats: (p: {
@@ -5048,6 +5122,16 @@ export type Subscription = {
     search?: String | null | undefined,
     where?: EmaillogWhereInputArgument | null | undefined
   }) => Emaillog[],
+  instanceLink: (p: {
+    id: ID
+  }) => Instancelink,
+  instanceLinks: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: InstancelinkOrderInputArgument | null | undefined,
+    search?: String | null | undefined,
+    where?: InstancelinkWhereInputArgument | null | undefined
+  }) => Instancelink[],
   nation: (p: {
     id: ID
   }) => Nation,
@@ -5907,7 +5991,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["assignmentReview", "assignmentReviews", "assignmentReviewsCount", "assignmentSingleRole", "assignmentSingleRoles", "assignmentUnit", "assignmentUnits", "assignmentWeight", "assignmentWeights", "attendanceEntries", "attendanceEntry", "attendanceSession", "attendanceSessions", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceEmailFooter", "conferenceEmailFooters", "conferenceEmailSetting", "conferenceEmailSettings", "conferenceEmailText", "conferenceEmailTexts", "conferenceParticipant", "conferenceParticipants", "conferenceRole", "conferenceRoles", "conferenceSupervisor", "conferenceSupervisors", "conferences", "delegation", "delegationMember", "delegationMembers", "delegations", "delegationsCount", "emailLog", "emailLogs", "instanceLink", "instanceLinks", "nation", "nations", "paper", "papers", "papersCount", "paymentTransaction", "paymentTransactions", "place", "places", "possibleDuplicate", "possibleDuplicates", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "school", "schoolSuggestion", "schoolSuggestions", "schools", "searchHistories", "searchHistory", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "teamMembersCount", "user", "users", "waitingListEntries", "waitingListEntriesCount", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

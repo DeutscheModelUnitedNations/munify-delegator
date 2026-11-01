@@ -74,6 +74,7 @@ export {
 } from './papers';
 export { paymentTransaction, userReferenceInPaymentTransaction } from './payments';
 export { mailingList } from './mailSync';
+export { instanceLinkStatus, chaseAccess, instanceLink } from './chaseLink';
 export {
 	statisticsPeople,
 	statisticsDelegations,

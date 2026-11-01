@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { defaultIdAndTimestamps, defaultTimestamps, implicitManyToMany } from './helpers';
 import { conferenceRef } from './conference';
 import { committee } from './committees';
+import { chaseAccess } from './chaseLink';
 
 /** The roles a conference offers: nations, non-state actors and custom roles. */
 
@@ -46,7 +47,9 @@ export const conferenceRole = snakeCase.table(
 		description: text(),
 		fontAwesomeIcon: text(),
 		/** How many people the role seats: a non-state actor's delegation size, a custom role's places. */
-		seatAmount: integer()
+		seatAmount: integer(),
+		/** Custom roles only: what their people are in a linked CHASE. */
+		chaseAccess: chaseAccess().default('SPECTATOR').notNull()
 	},
 	(table) => [
 		index('conference_role_conference_id_idx').using('btree', table.conferenceId.asc().nullsLast()),

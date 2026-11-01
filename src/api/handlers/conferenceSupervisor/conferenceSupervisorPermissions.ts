@@ -1,10 +1,12 @@
 import { db } from '#api/db/db';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
-	PARTICIPANT_CARE_ROLES,
 	assertTeamPermission,
 	isOwnUser,
 	isTeamMemberOfConference,
+	linkedChase,
+	PARTICIPANT_CARE_ROLES,
+	RELEASED_MIRRORED_CONFERENCE,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { callerUserId, grantWhere } from '#api/services/authHelper/utils';
@@ -22,6 +24,15 @@ import { apiError } from '#api/services/errors';
 const WITHOUT_CONNECTION_CODE = { connectionCode: false };
 
 export function registerConferenceSupervisorAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`): only these columns, and people only
+	// once the assignment is released.
+	abilityBuilder.conferenceSupervisor.allow('read').when(
+		linkedChase({
+			where: { conference: RELEASED_MIRRORED_CONFERENCE },
+			columns: { id: true, conferenceParticipantId: true }
+		})
+	);
+
 	// System admins read, update and delete every supervisor.
 	abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
 

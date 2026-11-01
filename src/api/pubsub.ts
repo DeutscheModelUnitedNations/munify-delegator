@@ -22,6 +22,7 @@ export const conferenceSupervisorPubsub = pubsub({ table: 'conferenceSupervisor'
 export const delegationPubsub = pubsub({ table: 'delegation' });
 export const delegationMemberPubsub = pubsub({ table: 'delegationMember' });
 export const emailLogPubsub = pubsub({ table: 'emailLog' });
+export const instanceLinkPubsub = pubsub({ table: 'instanceLink' });
 export const paperPubsub = pubsub({ table: 'paper' });
 export const paperReviewPubsub = pubsub({ table: 'paperReview' });
 export const paperVersionPubsub = pubsub({ table: 'paperVersion' });

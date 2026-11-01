@@ -3,6 +3,8 @@ import { type ApiContext, abilityBuilder } from '#api/rumble';
 import {
 	assertTeamPermission,
 	isTeamMemberOfConference,
+	linkedChase,
+	MIRRORED_CONFERENCE,
 	readableConference,
 	SEAT_PLANNING_ROLES,
 	systemAdmin
@@ -12,6 +14,23 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { whereRows } from '#api/db/whereRows';
 
 export function registerConferenceRoleAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
+	abilityBuilder.conferenceRole.allow('read').when(
+		linkedChase({
+			where: { conference: MIRRORED_CONFERENCE },
+			columns: {
+				id: true,
+				conferenceId: true,
+				kind: true,
+				nationAlpha3Code: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true,
+				chaseAccess: true
+			}
+		})
+	);
+
 	// Everybody who may read the conference (`readableConference`) reads its roles: they are part
 	// of its seat overview. The nations they stand for are global reference data and public.
 	abilityBuilder.conferenceRole

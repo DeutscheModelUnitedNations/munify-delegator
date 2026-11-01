@@ -5,14 +5,24 @@ import type { TeamRole } from '#api/services/authHelper/rules';
 import { abilityBuilder, type ApiContext } from '#api/rumble';
 import {
 	assertTeamPermission,
-	isTeamMemberOfConference,
 	isSystemAdmin,
+	isTeamMemberOfConference,
+	linkedChase,
+	MIRRORED_CONFERENCE,
 	PROJECT_MANAGEMENT_ROLES,
 	systemAdmin
 } from '#api/services/authHelper/rules';
 import { assertAllowed, grantWhere } from '#api/services/authHelper/utils';
 
 export function registerTeamMemberAbilities() {
+	// The linked CHASE mirrors it (`docs/plans/chase-link.md`), with only these columns.
+	abilityBuilder.teamMember.allow('read').when(
+		linkedChase({
+			where: { conference: MIRRORED_CONFERENCE },
+			columns: { id: true, conferenceId: true, userId: true, role: true }
+		})
+	);
+
 	abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 	// Every team member reads the memberships of their conference.
