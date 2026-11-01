@@ -41,7 +41,7 @@
 	import EmailSettings from './emails/EmailSettings.svelte';
 	import { createEmailChanges, emailConfigChanges } from './emails/emailChanges.svelte';
 	import EmailPrompt from '#lib/components/email/EmailPrompt.svelte';
-	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte';
+	import { createEmailPrompt } from '#lib/components/email/emailPrompt.svelte.js';
 	import { settingsEmailKinds } from '#lib/helpers/emailKinds';
 
 	let { conferenceId }: { conferenceId: string } = $props();
