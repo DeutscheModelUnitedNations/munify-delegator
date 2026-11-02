@@ -39,6 +39,7 @@
 			score: true,
 			reasons: true,
 			status: true,
+			inferred: true,
 			userId: true,
 			candidateId: true,
 			user: account,
@@ -48,7 +49,13 @@
 		})
 	);
 
-	const active = $derived(pairs.filter((pair) => pair.status !== 'DISMISSED'));
+	const open = $derived(pairs.filter((pair) => pair.status === 'OPEN'));
+	// decided pairs before those the links made (`inferred`), each by score
+	const confirmed = $derived(
+		pairs
+			.filter((pair) => pair.status === 'CONFIRMED')
+			.sort((a, b) => Number(a.inferred) - Number(b.inferred))
+	);
 	const dismissed = $derived(pairs.filter((pair) => pair.status === 'DISMISSED'));
 
 	let scanning = $state(false);
@@ -77,9 +84,74 @@
 	let dismissedOpen = $state(false);
 </script>
 
-{#snippet pairCard(pair: (typeof pairs)[number])}
+{#snippet matchBadge(pair: (typeof pairs)[number])}
 	{@const percent = Math.round(pair.score * 100)}
-	<div id="pair-{pair.id}" class="card bg-base-200 scroll-mt-6 shadow-sm">
+	{@const confirmed = pair.status === 'CONFIRMED'}
+	<div class="flex flex-col items-center gap-1">
+		{#if pair.inferred}
+			<i
+				class="fa-sharp-duotone fa-solid fa-link text-error text-2xl"
+				title={m.possibleDuplicateInferred()}
+				role="img"
+				aria-label={m.possibleDuplicateInferred()}
+			></i>
+		{:else}
+			<div
+				class="radial-progress text-xs font-bold {confirmed ? 'text-error' : 'text-warning'}"
+				style="--value:{percent}; --size:3rem; --thickness:4px;"
+				role="progressbar"
+				aria-valuenow={percent}
+				aria-valuemin="0"
+				aria-valuemax="100"
+				title={m.possibleDuplicateMatch({ score: percent })}
+			>
+				<span class="text-base-content">{percent}%</span>
+			</div>
+			<!-- Always there, hidden unless confirmed, so the corner keeps its height -->
+			{@const label = confirmed ? m.possibleDuplicateConfirmedBadge() : undefined}
+			<i
+				class="fa-sharp-duotone fa-solid fa-link text-error {confirmed ? '' : 'invisible'}"
+				title={label}
+				aria-label={label}
+				aria-hidden={confirmed ? undefined : true}
+			></i>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet pairActions(pair: (typeof pairs)[number])}
+	<div class="card-actions items-center justify-end">
+		{#if pair.inferred}
+			<!-- follows the decided pairs; reopening one of those takes it back -->
+			<span class="text-base-content/60 text-xs">{m.possibleDuplicateInferred()}</span>
+		{:else if pair.status === 'OPEN'}
+			<button class="btn btn-xs" onclick={() => decide({ id: pair.id, status: 'DISMISSED' })}>
+				<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
+				{m.possibleDuplicateDifferentPeople()}
+			</button>
+			<button
+				class="btn btn-xs btn-warning"
+				onclick={() => decide({ id: pair.id, status: 'CONFIRMED' })}
+			>
+				<i class="fa-sharp-duotone fa-solid fa-link"></i>
+				{m.possibleDuplicateSamePerson()}
+			</button>
+		{:else}
+			<button class="btn btn-xs btn-ghost" onclick={() => decide({ id: pair.id, status: 'OPEN' })}>
+				<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
+				{m.possibleDuplicateReopen()}
+			</button>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet pairCard(pair: (typeof pairs)[number])}
+	<div
+		id="pair-{pair.id}"
+		class="card bg-base-200 scroll-mt-6 shadow-sm {pair.status === 'CONFIRMED'
+			? 'border-error/40 border'
+			: ''}"
+	>
 		<div class="card-body gap-2 p-3">
 			<DuplicateComparison
 				reasons={pair.reasons}
@@ -91,55 +163,10 @@
 				}}
 			>
 				{#snippet corner()}
-					<div class="flex flex-col items-center gap-1">
-						<div
-							class="radial-progress text-warning text-xs font-bold"
-							style="--value:{percent}; --size:3rem; --thickness:4px;"
-							role="progressbar"
-							aria-valuenow={percent}
-							aria-valuemin="0"
-							aria-valuemax="100"
-							title={m.possibleDuplicateMatch({ score: percent })}
-						>
-							<span class="text-base-content">{percent}%</span>
-						</div>
-						<!-- Always there, hidden unless confirmed, so the corner keeps its height -->
-						<i
-							class="fa-sharp-duotone fa-solid fa-link text-error {pair.status === 'CONFIRMED'
-								? ''
-								: 'invisible'}"
-							title={pair.status === 'CONFIRMED' ? m.possibleDuplicateConfirmedBadge() : undefined}
-							aria-label={pair.status === 'CONFIRMED'
-								? m.possibleDuplicateConfirmedBadge()
-								: undefined}
-							aria-hidden={pair.status === 'CONFIRMED' ? undefined : true}
-						></i>
-					</div>
+					{@render matchBadge(pair)}
 				{/snippet}
 			</DuplicateComparison>
-			<div class="card-actions justify-end">
-				{#if pair.status === 'OPEN'}
-					<button class="btn btn-xs" onclick={() => decide({ id: pair.id, status: 'DISMISSED' })}>
-						<i class="fa-sharp-duotone fa-solid fa-people-arrows"></i>
-						{m.possibleDuplicateDifferentPeople()}
-					</button>
-					<button
-						class="btn btn-xs btn-warning"
-						onclick={() => decide({ id: pair.id, status: 'CONFIRMED' })}
-					>
-						<i class="fa-sharp-duotone fa-solid fa-link"></i>
-						{m.possibleDuplicateSamePerson()}
-					</button>
-				{:else}
-					<button
-						class="btn btn-xs btn-ghost"
-						onclick={() => decide({ id: pair.id, status: 'OPEN' })}
-					>
-						<i class="fa-sharp-duotone fa-solid fa-rotate-left"></i>
-						{m.possibleDuplicateReopen()}
-					</button>
-				{/if}
-			</div>
+			{@render pairActions(pair)}
 		</div>
 	</div>
 {/snippet}
@@ -154,14 +181,26 @@
 	</div>
 	<p class="text-base-content/70 max-w-3xl text-sm">{m.possibleDuplicatesDescription()}</p>
 
-	{#if active.length > 0}
+	{#if open.length > 0}
 		<div class="grid gap-4 lg:grid-cols-2">
-			{#each active as pair (pair.id)}
+			{#each open as pair (pair.id)}
 				{@render pairCard(pair)}
 			{/each}
 		</div>
-	{:else}
+	{:else if confirmed.length === 0}
 		<p class="text-base-content/60">{m.possibleDuplicatesNone()}</p>
+	{/if}
+
+	{#if confirmed.length > 0}
+		<h3 class="mt-2 flex items-center gap-2 text-lg font-semibold">
+			<i class="fa-sharp-duotone fa-solid fa-link text-error"></i>
+			{m.possibleDuplicatesConfirmed({ count: confirmed.length })}
+		</h3>
+		<div class="grid gap-4 lg:grid-cols-2">
+			{#each confirmed as pair (pair.id)}
+				{@render pairCard(pair)}
+			{/each}
+		</div>
 	{/if}
 
 	{#if dismissed.length > 0}

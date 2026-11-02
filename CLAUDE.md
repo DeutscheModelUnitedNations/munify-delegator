@@ -887,6 +887,15 @@ bun run preview
   with the person's own (`careNotesOf` in `#lib/helpers/linkedNotes`; select
   `confirmedLinkedAccounts` wherever a note is shown). An open pair is only a suspicion and carries
   nothing over.
+- **Confirmations are transitive, and stored that way.** A is B and B is C makes A and C a pair
+  too: `decidePossibleDuplicate` pairs every account of a person with every other one
+  (`reconcileLinks`, `possibleDuplicate/sameLinks.ts`), marking the pairs nobody decided
+  `inferred`, and takes them back when a decided one is reopened or dismissed (a pair only the
+  links made is deleted, one the matcher found goes back to open). So one account's confirmed
+  pairs are always the whole person, and the notes, read rules, the badge and the "Konferenzen"
+  tab (the linked accounts' conferences) need no chain walking. A confirmation that would make one
+  person of a dismissed pair answers `CONFLICT`. The plausibility page lists open pairs, then the
+  confirmed ones, then the dismissed.
 - **The dev seed replays the ways a returning person's data can differ**
   (`seed-dev/duplicateScenarios.ts`, one scenario per case): spelling, umlauts, name order, a
   dropped second given name, typos, another script, an email variant, a nickname with a reformatted

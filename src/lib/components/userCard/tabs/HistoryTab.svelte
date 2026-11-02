@@ -4,9 +4,11 @@
 	import { client } from '#lib/api/rumbleClient/client';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import Flag from '#lib/components/Flag.svelte';
+	import formatNames from '#lib/helpers/formatNames';
 	import {
 		compareByStartDateDesc,
 		delegationMemberEntry,
+		linkedAttendanceEntry,
 		singleParticipantEntry,
 		supervisorEntry,
 		teamMemberEntry,
@@ -37,43 +39,94 @@
 			where: { user: { id: { eq: userId } }, conference: { id: { ne: conferenceId } } }
 		};
 
-		const [delegationMembers, singleParticipants, supervisors, teamMembers] = await Promise.all([
-			client.liveQuery.delegationMembers({
-				__args: registrationOfUser,
-				id: true,
-				isHeadDelegate: true,
-				conference: conferenceSummary,
-				delegation: {
-					id: true,
-					assignedRole: {
-						kind: true,
-						name: true,
-						fontAwesomeIcon: true,
-						nation: { alpha2Code: true, alpha3Code: true }
-					}
-				},
-				assignedCommittee: { id: true, abbreviation: true }
-			}),
-			client.liveQuery.singleParticipants({
-				__args: registrationOfUser,
-				id: true,
-				conference: conferenceSummary,
-				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
-			}),
-			client.liveQuery.conferenceSupervisors({
-				__args: registrationOfUser,
-				id: true,
-				conference: conferenceSummary
-			}),
-			client.liveQuery.teamMembers({
-				__args: forUser,
-				id: true,
-				role: true,
-				conference: conferenceSummary
-			})
-		]);
+		const confirmed = { where: { status: 'CONFIRMED' as const } };
+		const account = { givenName: true, familyName: true } as const;
+		const attendance = {
+			conferenceId: true,
+			title: true,
+			startConference: true,
+			role: true
+		} as const;
 
-		return { delegationMembers, singleParticipants, supervisors, teamMembers };
+		const [delegationMembers, singleParticipants, supervisors, teamMembers, user] =
+			await Promise.all([
+				client.liveQuery.delegationMembers({
+					__args: registrationOfUser,
+					id: true,
+					isHeadDelegate: true,
+					conference: conferenceSummary,
+					delegation: {
+						id: true,
+						assignedRole: {
+							kind: true,
+							name: true,
+							fontAwesomeIcon: true,
+							nation: { alpha2Code: true, alpha3Code: true }
+						}
+					},
+					assignedCommittee: { id: true, abbreviation: true }
+				}),
+				client.liveQuery.singleParticipants({
+					__args: registrationOfUser,
+					id: true,
+					conference: conferenceSummary,
+					assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+				}),
+				client.liveQuery.conferenceSupervisors({
+					__args: registrationOfUser,
+					id: true,
+					conference: conferenceSummary
+				}),
+				client.liveQuery.teamMembers({
+					__args: forUser,
+					id: true,
+					role: true,
+					conference: conferenceSummary
+				}),
+				// The accounts confirmed to be the same person, all of them (`sameLinks.ts`), with the
+				// conferences they took part in. Only the care team reads the pairs; for others, none.
+				client.liveQuery.user({
+					__args: { id: userId },
+					duplicatesAsUser: {
+						__args: confirmed,
+						candidateId: true,
+						candidate: account,
+						candidateAttendances: attendance
+					},
+					duplicatesAsCandidate: {
+						__args: confirmed,
+						userId: true,
+						user: account,
+						userAttendances: attendance
+					}
+				})
+			]);
+
+		const linked = [
+			...user.duplicatesAsUser.map((pair) => ({
+				id: pair.candidateId,
+				account: pair.candidate,
+				attendances: pair.candidateAttendances
+			})),
+			...user.duplicatesAsCandidate.map((pair) => ({
+				id: pair.userId,
+				account: pair.user,
+				attendances: pair.userAttendances
+			}))
+		];
+		const linkedAttendances = linked.flatMap(({ id, account, attendances }) =>
+			attendances
+				.filter((attendance) => attendance.conferenceId !== conferenceId)
+				.map((attendance) => ({
+					attendance,
+					account: {
+						id,
+						name: formatNames({ givenName: account.givenName, familyName: account.familyName })
+					}
+				}))
+		);
+
+		return { delegationMembers, singleParticipants, supervisors, teamMembers, linkedAttendances };
 	}
 
 	const history = $derived(await fetchHistory({ userId, conferenceId }));
@@ -83,7 +136,8 @@
 			...history.delegationMembers.map(delegationMemberEntry),
 			...history.singleParticipants.map(singleParticipantEntry),
 			...history.supervisors.map(supervisorEntry),
-			...history.teamMembers.map(teamMemberEntry)
+			...history.teamMembers.map(teamMemberEntry),
+			...history.linkedAttendances.map(linkedAttendanceEntry)
 		].sort(compareByStartDateDesc)
 	);
 
@@ -130,7 +184,7 @@
 						class="link link-hover font-bold"
 						href={resolve('/(authenticated)/dashboard/[conferenceId]/team/user/[userId]', {
 							conferenceId: entry.conferenceId,
-							userId
+							userId: entry.linkedAccount?.id ?? userId
 						})}
 						title={m.openUserCardInConference({ conference: entry.conferenceTitle })}
 					>
@@ -154,6 +208,15 @@
 					{#if entry.committeeName}
 						<span class="text-base-content/50 text-sm">· {entry.committeeName}</span>
 					{/if}
+					{#if entry.linkedAccount}
+						<span
+							class="badge badge-error badge-soft badge-sm gap-1"
+							title={m.possibleDuplicateConfirmedBadge()}
+						>
+							<i class="fa-sharp-duotone fa-solid fa-link"></i>
+							{m.userCardLinkedHistoryAccount({ name: entry.linkedAccount.name })}
+						</span>
+					{/if}
 					{#if entry.isHeadDelegate}
 						<span class="badge badge-accent badge-xs">
 							<i class="fa-sharp-duotone fa-solid fa-medal"></i>
@@ -173,7 +236,7 @@
 	</div>
 {:else}
 	<div class="flex flex-col gap-3">
-		{#each historyEntries as entry (`${entry.roleType}:${entry.conferenceId}`)}
+		{#each historyEntries as entry (`${entry.linkedAccount?.id ?? userId}:${entry.roleType}:${entry.conferenceId}`)}
 			{@render historyCard(entry)}
 		{/each}
 	</div>
