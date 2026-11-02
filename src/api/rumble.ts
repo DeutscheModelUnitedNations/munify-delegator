@@ -39,6 +39,9 @@ export const {
 	schema,
 	context,
 	defaultLimit: 1000,
+	// Relational rules are looked up once per request and become id lists in the statements,
+	// instead of nested exists at every nesting site that cost Postgres ~100 MB to plan.
+	resolveRelationalRules: { enabled: true },
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
 	search: { enabled: true, threshold: 0.3 },
