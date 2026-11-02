@@ -15,19 +15,30 @@ import { onNavigate } from '$app/navigation';
  *
  * A name has to be unique on the page while the transition runs, or the browser skips it.
  *
- * Shallow `goto`s (a table's URL state, the assignment board's filters) are no navigation to the
- * eye and get none. Browsers without the API navigate as before.
+ * Shallow `goto`s and navigations that keep the path (a table's search, sort and page in the URL,
+ * the assignment board's filters) are no navigation to the eye and get none. Browsers without the
+ * API navigate as before.
+ *
+ * A transition that is cut short, by a newer navigation aborting this one or by the browser
+ * skipping it, rejects its promises; those are expected and handled here, or every one would be
+ * an uncaught error.
  */
 export function enableViewTransitionApi() {
 	onNavigate((navigation) => {
 		if (navigation.shallow && navigation.type === 'goto') return;
+		if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
 		if (!document.startViewTransition) return;
 
 		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
+			const transition = document.startViewTransition(async () => {
 				resolve();
-				await navigation.complete;
+				// an aborted navigation leaves the page to the one that replaced it
+				await navigation.complete.catch(() => undefined);
 			});
+			// skipped transitions reject these; the navigation goes on regardless
+			transition.ready.catch(() => undefined);
+			transition.finished.catch(() => undefined);
+			transition.updateCallbackDone.catch(() => undefined);
 		});
 	});
 }

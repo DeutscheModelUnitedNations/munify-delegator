@@ -22,7 +22,8 @@ test('the team navigation switches pages client-side and marks the open one', as
 		document.body.dataset.e2eSameDocument = 'yes';
 	});
 
-	const menu = page.locator('ul.menu').first();
+	// the side navigation's menu, not the header's account menu, which is a `ul.menu` too
+	const menu = page.getByRole('navigation', { name: /seitennavigation|page navigation/i });
 	await menu
 		.getByRole('link', { name: /participants|teilnehmende/i })
 		.first()
