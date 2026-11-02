@@ -70,11 +70,22 @@ test('the sighting keeps ratings, exclusions and notes on the server', async ({ 
 	await expect(card).toHaveClass(/bg-error/);
 	await expect(page.getByRole('textbox', { name: /notiz|note/i })).toHaveValue('e2e note');
 
-	// Undo, so the shared seed stays as it was.
+	// Undo, so the shared seed stays as it was. Reviews show before they are saved, so wait for
+	// the saves themselves: the test ending first would leave the application excluded.
+	const saved = () =>
+		page.waitForResponse(
+			(res) =>
+				res.url().includes('/api/graphql') &&
+				(res.request().postData() ?? '').includes('upsertAssignmentReview')
+		);
+	let save = saved();
 	await page.getByRole('button', { name: /ausschließen|exclude|disqualif/i }).click();
+	await save;
 	await expect(card).toHaveClass(/bg-base-300/);
+	save = saved();
 	await page.getByRole('textbox', { name: /notiz|note/i }).fill('');
 	await page.getByRole('textbox', { name: /notiz|note/i }).blur();
+	await save;
 });
 
 // The deck, its filters, the slider and the search are the backend's: only a window of the deck
@@ -134,10 +145,14 @@ test('a review change keeps the fields it does not name', async ({ page }) => {
 		};
 	};
 
-	expect((await review('evaluation: 4')).data?.upsertAssignmentReview).toMatchObject({
-		evaluation: 4,
-		required: false
-	});
+	// From a known review, whatever an earlier test left behind
+	expect(
+		(
+			await review(
+				'evaluation: 4, flagged: false, disqualified: false, required: false, note: null'
+			)
+		).data?.upsertAssignmentReview
+	).toMatchObject({ evaluation: 4, required: false });
 	expect((await review('note: "e2e partial"')).data?.upsertAssignmentReview).toMatchObject({
 		evaluation: 4,
 		note: 'e2e partial'
