@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { dialogs } from '#lib/state/dialogs.svelte.js';
 	import { m } from '#lib/paraglide/messages';
+	import { fade, scale } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 
 	const request = $derived(dialogs.current);
 	let value = $state('');
@@ -27,9 +29,15 @@
 <svelte:window onkeydown={(e) => e.key === 'Escape' && request && dialogs.dismiss()} />
 
 {#if request}
-	<div class="modal modal-open" role="alertdialog" aria-modal="true">
+	<div
+		class="modal modal-open"
+		role="alertdialog"
+		aria-modal="true"
+		transition:fade={{ duration: 150 }}
+	>
 		<form
 			class="modal-box"
+			transition:scale={{ start: 0.96, duration: 180, easing: cubicOut }}
 			onsubmit={(e) => {
 				e.preventDefault();
 				accept();

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
 	groupedTeamRoutes,
 	mayOpenTeamRoute,
+	teamRelativePath,
 	teamRouteForPath,
 	teamRoutes,
 	teamRoutesFor
@@ -103,5 +104,36 @@ describe('teamRouteForPath', () => {
 		expect(mayOpenTeamRoute({ route: route('seatPlanning'), access: as('CONTENT_LEAD') })).toBe(
 			true
 		);
+	});
+});
+
+describe('teamRelativePath', () => {
+	const conferenceId = 'conf-1';
+
+	test('is the path below the conference dashboard', () => {
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/team/stats', conferenceId })).toBe(
+			'team/stats'
+		);
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/team/user/u1/', conferenceId })).toBe(
+			'team/user/u1'
+		);
+	});
+
+	test('ignores a locale prefix, which page.url keeps', () => {
+		expect(teamRelativePath({ pathname: '/en/dashboard/conf-1/team/stats', conferenceId })).toBe(
+			'team/stats'
+		);
+		expect(
+			teamRouteForPath(
+				teamRelativePath({ pathname: '/en/dashboard/conf-1/team/seats', conferenceId })
+			)?.id
+		).toBe('seats');
+	});
+
+	test('is empty for the dashboard itself and for another conference', () => {
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/conf-1/', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/conf-12/team/stats', conferenceId })).toBe('');
+		expect(teamRelativePath({ pathname: '/dashboard/other/team/stats', conferenceId })).toBe('');
 	});
 });

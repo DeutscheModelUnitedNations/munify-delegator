@@ -19,6 +19,7 @@
 	import Maps from './widgets/Maps.svelte';
 	import HistoryComparison from './widgets/HistoryComparison.svelte';
 	import type { PageProps } from './$types';
+	import { fade } from 'svelte/transition';
 
 	let { params }: PageProps = $props();
 
@@ -31,7 +32,10 @@
 <div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
 	<!-- Loading overlay -->
 	{#if isLoading}
-		<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-box">
+		<div
+			class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-box"
+			transition:fade={{ duration: 150 }}
+		>
 			<span class="loading loading-spinner loading-lg text-primary"></span>
 		</div>
 	{/if}

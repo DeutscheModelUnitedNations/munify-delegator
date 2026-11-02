@@ -20,6 +20,107 @@
 	}
 }
 
+/* --- NAVIGATION --- */
+
+/*
+ * View transitions (`#lib/helpers/viewTransitionApi.svelte`): the page cross-fades, the new one
+ * rising a little. The header, the side navigation and the footer carry `view-transition-name`s,
+ * so they are captured on their own and stay put while the content between them changes; the
+ * navigation's active entry (`nav-active`) glides from the old entry to the new one.
+ */
+@keyframes vt-fade-out {
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes vt-rise-in {
+	from {
+		opacity: 0;
+		translate: 0 6px;
+	}
+}
+
+::view-transition-old(root) {
+	animation: 120ms ease-in both vt-fade-out;
+}
+
+::view-transition-new(root) {
+	animation: 200ms ease-out both vt-rise-in;
+}
+
+::view-transition-group(nav-active) {
+	animation-duration: 220ms;
+	animation-timing-function: ease-out;
+}
+
+/* The chrome is the same before and after: no need to cross-fade its two identical images */
+::view-transition-old(app-header),
+::view-transition-old(team-nav),
+::view-transition-old(app-footer) {
+	display: none;
+}
+
+::view-transition-new(app-header),
+::view-transition-new(team-nav),
+::view-transition-new(app-footer) {
+	animation: none;
+}
+
+/*
+ * A page's skeleton (`PageSkeleton`) stays invisible for its first moments: cached data resolves
+ * within a frame or two, and a skeleton that flashes for that long only draws the eye.
+ */
+@keyframes page-skeleton-appear {
+	from {
+		opacity: 0;
+	}
+}
+
+.page-skeleton {
+	animation: 150ms ease-out 120ms both page-skeleton-appear;
+}
+
+/* The bar along the top edge while a navigation loads (`NavigationProgress`) */
+@keyframes nav-progress-appear {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes nav-progress-advance {
+	0% {
+		width: 0;
+	}
+	30% {
+		width: 45%;
+	}
+	100% {
+		width: 92%;
+	}
+}
+
+.nav-progress {
+	animation: 150ms linear 200ms both nav-progress-appear;
+}
+
+.nav-progress-bar {
+	animation: 4s cubic-bezier(0.1, 0.8, 0.3, 1) both nav-progress-advance;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+
+	.nav-progress-bar {
+		animation: none;
+		width: 100%;
+	}
+}
+
 @utility max-ch-sm {
 	max-width: 50ch;
 }

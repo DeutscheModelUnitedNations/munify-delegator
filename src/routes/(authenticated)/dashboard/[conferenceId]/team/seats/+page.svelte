@@ -12,6 +12,7 @@
 	import { genericPromiseToastMessages } from '#lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import type { PageProps } from './$types';
+	import { slide } from 'svelte/transition';
 
 	let { params: routeParams }: PageProps = $props();
 
@@ -47,7 +48,7 @@
 
 <div class="flex w-full flex-col items-start gap-10 py-4 sm:px-4">
 	{#if assignUserParam.userId}
-		<div class="w-full">
+		<div class="w-full" transition:slide={{ duration: 200 }}>
 			<div class="alert alert-warning w-full">
 				{#if assignUserLoading}
 					<i class="fa-sharp-duotone fa-solid fa-spinner fa-spin"></i>

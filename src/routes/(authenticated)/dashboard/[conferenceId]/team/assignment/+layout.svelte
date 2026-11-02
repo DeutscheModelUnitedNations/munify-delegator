@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import Tab from '#lib/components/tabs/Tab.svelte';
 	import Tabs from '#lib/components/tabs/Tabs.svelte';
+	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { LayoutProps } from './$types';
 	import DraftStatus from './DraftStatus.svelte';
@@ -16,6 +17,9 @@
 
 	// The route id is fixed per page, unlike `page.params`, so reading it here is safe.
 	const tab = $derived(page.route.id?.split('/').pop());
+	// The tabs stay; only the tab's content below them loads (the team shell leaves this section's
+	// pages to this layout, see `boundaryKey`).
+	const pathname = $derived(page.url.pathname);
 
 	const tabs = $derived(
 		(
@@ -52,5 +56,7 @@
 		{/each}
 	</Tabs>
 
-	{@render children()}
+	<PageBoundary key={pathname} shape="cards">
+		{@render children()}
+	</PageBoundary>
 </div>

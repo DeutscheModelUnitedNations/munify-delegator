@@ -74,6 +74,7 @@
 <header
 	bind:clientHeight={headerHeight}
 	class="no-print bg-base-100/80 sticky top-0 z-30 w-full backdrop-blur"
+	style:view-transition-name="app-header"
 >
 	{#if stripClass}
 		<div class="h-0.5 w-full {stripClass}"></div>

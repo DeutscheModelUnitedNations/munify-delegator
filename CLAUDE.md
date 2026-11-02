@@ -406,6 +406,19 @@ bun run preview
   real bug, not noise. A plain `await` is right only for something seeded once, such as the initial
   value of a form field.
 
+- **A layout shows the next page's skeleton, not the old page, while that page's first data
+  loads.** An `await` outside any boundary holds the whole update back, so a client-side
+  navigation would keep the old page on screen until the new one has its data. The layouts that
+  render pages wrap them in `PageBoundary` (`#lib/components/navigation/`), a
+  `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
+  navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
+  only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
+  full load still arrives with its content. A section that keeps a frame across its pages (the
+  assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
+  outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
+  registry names each page's `skeleton` shape; `NavigationProgress` draws the bar along the top
+  edge while a navigation loads, and `enableViewTransitionApi` (`#lib/helpers/viewTransitionApi.svelte`,
+  after chase) cross-fades the pages. See "Navigation" in CLAUDE-UI.md.
 - **Each component fetches what it renders, and nothing more.** A page fetches only what decides
   _which_ sections to show (often just ids), and hands each section the ids it needs; the section
   queries its own fields. Never fetch a large tree at the top and prop-drill it down: every

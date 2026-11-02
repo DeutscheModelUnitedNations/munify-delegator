@@ -19,9 +19,14 @@
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
 	import DevTools from '#lib/components/DevTools.svelte';
+	import NavigationProgress from '#lib/components/navigation/NavigationProgress.svelte';
+	import { enableViewTransitionApi } from '#lib/helpers/viewTransitionApi.svelte';
 	import { onMount } from 'svelte';
 
 	let { children }: LayoutProps = $props();
+
+	// Every client-side navigation cross-fades (see `app.css` for the timing and the named parts)
+	enableViewTransitionApi();
 
 	// Marks the document once the client has taken over the server-rendered page. The e2e suite
 	// waits for it (`waitForHydration`): a click that lands before hydration attaches its handler is
@@ -43,6 +48,7 @@
 	<meta name="theme-color" content="#ffffff" />
 </svelte:head>
 
+<NavigationProgress />
 <Toaster richColors position="top-center" />
 <DialogHost />
 <CookieBanner />
