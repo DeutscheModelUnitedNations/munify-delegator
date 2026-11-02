@@ -25,8 +25,7 @@
 /*
  * View transitions (`#lib/helpers/viewTransitionApi.svelte`): the page cross-fades, the new one
  * rising a little. The header, the side navigation and the footer carry `view-transition-name`s,
- * so they are captured on their own and stay put while the content between them changes; the
- * navigation's active entry (`nav-active`) glides from the old entry to the new one.
+ * so they are captured on their own and stay put while the content between them changes.
  */
 @keyframes vt-fade-out {
 	to {
@@ -47,11 +46,6 @@
 
 ::view-transition-new(root) {
 	animation: 200ms ease-out both vt-rise-in;
-}
-
-::view-transition-group(nav-active) {
-	animation-duration: 220ms;
-	animation-timing-function: ease-out;
 }
 
 /* The chrome is the same before and after: no need to cross-fade its two identical images */

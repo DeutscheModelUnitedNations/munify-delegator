@@ -1441,8 +1441,7 @@ layout and turns every non-shallow navigation into a `document.startViewTransiti
 the animation: the old page fades out, the new one rises in; `prefers-reduced-motion` switches it
 off. Parts that are the same on both pages carry a `view-transition-name` so they stay put instead
 of cross-fading with the content: `app-header` (`AuthenticatedHeader`), `team-nav`
-(`SideNavigationDrawer`), `app-footer` (`Footer`). The active `NavMenuButton` is `nav-active`, so
-the highlight glides from the old entry to the new one. A name must be unique on the page while a
+(`SideNavigationDrawer`), `app-footer` (`Footer`). A name must be unique on the page while a
 transition runs, or the browser skips the transition. To morph an element across pages the way
 chase does with committee titles, give it the same name on both (`view-transition-name: thing-{id}`).
 

@@ -47,13 +47,7 @@
 </script>
 
 <li class="w-full" {title}>
-	<!-- The active entry is named, so a view transition moves the highlight from the old entry to
-	the new one rather than cross-fading two menus -->
-	<a
-		{href}
-		class="flex w-full items-center gap-2 {showAsActive ? 'menu-active' : ''}"
-		style:view-transition-name={showAsActive ? 'nav-active' : undefined}
-	>
+	<a {href} class="flex w-full items-center gap-2 {showAsActive ? 'menu-active' : ''}">
 		<i class="{showAsActive ? 'fas ' : 'fa-sharp-duotone fa-solid'} {icon} w-5 text-center"></i>
 
 		<span class="truncate">{title}</span>
