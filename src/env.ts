@@ -83,8 +83,9 @@ export const variables = defineEnvVars({
 				.optional()
 		)
 	},
-	// The resource indicator the impersonation's token exchange asks for (Logto requires one). Sign
-	// in sends none.
+	// The API resource the sign-in, every refresh and the impersonation's token exchange ask tokens
+	// for. With it, Logto issues JWT access tokens that are verified offline; without it, opaque
+	// ones, which cost a request to Logto's introspection endpoint on every request.
 	OIDC_RESOURCE: { schema: z.string().url().optional() },
 	// Machine-to-machine credentials for the Logto Management API, which issues the subject tokens
 	// impersonation exchanges (#api/handlers/user/impersonation). Without them it is unavailable.

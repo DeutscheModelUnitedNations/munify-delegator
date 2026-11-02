@@ -2,7 +2,7 @@ import { building, dev } from '$app/env';
 import { makeOIDC } from '@m1212e/sveltekit-oidc';
 import { isRedirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
-import { OIDC_CLIENT_SECRET, OIDC_ROLE_CLAIM, OIDC_SCOPES } from '$app/env/private';
+import { OIDC_CLIENT_SECRET, OIDC_RESOURCE, OIDC_ROLE_CLAIM, OIDC_SCOPES } from '$app/env/private';
 import { PUBLIC_OIDC_AUTHORITY, PUBLIC_OIDC_CLIENT_ID } from '$app/env/public';
 import { providerClaims } from '../account/providerClaims';
 import { upsertSelfFromClaims } from '../account/upsertSelf';
@@ -95,6 +95,7 @@ function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 		clientId: PUBLIC_OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,
 		scope: OIDC_SCOPES,
+		resource: OIDC_RESOURCE,
 		loginCallbackRoute: '/auth/login-callback',
 		logoutCallbackRoute: '/auth/logout-callback',
 		// A function rather than the list: the library would match the list against the
