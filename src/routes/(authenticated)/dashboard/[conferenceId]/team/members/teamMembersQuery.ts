@@ -11,8 +11,7 @@ import {
 	enumFilter,
 	fetchEveryRow,
 	orderFrom,
-	pageArgs,
-	pageOf
+	pageArgs
 } from '#lib/components/tanStackTable/serverQuery';
 import { matchingUserIds } from '#lib/components/tanStackTable/matchingUsers';
 
@@ -91,7 +90,11 @@ function listTeamMembers({
 	});
 }
 
-/** One page of a conference's team, searched, filtered and ordered by the backend. */
+/**
+ * One page of a conference's team, searched, filtered and ordered by the backend: the live list
+ * (`pageOf` it in the component, so the read is tracked and the table follows updates) and the
+ * user ids the search matched, for `countTeamMembers`.
+ */
 export async function fetchTeamMembersPage({
 	conferenceId,
 	state
@@ -100,13 +103,25 @@ export async function fetchTeamMembersPage({
 	state: TableState;
 }) {
 	const userIds = await matchingUserIds(state.search);
-	const [members, total] = await Promise.all([
-		listTeamMembers({ conferenceId, state, userIds, paging: pageArgs(state) }),
-		client.liveQuery.teamMembersCount({
+	const members = await listTeamMembers({ conferenceId, state, userIds, paging: pageArgs(state) });
+	return { members, userIds };
+}
+
+/** How many team members match the table's search and filters. A count is not live. */
+export async function countTeamMembers({
+	conferenceId,
+	state,
+	userIds
+}: {
+	conferenceId: string;
+	state: TableState;
+	userIds: string[] | undefined;
+}) {
+	return asCount(
+		await client.query.teamMembersCount({
 			__args: { where: whereOf({ conferenceId, state, userIds }) }
 		})
-	]);
-	return { ...pageOf({ rows: members, state }), total: asCount(total) };
+	);
 }
 
 /** Every team member matching the table's search and filters, for the export. */

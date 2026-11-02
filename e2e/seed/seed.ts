@@ -83,6 +83,7 @@ export const E2E_UNRELEASED_COMMITTEE_ID = 'e2e00000committee000000004';
 export const E2E_UNRELEASED_DELEGATION_ID = 'e2e00000delegation00000006';
 export const E2E_UNRELEASED_PARTICIPANT_USER_ID = 'e2e-unreleased-participant';
 /** A co-delegate of the unreleased delegation without a committee, for the head delegate to seat. */
+export const E2E_UNRELEASED_REVIEW_NOTE = 'e2e team-only review note';
 export const E2E_UNRELEASED_CODELEGATE_MEMBER_ID = 'e2e00000delegationmember0007';
 /** A participant row of the unreleased conference whose registration has ended, keeping its school. */
 export const E2E_UNRELEASED_FORMER_SCHOOL_ID = 'e2e00000school0000000001';
@@ -953,6 +954,19 @@ export default async function seed() {
 		.insert(schema.teamMember)
 		.values(unreleasedTeamMember)
 		.onConflictDoUpdate({ target: schema.teamMember.id, set: unreleasedTeamMember });
+
+	// The team's review of the delegation, with a note only participant care may read.
+	const unreleasedReview = {
+		id: 'e2e00000assignmentreview0001',
+		conferenceId: unreleasedConference.id,
+		delegationId: unreleasedDelegation.id,
+		evaluation: 3,
+		note: E2E_UNRELEASED_REVIEW_NOTE
+	};
+	await db
+		.insert(schema.assignmentReview)
+		.values(unreleasedReview)
+		.onConflictDoUpdate({ target: schema.assignmentReview.id, set: unreleasedReview });
 
 	await upsertActorUser('e2e-unreleased-codelegate');
 	const unreleasedCodelegate = {

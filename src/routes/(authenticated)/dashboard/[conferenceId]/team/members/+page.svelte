@@ -13,7 +13,13 @@
 	import { translateTeamRole } from '#lib/utils/enumTranslations';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
-	import { TEAM_ROLES, fetchAllTeamMembers, fetchTeamMembersPage } from './teamMembersQuery';
+	import {
+		TEAM_ROLES,
+		countTeamMembers,
+		fetchAllTeamMembers,
+		fetchTeamMembersPage
+	} from './teamMembersQuery';
+	import { pageOf } from '#lib/components/tanStackTable/serverQuery';
 	import { toast } from 'svelte-sonner';
 	import { conflictMessageOf } from '#lib/api/errorCodes';
 	import { z } from 'zod';
@@ -31,7 +37,14 @@
 	// Search, filters, order and paging run in the backend; the table only holds this page.
 	const tableState = createTableState();
 	const fetched = $derived(await fetchTeamMembersPage({ conferenceId, state: tableState }));
-	const teamMembers = $derived(fetched.rows);
+	// Sliced here rather than in the fetch: a read after an await there is not tracked, and the
+	// table would never hear of a member joining or leaving.
+	const page = $derived(pageOf({ rows: fetched.members, state: tableState }));
+	const teamMembers = $derived(page.rows);
+	// A count is not live, so it is asked again whenever the page's rows change.
+	const countFor = (_rows: unknown) =>
+		countTeamMembers({ conferenceId, state: tableState, userIds: fetched.userIds });
+	const total = $derived(await countFor(page.rows));
 	const exportRows = () => fetchAllTeamMembers({ conferenceId, state: tableState });
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
 
@@ -178,8 +191,8 @@
 		{columns}
 		rows={teamMembers}
 		{tableState}
-		hasMore={fetched.hasMore}
-		rowCount={fetched.total}
+		hasMore={page.hasMore}
+		rowCount={total}
 		{exportRows}
 	/>
 </TeamManagementPage>

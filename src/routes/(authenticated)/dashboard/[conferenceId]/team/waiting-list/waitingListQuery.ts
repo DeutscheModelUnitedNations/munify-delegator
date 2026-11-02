@@ -12,7 +12,6 @@ import {
 	fetchEveryRow,
 	orderFrom,
 	pageArgs,
-	pageOf,
 	rangeFilter,
 	stringFilter
 } from '#lib/components/tanStackTable/serverQuery';
@@ -190,7 +189,11 @@ export async function fetchWaitingListPositions(conferenceId: string) {
 	return entries;
 }
 
-/** One page of the entries (by default those still waiting), searched, filtered and ordered by the backend. */
+/**
+ * One page of the entries (by default those still waiting), searched, filtered and ordered by the
+ * backend: the live list (`pageOf` it in the component, so the read is tracked and the table
+ * follows updates) and the user ids the search matched, for `countWaitingListEntries`.
+ */
 export async function fetchWaitingListPage({
 	conferenceId,
 	state,
@@ -203,22 +206,38 @@ export async function fetchWaitingListPage({
 	startConference: Date | string | null | undefined;
 }) {
 	const userIds = await matchingUserIds(state.search);
-	const [entries, total] = await Promise.all([
-		listEntries({
-			conferenceId,
-			state,
-			toggles,
-			startConference,
-			userIds,
-			paging: pageArgs(state)
-		}),
-		client.liveQuery.waitingListEntriesCount({
+	const entries = await listEntries({
+		conferenceId,
+		state,
+		toggles,
+		startConference,
+		userIds,
+		paging: pageArgs(state)
+	});
+	return { entries, userIds };
+}
+
+/** How many entries match the table's search and filters. A count is not live. */
+export async function countWaitingListEntries({
+	conferenceId,
+	state,
+	toggles,
+	startConference,
+	userIds
+}: {
+	conferenceId: string;
+	state: TableState;
+	toggles: WaitingListToggles;
+	startConference: Date | string | null | undefined;
+	userIds: string[] | undefined;
+}) {
+	return asCount(
+		await client.query.waitingListEntriesCount({
 			__args: {
 				where: waitingListWhere({ conferenceId, state, toggles, startConference, userIds })
 			}
 		})
-	]);
-	return { ...pageOf({ rows: entries, state }), total: asCount(total) };
+	);
 }
 
 /** Every entry matching the table's search and filters, for the export. */

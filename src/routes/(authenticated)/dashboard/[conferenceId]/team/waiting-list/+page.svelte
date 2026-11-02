@@ -14,11 +14,13 @@
 	import { toWaitingListRow, waitingListPositions, type WaitingListRow } from './waitingListRows';
 	import { createTableState } from '#lib/components/tanStackTable/tableState.svelte.js';
 	import {
+		countWaitingListEntries,
 		fetchAllWaitingListEntries,
 		fetchWaitingListPage,
 		fetchWaitingListPositions
 	} from './waitingListQuery';
 	import { liveSnapshot } from '#lib/api/liveSnapshot';
+	import { pageOf } from '#lib/components/tanStackTable/serverQuery';
 
 	let { params }: PageProps = $props();
 
@@ -49,9 +51,22 @@
 
 	const startConference = $derived(conference?.startConference);
 
-	const page = $derived(
+	const fetched = $derived(
 		await fetchWaitingListPage({ conferenceId, state: tableState, toggles, startConference })
 	);
+	// Sliced here rather than in the fetch: a read after an await there is not tracked, and the
+	// table would never hear of an entry arriving or leaving.
+	const page = $derived(pageOf({ rows: fetched.entries, state: tableState }));
+	// A count is not live, so it is asked again whenever the page's rows change.
+	const countFor = (_rows: unknown) =>
+		countWaitingListEntries({
+			conferenceId,
+			state: tableState,
+			toggles,
+			startConference,
+			userIds: fetched.userIds
+		});
+	const total = $derived(await countFor(page.rows));
 	const waiting = $derived(await fetchWaitingListPositions(conferenceId));
 	// read the live list once into a plain copy, see `liveSnapshot`
 	const snapshotWaiting = liveSnapshot<{ id: string }>();
@@ -216,7 +231,7 @@
 	storageKey="waiting-list-columns-{params.conferenceId}"
 	{tableState}
 	hasMore={page.hasMore}
-	rowCount={page.total}
+	rowCount={total}
 	{exportRows}
 >
 	{#snippet toolbar()}
