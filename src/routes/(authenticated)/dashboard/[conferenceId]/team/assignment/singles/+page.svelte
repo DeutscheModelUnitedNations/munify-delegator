@@ -36,17 +36,22 @@
 	import { warnAboutSchoolSeats } from '../schoolSeatsWarning';
 	import SchoolSeatsPanel from '../SchoolSeatsPanel.svelte';
 	import type { PageProps } from './$types';
+	import { untrack } from 'svelte';
 
 	let { params }: PageProps = $props();
+
+	// Read once: the assignment layout keys each tab by its pathname, so this instance never
+	// changes conference. Read live, a re-run inside hydration's pending batch sees `params` as `{}`.
+	const conferenceId = untrack(() => params.conferenceId);
 
 	// Nothing here depends on the draft through a query: the draft brings the applications it
 	// touches along, so a move arrives as one live update and asks for nothing afterwards.
 	const [roles, draft, seated, schoolLimit] = $derived(
 		await Promise.all([
-			fetchAssignmentRoles(params.conferenceId),
-			fetchAssignmentDraft(params.conferenceId),
-			fetchSeatedApplications(params.conferenceId),
-			fetchSchoolSeatLimit(params.conferenceId)
+			fetchAssignmentRoles(conferenceId),
+			fetchAssignmentDraft(conferenceId),
+			fetchSeatedApplications(conferenceId),
+			fetchSchoolSeatLimit(conferenceId)
 		])
 	);
 	const maxSeatsPerSchool = $derived(schoolLimit.maxSeatsPerSchool ?? null);
@@ -71,9 +76,8 @@
 	// plain data, read once; what the draft or applying changes about them comes in live through
 	// `seated`, which is listed last so it wins.
 	const search = createPoolSearch();
-	const poolKey = $derived(`${params.conferenceId}|${search.term}`);
+	const poolKey = $derived(`${conferenceId}|${search.term}`);
 	const poolLoader = createPool<BoardSingleParticipant>(() => {
-		const { conferenceId } = params;
 		const term = search.term;
 		return {
 			key: poolKey,
@@ -107,7 +111,7 @@
 	async function autoAssign() {
 		busy = true;
 		const mutation = Promise.resolve(
-			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId: params.conferenceId } })
+			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId } })
 		);
 		if (await succeeded(mutation)) {
 			toast.success(m.assignmentSinglesAutoAssigned({ count: await mutation }));
@@ -224,7 +228,7 @@
 		roleId={single.roleId}
 		{container}
 		onDragChange={(isDragging) => (dragging = isDragging)}
-		conferenceId={params.conferenceId}
+		{conferenceId}
 		{fluid}
 		busy={moves.has(single.singleParticipantId)}
 	/>

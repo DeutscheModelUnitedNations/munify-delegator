@@ -33,9 +33,10 @@
 
 	let { params: routeParams }: PageProps = $props();
 
-	// A navigation hands the page fresh params; reading them inside an awaited derived would ask
-	// again for everything on every card turn, from the state of a batch still under way.
-	const conferenceId = $derived(routeParams.conferenceId);
+	// Read once: the assignment layout keys each tab by its pathname, so this instance never
+	// changes conference. Read live, every card turn (a navigation of the query) and hydration's
+	// pending batch re-ran the deck's queries from a `params` still showing `{}`.
+	const conferenceId = untrack(() => routeParams.conferenceId);
 
 	// No defaults written into the URL: that is a navigation on arrival, which pushes a history
 	// entry and traps the back button when the page is entered with `?application=`.
