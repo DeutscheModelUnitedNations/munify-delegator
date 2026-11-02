@@ -1,6 +1,7 @@
 import { rumble } from '@m1212e/rumble';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
-// rumble installs the plugin; this brings in its types (`validate`, `t.validate`).
+// rumble installs these plugins; this brings in their types (`subscribe`, `validate`, `t.validate`).
+import type {} from '@pothos/plugin-smart-subscriptions';
 import type {} from '@pothos/plugin-validation';
 import { trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';

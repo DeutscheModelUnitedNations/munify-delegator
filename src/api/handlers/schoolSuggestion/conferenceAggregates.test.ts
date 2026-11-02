@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { schoolRows } from './conferenceAggregates';
+import { schoolRowSources, schoolRows } from './conferenceAggregates';
 
 const kiel = { id: 's1', name: 'Gymnasium Kiel' };
 const luebeck = { id: 's2', name: 'Schule Lübeck' };
@@ -59,5 +59,36 @@ describe('schoolRows', () => {
 				singleParticipants: [{ school: other }]
 			}).map((row) => row.schoolId)
 		).toEqual(['s1', 's4']);
+	});
+});
+
+describe('schoolRowSources', () => {
+	test('names the people, delegations and single participants each school counts', () => {
+		const sources = schoolRowSources({
+			members: [
+				{ delegationId: 'd1', participantId: 'p1', school: kiel },
+				{ delegationId: 'd1', participantId: 'p2', school: kiel },
+				{ delegationId: 'd2', participantId: 'p3', school: luebeck },
+				{ delegationId: 'd3', participantId: 'p4', school: null }
+			],
+			singleParticipants: [
+				{ id: 'sp1', participantId: 'p5', school: kiel },
+				{ id: 'sp2', participantId: 'p6', school: null }
+			]
+		});
+
+		expect(sources.get('s1')).toEqual({
+			schoolId: 's1',
+			participantIds: ['p1', 'p2', 'p5'],
+			delegationIds: ['d1'],
+			singleParticipantIds: ['sp1']
+		});
+		expect(sources.get('s2')).toEqual({
+			schoolId: 's2',
+			participantIds: ['p3'],
+			delegationIds: ['d2'],
+			singleParticipantIds: []
+		});
+		expect(sources.size).toBe(2);
 	});
 });

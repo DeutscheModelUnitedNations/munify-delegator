@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { shownUserCardTab, visibleUserCardTabs, type UserCardTabFlags } from './userCardTabs';
+import {
+	nextUserCardTabToPrefetch,
+	shownUserCardTab,
+	visibleUserCardTabs,
+	type UserCardTabFlags
+} from './userCardTabs';
 
 const none: UserCardTabFlags = {
 	registered: false,
@@ -92,5 +97,40 @@ describe('shownUserCardTab', () => {
 		expect(
 			shownUserCardTab({ picked: null, visible: ['person', 'history'], state: 'ACTIVE' })
 		).toBe('person');
+	});
+});
+
+describe('nextUserCardTabToPrefetch', () => {
+	const visible = ['person', 'registration', 'seat', 'formalities', 'history'] as const;
+
+	it('loads the tab after the shown one first, then the one before it', () => {
+		const loaded = new Set<(typeof visible)[number]>();
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('formalities');
+		loaded.add('formalities');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('registration');
+		loaded.add('registration');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('history');
+		loaded.add('history');
+		expect(nextUserCardTabToPrefetch({ visible, shown: 'seat', loaded })).toBe('person');
+	});
+
+	it('never picks the shown tab, and stops once every other tab is loaded', () => {
+		expect(
+			nextUserCardTabToPrefetch({
+				visible,
+				shown: 'person',
+				loaded: new Set(['registration', 'seat', 'formalities', 'history'])
+			})
+		).toBeUndefined();
+	});
+
+	it('only offers tabs this card has', () => {
+		expect(
+			nextUserCardTabToPrefetch({
+				visible: ['person', 'history'],
+				shown: 'person',
+				loaded: new Set()
+			})
+		).toBe('history');
 	});
 });

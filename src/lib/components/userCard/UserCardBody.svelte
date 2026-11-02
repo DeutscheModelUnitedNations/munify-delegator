@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
 	import { logger } from '#lib/logger';
 	import { m } from '#lib/paraglide/messages';
 	import { fetchUserCardRoles, hasConferenceAccess, participationStage } from './userCardRoles';
 	import UserCardHeader from './UserCardHeader.svelte';
 	import UserCardTabs from './UserCardTabs.svelte';
-	import { shownUserCardTab, visibleUserCardTabs, type UserCardTab } from './userCardTabs';
+	import {
+		nextUserCardTabToPrefetch,
+		shownUserCardTab,
+		visibleUserCardTabs,
+		type UserCardTab
+	} from './userCardTabs';
 	import PersonTab from './tabs/PersonTab.svelte';
 	import RegistrationTab from './tabs/RegistrationTab.svelte';
 	import SeatTab from './tabs/SeatTab.svelte';
@@ -15,6 +21,7 @@
 	import HistoryTab from './tabs/HistoryTab.svelte';
 	import UserCardLoadError from './UserCardLoadError.svelte';
 	import UserCardNotFound from './UserCardNotFound.svelte';
+	import TabReady from './TabReady.svelte';
 
 	interface Props {
 		userId: string;
@@ -72,6 +79,33 @@
 	const singleParticipantId = $derived(singleParticipant?.id);
 	const supervisorId = $derived(conferenceSupervisor?.id);
 	const teamRole = $derived(teamMember?.role);
+
+	// The other tabs load in the background, one at a time while the browser is idle, once the shown
+	// one has its data: each is rendered hidden until its queries have answered, which leaves their
+	// results in the client's cache, so opening it later shows them at once and refreshes behind.
+	const person = $derived(`${userId}:${conferenceId}`);
+	const loaded = $derived.by(() => {
+		void person;
+		return new SvelteSet<UserCardTab>();
+	});
+	let prefetching = $state<{ person: string; tab: UserCardTab } | null>(null);
+	const prefetchTab = $derived(prefetching?.person === person ? prefetching.tab : undefined);
+
+	function whenIdle(run: () => void) {
+		if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
+		else setTimeout(run, 200);
+	}
+
+	function tabLoaded(tab: UserCardTab) {
+		const of = person;
+		loaded.add(tab);
+		if (prefetchTab === tab) prefetching = null;
+		whenIdle(() => {
+			if (of !== person || prefetching) return;
+			const next = nextUserCardTabToPrefetch({ visible: tabs, shown: shownTab, loaded });
+			if (next) prefetching = { person: of, tab: next };
+		});
+	}
 </script>
 
 {#snippet tabContent(tab: UserCardTab)}
@@ -137,6 +171,7 @@
 			{#key shownTab}
 				<svelte:boundary onerror={(error) => logger.error('Failed to load user card tab', error)}>
 					{@render tabContent(shownTab)}
+					<TabReady onready={() => tabLoaded(shownTab)} />
 
 					{#snippet pending()}
 						<div class="flex flex-col gap-3">
@@ -150,6 +185,21 @@
 					{/snippet}
 				</svelte:boundary>
 			{/key}
+
+			{#if prefetchTab && prefetchTab !== shownTab}
+				{#each [prefetchTab] as tab (tab)}
+					<div hidden inert>
+						<!-- A tab that fails here is skipped: it shows its own error when it is opened. -->
+						<svelte:boundary onerror={() => tabLoaded(tab)}>
+							{@render tabContent(tab)}
+							<TabReady onready={() => tabLoaded(tab)} />
+
+							{#snippet pending()}{/snippet}
+							{#snippet failed()}{/snippet}
+						</svelte:boundary>
+					</div>
+				{/each}
+			{/if}
 		</div>
 	</div>
 {/if}

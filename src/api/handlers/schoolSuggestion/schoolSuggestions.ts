@@ -7,14 +7,18 @@ import { eq } from 'drizzle-orm';
 import { whereRows } from '#api/db/whereRows';
 
 /**
- * The people of applied registrations the caller may read (`readableSchoolRegistrations`), grouped
- * by their own school.
+ * The people of applied registrations the caller may read (`readableSchoolRegistrations`), each
+ * with their own school and the rows they are counted through.
  */
-export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
+export async function loadSchoolRegistrations(readable: ReadableSchoolRegistrations) {
 	const school = { id: schema.school.id, name: schema.school.name };
 	const [members, singleParticipants] = await Promise.all([
 		db
-			.select({ delegationId: schema.delegationMember.delegationId, school })
+			.select({
+				delegationId: schema.delegationMember.delegationId,
+				participantId: schema.conferenceParticipant.id,
+				school
+			})
 			.from(schema.delegationMember)
 			.innerJoin(schema.delegation, eq(schema.delegation.id, schema.delegationMember.delegationId))
 			.innerJoin(
@@ -24,7 +28,11 @@ export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
 			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
 			.where(readable.delegations),
 		db
-			.select({ school })
+			.select({
+				id: schema.singleParticipant.id,
+				participantId: schema.conferenceParticipant.id,
+				school
+			})
 			.from(schema.singleParticipant)
 			.innerJoin(
 				schema.conferenceParticipant,
@@ -33,8 +41,12 @@ export async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
 			.innerJoin(schema.school, eq(schema.school.id, schema.conferenceParticipant.schoolId))
 			.where(readable.singleParticipants)
 	]);
+	return { members, singleParticipants };
+}
 
-	return schoolRows({ members, singleParticipants });
+/** The people of `loadSchoolRegistrations`, grouped by their own school. */
+async function loadSchoolRows(readable: ReadableSchoolRegistrations) {
+	return schoolRows(await loadSchoolRegistrations(readable));
 }
 
 /**

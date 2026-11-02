@@ -75,3 +75,25 @@ export function shownUserCardTab({
 	const suggested = STAGE_TAB[state];
 	return visible.includes(suggested) ? suggested : (visible[0] ?? 'person');
 }
+
+/**
+ * The next tab to load in the background while `shown` is open: of those not `loaded` yet, the
+ * nearest to it, the one after it first, since that is where people click next. One at a time, so
+ * a card opening does not hit the API with every tab's queries at once.
+ */
+export function nextUserCardTabToPrefetch({
+	visible,
+	shown,
+	loaded
+}: {
+	visible: readonly UserCardTab[];
+	shown: UserCardTab;
+	loaded: ReadonlySet<UserCardTab>;
+}): UserCardTab | undefined {
+	const from = Math.max(visible.indexOf(shown), 0);
+	const byDistance = visible
+		.map((tab, index) => ({ tab, distance: index - from }))
+		.filter(({ tab }) => tab !== shown && !loaded.has(tab))
+		.toSorted((a, b) => Math.abs(a.distance) - Math.abs(b.distance) || b.distance - a.distance);
+	return byDistance.at(0)?.tab;
+}

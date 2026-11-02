@@ -57,3 +57,48 @@ export function schoolRows({
 
 	return [...bySchool.values()];
 }
+
+/** The rows a school's counts come from, so a live overview can listen on them. */
+export type SchoolRowSources = {
+	schoolId: string;
+	participantIds: string[];
+	delegationIds: string[];
+	singleParticipantIds: string[];
+};
+
+/** Which participants, delegations and single participants each school of `schoolRows` counts. */
+export function schoolRowSources({
+	members,
+	singleParticipants
+}: {
+	members: { delegationId: string; participantId: string; school: NamedSchool }[];
+	singleParticipants: { id: string; participantId: string; school: NamedSchool }[];
+}): Map<string, SchoolRowSources> {
+	const bySchool = new Map<string, SchoolRowSources>();
+	const entryFor = (schoolId: string) => {
+		const existing = bySchool.get(schoolId) ?? {
+			schoolId,
+			participantIds: [],
+			delegationIds: [],
+			singleParticipantIds: []
+		};
+		bySchool.set(schoolId, existing);
+		return existing;
+	};
+
+	for (const member of members) {
+		if (!member.school) continue;
+		const entry = entryFor(member.school.id);
+		entry.participantIds.push(member.participantId);
+		if (!entry.delegationIds.includes(member.delegationId)) {
+			entry.delegationIds.push(member.delegationId);
+		}
+	}
+	for (const participant of singleParticipants) {
+		if (!participant.school) continue;
+		const entry = entryFor(participant.school.id);
+		entry.participantIds.push(participant.participantId);
+		entry.singleParticipantIds.push(participant.id);
+	}
+	return bySchool;
+}

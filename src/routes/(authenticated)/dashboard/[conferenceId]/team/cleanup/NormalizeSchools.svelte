@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { logger } from '#lib/logger';
 	import { client } from '#lib/api/rumbleClient/client';
+	import { liveSnapshot } from '#lib/api/liveSnapshot';
 	import { m } from '#lib/paraglide/messages';
 	import type { ManagedColumn } from '#lib/components/tanStackTable/managedTable';
 	import { toast } from 'svelte-sonner';
@@ -25,32 +26,18 @@
 		sumParticipants: true
 	} as const;
 
-	function fetchSchools() {
-		return client.query.conference({
+	const conference = $derived(
+		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			id: true,
 			schools: schoolSelection
-		});
-	}
+		})
+	);
+	const snapshot = liveSnapshot<(typeof conference.schools)[number]>();
+	const schools = $derived(snapshot(conference.schools));
 
-	type SchoolRow = Awaited<ReturnType<typeof fetchSchools>>['schools'][number];
+	type SchoolRow = (typeof schools)[number];
 
-	let schoolsLoading = $state(true);
 	let normalizing = $state(false);
-	let loadedSchools = $state<SchoolRow[]>([]);
-
-	async function loadSchools() {
-		try {
-			const conference = await fetchSchools();
-			loadedSchools = conference.schools;
-		} finally {
-			schoolsLoading = false;
-		}
-	}
-
-	$effect(() => {
-		if (conferenceId) void loadSchools();
-	});
 
 	/** A school picked for merging. */
 	type PickedSchool = { id: string; name: string };
@@ -58,7 +45,6 @@
 	let newSchoolName = $state('');
 	let selectedSchools = $state<PickedSchool[]>([]);
 
-	const schools = $derived(loadedSchools);
 	const isSelected = (id: string) => selectedSchools.some((school) => school.id === id);
 
 	$effect(() => {
@@ -136,7 +122,6 @@
 			const merged = new Set([targetId, ...sources]);
 			selectedSchools = selectedSchools.filter((school) => !merged.has(school.id));
 			newSchoolName = '';
-			await loadSchools();
 			return true;
 		} catch (error) {
 			toast.error(m.cleanupNormalizeSchoolsFailed());
@@ -178,11 +163,7 @@
 	});
 </script>
 
-{#if schoolsLoading}
-	<div class="flex items-center justify-center p-8">
-		<span class="loading loading-spinner loading-lg"></span>
-	</div>
-{:else if schools.length > 0}
+{#if schools.length > 0}
 	<div class="mt-4">
 		<SchoolSuggestions
 			{conferenceId}
