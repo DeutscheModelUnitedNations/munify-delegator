@@ -479,6 +479,10 @@ bun run preview
   (`const conferenceId = $derived(params.conferenceId)`) before an awaited derived uses it, in
   layouts too: every navigation, a query-only one included, hands over a fresh `params` object,
   and an awaited derived reading `params.x` directly asks for everything again each time.
+  A page under a `PageBoundary` keyed by its pathname (the team pages) never changes params, so it
+  reads them once, `untrack(() => params.conferenceId)`: even through a `$derived`, a re-run inside
+  a pending batch (hydration, a table writing its URL state) can still see the prop as `{}` and
+  ask for conference `''` (the participants, waiting-list and members tables did).
 
 - **Global state lives in `#lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.

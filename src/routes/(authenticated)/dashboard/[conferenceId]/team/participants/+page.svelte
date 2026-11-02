@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { client } from '#lib/api/rumbleClient/client';
 	import ManagedTable from '#lib/components/tanStackTable/ui/ManagedTable.svelte';
 	import { columnIdOf } from '#lib/components/tanStackTable/managedTable';
@@ -17,7 +18,10 @@
 
 	let { params: routeParams }: PageProps = $props();
 
-	const conferenceId = $derived(routeParams.conferenceId ?? '');
+	// Read once: the team shell keys each page by its pathname, so this instance never changes
+	// conference. Read live, the page's queries re-ran inside hydration's pending batch, which still
+	// shows `params` as `{}`, and asked for conference ''.
+	const conferenceId = untrack(() => routeParams.conferenceId);
 
 	// Everything that reads the URL is set up before the first await: after it, the component has
 	// no request to read the URL of while it renders on the server.

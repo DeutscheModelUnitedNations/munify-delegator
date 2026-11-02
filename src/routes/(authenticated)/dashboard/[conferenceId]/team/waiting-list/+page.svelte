@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { getLocale } from '#lib/paraglide/runtime';
 	import { client } from '#lib/api/rumbleClient/client';
 	import { renderComponent } from '#lib/components/tanStackTable/index';
@@ -21,9 +22,10 @@
 
 	let { params }: PageProps = $props();
 
-	// Navigations (the table's own URL state is one) hand over fresh params; reading them inside an
-	// awaited derived would refetch from whatever state the batch under way still shows.
-	const conferenceId = $derived(params.conferenceId);
+	// Read once: the team shell keys each page by its pathname, so this instance never changes
+	// conference. Read live, a navigation of the table's own URL state re-ran the queries inside a
+	// pending batch, which still shows `params` as `{}`, and asked for no conference.
+	const conferenceId = untrack(() => params.conferenceId);
 
 	// Set up before the first await: afterwards a server render has no request to read the URL of.
 	// Search, filters, order and paging run in the backend; the table only holds this page.
