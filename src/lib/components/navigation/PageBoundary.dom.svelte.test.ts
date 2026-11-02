@@ -32,7 +32,7 @@ describe('PageBoundary', () => {
 		app = mount(Probe, { target, props: { key: props.key, load: () => props.load.promise } });
 		flushSync();
 
-		expect(target.querySelector('[data-skeleton="table"]')).not.toBeNull();
+		expect(target.querySelector('[data-skeleton="participants"]')).not.toBeNull();
 		expect(target.querySelector('[data-content]')).toBeNull();
 
 		props.load.resolve('participants');

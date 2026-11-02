@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { browser } from '$app/env';
 	import PageSkeleton from './PageSkeleton.svelte';
-	import type { SkeletonShape } from './skeletonShapes';
+	import type { SkeletonLayout } from './skeletonShapes';
 
 	/**
 	 * Wraps the pages a layout renders so a client-side navigation shows the next page's skeleton
@@ -18,19 +18,16 @@
 	 * its content. The client then hydrates the rendered content as usual, and the skeleton only
 	 * appears from the first navigation on.
 	 */
-	let {
-		key,
-		shape = 'page',
-		children
-	}: { key: string; shape?: SkeletonShape; children: Snippet } = $props();
+	let { key, skeleton, children }: { key: string; skeleton?: SkeletonLayout; children: Snippet } =
+		$props();
 </script>
 
 {#key key}
-	<svelte:boundary pending={browser ? skeleton : undefined}>
+	<svelte:boundary pending={browser ? placeholder : undefined}>
 		{@render children()}
 	</svelte:boundary>
 {/key}
 
-{#snippet skeleton()}
-	<PageSkeleton {shape} />
+{#snippet placeholder()}
+	<PageSkeleton {skeleton} />
 {/snippet}

@@ -1,32 +1,38 @@
 <script lang="ts">
 	import { m } from '#lib/paraglide/messages';
-	import { SKELETON_LAYOUTS, type SkeletonShape } from './skeletonShapes';
+	import { PAGE_SKELETON, type SkeletonLayout, type SkeletonNode } from './skeletonShapes';
 
 	/**
 	 * The placeholder a `PageBoundary` shows while a page's first data loads: grey blocks in the
-	 * rough layout of the page (`shape`, drawn from `SKELETON_LAYOUTS`), so the eye already knows
-	 * where things will be.
+	 * layout of the page (`skeleton`, see `skeletonShapes.ts`), so the eye already knows where
+	 * things will be.
 	 *
 	 * It stays invisible for its first moments (`page-skeleton` in `app.css`): a page whose data is
 	 * cached resolves within a frame or two and would only flash it.
 	 */
-	let { shape = 'page' }: { shape?: SkeletonShape } = $props();
-
-	const rows = $derived(SKELETON_LAYOUTS[shape]);
+	let { skeleton = PAGE_SKELETON }: { skeleton?: SkeletonLayout } = $props();
 </script>
 
+{#snippet node({ class: classes, children }: SkeletonNode)}
+	{#if children}
+		<div class={classes}>
+			{#each children as child, index (index)}
+				{@render node(child)}
+			{/each}
+		</div>
+	{:else}
+		<div class="skeleton {classes}"></div>
+	{/if}
+{/snippet}
+
 <div
-	class="page-skeleton flex w-full flex-col gap-4 py-4"
+	class="page-skeleton w-full min-w-0"
 	role="status"
 	aria-busy="true"
 	aria-label={m.a11yLoadingPage()}
-	data-skeleton={shape}
+	data-skeleton={skeleton.name}
 >
-	{#each rows as { row, blocks }, index (index)}
-		<div class={row}>
-			{#each blocks as block, blockIndex (blockIndex)}
-				<div class="skeleton {block}"></div>
-			{/each}
-		</div>
+	{#each skeleton.nodes as child, index (index)}
+		{@render node(child)}
 	{/each}
 </div>

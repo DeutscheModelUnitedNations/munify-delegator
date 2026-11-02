@@ -416,7 +416,7 @@ bun run preview
   full load still arrives with its content. A section that keeps a frame across its pages (the
   assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
   outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
-  registry names each page's `skeleton` shape; `NavigationProgress` draws the bar along the top
+  registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
   edge while a navigation loads, and `enableViewTransitionApi` (`#lib/helpers/viewTransitionApi.svelte`,
   after chase) cross-fades the pages. See "Navigation" in CLAUDE-UI.md.
 - **Each component fetches what it renders, and nothing more.** A page fetches only what decides

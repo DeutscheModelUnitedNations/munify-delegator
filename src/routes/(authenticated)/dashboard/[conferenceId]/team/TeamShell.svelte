@@ -9,7 +9,7 @@
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { hasAnyRole } from '#lib/helpers/teamAccess';
 	import { PARTICIPANT_CARE_ROLES } from '#lib/helpers/teamRoles';
-	import { groupedTeamRoutes, teamRelativePath, teamRouteForPath } from '#lib/data/teamRoutes';
+	import { groupedTeamRoutes, teamRelativePath, teamSkeletonForPath } from '#lib/data/teamRoutes';
 	import TeamNavMenu from './TeamNavMenu.svelte';
 	import { fetchCanOpenPaperHub } from '../paperhub/myPaperHubRoles';
 
@@ -44,9 +44,7 @@
 	// itself (`assignment/+layout.svelte`), so its pages share one key here.
 	const pathname = $derived(page.url.pathname);
 	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment'] }));
-	const skeletonShape = $derived(
-		teamRouteForPath(teamRelativePath({ pathname, conferenceId }))?.skeleton ?? 'page'
-	);
+	const skeleton = $derived(teamSkeletonForPath(teamRelativePath({ pathname, conferenceId })));
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-x-clip">
@@ -60,7 +58,7 @@
 		{#if !showMenu}
 			{@render withoutMenu?.()}
 		{/if}
-		<PageBoundary key={pageKey} shape={skeletonShape}>
+		<PageBoundary key={pageKey} {skeleton}>
 			{@render children()}
 		</PageBoundary>
 	</div>

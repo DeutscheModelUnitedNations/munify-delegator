@@ -1399,33 +1399,45 @@ passed in the browser, so a full page load is still server-rendered with its con
 	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
 	import { boundaryKey } from '#lib/helpers/boundaryKey';
 
+	import { TEAM_SKELETONS } from '#lib/data/teamSkeletons';
+
 	const pathname = $derived(page.url.pathname);
 	// pages inside `team/assignment` share one key: that layout has a PageBoundary of its own
 	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment'] }));
 </script>
 
-<PageBoundary key={pageKey} shape="table">
+<PageBoundary key={pageKey} skeleton={TEAM_SKELETONS.participants}>
 	{@render children()}
 </PageBoundary>
 ```
 
-| Prop    | Type            | Description                                                  |
-| ------- | --------------- | ------------------------------------------------------------ |
-| `key`   | `string`        | A new value creates a new boundary, which shows the skeleton |
-| `shape` | `SkeletonShape` | `page` (default), `table`, `cards`, `form`, `dashboard`      |
+| Prop       | Type             | Description                                                  |
+| ---------- | ---------------- | ------------------------------------------------------------ |
+| `key`      | `string`         | A new value creates a new boundary, which shows the skeleton |
+| `skeleton` | `SkeletonLayout` | What to draw; `PAGE_SKELETON` when left out                  |
 
-Where it sits: the team shell (`team/TeamShell.svelte`, shape from the route registry's
-`skeleton`), the assignment layout (below its tabs), and `dashboard/+layout.svelte` (every
+Where it sits: the team shell (`team/TeamShell.svelte`, `teamSkeletonForPath`), the assignment
+layout (below its tabs, `ASSIGNMENT_TAB_SKELETONS`), and `dashboard/+layout.svelte` (every
 dashboard page but the paper hub's, whose shell shows it). A layout that keeps state across its
 pages must not sit inside a boundary keyed by the pathname: name it as a frame in `boundaryKey`
 and give it a `PageBoundary` of its own.
 
 ### PageSkeleton
 
-`src/lib/components/navigation/PageSkeleton.svelte` - grey blocks in the rough layout of the page
-(`shape`), `role="status"` and `aria-busy`. It stays invisible for its first 120 ms (`.page-skeleton`
-in `app.css`), so cached data that resolves at once never flashes it. A new team page picks its
-shape in `#lib/data/teamRoutes.ts` (`skeleton`); absent means `page`.
+`src/lib/components/navigation/PageSkeleton.svelte` - draws a `SkeletonLayout`, `role="status"`
+and `aria-busy`, its name as `data-skeleton`. It stays invisible for its first 120 ms
+(`.page-skeleton` in `app.css`), so cached data that resolves at once never flashes it.
+
+A layout is a tree of `SkeletonNode`s (`skeletonShapes.ts`): a node with `children` is a plain
+element (a card's frame, a row, a grid), one without a grey `skeleton` block. **Each team page has
+its own**, in `#lib/data/teamSkeletons.ts`, drawn after the page: its wrapper's classes, its
+grids and breakpoints, then its sections in the typical populated state, so the skeleton reflows
+like the page and nothing jumps when the data arrives. Build them from the shared blocks
+(`managedTable`, `tabs`, `formSection`, `field`, `stat`, `toggle`, `paragraph`, `table`) and write
+class strings out whole, since Tailwind only finds literal ones. A new team page gets an entry in
+`TEAM_SKELETONS` and names it as its registry entry's `skeleton`; a page below an entry that looks
+different (a detail page, a page the entry `owns`) goes into `SUBPAGE_SKELETONS`. **When a page's
+layout changes, change its skeleton too.**
 
 ### NavigationProgress
 

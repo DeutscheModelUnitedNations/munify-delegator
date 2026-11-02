@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
 	import { boundaryKey } from '#lib/helpers/boundaryKey';
+	import { DASHBOARD_SKELETON, PAGE_SKELETON } from '#lib/components/navigation/skeletonShapes';
 
 	interface Props {
 		children: Snippet;
@@ -17,8 +18,10 @@
 	// must not be re-created between them; it shows the skeleton for its pages itself.
 	const pathname = $derived(page.url.pathname);
 	const pageKey = $derived(boundaryKey({ pathname, frames: ['paperhub'] }));
-	const shape = $derived(
-		page.route.id === '/(authenticated)/dashboard/[conferenceId]' ? 'dashboard' : 'page'
+	const skeleton = $derived(
+		page.route.id === '/(authenticated)/dashboard/[conferenceId]'
+			? DASHBOARD_SKELETON
+			: PAGE_SKELETON
 	);
 </script>
 
@@ -27,7 +30,7 @@
 </svelte:head>
 
 <div class="flex w-full">
-	<PageBoundary key={pageKey} {shape}>
+	<PageBoundary key={pageKey} {skeleton}>
 		{@render children()}
 	</PageBoundary>
 </div>

@@ -1,6 +1,7 @@
 import { m } from '#lib/paraglide/messages';
 import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
-import type { SkeletonShape } from '#lib/components/navigation/skeletonShapes';
+import { PAGE_SKELETON, type SkeletonLayout } from '#lib/components/navigation/skeletonShapes';
+import { TEAM_SKELETONS, teamSubpageSkeleton } from '#lib/data/teamSkeletons';
 import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess';
 import {
 	CONFERENCE_CONTENT_ROLES,
@@ -48,8 +49,8 @@ export interface TeamRoute {
 	roles?: readonly TeamroleEnum[];
 	/** Needs more than roles, such as the paper hub, which participants use too */
 	extraAccess?: (access: TeamAccess & { canSeePaperHub?: boolean }) => boolean;
-	/** The rough layout of the page, for the skeleton shown while it loads. Absent: `page`. */
-	skeleton?: SkeletonShape;
+	/** What the page looks like, for the skeleton shown while it loads (`#lib/data/teamSkeletons`) */
+	skeleton: SkeletonLayout;
 }
 
 const teamPath = (page: string) => `team/${page}`;
@@ -57,7 +58,7 @@ const teamPath = (page: string) => `team/${page}`;
 export const teamRoutes: readonly TeamRoute[] = [
 	{
 		id: 'stats',
-		skeleton: 'dashboard',
+		skeleton: TEAM_SKELETONS.stats,
 		path: teamPath('stats'),
 		title: () => m.adminStats(),
 		icon: 'fa-chart-pie',
@@ -67,7 +68,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'settings',
-		skeleton: 'form',
+		skeleton: TEAM_SKELETONS.settings,
 		path: teamPath('configuration'),
 		title: () => m.settings(),
 		description: () => m.manageConference(),
@@ -96,7 +97,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'seats',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.seats,
 		path: teamPath('seats'),
 		title: () => m.seats(),
 		icon: 'fa-chair-office',
@@ -107,7 +108,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'participants',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.participants,
 		path: teamPath('participants'),
 		owns: [teamPath('user')],
 		title: () => m.adminUsers(),
@@ -119,7 +120,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'waitingList',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.waitingList,
 		path: teamPath('waiting-list'),
 		title: () => m.waitingList(),
 		icon: 'fa-user-clock',
@@ -130,7 +131,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'schools',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.schools,
 		path: teamPath('schools'),
 		title: () => m.schools(),
 		icon: 'fa-school',
@@ -141,7 +142,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'members',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.members,
 		path: teamPath('members'),
 		owns: [teamPath('invitations')],
 		title: () => m.teamManagement(),
@@ -156,7 +157,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 		// The paper hub is shared with participants and supervisors, so it stays at its own path
 		// and has its own rule on top of the team roles.
 		id: 'paperHub',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.paperHub,
 		path: 'paperhub',
 		title: () => m.paperHub(),
 		description: () => m.reviewPapers(),
@@ -168,7 +169,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'seatPlanning',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.seatPlanning,
 		path: teamPath('seat-planning'),
 		title: () => m.seatPlanning(),
 		description: () => m.seatPlanningDescription(),
@@ -180,7 +181,8 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'assignment',
-		skeleton: 'cards',
+		// the sighting's; every tab has its own (`teamSkeletonForPath`)
+		skeleton: TEAM_SKELETONS.assignment,
 		// The assignment has no page of its own; the sighting is where the work starts.
 		path: teamPath('assignment/sighting'),
 		owns: [teamPath('assignment')],
@@ -193,7 +195,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'checkIn',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.checkIn,
 		path: teamPath('check-in'),
 		title: () => m.onSiteCheckIn(),
 		icon: 'fa-id-badge',
@@ -204,6 +206,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'postalRegistration',
+		skeleton: TEAM_SKELETONS.postalRegistration,
 		path: teamPath('postal-registration'),
 		title: () => m.postalRegistration(),
 		icon: 'fa-envelope',
@@ -214,6 +217,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'payments',
+		skeleton: TEAM_SKELETONS.payments,
 		path: teamPath('payments'),
 		title: () => m.payment(),
 		icon: 'fa-money-bill-transfer',
@@ -224,7 +228,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'attendance',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.attendance,
 		path: teamPath('attendance'),
 		title: () => m.attendanceScanner(),
 		description: () => m.attendanceScannerDescription(),
@@ -248,6 +252,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'announcement',
+		skeleton: TEAM_SKELETONS.announcement,
 		path: teamPath('announcement'),
 		title: () => m.announcementSectionTitle(),
 		icon: 'fa-bullhorn',
@@ -258,7 +263,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'calendar',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.calendar,
 		path: teamPath('calendar'),
 		title: () => m.calendar(),
 		icon: 'fa-calendar-days',
@@ -269,7 +274,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'survey',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.survey,
 		path: teamPath('survey'),
 		title: () => m.survey(),
 		icon: 'fa-chart-pie',
@@ -280,7 +285,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'plausibility',
-		skeleton: 'table',
+		skeleton: TEAM_SKELETONS.plausibility,
 		path: teamPath('plausibility'),
 		title: () => m.adminPlausibility(),
 		icon: 'fa-shield-check',
@@ -291,7 +296,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'cleanup',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.cleanup,
 		path: teamPath('cleanup'),
 		title: () => m.cleanup(),
 		icon: 'fa-broom',
@@ -302,6 +307,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'helper',
+		skeleton: TEAM_SKELETONS.helper,
 		path: teamPath('helper'),
 		title: () => m.helper(),
 		icon: 'fa-gear-code',
@@ -312,7 +318,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'import',
-		skeleton: 'form',
+		skeleton: TEAM_SKELETONS.import,
 		path: teamPath('import'),
 		title: () => m.import(),
 		icon: 'fa-file-import',
@@ -323,7 +329,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'downloads',
-		skeleton: 'cards',
+		skeleton: TEAM_SKELETONS.downloads,
 		path: teamPath('downloads'),
 		title: () => m.downloads(),
 		icon: 'fa-download',
@@ -405,4 +411,13 @@ export function teamRouteForPath(relativePath: string): TeamRoute | undefined {
 		}
 	}
 	return best?.route;
+}
+
+/**
+ * The skeleton for a path relative to the conference's dashboard: the page's own where it has one
+ * (a detail page, an assignment tab), else its entry's, else the generic one.
+ */
+export function teamSkeletonForPath(relativePath: string): SkeletonLayout {
+	const normalized = relativePath.replace(/^\/+|\/+$/g, '');
+	return teamSubpageSkeleton(normalized) ?? teamRouteForPath(normalized)?.skeleton ?? PAGE_SKELETON;
 }

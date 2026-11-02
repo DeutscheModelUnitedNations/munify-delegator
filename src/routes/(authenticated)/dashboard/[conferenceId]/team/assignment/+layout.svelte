@@ -7,6 +7,7 @@
 	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
 	import { m } from '#lib/paraglide/messages';
 	import type { LayoutProps } from './$types';
+	import { ASSIGNMENT_TAB_SKELETONS } from '#lib/data/teamSkeletons';
 	import DraftStatus from './DraftStatus.svelte';
 
 	let { children, params }: LayoutProps = $props();
@@ -22,6 +23,9 @@
 	// The tabs stay; only the tab's content below them loads (the team shell leaves this section's
 	// pages to this layout, see `boundaryKey`).
 	const pathname = $derived(page.url.pathname);
+	const skeleton = $derived(
+		ASSIGNMENT_TAB_SKELETONS[tab ?? ''] ?? ASSIGNMENT_TAB_SKELETONS.sighting
+	);
 
 	const tabs = $derived(
 		(
@@ -58,7 +62,7 @@
 		{/each}
 	</Tabs>
 
-	<PageBoundary key={pathname} shape="cards">
+	<PageBoundary key={pathname} {skeleton}>
 		{@render children()}
 	</PageBoundary>
 </div>
