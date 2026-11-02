@@ -33,7 +33,7 @@
         "@inlang/cli": "^3.4.4",
         "@inlang/paraglide-js": "^2.29.1",
         "@lingual/i18n-check": "^0.9.5",
-        "@m1212e/rumble": "^0.27.5",
+        "@m1212e/rumble": "^0.27.6",
         "@magidoc/plugin-svelte-marked": "^7.0.0",
         "@opentelemetry/api": "^1.10.0",
         "@opentelemetry/context-async-hooks": "^3.0.0",
@@ -472,7 +472,7 @@
 
     "@graphql-yoga/logger": ["@graphql-yoga/logger@2.0.2", "", { "dependencies": { "tslib": "^2.8.1" } }, "sha512-k2QGHCcH10O+GGe1sgXn0paaP9GCK91wxkuNQaA4IvXBF/RcdBLaX15UeZLW9kMG8kfz7bL0r4Yu+BXYe0JOaw=="],
 
-    "@graphql-yoga/plugin-disable-introspection": ["@graphql-yoga/plugin-disable-introspection@2.25.1", "", { "dependencies": { "@whatwg-node/promise-helpers": "^1.3.2" }, "peerDependencies": { "graphql": "^15.2.0 || ^16.0.0 || ^17.0.0", "graphql-yoga": "^5.24.1" } }, "sha512-mgGLKim8LIXJgdwRn6A2HTgzNEa9g0k8m5h8oXfTwjrzRumBThSrR10F9b7327c8iLBaLxNhV5Qlblw4zZh4BA=="],
+    "@graphql-yoga/plugin-disable-introspection": ["@graphql-yoga/plugin-disable-introspection@2.25.6", "", { "dependencies": { "@whatwg-node/promise-helpers": "^1.3.2" }, "peerDependencies": { "graphql": "^15.2.0 || ^16.0.0 || ^17.0.0", "graphql-yoga": "^5.24.6" } }, "sha512-ctpRlyarbR2Cbdcl5Z7vHr7UWlRLfqk1Xx/qdleN1a9hOIgdUNbMDfhqkglsDEMgv7ZcE4sPyImB8gwJT4kO4w=="],
 
     "@graphql-yoga/plugin-graphql-sse": ["@graphql-yoga/plugin-graphql-sse@3.24.6", "", { "dependencies": { "@whatwg-node/promise-helpers": "^1.3.2", "graphql-sse": "^2.0.0" }, "peerDependencies": { "graphql": "^15.2.0 || ^16.0.0 || ^17.0.0", "graphql-yoga": "^5.24.6" } }, "sha512-A3imERv5x6gHdeeT6D9k/vPnTaCHkLbaMc8O0zyG12XrPlmESrYuH0Sa+wcrqTbOr+d0W+m/CeBZPpdm3JLKmg=="],
 
@@ -566,7 +566,7 @@
 
     "@m1212e/oidc": ["@m1212e/oidc@0.2.1", "", { "dependencies": { "jose": "^6.2.13", "oauth4webapi": "^3.8.8", "openid-client": "^6.8.8", "typebox": "^1.4.3" } }, "sha512-v4DtbdHnZ0PLFr/WmIN0s7m1F1PhdRHL8JE40SN1WfxoYKp86eG+Hmn9fDAE98Ezd0KrdNvJZHB1E/IZGqwZGA=="],
 
-    "@m1212e/rumble": ["@m1212e/rumble@0.27.5", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.25.1", "@opentelemetry/api": "^1.9.1", "@opentelemetry/semantic-conventions": "^1.43.0", "@pothos/core": "^4.15.1", "@pothos/plugin-drizzle": "^0.20.0", "@pothos/plugin-smart-subscriptions": "^4.1.7", "@pothos/plugin-tracing": "^1.1.4", "@pothos/plugin-validation": "^4.3.4", "@pothos/tracing-opentelemetry": "^1.2.1", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.2", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^6.0.2", "es-toolkit": "^1.52.0", "graphql-scalars": "^2.0.1", "graphql-yoga": "^5.24.6", "libphonenumber-js": "^1.13.14", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.6.7" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18", "drizzle-orm": "^1", "graphql": "^16 || ^17", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6 || ^7" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-NT1P755NJdzJOqW9UKamepmgZWJnS/W0xKpPJ8Qi2A6PPCN0Pxq6M49zdXtWE+VM5K/D7s+4tcutvt3nKOrimA=="],
+    "@m1212e/rumble": ["@m1212e/rumble@0.27.6", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.25.6", "@opentelemetry/api": "^1.10.0", "@opentelemetry/semantic-conventions": "^1.44.0", "@pothos/core": "^4.16.0", "@pothos/plugin-drizzle": "^0.20.2", "@pothos/plugin-smart-subscriptions": "^4.1.7", "@pothos/plugin-tracing": "^1.1.4", "@pothos/plugin-validation": "^4.3.5", "@pothos/tracing-opentelemetry": "^1.2.1", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.2", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^6.0.3", "es-toolkit": "^1.53.1", "graphql-scalars": "^2.0.1", "graphql-yoga": "^5.24.6", "libphonenumber-js": "^1.13.15", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.6.7" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18", "drizzle-orm": "^1", "graphql": "^16 || ^17", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6 || ^7" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-jJeVD/8pViUg/qhxM2/OBBEphGoHmG2VCBD/rHWu4tvZ0Ert+WCYwcCoFunomgzgegXttR5UWpbMlU2p5tpmIQ=="],
 
     "@m1212e/sveltekit-oidc": ["@m1212e/sveltekit-oidc@0.3.1", "", { "dependencies": { "@m1212e/oidc": "^0.2.1" }, "peerDependencies": { "@sveltejs/kit": "^3.0.0" } }, "sha512-VrJtbkxR2qC2UiFV2+wrGBShMYk+4GM7y/8hVbyCP5IrGnZS8J892581xcajr6HVpn0TXizrS0qmxWR7Y6yrUg=="],
 
@@ -730,7 +730,7 @@
 
     "@pothos/core": ["@pothos/core@4.15.1", "", { "peerDependencies": { "graphql": "^16.10.0 || ^17.0.0" } }, "sha512-G0riOIbF6zer2SU7V1MmivkSdoKk+gYRf+Ru8JVcy3p9GhyJ8OzQj92RgCfCpEvkTgl6EdH8VueLe1Lm7lY4aA=="],
 
-    "@pothos/plugin-drizzle": ["@pothos/plugin-drizzle@0.20.0", "", { "dependencies": { "@pothos/selection-mapper": "0.1.0" }, "peerDependencies": { "@pothos/core": "*", "drizzle-orm": ">=1.0.0-rc.2", "graphql": "^16.10.0 || ^17.0.0" } }, "sha512-40Jn4CS0Z9JyI0sh0F9gqsByHm4f+isBvQy6/8lTj0KFv6qyaEDct90+aKybrXQAUCMHDabSEP1e9YfixMekaw=="],
+    "@pothos/plugin-drizzle": ["@pothos/plugin-drizzle@0.20.2", "", { "dependencies": { "@pothos/selection-mapper": "0.1.0" }, "peerDependencies": { "@pothos/core": "*", "drizzle-orm": ">=1.0.0-rc.2", "graphql": "^16.10.0 || ^17.0.0" } }, "sha512-BZ0aay36fPiWIue78eIY4ocZAEoUgGKDkdQfHsQHtgNFB6BjuFvT0CYqkAFuEFZo5rANrZWEkSu0qz8PFggqxg=="],
 
     "@pothos/plugin-simple-objects": ["@pothos/plugin-simple-objects@4.1.4", "", { "peerDependencies": { "@pothos/core": "*", "graphql": "^16.10.0 || ^17.0.0" } }, "sha512-mkDn640l/y1u3wg7LRNr/HaCpQypGJwjokeoJeHLHNvxsIQ+vLOjpNgwoAb+DhUusa75xWjVnMsbGsIGEr3Z3w=="],
 
@@ -1490,7 +1490,7 @@
 
     "es-object-atoms": ["es-object-atoms@1.1.2", "", { "dependencies": { "es-errors": "^1.3.0" } }, "sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw=="],
 
-    "es-toolkit": ["es-toolkit@1.52.0", "", {}, "sha512-XTNEJQh1tY1ZJVcf6ayP/2n4ZPyaHlW2FWs7xvw5ddPuhUVjLD3olQVQS7kf58JbAB48iL0uL/jerTrjtV3lDA=="],
+    "es-toolkit": ["es-toolkit@1.53.1", "", {}, "sha512-VhMc6IXmexu8iYFfL2aaAww6IvJTdHlqBLruLoEUs33YD4IcP5DdZcLOybMsMmmLsiy1c8PsiLsrM0DdIuuRUA=="],
 
     "es5-ext": ["es5-ext@0.10.64", "", { "dependencies": { "es6-iterator": "^2.0.3", "es6-symbol": "^3.1.3", "esniff": "^2.0.1", "next-tick": "^1.1.0" } }, "sha512-p2snDhiLaXe6dahss1LddxqEm+SkuDvV8dnIQG0MWjyHpcMNfXKPE+/Cc0y+PhxJX3A4xGNeFCj5oc0BUh6deg=="],
 
@@ -2458,6 +2458,10 @@
 
     "@m1212e/oidc/typebox": ["typebox@1.4.3", "", {}, "sha512-u3nyf7ZciAv1GOijVpI0TDt9At5wmEi7lSHSlRrnjuThv1DcB7fgGBqqrz+fGZ54jAfTpOOX0JXwxSIg3pnxQA=="],
 
+    "@m1212e/rumble/@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.44.0", "", {}, "sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ=="],
+
+    "@m1212e/rumble/@pothos/plugin-validation": ["@pothos/plugin-validation@4.3.5", "", { "peerDependencies": { "@pothos/core": "*", "graphql": "^16.10.0 || ^17.0.0" } }, "sha512-gBeHwCrmFWMvlcmlcwCzzU2RKEEAWi0aGTVTCzWQ7MCFZ5KvRGdpeynikf5d0H4pDbb40EIseHK+nM/zUHEZdg=="],
+
     "@redocly/ajv/json-schema-traverse": ["json-schema-traverse@1.0.0", "", {}, "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug=="],
 
     "@redocly/openapi-core/colorette": ["colorette@1.4.0", "", {}, "sha512-Y2oEozpomLn7Q3HFP7dpww7AtMJplbM9lGZP6RDfHqmbeRjiwRg4n6VM6j4KLmRke85uWEI7JqF17f3pqdRA0g=="],
@@ -2551,6 +2555,8 @@
     "lib-address/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "loud-rejection/signal-exit": ["signal-exit@3.0.7", "", {}, "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ=="],
+
+    "mermaid/es-toolkit": ["es-toolkit@1.52.0", "", {}, "sha512-XTNEJQh1tY1ZJVcf6ayP/2n4ZPyaHlW2FWs7xvw5ddPuhUVjLD3olQVQS7kf58JbAB48iL0uL/jerTrjtV3lDA=="],
 
     "mermaid/marked": ["marked@16.4.2", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-TI3V8YYWvkVf3KJe1dRkpnjs68JUPyEa5vjKrp1XEEJUAOaQc+Qj+L1qWbPd0SJuAdQkFU0h73sXXqwDYxsiDA=="],
 
