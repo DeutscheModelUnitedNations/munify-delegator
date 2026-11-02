@@ -5,8 +5,9 @@
 	by the standalone committees page.
 -->
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { client } from '#lib/api/rumbleClient/client';
-	import { canEditCommittees, canEditConference } from '#lib/helpers/teamAccess';
+	import { canEditCommittees, canEditConference, canPlanSeats } from '#lib/helpers/teamAccess';
 	import { fetchTeamAccess } from '#lib/api/teamAccess';
 	import { m } from '#lib/paraglide/messages';
 	import AddAgendaItemModal from './AddAgendaItemModal.svelte';
@@ -43,6 +44,8 @@
 	const canEdit = $derived(canEditCommittees(access));
 	/** Creating and deleting committees stays with project management */
 	const canCreateAndDelete = $derived(canEditConference(access));
+	/** Seats, non-state actors and single roles live on the seat planning page */
+	const showSeatPlanningHint = $derived(canPlanSeats(access));
 
 	let addCommitteeModalOpen = $state(false);
 	let committeeToAddAgendaItem = $state<ManagedCommittee>();
@@ -53,6 +56,22 @@
 </script>
 
 <div class="flex flex-col gap-10 sm:gap-20">
+	{#if showSeatPlanningHint}
+		<div role="note" class="alert alert-info alert-soft text-sm">
+			<i class="fa-sharp-duotone fa-solid fa-table-cells"></i>
+			<span>{m.committeesSeatPlanningHint()}</span>
+			<a
+				class="btn btn-sm btn-ghost"
+				href={resolve('/(authenticated)/dashboard/[conferenceId]/team/seat-planning', {
+					conferenceId
+				})}
+			>
+				{m.seatPlanningOpen()}
+				<i class="fa-sharp-duotone fa-solid fa-arrow-right"></i>
+			</a>
+		</div>
+	{/if}
+
 	{#if canCreateAndDelete}
 		<button
 			class="btn btn-ghost border-base-content/30 text-base-content/70 w-full border-dashed"
