@@ -12,6 +12,12 @@ import { logger } from '#lib/logger';
 import { retryAtStartup } from './retryAtStartup';
 
 /**
+ * How long the session cookies live, the library's default made explicit so
+ * `sessionCookieOptions` can match it.
+ */
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+
+/**
  * Everything behind the `(authenticated)` route group, except the conference selector at
  * `/dashboard` itself: matched by prefix, so the trailing slash leaves it public. `/login` exists
  * to start the sign-in from there and send the visitor back.
@@ -67,6 +73,28 @@ function isLoopbackIssuer(issuer: string): boolean {
 }
 
 /**
+ * Whether the provider is run for development: `vite dev`, or a provider on this machine. The
+ * library then accepts it over plain HTTP and sets its cookies without `Secure`.
+ */
+function isDevelopment(): boolean {
+	return dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY);
+}
+
+/**
+ * The attributes the library sets on its session cookies, for the one place the app writes one
+ * itself: a rotated refresh token (`actorToken.ts`).
+ */
+export function sessionCookieOptions() {
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: !isDevelopment(),
+		maxAge: SESSION_MAX_AGE
+	} as const;
+}
+
+/**
  * The OIDC flow, owned by the library rather than by route loads.
  *
  * Its `handle` hook protects `authenticatedRoutes`, serves both callback routes and puts the
@@ -90,12 +118,13 @@ export const OIDC = !building
 
 function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 	return {
-		development: dev || isLoopbackIssuer(PUBLIC_OIDC_AUTHORITY),
+		development: isDevelopment(),
 		issuer: PUBLIC_OIDC_AUTHORITY,
 		clientId: PUBLIC_OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,
 		scope: OIDC_SCOPES,
 		resource: OIDC_RESOURCE,
+		sessionMaxAge: SESSION_MAX_AGE,
 		loginCallbackRoute: '/auth/login-callback',
 		logoutCallbackRoute: '/auth/logout-callback',
 		// A function rather than the list: the library would match the list against the
