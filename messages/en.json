@@ -466,6 +466,8 @@
 	"badgeDataDescription": "CSV files for the badge generator: nametags per committee and role, and placards for every seat in the committees.",
 	"badgeDataTitle": "Badge Data",
 	"badgeForPerson": "Nametag and placard",
+	"badgeFoundConfirmText": "The person gets an email that their badge was found and waits for them at participant care. It goes out again every time you confirm.",
+	"badgeFoundConfirmTitle": "Send notification?",
 	"badgeFoundNotify": "Badge found",
 	"badgeFoundNotifyHint": "Email the person that their badge waits for them at participant care",
 	"badgeFoundSent": "The person was notified.",

@@ -466,6 +466,8 @@
 	"badgeDataDescription": "CSV-Dateien für den Badge-Generator: Namensschilder pro Gremium und Rolle sowie Länderschilder für jeden Platz in den Gremien.",
 	"badgeDataTitle": "Namensschild-Daten",
 	"badgeForPerson": "Namensschild und Länderschild",
+	"badgeFoundConfirmText": "Die Person bekommt eine E-Mail, dass ihr Zugangsausweis gefunden wurde und bei der Teilnehmendenbetreuung auf sie wartet. Sie geht bei jeder Bestätigung erneut raus.",
+	"badgeFoundConfirmTitle": "Benachrichtigung senden?",
 	"badgeFoundNotify": "Ausweis gefunden",
 	"badgeFoundNotifyHint": "Der Person per E-Mail mitteilen, dass ihr Zugangsausweis bei der Teilnehmendenbetreuung auf sie wartet",
 	"badgeFoundSent": "Die Person wurde benachrichtigt.",
