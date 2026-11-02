@@ -8,6 +8,7 @@ import './calendar/calendarTrack';
 import './committee/committee';
 import './committeeAgendaItem/committeeAgendaItem';
 import './chaseLink/chaseLink';
+import './chasePresence/chasePresence';
 import './conference/conference';
 import './conferenceParticipant/conferenceParticipant';
 import './conferenceRole/conferenceRole';

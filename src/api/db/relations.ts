@@ -767,6 +767,13 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.surveyAnswer.questionId
 		})
 	},
+	chasePresence: {
+		conference: r.one.conference({
+			from: r.chasePresence.conferenceId,
+			to: r.conference.id,
+			optional: false
+		})
+	},
 	teamMember: {
 		conference: r.one.conference({
 			from: r.teamMember.conferenceId,

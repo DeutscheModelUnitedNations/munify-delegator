@@ -665,6 +665,41 @@ enum ChaseaccessEnum {
   TEAM
 }
 
+type Chasepresence {
+  """Get the conferences related to this chasePresence"""
+  conference(orderBy: ConferenceOrderInputArgument, where: ConferenceWhereInputArgument): Conference!
+  conferenceId: ID!
+  createdAt: DateTime!
+  data: JSON!
+  fetchedAt: DateTime!
+
+  """
+  The search distance of the object. If a search is provided, this field will be populated with the search distance.
+  """
+  search_distance: Float
+  updatedAt: DateTime!
+}
+
+input ChasepresenceOrderInputArgument {
+  conferenceId: SortingParameter
+  createdAt: SortingParameter
+  data: SortingParameter
+  fetchedAt: SortingParameter
+  updatedAt: SortingParameter
+}
+
+input ChasepresenceWhereInputArgument {
+  AND: [ChasepresenceWhereInputArgument!]
+  NOT: ChasepresenceWhereInputArgument
+  OR: [ChasepresenceWhereInputArgument!]
+  conference: ConferenceWhereInputArgument
+  conferenceId: IDWhereInputArgument
+  createdAt: DateTimeWhereInputArgument
+  data: JSONWhereInputArgument
+  fetchedAt: DateTimeWhereInputArgument
+  updatedAt: DateTimeWhereInputArgument
+}
+
 type Committee {
   abbreviation: String!
 
@@ -4083,6 +4118,12 @@ type Query {
   """
   canImpersonateUser(targetUserId: ID!): Boolean!
 
+  """Get a single chasePresence by ID"""
+  chasePresence(id: ID!): Chasepresence!
+
+  """List all chasePresences"""
+  chasePresences(limit: Int, offset: Int, orderBy: ChasepresenceOrderInputArgument, search: String, where: ChasepresenceWhereInputArgument): [Chasepresence!]!
+
   """
   Tells the invite form what will happen to each address before anything is sent: already on the team, already invited, a known account that would be added directly, or a new one. For whoever may invite to the conference (manageTeam).
   """
@@ -6170,6 +6211,12 @@ type Subscription {
 
   """List all calendarTracks"""
   calendarTracks(limit: Int, offset: Int, orderBy: CalendartrackOrderInputArgument, search: String, where: CalendartrackWhereInputArgument): [Calendartrack!]!
+
+  """Get a single chasePresence by ID"""
+  chasePresence(id: ID!): Chasepresence!
+
+  """List all chasePresences"""
+  chasePresences(limit: Int, offset: Int, orderBy: ChasepresenceOrderInputArgument, search: String, where: ChasepresenceWhereInputArgument): [Chasepresence!]!
 
   """Get a single committee by ID"""
   committee(id: ID!): Committee!

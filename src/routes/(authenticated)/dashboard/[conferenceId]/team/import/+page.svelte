@@ -20,7 +20,11 @@
 		type ScoredDelegate,
 		type ScoredNsa
 	} from './presenceImport';
-	import type { ChasePresenceRepresentation } from '#lib/schemata/chasePresence';
+	import {
+		chasePresenceSchema,
+		type ChasePresenceRepresentation
+	} from '#lib/schemata/chasePresence';
+	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -39,7 +43,29 @@
 	let nsaMinCheckIns = $state(3);
 
 	let parsed = $derived(fileInput === undefined ? undefined : parsePresenceExport(fileInput));
-	let participants = $derived(parsed?.ok ? parsed.data.participants : undefined);
+
+	// While linked, CHASE's records arrive on their own (`docs/plans/chase-link.md`); a file
+	// uploaded below still wins, for a conference that ran on another CHASE
+	const chaseLink = $derived(await fetchActiveChaseLink());
+	const linkedRows = $derived(
+		chaseLink
+			? await client.liveQuery.chasePresences({
+					__args: { where: { conferenceId: { eq: conferenceId } } },
+					data: true,
+					fetchedAt: true
+				})
+			: []
+	);
+	const linkedRow = $derived(linkedRows.at(0));
+	const fromChase = $derived(linkedRow ? chasePresenceSchema.safeParse(linkedRow.data) : undefined);
+
+	let participants = $derived(
+		parsed?.ok
+			? parsed.data.participants
+			: fromChase?.success
+				? fromChase.data.participants
+				: undefined
+	);
 
 	let delegates = $derived(
 		participants && scoreDelegates({ participants, thresholdPercent: delegateThreshold })
@@ -142,17 +168,32 @@
 		<p>{@html m.importDescription()}</p>
 	</div>
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
-		<input
-			class="file-input mt-4 w-full"
-			type="file"
-			accept=".json"
-			onchange={(e) => setFileInput(e)}
-		/>
-		{#if parsed && !parsed.ok}
-			<div class="alert alert-error mt-4">
-				<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
-				<span>{m.importPresenceInvalidFile()}</span>
+		{#if chaseLink}
+			<div class="alert {parsed?.ok ? 'alert-warning' : 'alert-info'} mt-4">
+				<i class="fa-sharp-duotone fa-solid fa-link"></i>
+				<span>
+					{#if parsed?.ok}
+						{m.importPresenceFileInsteadOfChase()}
+					{:else if linkedRow}
+						{m.importPresenceFromChase({
+							time: linkedRow.fetchedAt.toLocaleString(getLocale(), {
+								dateStyle: 'medium',
+								timeStyle: 'short'
+							})
+						})}
+					{:else}
+						{m.importPresenceFromChaseNothingYet()}
+					{/if}
+				</span>
 			</div>
+		{/if}
+		{#if chaseLink}
+			<details class="mt-4">
+				<summary class="cursor-pointer">{m.importPresenceFromFile()}</summary>
+				{@render fileInputField()}
+			</details>
+		{:else}
+			{@render fileInputField()}
 		{/if}
 	</Section>
 
@@ -233,6 +274,21 @@
 		{@render saveIcon()}
 		{m.save()}
 	</button>
+{/snippet}
+
+{#snippet fileInputField()}
+	<input
+		class="file-input mt-4 w-full"
+		type="file"
+		accept=".json"
+		onchange={(e) => setFileInput(e)}
+	/>
+	{#if parsed && !parsed.ok}
+		<div class="alert alert-error mt-4">
+			<i class="fa-sharp-duotone fa-solid fa-triangle-exclamation"></i>
+			<span>{m.importPresenceInvalidFile()}</span>
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet saveIcon()}

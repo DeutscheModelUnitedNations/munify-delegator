@@ -5,6 +5,7 @@ import { instanceLinkPubsub } from '#api/pubsub';
 import { logger } from '#lib/logger';
 import { m } from '#lib/paraglide/messages';
 import { createChaseClient } from './chaseRemote';
+import { startLinkWorker, stopLinkWorker } from './linkWorker';
 import {
 	hashLinkToken,
 	makeConfirmationCode,
@@ -96,6 +97,7 @@ export async function confirmChaseLink({
 		throw apiError({ code: 'CONFLICT', message: m.chaseLinkNotPending() });
 	}
 	instanceLinkPubsub.updated(linkId);
+	startLinkWorker();
 }
 
 /**
@@ -116,6 +118,7 @@ export async function freezeChaseLink({ notifyRemote }: { notifyRemote: boolean 
 			.finally(() => remote.dispose());
 	}
 
+	stopLinkWorker();
 	if (link.status === 'PENDING') {
 		await db.delete(schema.instanceLink).where(eq(schema.instanceLink.id, link.id));
 		instanceLinkPubsub.removed();
