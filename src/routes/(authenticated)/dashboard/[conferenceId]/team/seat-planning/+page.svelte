@@ -63,6 +63,7 @@
 				description: true,
 				fontAwesomeIcon: true,
 				seatAmount: true,
+				chaseAccess: true,
 				assignedSingleParticipants: { id: true }
 			}),
 			client.liveQuery.seatPlanningAssignments({

@@ -2705,6 +2705,7 @@ export type Mutation = {
     plansOwnAttendenceAtConference: Boolean
   }) => Conferencesupervisor,
   updateCustomRole: (p: {
+    chaseAccess?: ChaseaccessEnum | null | undefined,
     description?: String | null | undefined,
     fontAwesomeIcon?: String | null | undefined,
     id: ID,

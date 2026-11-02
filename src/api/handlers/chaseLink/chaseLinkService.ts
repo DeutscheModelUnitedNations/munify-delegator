@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { db, schema } from '#api/db/db';
 import { and, eq } from 'drizzle-orm';
 import { apiError } from '#api/services/errors';
@@ -19,22 +18,6 @@ import {
  * CHASE will call it with, a CHASE admin approves, and CHASE confirms with its own token. Only one
  * link at a time; a frozen one is replaced by the next request.
  */
-
-const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
-
-/** A CHASE instance's origin: https, or http on this machine (development). */
-export const chaseUrlSchema = z
-	.url({ error: () => m.chaseLinkUrlInvalid() })
-	.refine(
-		(value) => {
-			const url = new URL(value);
-			return (
-				url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.includes(url.hostname))
-			);
-		},
-		{ error: () => m.chaseLinkUrlInvalid() }
-	)
-	.transform((value) => new URL(value).origin);
 
 export async function requestChaseLink({
 	chaseUrl,

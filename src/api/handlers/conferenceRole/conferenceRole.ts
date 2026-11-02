@@ -1,5 +1,5 @@
 import { db } from '#api/db/db';
-import { object, query, schemaBuilder, type ApiContext } from '#api/rumble';
+import { enum_, object, query, schemaBuilder, type ApiContext } from '#api/rumble';
 import { seatCountSchema } from '#api/handlers/seatPlanning/seatRules';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import {
@@ -27,6 +27,9 @@ const readableRole = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 	(await ctx.abilities.conferenceRole.filter('read')).merge({ where: { id } }).query.single;
 
 const iconDescription = 'A FontAwesome icon name; empty or left out shows none.';
+
+/** What a custom role's people are in a linked CHASE (`docs/plans/chase-link.md`). */
+const chaseAccessEnum = enum_({ tsName: 'chaseAccess' });
 
 schemaBuilder.mutationFields((t) => {
 	/** What every role the seat planning creates names: its conference, name, icon and seats. */
@@ -111,14 +114,15 @@ schemaBuilder.mutationFields((t) => {
 
 		updateCustomRole: t.drizzleField({
 			description:
-				'Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has.',
+				'Changes the given fields of a custom role; left out keeps a field, `null` clears the description or icon, an empty name keeps the old one. Seats below the people already holding it are refused with CONFLICT, as is a name another role of the conference has. `chaseAccess` is what its people are in a linked CHASE.',
 			type: ConferenceRoleRef,
 			args: {
 				id: t.arg.id({ required: true }),
 				name: t.arg.string(),
 				description: t.arg.string(),
 				fontAwesomeIcon: t.arg.string(),
-				seatAmount: t.arg.int().validate(customRoleSeatsSchema.nullish())
+				seatAmount: t.arg.int().validate(customRoleSeatsSchema.nullish()),
+				chaseAccess: t.arg({ type: chaseAccessEnum })
 			},
 			resolve: async (query, _root, { id, ...data }, ctx) => {
 				const before = await assertCanUpdateConferenceRole({ ctx, id, kind: 'CUSTOM' });
@@ -128,7 +132,8 @@ schemaBuilder.mutationFields((t) => {
 						name: data.name || undefined,
 						description: data.description,
 						fontAwesomeIcon: data.fontAwesomeIcon,
-						seatAmount: data.seatAmount ?? undefined
+						seatAmount: data.seatAmount ?? undefined,
+						chaseAccess: data.chaseAccess ?? undefined
 					}
 				});
 

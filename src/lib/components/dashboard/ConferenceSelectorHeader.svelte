@@ -18,13 +18,16 @@
 			<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
 		</div>
 		{#if isAdmin}
-			<a
-				class="btn btn-primary sm:btn-lg max-sm:w-full shrink-0 gap-2"
-				href={resolve('dashboard/create')}
-			>
-				<i class="fa-sharp-duotone fa-solid fa-plus sm:text-2xl"></i>
-				{m.seedConference()}
-			</a>
+			<div class="flex shrink-0 flex-col gap-2 max-sm:w-full sm:flex-row">
+				<a class="btn btn-ghost sm:btn-lg gap-2" href={resolve('dashboard/chase-link')}>
+					<i class="fa-sharp-duotone fa-solid fa-link sm:text-2xl"></i>
+					{m.chaseLinkTitle()}
+				</a>
+				<a class="btn btn-primary sm:btn-lg gap-2" href={resolve('dashboard/create')}>
+					<i class="fa-sharp-duotone fa-solid fa-plus sm:text-2xl"></i>
+					{m.seedConference()}
+				</a>
+			</div>
 		{/if}
 	</div>
 </header>

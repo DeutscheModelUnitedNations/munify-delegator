@@ -7,12 +7,8 @@ import {
 	isLinkedChaseCaller,
 	registerInstanceLinkAbilities
 } from './chaseLinkPermissions';
-import {
-	chaseUrlSchema,
-	confirmChaseLink,
-	freezeChaseLink,
-	requestChaseLink
-} from './chaseLinkService';
+import { confirmChaseLink, freezeChaseLink, requestChaseLink } from './chaseLinkService';
+import { chaseUrlSchema } from '#lib/schemata/chaseLink';
 
 registerInstanceLinkAbilities();
 
