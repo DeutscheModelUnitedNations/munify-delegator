@@ -132,6 +132,7 @@
 		"numeral": "^2.0.6",
 		"oidc-mock": "^0.2.0",
 		"openapi-fetch": "^0.17.0",
+		"openid-client": "^6.8.8",
 		"openapi-typescript": "^7.13.0",
 		"pdf-lib": "^1.17.1",
 		"pdfjs-dist": "^6.4.299",
