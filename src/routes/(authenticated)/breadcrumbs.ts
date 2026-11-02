@@ -150,6 +150,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'seedling',
 		translation: () => m.seedConference()
 	},
+	'chase-link': {
+		icon: 'link',
+		translation: () => m.chaseLinkTitle()
+	},
 	committees: {
 		icon: 'podium',
 		translation: () => m.committees()

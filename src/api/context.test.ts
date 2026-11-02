@@ -2,6 +2,8 @@ import { describe, expect, test, vi } from 'vitest';
 import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 
 vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles', OIDC_ROLE_MAP: undefined }));
+// the link lookup reaches the database, which these tests never get to
+vi.mock('#api/handlers/chaseLink/linkCaller', () => ({ findLinkCaller: async () => undefined }));
 
 const { effectiveRoles, rolesOfSession, sessionClaims, sessionUser } = await import('./context');
 
