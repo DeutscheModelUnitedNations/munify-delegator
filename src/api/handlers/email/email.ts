@@ -6,12 +6,13 @@ import {
 } from './emailPermissions';
 import {
 	emailStats,
-	emailLineSchema,
 	emailParagraphsSchema,
 	emailsPerSecondSchema,
 	localeSchema,
 	notifyBadgeFound,
 	openEmailCounts,
+	optionalEmailLineSchema,
+	optionalEmailParagraphsSchema,
 	optionalLocaleSchema,
 	personEmails,
 	previewEmailFor,
@@ -150,10 +151,10 @@ schemaBuilder.queryFields((t) => ({
 			draft: t.arg.boolean({
 				description: 'Preview `subject`, `heading` and `body` instead of the stored text.'
 			}),
-			subject: t.arg.string().validate(emailLineSchema),
-			heading: t.arg.string().validate(emailLineSchema),
-			body: t.arg.string().validate(emailParagraphsSchema),
-			footer: t.arg.string()
+			subject: t.arg.string().validate(optionalEmailLineSchema),
+			heading: t.arg.string().validate(optionalEmailLineSchema),
+			body: t.arg.string().validate(optionalEmailParagraphsSchema),
+			footer: t.arg.string().validate(optionalEmailParagraphsSchema)
 		},
 		resolve: async (_root, args, ctx) => {
 			const { callerId } = await assertCanManageEmails({ ctx, conferenceId: args.conferenceId });

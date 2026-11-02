@@ -12,6 +12,8 @@ const {
 	emailLineSchema,
 	emailParagraphsSchema,
 	localeSchema,
+	optionalEmailLineSchema,
+	optionalEmailParagraphsSchema,
 	optionalLocaleSchema,
 	switchableKindSchema
 } = await import('./emailService');
@@ -33,6 +35,16 @@ describe('the email argument schemas', () => {
 		expect(emailLineSchema.safeParse('x'.repeat(201)).success).toBe(false);
 		expect(emailParagraphsSchema.safeParse('x'.repeat(10_000)).success).toBe(true);
 		expect(emailParagraphsSchema.safeParse('x'.repeat(10_001)).success).toBe(false);
+	});
+
+	test('let a preview leave the texts out, still within bounds', () => {
+		// The footer editor previews without subject, heading or body.
+		for (const schema of [optionalEmailLineSchema, optionalEmailParagraphsSchema]) {
+			expect(schema.safeParse(undefined).success).toBe(true);
+			expect(schema.safeParse(null).success).toBe(true);
+		}
+		expect(optionalEmailLineSchema.safeParse('x'.repeat(201)).success).toBe(false);
+		expect(optionalEmailParagraphsSchema.safeParse('x'.repeat(10_001)).success).toBe(false);
 	});
 
 	test('refuse switching a kind that is always sent', () => {

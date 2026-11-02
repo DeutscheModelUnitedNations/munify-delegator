@@ -50,6 +50,13 @@ export const emailLineSchema = emailTextSchema(200);
 /** A mail's body or footer: a few paragraphs, generously. */
 export const emailParagraphsSchema = emailTextSchema(10_000);
 
+/**
+ * The same bounds for an optional argument: the validation plugin runs an argument's schema
+ * even when the argument is left out, so the bare ones refuse `undefined`.
+ */
+export const optionalEmailLineSchema = emailLineSchema.nullish();
+export const optionalEmailParagraphsSchema = emailParagraphsSchema.nullish();
+
 /** A language the app speaks, or none (empty or left out). */
 export const optionalLocaleSchema = z
 	.union([z.literal('').transform(() => undefined), localeSchema])
