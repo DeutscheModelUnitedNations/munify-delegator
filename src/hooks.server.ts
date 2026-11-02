@@ -1,21 +1,13 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
 import { graphqlLogger, logger } from '#lib/logger';
-import {
-	sequence,
-	type Handle,
-	type HandleServerError,
-	type ServerInit
-} from '@sveltejs/kit/hooks';
+import { sequence, type Handle, type HandleServerError } from '@sveltejs/kit/hooks';
 
 import { oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
 import { paraglideMiddleware } from '#lib/paraglide/server';
 import { impersonationHandle } from '#api/handlers/user/userPermissions';
 import { localeOfRequest, runWithLocale } from '#api/services/requestLocale';
 import { building } from '$app/env';
-import { db } from '#api/db/db';
-import { uploadLegacyFiles } from '#api/handlers/storedFile/legacyFileUpload';
-import { storage } from '#api/handlers/storedFile/storedFileService';
 import { NODE_ENV, SENTRY_DSN, SENTRY_SEND_DEFAULT_PII } from '$app/env/private';
 import {
 	PUBLIC_FONTAWESOME_CSS_URL,
@@ -34,16 +26,6 @@ if (!building && SENTRY_DSN) {
 	});
 	Sentry.pinoIntegration.untrackLogger(graphqlLogger);
 }
-
-// Awaited before the first request: files moved off the Prisma app's data URLs must be in the
-// bucket before anyone is handed their URLs. A failure stops the start, and the next one resumes.
-// TODO: remove this hook, `legacyFileUpload.ts` and the export of `storage()` once production has
-// started on the drizzle schema and `legacy_file_upload` is gone (and "Files from before the
-// bucket" in CLAUDE.md).
-export const init: ServerInit = async () => {
-	if (building) return;
-	await uploadLegacyFiles({ db, storage: storage() });
-};
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>

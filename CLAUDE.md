@@ -579,11 +579,6 @@ bun run preview
     and PUT from the app's origin), and an image drawn onto a canvas is loaded with
     `crossOrigin = 'anonymous'`. The resolution header's emblem is still embedded as a data URL
     (`fetchFileAsDataURL`, `paperhub/conferenceHeaderInfo.ts`) for the editor and `/api/pdf`.
-  - **Files from before the bucket** (the Prisma app's data URLs) were turned into `stored_file`
-    rows by the `stored_files` migration, their bytes parked in `legacy_file_upload` (outside the
-    drizzle schema). The server's `init` hook (`uploadLegacyFiles`,
-    `#api/handlers/storedFile/legacyFileUpload`) puts them into the bucket before the first request
-    and drops that table; afterwards it costs one query per start.
   - **Cleanup is garbage collection:** no mutation or cascade deletes a file, and a file names no
     conference. The `file-cleanup` job collects every `stored_file` nothing points at, found
     through the schema's foreign keys to it (`fileReferenceColumns`), so **a file id kept in
