@@ -1180,7 +1180,7 @@ Required variables (see `.env.example`):
   it); `S3_PUBLIC_ENDPOINT` when browsers reach it under another URL, `S3_REGION` (us-east-1)
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
 - `LOG_LEVEL` (optional): `debug` / `info` / `warn` / `error` / `silent`; defaults to `debug` in
-  development, `warn` otherwise (the e2e server too), `silent` under vitest
+  development, `warn` otherwise (the e2e server too), `info` for the jobs (`runJob`), `silent` under vitest
 
 ## Common Workflows
 

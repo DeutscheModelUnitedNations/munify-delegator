@@ -8,7 +8,8 @@ import pino from 'pino';
  *
  * Reads `process.env` directly: the jobs and the seed run outside SvelteKit, and the browser has
  * no `process` at all. `LOG_LEVEL` overrides the level, which is debug in development, silent under
- * vitest and warn otherwise, so production keeps out rumble's line per operation.
+ * vitest and warn otherwise, so production keeps out rumble's line per operation. The jobs log at
+ * info (`runJob`, `src/jobs/logs.ts`).
  */
 const env = typeof process === 'undefined' ? {} : process.env;
 const isDev = env.NODE_ENV === 'development';
@@ -129,6 +130,13 @@ function makeLevelLoggers(instance: pino.Logger) {
  */
 export const logger = {
 	...makeLevelLoggers(pinoLogger),
+	/**
+	 * Changes the level of every line from now on (children created before keep theirs). For a
+	 * default of its own, such as the jobs' `info`; `LOG_LEVEL` is still the operator's to set.
+	 */
+	setLevel: (level: Level | 'silent') => {
+		pinoLogger.level = level;
+	},
 	/** A logger with fields bound to every line (a job's name, a conference id). */
 	child: (bindings: Record<string, unknown>) => makeLevelLoggers(pinoLogger.child(bindings))
 };
