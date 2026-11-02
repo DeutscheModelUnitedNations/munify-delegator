@@ -3,7 +3,7 @@ import type { LayoutLoad } from './$types';
 import { m } from '#lib/paraglide/messages';
 import { fetchTeamAccess } from '#lib/api/teamAccess';
 import { isOnTeam } from '#lib/helpers/teamAccess';
-import { mayOpenTeamRoute, teamRouteForPath } from '#lib/data/teamRoutes';
+import { mayOpenTeamRoute, teamRelativePath, teamRouteForPath } from '#lib/data/teamRoutes';
 
 /**
  * The one guard of the team area. Holding a privileged role in another conference grants nothing
@@ -15,7 +15,6 @@ export const load: LayoutLoad = async (event) => {
 	const access = await fetchTeamAccess(conferenceId);
 	if (!isOnTeam(access)) error(403, m.noAccess());
 
-	const relativePath = event.url.pathname.replace(`/dashboard/${conferenceId}/`, '');
-	const route = teamRouteForPath(relativePath);
+	const route = teamRouteForPath(teamRelativePath({ pathname: event.url.pathname, conferenceId }));
 	if (route && !mayOpenTeamRoute({ route, access })) error(403, m.noAccess());
 };

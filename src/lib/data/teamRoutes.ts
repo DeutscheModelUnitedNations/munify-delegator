@@ -1,5 +1,6 @@
 import { m } from '#lib/paraglide/messages';
 import type { TeamroleEnum } from '#lib/api/rumbleClient/client';
+import type { SkeletonShape } from '#lib/components/navigation/skeletonShapes';
 import { hasAnyRole, isOnTeam, type TeamAccess } from '#lib/helpers/teamAccess';
 import {
 	CONFERENCE_CONTENT_ROLES,
@@ -47,6 +48,8 @@ export interface TeamRoute {
 	roles?: readonly TeamroleEnum[];
 	/** Needs more than roles, such as the paper hub, which participants use too */
 	extraAccess?: (access: TeamAccess & { canSeePaperHub?: boolean }) => boolean;
+	/** The rough layout of the page, for the skeleton shown while it loads. Absent: `page`. */
+	skeleton?: SkeletonShape;
 }
 
 const teamPath = (page: string) => `team/${page}`;
@@ -54,6 +57,7 @@ const teamPath = (page: string) => `team/${page}`;
 export const teamRoutes: readonly TeamRoute[] = [
 	{
 		id: 'stats',
+		skeleton: 'dashboard',
 		path: teamPath('stats'),
 		title: () => m.adminStats(),
 		icon: 'fa-chart-pie',
@@ -63,6 +67,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'settings',
+		skeleton: 'form',
 		path: teamPath('configuration'),
 		title: () => m.settings(),
 		description: () => m.manageConference(),
@@ -91,6 +96,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'seats',
+		skeleton: 'cards',
 		path: teamPath('seats'),
 		title: () => m.seats(),
 		icon: 'fa-chair-office',
@@ -101,6 +107,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'participants',
+		skeleton: 'table',
 		path: teamPath('participants'),
 		owns: [teamPath('user')],
 		title: () => m.adminUsers(),
@@ -112,6 +119,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'waitingList',
+		skeleton: 'table',
 		path: teamPath('waiting-list'),
 		title: () => m.waitingList(),
 		icon: 'fa-user-clock',
@@ -122,6 +130,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'schools',
+		skeleton: 'table',
 		path: teamPath('schools'),
 		title: () => m.schools(),
 		icon: 'fa-school',
@@ -132,6 +141,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'members',
+		skeleton: 'table',
 		path: teamPath('members'),
 		owns: [teamPath('invitations')],
 		title: () => m.teamManagement(),
@@ -146,6 +156,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 		// The paper hub is shared with participants and supervisors, so it stays at its own path
 		// and has its own rule on top of the team roles.
 		id: 'paperHub',
+		skeleton: 'cards',
 		path: 'paperhub',
 		title: () => m.paperHub(),
 		description: () => m.reviewPapers(),
@@ -157,6 +168,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'seatPlanning',
+		skeleton: 'table',
 		path: teamPath('seat-planning'),
 		title: () => m.seatPlanning(),
 		description: () => m.seatPlanningDescription(),
@@ -168,6 +180,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'assignment',
+		skeleton: 'cards',
 		// The assignment has no page of its own; the sighting is where the work starts.
 		path: teamPath('assignment/sighting'),
 		owns: [teamPath('assignment')],
@@ -180,6 +193,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'checkIn',
+		skeleton: 'cards',
 		path: teamPath('check-in'),
 		title: () => m.onSiteCheckIn(),
 		icon: 'fa-id-badge',
@@ -210,6 +224,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'attendance',
+		skeleton: 'table',
 		path: teamPath('attendance'),
 		title: () => m.attendanceScanner(),
 		description: () => m.attendanceScannerDescription(),
@@ -243,6 +258,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'calendar',
+		skeleton: 'cards',
 		path: teamPath('calendar'),
 		title: () => m.calendar(),
 		icon: 'fa-calendar-days',
@@ -253,6 +269,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'survey',
+		skeleton: 'cards',
 		path: teamPath('survey'),
 		title: () => m.survey(),
 		icon: 'fa-chart-pie',
@@ -263,6 +280,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'plausibility',
+		skeleton: 'table',
 		path: teamPath('plausibility'),
 		title: () => m.adminPlausibility(),
 		icon: 'fa-shield-check',
@@ -273,6 +291,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'cleanup',
+		skeleton: 'cards',
 		path: teamPath('cleanup'),
 		title: () => m.cleanup(),
 		icon: 'fa-broom',
@@ -293,6 +312,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'import',
+		skeleton: 'form',
 		path: teamPath('import'),
 		title: () => m.import(),
 		icon: 'fa-file-import',
@@ -303,6 +323,7 @@ export const teamRoutes: readonly TeamRoute[] = [
 	},
 	{
 		id: 'downloads',
+		skeleton: 'cards',
 		path: teamPath('downloads'),
 		title: () => m.downloads(),
 		icon: 'fa-download',
@@ -347,6 +368,27 @@ export function groupedTeamRoutes(
 		group,
 		routes: visible.filter((route) => route.group === group)
 	})).filter((section) => section.routes.length > 0);
+}
+
+/**
+ * A URL's path relative to the conference's dashboard: `team/stats` for
+ * `/dashboard/<id>/team/stats`, and for `/en/dashboard/<id>/team/stats` too - Paraglide keeps the
+ * locale prefix on `page.url`, which a plain `replace` of the dashboard prefix left in front.
+ * An empty string for the dashboard itself, and for a path of another conference.
+ */
+export function teamRelativePath({
+	pathname,
+	conferenceId
+}: {
+	pathname: string;
+	conferenceId: string;
+}): string {
+	const base = `/dashboard/${conferenceId}`;
+	const start = pathname.indexOf(base);
+	if (start === -1) return '';
+	const rest = pathname.slice(start + base.length);
+	if (rest !== '' && !rest.startsWith('/')) return '';
+	return rest.replace(/^\/+|\/+$/g, '');
 }
 
 /**

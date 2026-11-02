@@ -6,6 +6,7 @@
 	import NavMenuButton from '#lib/components/navMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '#lib/components/navMenu/NavMenuDetails.svelte';
 	import {
+		teamRelativePath,
 		teamRouteForPath,
 		teamRouteGroupTitle,
 		type groupedTeamRoutes,
@@ -20,8 +21,9 @@
 		sections
 	}: { conferenceId: string; sections: ReturnType<typeof groupedTeamRoutes> } = $props();
 
-	const base = $derived(`/dashboard/${conferenceId}/`);
-	const openRoute = $derived(teamRouteForPath(page.url.pathname.replace(base, '')));
+	const openRoute = $derived(
+		teamRouteForPath(teamRelativePath({ pathname: page.url.pathname, conferenceId }))
+	);
 
 	const groupIcon = {
 		main: 'fa-house',

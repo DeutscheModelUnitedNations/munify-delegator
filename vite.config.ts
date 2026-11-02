@@ -48,6 +48,22 @@ function rebuildRumbleOnSchemaChange(): Plugin {
 	};
 }
 
+/**
+ * Tests that mount a component into the document (`PageBoundary.dom.svelte.test.ts`); they run
+ * with the browser build of Svelte. The `.svelte.test.ts` suffix alone keeps a runes test in the
+ * unit project, where `browser` is false and the server build answers.
+ */
+const MOUNTED_COMPONENT_TESTS = 'src/**/*.dom.svelte.{test,spec}.?(c|m)[jt]s?(x)';
+
+const unitTestOptions = {
+	environment: 'jsdom',
+	// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
+	// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
+	include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+	// vitest blanks CSS, `?raw` imports included; the mails read their colours from the CI's
+	css: { include: [/corporate-identity\/dist\/.*\.css/] }
+};
+
 export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
@@ -108,12 +124,20 @@ export default defineConfig({
 		sourcemap: true // Required for Bugsink error tracking
 	},
 	test: {
-		environment: 'jsdom',
-		// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
-		// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
-		include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
-		// vitest blanks CSS, `?raw` imports included; the mails read their colours from the CI's
-		css: { include: [/corporate-identity\/dist\/.*\.css/] },
+		// Two projects over the same sources: tests of components that are mounted into a document
+		// (`*.dom.svelte.test.ts`) resolve Svelte's browser build - its server build has no `mount` -
+		// and `$app/env`'s `browser` is true there; everything else runs as before.
+		projects: [
+			{
+				extends: true,
+				test: { name: 'unit', ...unitTestOptions, exclude: [MOUNTED_COMPONENT_TESTS] }
+			},
+			{
+				extends: true,
+				resolve: { conditions: ['browser'] },
+				test: { name: 'client', ...unitTestOptions, include: [MOUNTED_COMPONENT_TESTS] }
+			}
+		],
 		coverage: {
 			provider: 'v8',
 			// Its own directory: vitest empties it on every run, and coverage/ also holds the e2e

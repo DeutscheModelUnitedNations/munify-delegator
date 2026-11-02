@@ -3,6 +3,7 @@
 	import { PUBLIC_MAINTENANCE_WINDOW_END, PUBLIC_MAINTENANCE_WINDOW_START } from '$app/env/public';
 	import { m } from '#lib/paraglide/messages';
 	import { maintenanceStatus } from './maintenanceWindow';
+	import { slide } from 'svelte/transition';
 
 	let start: Date | undefined = PUBLIC_MAINTENANCE_WINDOW_START
 		? new Date(PUBLIC_MAINTENANCE_WINDOW_START)
@@ -27,7 +28,7 @@
 </script>
 
 {#if visible}
-	<div class="bg-base-100 p-4 pb-0">
+	<div class="bg-base-100 p-4 pb-0" transition:slide={{ duration: 250 }}>
 		<div
 			class="alert shadow-lg {isUpcoming
 				? 'alert-info'

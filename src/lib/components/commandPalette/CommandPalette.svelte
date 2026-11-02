@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { goto } from '$app/navigation';
 	import { m } from '#lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
@@ -314,6 +316,7 @@
 		class="fixed inset-0 z-50 flex justify-center bg-black/40 max-sm:px-2"
 		onkeydown={handleKeydown}
 		onclick={() => closeCommandPalette()}
+		transition:fade={{ duration: 120 }}
 	>
 		<!-- Panel -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -321,6 +324,7 @@
 		<div
 			class="border-base-300 bg-base-100 rounded-box mt-4 h-fit w-full max-w-xl border shadow-2xl sm:mt-[15vh]"
 			onclick={(e) => e.stopPropagation()}
+			transition:fly={{ y: -12, duration: 150, easing: cubicOut }}
 		>
 			<!-- Search input -->
 			<div class="border-base-300 flex items-center gap-3 border-b px-4 py-3">

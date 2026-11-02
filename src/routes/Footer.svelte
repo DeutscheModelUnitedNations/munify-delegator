@@ -7,7 +7,7 @@
 	import { resolve } from '$app/paths';
 </script>
 
-<div class="w-full p-4 print:hidden">
+<div class="w-full p-4 print:hidden" style:view-transition-name="app-footer">
 	<footer
 		class="footer footer-center footer-horizontal bg-base-100 text-base-content rounded-box mt-3 flex flex-col p-10"
 	>

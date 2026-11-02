@@ -1378,9 +1378,95 @@ For card-based layouts:
 
 ---
 
+## Navigation
+
+Client-side navigations are instant: the next page's skeleton shows at once, the pages cross-fade,
+and a bar along the top edge reports a navigation that is still loading. Everything lives in
+`src/lib/components/navigation/` and `#lib/helpers/`.
+
+### PageBoundary
+
+`src/lib/components/navigation/PageBoundary.svelte`
+
+A layout wraps the pages it renders in it. It is a `<svelte:boundary>` whose `pending` snippet is a
+`PageSkeleton`, re-created for every `key` (the pathname), which is what makes the skeleton show on
+every navigation: a boundary that has settled never shows `pending` again. The snippet is only
+passed in the browser, so a full page load is still server-rendered with its content.
+
+```svelte
+<script lang="ts">
+	import { page } from '$app/state';
+	import PageBoundary from '#lib/components/navigation/PageBoundary.svelte';
+	import { boundaryKey } from '#lib/helpers/boundaryKey';
+
+	const pathname = $derived(page.url.pathname);
+	// pages inside `team/assignment` share one key: that layout has a PageBoundary of its own
+	const pageKey = $derived(boundaryKey({ pathname, frames: ['team/assignment'] }));
+</script>
+
+<PageBoundary key={pageKey} shape="table">
+	{@render children()}
+</PageBoundary>
+```
+
+| Prop    | Type            | Description                                                  |
+| ------- | --------------- | ------------------------------------------------------------ |
+| `key`   | `string`        | A new value creates a new boundary, which shows the skeleton |
+| `shape` | `SkeletonShape` | `page` (default), `table`, `cards`, `form`, `dashboard`      |
+
+Where it sits: the team shell (`team/TeamShell.svelte`, shape from the route registry's
+`skeleton`), the assignment layout (below its tabs), and `dashboard/+layout.svelte` (every
+dashboard page but the paper hub's, whose shell shows it). A layout that keeps state across its
+pages must not sit inside a boundary keyed by the pathname: name it as a frame in `boundaryKey`
+and give it a `PageBoundary` of its own.
+
+### PageSkeleton
+
+`src/lib/components/navigation/PageSkeleton.svelte` - grey blocks in the rough layout of the page
+(`shape`), `role="status"` and `aria-busy`. It stays invisible for its first 120 ms (`.page-skeleton`
+in `app.css`), so cached data that resolves at once never flashes it. A new team page picks its
+shape in `#lib/data/teamRoutes.ts` (`skeleton`); absent means `page`.
+
+### NavigationProgress
+
+`src/lib/components/navigation/NavigationProgress.svelte`, mounted once in the root layout. Shows a
+thin `bg-primary` bar along the top edge while `navigating.to` is set - the route guard, the page's
+code and its first render - after a 200 ms delay, so a navigation that finishes at once shows
+nothing.
+
+### View transitions
+
+`enableViewTransitionApi()` (`#lib/helpers/viewTransitionApi.svelte`, after chase) runs in the root
+layout and turns every non-shallow navigation into a `document.startViewTransition`. `app.css` sets
+the animation: the old page fades out, the new one rises in; `prefers-reduced-motion` switches it
+off. Parts that are the same on both pages carry a `view-transition-name` so they stay put instead
+of cross-fading with the content: `app-header` (`AuthenticatedHeader`), `team-nav`
+(`SideNavigationDrawer`), `app-footer` (`Footer`). The active `NavMenuButton` is `nav-active`, so
+the highlight glides from the old entry to the new one. A name must be unique on the page while a
+transition runs, or the browser skips the transition. To morph an element across pages the way
+chase does with committee titles, give it the same name on both (`view-transition-name: thing-{id}`).
+
+### Code preloading
+
+`<body data-sveltekit-preload-data="hover">` (app.html) preloads a link's route guard and code on
+hover. The team side navigation adds `data-sveltekit-preload-code="viewport"`, so the code of
+every entry on screen is fetched ahead and opening one waits for its data at most.
+
+### Svelte transitions
+
+Overlays animate in and out through Svelte transitions, never through CSS classes toggled on mount
+(daisyUI's `.modal` transition never runs on an element that is created open): `Modal` and
+`DialogHost` fade with the box scaling from 96 %, `Drawer` and `SlidePanel` fly in from the edge,
+the command palette drops in, `MaintenanceBanner` slides. Use `transition:slide` for a block that
+appears inside a page (the seats page's assign banner, collapsibles) and `transition:fade` for an
+overlay (the statistics' refetch overlay); keep durations at 150-300 ms and respect what is there.
+
 ## Common Patterns
 
 ### Loading States
+
+For a whole page, see "Navigation" above: the layout's `PageBoundary` shows the skeleton. Inside a
+page, a part that loads on its own wraps itself in a `<svelte:boundary>` with a `pending` snippet.
 
 ```svelte
 <!-- Spinner -->
