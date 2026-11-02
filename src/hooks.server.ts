@@ -1,7 +1,12 @@
 import * as Sentry from '@sentry/sveltekit';
 import { sentryDataCollection } from '#lib/sentryDataCollection';
-import { graphqlLogger } from '#lib/logger';
-import { sequence, type Handle, type ServerInit } from '@sveltejs/kit/hooks';
+import { graphqlLogger, logger } from '#lib/logger';
+import {
+	sequence,
+	type Handle,
+	type HandleServerError,
+	type ServerInit
+} from '@sveltejs/kit/hooks';
 
 import { oidcHandle, userInfoHandle } from '#api/services/oidc/OIDC';
 import { paraglideMiddleware } from '#lib/paraglide/server';
@@ -63,7 +68,20 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 			: render();
 	});
 
-export const handleError = Sentry.handleErrorWithSentry();
+/**
+ * An error the app's own code threw while answering a request (a hook, a load, an endpoint) as one
+ * log line, which `pinoIntegration` makes the Sentry issue. Sentry's own `handleErrorWithSentry`
+ * would capture it as well and print it through `console.error`, outside the JSON log. Errors
+ * thrown with `error(...)`, SvelteKit's 404s and validation failures are expected and stay out.
+ */
+export const handleError: HandleServerError = ({ error, event, kind }) => {
+	if (kind !== 'unknown') return;
+	logger.error('Request failed', {
+		err: error,
+		method: event.request.method,
+		route: event.route.id ?? undefined
+	});
+};
 export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
 	// Protects the authenticated routes, serves both callback routes and puts the validated session
