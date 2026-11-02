@@ -649,7 +649,9 @@ bun run preview
   only an opaque token with the `openid` scope as the actor's, and with `OIDC_RESOURCE` the
   session's access token is a JWT for that resource, so `actorAccessTokenOf`
   (`#api/services/oidc/actorToken.ts`) trades the session's refresh token for a token set without
-  a resource first, keeping a rotated refresh token in the session cookie. The library
+  a resource first, keeping a rotated refresh token in the session cookie. That refresh token
+  exists only because the sign-in sends `prompt: 'consent'` (`OIDC.ts`): Logto ignores
+  `offline_access` without it (OIDC Core §11). The library
   accepts it only as long as its actor is the signed-in session, never refreshes it, and drops it
   on sign out. Who may act as whom is `impersonatableBy` (`userPermissions.ts`): admins anybody but
   themselves, participant care and project management the participants of their conferences, never

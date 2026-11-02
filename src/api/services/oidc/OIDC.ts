@@ -123,6 +123,9 @@ function oidcOptions(): Parameters<typeof makeOIDC>[0] {
 		clientId: PUBLIC_OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,
 		scope: OIDC_SCOPES,
+		// Logto issues a refresh token for `offline_access` only with this (OIDC Core §11); without
+		// one, sessions cannot refresh and impersonation has no actor token (`actorToken.ts`)
+		prompt: 'consent',
 		resource: OIDC_RESOURCE,
 		sessionMaxAge: SESSION_MAX_AGE,
 		loginCallbackRoute: '/auth/login-callback',
