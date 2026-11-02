@@ -14,8 +14,44 @@ import pino from 'pino';
 const env = typeof process === 'undefined' ? {} : process.env;
 const isDev = env.NODE_ENV === 'development';
 
+// A field as it is if it serializes, otherwise named by its type: one that throws (a circular
+// client, a getter that throws) would cost the whole line.
+function jsonSafe(value: unknown): unknown {
+	try {
+		JSON.stringify(value);
+		return value;
+	} catch {
+		const type =
+			typeof value === 'object' && value !== null ? value.constructor?.name : typeof value;
+		return `[unserializable ${type ?? 'object'}]`;
+	}
+}
+
+/**
+ * pino's error serializer, except that a field it copies from the error which does not serialize
+ * is replaced by its type. pino copies every enumerable field of an error as it is, so one holding
+ * a socket or a client used to turn the whole line into "unable to serialize", the error with it.
+ */
+export function serializeError(err: unknown): unknown {
+	if (!(err instanceof Error)) return jsonSafe(err);
+	return safeErrorFields(pino.stdSerializers.err(err));
+}
+
+function safeErrorFields(serialized: unknown): unknown {
+	if (typeof serialized !== 'object' || serialized === null) return serialized;
+	return Object.fromEntries(
+		Object.entries(serialized).map(([key, value]) => [
+			key,
+			key === 'aggregateErrors' && Array.isArray(value)
+				? value.map(safeErrorFields)
+				: jsonSafe(value)
+		])
+	);
+}
+
 const pinoLogger = pino({
 	level: env.LOG_LEVEL ?? (env.VITEST ? 'silent' : isDev ? 'debug' : 'warn'),
+	serializers: { err: serializeError },
 	// Resolved here: pino resolves a bare target from its caller's file, which Vite's module runner
 	// leaves nameless, so `'pino-pretty'` alone fails in `vite dev`.
 	transport: isDev
@@ -53,7 +89,7 @@ function toSpanAttributes(data: unknown): Attributes {
 		) {
 			attributes[key] = value;
 		} else {
-			attributes[key] = JSON.stringify(value);
+			attributes[key] = JSON.stringify(jsonSafe(value));
 		}
 	}
 	return attributes;

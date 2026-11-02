@@ -1,6 +1,43 @@
 import { describe, expect, test, vi } from 'vitest';
 import { INVALID_SPAN_CONTEXT, SpanStatusCode, trace } from '@opentelemetry/api';
-import { errorReport, forwardErrors, logger } from './logger';
+import { errorReport, forwardErrors, logger, serializeError } from './logger';
+
+describe('serializeError', () => {
+	function circular() {
+		const client: Record<string, unknown> = { host: 'smtp' };
+		client.self = client;
+		return client;
+	}
+
+	test('keeps message, stack and fields that serialize, and names the ones that do not', () => {
+		const err = Object.assign(new Error('boom'), { code: 'ESOCKET', client: circular() });
+		const serialized = serializeError(err);
+
+		expect(serialized).toMatchObject({
+			type: 'Error',
+			message: 'boom',
+			stack: err.stack,
+			code: 'ESOCKET',
+			client: '[unserializable Object]'
+		});
+		expect(() => JSON.stringify(serialized)).not.toThrow();
+	});
+
+	test('does the same for the errors of an AggregateError', () => {
+		const inner = Object.assign(new Error('inner'), { socket: circular() });
+		const serialized = serializeError(new AggregateError([inner], 'outer'));
+
+		expect(serialized).toMatchObject({
+			message: 'outer',
+			aggregateErrors: [{ message: 'inner', socket: '[unserializable Object]' }]
+		});
+		expect(() => JSON.stringify(serialized)).not.toThrow();
+	});
+
+	test('leaves what is not an error alone', () => {
+		expect(serializeError('text')).toBe('text');
+	});
+});
 
 describe('errorReport', () => {
 	test('takes the error out of the line and keeps the rest as fields', () => {
