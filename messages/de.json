@@ -118,6 +118,7 @@
 	"applicationNotCompletedDelegationText": "Die Bewerbung deiner Delegation wurde bis zum Bewerbungsschluss nicht abgeschlossen. Eure Delegation kann im Auswahlverfahren daher nicht berücksichtigt werden. Bei Fragen wende dich bitte an die Teilnehmendenbetreuung.",
 	"applicationNotCompletedSingleParticipantText": "Deine Bewerbung wurde bis zum Bewerbungsschluss nicht abgeschlossen. Du kannst im Auswahlverfahren daher nicht berücksichtigt werden. Bei Fragen wende dich bitte an die Teilnehmendenbetreuung.",
 	"applicationNotCompletedTitle": "Bewerbung nicht abgeschlossen",
+	"applicationQualityHint": "Deine Antworten fließen in das Auswahlverfahren ein. Eine sorgfältige, aussagekräftige Bewerbung erhöht deine Chancen auf einen Platz.",
 	"applicationRejected": "Bewerbung nicht erfolgreich",
 	"applicationRejectedText": "Leider konnten wir dich nicht zur Konferenz zulassen. Dafür kann es verschiedene Gründe geben: Entweder deine Bewerbung wurde gar nicht abgeschlossen, es gab zu viele Bewerbungen für die Konferenz oder es hat andere, individuelle Gründe. Bei Fragen wende dich gerne an die Teilnehmendenbetreuung.",
 	"applicationTextTooLong": "Der Text darf höchstens {max} Zeichen lang sein.",

@@ -84,7 +84,13 @@
 		last={answered < 2}
 		scrollIntoView
 	>
-		<FormTextArea {form} name="motivation" placeholder={m.answerHere()} label={motivationLabel} />
+		<FormTextArea
+			{form}
+			name="motivation"
+			placeholder={m.answerHere()}
+			label={motivationLabel}
+			description={m.applicationQualityHint()}
+		/>
 		{@render next('motivation')}
 	</FlowStep>
 {/if}
@@ -92,7 +98,13 @@
 {#if answered >= 2}
 	<FlowStep number={firstNumber + 2} title={m.experience()} last scrollIntoView>
 		<Form {form} showSubmitButton={false}>
-			<FormTextArea {form} name="experience" placeholder={m.answerHere()} label={experienceLabel} />
+			<FormTextArea
+				{form}
+				name="experience"
+				placeholder={m.answerHere()}
+				label={experienceLabel}
+				description={m.applicationQualityHint()}
+			/>
 			<button class="btn btn-primary mt-4 self-end" type="submit" disabled={$submitting}>
 				{#if $submitting}
 					<span class="loading loading-spinner loading-sm"></span>

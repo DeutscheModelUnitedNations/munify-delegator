@@ -118,6 +118,7 @@
 	"applicationNotCompletedDelegationText": "Your delegation's application was not completed before the registration deadline. Your delegation can therefore not be considered in the selection process. If you have any questions, please contact the participant care team.",
 	"applicationNotCompletedSingleParticipantText": "Your application was not completed before the registration deadline. You can therefore not be considered in the selection process. If you have any questions, please contact the participant care team.",
 	"applicationNotCompletedTitle": "Application not completed",
+	"applicationQualityHint": "Your answers are part of the selection process. A careful, meaningful application improves your chances of getting a seat.",
 	"applicationRejected": "Application Rejected",
 	"applicationRejectedText": "We are sad to inform you that you cannot participate at this conference. This is either because you did not complete the registration in time, there were too many applications for the conference or due to individual reasons. If you have any questions, please contact the participant care.",
 	"applicationTextTooLong": "The text may be at most {max} characters long.",
