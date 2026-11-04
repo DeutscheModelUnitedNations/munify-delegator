@@ -1,5 +1,4 @@
-import { Redis } from 'ioredis';
-import { REDIS_URL } from '$app/env/private';
+import { redisClient } from '#api/services/redisClient';
 import { createPacer, memorySlots, redisSlots } from './emailPacing';
 
 /**
@@ -7,9 +6,9 @@ import { createPacer, memorySlots, redisSlots } from './emailPacing';
  * offline queue and with one retry, a command fails at once while Redis is away, and the slot comes
  * from memory instead of the send waiting for a reconnect.
  */
+const redis = redisClient({ enableOfflineQueue: false, maxRetriesPerRequest: 1 });
+
 export const emailPacer = createPacer({
-	store: REDIS_URL
-		? redisSlots(new Redis(REDIS_URL, { enableOfflineQueue: false, maxRetriesPerRequest: 1 }))
-		: memorySlots(),
+	store: redis ? redisSlots(redis) : memorySlots(),
 	fallback: memorySlots()
 });

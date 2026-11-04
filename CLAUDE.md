@@ -413,7 +413,10 @@ bun run preview
   `<svelte:boundary>` with a skeleton as `pending` snippet, keyed by the pathname so every
   navigation creates a fresh one (a settled boundary never shows `pending` again). The snippet is
   only passed in the browser: on the server a boundary with `pending` renders nothing else, and a
-  full load still arrives with its content. A section that keeps a frame across its pages (the
+  full load still arrives with its content. A page whose fetch fails shows a retry
+  (`LoadError`) in its boundary, logged as a warning when the API was not reached: past a failed
+  `await`, Svelte still runs the template against script variables that were never assigned, so
+  the error must not escape the boundary. A section that keeps a frame across its pages (the
   assignment's tabs, the paper hub's shell) shows the skeleton below the frame itself, and the
   outer layout's key stops at it (`boundaryKey`, `#lib/helpers/boundaryKey`). The team route
   registry names each page's `skeleton`, drawn after that page (`#lib/data/teamSkeletons`); `NavigationProgress` draws the bar along the top
@@ -456,7 +459,9 @@ bun run preview
 
 - **`load` functions are for three things only**: redirect and 403 guards, page options like
   `ssr = false`, and cookie work that has to happen before anything renders — of which only
-  `auth/accept-invitation` is left. There are **no form-action loads any more**; every form submits
+  `auth/accept-invitation` is left (and the user manual's server loads, which serve markdown
+  bundled into the build, not API data; see "User manual, help and tours"). There are **no
+  form-action loads any more**; every form submits
   through a mutation (see Forms below). Everything else fetches in the component, and a guard
   returns nothing — route parameters come from the `params` prop, not from load data. A `load` must
   never return what the generated client gave it: those are subscribeable proxies, and `load` data
@@ -1076,7 +1081,48 @@ bun run preview
     sending speed, and live pages hearing of the log rows), and `APP_URL`, the public address
     the mails link to
 
-#### 11. MCP server for AI assistants
+#### 11. User manual, help and tours
+
+- **The manual is markdown in the repository**: `docs/de/` and `docs/en/` (`docs/review/` holds
+  internal notes and is not part of it), served publicly at `/docs` (`src/routes/docs/`) in the
+  landing page's frame. A page needs a `title` in its frontmatter; the sidebar order lives in
+  `#lib/docs/nav.ts`. A page missing in English falls back to German with a notice. Links between
+  pages are relative (`./dashboard#payment`) and keep the reader's locale prefix; a section other
+  pages or the help map link to carries an explicit id in both languages
+  (`## Zahlung {#payment}`), so German and English headings share it.
+- **Everything generic is MUNify CHASE's, shared through `@deutschemodelunitednations/docs-kit`**
+  (repository `munify-docs-kit`): the markdown renderer (admonitions as `:::tip Title … :::`,
+  `{#id}` headings, `shot:` screenshots), the docs layout and page components, the help
+  dropdown, the driver.js tour runner, the guard tests and the screenshot capture. What is
+  DELEGATOR's lives in `src/lib/docs/` and `scripts/docs-screenshots/`. Improve the kit rather
+  than working around it here: a GitHub release `v<version>` of `munify-docs-kit` publishes it to
+  npm, then bump it here and in CHASE.
+- **Every route can point at its manual page.** `routeHelp.ts` maps `RouteId`s to a page and
+  section (`'user-manual/team/assignment#sighting'`) and optionally a tour, so a renamed route
+  breaks the typecheck. `helpForRoute` (`#lib/docs/help.ts`) turns it into a link (the manual's
+  start page for routes without an entry), which the header's help button
+  (`#lib/docs/HelpButton.svelte`), the footer, the team navigation and the command palette
+  (a `manual` result, opened in a new tab) all use. They read `page.route.id` only.
+- **Tours** are `*.tour.ts` files in `#lib/docs/tours/`, anchored on `data-tour="…"` attributes
+  (or the `tourAnchor` prop of `DashboardSection`). A step whose anchor is not on screen is
+  skipped. The conference dashboard picks the registration tour when the registration choice is
+  on screen, the participant tour otherwise. Messages are `tour…` keys.
+- **Screenshots are generated, never taken by hand.** Reference one as
+  `![alt](shot:team/assignment-sighting)` and list it in `scripts/docs-screenshots/shots.ts`
+  (persona, path, optional viewport, wait or clip). `bun run docs:screenshots [id-prefix]` loads
+  the dev seed into a `delegator_docs` database, starts a dev server and captures every shot in
+  German and English, light and dark, into `static/docs-assets/screenshots/` (stop your own dev
+  server first; it needs the dev bucket from `dev:docker`). `DOCS_DATABASE_URL` and
+  `DOCS_SKIP_SEED=1` reuse an already seeded database, `DOCS_CHROMIUM` points at another
+  Chromium. Shots only look, they never change data. The `Docs screenshots` workflow reruns it
+  on main and opens a PR.
+- `src/lib/docs/docs.test.ts` fails on a page missing from the sidebar or a language, broken
+  links or sections, missing or unused screenshots, help targets that do not exist and tour
+  anchors no component defines. **When a feature's UI changes, update its manual page in both
+  languages, keep the `data-tour` anchors and rerun the affected screenshots.** Manual prose:
+  concise, no semicolons or dashes, German in du-form and gender-inclusive like the UI.
+
+#### 12. MCP server for AI assistants
 
 - **Why:** AI gets used anyway; rather than people downloading participant data to paste into
   one, the team connects an assistant to `/mcp`, which works with the caller's own rights and
@@ -1225,6 +1271,7 @@ Format: `<type> (<scope>): <description>` (e.g., `feat (Frontend): implement log
 Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_POOL_SIZE` (optional) - connections each app instance holds open to Postgres (20)
 - `SECRET` - Session encryption secret
 - `NODE_ENV` - Environment (development/production/test)
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
@@ -1452,6 +1499,14 @@ Some versions are held back or wired up on purpose. Check here before "updating 
 
 - **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
   glob on every page render, in the browser and the server log alike.
+
+- **graphql-sse is patched** (`lib/handler.*`, `lib/client.*`, the compiled files both bundles
+  inline) for two leaks upstream has not released fixes for. The handler disposes a stream
+  reserved with `PUT` that no `GET` connects to within `reservationTimeout` (30 s; issue #123):
+  it kept its subscriptions and their queued results forever, ~330 KB each. The client aborts its
+  event stream when an operation's request fails instead of opening a second one beside it (issue
+  #135, PR #136 ported). `src/api/sseReservations.test.ts` and `src/lib/api/sseClient.test.ts`
+  fail without the patch; drop it once a release carries both fixes.
 
 ## Development Workflow
 

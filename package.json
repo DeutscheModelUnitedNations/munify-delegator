@@ -17,6 +17,7 @@
 		"@better-svelte-email/server": "^2.3.0",
 		"@bwip-js/browser": "^4.11.4",
 		"@deutschemodelunitednations/corporate-identity": "^2.1.0",
+		"@deutschemodelunitednations/docs-kit": "^0.1.2",
 		"@deutschemodelunitednations/munify-resolution-editor": "^0.6.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^2.1.1",
@@ -100,6 +101,7 @@
 		"daisyui": "^5.7.50",
 		"date-fns": "^4.4.0",
 		"dayjs": "^1.11.23",
+		"driver.js": "^1.10.2",
 		"drizzle-kit": "1.0.0-rc.5-5935859",
 		"drizzle-seed": "1.0.0-rc.5-5935859",
 		"echarts": "^6.1.0",
@@ -211,6 +213,7 @@
 		"db:studio": "drizzle-kit studio",
 		"db:reset": "bun ./src/api/db/reset.ts",
 		"db:seed:dev": "bun ./src/api/db/seedDev.ts",
+		"docs:screenshots": "bun scripts/docs-screenshots/run.ts",
 		"dev:accounts": "bun ./scripts/writeOidcMockUsers.ts",
 		"mcp:token": "bun ./scripts/mcpDevToken.ts",
 		"db:nuke": "docker compose -f ./dev.docker-compose.yml down -v && docker compose -f ./dev.docker-compose.yml up -d --wait && bun run db:migrate",
@@ -241,7 +244,8 @@
 		"@magidoc/plugin-svelte-marked@7.0.0": "patches/@magidoc%2Fplugin-svelte-marked@7.0.0.patch",
 		"sveltekit-breadcrumbs@0.0.9": "patches/sveltekit-breadcrumbs@0.0.9.patch",
 		"svelte-virtual-list@3.0.1": "patches/svelte-virtual-list@3.0.1.patch",
-		"@sveltejs/kit@3.1.0": "patches/@sveltejs%2Fkit@3.1.0.patch"
+		"@sveltejs/kit@3.1.0": "patches/@sveltejs%2Fkit@3.1.0.patch",
+		"graphql-sse@2.6.3": "patches/graphql-sse@2.6.3.patch"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",

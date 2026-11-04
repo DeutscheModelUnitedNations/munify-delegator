@@ -737,6 +737,8 @@ Main section wrapper with icon, title, and description:
 - `defaultCollapsed`: Boolean for initial collapsed state
 - `collapsed`: Bindable boolean to track/control collapsed state externally
 - `headerAction`: Optional snippet for header actions
+- `tourAnchor`: Optional `data-tour` anchor a guided tour points at (see "User manual, help and
+  tours" in CLAUDE.md)
 
 ### DashboardLinkCard
 

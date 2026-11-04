@@ -14,6 +14,7 @@
 	} from '#lib/data/teamRoutes';
 	import PlausibilityNavButton from './PlausibilityNavButton.svelte';
 	import CleanupNavButton from './CleanupNavButton.svelte';
+	import { helpForRoute } from '#lib/docs/help';
 
 	/** The menu itself: the registry's sections, each page a button, the open one marked. */
 	let {
@@ -31,6 +32,9 @@
 		info: 'fa-comments',
 		maintenance: 'fa-toolbox'
 	} as const;
+
+	// The manual's page about the team page on screen, or the manual's start
+	const help = $derived(helpForRoute(page.route.id));
 
 	const hrefOf = (route: TeamRoute) => resolve(`dashboard/${conferenceId}/${route.path}`);
 </script>
@@ -85,4 +89,22 @@
 			</NavMenuDetails>
 		{/if}
 	{/each}
+	<li class="menu-title p-0"><div class="divider my-1"></div></li>
+	<li>
+		<!-- eslint-disable svelte/no-navigation-without-resolve -- helpForRoute resolves the manual's path, then adds the locale prefix and the section -->
+		<a
+			href={help.manualHref}
+			target="_blank"
+			rel="noopener noreferrer"
+			data-testid="team-manual-link"
+		>
+			<i class="fa-sharp-duotone fa-solid fa-book w-5 text-center"></i>
+			<span class="flex-1">{help.specific ? m.helpManualForPage() : m.helpManual()}</span>
+			<i
+				class="fa-sharp-duotone fa-solid fa-arrow-up-right text-base-content/50 text-xs"
+				aria-hidden="true"
+			></i>
+		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
+	</li>
 </NavMenu>

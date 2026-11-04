@@ -80,17 +80,20 @@
 						/>
 					{/snippet}
 				</DashboardConferenceOverview>
-				<ParticipationStages
-					{conferenceId}
-					{conference}
-					{singleParticipant}
-					{delegationMember}
-					supervisorId={supervisor?.id}
-					isTeamMember={!!teamMember}
-					user={currentUser}
-					{status}
-					ofAge={isOfAgeAtConference}
-				/>
+				<!-- Spaced like the page around it; the dashboard's tour points at it as a whole -->
+				<div class="flex flex-col gap-10" data-tour="dashboard.stages">
+					<ParticipationStages
+						{conferenceId}
+						{conference}
+						{singleParticipant}
+						{delegationMember}
+						supervisorId={supervisor?.id}
+						isTeamMember={!!teamMember}
+						user={currentUser}
+						{status}
+						ofAge={isOfAgeAtConference}
+					/>
+				</div>
 			{:else}
 				<NoConferenceIndicator />
 			{/if}

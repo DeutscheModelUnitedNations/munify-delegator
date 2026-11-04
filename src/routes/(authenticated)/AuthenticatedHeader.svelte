@@ -13,6 +13,7 @@
 	import Breadcrumbs from './Breadcrumbs.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import UserMenu from './UserMenu.svelte';
+	import HelpButton from '#lib/docs/HelpButton.svelte';
 
 	//TODO
 	// import ExportButtons from '#lib/components/dataTable/ExportButtons.svelte';
@@ -152,6 +153,7 @@
 				</button>
 			{/if}
 
+			<HelpButton />
 			<UserMenu />
 		</div>
 	</div>

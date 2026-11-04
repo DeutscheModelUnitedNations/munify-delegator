@@ -44,6 +44,10 @@ const requiredAtRuntime = <T extends z.ZodType<unknown, string | undefined>>({
 export const variables = defineEnvVars({
 	// --- Private ---
 	DATABASE_URL: { schema: requiredAtRuntime({ schema: z.string(), placeholder: '' }) },
+	/** Connections each app instance may hold open to Postgres at once. */
+	DATABASE_POOL_SIZE: {
+		schema: numberOr(20).pipe(z.number().int().min(1, 'must be at least 1'))
+	},
 	NODE_ENV: {
 		schema: requiredAtRuntime({
 			schema: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),

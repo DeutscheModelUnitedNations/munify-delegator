@@ -63,7 +63,11 @@
 {:else}
 	<DashboardSection icon="file-signature" title={m.signup()}>
 		{#snippet headerAction()}
-			<a class="btn btn-ghost btn-sm" href={resolve(`dashboard/${conferenceId}/seats`)}>
+			<a
+				class="btn btn-ghost btn-sm"
+				href={resolve(`dashboard/${conferenceId}/seats`)}
+				data-tour="registration.seats"
+			>
 				<i class="fa-sharp-duotone fa-solid fa-person-seat"></i>
 				<span class="max-sm:hidden">{m.conferenceSeats()}</span>
 			</a>
@@ -74,7 +78,7 @@
 			{@html m.conferenceSignupIntroduction()}
 		</p>
 
-		<div class="bg-base-200 rounded-box mt-6 p-4">
+		<div class="bg-base-200 rounded-box mt-6 p-4" data-tour="registration.assistant">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<i class="fa-sharp-duotone fa-solid fa-message-question text-info text-2xl"></i>
 				<div class="flex-1">

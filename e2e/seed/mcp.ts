@@ -17,8 +17,8 @@ import { upsertParticipant } from './participant';
 import { upsertTeamMember } from './teamMember';
 import { COMPLETE_PROFILE, upsertUsers } from './user';
 
-export const E2E_MCP_CONFERENCE_ID = 'e2e00000conference0000008';
-export const E2E_MCP_OFF_CONFERENCE_ID = 'e2e00000conference0000009';
+export const E2E_MCP_CONFERENCE_ID = 'e2e00000conference0000010';
+export const E2E_MCP_OFF_CONFERENCE_ID = 'e2e00000conference0000011';
 export const E2E_MCP_CARE_ID = 'e2e-mcp-care';
 export const E2E_MCP_DELEGATE_ID = 'e2e-mcp-delegate';
 /** The delegate's family name, which no answer may contain. */

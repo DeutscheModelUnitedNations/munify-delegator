@@ -9,8 +9,7 @@ import { mkdtemp, rm, writeFile, readFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Redis } from 'ioredis';
-import { REDIS_URL } from '$app/env/private';
+import { redisClient } from '#api/services/redisClient';
 import { createAttemptLimiter, createCounter } from '#api/services/failureLimit';
 import {
 	assertSignedIn,
@@ -40,7 +39,7 @@ const PARALLEL_COMPILES = 2;
 
 const compileLimiter = createAttemptLimiter({
 	counter: createCounter({
-		redis: REDIS_URL ? new Redis(REDIS_URL, { lazyConnect: true }) : undefined,
+		redis: redisClient({ lazyConnect: true }),
 		prefix: 'pdf-compile',
 		limit: COMPILES_PER_WINDOW,
 		windowSeconds: WINDOW_SECONDS

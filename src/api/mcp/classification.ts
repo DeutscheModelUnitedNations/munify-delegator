@@ -758,6 +758,7 @@ const FIELDS: Record<string, TypeClassification> = {
 			'mcpServerUrl',
 			'myOIDCRoles',
 			'papersCount',
+			'supervisorSignupOpen',
 			'teamMembersCount',
 			'waitingListEntriesCount'
 		]

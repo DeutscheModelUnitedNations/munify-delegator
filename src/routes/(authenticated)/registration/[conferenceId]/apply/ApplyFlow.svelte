@@ -88,7 +88,8 @@
 		last={!chosen}
 		bare
 	>
-		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<!-- `registration.choice` (#lib/docs/tours/anchors) also tells the dashboard's tours apart -->
+		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="registration.choice">
 			{#each options as option, index (option.path)}
 				<button
 					type="button"
