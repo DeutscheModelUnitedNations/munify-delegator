@@ -72,12 +72,14 @@ test('the participants table filters, groups and keeps a personal view', async (
 		timeout: 15_000
 	});
 
-	// Deleted again, so reruns start from the base view
+	// Deleted again, so reruns start from the base view. The grouped table may have scrolled the
+	// toolbar under the sticky header, where a click would land on the header.
+	await page.evaluate(() => window.scrollTo(0, 0));
 	await viewsButton.click();
 	await page.getByRole('button', { name: /Ansicht löschen|Delete view/ }).click();
 	await page
+		.getByRole('alertdialog')
 		.getByRole('button', { name: /Ansicht löschen|Delete view/ })
-		.last()
 		.click();
 	await expect(viewsButton).not.toContainText(name, { timeout: 15_000 });
 

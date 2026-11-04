@@ -22,11 +22,23 @@
 	const sorted = $derived(sortViews(views));
 	const shared = $derived(sorted.filter((view) => view.shared));
 	const personal = $derived(sorted.filter((view) => !view.shared));
+
+	/**
+	 * Runs a choice and closes the menu: a focus dropdown stays open while anything in it has
+	 * focus, so it would otherwise keep covering the table (and its own button) after a choice.
+	 */
+	function choose(run: () => void) {
+		if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+		run();
+	}
 </script>
 
 {#snippet viewItem(view: SavedView)}
 	<li>
-		<button class:menu-active={current?.id === view.id} onclick={() => onselect(view)}>
+		<button
+			class:menu-active={current?.id === view.id}
+			onclick={() => choose(() => onselect(view))}
+		>
 			<span class="grow truncate">{view.name}</span>
 			{#if view.global}
 				<i
@@ -62,7 +74,7 @@
 		class="dropdown-content menu bg-base-200 rounded-box z-20 max-h-[70vh] w-72 flex-nowrap overflow-y-auto p-2 shadow"
 	>
 		<li>
-			<button class:menu-active={current === null} onclick={() => onselect(null)}>
+			<button class:menu-active={current === null} onclick={() => choose(() => onselect(null))}>
 				<span class="grow">{m.dataGridBaseView()}</span>
 			</button>
 		</li>
@@ -82,7 +94,7 @@
 		{#each actions as action (action)}
 			{@const entry = viewActionEntry({ action, current })}
 			<li>
-				<button class:text-error={entry.danger} onclick={() => onaction(action)}>
+				<button class:text-error={entry.danger} onclick={() => choose(() => onaction(action))}>
 					<i class="fa-sharp-duotone fa-solid {entry.icon}"></i>
 					{entry.label}
 				</button>
