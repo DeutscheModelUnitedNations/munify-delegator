@@ -4,7 +4,8 @@
 	import { m } from '#lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import Modal from '#lib/components/Modal.svelte';
-	import { EMAIL_GROUPS } from '#lib/helpers/emailKinds';
+	import { EMAIL_GROUPS, kindApplies, REMINDER_GAP_DAYS } from '#lib/helpers/emailKinds';
+	import { fetchActiveChaseLink } from '#lib/api/chaseLink';
 	import { emailGroupTitle, emailKindTexts } from '#lib/helpers/emailKindTexts';
 	import EmailKindCard from './EmailKindCard.svelte';
 	import EmailLog from './EmailLog.svelte';
@@ -22,6 +23,17 @@
 	}
 
 	let { conferenceId, changes }: Props = $props();
+
+	// the CHASE mail exists only while an instance is linked
+	const chaseLink = $derived(await fetchActiveChaseLink());
+	const groups = $derived(
+		EMAIL_GROUPS.map((group) => ({
+			id: group.id,
+			kinds: group.kinds.filter((kind) =>
+				kindApplies({ kind, chaseLinked: chaseLink !== undefined })
+			)
+		}))
+	);
 
 	const settings = $derived(
 		await client.liveQuery.conferenceEmailSettings({
@@ -166,9 +178,14 @@
 	<EmailFooterCard {conferenceId} onedit={() => (editingFooter = true)} />
 	<EmailPaceCard {conferenceId} {changes} />
 
-	{#each EMAIL_GROUPS as group (group.id)}
+	{#each groups as group (group.id)}
 		<section class="flex flex-col gap-3">
 			<h3 class="text-lg font-bold">{emailGroupTitle[group.id]()}</h3>
+			{#if group.id === 'reminders'}
+				<p class="text-base-content/70 text-sm">
+					{m.emailRemindersSpacing({ days: REMINDER_GAP_DAYS })}
+				</p>
+			{/if}
 			{#each group.kinds as kind (kind)}
 				<EmailKindCard
 					{kind}

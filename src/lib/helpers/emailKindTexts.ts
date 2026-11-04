@@ -4,6 +4,7 @@ import {
 	APPLICATION_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
+	CHASE_INTRO_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
 	type EmailGroupId
 } from '#lib/helpers/emailKinds';
@@ -82,6 +83,12 @@ const TEXTS: Record<EmailkindEnum, () => EmailKindTexts> = {
 		trigger: m.emailKindOpenIssuesTrigger({ days: OPEN_ISSUES_REMINDER_DAYS }),
 		recipients: m.emailKindOpenIssuesRecipients(),
 		content: m.emailKindOpenIssuesContent()
+	}),
+	CHASE_INTRO_REMINDER: () => ({
+		title: m.emailKindChaseIntroTitle(),
+		trigger: m.emailKindChaseIntroTrigger({ days: CHASE_INTRO_REMINDER_DAYS }),
+		recipients: m.emailKindChaseIntroRecipients(),
+		content: m.emailKindChaseIntroContent()
 	}),
 	PHONE_READY_REMINDER: () => ({
 		title: m.emailKindPhoneTitle(),

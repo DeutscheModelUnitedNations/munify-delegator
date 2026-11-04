@@ -8,7 +8,9 @@ import type {
 	SnapshotTeamMember
 } from './dueEmails';
 
-const ROLE = { columns: { id: true, kind: true, name: true, nationAlpha3Code: true } } as const;
+const ROLE = {
+	columns: { id: true, kind: true, name: true, nationAlpha3Code: true, chaseAccess: true }
+} as const;
 const USER = {
 	columns: {
 		id: true,
@@ -38,6 +40,10 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 		}
 	});
 	if (!conference) return undefined;
+	const chaseLink = await db.query.instanceLink.findFirst({
+		where: { status: 'ACTIVE' },
+		columns: { remoteUrl: true }
+	});
 
 	const [participants, seatedEntries, reviews, surveys, teamMembers, acceptedInvitations] =
 		await Promise.all([
@@ -60,7 +66,7 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 								columns: { applied: true },
 								with: { assignedRole: ROLE }
 							},
-							assignedCommittee: { columns: { abbreviation: true } }
+							assignedCommittee: { columns: { id: true, abbreviation: true } }
 						}
 					},
 					singleParticipant: {
@@ -160,7 +166,8 @@ export async function loadEmailSnapshot(conferenceId: string): Promise<EmailSnap
 			applicationDeadline: conference.applicationDeadline,
 			startConference: conference.startConference,
 			timezone: conference.timezone,
-			certificateAvailable: !!conference.certificateFileId
+			certificateAvailable: !!conference.certificateFileId,
+			chaseUrl: chaseLink?.remoteUrl ?? null
 		},
 		people,
 		team: teamMembers.flatMap((member): SnapshotTeamMember[] =>
@@ -230,7 +237,7 @@ export function delegationPart(
 	member:
 		| {
 				delegation: { applied: boolean; assignedRole?: Role } | null;
-				assignedCommittee?: { abbreviation: string } | null;
+				assignedCommittee?: { id: string; abbreviation: string } | null;
 		  }
 		| null
 		| undefined
@@ -239,7 +246,8 @@ export function delegationPart(
 	return {
 		applied: member.delegation.applied,
 		role: member.delegation.assignedRole ?? null,
-		committee: member.assignedCommittee?.abbreviation ?? null
+		committee: member.assignedCommittee?.abbreviation ?? null,
+		committeeId: member.assignedCommittee?.id ?? null
 	};
 }
 

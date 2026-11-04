@@ -3,11 +3,13 @@ import getSimplifiedPostalStatus from '#lib/helpers/getSimplifiedPostalStatus';
 import { ofAgeAtConference } from '#lib/helpers/ageChecker';
 import {
 	APPLICATION_REMINDER_DAYS,
+	CHASE_INTRO_REMINDER_DAYS,
 	OPEN_ISSUES_REMINDER_DAYS,
 	PHONE_READY_REMINDER_DAYS,
 	SURVEY_REMINDER_DAYS,
 	type AlwaysSentKind
 } from '#lib/helpers/emailKinds';
+import { chaseRoleOf } from '#lib/helpers/chaseLinks';
 
 /**
  * Which automatic mails a conference owes whom, decided from its current state alone. Every mail
@@ -27,6 +29,8 @@ export interface SnapshotRole {
 	kind: (typeof schema.conferenceRoleKind.enumValues)[number];
 	name: string | null;
 	nationAlpha3Code: string | null;
+	/** What a custom role's holders are in a linked CHASE. */
+	chaseAccess: (typeof schema.chaseAccess.enumValues)[number];
 }
 
 /** Who a mail goes to. */
@@ -47,7 +51,13 @@ export interface SnapshotPerson {
 	guardianConsent: Status;
 	mediaConsent: Status;
 	didAttend: boolean;
-	delegation: { applied: boolean; role: SnapshotRole | null; committee: string | null } | null;
+	delegation: {
+		applied: boolean;
+		role: SnapshotRole | null;
+		/** The committee's abbreviation. */
+		committee: string | null;
+		committeeId: string | null;
+	} | null;
 	single: { applied: boolean; role: SnapshotRole | null } | null;
 	/** The people (participant ids) a supervisor supervises. */
 	supervisor: { plansOwnAttendance: boolean; studentIds: string[] } | null;
@@ -100,6 +110,8 @@ export interface EmailSnapshot {
 		timezone: string;
 		/** A certificate template is uploaded, so certificates can be downloaded. */
 		certificateAvailable: boolean;
+		/** The linked MUNify CHASE's address; `null` while no instance is linked. */
+		chaseUrl: string | null;
 	};
 	people: SnapshotPerson[];
 	team: SnapshotTeamMember[];
@@ -129,6 +141,8 @@ export interface DueEmail {
 	review?: SnapshotReview;
 	/** For a survey reminder: the survey. */
 	survey?: SnapshotSurvey;
+	/** For a reminder: the date it reminds of, which its window closes at (`reminderSpacing.ts`). */
+	remindsOf?: Date;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -288,15 +302,47 @@ const conferenceReminders: Rule = ({ conference, remindBefore, postalDone }, per
 	const openIssues =
 		(conference.unlockPostals && !postalDone(person)) ||
 		(conference.unlockPayments && !paid(person));
-	const within = (days: number) => remindBefore({ date: conference.startConference, days });
+	const remindsOf = conference.startConference;
+	const within = (days: number) => remindBefore({ date: remindsOf, days });
 	return [
 		...(openIssues && within(OPEN_ISSUES_REMINDER_DAYS)
-			? [email({ kind: 'OPEN_ISSUES_REMINDER', person, subjectKey: 'open-issues' })]
+			? [
+					email({
+						kind: 'OPEN_ISSUES_REMINDER',
+						person,
+						subjectKey: 'open-issues',
+						extra: { remindsOf }
+					})
+				]
 			: []),
 		...(within(PHONE_READY_REMINDER_DAYS)
-			? [email({ kind: 'PHONE_READY_REMINDER', person, subjectKey: 'phone' })]
+			? [email({ kind: 'PHONE_READY_REMINDER', person, subjectKey: 'phone', extra: { remindsOf } })]
 			: [])
 	];
+};
+
+/**
+ * The invitation to look around the linked MUNify CHASE before the conference: to everyone with a
+ * part there (`chaseRoleOf`), only while an instance is linked. Keyed by the start: a conference
+ * moved later invites again.
+ */
+const chaseIntro: Rule = ({ conference, remindBefore }, person) => {
+	if (!conference.chaseUrl || !conference.assignmentReleased) return [];
+	const role = chaseRoleOf({
+		role: seatOf(person),
+		committeeId: person.delegation?.role ? person.delegation.committeeId : null
+	});
+	const remindsOf = conference.startConference;
+	return role && remindBefore({ date: remindsOf, days: CHASE_INTRO_REMINDER_DAYS })
+		? [
+				email({
+					kind: 'CHASE_INTRO_REMINDER',
+					person,
+					subjectKey: remindsOf.toISOString().slice(0, 10),
+					extra: { remindsOf }
+				})
+			]
+		: [];
 };
 
 /**
@@ -317,7 +363,7 @@ const surveyReminders: Rule = ({ conference, remindBefore, surveys }, person) =>
 						kind: 'SURVEY_REMINDER',
 						person,
 						subjectKey: `${survey.id}:${survey.deadline.toISOString().slice(0, 10)}`,
-						extra: { survey }
+						extra: { survey, remindsOf: survey.deadline }
 					})
 				)
 		: [];
@@ -337,7 +383,8 @@ const applicationReminder: Rule = ({ conference, remindBefore }, person) =>
 				email({
 					kind: 'APPLICATION_DEADLINE_REMINDER',
 					person,
-					subjectKey: conference.applicationDeadline.toISOString().slice(0, 10)
+					subjectKey: conference.applicationDeadline.toISOString().slice(0, 10),
+					extra: { remindsOf: conference.applicationDeadline }
 				})
 			]
 		: [];
@@ -368,6 +415,7 @@ const RULES: Rule[] = [
 	assignmentResult,
 	supervisorSummary,
 	acceptedEmails,
+	chaseIntro,
 	applicationReminder,
 	surveyReminders,
 	certificate,

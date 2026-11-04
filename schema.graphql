@@ -1813,6 +1813,7 @@ enum EmailkindEnum {
   ASSIGNMENT_REJECTED
   BADGE_FOUND
   CERTIFICATE_AVAILABLE
+  CHASE_INTRO_REMINDER
   OPEN_ISSUES_REMINDER
   PAPERWORK_PROBLEM
   PAPER_REVIEWED
@@ -4341,7 +4342,7 @@ type Query {
   ): StatisticsResult!
 
   """
-  The public key identity codes are checked against, raw and base64url. Public by nature, but only handed to signed-in callers (UNAUTHENTICATED otherwise).
+  The public key identity codes and NSA cards are checked against, raw and base64url. Public by nature, but only handed to signed-in callers and the linked CHASE (UNAUTHENTICATED otherwise).
   """
   identityCodePublicKey: IdentityCodePublicKey!
 

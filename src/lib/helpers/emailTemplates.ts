@@ -29,7 +29,10 @@ export type EmailPlaceholder =
 	| 'status'
 	| 'role'
 	| 'inviter'
-	| 'survey';
+	| 'survey'
+	| 'committee'
+	| 'chaseLink'
+	| 'manualLink';
 
 interface KindTemplate {
 	/** What this kind's text can use, besides `name` and `conference`, which every kind has. */
@@ -51,7 +54,9 @@ const P = {
 	status: '{status}',
 	role: '{role}',
 	inviter: '{inviter}',
-	survey: '{survey}'
+	survey: '{survey}',
+	chaseLink: '{chaseLink}',
+	manualLink: '{manualLink}'
 } as const;
 
 const paragraphs = (...blocks: string[]) => blocks.join('\n\n');
@@ -170,6 +175,18 @@ const TEMPLATES: Record<EmailkindEnum, KindTemplate> = {
 				m.emailAutoOpenIssuesBody({ conference: P.conference, date: P.date }, { locale }),
 				'{list}',
 				m.emailAutoOpenIssuesClosing({}, { locale })
+			)
+		})
+	},
+	CHASE_INTRO_REMINDER: {
+		placeholders: ['date', 'committee', 'chaseLink', 'manualLink'],
+		text: (locale) => ({
+			subject: m.emailAutoChaseIntroSubject({ conference: P.conference }, { locale }),
+			heading: m.emailAutoChaseIntroHeading({}, { locale }),
+			body: paragraphs(
+				m.emailAutoChaseIntroBody({ conference: P.conference, date: P.date }, { locale }),
+				m.emailAutoChaseIntroLook({ chaseLink: P.chaseLink }, { locale }),
+				m.emailAutoChaseIntroManual({ manualLink: P.manualLink }, { locale })
 			)
 		})
 	},

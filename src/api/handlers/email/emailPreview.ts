@@ -55,8 +55,15 @@ export async function previewEmail({
 		didAttend: true,
 		delegation: {
 			applied: true,
-			role: { id: 'sample', kind: 'NATION', name: null, nationAlpha3Code: 'FRA' },
-			committee: 'GV'
+			role: {
+				id: 'sample',
+				kind: 'NATION',
+				name: null,
+				nationAlpha3Code: 'FRA',
+				chaseAccess: 'SPECTATOR'
+			},
+			committee: 'GV',
+			committeeId: 'sample-committee'
 		},
 		single: null,
 		supervisor: null,
@@ -68,7 +75,7 @@ export async function previewEmail({
 	});
 	const rejectedStudent = sample({
 		user: { ...user, id: 'sample-student-2', givenName: 'Kim', familyName: 'Muster' },
-		delegation: { applied: true, role: null, committee: null }
+		delegation: { applied: true, role: null, committee: null, committeeId: null }
 	});
 	const email: DueEmail = {
 		kind,

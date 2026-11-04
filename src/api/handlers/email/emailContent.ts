@@ -24,6 +24,7 @@ import {
 	type EmailPlaceholderValues,
 	type EmailTextOverride
 } from './emailText';
+import { chaseLinks, chaseRoleOf } from '#lib/helpers/chaseLinks';
 
 /**
  * What an automatic mail says, in the locale it is rendered in (`runWithLocale`). Every kind is the
@@ -164,6 +165,27 @@ const CONTENT: Record<DueEmail['kind'], ContentBuilder> = {
 		],
 		button: dashboard
 	}),
+	CHASE_INTRO_REMINDER: ({ email, conference, dashboard }) => {
+		const person = email.person;
+		const committeeId = person?.delegation?.role ? person.delegation.committeeId : null;
+		const role = person && chaseRoleOf({ role: seatOf(person), committeeId });
+		if (!conference.chaseUrl || !role) return { button: dashboard };
+		const links = chaseLinks({
+			chaseUrl: conference.chaseUrl,
+			conferenceId: conference.id,
+			committeeId,
+			role
+		});
+		return {
+			values: {
+				date: day(conference.startConference),
+				committee: person.delegation?.committee ?? '',
+				chaseLink: links.app,
+				manualLink: links.manual
+			},
+			button: { label: m.emailAutoChaseIntroButton(), url: links.app }
+		};
+	},
 	PHONE_READY_REMINDER: ({ conference, origin }) => ({
 		values: { date: day(conference.startConference) },
 		items: [m.emailAutoPhoneLogin(), m.emailAutoPhoneHomeScreen(), m.emailAutoPhoneBattery()],

@@ -11,6 +11,7 @@ import {
 } from './dueEmails';
 import { loadEmailSnapshot } from './emailSnapshot';
 import { REMINDER_KINDS } from '#lib/helpers/emailKinds';
+import { spaceReminders } from './reminderSpacing';
 import {
 	deliver,
 	loadWording,
@@ -51,15 +52,21 @@ export function isOpen({ log, now }: { log: LogState | undefined; now: Date }) {
 	return false;
 }
 
-/** The mails of `kinds` the conference owes and has not sent, skipped or given up on. */
+/**
+ * The mails of `kinds` the conference owes and has not sent, skipped or given up on. `spaced` holds
+ * back the reminders a person would get too soon after another (`spaceReminders`): what a sweep
+ * sends, not what the team is told is owed.
+ */
 async function openEmails({
 	snapshot,
 	kinds,
-	now
+	now,
+	spaced = false
 }: {
 	snapshot: EmailSnapshot;
 	kinds: ReadonlySet<EmailKind>;
 	now: Date;
+	spaced?: boolean;
 }) {
 	const logs = await db.query.emailLog.findMany({
 		where: { conferenceId: snapshot.conference.id },
@@ -73,7 +80,20 @@ async function openEmails({
 			updatedAt: true
 		}
 	});
-	return stillOpen({ due: dueEmails({ snapshot, now }), logs, kinds, now });
+	const open = stillOpen({ due: dueEmails({ snapshot, now }), logs, kinds, now });
+	return spaced ? spaceReminders({ due: open, lastReminderAt: lastReminders(logs), now }) : open;
+}
+
+/** When each person last got an automatic reminder (or one is being sent). */
+function lastReminders(logs: readonly LogRow[]) {
+	const last = new Map<string, Date>();
+	for (const log of logs) {
+		if (log.trigger !== 'AUTOMATIC' || !log.userId || !isReminder(log.kind)) continue;
+		if (log.status !== 'SENT' && log.status !== 'SENDING') continue;
+		const previous = last.get(log.userId);
+		if (!previous || previous < log.updatedAt) last.set(log.userId, log.updatedAt);
+	}
+	return last;
 }
 
 type LogRow = LogState & {
@@ -233,7 +253,7 @@ export async function sendDueEmails({
 	const snapshot = kinds.size > 0 ? await loadEmailSnapshot(conferenceId) : undefined;
 	if (!snapshot) return { sent: 0, failed: 0, remaining: 0 };
 
-	const open = await openEmails({ snapshot, kinds, now });
+	const open = await openEmails({ snapshot, kinds, now, spaced: true });
 	const perSecond = await emailsPerSecondOf(conferenceId);
 	const batch = open.slice(0, roundLimit({ limit, perSecond }));
 	const wording = await loadWording(conferenceId);
