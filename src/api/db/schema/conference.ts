@@ -97,5 +97,10 @@ export const conference = snakeCase.table('conference', {
 	 */
 	maxSeatsPerSchool: integer().default(16),
 	/** How many mails a sweep sends per second at most. Empty means as fast as it can. */
-	emailsPerSecond: integer()
+	emailsPerSecond: integer(),
+	/**
+	 * Whether the team may reach the conference through AI assistants (the MCP server,
+	 * `src/api/mcp/`). Project management switches it on; off, no assistant sees anything of it.
+	 */
+	mcpEnabled: boolean().default(false).notNull()
 });

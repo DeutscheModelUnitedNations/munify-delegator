@@ -10,6 +10,7 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { surveyOptionPubsub } from '#api/pubsub';
 import { deleteIfAllowed, updateIfAllowed } from '#api/services/authHelper/utils';
 import { m } from '#lib/paraglide/messages';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerSurveyOptionAbilities();
 
@@ -32,6 +33,7 @@ const readableOption = async ({ ctx, id }: { ctx: ApiContext; id: string }) =>
 
 schemaBuilder.mutationFields((t) => ({
 	createSurveyOption: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'description'] }),
 		description:
 			'Adds an option to a survey question, with how many may pick it. A title the question already has is refused with CONFLICT.',
 		type: SurveyOptionRef,
@@ -59,6 +61,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateSurveyOption: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'description'] }),
 		description:
 			'Changes the given fields of a survey option; the others stay as they are, and `null` leaves one alone too. A lower limit keeps the answers already given. A title the question already has is refused with CONFLICT.',
 		type: SurveyOptionRef,
@@ -95,6 +98,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteSurveyOption: t.field({
+		extensions: mcpTool(),
 		description:
 			'Deletes a survey option. Refused with CONFLICT while somebody has picked it or a schedule entry is limited to it; scanner sessions expecting it simply stop expecting it.',
 		type: 'Boolean',

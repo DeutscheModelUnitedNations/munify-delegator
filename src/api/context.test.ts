@@ -3,7 +3,8 @@ import type { OIDCSession } from '@m1212e/sveltekit-oidc';
 
 vi.mock('$app/env/private', () => ({ OIDC_ROLE_CLAIM: 'roles', OIDC_ROLE_MAP: undefined }));
 
-const { effectiveRoles, rolesOfSession, sessionClaims, sessionUser } = await import('./context');
+const { effectiveRoles, requestIdentity, rolesOfSession, sessionClaims, sessionUser } =
+	await import('./context');
 
 function session(sub: string, roles: unknown, impersonator?: OIDCSession): OIDCSession {
 	return {
@@ -90,5 +91,27 @@ describe('sessionClaims', () => {
 
 	test('is empty without a session', () => {
 		expect(sessionClaims(undefined)).toEqual({});
+	});
+});
+
+describe('requestIdentity', () => {
+	test('is the session for a signed-in request', () => {
+		const identity = requestIdentity({ oidc: session('a', ['admin']) });
+		expect(identity.mcp).toBeUndefined();
+		expect(identity.OIDCRoleNames).toEqual(['admin']);
+		expect(identity.user?.sub).toBe('a');
+	});
+
+	test('is the assistant’s account over MCP, without any system role', () => {
+		const identity = requestIdentity({
+			// A session in the same request must not lend the assistant its roles
+			oidc: session('someone-else', ['admin']),
+			mcp: { userId: 'u1', isAdmin: true, conferenceId: 'c1' }
+		});
+		expect(identity.session).toBeUndefined();
+		expect(identity.OIDCRoleNames).toEqual([]);
+		expect(identity.user?.sub).toBe('u1');
+		expect(identity.user?.hasRole('admin')).toBe(false);
+		expect(identity.mcp).toEqual({ isAdmin: true, conferenceId: 'c1' });
 	});
 });

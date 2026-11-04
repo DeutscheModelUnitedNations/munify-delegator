@@ -22,6 +22,16 @@ declare global {
 				locale?: string;
 				phone?: string;
 			};
+			/**
+			 * Set by the `/mcp` endpoint for an AI assistant's request, once its bearer token checked
+			 * out: whose account it acts with, whether that account is a system admin, and the one
+			 * conference the tool call is about (`#api/context`, `src/api/mcp/`).
+			 */
+			mcp?: {
+				userId: string;
+				isAdmin: boolean;
+				conferenceId: string;
+			};
 		}
 	}
 }

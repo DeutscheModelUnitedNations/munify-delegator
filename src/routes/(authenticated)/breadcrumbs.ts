@@ -126,6 +126,10 @@ export const breadcrumbs: Record<string, LocalizedBreadcrumb> = {
 		icon: 'download',
 		translation: () => m.downloads()
 	},
+	'ai-access': {
+		icon: 'robot',
+		translation: () => m.aiAccess()
+	},
 	calendar: {
 		icon: 'calendar-days',
 		translation: () => m.calendar()

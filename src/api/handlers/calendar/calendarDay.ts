@@ -9,6 +9,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { calendarDayPubsub } from '#api/pubsub';
 import { updateIfAllowed } from '#api/services/authHelper/utils';
 import { deleteCalendarDay } from './calendarDayService';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCalendarDayAbilities();
 
@@ -22,6 +23,7 @@ async function readableDayQuery({ ctx, id }: { ctx: ApiContext; id: string }) {
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarDay: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name'] }),
 		description: "Adds an empty day to the conference's schedule.",
 		type: CalendarDayRef,
 		args: {
@@ -51,6 +53,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateCalendarDay: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['name'] }),
 		description: 'Changes the given fields of a schedule day; the others stay as they are.',
 		type: CalendarDayRef,
 		args: {
@@ -78,6 +81,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteCalendarDay: t.field({
+		extensions: mcpTool(),
 		description:
 			"Deletes a schedule day together with its entries. The tracks are the conference's and stay; they no longer run on it. NOT_FOUND for a day the caller may not manage.",
 		type: 'Boolean',

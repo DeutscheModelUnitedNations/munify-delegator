@@ -12,6 +12,7 @@ import {
 	assertCanScanPossibleDuplicates,
 	registerPossibleDuplicateAbilities
 } from './possibleDuplicatePermissions';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerPossibleDuplicateAbilities();
 
@@ -65,6 +66,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	decidePossibleDuplicate: t.drizzleField({
+		extensions: mcpTool(),
 		description:
 			"Settles a pair: `CONFIRMED` (one person), `DISMISSED` (two people), or back to `OPEN`, which forgets who decided. A dismissed pair no longer lets the care team read the other account's notes. NOT_FOUND for a pair the caller may not decide.",
 		type: PossibleDuplicateRef,

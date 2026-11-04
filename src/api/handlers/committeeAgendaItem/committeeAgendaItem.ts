@@ -9,6 +9,7 @@ import {
 	registerCommitteeAgendaItemAbilities
 } from './committeeAgendaItemPermissions';
 import { createAgendaItem, deleteAgendaItem, updateAgendaItem } from './committeeAgendaItemService';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerCommitteeAgendaItemAbilities();
 
@@ -25,6 +26,7 @@ async function readableAgendaItem({ ctx, id }: { ctx: ApiContext; id: string }) 
 
 schemaBuilder.mutationFields((t) => ({
 	createAgendaItem: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'teaserText'] }),
 		description:
 			'Adds an agenda item (a topic) to a committee: `planSeats` (project management and content lead) in its conference. NOT_FOUND otherwise.',
 		type: CommitteeAgendaItemRef,
@@ -44,6 +46,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateAgendaItem: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['title', 'teaserText'] }),
 		description: 'Changes the given fields of an agenda item; left out or `null` keeps a field.',
 		type: CommitteeAgendaItemRef,
 		args: {
@@ -62,6 +65,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	deleteAgendaItem: t.field({
+		extensions: mcpTool(),
 		description: 'Deletes an agenda item; its papers stay, without an agenda item.',
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },

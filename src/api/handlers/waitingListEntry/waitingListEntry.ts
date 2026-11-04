@@ -9,6 +9,7 @@ import {
 import { waitingListEntryPubsub } from '#api/pubsub';
 import { createWaitingListEntry, updateWaitingListEntry } from './waitingListEntryService';
 import { deleteIfAllowed } from '#api/services/authHelper/utils';
+import { mcpTool } from '#api/mcp/mcpTool';
 
 registerWaitingListEntryAbilities();
 
@@ -61,6 +62,7 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	updateWaitingListEntry: t.drizzleField({
+		extensions: mcpTool({ textArguments: ['schoolName'] }),
 		description:
 			"Changes the given fields of a waiting list entry; the others stay as they are. The entrant may until they are given a seat, participant care at any time; hiding the entry is participant care's alone.",
 		type: WaitingListEntryRef,

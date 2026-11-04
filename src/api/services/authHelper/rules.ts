@@ -35,16 +35,29 @@ export function isSystemAdmin(ctx: Context) {
 	return ctx.hasRole('admin');
 }
 /**
+ * The one conference an AI assistant's request may reach (`ctx.mcp`): the conference its tool
+ * call is about, and only while it has switched MCP on. Undefined for any other request.
+ */
+function mcpConference(ctx: Context) {
+	return ctx.mcp ? { id: ctx.mcp.conferenceId, mcpEnabled: true } : undefined;
+}
+
+/**
  * Matches a Conference row whose team includes the caller, optionally only with one of `roles`.
  * A system admin matches every conference; undefined (nobody) for an anonymous caller.
+ *
+ * An AI assistant (`ctx.mcp`) reaches only the conference of its tool call, if that has switched
+ * MCP on: there the caller's own team roles count, and a system admin counts as holding every
+ * one. Every team rule goes through here, so this is what confines an assistant.
  */
 export function isTeamMemberOf({ ctx, roles }: { ctx: Context; roles?: readonly TeamRole[] }) {
+	const assistantScope = mcpConference(ctx);
+	if (assistantScope && ctx.mcp?.isAdmin) return assistantScope;
 	if (isSystemAdmin(ctx)) return {};
 	const id = callerUserId(ctx);
 	if (!id) return undefined;
-	return {
-		teamMembers: roles ? { user: { id }, role: { in: [...roles] } } : { user: { id } }
-	};
+	const teamMembers = roles ? { user: { id }, role: { in: [...roles] } } : { user: { id } };
+	return { ...assistantScope, teamMembers };
 }
 
 /** `isTeamMemberOf` one level down: matches a row whose `conference` has the caller on its team. */
@@ -159,9 +172,10 @@ const conferenceParticipantWithRegistration = {
  */
 export function isParticipantOf(ctx: Context) {
 	const id = callerUserId(ctx);
-	return id
-		? { conferenceParticipants: { userId: id, ...conferenceParticipantWithRegistration } }
-		: undefined;
+	if (!id) return undefined;
+	const conferenceParticipants = { userId: id, ...conferenceParticipantWithRegistration };
+	// An assistant stays inside the conference of its tool call, as in `isTeamMemberOf`.
+	return { ...mcpConference(ctx), conferenceParticipants };
 }
 
 /** `isParticipantOf` one level down: matches a row whose `conference` the caller is registered in. */
